@@ -136,6 +136,12 @@ const SEEDS: Seed[] = [
       // confirmed by the word: the 885's code 52 sits in `Initialization`, `HDMI` and `I'm Done`.
       { container: 'arch8_config_880', codes: { 66: '<' } },
       { container: 'arch8_config_885', codes: { 52: 'I', 71: '<' } },
+      // Bench unit A's Dutch configuration, for the four codes it draws that no shape here named, found when
+      // `todo-compile-885.md` 1.6's letters were borrowed into it: a borrow gives a character with no code a new
+      // one, so an unread `J` would have become a second code for `J`. Each was read from its glyph and confirmed
+      // by its word: the apostrophe of `Infrarood-LED's`, the `ë` of `beëindigd`, the `J` of `Ja` and of
+      // `Tijd instellen: Jaar`, and the closing bracket of the `(+10 dB)` run of labels.
+      { container: 'h885_a_config', codes: { 42: "'", 61: 'ë', 67: 'J', 73: ')' } },
     ],
     proof: 'Everything is OK >',
   },

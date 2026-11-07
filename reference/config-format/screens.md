@@ -372,6 +372,17 @@ can be NULL in another. On one Harmony One configuration the font that titles ev
 `LG`, while the row font of the same height carries the whole drawn alphabet, so whether a text can be
 drawn is a question per character per font.[^s173]
 
+**Which sets are one typeface is shown by the glyphs they already share**, since nothing in a set's header names
+its face and two sets of one height can be two faces. Over the eight Harmony 880 and 885 configurations read, five
+of skin 15 and three of skin 17, every pair of sets of one height either draws every non blank character both hold
+in the same bytes, 280 pairs sharing 5 to 67 such characters, or draws none of them alike, 294 pairs; no pair agrees
+on some and not others.[^t-glyph-borrow] So a glyph one configuration's set lacks can be copied from another
+configuration's set that agrees with it on every glyph they share, which is how `borrowGlyphs` in
+`packages/codec/src/glyphborrow.ts` fills a letter a compile never drew, refusing a donor set that shares fewer
+than three. A code given to a character this way is NULL in every set it was not copied into, and the arch 8
+firmware checks neither a NULL pointer nor the count[^t-885-screens], so a text may use it only in those sets.
+Whether sets agree the same way across configurations of the other architectures is not checked.[^unchecked]
+
 **A glyph code is one based** in every generated configuration, because zero ends an inline string and
 nothing can name a glyph by the code zero. It is the header that says so, not the format: the arch 9 safe
 mode container's sets start at 32 and its codes are ASCII.[^s78]
@@ -526,4 +537,5 @@ with the owner's own device names in it.[^s149] `configLanguage`, `LANGUAGE_MARK
 [^unchecked]: Not checked.
 [^t-885-screens]: Read in the firmware. [The test](../../tests/test_harmony_885_screens.py)
 [^t-885-screens-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_screens.py)
+[^t-glyph-borrow]: Measured in configurations. [The test](../../packages/codec/test/glyphborrow.test.ts)
 [^s173]: Measured in configurations. [Section 173](../../docs/findings.md#s173)

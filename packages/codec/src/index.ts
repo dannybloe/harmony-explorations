@@ -83,6 +83,9 @@ export * from './typeface.ts';
 export * from './lettering.ts';
 export * from './blending.ts';
 export * from './fonttable.ts';
+// Letters a Logitech compile lacks, copied from another compile of the same remotes in the same face, until our
+// own letters replace them, todo-compile-885.md 1.6 and chapter 8.
+export * from './glyphborrow.ts';
 // **The metadata archive**, section 260: the ZIP two architectures carry inside the container,
 // which on arch 16 (Harmony 300 and 350) names every device and every command. Exported for the
 // same reason the archive readers below are: FreeHarmony is what wants a command's name, and

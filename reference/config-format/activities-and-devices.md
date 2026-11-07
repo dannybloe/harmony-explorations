@@ -34,7 +34,8 @@ negative, a Wii that names nothing; a cut the screen does not mark with `..` is 
 **On the Harmony 880 and 885 the device list is read the same way.** A row is two instructions, enter the
 device's mode and write 1 to the configuration's device mode mark, with no beep, as on the Harmony 600, 650 and
 700, and its label sits in the cell of its key: eight keys beside the screen, two columns of four. The figures
-here are over eight configurations, one of them a Harmony 880's and the rest a Harmony 885's, two of which carry
+here are over eight configurations, five of them Harmony 880s' and three Harmony 885s' by the skin each states
+(this said one 880's and the rest 885s' until that was read), two of which carry
 one remote's identical device list, so that list counts twice; the keys' cells were pressed on a Harmony 885
 only. Every row's mode reaches exactly one infrared group, one row per device; and of the 44 devices base slot 0
 names, 38 without the repeated list, the label in the cell of the key that enters the device's mode spells the

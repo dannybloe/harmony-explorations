@@ -67,8 +67,9 @@
  * client was not read for this: the question is what a compiled configuration draws, which the client does not
  * hold, and the firmware was not read either, since nothing here depends on how it runs a list.
  *
- * **Width.** Arch 8, the Harmony 880 and 885, which run one application; one configuration is an 880's and seven
- * are 885s', and the key cells were pressed on an 885 only. Arch 9 and arch 10 are not read by any of it.
+ * **Width.** Arch 8, the Harmony 880 and 885, which run one application; five configurations are 880s' and three
+ * 885s', by the skin byte each states (15 and 17); this said one 880's and seven 885s' until the glyph borrow's
+ * check of the same files. The key cells were pressed on an 885 only. Arch 9 and arch 10 are not read by any of it.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
