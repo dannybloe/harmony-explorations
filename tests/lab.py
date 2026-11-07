@@ -1007,6 +1007,9 @@ IMAGES = {
     # DAV-C540 as "Sony HT", by compose-device.ts and stamped by it, in the lab's work folder.
     # packages/codec/test/sidekeysdevice.test.ts composes it again; test_harmony_885_start_check.py checks it.
     'h885_composed_2_1': 'h885-a-plus-sony-ht.bin',
+    # Unit B after todo-compile-885.md 2.1: the composed configuration as written, and read back.
+    'h885_b_written_2_1': 'h885-a-plus-sony-ht-to-write.bin',
+    'h885_b_after_2_1_config': '20261107T1505Z-h885-b-after-2-1-config.bin',
     # The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: watch-keys.ts polling data
     # memory 0x295 (the key held) and 0x3A1 (the last key pressed) while keys were pressed by hand, as
     # text. Unit A before its key contacts were cleaned, A opened and pressed freely, A's run through
@@ -1208,7 +1211,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region',
                       # A composition of ours onto unit A's configuration, todo-compile-885.md 2.1:
                       # not a configuration any remote was compiled to, so counted in no total.
-                      'h885_composed_2_1')
+                      'h885_composed_2_1', 'h885_b_written_2_1', 'h885_b_after_2_1_config')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

@@ -40,7 +40,7 @@ Written on 6 November 2026; linked from `todo-later.md` 5.6.
 
 ## 2. Devices, everything that can be checked in device mode
 
-- [ ] 2.1 Compose a device from Logitech's catalogue onto the base: its infrared codes, its power, a device mode with its screen and key map, a row on the device list
+- [x] 2.1 Compose a device from Logitech's catalogue onto the base: its infrared codes, its power, a device mode with its screen and key map, a row on the device list: the Sony HT through the side keys family (`14d374a9`), on a second page of every copy of the device list, written to unit B and checked there against the prediction (`tests/test_harmony_885_first_config_write.py`); what its keys send is measured with the Flirc later
 - [ ] 2.2 Power on and off as the catalogue states them, the long press version included
 - [ ] 2.3 The opening silence of every switching code, the 885's inter device delay (prepare 3.11)
 - [ ] 2.4 A new device list page when the last one is full

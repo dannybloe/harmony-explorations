@@ -149,7 +149,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 539 with 7.1's ten bench runs and the monitor log holding them and the live retest of its three missed presses.
   // 542 with the Harmony 885 unit A's whole flash, read twice, and its configuration after the first block write.
   // 545 with unit B's, todo-compile-885.md 1.8. 549 with its four files of 1.4. 550 with 2.1's composed file.
-  assert.equal(Object.keys(pythonImages()).length, 550, 'every fixture tests/lab.py names');
+  // 552 with B's two files of 2.1.
+  assert.equal(Object.keys(pythonImages()).length, 552, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -242,6 +243,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // write, todo-compile-885.md 1.3. 158 with unit B's, 1.8. 161 with B's
   // configuration as 1.4 wrote it, read back and in its region. 162 with 2.1's composed file, unit A's
   // configuration plus one catalogue device, whose container is counted under `h885_a_config`.
-  assert.equal(names.length, 162, 'each one a container already counted, that container plus a known '
+  // 164 with B's configuration as 2.1 wrote it and read it back.
+  assert.equal(names.length, 164, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

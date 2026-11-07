@@ -110,5 +110,32 @@ class TheClockAfterTheRestart(unittest.TestCase):
         self.assertEqual(datetime.date(2026, 11, 7).isoweekday() % 7, 6)
 
 
+
+class TheComposedConfigurationOnB(unittest.TestCase):
+    """Item 2.1: unit A's configuration with the Sony HT composed onto it, written to unit B.
+
+    **Measured on a unit.** The writer's first commit run stopped on a sequence break during its compare
+    before the first erase, with nothing written; its block reads then gained the shared window retry and the
+    same command ran through: nine sectors, `0x020000` to `0x0A0000`, each matched against B's region after 1.4
+    before its erase, the whole configuration read back identical, the status 0 before and after, `E1 02`, and
+    B back on the bus within ten seconds with its clock on the new stamp. Checked at the bench against the
+    prediction in `packages/codec/test/sidekeysdevice.test.ts`'s header: the device list's second page shows
+    Sony HT at the top left, outside the activities and inside one of them, its page shows the title and the
+    eight labels where predicted, and nothing else looked wrong. What the keys send was not measured here.
+    """
+
+    def setUp(self):
+        lab.require('h885_composed_2_1', 'h885_b_written_2_1', 'h885_b_after_2_1_config')
+
+    def test_b_holds_the_composed_file_with_only_its_stamp_changed(self):
+        written = lab.load('h885_b_written_2_1')
+        self.assertEqual(len(written), 572238)
+        self.assertEqual(lab.load('h885_b_after_2_1_config'), written)
+        composed = lab.load('h885_composed_2_1')
+        self.assertEqual(len(composed), len(written))
+        # The stamp's fields that moved between composing and writing, and the trailer checksum.
+        self.assertEqual(sum(1 for i in range(len(composed)) if composed[i] != written[i]), 6)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -260,3 +260,24 @@ writer's journals beside it), `h885_b_after_1_4_config`, `h885_b_after_1_4_regio
 reads after the write's restart met one. The configuration reader asks for the window again; the two region
 readers stop. Their window retry is the gap to close before the next long read.
 
+## 7 November 2026: the first composed device, the Sony HT, on unit B
+
+`todo/todo-compile-885.md` 2.1, **unit B on the cable**. The file is unit A's configuration with the Sony HT
+composed onto it (`h885_composed_2_1`), so B now carries A's devices and activities plus the Sony, as 1.6
+decided; B's own configuration stays in the lab backup. In order:
+
+1. **The dry run**: nine blocks differ, `0x020000` to `0x0A0000`, each matched B's region after 1.4; the
+   status read 0.
+2. **The first commit**: stopped on a `flash chunk out of sequence` while comparing, before the drop; nothing
+   was written. The writer's block reads then gained the shared window retry.
+3. **The commit again**: the status 0; the drop; nine sectors erased, each with its neighbours unchanged, and
+   written; the whole configuration read back identical to the file; the status 0; `E1 02`.
+4. **Back on the bus within ten seconds**; the clock `16:01:16` against the stamp `16:01:09`, the status 0.
+5. **`read-config.ts`**: 572238 bytes, no window retried, identical to the written file.
+6. **At the bench, against the prediction**: the device list has a second page with Sony HT at the top left
+   and "1 OF 2" on the first, outside the activities and inside one; the Sony page shows its title and the
+   eight labels where predicted; nothing looked wrong. What the keys send was not measured.
+
+Filed as `h885_b_written_2_1` and `h885_b_after_2_1_config`; `tests/test_harmony_885_first_config_write.py`.
+**B's region has not been read since**, so the next write to B starts with a region read as its compare base.
+

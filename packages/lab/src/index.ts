@@ -1108,6 +1108,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h885_b_after_1_4_config: '20261107T1111Z-h885-b-after-1-4-config.bin',
   h885_b_after_1_4_region: '20261107T111248Z-h885-b-after-1.4-region-region-0x20000-0x1d0000.bin',
   h885_b_clock_after_1_4: '20261107T1110Z-h885-b-clock-after-1-4.txt',
+  // Unit B after todo-compile-885.md 2.1: unit A's configuration with the Sony HT composed onto it, as the
+  // writer stamped and wrote it (the lab's work folder, journals beside it), and read back once.
+  h885_b_written_2_1: 'h885-a-plus-sony-ht-to-write.bin',
+  h885_b_after_2_1_config: '20261107T1505Z-h885-b-after-2-1-config.bin',
   // todo-compile-885.md 2.1: the first catalogue device composed onto unit A's configuration, the Sony DAV-C540 as
   // `Sony HT`, by `compose-device.ts` and stamped by it, in the lab's work folder. The file written is a copy of
   // it, since the writer stamps over its input. `packages/codec/test/sidekeysdevice.test.ts` composes it again.
@@ -1267,7 +1271,9 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region',
     // A composition of ours onto unit A's configuration, todo-compile-885.md 2.1: not a configuration any remote
     // was compiled to, so it is counted in no corpus total.
-    'h885_composed_2_1'];
+    'h885_composed_2_1',
+    // The composed configuration of 2.1 as written to B and read back: h885_composed_2_1 restamped.
+    'h885_b_written_2_1', 'h885_b_after_2_1_config'];
 
 const cache = new Map<string, string[]>();
 
