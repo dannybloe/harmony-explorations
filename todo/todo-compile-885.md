@@ -47,6 +47,7 @@ Written on 6 November 2026; linked from `todo-later.md` 5.6.
 - [ ] 2.5 A full device: every command the catalogue holds, on as many device mode pages as it takes
 - [ ] 2.6 A device's inputs, directly or by stepping through them
 - [ ] 2.7 Several devices composed at once into one configuration
+- [ ] 2.8 A device on a device list whose last page has room: a free cell on an existing page, on every copy of the list
 
 ## 3. Activities
 

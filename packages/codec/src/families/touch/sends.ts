@@ -8,20 +8,20 @@
  * **The pair is every architecture's send but the Harmony 600, 650 and 700's**, which put the delay step in
  * front of it, section 287: no command opens with that step on the Harmony One, the 525 or the arch 8
  * configuration, `compose.test.ts`. So it is also the send a configuration no family serves gets, `sendsOf` in
- * the registry, as it did before plan 007. **The wait at the end of the on list is the Harmony One's alone**,
- * section 393.
+ * the registry, as it did before plan 007. **The wait at the end of the on list is the Harmony One's**, section
+ * 393, and the Harmony 880 and 885's too, so the device half is shared since `todo-compile-885.md` 2.1,
+ * `shared/sendpair.ts`; this said it was the Harmony One's alone until the 885's compiles were read for it.
  *
  * Moved out of `shared/devices.ts`, `inputs.ts`, `sequence.ts` and `composecatalogue.ts` with
  * `todo-compile-one.md` 3.3.3.4, where each module tested a trait, `sendPrelude`, and built or matched this
  * shape itself; nothing in what is built or matched changed.
  */
 import type { DeviceSends, ListBody, SendList, SendShape } from '../family.ts';
-import { Writer } from '../../emit.ts';
 import type { Container, Instruction } from '../../gspm.ts';
 import { DEVICE_QUANTITY, SEND_INFRARED, stateVariables } from '../../inventory.ts';
 import { ACTION_LIST_INDEX_OPCODE } from '../../sections.ts';
-import { ComposeError } from '../../shared/core.ts';
 import type { ComposeDevice, ComposedDevice } from '../../shared/devices.ts';
+import { pairDeviceSends } from '../../shared/sendpair.ts';
 
 /**
  * A device's lists after its sends: none, or where the device states a power on delay, the on list, every
@@ -29,26 +29,13 @@ import type { ComposeDevice, ComposedDevice } from '../../shared/devices.ts';
  * writes it on eight catalogue devices of eight, findings section 393, `todo-compile-one.md` 1.2. It goes
  * straight after the sends. A delay past one quantity byte is not composed: no compile of a One here shows how
  * one is split.
+ *
+ * The lists themselves are `pairDeviceSends` in `shared/sendpair.ts` since `todo-compile-885.md` 2.1, where the
+ * Harmony 880 and 885 turned out to write the same bytes; this family states only its largest wait, the byte's
+ * 255, with the refusal it always gave.
  */
 function touchDevice(c: Container, group: number, device: ComposeDevice): DeviceSends {
-  const wait = device.powerOnDelay;
-  if (wait !== undefined && (!Number.isInteger(wait) || wait < 1 || wait > 0xff)) {
-    throw new ComposeError(`a power on delay of ${wait} tenths is not one wait on this remote`);
-  }
-  return {
-    container: c,
-    lay(firstList, sends, onCalls) {
-      const bodies = sends.map((one) => new Writer(7).u8(2)
-        .u16((group << 8) | one.record).u8(SEND_INFRARED)
-        .u16((group << 8) | one.quantity).u8(DEVICE_QUANTITY));
-      const after = firstList + sends.length;
-      if (wait === undefined) return { bodies, next: after, switchOn: undefined, described: () => ({}) };
-      const on = new Writer(1 + 3 * (onCalls.length + 1)).u8(onCalls.length + 1);
-      for (const at of onCalls) on.u16(at).u8(ACTION_LIST_INDEX_OPCODE);
-      bodies.push(on.u16((group << 8) | wait).u8(DEVICE_QUANTITY));
-      return { bodies, next: after + 1, switchOn: after, described: () => ({}) };
-    },
-  };
+  return pairDeviceSends(c, group, device, 0xff, 'this remote');
 }
 
 /**

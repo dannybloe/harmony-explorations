@@ -30,6 +30,7 @@ import {
 } from '../../sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { activityMenus, deviceListMenus, pageTexts } from '../../shared/menus.ts';
+import { appendModePage } from '../../shared/modes.ts';
 import {
   blobReader, codesFor, textAt, textGlyphs, textValues, textWidth, type ValueReader,
 } from '../../shared/spelling.ts';
@@ -379,7 +380,7 @@ export function openFourSlotMenuPage(
   start: Container, menu: number, kind: FourSlotMenuKind, firstRowList: number, codes: readonly number[],
   font: number, counterDefault: number,
 ): { container: Container; bound: number } {
-  let current = start;
+  const current = start;
   const recordOf = (): ModeRecord => {
     const record = modeRecords(current)?.[menu];
     if (record === undefined) throw new ComposeError(`menu ${menu} stopped reading`);
@@ -434,86 +435,27 @@ export function openFourSlotMenuPage(
     return bytes.bytes;
   };
 
-  // 1. The pool copy, right after the copy of the menu's last page.
-  const lastIndex = modePages(current).findIndex((one) => one.address === last.address);
-  const copyOff = pageListCopies(current)[lastIndex];
-  const copyLength = copyOff === undefined ? undefined : taggedList(current, copyOff + current.flashBase)?.length;
-  if (copyOff === undefined || copyLength === undefined) {
-    throw new ComposeError(`menu ${menu}'s last page has no pool copy`);
-  }
+  // 1 to 5. The pool copy, the page's own list, the entry, the block and the swap, the steps every family that
+  // opens a page shares, `appendModePage`, which held them here until `todo-compile-885.md` 2.1. The copy's list
+  // is written first and the page's own second, so the copy binds the lower row lists, as before. The page is
+  // built when the helper asks, from the chrome located in the container as it then is, so no address it embeds
+  // is stale.
   const copyBytes = pageList();
-  const copyHole = relocate(current, copyOff + copyLength, copyBytes.length);
-  copyHole.bytes.set(copyBytes, copyOff + copyLength);
-  current = parse(copyHole.bytes);
-
-  // 2. The page's own list, at the end of the run every page list lives in. Nothing names it until
-  // the page record exists, so its address is carried by arithmetic through the next two insertions.
   const listBytes = pageList();
-  const listAt = Math.max(...modePages(current).map((page) => {
-    const off = current.blobOffsetOf(page.list);
-    const list = taggedList(current, page.list);
-    return off === undefined || list === undefined ? 0 : off + list.length;
-  }));
-  const listHole = relocate(current, listAt, listBytes.length);
-  listHole.bytes.set(listBytes, listAt);
-  current = parse(listHole.bytes);
-
-  // 3. The entry: its count, and a pointer at the last page until the new record exists.
-  const grownRecord = recordOf();
-  const entryOff = current.blobOffsetOf(grownRecord.address);
-  const lastNow = grownRecord.pages.at(-1);
-  if (entryOff === undefined || lastNow === undefined) throw new ComposeError(`menu ${menu}'s entry moved out of reach`);
-  const slotAt = entryOff + 6 + 3 * grownRecord.pageCount;
-  let pageListOff = listAt + (listAt >= slotAt ? 3 : 0);
-  const entryHole = relocate(current, slotAt, 3);
-  entryHole.bytes.set(new Writer(3).u24(lastNow.address).bytes, slotAt);
-  entryHole.bytes.set(new Writer(2).u16(grownRecord.pageCount + 1).bytes, entryOff + 4);
-  current = parse(entryHole.bytes);
-
-  // 4. The block: the program, then the page record, at the entry's own offset, which is right after
-  // the last page's record on every arch 14 mode here. The page is built now, from the chrome located
-  // in the container as it is, so no address it embeds is stale.
-  const record = recordOf();
-  const lastReal = record.pages[record.pageCount - 2];
-  const blockAt = current.blobOffsetOf(record.address);
-  const lastRealOff = lastReal === undefined ? undefined : current.blobOffsetOf(lastReal.address);
-  if (lastReal === undefined || blockAt === undefined || lastRealOff === undefined) {
-    throw new ComposeError(`menu ${menu}'s pages moved out of reach`);
-  }
-  if (lastRealOff + lastReal.length !== blockAt) {
-    throw new ComposeError(`menu ${menu}'s last page record does not end where its entry begins`);
-  }
-  const parts = menuPageParts(current, fourSlotMenuChrome(current, kind), {
-    number: total, total, titleFont, counterFont, labels: [{ font, lines: [[...codes]] }],
+  const placed = appendModePage(current, menu, listBytes, copyBytes, (now) => {
+    const parts = menuPageParts(now, fourSlotMenuChrome(now, kind), {
+      number: total, total, titleFont, counterFont, labels: [{ font, lines: [[...codes]] }],
+    });
+    const homes = inlineHomes(now);
+    return {
+      length: menuPageBytes(parts, homes, NEW_PAGE_POINTED, (address) => address).length,
+      build: (shifted) => menuPageBytes(parts, homes, NEW_PAGE_POINTED, shifted),
+    };
   });
-  const homes = inlineHomes(current);
-  const programLength = menuPageBytes(parts, homes, NEW_PAGE_POINTED, (address) => address).length;
-  const pageRecordLength = 6;
-  const blockLength = programLength + pageRecordLength;
-  const base = current.flashBase + blockAt;
-  const shifted = (address: number): number => (address >= base ? address + blockLength : address);
-  pageListOff += pageListOff >= blockAt ? blockLength : 0;
-  const block = new Writer(blockLength);
-  block.raw(menuPageBytes(parts, homes, NEW_PAGE_POINTED, shifted));
-  // The page record: the list, which step 2 placed and this block's insertion moves by `blockLength`
-  // when it lies above, then the program, which is the block's own first byte.
-  block.u24(current.flashBase + pageListOff).u24(base);
-  if (block.bytes.length !== blockLength) {
-    throw new ComposeError(`the new page came to ${block.bytes.length} bytes against ${blockLength}`);
-  }
-  const blockHole = relocate(current, blockAt, blockLength);
-  blockHole.bytes.set(block.bytes, blockAt);
-
-  // 5. The swap: the entry's last pointer from the placeholder to the new page record.
-  const placed = parse(blockHole.bytes);
-  const swapRecord = modeRecords(placed)?.[menu];
-  const swapOff = swapRecord === undefined ? undefined : placed.blobOffsetOf(swapRecord.address);
-  if (swapRecord === undefined || swapOff === undefined) throw new ComposeError(`menu ${menu}'s entry moved out of reach`);
-  placed.blob.set(new Writer(3).u24(base + programLength).bytes, swapOff + 6 + 3 * (swapRecord.pageCount - 1));
 
   // 6. Every page counts to the new total, and the page that had none, a menu's only page, gains one.
   // Then every page of the menu is the page built for it, the new one and the restated ones alike.
-  const paged = paginateFourSlot(parse(placed.blob), menu, startChrome.counterX, counterFont);
+  const paged = paginateFourSlot(placed, menu, startChrome.counterX, counterFont);
   const after = fourSlotMenuChrome(paged, kind);
   for (let index = 0; index < total; index += 1) {
     const difference = menuPageDifference(paged, after, menu, index);

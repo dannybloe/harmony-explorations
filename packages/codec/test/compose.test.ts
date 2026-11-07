@@ -1627,12 +1627,13 @@ test('the screen half refuses what it cannot draw or place', skipUnless('one_con
                 (error: unknown) => error instanceof ComposeError && /'z'/.test(String(error)),
                 'the refusal names the missing character');
 
-  // An architecture with neither layout is refused outright. Arch 14 was refused here too until
-  // section 285 composed its screen, and its own refusals are asserted beside its composition.
+  // An architecture with no family is refused outright. Arch 14 was refused here too until
+  // section 285 composed its screen, and arch 8 until `todo-compile-885.md` 2.1; their own refusals
+  // are asserted beside their compositions.
   const h525 = parse(load('h525_config') as Uint8Array);
   assert.throws(() => composeDeviceScreen(h525, 'LG', rows),
                 (error: unknown) => error instanceof ComposeError
-                  && /Harmony One and arch 14 alone/.test(String(error)));
+                  && /arch 9 has none/.test(String(error)));
 
   // No rows and too many rows are refused before anything moves.
   assert.throws(() => composeDeviceScreen(before, 'LG', []), ComposeError);

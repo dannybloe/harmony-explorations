@@ -91,7 +91,9 @@ export function composeDeviceScreen(
 ): ComposedScreen {
   const family = familyOf(c);
   if (family === undefined) {
-    throw new ComposeError('the screen half is composed for the Harmony One and arch 14 alone');
+    // Which remotes have a family is the registry's to say, so the refusal names the architecture rather than a list
+    // of the ones that do, which went stale here once already: it named two after a third had joined.
+    throw new ComposeError(`the screen half is composed for a remote with a family, and arch ${c.architecture} has none`);
   }
   return family.composeDeviceScreen(c, label, rows, options);
 }

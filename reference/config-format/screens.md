@@ -473,6 +473,25 @@ thirteen with every rival language at zero and refuses on the three containers t
 configuration. A third to a half of the mode pages are the Help walkthrough, whose wording is that template
 with the owner's own device names in it.[^s149] `configLanguage`, `LANGUAGE_MARKERS`.
 
+## A page of the Harmony 880 and 885
+
+**A device's pages and the device list are one grammar on these remotes**, a page of cells beside the eight keys
+next to the screen, two columns of four, filled left then right, row by row. Over every page of the eight
+configurations read[^t-side-keys]:
+
+* a label's line 18 pixels below its row's top starts at x 3 in the left column and ends at x 125 in the right,
+  the rows 32 apart from 24, and is never wider than 59 pixels;
+* every such line is followed by its cell's separator, a picture at x 0 for the left column and x 64 for the
+  right, at the row's top;
+* a page counter, `n OF m`, is two arrow pictures at x 25 and 88 of row 152 and three texts in one font, the
+  number ending at x 52, `OF` at 57 and the total at 75.
+
+A device mode of one page draws in the mode's own program, the page and the mode naming the same address; the
+device modes of one configuration share the tags of their own key list, its handlers and the content of the list
+their programs queue; and every device page stores its key list in the compiler's tag order, names the same lists
+in its pool copy, and binds no list that opens with a beep[^t-side-keys]. The device list's copies are
+[activities and devices](activities-and-devices.md#which-devices-a-configuration-drives-and-what-each-one-is-called).
+
 ## For a writer
 
 * **A string is shared**: opcode 4 names another program's bytes, so editing a string in place changes
@@ -537,5 +556,6 @@ with the owner's own device names in it.[^s149] `configLanguage`, `LANGUAGE_MARK
 [^unchecked]: Not checked.
 [^t-885-screens]: Read in the firmware. [The test](../../tests/test_harmony_885_screens.py)
 [^t-885-screens-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_screens.py)
+[^t-side-keys]: Measured in configurations. [The test](../../packages/codec/test/sidekeysdevice.test.ts)
 [^t-glyph-borrow]: Measured in configurations. [The test](../../packages/codec/test/glyphborrow.test.ts)
 [^s173]: Measured in configurations. [Section 173](../../docs/findings.md#s173)

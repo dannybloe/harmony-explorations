@@ -44,6 +44,15 @@ of the 42 rows that have a cell beside them[^t-arch8-devices]. **In two configur
 devices have no state variable**, so base slot 0 does not name them, and the configuration's text never spells
 their names: the device list draws them, one cut by the screen with two dots[^t-arch8-devices].
 
+**On the Harmony 880 and 885 the device list is several copies, one per context the Devices key is pressed in.**
+Each activity's key map binds the Devices key to a list that enters a copy of its own, the key map in force
+outside every activity binds it to another, and one further copy is entered by nothing a reader here finds; every
+copy lists every device once, so a configuration holds as many copies as it has activities, plus two, on each of
+the eight configurations read. An activity's copy lists one to four devices first and the rest in the order of
+the copy outside every activity, which the unentered copy shares. That order is not the infrared groups' order on
+any of the eight, and what it is is not read[^t-side-keys]. **A writer adding a device puts its row on every
+copy**, or the device is missing from the list in every context whose copy was left out.
+
 A level 1 name in the name tree that belongs to a device is spelled
 
 ```
@@ -299,6 +308,11 @@ delay is felt[^unchecked].
 *The check that can fail*: `powerOnDelayReach` reports, per activity and device, how many further commands
 the activity sends that device. Zero means the delay is never felt.
 
+**On the Harmony 880 and 885 the list that switches a device on is one call and one wait**: every power
+variable of the eight configurations read goes from 0 to 1 through a list of two instructions, a call of the
+power command's send list and a `0x7C` naming the device's own group, and no `0x7C` in them waits longer than 100
+tenths[^t-side-keys].
+
 **P6.** A builder does not put a delay in the activity. It sets the device's delay, in the device's list
 or the device's variable as the architecture keeps it, and the activity inherits it.
 
@@ -439,6 +453,7 @@ put there.
 [^s120]: Measured in configurations. [Section 120](../../docs/findings.md#s120)
 [^t-inventory]: Measured in configurations. [The test](../../packages/codec/test/inventory.test.ts)
 [^t-arch8-devices]: Measured in configurations. [The test](../../packages/codec/test/arch8devicelist.test.ts)
+[^t-side-keys]: Measured in configurations. [The test](../../packages/codec/test/sidekeysdevice.test.ts)
 [^unchecked]: Not checked.
 [^s273]: Measured in configurations. [Section 273](../../docs/findings.md#s273)
 [^s274]: Read in the firmware. [Section 274](../../docs/findings.md#s274)

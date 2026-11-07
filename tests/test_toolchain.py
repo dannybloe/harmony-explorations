@@ -323,8 +323,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # three files, `tests/test_harmony_touch_recovery.py`, `_serial.py` and `_favourites_untagged.py`, which
         # carry one each. 104 with `tests/test_harmony_880_keys.py`, todo-prepare-885 2.5.2, which carries one.
         # 105 with `tests/test_harmony_885_flash_backup.py`, todo-compile-885 1.3, which carries one. 106
-        # with `tests/test_harmony_885_first_config_write.py`, 1.4, which carries one.
-        self.assertEqual(with_block, 106,
+        # with `tests/test_harmony_885_first_config_write.py`, 1.4, which carries one. 107 with
+        # `tests/test_harmony_885_borrowed_letters.py`, which carries one.
+        self.assertEqual(with_block, 107,
                          'files carrying a __main__ block, of %d' % len(files))
 
 

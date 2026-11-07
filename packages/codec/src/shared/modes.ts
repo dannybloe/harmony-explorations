@@ -11,7 +11,9 @@
 import { Writer } from '../emit.ts';
 import { type Container, parse } from '../gspm.ts';
 import { relocate } from '../relocate.ts';
-import { modePages, modeRecords, modeTable, taggedList, taggedListPools } from '../sections.ts';
+import {
+  type ModeRecord, modePages, modeRecords, modeTable, pageListCopies, taggedList, taggedListPools,
+} from '../sections.ts';
 import { ComposeError } from './core.ts';
 
 /** A program of the mode's, sized before the block is placed and built once its addresses are known. */
@@ -169,4 +171,117 @@ export function appendMode(
   if (grownTable === undefined) throw new ComposeError('base slot 6 stopped reading');
   swapped.blob.set(new Writer(3).u24(entryAddress).bytes, grownTable.start + 3 + 3 * mode);
   return parse(swapped.blob);
+}
+
+/**
+ * Add one page at the end of mode `mode`, which exists and has a page already: the order that keeps the container
+ * parseable through it, which every family that opens a page on a menu shares. Cut out of the four slot family's
+ * `openFourSlotMenuPage`, steps 1 to 5 unchanged, when the side keys family needed the same steps for the Harmony
+ * 880 and 885's device list, `todo-compile-885.md` 2.1; what each family builds around it, which list a page binds
+ * and what its program draws, stays the family's.
+ *
+ * 1. the pool copy, `copy`, right after the copy of the mode's last page, since copies pair with the pages by
+ *    position, section 69;
+ * 2. the page's own list, `list`, at the end of the run every page list lives in. Nothing names it until the page
+ *    record exists, so its address is carried by arithmetic through the next two insertions;
+ * 3. the entry: its page count one higher, and a pointer at the last page until the new record exists;
+ * 4. the block, the program and then the page record, at the entry's own offset, which is right after the last
+ *    page's record on every mode it has been run on, arch 8 and arch 14, and is refused otherwise. The program is
+ *    asked for now, `programFor`, from the container as it is, so no address it embeds is stale; its `build` is
+ *    given the shift the block's own insertion makes, as `appendMode`'s are;
+ * 5. the swap: the entry's last pointer from the placeholder to the new page record.
+ *
+ * The page record is six bytes, the list and the program: the Harmony One's seven, with a hit page in front, is
+ * refused rather than half built, since no family adds a page to one of its modes this way.
+ */
+export function appendModePage(
+  start: Container, mode: number, list: Uint8Array, copy: Uint8Array,
+  programFor: (current: Container) => ModeProgram,
+): Container {
+  let current = start;
+  const recordOf = (): ModeRecord => {
+    const record = modeRecords(current)?.[mode];
+    if (record === undefined) throw new ComposeError(`mode ${mode} stopped reading`);
+    return record;
+  };
+  if (list.length !== copy.length) throw new ComposeError('a page list and its copy differ in length');
+  const before = recordOf();
+  const last = before.pages.at(-1);
+  if (last === undefined) throw new ComposeError(`mode ${mode} has no page to add one after`);
+  if (last.length !== 6) {
+    throw new ComposeError(`mode ${mode}'s page records are ${last.length} bytes, and this adds six byte ones only`);
+  }
+
+  // 1. The pool copy, right after the copy of the mode's last page.
+  const lastIndex = modePages(current).findIndex((one) => one.address === last.address);
+  const copyOff = pageListCopies(current)[lastIndex];
+  const copyLength = copyOff === undefined ? undefined : taggedList(current, copyOff + current.flashBase)?.length;
+  if (copyOff === undefined || copyLength === undefined) {
+    throw new ComposeError(`mode ${mode}'s last page has no pool copy`);
+  }
+  const copyHole = relocate(current, copyOff + copyLength, copy.length);
+  copyHole.bytes.set(copy, copyOff + copyLength);
+  current = parse(copyHole.bytes);
+
+  // 2. The page's own list, at the end of the run every page list lives in.
+  const listAt = Math.max(...modePages(current).map((page) => {
+    const off = current.blobOffsetOf(page.list);
+    const one = taggedList(current, page.list);
+    return off === undefined || one === undefined ? 0 : off + one.length;
+  }));
+  const listHole = relocate(current, listAt, list.length);
+  listHole.bytes.set(list, listAt);
+  current = parse(listHole.bytes);
+
+  // 3. The entry: its count, and a pointer at the last page until the new record exists.
+  const grownRecord = recordOf();
+  const entryOff = current.blobOffsetOf(grownRecord.address);
+  const lastNow = grownRecord.pages.at(-1);
+  if (entryOff === undefined || lastNow === undefined) throw new ComposeError(`mode ${mode}'s entry moved out of reach`);
+  const slotAt = entryOff + 6 + 3 * grownRecord.pageCount;
+  let pageListOff = listAt + (listAt >= slotAt ? 3 : 0);
+  const entryHole = relocate(current, slotAt, 3);
+  entryHole.bytes.set(new Writer(3).u24(lastNow.address).bytes, slotAt);
+  entryHole.bytes.set(new Writer(2).u16(grownRecord.pageCount + 1).bytes, entryOff + 4);
+  current = parse(entryHole.bytes);
+
+  // 4. The block: the program, then the page record, at the entry's own offset.
+  const record = recordOf();
+  const lastReal = record.pages[record.pageCount - 2];
+  const blockAt = current.blobOffsetOf(record.address);
+  const lastRealOff = lastReal === undefined ? undefined : current.blobOffsetOf(lastReal.address);
+  if (lastReal === undefined || blockAt === undefined || lastRealOff === undefined) {
+    throw new ComposeError(`mode ${mode}'s pages moved out of reach`);
+  }
+  if (lastRealOff + lastReal.length !== blockAt) {
+    throw new ComposeError(`mode ${mode}'s last page record does not end where its entry begins`);
+  }
+  const program = programFor(current);
+  const pageRecordLength = 6;
+  const blockLength = program.length + pageRecordLength;
+  const base = current.flashBase + blockAt;
+  const shifted = (address: number): number => (address >= base ? address + blockLength : address);
+  pageListOff += pageListOff >= blockAt ? blockLength : 0;
+  const block = new Writer(blockLength);
+  const bytes = program.build(shifted);
+  if (bytes.length !== program.length) {
+    throw new ComposeError(`the new page's program came to ${bytes.length} bytes against ${program.length}`);
+  }
+  block.raw(bytes);
+  // The page record: the list, which step 2 placed and this block's insertion moves by `blockLength` when it lies
+  // above, then the program, which is the block's own first byte.
+  block.u24(current.flashBase + pageListOff).u24(base);
+  if (block.bytes.length !== blockLength) {
+    throw new ComposeError(`the new page came to ${block.bytes.length} bytes against ${blockLength}`);
+  }
+  const blockHole = relocate(current, blockAt, blockLength);
+  blockHole.bytes.set(block.bytes, blockAt);
+
+  // 5. The swap: the entry's last pointer from the placeholder to the new page record.
+  const placed = parse(blockHole.bytes);
+  const swapRecord = modeRecords(placed)?.[mode];
+  const swapOff = swapRecord === undefined ? undefined : placed.blobOffsetOf(swapRecord.address);
+  if (swapRecord === undefined || swapOff === undefined) throw new ComposeError(`mode ${mode}'s entry moved out of reach`);
+  placed.blob.set(new Writer(3).u24(base + program.length).bytes, swapOff + 6 + 3 * (swapRecord.pageCount - 1));
+  return parse(placed.blob);
 }

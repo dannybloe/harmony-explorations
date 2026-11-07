@@ -546,6 +546,27 @@ class TheCorpusPassesTheCheckAsRead(unittest.TestCase):
         self.assertEqual(self.control(edit=transpose), 'pass')
 
 
+class TheFirstComposedConfigurationPassesTheCheck(unittest.TestCase):
+    """`todo-compile-885.md` 2.1: a catalogue device composed onto unit A's configuration by the codec.
+
+    The codec stamps the trailer with its own checksum, and its own reader agrees with it, which is the same
+    derivation at both ends. What this adds is the other end: the check as the 885's application performs it,
+    with the cookie, the marker, the end marker and the seeds decoded out of the code, so a configuration of
+    ours that this passes is one the remote runs rather than replaces with its built in one at start. The
+    control is the file with one byte of its body changed, which the same check must refuse.
+    """
+
+    def test_the_composed_file_passes_and_a_changed_byte_does_not(self):
+        lab.require('h885_composed_2_1')
+        check = CheckAsRead(application())
+        payload = bytearray(lab.load('h885_composed_2_1'))
+        verdict, end = check(Flash().place(USER_BASE, bytes(payload)), USER_BASE)
+        self.assertEqual(verdict, 'pass')
+        self.assertEqual(len(payload), end + 4 - USER_BASE)
+        payload[0x1000] ^= 0x01
+        self.assertEqual(check(Flash().place(USER_BASE, bytes(payload)), USER_BASE)[0], 'checksum')
+
+
 class TheBuildsAgree(unittest.TestCase):
     def test_three_880_class_images_differ_from_the_885s_in_the_two_skin_bytes(self):
         code = application()

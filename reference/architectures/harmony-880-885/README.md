@@ -53,6 +53,7 @@ Read in the 880's and 885's firmware images, or counted over the configurations,
 | execution | the bootloader owns the vector table and hands both interrupt vectors to the application, so the two images are halves of one program[^s116] |
 | container | `TPTP` and `DKDK`, marker `WLWL` opening the key table, format `0x1500`, 21 pointer slots: the base layout with a NULL inserted at slot 8, [memory.md](memory.md)[^s14][^s194] |
 | screen raster | 128 by 160[^s129] |
+| screen pages | on the Harmony 880 and 885, cells beside the eight keys next to the screen, one grammar for a device's pages and the device list, and one copy of the device list per activity and outside them, [screens](../../config-format/screens.md#a-page-of-the-harmony-880-and-885)[^t-side-keys]. The 720's six cells are not checked |
 | keypad | a 4 by 16 lattice, scan code `(line - 1) * 4 + input`[^s144] |
 | state variables the firmware owns | 0 to 17, as on the Harmony One and the Harmony 600, 650 and 700[^s284] |
 | USB | product id `0xC110`, the HID command protocol, `bcdDevice` as protocol and skin in plain binary, [usb.md](usb.md)[^s207][^s113] |
@@ -98,3 +99,4 @@ Read in the 880's and 885's firmware images, or counted over the configurations,
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
 [^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
 [^t-printing-880pro]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-side-keys]: Measured in configurations. [The test](../../../packages/codec/test/sidekeysdevice.test.ts)

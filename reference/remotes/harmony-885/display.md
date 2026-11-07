@@ -35,6 +35,10 @@ A device's own pages draw its name as a title only when there is one page of the
 variable of the configuration names is named on its device list row, which can be the only place the
 configuration states its name. How a reader takes a device's name is [activities and devices](../../config-format/activities-and-devices.md#which-devices-a-configuration-drives-and-what-each-one-is-called).[^t-arch8-devices]
 
+**Each context the Devices key is pressed in shows its own copy of the device list**, one per activity and one
+outside every activity, each listing every device, and a page's cells, labels, separators and counter sit where
+[a page of the Harmony 880 and 885](../../config-format/screens.md#a-page-of-the-harmony-880-and-885) says.[^t-side-keys]
+
 ## Not checked
 
 * The panel's size, its colour depth as the panel shows it, and its backlight.[^unchecked]
@@ -46,3 +50,4 @@ configuration states its name. How a reader takes a device's name is [activities
 [^unchecked]: Not checked.
 [^t-885-screens]: Read in the firmware. [The test](../../../tests/test_harmony_885_screens.py)
 [^t-arch8-devices]: Measured in configurations. [The test](../../../packages/codec/test/arch8devicelist.test.ts)
+[^t-side-keys]: Measured in configurations. [The test](../../../packages/codec/test/sidekeysdevice.test.ts)
