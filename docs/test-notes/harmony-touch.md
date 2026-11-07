@@ -663,7 +663,7 @@ and ProtocolList composed and retagged (ProtocolList's content the source's), an
 | `0904Z` | `touch-confighash` | equal on `8.6-setup-back` |
 | `0904Z` | `touch-sync-set`, `8.6-setup` | the four 200 with the set's content and tags, Context and Settings 304, favourites and pictures 304, the finish; first list (`006`) the four with the source's tags, Context and Settings with the set's, which are the source's; `sync: finished`, nothing handed up |
 | `0905Z` | `touch-confighash` | equal on `8.6-setup` |
-| `091013Z` to `092705Z` | the ten 7.1 bench tests, the last attempt of each | 38, 30, 15, 33, 39, 32, 38, 37, 74 and 82: 418 of 418 |
+| `091013Z` to `092705Z` | the ten 7.1 bench tests, the last attempt of each | starts 38, switches 30, favourites 15, the five activities' keys 33, 39, 32, 38 and 37, device mode 74 and 82: 418 of 418 |
 | `091413Z`, `091912Z`, `091922Z` | three attempts started again | the favourites 0 of 15 and Listen to Music's keys 1 of 32 and 0 of 32, each superseded by the next attempt of the same test |
 | `0904Z` | the monitor's live log | the thirteen attempts' presses and one Off between the favourites attempts before the put back, nothing before the first test |
 | `0932Z` | `touch-sync-set`, `8.6-setup-back`, and `0933Z` `touch-confighash` | the four 200 with the old content and tags, Context and Settings 304; first list the four with `8.6-setup`'s tags; hash equal on `8.6-setup-back` |
