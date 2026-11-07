@@ -260,7 +260,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `_delay.py`. 101 with 2.1 and 2.3, `tests/test_harmony_885_bench_reads.py`. 102 with 2.4,
         # `tests/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/test_harmony_touch_recovery.py`,
         # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/test_harmony_880_keys.py`.
-        self.assertEqual(len(files), 106, 'the Python test files')
+        # 107 with todo-compile-885 1.3, `tests/test_harmony_885_flash_backup.py`.
+        self.assertEqual(len(files), 107, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -320,7 +321,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # with `tests/test_harmony_885_keys.py`, 2.4, which carries one. 101 to 103 with todo-touch 6.1 to 6.7's
         # three files, `tests/test_harmony_touch_recovery.py`, `_serial.py` and `_favourites_untagged.py`, which
         # carry one each. 104 with `tests/test_harmony_880_keys.py`, todo-prepare-885 2.5.2, which carries one.
-        self.assertEqual(with_block, 104,
+        # 105 with `tests/test_harmony_885_flash_backup.py`, todo-compile-885 1.3, which carries one.
+        self.assertEqual(with_block, 105,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -823,7 +825,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `_delay.py`. 101 with 2.1 and 2.3, `tests/test_harmony_885_bench_reads.py`. 102 with 2.4,
         # `tests/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/test_harmony_touch_recovery.py`,
         # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/test_harmony_880_keys.py`.
-        self.assertEqual(len(scanned), 106, 'Python test files, which moves when one is added')
+        # 107 with todo-compile-885 1.3, `tests/test_harmony_885_flash_backup.py`.
+        self.assertEqual(len(scanned), 107, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1767,7 +1770,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 29 since plan 009's step 3.2 removed the Harmony 525's memory map: its erase and write
         # mechanism moved into `reference/architectures/harmony-5xx/`, which a row already withholds,
         # and that row now carries the map's history. Nothing widened; the list was re-read.
-        self.assertEqual(len(must), 29, 'the withhold list should resolve to 29 paths, got %s'
+        # 32 with the Harmony 885's compile track: its skill, its test notes and `todo-compile-885.md`,
+        # each naming `rehearse-block.ts` and the first block written on arch 8.
+        self.assertEqual(len(must), 32, 'the withhold list should resolve to 32 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1886,7 +1891,10 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # and leaves the reasoning about an interlock to the documents that own it. It stays withheld,
         # since it still states the client's write transfer; nothing started stating the path, and the
         # list was re-read.
-        self.assertEqual(len(stating), 40,
+        # 44 with the Harmony 885's compile track: its skill, its test notes, `todo-compile-885.md` and
+        # `tests/test_harmony_885_flash_backup.py` name `rehearse-block.ts`. The first three went on the
+        # withhold list; the test sits under `tests/`, already withheld. The list was re-read.
+        self.assertEqual(len(stating), 44,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

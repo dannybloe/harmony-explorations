@@ -265,8 +265,8 @@ const H700_DUMPS = new Set<string>([
  * November 2026 and identical, `docs/test-notes/harmony-885.md`. Both reads start at the region's base,
  * so a block's offset in them is its distance from `0x020000`, which is what the compare below takes.
  *
- * **Unit A only**, decision 30: both bench 885s may be written and A goes first. Unit B's region reads,
- * `h885_b_region` and `_2`, are in the lab and join with a target of their own once A has gone first.
+ * **Unit A went first**, decision 30, `todo-compile-885.md` 1.3: `0x0C0000` written back unchanged on 7
+ * November 2026, `tests/test_harmony_885_flash_backup.py`. Unit B joined after it, `H885_B_DUMPS` below.
  *
  * **Which block, on this platform, is not the 525's choice**, and the reason is the platform's: the
  * firmware runs from the same flash part as the configuration, so while a block of the live
@@ -282,6 +282,23 @@ const H700_DUMPS = new Set<string>([
 const H885_A_DUMPS = new Set<string>([
   'h885_a_region',
   'h885_a_region_2',
+]);
+
+/**
+ * The Harmony 885 unit B's configuration region, arch 8, `0x020000` to `0x1D0000`, read twice on 5 November
+ * 2026 after a hand restart and identical, `docs/test-notes/harmony-885.md`.
+ *
+ * **B joined after A's first write**, `todo-compile-885.md` 1.8, because its keys work better and the hands
+ * on tests run on it. The block choice is A's reasoning on B's flash: B's configuration ends at `0x0BB8C7`
+ * and is erased to `0x0C0000`, and from there remains of earlier configurations reach `0x0D00AA`, so
+ * `0x0C0000` is again a block the remote never reads and which is not `0xFF`, from its first byte to
+ * `0x0C4593`. Its upper neighbour starts with data at `0x0D0000`, the 171 bytes both units hold, so the
+ * erase is bounded tightly on that side; below the block B is erased back to its configuration's end, so the
+ * lower side is bounded only by that, `0x0BB8C7`, looser than on A.
+ */
+const H885_B_DUMPS = new Set<string>([
+  'h885_b_region',
+  'h885_b_region_2',
 ]);
 
 /** A remote this script may run against, per architecture. */
@@ -318,9 +335,13 @@ interface Target {
  * comparing is the step that has to happen before a write is authorised at all.
  */
 const TARGETS: Readonly<Record<number, readonly Target[]>> = {
-  // Unit A only, decision 30. Every arch 8 model reports one product id, so the unit record is what
-  // says the remote on the cable is this 885 and not unit B, an 880 or a 720.
-  8: [{ model: 'the Harmony 885 unit A', unitLabel: 'h885_a', dumps: H885_A_DUMPS }],
+  // The two bench 885s, decision 30, A first and B after it, `todo-compile-885.md` 1.8. Every arch 8 model
+  // reports one product id, so the dump says which unit is expected and the unit record is what says the
+  // remote on the cable is that 885 and not the other, an 880 or a 720.
+  8: [
+    { model: 'the Harmony 885 unit A', unitLabel: 'h885_a', dumps: H885_A_DUMPS },
+    { model: 'the Harmony 885 unit B', unitLabel: 'h885_b', dumps: H885_B_DUMPS },
+  ],
   9: [{ model: 'the Harmony 525', unitLabel: 'h525', dumps: H525_DUMPS }],
   12: [{ model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS }],
   // Three units on arch 14 since Danny's decision of 29 September 2026, and the 600 and the 650 enumerate identically, so the

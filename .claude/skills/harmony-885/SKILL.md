@@ -47,7 +47,7 @@ require of a session.
 * **Two bench units may be written, `h885_a` first**, decision 30. Which unit is on the cable is read off its
   identity block against the lab's `units/h885_a.txt` or `units/h885_b.txt`, never assumed from the port or a
   sticker. **Permission is not a write path**: since `todo-compile-885.md` 1.2 the library opens the flash
-  block path for unit A only, through `rehearse-block.ts`, and refuses every other write to this platform:
+  block path for unit A and, since 1.8, unit B, through `rehearse-block.ts`, and refuses every other write to this platform:
   the restart, the invalidate, the RAM write and `write-config.ts`. Those refusals are not something to
   work around; each path opens with its own item.
 * **Only the user configuration is written**: from `0x020000`, whole 64 KiB sectors, below the staging
@@ -84,7 +84,7 @@ word at `0x000160` are what a recovery puts back and nothing else holds them.
 
 ## 4. Writing the 885's configuration
 
-**One block at a time, unit A only, and one block performed.** `todo-compile-885.md` 1.2 made the platform a
+**One block at a time, through `rehearse-block.ts`, on unit A and since 1.8 unit B; one block performed on A.** `todo-compile-885.md` 1.2 made the platform a
 flash block target; 1.3 wrote one block of unit A back unchanged, `0x0C0000`, and 1.4 writes the whole
 configuration. Each lands its procedure here as the `harmony-525` and `harmony-650` skills hold theirs.
 
