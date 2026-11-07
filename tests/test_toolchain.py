@@ -260,8 +260,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `_delay.py`. 101 with 2.1 and 2.3, `tests/test_harmony_885_bench_reads.py`. 102 with 2.4,
         # `tests/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/test_harmony_touch_recovery.py`,
         # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/test_harmony_880_keys.py`.
-        # 107 with todo-compile-885 1.3, `tests/test_harmony_885_flash_backup.py`.
-        self.assertEqual(len(files), 107, 'the Python test files')
+        # 107 with todo-compile-885 1.3, `tests/test_harmony_885_flash_backup.py`. 108 with 1.4,
+        # `tests/test_harmony_885_first_config_write.py`.
+        self.assertEqual(len(files), 108, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -321,8 +322,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # with `tests/test_harmony_885_keys.py`, 2.4, which carries one. 101 to 103 with todo-touch 6.1 to 6.7's
         # three files, `tests/test_harmony_touch_recovery.py`, `_serial.py` and `_favourites_untagged.py`, which
         # carry one each. 104 with `tests/test_harmony_880_keys.py`, todo-prepare-885 2.5.2, which carries one.
-        # 105 with `tests/test_harmony_885_flash_backup.py`, todo-compile-885 1.3, which carries one.
-        self.assertEqual(with_block, 105,
+        # 105 with `tests/test_harmony_885_flash_backup.py`, todo-compile-885 1.3, which carries one. 106
+        # with `tests/test_harmony_885_first_config_write.py`, 1.4, which carries one.
+        self.assertEqual(with_block, 106,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -825,8 +827,9 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `_delay.py`. 101 with 2.1 and 2.3, `tests/test_harmony_885_bench_reads.py`. 102 with 2.4,
         # `tests/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/test_harmony_touch_recovery.py`,
         # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/test_harmony_880_keys.py`.
-        # 107 with todo-compile-885 1.3, `tests/test_harmony_885_flash_backup.py`.
-        self.assertEqual(len(scanned), 107, 'Python test files, which moves when one is added')
+        # 107 with todo-compile-885 1.3, `tests/test_harmony_885_flash_backup.py`. 108 with 1.4,
+        # `tests/test_harmony_885_first_config_write.py`.
+        self.assertEqual(len(scanned), 108, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

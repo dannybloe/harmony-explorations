@@ -1100,6 +1100,14 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h885_b_flash: '20261107T1041Z-h885-b-flash-region.bin',
   h885_b_flash_2: '20261107T1045Z-h885-b-flash-2-region.bin',
   h885_b_after_block_config: '20261107T1047Z-h885-b-after-block-config.bin',
+  // Unit B after todo-compile-885.md 1.4, its own configuration written back with a fresh stamp and restarted:
+  // the stamped file as written (the lab's work folder, with the writer's journals beside it), the
+  // configuration read back, the region read once (a second read met a sequence break), and data memory
+  // 0x100 to 0x10F read once after the restart, as text.
+  h885_b_written_1_4: 'h885-b-own.bin',
+  h885_b_after_1_4_config: '20261107T1111Z-h885-b-after-1-4-config.bin',
+  h885_b_after_1_4_region: '20261107T111248Z-h885-b-after-1.4-region-region-0x20000-0x1d0000.bin',
+  h885_b_clock_after_1_4: '20261107T1110Z-h885-b-clock-after-1-4.txt',
   // The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: `watch-keys.ts` polling data memory
   // `0x295` (the key held) and `0x3A1` (the last key pressed) while keys were pressed by hand, as text. Unit A
   // before its key contacts were cleaned, A opened and pressed freely, A's run through every key in a set order,
@@ -1250,7 +1258,9 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // Unit A's whole flash, which holds its configuration at 0x020000, and the configuration read after the
     // first block write, byte identical to `h885_a_config`: each would count that configuration again.
     'h885_a_flash', 'h885_a_flash_2', 'h885_a_after_block_config',
-    'h885_b_flash', 'h885_b_flash_2', 'h885_b_after_block_config'];
+    'h885_b_flash', 'h885_b_flash_2', 'h885_b_after_block_config',
+    // Unit B's configuration as 1.4 wrote it, read back and in its region: each is h885_b_config restamped.
+    'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region'];
 
 const cache = new Map<string, string[]>();
 

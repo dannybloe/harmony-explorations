@@ -827,3 +827,4 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `still not in \`ARCHITECTURES_WITH_A_WRITE_TARGET\`` | `packages/usb/test/rails.test.ts`, `todo-compile-885.md` 1.2 | of arch 8 (Harmony 880 and 885), the same correction as the row above |
 | `Nothing has been written to either` | `tests/test_harmony_885_flash_backup.py`, `todo-compile-885.md` 1.3 | of the two bench Harmony 885s: one block of unit A was written back unchanged |
 | `its first rehearsal still to be performed` | `tests/test_harmony_885_flash_backup.py`, `todo-compile-885.md` 1.3 | of arch 8 (Harmony 880 and 885): performed on unit A at `0x0C0000` |
+| `its first run is still to be performed` | `tests/test_harmony_885_first_config_write.py`, `todo-compile-885.md` 1.4 | of `write-config.ts` on the bench 885s: performed on unit B |

@@ -14,7 +14,8 @@ file; it reads what the bench session filed in the lab.
    `0x1FE000`, where the device window starts. The first read finished. The second stopped twice on a
    `flash chunk out of sequence`, once late in the run and once early, and filed nothing; after the unit was
    restarted by hand it finished with no break. The same as unit B's region reads on 5 November 2026: breaks
-   before a hand restart and none after. The cause is open; the reads' console output was not filed.
+   before a hand restart and none after, then; after 1.4's restart breaks came back,
+   `tests/test_harmony_885_first_config_write.py`. The cause is open; the console output was not filed.
 3. `rehearse-block.ts ... --commit` with both write flags: the unit check passed, the block read off the remote
    matched the dump, the neighbours `0x0B0000` and `0x0D0000` were read, `0x0C0000` was erased and read back
    as all ones, the neighbours read again unchanged, 21 transfers of at most 3150 bytes wrote the block, and

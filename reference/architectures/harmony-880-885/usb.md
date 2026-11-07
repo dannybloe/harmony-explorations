@@ -167,6 +167,12 @@ bootloader.[^t-885-end] Logitech's classic client never writes the status for a 
 platform: after the write it erases the event range the configuration's header names, restarts the remote
 the same way, and then writes the saved state variables back and sets the clock.[^t-885-end-client]
 
+**On an 885 that sequence was performed once and the remote took the configuration up**: selector 2 was
+answered, three sectors of the configuration were erased and rewritten, the status read 0 before and after,
+`E1 02` was sent, and the remote was back on the bus within five seconds holding the written configuration
+byte for byte, its clock standing on the configuration's stamp plus the seconds since the restart. The status
+was read with `READ_MISC` selector 7 at `0x100`. An 880 is not checked.[^t-885-first-write][^unchecked]
+
 ## In the bootloader
 
 **The bootloader answers the same protocol**, six of the application's commands and the escape, with no
@@ -250,6 +256,7 @@ configuration would run on an 885 is not checked.[^unchecked]
 [^t-885-flash]: Read in the firmware. [The test](../../../tests/test_harmony_885_erase_and_write.py)
 [^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
 [^t-885-end-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_885_write_end.py)
+[^t-885-first-write]: Measured on a unit. [The test](../../../tests/test_harmony_885_first_config_write.py)
 [^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
 [^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)
 [^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)

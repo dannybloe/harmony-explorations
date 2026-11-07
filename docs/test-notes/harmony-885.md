@@ -231,5 +231,32 @@ fields and the two at `0x000162`; the region is the earlier region read; the sta
 that are not `0xFF`, as on A, and the log area is erased. Filed as `h885_b_flash`, `h885_b_flash_2` and
 `h885_b_after_block_config`.
 
-**Every read that met a sequence break came before a hand restart**, on both units, and none after one.
+**Every read that met a sequence break came before a hand restart**, on both units, and none after one, up
+to here; the next section met them after a restart too.
+
+## 7 November 2026: the first whole configuration, unit B's own, restarted
+
+`todo/todo-compile-885.md` 1.4, **unit B on the cable**. Its own configuration, `h885_b_config`, copied into
+the lab's work folder and written back with a fresh stamp. In order:
+
+1. **The dry run**: stopped on a `flash chunk out of sequence` while comparing blocks; nothing written.
+2. **Unit B restarted by hand**, and the dry run again: the identity matched, 17 bytes differ in the blocks
+   `0x020000`, `0x050000` and `0x0B0000`, each block matched the dump, the install status at `0x100` read 0.
+3. **The commit**, both write flags: the status 0; the cache drop answered; each block erased, read back as
+   all ones with its neighbours unchanged, and written; the whole configuration read back identical to the
+   file; the status 0 again; the restart `E1 02` sent.
+4. **Back on the bus within five seconds**, on its own.
+5. **Data memory `0x100` to `0x10F`**: the status 0, the clock `2026-11-07 12:09:18`, a Saturday, against the
+   stamp `12:09:07`, with the host clock at 12:10:56. The restart reseeded the clock from the configuration.
+6. **`read-config.ts`**: 637127 bytes, one window retried, identical to the written file.
+7. **`read-region.ts` twice**: the first finished and differs from `h885_b_region` in exactly the stamp's 17
+   bytes; the second stopped on a sequence break and filed nothing.
+8. **Unplugged and used**: it looked and behaved as before, as far as could be told at the bench.
+
+`tests/test_harmony_885_first_config_write.py`. Filed as `h885_b_written_1_4` (the stamped file, with the
+writer's journals beside it), `h885_b_after_1_4_config`, `h885_b_after_1_4_region` and `h885_b_clock_after_1_4`.
+
+**The sequence breaks are not only before a hand restart**, which the sections above said: two of the four
+reads after the write's restart met one. The configuration reader asks for the window again; the two region
+readers stop. Their window retry is the gap to close before the next long read.
 

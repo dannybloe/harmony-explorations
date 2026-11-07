@@ -81,8 +81,9 @@ and identical, as the `recovering-a-remote` section says. **Both units' are in t
 twice, the second with `--label h885-b-flash-2`, and the same with `h885-a-` for unit A; a backup taken
 again is taken the same way. The reader reads `0x4000` chunks from zero, so no chunk ends
 alone on `0x000104` or `0x000105`. **A `flash chunk out of sequence` stops it and files nothing**: it has no
-window retry. Both units met it before a hand restart and neither after, so restart the unit by hand rather
-than rerunning blind. The identity block at `0x000110` and the battery calibration
+window retry. A hand restart made it rarer on both units and did not end it: after 1.4's restart two of four
+reads met one. Restart by hand and rerun with the same arguments until the region readers get their retry,
+`todo-compile-885.md` 1.10. The identity block at `0x000110` and the battery calibration
 word at `0x000160` are what a recovery puts back and nothing else holds them.
 
 ## 4. Writing the 885's configuration
@@ -90,7 +91,10 @@ word at `0x000160` are what a recovery puts back and nothing else holds them.
 **Two writers: one block through `rehearse-block.ts`, and since 1.4 a whole configuration through
 `write-config.ts`, on both units.** `todo-compile-885.md` 1.2 made the platform a flash block target; 1.3 wrote
 one block of unit A back unchanged, `0x0C0000`, and 1.8 one of unit B, `0x0D0000`; 1.4 gave `write-config.ts`
-both units and the 885's write end, and its first run is still to be performed. Each lands its procedure here
+both units and the 885's write end, and ran it once on unit B: its own configuration restamped, three sectors
+rewritten, the restart, B back within five seconds holding the file and its clock reseeded,
+`tests/test_harmony_885_first_config_write.py`. **Region reads stop on a sequence break** and have no window
+retry yet (1.10); a hand restart made them rarer and did not end them. Each lands its procedure here
 as the `harmony-525` and `harmony-650` skills hold theirs.
 
 **The order 1.3 took, which is the order for unit B too**: the dry run first, which also says which unit is

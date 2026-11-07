@@ -997,6 +997,12 @@ IMAGES = {
     'h885_b_flash': '20261107T1041Z-h885-b-flash-region.bin',
     'h885_b_flash_2': '20261107T1045Z-h885-b-flash-2-region.bin',
     'h885_b_after_block_config': '20261107T1047Z-h885-b-after-block-config.bin',
+    # Unit B after todo-compile-885.md 1.4: the stamped file as written, the configuration read back, the
+    # region read once, and data memory 0x100 to 0x10F read after the restart, as text.
+    'h885_b_written_1_4': 'h885-b-own.bin',
+    'h885_b_after_1_4_config': '20261107T1111Z-h885-b-after-1-4-config.bin',
+    'h885_b_after_1_4_region': '20261107T111248Z-h885-b-after-1.4-region-region-0x20000-0x1d0000.bin',
+    'h885_b_clock_after_1_4': '20261107T1110Z-h885-b-clock-after-1-4.txt',
     # The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: watch-keys.ts polling data
     # memory 0x295 (the key held) and 0x3A1 (the last key pressed) while keys were pressed by hand, as
     # text. Unit A before its key contacts were cleaned, A opened and pressed freely, A's run through
@@ -1194,7 +1200,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # Unit A's whole flash, holding its configuration at 0x020000, and the
                       # configuration read after the first block write, identical to h885_a_config.
                       'h885_a_flash', 'h885_a_flash_2', 'h885_a_after_block_config',
-                      'h885_b_flash', 'h885_b_flash_2', 'h885_b_after_block_config')
+                      'h885_b_flash', 'h885_b_flash_2', 'h885_b_after_block_config',
+                      'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
