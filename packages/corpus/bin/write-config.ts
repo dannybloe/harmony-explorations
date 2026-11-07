@@ -315,6 +315,11 @@ const H885_A_DUMPS = new Set<string>([
 const H885_B_DUMPS = new Set<string>([
   'h885_b_region',
   'h885_b_region_2',
+  // B's region after todo-compile-885.md 1.4 wrote its own configuration back restamped: the current content
+  // since then, differing from the two above in that write's 17 stamp bytes. Read once; a second read met a
+  // sequence break, and the one read is checked against the written file and the region before it instead,
+  // `tests/test_harmony_885_first_config_write.py`. Every write to B from 1.4 on compares against this.
+  'h885_b_after_1_4_region',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */
