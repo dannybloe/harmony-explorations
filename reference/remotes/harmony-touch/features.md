@@ -171,7 +171,13 @@ with three other activities, taken out of the four documents that named them wit
 protocol of the receiver's, delivered with 200, left four activities and six devices on the remote's lists and the
 other activities starting and ending without a code of the receiver; delivering the four back restored both,
 [taking out](../../architectures/harmony-touch/activities-and-buttons.md#taking-out-an-activity-and-a-device)[^t-touch-removal-of-theirs].
-A document composed whole by this project is not checked[^unchecked].
+**A whole setup composed by this project runs as the one it was described from**: every device and every activity of
+the documents a Touch held, described in this project's own terms and composed again under ids of ours, the four
+documents that name them delivered with 200, ran the ten tests at an infrared receiver that Logitech's documents had
+run, every expected code heard and every timed pause in its band, 418 of 418; delivering the four back restored the set before,
+[a whole setup of ours](../../architectures/harmony-touch/activities-and-buttons.md#a-whole-setup-of-ours)[^t-touch-setup-of-ours].
+*Corrected:* this said a document composed whole by this project was not checked<!--superseded--> until that run.
+A setup that is not a description of one Logitech's service built is not checked[^unchecked].
 
 ## Changes on the remote travel back
 
@@ -212,6 +218,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
 [^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch84-runs.test.ts)
 [^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch85-runs.test.ts)
+[^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch86-runs.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

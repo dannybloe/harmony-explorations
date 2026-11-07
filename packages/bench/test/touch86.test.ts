@@ -7,8 +7,8 @@
  * `touch71Configuration`, `src/touchbench.ts`), are the files in `irtests/` as they stand, file for file, step for step,
  * and the same as those derived from the source set itself. So the setup predicts what the set it was described from
  * predicts, and the 8.6 run is those ten files: 10 tests, 418 expectations. The setup is built here from the source and
- * the description by the codec, and held equal, document for document, to the set built in the lab for the remote,
- * `work/touch-firmware/sets/8.6-setup`, read by path until a fixture names it.
+ * the description by the codec, and held equal, document for document, to the set built in the lab and delivered to
+ * the remote, `work/touch-firmware/sets/8.6-setup`, the fixture `touch_setup_set`.
  *
  * **The control**: the same description with one key of Watch TV sending another command gives a different Watch TV
  * keys test, so "the files as they stand" can fail.
@@ -19,15 +19,14 @@
  * **Sources checked first.** The 8.6 brief in the lab; `touch71.test.ts` and `touch85.test.ts`, whose derivation this
  * reuses. Logitech's client was not consulted.
  *
- * **What this does not show** is what the remote does: that is the 8.6 run.
+ * **What this does not show** is what the remote does: that is the 8.6 run, judged in `touch86-runs.test.ts`.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330, the one bench unit; its firmware reports 17 and
  * Logitech's templates file it under 18.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { harmonyTouch } from '@harmony/codec';
@@ -35,10 +34,12 @@ import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { TOUCH_8_6_SET, TOUCH_8_6_TESTS } from '../src/touch86.ts';
+import { TOUCH_8_6_TESTS } from '../src/touch86.ts';
 import { touch71Configuration, touch71Tests } from '../src/touchbench.ts';
 
 const SOURCE = 'touch_removal_set_back';
+/** The set 8.6 built in the lab and delivered to the bench Touch, `TOUCH_8_6_SET` in `src/touch86.ts`, by fixture. */
+const BUILT = 'touch_setup_set';
 const FULL = 'touch_full_sync_recording';
 const DESCRIPTION = fileURLToPath(new URL('../../corpus/touch-setups/8.6-test-setup.json', import.meta.url));
 const IRTESTS = fileURLToPath(new URL('../irtests/', import.meta.url));
@@ -63,9 +64,6 @@ const favourites = (): Record<string, unknown> =>
 const derive = (answers: harmonyTouch.SyncAnswer[]) => touch71Tests(touch71Configuration({ answers }, favourites()));
 const plain = (d: TestDefinition): TestDefinition => JSON.parse(JSON.stringify(d)) as TestDefinition;
 
-const built = (path: string): { skip: string | false } =>
-  lab.LAB === undefined ? { skip: 'no lab' } : existsSync(join(lab.LAB, path)) ? { skip: false } : { skip: `${path} not in the lab` };
-
 test('the 8.6 run is the ten 7.1 test files as they stand: the setup composed from the description derives them file for file, as the set it describes does',
   lab.needing(lab.skipUnless(SOURCE, FULL)), () => {
     const ours = derive(composedAnswers(description()));
@@ -80,8 +78,8 @@ test('the 8.6 run is the ten 7.1 test files as they stand: the setup composed fr
     assert.equal(ours.flatMap((t) => t.definition.steps.flatMap((s) => s.expect ?? [])).length, 418);
   });
 
-test('the set built in the lab for the remote is the setup composed here, document for document', lab.needing(lab.skipUnless(SOURCE), built(TOUCH_8_6_SET)), () => {
-  const delivered = (JSON.parse(readFileSync(join(lab.LAB!, TOUCH_8_6_SET), 'utf8')) as Answers).answers;
+test('the set built in the lab for the remote is the setup composed here, document for document', lab.needing(lab.skipUnless(SOURCE, BUILT)), () => {
+  const delivered = (JSON.parse(new TextDecoder().decode(lab.require_(BUILT))) as Answers).answers;
   assert.deepEqual(composedAnswers(description()).map((a) => a.resource), delivered.map((a) => a.resource));
 });
 

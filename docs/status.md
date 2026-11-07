@@ -187,7 +187,7 @@ the generator that wrote it, with firmware event 0xFF bound so it serves both mo
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
-**The Harmony Touch is described from its own reading, twenty five syncs of ours have run on it, twenty three committed, fourteen of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, a Settings of ours has been delivered and seen, and an activity and a device of Logitech's have been taken out and the rest heard without them.** Its configuration
+**The Harmony Touch is described from its own reading, twenty eight syncs of ours have run on it, twenty six committed, sixteen of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, a Settings of ours has been delivered and seen, an activity and a device of Logitech's have been taken out and the rest heard without them, and a whole setup composed by us has run its full bench test.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
@@ -212,7 +212,7 @@ delivered one document with one value changed, or put back, with 200 and the oth
 committed. A sequence's delay went from 1 second to 3 and the pause between its two infrared codes grew by about
 two seconds, then came back when the value did; an activity's name changed on the activity list and changed
 back. A closing `--unchanged` run was asked for the six with the last set's tags,
-`packages/usb/test/touch-changed-set-sync.test.ts`. A document composed whole by this project is still unchecked.
+`packages/usb/test/touch-changed-set-sync.test.ts`. Documents composed whole by this project reached it in 8.6, below.
 In 7.1 the Touch's first full bench test ran on the documents it holds, ten tests on the infrared monitor: every
 activity started, switched and stopped, the five favourites, every key of every activity's map and of six devices'
 own maps, tapped and held. 413 of the 418 expected codes and pauses held, every code in the order the model of its
@@ -250,7 +250,13 @@ activities and six devices; the three activities that had used the receiver were
 the volume keys sending nothing. A second sync put the four back. A first try stopped on a USB read timeout while
 its 13 chunk write was going out and the remote was seen restarting; the configuration hash then still answered with
 the set before's tags, and the same set went through on the next try. What made it stop is not known,
-`packages/bench/test/touch85-runs.test.ts`.
+`packages/bench/test/touch85-runs.test.ts`. In 8.6 the whole test setup was composed by this project: the seven
+devices, five activities and 616 keys, gestures and screen entries the remote held, described and composed again under
+identifiers of ours onto the set with the four lists emptied, every device's record and codes carried from its
+catalogue entry, and compared with Logitech's documents field by field with nothing unexplained. Delivered as the four
+documents with 200 and Context and Settings 304, the remote committed it, and the ten 7.1 tests, unchanged, held 418
+of 418 on it, against 413 on Logitech's own; three attempts were started again, the person at the bench reporting a few mistakes here and there. A second
+sync put the remote's own four back, `packages/bench/test/touch86-runs.test.ts`.
 
 ## What is still open
 

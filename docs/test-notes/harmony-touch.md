@@ -645,6 +645,64 @@ committed set as it was. The remote holds `8.5-removal-back`, which is `8.4-sett
 a removal while the activity or the device is in use, the lists at the moment of the commit, and what restarted the
 remote on the first try. The runs are held by `packages/bench/test/touch85-runs.test.ts`. 8.5 is done.
 
+## The whole test setup composed by us, run and put back, todo-touch 8.6
+
+**Run on 7 November 2026**, after 8.5, after commit `a50473a9`, the 8.6 preparation, and commit `72a96edc`, which moved
+the Touch bench tests already run to `irtests/done/`, in the order of the lab's `work/touch-firmware/notes/8.6-preflight.md`
+section 7, each run read before the next, Off pressed before each sync, the bench started afresh for a new monitor
+log. The setup is `packages/corpus/touch-setups/8.6-test-setup.json`, the set the remote held described by
+`describeTouchSetup`: seven devices, five activities and 616 buttons under ids of ours, devices from 900000101,
+activities from 900000201, sequences from 900000301, composed by `composeTouchSetup` onto `8.5-removal-back` with the
+four lists emptied, each device's record carried from that set as its catalogue. The two sets were built by
+`packages/corpus/bin/touch-device-set.ts --setup` and `--setup-back`: `8.6-setup` with ActivityList, DeviceList, MapList
+and ProtocolList composed and retagged (ProtocolList's content the source's), and `8.6-setup-back`, which is
+`8.5-removal-back`.
+
+| time (UTC) | run | what it gave |
+|---|---|---|
+| `0904Z` | `touch-confighash` | equal on `8.6-setup-back` |
+| `0904Z` | `touch-sync-set`, `8.6-setup` | the four 200 with the set's content and tags, Context and Settings 304, favourites and pictures 304, the finish; first list (`006`) the four with the source's tags, Context and Settings with the set's, which are the source's; `sync: finished`, nothing handed up |
+| `0905Z` | `touch-confighash` | equal on `8.6-setup` |
+| `091013Z` to `092705Z` | the ten 7.1 bench tests, the last attempt of each | 38, 30, 15, 33, 39, 32, 38, 37, 74 and 82: 418 of 418 |
+| `091413Z`, `091912Z`, `091922Z` | three attempts started again | the favourites 0 of 15 and Listen to Music's keys 1 of 32 and 0 of 32, each superseded by the next attempt of the same test |
+| `0904Z` | the monitor's live log | the thirteen attempts' presses and one Off between the favourites attempts before the put back, nothing before the first test |
+| `0932Z` | `touch-sync-set`, `8.6-setup-back`, and `0933Z` `touch-confighash` | the four 200 with the old content and tags, Context and Settings 304; first list the four with `8.6-setup`'s tags; hash equal on `8.6-setup-back` |
+| `0934Z` | `touch-sync-unchanged` | 19 answers 304 and the two finishes 200; first list six of `8.6-setup-back`'s tags |
+
+All in `reads/20261107T<time>-*`. Every committed run handed out eight request lists and nothing was handed up. The
+six went in one write, the run's `007-answers-request.txt`, of 494602 characters, 16 chunks, for the setup and 567941,
+19 chunks, for the put back, each replied 200. That file is the kept write; the run's other answers files hold the
+favourites, the pictures and the finish and none of the six, which is why `touch-device-set.ts --check --written`
+prints "NOT OK: the kept write answered ;" for each of them. Whether `--written` should pass over such files is an open
+question about the tool, not about the run.
+
+* **The ten tests**, the files at the top of `irtests/` unchanged, which the setup derives file for file
+  (`touch86.test.ts`), on the Flirc monitor. The last attempt of each held every expectation, judged afresh from the
+  pulses by the setup's own documents, every verdict the one the monitor wrote. **Heard and named by no expectation**:
+  in the Switch Box keys, step 4 counting from 0, one KPN ChannelPrev after Channel Down, unmarked in the run, the code
+  Switch Box's Previous key sends and no other key of its map; in device mode 1 of 2, step 7, one LG TV Rewind between
+  Menu held and Previous held, marked "drukte per ongeluk op << eerst" (pressed << by accident first); in device mode 2
+  of 2, step 21, five Xbox codes besides the five expected, marked "may have touch too many buttons but they all were
+  reocorded properly", each the Xbox's own map's code for one of that step's keys held. Every press of every attempt
+  was named.
+* **The three attempts started again**, superseded by the next attempt of the same test: the favourites at `091413Z`,
+  0 of 15, nothing heard at its second step, the seven codes NPO 1 tapped with nothing running sends having been heard
+  while it was still at its first, the unjudged Off; Listen to Music's keys at `091912Z`, 1 of 32, the receiver's input
+  heard at the start and not its power or Plex's, which were heard during its Off; and at `091922Z`, 0 of 32, stopped
+  before its start. Between the first of them and the next favourites attempt the log holds the LG TV's and the Denon's
+  power off, which is Off after Watch TV. **The person at the bench said they made a few mistakes here and there**; no
+  other cause is claimed, for these or for the unmarked ChannelPrev.
+* **The look, reported at the bench and held by no file**: after the setup, the look of the preflight's section 6
+  was right, "everything looks good": the activity list, the devices, Watch TV and Watch a Blu-ray opened; after the
+  put back everything was back. The run files' problem fields hold the two notes above and nothing of the look.
+
+So a whole setup composed by this project, every device and every activity under an id of ours, was stored and
+committed by the remote and behaved as the set it was described from, 418 of 418; the put back restored the set
+before. The remote holds `8.6-setup-back`, which is `8.5-removal-back`. What this does not cover: the screens' pictures
+and icons beyond the look, the engine's stored power state per device under the new ids, the tests while an activity
+runs across a sync, and a setup that describes no set Logitech built. The runs are held by
+`packages/bench/test/touch86-runs.test.ts`. 8.6 is done.
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been

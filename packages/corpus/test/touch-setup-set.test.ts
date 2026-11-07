@@ -26,7 +26,8 @@
  *    source's, content and tags. The put back is the source exactly. The gate refuses neither, and the check finds the
  *    same two findings of the screens' lists on both, as on the source.
  * 6. **The sets the lab holds**, `work/touch-firmware/sets/8.6-setup` and `8.6-setup-back`, are what this derivation
- *    gives, read by path until the fixtures are named.
+ *    gives, read by fixture, `touch_setup_set` and `touch_setup_set_back`; what the remote did with the two is
+ *    `packages/bench/test/touch86-runs.test.ts`.
  * 7. **On the fake remote**, the closing `--unchanged` run of 8.5 served as recorded, its first list asking with the
  *    tags of the set the remote holds, which is the source: the setup answers the four 200 with its content and tags and
  *    Context and Settings 304, keeps every favourites document and picture the remote holds, and finishes; the put back
@@ -46,8 +47,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -66,9 +66,9 @@ const CLOSING = 'touch_removal_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
 const DESCRIPTION = fileURLToPath(new URL('../touch-setups/8.6-test-setup.json', import.meta.url));
-/** The two sets 8.6 built in the lab, by path: no fixture names them yet. */
-const BUILT = 'work/touch-firmware/sets/8.6-setup/set.json';
-const BUILT_BACK = 'work/touch-firmware/sets/8.6-setup-back/set.json';
+/** The two sets 8.6 built in the lab and delivered to the bench Touch, by fixture. */
+const BUILT = 'touch_setup_set';
+const BUILT_BACK = 'touch_setup_set_back';
 const FOUR: readonly string[] = SETUP_DOCUMENTS;
 
 const description = (): harmonyTouch.TouchSetup => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { setup: harmonyTouch.TouchSetup }).setup;
@@ -220,14 +220,10 @@ describe('the 8.6 setup, its comparison with Logitech\'s documents and its put b
     assert.deepEqual(findings(setup), { 'repeated screen index': 2, 'number pad entry on no key': 2 });
   });
 
-  const built = (path: string): { skip: string | false } =>
-    lab.LAB === undefined ? { skip: 'no lab' } : existsSync(join(lab.LAB, path)) ? { skip: false } : { skip: `${path} not in the lab` };
-
-  it('the sets the lab holds are the ones this derivation gives, as parsed JSON, tags and all', lab.needing(built(BUILT), built(BUILT_BACK)), () => {
+  it('the sets the lab holds are the ones this derivation gives, as parsed JSON, tags and all', lab.skipUnless(BUILT, BUILT_BACK), () => {
     const { setup, back } = chain();
-    const read = (path: string): unknown => JSON.parse(readFileSync(join(lab.LAB!, path), 'utf8'));
-    assert.deepEqual(read(BUILT), JSON.parse(JSON.stringify(setup)));
-    assert.deepEqual(read(BUILT_BACK), JSON.parse(JSON.stringify(back)));
+    assert.deepEqual(json(BUILT), JSON.parse(JSON.stringify(setup)));
+    assert.deepEqual(json(BUILT_BACK), JSON.parse(JSON.stringify(back)));
   });
 });
 

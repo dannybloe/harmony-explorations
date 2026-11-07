@@ -37,6 +37,21 @@
  *    leaving the key out otherwise changes no field the screens read: `FunctionId-` 0, nil and absent are alike to
  *    them, the lab's `notes/6.10-screens-reads.md` and `gesturepad.lua` 121 to 139.
  *
+ * **What the setup's rules rest on, read in the firmware** (the lab's `notes/8.6-preflight.md` sections 2 and 3, from
+ * the readings named below). The screens offer an activity's start screen by a condition each, and fall back to the
+ * command list when it fails: Favorites only on the activity the favourite channels belong to, `IsTuningDefault`, which
+ * tunes them through its channel changing role, and the gesture screen only where the map holds gestures; so the
+ * composer writes either only where what it needs is. The engine sorts an activity's start and end steps by
+ * `ActionOrder`, `orderTableItems`, keeping them in a table by that number, so only the order matters and two steps on
+ * one order would be one; a channel step, `ChannelActivityAction`, tunes its digits through a device with channel
+ * tuning. The favourites documents' address and key, `DeviceProfileUri` and `ContentProfileKey`, are carried on the
+ * tuning device from the catalogue record: in Logitech's documents the key is the device's own id, and under an id of
+ * ours it no longer is, but the screens' `favoritesmanager.lua` takes the pair by the device's `Id-` (lines 166 to 192
+ * and 195 to 207), so it still finds them. These are readings, held here by the rules they produce and not by the
+ * firmware's bytes; the 8.6 run on the bench Touch, `packages/bench/test/touch86-runs.test.ts`, measured a setup built
+ * on them: Watch TV, the favourites' activity, and the five favourites through the LG TV under an id of ours, 15 of 15,
+ * and Switch Box's start steps, its channel step among them, heard in their order.
+ *
  * **Sources checked first.** The 8.6 brief in the lab; `compose.ts` and `touch-activity-add.test.ts`, whose shape the
  * made up documents follow; `remove.ts` and `touch-removal.test.ts` for what the removal refuses; the reference's
  * `activities-and-buttons.md` and `devices-and-infrared.md`; the lab's decompiled engine, `userconfigreader.lua`

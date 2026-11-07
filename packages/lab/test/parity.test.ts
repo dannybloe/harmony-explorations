@@ -159,7 +159,10 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 853 with the 69 files of 8.5: the removal set and its put back, the five config hash reads, the first try that
   // stopped with the seven files it kept, the two committed syncs of eight request lists each with the reply to their
   // kept write, the closing `--unchanged` run, the bench run and the monitor log.
-  assert.equal(Object.keys(pythonImages()).length, 853, 'every fixture tests/lab.py names');
+  // 925 with the 72 files of 8.6: the setup set and its put back, the three config hash reads, the two committed syncs
+  // of eight request lists each with the reply to their kept write, the closing `--unchanged` run, the ten 7.1 bench
+  // runs on the setup with the three attempts started again, and the monitor log.
+  assert.equal(Object.keys(pythonImages()).length, 925, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

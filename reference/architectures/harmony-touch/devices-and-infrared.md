@@ -10,7 +10,9 @@ on every Harmony, the code families and how often a press sends a code, is [infr
 in the Touch's production image 4.15.330, and everything measured was measured in the documents one sync
 handed a Touch: seven infrared devices using five code families[^t-touch-devices][^t-touch-engine]. One more
 device, composed by this project with a definition of its own, was added to those documents, delivered and heard,
-[a device of ours](#a-device-of-ours)[^t-touch-device-of-ours]. **What
+[a device of ours](#a-device-of-ours)[^t-touch-device-of-ours]; and all seven were composed again under ids of
+ours from their catalogue records and run inside their activities, [the catalogue's and the
+person's](#the-catalogues-and-the-persons)[^t-touch-setup-of-ours]. **What
 is read in the firmware was read in the decompiled engine**, the remote's own program; the test anchors the
 parts it can name in the compiled files and lists the rest as read only. Nothing here is checked on another
 build or another model.
@@ -236,7 +238,32 @@ and not a guarantee, so a writer still refuses an id the documents already hold,
 another device's or sit inside one, and an activity id already an activity's or a device's.
 
 What the screens drew for that device is [the model's display](../../remotes/harmony-touch/display.md#what-the-screen-shows).
-A device of ours used inside an activity, with power or input states of its own, is not checked[^unchecked].
+*Corrected:* this said a device of ours used inside an activity, with power or input states of its own, was not
+checked<!--superseded-->; devices under ids of ours with the catalogue's power, input and channel features ran inside
+activities, [below](#the-catalogues-and-the-persons)[^t-touch-setup-of-ours]. A definition of ours inside an activity is
+not checked[^unchecked].
+
+## The catalogue's and the person's
+
+**A device a person sets up is two kinds of thing**: what the catalogue brings when the person picks a maker and
+model, and what the person chooses. A writer composes the second and carries the first. **The person's**: the
+device's name, its maker and model, its control port, its press repeat count, its inter key and inter device delays,
+its power on delay, whether it is kept on between activities and always on, its input delay, and its own map.
+**The catalogue's**, carried unchanged but for the device's id where a feature names it: every other field of the
+device record, its features (inputs, power, channel tuning) with their steps, its commands with their codes, and
+the definitions those commands name, under the catalogue's own protocol ids. Composed so from a description of a set
+Logitech's service built, every device field came out equal to theirs, or equal but for the id[^t-touch-setup-compared]. All seven
+devices of a set a Touch held were composed that way under ids of ours, with their records taken from the set the
+remote held, and every code of the ten tests that had run on the set before was heard from them, 418 of 418, inside
+their activities and in device mode[^t-touch-setup-of-ours].
+
+**Two carried fields are the account's and not the catalogue's**: `DeviceProfileUri` and `ContentProfileKey`, the
+address and the key of the device's favourites documents, which the remote keeps apart from the six. In Logitech's
+documents the key is the device's own id; under an id of ours it no longer is. The screens' favourites reader takes
+the pair by the device's id and reads the key and the address from the device, so a writer carries the pair on the
+tuning device and the favourites are still found[^t-touch-setup-firmware]. Measured: with the pair carried on a TV
+under an id of ours, the five favourite channels were each tuned as before, 15 of 15 codes[^t-touch-setup-of-ours]. A pair that does not match the remote's
+favourites documents is not checked[^unchecked].
 
 ## What a writer must carry
 
@@ -287,8 +314,10 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 * Whether a device's repeat count and its family's ever differ for a device a Touch is given, which decides
   whether a Touch and a compiled configuration send such a code a different number of times[^unchecked].
 * What a nonzero control port does on a Touch with no hub[^unchecked].
-* A device of ours inside an activity, a device of ours with features, and a definition of ours of a shape no
-  Logitech definition the remote holds has[^unchecked].
+* A definition of ours inside an activity, and a definition of ours of a shape no Logitech definition the remote
+  holds has[^unchecked]. *Corrected:* this listed a device of ours inside an activity and a device of ours with
+  features<!--superseded-->, which [the catalogue's and the person's](#the-catalogues-and-the-persons) ran under ids of
+  ours[^t-touch-setup-of-ours].
 * Any other firmware build, and the other remotes of the generation[^unchecked].
 
 [^t-touch-devices]: Measured on a unit. [The test](../../../packages/usb/test/touch-devices.test.ts)
@@ -298,6 +327,9 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch81-runs.test.ts)
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
+[^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch86-runs.test.ts)
+[^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-setup-set.test.ts)
+[^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-setup.test.ts)
 [^s92]: Measured in configurations. [Section 92](../../../docs/findings.md#s92)
 [^s348]: Measured in configurations. [Section 348](../../../docs/findings.md#s348)
 [^unchecked]: Not checked.
