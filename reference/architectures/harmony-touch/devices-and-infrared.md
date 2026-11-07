@@ -288,7 +288,8 @@ heard in every activity and in device mode in the ten tests of [starting, switch
 stopping](activities-and-buttons.md#starting-switching-and-stopping)[^t-touch-devices][^t-touch-in-use]; from
 definitions of ours, Sony 12 Bit in device mode, [above](#a-device-of-ours)[^t-touch-device-of-ours], and the same
 five, Toshiba 32 Bit, Sharp 15 Bit 2, Sharp 48 Bit 2, Sony 20 Bit and Microsoft 30 Bit, inside activities, in the
-test above[^t-touch-from-nothing]. No other family has been played on a Touch[^unchecked].
+test above[^t-touch-from-nothing]. No other family has been played on a Touch[^unchecked]; what the rest of the table
+would send is read in code, [below](#every-family-of-the-rhythm-table).
 
 **What a definition has to state for a whole transmission.** The engine sends an encoded segment as its header,
 its cells, its trailer and then a silence up to the segment's `TotalLength`, and nothing else between one segment
@@ -306,6 +307,60 @@ comparison's reading every press of a key sends the code as first stated[^t-touc
 the same key in a row was not sent in the test, and whether a console tells two presses from a hold without it is not
 checked[^unchecked]. The other codes of each family, beyond the ones that
 test sends, are the comparison's reading of the definitions and were not heard[^unchecked].
+
+## Every family of the rhythm table
+
+**Of the 681<!--fact:protocol_entries--> families of this project's [rhythm table](../../infrared/families.md), 577 are
+written into a definition a Touch reads, and every code tried through each sends the durations the table states for
+that family, but where the engine's own spelling of a duration changes one and on three codes the table's renderer
+declines.** This is read in code and not on a unit[^t-touch-rhythm-table]: each definition and a set of codes into it are read the way the engine reads them, segment
+by segment, header, cells, trailer and pad, each duration as the engine's words, `enginePacketOf` in
+`packages/codec/src/harmony-touch/packet.ts`, and held against the table's own renderer over the family's first
+transmission and its held repetition. The codes are chosen so every cell goes out at every place, with alternating and
+fixed pseudo random values besides, each value at its segment's width[^t-touch-rhythm-table]. A press is read as the
+start sequence followed by the repeat sequence as many times as the family's first transmission repeats it; how the
+native program plays the three sequences is not checked[^unchecked].
+
+**What the engine changes**, from a definition of ours and from Logitech's alike[^t-touch-rhythm-table]:
+
+* **A duration under 30 microseconds goes out as 30**, a zero included, and the rest of one over 32767 is raised the
+  same way. Eight families state such a mark in a definition written at their name's widths, and the Touch sends it
+  longer than the table states[^t-touch-rhythm-table]; Logitech's definitions of those eight state the same short
+  marks, so the Touch sends the same from either[^t-touch-definition].
+* **A frame longer than its padded length goes out whole with no pad.** Three families meet it on one code each,
+  where the table's renderer declines the value.
+* **The carrier period is rounded where the table's is truncated**, so on 396 rows the period a Touch takes from the
+  carrier a definition of ours states is a nanosecond longer than the row's.
+
+**No row has a toggle bit or a release, and so no definition of ours has either**: a toggling family's code goes out the
+same on every press, where from Logitech's definition the toggle bit flips[^t-touch-rhythm-table], [built from
+nothing](#built-from-nothing).
+
+**The 104 rows not written are each a gap of this project's, never of the Touch's description**[^t-touch-rhythm-table]:
+
+| why | rows | which |
+|---|---|---|
+| the family's name states no width for its values, or one that is not a whole number of cells | 96 | all of them stated rows; each is written at a width a caller states, and sends the table's durations then, but for the engine's spelling |
+| the row was measured as a frame with nothing after it, so no trailer and no gap | 5 | Kreatel IP 22 Bit, MitsubishiO1 Dual 8 16 Bit, Roku 32 Bit 1, Panasonic 16 Bit, Sharp 48 Bit |
+| the row is a whole record of a shape the writer has no segment spelling for | 3 | Galaxis 16 Bit Quad Toggle, Philips Hurd 16 Bit LongToggle, Samsung 38 Bit |
+
+Logitech's own definition of every one of the 104 families is written in the same description, and read the way the
+engine reads it, it makes a packet for every catalogue code of 103 of them and for all but 27 codes of the
+104th, `Galaxis 16 Bit Quad Toggle`, whose 27 carry a second `0x` inside a value that the engine cannot read as
+digits[^t-touch-rhythm-table]. Between them the 104 hold 8946 distinct codes of the catalogue, against 142931 for the
+families written.
+
+**The reading is calibrated on Logitech's own definitions.** Read the same way and played at the compiler's repeat count,
+Logitech's definitions of the 29 measured rows written send those rows' blocks, which were measured off configurations
+Logitech's compiler built, on 89367 of the 93422 catalogue codes of those families; 417 name other segments than the
+family's default and 4 do not read, and the 3634 that differ are all of `MemorexO1 32 Bit`, whose row was measured
+with another gap after the frame than Logitech's definition pads to[^t-touch-rhythm-table].
+
+**Which shapes the unit has played, and which not.** Of the [six shapes of frame](../../infrared/frames.md#six-shapes-of-frame),
+the families played from definitions of ours, [above](#built-from-nothing), are pulse distance, pulse width and
+biphase, each in one rhythm. No family of a cell table, 220 rows, nor of several rhythms in one press, 52 rows across
+the shapes, has been played from a definition of ours, and no definition is written for the quaternary, long toggle and
+sections shapes; 146 rows written at their name's widths are of a shape no played family has[^t-touch-rhythm-table].
 
 ## What a writer must carry
 
@@ -356,7 +411,9 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 * Whether a device's repeat count and its family's ever differ for a device a Touch is given, which decides
   whether a Touch and a compiled configuration send such a code a different number of times[^unchecked].
 * What a nonzero control port does on a Touch with no hub[^unchecked].
-* A definition of ours of a shape no Logitech definition the remote holds has[^unchecked]. *Corrected:* this listed a
+* A definition of ours of a shape no Logitech definition the remote holds has[^unchecked], and on a unit any of a cell
+  table or of several rhythms in one press, which [every family of the rhythm table](#every-family-of-the-rhythm-table)
+  reads in code only[^unchecked]. *Corrected:* this listed a
   device of ours inside an activity and a device of ours with features<!--superseded-->, which [the catalogue's and the
   person's](#the-catalogues-and-the-persons) ran under ids of ours[^t-touch-setup-of-ours], and then a definition of ours
   inside an activity<!--superseded-->, which [built from nothing](#built-from-nothing) ran for five
@@ -375,6 +432,8 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
 [^t-touch-nothing-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-nothing-set.test.ts)
 [^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-setup.test.ts)
+[^t-touch-definition]: Measured in configurations. [The test](../../../packages/codec/test/touch-definition.test.ts)
+[^t-touch-rhythm-table]: Measured in configurations. [The test](../../../packages/codec/test/touch-rhythm-table.test.ts)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)
 [^s92]: Measured in configurations. [Section 92](../../../docs/findings.md#s92)
 [^s348]: Measured in configurations. [Section 348](../../../docs/findings.md#s348)

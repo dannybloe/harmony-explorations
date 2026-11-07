@@ -229,6 +229,24 @@ function unstored(words: readonly number[]): number[] {
 }
 
 /**
+ * How many microseconds a row's block carries on its last duration beyond the signal: the stored form's one, or
+ * none. The rule `unstored` and `emissionsOf` apply, stated once for a caller that plays a block, `pulsesOfBlock`,
+ * and wants the signal a Touch sends instead: a block that ends on a pad carries it, in the pad or in the total it
+ * is solved from; one that ends on words carries it on its last word, or on a silence of exactly one microsecond
+ * before a closing zero; one that ends on a copy carries none.
+ */
+export function storedMicrosecondOf(block: BlockTail): 0 | 1 {
+  const last = block.items[block.items.length - 1];
+  if (last === undefined || 'copy' in last) return 0;
+  if ('pad' in last) return 1;
+  const words = last.words;
+  const end = words[words.length - 1];
+  if (end === undefined) return 0;
+  if (end !== 0) return 1;
+  return words[words.length - 2] === -1 ? 1 : 0;
+}
+
+/**
  * How long a copy runs whatever its value, where that does not depend on the value: a biphase copy, whose two
  * cells hold the same two halves. Undefined for every other shape.
  */
