@@ -1,6 +1,6 @@
 /**
  * The set of a Harmony Touch's own documents that `todo-touch.md` 6.8 delivers back with 200, its builder
- * `src/touchownset.ts`, the two comparisons that read the remote afterwards, and the shape of the tags a Touch
+ * `experiments/touchownset.ts`, the two comparisons that read the remote afterwards, and the shape of the tags a Touch
  * has been seen to store.
  *
  * **What the builder has to get right, and why each test is here.**
@@ -53,7 +53,7 @@ import {
   compareRequestList,
   predictedConfigHash,
   type OwnSource,
-} from '../src/touchownset.ts';
+} from '../experiments/touchownset.ts';
 import { READ_LIST, ourTag, setTag, type RemoteRequest, type TouchSet } from '../src/touchsync.ts';
 
 const ADDRESS: Record<string, string> = {

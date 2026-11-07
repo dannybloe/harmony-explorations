@@ -44,7 +44,7 @@
  * for no favourites document and for the two pictures of Settings' user background, and the put back's sync after it
  * asked for every stored picture with the tag the remote held it with, so the pictures were carried. That the
  * favourites documents were dropped is still the reading's alone: the put back asked for them without a tag, as every
- * sync through a computer does, and delivered them with 200, `packages/bench/test/touch92-runs.test.ts`. The screens'
+ * sync through a computer does, and delivered them with 200, `packages/bench/test/touch-empty-runs.test.ts`. The screens'
  * "no activity" notice is also put up when the remote leaves USB power after a sync, which the preparation missed,
  * `tests/test_harmony_touch_empty_screens.py`. **Which architectures**:
  * the Harmony Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it under 18.

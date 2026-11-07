@@ -11,7 +11,7 @@
  * **`--build`** copies the set in `--from`, a folder `touch-own-set.ts` or this script wrote, changes the one
  * value `--pointer` names in `--document` from `--was` to `--to`, and gives that document alone a new tag,
  * `setTag` with the new folder's name; the other five keep the source's tags, so the answerer answers them 304
- * on a remote that committed the source. `src/touchchangedset.ts` says why, and why a put back is the same
+ * on a remote that committed the source. `experiments/touchchangedset.ts` says why, and why a put back is the same
  * change the other way under a tag of its own. `--was` and `--to` are read as the type the source holds at the
  * pointer, a number, a string or `true` or `false`, so a delay is `--was 1 --to 3` and a name is given as it
  * is. Every tag the chain of sets back to the first has stated is in play, and a new tag equal to one of them
@@ -48,8 +48,8 @@ import {
   type Leaf,
   type OneChange,
   type SetRecord,
-} from '../src/touchchangedset.ts';
-import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../src/touchownset.ts';
+} from '../experiments/touchchangedset.ts';
+import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../experiments/touchownset.ts';
 import { WRITE_ANSWERS, keyOf, prepareSet, setTag, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 function fail(message: string): never {

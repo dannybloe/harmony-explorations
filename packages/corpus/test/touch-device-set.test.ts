@@ -1,6 +1,6 @@
 /**
  * A Harmony Touch set with a device of ours added, and the set that takes it out again, `todo-touch.md` 8.1:
- * `changeDocuments`, `listChanges` and `chainTags` in `src/touchchangedset.ts`, the composing being the codec's
+ * `changeDocuments`, `listChanges` and `chainTags` in `experiments/touchchangedset.ts`, the composing being the codec's
  * (`withTouchDevice`, `withoutTouchDevice`, `test/touch-device-add.test.ts` there).
  *
  * **What has to hold, and why each test is here.**
@@ -39,7 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 
-import { chainTags, changeDocuments, changeOneValue, listChanges, setDifferences } from '../src/touchchangedset.ts';
+import { chainTags, changeDocuments, changeOneValue, listChanges, setDifferences } from '../experiments/touchchangedset.ts';
 import { keyOf, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

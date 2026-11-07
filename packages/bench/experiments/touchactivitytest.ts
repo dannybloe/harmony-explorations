@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch's bench test for an activity of ours, `todo-touch.md` 8.2: the activity started from Off, its
  * keys and its screen entries, a switch to a recorded activity and back, and Off, with what the remote is predicted
- * to send derived from the documents by `touchengine.ts`, never written by hand. The same derivation as 7.1's and
+ * to send derived from the documents by `harmony-touch/engine.ts`, never written by hand. The same derivation as 7.1's and
  * 8.1's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.2-activity`, the set the bench Touch holds since 8.1,
@@ -31,8 +31,8 @@
  */
 import type { harmonyTouch } from '@harmony/codec';
 
-import type { TestDefinition } from './irsession.ts';
-import { keySteps, touchTest, type TouchStep, type TouchTestPlan } from './touchbench.ts';
+import type { TestDefinition } from '../src/irsession.ts';
+import { keySteps, touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';
 
 type Configuration = harmonyTouch.Configuration;
 

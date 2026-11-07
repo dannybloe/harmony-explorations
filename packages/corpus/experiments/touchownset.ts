@@ -28,7 +28,7 @@
  */
 import { harmonyTouch } from '@harmony/codec';
 
-import { keyOf, prepareSet, resultOf, setTag, statusOf, type RemoteRequest, type SetAnswer, type TouchSet } from './touchsync.ts';
+import { keyOf, prepareSet, resultOf, setTag, statusOf, type RemoteRequest, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** The six configuration documents a sync down asks for, in the order the remote asks for them. */
 export const OWN_SET_DOCUMENTS: readonly string[] = harmonyTouch.CONFIGURATION_DOCUMENTS;

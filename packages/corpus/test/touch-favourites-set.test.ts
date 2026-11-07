@@ -1,6 +1,6 @@
 /**
  * The Harmony Touch set of `todo-touch.md` 8.3: favourites of ours and a logo of ours delivered beside the six
- * configuration documents the remote holds, and its exact inverse, built by `src/touchfavouritesset.ts` and
+ * configuration documents the remote holds, and its exact inverse, built by `experiments/touchfavouritesset.ts` and
  * rehearsed through the real answerer and session on the fake remote.
  *
  * **What is held here.**
@@ -30,7 +30,7 @@
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates
  * file it under 18. The two 8.3 sets are read by fixture, `touch_favourites_set` and `touch_favourites_set_back`, and
- * what the remote did with them is `packages/bench/test/touch83-runs.test.ts`.
+ * what the remote did with them is `packages/bench/test/touch-favourites-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -42,7 +42,7 @@ import { encodePng, harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
-import { contentOfComposed, documentsHeld, heldContent, isContent, putBackContent, withContent, type Content } from '../src/touchfavouritesset.ts';
+import { contentOfComposed, documentsHeld, heldContent, isContent, putBackContent, withContent, type Content } from '../experiments/touchfavouritesset.ts';
 import { keyOf, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

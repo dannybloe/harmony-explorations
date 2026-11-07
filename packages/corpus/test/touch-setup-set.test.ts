@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch set of `todo-touch.md` 8.6: the whole test setup, seven devices and five activities, composed by us
  * from a description onto the set the bench Touch holds with every device and activity taken out, compared with
- * Logitech's documents field by field, and its put back; built by `src/touchsetupset.ts` and rehearsed through the real
+ * Logitech's documents field by field, and its put back; built by `experiments/touchsetupset.ts` and rehearsed through the real
  * answerer and session on the fake remote.
  *
  * **What is held here.**
@@ -18,7 +18,7 @@
  *    different for one of the eight stated reasons, and the counts are asserted exactly, row by row: ActivityList 194
  *    equal, 25 normalised, 74 different; DeviceList 6440, 32, 0; MapList 6859, 1124, 2725; ProtocolList 370, 0, 0; and
  *    **no row unexplained**. Every list's order is equal. Why each normalisation and difference changes nothing the
- *    remote does is the row's own text in `src/touchsetupset.ts`, with the reading behind it.
+ *    remote does is the row's own text in `experiments/touchsetupset.ts`, with the reading behind it.
  * 4. **The control**: the same description with one key of Watch TV sending another command is composed and compared,
  *    and the comparison then holds an unexplained row, so "no row unexplained" can fail.
  * 5. **The setup delivers the four documents a setup composes and only those**, each under the tag the set's name
@@ -27,7 +27,7 @@
  *    same two findings of the screens' lists on both, as on the source.
  * 6. **The sets the lab holds**, `work/touch-firmware/sets/8.6-setup` and `8.6-setup-back`, are what this derivation
  *    gives, read by fixture, `touch_setup_set` and `touch_setup_set_back`; what the remote did with the two is
- *    `packages/bench/test/touch86-runs.test.ts`.
+ *    `packages/bench/test/touch-setup-runs.test.ts`.
  * 7. **On the fake remote**, the closing `--unchanged` run of 8.5 served as recorded, its first list asking with the
  *    tags of the set the remote holds, which is the source: the setup answers the four 200 with its content and tags and
  *    Context and Settings 304, keeps every favourites document and picture the remote holds, and finishes; the put back
@@ -55,8 +55,8 @@ import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
-import { setDifferences } from '../src/touchchangedset.ts';
-import { compareSetup, comparisonLines, composedSetupDocuments, putBackSetup, SETUP_DOCUMENTS, SETUP_IDS, withSetup } from '../src/touchsetupset.ts';
+import { setDifferences } from '../experiments/touchchangedset.ts';
+import { compareSetup, comparisonLines, composedSetupDocuments, putBackSetup, SETUP_DOCUMENTS, SETUP_IDS, withSetup } from '../experiments/touchsetupset.ts';
 import { keyOf, resultOf, setTag, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

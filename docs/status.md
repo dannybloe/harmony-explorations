@@ -218,31 +218,31 @@ activity started, switched and stopped, the five favourites, every key of every 
 own maps, tapped and held. 413 of the 418 expected codes and pauses held, every code in the order the model of its
 engine predicts; three single presses were missed and each heard on a retest, and two pauses ran late after a code
 the remote holds for two seconds, which a rule for held codes now allows,
-`packages/bench/test/touch71-runs.test.ts`. In 8.1 a device composed by this project reached it: Test Projector,
+`packages/bench/test/touch-full-bench-runs.test.ts`. In 8.1 a device composed by this project reached it: Test Projector,
 eleven commands in a Sony 12 bit definition written from our own rhythm table under identifiers of ours, added to
 the device, map and protocol lists and delivered with those three 200 and the other three 304. The remote
 committed it and listed the device, and 15 of 15 expected codes were heard in device mode, its ten keys and the
 Blu-ray's five as a control, and its Power entry sent PowerToggle when tapped. A second sync took it out again and
-a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch81-runs.test.ts`. In 8.2 an
+a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch-device-runs.test.ts`. In 8.2 an
 activity composed by this project reached it: Test Cinema, a Custom activity of the Blu-ray and the LG TV under an
 identifier of ours, with start and end steps, a map sending to both devices and four screen entries under labels of
 ours, added to the activity and map lists and delivered with those two 200 and the other four 304. The remote
 committed it and listed it last with the custom picture, and 33 of 33 expected codes were heard: its start from Off,
 every key and entry, a switch to Watch TV and back, and Off, every timed pause in band. A second sync took it out
-again and a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch82-runs.test.ts`. In
+again and a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch-activity-runs.test.ts`. In
 8.3 favourites composed by this project reached it: the user's favourites document with channel 61 added from the
 line up and the order reversed, and a logo drawn by us at that channel's station logo address, delivered with those
 two 200 and every other request 304. The remote committed them and showed the six in the new order with our logo on
 61, and 18 of 18 expected codes were heard, 61 sending 0 6 1 from the line up's number; the next sync asked for the
 logo with our tag, the configuration hash not moving since favourites are not in it. A second sync put both back,
 the closing `--unchanged` run asked for the logo with its old tag, and 7.1's favourites test held 15 of 15 after
-it, `packages/bench/test/touch83-runs.test.ts`. In 8.4 a Settings and a Context composed by this project reached it:
+it, `packages/bench/test/touch-favourites-runs.test.ts`. In 8.4 a Settings and a Context composed by this project reached it:
 the remote's own Settings with the screen brightness from 100 to 20 and the timeout from 10 to 30 seconds, and a
 Context rebuilt from a description of the seven fields a Touch reads, equal in content to the remote's, delivered
 with those two 200 and the other four 304. The remote committed both: the configuration hash carried Context's new
 tag, the screen was dimmed and, off the cable, took about 30 seconds after a touch to dim, with no restart. A
 second sync put both back, full brightness and about 10 seconds returned, and its first list had asked for the two
-with our tags; a closing `--unchanged` run followed, `packages/corpus/test/touch84-runs.test.ts`. In 8.5 an activity
+with our tags; a closing `--unchanged` run followed, `packages/corpus/test/touch-settings-runs.test.ts`. In 8.5 an activity
 and a device of Logitech's were taken out: Listen to Music and the Denon AV Receiver, with the receiver's role in three
 other activities, their volume keys and swipes, one screen entry and the two infrared definitions only it used,
 delivered as four documents with 200 and Context and Settings 304. The remote committed them and listed four
@@ -250,19 +250,19 @@ activities and six devices; the three activities that had used the receiver were
 the volume keys sending nothing. A second sync put the four back. A first try stopped on a USB read timeout while
 its 13 chunk write was going out and the remote was seen restarting; the configuration hash then still answered with
 the set before's tags, and the same set went through on the next try. What made it stop is not known,
-`packages/bench/test/touch85-runs.test.ts`. In 8.6 the whole test setup was composed by this project: the seven
+`packages/bench/test/touch-removal-runs.test.ts`. In 8.6 the whole test setup was composed by this project: the seven
 devices, five activities and 616 keys, gestures and screen entries the remote held, described and composed again under
 identifiers of ours onto the set with the four lists emptied, every device's record and codes carried from its
 catalogue entry, and compared with Logitech's documents field by field with nothing unexplained. Delivered as the four
 documents with 200 and Context and Settings 304, the remote committed it, and the ten 7.1 tests, unchanged, held 418
 of 418 on it, against 413 on Logitech's own; three attempts were started again, the person at the bench reporting a few mistakes here and there. A second
-sync put the remote's own four back, `packages/bench/test/touch86-runs.test.ts`. In 9.2 the empty configuration went to
+sync put the remote's own four back, `packages/bench/test/touch-setup-runs.test.ts`. In 9.2 the empty configuration went to
 it: the four lists with no device and no activity, Context and Settings its own. The remote committed it, asked for no
 favourites document in that sync and for only the two pictures of its background, and started on it after the person
 at the bench restarted it, its favourites page on its own screen for no favourites, no activity page, an empty device
 page; a text seen once right after the sync was not identified. The put back delivered the four and the three
 favourites documents with 200, the tuning device's favourites and the line up for the first time, and every stored
-picture had survived, `packages/bench/test/touch92-runs.test.ts`. In 9.4 the test setup built from nothing went to it:
+picture had survived, `packages/bench/test/touch-empty-runs.test.ts`. In 9.4 the test setup built from nothing went to it:
 all six documents and a background picture written by this project from a setup file, the archive of the catalogue,
 our rhythm table and a description of the account, every one of its 10671 fields credited to the generator that wrote
 it and none carried from a Logitech document, 9.3. The remote committed it, asked for our background at our own
@@ -270,7 +270,7 @@ address, and test 1 of 7.1, every activity started from off and ended, held 38 o
 and all five code families of our definitions, the first time the remote played definitions of ours for those
 families; the other nine tests were left out by decision, since what the set changes against 8.6 is its definitions
 and records, not which code sits under which key. A band at the foot of every screen was consistent with our
-background. The put back delivered the remote's own six, `packages/bench/test/touch94-runs.test.ts`. With it
+background. The put back delivered the remote's own six, `packages/bench/test/touch-from-nothing-runs.test.ts`. With it
 `todo-touch.md` is done.
 
 ## What is still open

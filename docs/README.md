@@ -294,7 +294,11 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 from a setup file, the archive of the catalogue, our rhythm table
                                 and a description of the account, with no Logitech document as
                                 input, todo-touch.md 9.1, tested in test/touch-fromnothing.test.ts.
-                                The folder is not
+                                Its engine.ts models what the remote's engine sends for a press,
+                                and when, from the documents, todo-touch.md 7.1, moved from
+                                packages/bench in todo.md 7.3.1 as knowledge about the remote; the
+                                receiver's cut of a frame is handed to it, and packages/bench's
+                                tests calibrate and hold it. The folder is not
                                 touch.ts, which is the Harmony One's touch screen
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
@@ -326,28 +330,32 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync
                                 down through the request session, for the same kind of reason: it
                                 calls the codec's reader and check of a Touch's documents itself
-                                before anything is sent, and packages/usb cannot import the codec;
-                                and `src/touchownset.ts`, which builds a set of a Touch's own
+                                before anything is sent, and packages/usb cannot import the codec.
+                                The Touch's experiments, the set builders of its numbered bench
+                                steps, live in `experiments/` beside the scripts in `bin/` that run
+                                them and outside `src/`, since `todo.md` 7.3.1 and plan 013
+                                decision 7: no library imports them and the barrel exports none.
+                                They are `experiments/touchownset.ts`, which builds a set of a Touch's own
                                 documents for it to deliver, `todo-touch.md` 6.8, and
-                                `src/touchchangedset.ts`, which changes one value of such a set,
-                                `todo-touch.md` 6.9, and `src/touchfavouritesset.ts`, which builds a
+                                `experiments/touchchangedset.ts`, which changes one value of such a set,
+                                `todo-touch.md` 6.9, and `experiments/touchfavouritesset.ts`, which builds a
                                 set's favourites documents and pictures of ours and their put back
                                 from what the remote holds, `todo-touch.md` 8.3, and
-                                `src/touchsettingsset.ts`, which builds a set with a Settings and a
+                                `experiments/touchsettingsset.ts`, which builds a set with a Settings and a
                                 Context of ours and its put back, `todo-touch.md` 8.4, and
-                                `src/touchremovalset.ts`, which builds a set with devices and
+                                `experiments/touchremovalset.ts`, which builds a set with devices and
                                 activities of the remote's own taken out and its put back,
-                                `todo-touch.md` 8.5, and `src/touchsetupset.ts`, which builds a set
+                                `todo-touch.md` 8.5, and `experiments/touchsetupset.ts`, which builds a set
                                 with the whole setup composed from a description, compares it with
                                 Logitech's documents field by field and builds its put back,
                                 `todo-touch.md` 8.6, tested in `test/touch-setup-set.test.ts`, and
-                                `src/touchemptyset.ts`, which builds the empty configuration and its
+                                `experiments/touchemptyset.ts`, which builds the empty configuration and its
                                 put back with the favourites documents and logos the remote held,
                                 `todo-touch.md` 9.2, tested in `test/touch-empty-set.test.ts`, and
-                                `src/touchnothingset.ts`, which builds the set from nothing, its put
+                                `experiments/touchnothingset.ts`, which builds the set from nothing, its put
                                 back and its comparison with 8.6's set field by field and command by
                                 command, `todo-touch.md` 9.1, tested in `test/touch-nothing-set.test.ts`,
-                                and `src/touchattribution.ts`, which credits every field of such a set
+                                and `experiments/touchattribution.ts`, which credits every field of such a set
                                 to the generator that wrote it by running each step of the build again,
                                 `todo-touch.md` 9.3, tested in `test/touch-attribution.test.ts`, with
                                 the 9.4 run rehearsed on the fake remote in
@@ -363,9 +371,12 @@ packages/bench/                 TS: the bench instrument, a server plus two page
                                 hears, named against the bench remotes' configurations, plus
                                 recordings and a test runner whose step lists live in irtests/ and
                                 whose runs are filed in the lab. It only listens; never `sendir`.
-                                For a Harmony Touch, `src/touchengine.ts` models what its engine
-                                sends and when, and `src/touchbench.ts` derives `todo-touch.md`
-                                7.1's bench tests from the documents the remote holds; the monitor
+                                For a Harmony Touch, the codec's `harmony-touch/engine.ts` models
+                                what its engine sends and when, and `src/touchbench.ts` times it as
+                                the monitor hears it, `BenchTouchEngine`, and derives `todo-touch.md`
+                                7.1's bench tests from the documents the remote holds; the plans of
+                                the later bench tests, 8.1 to 9.1, are in `experiments/`, beside the
+                                scripts in `bin/` that write them, since `todo.md` 7.3.1; the monitor
                                 names a Touch's codes from those documents, `BENCH_TOUCH_SETS`
 packages/probe/                 TS: the contribution probe, a report with shape and no contents
 packages/keyreader/             TS: the key reader page's sources, built into reference/key-reader/.
@@ -1047,63 +1058,63 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        8.2, 8.3, 8.4, 8.5, 8.6, 9.2 and 9.4, each committed, and 8.5's first try, which stopped on a USB read
                        timeout inside its first write of answers and left the remote on the set before,
                        `packages/usb/test/touch-own-set-sync.test.ts`,
-                       `touch-changed-set-sync.test.ts`, `packages/bench/test/touch81-runs.test.ts`,
-                       `touch82-runs.test.ts`, `touch83-runs.test.ts`,
-                       `packages/corpus/test/touch84-runs.test.ts`,
-                       `packages/bench/test/touch85-runs.test.ts`, `touch86-runs.test.ts`,
-                       `touch92-runs.test.ts` and `touch94-runs.test.ts`.
+                       `touch-changed-set-sync.test.ts`, `packages/bench/test/touch-device-runs.test.ts`,
+                       `touch-activity-runs.test.ts`, `touch-favourites-runs.test.ts`,
+                       `packages/corpus/test/touch-settings-runs.test.ts`,
+                       `packages/bench/test/touch-removal-runs.test.ts`, `touch-setup-runs.test.ts`,
+                       `touch-empty-runs.test.ts` and `touch-from-nothing-runs.test.ts`.
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model
-                       `src/touchengine.ts`, and print them, or with `--write` write
-                       `irtests/touch-7-1-*.json`; `test/touch71.test.ts` holds the files equal to
-                       what this gives, and `test/touch71-runs.test.ts` the ten runs of them at the
+                       `packages/codec/src/harmony-touch/engine.ts`, and print them, or with `--write` write
+                       `irtests/touch-7-1-*.json`; `test/touch-full-bench-predicted.test.ts` holds the files equal to
+                       what this gives, and `test/touch-full-bench-runs.test.ts` the ten runs of them at the
                        bench. Reads the lab only. Opens nothing, sends nothing. The same ten files are
-                       `todo-touch.md` 8.6's bench test, `src/touch86.ts`: `test/touch86.test.ts` holds
+                       `todo-touch.md` 8.6's bench test, `experiments/touchsetuptest.ts`: `test/touch-setup-predicted.test.ts` holds
                        that the whole setup composed from `packages/corpus/touch-setups/8.6-test-setup.json`
-                       derives them file for file, with a control, and `test/touch86-runs.test.ts` the
+                       derives them file for file, with a control, and `test/touch-setup-runs.test.ts` the
                        ten runs of them on the remote holding that setup, 418 of 418, with the three
                        attempts started again. They are `todo-touch.md` 9.1's bench test as well,
-                       `src/touch91.ts`: `test/touch91.test.ts` holds that the set built from nothing
-                       derives them file for file, and `test/touch94-runs.test.ts` the run of test 1
+                       `experiments/touchfromnothingtest.ts`: `test/touch-from-nothing-predicted.test.ts` holds that the set built from nothing
+                       derives them file for file, and `test/touch-from-nothing-runs.test.ts` the run of test 1
                        on the remote holding that set in 9.4, 38 of 38, with two attempts started again.
 node packages/bench/bin/touch-device-tests.ts [--write]
                        derive `todo-touch.md` 8.1's bench test, a device of ours in device mode, from
                        the lab's `8.1-device` set and the recorded favourites through the same engine
-                       model, the plan in `src/touch81.ts`, and print it, or with `--write` write
-                       `irtests/touch-8-1-device-mode.json`, kept in `irtests/done/` after its run; `test/touch81.test.ts` holds the file
-                       equal to what this gives, and `test/touch81-runs.test.ts` its run at the bench.
+                       model, the plan in `experiments/touchdevicetest.ts`, and print it, or with `--write` write
+                       `irtests/touch-8-1-device-mode.json`, kept in `irtests/done/` after its run; `test/touch-device-predicted.test.ts` holds the file
+                       equal to what this gives, and `test/touch-device-runs.test.ts` its run at the bench.
                        Reads the lab only. Opens nothing, sends nothing.
 node packages/bench/bin/touch-activity-tests.ts [--write]
                        derive `todo-touch.md` 8.2's bench test, an activity of ours started, used,
                        switched and stopped, from the lab's `8.1-device-back` set with the activity of
                        `packages/corpus/touch-activities/test-cinema.json` added and the recorded
-                       favourites, through the same engine model, the plan in `src/touch82.ts`, and print
+                       favourites, through the same engine model, the plan in `experiments/touchactivitytest.ts`, and print
                        it, or with `--write` write `irtests/touch-8-2-activity.json`, kept in `irtests/done/` after its run;
-                       `test/touch82.test.ts` holds the file equal to what this gives, and
-                       `test/touch82-runs.test.ts` its run at the bench. Reads the lab only. Opens
+                       `test/touch-activity-predicted.test.ts` holds the file equal to what this gives, and
+                       `test/touch-activity-runs.test.ts` its run at the bench. Reads the lab only. Opens
                        nothing, sends nothing.
 node packages/bench/bin/touch-favourites-tests.ts [--write]
                        derive `todo-touch.md` 8.3's bench test, every favourite tapped in the order the
                        favourites screen is to show them, from the lab's `8.2-activity-back` set with the
                        favourites of `packages/corpus/touch-favourites/8.3-favourites.json` composed onto
                        the recorded favourites documents, through the same engine model, the plan in
-                       `src/touch83.ts`, and print it, or with `--write` write
-                       `irtests/touch-8-3-favourites.json`, kept in `irtests/done/` after its run; `test/touch83.test.ts` holds the file equal
-                       to what this gives, and `test/touch83-runs.test.ts` its run at the bench. Reads
+                       `experiments/touchfavouritestest.ts`, and print it, or with `--write` write
+                       `irtests/touch-8-3-favourites.json`, kept in `irtests/done/` after its run; `test/touch-favourites-predicted.test.ts` holds the file equal
+                       to what this gives, and `test/touch-favourites-runs.test.ts` its run at the bench. Reads
                        the lab only. Opens nothing, sends nothing.
 node packages/bench/bin/touch-removal-tests.ts [--write]
                        derive `todo-touch.md` 8.5's bench test, the activities that lost a device taken
                        out started, used, switched and ended without a code of it, from the lab's
                        `8.5-removal` set and the recorded favourites, through the same engine model, the
-                       plan in `src/touch85.ts`, and print it, or with `--write` write
-                       `irtests/touch-8-5-removal.json`, kept in `irtests/done/` after its run; `test/touch85.test.ts` holds the file equal to
-                       what this gives, with a control on the set before, and `test/touch85-runs.test.ts`
+                       plan in `experiments/touchremovaltest.ts`, and print it, or with `--write` write
+                       `irtests/touch-8-5-removal.json`, kept in `irtests/done/` after its run; `test/touch-removal-predicted.test.ts` holds the file equal to
+                       what this gives, with a control on the set before, and `test/touch-removal-runs.test.ts`
                        its run at the bench. Reads the lab only. Opens nothing, sends nothing.
 node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]
 node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>] [--list <list>]
                        build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, its own six
-                       documents with tags of ours, `src/touchownset.ts`: from the recorded full sync,
+                       documents with tags of ours, `experiments/touchownset.ts`: from the recorded full sync,
                        a document a hand over of ours wrote back replacing its copy, each only when the
                        tag the remote last asked with equals its source's. `--check` reads the set back
                        through the gate and the reader, against its sources, and sizes its write of
@@ -1115,7 +1126,7 @@ node packages/corpus/bin/touch-changed-set.ts --build <lab folder> --from <set f
 node packages/corpus/bin/touch-changed-set.ts --check <set folder> [--same-as <set>] [--written <answers>] \
   [--hash <answer>] [--list <list>]
                        build a set with one value of one document changed, `todo-touch.md` 6.9,
-                       `src/touchchangedset.ts`: a copy of a set the remote holds, the value checked
+                       `experiments/touchchangedset.ts`: a copy of a set the remote holds, the value checked
                        against `--was` first, that document alone under a new tag so the answerer
                        answers the other five 304, and no tag the chain of sets has stated before; a
                        put back is the same change the other way. `--check` holds it to exactly the one
@@ -1148,7 +1159,7 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        `packages/corpus/touch-devices/test-projector.json` by the codec's
                        `composeTouchDeviceOfRow` and added by `withTouchDevice`, or taken out by
                        `withoutTouchDevice`, and only DeviceList, MapList and ProtocolList retagged,
-                       `changeDocuments` in `src/touchchangedset.ts`. `--check` holds each of the
+                       `changeDocuments` in `experiments/touchchangedset.ts`. `--check` holds each of the
                        three to one entry added or taken out against its source, reads the device back
                        as the engine finds it and answers a remote holding the source (three 200,
                        three 304); the other options are `touch-changed-set.ts`'s. Reads and writes the
@@ -1159,52 +1170,52 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        and MapList alone; `--remove-activity` takes it out by `withoutTouchActivity`;
                        `--check` then reads the activity back (place, type, devices in power order with
                        inputs, steps, keys and entries) and answers a remote holding the source with
-                       two 200 and four 304, `packages/bench/test/touch82-runs.test.ts` holding both
+                       two 200 and four 304, `packages/bench/test/touch-activity-runs.test.ts` holding both
                        sets' runs. `--favourites` composes favourites described by channel number in
                        `packages/corpus/touch-favourites/`, such as `8.3-favourites.json`, by the codec's
                        `composeTouchFavourites` against what the remote holds, and delivers the
                        favourites documents it changes and the logos of ours drawn by `drawTouchLogo`
                        beside the source's six, which keep their content and tags, `withContent` in
-                       `src/touchfavouritesset.ts`; `--favourites-back` is its exact inverse, what the
+                       `experiments/touchfavouritesset.ts`; `--favourites-back` is its exact inverse, what the
                        remote held at those addresses, tags and all, `putBackContent`. `--check` then
                        reads the favourites and each picture back and answers a remote holding the
                        source, and `--list` compares a kept picture request list with the set's content,
-                       `packages/bench/test/touch83-runs.test.ts` holding both sets' runs. `--settings`
+                       `packages/bench/test/touch-favourites-runs.test.ts` holding both sets' runs. `--settings`
                        changes the rows a description in `packages/corpus/touch-settings/` names, such as
                        `8.4-settings.json`, by the codec's `composeTouchSettings`, and rebuilds Context
                        from a description of its seven read fields by `composeTouchContext`, both under
                        new tags beside the other four, `withSettingsAndContext` in
-                       `src/touchsettingsset.ts`; `--settings-back` is its exact inverse,
+                       `experiments/touchsettingsset.ts`; `--settings-back` is its exact inverse,
                        `putBackSettingsAndContext`. `--describe-context` writes a set's Context as a
                        description into a new lab file and prints none of it, since it holds the
                        account's values. `--check` then lists the settings rows changed and holds
-                       Context to the description, `packages/corpus/test/touch84-runs.test.ts` holding
+                       Context to the description, `packages/corpus/test/touch-settings-runs.test.ts` holding
                        both sets' runs. `--removal` takes devices and activities of the remote's own out
                        by the names a description in `packages/corpus/touch-removals/` gives, such as
                        `8.5-removal.json`, by the codec's `removalOfNames` and `withoutTouchEntries`, and
                        retags only the documents whose content changed, `withRemoval` in
-                       `src/touchremovalset.ts`; `--removal-back` is its exact inverse,
+                       `experiments/touchremovalset.ts`; `--removal-back` is its exact inverse,
                        `putBackRemoval`. `--check` then prints the structural diff entry by entry,
                        `removalChanges`, `packages/corpus/test/touch-removal-set.test.ts` holding the
-                       sets and `packages/bench/test/touch85-runs.test.ts` both sets' runs. `--setup`
+                       sets and `packages/bench/test/touch-removal-runs.test.ts` both sets' runs. `--setup`
                        composes a whole setup from a description in `packages/corpus/touch-setups/`, such
                        as `8.6-test-setup.json`, by the codec's `composeTouchSetup` onto the source with
                        the four lists emptied, each device's record carried from the source as its
                        catalogue, and delivers the four under new tags, `withSetup` in
-                       `src/touchsetupset.ts`; `--setup-back` is its exact inverse, `putBackSetup`.
+                       `experiments/touchsetupset.ts`; `--setup-back` is its exact inverse, `putBackSetup`.
                        `--describe-setup` writes a set's setup as a description, names and numbers and no
                        code, address or value of the account. `--check` then prints the comparison with
                        the source's documents field by field, `compareSetup`, NOT OK on any difference no
                        row explains, `packages/corpus/test/touch-setup-set.test.ts` holding the sets and
-                       `packages/bench/test/touch86-runs.test.ts` both sets' runs. `--empty` builds the
+                       `packages/bench/test/touch-setup-runs.test.ts` both sets' runs. `--empty` builds the
                        empty configuration, the source's six with the four lists emptied by the codec's
                        `emptyTouchDocuments` and delivered under new tags, `withEmpty` in
-                       `src/touchemptyset.ts`; `--empty-back` its put back, the six as the set before it
+                       `experiments/touchemptyset.ts`; `--empty-back` its put back, the six as the set before it
                        states them and the favourites documents and logos the remote held, since by the
                        reading the empty set's commit drops the favourites, `emptyBackOf`. `--check` of
                        either prints what the commit keeps, `keptAtTheCommit`, and the content a `--list`
                        asks for, `packages/corpus/test/touch-empty-set.test.ts` holding the sets and
-                       `packages/bench/test/touch92-runs.test.ts` both sets' runs. `--written` judges a
+                       `packages/bench/test/touch-empty-runs.test.ts` both sets' runs. `--written` judges a
                        file that answers any of the six, the run's `007-answers-request.txt`, and names
                        and passes over one that answers none of them, the favourites, pictures and
                        finish answers. *Corrected:* this said `--written` reported NOT OK on each file
@@ -1214,14 +1225,14 @@ node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --setup <
                        `todo-touch.md` 9.1: `--build --setup` writes the six documents and our background
                        and its twin from `packages/corpus/setups/touch-test.json`, the archive of the
                        catalogue and the lab's description of the account, each under a digest of its
-                       content, `withNothing` in `src/touchnothingset.ts`; `--build --back` the put back,
+                       content, `withNothing` in `experiments/touchnothingset.ts`; `--build --back` the put back,
                        `putBackNothing`; `--describe-account` writes the account's values into a new lab
                        file and prints none of them. `--check` reads a set as `touch-sync.ts` will and,
                        with `--against`, compares it with that set field by field, `compareNothing`, and
                        command by command, `waveformClosure`, NOT OK on anything no row explains; with
                        `--held`, the answers and the size of the write for a remote holding that set.
                        `--attribute`, `todo-touch.md` 9.3, credits every field to the generator that
-                       wrote it, `attributeNothingSet` in `src/touchattribution.ts`, NOT OK on a field no
+                       wrote it, `attributeNothingSet` in `experiments/touchattribution.ts`, NOT OK on a field no
                        generator reproduces. `--hash`, `--list` and `--written` judge a run's kept files,
                        `todo-touch.md` 9.4: a `getconfighash` answer against the set's four tags, a request
                        list against the set's tags, and a kept write of answers against the set's
@@ -1229,7 +1240,7 @@ node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --setup <
                        nothing; prints counts, names and verdicts, never a tag, an address or a value of
                        a document. `packages/corpus/test/touch-nothing-set.test.ts`,
                        `touch-attribution.test.ts` and `touch-nothing-run.test.ts` hold it, and
-                       `packages/bench/test/touch94-runs.test.ts` the 9.4 runs.
+                       `packages/bench/test/touch-from-nothing-runs.test.ts` the 9.4 runs.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

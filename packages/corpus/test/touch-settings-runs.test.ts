@@ -60,7 +60,7 @@
  * for Settings or Context with any tag but the forward set's; a hash after the forward run that was not the forward
  * set's; a screen not dimmed after the forward run.
  *
- * **Sources checked first**: the lab's `8.4-preflight.md` and `8.4-land-brief.md`, `touch83-runs.test.ts`, whose shape
+ * **Sources checked first**: the lab's `8.4-preflight.md` and `8.4-land-brief.md`, `touch-favourites-runs.test.ts`, whose shape
  * this follows for the sync half, `touch-settings-set.test.ts`, and the screens' `syncDone` handler and settings code
  * in the lab's firmware copy. Logitech's client was not consulted: the remote runs its own screens and the answers are
  * ours. **Which architectures**: the Harmony Touch on firmware 4.15.330, one unit, one run of each set; its firmware
@@ -80,8 +80,8 @@ import {
   type Request_,
 } from '@harmony/usb/test/touch-recording';
 
-import { differences } from '../src/touchchangedset.ts';
-import { settingsChanges } from '../src/touchsettingsset.ts';
+import { differences } from '../experiments/touchchangedset.ts';
+import { settingsChanges } from '../experiments/touchsettingsset.ts';
 
 /** `8.2-activity-back`, whose six `8.3-favourites-back` carries, content and tags: what the remote held before 8.4. */
 const SOURCE = 'touch_activity_set_back';

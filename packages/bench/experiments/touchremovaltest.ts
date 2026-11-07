@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch's bench test for 8.5, `todo-touch.md` 8.5: Listen to Music and the Denon AV Receiver taken out of
  * the documents, and the activities that lost the receiver started, used, switched and ended without a code of it,
- * with what the remote is predicted to send derived from the documents by `touchengine.ts`, never written by hand. The
+ * with what the remote is predicted to send derived from the documents by `harmony-touch/engine.ts`, never written by hand. The
  * same derivation as 7.1's to 8.3's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.5-removal`, the set the bench Touch holds since 8.4,
@@ -31,8 +31,8 @@
  */
 import type { harmonyTouch } from '@harmony/codec';
 
-import type { TestDefinition } from './irsession.ts';
-import { touchTest, type TouchStep, type TouchTestPlan } from './touchbench.ts';
+import type { TestDefinition } from '../src/irsession.ts';
+import { touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';
 
 type Configuration = harmonyTouch.Configuration;
 
@@ -49,7 +49,7 @@ export const TOUCH_8_5_ENTRY = 'Test Sequence';
 
 /**
  * The plan of 8.5, from the configuration; refused on one that lacks an activity it starts. It does not refuse a
- * configuration that still holds what 8.5 takes out, since `test/touch85.test.ts`'s control runs it on the set before.
+ * configuration that still holds what 8.5 takes out, since `test/touch-removal-predicted.test.ts`'s control runs it on the set before.
  */
 export function touch85Plans(c: Configuration): TouchTestPlan[] {
   for (const name of TOUCH_8_5_ACTIVITIES) if (!c.activities.some((a) => a.name === name)) throw new Error(`the configuration holds no ${name}`);

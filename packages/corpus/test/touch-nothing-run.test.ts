@@ -41,7 +41,7 @@
  *
  * **The run it rehearsed, 9.4, went as rehearsed**: the forward run's six in one write of 381470 characters, 13 chunks,
  * our two pictures 200 in one of 5288, the put back's six in 571577, 19 chunks, every other answer 304 but the finish,
- * and the closing run 304 throughout, `packages/bench/test/touch94-runs.test.ts`.
+ * and the closing run 304 throughout, `packages/bench/test/touch-from-nothing-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -52,8 +52,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 
-import { writeOfAnswersSize } from '../src/touchchangedset.ts';
-import { NOTHING_DOCUMENTS } from '../src/touchnothingset.ts';
+import { writeOfAnswersSize } from '../experiments/touchchangedset.ts';
+import { NOTHING_DOCUMENTS } from '../experiments/touchnothingset.ts';
 import { keyOf, resultOf, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

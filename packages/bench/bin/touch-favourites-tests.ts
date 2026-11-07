@@ -7,8 +7,8 @@
  *
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.3-favourites`,
  * which `packages/corpus/bin/touch-device-set.ts --favourites` built, and the favourites documents of the recorded full
- * sync that set leaves the remote to keep, through the engine model `src/touchengine.ts`; `src/touch83.ts` holds the
- * plan and `test/touch83.test.ts` that the file written is what this gives. The description,
+ * sync that set leaves the remote to keep, through the engine model `packages/codec/src/harmony-touch/engine.ts`; `experiments/touchfavouritestest.ts` holds the
+ * plan and `test/touch-favourites-predicted.test.ts` that the file written is what this gives. The description,
  * `packages/corpus/touch-favourites/8.3-favourites.json`, says which channel was added and the logo's text.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -20,7 +20,7 @@ import { LAB } from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
 import { touch71Configuration } from '../src/touchbench.ts';
-import { TOUCH_8_3_SET, touch83Tests } from '../src/touch83.ts';
+import { TOUCH_8_3_SET, touch83Tests } from '../experiments/touchfavouritestest.ts';
 
 if (LAB === undefined || !existsSync(join(LAB, TOUCH_8_3_SET))) {
   process.stderr.write(`no lab, or no ${TOUCH_8_3_SET} in it\n`);

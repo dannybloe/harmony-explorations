@@ -55,7 +55,7 @@ import {
   type SetAnswer,
   type TouchSet,
   type WrittenAnswer,
-} from './touchsync.ts';
+} from '../src/touchsync.ts';
 
 /** A value a change may touch: the three JSON leaves that are not null. */
 export type Leaf = string | number | boolean;

@@ -1,6 +1,6 @@
 /**
  * A Harmony Touch set with an activity of ours added, and the set that takes it out again, `todo-touch.md` 8.2:
- * `changeDocuments` and `chainTags` in `src/touchchangedset.ts` and `bin/touch-device-set.ts --activity`, the
+ * `changeDocuments` and `chainTags` in `experiments/touchchangedset.ts` and `bin/touch-device-set.ts --activity`, the
  * composing being the codec's (`composeTouchActivity`, `withTouchActivity`, `withoutTouchActivity`,
  * `test/touch-activity-add.test.ts` there).
  *
@@ -27,7 +27,7 @@
  * **Width.** One model, the Harmony Touch, firmware 4.15.330; its firmware reports architecture 17 and Logitech's
  * templates file it under 18. The lab half reads the bench sets and the recorded lists, prints nothing out of them
  * and touches no remote. The two 8.2 sets are read by fixture, `touch_activity_set` and `touch_activity_set_back`, and
- * what the remote did with them is `packages/bench/test/touch82-runs.test.ts`.
+ * what the remote did with them is `packages/bench/test/touch-activity-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -38,7 +38,7 @@ import { fileURLToPath } from 'node:url';
 import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 
-import { chainTags, changeDocuments, setDifferences } from '../src/touchchangedset.ts';
+import { chainTags, changeDocuments, setDifferences } from '../experiments/touchchangedset.ts';
 import { keyOf, resultOf, setTag, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

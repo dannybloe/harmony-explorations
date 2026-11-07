@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch sets of `todo-touch.md` 9.2: the empty configuration, no device and no activity, built from the set
  * the bench Touch held, and its put back, which carries the favourites documents and logos beside the six; built by
- * `src/touchemptyset.ts` and rehearsed through the real answerer and session on the fake remote.
+ * `experiments/touchemptyset.ts` and rehearsed through the real answerer and session on the fake remote.
  *
  * **What is held here.**
  *
@@ -10,7 +10,7 @@
  *    gate passes it, the reader reads no activity, device, map, definition or favourites activity, and the codec's
  *    `keptAtTheCommit` says the screens ask for no favourites document and for two pictures, the bench Settings' user
  *    background and its twin, so the pictures are carried and the favourites documents dropped (the reading of the
- *    codec's `empty.ts`, which the run measures, `packages/bench/test/touch92-runs.test.ts`).
+ *    codec's `empty.ts`, which the run measures, `packages/bench/test/touch-empty-runs.test.ts`).
  * 2. **The put back is the six of the set before, content and tags, and eleven pieces of content**: the user's
  *    favourites document, the tuning device's, the line up, the uploaded logo and seven station logos, each as the
  *    remote held it before the empty set, which is the recorded full sync's content and tag, since 8.3's put back
@@ -49,10 +49,10 @@ import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
-import { answersWhenHolding, setDifferences, writeOfAnswersSize } from '../src/touchchangedset.ts';
-import { EMPTY_DOCUMENTS, emptyBackOf, withEmpty } from '../src/touchemptyset.ts';
-import { contentKind, heldContent, isContent, isPictureAddress } from '../src/touchfavouritesset.ts';
-import { sixOf } from '../src/touchsettingsset.ts';
+import { answersWhenHolding, setDifferences, writeOfAnswersSize } from '../experiments/touchchangedset.ts';
+import { EMPTY_DOCUMENTS, emptyBackOf, withEmpty } from '../experiments/touchemptyset.ts';
+import { contentKind, heldContent, isContent, isPictureAddress } from '../experiments/touchfavouritesset.ts';
+import { sixOf } from '../experiments/touchsettingsset.ts';
 import { keyOf, prepareSet, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

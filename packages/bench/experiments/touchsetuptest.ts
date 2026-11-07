@@ -7,7 +7,7 @@
  * with Logitech's documents found every field equal, equal after a normalisation the remote does not see, or left out
  * as read by neither program, `packages/corpus/test/touch-setup-set.test.ts`. So the setup is meant to behave exactly
  * as the set it was described from, and the ten 7.1 tests derived from it are the files in `irtests/` as they stand,
- * expectation for expectation, `test/touch86.test.ts`. Running them on the remote holding our setup is the check that
+ * expectation for expectation, `test/touch-setup-predicted.test.ts`. Running them on the remote holding our setup is the check that
  * it does: every activity started and ended, the switches, the favourites, every key of every activity's map, and
  * every device's own keys in device mode, 418 expectations in ten tests.
  *

@@ -39,7 +39,7 @@
  * device's id after that test and raises, which is why the gate refuses exactly that case. A button whose action starts
  * an activity the list does not hold is stored at load without a lookup and answered 567, activity not found, when
  * pressed. These are readings, held here by the rules they produce and not by the firmware's bytes; the 8.5 run on the
- * bench Touch, `packages/bench/test/touch85-runs.test.ts`, measured a removal built on them.
+ * bench Touch, `packages/bench/test/touch-removal-runs.test.ts`, measured a removal built on them.
  *
  * **Sources checked first.** The 8.5 brief in the lab; `compose.ts`'s `withoutTouchDevice` and `withoutTouchActivity`
  * and their tests, the inverses this generalises; the reference's `activities-and-buttons.md`; the lab's

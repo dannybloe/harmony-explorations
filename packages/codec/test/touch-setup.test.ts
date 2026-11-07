@@ -48,7 +48,7 @@
  * tuning device from the catalogue record: in Logitech's documents the key is the device's own id, and under an id of
  * ours it no longer is, but the screens' `favoritesmanager.lua` takes the pair by the device's `Id-` (lines 166 to 192
  * and 195 to 207), so it still finds them. These are readings, held here by the rules they produce and not by the
- * firmware's bytes; the 8.6 run on the bench Touch, `packages/bench/test/touch86-runs.test.ts`, measured a setup built
+ * firmware's bytes; the 8.6 run on the bench Touch, `packages/bench/test/touch-setup-runs.test.ts`, measured a setup built
  * on them: Watch TV, the favourites' activity, and the five favourites through the LG TV under an id of ours, 15 of 15,
  * and Switch Box's start steps, its channel step among them, heard in their order.
  *

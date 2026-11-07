@@ -37,7 +37,7 @@
  * **These were readings, held here by the rule they produce.** The 9.2 run on the bench Touch measured two of them, no
  * favourites document and two pictures asked for by the empty set's sync, and the pictures carried, every one asked for
  * with its tag by the put back's; the drop of the favourites documents stays a reading, since a favourites document is
- * asked for untagged whether it is held or not, `packages/bench/test/touch92-runs.test.ts`. **Width**: the Harmony
+ * asked for untagged whether it is held or not, `packages/bench/test/touch-empty-runs.test.ts`. **Width**: the Harmony
  * Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it under 18.
  */
 import { test } from 'node:test';

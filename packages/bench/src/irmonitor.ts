@@ -34,7 +34,7 @@
  * it is rendered by the codec's renderer of a catalogue definition, `waveformOfArchiveCommand`, at the device's own
  * definition, with its toggle bit both ways, and a capture matching one is that device's command by the documents'
  * own names, which the catalogue route then leaves alone. Held against every press of the Touch's earlier bench
- * runs, `test/touch71.test.ts`.
+ * runs, `test/touch-full-bench-predicted.test.ts`.
  *
  * **Captured data stays in the lab.** Each frame is appended to a JSON lines file there as it arrives,
  * so a session can be read back while it runs. Codes compiled out of Logitech's database are the same

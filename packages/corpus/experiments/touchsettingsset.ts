@@ -26,7 +26,7 @@ import { harmonyTouch } from '@harmony/codec';
 
 import { changeDocuments, differences } from './touchchangedset.ts';
 import { isContent } from './touchfavouritesset.ts';
-import { keyOf, prepareSet, type SetAnswer, type TouchSet } from './touchsync.ts';
+import { keyOf, prepareSet, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** The two documents 8.4 delivers. */
 export const SETTINGS_SET_DOCUMENTS = ['Settings', 'Context'] as const;

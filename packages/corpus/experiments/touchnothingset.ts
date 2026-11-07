@@ -42,7 +42,7 @@
 import { RecipeError, harmonyTouch, mergedIntervals, waveformOfArchiveCommand, type Pulse } from '@harmony/codec';
 
 import { compareSetup, type ComparisonRules, type DocumentComparison, type Pair } from './touchsetupset.ts';
-import { keyOf, ourTag, prepareSet, type SetAnswer, type TouchSet } from './touchsync.ts';
+import { keyOf, ourTag, prepareSet, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** The six documents a set of 9.1 delivers, in the order the remote asks for them. */
 export const NOTHING_DOCUMENTS: readonly string[] = harmonyTouch.CONFIGURATION_DOCUMENTS;

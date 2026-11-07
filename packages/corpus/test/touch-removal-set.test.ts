@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch set of `todo-touch.md` 8.5: Listen to Music and the Denon AV Receiver, an activity and a device of
  * the remote's own, taken out of the set the bench Touch holds with everything that names them, and the put back,
- * built by `src/touchremovalset.ts` and rehearsed through the real answerer and session on the fake remote.
+ * built by `experiments/touchremovalset.ts` and rehearsed through the real answerer and session on the fake remote.
  *
  * **What is held here.**
  *
@@ -31,7 +31,7 @@
  * remote. The source is the `touch_activity_set_back` fixture, which is the set the bench Touch holds after 8.4,
  * `8.4-settings-back`, content and tags: 8.4's put back restored exactly what 8.2's left, `touch-settings-set.test.ts`.
  * The two 8.5 sets are read by fixture, `touch_removal_set` and `touch_removal_set_back`, and `8.4-settings-back` as
- * `touch_settings_set_back`; what the remote did with the two is `packages/bench/test/touch85-runs.test.ts`.
+ * `touch_settings_set_back`; what the remote did with the two is `packages/bench/test/touch-removal-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -42,8 +42,8 @@ import { fileURLToPath } from 'node:url';
 import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 
-import { setDifferences } from '../src/touchchangedset.ts';
-import { putBackRemoval, removalChanges, withRemoval } from '../src/touchremovalset.ts';
+import { setDifferences } from '../experiments/touchchangedset.ts';
+import { putBackRemoval, removalChanges, withRemoval } from '../experiments/touchremovalset.ts';
 import { keyOf, resultOf, setTag, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

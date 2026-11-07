@@ -5,7 +5,7 @@
  * **What the tests are.** Ten files in `irtests/`, `touch-7-1-*.json`: every activity started from Off and ended,
  * the activities switched one into the next, the favourite channels, the keys of each activity's map, short and
  * long, and each device's keys in device mode. Every expectation in them is derived, never written: the plan of
- * each test, `touch71Plans` in `src/touchbench.ts`, says what the person does, and `src/touchengine.ts`, a model of the
+ * each test, `touch71Plans` in `src/touchbench.ts`, says what the person does, and `packages/codec/src/harmony-touch/engine.ts`, a model of the
  * Touch's engine, says what it sends and when. `bin/touch-tests.ts --write` writes the files; the first test here
  * holds that the files are what the derivation gives from the documents, so the files cannot drift from them.
  *
@@ -41,7 +41,7 @@
  * them, the one left being the frame 3.2's notes record as unread, and the 18 presses of the Blu-ray among them are
  * ones the bench configurations named nothing at all.
  *
- * **What these tests do not show** is what the remote does: that is the 7.1 runs', held by `touch71-runs.test.ts`.
+ * **What these tests do not show** is what the remote does: that is the 7.1 runs', held by `touch-full-bench-runs.test.ts`.
  * Before them, the activity starts from Off but for Watch TV and Watch a Blu-ray, Off but from those two and Switch
  * Box, the switches but for Watch TV to Switch Box, the favourites, the keys but for the KPN's Rewind and Replay, the
  * Denon's VolumeUp and the Blu-ray's Yellow, and device mode were predicted and never heard; the runs heard all of
@@ -63,8 +63,7 @@ import { answersWritten, commands, records, sessions } from '@harmony/usb/test/t
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { PAUSE_SLACK_MS, TOUCH_7_1_SET, touch71Configuration, touch71Tests } from '../src/touchbench.ts';
-import { TIMING, TouchEngine, type Send } from '../src/touchengine.ts';
+import { BenchTouchEngine, PAUSE_SLACK_MS, TIMING, touch71Configuration, touch71Tests, TOUCH_7_1_SET, type Send } from '../src/touchbench.ts';
 
 const SET = 'touch_changed_set_label_back';
 const FULL = 'touch_full_sync_recording';
@@ -106,7 +105,7 @@ test('the 7.1 test files are what the documents the remote holds give, file for 
     assert.equal(TOUCH_7_1_SET, 'work/touch-firmware/sets/6.9-label-back/set.json');
   });
 
-type Act = (e: TouchEngine) => Send[];
+type Act = (e: BenchTouchEngine) => Send[];
 const start = (activity?: string): Act => (e) => e.start(activity);
 const tap = (key: string): Act => (e) => e.key(key, 'tap');
 const hold = (key: string): Act => (e) => e.key(key, 'hold');
@@ -125,7 +124,7 @@ function heard(run: string, book: CodeBook): { atMs: number; names: string[] }[]
  */
 function predicted(set: harmonyTouch.Configuration, acts: readonly (readonly Act[])[]): { low: Send[][][]; high: Send[][][] } {
   const walk = (timing: typeof TIMING.low | typeof TIMING.high) => {
-    const engine = new TouchEngine(set, timing);
+    const engine = new BenchTouchEngine(set, timing);
     return acts.map((step) => step.map((act) => {
       engine.idle();
       return act(engine);

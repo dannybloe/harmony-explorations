@@ -75,8 +75,8 @@
  * set leaves alone, or a 304 for one it changes; a hash not moving to each set's; a code of ours unheard, heard as
  * another command, or heard where the step expected none.
  *
- * **Sources checked first**: the lab's `8.1-preflight.md` and `8.1-land-brief.md`, `touch71-runs.test.ts` and
- * `packages/usb/test/touch-changed-set-sync.test.ts`, whose shapes this follows, `touchengine.ts`, and the engine's
+ * **Sources checked first**: the lab's `8.1-preflight.md` and `8.1-land-brief.md`, `touch-full-bench-runs.test.ts` and
+ * `packages/usb/test/touch-changed-set-sync.test.ts`, whose shapes this follows, `harmony-touch/engine.ts`, and the engine's
  * `buttonPress` in the decompiled engine for the screen entry, as the preflight read it. Logitech's client was not
  * consulted: the remote runs its own engine and the answers are ours. **Which architectures**: the Harmony Touch
  * on firmware 4.15.330, one unit, one run of each set; its firmware reports 17 and Logitech's templates file it
@@ -99,9 +99,8 @@ import {
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../src/irsession.ts';
-import { touch71Configuration, touch71Tests } from '../src/touchbench.ts';
-import { TIMING, TouchEngine } from '../src/touchengine.ts';
-import { TOUCH_8_1_CONTROL, TOUCH_8_1_DEVICE, touch81Tests } from '../src/touch81.ts';
+import { BenchTouchEngine, TIMING, touch71Configuration, touch71Tests } from '../src/touchbench.ts';
+import { TOUCH_8_1_CONTROL, TOUCH_8_1_DEVICE, touch81Tests } from '../experiments/touchdevicetest.ts';
 
 const SOURCE = 'touch_changed_set_label_back';
 const DEVICE_SET = 'touch_device_set';
@@ -366,7 +365,7 @@ test('the Power entry tapped after the test was Test Projector\'s PowerToggle, n
     assert.deepEqual(logPresses(bookOf(SOURCE)).at(-1)!.names, []);
     // The model: no key binds Power, and the screen entry labelled Power sends PowerToggle to the device.
     const c = configuration(DEVICE_SET);
-    const engine = new TouchEngine(c, TIMING.low);
+    const engine = new BenchTouchEngine(c, TIMING.low);
     engine.idle();
     assert.equal(c.devices.find((d) => d.name === TOUCH_8_1_DEVICE)!.map!.keys.some((b) => b.press?.command?.name === 'PowerToggle'), false);
     assert.deepEqual(engine.entry('Power', TOUCH_8_1_DEVICE).map((s) => `${s.device} ${s.command}`), [`${TOUCH_8_1_DEVICE} PowerToggle`]);
@@ -375,7 +374,7 @@ test('the Power entry tapped after the test was Test Projector\'s PowerToggle, n
 test('the screen entry predicts the Denon\'s PowerToggle for its entry, refuses a label it cannot find, and changes neither 7.1\'s tests nor 8.1\'s',
   lab.skipUnless(SOURCE, DEVICE_SET, FULL), () => {
     const c = configuration(SOURCE);
-    const engine = new TouchEngine(c, TIMING.low);
+    const engine = new BenchTouchEngine(c, TIMING.low);
     engine.idle();
     const denon = c.devices.find((d) => d.name === 'Denon AV Receiver')!;
     const entry = [...denon.map!.entries.values()].filter((b) => b.press?.command?.name === 'PowerToggle');

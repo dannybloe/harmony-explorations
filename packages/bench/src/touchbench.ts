@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch's first full bench test, `todo-touch.md` 7.1: what a person does at the bench, step by
  * step, and what the remote is predicted to send for it, derived from the documents the remote holds by
- * `touchengine.ts`, never written by hand.
+ * the codec's model of the Touch's engine, `packages/codec/src/harmony-touch/engine.ts`, never written by hand.
  *
  * **How a test file comes to be.** `touch71Plans` below says what each test does, as actions: an activity
  * started, a key tapped or held, a favourite tapped, a device chosen. `touchTests` walks those actions on the
@@ -9,7 +9,7 @@
  * definition: each instruction from the actions' words, each expectation from a send, named by the device
  * and the command as the documents state them, which is how the infrared monitor names a code of the
  * Touch's own documents, `irmonitor.ts` `BENCH_TOUCH_SETS`. `bin/touch-tests.ts` writes the files and
- * `test/touch71.test.ts` holds that the files in `irtests/` are what this derivation gives.
+ * `test/touch-full-bench-predicted.test.ts` holds that the files in `irtests/` are what this derivation gives.
  *
  * **Which pauses are judged.** Only those the engine times: between two codes of one activity start, one
  * favourite or one sequence. Between two keys the person sets the pace, so no pause is expected there. A
@@ -21,12 +21,36 @@
  * remote did before: the Off activity powers off every device the engine still holds on. That step is not
  * judged, since what it sends depends on what ran before the test, which the documents cannot say.
  */
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch, type Pulse } from '@harmony/codec';
 
+import { framesOfTrain } from './irmonitor.ts';
 import type { Expectation, TestDefinition, TestStep } from './irsession.ts';
-import { TIMING, TouchEngine, type Send } from './touchengine.ts';
 
 type Configuration = harmonyTouch.Configuration;
+type Send = harmonyTouch.Send;
+export type { Send };
+
+/** The engine's timing band, the codec's, under the name the bench's tests read it by. */
+export const TIMING = harmonyTouch.TIMING;
+
+/**
+ * Where the bench's monitor ends a code's first frame: the first of the frames it cuts a press's train into,
+ * `framesOfTrain`, so a predicted send's `heardMs` is when the monitor reports it.
+ */
+export function monitorFirstFrame(once: readonly Pulse[]): readonly Pulse[] {
+  return framesOfTrain(once)[0] ?? [];
+}
+
+/**
+ * The model of the Touch's engine, `harmonyTouch.TouchEngine` in the codec, with its sends timed as the bench's
+ * monitor hears them. The engine moved to the codec in `todo.md` 7.3.1 and this is the one part of it that was the
+ * bench's: the receiver's cut of a frame, `monitorFirstFrame`.
+ */
+export class BenchTouchEngine extends harmonyTouch.TouchEngine {
+  constructor(config: Configuration, timing: harmonyTouch.Timing) {
+    super(config, timing, monitorFirstFrame);
+  }
+}
 
 /**
  * The set the bench Touch holds since `todo-touch.md` 6.9, by its path in the lab: the predictions are made from
@@ -83,7 +107,7 @@ export interface TouchTestPlan {
   readonly steps: readonly TouchStep[];
 }
 
-/** How far a judged pause may sit outside the model's band: the 3.2 and 6.9 runs sat within 54 ms of it, touch71.test.ts. */
+/** How far a judged pause may sit outside the model's band: the 3.2 and 6.9 runs sat within 54 ms of it, touch-full-bench-predicted.test.ts. */
 export const PAUSE_SLACK_MS = 150;
 
 /**
@@ -94,7 +118,7 @@ export const PAUSE_SLACK_MS = 150;
  * engine's own time around an ordinary send. A held code ends when the engine's hold loop sees its time run out,
  * then the hold is cancelled, and nothing states how long either takes; the 7.1 runs heard the next device's code
  * 427 and 472 ms later than the held time and its inter device delay add up to, where the model's top end allows
- * 210, `touch71-runs.test.ts`. **The rule is the slack counted a second time, not those two numbers**: it is the
+ * 210, `touch-full-bench-runs.test.ts`. **The rule is the slack counted a second time, not those two numbers**: it is the
  * one figure calibrated on other runs, it widens only the four pauses that follow a held code in the 7.1 tests,
  * and the fast side and every other pause keep their bands. The test scores it on every judged pause of the ten
  * runs, both sides, and its control is the same runs judged with the hold left out of the documents, which this
@@ -160,7 +184,7 @@ function favouriteNumber(c: Configuration, name: string): { activity: string; nu
 }
 
 /** What the engine sends for each action of a step, one list per action. */
-function walk(e: TouchEngine, c: Configuration, step: TouchStep, mode: { device: string | undefined }): Send[][] {
+function walk(e: BenchTouchEngine, c: Configuration, step: TouchStep, mode: { device: string | undefined }): Send[][] {
   return step.actions.map((a) => {
     if ('start' in a) {
       mode.device = undefined;
@@ -187,8 +211,8 @@ const up50 = (ms: number) => Math.ceil(ms / 50) * 50;
  * judged against at the bench, before the rule.
  */
 export function touchTest(c: Configuration, plan: TouchTestPlan, heldSlackMs: number = HELD_CODE_SLACK_MS): TestDefinition {
-  const low = new TouchEngine(c, TIMING.low);
-  const high = new TouchEngine(c, TIMING.high);
+  const low = new BenchTouchEngine(c, TIMING.low);
+  const high = new BenchTouchEngine(c, TIMING.high);
   const modes = { low: { device: undefined as string | undefined }, high: { device: undefined as string | undefined } };
   const steps: TestStep[] = plan.steps.map((step) => {
     low.idle();

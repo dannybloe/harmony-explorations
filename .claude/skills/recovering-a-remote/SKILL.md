@@ -315,21 +315,21 @@ entry's type name the reader searches, or holds any other field the reader leans
 Measured twice: after 6.7's stop, cleared by the steps below, and after 8.5's first try, stopped on a USB read
 timeout inside its first write, the remote leaving the bus and seen restarting, where the read answered 200 with the
 set before's tags and the same set sent again was committed, nothing else sent; what made that one stop is not known,
-`packages/bench/test/touch85-runs.test.ts`. **Press Off before a sync that takes out an activity or a device, or
+`packages/bench/test/touch-removal-runs.test.ts`. **Press Off before a sync that takes out an activity or a device, or
 replaces them all**, so none runs while its documents change, and if a committed removal or whole setup misbehaves,
 the put back of the set before is the repair: an ordinary sync, not a restart, depending on nothing the set changed.
 8.6's whole setup, every device and activity under a new id, needed no repair and was put back by such a sync as planned,
-`packages/bench/test/touch86-runs.test.ts`. **A put back after a set with no favourites activity carries the
+`packages/bench/test/touch-setup-runs.test.ts`. **A put back after a set with no favourites activity carries the
 favourites documents as well**: 9.2's empty set made the remote ask for none, and by the reading its commit dropped
 them, so its put back delivered all three with 200 beside the four, `emptyBackOf` in
-`packages/corpus/src/touchemptyset.ts`; a restart on the empty set was safe, the remote starting on it with its
-configuration task answering, `packages/bench/test/touch92-runs.test.ts`. **Change nothing on the remote's screens
+`packages/corpus/experiments/touchemptyset.ts`; a restart on the empty set was safe, the remote starting on it with its
+configuration task answering, `packages/bench/test/touch-empty-runs.test.ts`. **Change nothing on the remote's screens
 between a set and its put back**: a change there, a background chosen in the picker among them, is handed up at the put
 back's hand over, and the answerer then stops before the sync request, since the set holds that document. By the
 answerer's reading the hand over has committed by then, under a tag of ours, and no sync is marked running, so the
 read answers 200 and running the same put back again reverts the change; never run that way on a unit,
 `packages/corpus/src/touchsync.ts`. 9.4's set from nothing, every device record and definition ours, needed no repair,
-`packages/bench/test/touch94-runs.test.ts`. **Keep any other remote off the bus during a long write**: 8.5's stopped
+`packages/bench/test/touch-from-nothing-runs.test.ts`. **Keep any other remote off the bus during a long write**: 8.5's stopped
 try had a second remote enumerated beside it; that is not a cause, only a variable worth removing.
 **202 needs `touch-recover.ts --step abort`, that read again, then `--step reboot`**, each a run of its own,
 each answer read before the next. The reboot is not optional after a host's abort: by the preflight's reading

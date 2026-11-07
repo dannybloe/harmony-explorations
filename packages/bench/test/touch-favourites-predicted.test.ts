@@ -4,8 +4,8 @@
  *
  * **What the test is.** One file in `irtests/`, `touch-8-3-favourites.json`: Off; the favourites screen and the first
  * favourite of the new order tapped, which starts Watch TV; every other favourite tapped in the order shown; Off. Every
- * expectation is derived, never written: `touch83Plans` in `src/touch83.ts` says what the person does and
- * `src/touchengine.ts`, the engine model 7.1 calibrated, what is sent. `bin/touch-favourites-tests.ts --write` writes
+ * expectation is derived, never written: `touch83Plans` in `experiments/touchfavouritestest.ts` says what the person does and
+ * `packages/codec/src/harmony-touch/engine.ts`, the engine model 7.1 calibrated, what is sent. `bin/touch-favourites-tests.ts --write` writes
  * the file; the first test holds that it is what the derivation gives.
  *
  * **What the predictions rest on.** The six documents of the set the bench Touch holds since 8.2's put back, the
@@ -21,12 +21,12 @@
  * alone names it. **The control** derives the same plan from the recorded favourites, the ones the remote holds before
  * 8.3: five taps, 6 6 6 first and no 0 6 1, so the test cannot pass on the remote's old favourites.
  *
- * **Sources checked first.** The 8.3 brief in the lab; `touch82.ts`, `touchbench.ts` and their tests, whose derivation
+ * **Sources checked first.** The 8.3 brief in the lab; `touchactivitytest.ts`, `touchbench.ts` and their tests, whose derivation
  * this reuses; the screens' favourites page in the lab's firmware copy (`juniper/favoritechannel.lua`, the tap's
  * `changeChannel` with the dial number `getFavoriteDialPositionDetails` fills from the line up). Logitech's client was not
  * consulted.
  *
- * **What this does not show** is what the remote does: that is the 8.3 run, held by `touch83-runs.test.ts`, where the
+ * **What this does not show** is what the remote does: that is the 8.3 run, held by `touch-favourites-runs.test.ts`, where the
  * bench run of this file held 18 of 18.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330, the one bench unit; its firmware reports 17 and
@@ -42,7 +42,7 @@ import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { TOUCH_8_3_SET, touch83Tests } from '../src/touch83.ts';
+import { TOUCH_8_3_SET, touch83Tests } from '../experiments/touchfavouritestest.ts';
 import { touch71Configuration } from '../src/touchbench.ts';
 
 const SOURCE = 'touch_activity_set_back';

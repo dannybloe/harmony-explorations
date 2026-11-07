@@ -83,8 +83,8 @@
  * 304 for any of the four; a put back first list asking with any tag but the removal's for the four; a receiver code
  * heard; a volume key sending anything; the entry tapped sending anything but Stop and TopMenu.
  *
- * **Sources checked first**: the lab's `8.5-preflight.md` and `8.5-land-brief.md`, `touch83-runs.test.ts` and
- * `touch84-runs.test.ts`, whose shape this follows, `touch85.test.ts`, `touch85.ts` and `touchengine.ts`, and
+ * **Sources checked first**: the lab's `8.5-preflight.md` and `8.5-land-brief.md`, `touch-favourites-runs.test.ts` and
+ * `touch-settings-runs.test.ts`, whose shape this follows, `touch-removal-predicted.test.ts`, `touchremovaltest.ts` and `harmony-touch/engine.ts`, and
  * `syncTouch` in `packages/corpus/src/touchsync.ts` for what a run's folder keeps and when: a request line is written
  * before it is sent, its answer and its announcement's answer only once the whole request has returned. Logitech's
  * client was not consulted: the remote runs its own screens and the answers are ours. **Which architectures**: the
@@ -111,7 +111,7 @@ import {
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../src/irsession.ts';
 import { touch71Configuration } from '../src/touchbench.ts';
-import { TOUCH_8_5_REMOVED, touch85Tests } from '../src/touch85.ts';
+import { TOUCH_8_5_REMOVED, touch85Tests } from '../experiments/touchremovaltest.ts';
 
 /** `8.4-settings-back`: what the bench Touch held before 8.5, and what the put back delivers. */
 const SOURCE = 'touch_settings_set_back';
@@ -434,7 +434,7 @@ test('the monitor log before the put back holds the run\'s 11 presses and nothin
 
 test('the control for "no code of the receiver": the same book names the receiver in 8.3\'s monitor log, where the receiver was still in use',
   lab.skipUnless(SOURCE, 'touch_8_3_monitor'), () => {
-    // 8.3's part of its log, up to its put back, as `touch83-runs.test.ts` bounds it.
+    // 8.3's part of its log, up to its put back, as `touch-favourites-runs.test.ts` bounds it.
     const receiver = logPresses('touch_8_3_monitor', '2026-11-06T13:39:00').filter((p) => p.names.some((n) => n.startsWith(`${RECEIVER} `)));
     // Eight: the receiver's power on and TV input at the 8.3 test's start, its power off at the test's Off, then its
     // power on, media player input and power off for Listen to Music started and ended, and its power on and TV input

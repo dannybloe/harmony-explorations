@@ -387,9 +387,9 @@ each step, Volume Up to the Denon after Home, pressed twice as that step's note 
 
 **Found while landing it**: the engine model looped for ever when a start was walked from a clock at 0, sleeping a
 rounding residue of 4.5e-13 ms that did not move the clock; a wait under a microsecond now counts as none,
-`waitFor` in `packages/bench/src/touchengine.ts`, and the test files came out unchanged by it.
+`waitFor` in `packages/codec/src/harmony-touch/engine.ts`, and the test files came out unchanged by it.
 
-The runs, the retest and the rule are held by `packages/bench/test/touch71-runs.test.ts`. 7.1 is done.
+The runs, the retest and the rule are held by `packages/bench/test/touch-full-bench-runs.test.ts`. 7.1 is done.
 
 ## A device of ours added, heard and taken out again, todo-touch 8.1
 
@@ -437,7 +437,7 @@ it**: the model gained a screen entry, `TouchEngine.entry` and the `{ entry }` a
 `packages/bench/src/touchbench.ts`, which predicts the Power tap and the Denon's PowerToggle entry of 7.1; the 7.1 and
 8.1 test files are unchanged by it. What this does not cover: a document composed whole, an activity, a favourite
 or a picture of ours, and the device used in an activity. The runs are held by
-`packages/bench/test/touch81-runs.test.ts`. 8.1 is done.
+`packages/bench/test/touch-device-runs.test.ts`. 8.1 is done.
 
 ## An activity of ours added, run and taken out again, todo-touch 8.2
 
@@ -487,7 +487,7 @@ committed, listed, started, used, switched and stopped by the remote as its reco
 the set before. The remote holds `8.2-activity-back`, the content of `8.1-device-back` under other tags for two
 documents. What this does not cover: a document composed whole, a favourite or a picture of ours, another activity
 type or start screen, an activity of ours with a device of ours, and an activity removed while it runs. The runs are
-held by `packages/bench/test/touch82-runs.test.ts`. 8.2 is done.
+held by `packages/bench/test/touch-activity-runs.test.ts`. 8.2 is done.
 
 ## Favourites of ours and a logo of ours, shown, heard and put back, todo-touch 8.3
 
@@ -550,7 +550,7 @@ line up number, and the put back restored what the remote held before. The remot
 six of `8.2-activity-back` and the recorded favourites and pictures, content and tags. What this does not cover: a
 tuning device's document or a line up of ours, a channel added by hand, an uploaded logo of ours, a picture at a new
 address, the screens' picture cache, and the added channel's name. The runs are held by
-`packages/bench/test/touch83-runs.test.ts`. 8.3 is done.
+`packages/bench/test/touch-favourites-runs.test.ts`. 8.3 is done.
 
 ## A Settings of ours and a Context composed by us, seen, timed and put back, todo-touch 8.4
 
@@ -591,7 +591,7 @@ what it held; a Context composed by this project from a description was stored u
 hash. The remote holds `8.4-settings-back`, which in the six equals `8.3-favourites-back`, with the recorded
 favourites and pictures. What this does not cover: a Context with content of its own, any other Settings row, the
 motion sensor and vibration, which act only at the next start, and the moment within the sync's end at which the
-backlight changes. The runs are held by `packages/corpus/test/touch84-runs.test.ts`. 8.4 is done.
+backlight changes. The runs are held by `packages/corpus/test/touch-settings-runs.test.ts`. 8.4 is done.
 
 ## An activity and a device of Logitech's taken out, run and put back, todo-touch 8.5
 
@@ -643,7 +643,7 @@ stored and committed by the remote, gone from its lists, and the activities that
 the put back restored the set before. A sync stopped before its commit by a read timeout on the cable left the
 committed set as it was. The remote holds `8.5-removal-back`, which is `8.4-settings-back`. What this does not cover:
 a removal while the activity or the device is in use, the lists at the moment of the commit, and what restarted the
-remote on the first try. The runs are held by `packages/bench/test/touch85-runs.test.ts`. 8.5 is done.
+remote on the first try. The runs are held by `packages/bench/test/touch-removal-runs.test.ts`. 8.5 is done.
 
 ## The whole test setup composed by us, run and put back, todo-touch 8.6
 
@@ -678,7 +678,7 @@ should pass over such files an open question about the tool; it now names and pa
 six.
 
 * **The ten tests**, the files at the top of `irtests/` unchanged, which the setup derives file for file
-  (`touch86.test.ts`), on the Flirc monitor. The last attempt of each held every expectation, judged afresh from the
+  (`touch-setup-predicted.test.ts`), on the Flirc monitor. The last attempt of each held every expectation, judged afresh from the
   pulses by the setup's own documents, every verdict the one the monitor wrote. **Heard and named by no expectation**:
   in the Switch Box keys, step 4 counting from 0, one KPN ChannelPrev after Channel Down, unmarked in the run, the code
   Switch Box's Previous key sends and no other key of its map; in device mode 1 of 2, step 7, one LG TV Rewind between
@@ -702,7 +702,7 @@ committed by the remote and behaved as the set it was described from, 418 of 418
 before. The remote holds `8.6-setup-back`, which is `8.5-removal-back`. What this does not cover: the screens' pictures
 and icons beyond the look, the engine's stored power state per device under the new ids, the tests while an activity
 runs across a sync, and a setup that describes no set Logitech built. The runs are held by
-`packages/bench/test/touch86-runs.test.ts`. 8.6 is done.
+`packages/bench/test/touch-setup-runs.test.ts`. 8.6 is done.
 
 ## The empty configuration, looked at and put back, todo-touch 9.2
 
@@ -754,7 +754,7 @@ So the remote stores, commits and starts on a configuration with no device and n
 document in that sync, keeps its pictures across it, and the put back with the favourites restored the set before. The
 remote holds `9.2-empty-back`, whose six are `8.6-setup-back`. What this does not cover: the empty device page and its
 menu in detail, which text was seen after the sync, whether the favourites documents were dropped, the keys on the empty
-set, and the look after the put back. The runs are held by `packages/bench/test/touch92-runs.test.ts`. 9.2 is done.
+set, and the look after the put back. The runs are held by `packages/bench/test/touch-empty-runs.test.ts`. 9.2 is done.
 
 ## The test setup built from nothing, run and put back, todo-touch 9.4
 
@@ -814,7 +814,7 @@ So a configuration built by this project from nothing, every device record, ever
 background ours, was stored and committed by the remote and played every device's codes as the set states them; the put
 back restored the set before. The remote holds `9.1-nothing-back`, which is `8.6-setup-back`. What this does not cover:
 the nine other 7.1 tests on this set, the Xbox's toggle bit, the entry icons and the picker, and every code of each
-family beyond those test 1 sends. The runs are held by `packages/bench/test/touch94-runs.test.ts`. 9.4 is done, and with
+family beyond those test 1 sends. The runs are held by `packages/bench/test/touch-from-nothing-runs.test.ts`. 9.4 is done, and with
 it `todo-touch.md`.
 
 ## Not done

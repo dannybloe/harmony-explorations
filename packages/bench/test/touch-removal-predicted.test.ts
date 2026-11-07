@@ -5,7 +5,7 @@
  *
  * **What the test is.** One file in `irtests/`, `touch-8-5-removal.json`: Off; Watch TV from Off; Volume Up, Volume
  * Down and Mute; Watch a Blu-ray; its Test Sequence entry; Play a Game; Off. Every expectation is derived, never
- * written: `touch85Plans` in `src/touch85.ts` says what the person does and `src/touchengine.ts`, the engine model 7.1
+ * written: `touch85Plans` in `experiments/touchremovaltest.ts` says what the person does and `packages/codec/src/harmony-touch/engine.ts`, the engine model 7.1
  * calibrated, says what is sent. `bin/touch-removal-tests.ts --write` writes the file; the first test holds that it is
  * what the derivation gives and what it predicts in outline.
  *
@@ -20,11 +20,11 @@
  * power on and TV input at Watch TV's start, the three volume keys, its input at each switch and its power off, so the
  * claim "no code of the receiver" can fail; and the entry tapped is the same sequence at its old place.
  *
- * **Sources checked first.** The 8.5 brief in the lab; `touch82.ts` and its test, whose derivation this reuses; the
+ * **Sources checked first.** The 8.5 brief in the lab; `touchactivitytest.ts` and its test, whose derivation this reuses; the
  * lab's `notes/6.10-screens-reads.md`, which reads that the screens drop a key the activity's map does not hold and walk
  * an activity's entries in IndexInMenu order. Logitech's client was not consulted.
  *
- * **What this does not show** is what the remote does: that is the 8.5 run, judged in `touch85-runs.test.ts`.
+ * **What this does not show** is what the remote does: that is the 8.5 run, judged in `touch-removal-runs.test.ts`.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330, the one bench unit; its firmware reports 17 and
  * Logitech's templates file it under 18.
@@ -40,10 +40,10 @@ import { answersWritten, commands, records, sessions } from '@harmony/usb/test/t
 
 import { BENCH_TOUCH_SETS } from '../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { TOUCH_8_5_ENTRY, TOUCH_8_5_REMOVED, touch85Tests } from '../src/touch85.ts';
+import { TOUCH_8_5_ENTRY, TOUCH_8_5_REMOVED, touch85Tests } from '../experiments/touchremovaltest.ts';
 
 const SOURCE = 'touch_activity_set_back';
-/** The set 8.5 built in the lab and delivered to the bench Touch, `TOUCH_8_5_SET` in `src/touch85.ts`, by fixture. */
+/** The set 8.5 built in the lab and delivered to the bench Touch, `TOUCH_8_5_SET` in `experiments/touchremovaltest.ts`, by fixture. */
 const BUILT = 'touch_removal_set';
 const FULL = 'touch_full_sync_recording';
 const DESCRIPTION = fileURLToPath(new URL('../../corpus/touch-removals/8.5-removal.json', import.meta.url));

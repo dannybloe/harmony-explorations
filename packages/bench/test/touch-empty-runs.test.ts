@@ -101,7 +101,7 @@
  * the restart; a put back asking for any picture without a tag, or for the four with any tag but the empty set's; a code
  * of either set heard between the commit and the put back.
  *
- * **Sources checked first**: the lab's `9.2-preflight.md` and `9.2-land-brief.md`, `touch86-runs.test.ts`, whose shape
+ * **Sources checked first**: the lab's `9.2-preflight.md` and `9.2-land-brief.md`, `touch-setup-runs.test.ts`, whose shape
  * this follows, `syncTouch` in `packages/corpus/src/touchsync.ts` for what a run's folder keeps, the codec's `empty.ts`,
  * and the image's screens for the strings and the reload, `tests/test_harmony_touch_empty_screens.py`. Logitech's client
  * was not consulted: the remote runs its own engine and screens and the answers are ours. **Which architectures**: the

@@ -1,6 +1,6 @@
 /**
  * The Harmony Touch's first full bench test, `todo-touch.md` 7.1, as it ran: ten runs at the bench held against
- * what the documents the remote holds predict, `touch71.test.ts` holding how those predictions are made.
+ * what the documents the remote holds predict, `touch-full-bench-predicted.test.ts` holding how those predictions are made.
  *
  * **What was run.** The ten tests of `irtests/touch-7-1-*.json`, one complete run each, on the bench Touch holding
  * `work/touch-firmware/sets/6.9-label-back` and the favourites of the recorded full sync, with the Flirc monitor
@@ -92,8 +92,7 @@ import { answersWritten, commands, records, sessions } from '@harmony/usb/test/t
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../src/irsession.ts';
-import { HELD_CODE_SLACK_MS, PAUSE_SLACK_MS, touch71Configuration, touch71Tests } from '../src/touchbench.ts';
-import { TIMING, TouchEngine } from '../src/touchengine.ts';
+import { BenchTouchEngine, HELD_CODE_SLACK_MS, PAUSE_SLACK_MS, TIMING, touch71Configuration, touch71Tests } from '../src/touchbench.ts';
 
 const SET = 'touch_changed_set_label_back';
 const FULL = 'touch_full_sync_recording';
@@ -251,7 +250,7 @@ test('the three presses the runs missed were each heard on the live retest, afte
     const heard = logPresses('2026-11-06T09:48:47', '2026-11-06T09:49:40');
     const c = configuration();
     for (const [timing, high] of [[TIMING.low, false], [TIMING.high, true]] as const) {
-      const engine = new TouchEngine(c, timing);
+      const engine = new BenchTouchEngine(c, timing);
       const acts = [() => engine.start('Watch TV'), () => engine.key('PrevChannel', 'hold'), () => engine.start('Watch a Blu-ray'),
         () => engine.key('Blue', 'tap'), () => engine.key('Rewind', 'hold')];
       const sends = acts.map((act) => {
@@ -272,7 +271,7 @@ test('the three presses the runs missed were each heard on the live retest, afte
     // Blu-ray from Watch TV, which is no test's step.
     const bands = (before: string | undefined, start: string) => {
       const [low, high] = [TIMING.low, TIMING.high].map((t) => {
-        const engine = new TouchEngine(c, t);
+        const engine = new BenchTouchEngine(c, t);
         if (before !== undefined) {
           engine.start(before);
           engine.idle();
@@ -381,7 +380,7 @@ test('the person\'s two marks: the extra presses in each marked step are the one
 
     // Play a Game step 7: one press first, Rewind held in Play a Game, then exactly the step's four expectations.
     const game = named(marked[0]!.s.presses);
-    const engine = new TouchEngine(c, TIMING.low);
+    const engine = new BenchTouchEngine(c, TIMING.low);
     engine.idle();
     engine.start('Play a Game');
     engine.idle();
@@ -403,7 +402,7 @@ test('the person\'s two marks: the extra presses in each marked step are the one
     }
     assert.equal(at, wanted.length);
     assert.deepEqual(extra, ['Xbox SkipBack', 'Xbox DirectionUp', 'Xbox DirectionDown']);
-    const device = new TouchEngine(c, TIMING.low);
+    const device = new BenchTouchEngine(c, TIMING.low);
     device.idle();
     const own = (key: string, how: 'tap' | 'hold') => device.key(key, how, 'Xbox').map((s) => `${s.device} ${s.command}`);
     assert.deepEqual([own('Rewind', 'hold'), own('DirectionUp', 'tap'), own('DirectionDown', 'tap')], [['Xbox SkipBack'], ['Xbox DirectionUp'], ['Xbox DirectionDown']]);

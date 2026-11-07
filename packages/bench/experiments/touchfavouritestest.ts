@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch's bench test for favourites of ours, `todo-touch.md` 8.3: every favourite tapped in the order the
  * favourites screen is to show them, with what the remote is predicted to send derived from the documents by
- * `touchengine.ts`, never written by hand, and what the person is to look at: the order and the logo of ours. The
+ * `harmony-touch/engine.ts`, never written by hand, and what the person is to look at: the order and the logo of ours. The
  * same derivation as 7.1's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The configuration it is derived from** is what the bench Touch holds once `work/touch-firmware/sets/8.3-favourites`
@@ -23,8 +23,8 @@
  */
 import type { harmonyTouch } from '@harmony/codec';
 
-import type { TestDefinition } from './irsession.ts';
-import { touchTest, type TouchAction, type TouchStep, type TouchTestPlan } from './touchbench.ts';
+import type { TestDefinition } from '../src/irsession.ts';
+import { touchTest, type TouchAction, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';
 
 type Configuration = harmonyTouch.Configuration;
 

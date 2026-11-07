@@ -86,7 +86,7 @@
  *   and not a difference of the set;
  * * the entry icons, the favourites page and the background picker were not reported.
  *
- * **Scored against 9.1's four predictions** (`src/touch91.ts`): our background shown **held**, by the band; no icon on
+ * **Scored against 9.1's four predictions** (`experiments/touchfromnothingtest.ts`): our background shown **held**, by the band; no icon on
  * any entry **not checked**; the seven field Context accepted **held**, every run committed and the remote acted on the
  * set; the person's background out of the picker **not checked**.
  *
@@ -108,8 +108,8 @@
  * asking with any tag but the forward set's; an expectation of test 1 unheard or a pause out of its band; a code of the
  * set heard in the last attempt that no expectation names; a family of the five, or a device of the seven, not heard.
  *
- * **Sources checked first**: the lab's `9.4-preflight.md` and `9.4-land-brief.md`, `touch92-runs.test.ts` and
- * `touch86-runs.test.ts`, whose shape this follows, `touch91.ts` and `touch91.test.ts`, and `syncTouch` in
+ * **Sources checked first**: the lab's `9.4-preflight.md` and `9.4-land-brief.md`, `touch-empty-runs.test.ts` and
+ * `touch-setup-runs.test.ts`, whose shape this follows, `touchfromnothingtest.ts` and `touch-from-nothing-predicted.test.ts`, and `syncTouch` in
  * `packages/corpus/src/touchsync.ts` for what a run's folder keeps. Logitech's client was not consulted: the remote runs
  * its own engine and screens and the answers are ours. **Which architectures**: the Harmony Touch on firmware 4.15.330,
  * one unit, one committed run of each set; its firmware reports 17 and Logitech's templates file it under 18.
@@ -131,9 +131,8 @@ import {
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../src/irsession.ts';
-import { TOUCH_9_1_TESTS } from '../src/touch91.ts';
-import { touch71Configuration, touch71Tests } from '../src/touchbench.ts';
-import { TIMING, TouchEngine } from '../src/touchengine.ts';
+import { TOUCH_9_1_TESTS } from '../experiments/touchfromnothingtest.ts';
+import { BenchTouchEngine, TIMING, touch71Configuration, touch71Tests } from '../src/touchbench.ts';
 
 /** The set built from nothing, its put back, and 9.2's put back, which the bench Touch held before 9.4. */
 const SET = 'touch_nothing_set';
@@ -377,7 +376,7 @@ let configurationCache: harmonyTouch.Configuration | undefined;
 const configuration = (): harmonyTouch.Configuration =>
   (configurationCache ??= touch71Configuration({ answers: setOf(SET) as unknown as harmonyTouch.SyncAnswer[] }, recordedFavourites()));
 let definitionCache: TestDefinition | undefined;
-/** Test 1 as the forward set derives it, `touch91.test.ts`'s derivation. */
+/** Test 1 as the forward set derives it, `touch-from-nothing-predicted.test.ts`'s derivation. */
 const definition = (): TestDefinition => (definitionCache ??= touch71Tests(configuration()).find((t) => t.id === ID)!.definition);
 
 /** A code book of one set's documents, the way the monitor names a Touch code; `blob` stands in for the set's bytes. */
@@ -544,7 +543,7 @@ test('the monitor log before the put back: the three attempts\' presses, as many
       'Denon AV Receiver PowerOn', 'Plex PowerToggle', 'Denon AV Receiver InputMediaPlayer', 'Denon AV Receiver PowerOff', 'Plex PowerToggle',
     ]);
     // Those are the codes the set gives Listen to Music's start and its end.
-    const engine = new TouchEngine(configuration(), TIMING.low);
+    const engine = new BenchTouchEngine(configuration(), TIMING.low);
     engine.idle();
     const start = engine.start('Listen to Music').map((x) => `${x.device} ${x.command}`);
     engine.idle();

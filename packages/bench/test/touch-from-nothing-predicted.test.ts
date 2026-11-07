@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch's bench test for 9.1, `todo-touch.md` 9.1, held against the documents it is derived from: the whole
  * test setup built from a setup file with no Logitech document as input, and the ten 7.1 tests as the run,
- * `src/touch91.ts`.
+ * `experiments/touchfromnothingtest.ts`.
  *
  * **What is held.** The ten 7.1 tests derived from the set 9.1 built in the lab, `work/touch-firmware/sets/9.1-nothing`,
  * the fixture `touch_nothing_set`, by the same derivation 7.1 and 8.6 use (`touch71Tests` over `touch71Configuration`,
@@ -16,7 +16,7 @@
  * **What the predictions rest on.** The set 9.1 built and the favourites of the recorded full sync, as in 7.1 and 8.6,
  * since a set of 9.1 delivers no favourites document and the remote keeps its own.
  *
- * **Sources checked first.** The 9.1 brief in the lab; `touch86.test.ts`, whose derivation this reuses. Logitech's
+ * **Sources checked first.** The 9.1 brief in the lab; `touch-setup-predicted.test.ts`, whose derivation this reuses. Logitech's
  * client was not consulted.
  *
  * **What this does not show** is what the remote does: that is the 9.4 run.
@@ -32,10 +32,10 @@ import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { TOUCH_9_1_TESTS } from '../src/touch91.ts';
+import { TOUCH_9_1_TESTS } from '../experiments/touchfromnothingtest.ts';
 import { touch71Configuration, touch71Tests } from '../src/touchbench.ts';
 
-/** The set 9.1 built in the lab for the bench Touch, `TOUCH_9_1_SET` in `src/touch91.ts`, by fixture. */
+/** The set 9.1 built in the lab for the bench Touch, `TOUCH_9_1_SET` in `experiments/touchfromnothingtest.ts`, by fixture. */
 const BUILT = 'touch_nothing_set';
 /** 8.6's set, which the bench Touch ran. */
 const SETUP = 'touch_setup_set';

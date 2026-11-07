@@ -1203,7 +1203,7 @@ function field(x: unknown, name: string): unknown {
  * the documents, so their absence is the answerer's to meet when the remote asks. **One present at an address the
  * remote never asks for is not refused here**: it costs the remote nothing, since it is never delivered, and the
  * gate refuses what costs the remote. It costs the set its purpose, so the builder of a set refuses it,
- * `favouritesAddressFindings` below and `withContent` in `packages/corpus/src/touchfavouritesset.ts`, `todo-touch.md`
+ * `favouritesAddressFindings` below and `withContent` in `packages/corpus/experiments/touchfavouritesset.ts`, `todo-touch.md`
  * 8.3.
  */
 export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {

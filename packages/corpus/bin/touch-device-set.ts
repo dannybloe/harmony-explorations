@@ -27,7 +27,7 @@
  * `composeTouchDeviceOfRow`, and adds it to the set in `--from` with `withTouchDevice`: the device to
  * `DeviceList`, its map to `MapList`, its definition to `ProtocolList`. Those three documents get new tags,
  * `setTag` with the new folder's name, and the other three keep the source's, so a remote that committed the
- * source is answered 304 for them, `changeDocuments` in `src/touchchangedset.ts`. **`--build --remove`** is the
+ * source is answered 304 for them, `changeDocuments` in `experiments/touchchangedset.ts`. **`--build --remove`** is the
  * exact inverse, `withoutTouchDevice`, the three documents again under new tags of their own. Every tag the chain
  * of sets back to the first has stated is in play, and a new tag equal to one of them is refused. It writes
  * `set.json`, the set `touch-sync.ts --set` reads, and `sources.json`, the source folder and the device or the
@@ -44,7 +44,7 @@
  * **`--build --favourites`** reads favourites described by channel number, a JSON file whose `favourites` is an
  * `OwnFavourites` (`packages/corpus/touch-favourites/8.3-favourites.json`), composes them against what the remote
  * holds, `composeTouchFavourites`, and delivers the favourites documents it changes and the logos of ours beside
- * the source's six, which keep the source's content and tags, `withContent` in `src/touchfavouritesset.ts`, 8.3.
+ * the source's six, which keep the source's content and tags, `withContent` in `experiments/touchfavouritesset.ts`, 8.3.
  * What the remote holds at a favourites address or a picture's is the latest set of the chain that delivered one
  * and otherwise the recorded full sync's, `touch_full_sync_recording`, `heldContent`. **`--build
  * --favourites-back`** is its exact inverse: every favourites document and picture the set in `--from` delivered,
@@ -54,7 +54,7 @@
  * (`packages/corpus/touch-settings/8.4-settings.json`), and a Context description in the lab, a JSON file whose
  * `context` is an `OwnContext`, the seven fields a Touch reads, which hold the account's and so never enter the
  * repository; composes both against the source's, `composeTouchSettings` and `composeTouchContext`, and delivers them
- * under new tags beside the source's other four, `withSettingsAndContext` in `src/touchsettingsset.ts`, 8.4. The set is
+ * under new tags beside the source's other four, `withSettingsAndContext` in `experiments/touchsettingsset.ts`, 8.4. The set is
  * the six alone: favourites or pictures the source delivered are the remote's once it is committed. **`--build
  * --settings-back`** is its exact inverse, the source's Settings and Context, content and tags. The record says
  * `settings`, with the Context description's path and never its content, or `settingsBack`. **`--describe-context`**
@@ -64,7 +64,7 @@
  * JSON file whose `removal` is a `NamedRemoval` (`packages/corpus/touch-removals/8.5-removal.json`), takes them out of
  * the source with everything that names them, `withoutTouchEntries` in the codec, and delivers those of the four
  * documents a device or an activity is named in whose content changed, under new tags, beside the source's others,
- * `withRemoval` in `src/touchremovalset.ts`, 8.5. **`--build --removal-back`** is its exact inverse, the documents the
+ * `withRemoval` in `experiments/touchremovalset.ts`, 8.5. **`--build --removal-back`** is its exact inverse, the documents the
  * removal changed as the remote held them before, content and tags, `putBackRemoval`. The record says `removal` or
  * `removalBack`. `--check` of either prints the structural diff entry by entry, `removalChanges`.
  *
@@ -72,7 +72,7 @@
  * (`packages/corpus/touch-setups/8.6-test-setup.json`), composes it onto the source with every device and activity taken
  * out, the source's own device and protocol lists standing for the catalogue, `composeTouchSetup` in the codec, and
  * delivers the four documents a device or an activity is named in under new tags beside the source's Context and
- * Settings, `withSetup` in `src/touchsetupset.ts`, 8.6. **`--build --setup-back`** is its exact inverse, the four as the
+ * Settings, `withSetup` in `experiments/touchsetupset.ts`, 8.6. **`--build --setup-back`** is its exact inverse, the four as the
  * remote held them before, content and tags, `putBackSetup`. The record says `setup`, the description's path, or
  * `setupBack`. `--check` of a setup set prints the field by field comparison with the source's documents,
  * `compareSetup`, and is NOT OK on any difference no row explains. **`--describe-setup`** writes the description of a
@@ -81,7 +81,7 @@
  *
  * **`--build --empty`** builds the empty configuration, no device and no activity: the source's six with the four lists
  * emptied by the codec's `emptyTouchDocuments`, the four under new tags and Context and Settings the source's, content and
- * tags, `withEmpty` in `src/touchemptyset.ts`, `todo-touch.md` 9.2. **`--build --empty-back`** is its put back, and it is
+ * tags, `withEmpty` in `experiments/touchemptyset.ts`, `todo-touch.md` 9.2. **`--build --empty-back`** is its put back, and it is
  * not the six alone: the six as the set before the empty one states them, and beside them the three favourites
  * documents and the logos the remote asks for once it holds them, each as the remote held it before the empty set,
  * content and tag, `emptyBackOf`, since by the reading the empty set's commit drops every favourites document. The record
@@ -118,16 +118,16 @@ import {
   setDifferences,
   writeOfAnswersSize,
   type SetRecord,
-} from '../src/touchchangedset.ts';
+} from '../experiments/touchchangedset.ts';
 import {
   compareContentRequests, contentKind, contentOfComposed, documentsHeld, heldContent, isContent, logosAsked, putBackContent,
   withContent,
-} from '../src/touchfavouritesset.ts';
-import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../src/touchownset.ts';
-import { SETTINGS_SET_DOCUMENTS, putBackSettingsAndContext, settingsChanges, sixOf, withSettingsAndContext } from '../src/touchsettingsset.ts';
-import { REMOVAL_DOCUMENTS, putBackRemoval, removalChanges, withRemoval } from '../src/touchremovalset.ts';
-import { SETUP_DOCUMENTS, SETUP_IDS, compareSetup, comparisonLines, putBackSetup, withSetup } from '../src/touchsetupset.ts';
-import { EMPTY_DOCUMENTS, emptyBackOf, withEmpty } from '../src/touchemptyset.ts';
+} from '../experiments/touchfavouritesset.ts';
+import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../experiments/touchownset.ts';
+import { SETTINGS_SET_DOCUMENTS, putBackSettingsAndContext, settingsChanges, sixOf, withSettingsAndContext } from '../experiments/touchsettingsset.ts';
+import { REMOVAL_DOCUMENTS, putBackRemoval, removalChanges, withRemoval } from '../experiments/touchremovalset.ts';
+import { SETUP_DOCUMENTS, SETUP_IDS, compareSetup, comparisonLines, putBackSetup, withSetup } from '../experiments/touchsetupset.ts';
+import { EMPTY_DOCUMENTS, emptyBackOf, withEmpty } from '../experiments/touchemptyset.ts';
 import { WRITE_ANSWERS, answerOf, keyOf, prepareSet, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** The three documents a device is told to a Touch in, and the list in each that holds it. */

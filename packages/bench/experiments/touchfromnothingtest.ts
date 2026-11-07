@@ -7,7 +7,7 @@
  * 418, found every field equal, equal after a normalisation the remote does not tell apart, or different for a stated
  * reason, and every one of the 373 commands sending the same, `packages/corpus/test/touch-nothing-set.test.ts`. So the
  * set is meant to behave as 8.6's did, and the ten 7.1 tests derived from it are the files in `irtests/` as they stand,
- * expectation for expectation, `test/touch91.test.ts`: every activity started and ended, the switches, the favourites,
+ * expectation for expectation, `test/touch-from-nothing-predicted.test.ts`: every activity started and ended, the switches, the favourites,
  * every key of every activity's map, and every device's own keys in device mode, 418 expectations in ten tests.
  *
  * **What the model cannot say, and the person notes**, beyond 8.6's list: the entries of each activity's and device's
@@ -18,7 +18,7 @@
  * twenty one; and the background, a picture of ours, dark blue with a yellow band across its foot, shown in place of the
  * built in one 8.6 showed, with the person's own background out of the background picker while the set is held and in
  * it again after the put back. Those are the predictions 9.4 tests, each named as a difference in
- * `src/touchnothingset.ts` in `packages/corpus`.
+ * `experiments/touchnothingset.ts` in `packages/corpus`.
  *
  * **Every code it predicts is named by the monitor already**: the codes send what 8.6's sent and the device names are
  * the setup file's, which are 8.6's, so `BENCH_TOUCH_SETS` in `irmonitor.ts` names them as it named them in 7.1.

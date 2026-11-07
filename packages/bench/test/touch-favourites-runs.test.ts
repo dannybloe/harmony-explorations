@@ -87,8 +87,8 @@
  * for the station's logo with a tag but the one the remote was given last; a hash that moved; 0 6 1 unheard or heard
  * for another tap, a digit out of order, or a pause outside its band.
  *
- * **Sources checked first**: the lab's `8.3-preflight.md` and `8.3-land-brief.md`, `touch82-runs.test.ts`, whose shape
- * this follows, `touch83.test.ts`, `touch83.ts` and `touchengine.ts`, and the screens' `submitImageRequest` in the
+ * **Sources checked first**: the lab's `8.3-preflight.md` and `8.3-land-brief.md`, `touch-activity-runs.test.ts`, whose shape
+ * this follows, `touch-favourites-predicted.test.ts`, `touchfavouritestest.ts` and `harmony-touch/engine.ts`, and the screens' `submitImageRequest` in the
  * lab's firmware copy for the picture order. Logitech's client was not consulted: the remote runs its own screens and
  * the answers are ours. **Which architectures**: the Harmony Touch on firmware 4.15.330, one unit, one run of each set;
  * its firmware reports 17 and Logitech's templates file it under 18.
@@ -111,9 +111,8 @@ import {
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../src/irsession.ts';
-import { touch71Configuration, touch71Tests } from '../src/touchbench.ts';
-import { TIMING, TouchEngine } from '../src/touchengine.ts';
-import { touch83Tests } from '../src/touch83.ts';
+import { BenchTouchEngine, TIMING, touch71Configuration, touch71Tests } from '../src/touchbench.ts';
+import { touch83Tests } from '../experiments/touchfavouritestest.ts';
 
 const SOURCE = 'touch_activity_set_back';
 const SET = 'touch_favourites_set';
@@ -448,7 +447,7 @@ test('the monitor log holds the run\'s 24 presses, then Listen to Music and Off,
     // After the test's Off: one frame no code of the documents names, then twelve the model predicts for Listen to
     // Music started from Off, Off, and NPO 3 tapped with nothing running.
     assert.deepEqual(after[0]!.names, []);
-    const engine = new TouchEngine(configuration(SET), TIMING.low);
+    const engine = new BenchTouchEngine(configuration(SET), TIMING.low);
     engine.start(undefined);
     engine.idle();
     const predicted = [...engine.start('Listen to Music'), ...(engine.idle(), engine.start(undefined)), ...(engine.idle(), engine.favourite('Watch TV', '3'))]

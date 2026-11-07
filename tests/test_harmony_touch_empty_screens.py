@@ -6,7 +6,7 @@ the production image, 4.15.330: `todo-touch.md` 9.2.
 at the bench reported, held by no file but one photograph, the favourites page showing "Please sign in to your Harmony
 account to add your favorite TV channels.", and right after the sync, off the cable, a text seen once and not brought
 back, "the remote says it is empty and something like Please sign in to your Harmony account". Which text that was is
-not identified. The run itself is `packages/bench/test/touch92-runs.test.ts`; this file holds what the image says about
+not identified. The run itself is `packages/bench/test/touch-empty-runs.test.ts`; this file holds what the image says about
 the two texts that fit the report, and about the moment the second can appear.
 
 **What was read, and what it settles.**

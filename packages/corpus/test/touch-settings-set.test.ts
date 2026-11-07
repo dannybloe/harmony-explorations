@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch set of `todo-touch.md` 8.4: Settings of ours and Context composed from a description, delivered
  * beside the four other configuration documents the remote holds, and its exact inverse, built by
- * `src/touchsettingsset.ts` and rehearsed through the real answerer and session on the fake remote.
+ * `experiments/touchsettingsset.ts` and rehearsed through the real answerer and session on the fake remote.
  *
  * **What is held here.**
  *
@@ -27,7 +27,7 @@
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates
  * file it under 18. The two 8.4 sets are read by fixture, `touch_settings_set` and `touch_settings_set_back`, and
- * what the remote did with them is `touch84-runs.test.ts`.
+ * what the remote did with them is `touch-settings-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -38,8 +38,8 @@ import { fileURLToPath } from 'node:url';
 import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 
-import { differences } from '../src/touchchangedset.ts';
-import { putBackSettingsAndContext, settingsChanges, sixOf, withSettingsAndContext } from '../src/touchsettingsset.ts';
+import { differences } from '../experiments/touchchangedset.ts';
+import { putBackSettingsAndContext, settingsChanges, sixOf, withSettingsAndContext } from '../experiments/touchsettingsset.ts';
 import { keyOf, resultOf, setTag, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

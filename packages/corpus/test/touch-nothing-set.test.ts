@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch set of `todo-touch.md` 9.1: the whole test setup built from a setup file, the archive of the
  * catalogue and our rhythm table, **with no Logitech document as input**, compared field by field with 8.6's set, which
- * the bench Touch ran 418 of 418, and its put back; built by `src/touchnothingset.ts` over the codec's
+ * the bench Touch ran 418 of 418, and its put back; built by `experiments/touchnothingset.ts` over the codec's
  * `buildTouchDocuments`, and rehearsed through the real answerer and session on the fake remote.
  *
  * **What is held here.**
@@ -24,7 +24,7 @@
  *    2318, 480, 3676; MapList 7362, 0, 531; Context 10, 0, 17; Settings 21, 0, 49; ProtocolList 320, 5, 59; and **no row
  *    unexplained**. ActivityList is equal whole, since an activity is composed from the same description by the same
  *    composer as in 8.6. Why each normalisation and difference changes nothing the remote does is the row's own text in
- *    `src/touchnothingset.ts`, with the reading behind it; the rows that rest on a prediction rather than a reading,
+ *    `experiments/touchnothingset.ts`, with the reading behind it; the rows that rest on a prediction rather than a reading,
  *    entries with no icon, the Xbox's toggle bit, Context's fourteen fields, and our background shown with the person's
  *    own out of the picker until the put back, are what 9.4 runs.
  * 4. **What every command sends is the same**: our definitions are written from our rhythm table and theirs are
@@ -72,9 +72,9 @@ import { isDeepStrictEqual } from 'node:util';
 import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 
-import { answersWhenHolding, writeOfAnswersSize } from '../src/touchchangedset.ts';
-import { comparisonLines } from '../src/touchsetupset.ts';
-import { compareNothing, describeTouchAccount, NOTHING_DOCUMENTS, putBackNothing, waveformClosure, withNothing, type TouchAccountFile } from '../src/touchnothingset.ts';
+import { answersWhenHolding, writeOfAnswersSize } from '../experiments/touchchangedset.ts';
+import { comparisonLines } from '../experiments/touchsetupset.ts';
+import { compareNothing, describeTouchAccount, NOTHING_DOCUMENTS, putBackNothing, waveformClosure, withNothing, type TouchAccountFile } from '../experiments/touchnothingset.ts';
 import { keyOf, ourTag, prepareSet, resultOf, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

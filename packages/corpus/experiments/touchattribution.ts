@@ -43,7 +43,7 @@
 import { catalogueCommands, catalogueDevice, catalogueDriving, harmonyTouch, statedCode } from '@harmony/codec';
 
 import { NOTHING_DOCUMENTS, type TouchAccountFile } from './touchnothingset.ts';
-import { keyOf, ourTag, type SetAnswer, type TouchSet } from './touchsync.ts';
+import { keyOf, ourTag, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 type Json = Record<string, unknown>;
 const isRecord = (x: unknown): x is Json => typeof x === 'object' && x !== null && !Array.isArray(x);

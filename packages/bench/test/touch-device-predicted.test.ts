@@ -4,8 +4,8 @@
  *
  * **What the test is.** One file in `irtests/`, `touch-8-1-device-mode.json`: Off, the Test Projector chosen from
  * the Devices list, each key its own map binds tapped, then the Blu-ray chosen and its navigation keys tapped as a
- * control from the same run. Every expectation is derived, never written: `touch81Plans` in `src/touch81.ts` says
- * what the person does and `src/touchengine.ts`, the engine model 7.1 calibrated, says what is sent.
+ * control from the same run. Every expectation is derived, never written: `touch81Plans` in `experiments/touchdevicetest.ts` says
+ * what the person does and `packages/codec/src/harmony-touch/engine.ts`, the engine model 7.1 calibrated, says what is sent.
  * `bin/touch-device-tests.ts --write` writes the file; the first test holds that it is what the derivation gives.
  *
  * **What the predictions rest on.** The documents of the set the bench Touch holds since 6.9, the
@@ -24,7 +24,7 @@
  * reason no Sony 12 Bit device of the bench configurations can. **The control** adds a second device of ours with
  * the same numbers, whose frames the check then reports as matching two devices: it can fail.
  *
- * **Sources checked first.** The 8.1 brief in the lab; `touchbench.ts` and `touch71.test.ts`, whose derivation
+ * **Sources checked first.** The 8.1 brief in the lab; `touchbench.ts` and `touch-full-bench-predicted.test.ts`, whose derivation
  * this reuses; `irmonitor.ts` (`CodeBook`, `sameFrame`, `withinTolerance`); the engine's `buttonPress` in the lab's
  * decompiled engine, which in device mode looks the key up in `16417Device` and the device's id and sends the
  * command it names, as the model has it. Logitech's client was not consulted.
@@ -47,7 +47,7 @@ import { answersWritten, commands, records, sessions } from '@harmony/usb/test/t
 
 import { BENCH_CONFIGS, BENCH_TOUCH_SETS, CodeBook, framesOfTrain } from '../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { TOUCH_8_1_DEVICE, TOUCH_8_1_SET, touch81Tests } from '../src/touch81.ts';
+import { TOUCH_8_1_DEVICE, TOUCH_8_1_SET, touch81Tests } from '../experiments/touchdevicetest.ts';
 
 const SOURCE = 'touch_changed_set_label_back';
 const FULL = 'touch_full_sync_recording';

@@ -7,8 +7,8 @@
  *
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.2-activity`,
  * which `packages/corpus/bin/touch-device-set.ts --activity` built, and the favourites' documents of the recorded
- * full sync, through the engine model `src/touchengine.ts`; `src/touch82.ts` holds the plan and
- * `test/touch82.test.ts` that the file written is what this gives. The 8.1 script, `touch-device-tests.ts`, is the
+ * full sync, through the engine model `packages/codec/src/harmony-touch/engine.ts`; `experiments/touchactivitytest.ts` holds the plan and
+ * `test/touch-activity-predicted.test.ts` that the file written is what this gives. The 8.1 script, `touch-device-tests.ts`, is the
  * same with 8.1's plan.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -20,7 +20,7 @@ import { LAB } from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
 import { touch71Configuration } from '../src/touchbench.ts';
-import { TOUCH_8_2_SET, touch82Tests } from '../src/touch82.ts';
+import { TOUCH_8_2_SET, touch82Tests } from '../experiments/touchactivitytest.ts';
 
 if (LAB === undefined || !existsSync(join(LAB, TOUCH_8_2_SET))) {
   process.stderr.write(`no lab, or no ${TOUCH_8_2_SET} in it\n`);

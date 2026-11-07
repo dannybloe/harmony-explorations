@@ -1,6 +1,6 @@
 /**
  * The Harmony Touch's bench test for a device of ours, `todo-touch.md` 8.1: device mode for the composed device,
- * each of its keys, with what the remote is predicted to send derived from the documents by `touchengine.ts`,
+ * each of its keys, with what the remote is predicted to send derived from the documents by `harmony-touch/engine.ts`,
  * never written by hand. The same derivation as 7.1's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.1-device`, the bench set of 6.9 with the Test
@@ -15,13 +15,13 @@
  * its labels in the order of their `IndexInMenu`. The screen entry Power, which no key binds, is not in the test:
  * when it was written the model predicted a key and not a screen entry, so the lab's `notes/8.1-preflight.md` had
  * the entry pressed after the test, heard and not judged. The model has had a screen entry since the run,
- * `TouchEngine.entry` and the `{ entry }` action, and `test/touch81-runs.test.ts` holds that it predicts that tap;
+ * `TouchEngine.entry` and the `{ entry }` action, and `test/touch-device-runs.test.ts` holds that it predicts that tap;
  * the plan is left as it ran, so the file in `irtests/` stays the one the run carried.
  */
 import type { harmonyTouch } from '@harmony/codec';
 
-import type { TestDefinition } from './irsession.ts';
-import { KEY_GROUPS, keySteps, touchTest, type TouchStep, type TouchTestPlan } from './touchbench.ts';
+import type { TestDefinition } from '../src/irsession.ts';
+import { KEY_GROUPS, keySteps, touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';
 
 type Configuration = harmonyTouch.Configuration;
 

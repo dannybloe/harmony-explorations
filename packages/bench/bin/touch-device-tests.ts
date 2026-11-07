@@ -6,7 +6,7 @@
  *
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.1-device`,
  * which `packages/corpus/bin/touch-device-set.ts` built, and the favourites' documents of the recorded full sync,
- * through the engine model `src/touchengine.ts`; `src/touch81.ts` holds the plan and `test/touch81.test.ts` that the
+ * through the engine model `packages/codec/src/harmony-touch/engine.ts`; `experiments/touchdevicetest.ts` holds the plan and `test/touch-device-predicted.test.ts` that the
  * file written is what this gives.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -18,7 +18,7 @@ import { LAB } from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 
 import { touch71Configuration } from '../src/touchbench.ts';
-import { TOUCH_8_1_SET, touch81Tests } from '../src/touch81.ts';
+import { TOUCH_8_1_SET, touch81Tests } from '../experiments/touchdevicetest.ts';
 
 if (LAB === undefined || !existsSync(join(LAB, TOUCH_8_1_SET))) {
   process.stderr.write(`no lab, or no ${TOUCH_8_1_SET} in it\n`);

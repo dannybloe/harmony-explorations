@@ -32,7 +32,7 @@
 import { harmonyTouch } from '@harmony/codec';
 
 import { builtFrom, differences, type SetRecord } from './touchchangedset.ts';
-import { prepareSet, setTag, keyOf, type BodyType, type SetAnswer, type TouchSet } from './touchsync.ts';
+import { prepareSet, setTag, keyOf, type BodyType, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
 /** A picture's address: Logitech's user image store, or the logical scheme for channel logos, as the answerer tells them. */
 export const isPictureAddress = (uri: string): boolean => uri.startsWith('content-image://') || uri.startsWith('https://');

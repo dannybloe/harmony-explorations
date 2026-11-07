@@ -75,8 +75,8 @@
  * set leaves alone, or a 304 for one it changes; a hash not moving to each set's; a code of ours unheard, heard out
  * of order, heard where the step expected none, or a pause outside its band.
  *
- * **Sources checked first**: the lab's `8.2-preflight.md` and `8.2-land-brief.md`, `touch81-runs.test.ts`, whose shape
- * this follows, `touch82.test.ts` and `touchengine.ts`. Logitech's client was not consulted: the remote runs its own
+ * **Sources checked first**: the lab's `8.2-preflight.md` and `8.2-land-brief.md`, `touch-device-runs.test.ts`, whose shape
+ * this follows, `touch-activity-predicted.test.ts` and `harmony-touch/engine.ts`. Logitech's client was not consulted: the remote runs its own
  * engine and the answers are ours. **Which architectures**: the Harmony Touch on firmware 4.15.330, one unit, one run
  * of each set; its firmware reports 17 and Logitech's templates file it under 18.
  *
@@ -96,9 +96,8 @@ import {
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, type Expectation, type RunPress, type Verdict } from '../src/irsession.ts';
-import { touch71Configuration } from '../src/touchbench.ts';
-import { TIMING, TouchEngine } from '../src/touchengine.ts';
-import { TOUCH_8_2_ACTIVITY, touch82Tests } from '../src/touch82.ts';
+import { BenchTouchEngine, TIMING, touch71Configuration } from '../src/touchbench.ts';
+import { TOUCH_8_2_ACTIVITY, touch82Tests } from '../experiments/touchactivitytest.ts';
 
 const SOURCE = 'touch_device_set_back';
 const ACTIVITY_SET = 'touch_activity_set';
@@ -127,7 +126,7 @@ const SET_RUNS = [
 ] as const;
 const CLOSING = 'touch_activity_unchanged_';
 
-/** The eight request lists every run of 8.2 handed out, as every run before 8.1's sets did, `touch81-runs.test.ts`. */
+/** The eight request lists every run of 8.2 handed out, as every run before 8.1's sets did, `touch-device-runs.test.ts`. */
 const EIGHT = [
   Array(6).fill('document'), [], ['user favourites'], ['device favourites'], ['line up'], [], Array(10).fill('picture'), ['finished'],
 ];
@@ -330,7 +329,7 @@ test('the control: judged by 8.1-device-back\'s documents no plan exists, and th
     const start = named(book, run()[1]!.presses);
     // Each recorded activity's start from Off as the model predicts it by the documents the remote held, as expectations.
     const scores = before.activities.map((a) => {
-      const engine = new TouchEngine(before, TIMING.low);
+      const engine = new BenchTouchEngine(before, TIMING.low);
       engine.start(undefined);
       engine.idle();
       const expect: Expectation[] = engine.start(a.name).map((s) => ({ device: s.device, command: s.command }) as Expectation);
@@ -342,7 +341,7 @@ test('the control: judged by 8.1-device-back\'s documents no plan exists, and th
     assert.deepEqual(scores.find(([n]) => n === 'Watch a Blu-ray'), ['Watch a Blu-ray', 2, 5]);
     // And by the activity set, its own start holds whole on the same presses.
     const c = configuration(ACTIVITY_SET);
-    const engine = new TouchEngine(c, TIMING.low);
+    const engine = new BenchTouchEngine(c, TIMING.low);
     engine.start(undefined);
     engine.idle();
     const own = engine.start(TOUCH_8_2_ACTIVITY).map((s) => ({ device: s.device, command: s.command }) as Expectation);
@@ -381,7 +380,7 @@ test('the monitor log holds the run\'s 33 presses, then Test Cinema started agai
     assert.deepEqual(during.map((p) => p.names), run().flatMap((s) => named(book, s.presses).map(names)));
     // After the test's Off the engine holds every device off: a start from Off and an Off then send these.
     const c = configuration(ACTIVITY_SET);
-    const engine = new TouchEngine(c, TIMING.low);
+    const engine = new BenchTouchEngine(c, TIMING.low);
     engine.start(undefined);
     engine.idle();
     const predicted = [...engine.start(TOUCH_8_2_ACTIVITY), ...(engine.idle(), engine.start(undefined))].map((s) => `${s.device} ${s.command}`);

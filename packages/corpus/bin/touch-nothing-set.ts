@@ -10,7 +10,7 @@
  *       [--attribute --setup <setup file> --account <lab file>] [--hash <answer>] [--list <request list>]... [--written <write>]...
  *
  * **`--describe-account`** writes the account's values out of a set the remote holds into a new lab file,
- * `describeTouchAccount` in `src/touchnothingset.ts`: Context's seven fields a Touch reads, the tuning device's
+ * `describeTouchAccount` in `experiments/touchnothingset.ts`: Context's seven fields a Touch reads, the tuning device's
  * favourites address and key, and the six documents' addresses. It prints nothing of them.
  *
  * **`--build --setup`** builds the six documents and the two pictures of our background from the setup file
@@ -30,7 +30,7 @@
  * the set holds answered to a remote that holds none of them, and the size of that write alone.
  *
  * **`--attribute`**, `todo-touch.md` 9.3: every field of the set credited to the generator that wrote it, found by
- * running each step of the build again by itself, `attributeNothingSet` in `src/touchattribution.ts`, with the setup file
+ * running each step of the build again by itself, `attributeNothingSet` in `experiments/touchattribution.ts`, with the setup file
  * and the account file it was built from; NOT OK on a field no generator reproduces, which is named carried when
  * `--against`'s set, Logitech's documents, holds the same value in the same field.
  *
@@ -48,12 +48,12 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 import { harmonyTouch } from '@harmony/codec';
 import { IR_ARCHIVE, LAB } from '@harmony/lab';
 
-import { attributeNothingSet, attributionLines } from '../src/touchattribution.ts';
-import { answersWhenHolding, writeOfAnswersSize } from '../src/touchchangedset.ts';
-import { compareContentRequests, contentKind, isContent } from '../src/touchfavouritesset.ts';
-import { compareConfigHash, compareRequestList } from '../src/touchownset.ts';
-import { comparisonLines } from '../src/touchsetupset.ts';
-import { compareNothing, describeTouchAccount, putBackNothing, waveformClosure, withNothing, type TouchAccountFile } from '../src/touchnothingset.ts';
+import { attributeNothingSet, attributionLines } from '../experiments/touchattribution.ts';
+import { answersWhenHolding, writeOfAnswersSize } from '../experiments/touchchangedset.ts';
+import { compareContentRequests, contentKind, isContent } from '../experiments/touchfavouritesset.ts';
+import { compareConfigHash, compareRequestList } from '../experiments/touchownset.ts';
+import { comparisonLines } from '../experiments/touchsetupset.ts';
+import { compareNothing, describeTouchAccount, putBackNothing, waveformClosure, withNothing, type TouchAccountFile } from '../experiments/touchnothingset.ts';
 import { WRITE_ANSWERS, keyOf, prepareSet, resultOf, type RemoteRequest, type TouchSet } from '../src/touchsync.ts';
 
 function fail(message: string): never {

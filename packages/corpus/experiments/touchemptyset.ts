@@ -17,7 +17,7 @@
  * request for one is answered 200 rather than 404; asked with the tag the remote held they are answered 304. The two user
  * backgrounds are not in it: no set here holds a background, and the one shown when they are missing is built in.
  *
- * What 9.2's run on the bench Touch did with the two is `packages/bench/test/touch92-runs.test.ts`; the sets are held
+ * What 9.2's run on the bench Touch did with the two is `packages/bench/test/touch-empty-runs.test.ts`; the sets are held
  * here by `packages/corpus/test/touch-empty-set.test.ts`. It never prints a value out of a document. Nothing here opens
  * a remote.
  */
@@ -27,7 +27,7 @@ import { changeDocuments } from './touchchangedset.ts';
 import { isPictureAddress, logosAsked, withContent, type Content } from './touchfavouritesset.ts';
 import { putBackRemoval } from './touchremovalset.ts';
 import { sixOf } from './touchsettingsset.ts';
-import type { SetAnswer, TouchSet } from './touchsync.ts';
+import type { SetAnswer, TouchSet } from '../src/touchsync.ts';
 
 /** The four documents the empty set empties and its put back restores, in the order the remote asks for them. */
 export const EMPTY_DOCUMENTS = ['ActivityList', 'DeviceList', 'MapList', 'ProtocolList'] as const;

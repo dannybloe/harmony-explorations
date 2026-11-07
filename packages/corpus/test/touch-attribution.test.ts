@@ -12,7 +12,7 @@
  *    rhythm table is code, `PROTOCOLS` in the codec, so it is read by no file. So the only inputs are the five the brief names: the
  *    setup file, the archive through our readers, our rhythm table, the lab's account description and the picture drawn
  *    in `ourBackground`.
- * 2. **Every field and its generator**, `attributeNothingSet` in `src/touchattribution.ts`: each step of the build run
+ * 2. **Every field and its generator**, `attributeNothingSet` in `experiments/touchattribution.ts`: each step of the build run
  *    again by itself and a field credited to the latest step whose own output holds that value at that place, the
  *    composer's own writes told from what it carries by composing the same devices onto skeleton records. On the lab's
  *    set, `work/touch-firmware/sets/9.1-nothing`, which 9.4 delivers: 10671 fields, per document and generator exactly as
@@ -56,8 +56,8 @@ import { fileURLToPath } from 'node:url';
 import { harmonyTouch } from '@harmony/codec';
 import * as lab from '@harmony/lab';
 
-import { attributeNothingSet, attributionCounts, layersOf, withField, type AttributedField, type NothingInputs } from '../src/touchattribution.ts';
-import { withNothing, type TouchAccountFile } from '../src/touchnothingset.ts';
+import { attributeNothingSet, attributionCounts, layersOf, withField, type AttributedField, type NothingInputs } from '../experiments/touchattribution.ts';
+import { withNothing, type TouchAccountFile } from '../experiments/touchnothingset.ts';
 import { keyOf, prepareSet, type TouchSet } from '../src/touchsync.ts';
 
 /** 8.6's set, Logitech's documents under tags of ours, which a field no generator reproduces is looked up in. */

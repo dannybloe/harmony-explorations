@@ -27,7 +27,7 @@
 import { harmonyTouch } from '@harmony/codec';
 
 import { changeDocuments, differences } from './touchchangedset.ts';
-import { keyOf, prepareSet, type TouchSet } from './touchsync.ts';
+import { keyOf, prepareSet, type TouchSet } from '../src/touchsync.ts';
 
 /** The documents a device or an activity is named in, and the list in each that holds them. */
 export const REMOVAL_DOCUMENTS: readonly (readonly [string, string])[] = [

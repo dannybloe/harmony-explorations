@@ -57,7 +57,7 @@
  * lists them again.
  *
  * **What it leaves for 9.3 and 9.4**, each named in the comparison with 8.6's set,
- * `packages/corpus/src/touchnothingset.ts`: a command's `FunctionId-`, which the archive does not hold and by which the
+ * `packages/corpus/experiments/touchnothingset.ts`: a command's `FunctionId-`, which the archive does not hold and by which the
  * screens draw an entry's icon; Context's fourteen fields a Touch synced through a computer does not read; and the
  * favourites documents and their pictures, which stay the remote's.
  *

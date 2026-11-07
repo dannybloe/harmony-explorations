@@ -36,7 +36,7 @@ import { harmonyTouch } from '@harmony/codec';
 import { changeDocuments, differences } from './touchchangedset.ts';
 import { putBackRemoval } from './touchremovalset.ts';
 import { sixOf } from './touchsettingsset.ts';
-import type { TouchSet } from './touchsync.ts';
+import type { TouchSet } from '../src/touchsync.ts';
 
 /** Where a described setup's ids start, `OWN_IDS`: past the ids 8.1 and 8.2 used, 900000001 to 900000003. */
 export const SETUP_IDS: harmonyTouch.SetupIds = { device: 900_000_101, activity: 900_000_201, sequence: 900_000_301 };
@@ -334,7 +334,7 @@ const KEYED = new Set(['Activities', 'DevicesWithFeatures', 'ButtonMaps', 'Proto
 /**
  * What a comparison compares and how it explains a field: the documents, the normalisations and differences, and lists
  * matched by a key of their own beyond `KEYED`'s, each with the key. 8.6's is `SETUP_RULES`; `todo-touch.md` 9.1 states
- * its own, `src/touchnothingset.ts`.
+ * its own, `experiments/touchnothingset.ts`.
  */
 export interface ComparisonRules {
   readonly documents: readonly string[];

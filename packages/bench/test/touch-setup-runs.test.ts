@@ -37,7 +37,7 @@
  * 4. **The ten 7.1 tests held 418 of 418 on the setup**, judged afresh here from each last attempt's pulses by the
  *    setup's own documents, which name every code the catalogue carried: 38, 30, 15, 33, 39, 32, 38, 37, 74 and 82,
  *    the verdicts the monitor wrote at the bench, one for one. The tests the runs carried are the files as they stand,
- *    and the files are what the setup derives, `touch86.test.ts`. So every start, switch and stop, the five favourites
+ *    and the files are what the setup derives, `touch-setup-predicted.test.ts`. So every start, switch and stop, the five favourites
  *    through the LG TV under an id of ours, every key of every activity's map, and every key of each device's own map
  *    in device mode went as on the set the setup was described from, every pause in its band.
  * 5. **What was heard that no expectation names**, in every judged step of the ten (the first Off of a test is not
@@ -74,7 +74,7 @@
  * a set Logitech built.
  *
  * **The control** judges the Watch TV keys run by the tests the same description derives with Watch TV's first key
- * sending another command, the change `touch86.test.ts` makes, Home made to send the LG TV's Exit: the run then holds
+ * sending another command, the change `touch-setup-predicted.test.ts` makes, Home made to send the LG TV's Exit: the run then holds
  * 32 of 33, the one unheard being that Exit, where it holds 33 of 33 by the setup's own, so the 418 rests on the
  * setup's documents and the judging can fail. The hash after the setup is held against the put
  * back's, from which it differs. And "nothing else heard" is the search that finds the three steps above.
@@ -84,8 +84,8 @@
  * ten unheard or a pause out of its band; a code heard that the setup's documents do not name; a press in the log
  * outside the attempts other than the Off.
  *
- * **Sources checked first**: the lab's `8.6-preflight.md` and `8.6-land-brief.md`, `touch85-runs.test.ts` and
- * `touch71-runs.test.ts`, whose shape this follows, `touch86.test.ts`, `touchbench.ts` and `touchengine.ts`, and
+ * **Sources checked first**: the lab's `8.6-preflight.md` and `8.6-land-brief.md`, `touch-removal-runs.test.ts` and
+ * `touch-full-bench-runs.test.ts`, whose shape this follows, `touch-setup-predicted.test.ts`, `touchbench.ts` and `harmony-touch/engine.ts`, and
  * `syncTouch` in `packages/corpus/src/touchsync.ts` for what a run's folder keeps. Logitech's client was not consulted:
  * the remote runs its own engine and screens and the answers are ours. **Which architectures**: the Harmony Touch on
  * firmware 4.15.330, one unit, one committed run of each set; its firmware reports 17 and Logitech's templates file it
@@ -109,9 +109,8 @@ import {
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../src/irsession.ts';
-import { TOUCH_8_6_TESTS } from '../src/touch86.ts';
-import { touch71Configuration, touch71Tests } from '../src/touchbench.ts';
-import { TIMING, TouchEngine } from '../src/touchengine.ts';
+import { TOUCH_8_6_TESTS } from '../experiments/touchsetuptest.ts';
+import { BenchTouchEngine, TIMING, touch71Configuration, touch71Tests } from '../src/touchbench.ts';
 
 /** `8.5-removal-back`: what the bench Touch held before 8.6, what the setup is described from and what the put back delivers. */
 const SOURCE = 'touch_removal_set_back';
@@ -438,14 +437,14 @@ test('nothing heard that no expectation names but one KPN ChannelPrev in the Swi
     const box = c.activities.find((a) => a.name === 'Switch Box')!.map!;
     const sendsChannelPrev = (b: harmonyTouch.ReadButton) => [b.press, b.longPress].some((a) => a?.kind === 'command' && a.command?.name === 'ChannelPrev');
     assert.deepEqual([...box.keys.filter(sendsChannelPrev).map((b) => b.key), ...[...box.entries.values()].filter(sendsChannelPrev).map((b) => b.label)], ['PrevChannel']);
-    const engine = new TouchEngine(c, TIMING.low);
+    const engine = new BenchTouchEngine(c, TIMING.low);
     engine.idle();
     engine.start('Switch Box');
     engine.idle();
     assert.deepEqual(engine.key('PrevChannel', 'tap').map((s) => `${s.device} ${s.command}`), ['KPN ChannelPrev']);
 
     // Device mode 1 of 2, step 7: << is Rewind, and the LG TV's own map sends Rewind for it.
-    const device = new TouchEngine(c, TIMING.low);
+    const device = new BenchTouchEngine(c, TIMING.low);
     device.idle();
     const own = (name: string, key: string, how: 'tap' | 'hold') => device.key(key, how, name).map((s) => `${s.device} ${s.command}`);
     assert.deepEqual(own('LG TV', 'Rewind', 'tap'), ['LG TV Rewind']);
@@ -518,7 +517,7 @@ test('the monitor log before the put back holds the thirteen attempts\' presses,
     assert.deepEqual(outside.map((p) => p.names[0]), ['LG TV PowerOff', 'Denon AV Receiver PowerOff']);
     assert.ok(outside.every((p) => p.at > runOf('touch_8_6_favourites_superseded').endedAt && p.at < runOf('touch_8_6_favourites').startedAt));
     // That is what Off sends after Watch TV, which the attempt's tap of NPO 1 started.
-    const engine = new TouchEngine(setup(), TIMING.low);
+    const engine = new BenchTouchEngine(setup(), TIMING.low);
     engine.idle();
     engine.start('Watch TV');
     engine.idle();
@@ -527,7 +526,7 @@ test('the monitor log before the put back holds the thirteen attempts\' presses,
     assert.ok(all[0]!.at >= runOf(RUNS[0]![0]).startedAt);
   });
 
-/** The source's answers with the four documents of `description` composed onto its base, as `touch86.test.ts` builds them. */
+/** The source's answers with the four documents of `description` composed onto its base, as `touch-setup-predicted.test.ts` builds them. */
 function composedAnswers(description: harmonyTouch.TouchSetup): SetAnswer[] {
   const answers = setOf(SOURCE);
   const docs = harmonyTouch.documentsOfAnswers(answers as unknown as harmonyTouch.SyncAnswer[]);

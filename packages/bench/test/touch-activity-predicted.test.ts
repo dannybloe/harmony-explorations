@@ -4,7 +4,7 @@
  *
  * **What the test is.** One file in `irtests/`, `touch-8-2-activity.json`: Off; Test Cinema started from Off; every
  * key its map binds and every screen entry, tapped; a switch to Watch TV and back; Off. Every expectation is derived,
- * never written: `touch82Plans` in `src/touch82.ts` says what the person does and `src/touchengine.ts`, the engine
+ * never written: `touch82Plans` in `experiments/touchactivitytest.ts` says what the person does and `packages/codec/src/harmony-touch/engine.ts`, the engine
  * model 7.1 calibrated, says what is sent. `bin/touch-activity-tests.ts --write` writes the file; the first test holds
  * that it is what the derivation gives, and what it predicts in outline.
  *
@@ -22,11 +22,11 @@
  * devices, orders and inputs, by the same composer, and the comparison reports it as the same start as Watch a
  * Blu-ray's: the check can fail.
  *
- * **Sources checked first.** The 8.2 brief in the lab; `touchbench.ts`, `touch81.ts` and their tests, whose
+ * **Sources checked first.** The 8.2 brief in the lab; `touchbench.ts`, `touchdevicetest.ts` and their tests, whose
  * derivation this reuses; the engine's `startActivity` and `buttonPress` in the lab's decompiled engine, which the
  * model reads. Logitech's client was not consulted.
  *
- * **What this does not show** is what the remote does: that is the 8.2 run, held by `touch82-runs.test.ts`, where the
+ * **What this does not show** is what the remote does: that is the 8.2 run, held by `touch-activity-runs.test.ts`, where the
  * bench run of this file held 33 of 33.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330, the one bench unit; its firmware reports 17 and
@@ -43,8 +43,8 @@ import { answersWritten, commands, records, sessions } from '@harmony/usb/test/t
 
 import { BENCH_TOUCH_SETS } from '../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { TOUCH_8_2_ACTIVITY, TOUCH_8_2_SET, touch82Tests } from '../src/touch82.ts';
-import { TIMING, TouchEngine } from '../src/touchengine.ts';
+import { TOUCH_8_2_ACTIVITY, TOUCH_8_2_SET, touch82Tests } from '../experiments/touchactivitytest.ts';
+import { BenchTouchEngine, TIMING } from '../src/touchbench.ts';
 
 const SOURCE = 'touch_device_set_back';
 const FULL = 'touch_full_sync_recording';
@@ -114,7 +114,7 @@ test('the 8.2 test file is what the activity set gives: a start of its own, its 
 function startsFromOff(c: harmonyTouch.Configuration): Map<string, string[]> {
   const out = new Map<string, string[]>();
   for (const a of c.activities) {
-    const e = new TouchEngine(c, TIMING.low);
+    const e = new BenchTouchEngine(c, TIMING.low);
     out.set(a.name ?? '', e.start(a.name).map((s) => `${s.device} ${s.command}`));
   }
   return out;
