@@ -51,13 +51,22 @@ This said the image's contents had not been examined until it was read.
 * **A sync stopped halfway is undone over the cable**, measured: while it is marked running the remote answers
   the configuration hash read 202, an abort answers 200 and clears it with the stored documents untouched, and
   the restart request answers 200 and the remote starts normally, [recovery](../../architectures/harmony-touch/firmware.md#a-sync-that-stops-halfway)[^t-touch-first-sync].
+  A sync stopped by a USB read timeout inside its first write of answers, after which the remote left the bus and
+  started again, left the stored documents as they were, the configuration hash answering 200 with their tags, and
+  the same set sent again was committed[^t-touch-removal-of-theirs]; what made it stop is not known[^unchecked].
 * **There is no second copy of the application and no safe mode** of the older remotes' kind: the kernel's
   own start program is the recovery system, and it installs a firmware drop or runs a factory reset before
   the system is mounted, [below the application](../../architectures/harmony-touch/firmware.md#below-the-application)[^t-touch-recovery].
 
 ## Not checked
 
-* Where on the remote the firmware and the configuration live[^unchecked].
+* The volumes the firmware and the configuration live on, looked at on a unit rather than read in the
+  image[^unchecked]. The image puts the system on a kernel, a root, a data and a cache volume and keeps the
+  configuration as documents on the data volume[^t-touch-recovery],
+  [below the application](../../architectures/harmony-touch/firmware.md#below-the-application) and [where each is
+  kept](../../architectures/harmony-touch/favourites-and-settings.md#where-each-is-kept). *Corrected:* this asked
+  where on the remote the firmware and the configuration live<!--superseded-->, which the image has since
+  answered.
 * Whether the update service's anonymous request serves a different build than a registered unit
   gets[^unchecked].
 
@@ -68,4 +77,5 @@ This said the image's contents had not been examined until it was read.
 [^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
+[^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch-removal-runs.test.ts)
 [^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)

@@ -4,15 +4,16 @@
  *
  * **What the test is.** One file in `irtests/`, `touch-8-1-device-mode.json`: Off, the Test Projector chosen from
  * the Devices list, each key its own map binds tapped, then the Blu-ray chosen and its navigation keys tapped as a
- * control from the same run. Every expectation is derived, never written: `touch81Plans` in `src/touch81.ts` says
- * what the person does and `src/touchengine.ts`, the engine model 7.1 calibrated, says what is sent.
+ * control from the same run. Every expectation is derived, never written: `touch81Plans` in `experiments/touchdevicetest.ts` says
+ * what the person does and `packages/codec/src/harmony-touch/engine.ts`, the engine model 7.1 calibrated, says what is sent.
  * `bin/touch-device-tests.ts --write` writes the file; the first test holds that it is what the derivation gives.
  *
  * **What the predictions rest on.** The documents of the set the bench Touch holds since 6.9, the
  * `touch_changed_set_label_back` fixture, with the device of `packages/corpus/touch-devices/test-projector.json`
- * added by the codec, `withTouchDevice`: the same content as the lab's `work/touch-firmware/sets/8.1-device`, which
- * `packages/corpus/test/touch-device-set.test.ts` holds as parsed JSON, tags and all. Built here from the fixture
- * so that this test needs no fixture of its own. The favourites are the recorded full sync's, as in 7.1.
+ * added by the codec, `withTouchDevice`. Built here from the source so that a change to the composer shows in the
+ * predictions, and held equal, document for document, to the set the bench Touch was given, the `touch_device_set`
+ * fixture, which `packages/corpus/test/touch-device-set.test.ts` also holds as parsed JSON, tags and all. The
+ * favourites are the recorded full sync's, as in 7.1.
  *
  * **No bench code can be heard as one of the device's, and no two of its own as each other.** The monitor names a
  * capture by every stored frame it matches, duration for duration within its tolerance, `CodeBook.match`, over
@@ -23,7 +24,7 @@
  * reason no Sony 12 Bit device of the bench configurations can. **The control** adds a second device of ours with
  * the same numbers, whose frames the check then reports as matching two devices: it can fail.
  *
- * **Sources checked first.** The 8.1 brief in the lab; `touchbench.ts` and `touch71.test.ts`, whose derivation
+ * **Sources checked first.** The 8.1 brief in the lab; `touchbench.ts` and `touch-full-bench-predicted.test.ts`, whose derivation
  * this reuses; `irmonitor.ts` (`CodeBook`, `sameFrame`, `withinTolerance`); the engine's `buttonPress` in the lab's
  * decompiled engine, which in device mode looks the key up in `16417Device` and the device's id and sends the
  * command it names, as the model has it. Logitech's client was not consulted.
@@ -46,10 +47,12 @@ import { answersWritten, commands, records, sessions } from '@harmony/usb/test/t
 
 import { BENCH_CONFIGS, BENCH_TOUCH_SETS, CodeBook, framesOfTrain } from '../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
-import { TOUCH_8_1_DEVICE, TOUCH_8_1_SET, touch81Tests } from '../src/touch81.ts';
+import { TOUCH_8_1_DEVICE, TOUCH_8_1_SET, touch81Tests } from '../experiments/touchdevicetest.ts';
 
 const SOURCE = 'touch_changed_set_label_back';
 const FULL = 'touch_full_sync_recording';
+/** The set the bench Touch was given for 8.1, by fixture. */
+const DEVICE_SET = 'touch_device_set';
 const DESCRIPTION = fileURLToPath(new URL('../../corpus/touch-devices/test-projector.json', import.meta.url));
 
 const projector = (): harmonyTouch.RowDevice => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { device: harmonyTouch.RowDevice }).device;
@@ -78,11 +81,15 @@ function configuration(): harmonyTouch.Configuration {
   return harmonyTouch.readConfiguration(documents as harmonyTouch.SyncDocuments);
 }
 
-test('the 8.1 test file is what the device set gives, and every key of the device sends its own command to it', lab.needing(lab.skipUnless(SOURCE, FULL)), () => {
+test('the 8.1 test file is what the device set gives, and every key of the device sends its own command to it', lab.needing(lab.skipUnless(SOURCE, FULL, DEVICE_SET)), () => {
+  // The set built here is the one the remote was given, as parsed JSON, so the predictions are the delivered set's.
+  const delivered = (JSON.parse(new TextDecoder().decode(lab.require_(DEVICE_SET))) as { answers: harmonyTouch.SyncAnswer[] }).answers;
+  assert.deepEqual(answersWith([projector()]).map((a) => a.resource), delivered.map((a) => a.resource));
+  assert.equal(lab.IMAGES[DEVICE_SET], TOUCH_8_1_SET);
   const c = configuration();
   const derived = touch81Tests(c);
   const directory = fileURLToPath(new URL('../irtests/', import.meta.url));
-  const onDisk = testDefinitions(directory).filter((one) => one.id.startsWith('touch-8-1-'));
+  const onDisk = testDefinitions(directory).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url)))).filter((one) => one.id.startsWith('touch-8-1-'));
   assert.deepEqual(onDisk.map((one) => one.id), ['touch-8-1-device-mode']);
   assert.deepEqual(onDisk[0]!.definition, JSON.parse(JSON.stringify(derived[0]!.definition)) as TestDefinition);
   const expectations = derived[0]!.definition.steps.flatMap((s) => s.expect ?? []);

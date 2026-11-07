@@ -112,6 +112,38 @@ of twelve functions in eight files, none of them cited here. The reading, file b
 13. **The pictures are asked for in one order**: the activities' own pictures, the backgrounds, the home
    control scenes, then per favourites activity its favourites' logos and its popular channels' logos,
    after every picture already held has been carried into the new set.
+14. **Where a change made on the remote is handed up, what is carried from one set to the next, and how a drawn
+   picture is kept**, read for `todo-touch.md` 8.3, whose run delivered a user's favourites document and a logo of
+   ours: the screens' `getRequest` puts the user's favourites document to `content://1.0/user/` and its `id`, and a
+   device's to `content://1.0/device/` and its `id`, not to the addresses a sync asks for them at; `copyImages`
+   copies every file ending `.png` from `/data/resources` into the set being gathered, with its index entry, and asks
+   nothing else of it, so a picture no favourite names any more is carried into every later set; and the drawing
+   layer keeps decoded pictures in one cache of 6 MiB keyed by the picture's file path, which drops the least
+   recently used when full and which nothing else empties, `draws/cache.lua` having no other removal and
+   `draws/imageManager.lua` making the one cache. So a picture replaced at the same path may be drawn from the old
+   decoding until it is pushed out or the screens restart; in the 8.3 run the added channel's tile showed the new
+   logo at once, which says only that the old one was not in the cache at that path then.
+15. **When a delivered Settings acts, and the two values whose cost is more than one screen**, read for
+   `todo-touch.md` 8.4, whose run delivered a Settings of ours. At a committed sync's end the screens' finish
+   callback empties their document cache (`resMgr.init()`, which sets `resourceCache = {}`) before calling the
+   sync's subscriber, and the subscriber of a sync answered 200 shows the sync complete screen and posts `syncDone`
+   (`appscommon/sync.lua`). `juniper/init.lua`'s `syncDone` handler sets, in this order, the screen's backlight, the
+   keys', the suspend timeout, the clock and the background, each reading the new document: **those rows act at the
+   sync's end with no restart**. It does not set vibration or the motion sensor, which are set at start, by the same
+   unindented start up lines that set every other row, and on the `setting` event a change on the screens posts:
+   **a sync's value for those two acts at the next start**. **The screen brightness below 4**: `setBrightness`
+   holds the level to 10 to 100 through `getVal`, but `fadeBrightness`, the fade before the screen sleeps, reads the
+   stored level with no `getVal`, starts its count at `floor(26 * level / 100)`, takes one off every 50 ms and ends
+   only when the count equals 0, so a level of 3 or less starts at 0, goes negative and never ends: the remote never
+   finishes fading and never sleeps on battery (a touch's `resume` calls `setBrightness`, which cancels the fade's
+   timer, and the next timeout starts it again; read and not asserted). **The timeout of 0**: `setSuspendTimeout` hands the value times 1000
+   to the renderer with nothing holding it, and a timer is due at the clock plus its interval, so 0 is due at once
+   after every wake; what a person sees then is inferred, not read. **When a change on the screens hands Settings
+   up**: `updateRemoteSettings` puts the whole document when the row's value changed or the caller passes
+   `forceSync`; four of the Touch's settings screens pass it, the brightness screen when its slider ends away from the
+   value it opened with (the slider writes each value in place as it moves, without a put, so the row already holds
+   it by Done), the edit lock and motion sensor screens only past their own check that the switch changed, and the
+   set time screen after any touch of the clock or its 12 hour switch, the time alone included.
 
 **Read and not asserted.** A user background appears in the background picker only once its `_small`
 twin is stored in `/data/resources/` (`juniper/settings/background.lua` walks that folder for twins and
@@ -155,6 +187,12 @@ CHANNELS = SCREENS + 'juniper/favoritechannel.lua'
 INIT = SCREENS + 'juniper/init.lua'
 STYLE = SCREENS + 'juniper/style.lua'
 MAIN = SCREENS + 'main.lua'
+RESOURCES = SCREENS + 'appscommon/resourcemanager.lua'
+DRAW_CACHE = SCREENS + 'draws/cache.lua'
+IMAGE_MANAGER = SCREENS + 'draws/imageManager.lua'
+SYNC_SCREENS = SCREENS + 'appscommon/sync.lua'
+RENDER = SCREENS + 'draws/render.lua'
+SETTINGS_SCREENS = SCREENS + 'juniper/settings/'
 SCREEN_TEST_DATA = SCREENS + 'appscommon/test/'
 ENGINE = 'opt/luaworks/tasks/'
 
@@ -361,6 +399,90 @@ class TheTouchsFavouritesAndSettings(unittest.TestCase):
         order = ['submitActivityImageRequest', 'submitBackgroundImageRequest', 'submitScenesImageRequest',
                  'submitUserSelectedImageRequest', 'submitPopularImageRequest', 'copyImages']
         self.assertEqual(sorted(order, key=images.index), order)
+
+    def test_a_change_goes_up_to_its_own_address_every_stored_picture_is_carried_and_a_drawing_is_cached_by_path(self):
+        request = function_of_local(self.text[HARMONY], 'getRequest')
+        # The put of a favourites document goes to the kind's base and the document's own id.
+        self.assertEqual(re.findall(r'request\.uri = "(content://1\.0/\w+/)" \.\. params\.resource\.id', request),
+                         ['content://1.0/user/', 'content://1.0/device/'])
+        self.assertLess(request.index('"ContentUser" and params.verb == "put"'), request.index('"content://1.0/user/"'))
+        self.assertLess(request.index('"CD_") and params.verb == "put"'), request.index('"content://1.0/device/"'))
+        files = {p: b.decode('utf-8') for p, b in self.rootfs.each([RESOURCES, DRAW_CACHE, IMAGE_MANAGER]).items()}
+        # Every stored picture is copied into the set being gathered, chosen by its name ending `.png` alone.
+        copy = function(files[RESOURCES], 'copyImages')
+        self.assertEqual(re.findall(r'for (\w+) in lfs\.dir\((\w+)\)', copy), [('file', 'DATA_FOLDER')])
+        self.assertEqual(re.findall(r'string\.match\(file, "([^"]+)"\)', copy), ['.*%.png$'])
+        self.assertEqual(re.findall(r'utils\.copyFile\((\w+), (\w+), fileName\)', copy), [('DATA_FOLDER', 'DATA_FOLDER_TEMP')])
+        # Four conditions: the two folders exist, the name matched, and an index entry to carry with it. Booleans,
+        # so a failure prints no firmware source.
+        conditions = re.findall(r'\b(?:else)?if (.+?) then', copy)
+        self.assertEqual(len(conditions), 4)
+        self.assertTrue(all('DATA_FOLDER' in c for c in conditions[:2]), 'the two folder checks')
+        self.assertTrue(conditions[2:] == ['fileName', 'indexInfo'], 'the name and the index entry, nothing else')
+        # Called where the pictures are asked for, and where the favourites documents are carried over.
+        self.assertEqual(calls(self.text[HARMONY], 'resMgr.copyImages()'), ['copyContentResource', 'submitImageRequest'])
+        # One cache of decoded pictures, 6 MiB, keyed by the file's path.
+        manager = files[IMAGE_MANAGER]
+        self.assertEqual(re.findall(r'^local cache = Cache:new\(([^)]*)\)', manager, re.M), ['6*1024*1024'])
+        self.assertEqual(re.findall(r'cache:(get|set)\((\w+(?:\.\w+)?)', manager), [('get', 'img_path'), ('set', 'img_path'), ('set', 'imgObj.imgPath')])
+        # The cache's functions: nothing public removes an entry; the one removal is local and runs only when full.
+        cache = files[DRAW_CACHE]
+        self.assertEqual(re.findall(r'^function (\w+)\(', cache, re.M), ['new', 'get', 'set', 'dumpSize', 'dumpSurfaceList'])
+        self.assertEqual(re.findall(r'^local function (\w+)\(', cache, re.M), ['removeHead'])
+        self.assertEqual(len(re.findall(r'\bremoveHead\(self\)', cache)), 1 + 1, 'defined once, called once')
+        self.assertRegex(function(cache, 'set'), r'while self\.size > self\.limit do\s+removeHead\(self\)')
+
+    def test_a_delivered_settings_acts_at_the_syncs_end_and_two_values_cost_more_than_one_screen(self):
+        init = self.text[INIT]
+        files = {p: b.decode('utf-8') for p, b in self.rootfs.each([SYNC_SCREENS, RESOURCES, RENDER]).items()}
+        # The finish callback empties the document cache before it calls the sync's subscriber.
+        finished = function(self.text[HARMONY], 'proxyFinishedCallback')
+        self.assertLess(finished.index('resMgr.init()'), finished.index('subscriber.callback('))
+        self.assertTrue('resourceCache = {}' in function(files[RESOURCES], 'init'), 'init empties the cache')
+        # A sync answered 200 shows the sync complete screen, which posts syncDone.
+        sync = files[SYNC_SCREENS]
+        complete = function_of_local(sync, 'showSyncCompleteScreen')
+        self.assertTrue(complete.rstrip().endswith('Render:processEvent(Event:new("syncDone"))\nend'), 'syncDone last')
+        self.assertTrue(re.search(r'elseif result == "200" then(?:\s+[\w.:]+(?: = [\w.+ ]+)?\(?\)?)*\s+showSyncCompleteScreen\(\)', sync),
+                        'a sync answered 200 shows the sync complete screen')
+        # The syncDone handler sets five things from the new document, and neither vibration nor the motion sensor.
+        done = re.search(r'^Render:addGlobalCallback\("syncDone", function\(\)\n(.*?)^end\)', init, re.M | re.S).group(1)
+        setters = re.findall(r'^\t(set\w+)\(\)', done, re.M)
+        self.assertEqual(setters, ['setBrightness', 'setKeyBrightness', 'setSuspendTimeout', 'setTime', 'setBackground'])
+        # Vibration and the motion sensor: at start, unindented, and on the setting event, and nowhere else.
+        for name in ('setHaptic', 'setAccel'):
+            self.assertEqual(len(re.findall(r'^%s\(\)$' % name, init, re.M)), 1, name + ' at start')
+            self.assertEqual(len(re.findall(r'\b%s\(\)' % name, init)), 2 + 1, name + ': defined, the setting event, the start')
+        setting = re.search(r'^Render:addGlobalCallback\("setting", function.*?^end\)', init, re.M | re.S).group(0)
+        self.assertEqual(re.findall(r'\t\t(set\w+)\(\)', setting),
+                         ['setKeyBrightness', 'setBrightness', 'setSuspendTimeout', 'setTime', 'setHaptic', 'setAccel'])
+        # The fade reads the stored level with no getVal and ends only when its count equals 0.
+        fade = function_of_local(init, 'fadeBrightness')
+        self.assertFalse('getVal' in fade, 'the fade holds nothing')
+        self.assertTrue('local level = Harmony:getRemoteSettings("ScreenBrightness")' in fade, 'the stored level')
+        self.assertTrue('local fadeCount = math.floor(MAX_LCD_BRIGHTNESS * level / 100)' in fade, 'the count')
+        self.assertEqual(re.findall(r'fadeCount = fadeCount - (\d+)', fade), ['1'])
+        self.assertEqual(re.findall(r'Render:addTimer\((\d+),', fade), ['50'])
+        self.assertEqual(re.findall(r'if fadeCount == (\d+) then\s+callback\(\)', fade), ['0'])
+        self.assertTrue('getVal(Harmony:getRemoteSettings("ScreenBrightness"))' in function_of_local(init, 'setBrightness'), 'the backlight is held')
+        # So, in the fade's arithmetic, the lowest level whose fade ends is 4, and 10, the slider's floor, ends.
+        lcd = constant(init, 'MAX_LCD_BRIGHTNESS')
+        ends = [level for level in range(0, 101) if lcd * level // 100 >= 1]
+        self.assertEqual(ends[0], 4)
+        self.assertEqual(lcd * 3 // 100, 0)
+        # The timeout: times 1000 to the renderer, nothing holding it, and a timer is due at the clock plus its interval.
+        timeout = function_of_local(init, 'setSuspendTimeout')
+        self.assertEqual(re.findall(r'Render:setSuspendTimeout\(([^)]*)\)', timeout), ['timeout * 1000'])
+        self.assertFalse(any(w in timeout for w in ('getVal', 'math.max', 'math.min', '<', '>')), 'nothing holds it')
+        render = files[RENDER]
+        self.assertTrue('self.suspendTimeout = timeout' in function(render, 'setSuspendTimeout'), 'stored as given')
+        self.assertTrue(re.search(r'timer\.due = ui\.jiffies\(\) \+ timer\.interval', function(render, 'restartTimer')), 'due at the clock plus the interval')
+        # A change on the screens is put when the value changed or the caller forces it, and which screens force it.
+        write = function(self.text[HARMONY], 'updateRemoteSettings')
+        self.assertTrue(re.search(r'if \(mustQ or args\.forceSync\) and not doNotSync then', write), 'changed or forced')
+        names = [n for n in self.rootfs.names() if n.startswith(SETTINGS_SCREENS) and n.endswith('.lua')]
+        forcing = sorted(n[len(SETTINGS_SCREENS):] for n, b in self.rootfs.each(names).items() if b'forceSync' in b)
+        self.assertEqual(forcing, ['accel.lua', 'editlock.lua', 'screenBrightness.lua', 'setTime.lua'])
 
     def test_the_brightness_scales(self):
         init = self.text[INIT]

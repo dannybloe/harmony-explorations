@@ -32,15 +32,26 @@
  * count, and the engine's own overhead around each send and each sleep, which no document states. The model
  * runs every scenario twice, with the overhead at the bottom and the top of `TIMING`, and a prediction is the
  * band between the two. The band's width is calibrated on the bench runs of `todo-touch.md` 3.2 and 6.9,
- * `packages/bench/test/touch71.test.ts`.
+ * `packages/bench/test/touch-full-bench-predicted.test.ts`.
+ *
+ * **Why it lives in the codec.** It is knowledge about the remote, what its engine sends and when, so it sits
+ * beside the documents it reads, plan 013 decision 7, where a preview of what an activity will send can use it as
+ * the bench does. It moved here from the bench package, `packages/bench/src/touchengine.ts`, in `todo.md` 7.3.1,
+ * unchanged in what it predicts.
+ *
+ * **What it leaves to the receiver.** A send's `heardMs` is when a receiver has heard the code's first frame, and
+ * where one frame ends and the next begins is the receiver's rule, not the remote's. So the engine takes that rule
+ * as `FirstFrame` when it is made: the bench passes the cut its monitor makes, `framesOfTrain` in
+ * `packages/bench/src/irmonitor.ts`, through `BenchTouchEngine` in `packages/bench/src/touchbench.ts`. Everything
+ * else here, the lamp's whole time included, is the remote's.
  */
-import { harmonyTouch, waveformOfArchiveCommand, type Pulse } from '@harmony/codec';
-
-import { framesOfTrain } from './irmonitor.ts';
-
-type Configuration = harmonyTouch.Configuration;
-type ReadDevice = harmonyTouch.ReadDevice;
-type ReadCommand = harmonyTouch.ReadCommand;
+import { waveformOfArchiveCommand } from '../archive.ts';
+import type { Pulse } from '../irframe.ts';
+import { kindOf } from './documents.ts';
+import {
+  INFRARED_TRANSPORT,
+  type Configuration, type ReadActivity, type ReadButton, type ReadCommand, type ReadDevice, type ReadMap,
+} from './read.ts';
 
 /** A step of a feature's, an activity's or a sequence's list, as the engine reads it. */
 type Step =
@@ -142,7 +153,7 @@ export interface Send {
 /**
  * The engine's overhead around a send and a sleep, at the two ends of the band. A send's lamp starts this
  * long after the engine asks for it and the engine goes on this long after the lamp stops; a sleep ends this
- * long late. The top end is calibrated, `touch71.test.ts`: the 6.9 runs put a send and a sleep together at
+ * long late. The top end is calibrated, `touch-full-bench-predicted.test.ts`: the 6.9 runs put a send and a sleep together at
  * 133 to 192 ms beyond a stated delay, and the 3.2 runs' activity starts at less.
  */
 export const TIMING = {
@@ -166,7 +177,7 @@ function stepsOf(xs: unknown): Step[] {
   if (!Array.isArray(xs)) return [];
   const keyed: [number, Step][] = [];
   for (const raw of xs as Record<string, unknown>[]) {
-    const kind = harmonyTouch.kindOf(raw as { __type?: unknown });
+    const kind = kindOf(raw as { __type?: unknown });
     if (typeof raw['Order'] !== 'number') throw new Error(`an action of kind ${kind} without a numeric Order`);
     const name = typeof raw['IRCommandName'] === 'string' ? lower(raw['IRCommandName']) : '';
     let step: Step;
@@ -192,7 +203,7 @@ function statesOf(d: ReadDevice): { states: Map<string, State>; byHand: boolean;
   let alwaysOn = false;
   let keptOn = false;
   for (const f of (d.source.DeviceFeatures ?? []) as unknown as Record<string, unknown>[]) {
-    const kind = harmonyTouch.kindOf(f as { __type?: unknown });
+    const kind = kindOf(f as { __type?: unknown });
     let id: string | undefined;
     let stepping = false;
     let delay: number | null = 0;
@@ -276,7 +287,7 @@ function statesOf(d: ReadDevice): { states: Map<string, State>; byHand: boolean;
 
 /** An activity step added by hand: a command, a channel or a delay, the delay's `Duration` in seconds. */
 function activityStepOf(raw: Record<string, unknown>): ActivityStep {
-  const kind = harmonyTouch.kindOf(raw as { __type?: unknown });
+  const kind = kindOf(raw as { __type?: unknown });
   const deviceId = raw['DeviceId-'] === undefined || raw['DeviceId-'] === null ? undefined : String(raw['DeviceId-']);
   if (raw['TargetLevel'] !== undefined && raw['TargetLevel'] !== null) throw new Error('a step with a target level, a speaker group\'s');
   if (kind === 'CommandActivityAction') return { deviceId, step: { kind: 'command', name: lower(String(raw['CommandName'] ?? '')), holdMs: undefined } };
@@ -294,7 +305,7 @@ function byOrder(xs: unknown, field: string): ActivityStep[] {
   return keyed.sort((a, b) => a[0] - b[0]).map(([, s]) => s);
 }
 
-function activityOf(a: harmonyTouch.ReadActivity): Activity {
+function activityOf(a: ReadActivity): Activity {
   const raw = a.source as unknown as Record<string, unknown>;
   if (raw['IsMultiZone'] === true) throw new Error(`${a.name}: a multi zone activity`);
   const powerOn = new Map<number, string>();
@@ -304,7 +315,7 @@ function activityOf(a: harmonyTouch.ReadActivity): Activity {
   let channelDevice: string | undefined;
   for (const role of a.roles) {
     const id = role.deviceId;
-    const kind = harmonyTouch.kindOf(role.source as { __type?: unknown });
+    const kind = kindOf(role.source as { __type?: unknown });
     if (/SmartTV|Roku|Sonos|Speaker|ControlsApp/.test(kind)) throw new Error(`${a.name}: a role of kind ${kind}`);
     if (kind === 'ChannelChangingActivityRole') channelDevice = id;
     if (!seen.has(id)) {
@@ -344,15 +355,22 @@ export interface Airtime {
 }
 
 /**
- * The lamp's time for a command, from its definition: the codec's rendering of the code at the device's
- * repeat count, which gave the frame counts the monitor heard for every code of the 3.2 and 6.9 runs.
+ * A receiver's rule for where a code's first frame ends: the durations of the first frame of a press's train, or
+ * none. The receiver's and not the remote's, so the engine is handed it, see this module's header.
  */
-export function airtimeOf(device: ReadDevice, command: ReadCommand): Airtime {
+export type FirstFrame = (once: readonly Pulse[]) => readonly Pulse[];
+
+/**
+ * The lamp's time for a command, from its definition: the codec's rendering of the code at the device's
+ * repeat count, which gave the frame counts the monitor heard for every code of the 3.2 and 6.9 runs. Its first
+ * frame is cut by the receiver's rule, `firstFrame`.
+ */
+export function airtimeOf(device: ReadDevice, command: ReadCommand, firstFrame: FirstFrame): Airtime {
   if (command.protocol === undefined || typeof command.keyCode !== 'string') throw new Error(`${device.name} ${command.name}: no definition to send`);
   const w = waveformOfArchiveCommand(command.protocol.archive, command.keyCode, { repeats: device.pressRepeats, asStored: true });
   if ('refusal' in w) throw new Error(`${device.name} ${command.name}: ${w.refusal}`);
   const total = (xs: readonly Pulse[]) => xs.reduce((sum, p) => sum + p.us, 0) / 1000;
-  const first = framesOfTrain(w.once)[0] ?? [];
+  const first = firstFrame(w.once);
   return { lampMs: total(w.once), firstFrameMs: total(first) };
 }
 
@@ -365,17 +383,20 @@ export class TouchEngine {
   private readonly activities = new Map<string, Activity>();
   private readonly config: Configuration;
   private readonly timing: Timing;
+  private readonly firstFrame: FirstFrame;
   private now = 0;
   private lastDevice: string | undefined;
   private lastSent: number | undefined;
   private running: string | undefined;
   private sends: Send[] = [];
 
-  constructor(config: Configuration, timing: Timing) {
+  /** `firstFrame` is the receiver's cut of a code's first frame, which only a send's `heardMs` reads. */
+  constructor(config: Configuration, timing: Timing, firstFrame: FirstFrame) {
     this.config = config;
     this.timing = timing;
+    this.firstFrame = firstFrame;
     for (const d of config.devices) {
-      if (d.transport !== harmonyTouch.INFRARED_TRANSPORT) throw new Error(`${d.name}: a transport other than infrared`);
+      if (d.transport !== INFRARED_TRANSPORT) throw new Error(`${d.name}: a transport other than infrared`);
       if ((d.source.Device as unknown as Record<string, unknown>)['IsScartCableSupported'] === true) throw new Error(`${d.name}: a Scart device`);
       const { states, byHand, alwaysOn, keptOn } = statesOf(d);
       this.devices.set(d.id, {
@@ -548,7 +569,7 @@ export class TouchEngine {
       return;
     }
     const command = d.read.commandsByName.get(e.key)!;
-    const air = airtimeOf(d.read, command);
+    const air = airtimeOf(d.read, command, this.firstFrame);
     const lampStart = this.now + this.timing.beforeLampMs;
     this.sends.push({
       deviceId: d.id, device: d.name, command: command.name ?? e.key, heardMs: lampStart + air.firstFrameMs,
@@ -706,17 +727,41 @@ export class TouchEngine {
    * A command goes out on its own and starts no wait; a sequence goes as a list, its delays slept.
    */
   key(key: string, how: 'tap' | 'hold', deviceName?: string): Send[] {
-    const map = deviceName === undefined
+    const map = this.mapOf(deviceName);
+    const button = map?.keys.find((b) => b.key === key);
+    if (map === undefined || button === undefined) return [];
+    return this.press(map, button, how);
+  }
+
+  /**
+   * An entry of the screen's command list tapped, in the running activity or in a device's mode, found by the label
+   * the screens show on it. **The engine sends it as it sends a key**: its `buttonPress` takes the entry by its
+   * `IndexInMenu`, which is the soft button's name, out of the same map, and goes on down the same path, so a tap
+   * goes as a tapped key goes. The label is the model's handle and not the engine's, which never reads it, so a
+   * label that names no entry, or two, is refused rather than guessed at.
+   */
+  entry(label: string, deviceName?: string): Send[] {
+    const map = this.mapOf(deviceName);
+    const found = [...(map?.entries.values() ?? [])].filter((b) => b.label === label);
+    if (found.length !== 1) throw new Error(`${found.length} screen entries labelled ${label} on ${deviceName ?? 'the running activity'}`);
+    return this.press(map!, found[0]!, 'tap');
+  }
+
+  /** The map a press reaches: a device's own in its mode, else the running activity's, else none. */
+  private mapOf(deviceName: string | undefined): ReadMap | undefined {
+    return deviceName === undefined
       ? (this.running === undefined ? undefined : this.config.activities.find((a) => a.id === this.running)!.map)
       : this.config.devices.find((d) => d.name === deviceName)!.map;
-    const button = map?.keys.find((b) => b.key === key);
-    if (button === undefined) return [];
+  }
+
+  /** One button of `map` pressed, a key or a screen entry alike. */
+  private press(map: ReadMap, button: ReadButton, how: 'tap' | 'hold'): Send[] {
     const action = how === 'hold' && button.longPress !== undefined ? button.longPress : button.press;
     if (action === undefined) return [];
     if (action.kind === 'command') {
       const d = this.device(action.deviceId);
       if (d === undefined || action.command === undefined) return [];
-      const air = airtimeOf(d.read, action.command);
+      const air = airtimeOf(d.read, action.command, this.firstFrame);
       const lampStart = this.now + this.timing.beforeLampMs;
       this.sends.push({
         deviceId: d.id, device: d.name, command: action.command.name ?? '', heardMs: lampStart + air.firstFrameMs,
@@ -729,7 +774,7 @@ export class TouchEngine {
       return this.collect();
     }
     if (action.kind === 'sequence') {
-      const sequence = map!.sequences.find((s) => s.id === action.sequenceId);
+      const sequence = map.sequences.find((s) => s.id === action.sequenceId);
       if (sequence === undefined) return [];
       const list: Entry[] = [];
       for (const s of sequence.steps) {

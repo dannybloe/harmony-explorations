@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch's first full bench test, `todo-touch.md` 7.1: what a person does at the bench, step by
  * step, and what the remote is predicted to send for it, derived from the documents the remote holds by
- * `touchengine.ts`, never written by hand.
+ * the codec's model of the Touch's engine, `packages/codec/src/harmony-touch/engine.ts`, never written by hand.
  *
  * **How a test file comes to be.** `touch71Plans` below says what each test does, as actions: an activity
  * started, a key tapped or held, a favourite tapped, a device chosen. `touchTests` walks those actions on the
@@ -9,7 +9,7 @@
  * definition: each instruction from the actions' words, each expectation from a send, named by the device
  * and the command as the documents state them, which is how the infrared monitor names a code of the
  * Touch's own documents, `irmonitor.ts` `BENCH_TOUCH_SETS`. `bin/touch-tests.ts` writes the files and
- * `test/touch71.test.ts` holds that the files in `irtests/` are what this derivation gives.
+ * `test/touch-full-bench-predicted.test.ts` holds that the files in `irtests/` are what this derivation gives.
  *
  * **Which pauses are judged.** Only those the engine times: between two codes of one activity start, one
  * favourite or one sequence. Between two keys the person sets the pace, so no pause is expected there. A
@@ -21,12 +21,36 @@
  * remote did before: the Off activity powers off every device the engine still holds on. That step is not
  * judged, since what it sends depends on what ran before the test, which the documents cannot say.
  */
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch, type Pulse } from '@harmony/codec';
 
+import { framesOfTrain } from './irmonitor.ts';
 import type { Expectation, TestDefinition, TestStep } from './irsession.ts';
-import { TIMING, TouchEngine, type Send } from './touchengine.ts';
 
 type Configuration = harmonyTouch.Configuration;
+type Send = harmonyTouch.Send;
+export type { Send };
+
+/** The engine's timing band, the codec's, under the name the bench's tests read it by. */
+export const TIMING = harmonyTouch.TIMING;
+
+/**
+ * Where the bench's monitor ends a code's first frame: the first of the frames it cuts a press's train into,
+ * `framesOfTrain`, so a predicted send's `heardMs` is when the monitor reports it.
+ */
+export function monitorFirstFrame(once: readonly Pulse[]): readonly Pulse[] {
+  return framesOfTrain(once)[0] ?? [];
+}
+
+/**
+ * The model of the Touch's engine, `harmonyTouch.TouchEngine` in the codec, with its sends timed as the bench's
+ * monitor hears them. The engine moved to the codec in `todo.md` 7.3.1 and this is the one part of it that was the
+ * bench's: the receiver's cut of a frame, `monitorFirstFrame`.
+ */
+export class BenchTouchEngine extends harmonyTouch.TouchEngine {
+  constructor(config: Configuration, timing: harmonyTouch.Timing) {
+    super(config, timing, monitorFirstFrame);
+  }
+}
 
 /**
  * The set the bench Touch holds since `todo-touch.md` 6.9, by its path in the lab: the predictions are made from
@@ -54,9 +78,19 @@ export type TouchAction =
   | { readonly key: string; readonly hold?: true }
   /** Device mode for a device, from the Devices list on the screen; sends nothing. */
   | { readonly device: string }
+  /**
+   * An entry of the command list on the screen, by the label it shows, in the device mode chosen last or else the
+   * running activity; tapped, and sent as a tapped key is, `TouchEngine.entry`. Added after 8.1, where the Power
+   * entry of a device of ours was tapped after the test and heard but not judged.
+   */
+  | { readonly entry: string }
   /** The favourites screen, by the Favorites mark above the screen; sends nothing. */
   | { readonly favourites: true }
-  /** A favourite channel on that screen, by the name it shows. */
+  /**
+   * A favourite channel on that screen, by its name, or by the channel number its tile shows under the picture
+   * when no favourite has that name: the tile shows a logo and a number and no name, and a logo of ours, 8.3,
+   * shows no station's name either.
+   */
   | { readonly favourite: string };
 
 export interface TouchStep {
@@ -73,7 +107,7 @@ export interface TouchTestPlan {
   readonly steps: readonly TouchStep[];
 }
 
-/** How far a judged pause may sit outside the model's band: the 3.2 and 6.9 runs sat within 54 ms of it, touch71.test.ts. */
+/** How far a judged pause may sit outside the model's band: the 3.2 and 6.9 runs sat within 54 ms of it, touch-full-bench-predicted.test.ts. */
 export const PAUSE_SLACK_MS = 150;
 
 /**
@@ -84,7 +118,7 @@ export const PAUSE_SLACK_MS = 150;
  * engine's own time around an ordinary send. A held code ends when the engine's hold loop sees its time run out,
  * then the hold is cancelled, and nothing states how long either takes; the 7.1 runs heard the next device's code
  * 427 and 472 ms later than the held time and its inter device delay add up to, where the model's top end allows
- * 210, `touch71-runs.test.ts`. **The rule is the slack counted a second time, not those two numbers**: it is the
+ * 210, `touch-full-bench-runs.test.ts`. **The rule is the slack counted a second time, not those two numbers**: it is the
  * one figure calibrated on other runs, it widens only the four pauses that follow a held code in the 7.1 tests,
  * and the fast side and every other pause keep their bands. The test scores it on every judged pause of the ten
  * runs, both sides, and its control is the same runs judged with the hold left out of the documents, which this
@@ -115,6 +149,7 @@ export function wordsOf(a: TouchAction): string {
   if ('start' in a) return a.start === null ? 'Button: Off' : `Activity: ${a.start}`;
   if ('key' in a) return `Button: ${KEY_WORDS[a.key] ?? a.key}${a.hold === true ? ', hold 1 s' : ''}`;
   if ('device' in a) return `Screen: Devices → Screen: ${a.device}`;
+  if ('entry' in a) return `Screen: ${a.entry}`;
   if ('favourites' in a) return 'Button: Favorites';
   return `Screen: ${a.favourite}`;
 }
@@ -137,23 +172,26 @@ export function keySteps(keys: readonly harmonyTouch.ReadButton[]): TouchStep[] 
   return out;
 }
 
-/** The favourite named `name` on the activity's favourites screen, with its number. */
+/** The favourite named `name` on the activity's favourites screen, or else numbered `name`, with its number. */
 function favouriteNumber(c: Configuration, name: string): { activity: string; number: string } {
-  for (const f of c.favourites) {
-    const found = f.favourites.filter((x) => x.name === name);
-    if (found.length === 1 && typeof found[0]!.number === 'string') return { activity: f.activity.name ?? '', number: found[0]!.number };
+  for (const by of [(x: harmonyTouch.ReadFavourite) => x.name === name, (x: harmonyTouch.ReadFavourite) => x.number === name]) {
+    for (const f of c.favourites) {
+      const found = f.favourites.filter(by);
+      if (found.length === 1 && typeof found[0]!.number === 'string') return { activity: f.activity.name ?? '', number: found[0]!.number };
+    }
   }
-  throw new Error(`no one favourite named ${name}`);
+  throw new Error(`no one favourite named or numbered ${name}`);
 }
 
 /** What the engine sends for each action of a step, one list per action. */
-function walk(e: TouchEngine, c: Configuration, step: TouchStep, mode: { device: string | undefined }): Send[][] {
+function walk(e: BenchTouchEngine, c: Configuration, step: TouchStep, mode: { device: string | undefined }): Send[][] {
   return step.actions.map((a) => {
     if ('start' in a) {
       mode.device = undefined;
       return e.start(a.start ?? undefined);
     }
     if ('key' in a) return e.key(a.key, a.hold === true ? 'hold' : 'tap', mode.device);
+    if ('entry' in a) return e.entry(a.entry, mode.device);
     if ('device' in a) {
       mode.device = a.device;
       return [];
@@ -173,8 +211,8 @@ const up50 = (ms: number) => Math.ceil(ms / 50) * 50;
  * judged against at the bench, before the rule.
  */
 export function touchTest(c: Configuration, plan: TouchTestPlan, heldSlackMs: number = HELD_CODE_SLACK_MS): TestDefinition {
-  const low = new TouchEngine(c, TIMING.low);
-  const high = new TouchEngine(c, TIMING.high);
+  const low = new BenchTouchEngine(c, TIMING.low);
+  const high = new BenchTouchEngine(c, TIMING.high);
   const modes = { low: { device: undefined as string | undefined }, high: { device: undefined as string | undefined } };
   const steps: TestStep[] = plan.steps.map((step) => {
     low.idle();

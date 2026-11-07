@@ -7,8 +7,11 @@ client sends the account and sync requests over the cable during a sync, the con
 firmware requests and listen for the events several of these requests announce. What an answerer must do
 during a sync is [answering a sync](../answering-a-sync.md), which this page links rather than repeats.
 
-**Everything here is read in the production firmware 4.15.330, the build a Touch reports for itself**, and
-none of it has been sent to a remote by this project[^t-touch-api-setup]. The same engine runs on the other
+**Everything here is read in the production firmware 4.15.330, the build a Touch reports for itself**[^t-touch-api-setup].
+Four of these requests have been sent to one Touch by this project, `setup.account?getprovisioninfo`,
+`setup.syncRemoteChanges`, `setup.sync` and `setup.firmware?reboot`, and each answered as read below, [answering a
+sync](../answering-a-sync.md#a-sync-end-to-end) and [recovery](../firmware.md#a-sync-that-stops-halfway)[^t-touch-first-sync][^t-touch-second-sync];
+this said "none of it has been sent to a remote by this project"<!--superseded--> until then. The same engine runs on the other
 remotes of the generation and, as a sibling image, on the hubs; where a request branches on the host name
 or on the provisioning mode, the page says which branch a Touch takes, host name `juniper`, and the other
 branches are read but not checked against a unit[^unchecked]. How a request travels from the cable to the
@@ -215,7 +218,9 @@ the queue and resets what was marked as handed over; when the configuration is s
 entirely, so the changes are discarded. With nothing left it queues `proxy://Finished` and answers 200.
 Otherwise it announces status 0 with the remote number, copies the store aside as a sync conflict, readies
 the queued `put` requests for their answers and answers 200; when the queue turns out empty after all it
-announces status 200 as well[^t-touch-api-setup]. The screens subscribe to its name.
+announces status 200 as well[^t-touch-api-setup]. The screens subscribe to its name. **Measured on a unit**: with
+settings changed on the remote's screens, the list after it held one `put` of the whole Settings document with no
+tag, and with nothing changed it held `proxy://Finished` alone[^t-touch-first-sync][^t-touch-second-sync].
 
 ## Content
 
@@ -306,7 +311,8 @@ current firmware version, whatever is pending. No parameter[^t-touch-api-setup].
 **Restarts the remote.** The registered name carries its verb, `reboot`, and the handler starts a task that
 waits two seconds and restarts the remote, then answers 200 at once. It is refused with 202 while a sync
 runs[^t-touch-api-setup]. It is the engine's restart, beside the native program's `/sys/reboot`,
-[recovery](../firmware.md#a-configuration-that-fails-to-load).
+[recovery](../firmware.md#a-configuration-that-fails-to-load). **Measured on a unit**: sent after a stopped sync had
+been aborted, it answered 200 and the remote started normally[^t-touch-first-sync].
 
 ### `setup.firmware?packageinstall`
 
@@ -349,4 +355,6 @@ path as it stands[^t-touch-api-setup].
 
 [^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_setup.py)
 [^t-touch-host]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_host.py)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-second-sync.test.ts)
 [^unchecked]: Not checked.

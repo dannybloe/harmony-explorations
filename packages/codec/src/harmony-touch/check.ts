@@ -32,6 +32,7 @@ import {
   DELETED_ON_REMOTE, INFRARED_TRANSPORT, mapIdentifier, numberPadKey, readConfiguration, type Configuration, type ReadActivity,
   type ReadButtonAction, type ReadDevice, type ReadMap,
 } from './read.ts';
+import { BACKLIGHT_STEPS, luaNumber } from './settings.ts';
 
 /** The rules, each named for what it finds. */
 export type Rule =
@@ -43,6 +44,8 @@ export type Rule =
   | 'repeated screen index'
   | 'action device missing'
   | 'action command missing'
+  | 'role device missing'
+  | 'action activity missing'
   | 'commands differ in case'
   | 'unknown input'
   | 'shared power order'
@@ -59,7 +62,9 @@ export type Rule =
   | 'no power state'
   | 'screens raise'
   | 'document absent'
-  | 'not a document';
+  | 'not a document'
+  | 'favourites address'
+  | 'setting mishandled';
 
 export interface Finding {
   readonly rule: Rule;
@@ -88,7 +93,7 @@ export function checkConfiguration(c: Configuration): Finding[] {
     ...checkFields(c.documents),
     ...checkScreens(c.documents),
     ...checkDevices(c.devices),
-    ...checkMaps(c.maps, c.devices),
+    ...checkMaps(c.maps, c.devices, c.activities),
     ...checkActivities(c),
     ...checkFavourites(c),
   ];
@@ -1195,7 +1200,11 @@ function field(x: unknown, name: string): unknown {
  *    of it, `touch-reader.test.ts`.
  *
  * Favourites documents present in the set are read with the rest; which ones a sync will ask for depends on
- * the documents, so their absence is the answerer's to meet when the remote asks.
+ * the documents, so their absence is the answerer's to meet when the remote asks. **One present at an address the
+ * remote never asks for is not refused here**: it costs the remote nothing, since it is never delivered, and the
+ * gate refuses what costs the remote. It costs the set its purpose, so the builder of a set refuses it,
+ * `favouritesAddressFindings` below and `withContent` in `packages/corpus/experiments/touchfavouritesset.ts`, `todo-touch.md`
+ * 8.3.
  */
 export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
   const absent = CONFIGURATION_DOCUMENTS.filter((name) => documents[name] === undefined).map((name): Finding => ({
@@ -1208,9 +1217,77 @@ export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
     message: 'the document is not a JSON object, so the remote stores it as something its reader finds no list in',
   }));
   if (notObjects.length > 0) return notObjects;
-  const structure = [...readerRaises(documents), ...checkScreens(documents)];
+  const structure = [...readerRaises(documents), ...checkScreens(documents), ...checkSettingValues(documents)];
   if (structure.length > 0) return structure;
   return checkConfiguration(readConfiguration(documents)).filter((f) => f.effect === 'refused');
+}
+
+/**
+ * `setting mishandled`, refused, `todo-touch.md` 8.4: a Settings value the remote's screens take without raising and
+ * then mishandle in a way that costs more than one screen, read in the lab's firmware copy, `juniper/init.lua`, for
+ * the preparation of 8.4 and argued in `settings.ts`. Each value is read as the screens read it, `tonumber` of the
+ * first value of the first row of that name, `luaNumber`; a value that reads as no number takes the firmware's
+ * default and is not found here.
+ *
+ * * **`ScreenBrightness` whose backlight step is below 1**, a level below 4: the fade before the screen sleeps,
+ *   `fadeBrightness`, counts down from `floor(26 * level / 100)` and ends only when the count reaches 0 after a step,
+ *   so a count that starts at 0 or below runs every 50 ms for ever, and on battery the remote never sleeps. Read.
+ *   The backlight itself is held to 10 to 100 and does not show it.
+ * * **`ScreenTimeout` below one second**: the value times 1000 is the suspend timer, unclamped, and 0 is a timer that
+ *   is due at once, so after every wake the screen fades and the remote sleeps on battery, and on USB power the timer
+ *   is restarted at 0 every turn of the screens' loop. The timer's arithmetic is read; what a person sees is inferred.
+ *
+ * Every other value outside the remote's own sliders is the composer's to refuse, `composeTouchSettings`, since
+ * what it costs is one screen at most or nothing at all.
+ */
+export function checkSettingValues(documents: SyncDocuments): Finding[] {
+  const settings = documents.Settings;
+  if (!isObject(settings) || !Array.isArray(settings['Settings'])) return [];
+  const out: Finding[] = [];
+  const seen = new Set<string>();
+  (settings['Settings'] as unknown[]).forEach((row, r) => {
+    if (!isObject(row) || typeof row['Name'] !== 'string' || seen.has(row['Name'])) return;
+    // The screens' `getRemoteSettings` stops at the first row of a name, so a later one is never read.
+    seen.add(row['Name']);
+    const values = row['Values'];
+    const level = Array.isArray(values) ? luaNumber(values[0]) : undefined;
+    if (level === undefined) return;
+    const at = `Settings[${r}].Values[0]`;
+    if (row['Name'] === 'ScreenBrightness' && Math.floor(BACKLIGHT_STEPS * level / 100) < 1) {
+      out.push({ rule: 'setting mishandled', effect: 'refused', document: 'Settings', path: at,
+        message: 'the screen brightness is below 4, so the fade before the screen sleeps never ends and the remote never sleeps on battery' });
+    }
+    if (row['Name'] === 'ScreenTimeout' && level < 1) {
+      out.push({ rule: 'setting mishandled', effect: 'refused', document: 'Settings', path: at,
+        message: 'the screen timeout is below one second, so the screen fades and the remote sleeps right after every wake on battery, inferred from the suspend timer' });
+    }
+  });
+  return out;
+}
+
+/** The kind of favourites document an address is, by the start the screens build it with, for a finding. */
+const favouritesKind = (address: string): string =>
+  address.startsWith(CONTENT_USER) ? 'ContentUser' : address.startsWith(CONTENT_DEVICE) ? 'ContentDevice' : 'ContentService';
+
+/**
+ * `favourites address`, `todo-touch.md` 8.3: each favourites document of a set that sits at no address the set's own
+ * documents make the remote ask for. The remote pairs an answer to its request by the address character for
+ * character, so a favourites document anywhere else is never delivered and the sync goes through without it, the
+ * change it carried silently missing. The user's address is built from the context, the device's from the tuning
+ * device's profile address, and the line up's from the service the user's document names first, `readFavourites`;
+ * a line up with no user's document beside it cannot be placed and is found for that. **Not part of
+ * `refusalsBeforeASync`**, which says why; a set's builder refuses what this finds. The finding names the kind of
+ * document and never its address, which carries the account's identifiers.
+ */
+export function favouritesAddressFindings(documents: SyncDocuments): Finding[] {
+  const c = readConfiguration(documents);
+  const asked = new Set(c.favourites.flatMap((f) => [f.addresses.user, f.addresses.device, f.addresses.service]).filter((a): a is string => a !== undefined));
+  return Object.keys(c.documents)
+    .filter((name) => (name.startsWith(CONTENT_USER) || name.startsWith(CONTENT_DEVICE) || name.startsWith(CONTENT_SERVICE)) && !asked.has(name))
+    .map((name): Finding => ({
+      rule: 'favourites address', effect: 'refused', document: favouritesKind(name), path: '',
+      message: 'the favourites document is at an address the set\'s own documents never make the remote ask for, so it would never be delivered',
+    }));
 }
 
 /**
@@ -1290,12 +1367,13 @@ function checkDevices(devices: readonly ReadDevice[]): Finding[] {
  * engine and never used", "What a writer must carry", so they play no part here: what decides is whether
  * the identifier is one the screens build for a device or an activity of the configuration, `ReadMap.owner`.
  */
-function checkMaps(maps: readonly ReadMap[], devices: readonly ReadDevice[]): Finding[] {
+function checkMaps(maps: readonly ReadMap[], devices: readonly ReadDevice[], activities: readonly ReadActivity[]): Finding[] {
   const out: Finding[] = [];
   const found = (rule: Rule, effect: Finding['effect'], path: string, message: string): void => {
     out.push({ rule, effect, document: 'MapList', path, message });
   };
   const deviceIds = new Set(devices.map((d) => d.id));
+  const activityIds = new Set(activities.map((a) => a.id));
   for (const m of maps) {
     // A map whose identifier no device and no activity builds is reached by no press. A map of another
     // kind than a device's or an activity's, a root map among them, is left alone: how the engine finds
@@ -1316,7 +1394,10 @@ function checkMaps(maps: readonly ReadMap[], devices: readonly ReadDevice[]): Fi
         && b.state !== DELETED_ON_REMOTE && numberPadKey(b.press.commandName) === undefined) {
         found('number pad entry on no key', 'ignored', b.path, 'the number pad places this entry\'s command on no key');
       }
-      for (const a of actionsOf(b)) checkCommandAction(a, deviceIds, found);
+      for (const a of actionsOf(b)) {
+        checkCommandAction(a, deviceIds, found);
+        checkActivityAction(a, activityIds, found);
+      }
     }
     for (const s of m.sequences) {
       for (const a of s.steps) {
@@ -1347,6 +1428,22 @@ function checkCommandAction(
   }
 }
 
+/**
+ * `action activity missing`, ignored, `todo-touch.md` 8.5: a button whose action starts an activity the activity list
+ * does not hold. The engine stores the id at load without looking it up and answers the start 567, activity not found,
+ * `startActivity` in the lab's decompiled `apihandler/activity.lua`; the screens send the press as any other. So the
+ * button starts nothing and costs that one key. No document measured holds such an action at all.
+ */
+function checkActivityAction(
+  a: ReadButtonAction, activityIds: ReadonlySet<string>,
+  found: (rule: Rule, effect: Finding['effect'], path: string, message: string) => void,
+): void {
+  if (a.type !== 'ButtonActivityAction') return;
+  const id = (a.source as unknown as Record<string, unknown>)['ActivityId-'];
+  if (typeof id !== 'string' && typeof id !== 'number') return;
+  if (!activityIds.has(String(id))) found('action activity missing', 'ignored', a.path, 'the action starts an activity the activity list does not hold, so it starts nothing');
+}
+
 /** The activity list, `activities-and-buttons.md`, "An activity: what it is made of". */
 function checkActivities(c: Configuration): Finding[] {
   const out: Finding[] = [];
@@ -1368,6 +1465,23 @@ function checkActivities(c: Configuration): Finding[] {
         found('action device missing', 'ignored', step.path, 'the step names a device the device list does not hold, so it sends nothing');
       } else if (step.kind === 'command' && step.command === undefined) {
         found('action command missing', 'ignored', step.path, 'the step names a command its device does not have, so it sends nothing');
+      }
+    }
+    // `role device missing`, `todo-touch.md` 8.5: a role naming a device the device list does not hold. The engine
+    // passes over its power and input steps, `startActivity` and `Action:getCommands` in the lab's decompiled engine
+    // testing the device first, and the screens look an activity's devices up by matching the device list against the
+    // roles, `getActivityDevices`, so the device is simply not among them: ignored. **But one place does not test it**:
+    // when any role of the activity states a number for `NextDevicePowerOnDelay`, the start reads the missing device's
+    // id off nothing, `activity.nextDelayActions[device.id]` after the test that logged it missing, and raises inside
+    // the engine's start of that activity. What catches that raise is not read, so it is refused, the safe side: its
+    // cost may be the activity never starting or the engine's task ending.
+    const delays = a.roles.some((r) => typeof r.nextDevicePowerOnDelay === 'number');
+    for (const r of a.roles) {
+      if (r.device !== undefined) continue;
+      if (delays) {
+        found('role device missing', 'refused', r.path, 'the role names a device the device list does not hold, and a role of the activity states a power on delay, so the engine\'s start of it reads the missing device and raises');
+      } else {
+        found('role device missing', 'ignored', r.path, 'the role names a device the device list does not hold, so its power and input steps are passed over');
       }
     }
     // "`SelectedInput.Name` is the input the device is switched to, and a name that is not one of the

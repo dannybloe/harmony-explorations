@@ -261,8 +261,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/test_harmony_touch_recovery.py`,
         # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/test_harmony_880_keys.py`.
         # 107 with todo-compile-885 1.3, `tests/test_harmony_885_flash_backup.py`. 108 with 1.4,
-        # `tests/test_harmony_885_first_config_write.py`. 109 with `tests/test_harmony_885_borrowed_letters.py`.
-        self.assertEqual(len(files), 109, 'the Python test files')
+        # `tests/test_harmony_885_first_config_write.py`. 109 with `tests/test_harmony_885_borrowed_letters.py`. 110 with
+        # todo-touch 9.2, `tests/test_harmony_touch_empty_screens.py`, merged from main.
+        self.assertEqual(len(files), 110, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -324,8 +325,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # carry one each. 104 with `tests/test_harmony_880_keys.py`, todo-prepare-885 2.5.2, which carries one.
         # 105 with `tests/test_harmony_885_flash_backup.py`, todo-compile-885 1.3, which carries one. 106
         # with `tests/test_harmony_885_first_config_write.py`, 1.4, which carries one. 107 with
-        # `tests/test_harmony_885_borrowed_letters.py`, which carries one.
-        self.assertEqual(with_block, 107,
+        # `tests/test_harmony_885_borrowed_letters.py`, which carries one. 108 with
+        # `tests/test_harmony_touch_empty_screens.py`, todo-touch 9.2, merged from main, which carries one.
+        self.assertEqual(with_block, 108,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -829,8 +831,9 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `tests/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/test_harmony_touch_recovery.py`,
         # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/test_harmony_880_keys.py`.
         # 107 with todo-compile-885 1.3, `tests/test_harmony_885_flash_backup.py`. 108 with 1.4,
-        # `tests/test_harmony_885_first_config_write.py`. 109 with `tests/test_harmony_885_borrowed_letters.py`.
-        self.assertEqual(len(scanned), 109, 'Python test files, which moves when one is added')
+        # `tests/test_harmony_885_first_config_write.py`. 109 with `tests/test_harmony_885_borrowed_letters.py`. 110 with
+        # todo-touch 9.2, `tests/test_harmony_touch_empty_screens.py`, merged from main.
+        self.assertEqual(len(scanned), 110, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1422,8 +1425,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 181 with `reads/20261102T1520Z-touch-sync-full-setup/`, the sync after the setup was filled, 2.3,
         # and 182 with `reads/20261102T1524Z-touch-reverse-sync/`, the reverse sync recorded after it.
         # 183 with `work/legacy-remotes/`, the legacy remotes track, plan 012, and 184 with `work/webhid/`, the
-        # browser key read, todo-prepare-885 2.6.
-        self.assertEqual(len(named), 184, "lab paths the register names")
+        # browser key read, todo-prepare-885 2.6. 185 with `work/architecture-review/`, the review of the packages.
+        self.assertEqual(len(named), 185, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1539,8 +1542,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 155 with `work/harmony-desktop-inspectable/` and the recorded Touch sync's read, todo-touch 2.1 and 2.3,
         # and 156 with the full setup's sync, 2.3, and 157 with the reverse sync after it.
         # 158 with `work/legacy-remotes/`, plan 012, and 159 with `work/webhid/`, todo-prepare-885 2.6.
-        self.assertEqual(len(rows), 159)
-        self.assertEqual(len(dict(rows)), 159, 'a duplicated path would make a query ambiguous')
+        # 160 with `work/architecture-review/`, the review of the packages.
+        self.assertEqual(len(rows), 160)
+        self.assertEqual(len(dict(rows)), 160, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

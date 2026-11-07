@@ -2,8 +2,9 @@
 
 A touch screen in the upper half of the face, which shows the activities, the favourite channels as
 pictures, a device's commands, an on screen number pad, the settings and help[^x-touch-manual]. No picture
-or screen description has been read off a remote of this model; what its screens draw and when is read in
-its firmware, whose screens are source in the image, and the rest is the manual's. This said the page was
+or screen description has been read off a remote of this model over the cable; what its screens draw and when
+is read in its firmware, whose screens are source in the image, what one unit's screen showed after a sync of
+this project is marked measured where it stands, and the rest is the manual's. This said the page was
 the manual's and the drawing's<!--superseded--> until the firmware was read.
 
 ## The panel
@@ -26,6 +27,7 @@ Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-
 | backlight | brightness and screen timeout are remote settings, both noted as costing battery; Logitech's service names a `ScreenTimeout` setting for a Touch | [^x-touch-manual], "Remote Settings"; [^s292] |
 | backlight, on the remote | **screen brightness and key brightness, each a slider from 10 to 100**, past 95 a warning that brighter screen and keys drain the battery faster; **screen timeout a slider from 1 to 30 seconds**, beside the screen lock switch. A setting of 100 is the display backlight's step 26 and the key light's step 42, and a lower one is scaled in proportion and rounded down | [^t-touch-keys], [^t-touch-favourites-firmware] |
 | backlight, by default | the screen at 85 of 100, the keys at 35, the screen asleep after 10 seconds but never on USB power, when the account gives no value | [^t-touch-favourites-firmware] |
+| backlight, from a sync | a delivered settings document sets the screen's and the keys' backlight and the timeout at the sync's end, with no restart; one with the screen at 20 and the timeout at 30 seconds left the screen dimmed and dimming about 30 seconds after a touch off the cable, and the remote's own back restored full brightness and about 10 seconds | [^t-touch-favourites-firmware], [^t-touch-settings-of-ours] |
 | background | chosen from a set of background images on the remote | [^x-touch-manual], "Remote Settings" |
 | backgrounds held | nine built in, each with a small twin for the picker, and the user's own uploaded ones, asked for at every sync; an uploaded one measured 240 by 320 with a 60 by 80 twin | [^t-touch-favourites-firmware][^t-touch-favourites] |
 | channel logos | asked for at 54 by 54, and every time in the one sync that carried pictures; a channel added by hand shows its own uploaded picture or none | [^t-touch-favourites-firmware][^t-touch-favourites] |
@@ -63,12 +65,34 @@ Which of the held and double forms a button map can bind is the map's question,
   the activity's name in capitals, broken onto two lines at its first space**: an activity named "Listen to
   Music" reads LISTEN over TO MUSIC, and renamed "Music Test" it read MUSIC over TEST once the renamed list was
   synced to the remote[^t-touch-changed-set]. What happens to a name with no space, or one too wide for the
-  entry, is not checked[^unchecked].
+  entry, is not checked[^unchecked]. **An activity with no picture of its own is drawn with its type's default
+  picture, at the place its order gives it**: a Custom activity added by a program, with no `ImageKey`, showed
+  last of six on the list with the picture of a custom activity, and its command list, the screen it opens on,
+  listed its four entries in the order of their places in the map, each a label with no icon, none of them naming a
+  function[^t-touch-activity-of-ours]. The default picture of a type other than Custom is not
+  checked[^unchecked].
 * **The favourite channels**, under Favorites, as pictures, up to 50, editable and reorderable on the
-  remote[^x-touch-manual].
-* **A device's commands**, from the device list[^x-touch-manual]; [behaviour.md](behaviour.md).
+  remote[^x-touch-manual]. **The tiles follow the user's favourites document**: delivered by a program with a
+  channel added first and the rest reversed, the screen showed the six in that order, the added channel's tile
+  with its number, 61, and a logo drawn by the program, a 54 by 54 picture at the address of the station's logo, in
+  place of the station's own[^t-touch-favourites-of-ours].
+* **A device's commands**, from the device list[^x-touch-manual]; [behaviour.md](behaviour.md). **A device whose
+  type has no picture of its own is drawn in the device list with the default picture**, and **a screen entry
+  that names no function is drawn without an icon**: a projector added by a program, a type the remote holds no
+  picture for, showed last in the list with its name and the default picture, and its command screen listed its
+  eleven entries in the order of their places in the map, each a label with no icon, none of them naming a
+  function[^t-touch-device-of-ours]. Which device types do have a picture of their own is not
+  checked[^unchecked].
 * **Settings**, at the far right of the home screen[^x-touch-manual]: one entry of the menu behind the right
   hand button at the foot of the activity list, beside Help, Devices, Edit and the sleep timer[^t-touch-keys].
+* **The background shows at the foot of every screen, under the screens' dark footer**: a user background of ours,
+  dark blue with a bright yellow band across its foot, showed as a band at the foot of every screen, the activity list
+  among them; consistent with the picture's design, and nothing else of it was compared[^t-touch-from-nothing].
+* **With no activity and no device**, the screens show pages of their own, worded by the firmware and not by any
+  configuration, [features](features.md#an-empty-configuration)[^t-touch-empty][^t-touch-empty-screens].
+* **The "Powering off" screen's help text runs past its right edge** in English, "Point the remote at your devices
+  while th", cut off there, with Logitech's documents and with a set of this project's alike, so it is the firmware's
+  layout and no configuration's[^t-touch-from-nothing].
 
 ## Charging and the battery
 
@@ -120,3 +144,10 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
+[^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-device-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-activity-runs.test.ts)
+[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-favourites-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch-settings-runs.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch-empty-runs.test.ts)
+[^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/test_harmony_touch_empty_screens.py)

@@ -1,5 +1,5 @@
 /**
- * A Harmony Touch set with one value changed, `src/touchchangedset.ts`, for `todo-touch.md` 6.9: one delay
+ * A Harmony Touch set with one value changed, `experiments/touchchangedset.ts`, for `todo-touch.md` 6.9: one delay
  * and one label changed and put back, each heard or seen at the bench.
  *
  * **What has to hold, and why each test is here.**
@@ -48,7 +48,7 @@ import {
   pointerTokens,
   setDifferences,
   type OneChange,
-} from '../src/touchchangedset.ts';
+} from '../experiments/touchchangedset.ts';
 import { keyOf, prepareSet, setTag, type RemoteRequest, type SetAnswer, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 

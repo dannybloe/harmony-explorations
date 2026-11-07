@@ -8,7 +8,13 @@ on every Harmony, the code families and how often a press sends a code, is [infr
 
 **The scope is one firmware build and one synced set of documents.** Everything read in the firmware was read
 in the Touch's production image 4.15.330, and everything measured was measured in the documents one sync
-handed a Touch: seven infrared devices using five code families[^t-touch-devices][^t-touch-engine]. **What
+handed a Touch: seven infrared devices using five code families[^t-touch-devices][^t-touch-engine]. One more
+device, composed by this project with a definition of its own, was added to those documents, delivered and heard,
+[a device of ours](#a-device-of-ours)[^t-touch-device-of-ours]; and all seven were composed again under ids of
+ours from their catalogue records and run inside their activities, [the catalogue's and the
+person's](#the-catalogues-and-the-persons)[^t-touch-setup-of-ours]; and all seven were written again by this project
+from their catalogue entries, every definition from its own table, and heard inside their activities, [built from
+nothing](#built-from-nothing)[^t-touch-from-nothing]. **What
 is read in the firmware was read in the decompiled engine**, the remote's own program; the test anchors the
 parts it can name in the compiled files and lists the rest as read only. Nothing here is checked on another
 build or another model.
@@ -209,13 +215,107 @@ is still sent; a device whose `PowerTypeId` is 0 or 3 is powered by hand and get
 power two discrete states and 2 one state that steps. **`IsScartCableSupported`**: while an activity starts,
 as long as a command for such a device is waiting, devices without the flag are held back.
 
+## A device of ours
+
+**A device composed by a program, with a definition written from the program's own table of code families, is
+listed and sent like one of Logitech's.** One device was added to the device, map and protocol lists a Touch
+held and delivered in a sync: a projector with eleven commands, ten bound to keys of its own map and one, Power,
+only on its screen, every command in the Sony 12 bit family, whose definition was written from the [rhythm
+table](../../infrared/families.md) and listed under a protocol id of ours rather than the catalogue's. The remote
+stored and committed the three lists, showed the device in its device list, and sent every one of the eleven when
+its key or its screen entry was pressed: each heard at a receiver as the 12 bit frame the definition describes,
+the command of the key's name to that device and nothing else, at least three frames a press, the device's press
+repeat count being 3[^t-touch-device-of-ours]. Taken out again by a second sync, the device was gone and
+the rest of the set was as before. So the engine builds its packet from a definition it has never been given by
+Logitech exactly as from theirs, at least for a definition of the same fields and shape as one of theirs: that one
+had the fields and shape of Logitech's Sony 20 bit definition, which the same remote sent beside it.
+
+**Identifiers of ours are nine digits from 900000000.** A device, a map and a protocol definition each carry an id
+the others name it by. Logitech's device and activity ids in the documents a Touch held are eight digits and the
+protocol ids are the catalogue's, below a thousand, so an id of nine digits from 900000000 lies outside both by a
+factor of ten and below 2<sup>31</sup>; the remote took a device and a definition under such ids, 900000001 and
+900000002[^t-touch-device-of-ours], and an activity under 900000003, its map named `16417Activity900000003` by
+it[^t-touch-activity-of-ours], [an activity of ours](activities-and-buttons.md#an-activity-of-ours). That is a margin
+and not a guarantee, so a writer still refuses an id the documents already hold, a device id whose digits contain
+another device's or sit inside one, and an activity id already an activity's or a device's.
+
+What the screens drew for that device is [the model's display](../../remotes/harmony-touch/display.md#what-the-screen-shows).
+*Corrected:* this said a device of ours used inside an activity, with power or input states of its own, was not
+checked<!--superseded-->; devices under ids of ours with the catalogue's power, input and channel features ran inside
+activities, [below](#the-catalogues-and-the-persons)[^t-touch-setup-of-ours]. It then said a definition of ours inside
+an activity was not checked<!--superseded-->, until definitions of ours for five families were heard inside every
+activity of a set, [built from nothing](#built-from-nothing)[^t-touch-from-nothing].
+
+## The catalogue's and the person's
+
+**A device a person sets up is two kinds of thing**: what the catalogue brings when the person picks a maker and
+model, and what the person chooses. A writer composes the second and carries the first. **The person's**: the
+device's name, its maker and model, its control port, its press repeat count, its inter key and inter device delays,
+its power on delay, whether it is kept on between activities and always on, its input delay, and its own map.
+**The catalogue's**, carried unchanged but for the device's id where a feature names it: every other field of the
+device record, its features (inputs, power, channel tuning) with their steps, its commands with their codes, and
+the definitions those commands name, under the catalogue's own protocol ids. Composed so from a description of a set
+Logitech's service built, every device field came out equal to theirs, or equal but for the id[^t-touch-setup-compared]. All seven
+devices of a set a Touch held were composed that way under ids of ours, with their records taken from the set the
+remote held, and every code of the ten tests that had run on the set before was heard from them, 418 of 418, inside
+their activities and in device mode[^t-touch-setup-of-ours].
+
+**Two carried fields are the account's and not the catalogue's**: `DeviceProfileUri` and `ContentProfileKey`, the
+address and the key of the device's favourites documents, which the remote keeps apart from the six. In Logitech's
+documents the key is the device's own id; under an id of ours it no longer is. The screens' favourites reader takes
+the pair by the device's id and reads the key and the address from the device, so a writer carries the pair on the
+tuning device and the favourites are still found[^t-touch-setup-firmware]. Measured: with the pair carried on a TV
+under an id of ours, the five favourite channels were each tuned as before, 15 of 15 codes[^t-touch-setup-of-ours]. A pair that does not match the remote's
+favourites documents is not checked[^unchecked].
+
+## Built from nothing
+
+**A set whose every device record and every definition was written by a program, with no Logitech document as
+input, is stored and sends every device's codes as it states them.** The seven devices of the documents above were
+written again from a setup file and Logitech's catalogue: each device record from its catalogue entry, every
+definition from the program's own [table of code families](../../infrared/families.md), five definitions in all,
+under protocol ids of ours, with the same devices, maps and activities as the whole setup above. Delivered with the
+other four documents in a sync, it was committed, and a test that starts every activity from off and ends it heard
+every one of its 38 expected codes at a receiver, each pause in its band, judged by rendering every code from the
+set's own definitions: Toshiba 32 Bit from four devices, Sharp 15 Bit 2 and Sharp 48 Bit 2 from the receiver's power
+and input codes, Sony 20 Bit and Microsoft 30 Bit; no other code was heard during the test[^t-touch-from-nothing].
+With the Toshiba 32 Bit definition's header pulse made half as long again, the same pulses fit 15 of the 38, so the
+judging rests on the definitions[^t-touch-from-nothing]. Before that, one definition written by a program had been
+played, the Sony 12 bit definition [above](#a-device-of-ours)[^t-touch-device-of-ours].
+
+**The families a unit has played**: from Logitech's definitions, the five of the documents a sync handed a Touch,
+heard in every activity and in device mode in the ten tests of [starting, switching and
+stopping](activities-and-buttons.md#starting-switching-and-stopping)[^t-touch-devices][^t-touch-in-use]; from
+definitions of ours, Sony 12 Bit in device mode, [above](#a-device-of-ours)[^t-touch-device-of-ours], and the same
+five, Toshiba 32 Bit, Sharp 15 Bit 2, Sharp 48 Bit 2, Sony 20 Bit and Microsoft 30 Bit, inside activities, in the
+test above[^t-touch-from-nothing]. No other family has been played on a Touch[^unchecked].
+
+**What a definition has to state for a whole transmission.** The engine sends an encoded segment as its header,
+its cells, its trailer and then a silence up to the segment's `TotalLength`, and nothing else between one segment
+and the next, [how a code becomes durations](#how-a-code-becomes-durations)[^t-touch-engine]. So a definition
+written from a family's rhythm has to carry what follows each frame, the trailer and the length it is padded to,
+besides the lead in, the cells and the carrier; without them one frame follows the last with no gap. This project's
+rhythm table states a family's frame, and the trailer and the gap only in its timings of one repetition and of the
+first transmission, which is what its writer reads them from, and states no toggle bit and no finish sequence, so its
+definitions carry neither, `packages/codec/src/harmony-touch/definition.ts`[^t-touch-nothing-compared].
+
+**What these definitions leave out against Logitech's for the same families**, field by field, and why each changes
+nothing the engine does, is held by the comparison that built them[^t-touch-nothing-compared]. The one that could show
+on a unit is the Microsoft 30 Bit toggle bit, which Logitech's definition states and ours does not, so by the
+comparison's reading every press of a key sends the code as first stated[^t-touch-nothing-compared]; a second press of
+the same key in a row was not sent in the test, and whether a console tells two presses from a hold without it is not
+checked[^unchecked]. The other codes of each family, beyond the ones that
+test sends, are the comparison's reading of the definitions and were not heard[^unchecked].
+
 ## What a writer must carry
 
 **The remote's own screens change `DeviceList` and send it back whole**: the delay screens and their reset,
 the port assignment screen, and a device's setup state, each by changing the document in place and saving
 all of it[^t-touch-engine]. So every field a writer puts in a device list can come back, the fields nothing
-reads among them, and a writer that drops one has changed what Logitech's service holds. Uploading a changed
-device list has not been measured[^unchecked].
+reads among them, and a writer that drops one has changed what Logitech's service holds. **A device list changed
+by a program and delivered in a sync was stored, committed and used**: one with a device of ours appended,
+[below](#a-device-of-ours), and the same list with it taken out again[^t-touch-device-of-ours]. This said
+uploading a changed device list had not been measured<!--superseded--> until then.
 
 **Required**, in that a document without the field stops the engine[^t-touch-engine]: a device's
 `DeviceType`, `Manufacturer` and `Transport`; a command's `TransportType` and its `Raw` key, which may be
@@ -256,6 +356,11 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 * Whether a device's repeat count and its family's ever differ for a device a Touch is given, which decides
   whether a Touch and a compiled configuration send such a code a different number of times[^unchecked].
 * What a nonzero control port does on a Touch with no hub[^unchecked].
+* A definition of ours of a shape no Logitech definition the remote holds has[^unchecked]. *Corrected:* this listed a
+  device of ours inside an activity and a device of ours with features<!--superseded-->, which [the catalogue's and the
+  person's](#the-catalogues-and-the-persons) ran under ids of ours[^t-touch-setup-of-ours], and then a definition of ours
+  inside an activity<!--superseded-->, which [built from nothing](#built-from-nothing) ran for five
+  families[^t-touch-from-nothing].
 * Any other firmware build, and the other remotes of the generation[^unchecked].
 
 [^t-touch-devices]: Measured on a unit. [The test](../../../packages/usb/test/touch-devices.test.ts)
@@ -263,6 +368,14 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 [^t-touch-devices-catalogue]: Stated by Logitech, in their catalogue. [The test](../../../packages/usb/test/touch-devices.test.ts)
 [^t-touch-engine]: Read in the firmware. [The test](../../../tests/test_harmony_touch_devices.py)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
+[^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-device-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-activity-runs.test.ts)
+[^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-setup-runs.test.ts)
+[^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-setup-set.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
+[^t-touch-nothing-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-nothing-set.test.ts)
+[^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-setup.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)
 [^s92]: Measured in configurations. [Section 92](../../../docs/findings.md#s92)
 [^s348]: Measured in configurations. [Section 348](../../../docs/findings.md#s348)
 [^unchecked]: Not checked.

@@ -65,8 +65,11 @@ it is the malformed packet and not the number of attempts[^s198b].
 | `0x08` | request and response with no file, which the comments call an HBus command | packet count |
 | `0xFF` | device control with no file | `0x66` resets the file system, `0x00` reboots |
 
-Stated by Logitech[^s198]. This library has sent only `0x00`, `0x01`, `0x04` and `0x07` to a Harmony Touch,
-and only for reading[^s200]. **Logitech's client was recorded syncing a Harmony Touch with `0x00`, `0x01`,
+Stated by Logitech[^s198]. This library sends a Harmony Touch `0x00`, `0x01`, `0x04` and `0x07` to read its
+identity file[^s200], and `0x03` only into `/sys/hlapi`, through the request rail of [the Touch's usb
+page](../remotes/harmony-touch/usb.md#what-this-library-does-with-a-touch), byte for byte as Logitech's client wrote
+the same requests[^t-touch-session]. This said it had sent only the four, and only
+for reading<!--superseded-->, until that rail answered its first sync. **Logitech's client was recorded syncing a Harmony Touch with `0x00`, `0x01`,
 `0x03`, `0x04`, `0x07` and the file system reset `0xFF 0x66`, and no `0x08`**[^t-touch-sync]: mostly opens,
 writes, reads and closes on one path, `/sys/hlapi`, with the identity file read and a write to `/sys/time` tried,
 [the Touch generation's usb page](../architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile).
@@ -179,6 +182,7 @@ and does not read one back, by choice rather than by capability,
 [^s196]: Stated by Logitech. [Section 196](../../docs/findings.md#s196)
 [^unchecked]: Not checked.
 [^t-touch-sync]: Measured on a unit. [The test](../../packages/usb/test/touch-sync.test.ts)
+[^t-touch-session]: Measured on a unit. [The test](../../packages/usb/test/touchsession.test.ts)
 [^s19]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
 [^s295]: Measured on a unit. [Section 295](../../docs/findings.md#s295)
 [^t-write-route]: Stated by Logitech, in their client. [The test](../../tests/test_file_family_write_route.py)

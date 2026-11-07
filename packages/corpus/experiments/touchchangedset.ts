@@ -55,7 +55,7 @@ import {
   type SetAnswer,
   type TouchSet,
   type WrittenAnswer,
-} from './touchsync.ts';
+} from '../src/touchsync.ts';
 
 /** A value a change may touch: the three JSON leaves that are not null. */
 export type Leaf = string | number | boolean;
@@ -165,6 +165,12 @@ export function changeDocuments(options: {
   readonly documents: Readonly<Record<string, unknown>>;
   readonly name: string;
   readonly tagsInPlay?: Iterable<string>;
+  /**
+   * Documents delivered under a new tag although their content equals the source's, `todo-touch.md` 8.4, where Context
+   * is composed from a description equal to what the remote holds so that the run proves Context can be written with
+   * no change of behaviour. Every other document whose content equals the source's is still refused.
+   */
+  readonly retagUnchanged?: readonly string[];
 }): { readonly set: TouchSet } | { readonly refusals: readonly string[] } {
   const { set, name } = options;
   const names = Object.keys(options.documents);
@@ -178,7 +184,10 @@ export function changeDocuments(options: {
     if (at < 0) { refusals.push(`the source set holds no ${document}`); continue; }
     const source = set.answers[at]!;
     const resource = copy(options.documents[document]);
-    if (differences(source.resource, resource).length === 0) { refusals.push(`${document}: the new content equals the source's, which changes nothing`); continue; }
+    if (differences(source.resource, resource).length === 0 && !(options.retagUnchanged ?? []).includes(document)) {
+      refusals.push(`${document}: the new content equals the source's, which changes nothing`);
+      continue;
+    }
     const tag = setTag({ 'body-type': source['body-type'], resource }, name);
     if (inPlay.has(tag)) { refusals.push(`${document}: its new tag equals a tag already in play, so a set of this name was made before`); continue; }
     // The source's own key order, so a changed answer is written as the others are.
@@ -248,12 +257,34 @@ export interface SetRecord {
   readonly change?: unknown;
   readonly device?: unknown;
   readonly removed?: unknown;
+  /** An activity added or taken out, `todo-touch.md` 8.2. */
+  readonly activity?: unknown;
+  readonly removedActivity?: unknown;
+  /** Favourites and a logo of ours delivered, or put back as the remote held them, `todo-touch.md` 8.3. */
+  readonly favourites?: unknown;
+  readonly favouritesBack?: unknown;
+  /** Settings of ours and Context composed from a description, or both put back as the remote held them, `todo-touch.md` 8.4. */
+  readonly settings?: unknown;
+  readonly settingsBack?: unknown;
+  /** Devices and activities of the remote's own taken out, or put back as the remote held them, `todo-touch.md` 8.5. */
+  readonly removal?: unknown;
+  readonly removalBack?: unknown;
+  /** A whole setup composed by us onto the set with its devices taken out, or put back as the remote held it, `todo-touch.md` 8.6. */
+  readonly setup?: unknown;
+  readonly setupBack?: unknown;
+  /** The empty configuration, no device and no activity, or its put back with the favourites, `todo-touch.md` 9.2. */
+  readonly empty?: unknown;
+  readonly emptyBack?: unknown;
 }
 
 /**
  * Every tag stated by the set in `folder` and by each set it was built from, back to the first, which
  * `touch-own-set.ts` built and records no change of ours. A set built by `touch-changed-set.ts` records its
- * `change`, one built by `touch-device-set.ts` its `device` or `removed`; either names the set it came `from`.
+ * `change`, one built by `touch-device-set.ts` its `device` or `removed`, or for an activity, `todo-touch.md` 8.2,
+ * its `activity` or `removedActivity`, or for favourites, 8.3, its `favourites` or `favouritesBack`, or for Settings
+ * and Context, 8.4, its `settings` or `settingsBack`, or for devices and activities of the remote's taken out, 8.5,
+ * its `removal` or `removalBack`, or for a whole setup of ours, 8.6, its `setup` or `setupBack`, or for the empty
+ * configuration, 9.2, its `empty` or `emptyBack`; each names the set it came `from`.
  * `read` reads a folder's set and record, so this stays free of the file system. A folder met twice stops it.
  */
 export function chainTags(folder: string, read: (folder: string) => { readonly set: TouchSet; readonly record: SetRecord }): Set<string> {
@@ -264,10 +295,24 @@ export function chainTags(folder: string, read: (folder: string) => { readonly s
     seen.add(at);
     const { set, record } = read(at);
     for (const a of set.answers) if (typeof a.etag === 'string') tags.add(a.etag);
-    const built = record.change !== undefined || record.device !== undefined || record.removed !== undefined;
-    at = built && typeof record.from === 'string' ? record.from : undefined;
+    at = builtFrom(record);
   }
   return tags;
+}
+
+/**
+ * The folder a set was built from, by its record, or undefined for a set no builder of a change made: the first of
+ * a chain, which `touch-own-set.ts` built and records no change of ours.
+ */
+export function builtFrom(record: SetRecord): string | undefined {
+  const built = record.change !== undefined || record.device !== undefined || record.removed !== undefined
+    || record.activity !== undefined || record.removedActivity !== undefined
+    || record.favourites !== undefined || record.favouritesBack !== undefined
+    || record.settings !== undefined || record.settingsBack !== undefined
+    || record.removal !== undefined || record.removalBack !== undefined
+    || record.setup !== undefined || record.setupBack !== undefined
+    || record.empty !== undefined || record.emptyBack !== undefined;
+  return built && typeof record.from === 'string' ? record.from : undefined;
 }
 
 /** One document of two sets compared: where its content differs, and whether its tag does. */

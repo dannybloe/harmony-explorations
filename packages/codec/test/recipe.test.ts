@@ -17,7 +17,10 @@ const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(n
 test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the touch family\'s, and the Harmony 300\'s, 350\'s and Touch\'s, which no recipe target serves yet',
   () => {
   const files = readdirSync(SETUPS).filter((one) => one.endsWith('.json')).sort();
-  assert.deepEqual(files, ['h300-test.json', 'h350-test.json', 'h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json', 'touch-full.json']);
+  assert.deepEqual(files, ['h300-test.json', 'h350-test.json', 'h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json', 'touch-full.json', 'touch-test.json']);
+  // Only todo-touch.md 9.1's setup file carries a Touch's part, `touch`, which the recipe passes through unread,
+  // `readTouchSetupFile` in the codec's harmony-touch folder reading it.
+  assert.deepEqual(files.filter((file) => readRecipe(raw(file)).touch !== undefined), ['touch-test.json']);
   for (const file of files) {
     const recipe = readRecipe(raw(file));
     // The Harmony 350's setup is sent to Logitech's service and built by nothing here: its skin is not in
@@ -28,8 +31,9 @@ test('every setup file reads as a recipe: the three for the Harmony 650, skin 72
       assert.throws(() => recipeTarget(recipe), file.startsWith('h350-') ? /no model has skin 104/ : /no model has skin 79/);
       continue;
     }
-    // The Harmony Touch's, todo-touch 2.2.1, is put on its record by `build-setup.ts` and built by nothing
-    // here, since a Touch takes Logitech's documents rather than a container; refused at skin 99.
+    // The Harmony Touch's two: `touch-full.json`, todo-touch 2.2.1, put on its record by `build-setup.ts`, and
+    // `touch-test.json`, todo-touch 9.1, built into the six documents by `touch-nothing-set.ts`. No recipe target
+    // serves them, since a Touch takes documents rather than a container; refused at skin 99.
     if (file.startsWith('touch-')) {
       assert.throws(() => recipeTarget(recipe), /no model has skin 99/);
       continue;

@@ -9,7 +9,9 @@ answered there is the [API overview](README.md). A hub runs the same engine in i
 same names were there for Logitech's phone app to send; that side is not checked here[^unchecked].
 
 **Everything here was read in the Touch's production firmware, build 4.15.330**, in the engine and in the
-screens; nothing was sent to a remote[^t-touch-api-engine]. The same image runs the other remotes of the
+screens[^t-touch-api-engine]. One request of this group has been sent to a Touch, `getconfighash`, around
+the syncs of this project, [below](#harmonyenginegetconfighash)[^t-touch-confighash][^t-touch-first-sync]; this
+said "nothing was sent to a remote"<!--superseded--> until then. The same image runs the other remotes of the
 generation and the hubs run a sibling of it; where a request behaves differently by host name or by
 provisioning mode, the page says which branch a Touch takes, which is host name `juniper` and, as measured,
 mode 0[^t-touch-answers], and marks the other branches not checked.
@@ -314,7 +316,8 @@ synced through a computer that is four tags**, the activity list's, the device l
 fetches no function list and no home control configuration; the button map list and the settings are not
 part of it[^t-touch-api-engine]. **A unit answers it on the cable in exactly that form**: the four tags the last sync handed
 it, joined in that order with no separator and no quote, and no other order of the four gives the same
-string[^t-touch-confighash]. Each tag is the one the answer that stored the document carried,
+string[^t-touch-confighash]. While a sync was marked running it answered 202 with the message "sync in
+progress", as its `IsSyncComplete` check reads[^t-touch-first-sync]. Each tag is the one the answer that stored the document carried,
 [answering a sync](../answering-a-sync.md#the-entity-tag-an-answerer-sends), so a host that knows the tags it
 sent can compare: this is the one request in the group that reports the committed documents to a host.
 
@@ -700,4 +703,5 @@ client, and a cable host is not one the engine can answer[^t-touch-api-engine].
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_activities.py)
 [^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)
 [^t-touch-confighash]: Measured on a unit. [The test](../../../../packages/usb/test/touch-confighash.test.ts)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-first-sync.test.ts)
 [^unchecked]: Not checked.

@@ -422,6 +422,39 @@ that its configuration was checked and found good. A host drops them before writ
 the new bytes rather than keeping a verdict earned against the old ones,
 [Commands](usb-protocol/commands.md#selector-0x02-drops-the-cached-region-descriptors).[^s246][^s250]
 
+## The Harmony Touch's sync
+
+**provisioning** (Logitech's word, in their client's capability names). Tying a remote of the Harmony Touch's
+generation to an account, after which it fetches its own configuration through the computer rather than being
+sent a compiled one, [the platform on the cable](architectures/harmony-touch/usb.md#provisioning-instead-of-a-compile).[^s202]
+
+**document** (this project's use). One JSON file of Logitech's data model that a Harmony Touch asks for in a sync:
+the six configuration documents, `ActivityList`, `MapList`, `DeviceList`, `ProtocolList`, `Context` and `Settings`,
+and the favourites documents, [the documents a sync
+delivers](architectures/harmony-touch/README.md#the-documents-a-sync-delivers-and-where-each-is-described).
+
+**hand over** (this project's name). The first part of a Harmony Touch's sync, in which the remote passes up the
+documents changed on its own screens before the account comes down, [a sync end to
+end](architectures/harmony-touch/answering-a-sync.md#a-sync-end-to-end).
+
+**request list** (this project's name). What a Harmony Touch hands the computer when asked what it wants next: web
+requests, each a verb, a logical address and the entity tag of the copy it holds, which the computer answers.
+
+**entity tag** (standard, from the web's caching rules). An opaque text that comes with a document so that a
+later request can ask whether it changed; a Harmony Touch stores each tag as given and sends it back, and an
+answer of 304 means "unchanged, keep yours", [the entity tag an answerer
+sends](architectures/harmony-touch/answering-a-sync.md#the-entity-tag-an-answerer-sends).[^t-touch-host]
+
+**commit** (this project's use). The moment a Harmony Touch swaps the documents gathered in a sync in for the ones it
+held, which its own screens decide, [how a sync aborts](architectures/harmony-touch/answering-a-sync.md#how-a-sync-aborts-and-how-an-answerer-learns-of-it).
+
+**answerer** (this project's name). A program that answers a Harmony Touch's sync in place of Logitech's server,
+[answering a sync](architectures/harmony-touch/answering-a-sync.md).
+
+**the engine**, **the screens** (this project's names). A Harmony Touch's two programs: the engine, compiled Lua,
+which holds the configuration and sends the codes, and the screens, Lua source, which draw and decide what a touch
+means, [activities and buttons](architectures/harmony-touch/activities-and-buttons.md#two-documents-and-two-programs-that-read-them).[^t-touch-activities-firmware]
+
 ## Reading the firmware
 
 **PIC18** (standard). The Microchip processor family inside these remotes; which part, and so which map of
@@ -516,3 +549,6 @@ that reads that variable says what the section is for, [the configuration file](
 [^s250]: Read in the firmware. [Section 250](../docs/findings.md#s250)
 [^s38]: Read in the firmware. [Section 38](../docs/findings.md#s38)
 [^t-885-boot]: Read in the firmware. [The test](../tests/test_harmony_885_bootloader.py)
+[^s202]: Stated by Logitech, in their client. [Section 202](../docs/findings.md#s202)
+[^t-touch-host]: Read in the firmware. [The test](../tests/test_harmony_touch_host.py)
+[^t-touch-activities-firmware]: Read in the firmware. [The test](../tests/test_harmony_touch_activities.py)

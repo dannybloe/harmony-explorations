@@ -11,7 +11,15 @@ own folder, [harmony-touch](../../remotes/harmony-touch/README.md).
 
 **The scope is one firmware build and one synced set of documents.** Everything read in the firmware was read
 in the Touch's production image 4.15.330, and everything measured was measured in the documents one sync
-handed a Touch[^t-touch-activities]. The image is shared with the other remotes of the generation, but the
+handed a Touch[^t-touch-activities]. One more activity, composed by this project from the devices those documents
+held, was added to them, delivered, run and heard, [an activity of ours](#an-activity-of-ours)[^t-touch-activity-of-ours],
+and one activity and one device of Logitech's were taken out of them and the rest run without them,
+[taking out](#taking-out-an-activity-and-a-device)[^t-touch-removal-of-theirs]; and every device and activity of
+those documents was composed again by this project under ids of its own and run as the documents had been,
+[a whole setup of ours](#a-whole-setup-of-ours)[^t-touch-setup-of-ours]; and the same activities and devices, in
+documents this project wrote from nothing, were each started from Off and ended,
+[built from nothing](devices-and-infrared.md#built-from-nothing)[^t-touch-from-nothing].
+The image is shared with the other remotes of the generation, but the
 screens are chosen per skin: the Touch, skin 99, runs one set of screens and skins 111 and 112 run
 another[^t-touch-activities-firmware]. Nothing here is checked on another build or another model.
 
@@ -113,7 +121,7 @@ name: the digits on their keys, `-`, `.`, `*` and `NumberPlus` on the key left o
 is placed on no key, which is where the two `Clear` entries measured end up[^t-touch-activities]. The number
 pad sends each tap as one request with no hold reports after it[^t-touch-activities-firmware].
 
-**Two traps in `IndexInMenu`**, both met in Logitech's own documents:
+**Three traps in `IndexInMenu`**, all met in Logitech's own documents:
 
 * **The number pad's entries count from 0 in the same map as the list's**, so one index names a list entry
   and a number pad entry at once and only the group tells them apart. Ten of the twelve maps measured do
@@ -127,6 +135,13 @@ pad sends each tap as one request with no hold reports after it[^t-touch-activit
   table**[^t-touch-activities-firmware]. One look at one unit's screens after a sync, by the person holding
   it, found neither of the two entries hidden this way on its device's screen; the test holds the repeated
   positions and its header records that look[^t-touch-activities].
+
+**A writer keeps an entry list's indices without gaps**: the screens build the list in a table keyed by
+`IndexInMenu + 1` and walk it with Lua's `pairs`, which promises no order, so a list whose indices have a gap can be
+shown in an order the document does not mean; the activity list is built the same way from `ActivityOrder + 1`, and the
+remote's own reorder writes 0 to n - 1[^t-touch-removal-firmware]. An entry taken out therefore moves every entry after
+it up one, which a removal of Logitech's entries did and the remote then sent the moved entry by its new
+index[^t-touch-removal-of-theirs].
 
 ## Gestures
 
@@ -188,10 +203,22 @@ added by hand, `EnterActions` at the start and `LeaveActions` at the end.
   activity's type; a smart TV role adds an input step of its own. `DisplayActivityRole` and
   `PassThroughActivityRole` do nothing beyond the power and input step of their
   device[^t-touch-activities-firmware].
+* **A role naming a device the device list does not hold is passed over**: the engine's start and the step that
+  gathers an activity's commands both test the device first, and the screens list an activity's devices by matching
+  the device list against the roles, so it is not listed. **Except where a role of the same activity states a number
+  for `NextDevicePowerOnDelay`**: the start then reads the delay by the missing device's id after that test, and
+  raises inside the engine's start[^t-touch-removal-firmware]. What catches that raise is not read[^unchecked].
 * **`EnterActions` and `LeaveActions` hold the steps added by hand**, a command, a channel or a delay each,
   run in `ActionOrder`; an action without an `ActionOrder` stops the reader[^t-touch-activities-firmware]. A
   `DelayActivityAction`'s `Duration` is in seconds, as a sequence's is[^t-touch-activities-firmware]. All three
   kinds are stored on the activity as Logitech's client saves them[^t-touch-activities].
+* **Only a step's order matters, and a writer may keep its own numbering**: the engine keeps the steps in a table
+  keyed by `ActionOrder` and sorts it, so the numbers need not start at 1 or run without gaps, and two steps of one
+  list on one number would be one step[^t-touch-setup-firmware]. Logitech's client numbers them in a way of its own,
+  one activity's start steps from 4. A `ChannelActivityAction` tunes its `ChannelNumber`, digits, through the device
+  it names, which needs channel tuning[^t-touch-setup-firmware]. Start steps composed by this project in Logitech's
+  numbering, a command, a pause of 2 seconds and a channel, were sent in that order with the pause, the channel as its
+  digits[^t-touch-setup-of-ours].
 
 **`Type` is the activity kind the Touch acts on, and `ActivityGroup` is not.** `Type` picks the default
 picture, the gesture screen's play and pause target, and the paths for Roku, Sonos and speaker
@@ -200,6 +227,21 @@ activities[^t-touch-activities-firmware]; its numbers are the positions of Logit
 `ActivityGroup` is not `Type`: they differ on three of the five activities measured[^t-touch-activities]. The
 engine only copies the group's name into the answer
 it gives other clients; an activity without one makes the reader fail[^t-touch-activities-firmware].
+
+**Each type carries one group in the documents measured**, one activity of each of five types, and a writer that
+gives an activity a type takes its group from this table:
+
+| `Type` | its name | `ActivityGroup` |
+|---|---|---|
+| 1 | `WatchTV` | 1 |
+| 2 | `WatchDvd` | 2 |
+| 3 | `PlayGame` | 4 |
+| 4 | `ListenToMusic` | 3 |
+| 5 | `Custom` | 0 |
+
+Five of five activities agree[^t-touch-activity-of-ours], and an activity of ours of type 5 with group 0 was
+listed and ran, [below](#an-activity-of-ours)[^t-touch-activity-of-ours]. The group of any other type is not
+checked, since no document measured holds one[^unchecked].
 
 The other fields the remote uses:
 
@@ -216,6 +258,14 @@ The other fields the remote uses:
 
 All of those are read in the firmware[^t-touch-activities-firmware]. Exactly one activity measured is the
 tuning default, and it holds one channel changing role[^t-touch-activities].
+
+**A writer gives a start screen only where what it needs is**, since a screen whose condition fails falls back to the
+command list: Favorites only on the tuning default activity, which needs a channel changing role to tune the
+favourites through, and Gesturepad only on an activity whose map holds gestures[^t-touch-setup-firmware]. Numpad,
+Trackpad and Nowplaying each need something of the activity a writer of this project does not write yet. An activity
+composed by this project on Favorites and one on Gesturepad, each with what it needs, were run; the look planned for
+them, the favourites' activity opening on its favourites and the other on its gesture screen, was reported "everything
+looks good" by the person holding the remote, [a whole setup of ours](#a-whole-setup-of-ours)[^t-touch-setup-of-ours].
 
 **`Zones` is in every activity and is not in Logitech's schema**: the schema's `Activity` entity lists 25
 fields, and every activity measured carries those 25 and `Zones`[^t-touch-activities].
@@ -260,14 +310,115 @@ inter device delay add up to, where every pause after a code that is not held fi
 own time per send, give or take those 150 ms[^t-touch-in-use]. The held code itself lasted 1.8 to 2.2 seconds on
 the receiver over six holds[^t-touch-in-use]; what the time after it is made of is not checked[^unchecked].
 
+## An activity of ours
+
+**An activity composed by a program, from devices the remote already holds, is listed, started, used, switched and
+stopped as its record states.** One activity was added to the activity list and the button map list a Touch held
+and delivered in a sync: a Custom activity of two devices, a Blu-ray player switched on first and the TV second,
+the TV on one of its inputs, a pause of 3 seconds and a command added by hand at the start and one at the end,
+and a map of its own sending the volume keys to the TV and the other keys to the player, with four screen entries
+under labels of its own. No record of Logitech's was copied: the seven activity fields read by neither program, the
+roles' and inputs' ids and the steps' ids were left out, [below](#what-a-writer-must-carry). The remote stored and
+committed the two lists and listed the activity last, at its `ActivityOrder`, and at a receiver, started from Off,
+switched to an activity of Logitech's and back, and ended by Off, it sent every code in the order of
+[starting, switching and stopping](#starting-switching-and-stopping): its devices in its power on order, its input
+after the TV's power on delay, its start steps with the pause, its end step first on leaving, its power offs in
+its power off order, a device kept on between activities left on and a device the next activity does not use
+switched off. Every key and every screen entry of its map sent the command it binds, to the device it names, so
+one map of ours sent to two devices; 33 codes in all, none out of order and nothing else, every timed pause in its
+band[^t-touch-activity-of-ours]. Taken out again by a second sync, the remote committed the set it held before,
+content for content, under new tags of ours, and the activity was gone from its list[^t-touch-activity-of-ours].
+
+**Its identifiers are of ours**, the activity's id and so its map's `16417Activity` identifier, by the rule for
+[identifiers of ours](devices-and-infrared.md#a-device-of-ours): Logitech's activity ids in the documents a Touch
+held are eight digits, and the remote took an activity under 900000003[^t-touch-activity-of-ours].
+
+What the screens drew for it is [the model's display](../../remotes/harmony-touch/display.md#what-the-screen-shows).
+*Corrected:* this said an activity of ours of another type, opening on another start screen, holding favourites,
+gestures or sequences, or using a device of ours, was not checked<!--superseded-->; activities of four more types,
+opening on the favourites and the gesture screen, holding favourites, gestures and sequences, on devices under ids of
+ours, were composed and run in [a whole setup of ours](#a-whole-setup-of-ours)[^t-touch-setup-of-ours]. One removed
+while it runs is not checked[^unchecked].
+
+## Taking out an activity and a device
+
+**An activity and a device of Logitech's, taken out by a program with everything in the other documents that names
+them, are gone from the remote's lists, and the activities that used the device run without it.** From the documents
+a Touch held, an activity and a receiver used by four activities were taken out: the activity's entry and its map,
+the receiver's entry, its own map and the two infrared definitions only it used, its role in the three other
+activities, their three volume keys and two swipe gestures that sent its commands, the long press of their tap gesture,
+which sent its mute, cleared, and one screen entry that sent its input, the entries after it moved up one; the activities after the removed one moved
+up one place on the list[^t-touch-removal-of-theirs]. The four documents went to the remote in a sync and were
+committed. At a receiver, the three activities that had held the receiver started, switched and ended with every code
+the set predicts and none of the receiver's, 11 of 11, the volume keys of one of them sending nothing at all and the
+moved screen entry sending its sequence; and by a look at the remote, the activity list showed four activities and
+the device list six, neither of the two, and the moved entry's list eight entries[^t-touch-removal-of-theirs]. Putting
+the four documents back as they had been restored both and the volume keys[^t-touch-removal-of-theirs].
+
+**What a removal refuses.** The device the favourite channels are tuned through, since the screens' favourites page
+then finds no channel, read in the firmware[^t-touch-removal-firmware]; and, as this project's choice rather than a
+reading, the activity the favourites belong to, the last activity shown, and a device whose removal would leave an
+activity with no role, whose effect on the remote is not read[^unchecked]. A dangling role in an activity with a power
+on delay is refused by the answerer's check, [answering a
+sync](answering-a-sync.md#what-the-remote-does-not-check-and-why-an-answerer-still-has-to-be-careful)[^t-touch-removal-firmware].
+Power, enter and leave orders are sorted by the engine, so a gap there costs nothing and a removal leaves
+them[^t-touch-removal-firmware]. An activity taken out while it runs, and a device taken out while an activity holds
+it on, are not checked[^unchecked].
+
+## A whole setup of ours
+
+**Every device and every activity of a set a Touch held, composed again by a program under ids of its own, ran as
+the set it was described from.** The documents a Touch held, seven devices and five activities with 616 keys,
+gestures and screen entries, were described in this project's own terms: per device its name, maker and model, its
+delays, power and input settings and its own map; per activity all of it, roles, inputs, power orders, start and end
+steps, the favourites, the start screen and its map with gestures, long and double presses, sequences and the number
+pad entry. The four documents that name devices and activities were then composed from that description onto the
+set with the four emptied, every device's record, features, commands and codes carried from its catalogue entry,
+and every device, activity, map and sequence under an id of ours, so no device or activity kept Logitech's
+id[^t-touch-setup-of-ours]. Against Logitech's documents every field was equal, equal after a change the remote does
+not see (ids of ours, a key's state 0 for 1, the event type, a function id 0 for none, no sequences as an empty
+list), or one of the fields [below](#what-a-writer-must-carry) that neither program reads[^t-touch-setup-compared]; why
+each changes nothing the remote does is a reading of the engine and the screens[^t-touch-setup-firmware].
+
+The four went to the remote in a sync and were committed. At a receiver, the ten tests that had measured
+[starting, switching and stopping](#starting-switching-and-stopping) and every key above on Logitech's documents
+held 418 of 418 expected codes on ours: every activity started from Off and ended by Off, the five switched one into the next, the
+five favourite channels through the TV under an id of ours, every key of every activity's map tapped and held, and
+every key of each device's own map in device mode, every pause in its band; and nothing was heard that the set does
+not predict but extra presses, in two steps noted as such at the time and in one step not, each the code its key
+sends[^t-touch-setup-of-ours]. By a look at the remote it was reported right: the activity list, the
+devices, and the two activities opened[^t-touch-setup-of-ours]. Putting the four documents back as they had been
+restored the set before[^t-touch-setup-of-ours].
+
+**What this does not show**: a setup that is not a description of one Logitech's service built; the screens'
+pictures and icons beyond that look; and the engine's stored power state per device, which a device under a new id
+starts without, the remote having been switched off before each sync[^unchecked].
+
+## No activity and no device
+
+**Both programs take a configuration with none of either.** The engine's reader walks each list and needs no entry,
+and the screens have a page for each empty case[^t-touch-empty-reading]. Read in the screens' source and held by no
+test: with no activity listed the home page is the device page, the current activity is none, Off then starts nothing
+and sends nothing, and no other hard key is sent while neither a device nor an activity is current[^unchecked]. Delivered to a remote, the four lists empty, it was
+committed and the remote started on it: no activity page, the favourites page on its screen for no favourites, after a
+restart an empty device page as the home page[^t-touch-empty]. What the screens say on those pages is the firmware's
+text, [features](../../remotes/harmony-touch/features.md#an-empty-configuration), and what such a commit keeps of the
+favourites and the pictures is [answering a sync](answering-a-sync.md#the-smallest-set-of-documents). The keys on that
+set, Off, the volume keys and the numbers, were not tried on a unit[^unchecked].
+
 ## What a writer must carry
 
 **The screens change these documents and send them back whole.** Reordering activities, choosing a start
 screen or a picture and changing an input rewrite `ActivityList`; editing a command list or a gesture rewrites
 `MapList`; and each goes up as the whole document[^t-touch-activities-firmware], as the remote's settings were
 measured to[^t-touch-both-ways]. So every field below, though nothing on the remote reads it, comes back as it
-went down, and a writer that drops one has changed what Logitech's service holds. Uploading these two
-documents has not been measured[^unchecked].
+went down, and a writer that drops one has changed what Logitech's service holds. The remote uploading these two
+documents after an edit on its screens has not been measured[^unchecked]. **The other way, both changed by a
+program and delivered in a sync, they were stored, committed and used**: one value changed in each, a sequence's
+delay and an activity's name[^t-touch-changed-set], and an activity of ours appended to both and taken out
+again, whose record left out the activity's, the roles' and the steps' fields of the first table below and ran
+all the same,
+[above](#an-activity-of-ours)[^t-touch-activity-of-ours].
 
 **Read by neither program**[^t-touch-activities-firmware]:
 
@@ -334,6 +485,11 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
   and 32 going into the first list; a key marked 4 still sending, which the documents measured never
   hold[^unchecked].
 * Whether Logitech's service always leaves a Custom activity without gestures[^unchecked].
+* The `ActivityGroup` of a type no document measured holds[^unchecked]. *Corrected:* this said an activity of ours
+  of any type but Custom, on any start screen but the command list, with favourites, gestures or sequences, or using
+  a device of ours, was not checked<!--superseded-->; [a whole setup of ours](#a-whole-setup-of-ours) ran all
+  of those[^t-touch-setup-of-ours]. An activity of ours on the Numpad, Trackpad or Nowplaying screen is not
+  checked[^unchecked].
 * The roles, steps and paths for Sonos, Roku, speakers, home control and multi zone activities, which the
   documents measured do not hold[^unchecked].
 * Any other firmware build, and the other remotes of the generation[^unchecked].
@@ -344,4 +500,13 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^unchecked]: Not checked.
 [^t-touch-compose]: Measured on a unit. [The test](../../../packages/codec/test/touch-compose.test.ts)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
-[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-activity-runs.test.ts)
+[^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch-removal-runs.test.ts)
+[^t-touch-removal-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-removal.test.ts)
+[^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-setup-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch-empty-runs.test.ts)
+[^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/touch-empty.test.ts)
+[^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-setup-set.test.ts)
+[^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-setup.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)

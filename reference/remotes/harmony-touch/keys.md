@@ -200,6 +200,6 @@ try[^t-touch-in-use].
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
 [^unchecked]: Not checked.
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
-[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py), class `WhichKeysMyHarmonyGivesALongPressInDeviceMode`

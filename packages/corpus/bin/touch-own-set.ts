@@ -11,7 +11,7 @@
  * fixture `touch_full_sync_recording`, and lets a document a hand over of ours wrote back replace its
  * recorded copy: each `--handed-up` is the kept request line of a hand over's write of answers, `NNN-answers-
  * request.txt` in a run's folder, whose answers are the remote's own documents as handed up, with the tag our
- * hand over gave them. Then `buildOwnSet`, `src/touchownset.ts`: each of the six only when the tag the remote
+ * hand over gave them. Then `buildOwnSet`, `experiments/touchownset.ts`: each of the six only when the tag the remote
  * last asked for it with, `--requests`, equals the tag its source delivered it under, every new tag `setTag`
  * with the folder's name, and the answerer's gate passed. It writes `set.json`, the set `touch-sync.ts --set`
  * reads, and `sources.json`, which document came from which file. The folder has to be inside the lab and
@@ -33,8 +33,8 @@ import { harmonyTouch } from '@harmony/codec';
 import { LAB } from '@harmony/lab';
 import { answersWritten, commands, records, sessions, text } from '@harmony/usb/test/touch-recording';
 
-import { CONFIG_HASH_DOCUMENTS, OWN_SET_DOCUMENTS, buildOwnSet, compareConfigHash, compareRequestList, type OwnSource } from '../src/touchownset.ts';
-import { writeOfAnswersSize } from '../src/touchchangedset.ts';
+import { CONFIG_HASH_DOCUMENTS, OWN_SET_DOCUMENTS, buildOwnSet, compareConfigHash, compareRequestList, type OwnSource } from '../experiments/touchownset.ts';
+import { writeOfAnswersSize } from '../experiments/touchchangedset.ts';
 import {
   SYNC,
   WRITE_ANSWERS,

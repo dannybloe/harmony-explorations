@@ -1,0 +1,7 @@
+{
+  "what": "todo-touch.md 8.5: Listen to Music and the Denon AV Receiver taken out of the bench Touch's documents with everything that names them; the receiver is in Watch TV, Watch a Blu-ray and Play a Game besides, so those three lose its role, its keys and its gestures; Plex stays, in device mode only",
+  "removal": {
+    "activities": ["Listen to Music"],
+    "devices": ["Denon AV Receiver"]
+  }
+}

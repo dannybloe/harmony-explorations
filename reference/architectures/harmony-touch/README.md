@@ -7,10 +7,14 @@ fetches its own, through the computer, over the network[^s196][^s198][^s203]. Th
 One, Ultimate Home, Elite and 950 run the same firmware image, and Logitech's hubs run a sibling of
 it[^s196].
 
-**This folder is thin because one model of the generation has been read, and only two of its files.**
-What it holds is what Logitech states about the generation and what a Harmony Touch showed on the cable.
-The model's own folder, its keys, screen and behaviour, is
-[harmony-touch](../../remotes/harmony-touch/README.md).
+**One model of the generation has been read, the Harmony Touch, on one firmware build, 4.15.330.** What this
+folder holds is what Logitech states about the generation, what the Touch's firmware image does, read in its
+engine and its screens, and what one Touch did on the cable, with Logitech's client and with this project's own
+answerer in its place[^s196][^t-touch-from-nothing]. Where a page says the platform, it means that build as the
+Touch runs it; the other models of the generation are not checked[^unchecked]. The model's own folder, its keys,
+screen and behaviour, is [harmony-touch](../../remotes/harmony-touch/README.md). *Corrected:* this said "This
+folder is thin because one model of the generation has been read, and only two of its files"<!--superseded-->,
+before the image and the syncs were read.
 
 ## Skins
 
@@ -67,7 +71,9 @@ states both wherever a number is needed.
 
 **Which number a writer would need is not established**[^unchecked]. On the remote the value goes only into
 the identity file, and the engine's is a fixed string[^t-touch-arch]; whether anything else on the remote
-reads the identity file back is not checked[^unchecked]. Nothing in this library writes to this model.
+reads the identity file back is not checked[^unchecked]. What this library writes to this model is the
+answers of a sync, through its request rail, [answering a sync](answering-a-sync.md)[^d29]; this said "Nothing in
+this library writes to this model"<!--superseded--> until that rail was built.
 
 ### The two numbers in Logitech's template map
 
@@ -126,13 +132,32 @@ On a Touch a key with a long press sends nothing on the press: its long action f
 
 | file | what it holds |
 |---|---|
-| [firmware.md](firmware.md) | the images Logitech serves for this generation, the factory images, the recovery tool's network reset |
-| [usb.md](usb.md) | the file protocol as this generation speaks it, the `MD5` write check, provisioning instead of a compile |
-| [devices-and-infrared.md](devices-and-infrared.md) | the device and protocol lists, how a command becomes infrared on the remote, and what a writer must carry |
-| [activities-and-buttons.md](activities-and-buttons.md) | the activities and button maps: key presses, the long press, the number pad, gestures, sequences, the start and switch order, and the fields nothing reads |
-| [favourites-and-settings.md](favourites-and-settings.md) | the Context and Settings documents, the favourite channels and the pictures, field by field |
-| [answering-a-sync.md](answering-a-sync.md) | answering a Touch's sync in place of Logitech's server: what the remote checks of an answer, the smallest set of documents, entity tags, the direct resource put, and which request names act |
+| [firmware.md](firmware.md) | the images Logitech serves for this generation, what the remotes' image holds, the architecture number it reports, the factory images, and recovery: a configuration that fails to load, a sync that stops halfway, the remote's own factory reset and Logitech's routes |
+| [usb.md](usb.md) | the file protocol as this generation speaks it, the `MD5` write check, provisioning instead of a compile, and a sync of Logitech's client both ways |
+| [devices-and-infrared.md](devices-and-infrared.md) | the device and protocol lists, how a command becomes infrared on the remote, a device and definitions of ours, the identifiers of ours, the catalogue's fields and the person's, and what a writer must carry |
+| [activities-and-buttons.md](activities-and-buttons.md) | the activities and button maps: key presses, the long press, the number pad, gestures, sequences, the start and switch order, an activity of ours, taking one out, a whole setup of ours, no activity at all, and the fields nothing reads |
+| [favourites-and-settings.md](favourites-and-settings.md) | the Context and Settings documents, the favourite channels and the pictures, field by field, and what each composed by a program did |
+| [answering-a-sync.md](answering-a-sync.md) | answering a Touch's sync in place of Logitech's server: a sync end to end, what the remote checks of an answer, what an answerer refuses, how a sync aborts and commits, the syncs this project ran, the smallest set of documents and what a commit keeps, entity tags, the direct resource put, and which request names act |
 | [api/README.md](api/README.md) | the remote's whole interface as an API: the names its USB program answers and every request its engine registers, each with what it does, its parameters and its answer |
+
+### The documents a sync delivers, and where each is described
+
+A Touch's configuration is the documents it asks for in a sync, each JSON, and pictures, each a PNG; the six
+configuration documents are asked for in every sync down, the favourites documents and pictures only when the
+remote needs them[^t-touch-sync][^t-touch-host]:
+
+| what | what it holds | its page |
+|---|---|---|
+| `ActivityList` | the activities: their roles, inputs, power orders, start and end steps | [activities and buttons](activities-and-buttons.md) |
+| `MapList` | a button map per device and per activity: keys, screen entries, gestures, sequences | [activities and buttons](activities-and-buttons.md) |
+| `DeviceList` | the devices: their records, features and commands | [devices and infrared](devices-and-infrared.md) |
+| `ProtocolList` | a definition per code family the commands use | [devices and infrared](devices-and-infrared.md) |
+| `Context` | the account: its number, language and the address of the user's favourites | [favourites and settings](favourites-and-settings.md#context) |
+| `Settings` | the remote's own settings: brightness, timeout, background, clock | [favourites and settings](favourites-and-settings.md#settings) |
+| the user's favourites, a device's favourites, the provider's line up | the favourite channels, their numbers and names, and the channels on offer | [favourites and settings](favourites-and-settings.md#favourite-channels) |
+| pictures | the user's backgrounds and their small twins, the channel logos | [favourites and settings](favourites-and-settings.md#pictures) |
+
+How each is asked for and answered is [answering a sync](answering-a-sync.md).
 
 There is no memory page: no address a host can name has been read on this generation, and what a Touch
 answers is a set of paths, [the model's memory page](../../remotes/harmony-touch/memory.md).
@@ -166,4 +191,8 @@ answers is a set of paths, [the model's memory page](../../remotes/harmony-touch
 [^t-touch-arch-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_architecture.py)
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
 [^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
+[^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
+[^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)
+[^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

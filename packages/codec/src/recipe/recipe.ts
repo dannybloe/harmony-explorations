@@ -100,6 +100,14 @@ export interface Recipe {
    * by the family, which refuses one it does not make.
    */
   readonly choices?: Readonly<Record<string, unknown>>;
+  /**
+   * The Harmony Touch's own part, `todo-touch.md` 9.1: what a person chose for each device and activity beyond what a
+   * recipe states, their ids, delays, keys, screen entries and sequences, the families of our rhythm table their codes
+   * are written with, and the remote's settings. A Touch is given documents rather than a compiled file, so nothing
+   * builds it from a recipe; `readTouchSetupFile` in `harmony-touch/fromnothing.ts` reads and checks this part, and
+   * nothing else reads it.
+   */
+  readonly touch?: Readonly<Record<string, unknown>>;
 }
 
 /** The model a recipe names, its skin and its definition, and the family that builds for it. */
@@ -200,7 +208,7 @@ function screenItem(value: unknown, what: string): RecipeScreenItem {
  * role one of the contract's. Refused with the first thing wrong, by where it is.
  */
 export function readRecipe(json: unknown): Recipe {
-  const top = fields(json, 'the recipe', ['model', 'devices', 'activities'], ['about', 'choices', 'favourites']);
+  const top = fields(json, 'the recipe', ['model', 'devices', 'activities'], ['about', 'choices', 'favourites', 'touch']);
   const m = fields(top.model, 'the model', ['name'], ['skin']);
   if (m.skin !== undefined && !Number.isInteger(m.skin)) throw new RecipeError('the model\'s skin is not a number');
   const model: RecipeModel = { name: text(m.name, 'the model\'s name'), ...(m.skin === undefined ? {} : { skin: m.skin as number }) };
@@ -255,5 +263,6 @@ export function readRecipe(json: unknown): Recipe {
     model, devices, activities,
     ...(top.choices === undefined ? {} : { choices: object(top.choices, 'the choices') }),
     ...(favourites === undefined ? {} : { favourites }),
+    ...(top.touch === undefined ? {} : { touch: object(top.touch, 'the Touch\'s part') }),
   };
 }

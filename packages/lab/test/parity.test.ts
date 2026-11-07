@@ -147,10 +147,32 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // timed the sequence's delay.
   // 528 with the two infrared monitor runs of the Touch's 3.2 bench checks, which 7.1's engine model is calibrated on.
   // 539 with 7.1's ten bench runs and the monitor log holding them and the live retest of its three missed presses.
-  // 542 with the Harmony 885 unit A's whole flash, read twice, and its configuration after the first block write.
-  // 545 with unit B's, todo-compile-885.md 1.8. 549 with its four files of 1.4. 550 with 2.1's composed file.
-  // 552 with B's two files of 2.1.
-  assert.equal(Object.keys(pythonImages()).length, 552, 'every fixture tests/lab.py names');
+  // 601 with the 62 files of 8.1: the device set and its put back, the three config hash reads, the two syncs of
+  // nine request lists each, the closing `--unchanged` run, the bench run and the monitor log.
+  // 661 with the 60 files of 8.2: the activity set and its put back, the three config hash reads, the two syncs of
+  // eight request lists each, the closing `--unchanged` run, the bench run and the monitor log.
+  // 726 with the 65 files of 8.3: the favourites set and its put back, the three config hash reads, the two syncs of
+  // eight request lists each with the replies to their two writes of content, the closing `--unchanged` run, the
+  // bench run, the monitor log, and the 7.1 favourites test run again after the put back with its two shorter starts.
+  // 784 with the 58 files of 8.4: the settings set and its put back, the three config hash reads, the two syncs of
+  // eight request lists each with the reply to their kept write, and the closing `--unchanged` run.
+  // 853 with the 69 files of 8.5: the removal set and its put back, the five config hash reads, the first try that
+  // stopped with the seven files it kept, the two committed syncs of eight request lists each with the reply to their
+  // kept write, the closing `--unchanged` run, the bench run and the monitor log.
+  // 925 with the 72 files of 8.6: the setup set and its put back, the three config hash reads, the two committed syncs
+  // of eight request lists each with the reply to their kept write, the closing `--unchanged` run, the ten 7.1 bench
+  // runs on the setup with the three attempts started again, and the monitor log.
+  // 928 with the 3 files of 9.1: the set built from nothing, its put back, and the account's description.
+  // 983 with the 55 files of 9.2: the empty set and its put back, the four config hash reads, the empty sync of four
+  // request lists and the put back of eight, each with the reply to its kept write and the put back's to its line up,
+  // the closing `--unchanged` run, the photograph of the favourites page and the monitor log.
+  // 1046 with the 63 files of 9.4: the three config hash reads, the two committed syncs of eight request lists each
+  // with the reply to their kept write and the forward run's to its picture write, the closing `--unchanged` run, the
+  // one 7.1 bench test on the set with its two attempts started again, the monitor log and the two photographs.
+  // 1059 with the Harmony 885 track's 13, merged from its branch: unit A's whole flash twice and its
+  // configuration after the first block write, unit B's three of 1.8, its four of 1.4, 2.1's composed file and
+  // B's two of 2.1.
+  assert.equal(Object.keys(pythonImages()).length, 1059, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

@@ -12,7 +12,7 @@ remote[^s200][^s201].
 | `/rf/deviceinfo` | 83 bytes | the word `Response`, a comma and a JSON object: a radio identity, a list of paired devices and their count. A query answered when opened, not storage | [^s201] |
 | `/tde/enable` | 1 byte | not read | [^s200] |
 | `/fw/otaupdate`, `/ir/ir_cap` | 0 bytes | not read | [^s200] |
-| `/sys/hlapi` | 0 bytes | **the remote's request and answer file**: a request is written into it and the answer read back, which is how Logitech's client syncs the remote in both directions, [usb.md](usb.md). It opened at 0 bytes when probed outside a sync | [^s200], [^t-touch-sync], [^t-touch-both-ways] |
+| `/sys/hlapi` | 0 bytes | **the remote's request and answer file**: a request is written into it and the answer read back, which is how Logitech's client syncs the remote in both directions, [usb.md](usb.md), and how this project's answerer syncs it in Logitech's place, [answering a sync](../../architectures/harmony-touch/answering-a-sync.md). It opened at 0 bytes when probed outside a sync | [^s200], [^t-touch-sync], [^t-touch-both-ways], [^t-touch-second-sync] |
 | `/sys/time` | 0 bytes | Logitech's client writes the time and a time zone into it during a sync down, and in both syncs down measured the remote refused the write; a hand over of the remote's changes wrote nothing to it; not read | [^s200], [^t-touch-sync], [^t-touch-both-ways] |
 | `/sys/factoryreset`, `/sys/reboot` | 0 bytes | **controls** that act on a write and do nothing when opened; neither is on the inert list, [usb.md](usb.md). This row said opening one is the action<!--superseded--> until the native program was read, [the names](../../architectures/harmony-touch/api/names.md#the-names-that-act-on-a-write-and-on-an-open) | [^s200], [^t-touch-api-names] |
 
@@ -46,6 +46,7 @@ either: this is a later generation[^s199].
 [^s199]: Read in the firmware. [Section 199](../../../docs/findings.md#s199)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^unchecked]: Not checked.
 [^s198b]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)

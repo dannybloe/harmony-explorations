@@ -46,9 +46,20 @@ channel tuning settings were not measured[^unchecked].
 **On the remote**, up to 50 favourites can be held: the add screen refuses a fifty first with a
 warning. That is read in the screens; the test holds the number 50 and not the
 refusal[^t-touch-favourites-firmware]. Reordering them changes only the user's favourites document, and
-changing a channel changes the device's as well; each goes up to the account at the next
-sync[^t-touch-favourites-firmware]. What such a change looks like on the cable is not
-checked[^unchecked].
+changing a channel changes the device's as well; each goes up to the account at the next sync, to an address of
+its own: `content://1.0/user/` and the document's `id` for the user's, `content://1.0/device/` and its `id` for a
+device's, not the address a sync asks for it at[^t-touch-favourites-firmware]. What such a change looks like on the
+cable is not checked[^unchecked].
+
+**Favourites composed by a program are shown and sent as the remote's own.** A user's favourites document delivered
+with 200 under a new tag, holding the five favourites the remote had in reverse order and a channel of the line up
+added first the way the remote's add screen adds an offered one, its station alone appended to the user's list with
+no dial position, was committed, and the favourites screen showed the six in the document's order. The added
+channel's tile showed the number the line up gives its station, 61, and a tap on it with no activity running started
+the tuning activity and sent 0, 6, 1, that number padded by the device's channel tuning; the other five sent their
+own numbers. The remote's own document, delivered back the same way under its old tag, restored the old
+order[^t-touch-favourites-of-ours]. The added channel's name, which its tile does not show, a channel added by hand,
+and a tuning device's document or a line up composed by a program are not checked[^unchecked].
 
 ## Settings
 
@@ -62,8 +73,8 @@ too:
 | `BackgroundImage` | the background picture, one of nine built into the remote or one of the user's own | a built in picture |
 | `UserImages` | the user's own backgrounds, each fetched with a small twin for the picker; the row allows five, a count the remote does not read | none |
 | `TwelveHourClock` | the clock in the status bar, 12 hour or 24 hour, and the set time screen | 12 hour |
-| `ScreenBrightness` | the screen's backlight; a value is held to 10 to 100 | 85 |
-| `ScreenTimeout` | seconds before the screen goes to sleep, which it does not do on USB power; a value is not clamped, and the lock screen uses half of it | 10 |
+| `ScreenBrightness` | the screen's backlight, which holds a value to 10 to 100; the fade before the screen sleeps reads the value unheld, so below 4 the fade never ends and the remote never sleeps on battery | 85 |
+| `ScreenTimeout` | seconds before the screen goes to sleep, which it does not do on USB power; a value is not clamped, so 0 is a sleep timer due at once after every wake, and the lock screen uses half of it | 10 |
 | `ScreenLockFlag` | the lock screen, shown when the screen fades out | off |
 | `EditLock` | locks the Remote, Devices and Activities menus and the gesture editor, and not its own switch | off |
 | `KeyBrightness` | the keys' backlight; a value from the account is taken from 5 to 100 and turns the light off below 5, where the remote's own slider starts at 10 | 35 |
@@ -87,6 +98,28 @@ offer is [the model's display page](../../remotes/harmony-touch/display.md#the-p
 
 The document's own fields: `RemoteName` is the model name on the About screen, the firmware's own when
 empty; `UserImageBucketUri` is where the user's backgrounds are fetched from[^t-touch-favourites-firmware].
+
+**A Settings delivered in a sync acts at the sync's end, with no restart, for most rows.** When a sync is
+committed the screens empty their copy of the documents, show the sync complete screen and then set the screen's
+and the keys' backlight, the timeout, the clock's form and the background from the new Settings; the lock screen
+and the edit lock are read each time they are needed. Vibration and the motion sensor are set only when the remote
+starts and when they are changed on its own screens, so a sync's value for either acts at the next
+start[^t-touch-favourites-firmware]. **Measured on a unit**: a Settings composed by a program, the remote's own with
+the screen brightness changed from 100 to 20 and the timeout from 10 to 30 seconds and every other row as it was,
+delivered with 200 under a new tag, was committed; afterwards the screen was dimmed and, off the cable, took about
+30 seconds after a touch to dim. Its own Settings delivered back the same way under its old tag brought full
+brightness and a timeout of about 10 seconds back. Both were seen after the sync and before any restart; the
+moment within the sync's end at which the backlight changes was not watched, so that part rests on the
+reading[^t-touch-settings-of-ours].
+
+**Two values cost more than one screen**[^t-touch-favourites-firmware]. A screen brightness below 4: the backlight
+holds the level to 10 to 100, but the fade before the screen sleeps counts down from the level's backlight step,
+one step every 50 ms, and stops only when the count reaches 0, so a level whose step is 0 starts the count at 0,
+passes it, and the remote never finishes fading and never sleeps on battery; a touch cancels the fade and the next
+timeout starts it again. A timeout of 0: the value times 1000 goes to the sleep timer with nothing holding it, and
+a timer is due at the clock plus its interval, so the screen fades and the remote sleeps right after every wake;
+what a person sees then is inferred and not checked[^unchecked]. **A correction**: the table above said the screen
+brightness "is held to 10 to 100"<!--superseded--> as a whole, which is true of the backlight and not of the fade.
 
 ## Context
 
@@ -116,6 +149,18 @@ Five of the 21 are not in Logitech's data model as this reference holds it: `Cus
 `Email`, `LatestSLAAccepted` and `LatestSLAAcceptedDate`[^t-touch-favourites]. Context arrived the same in
 both syncs measured that carried one[^t-touch-favourites].
 
+**A Context composed by a program is stored and reported.** One built from a description of the seven fields above,
+each as the remote held it, and the other fourteen carried, so equal in content and key order to the remote's own,
+was delivered with 200 under a new tag and committed; the remote's configuration hash, which joins Context's tag,
+carried the new tag afterwards, and its own Context delivered back under its old tag restored the old
+hash[^t-touch-settings-of-ours]. **A Context of the seven fields alone is taken**: one written by a program with only
+the seven above, each the account's own value, and none of the other fourteen, was delivered with 200 in a set of
+ours and committed, the hash carrying its tag, and every activity of that set was started and ended
+afterwards[^t-touch-from-nothing]. This said a Context whose content differs from the remote's was not
+checked<!--superseded--> until then. What the account screen showed, and whether the activity tutorial was offered,
+with that Context were not looked at, and a Context whose seven values differ from the remote's is not
+checked[^unchecked].
+
 ## Pictures
 
 **Every picture is fetched again at every sync but the channel logos from the line up**, and in the one
@@ -124,10 +169,35 @@ passed, and the expiry comes from a `cache-Control` field on the answer, which n
 carried; so a logo was given no expiry and is fetched every time[^t-touch-favourites][^t-touch-favourites-firmware]. The background, its
 twin and an uploaded channel logo have no such rule; each is asked for with the entity tag the remote
 holds[^t-touch-favourites-firmware]. Before the pictures are asked for, every picture already held is carried
-into the new set, so one that fails to arrive keeps its old copy[^t-touch-favourites-firmware]. **Measured:
-pictures the remote holds are asked for with their tags**, all ten in a later sync with exactly the tags they
-were delivered with, where the sync that delivered them had asked for every one untagged; answered 304, the
-remote kept them and committed the set[^t-touch-second-sync].
+into the new set, so one that fails to arrive keeps its old copy[^t-touch-favourites-firmware]. **That carrying
+takes every stored PNG, whatever names it**, so a picture at an address no favourite names any more is carried
+into every later set for good[^t-touch-favourites-firmware]. With no picture asked for, none is carried[^t-touch-empty-reading]; a set with no
+activity still asks for the settings' user backgrounds, and across one the remote kept all ten of its pictures,
+[answering a sync](answering-a-sync.md#the-smallest-set-of-documents)[^t-touch-empty]. **Measured: pictures the remote holds are asked for
+with their tags**, all ten in a later sync with exactly the tags they were delivered with, where the sync that
+delivered them had asked for every one untagged; answered 304, the remote kept them and committed the
+set[^t-touch-second-sync].
+
+**Measured: a picture delivered with 200 at the address of one the remote holds replaces it.** A logo drawn by a
+program, a 54 by 54 PNG, delivered under a new tag at the address of a station logo the remote held, was stored,
+drawn on the favourite tile that names the station, and asked for with that new tag in the next sync; the remote's
+own picture, delivered back the same way, was asked for with its old tag in the sync after[^t-touch-favourites-of-ours].
+
+**Measured: a user background at an address of ours is asked for, stored and drawn.** A Settings written by a program
+named a background of ours in `UserImages` and `BackgroundImage` and an address of ours, which nothing serves, in
+`UserImageBucketUri`. The screens asked for the picture and its twin at that address, without a tag, since the remote
+held neither; delivered with 200, both were stored, and the remote's other two backgrounds were carried beside them,
+asked for again with their old tags once the remote's own Settings was back. A background of ours, dark blue with a
+bright yellow band across its foot, then showed as a band at the foot of every screen under the screens' dark footer,
+which is consistent with the picture and all that was compared[^t-touch-from-nothing]. *Corrected:* this said a picture
+at an address the remote did not hold before was not checked<!--superseded--> until then. Whether that background was
+in the picker, and the remote's own out of it, is not checked[^unchecked].
+
+**A drawn picture is kept by its file's path.** The screens keep decoded pictures in one cache of 6 MiB keyed by the
+picture file's path, which drops the least recently used when it is full and which nothing else
+empties[^t-touch-favourites-firmware]. So a picture replaced at the same path can be drawn from its old decoding
+until it is pushed out or the screens restart; the one picture replaced on a unit showed the new drawing at
+once[^t-touch-favourites-of-ours], and an old drawing kept was not seen[^unchecked].
 
 **What is asked for, in order**[^t-touch-favourites][^t-touch-favourites-firmware]:
 
@@ -136,6 +206,10 @@ remote kept them and committed the set[^t-touch-second-sync].
    the station's logo, unless the channel was added by hand, which then has no picture
 3. the logo of each popular channel in the line up, which the remote offers when a favourite is added on
    it; at most 25, a cap read in the screens, where the test holds the number
+
+**The favourites the order follows are the ones answered earlier in the same sync**: with a user's document of new
+order delivered with 200, the added channel's logo was asked for first of the eight logos, where with the old
+document it came sixth, among the popular channels'[^t-touch-favourites-of-ours].
 
 In the one sync that carried pictures, the background was 240 by 320 with a 60 by 80 twin, a station logo 54 by 54 and an
 uploaded logo 54 by 44, all PNG; the remote asks for logos at 54 by 54[^t-touch-favourites][^t-touch-favourites-firmware].
@@ -179,7 +253,9 @@ each speaker, device types 19 and 33; a line up for each favourites activity's s
 key under the device's `ContentProfileKey` in the user's document, skipping an antenna only service, named
 in braces, and the Roku, Sonos and Heos ones[^t-touch-favourites-firmware]. On the account measured, that made the
 tuning device's document the only one asked for, though every device carries a profile
-address[^t-touch-favourites].
+address[^t-touch-favourites]. **With no activity none is asked for**, measured with a set whose lists were all empty, and
+a commit keeps only what its sync asked for, so by the reading such a set drops every favourites document the remote
+held, [answering a sync](answering-a-sync.md#the-smallest-set-of-documents)[^t-touch-empty].
 
 **On a Touch synced through a computer all three kinds are asked for without an entity tag, every time**: the
 remote's screens ask for them, read each document's file before its tag, and during a sync read files from the
@@ -190,9 +266,14 @@ sync](answering-a-sync.md#the-entity-tag-an-answerer-sends)[^t-touch-favourites-
 **Measured in a sync answered by a program of this project**: the user's, the tuning device's and the line up's
 documents were each asked for without a tag, though an earlier sync of Logitech's had delivered each with 200
 and a tag; each was answered 304 with a tag of ours, the sync was committed, and the remote still showed its
-favourites afterwards[^t-touch-second-sync]. That fits the reading above. It does not by itself rule out a
-narrower one, that the tag is sent only when both the document's file and its index entry exist, since which
-favourites files the remote held was not read on the unit, so the cause is not checked[^unchecked].
+favourites afterwards[^t-touch-second-sync]. That fits the reading above. **A later measurement rules out the
+narrower one**, that the tag is sent only when both the document's file and its index entry exist: after a user's
+favourites document was delivered with 200 and a tag and committed, the screen showing it, the next two syncs still
+asked for it without a tag[^t-touch-favourites-of-ours].
+
+> This said that measurement does not by itself rule out a narrower one<!--superseded-->, since which favourites
+> files the remote held was not read on the unit, until a user's document delivered with 200 and a tag, which the
+> remote then held, was still asked for untagged[^t-touch-favourites-of-ours].
 
 ### The user's favourites document
 
@@ -288,8 +369,13 @@ So the two rows measured with no value and a null default, `ScreenBrightness` an
 and 10[^t-touch-favourites][^t-touch-favourites-firmware]. The backlight is set to the screen level scaled
 to 26 steps, and the keys' light to the key level scaled to 42, each rounded down[^t-touch-favourites-firmware].
 
-**How a value is written**: a change on the remote replaces the row's first value and, if it changed,
-hands the whole document up; it adds no row[^t-touch-favourites-firmware]. The hand over is
+**How a value is written**: a change on the remote replaces the row's first value and hands the whole document
+up when the value changed or the screen asks for it; it adds no row[^t-touch-favourites-firmware]. Four settings
+screens ask: the brightness screen when its slider ends away from where it opened, since the slider writes each
+value in place as it moves, the edit lock and motion sensor screens when their switch changed, and the set time
+screen after any touch of the clock or its 12 hour switch, the time alone included[^t-touch-favourites-firmware].
+**A correction**: this said the document is handed up "if it changed"<!--superseded-->, which the set time screen does
+not keep. The hand over is
 [usb.md](usb.md). A Settings document saved that way carries no entity tag, so the next sync asks for
 Settings untagged and gets the whole document; in the full sync measured, Settings was the one document
 asked for without a tag, which is consistent with this, as settings had been changed on the remote
@@ -311,8 +397,8 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 
 ## Not checked
 
-* Anything on this page observed on a remote's screen or its infrared: what the remote does is its
-  code[^unchecked].
+* Anything on this page observed on a remote's screen or its infrared beyond what is marked measured: what the
+  remote does is its code[^unchecked].
 * Channel tuning settings other than the two measured[^unchecked].
 * What a change of favourites made on the remote looks like when it is handed up[^unchecked].
 * Whether the code that reads Context's other six fields runs on a Touch synced over USB: the hub,
@@ -333,4 +419,9 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^unchecked]: Not checked.
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
-[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)
+[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-favourites-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch-settings-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch-empty-runs.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
+[^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/touch-empty.test.ts)

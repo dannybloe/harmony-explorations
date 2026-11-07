@@ -52,7 +52,9 @@ Desktop's client that name `/sys/hlapi` use only open, write, read and close[^t-
 **A sync goes two ways, and the two are separate conversations.** Changes made on the remote go up, when the
 client asks for them; the account comes down. Both were measured on a Harmony Touch through Harmony Desktop.
 
-**Up, the remote's own changes**, measured once, a hand over of changed settings[^t-touch-both-ways]:
+**Up, the remote's own changes**, measured once through Logitech's client, a hand over of changed settings[^t-touch-both-ways],
+and once through this project's answerer, where the remote handed up its whole Settings document with no tag in the
+same way, [answering a sync](answering-a-sync.md#a-sync-end-to-end)[^t-touch-first-sync]:
 
 1. the computer asks the remote to sync its own changes, then asks it for work, a proxy read naming a
    session
@@ -69,7 +71,10 @@ With nothing changed on the remote, the first list held only `proxy://Finished`[
 asks for the remote's changes only when the account has no sync pending**, among its other conditions: with
 edits waiting on the account, it goes straight to the sync down[^t-client-reverse-sync]. A sync down measured
 after edits on the account sent no request for the remote's changes, which is consistent with
-that[^t-touch-both-ways]. What then becomes of changes waiting on the remote is not checked[^unchecked].
+that[^t-touch-both-ways]. **Changes then waiting on the remote never reach the account**: the sync request empties
+the queue that would carry them up, read in the firmware, [setup](api/setup.md#setupsync)[^t-touch-api-setup],
+and not seen on a remote[^unchecked]. This said what becomes of them was not checked<!--superseded--> until the
+handler was read.
 
 **Down, the account**, measured twice, on an account without favourites or pictures and on one with
 both[^t-touch-sync][^t-touch-both-ways]:
@@ -141,4 +146,6 @@ testing only"[^s198], and a Touch has no file at the Harmony 300 and 350's confi
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_setup.py)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
 [^unchecked]: Not checked.

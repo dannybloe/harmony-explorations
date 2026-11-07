@@ -133,7 +133,10 @@ a restart meets such a set again, and that the engine, a separate program, still
 that the delete of the stored documents below reaches the remote, is inferred and not tried[^unchecked]. All of this is read in the production
 build 4.15.330, and **one route has been run on a remote**: a sync stopped halfway, cleared by the abort and
 the restart over the cable, [below](#a-sync-that-stops-halfway)[^t-touch-first-sync]. The configuration that
-fails to load has not been tried[^unchecked].
+fails to load has not been tried[^unchecked]. **An empty configuration is not a failure**: a set with every list empty,
+no device and no activity, was committed, and after a restart the remote's configuration hash still answered with that
+set's tags, so it started on it with the configuration task alive, and the next sync replaced it as usual,
+[answering a sync](answering-a-sync.md#the-smallest-set-of-documents)[^t-touch-empty].
 
 ### A configuration that fails to load
 
@@ -201,6 +204,15 @@ and `setup.firmware?reboot` answered 200, after which the remote started normall
 order the reading gives, the read first, the abort, the read again and the restart, holds on a unit for a sync
 stopped before its commit. A sync stopped inside the hand over, a configuration task that has ended, and the
 deletion of the stored documents have not been tried[^unchecked].
+
+**Measured on a unit, a second stop before the commit, of another kind**: a sync stopped while the answers to its
+first request list were being written, the answerer's read of the remote's reply timing out inside a write of 13
+chunks, after which the remote left the bus, enumerated again and was reported restarting by the person holding it.
+`harmony.engine?getconfighash` then answered 200 twice, not 202, with the stored documents' tags from before the
+sync, so no sync was marked running and nothing of the gathered set was committed; nothing was sent to recover it, and
+the same set sent again was committed[^t-touch-removal-of-theirs]. That agrees with a restart before the commit
+deleting the set aside and clearing the flag, above; what made the read time out and the remote restart, the write,
+the cable or anything else, is not known[^unchecked].
 
 ### The remote's own factory reset
 
@@ -294,7 +306,10 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 ## Not checked
 
 * Which DA850 variant the remotes run on, the memory fitted, and the size of their flash[^unchecked].
-* Where on a remote the configuration lives, and in what form[^unchecked].
+* The volumes and the documents of the configuration looked at on a unit[^unchecked]; they are read in the
+  image, [below the application](#below-the-application) and [where each is
+  kept](favourites-and-settings.md#where-each-is-kept)[^t-touch-recovery]. *Corrected:* this asked where on a
+  remote the configuration lives, and in what form<!--superseded-->, which the image has since answered.
 * Whether a unit's second kernel volume holds anything, and whether the serial port is reachable[^unchecked].
 * Whether the update service serves a different build to a registered unit than to the anonymous
   request[^unchecked].
@@ -314,6 +329,8 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch-empty-runs.test.ts)
+[^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch-removal-runs.test.ts)
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_recovery.py)
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/test_harmony_touch_host.py)
 [^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/touch-check.test.ts)

@@ -91,7 +91,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [ ] 3.8.1 Confirm no firmware seeks base slot 0 on the images not yet scanned, the Harmony 600's and 650's 0.2 among them, per architecture; the Harmony 600 and 650 0.2 builds scanned since, never 0 or 1 (section 392), beside the One 3.4 and 700 2.8 (section 81) and the 525 (section 274); left: the 650 0.4 and 700 2.5 images, and reads that bypass the seeker
   - [ ] 3.8.2 The codec writes and reads the record, kept apart from Logitech's name tree, and a configuration without one reads as having none
   - [ ] 3.8.3 Written to a bench remote and read back, the remote running unchanged
-- [ ] 3.9 Straight after 3.7, decided on 2 November 2026: describe the Harmony Touch, firmware first and then one sync recorded; its own track, [todo-touch.md](todo/todo-touch.md); chapters 1 to 4 done: both directions of a sync recorded, the configuration described field by field and read by the codec, and answering a sync in place of Logitech's server reads as possible in the firmware, and in 6.7 two syncs were answered on the bench Touch, the second committed with every answer a 304 or the finish, and in 6.8 its own six documents went back with 200 under tags of ours and were committed, and in 6.9 a sequence's delay and an activity's name were each changed and put back, heard and seen on the remote; what a Touch acts on beyond Logitech's software listed, 5.1; a Touch device written by us composed, 5.3, from our own rhythm table for 577 of its 681 families, from a learned code or its raw text, with its own map; extended on 5 November 2026 to the finish line of 3.5 and 3.7, a configuration built entirely by us, answered to the bench Touch in place of Logitech's server and used, chapters 6 to 9
+- [x] 3.9 Straight after 3.7, decided on 2 November 2026: describe the Harmony Touch, firmware first and then one sync recorded; its own track, [todo-touch.md](todo/todo-touch.md); chapters 1 to 4 done: both directions of a sync recorded, the configuration described field by field and read by the codec, and answering a sync in place of Logitech's server reads as possible in the firmware, and in 6.7 two syncs were answered on the bench Touch, the second committed with every answer a 304 or the finish, and in 6.8 its own six documents went back with 200 under tags of ours and were committed, and in 6.9 a sequence's delay and an activity's name were each changed and put back, heard and seen on the remote; what a Touch acts on beyond Logitech's software listed, 5.1; a Touch device written by us composed, 5.3, from our own rhythm table for 577 of its 681 families, from a learned code or its raw text, with its own map; extended on 5 November 2026 to the finish line of 3.5 and 3.7, a configuration built entirely by us, answered to the bench Touch in place of Logitech's server and used, chapters 6 to 9; done in todo-touch 9.4: the test setup built from nothing, with no Logitech document as input, committed on the bench Touch and run, test 1 of 7.1 heard 38 of 38, and put back
 
 ## 4. The device library
 
@@ -129,7 +129,7 @@ The remote's own settings rather than its devices and activities. Logitech's ser
     - [ ] On the Harmony 700: which of its pair of timers it is, on the bench unit
   - [ ] 6.1.2 RemoteAssistant, the question after an activity starts, on the Harmony 600, 650 and 700; done on the Harmony 650 (section 345); the 600's compile without it holds none of its screens (section 347); the 700 not compiled with it off
   - [ ] 6.1.3 TiltSensor, waking when picked up, on the Harmony 600, 650 and 700; done on the Harmony 650 (sections 346, 347); the 600 and 700 not compiled with it off
-  - [ ] 6.1.4 The Harmony Touch's eleven, among them screen brightness and screen timeout
+  - [x] 6.1.4 The Harmony Touch's eleven, among them screen brightness and screen timeout: rows of its Settings document, `reference/architectures/harmony-touch/favourites-and-settings.md`; seven composed and four refused by `composeTouchSettings`, brightness and timeout delivered to the bench Touch, `todo-touch.md` 8.4
   - [ ] 6.1.5 The Harmony One's and the Harmony 525's, which Logitech's service does not list
 - [ ] 6.2 Read and change them from FreeHarmony
 
@@ -139,6 +139,16 @@ After 3 produces something.
 
 - [ ] 7.1 The interface
 - [ ] 7.2 Publish `packages/*` so somebody without this checkout can build it (decision 4)
+- [ ] 7.3 The libraries as a base for the app, after an architecture review: [plan 013](docs/plans/013-the-libraries-as-a-base.md); the moves that touch the 885 branch's files wait until it is in main
+  - [ ] 7.3.1 The Touch's numbered experiments out of `corpus/src` and `bench/src` beside their scripts, its engine model into the codec, test files named by subject
+  - [ ] 7.3.2 `families/touch/` renamed `families/one/`, so "touch" means the Harmony Touch only
+  - [ ] 7.3.3 The registry chooses by model, two kinds of family, compiled and document, and an unserved architecture refused rather than given the Harmony One's shapes
+  - [ ] 7.3.4 A base package for the model table, the trailer checksum and the key codes; the codec off `packages/usb`
+  - [ ] 7.3.5 The codec's disk readers behind a Node entry point, so its core loads in a renderer
+  - [ ] 7.3.6 Explicit public surfaces per package, a test kit for the usb test helpers, `@harmony/lab` out of FreeHarmony's product dependencies, FreeHarmony's imports moved along
+  - [ ] 7.3.7 One CLI helper for the scripts and one byte comparison in `bytes.ts`
+  - [ ] 7.3.8 The codec's top level grouped into folders and its largest files split, `inventory.ts` first
+  - [ ] 7.3.9 The architecture rules as a skill with tests that enforce them, and the decision recorded
 
 ---
 

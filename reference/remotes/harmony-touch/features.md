@@ -1,9 +1,10 @@
 # Harmony Touch: features
 
-What the Touch offers a person and what Logitech's software lets them set. Little of it is measured: no
-configuration of this model exists as a file anywhere this project can reach, so its limits are Logitech's
-word, from the manual, the service and the client. Its keys and screens are read in its firmware,
-[keys.md](keys.md) and [display.md](display.md).
+What the Touch offers a person and what Logitech's software lets them set. No compiled configuration of this
+model exists, so its limits are Logitech's word, from the manual, the service and the client. Its keys and
+screens are read in its firmware, [keys.md](keys.md) and [display.md](display.md), and what one unit did with
+documents a program of this project delivered is measured, [below](#no-compiled-configuration-exists-for-this-model).
+This said "Little of it is measured"<!--superseded--> before those syncs.
 
 ## The capability fields
 
@@ -87,7 +88,10 @@ it, and neither is fixed behaviour no document changes.
   starts at 10, so only a document reaches it[^t-touch-favourites-firmware][^t-touch-beyond-firmware].
 * **A screen timeout past 30 seconds.** The remote's slider runs from 1 to 30; a value from a document
   reaches the sleep timer unclamped, and the lock screen uses half of it[^t-touch-beyond-firmware]. Zero is
-  not refused on the way either, so zero is not a value to offer.
+  not refused on the way either, and it is a sleep timer due at once after every wake, so zero is not a value to
+  offer[^t-touch-favourites-firmware]. Nor is a screen brightness below 4 from a document: the backlight holds it
+  at 10, but the fade before the screen sleeps never ends, so the remote never sleeps on
+  battery[^t-touch-favourites-firmware].
 * **The edit lock, set from outside.** It locks the remote's Remote, Devices and Activities menus and its
   gesture editor, and not its own switch, so anyone holding the remote can turn it off again[^t-touch-beyond-firmware].
 * **Vibration that lasts.** With no vibration row in the account's settings, which is how every sync
@@ -144,8 +148,63 @@ remote's own six configuration documents, answered 200 under tags of ours, were 
 hash then carried those tags, and the next sync asked for the six with them[^t-touch-own-set-sync]. **A document
 changed by this project reaches what the remote does**: a sequence's delay and an activity's name, each changed
 in one value, delivered alone with 200 and committed, changed the pause the remote left between two commands and
-the name on its activity list, and putting each value back restored them[^t-touch-changed-set]. A document
-composed whole by this project is not checked[^unchecked].
+the name on its activity list, and putting each value back restored them[^t-touch-changed-set]. **A device
+composed by this project is listed and sent**: a projector of ours, its map and a definition written from this
+project's own table, added to the three lists the remote held and delivered with 200, showed in the device list,
+and each of its eleven commands was heard when pressed; taking it out again restored the set before,
+[a device of ours](../../architectures/harmony-touch/devices-and-infrared.md#a-device-of-ours)[^t-touch-device-of-ours].
+**An activity composed by this project is listed and runs**: an activity of ours from two devices the remote held,
+with a map and screen entries of its own, added to the activity and map lists and delivered with 200, showed on the
+activity list and was started, used, switched and stopped as its record states; taking it out again restored the
+set before, [an activity of ours](../../architectures/harmony-touch/activities-and-buttons.md#an-activity-of-ours)[^t-touch-activity-of-ours].
+**Favourites and a logo composed by this project are shown and sent**: the user's favourites document with a
+channel of the line up added and the order reversed, and a logo of ours at the address of that channel's station
+logo, delivered with 200, put the six favourites on the screen in the document's order with our logo on the added
+one, which sent its line up number; delivering the remote's own two back restored the old order and logo,
+[favourites and settings](../../architectures/harmony-touch/favourites-and-settings.md#favourite-channels)[^t-touch-favourites-of-ours].
+**Settings composed by this project act**: the remote's own settings document with the screen brightness at 20 and
+the timeout at 30 seconds, delivered with 200, left the screen dimmed and the screen taking about 30 seconds to dim
+off the cable, with no restart; delivering the remote's own back restored full brightness and about 10 seconds. A
+context document rebuilt from a description of the fields a Touch reads was stored and reported in the same sync,
+[favourites and settings](../../architectures/harmony-touch/favourites-and-settings.md#settings)[^t-touch-settings-of-ours].
+**An activity and a device of Logitech's can be taken out by this project**: an activity and the receiver it shared
+with three other activities, taken out of the four documents that named them with every role, key, gesture, entry and
+protocol of the receiver's, delivered with 200, left four activities and six devices on the remote's lists and the
+other activities starting and ending without a code of the receiver; delivering the four back restored both,
+[taking out](../../architectures/harmony-touch/activities-and-buttons.md#taking-out-an-activity-and-a-device)[^t-touch-removal-of-theirs].
+**A whole setup composed by this project runs as the one it was described from**: every device and every activity of
+the documents a Touch held, described in this project's own terms and composed again under ids of ours, the four
+documents that name them delivered with 200, ran the ten tests at an infrared receiver that Logitech's documents had
+run, every expected code heard and every timed pause in its band, 418 of 418; delivering the four back restored the set before,
+[a whole setup of ours](../../architectures/harmony-touch/activities-and-buttons.md#a-whole-setup-of-ours)[^t-touch-setup-of-ours].
+*Corrected:* this said a document composed whole by this project was not checked<!--superseded--> until that run.
+**A configuration built by this project from nothing runs**: the six documents and a background picture written from
+a setup file, Logitech's catalogue entries and this project's own table of code families, with no document of
+Logitech's as input, delivered with 200, were committed; every activity was started from off and ended at an infrared
+receiver with every expected code heard, 38 of 38, from all seven devices and all five code families of its
+definitions, the background of ours was drawn, and delivering the remote's own six back restored the set before,
+[built from nothing](../../architectures/harmony-touch/devices-and-infrared.md#built-from-nothing)[^t-touch-from-nothing].
+The other keys of such a set at a receiver are not checked[^unchecked]. A setup that is not a description of one
+Logitech's service built is not checked[^unchecked].
+
+## An empty configuration
+
+**A Touch takes a configuration with no device and no activity**, and shows its own empty pages. Delivered by this
+project with the remote's own context and settings, the four lists empty, it was committed and the remote started on
+it: the favourites page showed the remote's screen for no favourites, no activity page was offered, after a restart the
+home page was an empty device page, and the settings menu looked as usual. Delivering the remote's own lists and its
+three favourites documents back restored the set before, [answering a
+sync](../../architectures/harmony-touch/answering-a-sync.md#the-smallest-set-of-documents)[^t-touch-empty]. What the
+empty device page and its menu look like in detail is not checked[^unchecked].
+
+**The words on those screens are the firmware's and no configuration changes them.** The screen for no favourites says
+"Please sign in to your Harmony account to add your favorite TV channels.", and the screens' "no activity" notice, put
+up while no activity is listed when the screens load, at a start, on Off and when the remote leaves USB power after
+its USB screen, until its OK is pressed, opens "You have not set up any Activities." and
+asks the person to sign in to their Harmony account; both are the image's own text, one table per language, and a
+configuration chooses only the language, through the context[^t-touch-empty-screens]. So an application that is not
+Logitech's service cannot word them otherwise, and a remote it leaves empty points the person at a Harmony account.
+Right after the empty set's sync a text of that kind was seen once and not identified[^t-touch-empty].
 
 ## Changes on the remote travel back
 
@@ -162,7 +221,8 @@ channels and commands changed on the remote are not checked[^unchecked].
 * The device and activity limits as the remote enforces them; the favourites' limit is
   the remote's code, never tried on one[^unchecked].
 * Which keys take a long press[^unchecked].
-* Learning, gestures and every setting on a unit, and every item beyond Logitech's software above[^unchecked].
+* Learning, gestures and every setting on a unit but the screen brightness and the timeout, and every item beyond
+  Logitech's software above[^unchecked].
 
 [^unchecked]: Not checked.
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
@@ -176,10 +236,19 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-second-sync.test.ts)
 [^t-touch-own-set-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-own-set-sync.test.ts)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
+[^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-device-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-activity-runs.test.ts)
 [^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
-[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch71-runs.test.ts)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)
+[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-favourites-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch-settings-runs.test.ts)
+[^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch-removal-runs.test.ts)
+[^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-setup-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch-empty-runs.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
+[^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/test_harmony_touch_empty_screens.py)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
 [^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
