@@ -70,6 +70,10 @@ source has 64 KiB sectors**: Logitech's classic client gives both parts eight 8 
 thirty one of 64 KiB above, to `0x200000`, and concordance gives `01:49` sectors of 16, 8, 8 and 32 KiB
 below it and 64 KiB above.[^t-885-flash-client][^x-concordance] The bootloader's own staged install erases
 once at `0x010000` and then writes 64 KiB, which works only if that sector is at least that large.[^t-885-boot]
+**On an 885 one erase at `0x0C0000` removed bytes from that address on and left the bytes on either side of
+its 64 KiB intact**, `0x0BFFFF` and `0x0D0000`, so the sector there starts on the address and is no larger
+than 64 KiB. That it is not 32 KiB is not settled: everything that block held sat in its lower half.[^t-885-erase-unit]
+An 880 is not checked.[^unchecked]
 
 **What one erase can take**, with no unlock: the running application and its safe mode configuration at
 `0x010000`, the configuration, the staging source at `0x1D0000` and the log area; below `0x010000`, the
@@ -304,4 +308,5 @@ or where a page there names it:
 [^t-885-timers]: Read in the firmware. [The test](../../../tests/test_harmony_885_timers.py)
 [^t-885-stamp]: Read in the firmware. [The test](../../../tests/test_harmony_885_stamp.py)
 [^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)
+[^t-885-erase-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_flash_backup.py)
 [^t-885-unit-config]: Measured in configurations. [The test](../../../tests/test_harmony_885_bench_reads.py)

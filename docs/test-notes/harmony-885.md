@@ -4,7 +4,8 @@ The bench Harmony 885s: what was done to them, in order. What the remote and its
 [the reference](../../reference/architectures/harmony-880-885/README.md).
 
 **Two Harmony 885s are on the bench, and both may be written, unit A first**, decision 30. This said
-"neither may be written"<!--superseded--> until that decision. Nothing has been written to either. Arch 8 is in
+"neither may be written"<!--superseded--> until that decision. One block has been written to unit A, back
+unchanged, and nothing to B; this said "Nothing has been written to either"<!--superseded--> until then. Arch 8 is in
 `ARCHITECTURES_WITH_A_WRITE_TARGET` since `todo/todo-compile-885.md` 1.2, for the flash block path and unit A
 only; this said it was "still not in" the list<!--superseded--> until then. Before them, everything known about
 this architecture came from a contributor's firmware images and configurations, read off their remotes.
@@ -172,3 +173,39 @@ went fully off and its replies stopped; a second Glow did not bring the cable ba
 plugging in did, after which the remote was fine. Glow had lit once on the page before it happened. The
 node watcher's whole key map run, the day before, kept answering after its one Glow. The cause is not read,
 so the page warns against Glow rather than explaining it.
+
+## 7 November 2026: unit A's whole flash, and the first write to a Harmony 885
+
+`todo/todo-compile-885.md` 1.3, **unit A on the cable, unit B for a moment first**. In order:
+
+1. **The block rehearsal's dry run with B connected by mistake**: refused at the unit check, its identity
+   block not unit A's record. Nothing past the identity was read.
+2. **The same dry run with unit A**: the identity matched `h885_a`, the block `0x0C0000` read off the remote
+   matched `h885_a_region`, and the plan was printed: the neighbours read, one erase, 21 transfers, the read
+   back.
+3. **`read-region.ts` from `0x000000` to `0x1FE000`, the whole flash**: finished, 2088960 bytes.
+4. **The same, the second copy, twice**: both stopped on a `flash chunk out of sequence`, once late in the
+   run and once early, and filed nothing. The same as unit B's region reads before its restart, below.
+5. **Unit A restarted by hand** and plugged in again.
+6. **The second copy again**: finished with no break, 68 seconds, byte identical to the first.
+7. **The block written back**, `rehearse-block.ts --commit` with both write flags: the unit check passed; the
+   neighbours `0x0B0000` and `0x0D0000` read; `0x0C0000` erased and read back as all ones; the neighbours read
+   again unchanged; 21 transfers; the block read back byte identical to the dump. **The remote's screen showed
+   nothing during the write.** The script prints no times, so the erase was not timed.
+8. **`read-config.ts` once**: 568020 bytes, no window retried, SHA-256 equal to `h885_a_config`'s.
+9. **Unplugged and used**: it woke, ran an activity and answered keys as before.
+
+**What the backup holds**, `tests/test_harmony_885_flash_backup.py`: the application is Logitech's published
+885 image byte for byte; the bootloader differs from the published one in 33 bytes, the identity block's two
+per unit fields and the battery calibration word; the configuration region is the earlier region read; the
+staging region holds 48129 bytes that are not `0xFF`; the log area is erased. Filed as `h885_a_flash` and
+`h885_a_flash_2`, and the read after the write as `h885_a_after_block_config`.
+
+**The erase**: the block held bytes from `0x0C0000` to `0x0C542C`, and the bytes directly either side of it,
+`0x0BFFFF` and `0x0D0000`, are not `0xFF`; after the erase the block was all ones and both stayed. So the
+sector starts on `0x0C0000` and is no larger than 64 KiB. **32 KiB is not excluded**: everything the block
+held was in its lower half. A rehearsal on a block whose upper half holds data would decide it.
+
+**Unit A's keys are unreliable**, as said at the bench, and unit B's work better, so hands-on tests run on B
+once B has its own backup and one block written back.
+

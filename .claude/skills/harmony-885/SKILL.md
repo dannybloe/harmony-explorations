@@ -70,16 +70,33 @@ require of a session.
 ## 3. The backup a write needs
 
 **Before the first write to a unit, the whole flash from `0x000000` to `0x1FDFFF`** in the lab, read twice
-and identical, as the `recovering-a-remote` section says. **The lab does not hold it yet**: each unit's reads
-cover the configuration region, `0x020000` to `0x1D0000` (`h885_a_region`, `h885_b_region`), and the
-application, compared with the published image. The identity block at `0x000110` and the battery calibration
+and identical, as the `recovering-a-remote` section says. **Unit A's is in the lab**, `h885_a_flash` and
+`h885_a_flash_2`, and `tests/test_harmony_885_flash_backup.py` checks its parts against the published images;
+**unit B's is not yet**, its reads cover the configuration region, `0x020000` to `0x1D0000`. Take it with
+
+    node packages/corpus/bin/read-region.ts --label h885-b-flash --address 0x000000 --count 0x1FE000 --anywhere --product 0xc110
+
+twice, the second with `--label h885-b-flash-2`. The reader reads `0x4000` chunks from zero, so no chunk ends
+alone on `0x000104` or `0x000105`. **A `flash chunk out of sequence` stops it and files nothing**: it has no
+window retry. Both units met it before a hand restart and neither after, so restart the unit by hand rather
+than rerunning blind. The identity block at `0x000110` and the battery calibration
 word at `0x000160` are what a recovery puts back and nothing else holds them.
 
 ## 4. Writing the 885's configuration
 
-**One block at a time, unit A only, and not yet performed.** `todo-compile-885.md` 1.2 made the platform a
-flash block target; 1.3 writes one block of unit A back unchanged, 1.4 the whole configuration, and each
-lands its procedure here as the `harmony-525` and `harmony-650` skills hold theirs.
+**One block at a time, unit A only, and one block performed.** `todo-compile-885.md` 1.2 made the platform a
+flash block target; 1.3 wrote one block of unit A back unchanged, `0x0C0000`, and 1.4 writes the whole
+configuration. Each lands its procedure here as the `harmony-525` and `harmony-650` skills hold theirs.
+
+**The order 1.3 took, which is the order for unit B too**: the dry run first, which also says which unit is
+on the cable (it refuses the other unit at the identity); the whole flash backup twice, compared; then the
+commit:
+
+    HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/usb/bin/rehearse-block.ts --dump h885_a_region --block 0x0c0000 --commit
+
+then `read-config.ts` once, its SHA-256 equal to the configuration read before, and the remote used for a
+moment. Nothing on the screen changes during a block write, and no restart is needed when nothing the
+remote reads changed.
 
 The block writer is `packages/usb/bin/rehearse-block.ts`, with the dumps `h885_a_region` and
 `h885_a_region_2`, which start at `0x020000`. A dry run reads only: it checks the unit off its identity

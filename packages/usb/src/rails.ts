@@ -306,8 +306,12 @@ export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
   // concordance gives 64 KiB above its finer boot sectors, `memory.md` "The flash part"; the client's
   // walk over every block of the region, for both parts, is `tests/test_host_client.py`. A third, weaker
   // closure: the bootloader's own install erases once at `0x010000` and then writes 64 KiB, which works
-  // only if that sector is at least that large. **The first rehearsal measures it**, by reading the
-  // blocks either side before and after the erase, as it did on arch 9, 12 and 14.
+  // only if that sector is at least that large. **The first rehearsal measured it from one side**,
+  // `todo-compile-885.md` 1.3 on unit A, `tests/test_harmony_885_flash_backup.py`: an erase at `0x0C0000`
+  // cleared the block's bytes from that address on and left `0x0BFFFF` and `0x0D0000` intact, so the
+  // sector there is aligned and no larger than 64 KiB. Not smaller than 64 KiB is still the two sources'
+  // word: the block held nothing in its upper half, so 32 KiB is not excluded. A smaller sector could not
+  // pass silently, since `writeBlock` reads every write back.
   8: 0x10000,
   // **Arch 9 (Harmony 525) has two independent sources**, section 267. The firmware is the first:
   // the external flash driver at `0x07576` sends `0xD8`, which is a 64 KiB block

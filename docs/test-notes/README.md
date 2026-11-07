@@ -33,7 +33,7 @@ reached it, and before that it said seven, the same count `CLAUDE.md` had correc
 | a Harmony 600 | yes, since 29 September 2026 | a block back unchanged, section 302, then configurations; its saved delay cleared over USB once, section 305 | [harmony-600.md](harmony-600.md) |
 | a Harmony 650, second hand | yes, since 27 September 2026, and it may be reprogrammed as the work needs | the first arch 14 write, section 281, then configurations | [harmony-650.md](harmony-650.md) |
 | a Harmony 700 | yes, since 29 September 2026 | repaired out of safe mode by a reinstall request, section 295; firmware staged from 2.5 to 2.8, section 297; then configurations, sections 300 onwards | [harmony-700.md](harmony-700.md) |
-| two Harmony 885s | no: arch 8 is not a write target | nothing; read only | [harmony-885.md](harmony-885.md) |
+| two Harmony 885s | yes, since 5 November 2026, decision 30, unit A first; arch 8 a flash block target for unit A since `todo-compile-885.md` 1.2 | on unit A, its whole flash backed up and one block of remains written back unchanged, the first arch 8 write; nothing on B | [harmony-885.md](harmony-885.md) |
 | a Harmony Touch | yes, since 2 November 2026, decision 29; no write path exists yet, and `openHarmony` refuses the file based family | nothing by this project; read only, section 200, and synced by Logitech's client | [harmony-touch.md](harmony-touch.md) |
 | a Harmony 350 | yes, since 27 October 2026, decision 26; no write path exists yet | nothing; read as a file, section 262 | [harmony-350.md](harmony-350.md) |
 | a Harmony 300 | yes, since 27 October 2026, decision 26; no write path exists yet | nothing; read as a file, section 264 | [harmony-300.md](harmony-300.md) |

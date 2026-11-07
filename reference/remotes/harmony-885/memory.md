@@ -36,11 +36,21 @@ is the model's own, and so far that is very little.
   [Harmony 525](../harmony-525/memory.md), so a read of the whole region carries configurations nobody
   meant to hand over, and the end of a configuration is its end marker, not the first erased byte,
   [the container](../../config-format/container.md).[^t-885-on-a-unit]
+* **A whole flash read of an 885 matches what was published, except the unit's own bytes.** The application
+  is Logitech's published 885 image byte for byte, and the bootloader's 64 KiB differ from the published
+  bootloader in 33 bytes only, the identity block's two per unit fields and the battery calibration word at
+  `0x000160`. On that unit the staging region from `0x1D0000` held data and the log area from `0x1E0000` was
+  erased throughout.[^t-885-backup]
+* **One erase removed exactly what one 64 KiB sector holds, as far as the data could show.** A host erase at
+  `0x0C0000`, in a block of earlier configurations' remains, cleared the bytes from that address and left the bytes
+  directly either side of the 64 KiB block; written back, the block read back identical and the configuration
+  below it did not change. A 32 KiB sector is not excluded, [the platform's
+  sectors](../../architectures/harmony-880-885/memory.md#the-flash-part).[^t-885-backup]
 
 ## Not checked
 
-* Which of the two flash parts the firmware knows is fitted, and what a unit holds from `0x1D0000` up, its
-  log area included.[^unchecked] Which bytes of the identity block at `0x000110` are
+* Which of the two flash parts the firmware knows is fitted, and what the bytes in the staging region from
+  `0x1D0000` are.[^unchecked] Which bytes of the identity block at `0x000110` are
   a serial is read in the bottom 64 KiB of five remotes, [the architecture's memory
   page](../../architectures/harmony-880-885/memory.md#the-address-space).[^t-885-boot]
 * What the remains past a configuration were, and whether a factory configuration is among them.[^unchecked]
@@ -60,4 +70,5 @@ is the model's own, and so far that is very little.
 [^t-885-timers]: Read in the firmware. [The test](../../../tests/test_harmony_885_timers.py)
 [^t-885-stamp]: Read in the firmware. [The test](../../../tests/test_harmony_885_stamp.py)
 [^t-885-stamp-c]: Measured in configurations. [The test](../../../tests/test_harmony_885_stamp.py)
+[^t-885-backup]: Measured on a unit. [The test](../../../tests/test_harmony_885_flash_backup.py)
 [^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/test_harmony_885_bench_reads.py)

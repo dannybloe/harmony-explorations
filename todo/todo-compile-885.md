@@ -29,10 +29,11 @@ Written on 6 November 2026; linked from `todo-later.md` 5.6.
 
 - [x] 1.1 The `harmony-885` skill, as the 650 has its own: where the facts are, the rails, the write and bench procedure as they are established below; its write procedure is empty until 1.2 to 1.4 fill it in, and it names the backup a first write needs, which the lab does not hold yet
 - [x] 1.2 Arch 8 a write target, its own demonstration (section 269): the flash block path only, unit A only, through `rehearse-block.ts`: the region, ceiling and erase rows, `ARCHITECTURES_WITH_A_WRITE_TARGET`, the unit check against `units/h885_a.txt`, which tells the two units apart; `write-config.ts`'s target is 1.4's
-- [ ] 1.3 One block of unit A's configuration written back unchanged and read back identical, the remote still running
+- [x] 1.3 One block of unit A's configuration written back unchanged and read back identical, the remote still running: `0x0C0000`, after A's whole flash went into the lab twice (`tests/test_harmony_885_flash_backup.py`); the sector aligned and at most 64 KiB, 32 KiB not excluded
+- [ ] 1.8 Unit B a block target as A is, since its keys work better and the hands-on tests run on it: its whole flash backup twice, B in `rehearse-block.ts`'s targets with its region dumps, one block of remains written back unchanged
 - [ ] 1.4 Unit A's whole configuration written back unchanged: the write sequence as the firmware reads it (prepare 1.5), how the remote takes it up, and the clock afterwards, read over USB
 - [ ] 1.5 Every write stamps the build time, if the 885 sets its clock from it as the 650 does (prepare 2.3)
-- [ ] 1.6 Choose the test setup: the 650's devices and activities where the 885 can hold them, so the infrared bench tests carry over; what the 885 cannot hold, named
+- [ ] 1.6 Choose the test setup: the 650's devices and activities where the 885 can hold them, so the infrared bench tests carry over (agreed at the bench); what the 885 cannot hold, named
 - [x] 1.7 The starting configuration: unit A's own, registered as the compare base, its devices and activities read by our reader: `h885_a_config`, eight devices and three activities, every one named, unit B as the control with three names missing (`packages/codec/test/h885base.test.ts`)
 
 ## 2. Devices, everything that can be checked in device mode
