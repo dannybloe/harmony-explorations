@@ -32,6 +32,14 @@
  * The version string is not a build: the 600 and the 650 both report 0.2 and differ in 1395 bytes,
  * and 0.2 is listed for both only because section 282 found every routine involved identical.
  *
+ * **Six since `todo-compile-885.md` 1.4**: the two bench Harmony 885s, units A and B, decision 30, on
+ * arch 8, which every arch 8 model reports alike, so again the dump names the unit and the identity block
+ * has to match its record. **Their write end is not the others'**, `reference/architectures/
+ * harmony-880-885/usb.md` "How a write ends": the cache drop, `WRITE_MISC` selector 2, before the first
+ * erase, and the restart `E1 02`, which gets no reply. This script sends exactly those two and never a
+ * status step, on any architecture, so the two steps of the other Harmonys' sequence that hang or
+ * overwrite an 885, selector `0x0A` and the update status set to 2, are not in it to leave out.
+ *
  * **This is the step `rehearse-block.ts` was the rehearsal for.** That script writes a unit's own
  * dump back, so its correct outcome is known in advance and a difference is a failure. This one
  * writes bytes that have never been on a remote, which is the whole difficulty: what makes it safe
@@ -289,6 +297,26 @@ const H700_DUMPS = new Set<string>([
   'h700_bright_on',
 ]);
 
+/**
+ * The two bench Harmony 885s' region reads, arch 8, `todo-compile-885.md` 1.4. The same rule as every list
+ * above: region reads only, each the unit's content when it was read, so a write adds the next one.
+ *
+ * **The first entries are the reads `rehearse-block.ts` compares against**, each taken twice and
+ * identical, from the configuration's base at `0x020000` to the staging region at `0x1D0000`, so every
+ * block a configuration can occupy is covered and none past the ceiling is. Unit A's are still its content
+ * after 1.3, which wrote block `0x0C0000` back unchanged, `tests/test_harmony_885_flash_backup.py`; unit
+ * B's are from before anything was written to it. A write that lands makes them stale, which the block
+ * compare refuses rather than trusts, and the read after it is what goes in next.
+ */
+const H885_A_DUMPS = new Set<string>([
+  'h885_a_region',
+  'h885_a_region_2',
+]);
+const H885_B_DUMPS = new Set<string>([
+  'h885_b_region',
+  'h885_b_region_2',
+]);
+
 /** A remote this may run against, per architecture read off the device. */
 interface Target {
   readonly model: string;
@@ -304,7 +332,43 @@ interface Target {
    * build nobody has read yet.
    */
   readonly sequenceReadOn: readonly string[];
+  /**
+   * Why `--no-invalidate` is refused on this unit, or undefined where the control is offered.
+   *
+   * **The control is the Harmony One's**, section 250: there the drop clears a verdict and nothing the
+   * write needs. **On the Harmony 880 and 885 the drop is what keeps the remote off the region**: it moves
+   * every lookup to the built in configuration until the next start, and the firmware runs from the same
+   * flash part, so without it the remote can look up a block between its erase and its write and read it
+   * blank, `tests/test_harmony_885_write_end.py`. A control that measures that is not one to run on an
+   * irreplaceable remote, so it is refused rather than offered.
+   */
+  readonly dropRequired?: string;
+  /**
+   * The data memory address of the staged install's status byte, where a restart over USB can install
+   * firmware, or undefined where it cannot.
+   *
+   * **On the Harmony 880 and 885 the restart this script ends with is an install whenever that byte is
+   * not 0**, `reference/architectures/harmony-880-885/firmware.md` "What the bootloader does at power on":
+   * the byte at `0x100` survives the processor's `RESET` instruction, which is how `E1 02` ends, and the
+   * bootloader then erases the application at `0x010000` and copies 64 KiB over it, status 2 from the
+   * staging region and 6 from `0x020000`, 4 and 7 resuming them. A host sets it and the application never
+   * does, and nothing this package can send to arch 8 writes it, so 0 is expected. **It is read anyway,
+   * because the cost of being wrong is the application**: before the first erase, so a nonzero value stops
+   * the run with nothing written, and again immediately before the restart, which is withheld unless the
+   * byte is still 0. Read with `READ_MISC` selector 7, `readRam`, the path `read-ram.ts` read unit A's clock
+   * at `0x108` with, `tests/test_harmony_885_bench_reads.py`; on the Harmony One and the 600 series the
+   * install is a different mechanism and this stays undefined.
+   */
+  readonly installStatusAt?: number;
 }
+
+/** The refusal of `--no-invalidate` on an 885, `Target.dropRequired`. */
+const ARCH8_DROP_REQUIRED = 'on the Harmony 885 the cache drop moves every lookup to the built in '
+  + 'configuration until the restart, and the firmware runs from the same flash part, so without it the '
+  + 'remote can read a block between its erase and its write';
+
+/** Data memory `0x100`, the 885's staged install status, `Target.installStatusAt`. */
+const ARCH8_INSTALL_STATUS = 0x100;
 
 /**
  * Keyed by what the device says, never by an argument, for the reason `rehearse-block.ts` gives: an
@@ -314,6 +378,15 @@ interface Target {
  * is what refuses any other.
  */
 const TARGETS: Readonly<Record<number, readonly Target[]>> = {
+  // The two bench 885s, decision 30, `todo-compile-885.md` 1.4. **4.4 is the build their write end was
+  // read in**, the 885's application, `tests/test_harmony_885_write_end.py`; both units report it,
+  // version block `44 21 49 01 80 11 08`. The 880 runs the same application, but no 880 is a unit here.
+  8: [
+    { model: 'the Harmony 885 unit A', unitLabel: 'h885_a', dumps: H885_A_DUMPS, sequenceReadOn: ['4.4'],
+      dropRequired: ARCH8_DROP_REQUIRED, installStatusAt: ARCH8_INSTALL_STATUS },
+    { model: 'the Harmony 885 unit B', unitLabel: 'h885_b', dumps: H885_B_DUMPS, sequenceReadOn: ['4.4'],
+      dropRequired: ARCH8_DROP_REQUIRED, installStatusAt: ARCH8_INSTALL_STATUS },
+  ],
   12: [{ model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS, sequenceReadOn: ['3.4'] }],
   14: [
     { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: ['0.2'] },
@@ -545,6 +618,12 @@ async function main(): Promise<void> {
         + `restart this sends have been read in ${unit.sequenceReadOn.length === 0 ? 'no build of it yet'
           : `build ${unit.sequenceReadOn.join(' and ')} only`}. Read both in that build's image first.`);
     }
+    // Before the unit check and before any comparison, so that a run which would leave the remote reading
+    // a region while it is erased stops having read nothing but the version and the identity. Not only on
+    // a commit: a dry run that says what a commit would do should not describe a sequence this refuses.
+    if (!invalidate && unit.dropRequired !== undefined) {
+      throw new Refusal(`--no-invalidate is refused for ${unit.model}: ${unit.dropRequired}`);
+    }
     const stored = unitIdentity(unit.unitLabel);
     if (stored === undefined) {
       throw new Refusal(`the lab has no recorded identity for ${unit.unitLabel}, so nothing `
@@ -615,6 +694,40 @@ async function main(): Promise<void> {
       }
       say('the whole configuration reads back byte for byte identical to the file. '
         + "A config we produced is on the remote.\n");
+    };
+
+    /**
+     * Read the staged install's status byte, journal it, and refuse unless it is 0, on a unit that has
+     * one, `Target.installStatusAt`. A no op elsewhere.
+     *
+     * **Two bytes from the status's address and not one**, the status and its neighbour, so that every
+     * read here is an even count the way the odd count rail asks of a read of program memory. That rail is
+     * about `READ_FLASH` into internal memory and `READ_MISC` selector 7 reads one byte per exchange, so
+     * nothing hangs on a single byte; the even pair is kept because it costs one exchange and leaves no
+     * read in this script that a reader has to argue is the exception. Only the first byte is judged.
+     *
+     * `readRam` is the path `read-ram.ts` uses, and it takes the value from the byte of the reply the
+     * architecture puts it in, which `getVersion` has already pinned for this handle above.
+     */
+    const installStatusIsClear = async (moment: 'before the first erase' | 'before the restart'): Promise<void> => {
+      const at = unit.installStatusAt;
+      if (at === undefined) return;
+      const status = await remote.readRam(at);
+      const neighbour = await remote.readRam(at + 1);
+      say(`install status at data 0x${at.toString(16)} ${moment}: ${status} `
+        + `(0x${(at + 1).toString(16)} holds ${neighbour})\n`);
+      if (status === 0) return;
+      throw new Refusal(moment === 'before the first erase'
+        ? `the staged install status at data 0x${at.toString(16)} reads ${status}, and on ${unit.model} the `
+          + 'restart a write ends with installs firmware over the application whenever it is not 0. Nothing '
+          + 'was erased or written. Do not restart the remote over USB; report the value before going on'
+        : `the configuration is written and reads back identical to the file, and the restart is withheld: `
+          + `the staged install status at data 0x${at.toString(16)} reads ${status}, and on ${unit.model} `
+          + 'E1 02 with that byte set erases the application and copies 64 KiB over it. Leave the remote '
+          + 'as it is, running on its built in configuration, and report the value. A battery pull restarts '
+          + 'it without an install, since the bootloader clears the request after any reset but the RESET '
+          + 'instruction, reference/architectures/harmony-880-885/firmware.md; decide that step once the '
+          + 'value is understood, and do not rerun this script');
     };
 
     /** One erase block, read in transfers the announce's count field can state. */
@@ -744,6 +857,10 @@ async function main(): Promise<void> {
       + `bytes, check the neighbours again, write it back and read it back. `
       + `${plans.length} erase(s), ${totalPackets} reports in total\n`);
 
+    // **Before anything is sent that changes the remote**, and in a dry run too, so that a remote whose
+    // restart would be an install is found by the run that writes nothing. On the 885s only.
+    await installStatusIsClear('before the first erase');
+
     if (!commit) {
       say('dry run: nothing was written. Add --commit, with '
         + 'HARMONY_ENABLE_WRITES=1 and HARMONY_FIRST_WRITE=1, to perform it\n');
@@ -783,18 +900,23 @@ async function main(): Promise<void> {
       say('--drop-only: sending the cache drop and nothing else. No erase, no write, no restart\n');
       await remote.invalidateCachedRegions(permission);
       // Section 250's clock experiment is a Harmony One's; on arch 14 the next erase consumes the drop's
-      // flag instead, section 282, so the advice differs per architecture.
+      // flag instead, section 282, and on arch 8 the remote runs on its built in configuration until it
+      // next starts, `tests/test_harmony_885_write_end.py`, so the advice differs per architecture.
       say(architecture === 12
         ? 'the drop is sent. The remote keeps running; its verdict byte is now clear. Read its '
           + 'clock, pull the cable, plug it back in, and read the clock again: a running time that '
           + 'starts over is a restart the drop caused with no write anywhere in the chain\n'
-        : 'the drop is sent. The remote keeps running with its verdict clear and a flag set that the '
-          + 'next erase consumes; a restart or a battery pull clears both\n');
+        : architecture === 8
+          ? 'the drop is sent. The remote now looks everything up in its built in configuration, and '
+            + 'goes on doing so until it next starts; --restart-only or a battery pull ends it\n'
+          : 'the drop is sent. The remote keeps running with its verdict clear and a flag set that the '
+            + 'next erase consumes; a restart or a battery pull clears both\n');
       return;
     }
     if (restartOnly) {
       await containerMatchesTheFile();
       say('--restart-only: sending the restart and nothing else. No drop, no erase, no write\n');
+      await installStatusIsClear('before the restart');
       await remote.resetDevice(permission);
       resetSent = true;
       say('the restart is sent. The remote leaves the bus and comes back on its own; '
@@ -809,6 +931,17 @@ async function main(): Promise<void> {
     if (invalidate) {
       say('dropping the cached region descriptors, so nothing references the config while it '
         + 'changes, and so the remote re-checks what we write\n');
+      // **On arch 8 the drop is the whole of the protection while the blocks change**: the remote looks
+      // up the built in configuration from here until it restarts, so nothing it does reads a block this
+      // run is erasing. Said in the journal so that a run which stops part way says what the remote is
+      // running on, which is the first thing an operator looking at its screen will want to know.
+      if (architecture === 8) {
+        // Worded after the review of 1.4: the built in configuration covers only until the next start, and a
+        // battery pull is a start, which checks whatever the region then holds.
+        say('arch 8: from the drop until the restart the remote runs on its built in configuration; a run '
+          + 'that stops part way leaves the region half written, and the next start, a battery pull included, '
+          + 'checks it, so do not unplug or pull the batteries, report the stop\n');
+      }
       if (architecture === 14) {
         say(blocks[0] === base
           ? 'arch 14: the first erase is the configuration\'s first block, so the remote will also '
@@ -860,11 +993,21 @@ async function main(): Promise<void> {
     // handle survives the escape long enough to close cleanly, and the remote leaves the bus
     // afterwards. The arm below still catches the other case rather than assuming this one.
     if (restart) {
+      // **Immediately before the restart, on the 885s**: the configuration is written and verified by now,
+      // so a refusal here leaves it in place and withholds only the command that would install firmware.
+      await installStatusIsClear('before the restart');
       say('restarting the remote, which is what a battery pull was doing by hand\n');
       await remote.resetDevice(permission);
       resetSent = true;
       say('the restart is sent. The remote leaves the bus and comes back on its own; '
         + 'give it a few seconds before enumerating again\n');
+      // **Only a start takes up a new configuration on arch 8**: the start check and the sizing of the
+      // state variables run at a start and at no other moment, so the restart is what makes the remote
+      // use what was just written, and it comes back through its bootloader.
+      if (architecture === 8) {
+        say('arch 8: the remote comes back through its bootloader and checks the new configuration at '
+          + 'its start, the only moment it does\n');
+      }
     } else {
       say('--no-restart: the restart is deliberately not sent, which is section 247\'s control. '
         + 'The remote stays on the bus; a battery pull is the only other way to restart it\n');

@@ -233,6 +233,83 @@ test('the config writer refuses a commit on a firmware build whose drop and rest
   assert.match(text, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h700_delay90_region',/);
   assert.match(text, /if \(commit && !unit\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new Refusal/);
   assert.match(text, /const unit = units\.find\(\(one\) => one\.dumps\.has\(dumpName\)\);/);
+  // The two bench Harmony 885s since `todo-compile-885.md` 1.4: their write end was read in the 885's
+  // application 4.4, `tests/test_harmony_885_write_end.py`, which both units report. Their compare bases
+  // start with the region reads `rehearse-block.ts` takes, from the configuration's base to the staging region.
+  assert.match(text, /unitLabel: 'h885_a', dumps: H885_A_DUMPS, sequenceReadOn: \['4\.4'\],/);
+  assert.match(text, /unitLabel: 'h885_b', dumps: H885_B_DUMPS, sequenceReadOn: \['4\.4'\],/);
+  assert.match(text, /const H885_A_DUMPS = new Set<string>\(\[\s*'h885_a_region',\s*'h885_a_region_2',/);
+  assert.match(text, /const H885_B_DUMPS = new Set<string>\(\[\s*'h885_b_region',\s*'h885_b_region_2',/);
+});
+
+test("the config writer ends an 885's write with the drop and the restart, and sends nothing an 885 must not get", () => {
+  // `todo-compile-885.md` 1.4. The Harmony 880 and 885's write end, `reference/architectures/
+  // harmony-880-885/usb.md` "How a write ends": `WRITE_MISC` selector 2 before the first erase and the
+  // restart `E1 02` after the read back, and of the other Harmonys' eight steps neither selector `0x0A`,
+  // which an 885 never answers, nor the update status set to 2, which turns its next restart into an
+  // install over the application. `rails.test.ts` holds the library's half, that nothing in it can send
+  // them to arch 8; this holds the script's, that it does not ask, since it cannot be imported.
+  const text = readFileSync(fileURLToPath(new URL('../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
+  // Code only, so that the comments naming what is left out do not satisfy or defeat the checks.
+  const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  // The two commands, each once on the ordinary path, the drop before the first block and the restart
+  // after the whole configuration reads back.
+  const drop = code.indexOf('await remote.invalidateCachedRegions(permission);\n    } else');
+  const firstBlock = code.indexOf('await writeBlock(');
+  const readBack = code.lastIndexOf('await containerMatchesTheFile();');
+  const restart = code.lastIndexOf('await remote.resetDevice(permission);');
+  assert.ok(drop > 0 && firstBlock > drop && readBack > firstBlock && restart > readBack,
+    'the drop, then the blocks, then the read back, then the restart');
+  // Nothing that writes the update status, data memory, the settings store or the session end, and no
+  // request built by hand, on any architecture.
+  for (const forbidden of ['requestFirmwareReinstall', 'stageFirmware', 'writeRam', 'writeSettings',
+    'endSession', 'encodeRequest', 'writeMiscRequest', 'updateStatusWriteRequest', '0x0a', '0x0A']) {
+    assert.ok(!code.includes(forbidden), `write-config.ts calls ${forbidden}`);
+  }
+  // And on an 885 the drop cannot be left out: the control `--no-invalidate` is the Harmony One's, and on
+  // an 885 the drop is what keeps the remote off a block between its erase and its write.
+  assert.match(code, /if \(!invalidate && unit\.dropRequired !== undefined\) \{\s*throw new Refusal/);
+  assert.equal([...code.matchAll(/dropRequired: ARCH8_DROP_REQUIRED/g)].length, 2, 'both 885s');
+});
+
+test("the config writer's code reads an 885's install status before the first erase and before each restart, and refuses on a value other than 0", () => {
+  // A check on the script's source, since it cannot be imported: it holds the order and the refusal's
+  // presence, and not that the value read off a remote is the right byte, which the first dry run shows.
+  // `todo-compile-885.md` 1.4. On the Harmony 880 and 885 the status byte at data `0x100` survives the
+  // `RESET` instruction `E1 02` ends in, and the bootloader then installs firmware over the application
+  // unless it is 0, `reference/architectures/harmony-880-885/firmware.md` "What the bootloader does at power
+  // on". Nothing this package can send to arch 8 sets it, and the script reads it anyway, because being
+  // wrong costs the application. Held here on the script's code, since the script cannot be imported.
+  const text = readFileSync(fileURLToPath(new URL('../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
+  const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  // A property of the two 885s, not a test of the architecture: both carry the address, nothing else does.
+  assert.match(code, /const ARCH8_INSTALL_STATUS = 0x100;/);
+  assert.equal([...code.matchAll(/installStatusAt: ARCH8_INSTALL_STATUS/g)].length, 2, 'both 885s');
+  assert.equal([...code.matchAll(/installStatusAt:/g)].length, 2, 'and no other unit');
+  // The read: two bytes over `READ_MISC` selector 7, the first judged, and anything but 0 refused.
+  const helper = code.slice(code.indexOf('const installStatusIsClear'));
+  assert.match(helper, /^const installStatusIsClear = async[^\n]*\{\s*const at = unit\.installStatusAt;\s*if \(at === undefined\) return;\s*const status = await remote\.readRam\(at\);\s*const neighbour = await remote\.readRam\(at \+ 1\);/);
+  assert.match(helper, /if \(status === 0\) return;\s*throw new Refusal\(/);
+  // Before the first erase: after the blocks are compared, before the dry run returns, and so before the
+  // drop and the first block of a commit.
+  const beforeErase = code.indexOf("await installStatusIsClear('before the first erase');");
+  const dryRun = code.indexOf('if (!commit) {');
+  const drop = code.indexOf('await remote.invalidateCachedRegions(permission);\n    } else');
+  const firstBlock = code.indexOf('await writeBlock(');
+  assert.ok(beforeErase > 0 && dryRun > beforeErase && drop > beforeErase && firstBlock > beforeErase,
+    'the status is read before anything that changes the remote');
+  // Immediately before each restart: nothing awaited between the read and the escape but a journal line.
+  const restarts = [...code.matchAll(/await remote\.resetDevice\(permission\);/g)].map((m) => m.index!);
+  assert.equal(restarts.length, 2, 'the ordinary restart and --restart-only');
+  for (const restart of restarts) {
+    const read = code.lastIndexOf("await installStatusIsClear('before the restart');", restart);
+    assert.ok(read > 0, 'a status read before the restart');
+    const between = code.slice(read, restart);
+    assert.equal([...between.matchAll(/await /g)].length, 1, `only the read is awaited before the restart: ${between}`);
+  }
+  // And the ordinary restart comes after the whole configuration has read back, so a withheld restart
+  // leaves a configuration that is written and verified.
+  assert.ok(code.lastIndexOf('await containerMatchesTheFile();') < restarts[1]!);
 });
 
 test('a dry run asks for no write permission, whether or not the target has one', () => {

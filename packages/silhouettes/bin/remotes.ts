@@ -600,6 +600,16 @@ function fileBasedIdentity(architecture: number): string {
   ].join('\n');
 }
 
+/**
+ * How far an escape row was read, where it is narrower than the architecture. The row is keyed by
+ * architecture and printed on every model's page of it, and arch 8's was read in the Harmony 880 and 885
+ * application 4.4 only (`tests/test_harmony_885_write_end.py`): the 720, the 785 and the 880 Pro run other
+ * builds. Pointed out by the review of `todo-compile-885.md` 1.4, when the row first appeared on the 720's page.
+ */
+const ESCAPE_SCOPE: Readonly<Record<number, string>> = {
+  8: ' in the Harmony 880 and 885 application 4.4; other arch 8 models not read',
+};
+
 function usbIdentity(architecture: number): string {
   const profiles = PROFILES.filter((p) => p.architecture === architecture);
   // The file based family has no profile; its rows name the product id instead.
@@ -622,7 +632,7 @@ function usbIdentity(architecture: number): string {
     '|---|---|---|',
     `| USB product id | ${profiles.map((p) => hex(p.productId, 4)).join(', ') || 'none'} | \`PROFILES\` in \`packages/corpus/src/read.ts\` |`,
     ...flashRows,
-    `| escape sub commands dispatched | ${escapes.map((e) => hex(e, 2)).join(', ') || 'none read'} | \`ESCAPE_SUB_COMMANDS\` in \`packages/usb/src/protocol.ts\` |`,
+    `| escape sub commands dispatched | ${escapes.length === 0 ? 'none read' : `${escapes.map((e) => hex(e, 2)).join(', ')}${ESCAPE_SCOPE[architecture] ?? ''}`} | \`ESCAPE_SUB_COMMANDS\` in \`packages/usb/src/protocol.ts\` |`,
     '',
     provenance('`packages/corpus` and `packages/usb`'),
   ].join('\n');

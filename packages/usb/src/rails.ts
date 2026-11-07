@@ -131,13 +131,18 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [8, 9, 12, 1
 //
 // **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.2**, under decision 30, which
 // permits the two bench 885s, unit A first. The same shape as arch 9's arrival: it buys the flash block
-// path and nothing else. The reboot, the invalidate and the RAM write keep their lists, which do not hold
-// 8, so `rehearse-block.ts` is the one way in and `write-config.ts` has no arch 8 target. **Which unit is
-// on the cable is still the unit check's**, since every arch 8 model reports one product id: the 880,
-// 885, 880 Pro, 720 and 785 alike. Two hazards this platform adds and the tables above hold: the firmware
-// bounds an erase and a write from `0x010000` up by nothing, and it runs from the same flash part as its
-// configuration. The write end, selector `0x0A` absent and status 2 never to be sent, is 1.4's and goes
-// through the lists of its own paths.
+// path and nothing else. The reboot, the invalidate and the RAM write keep their lists, which did not hold
+// 8 until 1.4, so `rehearse-block.ts` was the one way in. **Which unit is on the cable is still the unit
+// check's**, since every arch 8 model reports one product id: the 880, 885, 880 Pro, 720 and 785 alike.
+// Two hazards this platform adds and the tables above hold: the firmware bounds an erase and a write from
+// `0x010000` up by nothing, and it runs from the same flash part as its configuration.
+//
+// **The write end joined for `todo-compile-885.md` 1.4, through the lists of its own paths**: arch 8 is on
+// the reset list and the invalidate list below, each for the one command its own comment names, so
+// `write-config.ts` can end a write the 885's way. Selector `0x0A` has no sender in this package at all,
+// the update status byte is written only behind the reinstall and staging rails, which hold no arch 8
+// row, and the RAM write list does not move, so the three steps that hang or overwrite an 885 stay
+// unreachable whatever this list says. `rails.test.ts` asserts each refusal with every door open.
 //
 // **Arch 14 joined on 27 September 2026, for the Harmony 650**, section 281. Danny's decision: a
 // second hand Harmony 650 arrived, arch 14 like the 600, and may be reprogrammed freely. The 600 was
@@ -167,7 +172,17 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [8, 9, 12, 1
  * both have been restarted after a configuration write since, sections 301 and 303. This said the unit
  * check "is what keeps a restart off it" until 9 October 2026.
  */
-export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [12, 14];
+//
+// **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.4**, decision 30, for the last step of
+// a configuration write on the two bench 885s and nothing else. The source is the 885's application 4.4,
+// read before anything was sent, `tests/test_harmony_885_write_end.py`: the parser takes the escape before
+// the command switch, `0x02` sets the flag the main loop turns into mode 3, and mode 3 waits 500 ticks and
+// executes `RESET`, with no reply and nothing on the way that writes flash. The processor comes back
+// through the bootloader, which keeps the update status byte across a `RESET` instruction, so **a restart
+// is an application install whenever that byte is 2 or 6**; nothing this package can send to arch 8 sets
+// it, which is the reinstall and staging rails' refusal, and the reason `write-config.ts` sends no status
+// step there. Unit B joins on the same reading; that it is the unit on the cable stays the unit check's.
+export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [8, 12, 14];
 
 /**
  * Architectures a config writer may send the **invalidate** to, `WRITE_MISC` selector `0x02`, which
@@ -188,7 +203,18 @@ export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [12, 14];
  * update one setting in the remote's settings store in internal program memory at `0x1EC00`, which on
  * both units read here would write nothing. The drop itself writes nothing persistent.
  */
-export const ARCHITECTURES_WITH_AN_INVALIDATE_TARGET: readonly number[] = [9, 12, 14];
+//
+// **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.4**, decision 30, as the first step of a
+// configuration write on the two bench 885s. Read in the 885's application 4.4 before it was sent,
+// `tests/test_harmony_885_write_end.py`: selector `0x02` walks two cached region records at `0x163BE` and
+// clears bits 2 and 3 of data `0x086`, which moves every lookup to the built in configuration until the
+// next start, so the remote stops reading the region being rewritten; it answers `F0 A0`. Logitech's
+// classic client sends it for a configuration on this architecture as well, stated by Logitech, in their
+// client. **The parser takes five bytes whatever the length nibble**, the selector and four more, and
+// `invalidateRequest` states the selector alone in a zero padded report, so the four are zeros, which
+// selector 2 does not read. **Selector `0x0A`, the other Harmonys' step 2, does not exist here** and gets
+// no reply; nothing in this package builds it, so this list does not reach it.
+export const ARCHITECTURES_WITH_AN_INVALIDATE_TARGET: readonly number[] = [8, 9, 12, 14];
 
 /**
  * Architectures whose data memory may be written, which is not the same list and is deliberately
@@ -740,6 +766,22 @@ export function assertRamWriteAllowed(
 export const SFR_PAGE_START = 0xf40;
 
 /**
+ * Architectures the session end escape, `0xE0 0x01`, may be sent to: the two it was sent to before arch 8's
+ * escape was read.
+ *
+ * **Split out for `todo-compile-885.md` 1.4**, on the rule section 281 set for the reboot and the
+ * invalidate: one list per path. Until then the session end rail admitted any architecture with an
+ * `ESCAPE_SUB_COMMANDS` row, which was arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700), both
+ * sent it. 1.4 gave arch 8 (Harmony 880 and 885) a row so that the restart could pass its dispatch check,
+ * and the row is a true statement of what the firmware dispatches, `0x01` included; without this list the
+ * same row would have opened the session end on an 885 as a side effect, which is exactly the widening
+ * section 269 caught twice. So the list keeps what was reachable before, and arch 8 joining it is a
+ * decision of its own. Nothing about the command itself argues against it: on arch 8 it clears the
+ * command state and replies nothing, `tests/test_harmony_885_write_end.py`.
+ */
+export const ARCHITECTURES_WITH_A_SESSION_END_TARGET: readonly number[] = [12, 14];
+
+/**
  * Throws unless the session-end escape may be sent to this remote.
  *
  * `0xE0 0x01` clears the command state variable and nothing else, `docs/findings.md` sections 97 and
@@ -785,6 +827,14 @@ export function assertSessionEndAllowed(
   if (!known.includes(subCommand)) {
     throw new RailError(
       `architecture ${p.architecture} does not dispatch escape sub-command 0x${subCommand.toString(16)}`,
+    );
+  }
+  // After the dispatch checks, so that arch 9 (Harmony 525) is still refused for its unread escape and
+  // the list refuses only what is read and not chosen, arch 8 (Harmony 880 and 885) since 1.4.
+  if (!ARCHITECTURES_WITH_A_SESSION_END_TARGET.includes(p.architecture)) {
+    throw new RailError(
+      `architecture ${p.architecture} dispatches the session end but is not on its list: its escape was `
+        + 'read for the restart a configuration write ends with, and that buys no other escape',
     );
   }
   // Same comparison as every other rail, section 226: the unit on the cable against the one the

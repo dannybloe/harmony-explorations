@@ -267,13 +267,14 @@ test('a write target is refused the reboot unless its escape is traced and it is
   // The title was "a write target either dispatches the reset escape or is refused one" until then,
   // an either or that arch 14 made false by doing both.
   //
-  // **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.2 and lands in the refused arm**,
-  // beside arch 9: its escape is read, `E1 02` restarts it, but nothing has been sent to it, so it has no
-  // `ESCAPE_SUB_COMMANDS` row and no place on the reset list. Its write end is 1.4's.
+  // **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.2 and landed in the refused arm**,
+  // beside arch 9, with no `ESCAPE_SUB_COMMANDS` row and no place on the reset list. **It moved to the
+  // traced arm for 1.4**, its write end: the row states what the 885's application dispatches,
+  // `tests/test_harmony_885_write_end.py`, and the reset list took it for the restart a write ends with.
   assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
   // **Arch 14 joined on 27 September 2026, section 282**, once its path was read on the Harmony 650's
-  // own build, so traced and permitted are the same two architectures now.
-  assert.deepEqual([...ARCHITECTURES_WITH_A_RESET_TARGET], [12, 14]);
+  // own build, and arch 8 for 1.4, so traced and permitted are the same three architectures now.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_RESET_TARGET], [8, 12, 14]);
   for (const architecture of ARCHITECTURES_WITH_A_RESET_TARGET) {
     assert.ok(ESCAPE_SUB_COMMANDS[architecture]?.includes(ESCAPE_RESET), `architecture ${architecture}`);
   }
@@ -287,11 +288,11 @@ test('a write target is refused the reboot unless its escape is traced and it is
   // The populations, stated rather than bounded: 12 has section 97's reading behind it and 9 has
   // nothing behind it, so a third architecture arriving on the write target list lands in neither
   // and fails here.
-  assert.deepEqual(traced, [12, 14]);
-  assert.deepEqual(refused, [8, 9]);
+  assert.deepEqual(traced, [8, 12, 14]);
+  assert.deepEqual(refused, [9]);
 });
 
-test('the reset escape is refused on a write target whose escape is unread, and allowed on the two that are traced', () => {
+test('the reset escape is refused on a write target whose escape is unread, and allowed on the three that are traced', () => {
   // The runtime half of the pair above, and it needs the flag on: with writes disabled
   // `assertResetAllowed` throws at its first line for every architecture, so asserting a throw here
   // would say nothing about which condition fired. The message is what distinguishes them.
@@ -336,16 +337,24 @@ test('the reset escape is refused on a write target whose escape is unread, and 
         intendedVersion: {},
         versionBlock: rails.encodeVersionBlock({architecture: 14}),
       }),
+      // Arch 8 (Harmony 885), traced in its application 4.4 and on the list since todo-compile-885.md 1.4.
+      say('arch 8', {
+        ...IDEAL,
+        architecture: 8,
+        intendedVersion: {},
+        versionBlock: rails.encodeVersionBlock({architecture: 8}),
+      }),
     ]));
   `);
   assert.deepEqual(JSON.parse(output), [
     'arch 12: allowed',
     'arch 9: RailError for the unread escape',
     'arch 14: allowed',
+    'arch 8: allowed',
   ]);
 });
 
-test('the invalidate is allowed on every write target, arch 14 since its executor was read', () => {
+test('the invalidate is allowed on every write target, arch 14 and arch 8 since their executors were read', () => {
   // Section 281. The invalidate took the write permission and nothing more, so putting the Harmony 650
   // on the write list handed it a command whose arch 14 executor nobody had read, and this asserted
   // arch 14 was refused. Section 282 read the executor on the Harmony 650's own build and Danny
@@ -366,12 +375,15 @@ test('the invalidate is allowed on every write target, arch 14 since its executo
           + (/not sent the invalidate/.test(error.message) ? ' for the unread executor' : ' for something else');
       }
     };
-    console.log(JSON.stringify([say('arch 12', 12), say('arch 9', 9), say('arch 14', 14)]));
+    console.log(JSON.stringify([say('arch 12', 12), say('arch 9', 9), say('arch 14', 14), say('arch 8', 8)]));
   `);
+  // Arch 8 (Harmony 885) since todo-compile-885.md 1.4, its selector 2 executor read in the 885's
+  // application 4.4, `tests/test_harmony_885_write_end.py`.
   assert.deepEqual(JSON.parse(output), [
     'arch 12: allowed',
     'arch 9: allowed',
     'arch 14: allowed',
+    'arch 8: allowed',
   ]);
 });
 
@@ -421,17 +433,19 @@ test("arch 14's write target is the Harmony 650, for the block path, the invalid
   // arrival bought one path, the flash block, and not the three that have lists of their own.
   //
   // **It moved again for `todo-compile-885.md` 1.2**: arch 8 (Harmony 880 and 885), the flash block path
-  // only, so it is on none of the three lists below.
+  // only, so it was on none of the three lists below. **1.4 put it on two of them**, the reboot and the
+  // invalidate, each for the one command an 885's write ends with; the RAM write stays shut, since selector
+  // 7 reaches the unlock and the install status on that platform with no bound.
   assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
-  assert.ok(!ARCHITECTURES_WITH_A_RESET_TARGET.includes(8), 'the reboot, arch 8');
-  assert.ok(!ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(8), 'the invalidate, arch 8');
+  assert.ok(ARCHITECTURES_WITH_A_RESET_TARGET.includes(8), 'the reboot, arch 8, todo-compile-885.md 1.4');
+  assert.ok(ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(8), 'the invalidate, arch 8, 1.4');
   assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(8), 'the RAM write, arch 8');
   // The reboot and the invalidate followed in section 282, each on its own evidence: the escape path
   // and the selector 2 executor read on the Harmony 650's own build. The RAM write did not.
   assert.ok(ARCHITECTURES_WITH_A_RESET_TARGET.includes(14), 'the reboot, section 282');
   assert.ok(ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(14), 'the invalidate, section 282');
   assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(14), 'the RAM write');
-  assert.deepEqual([...ARCHITECTURES_WITH_AN_INVALIDATE_TARGET], [9, 12, 14]);
+  assert.deepEqual([...ARCHITECTURES_WITH_AN_INVALIDATE_TARGET], [8, 9, 12, 14]);
 });
 
 test('the writable range needs both a region and a ceiling, and a hole in either refuses', () => {
@@ -538,13 +552,16 @@ test('a config length that is missing or absurd does not produce a range', () =>
  * of the tests above is that they run in the shipped state. A subprocess is the only honest way to
  * check both sides of a module level constant.
  */
-function withWritesEnabled(script: string): string {
+function withWritesEnabled(script: string, doors: Record<string, string> = {}): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
   const railsPath = join(here, '..', 'src', 'index.ts').replaceAll('\\', '/');
   return execFileSync(
     process.execPath,
     ['--input-type=module', '--eval', `import * as rails from '${railsPath}';\n${script}`],
-    { env: { ...process.env, HARMONY_ENABLE_WRITES: '1' }, encoding: 'utf8' },
+    // `doors` opens further named doors on top of the write flag, for a test whose point is that a
+    // refusal holds with every door open: the reinstall, the staging and the settings doors are each
+    // checked before the architecture, so with them shut a refusal would say nothing about arch 8.
+    { env: { ...process.env, HARMONY_ENABLE_WRITES: '1', ...doors }, encoding: 'utf8' },
   ).trim();
 }
 
@@ -792,6 +809,9 @@ test('with writing enabled, the session end escape refuses everything but itself
     check('the other reset, 0x03', spare12, 0x03);
     check('arch 14 only sub-command 0x05', {...spare12, architecture: 14}, 0x05);
     check('arch 9, whose escape nobody has read', {...spare12, architecture: 9}, 0x01);
+    // Arch 8 (Harmony 885): its escape is read and dispatches 0x01, todo-compile-885.md 1.4, and the row
+    // that says so is there for the restart; the session end has a list of its own that leaves it out.
+    check('arch 8, read for the restart only', {...spare12, architecture: 8}, 0x01);
     check('another unit on the cable', {...spare12, identityBlock: another}, 0x01);
     console.log(JSON.stringify(refusals));
   `);
@@ -807,6 +827,8 @@ test('with writing enabled, the session end escape refuses everything but itself
     'arch 14 only sub-command 0x05: refused by RailError',
     // A read profile is not a write profile, which is the same rule the flash rails state.
     'arch 9, whose escape nobody has read: refused by RailError',
+    // One list per path: an escape row read for one command buys no other.
+    'arch 8, read for the restart only: refused by RailError',
     // And the conservative condition that keeps this an experiment rather than a product decision.
     'another unit on the cable: refused by RailError',
   ]);
@@ -1109,4 +1131,172 @@ test('with writing enabled a Harmony 525 is still refused, and it is the archite
     'a write inside the region: refused by RailError',
     'an erase of the first block: refused by RailError',
   ]);
+});
+
+/**
+ * Every door this package has, open at once: what the Harmony 885's write end must still never reach.
+ *
+ * `todo-compile-885.md` 1.4 put arch 8 (Harmony 880 and 885) on the reset and invalidate lists, so that
+ * `write-config.ts` can end a write the 885's way, `reference/architectures/harmony-880-885/usb.md` "How a
+ * write ends". Two steps of the other Harmonys' sequence must not reach an 885 and two commands reach the
+ * guards of its flash, `tests/test_harmony_885_write_end.py` and `_erase_and_write.py`:
+ *
+ * * `WRITE_MISC` selector `0x0A` gets no reply on an 885, so a writer waiting for one hangs;
+ * * the update status set to 2 or 6 turns the next restart into an install that erases the application
+ *   and copies the staging region over it;
+ * * `WRITE_MISC` selector 7 reaches the unlock, the install status and the flash routines' RAM, unbounded;
+ * * a one byte write to `0x000106` sets the unlock, after which the bootloader is erasable.
+ *
+ * **Every door open is the point**: the reinstall, staging and settings rails each check their own door
+ * before the architecture, so with a door shut the refusal would be the door's and say nothing about arch 8.
+ * The unit matches throughout, so no row is refused for being the wrong remote either; each refusal is
+ * matched on its own wording.
+ */
+const ALL_DOORS = {
+  HARMONY_FIRST_WRITE: '1',
+  HARMONY_FIRMWARE_REINSTALL: '1',
+  HARMONY_FIRMWARE_STAGE: '1',
+  HARMONY_SETTINGS_WRITE: '1',
+};
+
+/** `IDEAL` moved to arch 8: a configuration read off the remote, so it states nothing to compare. */
+const ARCH8_SOURCE = `${IDEAL_SOURCE}
+  const p8 = {
+    ...IDEAL,
+    architecture: 8,
+    // The configuration region from 0x020000 to the staging region at 0x1D0000, which is what a region
+    // read of an 885 covers and what write-config.ts passes as the length.
+    configLength: 0x1b0000,
+    intendedVersion: {},
+    versionBlock: rails.encodeVersionBlock({ firmware: 0x44, architecture: 8, softwareType: 0 }),
+  };`;
+
+test('on arch 8 every door open still refuses the commands that hang or overwrite an 885, and admits its two', () => {
+  const output = withWritesEnabled(`
+    ${ARCH8_SOURCE}
+    const rows = [];
+    const check = (name, fn) => {
+      try { fn(); rows.push(name + ': allowed'); }
+      catch (error) { rows.push(name + ': ' + error.constructor.name + ': ' + error.message); }
+    };
+    // The two the 885's write end consists of.
+    check('the cache drop', () => rails.assertInvalidateAllowed(p8));
+    check('the restart', () => rails.assertResetAllowed(p8));
+    // The control: both still need the unit on the cable to be the recorded one.
+    check('the cache drop to another unit', () => rails.assertInvalidateAllowed({ ...p8, identityBlock: IDEAL.another }));
+    check('the restart of another unit', () => rails.assertResetAllowed({ ...p8, identityBlock: IDEAL.another }));
+    // Status 2 and status 0 then the staged image: the only two senders of selector 6.
+    check('status 2, the reinstall', () => rails.assertReinstallAllowed(p8,
+      { softwareType: 0, firmware: '4.4', staged: new Uint8Array(rails.REINSTALL_MAX_IMAGE) }));
+    check('the staging write', () => rails.assertStagingAllowed(p8,
+      { softwareType: 0, firmware: '4.4' }, new Uint8Array(16)));
+    // Selector 7, at the two data addresses that matter most on an 885 and at an ordinary one.
+    check('selector 7 to the unlock at 0x23A', () => rails.assertRamWriteAllowed(p8, 0x23a));
+    check('selector 7 to the install status at 0x100', () => rails.assertRamWriteAllowed(p8, 0x100));
+    check('selector 7 to a state variable at 0x108', () => rails.assertRamWriteAllowed(p8, 0x108));
+    // The unlock over the flash path, and the three regions an erase must never reach.
+    check('the unlock, one byte at 0x000106', () => rails.assertFlashWriteAllowed(p8, 0x000106, 1));
+    check('an erase of the application at 0x010000', () => rails.assertEraseAllowed(p8, 0x010000));
+    check('an erase of the staging region at 0x1D0000', () => rails.assertEraseAllowed(p8, 0x1d0000));
+    check('an erase of the log area at 0x1E0000', () => rails.assertEraseAllowed(p8, 0x1e0000));
+    // The other escapes: the session end, which the row read for the restart does not buy, and 0x03.
+    check('the session end, E1 01', () => rails.assertSessionEndAllowed(p8, 0x01));
+    check('the other restart, E1 03', () => rails.assertSessionEndAllowed(p8, 0x03));
+    // And the settings store, which is the Harmony 600 series' and has no arch 8 counterpart at all.
+    check('the settings store', () => rails.assertSettingsWriteAllowed(p8,
+      { firmware: '4.4', store: new Uint8Array(0x800) }, [{ setting: 0x80, value: 0 }]));
+    console.log(rows.join('\\n'));
+  `, ALL_DOORS).split('\n');
+  const expected: [string, RegExp][] = [
+    ['the cache drop', /: allowed$/],
+    ['the restart', /: allowed$/],
+    ['the cache drop to another unit', /: RailError: the remote on the cable is not the unit/],
+    ['the restart of another unit', /: RailError: the remote on the cable is not the unit/],
+    ['status 2, the reinstall', /: RailError: architecture 8 has no reinstall target/],
+    ['the staging write', /: RailError: architecture 8 has no staging region/],
+    ['selector 7 to the unlock at 0x23A', /: RailError: architecture 8 has no RAM write target/],
+    ['selector 7 to the install status at 0x100', /: RailError: architecture 8 has no RAM write target/],
+    ['selector 7 to a state variable at 0x108', /: RailError: architecture 8 has no RAM write target/],
+    ['the unlock, one byte at 0x000106', /: RailError: write of 1 bytes at 0x106 leaves the config region 0x20000\.\./],
+    ['an erase of the application at 0x010000', /: RailError: erasing 0x10000 bytes at 0x10000 leaves the writable region 0x20000\.\.0x1d0000/],
+    ['an erase of the staging region at 0x1D0000', /: RailError: erasing 0x10000 bytes at 0x1d0000 leaves the writable region/],
+    ['an erase of the log area at 0x1E0000', /: RailError: erasing 0x10000 bytes at 0x1e0000 leaves the writable region/],
+    ['the session end, E1 01', /: RailError: architecture 8 dispatches the session end but is not on its list/],
+    ['the other restart, E1 03', /: RailError: escape sub-command 0x3 is not the session end/],
+    ['the settings store', /: RailError: architecture 8 has no settings store this may write/],
+  ];
+  assert.equal(output.length, expected.length, output.join('\n'));
+  expected.forEach(([name, pattern], i) => {
+    assert.ok(output[i]!.startsWith(name + ': ') && pattern.test(output[i]!), output[i]);
+  });
+});
+
+test('on arch 8 the remote is sent A1 02 and E1 02 and nothing else, whatever else is asked of it', () => {
+  // The rails above, through the methods that send. A transport that records every report and answers
+  // the drop with the `F0 A0` an 885 sends; the restart gets no reply, as on the remote. Each forbidden
+  // call is made after the two that are allowed, so a method that wrote before its rail refused would
+  // show here as a third report.
+  const output = withWritesEnabled(`
+    ${ARCH8_SOURCE}
+    const written = [];
+    const replies = [];
+    const transport = {
+      async write(report) { written.push([...report]); replies.push(Uint8Array.from([0xf0, 0xa0, ...new Array(62).fill(0)])); },
+      async read() { return replies.shift(); },
+      async close() {},
+    };
+    const remote = new rails.HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 1, architecture: 8 });
+    await remote.invalidateCachedRegions(p8);
+    await remote.resetDevice(p8);
+    replies.length = 0;
+    const refused = [];
+    const attempt = async (name, fn) => {
+      try { await fn(); refused.push(name + ': sent'); }
+      catch (error) { refused.push(name + ': ' + error.constructor.name); }
+    };
+    await attempt('selector 7 to the unlock', () => remote.writeRam(p8, 0x23a, 0xa7));
+    await attempt('the unlock over the flash path', () => remote.writeFlash(p8, 0x000106, Uint8Array.of(0xa7)));
+    await attempt('an erase of the application', () => remote.eraseFlash(p8, 0x010000));
+    await attempt('the session end', () => remote.endSession(p8));
+    console.log(JSON.stringify({
+      // The first eight bytes of each report: the command, its payload and the start of the padding.
+      sent: written.map((r) => r.slice(0, 8)),
+      // The padding past them, which the 885's write misc parser reads as the selector's four operands.
+      padding: written.map((r) => r.slice(8).every((b) => b === 0)),
+      refused,
+    }));
+  `, ALL_DOORS);
+  const run = JSON.parse(output) as { sent: number[][]; padding: boolean[]; refused: string[] };
+  assert.deepEqual(run.sent, [
+    [0xa1, 0x02, 0, 0, 0, 0, 0, 0],
+    [0xe1, 0x02, 0, 0, 0, 0, 0, 0],
+  ]);
+  assert.deepEqual(run.padding, [true, true]);
+  assert.deepEqual(run.refused, [
+    'selector 7 to the unlock: RailError',
+    'the unlock over the flash path: RailError',
+    'an erase of the application: RailError',
+    'the session end: RailError',
+  ]);
+});
+
+test('writes.ts, remote.ts and protocol.ts build no write misc selector 0x0A, the step that hangs an 885', async () => {
+  // **A refusal by absence, which is the only kind a command with no sender can have.** Selector `0x0A` is
+  // step 2 of the Harmony One's and the Harmony 600 series' eight step sequence and does not exist on the
+  // Harmony 880 and 885, where it gets no reply at all, `tests/test_harmony_885_write_end.py`. No method
+  // here sends it and no rail could refuse it, so the claim is about the sources: every `WRITE_MISC`
+  // request this package can build names one of three selectors, the drop, the update status and the RAM
+  // write, each behind a rail the test above holds for arch 8. A fourth builder fails here and has to
+  // say which architectures may get it.
+  const sources = await Promise.all(['writes.ts', 'remote.ts', 'protocol.ts'].map(
+    (name) => readFile(new URL(`../src/${name}`, import.meta.url), 'utf8')));
+  const text = sources.join('\n');
+  const literal = [...text.matchAll(/encodeRequest\(WRITE_MISC, \[(\w+)/g)].map((m) => m[1]);
+  const generic = [...text.matchAll(/(?<!function )writeMiscRequest\((\w+)/g)].map((m) => m[1]);
+  // `selector` is the generic builder's own body, `writeMiscRequest`, whose callers the next line pins.
+  assert.deepEqual(literal, ['MISC_INVALIDATE', 'MISC_UPDATE_STATUS', 'selector']);
+  assert.deepEqual(generic, ['MISC_RAM']);
+  // The control: the selector list the decoder names does hold `0x0a`, so its absence above is the
+  // builders' and not a pattern that cannot match.
+  assert.match(text, /export const WRITE_MISC_SELECTORS[^;]*0x0a/);
 });

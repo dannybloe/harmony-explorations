@@ -440,8 +440,19 @@ export const ESCAPE_END_SESSION = 0x01;
 export const ESCAPE_RESET = 0x02;
 export const ESCAPE_RESET_ALT = 0x03;
 
-/** The sub-commands each architecture's escape dispatches. Arch 9 has not been read. */
+/**
+ * The sub-commands each architecture's escape dispatches. Arch 9 has not been read.
+ *
+ * **Arch 8 (Harmony 880 and 885) since `todo-compile-885.md` 1.4**, read in the 885's application 4.4
+ * before anything was sent, `tests/test_harmony_885_write_end.py`: the packet parser at `0x157D4` takes
+ * the escape before the command switch, `0x01` clears the command state and `0x02` and `0x03` set the
+ * flag the main loop turns into a wait and a `RESET`; none replies and any other sub code does nothing.
+ * **A row here is a fact about the firmware and not a permission**: the restart is `assertResetAllowed`'s,
+ * behind the reset list, and the session end `assertSessionEndAllowed`'s, behind a list of its own that
+ * leaves arch 8 out, so stating the dispatch truthfully opens neither by itself.
+ */
 export const ESCAPE_SUB_COMMANDS: Readonly<Record<number, readonly number[]>> = {
+  8: [ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_RESET_ALT],
   12: [ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_RESET_ALT],
   14: [ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_RESET_ALT, 0x05],
 };
