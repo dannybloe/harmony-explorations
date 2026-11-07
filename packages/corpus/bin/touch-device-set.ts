@@ -847,7 +847,14 @@ function checkTheRuns(set: TouchSet, source: TouchSet, from: string, touched: re
     if (!line.startsWith(`${WRITE_ANSWERS}&`)) fail(`${file} is not a kept write of answers`);
     const responses = (JSON.parse(decodeURIComponent(line.split('&responses=')[1] ?? '')) as { responses: { statusCode?: string; uri?: string; etag?: string; resource?: unknown }[] }).responses
       .filter((a) => typeof a.uri === 'string' && a.uri.startsWith('harmony://'));
-    const ofSet = (uri: string): SetAnswer | undefined => set.answers.find((a) => keyOf(a.uri) === keyOf(uri));
+    // A sync writes answers several times: the six in one write, then the favourites, the pictures and the finish
+    // in writes of their own. Passing every write of a run is the easy way to call this, so a write that answers
+    // none of the six is named and passed over rather than judged against them, which printed a NOT OK for each.
+    if (!responses.some((a) => (OWN_SET_DOCUMENTS as readonly string[]).includes(keyOf(a.uri!)))) {
+      console.log(`passed over: ${basename(file)} answers none of the six`);
+      continue;
+    }
+    const ofSet =(uri: string): SetAnswer | undefined => set.answers.find((a) => keyOf(a.uri) === keyOf(uri));
     const delivered = responses.filter((a) => a.statusCode === '200');
     const right = delivered.length === touched.length && delivered.every((a) => touched.includes(keyOf(a.uri!))
       && a.etag === ofSet(a.uri!)?.etag && JSON.stringify(a.resource) === JSON.stringify(ofSet(a.uri!)?.resource));
