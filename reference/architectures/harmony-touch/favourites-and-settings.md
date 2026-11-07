@@ -153,7 +153,13 @@ both syncs measured that carried one[^t-touch-favourites].
 each as the remote held it, and the other fourteen carried, so equal in content and key order to the remote's own,
 was delivered with 200 under a new tag and committed; the remote's configuration hash, which joins Context's tag,
 carried the new tag afterwards, and its own Context delivered back under its old tag restored the old
-hash[^t-touch-settings-of-ours]. A Context whose content differs from the remote's is not checked[^unchecked].
+hash[^t-touch-settings-of-ours]. **A Context of the seven fields alone is taken**: one written by a program with only
+the seven above, each the account's own value, and none of the other fourteen, was delivered with 200 in a set of
+ours and committed, the hash carrying its tag, and every activity of that set was started and ended
+afterwards[^t-touch-from-nothing]. This said a Context whose content differs from the remote's was not
+checked<!--superseded--> until then. What the account screen showed, and whether the activity tutorial was offered,
+with that Context were not looked at, and a Context whose seven values differ from the remote's is not
+checked[^unchecked].
 
 ## Pictures
 
@@ -176,7 +182,16 @@ set[^t-touch-second-sync].
 program, a 54 by 54 PNG, delivered under a new tag at the address of a station logo the remote held, was stored,
 drawn on the favourite tile that names the station, and asked for with that new tag in the next sync; the remote's
 own picture, delivered back the same way, was asked for with its old tag in the sync after[^t-touch-favourites-of-ours].
-A picture at an address the remote did not hold before is not checked[^unchecked].
+
+**Measured: a user background at an address of ours is asked for, stored and drawn.** A Settings written by a program
+named a background of ours in `UserImages` and `BackgroundImage` and an address of ours, which nothing serves, in
+`UserImageBucketUri`. The screens asked for the picture and its twin at that address, without a tag, since the remote
+held neither; delivered with 200, both were stored, and the remote's other two backgrounds were carried beside them,
+asked for again with their old tags once the remote's own Settings was back. A background of ours, dark blue with a
+bright yellow band across its foot, then showed as a band at the foot of every screen under the screens' dark footer,
+which is consistent with the picture and all that was compared[^t-touch-from-nothing]. *Corrected:* this said a picture
+at an address the remote did not hold before was not checked<!--superseded--> until then. Whether that background was
+in the picker, and the remote's own out of it, is not checked[^unchecked].
 
 **A drawn picture is kept by its file's path.** The screens keep decoded pictures in one cache of 6 MiB keyed by the
 picture file's path, which drops the least recently used when it is full and which nothing else
@@ -408,4 +423,5 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
 [^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch84-runs.test.ts)
 [^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch92-runs.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch94-runs.test.ts)
 [^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/touch-empty.test.ts)

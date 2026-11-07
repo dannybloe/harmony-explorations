@@ -289,7 +289,12 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 test/touch-setup.test.ts. Its empty.ts builds the empty
                                 configuration, no device and no activity, and says what a commit
                                 of it keeps of the favourites and the pictures, todo-touch.md 9.2,
-                                tested in test/touch-empty.test.ts. The folder is not
+                                tested in test/touch-empty.test.ts. Its fromnothing.ts and
+                                archivedevice.ts write every document and a background picture
+                                from a setup file, the archive of the catalogue, our rhythm table
+                                and a description of the account, with no Logitech document as
+                                input, todo-touch.md 9.1, tested in test/touch-fromnothing.test.ts.
+                                The folder is not
                                 touch.ts, which is the Harmony One's touch screen
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
@@ -338,7 +343,16 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 `todo-touch.md` 8.6, tested in `test/touch-setup-set.test.ts`, and
                                 `src/touchemptyset.ts`, which builds the empty configuration and its
                                 put back with the favourites documents and logos the remote held,
-                                `todo-touch.md` 9.2, tested in `test/touch-empty-set.test.ts`; the
+                                `todo-touch.md` 9.2, tested in `test/touch-empty-set.test.ts`, and
+                                `src/touchnothingset.ts`, which builds the set from nothing, its put
+                                back and its comparison with 8.6's set field by field and command by
+                                command, `todo-touch.md` 9.1, tested in `test/touch-nothing-set.test.ts`,
+                                and `src/touchattribution.ts`, which credits every field of such a set
+                                to the generator that wrote it by running each step of the build again,
+                                `todo-touch.md` 9.3, tested in `test/touch-attribution.test.ts`, with
+                                the 9.4 run rehearsed on the fake remote in
+                                `test/touch-nothing-run.test.ts`; the setup file it is built from is
+                                `setups/touch-test.json`; the
                                 descriptions such a set is built from are in `touch-devices/`,
                                 `touch-activities/`, `touch-favourites/`, `touch-settings/`,
                                 `touch-removals/` and `touch-setups/`,
@@ -1028,16 +1042,16 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        favourites document handed up to its own address, `content://1.0/user/` or
                        `content://1.0/device/`, when the set holds that kind, `favouritesClash`; every
                        picture a set holds must pass the codec's `pictureRefusals`. `--unchanged`
-                       has run eleven times on the bench Touch, 6.7, 6.8, 6.9, 8.1, 8.2, 8.3, 8.4, 8.5,
-                       8.6 and 9.2; `--set` twenty times, 6.8, the four sets of 6.9, the two each of 8.1,
-                       8.2, 8.3, 8.4, 8.5, 8.6 and 9.2, each committed, and 8.5's first try, which stopped on a USB read
+                       has run twelve times on the bench Touch, 6.7, 6.8, 6.9, 8.1, 8.2, 8.3, 8.4, 8.5,
+                       8.6, 9.2 and 9.4; `--set` twenty two times, 6.8, the four sets of 6.9, the two each of 8.1,
+                       8.2, 8.3, 8.4, 8.5, 8.6, 9.2 and 9.4, each committed, and 8.5's first try, which stopped on a USB read
                        timeout inside its first write of answers and left the remote on the set before,
                        `packages/usb/test/touch-own-set-sync.test.ts`,
                        `touch-changed-set-sync.test.ts`, `packages/bench/test/touch81-runs.test.ts`,
                        `touch82-runs.test.ts`, `touch83-runs.test.ts`,
                        `packages/corpus/test/touch84-runs.test.ts`,
-                       `packages/bench/test/touch85-runs.test.ts`, `touch86-runs.test.ts` and
-                       `touch92-runs.test.ts`.
+                       `packages/bench/test/touch85-runs.test.ts`, `touch86-runs.test.ts`,
+                       `touch92-runs.test.ts` and `touch94-runs.test.ts`.
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model
@@ -1049,7 +1063,10 @@ node packages/bench/bin/touch-tests.ts [--write]
                        that the whole setup composed from `packages/corpus/touch-setups/8.6-test-setup.json`
                        derives them file for file, with a control, and `test/touch86-runs.test.ts` the
                        ten runs of them on the remote holding that setup, 418 of 418, with the three
-                       attempts started again.
+                       attempts started again. They are `todo-touch.md` 9.1's bench test as well,
+                       `src/touch91.ts`: `test/touch91.test.ts` holds that the set built from nothing
+                       derives them file for file, and `test/touch94-runs.test.ts` the run of test 1
+                       on the remote holding that set in 9.4, 38 of 38, with two attempts started again.
 node packages/bench/bin/touch-device-tests.ts [--write]
                        derive `todo-touch.md` 8.1's bench test, a device of ours in device mode, from
                        the lab's `8.1-device` set and the recorded favourites through the same engine
@@ -1192,6 +1209,27 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        and passes over one that answers none of them, the favourites, pictures and
                        finish answers. *Corrected:* this said `--written` reported NOT OK on each file
                        that holds none of the six, which it did until it was changed to pass them over.
+node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --setup <file> --account <lab file> | --build <new lab folder> --back <set> --from <set> | --describe-account <set> --out <new lab file> | --check <set> [options]
+                       build a Harmony Touch set from a setup file with no Logitech document as input,
+                       `todo-touch.md` 9.1: `--build --setup` writes the six documents and our background
+                       and its twin from `packages/corpus/setups/touch-test.json`, the archive of the
+                       catalogue and the lab's description of the account, each under a digest of its
+                       content, `withNothing` in `src/touchnothingset.ts`; `--build --back` the put back,
+                       `putBackNothing`; `--describe-account` writes the account's values into a new lab
+                       file and prints none of them. `--check` reads a set as `touch-sync.ts` will and,
+                       with `--against`, compares it with that set field by field, `compareNothing`, and
+                       command by command, `waveformClosure`, NOT OK on anything no row explains; with
+                       `--held`, the answers and the size of the write for a remote holding that set.
+                       `--attribute`, `todo-touch.md` 9.3, credits every field to the generator that
+                       wrote it, `attributeNothingSet` in `src/touchattribution.ts`, NOT OK on a field no
+                       generator reproduces. `--hash`, `--list` and `--written` judge a run's kept files,
+                       `todo-touch.md` 9.4: a `getconfighash` answer against the set's four tags, a request
+                       list against the set's tags, and a kept write of answers against the set's
+                       content, a write that answers none of the set's passed over by name. Opens
+                       nothing; prints counts, names and verdicts, never a tag, an address or a value of
+                       a document. `packages/corpus/test/touch-nothing-set.test.ts`,
+                       `touch-attribution.test.ts` and `touch-nothing-run.test.ts` hold it, and
+                       `packages/bench/test/touch94-runs.test.ts` the 9.4 runs.
 node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
                        the general form of the above: read any path on `INERT_PATHS` and print it as
                        bytes and, where it is printable, as text. Deliberately does not parse, since

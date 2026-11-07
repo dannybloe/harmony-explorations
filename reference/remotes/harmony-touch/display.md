@@ -84,6 +84,12 @@ Which of the held and double forms a button map can bind is the map's question,
   checked[^unchecked].
 * **Settings**, at the far right of the home screen[^x-touch-manual]: one entry of the menu behind the right
   hand button at the foot of the activity list, beside Help, Devices, Edit and the sleep timer[^t-touch-keys].
+* **The background shows at the foot of every screen, under the screens' dark footer**: a user background of ours,
+  dark blue with a bright yellow band across its foot, showed as a band at the foot of every screen, the activity list
+  among them; consistent with the picture's design, and nothing else of it was compared[^t-touch-from-nothing].
+* **The "Powering off" screen's help text runs past its right edge** in English, "Point the remote at your devices
+  while th", cut off there, with Logitech's documents and with a set of this project's alike, so it is the firmware's
+  layout and no configuration's[^t-touch-from-nothing].
 
 ## Charging and the battery
 
@@ -139,3 +145,4 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch83-runs.test.ts)
 [^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch84-runs.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch94-runs.test.ts)

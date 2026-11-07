@@ -36,13 +36,15 @@
  * whose fake remote rehearsal on 8.6's closing lists this repeats on 9.2's. Logitech's client was not consulted.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it
- * under 18. The recorded run is read from the lab by its path, since its fixtures are not yet named; nothing here prints
- * a tag or an address.
+ * under 18. The recorded run is read by its fixtures, `touch_empty_unchanged_handover_list` and
+ * `touch_empty_unchanged_list_1` to `_8`, named when 9.2 landed; nothing here prints a tag or an address.
+ *
+ * **The run it rehearsed, 9.4, went as rehearsed**: the forward run's six in one write of 381470 characters, 13 chunks,
+ * our two pictures 200 in one of 5288, the put back's six in 571577, 19 chunks, every other answer 304 but the finish,
+ * and the closing run 304 throughout, `packages/bench/test/touch94-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
@@ -58,18 +60,14 @@ import type { Scenario } from './touch-sync-run.ts';
 /** The set 9.1 built and its put back, by fixture. */
 const BUILT = 'touch_nothing_set';
 const BUILT_BACK = 'touch_nothing_set_back';
-/** 9.2's closing run, by its path in the lab: the hand over's list, and the eight lists of the sync down. */
-const CLOSING = 'reads/20261107T1138Z-touch-sync-unchanged';
-const HAND_OVER = '003-request-list-answer.txt';
-const LISTS = ['006', '008', '009', '011', '013', '015', '016', '018'].map((n) => `${n}-request-list-answer.txt`);
-const closingPath = (file: string): string | undefined => (lab.LAB === undefined ? undefined : join(lab.LAB, CLOSING, file));
-const closingThere = (): { skip: string | false } =>
-  [HAND_OVER, ...LISTS].every((f) => { const p = closingPath(f); return p !== undefined && existsSync(p); }) ? { skip: false } : { skip: `not in the lab: ${CLOSING}` };
+/** 9.2's closing run, by fixture: the hand over's list, and the eight lists of the sync down. */
+const HAND_OVER = 'touch_empty_unchanged_handover_list';
+const LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `touch_empty_unchanged_list_${n}`);
 
 const json = (fixture: string): unknown => JSON.parse(new TextDecoder().decode(lab.require_(fixture)));
-const requestsOf = (file: string): RemoteRequest[] => {
-  const requests = resultOf(readFileSync(closingPath(file)!, 'utf8'))?.['requests'];
-  assert.ok(Array.isArray(requests), file);
+const requestsOf = (fixture: string): RemoteRequest[] => {
+  const requests = resultOf(new TextDecoder().decode(lab.require_(fixture)))?.['requests'];
+  assert.ok(Array.isArray(requests), fixture);
   return requests as RemoteRequest[];
 };
 const answer = (set: TouchSet, key: string) => set.answers.find((a) => keyOf(a.uri) === key)!;
@@ -140,7 +138,7 @@ const SHAPE = ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', '
   'favourites', 'favourites', 'favourites', 'background', 'background', ...Array(8).fill('logo'), 'finish'];
 
 describe('9.4 on the fake remote, served 9.2\'s closing lists: the set from nothing, its put back and a closing run',
-  { skip: lab.needing(lab.skipUnless(BUILT, BUILT_BACK), closingThere()).skip }, () => {
+  { skip: lab.needing(lab.skipUnless(BUILT, BUILT_BACK, HAND_OVER, ...LISTS)).skip }, () => {
     it('the recorded lists: the six asked with the put back\'s tags, the favourites three untagged, ten pictures with tags', () => {
       const back = json(BUILT_BACK) as TouchSet;
       assert.deepEqual(requestsOf(LISTS[0]!).map((r) => [keyOf(r.uri), r.etag === answer(back, keyOf(r.uri)).etag]), SIX.map((d) => [d, true]));

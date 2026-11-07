@@ -177,7 +177,14 @@ documents that name them delivered with 200, ran the ten tests at an infrared re
 run, every expected code heard and every timed pause in its band, 418 of 418; delivering the four back restored the set before,
 [a whole setup of ours](../../architectures/harmony-touch/activities-and-buttons.md#a-whole-setup-of-ours)[^t-touch-setup-of-ours].
 *Corrected:* this said a document composed whole by this project was not checked<!--superseded--> until that run.
-A setup that is not a description of one Logitech's service built is not checked[^unchecked].
+**A configuration built by this project from nothing runs**: the six documents and a background picture written from
+a setup file, Logitech's catalogue entries and this project's own table of code families, with no document of
+Logitech's as input, delivered with 200, were committed; every activity was started from off and ended at an infrared
+receiver with every expected code heard, 38 of 38, from all seven devices and all five code families of its
+definitions, the background of ours was drawn, and delivering the remote's own six back restored the set before,
+[built from nothing](../../architectures/harmony-touch/devices-and-infrared.md#built-from-nothing)[^t-touch-from-nothing].
+The other keys of such a set at a receiver are not checked[^unchecked]. A setup that is not a description of one
+Logitech's service built is not checked[^unchecked].
 
 ## An empty configuration
 
@@ -239,6 +246,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch85-runs.test.ts)
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch86-runs.test.ts)
 [^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch92-runs.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch94-runs.test.ts)
 [^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/test_harmony_touch_empty_screens.py)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
 [^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)

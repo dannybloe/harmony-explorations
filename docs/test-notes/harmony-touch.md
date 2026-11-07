@@ -756,6 +756,67 @@ remote holds `9.2-empty-back`, whose six are `8.6-setup-back`. What this does no
 menu in detail, which text was seen after the sync, whether the favourites documents were dropped, the keys on the empty
 set, and the look after the put back. The runs are held by `packages/bench/test/touch92-runs.test.ts`. 9.2 is done.
 
+## The test setup built from nothing, run and put back, todo-touch 9.4
+
+**Run on 7 November 2026**, after 9.2, after commit `8d4d004b`, the 9.3 and 9.4 preparation, and commit `81526d34`,
+which moved nine of the ten 7.1 tests to `irtests/done/` so that the bench listed test 1 alone, in the order of the lab's
+`work/touch-firmware/notes/9.4-preflight.md` section 7, each run read before the next, Off pressed before each sync, the
+bench started afresh for a new monitor log. The two sets were built in 9.1 by `packages/corpus/bin/touch-nothing-set.ts
+--build --setup`: `9.1-nothing`, the six documents written from `packages/corpus/setups/touch-test.json`, the archive of
+the catalogue through our readers, our rhythm table and the lab's description of the account, and our background and
+its twin, every one under a tag of ours, with the device and activity ids 8.6 used; and `9.1-nothing-back`, the six of
+`8.6-setup-back`, which are what 9.2's put back delivered. 9.3 credited each of the forward set's 10671 fields to the
+generator that wrote it, none carried from a Logitech document and none unattributed,
+`packages/corpus/test/touch-attribution.test.ts`.
+
+| time (UTC) | run | what it gave |
+|---|---|---|
+| `1316Z` | `touch-confighash` | equal on `9.1-nothing-back` |
+| `1317Z` | `touch-sync-set`, `9.1-nothing` | all six 200 with the set's content and tags (`007`, 381470 characters, 13 chunks); the three favourites 304 with a tag of ours; our background and its twin 200 with the set's pictures and tags and the uploaded logo and seven station logos 304 (`017`, 5288 characters); the finish (`019`); eight lists; first list (`006`) all six with another tag, the put back's; `sync: finished`, nothing handed up |
+| `1317Z` | `touch-confighash` | equal on `9.1-nothing` |
+| `132514Z`, `132537Z` | test 1 of 7.1, two attempts started again | 0 of 38, stopped after its first step, and 14 of 38, stopped after step 4, every expectation it reached held |
+| `132641Z` | test 1 of 7.1, the last attempt | 38 of 38 |
+| `1330Z` | two photographs, below | `reads/20261107T1330Z-touch-9.4-activities-photo.png` and `-powering-off-photo.png` |
+| `1332Z` | `touch-sync-set`, `9.1-nothing-back`, and `1333Z` `touch-confighash` | all six 200 with the back set's content and tags (`007`, 571577 characters, 19 chunks); favourites and pictures 304; the finish; first list all six with `9.1-nothing`'s tags; hash equal on `9.1-nothing-back` |
+| `1336Z` | `touch-sync-unchanged` | 19 answers 304 and the two finishes 200; first list six of `9.1-nothing-back`'s tags |
+| `1316Z` | the monitor's log | the three attempts' presses and, outside them, the rest of Watch TV's start and an Off after the first attempt and Listen to Music started and ended twice after the last, nothing during the forward sync |
+
+All in `reads/20261107T<time>-*`. The forward run asked for our background and its twin untagged, at our store's
+addresses, and the logos with the tags 9.2's closing run sent; the put back and the closing run asked for the pictures
+exactly as 9.2's closing run did, so the person's two backgrounds were carried across our set's commit. Our background was
+the first picture delivered at an address of ours.
+
+* **The bench test, reduced by the person's decision to test 1 of 7.1**, every activity started from off and ended. The
+  argument: what 9.1 changes against 8.6, which held 418 of 418, is the definitions, written from our rhythm table, and
+  the device records written from the archive; which code sits under which key is 8.6's structure, already run, and
+  a code heard right per device shows its family's definition on the remote. Test 1 hears all seven devices and all five
+  families the set holds: Toshiba 32 Bit from the LG TV, the KPN, the Plex and the Switch, Sharp 15 Bit 2 and Sharp 48
+  Bit 2 from the Denon, Sony 20 Bit from the Blu-ray and Microsoft 30 Bit from the Xbox, none of them played from a
+  definition of ours before (8.1 played Sony 12 Bit). The last attempt held 38 of 38, judged afresh from the pulses by
+  the forward set's own documents, every verdict the one the monitor wrote. No code was heard that no expectation names;
+  in the last Off, after the Xbox's power off, nine short frames came that the monitor marked unreadable and neither the
+  set nor 8.6's set names, what made them not recorded. The Xbox's toggle bit is not checked: test 1 sends no Xbox code
+  twice in a row.
+* **The two attempts started again**: the first heard the first two codes of Watch TV's start while it still stood at
+  its Off step, the rest of the start and an Off following in the log after it stopped; the second stopped after step 4.
+  No cause is claimed.
+* **The look, reported at the bench and held by no file but the two photographs**: a green band at the foot of every
+  screen, photographed on the activity list, which is our background's yellow band seen under the screens' dark footer,
+  consistent with the picture's design and compared with nothing else; the "Powering off" screen's help text runs past
+  the right edge, "Point the remote at your devices while th...", photographed on Listen to Music, and after the put
+  back, on Logitech's documents, the person saw the same, so it is the firmware's layout and not a difference of the
+  set. The entry icons, the favourites page and the background picker were not reported.
+* **Against 9.1's four predictions**: our background shown, held by the band; no icon on any entry, not checked; the
+  seven field Context accepted, held, every run committed and the remote acted on the set; the person's background out
+  of the picker, not checked.
+
+So a configuration built by this project from nothing, every device record, every definition, Settings, Context and the
+background ours, was stored and committed by the remote and played every device's codes as the set states them; the put
+back restored the set before. The remote holds `9.1-nothing-back`, which is `8.6-setup-back`. What this does not cover:
+the nine other 7.1 tests on this set, the Xbox's toggle bit, the entry icons and the picker, and every code of each
+family beyond those test 1 sends. The runs are held by `packages/bench/test/touch94-runs.test.ts`. 9.4 is done, and with
+it `todo-touch.md`.
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been

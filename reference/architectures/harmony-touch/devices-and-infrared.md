@@ -12,7 +12,9 @@ handed a Touch: seven infrared devices using five code families[^t-touch-devices
 device, composed by this project with a definition of its own, was added to those documents, delivered and heard,
 [a device of ours](#a-device-of-ours)[^t-touch-device-of-ours]; and all seven were composed again under ids of
 ours from their catalogue records and run inside their activities, [the catalogue's and the
-person's](#the-catalogues-and-the-persons)[^t-touch-setup-of-ours]. **What
+person's](#the-catalogues-and-the-persons)[^t-touch-setup-of-ours]; and all seven were written again by this project
+from their catalogue entries, every definition from its own table, and heard inside their activities, [built from
+nothing](#built-from-nothing)[^t-touch-from-nothing]. **What
 is read in the firmware was read in the decompiled engine**, the remote's own program; the test anchors the
 parts it can name in the compiled files and lists the rest as read only. Nothing here is checked on another
 build or another model.
@@ -240,8 +242,9 @@ another device's or sit inside one, and an activity id already an activity's or 
 What the screens drew for that device is [the model's display](../../remotes/harmony-touch/display.md#what-the-screen-shows).
 *Corrected:* this said a device of ours used inside an activity, with power or input states of its own, was not
 checked<!--superseded-->; devices under ids of ours with the catalogue's power, input and channel features ran inside
-activities, [below](#the-catalogues-and-the-persons)[^t-touch-setup-of-ours]. A definition of ours inside an activity is
-not checked[^unchecked].
+activities, [below](#the-catalogues-and-the-persons)[^t-touch-setup-of-ours]. It then said a definition of ours inside
+an activity was not checked<!--superseded-->, until definitions of ours for five families were heard inside every
+activity of a set, [built from nothing](#built-from-nothing)[^t-touch-from-nothing].
 
 ## The catalogue's and the person's
 
@@ -264,6 +267,29 @@ the pair by the device's id and reads the key and the address from the device, s
 tuning device and the favourites are still found[^t-touch-setup-firmware]. Measured: with the pair carried on a TV
 under an id of ours, the five favourite channels were each tuned as before, 15 of 15 codes[^t-touch-setup-of-ours]. A pair that does not match the remote's
 favourites documents is not checked[^unchecked].
+
+## Built from nothing
+
+**A set whose every device record and every definition was written by a program, with no Logitech document as
+input, is stored and sends every device's codes as it states them.** The seven devices of the documents above were
+written again from a setup file and Logitech's catalogue: each device record from its catalogue entry, every
+definition from the program's own [table of code families](../../infrared/families.md), five definitions in all,
+under protocol ids of ours, with the same devices, maps and activities as the whole setup above. Delivered with the
+other four documents in a sync, it was committed, and a test that starts every activity from off and ends it heard
+every one of its 38 expected codes at a receiver, each pause in its band, judged by rendering every code from the
+set's own definitions: Toshiba 32 Bit from four devices, Sharp 15 Bit 2 and Sharp 48 Bit 2 from the receiver's power
+and input codes, Sony 20 Bit and Microsoft 30 Bit; no other code was heard during the test[^t-touch-from-nothing].
+With the Toshiba 32 Bit definition's header pulse made half as long again, the same pulses fit 15 of the 38, so the
+judging rests on the definitions[^t-touch-from-nothing]. Before that, one definition written by a program had been
+played, the Sony 12 bit definition [above](#a-device-of-ours)[^t-touch-device-of-ours].
+
+**What these definitions leave out against Logitech's for the same families**, field by field, and why each changes
+nothing the engine does, is held by the comparison that built them[^t-touch-nothing-compared]. The one that could show
+on a unit is the Microsoft 30 Bit toggle bit, which Logitech's definition states and ours does not, so by the
+comparison's reading every press of a key sends the code as first stated[^t-touch-nothing-compared]; a second press of
+the same key in a row was not sent in the test, and whether a console tells two presses from a hold without it is not
+checked[^unchecked]. The other codes of each family, beyond the ones that
+test sends, are the comparison's reading of the definitions and were not heard[^unchecked].
 
 ## What a writer must carry
 
@@ -314,10 +340,11 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 * Whether a device's repeat count and its family's ever differ for a device a Touch is given, which decides
   whether a Touch and a compiled configuration send such a code a different number of times[^unchecked].
 * What a nonzero control port does on a Touch with no hub[^unchecked].
-* A definition of ours inside an activity, and a definition of ours of a shape no Logitech definition the remote
-  holds has[^unchecked]. *Corrected:* this listed a device of ours inside an activity and a device of ours with
-  features<!--superseded-->, which [the catalogue's and the person's](#the-catalogues-and-the-persons) ran under ids of
-  ours[^t-touch-setup-of-ours].
+* A definition of ours of a shape no Logitech definition the remote holds has[^unchecked]. *Corrected:* this listed a
+  device of ours inside an activity and a device of ours with features<!--superseded-->, which [the catalogue's and the
+  person's](#the-catalogues-and-the-persons) ran under ids of ours[^t-touch-setup-of-ours], and then a definition of ours
+  inside an activity<!--superseded-->, which [built from nothing](#built-from-nothing) ran for five
+  families[^t-touch-from-nothing].
 * Any other firmware build, and the other remotes of the generation[^unchecked].
 
 [^t-touch-devices]: Measured on a unit. [The test](../../../packages/usb/test/touch-devices.test.ts)
@@ -329,6 +356,8 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch82-runs.test.ts)
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch86-runs.test.ts)
 [^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-setup-set.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch94-runs.test.ts)
+[^t-touch-nothing-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch-nothing-set.test.ts)
 [^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/touch-setup.test.ts)
 [^s92]: Measured in configurations. [Section 92](../../../docs/findings.md#s92)
 [^s348]: Measured in configurations. [Section 348](../../../docs/findings.md#s348)
