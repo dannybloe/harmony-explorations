@@ -3,8 +3,9 @@
  * would refuse or ignore in them. `todo-touch.md` 3.3. And a model of what its engine sends for a press, read
  * from those documents, `engine.ts`, here since `todo.md` 7.3.1.
  *
- * Exported from the codec's barrel as one namespace, `harmonyTouch`, because "touch" already names the
- * Harmony One's family throughout this codec, `families/one/`, and the two must not meet by name.
+ * Exported from the codec's barrel as one namespace, `harmonyTouch`, which kept it apart from the Harmony One's
+ * family while that family's folder was called `touch`, until plan 013 step 7.3.2 renamed it `families/one/`. And
+ * the Touch as a document family, `family.ts`, plan 013 decision 1, which the registry chooses by model.
  */
 export * from './documents.ts';
 export * from './read.ts';
@@ -21,3 +22,4 @@ export * from './fromnothing.ts';
 export * from './empty.ts';
 export * from './engine.ts';
 export * from './packet.ts';
+export * from './family.ts';

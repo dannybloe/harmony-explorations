@@ -14,7 +14,7 @@ import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../src/families/four-slot/ch
 const SETUPS = new URL('../../corpus/setups/', import.meta.url);
 const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(new URL(file, SETUPS), 'utf8'));
 
-test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the One family\'s, and the Harmony 300\'s, 350\'s and Touch\'s, which no recipe target serves yet',
+test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the One family\'s, and the Harmony 300\'s, 350\'s and Touch\'s, which no recipe target serves, the Touch\'s being a document family\'s',
   () => {
   const files = readdirSync(SETUPS).filter((one) => one.endsWith('.json')).sort();
   assert.deepEqual(files, ['h300-test.json', 'h350-test.json', 'h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json', 'touch-full.json', 'touch-test.json']);
@@ -33,9 +33,11 @@ test('every setup file reads as a recipe: the three for the Harmony 650, skin 72
     }
     // The Harmony Touch's two: `touch-full.json`, todo-touch 2.2.1, put on its record by `build-setup.ts`, and
     // `touch-test.json`, todo-touch 9.1, built into the six documents by `touch-nothing-set.ts`. No recipe target
-    // serves them, since a Touch takes documents rather than a container; refused at skin 99.
+    // serves them, since a Touch takes documents rather than a container. Refused at skin 99 as no model's until plan
+    // 013, when the registry came to choose the Touch's document family by its name and skin; refused now because that
+    // family builds from its own setup file.
     if (file.startsWith('touch-')) {
-      assert.throws(() => recipeTarget(recipe), /no model has skin 99/);
+      assert.throws(() => recipeTarget(recipe), /the Harmony Touch is given documents, which its family builds from its own setup file/);
       continue;
     }
     const target = recipeTarget(recipe);

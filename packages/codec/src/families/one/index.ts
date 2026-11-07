@@ -21,6 +21,7 @@ import { withOneActivityDeviceList } from './devicelists.ts';
 import { oneMenuMarkerWriter } from './menus.ts';
 
 export const ONE: Family<OneChoices> = {
+  kind: 'compiled',
   name: 'the Harmony One',
   traits: { screenItemsBeep: true },
   choices: ONE_CHOICES,

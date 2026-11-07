@@ -32,6 +32,23 @@ the Harmony 650's alone in a shared file when the Harmony One turned out to bind
 were caught by the person reading along, not by the code. So the trigger is the **act** of writing build
 code, whatever the task was.
 
+## Two kinds of family, chosen by model
+
+**Plan 013 decisions 1 and 2.** A *compiled* family builds the one container a remote is written with, the
+`Family` interface in `families/family.ts`, `kind: 'compiled'`: the Harmony One's, the 600, 650 and 700's, the
+300 and 350's and the 880 and 885's. A *document* family builds the documents a remote assembles its
+configuration from, the `DocumentFamily` interface in `families/document.ts`, `kind: 'document'`: the Harmony
+Touch's, `harmony-touch/family.ts`. The two interfaces name nothing of each other's; what both share sits below
+them, the setup, the infrared definitions, the catalogue and the archive. A new remote that is given documents
+gets a `DocumentFamily`, never a `Family` of members that refuse.
+
+**The registry chooses by model**, `familyOfModel` in `families/registry.ts`: a model by Logitech's name and its
+skin, looked up in the model table or, for a model the table holds no record of, `MODELS_OUTSIDE_THE_TABLE`
+beside it, answered with a family of either kind or refused with the model named. `recipeTarget` asks it. **The
+container route stays**, `familyOf(c)` by the architecture a container states, and answers with a compiled family
+alone, since a container is compiled for one architecture. Never choose by architecture number where a model is
+in hand: the Harmony Touch's firmware reports 17, which it shares with the hubs.
+
 ## Before writing, answer four questions
 
 1. **Is this a fact about one family, or about all of them?** A measurement on the Harmony One is a
@@ -52,7 +69,11 @@ code, whatever the task was.
    since reading is not building.
 4. **Is the other family's half stated?** A trait or interface member is filled in for every family. Where
    the other family's answer is not measured, it refuses with a message that says so, rather than
-   borrowing the measured family's answer.
+   borrowing the measured family's answer. **The registry holds this for a configuration no family serves**,
+   plan 013 decision 2: `traitsOf`, `sendsOf`, `activityStartOf` and `choicesOf` refuse it through
+   `NoFamilyError`, naming its architecture and model, where until then they gave it the Harmony One's shapes.
+   A reader that has to read such a configuration asks `familyOf(c)`, which still answers undefined, and reads
+   on its own terms; it never asks the four.
 
 ## Checks before committing
 
@@ -117,6 +138,8 @@ and fails when a module joins the list or a count on it rises. The list is the d
 | a device's send lists that are the plain pair with an on list of one call and one wait, measured alike on the Harmony One and the Harmony 880 and 885, and the longest wait each allows | the pair in `shared/sendpair.ts`, `pairDeviceSends`, which both families' `sends.ts` call with their own longest wait; the 880 and 885's own rails, 64 state bytes and the toggle bit groups 8 and up share, stay in `families/side-keys/sends.ts`, `todo-compile-885.md` 2.1 |
 | how a composed device's power step is spelled where a family's compiles differ: the Harmony 880 and 885 open its record, the long press version included, with the device's delay between devices and send it at 1, where the Harmony 650 and 700 send the press bare at the inter key delay | `SendShape.powerStep`, the side keys family's `sideKeysPowerStep` in `families/side-keys/sends.ts`, which `composeDeviceFor` asks before building the records; absent keeps the default, `todo-compile-885.md` 2.2 and 2.3 |
 | a remote whose device modes and device list are one page grammar, labels beside eight side keys with a separator each, the Harmony 880 and 885 | the family's `families/side-keys/pages.ts`, read off the configuration's own pages and built from their pictures and fonts; appending a page to a mode, its list, its pool copy and its record, is shared, `appendModePage` in `shared/modes.ts`, which the four slot menu composer uses too, `todo-compile-885.md` 2.1 |
+| a remote given documents rather than a compiled file, the Harmony Touch: building them from a setup, the empty set, a device, an activity, a removal, favourites, settings, reading and checking | a `DocumentFamily`, `kind: 'document'`, assembled from the remote's own folder, `HARMONY_TOUCH_FAMILY` in `harmony-touch/family.ts`, and chosen by model in the registry; never a `Family` whose members refuse, plan 013 decision 1 |
+| a configuration of a remote no family serves, the Harmony 525's or the 890's, handed to a shared composer | refused by the registry's four questions, `NoFamilyError`, naming its architecture and model; never the Harmony One's shapes, which `PLAIN_TRAITS` and the One family's sends and start gave it until plan 013 decision 2 |
 
 Add a row when a new kind of difference lands.
 

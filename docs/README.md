@@ -257,13 +257,21 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 every remote's configuration is built from (devices, activities,
                                 infrared, power, spelling text, menus), src/families/<name>/
                                 what differs per kind of remote (four-slot: the Harmony 600, 650
-                                and 700; touch: the Harmony One; no-screen: the Harmony 300 and
-                                350, a device, its favourite channels and the one activity),
-                                and src/families/registry.ts is
-                                the one place that chooses a family. A shared module asks its
-                                family's traits rather than testing an architecture and reaches
-                                a family only through the registry, no family imports another,
-                                and compose.ts is the entry that re-exports both. Every choice
+                                and 700; one: the Harmony One; no-screen: the Harmony 300 and
+                                350, a device, its favourite channels and the one activity;
+                                side-keys: the Harmony 880 and 885), and src/families/registry.ts
+                                is the one place that chooses a family. Plan 013 gives a family
+                                one of two kinds: compiled, src/families/family.ts, which builds
+                                a container, and document, src/families/document.ts, which builds
+                                the documents a Harmony Touch is given, src/harmony-touch/family.ts.
+                                The registry chooses by model, familyOfModel, or by the
+                                architecture a container states, familyOf, and a configuration
+                                no family serves is refused by the four questions a shared
+                                composer asks rather than given the Harmony One's shapes. A
+                                shared module asks its family's traits rather than testing an
+                                architecture and reaches a family only through the registry,
+                                no family imports another, and compose.ts is the entry that
+                                re-exports both. Every choice
                                 of ours a family makes, with its default, is in that family's
                                 choices.ts, and src/recipe/ reads the recipe a build starts from,
                                 docs/recipe.md. Our letters are drawn from the typeface in fonts/

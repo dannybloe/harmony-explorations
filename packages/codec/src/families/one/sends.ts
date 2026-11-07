@@ -7,8 +7,8 @@
  *
  * **The pair is every architecture's send but the Harmony 600, 650 and 700's**, which put the delay step in
  * front of it, section 287: no command opens with that step on the Harmony One, the 525 or the arch 8
- * configuration, `compose.test.ts`. So it is also the send a configuration no family serves gets, `sendsOf` in
- * the registry, as it did before plan 007. **The wait at the end of the on list is the Harmony One's**, section
+ * configuration, `compose.test.ts`. It was also the send a configuration no family serves got, `sendsOf` in the
+ * registry, from before plan 007 until plan 013 decision 2, which refuses such a configuration. **The wait at the end of the on list is the Harmony One's**, section
  * 393, and the Harmony 880 and 885's too, so the device half is shared since `todo-compile-885.md` 2.1,
  * `shared/sendpair.ts`; this said it was the Harmony One's alone until the 885's compiles were read for it.
  *

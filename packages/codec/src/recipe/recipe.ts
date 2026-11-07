@@ -19,10 +19,14 @@
  * named the way the catalogue names them and the choices ones the family makes is for the steps that use
  * them, which already refuse each.
  */
-import { MODELS_BY_SKIN, type Model } from '@harmony/usb/models';
+import type { Model } from '@harmony/usb/models';
 import { ACTIVITY_ROLE_NAMES, type ActivityRoleName } from '../activityroles.ts';
 import type { Family } from '../families/family.ts';
-import { familyOfArchitecture } from '../families/registry.ts';
+import { chooseByModel, NoFamilyError, type ModelChoice } from '../families/registry.ts';
+
+// Logitech's name for a model record, which the registry holds since it chooses by model, plan 013; exported here as
+// it was, for the callers that took it from the recipe.
+export { modelName } from '../families/registry.ts';
 
 /** A recipe that cannot be read, or names a model nothing here can build for. */
 export class RecipeError extends Error {}
@@ -117,36 +121,27 @@ export interface RecipeTarget {
   readonly family: Family;
 }
 
-/** Logitech's name for a model record: "Harmony 650" for the record called "650". */
-export function modelName(model: Model): string {
-  return `Harmony ${model.name}`;
-}
-
 /**
- * The model a recipe names, by its skin where given and by its name otherwise, with the family that builds
- * for it. Refused where the table has no such model, where a name and a skin disagree, where a name is two
- * skins' and none is given, and where no family serves the model's architecture.
+ * The model a recipe names, its skin and its definition, and the family that builds for it, chosen by the registry,
+ * `chooseByModel`, plan 013: by its skin where given and by its name otherwise. Refused, as a `RecipeError` with the
+ * registry's message, where the table has no such model, where a name and a skin disagree, where a name is two skins'
+ * and none is given, and where no family serves the model's architecture; and refused where the model's family is a
+ * document family, the Harmony Touch's, which builds from its own setup file, `HARMONY_TOUCH_FAMILY.readSetup`, rather
+ * than from a recipe target.
  */
 export function recipeTarget(recipe: Recipe): RecipeTarget {
-  const { name, skin } = recipe.model;
-  const named = Object.entries(MODELS_BY_SKIN).filter(([, model]) => modelName(model) === name);
-  let chosen: [number, Model];
-  if (skin !== undefined) {
-    const model = MODELS_BY_SKIN[skin];
-    if (model === undefined) throw new RecipeError(`no model has skin ${skin}`);
-    if (modelName(model) !== name) throw new RecipeError(`skin ${skin} is the ${modelName(model)}, not the ${name}`);
-    chosen = [skin, model];
-  } else {
-    if (named.length === 0) throw new RecipeError(`no model is called ${name}`);
-    if (named.length > 1) {
-      throw new RecipeError(`${name} is skins ${named.map(([one]) => one).join(' and ')}: name the skin`);
-    }
-    const [only] = named as [[string, Model]];
-    chosen = [Number(only[0]), only[1]];
+  let choice: ModelChoice;
+  try {
+    choice = chooseByModel(recipe.model);
+  } catch (error) {
+    if (error instanceof NoFamilyError) throw new RecipeError(error.message);
+    throw error;
   }
-  const family = familyOfArchitecture(chosen[1].architecture);
-  if (family === undefined) throw new RecipeError(`nothing here builds a configuration for the ${name}`);
-  return { skin: chosen[0], model: chosen[1], family };
+  const { family, model, skin } = choice;
+  if (family.kind === 'document' || model === undefined) {
+    throw new RecipeError(`the ${recipe.model.name} is given documents, which its family builds from its own setup file and not from a recipe target`);
+  }
+  return { skin, model, family };
 }
 
 // ---------------------------------------------------------------------------------------------------

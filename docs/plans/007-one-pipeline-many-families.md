@@ -3,6 +3,9 @@
 **Status: open.** Written 12 October 2026 for `todo-compile-650.md` 10.7.1. Items 10.7.2 to 10.7.4 and
 11.1.1 carry it out; 10.7 is ticked with steps 1 to 3 done, and step 4 is 11.1.1's.
 
+Plan 013 extends it, decisions 1 and 2: two kinds of family, compiled and document, chosen by model in the
+registry, and a configuration no family serves refused rather than given the Harmony One's shapes.
+
 ## What it is for
 
 The code that builds a configuration is a deliverable: FreeHarmony will run it, first for the Harmony

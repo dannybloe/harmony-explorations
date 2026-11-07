@@ -61,6 +61,7 @@ const refuses = (why: string) => (): never => {
 };
 
 export const NO_SCREEN_FAMILY: Family = {
+  kind: 'compiled',
   name: NAME,
   traits: refusing<FamilyTraits>(`${NO_SCREEN}, so a screen item has no traits`),
   // No choice of ours is made for this family yet: a device's power on delay is the catalogue's, as Logitech's

@@ -430,8 +430,9 @@ export interface ComposeScreenOptions {
  *
  * **The marker it returns is built**, section 329: `menuMarkerOf`'s variable with
  * `ACTIVITY_MENU_MARKER_VALUE`, checked against every row of both kinds, rather than the last
- * instruction of the last row this walk met. A configuration no family serves is read by its rows,
- * `activityMenuByRows`, and gets no marker.
+ * instruction of the last row this walk met. A configuration no family serves is refused, since reading its
+ * rows asks the registry how its family shapes a row, `traitsOf`, plan 013 decision 2; until then it was read with
+ * the Harmony One's row shape and got no marker.
  */
 export function activityMenus(c: Container): { menu: number | undefined; marker: Instruction | undefined } {
   const family = familyOf(c);

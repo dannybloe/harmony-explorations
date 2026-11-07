@@ -194,8 +194,8 @@ export interface ComposedActivity {
  * *menu row*, which is the screen half's job. This function produces the one thing a row points at.
  *
  * `family` is the configuration's, `familyOf`, asked for its activity keys and the wiring an activity
- * changes; the start's shape is passed apart, `activityStartOf`, since a configuration no family serves
- * still has one.
+ * changes; the start's shape is passed apart, `activityStartOf`, which refuses a configuration no family
+ * serves, plan 013 decision 2, so `composeActivity` never passes `family` undefined.
  */
 export function composeActivityFor(
   c: Container, activity: ComposeActivity, start: ActivityStart, family: Family | undefined,

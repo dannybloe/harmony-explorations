@@ -29,6 +29,7 @@ import { checkWiring } from './wiring.ts';
 // nothing on any more: it is the object the registry hands out.
 
 export const FOUR_SLOT: Family<FourSlotChoices> = {
+  kind: 'compiled',
   name: 'the Harmony 600, 650 and 700',
   traits: { screenItemsBeep: false },
   choices: FOUR_SLOT_CHOICES,

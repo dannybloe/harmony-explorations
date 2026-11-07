@@ -11,9 +11,8 @@
  * ends with a further call into that branch, which ours leaves out. So the composed activity skips the Remote
  * Assistant's question.
  *
- * It is also the start a configuration no family serves gets, `activityStartOf` in the registry, as it did
- * before plan 007; no such configuration takes a screen, since the screen composers refuse it, so only the
- * enter list's writes are ever built there.
+ * It was also the start a configuration no family serves got, `activityStartOf` in the registry, from before
+ * plan 007 until plan 013 decision 2, which refuses such a configuration.
  */
 import { DEFERRED } from '../../actions.ts';
 import type { ActivityStart, ListBody } from '../family.ts';

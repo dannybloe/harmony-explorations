@@ -7,6 +7,12 @@
  * own compiler and whose held block is the ditto. The check is the one phase 6 demands: one more
  * device, the commands decode back to the exact numbers the catalogue states, the byte accounting
  * is still complete with no overlaps, and the whole file round trips through the emitter.
+ *
+ * **Since plan 013 decision 2 a configuration no family serves is refused by the composers**, through the registry,
+ * `NoFamilyError`. Until then the Harmony 525's configurations here were composed with the Harmony One's sends and
+ * start, which no family states for them; the five tests that composed on one, a device on `h525_config` twice and on
+ * `h525_config_2` once, an activity on `h525_config` twice, now assert that refusal for it, each where it composed,
+ * and keep reading the 525's configuration where they read it before composing.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -122,6 +128,7 @@ import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
 import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
 import { namedHitPages } from '../src/families/one/hitpages.ts';
+import { familyOf, NoFamilyError } from '../src/families/registry.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
@@ -136,8 +143,21 @@ const TELEVISION = [
   { stated: 'G:Toshiba 32 Bit:(0x20DF807F)(Repeat)():3', held: true },
 ] as const;
 
-/** One config per architecture, so the insertion is exercised against all four table layouts. */
+/**
+ * One config per architecture, so the insertion is exercised against all four table layouts. The Harmony 525's,
+ * `h525_config`, is refused since plan 013, no family serving it, so its layout is no longer exercised here.
+ */
 const HOSTS = ['one_config', 'h600_config', 'h525_config', 'arch8_config_a'] as const;
+
+/**
+ * A composer on a configuration no family serves refuses it, plan 013 decision 2, naming its architecture: the
+ * Harmony 525's here, where until then it composed with the Harmony One's shapes. True when it was refused.
+ */
+function refusedWithoutAFamily(c: ReturnType<typeof parse>, compose: () => unknown): boolean {
+  if (familyOf(c) !== undefined) return false;
+  assert.throws(compose, (error: unknown) => error instanceof NoFamilyError && error.message.startsWith(`no family serves arch ${c.architecture}, `));
+  return true;
+}
 
 for (const host of HOSTS) {
   test(`${host} takes the television and every reader agrees it is there`, skipUnless(host), () => {
@@ -146,6 +166,7 @@ for (const host of HOSTS) {
     const wasInventory = inventory(before);
     const wasTable = stateTable(before);
     assert.ok(wasTable !== undefined, `${host} carries a state table`);
+    if (refusedWithoutAFamily(before, () => composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 }))) return;
     const composed = composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 });
     const after = parse(composed.bytes);
 
@@ -2148,7 +2169,8 @@ test('a device list page binds exactly its hit page room, and only the last page
  *
  * A per architecture list rather than the whole corpus, because what is being checked is that the
  * five insertions land in a container of each shape: base slot 9 is at a different raw slot on each,
- * and arch 12 is the one with the extra section that shifts every index above 18.
+ * and arch 12 is the one with the extra section that shifts every index above 18. The Harmony 525's, `h525_config`,
+ * is refused since plan 013, no family serving it, so three of the four are composed on.
  */
 const ACTIVITY_HOSTS = ['one_config_unprogrammed', 'h600_config', 'h525_config', 'arch8_config_b'];
 
@@ -2172,6 +2194,8 @@ test('composing an activity adds one to the counter and one entry to the key map
     const before = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
     const sets = handlerSets(c);
     assert.ok(before?.record !== undefined && sets !== undefined, name);
+    const activity = { label: 'Test', targets: [{ variable: aDeviceVariable(c), value: 1 }], keys: [{ scan: 20, list: 0 }] };
+    if (refusedWithoutAFamily(c, () => composeActivity(c, activity))) continue;
 
     const out = composeActivity(c, {
       label: 'Test',
@@ -2221,11 +2245,11 @@ test('composing an activity adds one to the counter and one entry to the key map
     assert.equal(activityWriterCount(after), (activityWriterCount(c) as number) + 1);
     assert.equal(activityCount(after), (activityCount(c) as number) + 1);
   }
-  assert.equal(hosts, 4, 'one container per architecture');
-  // **37 bytes on all four**, and the same number on each is the point rather than the number: the
+  assert.equal(hosts, 3, 'one container per architecture a family serves');
+  // **37 bytes on all three**, and the same number on each is the point rather than the number: the
   // insertions are the enter list, the select list, their two pointers, the tagged list and its
   // pointer, none of which depends on the architecture. A container whose name count crossed a
-  // power of ten would be 38, which none of these four is.
+  // power of ten would be 38, which none of these three is.
   assert.deepEqual([...growth], [37]);
 });
 
@@ -2237,6 +2261,7 @@ test('a composed activity is entered by running its select list, and nothing els
   // change that quietly bound a key here would fail this test rather than pass the one above.
   for (const name of ACTIVITY_HOSTS) {
     const c = parse(require_(name));
+    if (refusedWithoutAFamily(c, () => composeActivity(c, { label: 'Test', targets: [{ variable: aDeviceVariable(c), value: 1 }] }))) continue;
     const out = composeActivity(c, {
       label: 'Test', targets: [{ variable: aDeviceVariable(c), value: 1 }],
     });
@@ -4590,6 +4615,7 @@ test('the configurations our test account had compiled follow the rule three cal
 for (const host of HOSTS) {
   test(`${host}: a composed device joins the all off list and every activity switches it off`, skipUnless(host), () => {
     const before = parse(require_(host));
+    if (refusedWithoutAFamily(before, () => composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 }))) return;
     const composed = composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 });
     const withDevice = parse(composed.bytes);
     // Before joining, the new device is exactly what section 280 found on the remote: in no list.
@@ -4643,6 +4669,7 @@ for (const host of ONE_DEVICE) {
     const power = deviceVariables(before).filter((one) => one.property === 'Power').map((one) => one.index);
     assert.equal(power.length, 1);
     assert.equal(allOffList(before), undefined);
+    if (refusedWithoutAFamily(before, () => composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 }))) return;
     const composed = composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 });
     const joined = joinPowerOff(parse(composed.bytes), composed.variable);
     const after = parse(joined.bytes);

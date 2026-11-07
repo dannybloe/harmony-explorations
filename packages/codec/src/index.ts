@@ -135,6 +135,12 @@ export * from './assemble.ts';
 export * from './shared/setup.ts';
 // The recipe a configuration of ours is built from, todo-compile-650 10.7.4, `docs/recipe.md`.
 export * from './recipe/recipe.ts';
+// The family that builds for a model, of either kind, or the refusal naming it, plan 013 decisions 1 and 2. The
+// families themselves stay behind the registry; what a caller choosing by model needs is the answer and its kind.
+export {
+  chooseByModel, familyKind, familyOfModel, NoFamilyError, type AnyFamily, type ModelChoice, type ModelNamed,
+} from './families/registry.ts';
+export type { DocumentFamily, DocumentTypes } from './families/document.ts';
 export * from './icons.ts';
 // The Harmony 300 and 350's family, plan 007, its device composer, todo-compile-350.md 4.1 and 4.4, its
 // favourite channels, 4.3, its activity, 4.2, and a whole setup, 4.5.
