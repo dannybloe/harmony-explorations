@@ -18,7 +18,7 @@
  * 5. `touch-sync.ts --set 8.3-favourites-back --commit`, the two pieces as the remote held them before, and
  *    `getconfighash`;
  * 6. one `touch-sync.ts --unchanged --commit`;
- * 7. the 7.1 favourites test, `irtests/touch-7-1-3-favourites.json`, unchanged. Two shorter runs of it just before
+ * 7. the 7.1 favourites test, `irtests/done/touch-7-1-3-favourites.json`, unchanged. Two shorter runs of it just before
  *    stopped early, 3 and 2 of its 15 expectations held; nothing records why, so they are abandoned starts and no
  *    cause is claimed.
  *
@@ -460,7 +460,7 @@ test('the monitor log holds the run\'s 24 presses, then Listen to Music and Off,
 test('after the put back the 7.1 favourites test, unchanged, held 15 of 15, and the two shorter runs just before it stopped early at 3 and 2',
   lab.skipUnless(BACK, FULL, RERUN, ...STARTS), () => {
     const definition = touch71Tests(configuration(BACK)).find((d) => d.id === 'touch-7-1-3-favourites')!.definition;
-    const onDisk = testDefinitions(fileURLToPath(new URL('../irtests/', import.meta.url))).find((one) => one.id === 'touch-7-1-3-favourites')!.definition;
+    const onDisk = testDefinitions(fileURLToPath(new URL('../irtests/', import.meta.url))).concat(testDefinitions(fileURLToPath(new URL('../irtests/done/', import.meta.url)))).find((one) => one.id === 'touch-7-1-3-favourites')!.definition;
     assert.deepEqual(onDisk, JSON.parse(JSON.stringify(definition)) as TestDefinition);
     const runs = [...STARTS, RERUN].map(runOf);
     for (const r of runs) assert.deepEqual(r.steps.map((s) => s.expect ?? []), definition.steps.map((s) => JSON.parse(JSON.stringify(s.expect ?? [])) as Expectation[]));

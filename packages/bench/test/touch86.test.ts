@@ -68,7 +68,7 @@ test('the 8.6 run is the ten 7.1 test files as they stand: the setup composed fr
   lab.needing(lab.skipUnless(SOURCE, FULL)), () => {
     const ours = derive(composedAnswers(description()));
     const theirs = derive(sourceSet().answers);
-    const onDisk = testDefinitions(IRTESTS).filter((one) => one.id.startsWith('touch-7-1-'));
+    const onDisk = testDefinitions(IRTESTS).concat(testDefinitions(`${IRTESTS}done/`)).filter((one) => one.id.startsWith('touch-7-1-'));
     assert.deepEqual(ours.map((t) => t.id), [...TOUCH_8_6_TESTS]);
     assert.deepEqual(onDisk.map((t) => t.id), [...TOUCH_8_6_TESTS]);
     for (const [i, t] of ours.entries()) {
@@ -92,7 +92,7 @@ test('the control: Watch TV\'s first key sending another command derives a diffe
     const other = buttons.find((b) => 'command' in b.press && 'command' in buttons[0]!.press && b.press.command !== buttons[0]!.press.command)!;
     buttons[0] = { ...buttons[0]!, press: other.press };
     const changed = derive(composedAnswers({ ...setup, activities: [{ ...first!, buttons }, ...rest] }));
-    const onDisk = testDefinitions(IRTESTS).filter((one) => one.id.startsWith('touch-7-1-'));
+    const onDisk = testDefinitions(IRTESTS).concat(testDefinitions(`${IRTESTS}done/`)).filter((one) => one.id.startsWith('touch-7-1-'));
     const differing = changed.filter((t, i) => JSON.stringify(plain(t.definition)) !== JSON.stringify(onDisk[i]!.definition)).map((t) => t.id);
     assert.deepEqual(differing, ['touch-7-1-4-watch-tv-keys']);
   });

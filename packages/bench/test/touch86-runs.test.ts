@@ -381,7 +381,7 @@ test('the ten last attempts carried the 7.1 tests as they stand, which the setup
     const definitions = definitionsOf(setup());
     assert.deepEqual(definitions.map((d) => d.id), [...TOUCH_8_6_TESTS]);
     assert.deepEqual(RUNS.map(([, id]) => id), [...TOUCH_8_6_TESTS]);
-    const onDisk = testDefinitions(IRTESTS).filter((one) => one.id.startsWith('touch-7-1-'));
+    const onDisk = testDefinitions(IRTESTS).concat(testDefinitions(`${IRTESTS}done/`)).filter((one) => one.id.startsWith('touch-7-1-'));
     const scores: [number, number][] = [];
     for (const [fixture, id] of RUNS) {
       const definition = definitions.find((d) => d.id === id)!.definition;

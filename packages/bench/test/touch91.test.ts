@@ -48,7 +48,7 @@ const favourites = (): Record<string, unknown> =>
   harmonyTouch.documentsOfAnswers(answersWritten(sessions(commands(records(FULL))).filter((s) => s.path === '/sys/hlapi')));
 const derive = (answers: harmonyTouch.SyncAnswer[]) => touch71Tests(touch71Configuration({ answers }, favourites()));
 const plain = (d: TestDefinition): TestDefinition => JSON.parse(JSON.stringify(d)) as TestDefinition;
-const onDisk = () => testDefinitions(IRTESTS).filter((one) => one.id.startsWith('touch-7-1-'));
+const onDisk = () => testDefinitions(IRTESTS).concat(testDefinitions(`${IRTESTS}done/`)).filter((one) => one.id.startsWith('touch-7-1-'));
 
 test('the 9.1 run is the ten 7.1 test files as they stand: the set from nothing derives them file for file, as 8.6\'s set does, 418 expectations',
   lab.needing(lab.skipUnless(BUILT, SETUP, FULL)), () => {
