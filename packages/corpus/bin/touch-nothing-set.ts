@@ -7,6 +7,7 @@
  *   node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --setup <setup file> --account <lab file> [--archive <checkout>]
  *   node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --back <set folder> --from <9.1 set folder>
  *   node packages/corpus/bin/touch-nothing-set.ts --check <set folder> --against <set folder> [--held <set folder>] [--archive <checkout>]
+ *       [--attribute --setup <setup file> --account <lab file>] [--hash <answer>] [--list <request list>]... [--written <write>]...
  *
  * **`--describe-account`** writes the account's values out of a set the remote holds into a new lab file,
  * `describeTouchAccount` in `src/touchnothingset.ts`: Context's seven fields a Touch reads, the tuning device's
@@ -28,6 +29,16 @@
  * `--held`, what the answerer writes for a remote that committed that set, and the size of the write; and the pictures
  * the set holds answered to a remote that holds none of them, and the size of that write alone.
  *
+ * **`--attribute`**, `todo-touch.md` 9.3: every field of the set credited to the generator that wrote it, found by
+ * running each step of the build again by itself, `attributeNothingSet` in `src/touchattribution.ts`, with the setup file
+ * and the account file it was built from; NOT OK on a field no generator reproduces, which is named carried when
+ * `--against`'s set, Logitech's documents, holds the same value in the same field.
+ *
+ * **A run's kept files**, `todo-touch.md` 9.4: `--hash`, a `getconfighash` answer, equal or not to the four tags the set
+ * states; `--list`, a request list, each of the six and each picture the set holds asked with the set's tag, another, none
+ * or not at all; `--written`, a kept write of answers, each of the set's answers it carries 200 with the set's content and
+ * tag or 304, and a write answering none of the set's passed over by name.
+ *
  * **What it prints**: counts, document names, field paths, the devices' names and `equal` or `not equal`; never a tag,
  * an address or any value out of a document.
  */
@@ -37,10 +48,13 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 import { harmonyTouch } from '@harmony/codec';
 import { IR_ARCHIVE, LAB } from '@harmony/lab';
 
+import { attributeNothingSet, attributionLines } from '../src/touchattribution.ts';
 import { answersWhenHolding, writeOfAnswersSize } from '../src/touchchangedset.ts';
+import { compareContentRequests, contentKind, isContent } from '../src/touchfavouritesset.ts';
+import { compareConfigHash, compareRequestList } from '../src/touchownset.ts';
 import { comparisonLines } from '../src/touchsetupset.ts';
 import { compareNothing, describeTouchAccount, putBackNothing, waveformClosure, withNothing, type TouchAccountFile } from '../src/touchnothingset.ts';
-import { keyOf, prepareSet, type TouchSet } from '../src/touchsync.ts';
+import { WRITE_ANSWERS, keyOf, prepareSet, resultOf, type RemoteRequest, type TouchSet } from '../src/touchsync.ts';
 
 function fail(message: string): never {
   process.stderr.write(`${message}\n`);
@@ -50,6 +64,11 @@ function fail(message: string): never {
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
   return at < 0 ? undefined : process.argv[at + 1];
+}
+
+/** Every value a repeatable option is given. */
+function arguments_(name: string): string[] {
+  return process.argv.flatMap((a, i) => (a === `--${name}` && process.argv[i + 1] !== undefined ? [process.argv[i + 1]!] : []));
 }
 
 /** A path inside the lab, resolved through its links, or a refusal; the same rule as `touch-device-set.ts`. */
@@ -163,6 +182,51 @@ function check(folder: string): void {
       const p = writeOfAnswersSize(answered);
       console.log(`write of those answers alone: ${p.length} characters, ${p.chunks} ${p.chunks === 1 ? 'chunk' : 'chunks'}, the last ${p.last}`);
     }
+  }
+  if (process.argv.includes('--attribute')) {
+    if (againstFolder === undefined) fail('--attribute needs --against <set folder>, the Logitech documents a field no generator reproduces is looked up in');
+    const setupFile = resolve(argument('setup') ?? fail('--attribute needs --setup <setup file> and --account <lab file>'));
+    const accountFile = insideTheLab(argument('account') ?? fail('--attribute needs --account <lab file>'), 'the account file');
+    const account = (JSON.parse(readFileSync(accountFile, 'utf8')) as { account: TouchAccountFile }).account;
+    const fields = attributeNothingSet(set, { file: JSON.parse(readFileSync(setupFile, 'utf8')), archive: archive(), account },
+      readSet(insideTheLab(againstFolder, 'the set compared with')));
+    for (const l of attributionLines(fields)) console.log(l);
+    const off = fields.filter((f) => f.by === 'carried from a Logitech document' || f.by === 'unattributed');
+    for (const f of off) console.log(`  ${f.by}: ${f.document} ${f.field}`);
+    say(off.length === 0, `attribution: ${fields.length} fields, ${off.filter((f) => f.by === 'unattributed').length} unattributed, ${off.filter((f) => f.by !== 'unattributed').length} carried from a Logitech document`);
+  }
+
+  // A run's kept files, against the set.
+  for (const file of arguments_('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
+  for (const file of arguments_('list')) {
+    const text = readFileSync(insideTheLab(file, 'the request list'), 'utf8');
+    const requests = (resultOf(text)?.['requests'] ?? []) as RemoteRequest[];
+    console.log(`request list ${basename(file)} against the set's tags:`);
+    if (requests.some((r) => typeof r?.uri === 'string' && r.uri.startsWith('harmony://'))) for (const l of compareRequestList(text, set)) console.log(`  ${l}`);
+    for (const l of compareContentRequests(requests, set).filter((x) => !x.endsWith('not asked for'))) console.log(`  ${l}`);
+    const others = requests.filter((r) => typeof r?.uri === 'string' && !r.uri.startsWith('harmony://') && !set.answers.some((a) => a.uri === r.uri));
+    if (others.length > 0) console.log(`  and ${others.length} the set does not hold: ${[...new Set(others.map((r) => (r.uri.startsWith('proxy://') ? 'the finish' : contentKind(r.uri))))].join(', ')}`);
+  }
+  for (const file of arguments_('written')) {
+    const line = readFileSync(insideTheLab(file, 'the kept write of answers'), 'utf8');
+    if (!line.startsWith(`${WRITE_ANSWERS}&`)) fail(`${file} is not a kept write of answers`);
+    const responses = (JSON.parse(decodeURIComponent(line.split('&responses=')[1] ?? '')) as { responses: { statusCode?: string; uri?: string; etag?: string; resource?: unknown }[] }).responses
+      .filter((r) => typeof r.uri === 'string');
+    const ofSet = (uri: string) => set.answers.find((a) => (uri.startsWith('harmony://') ? keyOf(a.uri) === keyOf(uri) : a.uri === uri));
+    const mine = responses.filter((r) => ofSet(r.uri!) !== undefined);
+    if (mine.length === 0) {
+      console.log(`passed over: ${basename(file)} answers none of the set's answers`);
+      continue;
+    }
+    for (const r of mine) {
+      const ours = ofSet(r.uri!)!;
+      const what = r.uri!.startsWith('harmony://') ? keyOf(r.uri!) : contentKind(r.uri!);
+      const delivered = r.statusCode === '200';
+      const right = delivered ? r.etag === ours.etag && JSON.stringify(r.resource) === JSON.stringify(ours.resource) : r.statusCode === '304';
+      say(right, `${basename(file)} answered ${what} ${r.statusCode ?? 'none'}${delivered ? (right ? ', with this set\'s content and tag' : ', NOT with this set\'s content and tag') : ''}`);
+    }
+    const rest = responses.length - mine.length;
+    if (rest > 0) console.log(`  and ${rest} answers the set does not hold, ${responses.filter((r) => ofSet(r.uri!) === undefined).map((r) => `${r.uri!.startsWith('proxy://') ? 'the finish' : isContent({ uri: r.uri! }) ? contentKind(r.uri!) : 'another'} ${r.statusCode ?? 'none'}`).join(', ')}`);
   }
   if (!ok) process.exit(1);
 }
