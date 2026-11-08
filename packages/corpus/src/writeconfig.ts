@@ -168,13 +168,37 @@ export const CONFIG_WRITE_MODELS = {
 
 export type ConfigWriteModelName = keyof typeof CONFIG_WRITE_MODELS;
 
-/** One unit a caller may write, as the caller records it. */
+/**
+ * **The units that may be written, and no others**, `CLAUDE.md` "Never write to a remote": each by the label of
+ * its record, with what the account calls it and its model. The script's table of targets was this list until
+ * `todo.md` 7.3.10 made the write a function, and an independent review of that step found the list had become
+ * a caller's parameter: any label with any model and a record of the caller's choosing would have been written.
+ * So the list and the pairing of a label with its model are the library's, and `writeConfiguration` refuses any
+ * other label before it opens anything. A caller still supplies a unit's region reads and its record's text,
+ * which are its bookkeeping; the unit on the cable must still match that record by its own identity block.
+ *
+ * **A new unit is a line here**, beside the decision that permits it, in the same commit, as a new architecture
+ * is a line in `rails.ts`. The order is the script's old table's, which a refusal lists units in.
+ */
+export const CONFIG_WRITE_UNITS = {
+  // The two bench Harmony 885s, decision 30, `todo-compile-885.md` 1.4.
+  h885_a: { name: 'the Harmony 885 unit A', model: 'Harmony 885' },
+  h885_b: { name: 'the Harmony 885 unit B', model: 'Harmony 885' },
+  // The spare Harmony One, the first write target, section 222. Never the everyday One, which has no label here.
+  one_spare: { name: 'the spare Harmony One', model: 'Harmony One' },
+  // The second hand Harmony 650, section 281; the Harmony 600 and 700, permitted 29 September 2026.
+  h650: { name: 'the Harmony 650', model: 'Harmony 650' },
+  h600: { name: 'the Harmony 600', model: 'Harmony 600' },
+  h700: { name: 'the Harmony 700', model: 'Harmony 700' },
+} as const satisfies Readonly<Record<string, { readonly name: string; readonly model: ConfigWriteModelName }>>;
+
+/** A label of `CONFIG_WRITE_UNITS`, which a caller's table can be typed by so that the compiler holds it to the list. */
+export type ConfigWriteUnitLabel = keyof typeof CONFIG_WRITE_UNITS;
+
+/** One unit a caller may write, as the caller records it: a label of `CONFIG_WRITE_UNITS` and its region reads. */
 export interface ConfigWriteUnit {
-  /** What the account calls it, `the spare Harmony One`. */
-  readonly name: string;
-  /** The name of its record, which `UnitRecords` is asked for. */
+  /** The name of its record, which `UnitRecords` is asked for; refused unless it is a key of `CONFIG_WRITE_UNITS`. */
   readonly label: string;
-  readonly model: ConfigWriteModelName;
   /**
    * The names of the region reads that are this unit's own content, each read whole blocks from the
    * configuration's base. The region read handed in has to be one of them, so that one unit is never compared
@@ -226,10 +250,17 @@ export interface ConfigWrite {
   readonly only?: 'drop' | 'restart';
   /** Open the one remote to write, after every check that needs no remote has passed. */
   open(): Promise<{ readonly remote: HarmonyRemote; readonly productId: number }>;
-  /** The stamped bytes, to keep before the first command that changes the remote, so a rerun finds them. */
+  /**
+   * The stamped bytes, to keep before the first command that changes the remote, so a rerun finds them and
+   * writes them unchanged, `stoppedAfterErase`. Required for the journal's reason.
+   */
   saveStamped(bytes: Uint8Array): void;
-  /** Each line of the account, without its newline, as it happens. */
-  readonly say?: (line: string) => void;
+  /**
+   * Each line of the account, without its newline, as it happens. **Required**, the journal of section 243: a
+   * killed run's account of itself is the only record of what reached the flash, so a write that keeps none is
+   * not one this offers. The script appends every line to the file beside the configuration.
+   */
+  readonly say: (line: string) => void;
   /** True the instant before the first erase goes out, false once its block is verified, as `writeBlock` sets it. */
   readonly onPastTheErase?: (value: boolean) => void;
   /** A line that is not part of the account: a close that failed before any restart was sent. */
@@ -240,7 +271,7 @@ export interface ConfigWriteResult {
   /** How the run ended: nothing differed, a dry run, one of the two controls, or a written configuration. */
   readonly outcome: 'nothing to write' | 'dry run' | 'dropped' | 'restarted' | 'written';
   readonly architecture: number;
-  /** The unit it ran against, by `ConfigWriteUnit.name`. */
+  /** The unit it ran against, by its name in `CONFIG_WRITE_UNITS`. */
   readonly unit: string;
   readonly firmware: string;
   /** The stamp written, when this run stamped. */
@@ -252,13 +283,19 @@ export interface ConfigWriteResult {
   readonly restarted: boolean;
 }
 
+/** A caller's unit with what the library knows of it. */
+interface Target extends ConfigWriteUnit {
+  readonly name: string;
+  readonly model: ConfigWriteModelName;
+}
+
 /**
  * Write `request.config` to the unit on the cable, as the header lists. Resolves with what was done; throws a
  * `ConfigWriteRefusal` for every refusal, and lets a fault of the remote or of a rail through as it is.
  */
 export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWriteResult> {
-  const say = request.say ?? ((): void => undefined);
-  const { config, region, units } = request;
+  const say = request.say;
+  const { config, region } = request;
   const configPath = config.name;
   const dumpName = region.name;
   const dump = region.bytes;
@@ -273,10 +310,22 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
   // units per architecture, and the 600 and the 650 enumerate identically, so the region read names which
   // unit is expected and the identity block read off the remote is what refuses any other. Integer keys
   // iterate in ascending order, which is the order a refusal lists them in.
-  const targets: Record<number, ConfigWriteUnit[]> = {};
-  for (const unit of units) {
-    const { architecture } = CONFIG_WRITE_MODELS[unit.model];
-    (targets[architecture] ??= []).push(unit);
+  //
+  // **Every label is checked against the library's list first, before anything else is done**, the review's
+  // point: the list of writable units is `CONFIG_WRITE_UNITS`, and a caller's unit takes its name and its model
+  // from there and nothing from the caller but its region reads.
+  const permitted: Readonly<Record<string, { readonly name: string; readonly model: ConfigWriteModelName }>> =
+    CONFIG_WRITE_UNITS;
+  const targets: Record<number, Target[]> = {};
+  for (const unit of request.units) {
+    const known = Object.hasOwn(permitted, unit.label) ? permitted[unit.label] : undefined;
+    if (known === undefined) {
+      throw new ConfigWriteRefusal(`${unit.label} is not a unit this may write: the units are the library's, `
+        + `${Object.keys(permitted).join(', ')}, CLAUDE.md "Never write to a remote". `
+        + 'Refusing before anything is opened.');
+    }
+    const { architecture } = CONFIG_WRITE_MODELS[known.model];
+    (targets[architecture] ??= []).push({ ...known, label: unit.label, regions: unit.regions });
   }
 
   let wanted: Uint8Array = config.bytes;

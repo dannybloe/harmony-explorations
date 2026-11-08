@@ -24,7 +24,6 @@ import { NOMINAL_FLASH_SIZE } from '@harmony/usb/write';
 import { stampForWrite } from '../src/stamp.ts';
 import {
   writeConfiguration,
-  type ConfigWriteModelName,
   type ConfigWriteResult,
   type ConfigWriteStamp,
 } from '../src/write.ts';
@@ -37,7 +36,7 @@ export const WHEN = new Date(2026, 9, 7, 9, 30, 15);
 export interface WriteScenario {
   /** The lab name of the configuration to write. */
   readonly sample: string;
-  readonly architecture: 8 | 12;
+  readonly architecture: 8 | 12 | 14;
   /** The firmware build the remote reports, as two nibbles; the model's own when absent. */
   readonly firmware?: number;
   /** Which unit is on the cable, by seed; 1, the recorded one, when absent. */
@@ -62,8 +61,8 @@ export interface WriteScenario {
   readonly configFlip?: number;
   /** The name the region read goes by; `r`, the unit's own, when absent. */
   readonly regionName?: string;
-  /** The model the caller records its unit as; the remote's own when absent. */
-  readonly unitModel?: ConfigWriteModelName;
+  /** The label the caller names its one unit by; a bench unit of the remote's own model when absent. */
+  readonly label?: string;
   /** Cut the region read to half the configuration. */
   readonly regionShort?: boolean;
   /** Data memory before the first erase and after it, by address, for the 885's install status. */
@@ -88,9 +87,10 @@ export interface WriteRun {
   readonly unchanged: boolean;
 }
 
-const PRODUCT: Record<number, number> = { 8: 0xc110, 12: 0xc121 };
-const FIRMWARE: Record<number, number> = { 8: 0x44, 12: 0x34 };
-const MODEL: Record<number, ConfigWriteModelName> = { 8: 'Harmony 885', 12: 'Harmony One' };
+const PRODUCT: Record<number, number> = { 8: 0xc110, 12: 0xc121, 14: 0xc122 };
+const FIRMWARE: Record<number, number> = { 8: 0x44, 12: 0x34, 14: 0x02 };
+/** A unit of `CONFIG_WRITE_UNITS` per architecture, the one a scenario writes unless it names another. */
+const LABEL: Record<number, string> = { 8: 'h885_a', 12: 'one_spare', 14: 'h650' };
 
 /**
  * The bytes the write will put on the remote: stamped at `WHEN`, or the file as it is. A file the stamp refuses
@@ -159,7 +159,7 @@ export async function runWrite(scenario: WriteScenario): Promise<WriteRun> {
     outcome = await writeConfiguration({
       config: { name: 'x.bin', bytes: config },
       region: { name: scenario.regionName ?? 'r', bytes: region },
-      units: [{ name: 'the test unit', label: 'test', model: scenario.unitModel ?? MODEL[architecture] as ConfigWriteModelName, regions: new Set(['r']) }],
+      units: [{ label: scenario.label ?? LABEL[architecture] as string, regions: new Set(['r']) }],
       records: {
         text: () => (scenario.recorded === false ? undefined : unitIdentityText(identityFor(1))),
         where: (label) => `units/${label}.txt`,

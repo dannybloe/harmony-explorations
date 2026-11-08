@@ -13,9 +13,11 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { TOUCH_SYNC_UNITS } from '../src/write.ts';
 import { runAnswer, type AnswerRun, type AnswerScenario } from './touch-answer-run.ts';
 
 const NEEDS = '--commit needs HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1';
@@ -58,6 +60,23 @@ describe('answering a sync as a library function', () => {
     assert.ok(run.log.includes('the unit matches its record'), 'the session checked the unit');
     assert.equal(run.reports.at(-1), 'sync: finished');
     assert.ok(run.written.length > 0, 'the control for the refusals: this run did write into /sys/hlapi');
+  });
+
+  it('refuses a label outside the library\'s list with both flags set, before the Touch is opened', () => {
+    for (const label of ['other', 'constructor']) {
+      const run = withFlags(BOTH, { label });
+      assert.equal(run.error?.name, 'RailError');
+      assert.match(run.error?.message ?? '', new RegExp(`^${label} is not a Harmony Touch this may sync: the units are the library's, touch,`));
+      assert.equal(run.opened, false, `${label} opened the Touch`);
+      assert.deepEqual(run.written, []);
+    }
+  });
+
+  it('holds one Touch, and the script names it from the library rather than a copy of its own', () => {
+    assert.deepEqual([...TOUCH_SYNC_UNITS], ['touch']);
+    const script = readFileSync(new URL('../bin/touch-sync.ts', import.meta.url), 'utf8');
+    assert.match(script, /^const UNIT = TOUCH_SYNC_UNITS\[0\];$/m);
+    assert.match(script, /^ {4}label: UNIT,$/m);
   });
 
   it('refuses another Touch at the session, before any request is written, and still closes it', () => {

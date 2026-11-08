@@ -93,7 +93,7 @@ import { openFileBasedRemote, unitIdentityFromText } from '@harmony/usb';
 import { TOUCH_PRODUCT_ID, TOUCH_RECOVERY_DOOR, TOUCH_REQUEST_DOOR, WRITES_ENABLED } from '@harmony/usb/rails';
 
 import { RECOVERY, SYNC_LINES, prepareSet, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
-import { answerTouchSync, assertTouchSyncAllowed } from '../src/write.ts';
+import { TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed } from '../src/write.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -106,8 +106,8 @@ const cli = commandLine({
   flags: ['unchanged', 'commit'],
 });
 
-/** The lab record the request channel compares against. */
-const UNIT = 'touch';
+/** The lab record the request channel compares against: the library's one Touch, `TOUCH_SYNC_UNITS`. */
+const UNIT = TOUCH_SYNC_UNITS[0];
 
 /** Why `folder` is not a set this script reads, or the set: a folder inside the lab holding `set.json`. */
 function readSet(folder: string): TouchSet {
@@ -193,6 +193,7 @@ async function main(): Promise<void> {
   const outcome = await answerTouchSync({
     mode,
     folder,
+    label: UNIT,
     permittedUnit: unitIdentityFromText(record),
     open: () => openFileBasedRemote({ productId: TOUCH_PRODUCT_ID }),
     log: (text) => console.log(text),

@@ -40,6 +40,7 @@ export type { WritePermission } from './rails.ts';
 // first, behind its own rail, `assertFileWriteAllowed`. `writeFileFamilyConfiguration` is the whole run an
 // application calls, `todo.md` 7.3.10: the container, the open, the judgement and `writeFileConfig`.
 export {
+  FILE_FAMILY_UNITS,
   FileWriteError,
   chunksFor,
   judgeCurrentContent,

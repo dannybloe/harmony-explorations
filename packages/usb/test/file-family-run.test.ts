@@ -18,6 +18,9 @@ import { execFileSync } from 'node:child_process';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { readFileSync } from 'node:fs';
+
+import { FILE_FAMILY_UNITS } from '../src/filewrite.ts';
 import { exportedNames } from './entries.ts';
 import { runFileFamily, type FileFamilyRun, type FileFamilyScenario } from './file-family-run.ts';
 
@@ -59,8 +62,9 @@ describe('the file write as a library function, in the shipped state', () => {
   });
 
   it('refuses a remote stating another skin, another unit, and a configuration the caller holds no copy of, on the reads alone', async () => {
-    const skin = await runFileFamily({ skin: 0x4f });
-    assert.equal(skin.error?.message, 'the remote states skin 0x68, and a Harmony 350 states 0x4f: this is not the unit h350 names');
+    // The record names the Harmony 300, whose skin the library holds, and the remote states a Harmony 350's.
+    const skin = await runFileFamily({ label: 'h300' });
+    assert.equal(skin.error?.message, 'the remote states skin 0x68, and a Harmony 300 states 0x4f: this is not the unit h300 names');
     const unit = await runFileFamily({ onCable: 2 });
     assert.match(unit.error!.message, /^refused: the remote on the cable is not the unit/);
     const unknown = await runFileFamily({ remoteHolds: 'unknown' });
@@ -70,6 +74,23 @@ describe('the file write as a library function, in the shipped state', () => {
       assert.equal(run.error?.name, 'RailError');
       assert.ok(run.opened && onlyReads(run.sent) && !run.erased);
     }
+  });
+
+  it('refuses a label outside the library\'s list before the container is judged or anything is opened', async () => {
+    for (const label of ['h515', 'constructor']) {
+      const run = await runFileFamily({ label, commit: true });
+      assert.equal(run.error?.name, 'RailError');
+      assert.match(run.error!.message, new RegExp(`^${label} is not a unit of this family this may write: the units are the library's, h350, h300`));
+      assert.equal(run.opened, false);
+      assert.deepEqual(run.lines, []);
+    }
+  });
+
+  it('holds the units the script\'s table held, and the script\'s table is the library\'s', async () => {
+    assert.deepEqual(FILE_FAMILY_UNITS, { h350: { model: 'Harmony 350', skin: 0x68 }, h300: { model: 'Harmony 300', skin: 0x4f } });
+    // The script names the library's table rather than keeping a copy; it is not importable, since it runs.
+    const script = readFileSync(new URL('../bin/write-file-config.ts', import.meta.url), 'utf8');
+    assert.match(script, /^const UNITS = FILE_FAMILY_UNITS;$/m);
   });
 
   it('a commit in the shipped state meets the rail inside the write, after the interrupt is armed and before any erase', async () => {

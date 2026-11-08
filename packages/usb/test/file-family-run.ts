@@ -49,8 +49,8 @@ export interface FileFamilyScenario {
   readonly asRead?: boolean;
   /** Hand in bytes that are no container at all. */
   readonly notAContainer?: boolean;
-  /** The skin the caller records its unit's model as; a Harmony 350's, `0x68`, when absent. */
-  readonly skin?: number;
+  /** The label the caller names its unit by; `h350`, whose skin the fake states, when absent. */
+  readonly label?: string;
   /** Which unit is on the cable, by seed; 1, the recorded one, when absent. */
   readonly onCable?: number;
   /** What the remote holds: the backup (absent), or a configuration the caller holds no copy of. */
@@ -88,7 +88,7 @@ export async function runFileFamily(scenario: FileFamilyScenario): Promise<FileF
   let error: FileFamilyRun['error'];
   try {
     const { container: written, ...rest } = await writeFileFamilyConfiguration({
-      unit: { label: 'h350', model: 'Harmony 350', skin: scenario.skin ?? 0x68, record: 'units/h350.txt' },
+      unit: { label: scenario.label ?? 'h350', record: `units/${scenario.label ?? 'h350'}.txt` },
       permittedUnit: guidFor(1),
       container: { name: 'x.bin', bytes: handedIn },
       backup,

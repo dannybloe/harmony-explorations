@@ -41,7 +41,7 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import { unitIdentity, unitIdentityPath } from '@harmony/lab';
 
 import { openFileBasedRemote } from '../src/filepipe.ts';
-import { writeFileFamilyConfiguration } from '../src/filewrite.ts';
+import { FILE_FAMILY_UNITS, writeFileFamilyConfiguration } from '../src/filewrite.ts';
 import { unitIdentityFromText } from '../src/identity.ts';
 import { commandLine } from '@harmony/lab/cli';
 
@@ -55,11 +55,11 @@ const cli = commandLine({
   flags: ['commit', 'no-reboot'],
 });
 
-/** The units decision 26 permits, and the skin each one's identity file states. */
-const UNITS: Readonly<Record<string, { readonly model: string; readonly skin: number }>> = {
-  h350: { model: 'Harmony 350', skin: 0x68 },
-  h300: { model: 'Harmony 300', skin: 0x4f },
-};
+/**
+ * The units decision 26 permits, and the skin each one's identity file states: the library's own list since
+ * `todo.md` 7.3.10's review, so this script and an application cannot hold two that differ.
+ */
+const UNITS = FILE_FAMILY_UNITS;
 
 /** The family's one product id, which both models report. */
 const FILE_FAMILY_PRODUCT = 0xc124;
@@ -108,7 +108,7 @@ async function main(): Promise<void> {
   const select: { productId: number; path?: string } = { productId: FILE_FAMILY_PRODUCT };
   if (devicePath !== undefined) select.path = devicePath;
   await writeFileFamilyConfiguration({
-    unit: { label: unitLabel, model: unit.model, skin: unit.skin, record: unitIdentityPath(unitLabel) },
+    unit: { label: unitLabel, record: unitIdentityPath(unitLabel) },
     permittedUnit,
     container: { name: configPath, bytes: container },
     backup,

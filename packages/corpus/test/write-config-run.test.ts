@@ -26,10 +26,12 @@ import { fileURLToPath } from 'node:url';
 import { skipUnless } from '@harmony/lab';
 
 import { stoppedAfterErase } from '../src/stamp.ts';
+import { CONFIG_WRITE_MODELS, CONFIG_WRITE_UNITS } from '../src/write.ts';
 import { runWrite, type WriteRun, type WriteScenario } from './write-config-run.ts';
 
 const ONE = 'one_spare_20260830';
 const H885 = 'h885_a_config';
+const H650 = 'h650_panasonic_config';
 
 /** The fake's calls that change a remote, which a run in the shipped state must never reach. */
 const CHANGES = /^(eraseFlash|writeFlash|invalidateCachedRegions|resetDevice|saveStamped)/;
@@ -47,12 +49,56 @@ function withFlags(scenario: WriteScenario): WriteRun {
   return JSON.parse(out) as WriteRun;
 }
 
+describe('the units and models are the library\'s, and hold what the script\'s table held', () => {
+  it('holds every unit with the name and the model `write-config.ts`\'s table gave it at 24590a98, and no other', () => {
+    // Copied by hand from `TARGETS` in `packages/corpus/bin/write-config.ts` as it stood at 24590a98, the commit
+    // before 7.3.10, so a change to the list is a change to this test and is visible in its diff.
+    assert.deepEqual(CONFIG_WRITE_UNITS, {
+      h885_a: { name: 'the Harmony 885 unit A', model: 'Harmony 885' },
+      h885_b: { name: 'the Harmony 885 unit B', model: 'Harmony 885' },
+      one_spare: { name: 'the spare Harmony One', model: 'Harmony One' },
+      h650: { name: 'the Harmony 650', model: 'Harmony 650' },
+      h600: { name: 'the Harmony 600', model: 'Harmony 600' },
+      h700: { name: 'the Harmony 700', model: 'Harmony 700' },
+    });
+  });
+
+  it('holds each model\'s architecture, builds, required drop and install status address as that table did', () => {
+    const drop = 'on the Harmony 885 the cache drop moves every lookup to the built in '
+      + 'configuration until the restart, and the firmware runs from the same flash part, so without it the '
+      + 'remote can read a block between its erase and its write';
+    assert.deepEqual(CONFIG_WRITE_MODELS, {
+      'Harmony 885': { architecture: 8, sequenceReadOn: ['4.4'], dropRequired: drop, installStatusAt: 0x100 },
+      'Harmony One': { architecture: 12, sequenceReadOn: ['3.4'] },
+      'Harmony 650': { architecture: 14, sequenceReadOn: ['0.2'] },
+      'Harmony 600': { architecture: 14, sequenceReadOn: ['0.2'] },
+      'Harmony 700': { architecture: 14, sequenceReadOn: ['2.8'] },
+    });
+  });
+
+  it('refuses a label outside the list before it stamps, checks or opens anything', skipUnless(ONE), async () => {
+    const run = await runWrite({ sample: ONE, architecture: 12, label: 'everyday_one' });
+    assert.equal(run.error?.name, 'ConfigWriteRefusal');
+    assert.match(run.error!.message, /^everyday_one is not a unit this may write: the units are the library's, h885_a, h885_b, one_spare, h650, h600, h700/);
+    assert.equal(run.opened, false);
+    assert.deepEqual(run.lines, []);
+    // The control: a label on the list with the same everything opens the remote.
+    assert.equal((await runWrite({ sample: ONE, architecture: 12, label: 'one_spare' })).opened, true);
+  });
+
+  it('refuses a label that names an inherited property rather than a unit', skipUnless(ONE), async () => {
+    const run = await runWrite({ sample: ONE, architecture: 12, label: 'constructor' });
+    assert.match(run.error?.message ?? '', /^constructor is not a unit this may write/);
+    assert.equal(run.opened, false);
+  });
+});
+
 describe('the shipped state, the flags unset', () => {
   it('a dry run reads the unit and every block it would change, and sends nothing that changes the remote', skipUnless(ONE), async () => {
     const run = await runWrite({ sample: ONE, architecture: 12 });
     assert.equal(run.error, undefined, run.error?.message);
     assert.equal(run.outcome?.outcome, 'dry run');
-    assert.equal(run.outcome?.unit, 'the test unit');
+    assert.equal(run.outcome?.unit, 'the spare Harmony One');
     assert.equal(run.outcome?.firmware, '3.4');
     assert.ok((run.outcome?.blocks.length ?? 0) > 0, 'the stamp changes at least one block');
     assert.deepEqual(changes(run), []);
@@ -88,10 +134,10 @@ describe('the shipped state, the flags unset', () => {
   });
 
   it('chooses the unit by what the remote reports, and refuses before the identity is read when none fits', skipUnless(ONE), async () => {
-    const arch = await runWrite({ sample: ONE, architecture: 12, unitModel: 'Harmony 650' });
-    assert.equal(arch.error?.message, 'architecture 12 has no unit this may write to (14: the test unit)');
+    const arch = await runWrite({ sample: ONE, architecture: 12, label: 'h650' });
+    assert.equal(arch.error?.message, 'architecture 12 has no unit this may write to (14: the Harmony 650)');
     const region = await runWrite({ sample: ONE, architecture: 12, regionName: 'someone-else' });
-    assert.match(region.error!.message, /^someone-else is not one of the region reads of an architecture 12 unit \(the test unit: r\)/);
+    assert.match(region.error!.message, /^someone-else is not one of the region reads of an architecture 12 unit \(the spare Harmony One: r\)/);
     for (const run of [arch, region]) {
       assert.deepEqual(run.calls, ['drainLeftovers', 'getVersion', 'close'], 'the version and nothing after it');
     }
@@ -99,9 +145,9 @@ describe('the shipped state, the flags unset', () => {
 
   it('refuses a commit on a build whose drop and restart nobody read, and a unit with no record, before reading its identity', skipUnless(ONE), async () => {
     const build = await runWrite({ sample: ONE, architecture: 12, firmware: 0x33, commit: true });
-    assert.match(build.error!.message, /^the test unit reports firmware 3\.3, and the cache drop and the restart this sends have been read in build 3\.4 only/);
+    assert.match(build.error!.message, /^the spare Harmony One reports firmware 3\.3, and the cache drop and the restart this sends have been read in build 3\.4 only/);
     const record = await runWrite({ sample: ONE, architecture: 12, recorded: false });
-    assert.match(record.error!.message, /^the lab has no recorded identity for test, .* Write it to units\/test\.txt$/);
+    assert.match(record.error!.message, /^the lab has no recorded identity for one_spare, .* Write it to units\/one_spare\.txt$/);
     for (const run of [build, record]) assert.ok(!run.calls.includes('readUnitIdentity'));
     // The control: the same build without a commit is a dry run, since only a commit sends the two commands.
     assert.equal((await runWrite({ sample: ONE, architecture: 12, firmware: 0x33 })).outcome?.outcome, 'dry run');
@@ -129,7 +175,7 @@ describe('the shipped state, the flags unset', () => {
 
   it('on a Harmony 885 refuses the write without the drop before the identity is read', skipUnless(H885), async () => {
     const run = await runWrite({ sample: H885, architecture: 8, invalidate: false });
-    assert.match(run.error!.message, /^--no-invalidate is refused for the test unit: on the Harmony 885 the cache drop/);
+    assert.match(run.error!.message, /^--no-invalidate is refused for the Harmony 885 unit A: on the Harmony 885 the cache drop/);
     assert.deepEqual(run.calls, ['drainLeftovers', 'getVersion', 'close']);
   });
 
@@ -198,6 +244,25 @@ describe('the writes, each in a process with the two flags set and the fake as t
       assert.deepEqual(changes(run), [only === 'drop' ? 'invalidateCachedRegions' : 'resetDevice']);
       assert.ok(run.unchanged);
     }
+  });
+
+  it('a Harmony 650: the arch 14 drop, each block written and read back, the restart, and no install status read', skipUnless(H650), () => {
+    const run = withFlags({ sample: H650, architecture: 14, commit: true });
+    assert.equal(run.error, undefined, run.error?.message);
+    assert.equal(run.outcome?.outcome, 'written');
+    assert.equal(run.outcome?.unit, 'the Harmony 650');
+    assert.equal(run.outcome?.firmware, '0.2');
+    assert.ok(run.holdsTheConfig);
+    assert.ok(run.lines.some((l) => l.startsWith('arch 14: the first erase is ')), 'the arch 14 account of the drop');
+    const order = run.calls.filter((c) => CHANGES.test(c)).map((c) => c.split(' ')[0]);
+    const erases = order.filter((c) => c === 'eraseFlash').length;
+    assert.equal(erases, run.outcome?.blocks.length);
+    assert.deepEqual(order, [
+      'saveStamped', 'invalidateCachedRegions',
+      ...Array.from({ length: erases }, () => ['eraseFlash', 'writeFlash']).flat(),
+      'resetDevice',
+    ]);
+    assert.ok(!run.calls.some((c) => c.startsWith('readRam')), 'the install status is the 885\'s alone');
   });
 
   it('a Harmony 885: the status read before the first erase and before the restart, the drop and the restart its own', skipUnless(H885), () => {

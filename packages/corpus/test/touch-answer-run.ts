@@ -6,7 +6,7 @@
  * touches a device**: the only transport the run is ever handed is `FakeTouchRemote` behind the guard
  * `openFileBasedRemote` returns, through the scenario's `open`, answering a sync that hands nothing up and asks
  * for nothing. What `syncTouch` does with a request list is `touch-sync.test.ts`'s; this holds the run around
- * it: the flags before anything is opened, the session's unit check, and the transport closed.
+ * it: the flags and the label before anything is opened, the session's unit check, and the transport closed.
  *
  * Not a test file itself, so the runner does not pick it up.
  */
@@ -25,6 +25,8 @@ import { SERIAL, sysinfoText } from './touch-sync-run.ts';
 export interface AnswerScenario {
   /** The serial the caller's record was made from; the fake's own when absent. */
   readonly recordSerial?: string;
+  /** The label the caller names; `touch`, the library's one Touch, when absent. */
+  readonly label?: string;
 }
 
 export interface AnswerRun {
@@ -67,6 +69,7 @@ export async function runAnswer(scenario: AnswerScenario): Promise<AnswerRun> {
     outcome = await answerTouchSync({
       mode: { kind: 'unchanged' },
       folder,
+      label: scenario.label ?? 'touch',
       permittedUnit: unitIdentityFromSerial(scenario.recordSerial ?? SERIAL),
       open: async () => {
         opened = true;

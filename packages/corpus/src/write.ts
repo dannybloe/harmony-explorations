@@ -19,7 +19,7 @@
  */
 
 // Writing a configuration to a remote of the compiled families: the Harmony One, 600, 650, 700 and 885.
-export { CONFIG_WRITE_MODELS, ConfigWriteRefusal, writeConfiguration } from './writeconfig.ts';
+export { CONFIG_WRITE_MODELS, CONFIG_WRITE_UNITS, ConfigWriteRefusal, writeConfiguration } from './writeconfig.ts';
 export type {
   ConfigWrite,
   ConfigWriteModel,
@@ -27,9 +27,12 @@ export type {
   ConfigWriteResult,
   ConfigWriteStamp,
   ConfigWriteUnit,
+  ConfigWriteUnitLabel,
   UnitRecords,
 } from './writeconfig.ts';
 
 // Answering a Harmony Touch's sync: the whole run, the flags it checks first, and what a caller hands it.
-export { RECOVERY, SYNC_LINES, answerTouchSync, assertTouchSyncAllowed, prepareSet } from './touchsync.ts';
+export {
+  RECOVERY, SYNC_LINES, TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed, prepareSet,
+} from './touchsync.ts';
 export type { SetAnswer, TouchSet, TouchSyncMode, TouchSyncOutcome, TouchSyncRun } from './touchsync.ts';

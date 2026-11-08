@@ -601,18 +601,23 @@ export async function writeFileConfig(
 // The whole run, from the container to the closed transport, `todo.md` 7.3.10
 // ---------------------------------------------------------------------------------------------------
 
+/**
+ * **The units of this family that may be written, and no others**, decision 26: each by the label of its record,
+ * with its model and the skin its identity file states, `0x68` for a Harmony 350 and `0x4f` for a Harmony 300, a
+ * second reading that costs nothing beside `/sys/guid`, which is the only thing on the cable that tells two units
+ * apart, since both models enumerate as `0xC124`. This was `write-file-config.ts`'s table until `todo.md` 7.3.10,
+ * and an independent review of that step found it had become a caller's parameter; so it is the library's, the
+ * script's table is this one, and `writeFileFamilyConfiguration` refuses any other label before it opens anything.
+ */
+export const FILE_FAMILY_UNITS: Readonly<Record<string, { readonly model: string; readonly skin: number }>> = {
+  h350: { model: 'Harmony 350', skin: 0x68 },
+  h300: { model: 'Harmony 300', skin: 0x4f },
+};
+
 /** The unit a file write is meant for, as the caller records it. */
 export interface FileFamilyUnit {
-  /** The name of its record, `h350` or `h300` in the lab, decision 26. */
+  /** The name of its record; refused unless it is a key of `FILE_FAMILY_UNITS`, which gives its model and skin. */
   readonly label: string;
-  /** `Harmony 350` or `Harmony 300`. */
-  readonly model: string;
-  /**
-   * The skin the model's identity file states, `0x68` for a Harmony 350 and `0x4f` for a Harmony 300: a second
-   * reading that costs nothing beside `/sys/guid`, which is the only thing on the cable that tells two units
-   * apart, since both models enumerate as `0xC124`.
-   */
-  readonly skin: number;
   /** Where the record is kept, for the account's line that the unit matched it. */
   readonly record: string;
 }
@@ -635,8 +640,12 @@ export interface FileFamilyWrite {
   readonly reboot: boolean;
   /** Open the remote, `openFileBasedRemote` for the script; called once the container has passed. */
   open(): Promise<Transport>;
-  /** Each line of the account, without its newline, as it happens, so a caller can journal it first. */
-  readonly say?: (line: string) => void;
+  /**
+   * Each line of the account, without its newline, as it happens, so a caller can journal it first. **Required**:
+   * the open for writing erases the configuration before it answers, so a killed run's account of itself is the
+   * only record of what it sent, section 243, and a write that keeps none is not one this offers.
+   */
+  readonly say: (line: string) => void;
   /** Called once a commit has been judged and immediately before its first command, where a caller arms its interrupt. */
   readonly onCommit?: () => void;
 }
@@ -660,6 +669,8 @@ export interface FileFamilyWriteResult {
  *
  * In order, and every line goes to `say` before the next step:
  *
+ * 0. **The unit**, before anything else: its label has to be one of `FILE_FAMILY_UNITS`, which gives its model and
+ *    skin.
  * 1. **The container**, before anything is opened: `assertFileFamilyContainer`, and when that refuses, the same
  *    rail on the bytes with the end marker put back, which is what a file read off a remote needs.
  * 2. **`open`**, the caller's.
@@ -677,9 +688,18 @@ export interface FileFamilyWriteResult {
  * transport error it was.
  */
 export async function writeFileFamilyConfiguration(request: FileFamilyWrite): Promise<FileFamilyWriteResult> {
-  const say = request.say ?? ((): void => undefined);
-  const { unit, permittedUnit, backup, reboot } = request;
+  const say = request.say;
+  const { permittedUnit, backup, reboot } = request;
   const configPath = request.container.name;
+
+  // The unit, from the library's list and from nothing the caller says but its label, before anything else.
+  const label = request.unit.label;
+  const known = Object.hasOwn(FILE_FAMILY_UNITS, label) ? FILE_FAMILY_UNITS[label] : undefined;
+  if (known === undefined) {
+    throw new RailError(`${label} is not a unit of this family this may write: the units are the library's, `
+      + `${Object.keys(FILE_FAMILY_UNITS).join(', ')}, decision 26. Refusing before anything is opened.`);
+  }
+  const unit = { label, record: request.unit.record, ...known };
 
   // The container: whole, or as read and short of its end marker by exactly four bytes.
   let container: Uint8Array = request.container.bytes;

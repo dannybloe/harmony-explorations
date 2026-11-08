@@ -18,14 +18,14 @@ const MANIFEST = new URL('../package.json', import.meta.url);
 
 /** The write subpath: the names that exist at run time. */
 const WRITE_VALUES = [
-  'CONFIG_WRITE_MODELS', 'ConfigWriteRefusal', 'RECOVERY', 'SYNC_LINES', 'answerTouchSync', 'assertTouchSyncAllowed',
-  'prepareSet', 'writeConfiguration',
+  'CONFIG_WRITE_MODELS', 'CONFIG_WRITE_UNITS', 'ConfigWriteRefusal', 'RECOVERY', 'SYNC_LINES', 'TOUCH_SYNC_UNITS',
+  'answerTouchSync', 'assertTouchSyncAllowed', 'prepareSet', 'writeConfiguration',
 ];
 
 /** The write subpath: the types and interfaces, which only the source shows. */
 const WRITE_TYPES = [
   'ConfigWrite', 'ConfigWriteModel', 'ConfigWriteModelName', 'ConfigWriteResult', 'ConfigWriteStamp',
-  'ConfigWriteUnit', 'SetAnswer', 'TouchSet', 'TouchSyncMode', 'TouchSyncOutcome', 'TouchSyncRun', 'UnitRecords',
+  'ConfigWriteUnit', 'ConfigWriteUnitLabel', 'SetAnswer', 'TouchSet', 'TouchSyncMode', 'TouchSyncOutcome', 'TouchSyncRun', 'UnitRecords',
 ];
 
 /** The two functions that write to a remote, which no entry but the write subpath may offer. */

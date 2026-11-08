@@ -406,8 +406,10 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 to check the one field the remote itself checks. Since `todo.md`
                                 7.3.10 its sequence is a library function, `writeConfiguration` in
                                 `src/writeconfig.ts`, with what each model's write end needs in
-                                `CONFIG_WRITE_MODELS`, and bin/write-config.ts keeps the command
-                                line, the lab's units and region reads and the journal. It is the write
+                                `CONFIG_WRITE_MODELS` and the units it may write in
+                                `CONFIG_WRITE_UNITS`, refused before anything opens when a label is
+                                not among them; bin/write-config.ts keeps the command line, each
+                                unit's region reads and the journal. It is the write
                                 path's first caller outside that package, which is why the blind
                                 review's withhold list gained a row for it. It also holds the
                                 Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync

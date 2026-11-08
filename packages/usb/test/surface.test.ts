@@ -40,10 +40,11 @@ const TYPES = [
 /**
  * The write subpath, `./write`: the names that exist at run time. `writeFileFamilyConfiguration` joined in
  * `todo.md` 7.3.10, the whole file write for the Harmony 300 and 350 as one function an application calls, where
- * the script's body had been; its rails are `writeFileConfig`'s and the transport's, unchanged.
+ * the script's body had been; its rails are `writeFileConfig`'s and the transport's, unchanged. `FILE_FAMILY_UNITS`
+ * joined with it after the review: the units it may write, which the library holds and the script reads.
  */
 const WRITE_VALUES = [
-  'BlockWriteError', 'CONFIG_REGION_BASE', 'FileWriteError', 'MAX_TRANSFER', 'NOMINAL_FLASH_SIZE',
+  'BlockWriteError', 'CONFIG_REGION_BASE', 'FILE_FAMILY_UNITS', 'FileWriteError', 'MAX_TRANSFER', 'NOMINAL_FLASH_SIZE',
   'assertFirstWriteAllowed', 'assertUnitIsPermitted', 'blocksDiffering', 'chunksFor', 'failureLine',
   'firstDifference', 'judgeCurrentContent', 'neighbourBlocks', 'readFileWriteFacts', 'reportCount', 'transfersFor',
   'withEndMarker', 'writeBlock', 'writeFileConfig', 'writeFileFamilyConfiguration',

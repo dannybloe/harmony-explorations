@@ -836,9 +836,18 @@ export function assertTouchSyncAllowed(): void {
   }
 }
 
+/**
+ * **The Harmony Touches that may be synced, and no others**, decision 29: the one bench unit, by the label of its
+ * record. `answerTouchSync` refuses any other label before it opens anything, `todo.md` 7.3.10's review, so the
+ * list is the library's and not a caller's; the script's label is this one.
+ */
+export const TOUCH_SYNC_UNITS = ['touch'] as const;
+
 /** What `answerTouchSync` needs: what `syncTouch` takes but the session, which it opens itself. */
 export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session'> {
-  /** The unit the session is meant for, the caller's record of the Touch it may sync. */
+  /** The label of the unit's record; refused unless it is one of `TOUCH_SYNC_UNITS`. */
+  readonly label: string;
+  /** That record: the identity the session compares the Touch on the cable with. */
   readonly permittedUnit: Uint8Array;
   /** Open the Touch, `openFileBasedRemote` for the script; called once the flags have passed. */
   open(): Promise<Transport>;
@@ -850,15 +859,20 @@ export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session'> {
  * Answer one sync of a Harmony Touch, from the flags to the closed transport: the library half of
  * `bin/touch-sync.ts`'s `--commit`, `todo.md` 7.3.10.
  *
- * In order: `assertTouchSyncAllowed`, before anything is opened; `open`; a session, which reads the identity
- * file and refuses any unit but `permittedUnit`, `openTouchRequestSession`; `syncTouch`, which runs the gate
- * before anything is sent and answers the sync as this file's header lists; and the transport closed, whatever
- * happened. Resolves with the outcome, as `syncTouch` does; throws only when the flags refuse, the open or the
- * session fails, or the folder cannot be used, each before anything that acts on the remote is sent.
+ * In order: `assertTouchSyncAllowed` and the label against `TOUCH_SYNC_UNITS`, before anything is opened; `open`; a
+ * session, which reads the identity file and refuses any unit but `permittedUnit`, `openTouchRequestSession`;
+ * `syncTouch`, which runs the gate before anything is sent and answers the sync as this file's header lists; and
+ * the transport closed, whatever happened. Resolves with the outcome, as `syncTouch` does; throws only when the
+ * flags or the label refuse, the open or the session fails, or the folder cannot be used, each before anything that acts on the
+ * remote is sent.
  */
 export async function answerTouchSync(run: TouchSyncRun): Promise<TouchSyncOutcome> {
   assertTouchSyncAllowed();
-  const { open, permittedUnit, log, ...options } = run;
+  const { open, permittedUnit, log, label, ...options } = run;
+  if (!(TOUCH_SYNC_UNITS as readonly string[]).includes(label)) {
+    throw new RailError(`${label} is not a Harmony Touch this may sync: the units are the library's, `
+      + `${TOUCH_SYNC_UNITS.join(', ')}, decision 29. Refusing before anything is opened.`);
+  }
   const transport = await open();
   try {
     const session = await openTouchRequestSession(transport, { permittedUnit, ...(log === undefined ? {} : { log }) });

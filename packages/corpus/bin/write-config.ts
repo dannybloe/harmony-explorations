@@ -77,7 +77,12 @@ import { basename, dirname, join } from 'node:path';
 import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import { HarmonyRemote, RailError, RemoteError, listHarmony, openHarmony } from '@harmony/usb';
 import { failureLine } from '@harmony/usb/write';
-import { ConfigWriteRefusal, writeConfiguration, type ConfigWriteUnit } from '../src/write.ts';
+import {
+  ConfigWriteRefusal,
+  writeConfiguration,
+  type ConfigWriteUnit,
+  type ConfigWriteUnitLabel,
+} from '../src/write.ts';
 import { stoppedAfterErase } from '../src/stamp.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
@@ -317,26 +322,27 @@ const H885_B_DUMPS = new Set<string>([
 ]);
 
 /**
- * The units this may write, each with its model and its own region reads. **Keyed by what the device says,
- * never by an argument**, for the reason `rehearse-block.ts` gives: an argument would let an operator point one
- * unit's allow list at another. So the library chooses among these by the architecture the remote reports and
- * the region read `--dump` names, and the identity block read off the remote is what refuses any other unit,
- * since the 600 and the 650 enumerate identically and so do two Harmony Ones. What each model's write end needs,
- * the builds its drop and restart were read in, whether its drop is required and where an install status sits,
- * is `CONFIG_WRITE_MODELS` in `src/writeconfig.ts`, a fact about the model rather than about a unit, since
- * `todo.md` 7.3.10 moved the sequence into the library.
+ * The region reads of each unit this may write. **The units themselves are the library's**, `CONFIG_WRITE_UNITS`
+ * in `src/writeconfig.ts`, each label with its name and model, and the library refuses any other label; this
+ * table only says which lab reads are each unit's own content. It is typed by the library's labels, so the
+ * compiler refuses a table that leaves one out or adds one, and the two cannot differ. The library chooses among
+ * the units by the architecture the remote reports and the region read `--dump` names, never by an argument, for
+ * the reason `rehearse-block.ts` gives, and the identity block read off the remote refuses any other unit, since
+ * the 600 and the 650 enumerate identically and so do two Harmony Ones. What each model's write end needs is
+ * `CONFIG_WRITE_MODELS` beside it, since `todo.md` 7.3.10 moved the sequence into the library.
  *
  * **Several units per architecture since Danny's decision of 29 September 2026**, the Harmony 600 and the
  * Harmony 700 beside the 650, and the two bench Harmony 885s since `todo-compile-885.md` 1.4, decision 30.
  */
-const UNITS: readonly ConfigWriteUnit[] = [
-  { name: 'the Harmony 885 unit A', label: 'h885_a', model: 'Harmony 885', regions: H885_A_DUMPS },
-  { name: 'the Harmony 885 unit B', label: 'h885_b', model: 'Harmony 885', regions: H885_B_DUMPS },
-  { name: 'the spare Harmony One', label: 'one_spare', model: 'Harmony One', regions: SPARE_DUMPS },
-  { name: 'the Harmony 650', label: 'h650', model: 'Harmony 650', regions: H650_DUMPS },
-  { name: 'the Harmony 600', label: 'h600', model: 'Harmony 600', regions: H600_DUMPS },
-  { name: 'the Harmony 700', label: 'h700', model: 'Harmony 700', regions: H700_DUMPS },
-];
+const REGIONS: Readonly<Record<ConfigWriteUnitLabel, ReadonlySet<string>>> = {
+  h885_a: H885_A_DUMPS,
+  h885_b: H885_B_DUMPS,
+  one_spare: SPARE_DUMPS,
+  h650: H650_DUMPS,
+  h600: H600_DUMPS,
+  h700: H700_DUMPS,
+};
+const UNITS: readonly ConfigWriteUnit[] = Object.entries(REGIONS).map(([label, regions]) => ({ label, regions }));
 const ALL_DUMPS = new Set(UNITS.flatMap((unit) => [...unit.regions]));
 
 /**
