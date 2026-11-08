@@ -62,6 +62,7 @@ import {
 } from '../src/families/four-slot/statetables.ts';
 import { ONE_FIRMWARE_STATE_RECORDS, ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
+import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
 const ARCH14_COMPILES = [

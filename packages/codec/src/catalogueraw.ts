@@ -42,16 +42,15 @@
  * series of independent gzip members of `RAW_BLOCK_LINES` lines each and writes an index of every
  * device's member, so one device costs one seek and one small decompression rather than a 329 MB scan.
  *
+ * **The files are read in `catalogueraw.node.ts`**, since `todo.md` 7.3.5: the derived files' state, the single device
+ * fetch and `catalogueRules`, which hands the side file's entry to `rawDrivingFields` here. What stays here is pure.
+ *
  * Decisions 15 and 11 apply as they do to the archive's readers: this is Logitech's data, it crosses
  * into this repository only through readers like this one, and nothing read here may be shared through
  * a community device database. The derived files live in the lab, never here.
  */
-import { closeSync, existsSync, openSync, readFileSync, readSync } from 'node:fs';
-import { join } from 'node:path';
-import { gunzipSync } from 'node:zlib';
-import { ArchiveError, archiveManifest } from './archive.ts';
-import { catalogueDevice } from './catalogue.ts';
-import { catalogueDriving, type DeviceDriving, type DriveStep } from './driving.ts';
+import { ArchiveError } from './archive.ts';
+import type { DeviceDriving, DriveStep } from './driving.ts';
 
 /** The capture's own file names, as the release publishes them. */
 export const RAW_FEATURES_FILE = 'device_features_raw.jsonl.gz';
@@ -440,124 +439,11 @@ export interface RawManifest {
   readonly measured?: Readonly<Record<string, unknown>>;
 }
 
-/** The SHA-256 the lab's `SHA256SUMS` states for one file, or undefined. */
-export function statedSha256(directory: string, file: string): string | undefined {
-  const path = join(directory, RAW_SUMS_FILE);
-  if (!existsSync(path)) return undefined;
-  for (const line of readFileSync(path, 'utf8').split('\n')) {
-    const match = /^([0-9a-f]{64})\s+\*?(.+)$/.exec(line.trim());
-    if (match !== null && match[2] === file) return match[1];
-  }
-  return undefined;
-}
-
 /** Whether the derived files exist and were derived from the capture `SHA256SUMS` states. */
 export type RawDerivedState =
   | { readonly state: 'absent' }
   | { readonly state: 'fresh'; readonly manifest: RawManifest }
   | { readonly state: 'stale'; readonly reason: string };
-
-export function rawDerivedState(directory: string): RawDerivedState {
-  const derived = join(directory, RAW_DERIVED_DIRECTORY);
-  const manifestPath = join(derived, RAW_MANIFEST_FILE);
-  if (!existsSync(manifestPath)) return { state: 'absent' };
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as RawManifest;
-  for (const file of [RAW_BLOCKS_FILE, RAW_INDEX_FILE, RAW_FIELDS_FILE]) {
-    if (!existsSync(join(derived, file))) return { state: 'stale', reason: `${file} is missing beside the manifest` };
-  }
-  if (manifest.format !== RAW_FIELDS_FORMAT) {
-    return { state: 'stale', reason: `side file format ${manifest.format}, this reader knows ${RAW_FIELDS_FORMAT}` };
-  }
-  const fields = RAW_FIELDS.map((one) => one.name);
-  if (JSON.stringify(manifest.fields) !== JSON.stringify(fields)) {
-    return { state: 'stale', reason: `derived with fields ${manifest.fields.join(', ')}, RAW_FIELDS is ${fields.join(', ')}` };
-  }
-  const stated = statedSha256(directory, manifest.source.file);
-  if (stated === undefined) return { state: 'stale', reason: `${RAW_SUMS_FILE} states no checksum for ${manifest.source.file}` };
-  if (stated !== manifest.source.sha256) {
-    return { state: 'stale', reason: `derived from ${manifest.source.sha256.slice(0, 12)}, ${RAW_SUMS_FILE} states ${stated.slice(0, 12)}` };
-  }
-  return { state: 'fresh', manifest };
-}
-
-/** Refuse anything but a fresh derivation, naming why. */
-function requireFresh(directory: string): RawManifest {
-  const state = rawDerivedState(directory);
-  if (state.state === 'absent') throw new ArchiveError(`no derived files in ${directory}: run make catalogue-raw`);
-  if (state.state === 'stale') throw new ArchiveError(`the derived raw files are stale: ${state.reason}; run make catalogue-raw`);
-  return state.manifest;
-}
-
-// The index and the side file are loaded once per directory, since a caller asking about several
-// devices should not pay for reading 5.5 MB of index each time.
-const indexes = new Map<string, Buffer>();
-const sideFiles = new Map<string, ReadonlyMap<number, RawFieldsEntry>>();
-
-function indexOf(directory: string): Buffer {
-  let index = indexes.get(directory);
-  if (index === undefined) {
-    index = readFileSync(join(directory, RAW_DERIVED_DIRECTORY, RAW_INDEX_FILE));
-    if (index.toString('latin1', 0, 4) !== RAW_INDEX_MAGIC) throw new ArchiveError(`${RAW_INDEX_FILE} is not an index`);
-    indexes.set(directory, index);
-  }
-  return index;
-}
-
-/**
- * The raw line of one device, by its global device id, or undefined when the capture has no such id.
- *
- * **Read the token rule in this module's docstring before printing what this returns.**
- */
-export function rawCaptureLine(directory: string, globalDeviceId: number): string | undefined {
-  requireFresh(directory);
-  const index = indexOf(directory);
-  const count = index.readUInt32LE(4);
-  let low = 0;
-  let high = count - 1;
-  while (low <= high) {
-    const middle = (low + high) >>> 1;
-    const at = RAW_INDEX_HEADER + middle * RAW_INDEX_ENTRY;
-    const id = index.readUInt32LE(at);
-    if (id < globalDeviceId) low = middle + 1;
-    else if (id > globalDeviceId) high = middle - 1;
-    else {
-      const line = index.readUInt32LE(at + 4);
-      const offset = index.readDoubleLE(at + 8);
-      const length = index.readUInt32LE(at + 16);
-      const block = Buffer.alloc(length);
-      const fd = openSync(join(directory, RAW_DERIVED_DIRECTORY, RAW_BLOCKS_FILE), 'r');
-      try { readSync(fd, block, 0, length, offset); } finally { closeSync(fd); }
-      const text = gunzipSync(block).toString('utf8');
-      // The member holds whole lines, each ending in a newline, so the line'th is between two of them.
-      let start = 0;
-      for (let skip = 0; skip < line; skip++) start = text.indexOf('\n', start) + 1;
-      const end = text.indexOf('\n', start);
-      return text.slice(start, end === -1 ? undefined : end);
-    }
-  }
-  return undefined;
-}
-
-/**
- * One device of the raw capture, parsed. **Never print it whole**: pick the fields you need. One device
- * can be 35000 tokens.
- */
-export function rawCaptureDevice(directory: string, globalDeviceId: number): RawDeviceRecord | undefined {
-  const line = rawCaptureLine(directory, globalDeviceId);
-  return line === undefined ? undefined : JSON.parse(line) as RawDeviceRecord;
-}
-
-function sideFileOf(directory: string): ReadonlyMap<number, RawFieldsEntry> {
-  let side = sideFiles.get(directory);
-  if (side === undefined) {
-    const parsed = JSON.parse(gunzipSync(readFileSync(join(directory, RAW_DERIVED_DIRECTORY, RAW_FIELDS_FILE))).toString('utf8')) as {
-      devices: Record<string, RawFieldsEntry>;
-    };
-    side = new Map(Object.entries(parsed.devices).map(([id, entry]) => [Number(id), entry]));
-    sideFiles.set(directory, side);
-  }
-  return side;
-}
 
 /** The raw half of `catalogueRules`'s answer: every field of `RAW_FIELDS`, filled in, in the archive's coordinates. */
 export interface RawDrivingFields {
@@ -584,26 +470,13 @@ export interface CatalogueRules {
 }
 
 /**
- * **The one door**: a catalogue device's driving rules as the archive states them, and, given the raw
- * capture's directory, the fields the archive drops attached at the same coordinates.
+ * The raw half of `catalogueRules`'s answer for one device: the side file's `entry` for it attached to the archive's
+ * reading of it, `archive`, at the archive's coordinates, every field filled in with its usual value where the entry
+ * holds none. `catalogueRules` in `catalogueraw.node.ts` reads the entry and checks the derivation is fresh first.
  *
- * Refuses, rather than answering from the archive alone, when a raw directory is given and its derived
- * files are absent, stale against `SHA256SUMS`, or aligned against a different archive build: a caller
- * that asked for the raw fields and silently got none would compose every state step as a sending one.
+ * Refuses a stored step field on a path the archive has no step for, since that means the coordinates moved.
  */
-export function catalogueRules(
-  root: string, slug: string, file: string, options: { readonly raw?: string } = {},
-): CatalogueRules {
-  const archive = catalogueDriving(root, slug, file);
-  const { globalDeviceId } = catalogueDevice(root, slug, file);
-  const generated = archiveManifest(root).generated;
-  if (options.raw === undefined) return { globalDeviceId, archive, sources: { archive: { generated } } };
-  const manifest = requireFresh(options.raw);
-  if (manifest.archive.generated !== generated) {
-    throw new ArchiveError(`the side file was aligned against the archive of ${manifest.archive.generated}, `
-      + `the checkout is ${generated}: run make catalogue-raw`);
-  }
-  const entry = sideFileOf(options.raw).get(globalDeviceId) ?? {};
+export function rawDrivingFields(archive: DeviceDriving, globalDeviceId: number, entry: RawFieldsEntry): RawDrivingFields {
   const unaligned = entry.u ?? [];
   const inputs = unaligned.includes('inputs.list') ? [] : (archive.inputs?.list ?? []).map((_, at) => {
     const stored = entry.i?.[String(at)] ?? {};
@@ -626,12 +499,5 @@ export function catalogueRules(
   for (const path of Object.keys(entry.s ?? {})) {
     if (!steps.has(path)) throw new ArchiveError(`device ${globalDeviceId}: the side file names ${path}, which the archive has no such step for`);
   }
-  return {
-    globalDeviceId, archive, raw: { inputs, steps, unaligned },
-    sources: {
-      archive: { generated },
-      raw: { sha256: manifest.source.sha256, archiveGenerated: manifest.archive.generated,
-        ...(manifest.source.release === undefined ? {} : { release: manifest.source.release }) },
-    },
-  };
+  return { inputs, steps, unaligned };
 }

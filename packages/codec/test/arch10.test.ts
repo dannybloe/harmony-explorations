@@ -24,6 +24,7 @@ import {
 import { u8, u16, u24 } from '../src/bytes.ts';
 import { claims, coverage } from '../src/coverage.ts';
 import { lightBandExtras, parameterGroups } from '../src/tables.ts';
+import '../src/resources.node.ts';
 
 /** Every user config, with the device count `make devices` reports for it. Section 178. */
 const DEVICE_COUNTS: readonly [string, number][] = [

@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parse, parameterGroups } from '@harmony/codec';
+import { parse, parameterGroups } from '@harmony/codec/node';
 import { load, skipUnless } from '@harmony/lab';
 import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
 

@@ -13,32 +13,29 @@
  * Byte identical on every machine for the reason `raster.ts` gives, and the placement only adds and
  * multiplies.
  */
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import opentype, { type Font } from 'opentype.js';
 import { rasterise, type Drawing, type PathCommand } from './raster.ts';
+import { resource } from './resources.ts';
 
 /** An icon that cannot be drawn, by its name. */
 export class IconError extends Error {}
 
-const require = createRequire(import.meta.url);
-
 let font: Font | undefined;
 let names: Map<string, number> | undefined;
 
-/** The icon font, read once from the pinned package. */
+/** The icon font, parsed once from the bytes the codec's loader supplies, the pinned package's on the Node entry. */
 function iconFont(): Font {
   if (font === undefined) {
-    const bytes = readFileSync(require.resolve('@mdi/font/fonts/materialdesignicons-webfont.ttf'));
-    font = opentype.parse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+    const bytes = resource('iconFont')();
+    font = opentype.parse(new Uint8Array(bytes).buffer);
   }
   return font;
 }
 
-/** Every icon's name and its code point, from the package's own list. */
+/** Every icon's name and its code point, from the package's own list as the codec's loader supplies it. */
 export function iconNames(): ReadonlyMap<string, number> {
   if (names === undefined) {
-    const list = readFileSync(require.resolve('@mdi/font/scss/_variables.scss'), 'utf8');
+    const list = resource('iconList')();
     names = new Map([...list.matchAll(/^\s*"([a-z0-9-]+)":\s*([0-9A-F]+),?\s*$/gm)].map((m) => [m[1]!, parseInt(m[2]!, 16)]));
   }
   return names;

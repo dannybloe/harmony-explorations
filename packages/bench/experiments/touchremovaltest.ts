@@ -29,7 +29,7 @@
  * not Listen to Music, the device list showing six devices and not the Denon AV Receiver, and Watch a Blu-ray's command
  * list with eight entries, no InputAm, Test Sequence last.
  */
-import type { harmonyTouch } from '@harmony/codec';
+import type { harmonyTouch } from '@harmony/codec/node';
 
 import type { TestDefinition } from '../src/irsession.ts';
 import { touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';

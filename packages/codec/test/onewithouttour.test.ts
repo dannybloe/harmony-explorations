@@ -35,6 +35,7 @@ import { checkOneScreenTexts, describeOneScreenTexts } from '../src/families/one
 import { ONE_FIXED_SCREENS, oneFixedScreenModes, withOneOptionsWithoutTour } from '../src/families/one/fixedscreens.ts';
 import { withOneBuilders, withOneComposedBuilders } from '../src/families/one/builders.ts';
 import { ONE_CHOICES } from '../src/families/one/choices.ts';
+import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, the population every builder of the One family rebuilds. */
 const SKIN_54 = [

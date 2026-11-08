@@ -103,6 +103,7 @@ import {
   type NoScreenAttributed,
   type NoScreenAttribution, noScreenAttributedBytes, noScreenRegions, parse, type Recipe, restamped,
 } from '../src/index.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
 
 const FIVE = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'] as const;
 const SETUP = 'work/setups/h350-test/compile-Result.EzHex';
@@ -134,7 +135,7 @@ function seven(): [string, Container][] {
 
 /** Our build of the test setup from nothing, the setup file, Logitech's keys, a moment and the catalogue alone. */
 function ours(): Container {
-  return parse(buildNoScreenSetup(IR_ARCHIVE!, { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes);
+  return parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes);
 }
 
 const sum = (record: Readonly<Record<string, number>>): number => Object.values(record).reduce((a, b) => a + b, 0);
@@ -386,7 +387,7 @@ test('5.2.3: the build takes no container, and no module of the codec or of the 
   assert.equal(buildNoScreenSetup.length, 2);
   const request = Object.freeze({ recipe: RECIPE, keys: KEYS, builtAt: MOMENT });
   assert.deepEqual(Object.keys(request).sort(), ['builtAt', 'keys', 'recipe']);
-  assert.doesNotThrow(() => buildNoScreenSetup(IR_ARCHIVE!, request));
+  assert.doesNotThrow(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE!), request));
   // And no module that build can reach names the lab: neither the lab locator's package nor its variable appears in the
   // source of the codec or of the USB library, the one package the codec depends on that could carry a file in.
   const sources = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((one) =>

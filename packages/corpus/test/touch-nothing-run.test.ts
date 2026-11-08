@@ -49,7 +49,7 @@ import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 
 import { writeOfAnswersSize } from '../experiments/touchchangedset.ts';

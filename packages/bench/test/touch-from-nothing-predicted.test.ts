@@ -27,7 +27,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 

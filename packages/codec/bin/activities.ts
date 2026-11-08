@@ -22,6 +22,7 @@
 import { LAB, load } from '@harmony/lab';
 import { parse, activities } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
+import '../src/resources.node.ts';
 
 // The two arch 8 configs of 12 August 2026 are in, for the reason `bin/text.ts` states: the 880 is
 // the corpus's only container with a written description of what is in it, so it is the one place a

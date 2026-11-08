@@ -25,6 +25,7 @@ import {
   DISPLAY_TEST_CODE, STATUS_LINES, ONE_STATUS_SCREENS, statusScreen, buildOneStatusScreens, checkOneStatusScreens,
   describeOneStatusScreens, oneStatusScreenModes, withOneStatusScreens,
 } from '../src/families/one/statusscreens.ts';
+import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

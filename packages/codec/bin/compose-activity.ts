@@ -84,6 +84,7 @@ import {
   worstQueueRun,
 } from '../src/index.ts';
 import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
+import '../src/resources.node.ts';
 
 /** The erase block a Harmony One, 525 and 650 clear in one go, which is what a write is counted in. */
 const ERASE_BLOCK = 0x10000;

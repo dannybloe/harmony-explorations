@@ -51,7 +51,7 @@ import { randomUUID } from 'node:crypto';
 import { LAB, IR_ARCHIVE } from '@harmony/lab';
 import {
   activities as configActivities, devices as configDevices, parse, payloadOf, catalogueDevice, readRecipe,
-} from '@harmony/codec';
+} from '@harmony/codec/node';
 import {
   ACCOUNT_DIRECTOR, ACCOUNT_MANAGER, BUTTON_MAPPING_MANAGER, DEVICE_MANAGER, MyHarmonySession, SVCS, credentials,
 } from '../src/myharmony.ts';

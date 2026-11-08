@@ -5,6 +5,12 @@
  * once produced readable but wrong listings, and the same reasoning applies here. The Python
  * container parser stays in `src/harmony/` for the reverse engineering tools, and the two are
  * held equal by golden vectors until it is retired.
+ *
+ * **This entry loads anywhere**, an Electron renderer or a browser as well as Node, plan 013 decision 5: nothing it
+ * reaches imports a Node module or names a Node global, `test/mainentry.test.ts`. What reads the disk is the Node
+ * entry's, `@harmony/codec/node`, `node.ts`, which carries this one whole as well; a builder that needs the catalogue
+ * is handed a `CatalogueSource`, and one that draws a letter, an icon or a picture asks for what the loader supplies,
+ * `resources.ts`.
  */
 export * as bytes from './bytes.ts';
 export * from './gspm.ts';
@@ -97,7 +103,8 @@ export * from './deflate.ts';
 // **The infrared archive's two readers**, added 31 August 2026 for the reason the `protocols.ts`
 // comment above records: FreeHarmony is what consumes a device catalogue, and a barrel that does not
 // offer a reader is part of why a second one gets written. `archive.ts` reads Logitech's protocol
-// definitions and `catalogue.ts` their device catalogue, out of the same public checkout.
+// definitions and `catalogue.ts` their device catalogue, out of the same public checkout. Since todo.md
+// 7.3.5 these parse what they are handed and the files are read on the Node entry, `*.node.ts`.
 export * from './archive.ts';
 export * from './catalogue.ts';
 // And how to drive a catalogue device, from the archive's schema version 2: power, inputs, channel
@@ -142,6 +149,8 @@ export {
 } from './families/registry.ts';
 export type { DocumentFamily, DocumentTypes } from './families/document.ts';
 export * from './icons.ts';
+// What the codec asks its loader for, fonts, the icon list, a PNG's deflate and SHA-256, todo.md 7.3.5.
+export * from './resources.ts';
 // The Harmony 300 and 350's family, plan 007, its device composer, todo-compile-350.md 4.1 and 4.4, its
 // favourite channels, 4.3, its activity, 4.2, and a whole setup, 4.5.
 export {

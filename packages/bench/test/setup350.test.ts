@@ -125,7 +125,7 @@ import { fileURLToPath } from 'node:url';
 import {
   bytes, devices, irBlockWords, irGroups, irHeaderPointers, numberSenders, parse, stateRecords, taggedList,
   type Container,
-} from '@harmony/codec';
+} from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import { BENCH_CONFIGS, CodeBook, REPEAT_WINDOW_US } from '../src/irmonitor.ts';

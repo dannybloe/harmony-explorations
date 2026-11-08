@@ -84,6 +84,7 @@ import {
 } from '../src/index.ts';
 import { INLINE_DELAY_CONTAINERS } from '../bin/corpus.ts';
 import { tagFiveMisfit } from './tagfive.ts';
+import '../src/resources.node.ts';
 
 /** `[sample, named variables, activities, devices, device ids in the names]`. */
 const INVENTORY: readonly [string, number, number, number, number][] = [

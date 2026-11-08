@@ -63,7 +63,8 @@ import {
   takeApart,
   taggedList,
   withOxaniumFonts,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 import {
   HARD_KEYS,
@@ -822,16 +823,16 @@ test('section 331: several catalogue devices composed in one run each read back 
         full: true,
       }));
       if (refused !== undefined) {
-        assert.throws(() => composeCatalogueDevices(base, IR_ARCHIVE!, requests), { message: refused.message }, compile);
+        assert.throws(() => composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), requests), { message: refused.message }, compile);
         requests.splice(refused.keep);
         found.splice(refused.keep);
         if (found.length < 2) continue;
       }
-      const together = composeCatalogueDevices(base, IR_ARCHIVE!, requests);
+      const together = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), requests);
       const all = parse(together.bytes);
       found.forEach((f, k) => {
         const where = `${compile} ${f.one.label}`;
-        const alone = composeCatalogueDevice(base, IR_ARCHIVE!, requests[k]!);
+        const alone = composeCatalogueDevice(base, archiveAt(IR_ARCHIVE!), requests[k]!);
         const one = parse(alone.bytes);
         const mine = readMode(one, alone.screen.mode, namer(one, f.commands));
         // One namer for the composed container, since naming builds every catalogue command's block.

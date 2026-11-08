@@ -65,7 +65,8 @@ import { IR_ARCHIVE, LAB, load, needing, skipWithoutIrArchive, skipWithoutLab } 
 import {
   type AccountDevice, bytes, catalogueDevice, catalogueCommands, catalogueDevicePlan, composeIrGroup, type Container, devices, DIGIT_COPIES_BY_TYPE, irGroups,
   metadataArchive, parse, stateVariables, taggedList, volumeSource,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 import { DEVICE_KEYS, FAVOURITE_FIVE, INPUT_KEY, POWER_RESETS, START_UP_SELECT_ENTRY, VOLUME_SCANS } from '../src/families/no-screen/keys.ts';
 import { SILENT_WRITE } from '../src/actions.ts';
 import { withoutStartUpSelect, withStartUpSelect } from '../src/families/no-screen/devices.ts';
@@ -340,7 +341,7 @@ test('on every compile of the family, ten one block digit copies are stored for 
         // catalogue digit's code, the digits composed from the catalogue entry the device is identified as. A record
         // a digit key sends opens on a silence or has a held block, so it is not counted.
         const found = IDENTIFIED[file]![one.name]!;
-        const plan = catalogueDevicePlan(c, IR_ARCHIVE!, { manufacturer: found[0], model: found[1], label: 'X', full: true });
+        const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer: found[0], model: found[1], label: 'X', full: true });
         const digits = Array.from({ length: 10 }, (_, d) => String(d)).filter((d) => plan.wanted.includes(d));
         const scratch = digits.length === 0 ? undefined : parse(composeIrGroup(c, digits.map((d) => plan.device.commands[plan.wanted.indexOf(d)]!)).bytes);
         const codes = new Set(scratch === undefined ? [] : irGroups(scratch)!.at(-1)!.addresses.map((address) => onceWithoutLeadIn(scratch, address).code));
@@ -382,7 +383,7 @@ test('Teletext is stored with a send list nothing calls for every device with th
         const found = IDENTIFIED[file]![one.name];
         let teletext = '?';
         if (found !== undefined) {
-          const plan = catalogueDevicePlan(c, IR_ARCHIVE!, { manufacturer: found[0], model: found[1], label: 'X', full: true });
+          const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer: found[0], model: found[1], label: 'X', full: true });
           const scratch = parse(composeIrGroup(c, [plan.device.commands[plan.wanted.indexOf('Teletext')]!]).bytes);
           const key = recordKey(scratch, irGroups(scratch)!.at(-1)!.addresses[0]!);
           teletext = idle.some((address) => recordKey(c, address) === key) ? 'idle' : 'not idle';

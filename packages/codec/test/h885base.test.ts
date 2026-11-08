@@ -35,6 +35,7 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import { parse, devices, activityNames, activityCount, deviceCount } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 test('unit A, the base: eight devices and three activities, each with the name its configuration states',
   skipUnless('h885_a_config'), () => {

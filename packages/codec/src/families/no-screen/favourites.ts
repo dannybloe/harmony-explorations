@@ -37,6 +37,7 @@
  * favourite key, `todo-compile-350.md` 4.1.1, is read on one compile only, another owner's, whose LG television
  * holds a channel there and has a Home command, and one sample is not a rule.
  */
+import type { CatalogueSource } from '../../catalogue.ts';
 import { Writer } from '../../emit.ts';
 import { archSlot, type Container, parse } from '../../gspm.ts';
 import { devices } from '../../inventory.ts';
@@ -109,7 +110,7 @@ function routeOf(channel: string): 'number' | 'digits' {
  * usually found rather than made.
  */
 export function composeNoScreenFavourites(
-  c: Container, archive: string, request: NoScreenFavouritesRequest,
+  c: Container, archive: CatalogueSource, request: NoScreenFavouritesRequest,
 ): ComposedNoScreenFavourites {
   if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
   const skin = (c.versionWord ?? -1) & 0xff;

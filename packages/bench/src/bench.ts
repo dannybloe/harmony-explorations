@@ -27,7 +27,7 @@ import {
   idleActivityValue,
   parse,
   summary,
-} from '@harmony/codec';
+} from '@harmony/codec/node';
 import { modelForSkin, VERSION_FIELD_NAMES } from '@harmony/usb';
 
 export interface AttachedRemote {

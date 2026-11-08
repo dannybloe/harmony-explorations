@@ -21,7 +21,7 @@
  * **What the model cannot say, the description asks the person to note**: the tiles' order, and that the added
  * channel's tile shows the logo of ours where the station's logo was, with every other logo as before.
  */
-import type { harmonyTouch } from '@harmony/codec';
+import type { harmonyTouch } from '@harmony/codec/node';
 
 import type { TestDefinition } from '../src/irsession.ts';
 import { touchTest, type TouchAction, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';

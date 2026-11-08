@@ -35,6 +35,7 @@ import {
   roundTrip,
   takeApart,
 } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles of section 312, the population `frame.test.ts` lays out. */
 const ARCH14_COMPILES = [

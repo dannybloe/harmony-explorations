@@ -27,7 +27,7 @@
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { IR_ARCHIVE, LAB } from '@harmony/lab';
-import { composableKeycode } from '@harmony/codec';
+import { composableKeycode } from '@harmony/codec/node';
 import { HarvestRefusal } from '../src/harvest.ts';
 
 function flag(name: string): string | undefined {

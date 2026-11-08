@@ -94,3 +94,57 @@ export function bytesOf(text: string): Uint8Array {
   for (let i = 0; i < text.length; i += 1) out[i] = text.charCodeAt(i) & 0xff;
   return out;
 }
+
+/**
+ * Bytes as lower case hexadecimal, two digits each, as `Buffer`'s `toString('hex')` spells them, which every caller
+ * here used until `todo.md` 7.3.5 took Node out of the codec's core.
+ */
+export function hexOf(bytes: Uint8Array): string {
+  let out = '';
+  for (const byte of bytes) out += byte.toString(16).padStart(2, '0');
+  return out;
+}
+
+/**
+ * Whether two byte arrays hold the same bytes, compared four at a time, so that `memo.ts` keeps comparing a megabyte
+ * in a fraction of a millisecond without `Buffer.equals`. An array that does not start on a four byte boundary, as a
+ * container's blob inside a larger file may not, is copied first, which is a native copy and costs less than comparing
+ * it a byte at a time; the tail past the last whole word is compared byte by byte.
+ */
+export function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  // `new Uint8Array(view)` copies, where a Node `Buffer`'s own `slice` would hand back a view.
+  const left = a.byteOffset % 4 === 0 ? a : new Uint8Array(a);
+  const right = b.byteOffset % 4 === 0 ? b : new Uint8Array(b);
+  const words = a.length >>> 2;
+  const leftWords = new Uint32Array(left.buffer, left.byteOffset, words);
+  const rightWords = new Uint32Array(right.buffer, right.byteOffset, words);
+  for (let word = 0; word < words; word += 1) if (leftWords[word] !== rightWords[word]) return false;
+  for (let at = words << 2; at < a.length; at += 1) if (left[at] !== right[at]) return false;
+  return true;
+}
+
+/**
+ * CRC-32, the one PNG's chunks and a ZIP's entries both carry, ISO 3309's polynomial reflected, `0xedb88320`, and the
+ * value `zlib`'s `crc32` answers. Computed rather than tabulated: it runs four times per image and once per metadata
+ * archive. It was `png.ts`'s own until `todo.md` 7.3.5, when the metadata archive stopped asking Node's zlib.
+ */
+export function crc32(bytes: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/** Several byte arrays one after another in a new one, as `Buffer.concat` joins them. */
+export function concatBytes(parts: readonly Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(parts.reduce((sum, one) => sum + one.length, 0));
+  let at = 0;
+  for (const one of parts) {
+    out.set(one, at);
+    at += one.length;
+  }
+  return out;
+}

@@ -44,6 +44,7 @@
  * already there, which Logitech's service would give it, and the test setup's LG television's second stored but
  * unbound record, its Back, is not reproduced, since no rule read says why it is there.
  */
+import type { CatalogueSource } from '../../catalogue.ts';
 import { stateVariableSite } from '../../actions.ts';
 import { u8, u16 } from '../../bytes.ts';
 import { catalogueDevicePlan } from '../../composecatalogue.ts';
@@ -410,7 +411,7 @@ function withBindingOnEveryMap(c: Container, except: number, tag: number, list: 
  * Compose a catalogue device onto a Harmony 300 or 350 configuration, on a key's short or long press. Unstamped
  * where the shared composer leaves it so; the result is restamped once at the end.
  */
-export function composeNoScreenDevice(c: Container, archive: string, request: NoScreenDeviceRequest): ComposedNoScreenDevice {
+export function composeNoScreenDevice(c: Container, archive: CatalogueSource, request: NoScreenDeviceRequest): ComposedNoScreenDevice {
   const key = DEVICE_KEYS[request.place];
   if (key === undefined) throw new ComposeError(`a device key's place is 0 to ${DEVICE_KEYS.length - 1}, not ${request.place}`);
   const long = request.press === 'long';

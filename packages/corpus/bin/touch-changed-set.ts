@@ -35,7 +35,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 import { LAB } from '@harmony/lab';
 
 import {

@@ -58,6 +58,7 @@ import { buildTemplateScreens, describeTemplateScreens } from '../src/families/o
 import { readKeys, templateWalk } from '../src/families/one/numbering.ts';
 import { activities, caseQueued, devices, ENTER_MODE } from '../src/inventory.ts';
 import { valueMaps } from '../src/valuemap.ts';
+import '../src/resources.node.ts';
 
 /** The stamp the file is built at: a year whose Year picker offers 2025 to 2027 and no leap year. */
 const BUILT_AT = '2026-10-23T12:00:00';

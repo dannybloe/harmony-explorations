@@ -82,6 +82,7 @@ import {
 import type { Container } from '../src/index.ts';
 import { SIDE_KEY_GRIDS, gridCellAt } from '../src/cornerlayout.ts';
 import type { LabelGrid } from '../src/cornerlayout.ts';
+import '../src/resources.node.ts';
 
 /** Every arch 8 configuration the lab holds, with the device mode mark it writes and its device count. */
 const ARCH8: readonly [string, number, number][] = [

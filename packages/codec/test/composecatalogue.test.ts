@@ -74,7 +74,8 @@ import {
   stateVariables,
   taggedList,
   valueMaps,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 
 const CALL = 0x7f;
 const SEND = 0x7d;
@@ -152,9 +153,9 @@ test('several catalogue devices composed in one run are the bytes of composing t
   slow(needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config'))), () => {
     const base = open('h650_panasonic_config');
     const requests = PAIRS[0]!.devices.map(requestOf);
-    const together = composeCatalogueDevices(base, IR_ARCHIVE!, requests);
+    const together = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), requests);
     let chained = base;
-    for (const request of requests) chained = parse(composeCatalogueDevice(chained, IR_ARCHIVE!, request).bytes);
+    for (const request of requests) chained = parse(composeCatalogueDevice(chained, archiveAt(IR_ARCHIVE!), request).bytes);
     assert.deepEqual(together.bytes, chained.blob, 'one run is the chain');
 
     // Every device arrived, under its label, on every device list, with its own mode.
@@ -186,7 +187,7 @@ test('several catalogue devices composed in one run are the bytes of composing t
     assert.equal(byIndex.get(final.interDeviceDelay!), `InterDeviceDelay_${final.identifier}_65278`);
 
     // The control: the other order is another configuration, with the identifiers swapped over.
-    const swapped = composeCatalogueDevices(base, IR_ARCHIVE!, [...requests].reverse());
+    const swapped = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [...requests].reverse());
     assert.notDeepEqual(swapped.bytes, together.bytes);
     assert.deepEqual(swapped.variables.map((one) => [one.label, one.identifier]),
       [[requests[1]!.label, highest + 1], [requests[0]!.label, highest + 2]]);
@@ -198,19 +199,19 @@ test('several devices are refused past the model\'s device count, under a label 
     const [pana, knoll] = PAIRS[0]!.devices.map(requestOf) as [CatalogueDeviceRequest, CatalogueDeviceRequest];
     // Six devices; a Harmony 650 holds eight, Logitech's own figure for its account.
     assert.equal(devices(base).length, 6);
-    assert.throws(() => composeCatalogueDevices(base, IR_ARCHIVE!, [pana, knoll, { ...knoll, label: 'Knol' }],
+    assert.throws(() => composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [pana, knoll, { ...knoll, label: 'Knol' }],
       { maxDevices: 8 }), (error: unknown) => error instanceof ComposeError && /holds 8/.test(error.message));
     // The control: eight is allowed.
-    assert.equal(devices(parse(composeCatalogueDevices(base, IR_ARCHIVE!, [pana, knoll], { maxDevices: 8 }).bytes)).length, 8);
+    assert.equal(devices(parse(composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [pana, knoll], { maxDevices: 8 }).bytes)).length, 8);
     // A label the base already has, and one twice in the list.
     // Each by its own message, so that another refusal further in cannot pass for this one.
     const refusedAs = (message: string) => (error: unknown): boolean =>
       error instanceof ComposeError && error.message === message;
-    assert.throws(() => composeCatalogueDevices(base, IR_ARCHIVE!, [{ ...pana, label: 'KPN' }]),
+    assert.throws(() => composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [{ ...pana, label: 'KPN' }]),
       refusedAs('a device called KPN is already here or earlier in the list'));
-    assert.throws(() => composeCatalogueDevices(base, IR_ARCHIVE!, [pana, { ...knoll, label: 'Pana' }]),
+    assert.throws(() => composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [pana, { ...knoll, label: 'Pana' }]),
       refusedAs('a device called Pana is already here or earlier in the list'));
-    assert.throws(() => composeCatalogueDevices(base, IR_ARCHIVE!, []), refusedAs('no device to compose'));
+    assert.throws(() => composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), []), refusedAs('no device to compose'));
   });
 
 // ---------------------------------------------------------------------------------------------------
@@ -322,7 +323,7 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
     for (const pair of PAIRS) {
       const base = open(pair.base);
       const theirs = open(pair.compile);
-      const result = composeCatalogueDevices(base, IR_ARCHIVE!, pair.devices.map(requestOf));
+      const result = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), pair.devices.map(requestOf));
       const ours = parse(result.bytes);
 
       // **Every device list, page by page**: which device is in which corner or row, in fill order,
@@ -419,7 +420,7 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
     // Logitech's, which is what shows the comparison above sees the order and not only the membership.
     const pair = PAIRS[2]!;
     const reversed = [...pair.devices].reverse();
-    const wrong = composeCatalogueDevices(open(pair.base), IR_ARCHIVE!, reversed.map(requestOf));
+    const wrong = composeCatalogueDevices(open(pair.base), archiveAt(IR_ARCHIVE!), reversed.map(requestOf));
     const wrongC = parse(wrong.bytes);
     const wrongNames = new Map(devices(wrongC).flatMap((one) => (one.name === undefined ? [] : [[one.group, one.name] as const])));
     const wrongModes = new Map(deviceModeMaps(wrongC).map((one) => [one.mode, wrongNames.get(one.group) ?? '?']));
@@ -446,7 +447,7 @@ test('a whole composed device draws no corner label in a font its pages use for 
     // (reads/20261006T153704Z-ir-test-harmony-650-the-whole-plasma-on-seven-pages.json, step 3).
     const base = open('h650_panasonic_config');
     const before = (modeRecords(base) ?? []).length;
-    const composed = parse(composeCatalogueDevices(base, IR_ARCHIVE!, [
+    const composed = parse(composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [
       { manufacturer: 'Panasonic', model: 'TX-P42GT30E', label: 'Plasma', full: true }]).bytes);
     const records = modeRecords(composed) ?? [];
     const pages = records.slice(before).flatMap((record) => record.pages);
@@ -520,7 +521,7 @@ test('the test setup\'s seven devices composed whole are infrared records Logite
     const notCopies: string[] = [];
     let control = -1;
     for (const one of TEST_SETUP) {
-      const result = composeCatalogueDevices(base, IR_ARCHIVE!, [{ manufacturer: one.manufacturer, model: one.model,
+      const result = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [{ manufacturer: one.manufacturer, model: one.model,
         label: 'Test', full: true, inputs: true }], { maxDevices: 99 });
       const device = result.devices[0]!;
       assert.deepEqual(device.leftOut, [], `${one.theirs}: every catalogue command composes`);
@@ -672,17 +673,17 @@ test('a catalogue device composed onto a Harmony One switches on with its power 
   const request: CatalogueDeviceRequest = {
     manufacturer: 'Pioneer', model: 'VSX-90TXV', label: 'Test', commands: [pioneer[0]!.name], labels: ['Test'],
   };
-  const composed = parse(composeCatalogueDevice(base, IR_ARCHIVE!, request).bytes);
+  const composed = parse(composeCatalogueDevice(base, archiveAt(IR_ARCHIVE!), request).bytes);
   const { list, group } = onList(composed, 'Test');
   assert.deepEqual(list.slice(0, -1).map((one) => one.opcode), list.slice(0, -1).map(() => 0x7f), 'the power steps are calls');
   assert.deepEqual(list.at(-1), { opcode: 0x7c, operand: (group << 8) | 20 }, 'then the Pioneer\'s two seconds');
   // The controls: a delay that is no single wait is refused rather than clamped.
-  assert.throws(() => composeCatalogueDevice(base, IR_ARCHIVE!, { ...request, powerOnDelay: 0 }),
+  assert.throws(() => composeCatalogueDevice(base, archiveAt(IR_ARCHIVE!), { ...request, powerOnDelay: 0 }),
                 /power on delay of 0 tenths/);
-  assert.throws(() => composeCatalogueDevice(base, IR_ARCHIVE!, { ...request, powerOnDelay: 300 }),
+  assert.throws(() => composeCatalogueDevice(base, archiveAt(IR_ARCHIVE!), { ...request, powerOnDelay: 300 }),
                 /power on delay of 300 tenths is not one wait/);
   // And a delay the request states wins over the catalogue's, as on the 600 family.
-  const stated = parse(composeCatalogueDevice(base, IR_ARCHIVE!, { ...request, powerOnDelay: 45 }).bytes);
+  const stated = parse(composeCatalogueDevice(base, archiveAt(IR_ARCHIVE!), { ...request, powerOnDelay: 45 }).bytes);
   assert.equal(onList(stated, 'Test').list.at(-1)!.operand & 0xff, 45);
 });
 
@@ -692,7 +693,7 @@ test('a Logitech compile\'s own device gets its inputs composed, each transition
   // input variable, and the test setup's activities put both on one, `todo-compile-one.md` 1.2.9.
   const base = open('harvest_one_two_devices');
   assert.equal(deviceVariables(base).filter((one) => one.property === 'Input').length, 0);
-  const lg = composeDonorDeviceInputs(base, IR_ARCHIVE!, { label: 'LG_OLED65G26LA', manufacturer: 'LG', model: 'OLED65G26LA' })!;
+  const lg = composeDonorDeviceInputs(base, archiveAt(IR_ARCHIVE!), { label: 'LG_OLED65G26LA', manufacturer: 'LG', model: 'OLED65G26LA' })!;
   const composed = parse(lg.bytes);
   assert.ok(composed.allChecksPass);
   assert.deepEqual([...lg.input!.values.keys()], inputPlan(catalogueDriving(IR_ARCHIVE!, 'LG', 'OLED65G26LA')).input!.values);
@@ -700,7 +701,7 @@ test('a Logitech compile\'s own device gets its inputs composed, each transition
   // Every send a transition makes names one of the LG's records, and only Logitech's: nothing was appended
   // to its group.
   assert.equal(irGroups(composed)![0]!.addresses.length, irGroups(base)![0]!.addresses.length);
-  const denon = composeDonorDeviceInputs(composed, IR_ARCHIVE!, { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' })!;
+  const denon = composeDonorDeviceInputs(composed, archiveAt(IR_ARCHIVE!), { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' })!;
   assert.equal(denon.input!.values.size, inputPlan(catalogueDriving(IR_ARCHIVE!, 'Denon', 'AVR-X4800H')).input!.values.length);
   // Each transition that sends one command sends the device's own record with the catalogue's code for that
   // command, named here by the other reader of a donor's records, `composeDonorDeviceInfrared`'s mapping by code.
@@ -710,7 +711,7 @@ test('a Logitech compile\'s own device gets its inputs composed, each transition
   const lists = after.actionLists()!;
   const sentBy = (label: string, manufacturer: string, model: string, variable: number, plan: ReturnType<typeof inputPlan>['input']):
     { right: number; wrong: string[] } => {
-    const named = new Map(composeDonorDeviceInfrared(after, IR_ARCHIVE!, { label, manufacturer, model }).mapped.map((one) => [one.from, one.name]));
+    const named = new Map(composeDonorDeviceInfrared(after, archiveAt(IR_ARCHIVE!), { label, manufacturer, model }).mapped.map((one) => [one.from, one.name]));
     const group = devices(after).find((one) => one.name === label)!.group!;
     const out = { right: 0, wrong: [] as string[] };
     for (const transition of plan!.transitions) {
@@ -735,9 +736,9 @@ test('a Logitech compile\'s own device gets its inputs composed, each transition
   const lgStates = lgPlan.states.map((one) => sentBy('LG_OLED65G26LA', 'LG', 'OLED65G26LA', lg.states.get(one.property)!.variable, one));
   assert.deepEqual(lgStates, [{ right: 7, wrong: [] }, { right: 3, wrong: [] }]);
   // A device already holding its inputs is left alone.
-  assert.equal(composeDonorDeviceInputs(parse(denon.bytes), IR_ARCHIVE!, { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' }), undefined);
+  assert.equal(composeDonorDeviceInputs(parse(denon.bytes), archiveAt(IR_ARCHIVE!), { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' }), undefined);
   // The control: the same device read as another catalogue entry finds none of its codes there and is refused.
-  assert.throws(() => composeDonorDeviceInputs(base, IR_ARCHIVE!, { label: 'LG_OLED65G26LA', manufacturer: 'Denon', model: 'AVR-X4800H' }),
+  assert.throws(() => composeDonorDeviceInputs(base, archiveAt(IR_ARCHIVE!), { label: 'LG_OLED65G26LA', manufacturer: 'Denon', model: 'AVR-X4800H' }),
                 /holds no record with the catalogue's code/);
 });
 
@@ -749,7 +750,7 @@ test('a device of more than six commands composed onto a Harmony One takes a pag
   const pioneer = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Pioneer', 'VSX-90TXV').codeset!)
     .map((one) => one.name).filter((name) => /^[A-Za-z]+$/.test(name)).slice(0, 14);
   assert.equal(pioneer.length, 14);
-  const result = composeCatalogueDevice(base, IR_ARCHIVE!, {
+  const result = composeCatalogueDevice(base, archiveAt(IR_ARCHIVE!), {
     manufacturer: 'Pioneer', model: 'VSX-90TXV', label: 'Test', commands: pioneer, labels: pioneer.map((_, k) => `C${k}`),
   });
   const composed = parse(result.bytes);
@@ -777,7 +778,7 @@ test('a device of more than six commands composed onto a Harmony One takes a pag
   assert.equal(result.device.lists.length, 14);
   assert.deepEqual(lists, result.device.lists);
   // The control: the same device of six commands takes one page.
-  const six = parse(composeCatalogueDevice(base, IR_ARCHIVE!, {
+  const six = parse(composeCatalogueDevice(base, archiveAt(IR_ARCHIVE!), {
     manufacturer: 'Pioneer', model: 'VSX-90TXV', label: 'Test', commands: pioneer.slice(0, 6), labels: pioneer.slice(0, 6).map((_, k) => `C${k}`),
   }).bytes);
   assert.equal(modeRecords(six)!.at(-1)!.pages.length, 1);
@@ -814,7 +815,7 @@ test('a catalogue device composed whole onto a Harmony One binds its keys in dev
     const lettered = parse(layOutContainer(withOxaniumFonts(takeApart(theirs), 'own').layout).bytes);
     let composed: Container;
     try {
-      composed = parse(composeCatalogueDevices(lettered, IR_ARCHIVE!, [{ manufacturer: slug, model: file, label: 'Test', full: true }], { maxDevices: 99 }).bytes);
+      composed = parse(composeCatalogueDevices(lettered, archiveAt(IR_ARCHIVE!), [{ manufacturer: slug, model: file, label: 'Test', full: true }], { maxDevices: 99 }).bytes);
     } catch (error) {
       read[label] = `refused: ${(error as Error).message.slice(0, 60)}`;
       continue;

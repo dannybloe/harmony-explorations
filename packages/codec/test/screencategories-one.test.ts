@@ -34,6 +34,7 @@ import {
   screenUnits,
   sharesNoHousehold,
 } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, in the order the per configuration figures are listed. */
 const SKIN_54 = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

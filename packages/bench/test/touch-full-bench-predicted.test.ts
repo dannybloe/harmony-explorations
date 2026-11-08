@@ -57,7 +57,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 

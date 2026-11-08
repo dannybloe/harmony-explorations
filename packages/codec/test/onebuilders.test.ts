@@ -46,6 +46,7 @@ import { layOutContainer, takeApart } from '../src/frame.ts';
 import { numberSenders } from '../src/tables.ts';
 import { ONE_INSERTED_SECTION, withNumberSenderTable, withOneInsertedSection } from '../src/families/one/smalltables.ts';
 import { listsReached } from './screenlists.ts';
+import '../src/resources.node.ts';
 
 const DONOR = 'harvest_one_two_devices';
 

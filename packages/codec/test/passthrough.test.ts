@@ -56,6 +56,8 @@ import {
 import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
 import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 const START = 'h650_start_config';
 const BASE = 'h650_panasonic_config';
@@ -183,7 +185,7 @@ test('a pass through device composed from its roles and its input\'s name is sta
   const theirs = parse(require_(START));
   const kodi = seen(theirs, activities(theirs).find((one) => one.name === 'Kodi kijken')!.activity);
   // The three devices of the activity from the catalogue, under labels of ours, and Logitech's names for them.
-  const result = composeCatalogueDevices(parse(require_(BASE)), IR_ARCHIVE!, [
+  const result = composeCatalogueDevices(parse(require_(BASE)), archiveAt(IR_ARCHIVE!), [
     { manufacturer: 'LG', model: 'OLED65G26LA', label: 'LG', full: true, inputs: true },
     { manufacturer: 'Plex', model: 'Plex_Player', label: 'Plex', full: true, inputs: true },
     { manufacturer: 'Ligawo', model: '3090063', label: 'Switch', full: true, inputs: true },

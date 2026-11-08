@@ -38,6 +38,7 @@ import {
   activityScreenChrome,
   checkActivityScreens,
 } from '../src/families/four-slot/activityscreen.ts';
+import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles, as `menupage.test.ts`'s `ARCH14`. */
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

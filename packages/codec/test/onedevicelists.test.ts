@@ -37,6 +37,7 @@ import {
 } from '../src/families/one/devicelists.ts';
 import { activityMenuRoles, describeOneActivityMenu } from '../src/families/one/activitymenu.ts';
 import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
+import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

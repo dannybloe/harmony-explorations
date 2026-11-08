@@ -13,7 +13,7 @@
  */
 import { readFileSync } from 'node:fs';
 
-import { payloadOf } from '@harmony/codec';
+import { payloadOf } from '@harmony/codec/node';
 import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
 
 import { buildReport, probeRemote, usbReport } from '../src/index.ts';

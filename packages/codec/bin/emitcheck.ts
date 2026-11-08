@@ -29,6 +29,7 @@ import { LAB } from '@harmony/lab';
 import { irdaString } from '../src/irda.ts';
 import { PROTOCOLS } from '../src/protocols.ts';
 import { pulsesOfStatedCode, statedCode } from '../src/stated.ts';
+import '../src/resources.node.ts';
 
 const SECURITY = 'https://svcs.myharmony.com/CompositeSecurityServices/Security.svc/json/';
 const ANALYSIS = 'https://svcs.myharmony.com/InfraredAnalysisPlatform/InfraredAnalysisManager.svc/json/';

@@ -66,9 +66,10 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { IR_ARCHIVE, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
-  archiveProtocols, frameSlots, frameWidths, keyCodeOfStatedCode, rhythmKey, rhythmOfDefinition, statedCodeOfDefinition, withStatedWidths,
-  withToggleCleared, waveformOfArchiveCommand, type ArchiveKeyCode, type ArchiveProtocol,
+  frameSlots, frameWidths, keyCodeOfStatedCode, rhythmKey, rhythmOfDefinition, statedCodeOfDefinition,
+  withStatedWidths, withToggleCleared, waveformOfArchiveCommand, type ArchiveKeyCode, type ArchiveProtocol,
 } from '../src/archive.ts';
+import { archiveProtocols } from '../src/archive.node.ts';
 import { mergedIntervals, pulsesOfBlock, pulsesOfFrame, type Pulse } from '../src/irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
 import {

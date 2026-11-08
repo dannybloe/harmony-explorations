@@ -35,6 +35,7 @@ import { checkOneCasePrograms, oneValueMapRoles } from '../src/families/one/case
 import { ONE_CHOICES } from '../src/families/one/choices.ts';
 import { fontsOfFace } from '../src/families/one/labels.ts';
 import { letterOneDonor } from '../src/families/one/look.ts';
+import '../src/resources.node.ts';
 
 /** The Harmony One compiles that hold an activity, fifteen of the nineteen. */
 const WITH_ACTIVITIES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

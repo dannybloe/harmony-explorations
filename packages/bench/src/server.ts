@@ -14,7 +14,7 @@ import { createReadStream, existsSync } from 'node:fs';
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 
-import { encodePng } from '@harmony/codec';
+import { encodePng } from '@harmony/codec/node';
 
 import type { Bench } from './bench.ts';
 import type { IrMonitor } from './irmonitor.ts';

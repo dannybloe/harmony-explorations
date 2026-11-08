@@ -29,6 +29,7 @@
  * Arch 12 (Harmony One) alone: raw slot 18 is the One family's own section, `FRAME_ARCHITECTURES`, and the
  * number sender table is the format's on every family but is put on the One's composed path only here.
  */
+import { hexOf } from '../../bytes.ts';
 import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
 import { RAW_SLOT_PREFIX } from '../../coverage.ts';
 import { ComposeError } from '../../shared/core.ts';
@@ -60,7 +61,7 @@ export function withOneInsertedSection(layout: ContainerLayout): WithGenerated {
   const placed = layout.inserted![raw]!;
   const held = placed.head.flatMap((piece) => [...piece.bytes]);
   if (held.length !== ONE_INSERTED_SECTION.length || held.some((one, k) => one !== ONE_INSERTED_SECTION[k])) {
-    throw new ComposeError(`raw slot ${raw} holds ${held.length} bytes, ${Buffer.from(held).toString('hex')}, where every Harmony `
+    throw new ComposeError(`raw slot ${raw} holds ${held.length} bytes, ${hexOf(Uint8Array.from(held))}, where every Harmony `
       + `One container holds two zero bytes; what the firmware reads there is unread, so it is not rebuilt`);
   }
   // `raw-18-table`, the owner `coverage.ts` gives the section, so the frame keeps it the inserted slot's own.

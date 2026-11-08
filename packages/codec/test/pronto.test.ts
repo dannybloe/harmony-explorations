@@ -18,10 +18,10 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  archiveProtocols, bitsPerDigit, blockOfDefinition, frameDigitBases, frameSlots, frameWidths,
-  keyCodeOfStatedCode, rhythmOfDefinition, waveformOfArchiveCommand, withStatedWidths,
-  withToggleCleared,
+  bitsPerDigit, blockOfDefinition, frameDigitBases, frameSlots, frameWidths, keyCodeOfStatedCode, rhythmOfDefinition,
+  waveformOfArchiveCommand, withStatedWidths, withToggleCleared,
 } from '../src/archive.ts';
+import { archiveProtocols } from '../src/archive.node.ts';
 import { pulsesOfBlock } from '../src/irframe.ts';
 import {
   PRONTO_CLOCK, prontoCarrier, prontoPairs, prontoUnits, readPronto, writePronto,

@@ -17,9 +17,9 @@
  * box may slide right by up to two columns to the place that keeps the most of the letter and, of those,
  * lies most on the one bit ink: on Oxanium the `j` is drawn a column further right in grey than in one bit.
  */
-import { readFileSync } from 'node:fs';
 import opentype, { type Font } from 'opentype.js';
 import { rasterise, type PathCommand } from './raster.ts';
+import { resource } from './resources.ts';
 
 /** One face: what it draws, its cell, baseline row and lead column, the typeface's cut and size, and the space's width. */
 export interface FaceSpec {
@@ -57,12 +57,17 @@ const BASELINE_Y = 40;
 
 const fonts = new Map<string, Font>();
 
-/** Oxanium in one cut, this repository's own copy beside the codec, with its licence, read once. */
+/**
+ * Oxanium in one cut, this repository's own copy beside the codec, with its licence, parsed once. Its bytes are what
+ * the codec's loader supplies, `resources.ts`, which on the Node entry reads that copy, as this did until `todo.md` 7.3.5.
+ */
 export function oxanium(weight: string): Font {
   let font = fonts.get(weight);
   if (font === undefined) {
-    const bytes = readFileSync(new URL(`../fonts/Oxanium/static/Oxanium-${weight}.ttf`, import.meta.url));
-    font = opentype.parse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+    const bytes = resource('oxanium')(weight);
+    // A copy, so the parser is handed the font's bytes alone: what was supplied may be a view into a larger buffer,
+    // as a small file read by Node is, a slice of a shared pool.
+    font = opentype.parse(new Uint8Array(bytes).buffer);
     fonts.set(weight, font);
   }
   return font;

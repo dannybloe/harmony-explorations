@@ -109,7 +109,8 @@ import {
   catalogueDevice,
   localTimestamp,
   saveEdits,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 import { irFrame } from '../src/irframe.ts';
 
 /** The erase block a Harmony One clears in one go, which is what a write is counted in. */
@@ -213,7 +214,7 @@ if (model === undefined) {
 
 let composed: ReturnType<typeof composeCatalogueDevices>;
 try {
-  composed = composeCatalogueDevices(before, archive, requests,
+  composed = composeCatalogueDevices(before, archiveAt(archive), requests,
     model === undefined ? {} : { maxDevices: model.maxDevices });
 } catch (error) {
   if (!(error instanceof ComposeError)) throw error;

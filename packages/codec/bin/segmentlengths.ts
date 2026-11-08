@@ -10,7 +10,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
-import { segmentLengthsModule } from '../src/archive.ts';
+import { segmentLengthsModule } from '../src/archive.node.ts';
+import '../src/resources.node.ts';
 
 if (IR_ARCHIVE === undefined) {
   console.error('no infrared archive checkout; clone logitech-harmony-ir-archive alongside or set HARMONY_IR_ARCHIVE');

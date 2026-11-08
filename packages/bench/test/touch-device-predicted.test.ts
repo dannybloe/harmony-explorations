@@ -41,7 +41,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch, waveformOfArchiveCommand, type Pulse } from '@harmony/codec';
+import { harmonyTouch, waveformOfArchiveCommand, type Pulse } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 

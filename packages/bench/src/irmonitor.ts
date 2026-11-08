@@ -48,7 +48,7 @@ import {
   catalogueCommands, codeIndex, codeKey, devices, framesOfPulses, fromFirstMark, harmonyTouch, identifyCodeset,
   irBlockWords, irGroups, irHeaderPointers, mergedIntervals, parse, pulsesOfWords, waveformOfArchiveCommand,
   type Container, type Pulse,
-} from '@harmony/codec';
+} from '@harmony/codec/node';
 
 /** Where the Flirc application keeps its tools on a Mac. `HARMONY_IRTOOLS` overrides it. */
 export const DEFAULT_IRTOOLS = '/Applications/Flirc.app/Contents/Resources/irtools';

@@ -18,10 +18,10 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  ARCHIVE_SCHEMA_VERSION, ArchiveError, archiveManifest, archiveProtocols, blockOfDefinition,
-  catalogueByRhythm, familiesOfRhythm, periodOfCarrier, rhythmKey, rhythmOfDefinition, segmentLengthsModule,
-  type BlockRefusal, type ConversionRefusal,
+  ARCHIVE_SCHEMA_VERSION, ArchiveError, blockOfDefinition, familiesOfRhythm, periodOfCarrier, rhythmKey,
+  rhythmOfDefinition, type BlockRefusal, type ConversionRefusal,
 } from '../src/archive.ts';
+import { archiveManifest, archiveProtocols, catalogueByRhythm, segmentLengthsModule } from '../src/archive.node.ts';
 import { pulsesOfBlock, type BiphaseTimings, type BlockTail, type FrameTimings, type Pulse }
   from '../src/irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';

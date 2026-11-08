@@ -50,6 +50,7 @@ import {
   numberSenders, parse, stateRecords, taggedList,
 } from '../src/index.ts';
 import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
 
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
 const SECOND = 'work/setups/h350-test/compile-Result.EzHex';
@@ -74,7 +75,7 @@ let memo: { first: Container; second: Container; ours: Container; out: ReturnTyp
 function composed() {
   if (memo !== undefined) return memo;
   const first = lab(FIRST);
-  const out = composeNoScreenFavourites(first, IR_ARCHIVE!, { ...KPN, channels: CHANNELS });
+  const out = composeNoScreenFavourites(first, archiveAt(IR_ARCHIVE!), { ...KPN, channels: CHANNELS });
   memo = { first, second: lab(SECOND), ours: parse(out.bytes), out };
   return memo;
 }
@@ -202,8 +203,8 @@ test('on a KPN of ours the device composer makes the ten digit copies, each Logi
   needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless('h350_config')), () => {
     // The factory configuration's bottom left key is free, and it holds no favourites.
     const factory = parse(require_('h350_config'));
-    const device = composeNoScreenDevice(factory, IR_ARCHIVE!, { ...KPN, place: 2 });
-    const out = composeNoScreenFavourites(parse(device.bytes), IR_ARCHIVE!, { ...KPN, channels: CHANNELS });
+    const device = composeNoScreenDevice(factory, archiveAt(IR_ARCHIVE!), { ...KPN, place: 2 });
+    const out = composeNoScreenFavourites(parse(device.bytes), archiveAt(IR_ARCHIVE!), { ...KPN, channels: CHANNELS });
     const ours = parse(out.bytes);
     assert.ok(ours.allChecksPass);
     // A set top box is a type Logitech stores the copies for whether or not a favourite calls them, `DIGIT_COPIES_BY_TYPE`,
@@ -233,7 +234,7 @@ test('on a KPN of ours the device composer makes the ten digit copies, each Logi
 test('the favourites composer refuses what no compile shows', needsCompiles, () => {
   const { first, ours } = composed();
   const compose = (c: Container, channels: readonly string[], device = KPN) => () =>
-    composeNoScreenFavourites(c, IR_ARCHIVE!, { ...device, channels });
+    composeNoScreenFavourites(c, archiveAt(IR_ARCHIVE!), { ...device, channels });
   assert.throws(compose(first, ['1', '2', '3', '4', '5', '6']), /6 favourite channels/);
   assert.throws(compose(first, []), /0 favourite channels/);
   assert.throws(compose(first, ['0']), /of 0 is in no compile/);
@@ -250,7 +251,7 @@ test('the favourites composer refuses what no compile shows', needsCompiles, () 
 test('the favourites composer refuses the Harmony 300, whose favourite keys are in another order',
   needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless('h300_programmed_config')), () => {
     const c = parse(require_('h300_programmed_config'));
-    assert.throws(() => composeNoScreenFavourites(c, IR_ARCHIVE!, { ...KPN, channels: ['1'] }), /skin 79/);
+    assert.throws(() => composeNoScreenFavourites(c, archiveAt(IR_ARCHIVE!), { ...KPN, channels: ['1'] }), /skin 79/);
     // The order it differs by: the one map with favourites sends 1, 2, 3 and 666 from scans 8, 2, 9 and 34.
     const maps = c.pointerArray(6)!.map((address) => taggedList(c, address)!.entries);
     const withFavourites = maps.filter((entries) => entries.some((one) => one.tag === 0x88 && spelled(c, one).startsWith('(7a:')));

@@ -51,6 +51,7 @@
  * six for a Harmony 350 and one for a Harmony 300, given its own activity's devices again and compared with what
  * Logitech wrote.
  */
+import type { CatalogueSource } from '../../catalogue.ts';
 import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import { type Container, type Instruction, parse } from '../../gspm.ts';
 import { commandIndex, encodeStateRecord, FROM_ANY } from '../../inputs.ts';
@@ -64,7 +65,8 @@ import { irGroups } from '../../ir.ts';
 import { appendCopyRecord, oneBlockCopy } from '../../sequence.ts';
 import { composeIrGroup } from '../../shared/infrared.ts';
 import {
-  type ActivityStepWrite, activityList, type Body, bodyOf, type ConditionArm, conditionList, flipList, gateList, sendList, writesList,
+  type ActivityStepWrite, activityList, type Body, bodyOf, type ConditionArm, conditionList, flipList, gateList,
+  sendList, writesList,
 } from './lists.ts';
 import {
   arraysStart, assertNoVariablesOutsideLists, highestEnd, keyMaps, listExtents, mapOfGroup, PRESS, withMapEntries,
@@ -138,7 +140,7 @@ type InputPlan =
  * A device's input as this family compiles it, or a refusal naming the shape no compile shows. The catalogue's own
  * reading is `inputPlan`, the screen families'; what differs here is what becomes of it, the module comment.
  */
-function inputOf(c: Container, archive: string, device: NoScreenActivityDevice): InputPlan {
+function inputOf(c: Container, archive: CatalogueSource, device: NoScreenActivityDevice): InputPlan {
   if (device.manufacturer === undefined || device.model === undefined) {
     throw new ComposeError(`${device.name} is put on an input, so its catalogue entry is needed`);
   }
@@ -202,7 +204,7 @@ function powerStepOf(c: Container, name: string, group: number): ActivityPowerSt
  * Compose Watch TV onto a Harmony 300 or 350 configuration, replacing the one it holds. Unstamped steps, restamped
  * once at the end.
  */
-export function composeNoScreenActivity(c: Container, archive: string, request: NoScreenActivityRequest): ComposedNoScreenActivity {
+export function composeNoScreenActivity(c: Container, archive: CatalogueSource, request: NoScreenActivityRequest): ComposedNoScreenActivity {
   const names = request.devices.map((one) => one.name);
   if (names.length === 0) throw new ComposeError('an activity of no devices switches nothing');
   if (new Set(names).size !== names.length) throw new ComposeError('a device is in the activity twice');

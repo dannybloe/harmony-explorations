@@ -31,6 +31,7 @@ import { describeOneDevicePages } from '../src/families/one/devicepages.ts';
 import { describeOneClockHeader } from '../src/families/one/clockheader.ts';
 import { oneActivityScreenModes } from '../src/families/one/activityscreens.ts';
 import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
+import '../src/resources.node.ts';
 
 /** The sixteen English Harmony One compiles of skin 54, `onewithouttour.test.ts`' list. */
 const SKIN_54 = [

@@ -40,7 +40,7 @@
  * Nothing here opens a remote. **Which architectures**: the Harmony Touch alone, firmware 4.15.330; its firmware reports
  * 17 and Logitech's templates file it under 18.
  */
-import { catalogueCommands, catalogueDevice, catalogueDriving, harmonyTouch, statedCode } from '@harmony/codec';
+import { catalogueCommands, catalogueDevice, catalogueDriving, harmonyTouch, statedCode, archiveAt } from '@harmony/codec/node';
 
 import { NOTHING_DOCUMENTS, type TouchAccountFile } from './touchnothingset.ts';
 import { keyOf, ourTag, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
@@ -156,7 +156,7 @@ function skeletonOf(record: harmonyTouch.DeviceWithFeatures): Json {
 /** Every generator run again on the inputs, each by itself. */
 export function layersOf(inputs: NothingInputs): Layers {
   const file = harmonyTouch.readTouchSetupFile(inputs.file);
-  const catalogue = harmonyTouch.catalogueOfArchive(file, inputs.archive);
+  const catalogue = harmonyTouch.catalogueOfArchive(file, archiveAt(inputs.archive));
   const setup = harmonyTouch.setupOfSetupFile(file, catalogue);
   const features: harmonyTouch.DeviceFeature[][] = [];
   const keyCodes: (string | undefined)[][] = [];

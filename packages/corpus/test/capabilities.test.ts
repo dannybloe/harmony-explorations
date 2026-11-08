@@ -12,7 +12,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { parse, deviceCount, activityCount } from '@harmony/codec';
+import { parse, deviceCount, activityCount } from '@harmony/codec/node';
 import { modelForSkin } from '@harmony/usb';
 import { imagePath, skipUnless } from '@harmony/lab';
 

@@ -32,16 +32,17 @@
  * person's equipment and must not be published.
  *
  * The archive is deflated with a data descriptor, so the local header's sizes are zero and the
- * compressed length comes from the central directory. `node:zlib` inflates it; no dependency is added
- * for this, which is deliberate, since a ZIP reader would be a large tree for one file. **Writing one
- * deflates with `deflate.ts`, our own**, since the stream Logitech's compiler writes is stock zlib's
- * at its defaults and Node's zlib writes another, `todo-compile-350.md` 5.1.4.
+ * compressed length comes from the central directory. `inflateRaw` in `deflate.ts` inflates it, our own
+ * since `todo.md` 7.3.5 so that this reader loads where there is no Node, and held to `node:zlib`'s answer
+ * on every archive here, `inflate.test.ts`; no dependency is added for this, which is deliberate, since a
+ * ZIP reader would be a large tree for one file. **Writing one deflates with `deflate.ts`, our own**,
+ * since the stream Logitech's compiler writes is stock zlib's at its defaults and Node's zlib writes
+ * another, `todo-compile-350.md` 5.1.4.
  */
-import { crc32, inflateRawSync } from 'node:zlib';
-import { deflateRaw } from './deflate.ts';
+import { deflateRaw, inflateRaw } from './deflate.ts';
 import type { Container } from './gspm.ts';
 import { GspmError, parse, TRAILER_CHECKSUM_OFFSET, trailerChecksum } from './gspm.ts';
-import { u16, u32 } from './bytes.ts';
+import { bytesOf, concatBytes, crc32, u16, u32 } from './bytes.ts';
 import { Writer } from './emit.ts';
 import { excise, relocate } from './relocate.ts';
 
@@ -114,7 +115,8 @@ function inflateOneEntry(blob: Uint8Array, at: number): string | undefined {
   }
   if (compressed === 0 || data + compressed > blob.length) return undefined;
   try {
-    return Buffer.from(inflateRawSync(blob.subarray(data, data + compressed))).toString('utf8');
+    // `ignoreBOM` keeps a byte order mark in the text, as `Buffer`'s decoding did, where a `TextDecoder` would drop it.
+    return new TextDecoder('utf-8', { ignoreBOM: true }).decode(inflateRaw(blob.subarray(data, data + compressed)));
   } catch {
     return undefined;
   }
@@ -275,10 +277,10 @@ export function zipTimeOf(words: ZipTimeWords): ZipTime {
  */
 export function metadataZip(xml: string, time: ZipTime | ZipTimeWords): Uint8Array {
   const words = 'year' in time ? zipTimeWords(time) : time;
-  const text = Buffer.from(xml, 'utf8');
+  const text = new TextEncoder().encode(xml);
   const data = deflateRaw(text);
-  const check = crc32(text) >>> 0;
-  const name = Buffer.from(ENTRY_NAME, 'latin1');
+  const check = crc32(text);
+  const name = bytesOf(ENTRY_NAME);
   const local = new Writer(30 + name.length).u32(LOCAL_HEADER).u16(ZIP_VERSION).u16(FLAG_DESCRIPTOR).u16(METHOD_DEFLATE)
     .u16(words.time).u16(words.date).u32(0).u32(0).u32(0).u16(name.length).u16(0).raw(name);
   const descriptor = new Writer(16).u32(DESCRIPTOR).u32(check).u32(data.length).u32(text.length);
@@ -288,13 +290,13 @@ export function metadataZip(xml: string, time: ZipTime | ZipTimeWords): Uint8Arr
     .u16(name.length).u16(0).u16(0).u16(0).u16(0).u32(0).u32(0).raw(name);
   const end = new Writer(22).u32(END_OF_DIRECTORY).u16(0).u16(0).u16(1).u16(1)
     .u32(directory.bytes.length).u32(directoryAt).u16(0);
-  return Buffer.concat([local.bytes, data, descriptor.bytes, directory.bytes, end.bytes]);
+  return concatBytes([local.bytes, data, descriptor.bytes, directory.bytes, end.bytes]);
 }
 
 /** The archive as its section: the `u32` length the reader finds it by, then the ZIP, on both architectures. */
 export function metadataSection(xml: string, time: ZipTime | ZipTimeWords): Uint8Array {
   const zip = metadataZip(xml, time);
-  return Buffer.concat([new Writer(4).u32(zip.length).bytes, zip]);
+  return concatBytes([new Writer(4).u32(zip.length).bytes, zip]);
 }
 
 /** A ZIP's time, its first entry's, read from its local header. */

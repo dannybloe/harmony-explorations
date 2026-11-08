@@ -44,6 +44,7 @@ import {
 } from '../src/index.ts';
 import { familyOf } from '../src/families/registry.ts';
 import { FOUR_SLOT_ITEMS, fourSlotCellAt } from '../src/families/four-slot/geometry.ts';
+import '../src/resources.node.ts';
 
 const COMPILES = ['h600_config', 'calibration_h600', 'h650_config_region',
   'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_config',

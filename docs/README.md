@@ -312,7 +312,17 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 packages/bench in todo.md 7.3.1 as knowledge about the remote; the
                                 receiver's cut of a frame is handed to it, and packages/bench's
                                 tests calibrate and hold it. The folder is not
-                                touch.ts, which is the Harmony One's touch screen
+                                touch.ts, which is the Harmony One's touch screen.
+                                Two entries, plan 013 decision 5 and todo.md 7.3.5:
+                                @harmony/codec, src/index.ts, loads in a renderer, since nothing
+                                it reaches imports a Node module or names a Node global,
+                                test/mainentry.test.ts; @harmony/codec/node, src/node.ts, carries
+                                it whole and adds the disk, the files named *.node.ts: the
+                                archive's readers by path beside the parsers they feed, archiveAt,
+                                the CatalogueSource a builder is handed in place of a path, and
+                                resources.node.ts, which supplies what src/resources.ts asks the
+                                loader for, the fonts, the icon list, a PNG's deflate and SHA-256.
+                                Inflating is our own, beside deflate.ts, test/inflate.test.ts
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when

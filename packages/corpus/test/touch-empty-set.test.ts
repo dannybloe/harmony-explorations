@@ -45,7 +45,7 @@ import { describe, it } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 

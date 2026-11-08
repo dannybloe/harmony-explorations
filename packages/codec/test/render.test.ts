@@ -44,6 +44,7 @@ import {
   screenSwitch,
   describeChoices,
 } from '../src/index.ts';
+import '../src/resources.node.ts';
 /**
  * The whole corpus, safe mode containers included, since those are the counterexamples that have
  * caught two picture readers already, sections 78 and 85.

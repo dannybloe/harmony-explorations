@@ -29,7 +29,7 @@
  * **What the model cannot say, the description asks the person to note**: the activity on the activity list, last,
  * with its name and the picture of its type, and its command list with the four labels of ours in their order.
  */
-import type { harmonyTouch } from '@harmony/codec';
+import type { harmonyTouch } from '@harmony/codec/node';
 
 import type { TestDefinition } from '../src/irsession.ts';
 import { keySteps, touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';

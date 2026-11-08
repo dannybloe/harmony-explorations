@@ -52,6 +52,8 @@ import {
 } from '../src/families/one/devicepages.ts';
 import { carried, catalogueDevices } from './carried.ts';
 import { listsReached } from './screenlists.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -68,7 +70,7 @@ const empty = (): ReturnType<typeof buildEmptyOneConfiguration> => {
 /** The composition, once for every test here. */
 let composedOnce: ComposedSetup | undefined;
 const composed = (): ComposedSetup => {
-  composedOnce ??= composeSetup(recipe(), { donor: empty().bytes, archive: IR_ARCHIVE!, builtAt: BUILT_AT });
+  composedOnce ??= composeSetup(recipe(), { donor: empty().bytes, archive: archiveAt(IR_ARCHIVE!), builtAt: BUILT_AT });
   return composedOnce;
 };
 
@@ -78,7 +80,7 @@ const written = (): Uint8Array => {
   if (writtenOnce !== undefined) return writtenOnce;
   const out = composed();
   const built = oneBuiltBytes(out.container, out.blended).owners;
-  const infrared = catalogueInfraredBytes(out.container, IR_ARCHIVE!, catalogueDevices(out.container, recipe())).owners;
+  const infrared = catalogueInfraredBytes(out.container, archiveAt(IR_ARCHIVE!), catalogueDevices(out.container, recipe())).owners;
   writtenOnce = built.map((one, k) => (one !== 0 || infrared[k] !== 0 ? 1 : 0));
   return writtenOnce;
 };

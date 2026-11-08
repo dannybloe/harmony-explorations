@@ -31,7 +31,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { BASE_SLOT_COUNT, SCREEN_SIZES, SLOT_MAPS } from '@harmony/codec';
+import { BASE_SLOT_COUNT, SCREEN_SIZES, SLOT_MAPS } from '@harmony/codec/node';
 import { PROFILES } from '@harmony/corpus/read';
 import {
   ARCH9_FLASH_TOP_MAX,

@@ -18,6 +18,7 @@ import {
 } from '../src/index.ts';
 import { ONE_CHOICES } from '../src/families/one/choices.ts';
 import { readOnePictures, withOnePictures } from '../src/families/one/pictures.ts';
+import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
 const SIXTEEN = [

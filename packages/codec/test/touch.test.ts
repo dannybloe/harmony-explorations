@@ -35,6 +35,7 @@ import {
   touchPageOf,
   touchPages,
 } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 const SAMPLES = ['one_config', 'one_config_unprogrammed'];
 const SCAN = 0x3f;

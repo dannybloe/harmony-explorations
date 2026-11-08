@@ -38,6 +38,7 @@ import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups, irHeaderPo
   from '../src/ir.ts';
 import { irdaString, pulsesOfWords, untilSilence } from '../src/irda.ts';
 import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
+import '../src/resources.node.ts';
 
 const SECURITY = 'https://svcs.myharmony.com/CompositeSecurityServices/Security.svc/json/';
 /**

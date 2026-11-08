@@ -88,7 +88,7 @@ import {
   SIDE_KEYS_ROW_PITCH, SIDE_KEYS_ROW_TOP, SIDE_KEYS_SEPARATOR_X, SIDE_KEYS_TOTAL_X, SIDE_KEYS_ARROW_X,
   SIDE_KEYS_LABEL_WIDTH,
 } from '../src/families/side-keys/index.ts';
-import { catalogueDriving } from '../src/driving.ts';
+import { catalogueDriving } from '../src/driving.node.ts';
 import { compiledBlockWords } from '../src/shared/infrared.ts';
 import { familyOf } from '../src/families/registry.ts';
 import { sideKeysCopyModes, sideKeysDeviceLists } from '../src/families/side-keys/devicescreen.ts';
@@ -103,6 +103,8 @@ import {
   parameterGroupLengthsMatch, parameterGroups, parse, roundTrip, saveEdits, screenProgram, screenStrings, stateRecords, stateTable,
   stateVariableSite, taggedList, timers, trailerAgrees,
 } from '../src/index.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 /** Every arch 8 configuration the lab holds of the 880 and 885: six contributed, the two bench units'. */
 const ARCH8 = ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d', 'arch8_config_880',
@@ -356,7 +358,7 @@ test('todo-compile-885 2.2 and 2.3: the catalogue\'s power of the eight sheet de
       const theirs = new Map(theirSends.map((one) => [`${one.from}${one.to}`,
         [irCarrier(c, irGroups(c)![one.send >> 8]!.addresses[one.send & 0xff]!)?.periodNs, ...recordWords(c, one.send)]]));
       // The label and pad words are A's own letters; what is compared is the records.
-      const composed = parse(composeCatalogueDevice(a, IR_ARCHIVE!, {
+      const composed = parse(composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
         manufacturer, model, label: 'Sony HT', commands: [...commands], labels: ['Power', 'Mute'].slice(0, commands.length),
         interDeviceDelay: lead,
       }).bytes);
@@ -605,7 +607,7 @@ test('an arch 8 configuration holds one copy of its device list per activity, en
 
 /** The Sony composed onto unit A, unstamped, as the composer returns it. */
 function composeSony(): ReturnType<typeof composeCatalogueDevice> {
-  return composeCatalogueDevice(open('h885_a_config'), IR_ARCHIVE!, { ...SONY, commands: [...SONY.commands], labels: [...SONY.labels] });
+  return composeCatalogueDevice(open('h885_a_config'), archiveAt(IR_ARCHIVE!), { ...SONY, commands: [...SONY.commands], labels: [...SONY.labels] });
 }
 
 test('todo-compile-885 2.1: the Sony DAV-C540 composed onto unit A reads back as a ninth device with its codes, its power, its page and a row on a second page of every copy of the device list',
@@ -887,29 +889,29 @@ test('todo-compile-885 2.1: what the side keys family refuses rather than guesse
   needing(skipUnless('h885_a_config'), skipWithoutIrArchive()), () => {
     const a = open('h885_a_config');
     // A whole device needs the keys a device mode's commands take, which no compile of an 885 has been read for.
-    assert.throws(() => composeCatalogueDevice(a, IR_ARCHIVE!, { manufacturer: 'Sony', model: 'DAV-C540', label: 'Sony HT', full: true }),
+    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), { manufacturer: 'Sony', model: 'DAV-C540', label: 'Sony HT', full: true }),
       (error: unknown) => error instanceof ComposeError && /todo-compile-885.md 2.5/.test(error.message));
     // Nine commands are a second page of a device mode.
-    assert.throws(() => composeCatalogueDevice(a, IR_ARCHIVE!, {
+    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
       ...SONY, commands: [...SONY.commands, 'Eject'], labels: [...SONY.labels, 'Eject'],
     }), /more than one page/);
     // A label wider than a cell, rather than cut.
-    assert.throws(() => composeCatalogueDevice(a, IR_ARCHIVE!, {
+    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
       ...SONY, commands: ['PowerToggle'], labels: ['Power the receiver'],
     }), /a cell holds 59/);
     // A toggling code in group 8, which shares its toggle bit with group 0. The Thomson 14MG115's codes toggle,
     // `togglegroups.test.ts`.
-    assert.throws(() => composeCatalogueDevice(a, IR_ARCHIVE!, {
+    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
       manufacturer: 'Thomson', model: '14MG115', label: 'Thomson', commands: ['PowerToggle'], labels: ['Power'],
     }), /toggle bit with group 0/);
     // A second device on the lists' new pages fills a cell of an existing page, which is a step of its own.
     const once = parse(composeSony().bytes);
-    assert.throws(() => composeCatalogueDevice(once, IR_ARCHIVE!, {
+    assert.throws(() => composeCatalogueDevice(once, archiveAt(IR_ARCHIVE!), {
       manufacturer: 'Plex', model: 'Plex_Player', label: 'Kodi', commands: ['Play'], labels: ['Play'],
     }), /room on its last page.*todo-compile-885.md 2.8/);
     // Unit B's copies have two pages each, the second with room: the ordinary case of a free cell, refused too.
     if (load('h885_b_config') !== undefined) {
-      assert.throws(() => composeCatalogueDevice(open('h885_b_config'), IR_ARCHIVE!, {
+      assert.throws(() => composeCatalogueDevice(open('h885_b_config'), archiveAt(IR_ARCHIVE!), {
         ...SONY, commands: [...SONY.commands], labels: [...SONY.labels],
       }), /copy at mode 86 has room on its last page.*todo-compile-885.md 2.8/);
     }

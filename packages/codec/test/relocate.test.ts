@@ -42,6 +42,7 @@ import {
   relocationFloor,
   trailerAgrees} from '../src/index.ts';
 import { setupView } from '../src/families/four-slot/compare.ts';
+import '../src/resources.node.ts';
 
 /** The whole corpus, the same nineteen as every corpus wide claim. */
 const SAMPLES = [

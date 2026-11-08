@@ -22,7 +22,7 @@
  * Nothing here opens a remote: it builds and compares. The bench script is `bin/touch-device-set.ts`, `--settings`
  * with `--context`, `--settings-back` and `--describe-context`.
  */
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 
 import { changeDocuments, differences } from './touchchangedset.ts';
 import { isContent } from './touchfavouritesset.ts';

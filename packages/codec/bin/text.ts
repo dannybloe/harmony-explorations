@@ -17,6 +17,7 @@
 import { LAB, load } from '@harmony/lab';
 import { parse, characterMap, drawnCodes, screenStrings, textCoverage, stateVariables } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
+import '../src/resources.node.ts';
 
 // The byte accounting's stated population, plus the two arch 8 configs of 12 August 2026. They are
 // here and not there on purpose: their text is what section 124 read, and admitting them to the byte

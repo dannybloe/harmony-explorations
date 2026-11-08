@@ -28,6 +28,7 @@ import {
   DEVICE_PAGE_PADS, buildOneDevicePages, checkOneDevicePages, describeOneDevicePages, devicePageSlotRoles,
   oneDeviceModes, withOneDevicePages,
 } from '../src/families/one/devicepages.ts';
+import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

@@ -9,10 +9,12 @@
  * `generic.test.ts`'s among them, are about containers. The registry imports it from here, as it imports each
  * compiled family from its own folder.
  */
+import type { CatalogueSource } from '../catalogue.ts';
 import type { DocumentFamily } from '../families/document.ts';
 import { refusalsBeforeASync, type Finding } from './check.ts';
 import {
-  ComposeRefusal, composeTouchActivity, composeTouchDeviceOfRow, withTouchActivity, withTouchDevice, type OwnActivity, type RowDevice,
+  ComposeRefusal, composeTouchActivity, composeTouchDeviceOfRow, withTouchActivity, withTouchDevice, type OwnActivity,
+  type RowDevice,
 } from './compose.ts';
 import type { SyncDocuments } from './documents.ts';
 import { emptyTouchDocuments } from './empty.ts';
@@ -26,8 +28,8 @@ import { composeTouchSettings, type OwnSettings } from './settings.ts';
 export interface TouchTypes {
   readonly documents: SyncDocuments;
   readonly setup: TouchSetupFile;
-  /** The infrared archive's root and the account's own fields, which a setup file never holds. */
-  readonly sources: { readonly archive: string; readonly account: TouchAccount };
+  /** The infrared archive, `archiveAt` on Node, and the account's own fields, which a setup file never holds. */
+  readonly sources: { readonly archive: CatalogueSource; readonly account: TouchAccount };
   /** A device of ours in the rhythm table's terms, as `packages/corpus/touch-devices/` holds one. */
   readonly device: RowDevice;
   readonly activity: OwnActivity;

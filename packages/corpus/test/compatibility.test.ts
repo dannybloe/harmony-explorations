@@ -12,7 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { INTENDED_VERSION_FIELDS, parseEzhex } from '@harmony/codec';
+import { INTENDED_VERSION_FIELDS, parseEzhex } from '@harmony/codec/node';
 import {
   COMPARABLE_FIELDS,
   CompatibilityError,

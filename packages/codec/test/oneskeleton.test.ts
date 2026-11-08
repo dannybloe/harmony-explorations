@@ -45,6 +45,7 @@ import { buildOneTourScreens, describeOneTourScreens } from '../src/families/one
 import { buildOneDevicePages, describeOneDevicePages } from '../src/families/one/devicepages.ts';
 import { buildOneDeviceLists, describeOneDeviceLists } from '../src/families/one/devicelists.ts';
 import { buildOneActivityMenu, describeOneActivityMenu } from '../src/families/one/activitymenu.ts';
+import '../src/resources.node.ts';
 
 const BUILT_AT = '2026-10-23T12:00:00';
 const OPTIONS = { skin: 54, builtAt: BUILT_AT, choices: ONE_CHOICES };

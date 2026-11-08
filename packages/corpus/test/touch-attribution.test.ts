@@ -53,7 +53,7 @@ import { sep } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 
 import { attributeNothingSet, attributionCounts, layersOf, withField, type AttributedField, type NothingInputs } from '../experiments/touchattribution.ts';

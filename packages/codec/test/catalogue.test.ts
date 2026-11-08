@@ -18,14 +18,16 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  catalogueCommands, catalogueDevice, catalogueManufacturers, catalogueModels, codeIndex, codeKey,
-  identifyCodeset, DEVICE_TYPE_NAMES,
+  codeKey, identifyCodeset, DEVICE_TYPE_NAMES,
 } from '../src/catalogue.ts';
+import {
+  catalogueCommands, catalogueDevice, catalogueManufacturers, catalogueModels, codeIndex,
+} from '../src/catalogue.node.ts';
 import { parse, payloadOf } from '../src/index.ts';
 import { irGroups } from '../src/ir.ts';
 import { devices, keyCodes } from '../src/inventory.ts';
 import { metadataArchive } from '../src/metadata.ts';
-import { archiveProtocols } from '../src/archive.ts';
+import { archiveProtocols } from '../src/archive.node.ts';
 import { CONTAINERS as CATALOGUE_CORPUS } from '../bin/corpus.ts';
 import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnScans } from '../bin/drawings.ts';
 import { irHeaderPointers, irBlockWords, irCarrier } from '../src/ir.ts';
@@ -33,6 +35,7 @@ import { biphaseFrames } from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import { irFrame } from '../src/irframe.ts';
 import { statedCode } from '../src/stated.ts';
+import '../src/resources.node.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 

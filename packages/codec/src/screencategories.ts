@@ -111,6 +111,7 @@ import {
 import { glyphRunAt, referencedStringAddress } from './text.ts';
 import { valueMaps } from './valuemap.ts';
 import { STATE_BAND, STATE_WRITE_BASE } from './actions.ts';
+import { hexOf } from './bytes.ts';
 import {
   ACTIVITY_STATE_NAME,
   deviceListRowMode,
@@ -232,13 +233,6 @@ export function contentKey(bytes: Uint8Array): string {
   return a.toString(16).padStart(8, '0') + b.toString(16).padStart(8, '0');
 }
 
-/** Bytes as lower case hex, without `Buffer`, since the codec also runs outside Node. */
-function hex(bytes: Uint8Array): string {
-  let out = '';
-  for (const byte of bytes) out += byte.toString(16).padStart(2, '0');
-  return out;
-}
-
 /** One action instruction as text, at either strength. The tag is a tagged list's, or 0 when queued. */
 function entryForm(entry: TaggedEntry, look: boolean): string {
   const flags = entry.flags === undefined ? '' : `f${entry.flags}`;
@@ -306,15 +300,15 @@ function instructionForm(
   const picture = pictureReference(one);
   if (picture !== undefined) {
     // Where a picture lands is part of the look; where it is stored is not.
-    return `${one.opcode}(${hex(ops.subarray(0, ops.length - 3))})@pic:${ctx.pictures.get(picture) ?? '?'}`;
+    return `${one.opcode}(${hexOf(ops.subarray(0, ops.length - 3))})@pic:${ctx.pictures.get(picture) ?? '?'}`;
   }
   if (one.opcode === SCREEN_TEXT_INLINE || one.opcode === SCREEN_TEXT_AT) {
     const codes = one.opcode === SCREEN_TEXT_INLINE ? one.glyphs
       : glyphRunAt(ctx.c, referencedStringAddress(one) as number);
     const keys = [...(codes ?? [])].map((code) => ctx.glyphKeys[font]?.get(code) ?? `c${code}`);
     for (const key of keys) glyphs?.add(key);
-    const position = hex(ops.subarray(0, 2));
-    if (!look) return `${one.opcode}(${position})${hex(codes ?? new Uint8Array(0))}`;
+    const position = hexOf(ops.subarray(0, 2));
+    if (!look) return `${one.opcode}(${position})${hexOf(codes ?? new Uint8Array(0))}`;
     // A glyph code is the configuration's own numbering, so the look reads the glyph it names. Both
     // text opcodes are one draw in the look: whether a string is inline or names another program's copy
     // is how the compiler shared bytes, not what the screen shows.
@@ -340,7 +334,7 @@ function instructionForm(
     });
     return `S${one.opcode}:${variable}{${arms.join(',')}}`;
   }
-  return `${one.opcode}(${hex(ops)})`;
+  return `${one.opcode}(${hexOf(ops)})`;
 }
 
 /** Both forms of a tagged list's entries. */
@@ -626,7 +620,7 @@ export function screenUnits(c: Container): ScreenUnit[] | undefined {
       const [lookList, verbatimList] = listForms(list?.entries ?? []);
       lookPages += `P[${lookList}]`;
       verbatimPages += `P[${verbatimList}]`
-        + (copy !== undefined && extent !== undefined ? `C${hex(c.blob.subarray(copy, copy + extent.length))}` : '');
+        + (copy !== undefined && extent !== undefined ? `C${hexOf(c.blob.subarray(copy, copy + extent.length))}` : '');
     }
     const [lookOwn, verbatimOwn] = listForms(record.entries);
     const glyphs = new Set<string>();
@@ -685,7 +679,7 @@ export function screenUnits(c: Container): ScreenUnit[] | undefined {
       .sort((a, b) => (a.look < b.look ? -1 : a.look > b.look ? 1 : 0)).map((one) => one.address);
     const glyphs = new Set<string>();
     const look = ordered.length === 0
-      ? `shared:${ranges.map((r) => hex(c.blob.subarray(r.start, r.start + r.length))).join('')}`
+      ? `shared:${ranges.map((r) => hexOf(c.blob.subarray(r.start, r.start + r.length))).join('')}`
       : `shared:${graphForm(ctx, ordered, true, glyphs)}`;
     const verbatim = ordered.length === 0 ? look : `shared:${graphForm(ctx, ordered, false)}`;
     const allSetup = userIndices.every(setupUser);
@@ -741,7 +735,7 @@ export function screenUnits(c: Container): ScreenUnit[] | undefined {
     const off = c.blobOffsetOf(font.address) as number;
     units.push(finish({ kind: 'font-set', label: `font set ${index}`, ranges: [{ start: off, length: font.length }],
                         look: `font:${font.height}:${held.join(',')}`,
-                        verbatim: `font:${hex(c.blob.subarray(off, off + 3))}:${held.join(',')}`,
+                        verbatim: `font:${hexOf(c.blob.subarray(off, off + 3))}:${held.join(',')}`,
                         holdsGlyphs: held.filter((k) => k !== '-') }));
   });
 
@@ -760,7 +754,7 @@ export function screenUnits(c: Container): ScreenUnit[] | undefined {
     const ranges = runsOf(owner, (o) => o === name);
     const bytes = ranges.reduce((n, r) => n + r.length, 0);
     if (bytes === 0) continue;
-    const raw = why === undefined ? ranges.map((r) => hex(c.blob.subarray(r.start, r.start + r.length))).join('') : '';
+    const raw = why === undefined ? ranges.map((r) => hexOf(c.blob.subarray(r.start, r.start + r.length))).join('') : '';
     units.push(finish({ kind: 'table', label, ranges, look: `${name}:${bytes}:${raw}`, verbatim: `${name}:${bytes}:${raw}`,
                         ...(why === undefined ? {} : { setupBy: why }) }));
   }

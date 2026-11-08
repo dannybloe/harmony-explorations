@@ -49,6 +49,8 @@ import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
 import { oneDeviceLists } from '../src/families/one/devicelists.ts';
 import { activities, activityScreens, caseQueued, ENTER_MODE } from '../src/inventory.ts';
 import { valueMaps } from '../src/valuemap.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 const argument = (name: string): string | undefined => {
   const at = process.argv.indexOf(`--${name}`);
@@ -85,7 +87,7 @@ if (setupPath === undefined) {
   if (IR_ARCHIVE === undefined) throw new Error('no infrared archive: clone logitech-harmony-ir-archive beside this repository, or set HARMONY_IR_ARCHIVE');
   const donor = buildEmptyOneConfiguration({ skin: 54, builtAt, blend: false });
   const setup = readRecipe(JSON.parse(readFileSync(setupPath, 'utf8')));
-  const composed = composeSetup(setup, { donor: donor.bytes, archive: IR_ARCHIVE, builtAt });
+  const composed = composeSetup(setup, { donor: donor.bytes, archive: archiveAt(IR_ARCHIVE), builtAt });
   c = composed.container;
   if (!c.allChecksPass) throw new Error('the composed setup fails a container check');
   assertStateTableConsistent(c);

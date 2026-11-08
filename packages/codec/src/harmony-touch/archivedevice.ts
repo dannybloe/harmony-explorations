@@ -9,7 +9,8 @@
  * what that brings, its commands, its power steps, its inputs, its states and its timing, is exactly what the archive
  * holds per catalogue entry since its schema version 2, every value on the one record checked equal to what Logitech's
  * service answered, `driving.ts`. So this reads the entry through the codec's own readers, `catalogueDevice`,
- * `catalogueCommands` and `catalogueDriving`, and writes the Touch's record from what they give.
+ * `catalogueCommands` and `catalogueDriving`, handed in as a `CatalogueSource`, and writes the Touch's record from
+ * what they give.
  *
  * **What crosses from the archive, and how, decision 15.** Names and numbers only, through our readers: each command's
  * name and the family and numbers of its code, which `statedCode` parses out of the keycode text; the device's maker,
@@ -51,8 +52,8 @@
  * the Harmony Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it under 18.
  */
 import { ArchiveError } from '../archive.ts';
-import { catalogueCommands, catalogueDevice, type CatalogueDevice } from '../catalogue.ts';
-import { catalogueDriving, type DeviceDriving, type DeviceState, type DriveStep } from '../driving.ts';
+import type { CatalogueDevice, CatalogueSource } from '../catalogue.ts';
+import type { DeviceDriving, DeviceState, DriveStep } from '../driving.ts';
 import { statedCode, statedProtocol } from '../stated.ts';
 import { ComposeRefusal, isOwnId, OWN_IDS } from './compose.ts';
 import { definitionOfRow, isDefinitionRefusal, keyCodeText } from './definition.ts';
@@ -207,7 +208,7 @@ export function featuresOfDriving(driving: DeviceDriving, deviceId: number, spel
  * `definitionOfRow` cannot write, and a code `keyCodeText` cannot write into it; and two commands whose names differ only
  * in case, of which the engine keeps the later.
  */
-export function deviceRecordOfArchive(root: string, request: ArchiveDeviceRequest): ArchiveDeviceRecord {
+export function deviceRecordOfArchive(archive: CatalogueSource, request: ArchiveDeviceRequest): ArchiveDeviceRecord {
   const { entry, id } = request;
   if (!isOwnId(id)) throw new ComposeRefusal(`device id ${id} is not one of ours, ${OWN_IDS.first} to ${OWN_IDS.last}`);
   const slash = entry.indexOf('/');
@@ -216,7 +217,7 @@ export function deviceRecordOfArchive(root: string, request: ArchiveDeviceReques
   const file = entry.slice(slash + 1);
   let found: CatalogueDevice;
   try {
-    found = catalogueDevice(root, slug, file);
+    found = archive.device(slug, file);
   } catch (e) {
     // The archive's own error, turned into the refusal a caller of this folder catches, so a misspelt entry in a setup
     // file is reported as the file's mistake rather than as a stack.
@@ -248,7 +249,7 @@ export function deviceRecordOfArchive(root: string, request: ArchiveDeviceReques
   };
 
   const folded = new Map<string, string>();
-  const commands: Command[] = catalogueCommands(root, found.codeset).map((c) => {
+  const commands: Command[] = archive.commands(found.codeset).map((c) => {
     const where = `${entry} ${c.name}`;
     const before = folded.get(c.name.toLowerCase());
     if (before !== undefined) throw new ComposeRefusal(`${entry}: two commands are named "${before}" and "${c.name}", which the engine keeps as one`);
@@ -263,7 +264,7 @@ export function deviceRecordOfArchive(root: string, request: ArchiveDeviceReques
     return { Name: c.name, KeyCode: keyCode, ProtocolId: definition['Id-'], TransportType: INFRARED, Raw: null };
   });
 
-  const driving = catalogueDriving(root, slug, file);
+  const driving = archive.driving(slug, file);
   const t = driving.timing;
   const spell: Spelling = (name) => folded.get(name.toLowerCase()) ?? name;
   const record: DeviceWithFeatures = {

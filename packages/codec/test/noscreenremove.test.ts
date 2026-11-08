@@ -63,6 +63,7 @@ import {
 } from '../src/index.ts';
 import { mapOfGroup } from '../src/families/no-screen/devices.ts';
 import { allLists, maps, records, timerRecords, transitions, without } from './noscreenparts.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
 
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 
@@ -110,8 +111,8 @@ function round(file: keyof typeof COMPILES, one: (typeof LONG)[number]): Case {
   const theirs = compile(COMPILES[file]);
   const removed = withoutNoScreenDevice(theirs, one.name);
   const without = parse(removed.bytes);
-  const deviceType = catalogueDevicePlan(without, IR_ARCHIVE!, { manufacturer: one.manufacturer, model: one.model, label: 'X', full: true }).entry.deviceType;
-  const out = composeNoScreenDevice(without, IR_ARCHIVE!, {
+  const deviceType = catalogueDevicePlan(without, archiveAt(IR_ARCHIVE!), { manufacturer: one.manufacturer, model: one.model, label: 'X', full: true }).entry.deviceType;
+  const out = composeNoScreenDevice(without, archiveAt(IR_ARCHIVE!), {
     ...one, press: 'long', volumeFrom: volumeSource({ name: one.name, deviceType }, SETUP_ACCOUNT),
   });
   const made = { theirs, removed, without, out, ours: parse(out.bytes) };

@@ -28,6 +28,7 @@ import { oneStartupVariables, withoutStartupAssistant } from '../src/families/on
 import { describeOneWiring } from '../src/families/one/wiring.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow, namedByRecords } from './screenlists.ts';
+import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

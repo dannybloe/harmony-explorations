@@ -24,6 +24,7 @@ import { IMAGES, load } from '@harmony/lab';
 
 import { archSlot, parse, readingCoverage } from '../src/index.ts';
 import type { ReadingCoverage } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 const detail = process.argv.includes('--detail');
 

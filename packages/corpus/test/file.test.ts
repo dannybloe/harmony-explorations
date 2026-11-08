@@ -10,7 +10,7 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { decodePayload } from '@harmony/codec';
+import { decodePayload } from '@harmony/codec/node';
 import { load, require_, skipUnless } from '@harmony/lab';
 
 import {

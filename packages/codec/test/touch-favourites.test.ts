@@ -48,6 +48,7 @@ import {
 } from '../src/harmony-touch/favourites.ts';
 import { readConfiguration, stationLogo } from '../src/harmony-touch/read.ts';
 import { FULL, answersOf } from './touch-sync.ts';
+import '../src/resources.node.ts';
 
 const SIX = 'touch_activity_set_back';
 const STATION = stationLogo('station');

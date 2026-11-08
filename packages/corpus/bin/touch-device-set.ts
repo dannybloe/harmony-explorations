@@ -105,7 +105,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 
-import { harmonyTouch, readPng as readPngHeader } from '@harmony/codec';
+import { harmonyTouch, readPng as readPngHeader } from '@harmony/codec/node';
 import { LAB } from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 

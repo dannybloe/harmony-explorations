@@ -17,6 +17,7 @@
  * device's commands, `deviceCopyLists`, because Logitech stores one more one block copy beside the digits, the
  * channel tuning's finish, `channelFinish`; the digits stay its first caller, with their own entry.
  */
+import type { CatalogueSource } from '../../catalogue.ts';
 import { catalogueDevicePlan } from '../../composecatalogue.ts';
 import type { DeviceDriving } from '../../driving.ts';
 import { type Container, parse } from '../../gspm.ts';
@@ -49,7 +50,7 @@ export interface DigitLists {
  * The action list sending each of the device's digits, 0 to 9, as its one block copy, and the configuration
  * holding them: found where the device's group has them, appended where it does not.
  */
-export function deviceDigitLists(c: Container, archive: string, request: DigitDevice, group: number): DigitLists {
+export function deviceDigitLists(c: Container, archive: CatalogueSource, request: DigitDevice, group: number): DigitLists {
   const digits = Array.from({ length: NUMBER_SENDER_DIGITS }, (_, d) => String(d));
   return deviceCopyLists(c, archive, request, group, digits, 'the digits');
 }
@@ -60,7 +61,7 @@ export function deviceDigitLists(c: Container, archive: string, request: DigitDe
  * `deviceDigitLists`, for any command: the copy is the catalogue command's first block less its opening silence with
  * no held block, `oneBlockCopy`, and its list is the family's send shape. `what` names the commands in a refusal.
  */
-export function deviceCopyLists(c: Container, archive: string, request: DigitDevice, group: number, names: readonly string[],
+export function deviceCopyLists(c: Container, archive: CatalogueSource, request: DigitDevice, group: number, names: readonly string[],
   what = 'the command'): DigitLists {
   const plan = catalogueDevicePlan(c, archive, {
     manufacturer: request.manufacturer, model: request.model, label: nameOfLabel(request.name), full: true,

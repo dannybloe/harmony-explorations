@@ -46,6 +46,7 @@ import { buildFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } fr
 import { describeWiring } from '../src/families/four-slot/wiring.ts';
 import { activityEntriesByName, buildScreenRecords, describeScreenRecords, inActivityOrder, screenRecordModes, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
 import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { load, skipUnless } from '@harmony/lab';
 import { deviceListRows, modeRecords, parse, taggedList } from '../src/index.ts';
 import { BEEP_OPCODE, SCREEN_ITEM_BEEP } from '../src/inventory.ts';
+import '../src/resources.node.ts';
 
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
   'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',

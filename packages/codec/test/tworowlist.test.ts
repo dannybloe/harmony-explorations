@@ -41,6 +41,7 @@ import {
   timers,
   type Container,
 } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 /**
  * Every Harmony 600, 650 and 700 configuration Logitech compiled that the lab holds once each, the

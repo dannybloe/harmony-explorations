@@ -38,6 +38,7 @@ import {
   timers,
   valueMaps,
 } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405's population. */
 const SKIN_54 = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

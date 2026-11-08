@@ -50,6 +50,7 @@ import {
 import {
   BLANK_TIMERS, EMPTY_ONE_FONTS, EMPTY_ONE_SCREENS, emptyOneNumbering, emptyOneSpecs,
 } from '../src/families/one/emptynumbering.ts';
+import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
 const SIXTEEN = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

@@ -19,6 +19,7 @@ import { IMAGES, load } from '@harmony/lab';
 import { coverage, parse, payloadOf } from '../src/index.ts';
 import type { CoverageReport } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
+import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);

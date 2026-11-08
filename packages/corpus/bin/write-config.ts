@@ -102,7 +102,7 @@ import { readFlashWindow } from '@harmony/usb/readwindow';
 import {
   ACTION_QUEUE_INSTRUCTIONS, QueueError, StateTableError, assertQueueFits,
   assertStateTableConsistent, parse, trailerChecksum, worstQueueRun,
-} from '@harmony/codec';
+} from '@harmony/codec/node';
 import { profileFor, readConfig } from '../src/index.ts';
 import { StampError, stampForWrite, stoppedAfterErase } from '../src/stamp.ts';
 

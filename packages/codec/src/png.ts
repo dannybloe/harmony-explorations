@@ -16,20 +16,17 @@
  * has to know a picture it is about to hand the remote is one the remote's screens can draw, so `readPng`
  * reads a file back: its header and every chunk checked, and its image data inflated and measured, the reader
  * beside the writer as `CLAUDE.md` asks of every encoding.
+ *
+ * **The compression is two halves since `todo.md` 7.3.5**, so the module loads where there is no Node. Reading
+ * inflates with our own `inflateZlib`, beside `deflate.ts`'s writer, since every decoder gives the same bytes;
+ * writing deflates with the `deflate` the codec's loader supplies, `resources.ts`, Node's zlib on the Node entry,
+ * because that is what every PNG here was written with and a Harmony Touch background of ours is named by the hash
+ * of its bytes.
  */
-import { deflateSync, inflateSync } from 'node:zlib';
-
+import { concatBytes, crc32 } from './bytes.ts';
+import { inflateZlib } from './deflate.ts';
 import { UNDRAWN, type Raster } from './render.ts';
-
-/** CRC32, the PNG variant. Computed rather than tabulated: it runs four times per image. */
-function crc32(bytes: Uint8Array): number {
-  let crc = 0xffffffff;
-  for (const byte of bytes) {
-    crc ^= byte;
-    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
+import { resource } from './resources.ts';
 
 /** One chunk: length, kind, body, and the CRC over the kind and the body together. */
 function chunk(kind: string, body: Uint8Array): Uint8Array {
@@ -104,7 +101,7 @@ export function encodePng(width: number, height: number, rgb: Uint8Array, channe
   const parts = [
     new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk('IHDR', header),
-    chunk('IDAT', new Uint8Array(deflateSync(raw))),
+    chunk('IDAT', resource('deflate')(raw)),
     chunk('IEND', new Uint8Array()),
   ];
   const size = parts.reduce((total, part) => total + part.length, 0);
@@ -182,7 +179,7 @@ export function readPng(bytes: Uint8Array): PngHeader {
   if (header.interlace !== 0) return { ...header, chunks };
   let raw: Uint8Array;
   try {
-    raw = new Uint8Array(inflateSync(Buffer.concat(data)));
+    raw = inflateZlib(concatBytes(data));
   } catch {
     throw new RangeError('the image data does not inflate');
   }

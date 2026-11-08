@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, require_, skipUnless } from '@harmony/lab';
-import { parse } from '@harmony/codec';
+import { parse } from '@harmony/codec/node';
 
 import { buildReport, containerReport, probeBase, probeRemote, usbReport } from '../src/index.ts';
 

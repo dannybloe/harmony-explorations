@@ -30,6 +30,7 @@ import { screenRecordModes } from '../src/families/four-slot/screenrecords.ts';
 import { BackgroundError, checkStateBackgrounds, screenStates, withStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
 import { HARMONY_650_PICTURES } from '../src/families/four-slot/pictures.ts';
 import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import '../src/resources.node.ts';
 
 const H650 = [
   'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',

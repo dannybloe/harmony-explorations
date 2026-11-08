@@ -132,6 +132,7 @@ import { familyOf, NoFamilyError } from '../src/families/registry.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
+import '../src/resources.node.ts';
 
 /**
  * The goal device's commands, as the catalogue states them for the LG 42LM3400: power is a toggle

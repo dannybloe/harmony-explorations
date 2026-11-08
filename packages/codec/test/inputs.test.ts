@@ -24,7 +24,7 @@ import {
   deviceVariables, devices, handlerSets, inputPlan, inputTarget, irGroups, joinPowerOff,
   activityStartTargets, parse, payloadOf, stateRecords, stateVariables, taggedList,
   type Container, type HeldStep, type HeldVariable, type InputPlan,
-} from '../src/index.ts';
+} from '../src/node.ts';
 import { irFrame } from '../src/irframe.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */

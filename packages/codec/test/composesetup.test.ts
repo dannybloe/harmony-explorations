@@ -41,6 +41,8 @@ import { startSwitchedOn } from '../src/shared/activities.ts';
 import { ENTER_MODE, activities, activityScreens, caseQueued, deviceListRowMode, devices } from '../src/inventory.ts';
 import { valueMaps } from '../src/valuemap.ts';
 import { type DonorDeviceRequest, catalogueInfraredBytes, composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -50,7 +52,7 @@ const NEEDS = { skip: skipUnless('harvest_one_two_devices').skip || skipWithoutI
 /** The composition, once for every test here: it takes about a minute. */
 let composedOnce: ComposedSetup | undefined;
 const composed = (): ComposedSetup => {
-  composedOnce ??= composeSetup(recipe(), { donor: require_('harvest_one_two_devices'), archive: IR_ARCHIVE!, builtAt: '2026-10-15T12:00:00' });
+  composedOnce ??= composeSetup(recipe(), { donor: require_('harvest_one_two_devices'), archive: archiveAt(IR_ARCHIVE!), builtAt: '2026-10-15T12:00:00' });
   return composedOnce;
 };
 
@@ -200,7 +202,7 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
 /** What the catalogue reproduces of the composed setup's infrared, every device's records composed whole, measured once. */
 let catalogueOnce: ReturnType<typeof catalogueInfraredBytes> | undefined;
 const catalogueBytes = (): ReturnType<typeof catalogueInfraredBytes> => {
-  catalogueOnce ??= catalogueInfraredBytes(composed().container, IR_ARCHIVE!, catalogueDevicesOf(composed().container, recipe()));
+  catalogueOnce ??= catalogueInfraredBytes(composed().container, archiveAt(IR_ARCHIVE!), catalogueDevicesOf(composed().container, recipe()));
   return catalogueOnce;
 };
 
@@ -371,7 +373,7 @@ test('todo-compile-one 4.10: with the tour kept the composed setup does not keep
   choices.welcomeTour = true;
   let kept: Container;
   try {
-    kept = composeSetup(recipe(), { donor: require_('harvest_one_two_devices'), archive: IR_ARCHIVE!, builtAt: '2026-10-15T12:00:00' }).container;
+    kept = composeSetup(recipe(), { donor: require_('harvest_one_two_devices'), archive: archiveAt(IR_ARCHIVE!), builtAt: '2026-10-15T12:00:00' }).container;
   } finally {
     choices.welcomeTour = false;
   }
@@ -601,13 +603,13 @@ test('todo-compile-one 8.1.3: the donor\'s LG and Denon are given the infrared r
   // 63 and 118 records word for word the catalogue's and not the fifteen copies, and neither group in the
   // composer's order. So the attribution says what the catalogue writes and is not blind to a Logitech record.
   const donor = parse(require_('harvest_one_two_devices'));
-  assert.deepEqual(catalogueInfraredBytes(donor, IR_ARCHIVE!, [
+  assert.deepEqual(catalogueInfraredBytes(donor, archiveAt(IR_ARCHIVE!), [
     { label: 'LG_OLED65G26LA', manufacturer: 'LG', model: 'OLED65G26LA' },
     { label: 'Denon_AVR-X4800H', manufacturer: 'Denon', model: 'AVR-X4800H' },
   ]).devices.map((one) => [one.records, one.reproduced, one.array]), [[76, 63, false], [120, 118, false]]);
   // **And a refusal**: a device whose records carry codes its catalogue entry does not is refused rather than kept,
   // here the LG's records against the Plasma's entry.
-  assert.throws(() => composeDonorDeviceInfrared(donor, IR_ARCHIVE!, { label: 'LG_OLED65G26LA', manufacturer: 'Panasonic', model: 'TX-P42GT30E' }),
+  assert.throws(() => composeDonorDeviceInfrared(donor, archiveAt(IR_ARCHIVE!), { label: 'LG_OLED65G26LA', manufacturer: 'Panasonic', model: 'TX-P42GT30E' }),
     /LG_OLED65G26LA's record 0 sends a code, at its carrier, that no command of Panasonic TX-P42GT30E in the catalogue composes/);
 
   // **End to end, every send**: the step run on Logitech's compile alone, every site that sends one of the two devices'
@@ -626,7 +628,7 @@ test('todo-compile-one 8.1.3: the donor\'s LG and Denon are given the infrared r
     ['LG_OLED65G26LA', 'LG', 'OLED65G26LA', 0, 11], ['Denon_AVR-X4800H', 'Denon', 'AVR-X4800H', 1, 0],
   ] as const) {
     const before = sendsOf(donor, group);
-    const after = sendsOf(parse(composeDonorDeviceInfrared(donor, IR_ARCHIVE!, { label, manufacturer, model }).bytes), group);
+    const after = sendsOf(parse(composeDonorDeviceInfrared(donor, archiveAt(IR_ARCHIVE!), { label, manufacturer, model }).bytes), group);
     assert.deepEqual(after.map((one) => [one.within, one.code]), before.map((one) => [one.within, one.code]), label);
     assert.equal(after.filter((one, k) => one.held !== before[k]!.held).length, heldNow, label);
     assert.equal(before.length, group === 0 ? 76 : 120);

@@ -24,7 +24,7 @@
  *
  * Nothing here opens a remote.
  */
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 
 import { changeDocuments, differences } from './touchchangedset.ts';
 import { keyOf, prepareSet, type TouchSet } from '../src/touchsync.ts';

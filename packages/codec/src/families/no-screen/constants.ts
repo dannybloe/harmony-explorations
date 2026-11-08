@@ -30,6 +30,7 @@
  * Read only towards hardware: the result is bytes and pieces that `layOutContainer` places.
  */
 import { PIN_BAND, STATE_BAND } from '../../actions.ts';
+import { sameBytes } from '../../bytes.ts';
 import { buildLogArea, type BuiltParameterBlock, parameterGroupWriter } from '../../firmwaresections.ts';
 import { countedTable, type ContainerPiece } from '../../frame.ts';
 import { actionListBytes, type Instruction } from '../../gspm.ts';
@@ -142,7 +143,7 @@ function collect(lists: readonly [number, ContainerPiece][]): Map<number, Contai
   const out = new Map<number, ContainerPiece>();
   for (const [index, piece] of lists) {
     const there = out.get(index);
-    if (there !== undefined && Buffer.compare(there.bytes, piece.bytes) !== 0) throw new ComposeError(`list ${index} is given two different bodies`);
+    if (there !== undefined && !sameBytes(there.bytes, piece.bytes)) throw new ComposeError(`list ${index} is given two different bodies`);
     out.set(index, piece);
   }
   return out;

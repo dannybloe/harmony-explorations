@@ -35,14 +35,16 @@ import { pipeline } from 'node:stream/promises';
 import { execFileSync } from 'node:child_process';
 import { createGunzip, gzipSync } from 'node:zlib';
 import { IR_ARCHIVE, LAB, imagePath } from '@harmony/lab';
-import { archiveManifest } from '../src/archive.ts';
+import { archiveManifest } from '../src/archive.node.ts';
 import { deviceDriving } from '../src/driving.ts';
 import {
   RAW_BLOCKS_FILE, RAW_BLOCK_LINES, RAW_DERIVED_DIRECTORY, RAW_FEATURES_FILE, RAW_FIELDS, RAW_FIELDS_FILE,
   RAW_FIELDS_FORMAT, RAW_INDEX_ENTRY, RAW_INDEX_FILE, RAW_INDEX_HEADER, RAW_INDEX_MAGIC, RAW_MANIFEST_FILE,
-  RAW_SUMS_FILE, type RawDeviceRecord, type RawFieldsEntry, type RawManifest, alignDevice, catalogueRules,
-  rawCaptureLine, rawDerivedState, rawFieldsEntry, rawProjection, statedSha256,
+  RAW_SUMS_FILE, type RawDeviceRecord, type RawFieldsEntry, type RawManifest, alignDevice, rawFieldsEntry,
+  rawProjection,
 } from '../src/catalogueraw.ts';
+import { catalogueRules, rawCaptureLine, rawDerivedState, statedSha256 } from '../src/catalogueraw.node.ts';
+import '../src/resources.node.ts';
 
 const RELEASES = 'https://api.github.com/repos/pickysysadmin/logitech-harmony-ir-archive/releases';
 const offline = process.argv.includes('--offline');

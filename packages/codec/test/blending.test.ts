@@ -42,6 +42,7 @@ import {
 import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 import { withStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
 import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import '../src/resources.node.ts';
 
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;

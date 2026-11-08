@@ -12,7 +12,7 @@ import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { decodePayload } from '@harmony/codec';
+import { decodePayload } from '@harmony/codec/node';
 import { load, skipUnless } from '@harmony/lab';
 
 import { Bench, VERSION_FIELDS, type BenchDeps, type OpenRemote } from '../src/index.ts';

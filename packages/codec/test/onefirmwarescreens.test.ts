@@ -18,6 +18,7 @@ import {
 import {
   buildOneFirmwareScreens, checkOneFirmwareScreens, describeOneFirmwareScreens, withOneFirmwareScreens,
 } from '../src/families/one/firmwarescreens.ts';
+import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

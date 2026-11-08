@@ -45,13 +45,15 @@ import {
   composableKeycode, namesReleaseGroup, sameTrain, statedCode, statedCodeOfDefinition, statedProtocol, TABLE_PRESS_REPEATS, waveformOfArchiveCommand,
   type PressRepeats,
 } from '../src/index.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 const root = IR_ARCHIVE;
 if (root === undefined) {
   console.error('no infrared archive checkout found; set HARMONY_IR_ARCHIVE');
   process.exit(1);
 }
-const protocols = archiveProtocolsByName(root);
+const protocols = archiveProtocolsByName(archiveAt(root));
 
 /** Every device's count by its codeset: the archive's own index, then one read per device file. */
 const countsBySet = new Map<string, number[]>();

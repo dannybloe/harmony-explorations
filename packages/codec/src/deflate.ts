@@ -39,6 +39,9 @@
  * every chain and changes which candidates a search sees, and no archive needs it (the longest
  * text in the lab is 30775 bytes).
  * Not checked: whether a version of zlib other than 1.2.12 writes the same streams.
+ *
+ * **And the reader**, at the end of this module since `todo.md` 7.3.5: `inflateRaw` and `inflateZlib`, held to Node's
+ * zlib by `inflate.test.ts`, so a PNG and a metadata archive are read where there is no Node.
  */
 
 /** The window, and how far back a match may reach: the window less the lookahead zlib keeps, 32768 less 262. */
@@ -557,4 +560,267 @@ export function deflateRaw(input: Uint8Array): Uint8Array {
   flush(at, true);
   out.align();
   return out.bytes();
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// And the stream read back, RFC 1951 for a raw stream and RFC 1950 for its zlib wrapping
+
+/*
+ * **Why the reader is here too, since `todo.md` 7.3.5.** A PNG's image data and a metadata archive's entry were
+ * inflated by Node's zlib, which kept the codec's core from loading where there is no Node. Inflating, unlike
+ * deflating, has one answer for every stream, so our own reader can be held to Node's exactly: it is, on every PNG and
+ * every metadata archive the tests and the lab hold and on streams damaged at random, `inflate.test.ts`. It sits beside
+ * the writer because it reads the same tables, a field's decoder beside its encoder.
+ *
+ * **What it refuses is what zlib refuses**, so a reader that tries a candidate offset and takes a refusal as "not here",
+ * as `metadata.ts` does on a Harmony 890's container, finds the same answer it did: a block type of 3; a stored block
+ * whose length and complement disagree; more than 286 literal and length codes or 30 distance codes; a code length code
+ * that is not complete; a repeat with nothing before it or past the last length; no end of block code; a literal and
+ * length or a distance code that is over-subscribed, or incomplete other than by being one code of one bit; a code no
+ * table holds, length codes 286 and 287 and distance codes 30 and 31 among them; a distance reaching back before the
+ * start; and a stream that ends early. Bytes after the end of the stream are not read, as zlib does not read them. The
+ * decoding is the plain one, a code's bits one at a time against the count of each length, which is slower than
+ * zlib's tables and fast enough for a logo and a few kilobytes of text.
+ */
+
+/** A stream that does not inflate, with what is wrong with it. */
+export class InflateError extends RangeError {}
+
+/** The longest code deflate allows. */
+const MAX_CODE_BITS = 15;
+
+/** A canonical Huffman code for decoding: how many codes of each length, and the symbols in the order of their codes. */
+interface Decoding {
+  readonly counts: Uint16Array;
+  readonly symbols: Uint16Array;
+}
+
+/**
+ * The code `lengths` give the first `n` symbols, and how far it is from complete: below zero over-subscribed, above
+ * zero incomplete, zero complete or empty.
+ */
+function decoding(lengths: ArrayLike<number>, n: number): { readonly code: Decoding; readonly left: number } {
+  const counts = new Uint16Array(MAX_CODE_BITS + 1);
+  for (let symbol = 0; symbol < n; symbol += 1) counts[lengths[symbol]!]! += 1;
+  const symbols = new Uint16Array(n);
+  if (counts[0] === n) return { code: { counts, symbols }, left: 0 };
+  let left = 1;
+  for (let length = 1; length <= MAX_CODE_BITS; length += 1) {
+    left = left * 2 - counts[length]!;
+    if (left < 0) return { code: { counts, symbols }, left };
+  }
+  const next = new Uint16Array(MAX_CODE_BITS + 2);
+  for (let length = 1; length <= MAX_CODE_BITS; length += 1) next[length + 1] = next[length]! + counts[length]!;
+  for (let symbol = 0; symbol < n; symbol += 1) {
+    const length = lengths[symbol]!;
+    if (length !== 0) symbols[next[length]!++] = symbol;
+  }
+  return { code: { counts, symbols }, left };
+}
+
+/** Whether a code is one an inflater may use: complete, or empty, or a single code of one bit. */
+function usable(read: { readonly code: Decoding; readonly left: number }, n: number): boolean {
+  return read.left === 0 || (read.left > 0 && n === read.code.counts[0]! + read.code.counts[1]!);
+}
+
+/** Bits in, least significant first, the order `Bits` above packs them in. */
+class BitsIn {
+  /** The next byte not yet taken into `buffer`. */
+  at: number;
+  private readonly data: Uint8Array;
+  private buffer = 0;
+  private count = 0;
+
+  constructor(data: Uint8Array, at: number) {
+    this.data = data;
+    this.at = at;
+  }
+
+  bits(width: number): number {
+    let value = this.buffer;
+    while (this.count < width) {
+      if (this.at >= this.data.length) throw new InflateError('the stream ends early');
+      value |= this.data[this.at]! << this.count;
+      this.at += 1;
+      this.count += 8;
+    }
+    this.buffer = value >>> width;
+    this.count -= width;
+    return value & ((1 << width) - 1);
+  }
+
+  /** One symbol of `code`, its bits most significant first, RFC 1951 section 3.1.1. */
+  decode(code: Decoding): number {
+    let bits = 0;
+    let first = 0;
+    let index = 0;
+    for (let length = 1; length <= MAX_CODE_BITS; length += 1) {
+      bits |= this.bits(1);
+      const count = code.counts[length]!;
+      if (bits - first < count) return code.symbols[index + bits - first]!;
+      index += count;
+      first = (first + count) << 1;
+      bits <<= 1;
+    }
+    throw new InflateError('a code no table holds');
+  }
+
+  /** Drop the rest of the byte being read, as a stored block and the end of a stream do. */
+  align(): void {
+    this.buffer = 0;
+    this.count = 0;
+  }
+}
+
+/** The output, grown as it fills. */
+class BytesOut {
+  bytes = new Uint8Array(1 << 16);
+  length = 0;
+
+  room(more: number): void {
+    if (this.length + more <= this.bytes.length) return;
+    let size = this.bytes.length * 2;
+    while (size < this.length + more) size *= 2;
+    const grown = new Uint8Array(size);
+    grown.set(this.bytes.subarray(0, this.length));
+    this.bytes = grown;
+  }
+}
+
+const FIXED_LITERALS = decoding(FIXED_LITERAL_LENGTHS, FIXED_LITERAL_LENGTHS.length).code;
+const FIXED_DISTANCES = decoding(FIXED_DISTANCE_LENGTHS, FIXED_DISTANCE_LENGTHS.length).code;
+
+/** The block headers of a dynamic block, read into its two codes. */
+function dynamicCodes(input: BitsIn): { readonly literals: Decoding; readonly distances: Decoding } {
+  const literalCount = input.bits(5) + 257;
+  const distanceCount = input.bits(5) + 1;
+  const codeLengthCount = input.bits(4) + 4;
+  if (literalCount > LITERAL_CODES || distanceCount > DISTANCE_CODES) throw new InflateError('too many literal and length or distance codes');
+  const codeLengths = new Uint8Array(CODE_LENGTH_CODES);
+  for (let index = 0; index < codeLengthCount; index += 1) codeLengths[CODE_LENGTH_ORDER[index]!] = input.bits(3);
+  const lengthCode = decoding(codeLengths, CODE_LENGTH_CODES);
+  if (lengthCode.left !== 0) throw new InflateError('the code length code is not complete');
+  const lengths = new Uint8Array(literalCount + distanceCount);
+  let index = 0;
+  while (index < lengths.length) {
+    const symbol = input.decode(lengthCode.code);
+    if (symbol < 16) {
+      lengths[index] = symbol;
+      index += 1;
+      continue;
+    }
+    let value = 0;
+    let repeat: number;
+    if (symbol === 16) {
+      if (index === 0) throw new InflateError('a repeat with no length before it');
+      value = lengths[index - 1]!;
+      repeat = 3 + input.bits(2);
+    } else if (symbol === 17) {
+      repeat = 3 + input.bits(3);
+    } else {
+      repeat = 11 + input.bits(7);
+    }
+    if (index + repeat > lengths.length) throw new InflateError('a repeat past the last length');
+    lengths.fill(value, index, index + repeat);
+    index += repeat;
+  }
+  if (lengths[END_OF_BLOCK] === 0) throw new InflateError('no end of block code');
+  const literals = decoding(lengths.subarray(0, literalCount), literalCount);
+  if (!usable(literals, literalCount)) throw new InflateError('the literal and length code is over-subscribed or incomplete');
+  const distances = decoding(lengths.subarray(literalCount), distanceCount);
+  if (!usable(distances, distanceCount)) throw new InflateError('the distance code is over-subscribed or incomplete');
+  return { literals: literals.code, distances: distances.code };
+}
+
+/** The raw stream starting at `at`, inflated, and the byte after its last block. */
+function inflateFrom(stream: Uint8Array, at: number): { readonly out: Uint8Array; readonly end: number } {
+  const input = new BitsIn(stream, at);
+  const out = new BytesOut();
+  let last = 0;
+  do {
+    last = input.bits(1);
+    const type = input.bits(2);
+    if (type === 0) {
+      input.align();
+      if (input.at + 4 > stream.length) throw new InflateError('the stream ends early');
+      const length = stream[input.at]! | (stream[input.at + 1]! << 8);
+      const complement = stream[input.at + 2]! | (stream[input.at + 3]! << 8);
+      if (length !== (~complement & 0xffff)) throw new InflateError('a stored block whose length and its complement disagree');
+      input.at += 4;
+      if (input.at + length > stream.length) throw new InflateError('the stream ends early');
+      out.room(length);
+      out.bytes.set(stream.subarray(input.at, input.at + length), out.length);
+      out.length += length;
+      input.at += length;
+      continue;
+    }
+    if (type === 3) throw new InflateError('block type 3, which deflate does not define');
+    const { literals, distances } = type === 1 ? { literals: FIXED_LITERALS, distances: FIXED_DISTANCES } : dynamicCodes(input);
+    for (;;) {
+      const symbol = input.decode(literals);
+      if (symbol < END_OF_BLOCK) {
+        out.room(1);
+        out.bytes[out.length] = symbol;
+        out.length += 1;
+        continue;
+      }
+      if (symbol === END_OF_BLOCK) break;
+      const code = symbol - 257;
+      if (code >= LENGTH_CODES) throw new InflateError(`length code ${symbol}, which deflate does not define`);
+      const length = LENGTH_BASE[code]! + input.bits(LENGTH_EXTRA[code]!);
+      const distanceSymbol = input.decode(distances);
+      if (distanceSymbol >= DISTANCE_CODES) throw new InflateError(`distance code ${distanceSymbol}, which deflate does not define`);
+      const distance = DISTANCE_BASE[distanceSymbol]! + input.bits(DISTANCE_EXTRA[distanceSymbol]!);
+      if (distance > out.length) throw new InflateError('a distance reaching back before the start');
+      out.room(length);
+      for (let copied = 0; copied < length; copied += 1) {
+        out.bytes[out.length] = out.bytes[out.length - distance]!;
+        out.length += 1;
+      }
+    }
+  } while (last === 0);
+  input.align();
+  return { out: out.bytes.slice(0, out.length), end: input.at };
+}
+
+/** A raw deflate stream inflated, what a ZIP entry holds, as Node's `inflateRawSync` inflates it. */
+export function inflateRaw(stream: Uint8Array): Uint8Array {
+  return inflateFrom(stream, 0).out;
+}
+
+/** Adler-32, RFC 1950 section 8, the check a zlib stream ends with. */
+export function adler32(bytes: Uint8Array): number {
+  let a = 1;
+  let b = 0;
+  for (let at = 0; at < bytes.length;) {
+    // 5552 bytes is the most that can be summed before `b` must be reduced, zlib's NMAX; a double holds far more,
+    // so this only keeps the arithmetic in the range the reduction was written for.
+    const end = Math.min(at + 5552, bytes.length);
+    for (; at < end; at += 1) {
+      a += bytes[at]!;
+      b += a;
+    }
+    a %= 65521;
+    b %= 65521;
+  }
+  return ((b << 16) | a) >>> 0;
+}
+
+/**
+ * A zlib stream, RFC 1950, inflated, what a PNG's image data is, as Node's `inflateSync` inflates it: the header
+ * checked, its window at most 32 KiB and no preset dictionary, and the Adler-32 at the end compared.
+ */
+export function inflateZlib(stream: Uint8Array): Uint8Array {
+  if (stream.length < 2) throw new InflateError('the stream ends early');
+  const method = stream[0]!;
+  const flags = stream[1]!;
+  if (((method << 8) | flags) % 31 !== 0) throw new InflateError('a zlib header whose check is wrong');
+  if ((method & 0x0f) !== 8) throw new InflateError('a zlib header naming a method other than deflate');
+  if (method >> 4 > 7) throw new InflateError('a zlib header with a window over 32 KiB');
+  if ((flags & 0x20) !== 0) throw new InflateError('a zlib header asking for a preset dictionary');
+  const { out, end } = inflateFrom(stream, 2);
+  if (end + 4 > stream.length) throw new InflateError('the stream ends early');
+  const stated = ((stream[end]! << 24) | (stream[end + 1]! << 16) | (stream[end + 2]! << 8) | stream[end + 3]!) >>> 0;
+  if (stated !== adler32(out)) throw new InflateError('the Adler-32 at the end is wrong');
+  return out;
 }

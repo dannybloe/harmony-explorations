@@ -32,8 +32,7 @@ import {
   type ComposedDonorInfrared,
 } from '../composecatalogue.ts';
 import { inputPlan, inputTarget, type ComposedInputs } from '../inputs.ts';
-import { catalogueDriving } from '../driving.ts';
-import { catalogueDevice } from '../catalogue.ts';
+import type { CatalogueSource } from '../catalogue.ts';
 import { activityPauseGroups, composeSequence } from '../sequence.ts';
 
 /**
@@ -54,10 +53,10 @@ export interface AssembleOptions {
   /** False keeps the donor's placement of parked pieces and pictures instead of `placePieces`'. */
   readonly place?: boolean;
   /**
-   * The checkout of the device catalogue's archive, decision 15, which composing a device needs, and
-   * naming a donor device's input does, since an input's value is its place in the catalogue's list.
+   * The device catalogue's archive, decision 15, which composing a device needs, and naming a donor device's
+   * input does, since an input's value is its place in the catalogue's list: `archiveAt` of a checkout on Node.
    */
-  readonly archive?: string;
+  readonly archive?: CatalogueSource;
 }
 
 /** One step of the assembly, for a caller that reports. */
@@ -306,7 +305,7 @@ function composeSetupActivity(
         throw new AssemblyError(`${activity.name} puts ${one.device} on ${one.input}, and naming a donor device's input needs the catalogue's archive`);
       }
       const [slug, file] = (setupDevice?.device ?? '').split('/');
-      names = inputPlan(catalogueDriving(options.archive, slug ?? '', file ?? '')).input?.values;
+      names = inputPlan(options.archive.driving(slug ?? '', file ?? '')).input?.values;
     }
     const variable = deviceVariables(c).find((each) => each.device === label && each.property === 'Input')?.index;
     // A device with one input that does not step has no input variable, and Logitech's compiler writes
@@ -422,13 +421,13 @@ export function checkComposed(c: Container): void {
  * composers add, and the catalogue's own manufacturer and model, joined by `_`, for one the donor already
  * holds, the way Logitech names a device it compiled. Unknown without the archive.
  */
-function catalogueTypes(setup: Recipe, archive: string | undefined): (name: string | undefined) => number | undefined {
+function catalogueTypes(setup: Recipe, archive: CatalogueSource | undefined): (name: string | undefined) => number | undefined {
   const types = new Map<string, number>();
   if (archive !== undefined) {
     for (const device of setup.devices) {
       const [slug, file] = device.device.split('/');
       if (slug === undefined || file === undefined) continue;
-      const type = catalogueDevice(archive, slug, file).deviceType;
+      const type = archive.device(slug, file).deviceType;
       types.set(device.name, type);
       types.set(`${slug}_${file}`, type);
     }

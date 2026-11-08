@@ -51,7 +51,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { bytes, parse, taggedList, type Container } from '@harmony/codec';
+import { bytes, parse, taggedList, type Container } from '@harmony/codec/node';
 import { IR_ARCHIVE, load, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 
 import { CodeBook } from '../src/irmonitor.ts';

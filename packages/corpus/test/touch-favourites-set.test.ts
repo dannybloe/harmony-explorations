@@ -38,7 +38,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { encodePng, harmonyTouch } from '@harmony/codec';
+import { encodePng, harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
 

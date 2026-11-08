@@ -26,6 +26,7 @@ import {
 } from '../src/families/one/pictures.ts';
 import { withOneBuilders, withOneComposedBuilders } from '../src/families/one/builders.ts';
 import { withoutTourAndAssistant } from '../src/families/one/withouttour.ts';
+import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
 const SIXTEEN = [

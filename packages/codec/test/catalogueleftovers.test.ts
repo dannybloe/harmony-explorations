@@ -54,7 +54,8 @@ import {
   statedProtocol,
   TABLE_PRESS_REPEATS,
   waveformOfArchiveCommand,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 
 /** Every command of the archive with its keycode and the `protocol` field beside it, once per codeset. */
 let commands: { keycode: string; protocol: string }[] | undefined;
@@ -78,7 +79,7 @@ const familyOf = (keycode: string): string => /^G:([^:]+):/.exec(keycode)![1]!;
 
 test('five family spellings in the catalogue\'s codes name no definition, 222 commands, and the folded spelling finds the one the command\'s own protocol field names on every command',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const unnamed = new Map<string, number>();
     let agree = 0;
     const disagree: string[] = [];
@@ -115,7 +116,7 @@ test('the control: a folded spelling fitting two definitions finds neither, and 
 
 test('a code spelling its family otherwise composes exactly as the same code spelt as its definition, at either count',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const tally = new Map<string, number>();
     for (const keycode of new Set(archiveCommands().map(({ keycode }) => keycode))) {
       const family = familyOf(keycode);
@@ -147,7 +148,7 @@ const BLOCK_FAMILIES = ['Entone 56 Bit', 'Galaxis 16 Bit Quad Toggle', 'Philips 
 
 test('on the codes the four rows take, the definition at the row\'s count sends the row\'s train on 4797 of 4834, and the 67 they do not take go to the definition',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const calibration = new Map<string, [number, number]>();
     const admitted = new Map<string, number>();
     for (const keycode of new Set(archiveCommands().map(({ keycode }) => keycode))) {
@@ -217,14 +218,14 @@ const CLOSURE = [
 test('a Pioneer receiver and a Philips television holding such codes, composed whole, are Logitech\'s records on a Harmony One but for the Philips power step\'s long press version, the three codes included, and at the other count none of the three is',
   slow(needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config'))), () => {
     const base = open('h650_panasonic_config');
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const results: string[] = [];
     for (const one of CLOSURE) {
       const theirs = records(open(one.compile), one.group);
       const logitech = new Set(theirs);
       const codes = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, one.manufacturer, one.model).codeset!);
       for (const powerSteps of [true, false]) {
-        const composed = composeCatalogueDevices(base, IR_ARCHIVE!, [{ manufacturer: one.manufacturer, model: one.model,
+        const composed = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [{ manufacturer: one.manufacturer, model: one.model,
           label: 'Test', full: true, powerSteps }], { maxDevices: 99 });
         const device = composed.devices[0]!;
         assert.deepEqual(device.leftOut, [], `${one.model}: every catalogue command composes`);

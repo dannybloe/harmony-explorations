@@ -26,6 +26,7 @@ import {
   keepDeviceOn, modeRecords, parse, payloadOf, queueRun, roundTrip, sendPreludes, sequenceBody, taggedList, trailerAgrees,
   type Container, type Instruction, type SequenceStep} from '../src/index.ts';
 import { listSends, setupView } from '../src/families/four-slot/compare.ts';
+import '../src/resources.node.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

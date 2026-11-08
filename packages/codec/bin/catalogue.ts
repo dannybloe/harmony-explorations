@@ -31,11 +31,12 @@ import { devices, keyCodes } from '../src/inventory.ts';
 import { irFrame } from '../src/irframe.ts';
 import { ArchiveError } from '../src/archive.ts';
 import {
-  catalogueCommands, catalogueDevice, catalogueManufacturers, codeIndex, codeKey, identifyCodeset,
-  DEVICE_TYPE_NAMES, type Identification,
+  codeKey, identifyCodeset, DEVICE_TYPE_NAMES, type Identification,
 } from '../src/catalogue.ts';
+import { catalogueCommands, catalogueDevice, catalogueManufacturers, codeIndex } from '../src/catalogue.node.ts';
 import { CONTAINERS } from './corpus.ts';
 import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnScans } from './drawings.ts';
+import '../src/resources.node.ts';
 
 const detail = process.argv.includes('--detail');
 

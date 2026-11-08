@@ -21,7 +21,7 @@
  * here by `packages/corpus/test/touch-empty-set.test.ts`. It never prints a value out of a document. Nothing here opens
  * a remote.
  */
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 
 import { changeDocuments } from './touchchangedset.ts';
 import { isPictureAddress, logosAsked, withContent, type Content } from './touchfavouritesset.ts';

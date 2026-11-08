@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { decodePayload, parse } from '@harmony/codec';
+import { decodePayload, parse } from '@harmony/codec/node';
 import { load, skipUnless } from '@harmony/lab';
 
 import {

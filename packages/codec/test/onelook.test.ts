@@ -30,6 +30,7 @@ import { ACTION_LIST_TABLE_SLOT, archSlot } from '../src/gspm.ts';
 import { oneScreenLightTimer, withScreenLight } from '../src/families/one/screenlight.ts';
 import { timers } from '../src/tables.ts';
 import { restamped } from '../src/shared/core.ts';
+import '../src/resources.node.ts';
 
 /** The nineteen Harmony One compiles, as `fonttable.test.ts`'s. */
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

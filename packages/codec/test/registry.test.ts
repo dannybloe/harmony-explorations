@@ -37,6 +37,8 @@ import { emptyTouchDocuments } from '../src/harmony-touch/empty.ts';
 import type { TouchAccount } from '../src/harmony-touch/fromnothing.ts';
 import { ComposeError } from '../src/shared/core.ts';
 import { answersOf, FULL } from './touch-sync.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 test('every model of the model table is chosen a compiled family by its architecture or refused naming it, 14 and 21 of 35, the Harmony Touch a document family outside the table and the Harmony 300 and 350 a compiled one', () => {
   const served: string[] = [];
@@ -194,7 +196,7 @@ test('the Touch\'s family reads its setup file, refuses another model\'s, and bu
   const raw = JSON.parse(readFileSync(new URL('../../corpus/setups/touch-test.json', import.meta.url), 'utf8')) as Record<string, unknown>;
   const setup = family.readSetup(raw);
   assert.throws(() => family.readSetup({ ...raw, model: { name: 'Harmony One', skin: 54 } }), /is for the Harmony One, not the Harmony Touch/);
-  const docs = family.build(setup, { archive: IR_ARCHIVE!, account: ACCOUNT });
+  const docs = family.build(setup, { archive: archiveAt(IR_ARCHIVE!), account: ACCOUNT });
   assert.deepEqual(Object.keys(docs), ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList']);
   const read = family.read(docs);
   assert.deepEqual([read.activities.length, read.devices.length], [5, 7]);

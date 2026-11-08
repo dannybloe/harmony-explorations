@@ -28,6 +28,7 @@ import {
   timers,
   trailerChecksum,
 } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);

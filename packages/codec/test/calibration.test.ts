@@ -32,6 +32,7 @@ import { parse } from '../src/gspm.ts';
 import { devices, activities, inventory } from '../src/inventory.ts';
 import { coverage } from '../src/coverage.ts';
 import { emit } from '../src/emit.ts';
+import '../src/resources.node.ts';
 
 /** What was chosen, before any of these bytes existed. */
 const CHOSEN = {

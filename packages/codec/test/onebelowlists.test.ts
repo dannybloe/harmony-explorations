@@ -33,6 +33,7 @@ import {
 import { buildOneWiring, describeOneWiring } from '../src/families/one/wiring.ts';
 import { oneStartupVariables } from '../src/families/one/startupassistant.ts';
 import { leftBelow, namedByRecords } from './screenlists.ts';
+import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405, and of them the five where "Devices Off Again" stops. */
 const SIXTEEN = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

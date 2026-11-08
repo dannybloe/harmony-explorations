@@ -26,9 +26,11 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { imagePath, IR_ARCHIVE, LAB } from '@harmony/lab';
-import { ArchiveError, archiveProtocols, blockOfDefinition, catalogueByRhythm, familiesOfRhythm,
-         rhythmOfDefinition, type ArchiveBlock, type ArchiveRhythm, type BlockRefusal,
-         type CatalogueFamily, type ConversionRefusal } from '../src/archive.ts';
+import {
+  ArchiveError, blockOfDefinition, familiesOfRhythm, rhythmOfDefinition, type ArchiveBlock, type ArchiveRhythm,
+  type BlockRefusal, type CatalogueFamily, type ConversionRefusal,
+} from '../src/archive.ts';
+import { archiveProtocols, catalogueByRhythm } from '../src/archive.node.ts';
 import { parse, type Container } from '../src/gspm.ts';
 import { payloadOf } from '../src/ezhex.ts';
 import { statedCode } from '../src/stated.ts';
@@ -1711,6 +1713,7 @@ const GENERATED = `/**
  * identical to a config Logitech built.
  */
 import type { FrameCarrier, FrameShape } from './irframe.ts';
+import '../src/resources.node.ts';
 
 export interface StatedProtocol {
   /** Logitech's own name for it, as their analyser and their catalogue spell it. */

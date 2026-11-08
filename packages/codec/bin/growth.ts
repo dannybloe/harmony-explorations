@@ -20,6 +20,7 @@ import { require_ } from '@harmony/lab';
 import { growthReport, parse, payloadOf } from '../src/index.ts';
 import type { GrowthReport } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
+import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);

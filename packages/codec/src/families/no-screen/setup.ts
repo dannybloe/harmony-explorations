@@ -49,7 +49,7 @@
  * the same compile part by part. The Harmony 350 alone, one setup; the Harmony 300 has no long press and no favourite
  * key table, and its devices on short presses alone are not run through here.
  */
-import { catalogueDevice } from '../../catalogue.ts';
+import type { CatalogueSource } from '../../catalogue.ts';
 import { type Container, parse } from '../../gspm.ts';
 import { devices } from '../../inventory.ts';
 import type { Recipe } from '../../recipe/recipe.ts';
@@ -112,7 +112,7 @@ function entryOf(device: string): { manufacturer: string; model: string } {
 }
 
 /** Compose a whole setup onto a Harmony 350 configuration. Restamped, by the last composer that ran. */
-export function composeNoScreenSetup(c: Container, archive: string, request: NoScreenSetupRequest): ComposedNoScreenSetup {
+export function composeNoScreenSetup(c: Container, archive: CatalogueSource, request: NoScreenSetupRequest): ComposedNoScreenSetup {
   const { recipe, keys } = request;
   const skin = (c.versionWord ?? -1) & 0xff;
   if (recipe.model.skin !== undefined && recipe.model.skin !== skin) {
@@ -161,7 +161,7 @@ export function composeNoScreenSetup(c: Container, archive: string, request: NoS
   // Logitech's routing of volume asks every device's type, the account's in the setup's order.
   const account: AccountDevice[] = recipe.devices.map((one) => {
     const { manufacturer, model } = entryOf(one.device);
-    return { name: one.name, deviceType: catalogueDevice(archive, manufacturer, model).deviceType };
+    return { name: one.name, deviceType: archive.device(manufacturer, model).deviceType };
   });
   const volumeFrom = new Map(account.map((one) => [one.name, volumeSource(one, account)]));
 
@@ -271,7 +271,7 @@ export interface NoScreenSetupFromNothing extends NoScreenSetupRequest {
  * Logitech's with the one entry added, as the file the bench Harmony 300 ran did. Restamped by that step; a caller
  * writing it restamps again last, as every writer does.
  */
-export function buildNoScreenSetup(archive: string, request: NoScreenSetupFromNothing): ComposedNoScreenSetup {
+export function buildNoScreenSetup(archive: CatalogueSource, request: NoScreenSetupFromNothing): ComposedNoScreenSetup {
   const skin = request.recipe.model.skin;
   if (skin === undefined) throw new ComposeError('the setup states no skin, so the model the configuration is built for is not known');
   const empty = emptyNoScreenForComposing({

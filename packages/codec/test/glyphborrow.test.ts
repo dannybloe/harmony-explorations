@@ -64,6 +64,7 @@ import { IMAGE_SET_HEADER } from '../src/font.ts';
 import { TRAILER_CHECKSUM_OFFSET } from '../src/gspm.ts';
 import { Writer } from '../src/emit.ts';
 import { spelledText } from '../src/shared/spelling.ts';
+import '../src/resources.node.ts';
 
 /** Every Harmony 880 and 885 configuration the lab holds, the measurement's population. */
 const ARCH8 = [

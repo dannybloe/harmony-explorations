@@ -122,6 +122,7 @@ import {
 } from '../src/index.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { allLists, maps, records, recordKey, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
 
 const needsArchive = needing(skipWithoutIrArchive());
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
@@ -163,7 +164,7 @@ let memo: { out: ComposedNoScreenSetup; ours: Container } | undefined;
 /** The build, run once. */
 function built() {
   if (memo !== undefined) return memo;
-  const out = buildNoScreenSetup(IR_ARCHIVE!, { recipe: RECIPE, keys: KEYS, builtAt: MOMENT });
+  const out = buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: KEYS, builtAt: MOMENT });
   memo = { out, ours: parse(out.bytes) };
   return memo;
 }
@@ -237,7 +238,7 @@ test('the whole test setup builds with no Logitech file: every device, Watch TV 
     assert.equal(startUp(ours).length, 11);
     assert.equal(startUp(ours).filter((one) => one === '').length, 0);
     // The same inputs build the same bytes.
-    assert.ok(same(buildNoScreenSetup(IR_ARCHIVE!, { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes, out.bytes));
+    assert.ok(same(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes, out.bytes));
   });
 
 test('its state tables are the family allocator\'s byte for byte, and the file goes through the frame unchanged', needsArchive, () => {
@@ -325,21 +326,21 @@ test('the setup\'s order holds a device back only until what it needs is there: 
     // too, first: each waits for what it needs, the Knoll for both, and the rest keep the setup's order.
     const order = ['Knoll', 'KPN', 'LG TV', 'Plasma', 'Denon', 'Kodi', 'Switch', 'Sony HT'];
     const recipe: Recipe = { ...RECIPE, devices: order.map((name) => RECIPE.devices.find((one) => one.name === name)!) };
-    const out = buildNoScreenSetup(IR_ARCHIVE!, { recipe, keys: KEYS, builtAt: MOMENT });
+    const out = buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe, keys: KEYS, builtAt: MOMENT });
     assert.deepEqual(out.composed.map((one) => one.name), ['LG TV', 'Plasma', 'Denon', 'Knoll', 'KPN', 'Kodi', 'Switch', 'Sony HT']);
     // The archive lists them as composed, and the activity switches its devices in that order.
     assert.deepEqual(metadataArchive(parse(out.bytes))!.devices.map((one) => one.name), out.composed.map((one) => one.name));
     assert.deepEqual(out.activity!.power.map((one) => one.device), ['LG TV', 'Denon', 'KPN']);
     // Refused before anything is composed: a setup with no skin, an activity ending in no device's map, and a long
     // press on a key that holds no short press device.
-    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: { ...RECIPE, model: { name: 'Harmony 350' } }, keys: KEYS, builtAt: MOMENT }),
+    assert.throws(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: { ...RECIPE, model: { name: 'Harmony 350' } }, keys: KEYS, builtAt: MOMENT }),
       (error: unknown) => error instanceof ComposeError && /states no skin/.test(error.message));
     const activity = RECIPE.activities[0]!;
     const noChannel = { ...RECIPE, activities: [{ ...activity, devices: activity.devices.map((one) => ({ ...one, roles: [] })) }] };
-    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: noChannel, keys: KEYS, builtAt: MOMENT }), /gives 0 devices the ChannelChanging role/);
+    assert.throws(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: noChannel, keys: KEYS, builtAt: MOMENT }), /gives 0 devices the ChannelChanging role/);
     const { 'LG TV': _, ...noTv } = KEYS;
     const withoutTv: Recipe = { ...RECIPE, devices: RECIPE.devices.filter((one) => one.name !== 'LG TV'), activities: [], favourites: [] };
-    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: withoutTv, keys: noTv, builtAt: MOMENT }), /Knoll cannot be composed/);
+    assert.throws(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: withoutTv, keys: noTv, builtAt: MOMENT }), /Knoll cannot be composed/);
   });
 
 test('the comparison bites: against Logitech\'s first compile, without the favourites, the KPN\'s map, the lists and the number sender differ', needs, () => {
@@ -360,7 +361,7 @@ test('the file in the lab for the bench unit is this build from its own stamp, b
   assert.ok(existsSync(at), `${FROM_NOTHING} is in the lab, written by bin/compose-no-screen-setup.ts --from-nothing`);
   const file = new Uint8Array(readFileSync(at));
   const stamp = parse(file).builtAt!;
-  const again = buildNoScreenSetup(IR_ARCHIVE!, { recipe: RECIPE, keys: KEYS, builtAt: stamp });
+  const again = buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: KEYS, builtAt: stamp });
   assert.ok(same(file, again.bytes));
   // GSPM and PTYY, the end marker, end_addr at it and the trailer checksum, as write-file-config.ts checks them.
   const checked = assertFileFamilyContainer(file);
@@ -452,7 +453,7 @@ test('built from nothing, the KPN\'s map is the same catalogue KPN\'s on an acco
     assert.equal(mine['a6'], undefined);
     // Which commands they send: the catalogue's Replay and Advance, which the family's table gives no key, and which
     // the service's own default map before the save put on SkipBack and SkipForward.
-    const plan = catalogueDevicePlan(eight, IR_ARCHIVE!, { manufacturer: 'KPN', model: 'TV6000COK', label: 'KPN', full: true });
+    const plan = catalogueDevicePlan(eight, archiveAt(IR_ARCHIVE!), { manufacturer: 'KPN', model: 'TV6000COK', label: 'KPN', full: true });
     const scratch = parse(composeIrGroup(eight, plan.device.commands).bytes);
     const codeOf = (name: string) => recordKey(scratch, irGroups(scratch)!.at(-1)!.addresses[plan.wanted.indexOf(name)]!).slice(0, 40);
     assert.ok(other['95']!.includes(codeOf('Replay')));
@@ -470,15 +471,15 @@ test('the test setup cannot be built for the Harmony 300\'s own skin, so the Har
     // measured on the 350 alone, and even a setup with no television refuses a long press, since the 300's
     // configurations allocate four infrared groups and a long press takes a group from 4 up.
     const as300: Recipe = { ...RECIPE, model: { ...RECIPE.model, skin: 79 } };
-    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: as300, keys: KEYS, builtAt: MOMENT }),
+    assert.throws(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: as300, keys: KEYS, builtAt: MOMENT }),
       (error: unknown) => error instanceof ComposeError && /television's favourite key .* not skin 79/.test(error.message));
     const twoDevices: Recipe = {
       ...as300, devices: as300.devices.filter((one) => one.name === 'Denon' || one.name === 'Switch'), activities: [], favourites: [],
     };
-    assert.throws(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: twoDevices, keys: KEYS, builtAt: MOMENT }),
+    assert.throws(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: twoDevices, keys: KEYS, builtAt: MOMENT }),
       (error: unknown) => error instanceof ComposeError && /holds 4 groups, so there is no group 6/.test(error.message));
     // The control: the same two devices on the 350's skin build, so it is the skin that refuses and not the pair.
-    assert.doesNotThrow(() => buildNoScreenSetup(IR_ARCHIVE!, { recipe: { ...twoDevices, model: RECIPE.model }, keys: KEYS, builtAt: MOMENT }));
+    assert.doesNotThrow(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: { ...twoDevices, model: RECIPE.model }, keys: KEYS, builtAt: MOMENT }));
     // And the 350's build carries what the 300 needs: event 0xFF bound, the first test, and eight groups, four of them
     // long presses a 300 sends from only through that entry.
     assert.equal(irGroups(built().ours)!.length, 8);

@@ -59,6 +59,8 @@ import {
   withoutNoScreenDevice,
 } from '../src/index.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -102,7 +104,7 @@ if (fromNothing) {
   const keys = keysOf(argument('keys') ?? fail('--from-nothing needs --keys, since there is no donor to read them off'));
   const builtAt = argument('built-at') ?? now();
   process.stdout.write(`from nothing, built at ${builtAt}\n`);
-  out = buildNoScreenSetup(archive, { recipe, keys, builtAt });
+  out = buildNoScreenSetup(archiveAt(archive), { recipe, keys, builtAt });
 } else {
   const donorPath = argument('donor') ?? fail('--donor <config> or --from-nothing is required');
   const takeOut = (argument('take-out') ?? '').split(',').map((one) => one.trim()).filter((one) => one !== '');
@@ -120,7 +122,7 @@ if (fromNothing) {
     if (where === undefined) fail(`the donor holds no ${one.name}, so its key is not known`);
     keys[one.name] = where;
   }
-  out = composeNoScreenSetup(c, archive, { recipe, keys });
+  out = composeNoScreenSetup(c, archiveAt(archive), { recipe, keys });
 }
 for (const one of out.composed) process.stdout.write(`composed ${one.name}: group ${one.group}, map ${one.map}\n`);
 if (out.kept.length > 0) process.stdout.write(`kept ${out.kept.join(', ')}\n`);

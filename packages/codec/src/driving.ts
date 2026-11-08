@@ -27,9 +27,7 @@
  * data, it crosses into this repository only through this reader, and nothing derived from it may be
  * shared through a community device database.
  */
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { ArchiveError, archiveManifest } from './archive.ts';
+import { ArchiveError } from './archive.ts';
 
 /**
  * One step of an action list. A list is performed in order, and every actionable field below is one. The
@@ -334,7 +332,7 @@ function statesOf(value: unknown): Map<string, DeviceState> {
 
 /**
  * The driving half of one parsed device record. Pure, so a caller holding the record already, or a test
- * holding a record it made up, needs no checkout.
+ * holding a record it made up, needs no checkout; `catalogueDriving` in `driving.node.ts` reads one off a checkout.
  *
  * Throws on a record with no `timing`, which is every record of schema version 1: a reader that returned
  * nothing there would report a device with no rules, where the truth is an archive too old to say.
@@ -352,10 +350,3 @@ export function deviceDriving(record: unknown): DeviceDriving {
   };
 }
 
-/** One device's driving rules, by its manufacturer slug and file name, as `catalogueModels` gives them. */
-export function catalogueDriving(root: string, slug: string, file: string): DeviceDriving {
-  archiveManifest(root);
-  const path = join(root, 'devices', slug, file.endsWith('.json') ? file : `${file}.json`);
-  if (!existsSync(path)) throw new ArchiveError(`no such device: ${slug}/${file}`);
-  return deviceDriving(JSON.parse(readFileSync(path, 'utf8')));
-}

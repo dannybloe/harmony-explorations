@@ -31,6 +31,7 @@ import {
   type ActivityWorking, buildOneActivityScreenSet, checkOneActivityScreens, describeOneActivityScreens,
   oneActivityScreenModes, withOneActivityScreenSet,
 } from '../src/families/one/activityscreens.ts';
+import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

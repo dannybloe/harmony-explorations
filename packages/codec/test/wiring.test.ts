@@ -52,6 +52,7 @@ import {
   type WiringSpec, ACTIVITY_KEY_SCANS, ALL_OFF_SCAN, EVENT_COUNT, FIRMWARE_SCREENS, LOG_AREA, PARAMETER_VALUES, buildWiring,
   checkWiring, describeWiring, wiringFrontIndex,
 } from '../src/families/four-slot/wiring.ts';
+import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
 const ARCH14_COMPILES = [

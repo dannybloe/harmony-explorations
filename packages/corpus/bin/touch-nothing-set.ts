@@ -45,7 +45,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB } from '@harmony/lab';
 
 import { attributeNothingSet, attributionLines } from '../experiments/touchattribution.ts';

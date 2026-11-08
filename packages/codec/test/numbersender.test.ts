@@ -31,6 +31,7 @@ import { emit } from '../src/emit.ts';
 import { IR_CLASS_STREAM, irBlockWords, irClass, irGroups, irHeaderPointers } from '../src/ir.ts';
 import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
+import '../src/resources.node.ts';
 
 const SAMPLE = 'calibration_favchannels';
 /** The same account and remote before the channels existed. */

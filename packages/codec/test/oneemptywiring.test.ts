@@ -37,6 +37,7 @@ import {
   BLANK_SCREEN_SYMBOLS, EMPTY_ONE_MODES, EMPTY_ONE_REDRAW_CLASSES, EMPTY_ONE_VALUE_MAPS, WIRING_MAP_ROLES,
   emptyOneWiring, oneRedrawStarters, type EmptyOneMode, type EmptyOneWiring,
 } from '../src/families/one/emptywiring.ts';
+import '../src/resources.node.ts';
 
 /** The nineteen distinct Harmony One compiles of section 405, `test/wiring-one.test.ts`' list. */
 const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

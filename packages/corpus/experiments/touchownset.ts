@@ -26,7 +26,7 @@
  *
  * Nothing here opens a remote: it builds and compares.
  */
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 
 import { keyOf, prepareSet, resultOf, setTag, statusOf, type RemoteRequest, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 

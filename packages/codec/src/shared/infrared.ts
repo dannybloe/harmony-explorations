@@ -31,11 +31,12 @@
 // Plan 007 removed the screen opcodes `compose.ts` still spelled and the seven private copies of
 // `0x7E` across the codec, which `inventory.ts` names as `ENTER_MODE` now.
 import { joinedGaps } from '../archive.ts';
-import { u24 } from '../bytes.ts';
+import { hexOf, u24 } from '../bytes.ts';
 import { Writer } from '../emit.ts';
 import { archSlot, Container, parse } from '../gspm.ts';
 import {
-  IR_CLASS_STREAM, IR_POINTERS_PER_GROUP, IR_PULSE_MAX, IR_TABLE_SLOT, irBuildBlock, irBuildRecord, irGroups, type IrPulse,
+  IR_CLASS_STREAM, IR_POINTERS_PER_GROUP, IR_PULSE_MAX, IR_TABLE_SLOT, irBuildBlock, irBuildRecord, irGroups,
+  type IrPulse,
 } from '../ir.ts';
 import { type Pulse } from '../irframe.ts';
 import { relocate } from '../relocate.ts';
@@ -367,7 +368,7 @@ function irGroupContent(commands: readonly ComposeCommand[]): IrGroupContent {
   const blocks: Uint8Array[] = [];
   let cursor = 0;
   const place = (block: Uint8Array): number => {
-    const key = Buffer.from(block).toString('hex');
+    const key = hexOf(block);
     const found = blockAt.get(key);
     if (found !== undefined) return found;
     blockAt.set(key, cursor);

@@ -39,6 +39,7 @@ import {
   devices,
 } from '../src/index.ts';
 import type { Container } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 /** Every container in the corpus that has an infrared section. */
 const WITH_INFRARED = [

@@ -80,7 +80,8 @@ import {
   buildNoScreenSetup, catalogueCommands, catalogueDevice, catalogueDevicePlan, catalogueDriving, composeIrGroup, ComposeError,
   type Container, deviceModeLayout, devices, irGroups, metadataArchive, NO_SCREEN_HARD_KEYS, numberSenders, parse, type Recipe,
   stateRecords, taggedList, TELEVISION_TYPE,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 import { channelFinish } from '../src/families/no-screen/digits.ts';
 import { TELEVISION_STORED_UNBOUND } from '../src/families/no-screen/keys.ts';
 import { IDENTIFIED, onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
@@ -211,7 +212,7 @@ function read(): DeviceRead[] {
       const group = groupOf.get(one.name.replaceAll(' ', '_'));
       if (id === undefined || group === undefined) continue;
       const [manufacturer, model] = id;
-      const plan = catalogueDevicePlan(c, IR_ARCHIVE!, { manufacturer, model, label: one.name.replaceAll(' ', '_'), full: true });
+      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer, model, label: one.name.replaceAll(' ', '_'), full: true });
       const scratch = parse(composeIrGroup(c, plan.device.commands).bytes);
       const built = irGroups(scratch)!.at(-1)!.addresses;
       const keys = built.map((address) => recordKey(scratch, address));
@@ -368,10 +369,10 @@ function lgSetup(withDenon: boolean): Recipe {
 test('composed, a television stores the finish copy and, beside another device, its Back, each with a send list nothing calls',
   needing(skipWithoutIrArchive()), () => {
     const uncalledOf = (recipe: Recipe, keys: Record<string, { place: number; press: 'short' }>) => {
-      const c = parse(buildNoScreenSetup(IR_ARCHIVE!, { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes);
+      const c = parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes);
       const called = calledLists(c);
       const lg = devices(c).find((one) => one.name === 'LG_TV')!.group!;
-      const plan = catalogueDevicePlan(c, IR_ARCHIVE!, { manufacturer: 'LG', model: 'OLED65G26LA', label: 'LG_TV', full: true });
+      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer: 'LG', model: 'OLED65G26LA', label: 'LG_TV', full: true });
       const scratch = parse(composeIrGroup(c, plan.device.commands).bytes);
       const built = irGroups(scratch)!.at(-1)!.addresses;
       const out: string[] = [];

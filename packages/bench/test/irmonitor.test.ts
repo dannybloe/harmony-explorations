@@ -16,7 +16,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { Pulse } from '@harmony/codec';
+import type { Pulse } from '@harmony/codec/node';
 
 import {
   frameNumber, framesOfTrain, IrMonitor, parseListenLine, REPEAT_WINDOW_US, sameFrame, withinTolerance,

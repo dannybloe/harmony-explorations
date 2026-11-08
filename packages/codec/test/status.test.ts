@@ -19,6 +19,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load, skipWithoutLab, require_ } from '@harmony/lab';
 import { bitmapReference, modeRecords, parse, pictureReference, screenProgram, screenStrings } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 /** The status containers, by architecture, and where each one came from. */
 const ARCH12 = ['one_safemode', 'one34_region2'];

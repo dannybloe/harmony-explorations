@@ -22,9 +22,9 @@ import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, slow 
 import { deviceDriving } from '../src/driving.ts';
 import {
   RAW_BLOCKS_FILE, RAW_DERIVED_DIRECTORY, RAW_FIELDS, RAW_FIELDS_FILE, RAW_FIELDS_FORMAT, RAW_INDEX_FILE,
-  RAW_MANIFEST_FILE, RAW_SUMS_FILE, type RawDeviceRecord, alignDevice, catalogueRules, rawCaptureDevice,
-  rawDerivedState, rawFieldsEntry, rawProjection,
+  RAW_MANIFEST_FILE, RAW_SUMS_FILE, type RawDeviceRecord, alignDevice, rawFieldsEntry, rawProjection,
 } from '../src/catalogueraw.ts';
+import { catalogueRules, rawCaptureDevice, rawDerivedState } from '../src/catalogueraw.node.ts';
 
 /** The timing block every archive record carries, made up. */
 const TIMING = {

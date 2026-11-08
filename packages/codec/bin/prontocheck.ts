@@ -26,7 +26,7 @@ import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
 import {
   archiveProtocols, prontoPairs, prontoUnits, readPronto, waveformOfArchiveCommand,
-} from '../src/index.ts';
+} from '../src/node.ts';
 import type { ArchiveProtocol } from '../src/index.ts';
 
 const args = process.argv.slice(2);

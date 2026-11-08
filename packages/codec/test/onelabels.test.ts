@@ -17,6 +17,7 @@ import {
   padFontOf, ONE_PAD_HEIGHT, ONE_PAD_WIDTH, oneLabelLines, oneLabelWords,
 } from '../src/families/one/labels.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
+import '../src/resources.node.ts';
 
 /** A drawn line: its text, where its first glyph goes, and the font it was drawn in. */
 interface Drawn { text: string; x: number; y: number; font: number }

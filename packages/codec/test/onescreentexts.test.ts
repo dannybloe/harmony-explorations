@@ -25,6 +25,7 @@ import { ScreenTextError, withScreenTexts } from '../src/shared/screentexts.ts';
 import {
   TITLE_JOINER, buildOneScreenTexts, checkOneScreenTexts, describeOneScreenTexts, titleJoinerCode, oneCharacterMap,
 } from '../src/families/one/screentexts.ts';
+import '../src/resources.node.ts';
 
 /** `ONE_COMPILES` of `startupassistant.test.ts` without the Dutch `one_friend_asfound_config`. */
 const ENGLISH = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

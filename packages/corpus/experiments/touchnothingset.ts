@@ -39,10 +39,11 @@
  *
  * Nothing here opens a remote.
  */
-import { RecipeError, harmonyTouch, mergedIntervals, waveformOfArchiveCommand, type Pulse } from '@harmony/codec';
+import { RecipeError, harmonyTouch, mergedIntervals, waveformOfArchiveCommand, type Pulse } from '@harmony/codec/node';
 
 import { compareSetup, type ComparisonRules, type DocumentComparison, type Pair } from './touchsetupset.ts';
 import { keyOf, ourTag, prepareSet, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
+import { archiveAt } from '@harmony/codec/node';
 
 /** The six documents a set of 9.1 delivers, in the order the remote asks for them. */
 export const NOTHING_DOCUMENTS: readonly string[] = harmonyTouch.CONFIGURATION_DOCUMENTS;
@@ -99,7 +100,7 @@ export function withNothing(options: {
 }): { readonly set: TouchSet } | { readonly refusals: readonly string[] } {
   let documents: harmonyTouch.SyncDocuments;
   try {
-    documents = harmonyTouch.buildTouchDocuments(harmonyTouch.readTouchSetupFile(options.file), { archive: options.archive, account: options.account });
+    documents = harmonyTouch.buildTouchDocuments(harmonyTouch.readTouchSetupFile(options.file), { archive: archiveAt(options.archive), account: options.account });
   } catch (e) {
     if (e instanceof harmonyTouch.ComposeRefusal || e instanceof RecipeError) return { refusals: [e.message] };
     throw e;

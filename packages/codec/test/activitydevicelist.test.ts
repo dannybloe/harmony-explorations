@@ -32,6 +32,7 @@ import {
 } from '../src/families/four-slot/devicelist.ts';
 import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
+import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

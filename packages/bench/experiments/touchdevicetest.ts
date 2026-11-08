@@ -18,7 +18,7 @@
  * `TouchEngine.entry` and the `{ entry }` action, and `test/touch-device-runs.test.ts` holds that it predicts that tap;
  * the plan is left as it ran, so the file in `irtests/` stays the one the run carried.
  */
-import type { harmonyTouch } from '@harmony/codec';
+import type { harmonyTouch } from '@harmony/codec/node';
 
 import type { TestDefinition } from '../src/irsession.ts';
 import { KEY_GROUPS, keySteps, touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';

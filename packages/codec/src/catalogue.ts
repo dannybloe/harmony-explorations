@@ -22,13 +22,12 @@
  * devices use 54118 of them, one of which serves 3911 devices, so a codeset is a code table rather than
  * a device's property and 35175 of them belong to exactly one device.
  *
- * **Every reader here is lazy except `codeIndex`**, which is a full pass over the codesets and says so.
- * The catalogue is 2.2 GB, so a reader that loads it whole is a reader nobody can use inside an
- * application.
+ * **The files are read in `catalogue.node.ts`, and parsed here**, since `todo.md` 7.3.5: each reader by path there
+ * hands what it read to a parser here, so the catalogue's reading loads where there is no disk, and a builder that
+ * needs the catalogue is handed a `CatalogueSource` rather than a path. Every reader there is lazy except `codeIndex`.
  */
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { ArchiveError, archiveManifest } from './archive.ts';
+import type { ArchiveProtocol } from './archive.ts';
+import type { DeviceDriving } from './driving.ts';
 
 /** One manufacturer, as `index.json` states it. */
 export interface CatalogueManufacturer {
@@ -110,38 +109,41 @@ export const DEVICE_TYPE_NAMES: ReadonlyMap<number, string> = new Map([
   [5, 'StereoReceiver'],
 ]);
 
-/** Every manufacturer in the catalogue, in the archive's own order, which is by display name. */
-export function catalogueManufacturers(root: string): CatalogueManufacturer[] {
-  archiveManifest(root);
-  const path = join(root, 'index.json');
-  if (!existsSync(path)) throw new ArchiveError(`no index.json in ${root}`);
-  const rows = JSON.parse(readFileSync(path, 'utf8')) as { c: number; n: string; s: string }[];
+/**
+ * The archive as a builder reads it: the four questions a composer asks of a checkout, handed in rather than read from
+ * a path, so the builders load where there is no disk, `todo.md` 7.3.5. `archiveAt` in `catalogue.node.ts` answers
+ * them from a checkout on disk through the readers there, which is what every builder was handed the path of before;
+ * a renderer answers them from wherever it holds the archive. Each answers as the reader it is named after.
+ */
+export interface CatalogueSource {
+  /** Every protocol definition, `archiveProtocols`. */
+  readonly protocols: () => ArchiveProtocol[];
+  /** One device by its manufacturer slug and file name, `catalogueDevice`. */
+  readonly device: (slug: string, file: string) => CatalogueDevice;
+  /** The commands of one codeset, by the path a device states, `catalogueCommands`. */
+  readonly commands: (codeset: string, options?: { readonly pronto?: boolean }) => CatalogueCommand[];
+  /** One device's driving rules, `catalogueDriving`. */
+  readonly driving: (slug: string, file: string) => DeviceDriving;
+}
+
+/** The manufacturers of a parsed `index.json`, in its own order, which is by display name. */
+export function manufacturersOfIndex(parsed: unknown): CatalogueManufacturer[] {
+  const rows = parsed as { c: number; n: string; s: string }[];
   return rows.map((one) => ({ name: one.n, slug: one.s, devices: one.c }));
 }
 
-/**
- * Every model one manufacturer has.
- *
- * Read from the manufacturer's own `index.json` rather than by listing the directory, which is what
- * makes this cheap: the largest manufacturer has thousands of models and the index is one file. It is
- * also the only place the model name is stated, since a file name has its punctuation replaced and two
- * models may share one, in which case the archive appends the device id.
- */
-export function catalogueModels(root: string, slug: string): CatalogueModel[] {
-  const path = join(root, 'devices', slug, 'index.json');
-  if (!existsSync(path)) throw new ArchiveError(`no such manufacturer: ${slug}`);
+/** The models of a manufacturer's parsed `devices/<slug>/index.json`. */
+export function modelsOfIndex(parsed: unknown): CatalogueModel[] {
   // `m` is null on three rows of the whole archive, so the cast says so rather than the interface
   // carrying the lie: a cast is where a reader decides what it believes about somebody else's data.
   type Row = { f: string; id: number; m: string | null };
-  const rows = JSON.parse(readFileSync(path, 'utf8')) as Row[];
+  const rows = parsed as Row[];
   return rows.map((one) => ({ model: one.m ?? null, file: one.f, globalDeviceId: one.id }));
 }
 
-/** One device by its manufacturer slug and its file name, as `catalogueModels` gives them. */
-export function catalogueDevice(root: string, slug: string, file: string): CatalogueDevice {
-  const path = join(root, 'devices', slug, file.endsWith('.json') ? file : `${file}.json`);
-  if (!existsSync(path)) throw new ArchiveError(`no such device: ${slug}/${file}`);
-  const one = JSON.parse(readFileSync(path, 'utf8')) as {
+/** One device of a parsed `devices/<slug>/<file>.json`. */
+export function deviceOfRecord(parsed: unknown): CatalogueDevice {
+  const one = parsed as {
     manufacturer: string; model: string | null; deviceType: number; globalDeviceId: number;
     codeset?: string | null;
   };
@@ -157,60 +159,17 @@ export function catalogueDevice(root: string, slug: string, file: string): Catal
 }
 
 /**
- * The commands of one codeset, by the path a device states.
- *
- * `pronto` is left out of the result unless asked for, so a caller holding thousands of commands is not
- * holding thousands of rendered waveforms: they are about 95% of the archive's 1.1 GB of codesets, and an
- * importer wants none of them, since a frame is built from the rhythm table rather than replayed from a
- * rendering. **One file is still parsed whole**, which is cheap; what avoids parsing them at all is
- * `codeIndex`, and that is why it matches text rather than reading through here.
+ * The commands of a parsed codeset file, with `pronto` left out unless asked for, `catalogueCommands` in
+ * `catalogue.node.ts` says why.
  */
-export function catalogueCommands(
-  root: string, codeset: string, options: { readonly pronto?: boolean } = {},
-): CatalogueCommand[] {
-  const path = join(root, codeset);
-  if (!existsSync(path)) throw new ArchiveError(`no such codeset: ${codeset}`);
-  const parsed = JSON.parse(readFileSync(path, 'utf8')) as {
+export function commandsOfCodeset(parsed: unknown, options: { readonly pronto?: boolean } = {}): CatalogueCommand[] {
+  const codeset = parsed as {
     commands?: { keycode: string; name: string; pronto?: string }[];
   };
-  return (parsed.commands ?? []).map((one) => ({
+  return (codeset.commands ?? []).map((one) => ({
     name: one.name, keycode: one.keycode,
     ...(options.pronto === true && one.pronto !== undefined ? { pronto: one.pronto } : {}),
   }));
-}
-
-/**
- * Every number any keycode in the archive states, and which codesets state it.
- *
- * **This is a full pass over 54118 files and about eight seconds**, which is why it is one call a caller
- * makes deliberately and holds on to. It exists for one job: a configuration numbers its codes and names
- * none of them, so the way to find out what a device in a config **is** is to look up the numbers it
- * sends. That works because a number is specific: 104938 distinct numbers over 2067863 commands.
- *
- * The keycodes are matched with a regular expression rather than parsed, deliberately. Parsing means
- * materialising the rendered waveforms, which are 95% of the bytes and which nothing here wants, and the
- * shape being matched is a single JSON string field.
- */
-export function codeIndex(root: string): Map<string, string[]> {
-  archiveManifest(root);
-  const directory = join(root, 'codesets');
-  if (!existsSync(directory)) throw new ArchiveError(`no codesets/ in ${root}`);
-  const out = new Map<string, string[]>();
-  for (const bucket of readdirSync(directory)) {
-    for (const file of readdirSync(join(directory, bucket))) {
-      const at = `codesets/${bucket}/${file}`;
-      const text = readFileSync(join(directory, bucket, file), 'utf8');
-      for (const match of text.matchAll(/"keycode":\s*"([^"]*)"/g)) {
-        for (const value of match[1]!.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
-          const key = codeKey(value[1]!);
-          const list = out.get(key);
-          if (list === undefined) out.set(key, [at]);
-          else if (list[list.length - 1] !== at) list.push(at);
-        }
-      }
-    }
-  }
-  return out;
 }
 
 /** How a code number is keyed: lower case hexadecimal with no leading zeroes.

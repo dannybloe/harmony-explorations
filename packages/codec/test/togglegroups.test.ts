@@ -43,6 +43,8 @@ import {
   withToggleCleared,
   withToggleFlipped,
 } from '../src/index.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 /** A device group of a Logitech compile and the catalogue device it is, known from outside its bytes. */
 const CASES = [
@@ -121,7 +123,7 @@ test('a toggling code\'s record is two groups, the code as stated and then flipp
     const missed: string[] = [];
     let pairedCodes = 0;
     for (const [fixture, group, manufacturer, model] of CASES) {
-      const composed = composeCatalogueDevices(base, IR_ARCHIVE!, [{ manufacturer, model, label: 'Test', full: true }],
+      const composed = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [{ manufacturer, model, label: 'Test', full: true }],
         { maxDevices: 99 });
       assert.deepEqual(composed.devices[0]!.leftOut, [], `${model}: every catalogue command composes`);
       const c = parse(composed.bytes);
@@ -207,7 +209,7 @@ test('a toggling code\'s record is two groups, the code as stated and then flipp
 
 test('a code naming a release group carries its release behind the third pointer, spelt with no carved or stored microsecond, as the PlayStation 3\'s is',
   needing(skipWithoutIrArchive(), skipUnless('h650_config_region')), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const keycode = 'G:Logitech 24 Bit:()(0x2D11EE)(StopSpacer):3';
     assert.equal(namesReleaseGroup(keycode), true);
     const built = catalogueCommandBlocks(keycode, { repeats: 1 }, protocols);
@@ -227,7 +229,7 @@ test('a code naming a release group carries its release behind the third pointer
 
 test('the toggled code differs from the stated one in its toggle bit alone, and a code whose family states none has no second group',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const rc5 = protocols.get('Philips RC5 13 Bit Toggle')!;
     const frames = statedCodeOfDefinition(rc5, 'G:Philips RC5 13 Bit Toggle:()(0x10C6)():3')!.frames;
     const flipped = withToggleFlipped(rc5, frames)!;

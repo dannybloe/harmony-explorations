@@ -29,7 +29,7 @@
  * Nothing here opens a remote: it builds and compares. The bench script is `bin/touch-device-set.ts`,
  * `--favourites` and `--favourites-back`.
  */
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 
 import { builtFrom, differences, type SetRecord } from './touchchangedset.ts';
 import { prepareSet, setTag, keyOf, type BodyType, type SetAnswer, type TouchSet } from '../src/touchsync.ts';

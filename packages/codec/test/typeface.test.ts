@@ -25,6 +25,7 @@ import {
 // Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
 import { HARMONY_650_FACES } from '../src/families/four-slot/fonts.ts';
 import { HARMONY_ONE_FACES } from '../src/families/one/fonts.ts';
+import '../src/resources.node.ts';
 
 const box = (x0: number, y0: number, x1: number, y1: number): PathCommand[] =>
   [{ type: 'M', x: x0, y: y0 }, { type: 'L', x: x1, y: y0 }, { type: 'L', x: x1, y: y1 }, { type: 'L', x: x0, y: y1 }, { type: 'Z' }];

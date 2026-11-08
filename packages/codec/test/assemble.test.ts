@@ -15,7 +15,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
-import type { Container, Recipe, RecipeScreenItem } from '../src/index.ts';
+import type { CatalogueSource, Container, Recipe, RecipeScreenItem } from '../src/index.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
 import { screenProgram } from '../src/screen.ts';
 import { valueMaps } from '../src/valuemap.ts';
 import {
@@ -49,6 +50,7 @@ import { type Assembled, assembleSetup, attributeBytes, compareDrawnTexts } from
 import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
 import { checkStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
 import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import '../src/resources.node.ts';
 
 /**
  * The 22 arch 14 compiles sections 356 to 360 measure, by the skin each states: 13 Harmony 650, 2 Harmony
@@ -66,7 +68,7 @@ const TWENTY_TWO = [
 
 const containerOf = (name: string): Container => parse(new Uint8Array(require_(name)));
 /** What composing needs beside the donor: the catalogue's archive. The device count is the recipe's model's. */
-const composing = (): { archive: string } => ({ archive: IR_ARCHIVE! });
+const composing = (): { archive: CatalogueSource } => ({ archive: archiveAt(IR_ARCHIVE!) });
 /** A setup file, read as a recipe, which checks its shape. */
 const setupOf = (file: string): Recipe =>
   readRecipe(JSON.parse(readFileSync(new URL(`../../corpus/setups/${file}`, import.meta.url), 'utf8')));
@@ -85,7 +87,7 @@ const setupOf = (file: string): Recipe =>
  * shared assembly fails in the next one that asks for it instead of passing on bytes it did not build.
  */
 const ASSEMBLED = new Map<string, { out: Assembled; bytes: Uint8Array; blob: Uint8Array }>();
-function assembled(setup: Recipe, donor: string, extra: { archive?: string } = {}): Assembled {
+function assembled(setup: Recipe, donor: string, extra: { archive?: CatalogueSource } = {}): Assembled {
   // The setup is plain JSON data and the donor a lab name, so the key states the whole of the input.
   const key = JSON.stringify([setup, donor, extra]);
   const kept = ASSEMBLED.get(key);

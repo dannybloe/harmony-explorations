@@ -40,7 +40,8 @@ import {
   parse,
   payloadOf,
   stateRecords,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
 
 const CALL = 0x7f;
@@ -290,7 +291,7 @@ test('the states a power on resets are composed as Logitech compiles them, silen
         const codes = new Map(catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, one.slug, one.file).codeset!)
           .map((command) => [command.name, command.keycode]));
         const first = catalogueDevicePower(driving, (name) => codes.get(name)).onCommands[0]!;
-        composed = composeCatalogueDevice(pristine, IR_ARCHIVE!, {
+        composed = composeCatalogueDevice(pristine, archiveAt(IR_ARCHIVE!), {
           manufacturer: one.slug, model: one.file, label: 'Test', commands: [first], labels: ['On'], inputs: true,
         });
       } catch (error) {

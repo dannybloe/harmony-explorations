@@ -35,13 +35,11 @@ import type { DelayDefaults } from './families/family.ts';
 import { choicesOf, familyOf, sendsOf } from './families/registry.ts';
 import type { Container } from './gspm.ts';
 import { parse } from './gspm.ts';
+import { hexOf } from './bytes.ts';
+import type { CatalogueCommand, CatalogueDevice, CatalogueSource } from './catalogue.ts';
+import type { DeviceDriving } from './driving.ts';
 import {
-  catalogueCommands,
-  catalogueDevice,
-} from './catalogue.ts';
-import { catalogueDriving, type DeviceDriving } from './driving.ts';
-import {
-  archiveProtocols, statedCodeOfDefinition, waveformOfArchiveCommand, withToggleFlipped, type ArchiveProtocol,
+  statedCodeOfDefinition, waveformOfArchiveCommand, withToggleFlipped, type ArchiveProtocol,
 } from './archive.ts';
 import { blockOfStatedCode, statedCode, statedProtocol, type StatedCode } from './stated.ts';
 import { mergedIntervals, type Pulse } from './irframe.ts';
@@ -150,8 +148,8 @@ export interface ComposedCatalogueDevices {
  * `todo-compile-one.md` 8.1.3, so the two cannot disagree about what a catalogue device's records are.
  */
 export interface CatalogueDevicePlan {
-  readonly entry: ReturnType<typeof catalogueDevice>;
-  readonly available: ReturnType<typeof catalogueCommands>;
+  readonly entry: CatalogueDevice;
+  readonly available: CatalogueCommand[];
   readonly driving: DeviceDriving;
   /** The commands asked for or, under `full`, every one whose code composes, in catalogue order. */
   readonly wanted: readonly string[];
@@ -171,17 +169,17 @@ export interface CatalogueDevicePlan {
  * commands its keys bind, `todo-compile-350.md` 4.1, and takes them out of this plan rather than reading the
  * catalogue a second way: the same codes, blocks and power steps as a device composed whole.
  */
-export function catalogueDevicePlan(c: Container, archive: string, request: CatalogueDeviceRequest): CatalogueDevicePlan {
+export function catalogueDevicePlan(c: Container, archive: CatalogueSource, request: CatalogueDeviceRequest): CatalogueDevicePlan {
   const { manufacturer, model, label } = request;
   const full = request.full === true;
   if (full && (request.commands !== undefined || request.labels !== undefined)) {
     throw new ComposeError('a whole device takes every command the catalogue holds, so no commands or labels are given');
   }
-  const entry = catalogueDevice(archive, manufacturer, model);
+  const entry = archive.device(manufacturer, model);
   if (entry.codeset === undefined || entry.codeset === null) {
     throw new ComposeError(`${manufacturer} ${model} states no codeset`);
   }
-  const available = catalogueCommands(archive, entry.codeset);
+  const available = archive.commands(entry.codeset);
   // The first of each name, since a codeset can state one name twice and the first is what every
   // calibration here took.
   const byName = new Map<string, string>();
@@ -189,7 +187,7 @@ export function catalogueDevicePlan(c: Container, archive: string, request: Cata
 
   // A code whose family states no repeat count is composed at the device's count, section 348, from the
   // family's definition in the archive; the device's count is judged once, over its whole codeset.
-  const driving = catalogueDriving(archive, manufacturer, model);
+  const driving = archive.driving(manufacturer, model);
   const protocols = archiveProtocolsByName(archive);
   const press = cataloguePressRepeats(driving, available.map((one) => one.keycode), protocols);
   const derived = new Map<string, ReturnType<typeof catalogueCommandBlocks>>();
@@ -314,7 +312,7 @@ export function catalogueDevicePlan(c: Container, archive: string, request: Cata
  * screen. A refusal is a `ComposeError` naming why.
  */
 export function composeCatalogueDevice(
-  c: Container, archive: string, request: CatalogueDeviceRequest, delays?: DelayDefaults,
+  c: Container, archive: CatalogueSource, request: CatalogueDeviceRequest, delays?: DelayDefaults,
 ): ComposedCatalogueDevice {
   const { label } = request;
   const planned = catalogueDevicePlan(c, archive, request);
@@ -395,7 +393,7 @@ export interface ComposeCatalogueDevicesOptions {
  * apart.
  */
 export function composeCatalogueDevices(
-  c: Container, archive: string, requests: readonly CatalogueDeviceRequest[],
+  c: Container, archive: CatalogueSource, requests: readonly CatalogueDeviceRequest[],
   options: ComposeCatalogueDevicesOptions = {},
 ): ComposedCatalogueDevices {
   if (requests.length === 0) throw new ComposeError('no device to compose');
@@ -468,14 +466,14 @@ function recordWords(c: Container, address: number): string {
  * has an input variable here.
  */
 export function composeDonorDeviceInputs(
-  c: Container, archive: string, request: DonorDeviceRequest,
+  c: Container, archive: CatalogueSource, request: DonorDeviceRequest,
 ): ComposedInputs | undefined {
   const matchSend = sendsOf(c).donorSendList;
   if (matchSend === undefined) throw new ComposeError('a donor device\'s inputs are composed where a send is the send and its quantity alone, the Harmony One\'s');
   const own = devices(c).find((one) => one.name === request.label);
   if (own?.group === undefined) throw new ComposeError(`no device called ${request.label} with codes here`);
   if (deviceVariables(c).some((one) => one.device === request.label && one.property === 'Input')) return undefined;
-  const driving = catalogueDriving(archive, request.manufacturer, request.model);
+  const driving = archive.driving(request.manufacturer, request.model);
   const plan = inputPlan(driving);
   const variables = [...plan.states, ...(plan.input === undefined ? [] : [plan.input])];
   if (variables.length === 0) return undefined;
@@ -487,9 +485,9 @@ export function composeDonorDeviceInputs(
   // catalogue spells them, which the rules may spell in another case. Behind one other command, since a
   // device composed without `full` sends its first command both ways and gives it no held block, where
   // every input command of a compile is a command like any other and repeats while held.
-  const entry = catalogueDevice(archive, request.manufacturer, request.model);
+  const entry = archive.device(request.manufacturer, request.model);
   const catalogueNames = entry.codeset === undefined || entry.codeset === null ? []
-    : [...new Set(catalogueCommands(archive, entry.codeset).map((one) => one.name))];
+    : [...new Set(archive.commands(entry.codeset).map((one) => one.name))];
   const spelt = sent.map((name) => catalogueNames[commandIndex(catalogueNames, name)]!);
   const lead = catalogueNames.find((name) => !spelt.includes(name));
   if (lead === undefined) throw new ComposeError(`${request.label}'s catalogue entry holds no command but the ones its inputs send`);
@@ -572,7 +570,7 @@ function describeRecord(c: Container, address: number): { header: string; blocks
   // The header names its own data seven bytes in plus one, `irRecordStart`: an address, so not compared.
   header.fill(0, 8, 11);
   return {
-    header: Buffer.from(header).toString('hex'),
+    header: hexOf(header),
     blocks: irHeaderPointers(c, address).map((pointer) => (pointer === 0 ? undefined : irBlockWords(c, pointer))),
   };
 }
@@ -604,7 +602,7 @@ function describeRecord(c: Container, address: number): { header: string; blocks
  * codec composes for; run on the Harmony One alone, on `harvest_one_two_devices`' LG and Denon.
  */
 export function composeDonorDeviceInfrared(
-  c: Container, archive: string, request: DonorDeviceRequest,
+  c: Container, archive: CatalogueSource, request: DonorDeviceRequest,
 ): ComposedDonorInfrared {
   const own = devices(c).find((one) => one.name === request.label);
   if (own?.group === undefined) throw new ComposeError(`no device called ${request.label} with codes here`);
@@ -751,7 +749,7 @@ export interface CatalogueInfraredBytes {
  * can write and not what wrote it, and a caller holds it to the path separately.
  */
 export function catalogueInfraredBytes(
-  c: Container, archive: string, wanted: readonly DonorDeviceRequest[],
+  c: Container, archive: CatalogueSource, wanted: readonly DonorDeviceRequest[],
 ): CatalogueInfraredBytes {
   const owners = new Uint8Array(c.blob.length);
   const groups = irGroups(c);
@@ -794,14 +792,17 @@ export function catalogueInfraredBytes(
 // ---------------------------------------------------------------------------------------------------
 // How many times a press repeats the code, where the family does not say: the device does, section 348
 
-/** Every protocol definition of an archive checkout by family name, read once per checkout. */
-const PROTOCOLS_OF = new Map<string, ReadonlyMap<string, ArchiveProtocol>>();
+/**
+ * Every protocol definition of an archive by family name, read once per source. `archiveAt` gives one source per
+ * checkout, so this is read once per checkout, as it was when it was keyed on the checkout's path.
+ */
+const PROTOCOLS_OF = new WeakMap<CatalogueSource, ReadonlyMap<string, ArchiveProtocol>>();
 
-/** The archive's protocol definitions by family name, cached per checkout since a device composes many. */
-export function archiveProtocolsByName(archive: string): ReadonlyMap<string, ArchiveProtocol> {
+/** The archive's protocol definitions by family name, cached per source since a device composes many. */
+export function archiveProtocolsByName(archive: CatalogueSource): ReadonlyMap<string, ArchiveProtocol> {
   let found = PROTOCOLS_OF.get(archive);
   if (found === undefined) {
-    found = new Map(archiveProtocols(archive).map((one) => [one.name, one]));
+    found = new Map(archive.protocols().map((one) => [one.name, one]));
     PROTOCOLS_OF.set(archive, found);
   }
   return found;

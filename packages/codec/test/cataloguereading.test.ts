@@ -59,7 +59,8 @@ import {
   statedCode,
   statedCodeOfDefinition,
   waveformOfArchiveCommand,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 
 const HARVEST_THREE = 'work/harvest/families-one/compile-003-Result.EzHex';
 
@@ -127,7 +128,7 @@ function renderedKeycodes(): Set<string> {
 test('the codes a family\'s name cannot read are 52658 commands of 156 families, and the definition reads all but 172, none of them an infrared code the catalogue renders',
   slow(needing(skipWithoutIrArchive())), () => {
     const rendered = renderedKeycodes();
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const families = new Set<string>();
     let unnamed = 0;
     let read = 0;
@@ -157,7 +158,7 @@ test('the codes a family\'s name cannot read are 52658 commands of 156 families,
 
 test('on a code both readings read, the table\'s block is the same under both on all but 224 codes, where the name\'s is the definition at no count and the definition\'s is the definition at the family\'s own',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     let both = 0;
     let same = 0;
     const differ = new Map<string, number>();
@@ -199,7 +200,7 @@ test('on a code both readings read, the table\'s block is the same under both on
 
 test('a code only the definition reads is built from the definition, never the table\'s block, which sends fewer frames than such a code states on 78',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const taken = new Map<string, number>();
     const short = new Map<string, number>();
     const outcomes = new Map<string, number>();
@@ -257,7 +258,7 @@ test('three devices holding codes only the definition reads, composed whole, pre
     for (const one of CLOSURE) {
       const codes = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, one.manufacturer, one.model).codeset!);
       const unnamed = codes.filter(({ keycode }) => statedCode(keycode) === undefined).length;
-      const composed = composeCatalogueDevices(base, IR_ARCHIVE!, [{ manufacturer: one.manufacturer, model: one.model,
+      const composed = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [{ manufacturer: one.manufacturer, model: one.model,
         label: 'Test', full: true }], { maxDevices: 99 });
       assert.deepEqual(composed.devices[0]!.leftOut, [], `${one.model}: every catalogue command composes`);
       const c = parse(composed.bytes);
@@ -277,7 +278,7 @@ test('three devices holding codes only the definition reads, composed whole, pre
 test('the controls: read at the name\'s widths the TestQuhd composes nothing, spelt without its gaps joined no record is Logitech\'s, and built at 1 no press is',
   // The harvest compile it compares against is a lab file, so it skips without the lab as well.
   needing(skipWithoutIrArchive(), skipWithoutLab()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const codes = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Gemini', 'TestQuhd').codeset!);
     assert.equal(codes.length, 70);
     // At the name's widths not one code reads, so before this section the device had nothing to compose.
@@ -341,7 +342,7 @@ test('joinedGaps joins a chunked gap and leaves two half cells and a short space
 
 test('the Harmony 350\'s factory configuration holds 30 records of `Philips RC5Ex`, a family only the definition reads, each the definition\'s build at 3',
   needing(skipWithoutIrArchive(), skipUnless('h350_config')), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const protocol = protocols.get('Philips RC5Ex')!;
     const known = new Map<string, Set<number>>();
     for (const keycode of new Set(archiveKeycodes().filter((one) => familyOf(one) === 'Philips RC5Ex'))) {

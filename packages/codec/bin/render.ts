@@ -37,6 +37,7 @@ import {
   renderPage,
   type RenderedPage,
 } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 const argument = (name: string): string | undefined => {
   const at = process.argv.indexOf(`--${name}`);

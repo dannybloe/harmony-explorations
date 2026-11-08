@@ -71,9 +71,10 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  archiveProtocols, frameSlots, keyCodeOfStatedCode, roundedPeriodOfCarrier, segmentRefs, statedCodeOfDefinition,
-  withStatedWidths, withToggleCleared, type ArchiveKeyCode, type ArchiveProtocol,
+  frameSlots, keyCodeOfStatedCode, roundedPeriodOfCarrier, segmentRefs, statedCodeOfDefinition, withStatedWidths,
+  withToggleCleared, type ArchiveKeyCode, type ArchiveProtocol,
 } from '../src/archive.ts';
+import { archiveProtocols } from '../src/archive.node.ts';
 import { mergedIntervals, pulsesOfBlock, type BlockTail, type FrameShape, type Pulse } from '../src/irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
 import { biphaseOf, cellsOf, timingsOf, type StatedCode, type StatedItem } from '../src/stated.ts';

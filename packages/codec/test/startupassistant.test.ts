@@ -12,6 +12,7 @@ import { stateRecords } from '../src/sections.ts';
 import {
   ASSISTANT_HIDDEN, oneStartupVariables, withoutStartupAssistant,
 } from '../src/families/one/startupassistant.ts';
+import '../src/resources.node.ts';
 
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
   'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',

@@ -76,6 +76,7 @@ import {
 } from '../src/index.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
 import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
 
 /** Logitech's compile of the test setup, by its path in the lab, as `packages/bench/test/setup350.test.ts` names it. */
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
@@ -99,7 +100,7 @@ let memo: { donor: Container; theirs: Container; ours: Container; out: ReturnTyp
 function composed() {
   if (memo !== undefined) return memo;
   const donor = parse(require_('h350_three_devices_config'));
-  const out = composeNoScreenDevice(donor, IR_ARCHIVE!, { ...PLASMA, name: 'Plasma', place: PLACE });
+  const out = composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE!), { ...PLASMA, name: 'Plasma', place: PLACE });
   memo = { donor, theirs: compile(), ours: parse(out.bytes), out };
   return memo;
 }
@@ -157,7 +158,7 @@ test('the catalogue\'s power on delay, split into waits, is the waits Logitech\'
     let agree = 0;
     for (const one of setup.devices) {
       const [manufacturer, model] = one.device.split('/') as [string, string];
-      const plan = catalogueDevicePlan(c, IR_ARCHIVE!, { manufacturer, model, label: one.name, full: true });
+      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer, model, label: one.name, full: true });
       const index = [...names].find(([, name]) => name === `${one.name.replaceAll(' ', '_')}_Power_2`)![0];
       const on = records[index]!.values.find((value) => value.from === 0 && value.to === 1)!;
       const at = c.blobOffsetOf(lists[on.operand]!)!;
@@ -183,7 +184,7 @@ test('the family\'s key table gives every device of Logitech\'s compile the keys
     for (const one of setup.devices) {
       const label = one.name.replaceAll(' ', '_');
       const [manufacturer, model] = one.device.split('/') as [string, string];
-      const plan = catalogueDevicePlan(c, IR_ARCHIVE!, { manufacturer, model, label, full: true });
+      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer, model, label, full: true });
       // Every command's record as the composer builds it, laid out in a scratch copy and read back by content.
       const scratch = parse(composeIrGroup(c, plan.device.commands).bytes);
       const ours = irGroups(scratch)!.at(-1)!.addresses.map((address) => recordKey(scratch, address));
@@ -415,7 +416,7 @@ test('Logitech\'s compile names each of the eight devices in the setup\'s order 
     const counts: Record<string, number> = {};
     for (const one of setup.devices) {
       const [manufacturer, model] = one.device.split('/') as [string, string];
-      const plan = catalogueDevicePlan(c, IR_ARCHIVE!, { manufacturer, model, label: one.name.replaceAll(' ', '_'), full: true });
+      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer, model, label: one.name.replaceAll(' ', '_'), full: true });
       const sorted = [...new Set(plan.available.map((command) => command.name))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
       const theirs = named.find((device) => device.name === one.name)!.commands;
       assert.deepEqual(theirs.map((command) => `${command.index} ${command.name}`), sorted.map((name, k) => `${k} ${name}`), one.name);
@@ -448,7 +449,7 @@ test('composing the plasma leaves every one of the donor\'s parts as it was, rea
 test('the composer refuses what no compile shows or a later step builds', needsAll, () => {
   const { donor, ours } = composed();
   const compose = (c: Container, request: Partial<Parameters<typeof composeNoScreenDevice>[2]>) => () =>
-    composeNoScreenDevice(c, IR_ARCHIVE!, { ...PLASMA, name: 'Plasma', place: PLACE, ...request });
+    composeNoScreenDevice(c, archiveAt(IR_ARCHIVE!), { ...PLASMA, name: 'Plasma', place: PLACE, ...request });
   // A long press on the bottom left key, which holds no short press device in the donor.
   assert.throws(compose(donor, { press: 'long' }), /holds no short press device/);
   assert.throws(compose(donor, { place: 0 }), /top left key/);
@@ -539,12 +540,12 @@ const DONOR_ACCOUNT: readonly AccountDevice[] = [
 function longComposed() {
   if (longMemo !== undefined) return longMemo;
   const donor = parse(require_('h350_three_devices_config'));
-  const before = parse(composeNoScreenDevice(donor, IR_ARCHIVE!, { ...PLASMA, name: 'Plasma', place: PLACE }).bytes);
+  const before = parse(composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE!), { ...PLASMA, name: 'Plasma', place: PLACE }).bytes);
   let ours = before;
   const outs = new Map<string, ReturnType<typeof composeNoScreenDevice>>();
   for (const one of LONG) {
-    const deviceType = catalogueDevicePlan(ours, IR_ARCHIVE!, { manufacturer: one.manufacturer, model: one.model, label: 'X', full: true }).entry.deviceType;
-    const out = composeNoScreenDevice(ours, IR_ARCHIVE!, {
+    const deviceType = catalogueDevicePlan(ours, archiveAt(IR_ARCHIVE!), { manufacturer: one.manufacturer, model: one.model, label: 'X', full: true }).entry.deviceType;
+    const out = composeNoScreenDevice(ours, archiveAt(IR_ARCHIVE!), {
       manufacturer: one.manufacturer, model: one.model, name: one.name, place: one.place, press: 'long',
       volumeFrom: volumeSource({ name: one.name, deviceType }, DONOR_ACCOUNT),
     });
@@ -743,11 +744,11 @@ test('the long press composer refuses a key with no short press device and a sec
   needsAll, () => {
     const { donor, ours } = longComposed();
     const long = (c: Container, place: number, name = 'Other') => () =>
-      composeNoScreenDevice(c, IR_ARCHIVE!, { ...PLASMA, name, place, press: 'long' });
+      composeNoScreenDevice(c, archiveAt(IR_ARCHIVE!), { ...PLASMA, name, place, press: 'long' });
     // The donor's bottom left key is free.
     assert.throws(long(donor, 2), /holds no short press device/);
     // Every key of the composed configuration holds a long press device already.
     for (const place of [0, 1, 2, 3]) assert.throws(long(ours, place), /already holds a long press device/);
     // A short press on a key with a long press device is a key that holds a device.
-    assert.throws(() => composeNoScreenDevice(ours, IR_ARCHIVE!, { ...PLASMA, name: 'Other', place: 1 }), /already holds a device/);
+    assert.throws(() => composeNoScreenDevice(ours, archiveAt(IR_ARCHIVE!), { ...PLASMA, name: 'Other', place: 1 }), /already holds a device/);
   });

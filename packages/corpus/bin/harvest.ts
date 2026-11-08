@@ -51,7 +51,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { LAB, IR_ARCHIVE } from '@harmony/lab';
-import { devices as configDevices, parse, payloadOf, catalogueDevice } from '@harmony/codec';
+import { devices as configDevices, parse, payloadOf, catalogueDevice } from '@harmony/codec/node';
 import {
   ACCOUNT_MANAGER, DELETION_MANAGER, DEVICE_MANAGER, MyHarmonySession,
   credentials, type Reply,

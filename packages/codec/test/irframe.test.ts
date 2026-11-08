@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, skipWithoutLab, require_ } from '@harmony/lab';
-import { catalogueDriving } from '../src/driving.ts';
+import { catalogueDriving } from '../src/driving.node.ts';
 import { parse } from '../src/gspm.ts';
 import { payloadOf } from '../src/ezhex.ts';
 import {

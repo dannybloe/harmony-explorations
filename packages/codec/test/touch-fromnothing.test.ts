@@ -68,6 +68,8 @@ import { readConfiguration } from '../src/harmony-touch/read.ts';
 import { readPng } from '../src/png.ts';
 import type { TouchSetup } from '../src/harmony-touch/setup.ts';
 import { RecipeError } from '../src/recipe/recipe.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
+import '../src/resources.node.ts';
 
 // The setup file and the documents are JSON; the broken ones are built as such.
 type Json = any;
@@ -203,7 +205,7 @@ test('with the archive: each device\'s record, its commands, the families it sen
   const kinds = (r: DeviceWithFeatures) => (r.DeviceFeatures as Json[]).map((x) => `${String(x.__type).split(':')[0]}${x.Inputs?.length ? ` ${x.Inputs.length}` : ''}${x.StateValues ? ` ${x.StateValues.length}` : ''}`);
   const written = f.devices.map((r) => {
     const p = f.touch.devices.find((x) => x.device === r.name)!;
-    const w = deviceRecordOfArchive(IR_ARCHIVE!, { entry: r.device, id: p.id, protocolIds: f.touch.protocols });
+    const w = deviceRecordOfArchive(archiveAt(IR_ARCHIVE!), { entry: r.device, id: p.id, protocolIds: f.touch.protocols });
     assert.equal(w.record.Device['Id-'], p.id);
     for (const d of w.protocols) assert.equal(d['Id-'], f.touch.protocols[d.Name as string], `${r.name} ${String(d.Name)}`);
     return [r.name, w.record.Commands?.length ?? 0, w.protocols.map((d) => d.Name).join(' and '), kinds(w.record)];
@@ -223,7 +225,7 @@ test('with the archive: each device\'s record, its commands, the families it sen
 test('with the archive: the refusals of a family with no id of ours, an id not ours, a shared id and an entry the archive does not hold, beside the control', skipWithoutIrArchive(), () => {
   const f = file();
   const ids = f.touch.protocols;
-  const r = (entry: string, id: number, protocolIds: Record<string, number>) => refusalOf(() => deviceRecordOfArchive(IR_ARCHIVE!, { entry, id, protocolIds }));
+  const r = (entry: string, id: number, protocolIds: Record<string, number>) => refusalOf(() => deviceRecordOfArchive(archiveAt(IR_ARCHIVE!), { entry, id, protocolIds }));
   const { 'Sony 20 Bit': _, ...withoutSony } = ids;
   assert.match(r('Sony/BDP-S6500', 900000103, withoutSony) ?? '', /of the family Sony 20 Bit, which the setup names no protocol id for/);
   assert.match(r('Sony/BDP-S6500', 12, ids) ?? '', /device id 12 is not one of ours/);
@@ -233,7 +235,7 @@ test('with the archive: the refusals of a family with no id of ours, an id not o
 });
 
 test('with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone', skipWithoutIrArchive(), () => {
-  const docs: SyncDocuments = buildTouchDocuments(file(), { archive: IR_ARCHIVE!, account: ACCOUNT });
+  const docs: SyncDocuments = buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE!), account: ACCOUNT });
   assert.deepEqual(Object.keys(docs), ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList']);
   const read = readConfiguration(docs);
   assert.deepEqual([read.activities.length, read.devices.length, read.maps.length, read.protocols.length], [5, 7, 12, 5]);
@@ -243,5 +245,5 @@ test('with the archive: the six documents from nothing read back as the bench se
   assert.deepEqual(devices.filter((d) => d.Device.DeviceProfileUri !== undefined).map((d) => [d.Device.Name, d.Device.DeviceProfileUri, d.Device.ContentProfileKey]),
     [['LG TV', ACCOUNT.tuning!.DeviceProfileUri, ACCOUNT.tuning!.ContentProfileKey]]);
   // The control: an account with no favourites is refused, since the favourites activity's device needs them.
-  assert.match(refusalOf(() => buildTouchDocuments(file(), { archive: IR_ARCHIVE!, account: { context: ACCOUNT.context } })) ?? '', /the account states no favourites address and key/);
+  assert.match(refusalOf(() => buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE!), account: { context: ACCOUNT.context } })) ?? '', /the account states no favourites address and key/);
 });

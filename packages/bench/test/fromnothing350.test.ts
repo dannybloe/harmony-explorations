@@ -34,7 +34,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { devices, irBlockWords, irGroups, irHeaderPointers, parse, type Container } from '@harmony/codec';
+import { devices, irBlockWords, irGroups, irHeaderPointers, parse, type Container } from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import { BENCH_CONFIGS, CodeBook } from '../src/irmonitor.ts';

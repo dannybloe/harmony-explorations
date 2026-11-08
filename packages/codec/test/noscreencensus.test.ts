@@ -71,6 +71,7 @@ import {
   buildNoScreenSetup, composeNoScreenDevice, countedTable, frameArchitecture, layOutContainer, metadataArchive, nameNodes,
   numberSenders, numberSenderTable, parse, type Recipe, type SectionPlacement, stateRecords, takeApart, taggedList, taggedListExtent,
 } from '../src/index.ts';
+import { archiveAt } from '../src/catalogue.node.ts';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
 
@@ -561,7 +562,7 @@ test('the family\'s own members refuse the wiring and an activity\'s start', () 
 
 test('the device composer emits lists of the roles the census credits it with, and no others', needsComposer, () => {
   const donor = parse(require_('h350_three_devices_config'));
-  const out = composeNoScreenDevice(donor, IR_ARCHIVE!, { manufacturer: 'Panasonic', model: 'TX-P42GT30E', name: 'Plasma', place: 2 });
+  const out = composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE!), { manufacturer: 'Panasonic', model: 'TX-P42GT30E', name: 'Plasma', place: 2 });
   const tally = (c: Container): Map<string, number> => {
     const m = new Map<string, number>();
     listRoles(c).forEach((role) => m.set(role, (m.get(role) ?? 0) + 1));
@@ -586,7 +587,7 @@ test('built from nothing, the test setup holds every category of Logitech\'s com
       Kodi: { place: 1, press: 'long' }, Denon: { place: 2, press: 'short' }, Switch: { place: 2, press: 'long' },
       KPN: { place: 3, press: 'short' }, 'Sony HT': { place: 3, press: 'long' },
     } as const;
-    const ours = census(parse(buildNoScreenSetup(IR_ARCHIVE!, { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes));
+    const ours = census(parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes));
     const theirs = census(lab(COMPILE));
     assert.deepEqual([...ours.keys()].sort(), [...theirs.keys()].sort());
     assert.equal(ours.has('unnamed'), false);

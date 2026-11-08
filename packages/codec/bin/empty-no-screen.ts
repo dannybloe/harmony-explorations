@@ -38,6 +38,7 @@ import { dirname } from 'node:path';
 import { assertFileFamilyContainer } from '@harmony/usb';
 
 import { buildEmptyNoScreenConfiguration, irGroups } from '../src/index.ts';
+import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);

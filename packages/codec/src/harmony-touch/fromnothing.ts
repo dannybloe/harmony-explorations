@@ -65,10 +65,10 @@
  * else does, so this folder is the Touch's own. Which architectures: the Harmony Touch alone, firmware 4.15.330; its
  * firmware reports 17 and Logitech's templates file it under 18. **Nothing here sends anything.**
  */
-import { createHash } from 'node:crypto';
-
+import type { CatalogueSource } from '../catalogue.ts';
 import { encodePng } from '../png.ts';
 import { readRecipe, type Recipe, type RecipeActivity } from '../recipe/recipe.ts';
+import { resource } from '../resources.ts';
 import { deviceRecordOfArchive } from './archivedevice.ts';
 import {
   ACTIVITY_START_SCREENS, ACTIVITY_TYPES, ComposeRefusal, isOwnId, OWN_IDS,
@@ -243,15 +243,15 @@ function activityOf(r: RecipeActivity, p: TouchPartActivity): OwnActivity {
 
 /**
  * The catalogue a setup file's devices are composed from: each device's record written from its catalogue entry in the
- * archive at `root`, `deviceRecordOfArchive`, under its id of ours, with the families the file names; and each definition
+ * archive `archive` reads, `deviceRecordOfArchive`, under its id of ours, with the families the file names; and each definition
  * once. The records are in the file's device order, and a definition appears in the order the records first name it.
  */
-export function catalogueOfArchive(file: TouchSetupFile, root: string): TouchCatalogue {
+export function catalogueOfArchive(file: TouchSetupFile, archive: CatalogueSource): TouchCatalogue {
   const devices: DeviceWithFeatures[] = [];
   const protocols: IrProtocol[] = [];
   for (const r of file.devices) {
     const p = file.touch.devices.find((x) => x.device === r.name)!;
-    const written = deviceRecordOfArchive(root, { entry: r.device, id: p.id, protocolIds: file.touch.protocols });
+    const written = deviceRecordOfArchive(archive, { entry: r.device, id: p.id, protocolIds: file.touch.protocols });
     devices.push(written.record);
     for (const d of written.protocols) if (!protocols.some((x) => x['Id-'] === d['Id-'])) protocols.push(d);
   }
@@ -389,7 +389,7 @@ export interface OurBackground {
 export function ourBackground(): OurBackground {
   const picture = drawBackground(BACKGROUND_BOX.width, BACKGROUND_BOX.height);
   const twin = drawBackground(BACKGROUND_TWIN_BOX.width, BACKGROUND_TWIN_BOX.height);
-  const name = `${createHash('sha256').update(picture).digest('hex').slice(0, 32)}.png`;
+  const name = `${resource('sha256')(picture).slice(0, 32)}.png`;
   return { name, picture, twin, addresses: { picture: `${OUR_PICTURE_STORE}${name}`, twin: `${OUR_PICTURE_STORE}${name.replace(/\.png$/, '_small.png')}` } };
 }
 
@@ -459,7 +459,7 @@ export function contextOfAccount(account: TouchAccount): Context {
 
 /**
  * **The six documents of a setup file**, in the order the remote asks for them: the four lists composed by
- * `composeTouchSetup` onto `emptyTouchLists` from the catalogue the archive at `archive` gives, Context from the account
+ * `composeTouchSetup` onto `emptyTouchLists` from the catalogue `archive` gives, Context from the account
  * and Settings from the file.
  *
  * **The tuning device**, the device of the favourites activity, `tuningDefault`, that changes channels, carries the
@@ -467,7 +467,7 @@ export function contextOfAccount(account: TouchAccount): Context {
  * other device carries either. **Refuses** a favourites activity with no device that changes channels, or with one and
  * an account that states no favourites, and whatever the readers and composers refuse.
  */
-export function buildTouchDocuments(file: TouchSetupFile, options: { readonly archive: string; readonly account: TouchAccount }): SyncDocuments {
+export function buildTouchDocuments(file: TouchSetupFile, options: { readonly archive: CatalogueSource; readonly account: TouchAccount }): SyncDocuments {
   let catalogue = catalogueOfArchive(file, options.archive);
   const favourites = file.touch.activities.find((a) => a.tuningDefault === true);
   if (favourites !== undefined) {

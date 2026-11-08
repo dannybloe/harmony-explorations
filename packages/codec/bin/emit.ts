@@ -22,6 +22,7 @@ import { IMAGES, load } from '@harmony/lab';
 import { emit, parse, payloadOf, roundTrip } from '../src/index.ts';
 import type { Container } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
+import '../src/resources.node.ts';
 
 const detail = process.argv.includes('--detail');
 

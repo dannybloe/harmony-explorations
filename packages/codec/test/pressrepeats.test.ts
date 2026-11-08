@@ -54,7 +54,8 @@ import {
   sameTrain,
   TABLE_PRESS_REPEATS,
   waveformOfArchiveCommand,
-} from '../src/index.ts';
+  archiveAt,
+} from '../src/node.ts';
 
 /** A device group of a Logitech compile and the catalogue device it is, known from outside its bytes. */
 interface Pin {
@@ -256,7 +257,7 @@ const pulsesOfWords = (words: readonly number[]): Pulse[] =>
  * `none` for a record nothing rebuilds.
  */
 function repeatsOfGroup(c: Container, pin: Pin): Map<string, number> {
-  const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+  const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
   const device = catalogueDevice(IR_ARCHIVE!, pin.manufacturer, pin.file);
   const commands = catalogueCommands(IR_ARCHIVE!, device.codeset!);
   const driving = catalogueDriving(IR_ARCHIVE!, pin.manufacturer, pin.file);
@@ -298,7 +299,7 @@ function repeatsOfGroup(c: Container, pin: Pin): Map<string, number> {
 
 test('a family stating no repeat count repeats the device\'s own count on 45 of the 47 pinned catalogue devices holding such a family',
   needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const table: string[] = [];
     /** Per distinct catalogue device holding a family that states no count: its count, and whether every such record is at it. */
     const noCount = new Map<string, { count: number; agrees: boolean }>();
@@ -403,7 +404,7 @@ test('two devices whose families state no repeat count, composed whole at their 
     const base = open('h650_panasonic_config');
     const results: string[] = [];
     for (const one of WHOLE) {
-      const composed = composeCatalogueDevices(base, IR_ARCHIVE!, [{ manufacturer: one.manufacturer, model: one.model,
+      const composed = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [{ manufacturer: one.manufacturer, model: one.model,
         label: 'Test', full: true, inputs: true }], { maxDevices: 99 });
       assert.deepEqual(composed.devices[0]!.leftOut, [], `${one.model}: every catalogue command composes`);
       const c = parse(composed.bytes);
@@ -433,7 +434,7 @@ test('two devices whose families state no repeat count, composed whole at their 
 
 test('the control: the set top box built at the other count matches none of Logitech\'s records for it',
   needing(skipWithoutIrArchive(), skipUnless('h650_config_region')), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const device = catalogueDevice(IR_ARCHIVE!, 'Motorola', 'vip_1853');
     const theirs = new Set(recordBlocks(open('h650_config_region'), 1).map((blocks) =>
       train(pulsesOfWords(blocks[0]!.split(',').map(Number)))));
@@ -450,7 +451,7 @@ test('the control: the set top box built at the other count matches none of Logi
 
 test('what is still unknown is refused: a count of 0 and a device whose codeset holds a family stating another count, while a release group builds',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     // The Toshiba 20VL44G2 states 3, and its codeset is mostly `Toshiba 32 Bit`, which states 1: Logitech
     // wrote its `Memorex 32 Bit` commands at 1, the first test, so the device's 3 is not used there.
     const toshiba = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Toshiba', '20VL44G2').codeset!)
@@ -515,7 +516,7 @@ const TABLE_SAMPLES: Readonly<Record<string, string>> = {
 
 /** The counts 0 to 6 at which a code's definition rebuilds its table block, by the given comparison. */
 function tableReads(keycode: string, same: (a: readonly Pulse[], b: readonly Pulse[]) => boolean): number[] {
-  const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+  const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
   const family = /^G:([^:]+):/.exec(keycode)![1]!;
   const table = blockOfStatedCode(keycode, undefined, 'once')!;
   const reads: number[] = [];
@@ -528,7 +529,7 @@ function tableReads(keycode: string, same: (a: readonly Pulse[], b: readonly Pul
 
 test('a named code of each rhythm table family stating no count rebuilds at that family\'s count and no other, and the map names every such family',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     // Every row carrying a whole block whose family's definition states no count is in the map, and
     // nothing else is: a row the generator adds would otherwise compose at a guessed count.
     const owed = [...new Set(PROTOCOLS.filter((row) => (row.tail ?? row.quad ?? row.longToggle ?? row.sections) !== undefined
@@ -557,7 +558,7 @@ test('a named code of each rhythm table family stating no count rebuilds at that
 
 test('a code the table composes is built at the device\'s count where that is not the table\'s, keeps the table\'s block where it is or where the count is not known, and is refused where the two disagree about the frames a press sends',
   needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const memorex = TABLE_SAMPLES['Memorex 32 Bit']!;
     // At the table's own 1, and on a device whose count is refused, the table's block is sent.
     assert.equal(catalogueCommandBlocks(memorex, { repeats: 1 }, protocols), undefined);
@@ -598,7 +599,7 @@ test('a code the table composes is built at the device\'s count where that is no
  */
 test('the table\'s families stating no count, built at the device\'s count, are right on 2632 of 2636 pinned records where the table was on 2551',
   needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
-    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const familyOf = (keycode: string) => /^G:([^:]+):/.exec(keycode)?.[1];
     const lastMicrosecond = (a: string, b: string) => {
       const [x, y] = [a.split(','), b.split(',')];
@@ -669,7 +670,7 @@ test('the table\'s families stating no count, built at the device\'s count, are 
 
 test('the Dell 2300MP, whose family\'s table block holds a count it does not state, composed whole at its own count presses as Logitech compiled it, and the Philips 70FA930 gains its long toggle record',
   needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config', 'h650_power_hold_compile_2')), () => {
-    const composed = composeCatalogueDevices(open('h650_panasonic_config'), IR_ARCHIVE!, [{ manufacturer: 'Dell',
+    const composed = composeCatalogueDevices(open('h650_panasonic_config'), archiveAt(IR_ARCHIVE!), [{ manufacturer: 'Dell',
       model: '2300MP', label: 'Test', full: true, inputs: true }], { maxDevices: 99 });
     assert.deepEqual(composed.devices[0]!.leftOut, []);
     const c = parse(composed.bytes);
@@ -699,7 +700,7 @@ test('the Dell 2300MP, whose family\'s table block holds a count it does not sta
     // not read here. Two more long toggle codes state their frame three times, which the table's block does
     // not take: they were left out, 44 of 45, until section 361 built them from the definition at the
     // device's 1, and both are Logitech's records, which `catalogueleftovers.test.ts` holds by name.
-    const philips = composeCatalogueDevices(open('h650_panasonic_config'), IR_ARCHIVE!, [{ manufacturer: 'Philips',
+    const philips = composeCatalogueDevices(open('h650_panasonic_config'), archiveAt(IR_ARCHIVE!), [{ manufacturer: 'Philips',
       model: '70FA930_00S', label: 'Test', full: true }], { maxDevices: 99 });
     assert.deepEqual(philips.devices[0]!.leftOut, []);
     const p = parse(philips.bytes);

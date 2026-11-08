@@ -30,8 +30,6 @@
  * repository, which decision 15 forbids, so the tests skip without a checkout exactly as the corpus
  * tests skip without a lab.
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import type {
   BiphaseTimings, BlockTail, BlockTailItem, CellTimings, FrameCarrier, FrameShape, FrameTimings,
   Pulse,
@@ -158,20 +156,21 @@ export interface ArchiveProtocol {
 
 export class ArchiveError extends Error {}
 
+/** What an archive's manifest states, once its schema version is one this reader knows. */
+export interface ArchiveManifest {
+  readonly schemaVersion: number;
+  readonly generated: string;
+  readonly counts: Readonly<Record<string, number>>;
+}
+
 /**
- * Check the archive's manifest and hand back its counts.
+ * Check a parsed `manifest.json` and hand back its counts; `archiveManifest` in `archive.node.ts` reads the file.
  *
  * Throws on an unknown schema version, which is the whole point: a reader that carries on against a
  * layout it does not know produces durations nobody can tell from correct ones.
  */
-export function archiveManifest(root: string): {
-  readonly schemaVersion: number;
-  readonly generated: string;
-  readonly counts: Readonly<Record<string, number>>;
-} {
-  const path = join(root, 'manifest.json');
-  if (!existsSync(path)) throw new ArchiveError(`no manifest.json in ${root}`);
-  const manifest = JSON.parse(readFileSync(path, 'utf8')) as {
+export function archiveManifestOf(parsed: unknown): ArchiveManifest {
+  const manifest = parsed as {
     schemaVersion?: number; generated?: string; counts?: Record<string, number>;
   };
   if (manifest.schemaVersion !== ARCHIVE_SCHEMA_VERSION) {
@@ -185,25 +184,6 @@ export function archiveManifest(root: string): {
     generated: manifest.generated ?? 'unstated',
     counts: manifest.counts ?? {},
   };
-}
-
-/**
- * Every protocol definition in the archive, in the order the filesystem hands them over.
- *
- * `protocols/index.json` is skipped: it is the archive's own index of the other files, not a
- * definition, and counting it is what made an early reading of this checkout report 685 families where
- * the manifest says 684.
- */
-export function archiveProtocols(root: string): ArchiveProtocol[] {
-  archiveManifest(root);
-  const directory = join(root, 'protocols');
-  if (!existsSync(directory)) throw new ArchiveError(`no protocols/ in ${root}`);
-  const out: ArchiveProtocol[] = [];
-  for (const file of readdirSync(directory).sort()) {
-    if (!file.endsWith('.json') || file === 'index.json') continue;
-    out.push(JSON.parse(readFileSync(join(directory, file), 'utf8')) as ArchiveProtocol);
-  }
-  return out;
 }
 
 /** The carrier as our table states it: a period in nanoseconds, **truncated and never rounded**. */
@@ -715,9 +695,9 @@ export interface CatalogueFamily {
  * that Logitech states no such family or that its shape is one this converter still refuses. Those two
  * are not distinguished here, which is why a caller that finds nothing keeps the name it had.
  */
-export function catalogueByRhythm(root: string): Map<string, CatalogueFamily[]> {
+export function catalogueByRhythmOf(protocols: readonly ArchiveProtocol[]): Map<string, CatalogueFamily[]> {
   const out = new Map<string, CatalogueFamily[]>();
-  for (const protocol of archiveProtocols(root)) {
+  for (const protocol of protocols) {
     const read = rhythmOfDefinition(protocol);
     if ('refusal' in read) continue;
     const at = rhythmKey(read.periodNs, read);
@@ -1020,11 +1000,11 @@ export function statedSegmentLengths(protocol: ArchiveProtocol): Map<string, Sta
 }
 
 /**
- * The text of `src/segmentlengths.ts` as the archive at `root` states it, which `bin/segmentlengths.ts`
- * writes and a test compares the checked in file against.
+ * The text of `src/segmentlengths.ts` as the archive's definitions state it, which `bin/segmentlengths.ts`
+ * writes and a test compares the checked in file against; `segmentLengthsModule` in `archive.node.ts` reads them.
  */
-export function segmentLengthsModule(root: string): string {
-  const rows = archiveProtocols(root)
+export function segmentLengthsModuleOf(protocols: readonly ArchiveProtocol[]): string {
+  const rows = protocols
     .map((protocol) => ({ family: protocol.name, lengths: statedSegmentLengths(protocol) }))
     .filter((one) => one.lengths.size > 0)
     .sort((a, b) => a.family.localeCompare(b.family));

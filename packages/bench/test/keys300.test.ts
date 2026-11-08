@@ -98,7 +98,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   bytes, devices, irBlockWords, irGroups, irHeaderPointers, numberSenders, parse, taggedList, type Container,
-} from '@harmony/codec';
+} from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import { CodeBook } from '../src/irmonitor.ts';

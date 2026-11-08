@@ -36,7 +36,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec';
+import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 
 import { chainTags, changeDocuments, changeOneValue, listChanges, setDifferences } from '../experiments/touchchangedset.ts';
