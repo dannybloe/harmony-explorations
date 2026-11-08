@@ -261,21 +261,26 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 Outside the families the source is grouped by what a module is
                                 for, todo.md 7.3.8, with the four entries left at the top:
                                 src/container/, the container and its sections, read and
-                                encoded (gspm, ezhex, sections, tables, valuemap, actions, queue,
-                                memo, modezero, emit, coverage, summary, metadata);
+                                encoded (gspm with clock and slots, ezhex, sections, tables,
+                                valuemap, actions, queue, memo, modezero, emit, coverage,
+                                summary, metadata);
                                 src/inventory/, what a configuration is for, as an application
-                                reads it (inventory and its parts, cornerlayout, touch, language);
+                                reads it (inventory, which re-exports its parts statevariables,
+                                instructions, compilerorder, activities, devices, keys and power,
+                                with common unexported; cornerlayout, touch, language);
                                 src/infrared/, pulses, frames and protocols (ir, irframe, irda,
                                 protocols, pronto, stated, segmentlengths); src/catalogue/,
                                 Logitech's device catalogue and infrared archive with their
-                                *.node.ts readers (archive, catalogue, catalogueraw, driving);
+                                *.node.ts readers (archive with archiveblock and its unexported
+                                archiveschema, catalogue, catalogueraw, driving);
                                 src/screens/, the remote's screens read and drawn (screen, font,
                                 text, alphabets, oxaniumalphabet, render, png, screencategories);
                                 src/drawing/, our letters, pictures and icons (raster, typeface,
                                 lettering, blending, fonttable, glyphborrow, icons, pictures);
                                 src/edit/, a configuration changed in place (edit, relocate,
                                 growth); src/compose/, the composers outside a family (compose,
-                                composecatalogue, devicepower, inputs, sequence, activityroles,
+                                composecatalogue with donorinfrared and cataloguecodes,
+                                devicepower, inputs, sequence, activityroles,
                                 devicemode, screenrecords, screenparts); src/assembly/, a
                                 container built from nothing (frame, placer, assemble,
                                 statetables, firmwaresections, wiringparts, attribution); and
@@ -283,6 +288,9 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 resources and their Node supplier). ./internal carries the
                                 modules of container, inventory, infrared, catalogue, screens,
                                 edit and support, ./build those of drawing, compose and assembly.
+                                A module split by subject re-exports its parts whole, so its
+                                importers keep their path; a part only the others read is not
+                                re-exported, so the entries carry exactly the names they did.
                                 The composers are laid out by plan 007: src/shared/ holds what
                                 every remote's configuration is built from (devices, activities,
                                 infrared, power, spelling text, menus), src/families/<name>/
