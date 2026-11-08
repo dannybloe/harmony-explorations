@@ -100,8 +100,8 @@ Two independent checks[^s126]:
   On the Harmony 880 and 885 a title is drawn only on a device mode of one page, and of those 31 devices one has
   such a mode, which is why there it is no route at all[^t-arch8-devices].
 
-`packages/codec/src/inventory/inventory.ts` is the reader: `devices`, `deviceVariables`, `deviceModeTitles` and
-`infraredGroupsPerList`. `make devices` prints the figures with the source column, which is the number to
+`packages/codec/src/inventory/devices.ts` is the reader: `devices`, `deviceModeTitles` and `infraredGroupsPerList`, with
+`deviceVariables` in `statevariables.ts` beside it. `make devices` prints the figures with the source column, which is the number to
 watch rather than the total.
 
 ### What a button sends
@@ -405,7 +405,7 @@ Together that names 50<!--fact:activities_named--> of the corpus's 50<!--fact:ac
 activities, on all four architectures: **Harmony 880 and 885 22 of 22, Harmony 525 4 of 4, Harmony One 11
 of 11, Harmony 600 and 700 13 of 13**[^s125].
 
-`packages/codec/src/inventory/inventory.ts` is the reader: `activityBindings`, `activityNames`, `idleActivityValue`,
+`packages/codec/src/inventory/activities.ts` is the reader: `activityBindings`, `activityNames`, `idleActivityValue`,
 `activityWriterCount`. `make activities` prints the figures per container.
 
 *The check that can fail*: the name resolves for every activity in the container.

@@ -503,7 +503,7 @@ plus one case for the idle value that enters no screen. It is found by walking f
 device mode page, the "Activities" key, through `0x7F` and `0x72`; its index differs per configuration, 3, 5,
 11 or 13 on the thirteen measured, so it is never a constant. The activity's enter list opens with a `0x7E` into
 a different mode, its start up screen, on 60 of 60[^s279]. `activityScreens` in
-`packages/codec/src/inventory/inventory.ts`.
+`packages/codec/src/inventory/activities.ts`.
 
 On the composed path the activity composer ends by building every activity screen again through this template,
 `withOneActivityScreensRebuilt`[^s423].

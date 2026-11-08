@@ -385,7 +385,7 @@ delay.
 devices, because one that nothing switches on has no such list. That `0x72`'s base slot 14 record has 451
 entries, which states the 0 to 450 range a third time[^s235b].
 
-`deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory/inventory.ts`.
+`deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory/power.ts`.
 
 ### On the other architectures, one instruction
 

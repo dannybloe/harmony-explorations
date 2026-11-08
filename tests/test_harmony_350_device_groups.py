@@ -135,7 +135,7 @@ name no mode or group. The firmware, above. The archive: sections 17 (the event 
 key table and the send operand's group byte), 262 to 265 (the 350's and 300's device to group
 identifications and the device type button), 278 (the send pair). The reference: this family's
 `memory.md`, both models' `keys.md` and `memory.md`, and `reference/config-format/modes-and-keys.md`. The
-library: `devices` in `packages/codec/src/inventory/inventory.ts`, which names each group of this family from its
+library: `devices` in `packages/codec/src/inventory/devices.ts`, which names each group of this family from its
 `Power` variable, the source of the device names quoted above.
 
 **Which architectures.** Arch 16 alone, both of its models: the firmware read is the one 1.4 image,

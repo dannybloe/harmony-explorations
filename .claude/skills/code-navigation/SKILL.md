@@ -73,8 +73,8 @@ the test fail on it, so the runtime reads the tuple element. **A diagnostic is a
 "this is unused" is checkable in one run.** `make ts` and `make pyright` are the authorities, because
 they are the same compilers the scripts use.
 
-**A star re-export produces no reference.** `packages/codec/src/index.ts` is
-`export * from './inventory.ts'`, so the barrel does not appear in the references of anything it
+**A star re-export produces no reference.** `packages/codec/src/internal.ts` is
+`export * from './inventory/inventory.ts'`, which is in turn `export *` of the inventory's parts, so the barrel does not appear in the references of anything it
 re-exports, and neither does an importer that goes through it appear as an importer of the file.
 References are still complete, because the importers themselves are listed; it is the barrel that is
 invisible. Do not read its absence as "nothing re-exports this".

@@ -91,7 +91,7 @@ pressed; and the Harmony 300, which runs the same image on Logitech's word and w
 (the tick and the picker, per device), 278 (the send pair, which this family keeps on 602 of 602 lists),
 86 (a device's `Power` transitions). The reference: `reference/config-format/actions.md` and `state.md`,
 and this family's `memory.md` and `firmware.md`. The library: `powerOnInstructions` in
-`packages/codec/src/inventory/inventory.ts`, which reads this family's delays once base slot 13 is placed.
+`packages/codec/src/inventory/power.ts`, which reads this family's delays once base slot 13 is placed.
 
 **Which architectures.** Arch 16 alone: the one 1.4 image, read here as the Harmony 350's
 (`h350_code`); Logitech's package names it for skins 78, 79 and 104, so it is the Harmony 300's too on

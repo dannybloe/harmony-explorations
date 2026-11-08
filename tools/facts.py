@@ -275,7 +275,7 @@ def activity_facts():
     """How many of the corpus's activities have a drawn name attributed to them.
 
     Shelled out for the same reason as the four above, and it is a number two documents quote: the
-    naming rule in `packages/codec/src/inventory/inventory.ts` is the only thing that decides it, so a copy in
+    naming rule in `packages/codec/src/inventory/activities.ts` is the only thing that decides it, so a copy in
     Python would be free to disagree with the reader the application uses.
     """
     try:
