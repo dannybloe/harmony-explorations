@@ -200,12 +200,15 @@ test('the control: a cycle is found, and the test kit closes one through the tes
   assert.ok(cycleIn(both)?.includes('testkit'), 'the run time and test graph together close a cycle through the kit');
 });
 
-/** Every TypeScript file under a folder, `node_modules` left out. */
+/** Every TypeScript file under a folder, `node_modules`, build output and dot folders left out. */
 function typescriptUnder(directory: string): string[] {
   if (!existsSync(directory)) return [];
   const found: string[] = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === 'node_modules') continue;
+    // Only what is source: `dist/` is the compiler's output, and a dot folder (`.scratch/`) is ignored scratch.
+    // Both are absent from a fresh worktree, which is where these checks first passed while a checkout
+    // with a build and a scratch file failed them.
+    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.')) continue;
     const path = join(directory, entry.name);
     if (entry.isDirectory()) found.push(...typescriptUnder(path));
     else if (/\.(ts|tsx|mts)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) found.push(path);

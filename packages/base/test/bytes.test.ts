@@ -102,11 +102,14 @@ const COMPARISON = /\(\s*\w+\s*:\s*(?:Readonly)?Uint8Array\s*,\s*\w+\s*:\s*(?:Re
 
 const PACKAGES = fileURLToPath(new URL('../../', import.meta.url));
 
-/** Every TypeScript file of the workspace's packages, `node_modules` left out, by its path below `packages/`. */
+/** Every TypeScript file of the workspace's packages, `node_modules`, build output and dot folders left out, by its path below `packages/`. */
 function sources(directory: string): string[] {
   const found: string[] = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === 'node_modules') continue;
+    // Only what is source: `dist/` is the compiler's output, and a dot folder (`.scratch/`) is ignored scratch.
+    // Both are absent from a fresh worktree, which is where these checks first passed while a checkout
+    // with a build and a scratch file failed them.
+    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.')) continue;
     const path = join(directory, entry.name);
     if (entry.isDirectory()) found.push(...sources(path));
     else if (entry.name.endsWith('.ts')) found.push(relative(PACKAGES, path).split(sep).join('/'));
