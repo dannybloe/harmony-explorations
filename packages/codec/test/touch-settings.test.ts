@@ -1,6 +1,6 @@
 /**
  * Settings of ours and Context composed from a description for a Harmony Touch, and the gate's rule for the Settings
- * values the remote mishandles: `todo-touch.md` 8.4, `packages/codec/src/harmony-touch/settings.ts` and the `setting
+ * values the remote mishandles: `todo-touch.md` 8.4, `packages/codec/src/families/harmony-touch/settings.ts` and the `setting
  * mishandled` rule of `check.ts`.
  *
  * **The facts these rest on**, `reference/architectures/harmony-touch/favourites-and-settings.md`, "Settings",
@@ -43,13 +43,13 @@ import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
 
-import { checkSettingValues, findingsByRule, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
-import { ComposeRefusal } from '../src/harmony-touch/compose.ts';
-import { documentsOfAnswers, type Context, type Settings, type SyncAnswer, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { readSettings } from '../src/harmony-touch/read.ts';
+import { checkSettingValues, findingsByRule, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
+import { ComposeRefusal } from '../src/families/harmony-touch/compose.ts';
+import { documentsOfAnswers, type Context, type Settings, type SyncAnswer, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { readSettings } from '../src/families/harmony-touch/read.ts';
 import {
   CONTEXT_FIELDS_READ, SETTING_ROWS, composeTouchContext, composeTouchSettings, describeTouchContext, luaNumber, type OwnContext,
-} from '../src/harmony-touch/settings.ts';
+} from '../src/families/harmony-touch/settings.ts';
 
 const SIX = 'touch_activity_set_back';
 

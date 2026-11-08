@@ -10,13 +10,13 @@
  * **The builder is generic and a family brings what differs**, `todo-compile-one.md` 3.3.3.3: the values
  * a family's tables hold that another's do not are its `StateTableFacts`, `Family.stateTables`, and the
  * builder and reader here take them as an argument. The four slot family's, the Harmony 600, 650 and 700's,
- * are measured over the thirteen compiles section 312 lists, `families/four-slot/statetables.ts`; the One
+ * are measured over the thirteen compiles section 312 lists, `families/harmony-600-650-700/statetables.ts`; the One
  * family's, the Harmony One's, over its 19 distinct compiles since `todo-compile-one.md` 6.4,
- * `families/one/statetables.ts`, where they differ in records 13 and 14, the width line, a one byte case
+ * `families/harmony-one/statetables.ts`, where they differ in records 13 and 14, the width line, a one byte case
  * count and a second transition on the minute. What is written below about the thirteen is that
  * measurement, and the rest of it holds on the One's 19 as well. The no screen family's, the Harmony 300 and
  * 350's, over the 13 compiles of that family the lab holds since `todo-compile-350.md` 5.1.2,
- * `families/no-screen/statetables.ts`, where the clock carries nothing, there are no value maps and every
+ * `families/harmony-300-350/statetables.ts`, where the clock carries nothing, there are no value maps and every
  * variable above the firmware's block but the compiler's first is one byte, with maxima up to 18.
  *
  * **What is generated**, each measured on the thirteen and each a place a carried copy could have
@@ -161,7 +161,7 @@ const TO_ANY = -2;
 
 /**
  * The clock's indices, section 130. The second, the minute and the hour are exported for the Harmony One's
- * clock header, which switches on them, `families/one/clockheader.ts`, section 414.
+ * clock header, which switches on them, `families/harmony-one/clockheader.ts`, section 414.
  */
 export const CLOCK_SECOND = 0;
 export const CLOCK_MINUTE = 1;
@@ -405,7 +405,7 @@ export function hourListBytes(): Uint8Array {
  * `CLOCK_STATE_MAXIMA`'s and the year's one above it, `edit.ts`' stamping rule for a configuration built
  * from nothing. The same on every family a configuration is built from nothing for, the Harmony 600, 650
  * and 700's and the Harmony One's, since the maxima are the same in every container, section 130; moved
- * here out of `families/four-slot/empty.ts` when the Harmony One came to need it, `todo-compile-one.md`
+ * here out of `families/harmony-600-650-700/empty.ts` when the Harmony One came to need it, `todo-compile-one.md`
  * 7.1.3, so the two families stamp through one copy.
  */
 export function clockSpec(builtAt: string): StateTablesSpec['clock'] {

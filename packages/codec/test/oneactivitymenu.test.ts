@@ -21,13 +21,13 @@ import {
   ACTIVITY_STATE_NAME, type Container, type ContainerPiece, ScreenRecordError, composeActivity, composeActivityMenuRow,
   firmwareStateVariableMax, layOutContainer, modeRecords, parse, stateVariables, takeApart, touchPages,
 } from '../src/index.ts';
-import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
-import { letterOneDonor } from '../src/families/one/look.ts';
+import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
+import { letterOneDonor } from '../src/families/harmony-one/look.ts';
 import {
   ACTIVITY_MENU_ROWS, activityMenuPages, activityMenuSlotRoles, buildOneActivityMenu, checkOneActivityMenu,
   describeOneActivityMenu, withOneActivityMenu,
-} from '../src/families/one/activitymenu.ts';
+} from '../src/families/harmony-one/activitymenu.ts';
 import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */

@@ -22,10 +22,10 @@ import {
 import {
   ONE_ASSISTANT_SCREENS, ONE_TOUR_SCREENS, buildOneTourScreens, checkOneTourScreens, describeOneTourScreens,
   oneTourScreenModes, withOneTourScreens,
-} from '../src/families/one/tourscreens.ts';
-import { ONE_FIXED_SCREENS, describeOneFixedScreens, oneFixedScreenModes } from '../src/families/one/fixedscreens.ts';
-import { oneStartupVariables, withoutStartupAssistant } from '../src/families/one/startupassistant.ts';
-import { describeOneWiring } from '../src/families/one/wiring.ts';
+} from '../src/families/harmony-one/tourscreens.ts';
+import { ONE_FIXED_SCREENS, describeOneFixedScreens, oneFixedScreenModes } from '../src/families/harmony-one/fixedscreens.ts';
+import { oneStartupVariables, withoutStartupAssistant } from '../src/families/harmony-one/startupassistant.ts';
+import { describeOneWiring } from '../src/families/harmony-one/wiring.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow, namedByRecords } from './screenlists.ts';
 import '../src/resources.node.ts';

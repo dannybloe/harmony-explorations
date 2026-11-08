@@ -21,22 +21,22 @@ import { activities, modeRecords, parse, takeApart } from '../src/index.ts';
 import { describeStateTables, buildStateTables, hourListBytes } from '../src/statetables.ts';
 import { clockRecordFields } from '../src/gspm.ts';
 import { CLOCK_STATE_MAXIMA } from '../src/sections.ts';
-import { ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
+import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
 import { WiringError, type BuiltWiring } from '../src/wiringparts.ts';
-import { ONE_FIRMWARE_SCREENS, buildOneWiring, describeOneWiring } from '../src/families/one/wiring.ts';
-import { buildOneCasePrograms, describeOneCasePrograms, oneValueMapRoles } from '../src/families/one/caseprograms.ts';
-import { oneClockHeaderEntries } from '../src/families/one/clockheader.ts';
-import { ONE_FIXED_SCREENS, oneFixedScreenModes } from '../src/families/one/fixedscreens.ts';
-import { oneStatusScreenModes } from '../src/families/one/statusscreens.ts';
-import { oneTourScreenModes, ONE_TOUR_SCREENS, ONE_ASSISTANT_SCREENS } from '../src/families/one/tourscreens.ts';
-import { oneHelpScreenModes } from '../src/families/one/helpscreens.ts';
-import { oneDeviceModes } from '../src/families/one/devicepages.ts';
-import { oneDeviceLists } from '../src/families/one/devicelists.ts';
-import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
+import { ONE_FIRMWARE_SCREENS, buildOneWiring, describeOneWiring } from '../src/families/harmony-one/wiring.ts';
+import { buildOneCasePrograms, describeOneCasePrograms, oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
+import { oneClockHeaderEntries } from '../src/families/harmony-one/clockheader.ts';
+import { ONE_FIXED_SCREENS, oneFixedScreenModes } from '../src/families/harmony-one/fixedscreens.ts';
+import { oneStatusScreenModes } from '../src/families/harmony-one/statusscreens.ts';
+import { oneTourScreenModes, ONE_TOUR_SCREENS, ONE_ASSISTANT_SCREENS } from '../src/families/harmony-one/tourscreens.ts';
+import { oneHelpScreenModes } from '../src/families/harmony-one/helpscreens.ts';
+import { oneDeviceModes } from '../src/families/harmony-one/devicepages.ts';
+import { oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
+import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
 import {
   BLANK_SCREEN_SYMBOLS, EMPTY_ONE_MODES, EMPTY_ONE_REDRAW_CLASSES, EMPTY_ONE_VALUE_MAPS, WIRING_MAP_ROLES,
   emptyOneWiring, oneRedrawStarters, type EmptyOneMode, type EmptyOneWiring,
-} from '../src/families/one/emptywiring.ts';
+} from '../src/families/harmony-one/emptywiring.ts';
 import '../src/resources.node.ts';
 
 /** The nineteen distinct Harmony One compiles of section 405, `test/wiring-one.test.ts`' list. */

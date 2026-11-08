@@ -1,6 +1,6 @@
 /**
  * How a command's name is laid out on a Harmony One pad, findings section 394 and
- * `src/families/one/labels.ts`: the cases that pin each part of the rule, on Logitech's own compiles of
+ * `src/families/harmony-one/labels.ts`: the cases that pin each part of the rule, on Logitech's own compiles of
  * catalogue devices, and a census of every label the device pages of Logitech's One compiles draw.
  */
 import test from 'node:test';
@@ -12,10 +12,10 @@ import { fontSets } from '../src/font.ts';
 import {
   SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
 } from '../src/screen.ts';
-import { DEVICE_PAGE_SLOTS } from '../src/families/one/menus.ts';
+import { DEVICE_PAGE_SLOTS } from '../src/families/harmony-one/menus.ts';
 import {
   padFontOf, ONE_PAD_HEIGHT, ONE_PAD_WIDTH, oneLabelLines, oneLabelWords,
-} from '../src/families/one/labels.ts';
+} from '../src/families/harmony-one/labels.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import '../src/resources.node.ts';
 

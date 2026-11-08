@@ -23,11 +23,11 @@ import {
 import {
   HIT_CODES, HIT_EDGES, LEFT_KEY_AREA, RIGHT_KEY_AREA, ONE_HIT_PAGES, buildOneHitPages, buttonArea, checkOneHitPages,
   describeOneHitPages, oneHitPageAreas, withOneHitPages,
-} from '../src/families/one/hitpages.ts';
-import { ONE_FIRMWARE_SCREENS } from '../src/families/one/firmwarescreens.ts';
-import { oneFixedScreenModes } from '../src/families/one/fixedscreens.ts';
-import { oneTourScreenModes } from '../src/families/one/tourscreens.ts';
-import { oneStatusScreenModes } from '../src/families/one/statusscreens.ts';
+} from '../src/families/harmony-one/hitpages.ts';
+import { ONE_FIRMWARE_SCREENS } from '../src/families/harmony-one/firmwarescreens.ts';
+import { oneFixedScreenModes } from '../src/families/harmony-one/fixedscreens.ts';
+import { oneTourScreenModes } from '../src/families/harmony-one/tourscreens.ts';
+import { oneStatusScreenModes } from '../src/families/harmony-one/statusscreens.ts';
 import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */

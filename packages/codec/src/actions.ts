@@ -54,7 +54,7 @@ export const POP_MODE = { opcode: 0x07, operand: 0xfffc } as const;
 export const SILENT_WRITE = { opcode: 0x07, operand: 0xffff } as const;
 /**
  * `0x07` band `0xFB`, cancel all four running timers, section 73, `BANDS_07` below. Named for the Harmony 300
- * and 350's composer, `families/no-screen/`: every send list of their configurations opens with it, and so does
+ * and 350's composer, `families/harmony-300-350/`: every send list of their configurations opens with it, and so does
  * every binding of a device key, `reference/architectures/harmony-300-350/memory.md`.
  */
 export const CANCEL_TIMERS = { opcode: 0x07, operand: 0xfffb } as const;

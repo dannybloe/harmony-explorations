@@ -24,14 +24,14 @@ import {
   taggedList,
   valueMaps,
 } from '../src/index.ts';
-import { checkFourSlotMenuPages, fourSlotMenus } from '../src/families/four-slot/menus.ts';
+import { checkFourSlotMenuPages, fourSlotMenus } from '../src/families/harmony-600-650-700/menus.ts';
 import {
   activityDeviceList,
   checkActivityDeviceLists,
   composeActivityDeviceList,
-} from '../src/families/four-slot/devicelist.ts';
-import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
-import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
+} from '../src/families/harmony-600-650-700/devicelist.ts';
+import { activityKeyedRecords } from '../src/families/harmony-600-650-700/activityscreen.ts';
+import { FOUR_SLOT_ITEMS } from '../src/families/harmony-600-650-700/geometry.ts';
 import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */

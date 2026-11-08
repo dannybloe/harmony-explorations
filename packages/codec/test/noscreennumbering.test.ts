@@ -87,8 +87,8 @@ import { join } from 'node:path';
 import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
 import { type Container, irGroups, metadataArchive, parse, stateRecords, stateVariables } from '../src/index.ts';
-import { instructionsAt, mapOfGroup } from '../src/families/no-screen/devices.ts';
-import { DEVICE_KEYS } from '../src/families/no-screen/keys.ts';
+import { instructionsAt, mapOfGroup } from '../src/families/harmony-300-350/devices.ts';
+import { DEVICE_KEYS } from '../src/families/harmony-300-350/keys.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 
 const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];

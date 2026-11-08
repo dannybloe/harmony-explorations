@@ -14,28 +14,28 @@ import {
 } from '../src/index.ts';
 import { characterMap } from '../src/text.ts';
 import { timers } from '../src/tables.ts';
-import { oneScreenLightTimer } from '../src/families/one/screenlight.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
-import { ONE_BUILT, type OneBuiltBytes, oneBuiltBytes } from '../src/families/one/builders.ts';
-import { describeOneHelpScreens, oneHelpScreenModes } from '../src/families/one/helpscreens.ts';
+import { oneScreenLightTimer } from '../src/families/harmony-one/screenlight.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
+import { ONE_BUILT, type OneBuiltBytes, oneBuiltBytes } from '../src/families/harmony-one/builders.ts';
+import { describeOneHelpScreens, oneHelpScreenModes } from '../src/families/harmony-one/helpscreens.ts';
 import { layOutContainer, takeApart } from '../src/frame.ts';
 import { loosen, placePieces } from '../src/placer.ts';
 import { dropLists, instructionSites, listCallSites } from '../src/assemble.ts';
 import { assertStateTableConsistent, handlerSets } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
-import { oneTourScreenModes } from '../src/families/one/tourscreens.ts';
+import { oneTourScreenModes } from '../src/families/harmony-one/tourscreens.ts';
 import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
-import { checkOneWiring } from '../src/families/one/wiring.ts';
-import { checkOneScreenTexts } from '../src/families/one/screentexts.ts';
-import { withoutTourAndAssistant } from '../src/families/one/withouttour.ts';
+import { checkOneWiring } from '../src/families/harmony-one/wiring.ts';
+import { checkOneScreenTexts } from '../src/families/harmony-one/screentexts.ts';
+import { withoutTourAndAssistant } from '../src/families/harmony-one/withouttour.ts';
 import { listsReached } from './screenlists.ts';
 import { carried, catalogueDevices as catalogueDevicesOf } from './carried.ts';
 import { IMAGE_TABLE_SLOT, fontSets } from '../src/font.ts';
-import { buildOneFontTable, donorGlyphOrder } from '../src/families/one/fontsets.ts';
-import { colour565 } from '../src/families/one/activitypictures.ts';
-import { oneDeviceLists } from '../src/families/one/devicelists.ts';
-import { namedHitPages } from '../src/families/one/hitpages.ts';
-import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
+import { buildOneFontTable, donorGlyphOrder } from '../src/families/harmony-one/fontsets.ts';
+import { colour565 } from '../src/families/harmony-one/activitypictures.ts';
+import { oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
+import { namedHitPages } from '../src/families/harmony-one/hitpages.ts';
+import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import { startSwitchedOn } from '../src/shared/activities.ts';
 import { ENTER_MODE, activities, activityScreens, caseQueued, deviceListRowMode, devices } from '../src/inventory.ts';
@@ -529,7 +529,7 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1431 of its 9
   // match: two header lists of three programs, 20, two lists the chrome queues, 14, and the left key's list of the
   // list nothing enters and its copy's, 14.
   //
-  // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/one/smalltables.ts`.
+  // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/harmony-one/smalltables.ts`.
   //
   // **8.1.3 gave the donor's LG and Denon the catalogue's infrared**, section 433: the three `slot-5` rows went, 101656,
   // since every record of the seven devices is one the catalogue composes for that device whole and both groups are

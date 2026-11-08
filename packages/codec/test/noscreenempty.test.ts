@@ -1,7 +1,7 @@
 /**
  * The Harmony 300 and 350 configuration with no device and no activity, built from nothing, `todo-compile-350.md`
  * 5.1.5, step 5 of [plan 011](../../../docs/plans/011-the-350-from-nothing.md). The builder is
- * `buildEmptyNoScreenConfiguration` in `families/no-screen/empty.ts`; this is the argument for it.
+ * `buildEmptyNoScreenConfiguration` in `families/harmony-300-350/empty.ts`; this is the argument for it.
  *
  * **The question was what "empty" means, and the answer is measured as far as it can be.** The first act was to look
  * for a Logitech compile of this family with no device: every container of architecture 16 the lab holds was parsed

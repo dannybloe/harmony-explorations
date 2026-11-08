@@ -18,7 +18,7 @@
  * Not a test file itself, so the runner does not pick it up.
  */
 import { answersWritten, commands, records, requestLists, sessions, type Session } from '@harmony/usb/test/touch-recording';
-import type { SyncAnswer } from '../src/harmony-touch/documents.ts';
+import type { SyncAnswer } from '../src/families/harmony-touch/documents.ts';
 
 export const TRIAL = 'touch_sync_recording';
 export const FULL = 'touch_full_sync_recording';

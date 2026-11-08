@@ -22,15 +22,15 @@ import {
   type Container, type ContainerPiece, type ScreenInstruction, ScreenRecordError, activities, activityScreens, bitmapReference, layOutContainer, modeRecords,
   parse, picturesByContent, screenProgram, takeApart, SCREEN_CALL, SCREEN_DRAW_IMAGE,
 } from '../src/index.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
-import { letterOneDonor } from '../src/families/one/look.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
+import { letterOneDonor } from '../src/families/harmony-one/look.ts';
 import { activityBindings } from '../src/inventory.ts';
-import { buildOneActivityScreens } from '../src/families/one/activityscreen.ts';
-import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
+import { buildOneActivityScreens } from '../src/families/harmony-one/activityscreen.ts';
+import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import {
   type ActivityWorking, buildOneActivityScreenSet, checkOneActivityScreens, describeOneActivityScreens,
   oneActivityScreenModes, withOneActivityScreenSet,
-} from '../src/families/one/activityscreens.ts';
+} from '../src/families/harmony-one/activityscreens.ts';
 import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */

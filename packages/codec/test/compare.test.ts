@@ -11,7 +11,7 @@ import { LAB, require_, skipUnless } from '@harmony/lab';
 import { parse} from '../src/index.ts';
 import type { Container } from '../src/gspm.ts';
 import { activities } from '../src/inventory.ts';
-import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
 
 test('a file compared with itself differs nowhere, and the view reaches every part of the 650 test setup',

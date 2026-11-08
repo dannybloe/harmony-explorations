@@ -29,22 +29,22 @@ import { countedTable } from '../src/frame.ts';
 import { SCREEN_END, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screen.ts';
 import { stateRecords, taggedList } from '../src/sections.ts';
 import { speller, blobReader } from '../src/shared/spelling.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
-import { ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
-import { ONE_FIXED_CODES, ONE_FONT_SETS, ONE_ADDED_SETS, ONE_GLYPH_ORDER, buildOneFontTable } from '../src/families/one/fontsets.ts';
-import { buildOneScreenTexts, describeOneScreenTexts, oneCharacterMap } from '../src/families/one/screentexts.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
+import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
+import { ONE_FIXED_CODES, ONE_FONT_SETS, ONE_ADDED_SETS, ONE_GLYPH_ORDER, buildOneFontTable } from '../src/families/harmony-one/fontsets.ts';
+import { buildOneScreenTexts, describeOneScreenTexts, oneCharacterMap } from '../src/families/harmony-one/screentexts.ts';
 import {
   ONE_COUNT_WIDTHS, ONE_SKELETON_SKINS, OneSkeletonError, buildOneSkeleton, layOutOneSkeleton, oneSpellingContainer,
-} from '../src/families/one/skeleton.ts';
-import { buildOneFirmwareScreens, describeOneFirmwareScreens } from '../src/families/one/firmwarescreens.ts';
-import { buildOneFixedScreens, describeOneFixedScreens } from '../src/families/one/fixedscreens.ts';
-import { buildOneStatusScreens, describeOneStatusScreens } from '../src/families/one/statusscreens.ts';
-import { buildOneHelpScreens, describeOneHelpScreens } from '../src/families/one/helpscreens.ts';
-import { buildOneClockHeader, describeOneClockHeader } from '../src/families/one/clockheader.ts';
-import { buildOneTourScreens, describeOneTourScreens } from '../src/families/one/tourscreens.ts';
-import { buildOneDevicePages, describeOneDevicePages } from '../src/families/one/devicepages.ts';
-import { buildOneDeviceLists, describeOneDeviceLists } from '../src/families/one/devicelists.ts';
-import { buildOneActivityMenu, describeOneActivityMenu } from '../src/families/one/activitymenu.ts';
+} from '../src/families/harmony-one/skeleton.ts';
+import { buildOneFirmwareScreens, describeOneFirmwareScreens } from '../src/families/harmony-one/firmwarescreens.ts';
+import { buildOneFixedScreens, describeOneFixedScreens } from '../src/families/harmony-one/fixedscreens.ts';
+import { buildOneStatusScreens, describeOneStatusScreens } from '../src/families/harmony-one/statusscreens.ts';
+import { buildOneHelpScreens, describeOneHelpScreens } from '../src/families/harmony-one/helpscreens.ts';
+import { buildOneClockHeader, describeOneClockHeader } from '../src/families/harmony-one/clockheader.ts';
+import { buildOneTourScreens, describeOneTourScreens } from '../src/families/harmony-one/tourscreens.ts';
+import { buildOneDevicePages, describeOneDevicePages } from '../src/families/harmony-one/devicepages.ts';
+import { buildOneDeviceLists, describeOneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
+import { buildOneActivityMenu, describeOneActivityMenu } from '../src/families/harmony-one/activitymenu.ts';
 import '../src/resources.node.ts';
 
 const BUILT_AT = '2026-10-23T12:00:00';

@@ -1830,7 +1830,7 @@ export interface StatedProtocol {
    * it stands; written at a count nobody stated, it would be the guess the paragraph on stated rows refuses.
    * This is the same block with the count left out, which is all a reader that takes the count from somewhere
    * else needs: a Harmony Touch sends a code as many times as the device says and never reads a family's own,
-   * so \`definitionOfRow\` in \`harmony-touch/definition.ts\` takes the start group from it. Nothing that builds
+   * so \`definitionOfRow\` in \`families/harmony-touch/definition.ts\` takes the start group from it. Nothing that builds
    * a compiled configuration reads it.
    */
   readonly opening?: {
@@ -1974,7 +1974,7 @@ export interface StatedProtocol {
    * and not a placeholder. What it has instead is \`readBack\`.
    *
    * \`learned\` is never in this table: it is a row of our own fitted to one learned code that no row here
-   * fits, \`rhythmOfLearned\` in \`harmony-touch/learned.ts\`, measured over that one code and rendered back
+   * fits, \`rhythmOfLearned\` in \`families/harmony-touch/learned.ts\`, measured over that one code and rendered back
    * against it, so its \`codes\` and \`exact\` are 1 and 0 and its \`spread\` is the largest share any of
    * its durations sits from the learned one.
    */

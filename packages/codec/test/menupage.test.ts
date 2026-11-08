@@ -27,10 +27,10 @@ import {
   screenProgram,
   stateVariables,
 } from '../src/index.ts';
-import { checkFourSlotMenuPages, fourSlotMenuChrome, fourSlotMenus } from '../src/families/four-slot/menus.ts';
-import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
-import { activityMenuSingle } from '../src/families/four-slot/activityscreen.ts';
-import { MENU_EDGE_SCANS, MENU_ROW_SCAN, menuRowCapacity } from '../src/families/one/menus.ts';
+import { checkFourSlotMenuPages, fourSlotMenuChrome, fourSlotMenus } from '../src/families/harmony-600-650-700/menus.ts';
+import { deviceModeChrome } from '../src/families/harmony-600-650-700/chrome.ts';
+import { activityMenuSingle } from '../src/families/harmony-600-650-700/activityscreen.ts';
+import { MENU_EDGE_SCANS, MENU_ROW_SCAN, menuRowCapacity } from '../src/families/harmony-one/menus.ts';
 import { touchPages } from '../src/tables.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import '../src/resources.node.ts';

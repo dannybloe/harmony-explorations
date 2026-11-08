@@ -242,7 +242,7 @@ export function numberSenders(c: Container): Table<NumberSender> | undefined {
  * are placed. So no favourite channel sent as a number is one byte, a count of zero and not a NULL slot,
  * the form `reference/config-format/state.md` states for a configuration with no channels; one record is four, section
  * 154's sample. The same shape on every architecture that has the slot, so it is no family's;
- * the four slot family's empty configuration still writes its empty form inline, `families/four-slot/empty.ts`.
+ * the four slot family's empty configuration still writes its empty form inline, `families/harmony-600-650-700/empty.ts`.
  *
  * The records stay what they are: building them is a favourite channel's composer's, which there is not
  * yet, so a caller hands over the pieces the configuration holds, in the order its table names them.

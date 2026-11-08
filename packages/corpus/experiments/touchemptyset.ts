@@ -3,7 +3,7 @@
  * what its commit dropped: `todo-touch.md` 9.2.
  *
  * **The empty set**, `withEmpty`: the six of the source with the four lists emptied by the codec's
- * `emptyTouchDocuments` (`packages/codec/src/harmony-touch/empty.ts`, whose header says why each document has the form
+ * `emptyTouchDocuments` (`packages/codec/src/families/harmony-touch/empty.ts`, whose header says why each document has the form
  * it has), `ActivityList`, `DeviceList`, `MapList` and `ProtocolList` each under the tag `setTag` gives with the set's
  * name, through `changeDocuments`; Context and Settings keep the source's content and tag and are answered 304.
  *

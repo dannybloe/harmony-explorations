@@ -1,6 +1,6 @@
 /**
  * Devices and activities taken out of a Harmony Touch's documents with everything that names them,
- * `src/harmony-touch/remove.ts`, and the two rules of the check that say what a reference left dangling costs,
+ * `src/families/harmony-touch/remove.ts`, and the two rules of the check that say what a reference left dangling costs,
  * `todo-touch.md` 8.5.
  *
  * **What has to hold, and why each test is here.**
@@ -58,11 +58,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { checkConfiguration, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
-import { ComposeRefusal } from '../src/harmony-touch/compose.ts';
-import { CONFIGURATION_DOCUMENTS, documentsOfAnswers, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { readConfiguration } from '../src/harmony-touch/read.ts';
-import { removalOfNames, withoutTouchActivities, withoutTouchDevices, withoutTouchEntries } from '../src/harmony-touch/remove.ts';
+import { checkConfiguration, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
+import { ComposeRefusal } from '../src/families/harmony-touch/compose.ts';
+import { CONFIGURATION_DOCUMENTS, documentsOfAnswers, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { readConfiguration } from '../src/families/harmony-touch/read.ts';
+import { removalOfNames, withoutTouchActivities, withoutTouchDevices, withoutTouchEntries } from '../src/families/harmony-touch/remove.ts';
 import { answersOf, FULL } from './touch-sync.ts';
 
 type Json = Record<string, unknown>;

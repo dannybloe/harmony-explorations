@@ -191,7 +191,7 @@ Two Harmony 885s are on the bench as well, read only.
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
-`packages/codec/src/harmony-touch/`; what a host other than Logitech's server would have to answer is
+`packages/codec/src/families/harmony-touch/`; what a host other than Logitech's server would have to answer is
 [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md). The bench Touch may be written,
 decision 29: the rail for its request channel exists, `assertTouchRequestAllowed` behind
 `HARMONY_TOUCH_REQUESTS`, `todo-touch.md` 6.3, with the abort, the delete of the stored documents and the restart

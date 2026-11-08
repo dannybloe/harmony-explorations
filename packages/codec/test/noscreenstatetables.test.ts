@@ -2,7 +2,7 @@
  * The Harmony 300 and 350's state tables, built from a description and from our own numbering, held against every
  * compile of the family the lab holds, `todo-compile-350.md` 5.1.2, step 2 of
  * [plan 011](../../../docs/plans/011-the-350-from-nothing.md). The facts and the allocator are
- * `families/no-screen/statetables.ts`; the builder is the generic `buildStateTables`.
+ * `families/harmony-300-350/statetables.ts`; the builder is the generic `buildStateTables`.
  *
  * **The question.** Plan 011 counted base slot 13 as `other` on this family: the four slot and One families build
  * it, and `NO_SCREEN_FAMILY.stateTables` refused. It said the facts were measured on seven compiles (records 7 to
@@ -100,10 +100,10 @@ import {
   NO_SCREEN_STATE_TABLES, type NoScreenStateDevice, type NoScreenStateRequest, type NoScreenStateTables, noScreenStateVariables,
   parse, stateRecords, StateTablesError, stateTable, stateVariableName, stateVariables, takeApart, WATCH_TV_SCAN, withStateTables,
 } from '../src/index.ts';
-import { keyMaps, PRESS } from '../src/families/no-screen/devices.ts';
+import { keyMaps, PRESS } from '../src/families/harmony-300-350/devices.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
-import { FIRMWARE_STATE_RECORDS, FOUR_SLOT_STATE_TABLES } from '../src/families/four-slot/statetables.ts';
-import { ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
+import { FIRMWARE_STATE_RECORDS, FOUR_SLOT_STATE_TABLES } from '../src/families/harmony-600-650-700/statetables.ts';
+import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
 
 /** The five bench fixtures, by the lab's names. */
 const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];

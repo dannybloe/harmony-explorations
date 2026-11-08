@@ -469,7 +469,7 @@ export function composeIrGroup(
  * and which group a device takes is the place of the key it sits on, `reference/architectures/harmony-300-350/
  * memory.md`. So a device there goes into a group that already exists, at an index the caller chooses. Nothing
  * in this names a remote: it is the generic half, and the family that allocates its table that way chooses the
- * group, `families/no-screen/`. Run on the Harmony 350's compiles only, the one family with empty groups.
+ * group, `families/harmony-300-350/`. Run on the Harmony 350's compiles only, the one family with empty groups.
  *
  * **Two relocations, each leaving a container the census can walk**, as `composeIrGroup`'s are: first the
  * blocks and records, as one hole where the group arrays begin, so they sit after every record of the table,

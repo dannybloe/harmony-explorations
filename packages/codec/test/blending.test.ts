@@ -15,8 +15,8 @@ import assert from 'node:assert/strict';
 import { load, skipUnless, slow } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 // Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
-import { HARMONY_650_FACES } from '../src/families/four-slot/fonts.ts';
-import { HARMONY_ONE_FACES } from '../src/families/one/fonts.ts';
+import { HARMONY_650_FACES } from '../src/families/harmony-600-650-700/fonts.ts';
+import { HARMONY_ONE_FACES } from '../src/families/harmony-one/fonts.ts';
 import {
   BLEND_DITHER_STEPS,
   LETTERING_CHARACTERS,
@@ -39,9 +39,9 @@ import {
   takeApart,
   withBlendedLetters,
   withOxaniumFonts} from '../src/index.ts';
-import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
-import { withStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
-import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
+import { withStateBackgrounds } from '../src/families/harmony-600-650-700/backgrounds.ts';
+import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
 
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */

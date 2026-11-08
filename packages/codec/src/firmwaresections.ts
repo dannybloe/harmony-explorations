@@ -20,8 +20,8 @@
  * **The parameter block's values are the model's**, not the architecture's, `reference/config-format/state.md` under
  * base slot 15: one set per model on the thirteen arch 14 compiles, the Harmony 600 and the 650 differing
  * in group 3, and one set on the Harmony One's 19. So a caller supplies them, from its family: the
- * Harmony 600, 650 and 700's are `families/four-slot/wiring.ts`' `PARAMETER_VALUES`, the Harmony One's
- * `families/one/parameters.ts`. This module checks them against the lengths the firmware demands, the
+ * Harmony 600, 650 and 700's are `families/harmony-600-650-700/wiring.ts`' `PARAMETER_VALUES`, the Harmony One's
+ * `families/harmony-one/parameters.ts`. This module checks them against the lengths the firmware demands, the
  * rail `writing-a-config` names: a group whose length differs is replaced by compiled in defaults
  * without a word.
  *
@@ -147,7 +147,7 @@ export function buildParameterBlock(architecture: number, spec: ParameterBlockSp
  *
  * Exported for a family whose firmware has not been read for the lengths it demands, so that `buildParameterBlock`
  * refuses it: the Harmony 300 and 350's, whose five groups are what their compiles state,
- * `families/no-screen/constants.ts`. That family builds its block through this and `countedTable`, so the
+ * `families/harmony-300-350/constants.ts`. That family builds its block through this and `countedTable`, so the
  * encoding stays here once and the length rail stays where a demand is read.
  */
 export function parameterGroupWriter(values: readonly number[], extra = 0): Writer {

@@ -41,12 +41,12 @@ import {
 } from '../src/index.ts';
 import { assertStateTableConsistent } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
-import { oneDeviceModes } from '../src/families/one/devicepages.ts';
-import { buildEmptyOneConfiguration, oneAttributedBytes } from '../src/families/one/empty.ts';
-import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
-import { oneFixedScreenModes, ONE_FIXED_SCREENS } from '../src/families/one/fixedscreens.ts';
-import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
-import { oneDeviceLists } from '../src/families/one/devicelists.ts';
+import { oneDeviceModes } from '../src/families/harmony-one/devicepages.ts';
+import { buildEmptyOneConfiguration, oneAttributedBytes } from '../src/families/harmony-one/empty.ts';
+import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
+import { oneFixedScreenModes, ONE_FIXED_SCREENS } from '../src/families/harmony-one/fixedscreens.ts';
+import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
+import { oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
 import { activities, activityScreens, caseQueued, ENTER_MODE } from '../src/inventory.ts';
 import { valueMaps } from '../src/valuemap.ts';
 import { archiveAt } from '../src/catalogue.node.ts';

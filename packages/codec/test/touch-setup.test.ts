@@ -1,6 +1,6 @@
 /**
  * A whole Harmony Touch setup, every device and every activity, composed from a description onto a set with all of
- * them taken out: `src/harmony-touch/setup.ts` and the ordered form of a map in `src/harmony-touch/compose.ts`,
+ * them taken out: `src/families/harmony-touch/setup.ts` and the ordered form of a map in `src/families/harmony-touch/compose.ts`,
  * `todo-touch.md` 8.6.
  *
  * **What has to hold, and why each test is here.**
@@ -67,16 +67,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { checkConfiguration, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
+import { checkConfiguration, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
 import {
   ComposeRefusal, composeButtons, composeTouchActivity, functionIdOf, type OwnActivity, type OwnButton, type OwnSequence,
   type ResolvedCommand,
-} from '../src/harmony-touch/compose.ts';
-import { documentsOfAnswers, idText, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { readConfiguration, type Configuration, type ReadButtonAction } from '../src/harmony-touch/read.ts';
+} from '../src/families/harmony-touch/compose.ts';
+import { documentsOfAnswers, idText, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { readConfiguration, type Configuration, type ReadButtonAction } from '../src/families/harmony-touch/read.ts';
 import {
   composeTouchSetup, describeTouchSetup, catalogueOfSet, setupBaseOf, type TouchSetup,
-} from '../src/harmony-touch/setup.ts';
+} from '../src/families/harmony-touch/setup.ts';
 import { answersOf, FULL } from './touch-sync.ts';
 
 const IDS = { device: 900000101, activity: 900000201, sequence: 900000301 };

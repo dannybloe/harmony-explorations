@@ -187,7 +187,7 @@ pairs and differ in others[^s311b]. **On the Harmony 300 and 350, which have no 
 mode's list at all**: it is entry 0 of base slot 9, the map looked up last, holding the device keys and the
 activity's key, [their memory page](../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots]. The codec
 generates the Harmony 600, 650 and 700 tables rather than copying them, `modeZeroKeyList` in
-`packages/codec/src/families/four-slot/modezero.ts`.
+`packages/codec/src/families/harmony-600-650-700/modezero.ts`.
 
 So the Harmony 600, 650 and 700 enumerate all three event types for every key, while the Harmony One and
 the Harmony 880 and 885 record presses only[^s17]. That is a difference between the architectures and

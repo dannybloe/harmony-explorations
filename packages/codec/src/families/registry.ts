@@ -26,13 +26,13 @@
 import { MODELS_BY_SKIN, modelForSkin, type Model } from '@harmony/base/models';
 import type { Container } from '../gspm.ts';
 import { ComposeError } from '../shared/core.ts';
-import { HARMONY_TOUCH_FAMILY } from '../harmony-touch/family.ts';
+import { HARMONY_TOUCH_FAMILY } from './harmony-touch/family.ts';
 import type { DocumentFamily } from './document.ts';
 import type { ActivityStart, CommonChoices, Family, FamilyTraits, SendShape } from './family.ts';
-import { FOUR_SLOT } from './four-slot/index.ts';
-import { NO_SCREEN_FAMILY } from './no-screen/index.ts';
-import { SIDE_KEYS } from './side-keys/index.ts';
-import { ONE } from './one/index.ts';
+import { FOUR_SLOT } from './harmony-600-650-700/index.ts';
+import { NO_SCREEN_FAMILY } from './harmony-300-350/index.ts';
+import { SIDE_KEYS } from './harmony-880-885/index.ts';
+import { ONE } from './harmony-one/index.ts';
 
 /** A family of either kind, plan 013 decision 1: `kind` tells them apart. */
 export type AnyFamily = Family | DocumentFamily;

@@ -1,5 +1,5 @@
 /**
- * The Harmony One's builders on the composed path, `todo-compile-one.md` 3.2.2, `families/one/builders.ts`: the
+ * The Harmony One's builders on the composed path, `todo-compile-one.md` 3.2.2, `families/harmony-one/builders.ts`: the
  * firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help
  * screens, the activity menu, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base
  * slot 16's table, each built from a description of the configuration being composed in place of the donor's part;
@@ -25,26 +25,26 @@ import {
 } from '../src/index.ts';
 import { saveEdits } from '../src/edit.ts';
 import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../src/screen.ts';
-import { ONE } from '../src/families/one/index.ts';
-import { ONE_BUILT, OneBuildError, oneBuiltBytes, withOneBuilders, withOneComposedBuilders } from '../src/families/one/builders.ts';
-import { ATTEMPT_LINE, NO, YES, checkOneHelpScreens, oneHelpScreenModes, withOneHelpChain } from '../src/families/one/helpscreens.ts';
+import { ONE } from '../src/families/harmony-one/index.ts';
+import { ONE_BUILT, OneBuildError, oneBuiltBytes, withOneBuilders, withOneComposedBuilders } from '../src/families/harmony-one/builders.ts';
+import { ATTEMPT_LINE, NO, YES, checkOneHelpScreens, oneHelpScreenModes, withOneHelpChain } from '../src/families/harmony-one/helpscreens.ts';
 import { characterMap, decode } from '../src/text.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
-import { oneFixedScreenModes } from '../src/families/one/fixedscreens.ts';
-import { oneTourScreenModes } from '../src/families/one/tourscreens.ts';
-import { oneStatusScreenModes } from '../src/families/one/statusscreens.ts';
-import { oneClockHeaderEntries } from '../src/families/one/clockheader.ts';
-import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
-import { oneDeviceModes } from '../src/families/one/devicepages.ts';
-import { oneDeviceLists } from '../src/families/one/devicelists.ts';
-import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
-import { withCentredPadLabels } from '../src/families/one/centring.ts';
+import { oneFixedScreenModes } from '../src/families/harmony-one/fixedscreens.ts';
+import { oneTourScreenModes } from '../src/families/harmony-one/tourscreens.ts';
+import { oneStatusScreenModes } from '../src/families/harmony-one/statusscreens.ts';
+import { oneClockHeaderEntries } from '../src/families/harmony-one/clockheader.ts';
+import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
+import { oneDeviceModes } from '../src/families/harmony-one/devicepages.ts';
+import { oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
+import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
+import { withCentredPadLabels } from '../src/families/harmony-one/centring.ts';
 import { ENTER_MODE, caseQueued } from '../src/inventory.ts';
 import { appendValueMapCase, caseProgram } from '../src/shared/menus.ts';
 import { restamped } from '../src/shared/core.ts';
 import { layOutContainer, takeApart } from '../src/frame.ts';
 import { numberSenders } from '../src/tables.ts';
-import { ONE_INSERTED_SECTION, withNumberSenderTable, withOneInsertedSection } from '../src/families/one/smalltables.ts';
+import { ONE_INSERTED_SECTION, withNumberSenderTable, withOneInsertedSection } from '../src/families/harmony-one/smalltables.ts';
 import { listsReached } from './screenlists.ts';
 import '../src/resources.node.ts';
 

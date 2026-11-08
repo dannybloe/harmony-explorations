@@ -1,6 +1,6 @@
 /**
  * An activity of ours described by its devices, steps, keys and screen entries, and put into a whole set of a Harmony
- * Touch's documents, `src/harmony-touch/compose.ts`, `todo-touch.md` 8.2.
+ * Touch's documents, `src/families/harmony-touch/compose.ts`, `todo-touch.md` 8.2.
  *
  * **What has to hold, and why each test is here.**
  *
@@ -42,13 +42,13 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import * as lab from '@harmony/lab';
-import { checkConfiguration, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
+import { checkConfiguration, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
 import {
   ACTIVITY_GROUPS, ACTIVITY_TYPES, ComposeRefusal, composeTouchActivity, withTouchActivity, withoutTouchActivity,
   type OwnActivity,
-} from '../src/harmony-touch/compose.ts';
-import { documentsOfAnswers, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { readConfiguration } from '../src/harmony-touch/read.ts';
+} from '../src/families/harmony-touch/compose.ts';
+import { documentsOfAnswers, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { readConfiguration } from '../src/families/harmony-touch/read.ts';
 import { answersOf, FULL } from './touch-sync.ts';
 
 /** Made up documents of Logitech's shape: a TV with two inputs and a player, one activity, and their three maps. */

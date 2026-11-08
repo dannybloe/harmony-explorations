@@ -28,13 +28,13 @@ import { recordReading } from '../src/screenrecords.ts';
 import { blobReader } from '../src/shared/spelling.ts';
 import { reachablePrograms } from '../src/screen.ts';
 import { dropModes } from '../src/shared/dropmodes.ts';
-import { withoutTourAndAssistant } from '../src/families/one/withouttour.ts';
-import { oneTourScreenModes } from '../src/families/one/tourscreens.ts';
-import { checkOneWiring, withoutOneStartupLadder } from '../src/families/one/wiring.ts';
-import { checkOneScreenTexts, describeOneScreenTexts } from '../src/families/one/screentexts.ts';
-import { ONE_FIXED_SCREENS, oneFixedScreenModes, withOneOptionsWithoutTour } from '../src/families/one/fixedscreens.ts';
-import { withOneBuilders, withOneComposedBuilders } from '../src/families/one/builders.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
+import { withoutTourAndAssistant } from '../src/families/harmony-one/withouttour.ts';
+import { oneTourScreenModes } from '../src/families/harmony-one/tourscreens.ts';
+import { checkOneWiring, withoutOneStartupLadder } from '../src/families/harmony-one/wiring.ts';
+import { checkOneScreenTexts, describeOneScreenTexts } from '../src/families/harmony-one/screentexts.ts';
+import { ONE_FIXED_SCREENS, oneFixedScreenModes, withOneOptionsWithoutTour } from '../src/families/harmony-one/fixedscreens.ts';
+import { withOneBuilders, withOneComposedBuilders } from '../src/families/harmony-one/builders.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, the population every builder of the One family rebuilds. */

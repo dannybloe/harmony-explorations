@@ -25,10 +25,10 @@ import { type ComposedSetup, type Container, composeSetup, parse, readRecipe } f
 import { SEND_INFRARED, devices } from '../src/inventory.ts';
 import { instructionSites } from '../src/assemble.ts';
 import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
-import { buildEmptyOneConfiguration } from '../src/families/one/empty.ts';
+import { buildEmptyOneConfiguration } from '../src/families/harmony-one/empty.ts';
 import {
   type OneView, type OneViewDifference, type OneViewOptions, type OneViewResult, compareOneViews, oneView,
-} from '../src/families/one/view.ts';
+} from '../src/families/harmony-one/view.ts';
 import { modeRecords, stateRecords } from '../src/sections.ts';
 import { timers } from '../src/tables.ts';
 import { valueMaps } from '../src/valuemap.ts';

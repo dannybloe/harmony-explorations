@@ -59,8 +59,8 @@ import {
   WIDE_MAX_MEASURED,
   activityStateVariables,
   deviceDelayVariables,
-} from '../src/families/four-slot/statetables.ts';
-import { ONE_FIRMWARE_STATE_RECORDS, ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
+} from '../src/families/harmony-600-650-700/statetables.ts';
+import { ONE_FIRMWARE_STATE_RECORDS, ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
 import '../src/resources.node.ts';
 

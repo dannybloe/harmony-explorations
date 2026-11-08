@@ -124,7 +124,7 @@ the sibling product (`hops`). So whatever a writer puts in a device list travels
 fields included.
 
 **9. A learned raw code's grammar**, read in the infrared manager's raw code path and the loader, for
-`packages/codec/src/harmony-touch/learned.ts`, which writes the text and reads it back by this grammar
+`packages/codec/src/families/harmony-touch/learned.ts`, which writes the text and reads it back by this grammar
 (`todo-touch.md` 5.3). The loader keeps a command's `Raw` only when it is not null and its first character
 is `F`, and the manager sends the key code instead whenever the command's `KeyCode` is a non empty string,
 so a raw command states `KeyCode` null or empty. The manager then removes every dash (`gsub` with `%-`), and

@@ -20,15 +20,15 @@ import {
   type Container, type ContainerPiece, SCREEN_CALL, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, ScreenRecordError,
   characterMap, decode, layOutContainer, modeRecords, parse, screenProgram, stateVariables, taggedList, takeApart, timers, touchPages,
 } from '../src/index.ts';
-import { HELP_HIT_PARTS, hitPageAreasOf } from '../src/families/one/hitpages.ts';
-import { buildTemplateScreens, centred, font, wrapLines } from '../src/families/one/screentemplate.ts';
+import { HELP_HIT_PARTS, hitPageAreasOf } from '../src/families/harmony-one/hitpages.ts';
+import { buildTemplateScreens, centred, font, wrapLines } from '../src/families/harmony-one/screentemplate.ts';
 import {
   ATTEMPT_LINE, HELP_FIXED_ROWS, HELP_TITLE, NO, QUESTION_WIDTH, YES, buildOneHelpScreens, checkOneHelpScreens, describeOneHelpScreens,
   helpNumbering, helpScreens, numberedHelpScreens, oneHelpScreenModes, withOneHelpChain, withOneHelpScreens,
-} from '../src/families/one/helpscreens.ts';
+} from '../src/families/harmony-one/helpscreens.ts';
 import { speller, textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow } from './screenlists.ts';
-import { ONE } from '../src/families/one/index.ts';
+import { ONE } from '../src/families/harmony-one/index.ts';
 import '../src/resources.node.ts';
 
 test('todo-compile-one 3.2.2.4: on the test setup\'s donor lettered in ours the attempt line, 177 pixels, breaks in two by the questions\' wrap at 171 and the "If not" paragraph flows onto three lines of its own, each block centred again, where the engine refused the attempt line, which would start at x -1',

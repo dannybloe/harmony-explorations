@@ -19,7 +19,7 @@
  * the leading list names only the start list, below every drop.
  *
  * **The assembly itself moved into its family** with `todo-compile-one.md` 3.3.3.2,
- * `families/four-slot/assemble.ts`: `assembleSetup`, its checks and `attributeBytes` are the Harmony 600,
+ * `families/harmony-600-650-700/assemble.ts`: `assembleSetup`, its checks and `attributeBytes` are the Harmony 600,
  * 650 and 700's chain, and this module was its first half.
  */
 import { AssemblyError } from './shared/setup.ts';

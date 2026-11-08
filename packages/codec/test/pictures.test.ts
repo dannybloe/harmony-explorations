@@ -37,7 +37,7 @@ import {
   pictureBank,
   pictureRows,
   takeApart} from '../src/index.ts';
-import { HARMONY_650_PICTURES, buildPictures, checkPictures, describePictures, withPictures } from '../src/families/four-slot/pictures.ts';
+import { HARMONY_650_PICTURES, buildPictures, checkPictures, describePictures, withPictures } from '../src/families/harmony-600-650-700/pictures.ts';
 
 /** Section 356's 22 Logitech compiles of the Harmony 600, 650 and 700. */
 const COMPILES = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

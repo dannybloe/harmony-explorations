@@ -832,12 +832,12 @@ curves and about nothing else. A device's own numbers are state variables in bas
 `1 3 5 32` on the Harmony 600, `10 20 8 32` on the Harmony 650 and `3 5 10 32` on the Harmony 700, then
 `96 98 308 310 768 770`, group 5's curve, group 6's `2025 2075 2375 2425 2475 2525` and eight of 3300, `0`
 and `1800 10980`. Group 5 is group 6's curve on the Harmony 700 and `2025 2075 2100 2125 2200 2525` and eight
-of 3300 on the other two[^s347]. `PARAMETER_VALUES` in `packages/codec/src/families/four-slot/wiring.ts`.
+of 3300 on the other two[^s347]. `PARAMETER_VALUES` in `packages/codec/src/families/harmony-600-650-700/wiring.ts`.
 
 **On the Harmony One one set is on all 19 distinct compiles**, group 9's twelve bytes past its declared
 entries included. The groups the table above does not read hold `60`, `80`, `2500, 10980` and
 `129, 21, 3, 1, 0, 0, 0, 0` (groups 2, 3, 8 and 10)[^s407]. `ONE_PARAMETERS` in
-`packages/codec/src/families/one/parameters.ts`.
+`packages/codec/src/families/harmony-one/parameters.ts`.
 
 `buildParameterBlock` in `packages/codec/src/firmwaresections.ts` builds the section from the model's values
 and checks it against `PARAMETER_GROUP_COUNTS`, refusing a group of another length, byte for byte on the 19

@@ -53,9 +53,9 @@ import {
   taggedList,
   valueMaps,
 } from '../src/index.ts';
-import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
-import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
-import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
+import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
+import { activityKeyedRecords } from '../src/families/harmony-600-650-700/activityscreen.ts';
+import { FOUR_SLOT_ITEMS } from '../src/families/harmony-600-650-700/geometry.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';
 

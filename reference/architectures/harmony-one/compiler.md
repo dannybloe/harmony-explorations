@@ -10,7 +10,7 @@ One draws what its configuration tells it to draw.
 This page describes what that compiler writes, measured over nineteen distinct configurations it compiled for
 the Harmony One: sixteen English ones of skin 54, two English ones of skin 59, the European One, and one Dutch
 one. The rules here are stated as Logitech's and each is checked by rebuilding those compiles byte for byte;
-the code that does so is named beside each rule, under `packages/codec/src/families/one/`. A "compile" is one
+the code that does so is named beside each rule, under `packages/codec/src/families/harmony-one/`. A "compile" is one
 configuration Logitech's compiler wrote. "Fixed" is what every configuration holds whatever its setup,
 "the setup's" is what a device or an activity brings.
 
@@ -753,7 +753,7 @@ device does not hold it[^s435]:
 | a hit page a device list freed | no compile holds one named by nothing, 19 of 19 |
 | the power off help's show timer | of the sixteen English compiles only the one asking about no device holds it |
 
-This project's builder of a configuration with no device is `families/one/empty.ts`; what it decides is
+This project's builder of a configuration with no device is `families/harmony-one/empty.ts`; what it decides is
 described there.
 
 ## Not checked

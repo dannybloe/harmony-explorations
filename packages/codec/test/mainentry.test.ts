@@ -132,7 +132,7 @@ test('no module the codec\'s main entry reaches imports a Node module or names a
   const { reached, uses } = walk(ENTRY);
   assert.deepEqual(uses, [], described(uses));
   // The walk itself reached the codec, the families and the base package, so an empty list is not an empty walk.
-  for (const one of ['src/gspm.ts', 'src/families/registry.ts', 'src/harmony-touch/index.ts', 'src/archive.ts', 'src/typeface.ts']) {
+  for (const one of ['src/gspm.ts', 'src/families/registry.ts', 'src/families/harmony-touch/index.ts', 'src/archive.ts', 'src/typeface.ts']) {
     assert.ok(reached.includes(join(PACKAGE, one)), `the walk reached ${one}`);
   }
   assert.ok(reached.some((file) => file.includes(`${join('packages', 'base')}`)), 'the walk reached packages/base');
@@ -140,7 +140,7 @@ test('no module the codec\'s main entry reaches imports a Node module or names a
 
 test('the control: a node:fs import or a Buffer added to a module the entry reaches fails the walk', () => {
   const bytes = join(SOURCE, 'bytes.ts');
-  const deep = join(SOURCE, 'families', 'one', 'sends.ts');
+  const deep = join(SOURCE, 'families', 'harmony-one', 'sends.ts');
   for (const [file, added, expected] of [
     [bytes, "import { readFileSync } from 'node:fs';\n", 'an import of node:fs'],
     [deep, "import { join } from 'path';\n", 'an import of path'],

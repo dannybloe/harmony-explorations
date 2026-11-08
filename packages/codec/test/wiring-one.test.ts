@@ -25,8 +25,8 @@ import { familyOf } from '../src/families/registry.ts';
 import { WiringError, builtPieces, compareWiring, withWiring, type BuiltWiring } from '../src/wiringparts.ts';
 import {
   ONE_FIRMWARE_SCREENS, buildOneWiring, checkOneWiring, describeOneWiring, oneWiringNeeds, type OneWiringSpec,
-} from '../src/families/one/wiring.ts';
-import { describeWiring } from '../src/families/four-slot/wiring.ts';
+} from '../src/families/harmony-one/wiring.ts';
+import { describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
 
 /** The nineteen Harmony One compiles of section 405, `test/screenrecords-one.test.ts`' list. */
 const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

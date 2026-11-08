@@ -23,7 +23,7 @@ import { listsBelow, namedByRecords } from './screenlists.ts';
 import {
   ONE_FIXED_SCREENS, buildOneFixedScreens, checkOneFixedScreens, describeOneFixedScreens,
   oneFixedScreenModes, withOneFixedScreens,
-} from '../src/families/one/fixedscreens.ts';
+} from '../src/families/harmony-one/fixedscreens.ts';
 import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */

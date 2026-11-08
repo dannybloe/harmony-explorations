@@ -2,13 +2,13 @@
  * The bookkeeping every family's attribution of a finished configuration does, whichever generators it asks: a ledger
  * of which generator owns each byte, a byte credited only once its rebuild is the file, the bytes a generator read off
  * the file as its description counted apart, and what is left reported by the region that claims it or as claimed by
- * nothing. `todo-compile-350.md` 5.2.1, written for the Harmony 300 and 350's attribution, `families/no-screen/
+ * nothing. `todo-compile-350.md` 5.2.1, written for the Harmony 300 and 350's attribution, `families/harmony-300-350/
  * attribution.ts`.
  *
  * **Why it is outside every family.** Nothing here knows a byte of any remote: it takes the generators' names, their
  * rebuilt bytes and the regions a reader claims, and counts. The questions it answers are the ones the other two
- * families' attributions answer for themselves, `attributeBytes` in `families/four-slot/assemble.ts` and
- * `oneBuiltBytes` and `oneAttributedBytes` in `families/one/`: a first claim wins, the description is counted
+ * families' attributions answer for themselves, `attributeBytes` in `families/harmony-600-650-700/assemble.ts` and
+ * `oneBuiltBytes` and `oneAttributedBytes` in `families/harmony-one/`: a first claim wins, the description is counted
  * apart, and what no generator reproduces is named by its owner in `coverage.ts`' `claims` or reported unclaimed.
  * Those two keep their own ledgers, which predate this one and are pinned by their tests; folding them onto it is
  * open, not done, and nothing here depends on it.

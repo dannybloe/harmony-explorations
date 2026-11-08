@@ -240,7 +240,7 @@ export const SIX = ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Setting
 /**
  * The last path segment of a logical address, which names the resource.
  *
- * A twin of the rule in the codec's `documentsOfAnswers`, `packages/codec/src/harmony-touch/documents.ts`,
+ * A twin of the rule in the codec's `documentsOfAnswers`, `packages/codec/src/families/harmony-touch/documents.ts`,
  * kept here because this package cannot import the codec, which depends on it. The two are one line each and
  * have to change together.
  */

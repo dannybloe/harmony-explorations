@@ -1,7 +1,7 @@
 /**
  * The first catalogue device composed onto a Harmony 885's configuration, `todo-compile-885.md` 2.1: the Sony
  * DAV-C540 as `Sony HT`, eight commands, onto bench unit A's own configuration, `h885_a_config`, with the side keys
- * family, `families/side-keys/`.
+ * family, `families/harmony-880-885/`.
  *
  * **Why this device.** It is the test setup's own, `todo-compile-885.md` 1.6, so what is learned here carries; its
  * name and every label asked for are spelled in unit A's fonts, where the setup's other names lack letters A's title
@@ -87,12 +87,12 @@ import {
   SIDE_KEYS_GRID, SIDE_KEYS_LEFT_X, SIDE_KEYS_LINE_Y, SIDE_KEYS_NUMBER_END, SIDE_KEYS_OF_X, SIDE_KEYS_RIGHT_END,
   SIDE_KEYS_ROW_PITCH, SIDE_KEYS_ROW_TOP, SIDE_KEYS_SEPARATOR_X, SIDE_KEYS_TOTAL_X, SIDE_KEYS_ARROW_X,
   SIDE_KEYS_LABEL_WIDTH,
-} from '../src/families/side-keys/index.ts';
+} from '../src/families/harmony-880-885/index.ts';
 import { catalogueDriving } from '../src/driving.node.ts';
 import { compiledBlockWords } from '../src/shared/infrared.ts';
 import { familyOf } from '../src/families/registry.ts';
-import { sideKeysCopyModes, sideKeysDeviceLists } from '../src/families/side-keys/devicescreen.ts';
-import { SIDE_KEYS_SENDS } from '../src/families/side-keys/sends.ts';
+import { sideKeysCopyModes, sideKeysDeviceLists } from '../src/families/harmony-880-885/devicescreen.ts';
+import { SIDE_KEYS_SENDS } from '../src/families/harmony-880-885/sends.ts';
 import type { ComposeDevice } from '../src/shared/devices.ts';
 import { textGlyphs, textWidth } from '../src/shared/spelling.ts';
 import {

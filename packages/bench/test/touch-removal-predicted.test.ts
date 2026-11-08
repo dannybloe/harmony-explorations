@@ -5,7 +5,7 @@
  *
  * **What the test is.** One file in `irtests/`, `touch-8-5-removal.json`: Off; Watch TV from Off; Volume Up, Volume
  * Down and Mute; Watch a Blu-ray; its Test Sequence entry; Play a Game; Off. Every expectation is derived, never
- * written: `touch85Plans` in `experiments/touchremovaltest.ts` says what the person does and `packages/codec/src/harmony-touch/engine.ts`, the engine model 7.1
+ * written: `touch85Plans` in `experiments/touchremovaltest.ts` says what the person does and `packages/codec/src/families/harmony-touch/engine.ts`, the engine model 7.1
  * calibrated, says what is sent. `bin/touch-removal-tests.ts --write` writes the file; the first test holds that it is
  * what the derivation gives and what it predicts in outline.
  *

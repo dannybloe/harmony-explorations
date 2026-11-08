@@ -17,7 +17,7 @@ import {
   keyListOrder,
   parse,
 } from '../src/index.ts';
-import { modeZeroEntries, modeZeroKeyList } from '../src/families/four-slot/modezero.ts';
+import { modeZeroEntries, modeZeroKeyList } from '../src/families/harmony-600-650-700/modezero.ts';
 
 /** Section 311's four plus the two Harmony 650 compiles no remote held, section 306. */
 const SIX_FIFTY = ['h600_config', 'calibration_h600', 'h650_config_region', 'h650_panasonic_config',

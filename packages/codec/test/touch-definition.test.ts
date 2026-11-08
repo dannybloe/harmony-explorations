@@ -1,6 +1,6 @@
 /**
  * A family's definition in the Harmony Touch's shape, written from a row of our own rhythm table, and a key
- * code written into it, `src/harmony-touch/definition.ts`, `todo-touch.md` 5.3 part A.
+ * code written into it, `src/families/harmony-touch/definition.ts`, `todo-touch.md` 5.3 part A.
  *
  * **What is being claimed.** A Touch works a command's durations out from the family's definition each time
  * it sends, `reference/architectures/harmony-touch/devices-and-infrared.md`, and the definitions a sync
@@ -28,7 +28,7 @@
  * against 13 million of the archive's own renderings by `make prontocheck`; the Touch's engine is read in its
  * firmware, `tests/test_harmony_touch_devices.py`. Where the reference's reading of the engine says something
  * the renderer does not, the test says so below rather than assuming the two agree. **Since `todo-touch.md` 10.1
- * the engine's own reading is in the codec too**, `enginePacketOf` in `src/harmony-touch/packet.ts`, and
+ * the engine's own reading is in the codec too**, `enginePacketOf` in `src/families/harmony-touch/packet.ts`, and
  * `test/touch-rhythm-table.test.ts` holds every written definition through it against the row; this test keeps
  * the archive's renderer, whose closure against Logitech's own definitions is the one below:
  *
@@ -75,9 +75,9 @@ import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
 import {
   biphaseOf, blockOfStatedCode, cellsOf, pulsesOfStatedCode, statedCode, timingsOf, type StatedCode, type StatedItem,
 } from '../src/stated.ts';
-import { carrierOfPeriod, isDefinitionRefusal, definitionOfRow, keyCodeText } from '../src/harmony-touch/definition.ts';
-import type { IrProtocol } from '../src/harmony-touch/documents.ts';
-import { readConfiguration } from '../src/harmony-touch/read.ts';
+import { carrierOfPeriod, isDefinitionRefusal, definitionOfRow, keyCodeText } from '../src/families/harmony-touch/definition.ts';
+import type { IrProtocol } from '../src/families/harmony-touch/documents.ts';
+import { readConfiguration } from '../src/families/harmony-touch/read.ts';
 
 /** The definition as `archive.ts` reads it, through the Touch reader's own adapter rather than a copy. */
 function viewOf(definition: IrProtocol): ArchiveProtocol {

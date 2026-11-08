@@ -88,7 +88,7 @@
  * for another tap, a digit out of order, or a pause outside its band.
  *
  * **Sources checked first**: the lab's `8.3-preflight.md` and `8.3-land-brief.md`, `touch-activity-runs.test.ts`, whose shape
- * this follows, `touch-favourites-predicted.test.ts`, `touchfavouritestest.ts` and `harmony-touch/engine.ts`, and the screens' `submitImageRequest` in the
+ * this follows, `touch-favourites-predicted.test.ts`, `touchfavouritestest.ts` and `families/harmony-touch/engine.ts`, and the screens' `submitImageRequest` in the
  * lab's firmware copy for the picture order. Logitech's client was not consulted: the remote runs its own screens and
  * the answers are ours. **Which architectures**: the Harmony Touch on firmware 4.15.330, one unit, one run of each set;
  * its firmware reports 17 and Logitech's templates file it under 18.

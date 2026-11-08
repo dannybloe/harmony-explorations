@@ -55,18 +55,18 @@ import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 
-import { checkConfiguration, findingsByRule, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
-import { ComposeRefusal } from '../src/harmony-touch/compose.ts';
-import type { DeviceWithFeatures, SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { deviceRecordOfArchive } from '../src/harmony-touch/archivedevice.ts';
+import { checkConfiguration, findingsByRule, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
+import { ComposeRefusal } from '../src/families/harmony-touch/compose.ts';
+import type { DeviceWithFeatures, SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { deviceRecordOfArchive } from '../src/families/harmony-touch/archivedevice.ts';
 import {
   OUR_PICTURE_STORE, SETTINGS_ROWS_WRITTEN, buildTouchDocuments, ourBackground, emptyTouchLists, readTouchSetupFile, contextOfAccount, settingsOfSetupFile,
   setupOfSetupFile, type TouchAccount, type TouchSetupFile,
-} from '../src/harmony-touch/fromnothing.ts';
-import { pictureRefusals } from '../src/harmony-touch/favourites.ts';
-import { readConfiguration } from '../src/harmony-touch/read.ts';
+} from '../src/families/harmony-touch/fromnothing.ts';
+import { pictureRefusals } from '../src/families/harmony-touch/favourites.ts';
+import { readConfiguration } from '../src/families/harmony-touch/read.ts';
 import { readPng } from '../src/png.ts';
-import type { TouchSetup } from '../src/harmony-touch/setup.ts';
+import type { TouchSetup } from '../src/families/harmony-touch/setup.ts';
 import { RecipeError } from '../src/recipe/recipe.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';

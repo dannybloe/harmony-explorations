@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch reader, `src/harmony-touch/`, over the three recorded syncs: what it reads out of Logitech's
+ * The Harmony Touch reader, `src/families/harmony-touch/`, over the three recorded syncs: what it reads out of Logitech's
  * documents, and the closures that say it reads them the way the remote does.
  *
  * **The question.** `todo-touch.md` 3.3 asks for a reader of the Touch's configuration in the codec. The
@@ -73,9 +73,9 @@ import { isDeepStrictEqual } from 'node:util';
 import * as lab from '@harmony/lab';
 import { segmentRefs } from '../src/archive.ts';
 import { statedCode } from '../src/stated.ts';
-import { checkConfiguration, findingsByRule, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
-import { documentsOfAnswers, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { FIRMWARE_SETTINGS, readConfiguration, type Configuration } from '../src/harmony-touch/read.ts';
+import { checkConfiguration, findingsByRule, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
+import { documentsOfAnswers, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { FIRMWARE_SETTINGS, readConfiguration, type Configuration } from '../src/families/harmony-touch/read.ts';
 import { answersOf, FULL, requestsOf, REVERSE, TRIAL } from './touch-sync.ts';
 
 const cache = new Map<string, { documents: SyncDocuments; c: Configuration }>();

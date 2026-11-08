@@ -1,6 +1,6 @@
 /**
  * A learned code for a Harmony Touch: its raw text, `rawOfLearned` and `readTouchRaw`, and which row of the rhythm
- * table it is, `rhythmOfLearned`. `todo-touch.md` 5.3, part B; `src/harmony-touch/learned.ts` holds the why.
+ * table it is, `rhythmOfLearned`. `todo-touch.md` 5.3, part B; `src/families/harmony-touch/learned.ts` holds the why.
  *
  * ## The raw text
  *
@@ -59,7 +59,7 @@ import assert from 'node:assert/strict';
 
 import {
   LEARNED_TOLERANCE, readTouchRaw, rawOfLearned, rhythmOfLearned, type LearnedRow,
-} from '../src/harmony-touch/learned.ts';
+} from '../src/families/harmony-touch/learned.ts';
 import { mergedIntervals, type Pulse } from '../src/irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
 import { pulsesOfStatedRow, statedCode, statedProtocol } from '../src/stated.ts';

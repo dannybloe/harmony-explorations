@@ -330,7 +330,7 @@ checked[^unchecked].
 Changing one is a one byte edit of each copy's operand plus the trailer checksum, `setPowerOnDelay` in
 `packages/codec/src/edit.ts`, which changes the device's own `0x7C` and every copy in the lists Watch TV
 reaches, read as a call of the list the device's own switch on list calls followed by a `0x7C` naming the
-device; the family names them, `packages/codec/src/families/no-screen/delay.ts`. On a Harmony 300's
+device; the family names them, `packages/codec/src/families/harmony-300-350/delay.ts`. On a Harmony 300's
 configuration, a television's wait set from 50 to 100 tenths that way gives, byte for byte, the
 configuration whose two copies both say 100[^t-file-family-delays]. This said the edit left the activity's
 copy alone until the family named it.

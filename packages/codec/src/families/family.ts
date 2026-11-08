@@ -118,7 +118,7 @@ export interface SendShape {
    * shared composer's default, which is the Harmony 650 and 700 compiles' form, section 309 and 320: the ordinary
    * press with no lead in, or the long press version where the catalogue holds the key, sent at the catalogue's
    * inter key delay. Absent keeps that default. The Harmony 880 and 885 open each with the device's delay between
-   * devices and send it at a quantity of 1, `families/side-keys/sends.ts`, `todo-compile-885.md` 2.2 and 2.3.
+   * devices and send it at a quantity of 1, `families/harmony-880-885/sends.ts`, `todo-compile-885.md` 2.2 and 2.3.
    * The Harmony One's family states no `powerStep` yet, although its compiles open a power step with the catalogue's
    * `interDeviceDelay` on 8 of 8 catalogue devices, section 433, so a power step composed for a One keeps the
    * default. Asked before anything is built, so it is also where a family refuses a delay it cannot spell.
@@ -285,22 +285,22 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * The family's own wiring, the event map, the leading list, the timers, base slot 9's fixed entries and the
    * lists they reach: a configuration's checked against what the family's builder makes from the description
    * read off it, byte for byte, refused at the first difference. The Harmony 600, 650 and 700's is
-   * `families/four-slot/wiring.ts`, sections 347 and 360; the Harmony One's `families/one/wiring.ts`, section 410.
+   * `families/harmony-600-650-700/wiring.ts`, sections 347 and 360; the Harmony One's `families/harmony-one/wiring.ts`, section 410.
    */
   readonly wiring: { check(c: Container): WiringChecked };
   /**
    * How the family's font sets become our letters: the Harmony 600, 650 and 700's nine faces, measured on the
-   * 650 alone, `families/four-slot/fonts.ts`; the Harmony One's five, `families/one/fonts.ts`, section 396.
+   * 650 alone, `families/harmony-600-650-700/fonts.ts`; the Harmony One's five, `families/harmony-one/fonts.ts`, section 396.
    */
   readonly fonts: FamilyFonts;
   /**
    * How the family's commands are sent: the Harmony 600, 650 and 700's delay prelude,
-   * `families/four-slot/sends.ts`, and the Harmony One's send and quantity alone, `families/one/sends.ts`.
+   * `families/harmony-600-650-700/sends.ts`, and the Harmony One's send and quantity alone, `families/harmony-one/sends.ts`.
    */
   readonly sends: SendShape;
   /**
-   * The shape of an activity's start: the Harmony 600, 650 and 700's, `families/four-slot/start.ts`, and the
-   * Harmony One's, `families/one/start.ts`.
+   * The shape of an activity's start: the Harmony 600, 650 and 700's, `families/harmony-600-650-700/start.ts`, and the
+   * Harmony One's, `families/harmony-one/start.ts`.
    */
   readonly activityStart: ActivityStart;
   /**
@@ -314,7 +314,7 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * The copies of a device's inline power on delay that a key reaches besides the `0x7C` in its `Power` variable's
    * switch on list, each as a list and an instruction's place in it, which `setPowerOnDelay` changes along with
    * that one. The Harmony 300 and 350's Watch TV keeps its own copy for a device with one power code,
-   * `families/no-screen/delay.ts`, `todo-compile-350.md` 4.6. Absent where the switch on list is the only copy: the
+   * `families/harmony-300-350/delay.ts`, `todo-compile-350.md` 4.6. Absent where the switch on list is the only copy: the
    * Harmony One's activities reach a device's delay through its variable, and the Harmony 600, 650 and 700 keep the
    * delay as a stored setting, `setPowerOnDelayVariable`.
    */
@@ -381,7 +381,7 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * so its bytes come out of the builder rather than out of the donor. Refuses with the builder's refusal where
    * a builder refuses the configuration, never falling back to the donor's part; returns the configuration and
    * the names of the parts built, in the order built. The Harmony One's, `todo-compile-one.md` 3.2.2:
-   * `families/one/builders.ts`. Absent, every part no composer writes stays the donor's.
+   * `families/harmony-one/builders.ts`. Absent, every part no composer writes stays the donor's.
    *
    * `composed` is the devices the composers added, in the order composed, since `todo-compile-one.md` 3.2.2.4:
    * a part that asks about every device, the Harmony One's power off help, has to be told which devices are new

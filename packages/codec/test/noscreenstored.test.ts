@@ -82,8 +82,8 @@ import {
   stateRecords, taggedList, TELEVISION_TYPE,
   archiveAt,
 } from '../src/node.ts';
-import { channelFinish } from '../src/families/no-screen/digits.ts';
-import { TELEVISION_STORED_UNBOUND } from '../src/families/no-screen/keys.ts';
+import { channelFinish } from '../src/families/harmony-300-350/digits.ts';
+import { TELEVISION_STORED_UNBOUND } from '../src/families/harmony-300-350/keys.ts';
 import { IDENTIFIED, onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
 
 const FIXTURES = ['h350_programmed_config', 'h350_three_devices_config', 'h350_config', 'h300_programmed_config'];

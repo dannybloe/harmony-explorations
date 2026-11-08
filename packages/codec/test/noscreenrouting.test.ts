@@ -1,6 +1,6 @@
 /**
  * Logitech's routing in a Harmony 300 or 350 device's map, `todo-compile-350.md` 4.1.1, and the two facts about
- * the container the device composer copies besides, 4.1.2 and 4.1.4: each rule `families/no-screen/keys.ts`
+ * the container the device composer copies besides, 4.1.2 and 4.1.4: each rule `families/harmony-300-350/keys.ts`
  * states, held on every Logitech file of the family the lab holds, with the count both ways.
  *
  * **Why these are rules to copy and not choices to ask about.** The track composes what Logitech's service compiles
@@ -67,9 +67,9 @@ import {
   metadataArchive, parse, stateVariables, taggedList, volumeSource,
   archiveAt,
 } from '../src/node.ts';
-import { DEVICE_KEYS, FAVOURITE_FIVE, INPUT_KEY, POWER_RESETS, START_UP_SELECT_ENTRY, VOLUME_SCANS } from '../src/families/no-screen/keys.ts';
+import { DEVICE_KEYS, FAVOURITE_FIVE, INPUT_KEY, POWER_RESETS, START_UP_SELECT_ENTRY, VOLUME_SCANS } from '../src/families/harmony-300-350/keys.ts';
 import { SILENT_WRITE } from '../src/actions.ts';
-import { withoutStartUpSelect, withStartUpSelect } from '../src/families/no-screen/devices.ts';
+import { withoutStartUpSelect, withStartUpSelect } from '../src/families/harmony-300-350/devices.ts';
 import { IDENTIFIED, onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
 
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());

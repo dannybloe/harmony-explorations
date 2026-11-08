@@ -18,8 +18,8 @@
  * height, whether its glyphs carry a shadow, the stroke, as the median run of ink along a row, and the median
  * row a capital starts on. `measureSet` takes the measurements, which are the same on every family, and the
  * configuration's family names the face, `Family.fonts`: the four slot family's nine faces by the table in
- * `families/four-slot/fonts.ts`, derived on the 13 Harmony 650 compiles, and the One family's five by the
- * one in `families/one/fonts.ts`, section 396. The faces themselves are `lettering.ts`'s, sized to land on
+ * `families/harmony-600-650-700/fonts.ts`, derived on the 13 Harmony 650 compiles, and the One family's five by the
+ * one in `families/harmony-one/fonts.ts`, section 396. The faces themselves are `lettering.ts`'s, sized to land on
  * Logitech's rows. This module tested the architecture for it until `todo-compile-one.md` 3.3.3.5.
  *
  * **How a set is coloured is read off it as well**, `lettering.ts`: a set Logitech draws with a shadow gets
@@ -208,7 +208,7 @@ export function measureSet(c: Container, set: FontSet, map: CharacterMap): SetFa
  * code the configuration's character map reads keeps its character, and every printable character it has no
  * code for takes the next code after the highest one in use, the map's or a set's (`highestSet`), in
  * `LETTERING_CHARACTERS` order. A family that states its table for a configuration built from nothing reads
- * a donor's numbering through this, so the two cannot drift, `families/one/fontsets.ts`. Refuses a
+ * a donor's numbering through this, so the two cannot drift, `families/harmony-one/fontsets.ts`. Refuses a
  * character past the seven bits a code has.
  */
 export function letteredCodes(

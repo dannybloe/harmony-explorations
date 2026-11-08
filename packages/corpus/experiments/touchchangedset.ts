@@ -27,7 +27,7 @@
  * **The change is a value, never a structure.** A JSON Pointer (RFC 6901) names the value, which has to be a
  * string, a number or a boolean already there, holding the value the caller says it holds, and the new value
  * has to be of the same type. An object, a list or a null is not changed here, nor is a value added or
- * removed: that is a family's editor, which `packages/codec/src/harmony-touch/` does not have for these
+ * removed: that is a family's editor, which `packages/codec/src/families/harmony-touch/` does not have for these
  * fields, and 6.9 does not need one. The codec's reader and check meet the changed set through the answerer's
  * own gate, `prepareSet`, before the builder returns it.
  *
@@ -35,7 +35,7 @@
  * documents together, the device, map and protocol lists, so `changeDocuments` replaces any of the six by new
  * content and retags exactly those, by the same rules; `changeOneValue` is that with one value of one document.
  * The composing stays in the codec, `withTouchDevice` and `withoutTouchDevice` in
- * `packages/codec/src/harmony-touch/compose.ts`; this module only puts their documents into a set.
+ * `packages/codec/src/families/harmony-touch/compose.ts`; this module only puts their documents into a set.
  *
  * Nothing here opens a remote: it builds and compares. The bench scripts are `bin/touch-changed-set.ts` and, for
  * a device added or taken out, `bin/touch-device-set.ts`.

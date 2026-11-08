@@ -4,7 +4,7 @@
  *
  * **What 8.6 is for.** 8.1 to 8.5 each changed one thing in a set Logitech's service built. 8.6 builds the four
  * documents that name devices and activities from nothing but a description and the catalogue's records,
- * `composeTouchSetup` in `packages/codec/src/harmony-touch/setup.ts`, onto the set the remote holds with all of them
+ * `composeTouchSetup` in `packages/codec/src/families/harmony-touch/setup.ts`, onto the set the remote holds with all of them
  * taken out, `setupBaseOf`. Context and Settings are the source's: a setup names neither, and 8.4 composed both.
  *
  * **Which documents are delivered.** The four the setup composes, `ActivityList`, `DeviceList`, `MapList` and

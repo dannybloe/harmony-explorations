@@ -1,7 +1,7 @@
 /**
  * Every configuration the Harmony 300 and 350 family builds from nothing binds firmware event `0xFF` to the list event
  * `0x30` runs, `todo-compile-350.md` 5.4 and decision 28, so one build serves the Harmony 300 and the Harmony 350 alike.
- * The entry is `noScreenAcknowledgingEntry` in `families/no-screen/constants.ts`; the builders that carry it are
+ * The entry is `noScreenAcknowledgingEntry` in `families/harmony-300-350/constants.ts`; the builders that carry it are
  * `buildEmptyNoScreenConfiguration` and `buildNoScreenSetup`, the latter putting it in last, `withAcknowledgingEntry`.
  *
  * **The fact it rests on**, measured before this item and held elsewhere: a Harmony 300's application raises event
@@ -59,7 +59,7 @@ import {
   EMPTY_LIST_NUMBERS, NO_SCREEN_ATTRIBUTIONS, noScreenAcknowledgingEntry, noScreenAttributedBytes, type NoScreenSendEventNumbers, parse, type Recipe, restamped,
   SEND_EVENT_PINS, taggedList, UNMASKED_SEND_EVENT,
 } from '../src/index.ts';
-import { withAcknowledgingEntry } from '../src/families/no-screen/empty.ts';
+import { withAcknowledgingEntry } from '../src/families/harmony-300-350/empty.ts';
 import { maps } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 

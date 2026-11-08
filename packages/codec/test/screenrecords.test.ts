@@ -31,9 +31,9 @@ import {
   screenStrings,
   taggedList,
   takeApart} from '../src/index.ts';
-import { describeWiring } from '../src/families/four-slot/wiring.ts';
-import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, screenRecordModes, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
-import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import { describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
+import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, screenRecordModes, withScreenRecords } from '../src/families/harmony-600-650-700/screenrecords.ts';
+import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */

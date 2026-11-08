@@ -23,15 +23,15 @@ import { require_, skipUnless } from '@harmony/lab';
 import { type Container, ScreenRecordError, layOutContainer, parse, stateRecords, takeApart } from '../src/index.ts';
 import { STATE_TABLE_SLOT } from '../src/sections.ts';
 import { WiringError, compareWiring, tablePiece, tableTargets } from '../src/wiringparts.ts';
-import { buildOneFirmwareScreens, describeOneFirmwareScreens } from '../src/families/one/firmwarescreens.ts';
+import { buildOneFirmwareScreens, describeOneFirmwareScreens } from '../src/families/harmony-one/firmwarescreens.ts';
 import {
   ONE_FIXED_SCREENS, buildOneFixedScreens, describeOneFixedScreens, oneFixedScreenModes, withOneFixedScreens,
-} from '../src/families/one/fixedscreens.ts';
+} from '../src/families/harmony-one/fixedscreens.ts';
 import {
   ONE_ASSISTANT_SCREENS, ONE_TOUR_SCREENS, buildOneTourScreens, describeOneTourScreens, withOneTourScreens,
-} from '../src/families/one/tourscreens.ts';
-import { buildOneWiring, describeOneWiring } from '../src/families/one/wiring.ts';
-import { oneStartupVariables } from '../src/families/one/startupassistant.ts';
+} from '../src/families/harmony-one/tourscreens.ts';
+import { buildOneWiring, describeOneWiring } from '../src/families/harmony-one/wiring.ts';
+import { oneStartupVariables } from '../src/families/harmony-one/startupassistant.ts';
 import { leftBelow, namedByRecords } from './screenlists.ts';
 import '../src/resources.node.ts';
 

@@ -37,8 +37,8 @@ import {
   taggedList,
   valueMaps,
 } from '../src/index.ts';
-import { deviceModeChrome, deviceModeKeyMap } from '../src/families/four-slot/chrome.ts';
-import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
+import { deviceModeChrome, deviceModeKeyMap } from '../src/families/harmony-600-650-700/chrome.ts';
+import { activityKeyedRecords } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import {
   HARD_KEYS,
   LABEL_SIZES,
@@ -46,9 +46,9 @@ import {
   LABEL_WRAP_WIDTH,
   textWidthIn,
   wrapAtSpaces,
-} from '../src/families/four-slot/devicemode.ts';
+} from '../src/families/harmony-600-650-700/devicemode.ts';
 import { namedContentEnd } from '../src/coverage.ts';
-import { FOUR_SLOT_ITEMS, FOUR_SLOT_STORED_ORDER } from '../src/families/four-slot/geometry.ts';
+import { FOUR_SLOT_ITEMS, FOUR_SLOT_STORED_ORDER } from '../src/families/harmony-600-650-700/geometry.ts';
 import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */

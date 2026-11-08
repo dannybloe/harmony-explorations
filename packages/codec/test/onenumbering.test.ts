@@ -24,32 +24,32 @@ import type { Container, ContainerPiece } from '../src/index.ts';
 import { parse, takeApart } from '../src/index.ts';
 import { stateRecords, stateTable } from '../src/sections.ts';
 import { type PieceTarget, describeStateTables } from '../src/statetables.ts';
-import { ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
+import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
 import { ScreenRecordError } from '../src/screenrecords.ts';
-import { buildOneWiring, describeOneWiring } from '../src/families/one/wiring.ts';
-import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
+import { buildOneWiring, describeOneWiring } from '../src/families/harmony-one/wiring.ts';
+import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import {
   ONE_FIRMWARE_HIT_PAGES, ONE_FIRMWARE_OWN_LISTS, ONE_FIRMWARE_SCREENS, buildOneFirmwareScreens, describeOneFirmwareScreens,
-} from '../src/families/one/firmwarescreens.ts';
+} from '../src/families/harmony-one/firmwarescreens.ts';
 import {
   ONE_FIXED_SCREENS, buildOneFixedScreens, describeOneFixedScreens, oneFixedHitPages, oneFixedScreenModes,
   oneFixedScreenTemplates,
-} from '../src/families/one/fixedscreens.ts';
-import { buildOneStatusScreens, describeOneStatusScreens, oneStatusScreenModes } from '../src/families/one/statusscreens.ts';
-import { buildOneHelpScreens, describeOneHelpScreens, helpScreens, oneHelpScreenModes } from '../src/families/one/helpscreens.ts';
-import { buildOneActivityMenu, describeOneActivityMenu } from '../src/families/one/activitymenu.ts';
-import { buildOneDeviceLists, describeOneDeviceLists, oneDeviceLists } from '../src/families/one/devicelists.ts';
-import { CLOCK_HEADER_PICTURES, CLOCK_HEADER_PROGRAMS, buildOneClockHeader, describeOneClockHeader, oneClockHeaderEntries } from '../src/families/one/clockheader.ts';
-import { ONE_HIT_PAGES, buildOneHitPages, describeOneHitPages } from '../src/families/one/hitpages.ts';
-import { oneRedrawStarters } from '../src/families/one/emptywiring.ts';
-import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
-import { templateNumberSlots } from '../src/families/one/screentemplate.ts';
+} from '../src/families/harmony-one/fixedscreens.ts';
+import { buildOneStatusScreens, describeOneStatusScreens, oneStatusScreenModes } from '../src/families/harmony-one/statusscreens.ts';
+import { buildOneHelpScreens, describeOneHelpScreens, helpScreens, oneHelpScreenModes } from '../src/families/harmony-one/helpscreens.ts';
+import { buildOneActivityMenu, describeOneActivityMenu } from '../src/families/harmony-one/activitymenu.ts';
+import { buildOneDeviceLists, describeOneDeviceLists, oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
+import { CLOCK_HEADER_PICTURES, CLOCK_HEADER_PROGRAMS, buildOneClockHeader, describeOneClockHeader, oneClockHeaderEntries } from '../src/families/harmony-one/clockheader.ts';
+import { ONE_HIT_PAGES, buildOneHitPages, describeOneHitPages } from '../src/families/harmony-one/hitpages.ts';
+import { oneRedrawStarters } from '../src/families/harmony-one/emptywiring.ts';
+import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
+import { templateNumberSlots } from '../src/families/harmony-one/screentemplate.ts';
 import {
   type ScreenWalk, type OneScreenSet, OneNumbering, readKeys, screenSetWalks,
-} from '../src/families/one/numbering.ts';
+} from '../src/families/harmony-one/numbering.ts';
 import {
   BLANK_TIMERS, EMPTY_ONE_FONTS, EMPTY_ONE_SCREENS, emptyOneNumbering, emptyOneSpecs,
-} from '../src/families/one/emptynumbering.ts';
+} from '../src/families/harmony-one/emptynumbering.ts';
 import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */

@@ -27,14 +27,14 @@ import { inventory, irGroups } from '../src/index.ts';
 import {
   activityStartOf, chooseByModel, choicesOf, familyKind, familyOf, familyOfArchitecture, familyOfModel, modelName, NoFamilyError, sendsOf, traitsOf,
 } from '../src/families/registry.ts';
-import { HARMONY_TOUCH_FAMILY } from '../src/harmony-touch/family.ts';
-import { NO_SCREEN_FAMILY } from '../src/families/no-screen/index.ts';
-import { composeTouchDeviceOfRow, withTouchDevice, type OwnActivity, type RowDevice } from '../src/harmony-touch/compose.ts';
-import { documentsOfAnswers, type SyncAnswer, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { refusalsBeforeASync } from '../src/harmony-touch/check.ts';
-import { removalOfNames } from '../src/harmony-touch/remove.ts';
-import { emptyTouchDocuments } from '../src/harmony-touch/empty.ts';
-import type { TouchAccount } from '../src/harmony-touch/fromnothing.ts';
+import { HARMONY_TOUCH_FAMILY } from '../src/families/harmony-touch/family.ts';
+import { NO_SCREEN_FAMILY } from '../src/families/harmony-300-350/index.ts';
+import { composeTouchDeviceOfRow, withTouchDevice, type OwnActivity, type RowDevice } from '../src/families/harmony-touch/compose.ts';
+import { documentsOfAnswers, type SyncAnswer, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
+import { removalOfNames } from '../src/families/harmony-touch/remove.ts';
+import { emptyTouchDocuments } from '../src/families/harmony-touch/empty.ts';
+import type { TouchAccount } from '../src/families/harmony-touch/fromnothing.ts';
 import { ComposeError } from '../src/shared/core.ts';
 import { answersOf, FULL } from './touch-sync.ts';
 import { archiveAt } from '../src/catalogue.node.ts';

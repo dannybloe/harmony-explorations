@@ -6,7 +6,7 @@
  *
  * Opens no remote and sends nothing. The predictions come from the documents the bench Touch holds, the lab's
  * `work/touch-firmware/sets/6.9-label-back`, and the favourites' documents of the recorded full sync, through the
- * engine model `packages/codec/src/harmony-touch/engine.ts`; `src/touchbench.ts` holds the plans and `test/touch-full-bench-predicted.test.ts` that the files
+ * engine model `packages/codec/src/families/harmony-touch/engine.ts`; `src/touchbench.ts` holds the plans and `test/touch-full-bench-predicted.test.ts` that the files
  * written are what this gives. A file of the 7.1 series that the plans no longer name is reported, not deleted.
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';

@@ -76,7 +76,7 @@
  * of order, heard where the step expected none, or a pause outside its band.
  *
  * **Sources checked first**: the lab's `8.2-preflight.md` and `8.2-land-brief.md`, `touch-device-runs.test.ts`, whose shape
- * this follows, `touch-activity-predicted.test.ts` and `harmony-touch/engine.ts`. Logitech's client was not consulted: the remote runs its own
+ * this follows, `touch-activity-predicted.test.ts` and `families/harmony-touch/engine.ts`. Logitech's client was not consulted: the remote runs its own
  * engine and the answers are ours. **Which architectures**: the Harmony Touch on firmware 4.15.330, one unit, one run
  * of each set; its firmware reports 17 and Logitech's templates file it under 18.
  *

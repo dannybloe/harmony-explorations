@@ -18,13 +18,13 @@ import {
   type Container, type ContainerPiece, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, ScreenRecordError, assertRebuilt,
   characterMap, decode, eventMap, layOutContainer, modeRecords, parse, reachablePrograms, takeApart, withModeRecords,
 } from '../src/index.ts';
-import { buildTemplateScreens, describeTemplateScreens } from '../src/families/one/screentemplate.ts';
+import { buildTemplateScreens, describeTemplateScreens } from '../src/families/harmony-one/screentemplate.ts';
 import { speller, textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow } from './screenlists.ts';
 import {
   DISPLAY_TEST_CODE, STATUS_LINES, ONE_STATUS_SCREENS, statusScreen, buildOneStatusScreens, checkOneStatusScreens,
   describeOneStatusScreens, oneStatusScreenModes, withOneStatusScreens,
-} from '../src/families/one/statusscreens.ts';
+} from '../src/families/harmony-one/statusscreens.ts';
 import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */

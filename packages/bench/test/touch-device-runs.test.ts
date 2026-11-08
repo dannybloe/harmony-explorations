@@ -76,7 +76,7 @@
  * another command, or heard where the step expected none.
  *
  * **Sources checked first**: the lab's `8.1-preflight.md` and `8.1-land-brief.md`, `touch-full-bench-runs.test.ts` and
- * `packages/usb/test/touch-changed-set-sync.test.ts`, whose shapes this follows, `harmony-touch/engine.ts`, and the engine's
+ * `packages/usb/test/touch-changed-set-sync.test.ts`, whose shapes this follows, `families/harmony-touch/engine.ts`, and the engine's
  * `buttonPress` in the decompiled engine for the screen entry, as the preflight read it. Logitech's client was not
  * consulted: the remote runs its own engine and the answers are ours. **Which architectures**: the Harmony Touch
  * on firmware 4.15.330, one unit, one run of each set; its firmware reports 17 and Logitech's templates file it

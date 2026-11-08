@@ -10,7 +10,7 @@
  * reaches over the table's 681 rows: which rows can be written at all, and whether what is written makes the Touch
  * send what the row says.
  *
- * **The two ends, and why they are independent.** The Touch's end is `enginePacketOf` in `src/harmony-touch/packet.ts`,
+ * **The two ends, and why they are independent.** The Touch's end is `enginePacketOf` in `src/families/harmony-touch/packet.ts`,
  * a reading of the engine's own code: segment by segment, header, cells, trailer and pad, each duration spelled as the
  * engine's words. The row's end is the rhythm table's renderer, `pulsesOfBlock` in `irframe.ts`, over the row's own
  * first transmission and its held repetition. They share no code: the Touch's reading knows no row shape, and the
@@ -80,9 +80,9 @@ import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
 import { biphaseOf, cellsOf, timingsOf, type StatedCode, type StatedItem } from '../src/stated.ts';
 import {
   carrierOfPeriod, definitionOfRow, isDefinitionRefusal, keyCodeText, storedMicrosecondOf,
-} from '../src/harmony-touch/definition.ts';
-import type { IrProtocol } from '../src/harmony-touch/documents.ts';
-import { engineKeyCodeGroups, enginePacketOf, engineSegmentId, engineWordsOf, type TouchPacket } from '../src/harmony-touch/packet.ts';
+} from '../src/families/harmony-touch/definition.ts';
+import type { IrProtocol } from '../src/families/harmony-touch/documents.ts';
+import { engineKeyCodeGroups, enginePacketOf, engineSegmentId, engineWordsOf, type TouchPacket } from '../src/families/harmony-touch/packet.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // The two ends

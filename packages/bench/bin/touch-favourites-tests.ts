@@ -7,7 +7,7 @@
  *
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.3-favourites`,
  * which `packages/corpus/bin/touch-device-set.ts --favourites` built, and the favourites documents of the recorded full
- * sync that set leaves the remote to keep, through the engine model `packages/codec/src/harmony-touch/engine.ts`; `experiments/touchfavouritestest.ts` holds the
+ * sync that set leaves the remote to keep, through the engine model `packages/codec/src/families/harmony-touch/engine.ts`; `experiments/touchfavouritestest.ts` holds the
  * plan and `test/touch-favourites-predicted.test.ts` that the file written is what this gives. The description,
  * `packages/corpus/touch-favourites/8.3-favourites.json`, says which channel was added and the logo's text.
  */

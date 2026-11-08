@@ -26,8 +26,8 @@ import {
   takeApart,
   withFirmwareSections,
 } from '../src/index.ts';
-import { ONE_PARAMETERS } from '../src/families/one/parameters.ts';
-import { PARAMETER_VALUES, describeWiring } from '../src/families/four-slot/wiring.ts';
+import { ONE_PARAMETERS } from '../src/families/harmony-one/parameters.ts';
+import { PARAMETER_VALUES, describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
 
 /** The 19 distinct Harmony One compiles, `todo-compile-one.md` 2.2, as `startupassistant.test.ts` lists them. */
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

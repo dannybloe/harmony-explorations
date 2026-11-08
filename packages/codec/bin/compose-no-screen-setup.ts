@@ -47,7 +47,7 @@
  * ../lab/work/setups/h350-test/from-nothing-5.4.bin` wrote that file, the 5.1.6 and 5.1.7 files staying in the lab as
  * they were, without the entry. `packages/codec/test/noscreenfromnothing.test.ts` rebuilds the 5.4 file from its own
  * stamp and holds it against Logitech's second compile part by part. A composition onto `--donor` does not add the
- * entry, `families/no-screen/setup.ts` says why.
+ * entry, `families/harmony-300-350/setup.ts` says why.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';

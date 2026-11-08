@@ -24,7 +24,7 @@ import { characterMap } from '../src/text.ts';
 import { ScreenTextError, withScreenTexts } from '../src/shared/screentexts.ts';
 import {
   TITLE_JOINER, buildOneScreenTexts, checkOneScreenTexts, describeOneScreenTexts, titleJoinerCode, oneCharacterMap,
-} from '../src/families/one/screentexts.ts';
+} from '../src/families/harmony-one/screentexts.ts';
 import '../src/resources.node.ts';
 
 /** `ONE_COMPILES` of `startupassistant.test.ts` without the Dutch `one_friend_asfound_config`. */

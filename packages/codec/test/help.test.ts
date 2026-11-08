@@ -34,7 +34,7 @@ import {
   stateRecords,
   taggedList,
 } from '../src/index.ts';
-import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
+import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import { startTargets } from './tagfive.ts';
 import '../src/resources.node.ts';
 

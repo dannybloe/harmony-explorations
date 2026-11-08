@@ -5,7 +5,7 @@
  * **What the test is.** One file in `irtests/`, `touch-8-1-device-mode.json`: Off, the Test Projector chosen from
  * the Devices list, each key its own map binds tapped, then the Blu-ray chosen and its navigation keys tapped as a
  * control from the same run. Every expectation is derived, never written: `touch81Plans` in `experiments/touchdevicetest.ts` says
- * what the person does and `packages/codec/src/harmony-touch/engine.ts`, the engine model 7.1 calibrated, says what is sent.
+ * what the person does and `packages/codec/src/families/harmony-touch/engine.ts`, the engine model 7.1 calibrated, says what is sent.
  * `bin/touch-device-tests.ts --write` writes the file; the first test holds that it is what the derivation gives.
  *
  * **What the predictions rest on.** The documents of the set the bench Touch holds since 6.9, the

@@ -8,7 +8,7 @@
  * and no document measured breaks them. So each is exercised here on documents built for it, in the shape
  * the recordings have, with invented names and numbers and no account's data. What the remote does with each
  * is the reference's, `reference/architectures/harmony-touch/devices-and-infrared.md`,
- * `activities-and-buttons.md` and `favourites-and-settings.md`, whose sections the rules in `src/harmony-touch/`
+ * `activities-and-buttons.md` and `favourites-and-settings.md`, whose sections the rules in `src/families/harmony-touch/`
  * cite; this file checks that the code does what those sections say, not that the remote does.
  *
  * **The shape of each assertion.** A break is asserted as the whole of `findingsByRule`, so a rule that also
@@ -223,9 +223,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { TOP_LEVEL_LISTS, checkConfiguration, checkFields, checkScreens, checkTypes, findingsByRule, readerRaises, refusalsBeforeASync, typePlaces } from '../src/harmony-touch/check.ts';
-import { documentKeyOf, documentsOfAnswers, kindOf, type SyncAnswer, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { DEFAULT_PRESS_REPEATS, FIRMWARE_SETTINGS, mapIdentifier, numberPadKey, readConfiguration, readSettings, stationLogo, uploadedLogo } from '../src/harmony-touch/read.ts';
+import { TOP_LEVEL_LISTS, checkConfiguration, checkFields, checkScreens, checkTypes, findingsByRule, readerRaises, refusalsBeforeASync, typePlaces } from '../src/families/harmony-touch/check.ts';
+import { documentKeyOf, documentsOfAnswers, kindOf, type SyncAnswer, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { DEFAULT_PRESS_REPEATS, FIRMWARE_SETTINGS, mapIdentifier, numberPadKey, readConfiguration, readSettings, stationLogo, uploadedLogo } from '../src/families/harmony-touch/read.ts';
 import { answersOf, FULL, TRIAL } from './touch-sync.ts';
 
 // The documents are JSON; the synthetic ones are built and broken as such.

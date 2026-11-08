@@ -84,7 +84,7 @@
  * heard; a volume key sending anything; the entry tapped sending anything but Stop and TopMenu.
  *
  * **Sources checked first**: the lab's `8.5-preflight.md` and `8.5-land-brief.md`, `touch-favourites-runs.test.ts` and
- * `touch-settings-runs.test.ts`, whose shape this follows, `touch-removal-predicted.test.ts`, `touchremovaltest.ts` and `harmony-touch/engine.ts`, and
+ * `touch-settings-runs.test.ts`, whose shape this follows, `touch-removal-predicted.test.ts`, `touchremovaltest.ts` and `families/harmony-touch/engine.ts`, and
  * `syncTouch` in `packages/corpus/src/touchsync.ts` for what a run's folder keeps and when: a request line is written
  * before it is sent, its answer and its announcement's answer only once the whole request has returned. Logitech's
  * client was not consulted: the remote runs its own screens and the answers are ours. **Which architectures**: the

@@ -298,7 +298,7 @@ written from a family's rhythm has to carry what follows each frame, the trailer
 besides the lead in, the cells and the carrier; without them one frame follows the last with no gap. This project's
 rhythm table states a family's frame, and the trailer and the gap only in its timings of one repetition and of the
 first transmission, which is what its writer reads them from, and states no toggle bit and no finish sequence, so its
-definitions carry neither, `packages/codec/src/harmony-touch/definition.ts`[^t-touch-nothing-compared].
+definitions carry neither, `packages/codec/src/families/harmony-touch/definition.ts`[^t-touch-nothing-compared].
 
 **What these definitions leave out against Logitech's for the same families**, field by field, and why each changes
 nothing the engine does, is held by the comparison that built them[^t-touch-nothing-compared]. The one that could show
@@ -315,7 +315,7 @@ written into a definition a Touch reads, and every code tried through each sends
 that family, but where the engine's own spelling of a duration changes one and on three codes the table's renderer
 declines.** This is read in code and not on a unit[^t-touch-rhythm-table]: each definition and a set of codes into it are read the way the engine reads them, segment
 by segment, header, cells, trailer and pad, each duration as the engine's words, `enginePacketOf` in
-`packages/codec/src/harmony-touch/packet.ts`, and held against the table's own renderer over the family's first
+`packages/codec/src/families/harmony-touch/packet.ts`, and held against the table's own renderer over the family's first
 transmission and its held repetition. The codes are chosen so every cell goes out at every place, with alternating and
 fixed pseudo random values besides, each value at its segment's width[^t-touch-rhythm-table]. A press is read as the
 start sequence followed by the repeat sequence as many times as the family's first transmission repeats it; how the

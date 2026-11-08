@@ -22,12 +22,12 @@ import {
   type Container, type ContainerPiece, ScreenRecordError, composeDevice, composeDeviceScreen, layOutContainer, modeRecords, parse,
   takeApart, taggedList, touchPages,
 } from '../src/index.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
-import { letterOneDonor } from '../src/families/one/look.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
+import { letterOneDonor } from '../src/families/harmony-one/look.ts';
 import {
   DEVICE_PAGE_PADS, buildOneDevicePages, checkOneDevicePages, describeOneDevicePages, devicePageSlotRoles,
   oneDeviceModes, withOneDevicePages,
-} from '../src/families/one/devicepages.ts';
+} from '../src/families/harmony-one/devicepages.ts';
 import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */

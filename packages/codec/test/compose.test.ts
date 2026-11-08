@@ -120,18 +120,18 @@ import {
   STATE_WRITE_BASE,
   reachablePrograms,
 } from '../src/index.ts';
-import { activityStateVariables, startSequenceVariables } from '../src/families/four-slot/statetables.ts';
-import { startSequenceOf } from '../src/families/four-slot/start.ts';
-import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
-import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
-import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
-import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
+import { activityStateVariables, startSequenceVariables } from '../src/families/harmony-600-650-700/statetables.ts';
+import { startSequenceOf } from '../src/families/harmony-600-650-700/start.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
+import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
+import { deviceModeChrome } from '../src/families/harmony-600-650-700/chrome.ts';
+import { activityKeyedRecords } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
-import { namedHitPages } from '../src/families/one/hitpages.ts';
+import { namedHitPages } from '../src/families/harmony-one/hitpages.ts';
 import { familyOf, NoFamilyError } from '../src/families/registry.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
-import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';
+import { FOUR_SLOT_ITEMS } from '../src/families/harmony-600-650-700/geometry.ts';
 import '../src/resources.node.ts';
 
 /**

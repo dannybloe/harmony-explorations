@@ -1,7 +1,7 @@
 /**
  * The second kind of family, plan 013 decision 1: a remote that assembles its configuration itself from
  * documents it is given, where a compiled family, `Family` in `family.ts`, builds the one container the remote
- * is written with. The Harmony Touch is the one document family, `harmony-touch/family.ts`; the hubs and the
+ * is written with. The Harmony Touch is the one document family, `families/harmony-touch/family.ts`; the hubs and the
  * later remotes Logitech's templates file beside it would be the next.
  *
  * **Kept apart from `Family` on purpose.** Every member of a compiled family takes a container, and a set of

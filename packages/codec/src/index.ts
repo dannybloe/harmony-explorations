@@ -53,7 +53,7 @@ export * from './coverage.ts';
 export * from './screencategories.ts';
 export * from './edit.ts';
 // The order a key list is stored in, section 315; mode 0's own list is the four slot family's since
-// todo-compile-one 3.3.3.2, families/four-slot/modezero.ts.
+// todo-compile-one 3.3.3.2, families/harmony-600-650-700/modezero.ts.
 export * from './modezero.ts';
 export * from './queue.ts';
 export * from './growth.ts';
@@ -67,13 +67,13 @@ export * from './statetables.ts';
 // The log area and the parameter block built for an architecture, todo-compile-one 6.4.
 export * from './firmwaresections.ts';
 // The engine the families' wiring is built on, sections 347 and 410; the Harmony 600, 650 and 700's own
-// catalogue, todo-compile-650 10.2, is families/four-slot/wiring.ts since todo-compile-one 3.3.3.2.
+// catalogue, todo-compile-650 10.2, is families/harmony-600-650-700/wiring.ts since todo-compile-one 3.3.3.2.
 export { WiringError, builtPieces, withWiring } from './wiringparts.ts';
 export type { BuiltWiring, DeviceTimer, WiringChecked, WiringInstruction } from './wiringparts.ts';
 export * from './compose.ts';
 // The machinery every family builds a mode record with, reading its frame, building its pieces and placing
 // them, sections 356 and 357. The Harmony 600, 650 and 700's own three screen records and their state
-// backgrounds are that family's since todo-compile-one 3.3.3.2, families/four-slot/screenrecords.ts and
+// backgrounds are that family's since todo-compile-one 3.3.3.2, families/harmony-600-650-700/screenrecords.ts and
 // backgrounds.ts, and the screen part encoder is screenparts.ts.
 export * from './screenrecords.ts';
 export * from './screenparts.ts';
@@ -135,7 +135,7 @@ export * from './pronto.ts';
 // rows and errors it uses.
 export * from './activityroles.ts';
 // Which action lists a configuration names, and dropping the ones nothing names, the renumbering the
-// assembly runs; the assembly itself, todo-compile-650 10.6, is families/four-slot/assemble.ts since
+// assembly runs; the assembly itself, todo-compile-650 10.6, is families/harmony-600-650-700/assemble.ts since
 // todo-compile-one 3.3.3.2.
 export * from './assemble.ts';
 // The setup's devices and activities composed onto a donor, every family's steps, plan 007.
@@ -182,11 +182,11 @@ export {
   noScreenRegions, NO_SCREEN_LIST_KINDS, type ListKind, type ListNames, sendList, powerOnList, gateList, flipList, resetList, pressList,
   selectList, activityList, type ActivityStepWrite, conditionList, type ConditionArm, writesList, channelNumberList, channelDigitsList,
   readChannelDigits, keyTimerRecords, numberSenderBlock, TIMER_RECORD_LENGTH,
-} from './families/no-screen/index.ts';
+} from './families/harmony-300-350/index.ts';
 // The bookkeeping of an attribution, the ledger every family's could share, todo-compile-350.md 5.2.1.
 export * from './attribution.ts';
 // **The Harmony Touch's configuration**, todo-touch.md 3.3: not a container but Logitech's JSON documents,
 // which the remote fetches through the computer and keeps itself. Read into a typed view and checked for
 // what the remote would refuse or ignore. One namespace rather than a star export, because "touch" names
 // the Harmony One's touch panel elsewhere in this codec, `touch.ts`, and the two must not meet by name.
-export * as harmonyTouch from './harmony-touch/index.ts';
+export * as harmonyTouch from './families/harmony-touch/index.ts';

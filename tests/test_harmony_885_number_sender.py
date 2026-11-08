@@ -16,7 +16,7 @@ are the 885 application's unless named.
 (section 39's layout and conversion, read on the Harmony 700, 600 and One; sections 154 and 156, the Harmony
 One compiles that carry a record; section 262, the Harmony 300 and 350), the `writing-a-config` skill's two
 favourite channel rows, `gspm.number_senders`, `BANDS_1F` in `packages/codec/src/actions.ts` and
-`NUMBER_SENDER_BAND` in `packages/codec/src/families/no-screen/lists.ts`, and items 3.1 and 3.4 of this
+`NUMBER_SENDER_BAND` in `packages/codec/src/families/harmony-300-350/lists.ts`, and items 3.1 and 3.4 of this
 track (the `0x1F` dispatch and the seeker's census, where raw slot 17 is sought once). **Logitech's client,
 decision 2**: not searched for this item; how a number becomes digits is the firmware's alone, and the 720's
 configuration is itself a Logitech compile.

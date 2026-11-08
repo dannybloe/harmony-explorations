@@ -34,28 +34,28 @@ import { claims } from '../src/coverage.ts';
 import { fontSets, glyphOf } from '../src/font.ts';
 import { touchPages } from '../src/tables.ts';
 import { ScreenRecordError, assertRebuilt, withModeRecords } from '../src/screenrecords.ts';
-import { ONE_STATE_TABLES } from '../src/families/one/statetables.ts';
-import { ONE_PICTURES, readOnePictures, oneFixedPictures } from '../src/families/one/pictures.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
+import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
+import { ONE_PICTURES, readOnePictures, oneFixedPictures } from '../src/families/harmony-one/pictures.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import {
   EMPTY_ONE_CLOCK_SLOTS, EmptyOneError, type EmptyOneConfiguration, buildEmptyOneConfiguration, emptyOnePictureAt, oneAttributedBytes,
-} from '../src/families/one/empty.ts';
-import { type EmptyOneScreen, emptyOneNumbering, emptyOneScreens } from '../src/families/one/emptynumbering.ts';
+} from '../src/families/harmony-one/empty.ts';
+import { type EmptyOneScreen, emptyOneNumbering, emptyOneScreens } from '../src/families/harmony-one/emptynumbering.ts';
 import {
   LEAP_MONTH, ONE_FIXED_SCREENS, describeOneFixedScreens, oneFixedScreenModes, oneFixedScreenNames, oneFixedScreenTemplates,
-} from '../src/families/one/fixedscreens.ts';
-import { describeOneFirmwareScreens, ONE_FIRMWARE_SCREENS } from '../src/families/one/firmwarescreens.ts';
-import { describeOneStatusScreens } from '../src/families/one/statusscreens.ts';
-import { describeOneHelpScreens } from '../src/families/one/helpscreens.ts';
-import { describeOneActivityMenu } from '../src/families/one/activitymenu.ts';
-import { describeOneDeviceLists, oneDeviceLists } from '../src/families/one/devicelists.ts';
-import { describeOneClockHeader } from '../src/families/one/clockheader.ts';
-import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
-import { oneHitPageAreas } from '../src/families/one/hitpages.ts';
-import { EMPTY_ONE_REDRAW_CLASSES, oneRedrawStarters } from '../src/families/one/emptywiring.ts';
-import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
-import { buildTemplateScreens, describeTemplateScreens } from '../src/families/one/screentemplate.ts';
-import { readKeys, templateWalk } from '../src/families/one/numbering.ts';
+} from '../src/families/harmony-one/fixedscreens.ts';
+import { describeOneFirmwareScreens, ONE_FIRMWARE_SCREENS } from '../src/families/harmony-one/firmwarescreens.ts';
+import { describeOneStatusScreens } from '../src/families/harmony-one/statusscreens.ts';
+import { describeOneHelpScreens } from '../src/families/harmony-one/helpscreens.ts';
+import { describeOneActivityMenu } from '../src/families/harmony-one/activitymenu.ts';
+import { describeOneDeviceLists, oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
+import { describeOneClockHeader } from '../src/families/harmony-one/clockheader.ts';
+import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
+import { oneHitPageAreas } from '../src/families/harmony-one/hitpages.ts';
+import { EMPTY_ONE_REDRAW_CLASSES, oneRedrawStarters } from '../src/families/harmony-one/emptywiring.ts';
+import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
+import { buildTemplateScreens, describeTemplateScreens } from '../src/families/harmony-one/screentemplate.ts';
+import { readKeys, templateWalk } from '../src/families/harmony-one/numbering.ts';
 import { activities, caseQueued, devices, ENTER_MODE } from '../src/inventory.ts';
 import { valueMaps } from '../src/valuemap.ts';
 import '../src/resources.node.ts';

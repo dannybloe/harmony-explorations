@@ -33,8 +33,8 @@ import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow }
 import { layOutContainer, takeApart } from '../src/frame.ts';
 import { withOxaniumFonts } from '../src/fonttable.ts';
 import { deviceModeLayout } from '../src/devicemode.ts';
-import { HARD_KEYS } from '../src/families/four-slot/devicemode.ts';
-import { ONE_HARD_KEYS } from '../src/families/one/devicekeys.ts';
+import { HARD_KEYS } from '../src/families/harmony-600-650-700/devicemode.ts';
+import { ONE_HARD_KEYS } from '../src/families/harmony-one/devicekeys.ts';
 import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
 import {
   type CatalogueDeviceRequest,

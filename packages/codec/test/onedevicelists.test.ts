@@ -27,16 +27,16 @@ import { deviceListMenus } from '../src/shared/menus.ts';
 import { speller } from '../src/shared/spelling.ts';
 import { startSwitchedOn } from '../src/shared/activities.ts';
 import { ComposeError } from '../src/shared/core.ts';
-import { joinLines, wrapLines } from '../src/families/one/screentemplate.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
-import { letterOneDonor } from '../src/families/one/look.ts';
+import { joinLines, wrapLines } from '../src/families/harmony-one/screentemplate.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
+import { letterOneDonor } from '../src/families/harmony-one/look.ts';
 import {
   DEVICE_LIST_NAME_WIDTH, EMPTY_DEVICE_LISTS, type OneDeviceList, buildOneDeviceLists, deviceListPages, checkOneDeviceLists,
   describeOneDeviceLists, deviceListNameLines, deviceListRoles, emptyOneDeviceListsSpec, oneDeviceLists, withOneDeviceLists,
   withOneEmptyDeviceLists,
-} from '../src/families/one/devicelists.ts';
-import { activityMenuRoles, describeOneActivityMenu } from '../src/families/one/activitymenu.ts';
-import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
+} from '../src/families/harmony-one/devicelists.ts';
+import { activityMenuRoles, describeOneActivityMenu } from '../src/families/harmony-one/activitymenu.ts';
+import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */

@@ -1,6 +1,6 @@
 /**
  * The empty Harmony Touch configuration, no device and no activity, and what its commit leaves of the favourites and
- * the pictures: `src/harmony-touch/empty.ts`, `todo-touch.md` 9.2.
+ * the pictures: `src/families/harmony-touch/empty.ts`, `todo-touch.md` 9.2.
  *
  * **What has to hold, and why each test is here.**
  *
@@ -45,11 +45,11 @@ import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
 
-import { refusalsBeforeASync } from '../src/harmony-touch/check.ts';
-import { ComposeRefusal } from '../src/harmony-touch/compose.ts';
-import { CONFIGURATION_DOCUMENTS, documentsOfAnswers, type SyncAnswer, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { emptyTouchDocuments, favouritesAskedFor, keptAtTheCommit, userBackgroundsAsked } from '../src/harmony-touch/empty.ts';
-import { readConfiguration } from '../src/harmony-touch/read.ts';
+import { refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
+import { ComposeRefusal } from '../src/families/harmony-touch/compose.ts';
+import { CONFIGURATION_DOCUMENTS, documentsOfAnswers, type SyncAnswer, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { emptyTouchDocuments, favouritesAskedFor, keptAtTheCommit, userBackgroundsAsked } from '../src/families/harmony-touch/empty.ts';
+import { readConfiguration } from '../src/families/harmony-touch/read.ts';
 
 /** The set the bench Touch holds since 8.6's put back, which equals 8.5's. */
 const BENCH = 'touch_setup_set_back';

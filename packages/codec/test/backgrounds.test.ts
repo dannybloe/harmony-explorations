@@ -25,11 +25,11 @@ import {
   rgb565,
   rgbTo565,
   takeApart} from '../src/index.ts';
-import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
-import { screenRecordModes } from '../src/families/four-slot/screenrecords.ts';
-import { BackgroundError, checkStateBackgrounds, screenStates, withStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
-import { HARMONY_650_PICTURES } from '../src/families/four-slot/pictures.ts';
-import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
+import { screenRecordModes } from '../src/families/harmony-600-650-700/screenrecords.ts';
+import { BackgroundError, checkStateBackgrounds, screenStates, withStateBackgrounds } from '../src/families/harmony-600-650-700/backgrounds.ts';
+import { HARMONY_650_PICTURES } from '../src/families/harmony-600-650-700/pictures.ts';
+import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
 
 const H650 = [

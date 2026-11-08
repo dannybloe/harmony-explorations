@@ -5,7 +5,7 @@
  * **What the tests are.** Ten files in `irtests/`, `touch-7-1-*.json`: every activity started from Off and ended,
  * the activities switched one into the next, the favourite channels, the keys of each activity's map, short and
  * long, and each device's keys in device mode. Every expectation in them is derived, never written: the plan of
- * each test, `touch71Plans` in `src/touchbench.ts`, says what the person does, and `packages/codec/src/harmony-touch/engine.ts`, a model of the
+ * each test, `touch71Plans` in `src/touchbench.ts`, says what the person does, and `packages/codec/src/families/harmony-touch/engine.ts`, a model of the
  * Touch's engine, says what it sends and when. `bin/touch-tests.ts --write` writes the files; the first test here
  * holds that the files are what the derivation gives from the documents, so the files cannot drift from them.
  *

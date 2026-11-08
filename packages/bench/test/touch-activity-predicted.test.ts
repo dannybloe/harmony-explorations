@@ -4,7 +4,7 @@
  *
  * **What the test is.** One file in `irtests/`, `touch-8-2-activity.json`: Off; Test Cinema started from Off; every
  * key its map binds and every screen entry, tapped; a switch to Watch TV and back; Off. Every expectation is derived,
- * never written: `touch82Plans` in `experiments/touchactivitytest.ts` says what the person does and `packages/codec/src/harmony-touch/engine.ts`, the engine
+ * never written: `touch82Plans` in `experiments/touchactivitytest.ts` says what the person does and `packages/codec/src/families/harmony-touch/engine.ts`, the engine
  * model 7.1 calibrated, says what is sent. `bin/touch-activity-tests.ts --write` writes the file; the first test holds
  * that it is what the derivation gives, and what it predicts in outline.
  *

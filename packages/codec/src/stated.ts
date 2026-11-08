@@ -442,7 +442,7 @@ export function pulsesOfStatedCode(
  * The frame one row sends for a value, the row given rather than looked up by its family's name.
  *
  * **Split out of `pulsesOfStatedCode` for a row that is not in `PROTOCOLS`**: a rhythm fitted to a learned
- * code, `harmony-touch/learned.ts`, is a row of our own and has no name the table could find it by, and
+ * code, `families/harmony-touch/learned.ts`, is a row of our own and has no name the table could find it by, and
  * checking that fit means rendering it with the same encoder every table row is rendered with. A second
  * dispatch over the four shapes would be a second copy of this one, so the lookup stays in the function
  * above and the rendering lives here, once.

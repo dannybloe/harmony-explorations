@@ -273,7 +273,7 @@ export type PieceRef =
  * whose count is one or two bytes, of base slot 6, whose count is three, and on the Harmony One of base
  * slot 17, the touch hit map, whose count is one: the same widths on arch 12 (Harmony One) and arch 14
  * (Harmony 600, 650 and 700), read off their compiles. Each entry names its piece's start, or `offsets[k]`
- * bytes into it. Moved here out of `families/four-slot/empty.ts` with `todo-compile-one.md` 7.1.3, since
+ * bytes into it. Moved here out of `families/harmony-600-650-700/empty.ts` with `todo-compile-one.md` 7.1.3, since
  * both families build a configuration from nothing through it and nothing in it is either's.
  */
 export function countedTable(

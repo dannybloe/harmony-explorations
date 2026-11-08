@@ -107,7 +107,7 @@ function pulses(words: readonly number[]): Pulse[] {
  * `TRAILING_GAP_US` on the other half: a header's mark is thousands of microseconds, so the pair is
  * consumed and the walk stops one bit in, which is under `MIN_BITS`.
  *
- * Exported for `harmony-touch/learned.ts`, which asks where a recorded frame's closing silence has run on
+ * Exported for `families/harmony-touch/learned.ts`, which asks where a recorded frame's closing silence has run on
  * into the gap after it and takes the bound this reader ends a frame on, rather than a second one.
  */
 export const GAP_US = 8000;

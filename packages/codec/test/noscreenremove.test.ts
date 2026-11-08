@@ -61,7 +61,7 @@ import {
   type AccountDevice, catalogueDevicePlan, ComposeError, composeNoScreenDevice, type Container, devices, irGroups,
   metadataArchive, parse, stateRecords, stateVariables, taggedList, volumeSource, withoutNoScreenDevice,
 } from '../src/index.ts';
-import { mapOfGroup } from '../src/families/no-screen/devices.ts';
+import { mapOfGroup } from '../src/families/harmony-300-350/devices.ts';
 import { allLists, maps, records, timerRecords, transitions, without } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 

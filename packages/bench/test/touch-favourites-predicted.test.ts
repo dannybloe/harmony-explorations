@@ -5,7 +5,7 @@
  * **What the test is.** One file in `irtests/`, `touch-8-3-favourites.json`: Off; the favourites screen and the first
  * favourite of the new order tapped, which starts Watch TV; every other favourite tapped in the order shown; Off. Every
  * expectation is derived, never written: `touch83Plans` in `experiments/touchfavouritestest.ts` says what the person does and
- * `packages/codec/src/harmony-touch/engine.ts`, the engine model 7.1 calibrated, what is sent. `bin/touch-favourites-tests.ts --write` writes
+ * `packages/codec/src/families/harmony-touch/engine.ts`, the engine model 7.1 calibrated, what is sent. `bin/touch-favourites-tests.ts --write` writes
  * the file; the first test holds that it is what the derivation gives.
  *
  * **What the predictions rest on.** The six documents of the set the bench Touch holds since 8.2's put back, the

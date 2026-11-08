@@ -1,6 +1,6 @@
 /**
  * The few parts of opentype.js the codec uses, `typeface.ts`, and since `todo-touch.md` 8.3 a line of text for a
- * Harmony Touch's channel logo, `harmony-touch/favourites.ts`: the package ships no types. Pinned at 2.0.0, which
+ * Harmony Touch's channel logo, `families/harmony-touch/favourites.ts`: the package ships no types. Pinned at 2.0.0, which
  * depends on nothing, `todo-compile-650.md` 10.8.
  */
 declare module 'opentype.js' {

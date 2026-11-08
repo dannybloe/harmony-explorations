@@ -26,7 +26,7 @@
  *
  * **What moved**, `todo-compile-one.md` 3.3.3.2: mode 0's population, the key map over scans 1 to 54 and
  * that scan range itself, `KEYPAD_FIRST_SCAN` and `KEYPAD_LAST_SCAN`, are the four slot family's,
- * `families/four-slot/modezero.ts`, since the Harmony One's keypad is another, `ONE_FIRMWARE_KEYPAD`, and
+ * `families/harmony-600-650-700/modezero.ts`, since the Harmony One's keypad is another, `ONE_FIRMWARE_KEYPAD`, and
  * that is where a mode 0 list is generated now.
  */
 

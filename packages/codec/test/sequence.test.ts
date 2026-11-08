@@ -25,7 +25,7 @@ import {
   coverage, deviceKeypadLists, handlerSets, infraredCodesPerList, irCarrier, irFrames, irGroups, irRecordBlocks,
   keepDeviceOn, modeRecords, parse, payloadOf, queueRun, roundTrip, sendPreludes, sequenceBody, taggedList, trailerAgrees,
   type Container, type Instruction, type SequenceStep} from '../src/index.ts';
-import { listSends, setupView } from '../src/families/four-slot/compare.ts';
+import { listSends, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */

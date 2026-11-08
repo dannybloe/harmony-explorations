@@ -409,7 +409,7 @@ function encodedList(body: ListBody): Writer {
 /**
  * A transition record, as section 86 reads it: a seven byte header, then eight bytes per transition, `first` 0
  * and `max` one under the count of values. Exported for the Harmony 300 and 350's activity composer,
- * `families/no-screen/activity.ts`, whose input variables and activity flag are records of the same shape.
+ * `families/harmony-300-350/activity.ts`, whose input variables and activity flag are records of the same shape.
  */
 export function encodeStateRecord(values: number, encoded: readonly { from: number; to: number; instruction: Instruction }[]): Uint8Array {
   const out = new Writer(STATE_RECORD_HEADER + STATE_VALUE_LENGTH * encoded.length)

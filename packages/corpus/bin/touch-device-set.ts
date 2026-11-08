@@ -477,7 +477,7 @@ function describeSetup(folder: string): void {
   const set = sixOf(readSet(insideTheLab(folder, 'the set folder')));
   const setup = harmonyTouch.describeTouchSetup(documentsOf(set), SETUP_IDS);
   const about = `todo-touch.md 8.6: the bench Harmony Touch's whole test setup as the person built it in Logitech's software, `
-    + `described from the set it held, ${basename(folder)}, by describeTouchSetup in packages/codec/src/harmony-touch/setup.ts: each device `
+    + `described from the set it held, ${basename(folder)}, by describeTouchSetup in packages/codec/src/families/harmony-touch/setup.ts: each device `
     + 'by its maker and model, which find its catalogue record, and what was chosen for it, its name, control port, press repeats, delays, '
     + 'power and input settings and its own map; each activity with its roles, inputs, steps, map, gestures and sequences. Ids of ours, '
     + `OWN_IDS: devices from ${SETUP_IDS.device}, activities from ${SETUP_IDS.activity}, sequences from ${SETUP_IDS.sequence}. `

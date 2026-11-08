@@ -1,7 +1,7 @@
 /**
  * The Harmony 300 and 350's constant sections and lists, built from nothing and held against every compile of the
  * family the lab holds, `todo-compile-350.md` 5.1.3, step 3 of
- * [plan 011](../../../docs/plans/011-the-350-from-nothing.md). The builders are `families/no-screen/constants.ts`.
+ * [plan 011](../../../docs/plans/011-the-350-from-nothing.md). The builders are `families/harmony-300-350/constants.ts`.
  *
  * **The question.** Plan 011 counted 232 bytes per configuration that no generator wrote and that looked the same
  * in every compile: the log area (8), the parameter block (16 and 21), the digit entry table (2), the start up event

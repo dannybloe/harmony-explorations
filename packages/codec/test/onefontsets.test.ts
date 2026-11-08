@@ -16,21 +16,21 @@ import { type Container, layOutContainer, modeRecords, parse, takeApart } from '
 import { IMAGE_TABLE_SLOT, fontSets, glyphOf } from '../src/font.ts';
 import { measureSet } from '../src/fonttable.ts';
 import { characterMap } from '../src/text.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
-import { letterOneDonor } from '../src/families/one/look.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
+import { letterOneDonor } from '../src/families/harmony-one/look.ts';
 import {
   ONE_ADDED_SETS, ONE_CONTENT_FONT_SETS, ONE_FIXED_CODES, ONE_FONT_SETS, ONE_GLYPH_ORDER, type OneFontSet,
   buildOneFontTable, donorGlyphOrder,
-} from '../src/families/one/fontsets.ts';
-import { TITLE_JOINER } from '../src/families/one/screentexts.ts';
-import { describeOneFirmwareScreens } from '../src/families/one/firmwarescreens.ts';
-import { describeOneFixedScreens } from '../src/families/one/fixedscreens.ts';
-import { describeOneActivityMenu } from '../src/families/one/activitymenu.ts';
-import { describeOneTourScreens } from '../src/families/one/tourscreens.ts';
-import { describeOneDevicePages } from '../src/families/one/devicepages.ts';
-import { describeOneClockHeader } from '../src/families/one/clockheader.ts';
-import { oneActivityScreenModes } from '../src/families/one/activityscreens.ts';
-import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
+} from '../src/families/harmony-one/fontsets.ts';
+import { TITLE_JOINER } from '../src/families/harmony-one/screentexts.ts';
+import { describeOneFirmwareScreens } from '../src/families/harmony-one/firmwarescreens.ts';
+import { describeOneFixedScreens } from '../src/families/harmony-one/fixedscreens.ts';
+import { describeOneActivityMenu } from '../src/families/harmony-one/activitymenu.ts';
+import { describeOneTourScreens } from '../src/families/harmony-one/tourscreens.ts';
+import { describeOneDevicePages } from '../src/families/harmony-one/devicepages.ts';
+import { describeOneClockHeader } from '../src/families/harmony-one/clockheader.ts';
+import { oneActivityScreenModes } from '../src/families/harmony-one/activityscreens.ts';
+import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
 import '../src/resources.node.ts';
 
 /** The sixteen English Harmony One compiles of skin 54, `onewithouttour.test.ts`' list. */

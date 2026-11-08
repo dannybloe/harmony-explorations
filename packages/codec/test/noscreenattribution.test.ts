@@ -1,8 +1,8 @@
 /**
  * Which generator writes each byte of a Harmony 300 or 350 configuration, `todo-compile-350.md` 5.2.1 and 5.2.2, and
  * the evidence for 5.2.3, plan 011's "The check that proves 5.2". The attribution is `noScreenAttributedBytes` in
- * `families/no-screen/attribution.ts`, over the generic ledger in `attribution.ts`; the list writers it reads every
- * list back through are `families/no-screen/lists.ts`.
+ * `families/harmony-300-350/attribution.ts`, over the generic ledger in `attribution.ts`; the list writers it reads every
+ * list back through are `families/harmony-300-350/lists.ts`.
  *
  * **What it settled, in one line each.** Our build of the test setup, made from nothing, is every byte a generator's
  * with none carried and none unclaimed, 124170 of 124170. Logitech's compiles of the family are as well, but for parts
@@ -78,8 +78,8 @@
  * activity of no steps, the start up's first list read as one too, 10 bytes more contested on every compile.
  *
  * **Sources checked first**: plan 011 and chapter 5 of `todo-compile-350.md`; the two other families' attributions,
- * `attributeBytes` in `families/four-slot/assemble.ts` and `oneBuiltBytes` and `oneAttributedBytes` in
- * `families/one/`, and their tests, `oneempty.test.ts` for the planted controls; `noscreenempty.test.ts`, whose
+ * `attributeBytes` in `families/harmony-600-650-700/assemble.ts` and `oneBuiltBytes` and `oneAttributedBytes` in
+ * `families/harmony-one/`, and their tests, `oneempty.test.ts` for the planted controls; `noscreenempty.test.ts`, whose
  * accounting of the empty configuration this generalises; `noscreencensus.test.ts`; `noscreennumbering.test.ts` for
  * why lists are not credited by index; `reference/architectures/harmony-300-350/memory.md`. Logitech's client compiles
  * nothing for this family, `reference/logitech/clients.md`, so it has no attribution to read.

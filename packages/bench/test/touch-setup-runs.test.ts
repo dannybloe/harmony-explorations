@@ -85,7 +85,7 @@
  * outside the attempts other than the Off.
  *
  * **Sources checked first**: the lab's `8.6-preflight.md` and `8.6-land-brief.md`, `touch-removal-runs.test.ts` and
- * `touch-full-bench-runs.test.ts`, whose shape this follows, `touch-setup-predicted.test.ts`, `touchbench.ts` and `harmony-touch/engine.ts`, and
+ * `touch-full-bench-runs.test.ts`, whose shape this follows, `touch-setup-predicted.test.ts`, `touchbench.ts` and `families/harmony-touch/engine.ts`, and
  * `syncTouch` in `packages/corpus/src/touchsync.ts` for what a run's folder keeps. Logitech's client was not consulted:
  * the remote runs its own engine and screens and the answers are ours. **Which architectures**: the Harmony Touch on
  * firmware 4.15.330, one unit, one committed run of each set; its firmware reports 17 and Logitech's templates file it

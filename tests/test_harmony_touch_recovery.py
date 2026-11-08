@@ -36,7 +36,7 @@ before walking the lists it can meet as JSON null, a role list, the steps added 
 state's values, a map's `Sequences`, so null is not a list to the walk and a null in the three counts as
 missing; that is inferred from the guards, since the decoder's null value is native and not read. The
 codec's check refuses all of them before a write, `refusalsBeforeASync` in
-`packages/codec/src/harmony-touch/check.ts`. The configuration task holds
+`packages/codec/src/families/harmony-touch/check.ts`. The configuration task holds
 no `pcall`, `xpcall` or `safeCall` at all. **An error ends the task**: the scheduler's `_runtask`
 (`works/system.lua`) logs a coroutine that ends in an error and deletes it from the task list, and does not
 unregister its listeners. The watchdog task touches its file every 5000 ms through `openWatchDog` whatever

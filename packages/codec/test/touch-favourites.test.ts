@@ -1,7 +1,7 @@
 /**
  * Favourites of ours for a Harmony Touch, a logo of ours drawn as a picture, and what a picture and a favourites
  * document have to be before an answerer hands them to the remote: `todo-touch.md` 8.3,
- * `packages/codec/src/harmony-touch/favourites.ts` and the `favourites address` rule of `check.ts`.
+ * `packages/codec/src/families/harmony-touch/favourites.ts` and the `favourites address` rule of `check.ts`.
  *
  * **The facts these rest on**, `reference/architectures/harmony-touch/favourites-and-settings.md`: the favourites
  * screen shows the stations of the user's document in their order, a dial position of the tuning device's document
@@ -40,13 +40,13 @@ import { deflateSync, inflateSync } from 'node:zlib';
 import * as lab from '@harmony/lab';
 
 import { encodePng, readPng } from '../src/png.ts';
-import { favouritesAddressFindings, refusalsBeforeASync } from '../src/harmony-touch/check.ts';
-import { ComposeRefusal } from '../src/harmony-touch/compose.ts';
-import { CONTENT_SERVICE, CONTENT_USER, documentsOfAnswers, type SyncDocuments } from '../src/harmony-touch/documents.ts';
+import { favouritesAddressFindings, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
+import { ComposeRefusal } from '../src/families/harmony-touch/compose.ts';
+import { CONTENT_SERVICE, CONTENT_USER, documentsOfAnswers, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
 import {
   FAVOURITES_LIMIT, LOGO_BOX, LOGO_COLOURS, composeTouchFavourites, drawTouchLogo, pictureRefusals, type OwnFavourites,
-} from '../src/harmony-touch/favourites.ts';
-import { readConfiguration, stationLogo } from '../src/harmony-touch/read.ts';
+} from '../src/families/harmony-touch/favourites.ts';
+import { readConfiguration, stationLogo } from '../src/families/harmony-touch/read.ts';
 import { FULL, answersOf } from './touch-sync.ts';
 import '../src/resources.node.ts';
 

@@ -22,8 +22,8 @@ import { stateRecords } from '../src/sections.ts';
 import {
   ONE_VALUE_MAP_ROLES, buildOneCasePrograms, buildOneScreenTable, checkOneCasePrograms, describeOneCasePrograms,
   oneValueMapRoles, withOneCasePrograms,
-} from '../src/families/one/caseprograms.ts';
-import { oneClockHeaderEntries } from '../src/families/one/clockheader.ts';
+} from '../src/families/harmony-one/caseprograms.ts';
+import { oneClockHeaderEntries } from '../src/families/harmony-one/clockheader.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

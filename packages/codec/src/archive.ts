@@ -197,7 +197,7 @@ export function periodOfCarrier(hz: number): number {
  * A carrier's period in nanoseconds **rounded to the nearest**, and so deliberately not `periodOfCarrier`:
  * the period as a Harmony Touch sends it. Named for its arithmetic rather than for the remote, since code
  * outside the families names no remote, `test/generic.test.ts`; which remote takes it is its reader's
- * choice, `harmony-touch/read.ts`. A compiled configuration stores the truncated period; a Touch is
+ * choice, `families/harmony-touch/read.ts`. A compiled configuration stores the truncated period; a Touch is
  * given no compiled period at all and works one out each time it sends, through its engine's bit library,
  * whose conversion adds 2^52 + 2^51 in floating point and keeps the low word, which rounds.
  * `reference/architectures/harmony-touch/devices-and-infrared.md`, "How a code becomes durations", where

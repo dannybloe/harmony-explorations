@@ -551,7 +551,7 @@ export function setPowerOnDelay(c: Container, group: number, tenths: number): Ed
     return off;
   };
   // Every other copy a key reaches, which only the family can say: on the Harmony 300 and 350, Watch TV's own
-  // wait after a one code device's power, `families/no-screen/delay.ts`. None on a family without the member.
+  // wait after a one code device's power, `families/harmony-300-350/delay.ts`. None on a family without the member.
   const copies = familyOf(c)?.powerOnDelayCopies?.(c, group) ?? [];
   return [
     { start: quantityAt(found.list, found.at), bytes: Uint8Array.from([tenths]), owner: `power on delay of group ${group}` },

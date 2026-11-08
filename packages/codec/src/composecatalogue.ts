@@ -165,7 +165,7 @@ export interface CatalogueDevicePlan {
 }
 
 /**
- * Exported for the Harmony 300 and 350's device composer, `families/no-screen/devices.ts`, which stores only the
+ * Exported for the Harmony 300 and 350's device composer, `families/harmony-300-350/devices.ts`, which stores only the
  * commands its keys bind, `todo-compile-350.md` 4.1, and takes them out of this plan rather than reading the
  * catalogue a second way: the same codes, blocks and power steps as a device composed whole.
  */

@@ -4,7 +4,7 @@
  *
  * **What 8.4 is for.** Every set before it delivered Settings and Context only as the remote had them, 6.8's own
  * documents under tags of ours. 8.4 composes both in the codec, `composeTouchSettings` and `composeTouchContext` in
- * `packages/codec/src/harmony-touch/settings.ts`: Settings with a row or two changed that a person can see or time at
+ * `packages/codec/src/families/harmony-touch/settings.ts`: Settings with a row or two changed that a person can see or time at
  * the bench, and Context from a description of the seven fields a Touch reads, equal to what the remote holds, so that
  * the run proves Context can be written by us without changing what the remote does.
  *

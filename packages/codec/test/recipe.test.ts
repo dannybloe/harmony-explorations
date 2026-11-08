@@ -9,7 +9,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 
 import { MODELS_BY_SKIN } from '@harmony/base/models';
 import { RecipeError, modelName, readRecipe, recipeTarget } from '../src/index.ts';
-import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../src/families/four-slot/choices.ts';
+import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../src/families/harmony-600-650-700/choices.ts';
 
 const SETUPS = new URL('../../corpus/setups/', import.meta.url);
 const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(new URL(file, SETUPS), 'utf8'));

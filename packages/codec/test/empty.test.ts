@@ -12,40 +12,40 @@ import {
   characterMap, claims, describeStateTables, fontSets, glyphOf, letterRows, modePages, modeRecords, oxaniumFace,
   pageListCopies, screenProgram, stateVariables, takeApart, taggedList, valueMaps,
 } from '../src/index.ts';
-import { FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
+import { FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import {
   EMPTY_FONT_SETS, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyModelOf, emptyModes, emptyVariable,
   emptyVariables,
-} from '../src/families/four-slot/empty.ts';
-import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, SCAN_FOUR_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
-import { CORNER_PLACES, cornerPlaceAt, cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
-import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/four-slot/chrome.ts';
-import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus.ts';
-import { ourStateColours, recolouredStates, stateLookOf } from '../src/families/four-slot/statelook.ts';
+} from '../src/families/harmony-600-650-700/empty.ts';
+import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, SCAN_FOUR_TAG, cornerPrograms } from '../src/families/harmony-600-650-700/chrome.ts';
+import { CORNER_PLACES, cornerPlaceAt, cornerProgramAt, emptyFont } from '../src/families/harmony-600-650-700/empty.ts';
+import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/harmony-600-650-700/chrome.ts';
+import { fourSlotMenus, fourSlotTemplate } from '../src/families/harmony-600-650-700/menus.ts';
+import { ourStateColours, recolouredStates, stateLookOf } from '../src/families/harmony-600-650-700/statelook.ts';
 import { composeCatalogueDevices } from '../src/composecatalogue.ts';
 import { bitmapReference } from '../src/screen.ts';
 
 import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
-import { activityKeys } from '../src/families/four-slot/activitykeys.ts';
+import { activityKeys } from '../src/families/harmony-600-650-700/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { archSlot, parse, readRecipe, screenStrings} from '../src/index.ts';
 import { readFileSync } from 'node:fs';
-import { checkFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
+import { checkFirmwareScreens } from '../src/families/harmony-600-650-700/firmwarescreens.ts';
 
 import { stateRecords } from '../src/sections.ts';
 import type { Recipe } from '../src/index.ts';
-import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
-import { startupTitleYs } from '../src/families/four-slot/activityscreen.ts';
+import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/harmony-600-650-700/chrome.ts';
+import { startupTitleYs } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
 import { allOffList, composeDevice, coverage, deviceIds, joinPowerOff } from '../src/index.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
-import { FOUR_SLOT_STATE_TABLES } from '../src/families/four-slot/statetables.ts';
-import { describeWiring, FIRMWARE_SCREENS, checkWiring } from '../src/families/four-slot/wiring.ts';
-import { modeZeroKeyList } from '../src/families/four-slot/modezero.ts';
-import { assembleSetup, attributeBytes } from '../src/families/four-slot/assemble.ts';
-import { checkScreenRecords } from '../src/families/four-slot/screenrecords.ts';
-import { stateBackgroundColour } from '../src/families/four-slot/backgrounds.ts';
-import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import { FOUR_SLOT_STATE_TABLES } from '../src/families/harmony-600-650-700/statetables.ts';
+import { describeWiring, FIRMWARE_SCREENS, checkWiring } from '../src/families/harmony-600-650-700/wiring.ts';
+import { modeZeroKeyList } from '../src/families/harmony-600-650-700/modezero.ts';
+import { assembleSetup, attributeBytes } from '../src/families/harmony-600-650-700/assemble.ts';
+import { checkScreenRecords } from '../src/families/harmony-600-650-700/screenrecords.ts';
+import { stateBackgroundColour } from '../src/families/harmony-600-650-700/backgrounds.ts';
+import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';
 

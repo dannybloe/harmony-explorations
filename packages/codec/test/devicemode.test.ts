@@ -65,7 +65,7 @@ import {
   withOxaniumFonts,
   archiveAt,
 } from '../src/node.ts';
-import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import {
   HARD_KEYS,
   LABEL_SIZES,
@@ -79,7 +79,7 @@ import {
   pageCounter,
   placeLabel,
   sizeOfSet,
-} from '../src/families/four-slot/devicemode.ts';
+} from '../src/families/harmony-600-650-700/devicemode.ts';
 
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;

@@ -3,7 +3,7 @@
  * commands go to the keypad, by the family's own table of hard keys, `Family.deviceModeKeys`, and which go
  * to the screen and in what order. Section 325 read it on the Harmony 600, 650 and 700, section 397 the keys
  * on the Harmony One. How a four slot page sizes, splits and places a label, cuts a title and draws its
- * counter is that family's, `families/four-slot/devicemode.ts`, `todo-compile-one.md` 3.3.3.3.
+ * counter is that family's, `families/harmony-600-650-700/devicemode.ts`, `todo-compile-one.md` 3.3.3.3.
  *
  * **Every rule here is read off the compiler's output and none off its code.** The population is the
  * twenty devices Logitech compiled from its catalogue for the test accounts, in seven of the thirteen

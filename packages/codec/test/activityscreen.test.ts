@@ -31,13 +31,13 @@ import {
   taggedList,
   valueMaps,
 } from '../src/index.ts';
-import { fourSlotMenus } from '../src/families/four-slot/menus.ts';
-import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.ts';
+import { fourSlotMenus } from '../src/families/harmony-600-650-700/menus.ts';
+import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import {
   activityKeyedRecords,
   activityScreenChrome,
   checkActivityScreens,
-} from '../src/families/four-slot/activityscreen.ts';
+} from '../src/families/harmony-600-650-700/activityscreen.ts';
 import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles, as `menupage.test.ts`'s `ARCH14`. */

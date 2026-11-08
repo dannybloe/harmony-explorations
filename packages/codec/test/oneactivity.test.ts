@@ -30,11 +30,11 @@ import { textGlyphs } from '../src/shared/spelling.ts';
 import { characterMap, decode } from '../src/text.ts';
 import { fontSets } from '../src/font.ts';
 import { measureSet } from '../src/fonttable.ts';
-import { buildOneActivityScreens, oneActivityFonts } from '../src/families/one/activityscreen.ts';
-import { checkOneCasePrograms, oneValueMapRoles } from '../src/families/one/caseprograms.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
-import { fontsOfFace } from '../src/families/one/labels.ts';
-import { letterOneDonor } from '../src/families/one/look.ts';
+import { buildOneActivityScreens, oneActivityFonts } from '../src/families/harmony-one/activityscreen.ts';
+import { checkOneCasePrograms, oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
+import { fontsOfFace } from '../src/families/harmony-one/labels.ts';
+import { letterOneDonor } from '../src/families/harmony-one/look.ts';
 import '../src/resources.node.ts';
 
 /** The Harmony One compiles that hold an activity, fifteen of the nineteen. */

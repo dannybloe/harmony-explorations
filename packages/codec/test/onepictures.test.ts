@@ -1,6 +1,6 @@
 /**
  * The Harmony One's fixed pictures drawn by us, `todo-compile-one.md` 5.3.1 and 5.3.3, findings section 422,
- * `families/one/pictures.ts`: every picture of ours Logitech's size with Logitech's transparency mask, each icon
+ * `families/harmony-one/pictures.ts`: every picture of ours Logitech's size with Logitech's transparency mask, each icon
  * where Logitech's ink sits, and the whole screen background one black picture that the six blank screens drawing
  * photographs draw too. Logitech's pictures are read off the lab's compiles here and never written into the repository.
  *
@@ -19,13 +19,13 @@ import { require_, skipUnless } from '@harmony/lab';
 import { type Container, encodeBitmap, layOutContainer, parse, picturesByContent, takeApart } from '../src/index.ts';
 import { contentKey } from '../src/screencategories.ts';
 import { PictureError, withReplacedPictures } from '../src/pictures.ts';
-import { ONE_CHOICES } from '../src/families/one/choices.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import {
   ONE_PICTURES, type OnePictureEntry, readOnePictures, oneFixedPictures, oneOurPictures, onePictureBytes,
   onePictureFor, onePictureOwnBytes, onePictureOwnRows, onePictureRows, withOnePictures,
-} from '../src/families/one/pictures.ts';
-import { withOneBuilders, withOneComposedBuilders } from '../src/families/one/builders.ts';
-import { withoutTourAndAssistant } from '../src/families/one/withouttour.ts';
+} from '../src/families/harmony-one/pictures.ts';
+import { withOneBuilders, withOneComposedBuilders } from '../src/families/harmony-one/builders.ts';
+import { withoutTourAndAssistant } from '../src/families/harmony-one/withouttour.ts';
 import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */

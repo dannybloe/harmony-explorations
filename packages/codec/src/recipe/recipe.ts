@@ -108,7 +108,7 @@ export interface Recipe {
    * The Harmony Touch's own part, `todo-touch.md` 9.1: what a person chose for each device and activity beyond what a
    * recipe states, their ids, delays, keys, screen entries and sequences, the families of our rhythm table their codes
    * are written with, and the remote's settings. A Touch is given documents rather than a compiled file, so nothing
-   * builds it from a recipe; `readTouchSetupFile` in `harmony-touch/fromnothing.ts` reads and checks this part, and
+   * builds it from a recipe; `readTouchSetupFile` in `families/harmony-touch/fromnothing.ts` reads and checks this part, and
    * nothing else reads it.
    */
   readonly touch?: Readonly<Record<string, unknown>>;

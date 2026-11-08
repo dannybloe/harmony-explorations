@@ -17,7 +17,7 @@ import {
 } from '../src/index.ts';
 import {
   buildOneFirmwareScreens, checkOneFirmwareScreens, describeOneFirmwareScreens, withOneFirmwareScreens,
-} from '../src/families/one/firmwarescreens.ts';
+} from '../src/families/harmony-one/firmwarescreens.ts';
 import '../src/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */

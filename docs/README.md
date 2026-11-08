@@ -261,14 +261,15 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 The composers are laid out by plan 007: src/shared/ holds what
                                 every remote's configuration is built from (devices, activities,
                                 infrared, power, spelling text, menus), src/families/<name>/
-                                what differs per kind of remote (four-slot: the Harmony 600, 650
-                                and 700; one: the Harmony One; no-screen: the Harmony 300 and
-                                350, a device, its favourite channels and the one activity;
-                                side-keys: the Harmony 880 and 885), and src/families/registry.ts
+                                what differs per kind of remote, each folder named after its
+                                remotes as reference/architectures/ names them
+                                (harmony-600-650-700, harmony-one; harmony-300-350, a device,
+                                its favourite channels and the one activity; harmony-880-885;
+                                harmony-touch), and src/families/registry.ts
                                 is the one place that chooses a family. Plan 013 gives a family
                                 one of two kinds: compiled, src/families/family.ts, which builds
                                 a container, and document, src/families/document.ts, which builds
-                                the documents a Harmony Touch is given, src/harmony-touch/family.ts.
+                                the documents a Harmony Touch is given, src/families/harmony-touch/family.ts.
                                 The registry chooses by model, familyOfModel, or by the
                                 architecture a container states, familyOf, and a configuration
                                 no family serves is refused by the four questions a shared
@@ -284,7 +285,7 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 one rasteriser for outlines, with opentype.js reading the font;
                                 src/icons.ts draws icons of Material Design Icons (@mdi/font) on
                                 the same rasteriser, for the pictures of 9.1.2.2.
-                                src/harmony-touch/ reads a Harmony Touch's configuration, which
+                                src/families/harmony-touch/ reads a Harmony Touch's configuration, which
                                 is Logitech's documents rather than a container: a view over the
                                 documents a sync delivers, never a copy, and a check of what the
                                 remote would refuse or ignore, tested in test/touch-reader.test.ts
@@ -401,7 +402,7 @@ packages/bench/                 TS: the bench instrument, a server plus two page
                                 hears, named against the bench remotes' configurations, plus
                                 recordings and a test runner whose step lists live in irtests/ and
                                 whose runs are filed in the lab. It only listens; never `sendir`.
-                                For a Harmony Touch, the codec's `harmony-touch/engine.ts` models
+                                For a Harmony Touch, the codec's `families/harmony-touch/engine.ts` models
                                 what its engine sends and when, and `src/touchbench.ts` times it as
                                 the monitor hears it, `BenchTouchEngine`, and derives `todo-touch.md`
                                 7.1's bench tests from the documents the remote holds; the plans of
@@ -1098,7 +1099,7 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model
-                       `packages/codec/src/harmony-touch/engine.ts`, and print them, or with `--write` write
+                       `packages/codec/src/families/harmony-touch/engine.ts`, and print them, or with `--write` write
                        `irtests/touch-7-1-*.json`; `test/touch-full-bench-predicted.test.ts` holds the files equal to
                        what this gives, and `test/touch-full-bench-runs.test.ts` the ten runs of them at the
                        bench. Reads the lab only. Opens nothing, sends nothing. The same ten files are

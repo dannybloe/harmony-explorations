@@ -1,7 +1,7 @@
 /**
  * A Harmony Touch set with devices and activities of the remote's own taken out, everything that names them with
  * them, and its put back: `todo-touch.md` 8.5. The removal is the codec's, `withoutTouchEntries` in
- * `packages/codec/src/harmony-touch/remove.ts`; this module puts its documents into a set, puts the set before back,
+ * `packages/codec/src/families/harmony-touch/remove.ts`; this module puts its documents into a set, puts the set before back,
  * and says, entry by entry, what the removal took out and what it changed.
  *
  * **Which documents are delivered.** A device or an activity is named in `ActivityList`, `DeviceList`, `MapList` and

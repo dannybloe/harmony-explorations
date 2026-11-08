@@ -44,7 +44,7 @@ import { join } from 'node:path';
 import { LAB, skipWithoutLab } from '@harmony/lab';
 
 import { bytes, irGroups, parse, type Container } from '../src/index.ts';
-import { keyMaps, withMapEntries } from '../src/families/no-screen/devices.ts';
+import { keyMaps, withMapEntries } from '../src/families/harmony-300-350/devices.ts';
 import { restamped } from '../src/shared/core.ts';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';

@@ -13,7 +13,7 @@
  *
  * **Why this lives in `packages/corpus` and not in `packages/usb`.** The answerer has to refuse a set the
  * codec's reader and check reject before anything of it is written, and the reader and the check are the
- * codec's, `packages/codec/src/harmony-touch/`. The codec depended on `packages/usb` when this was written, so
+ * codec's, `packages/codec/src/families/harmony-touch/`. The codec depended on `packages/usb` when this was written, so
  * `packages/usb` could not import the codec (since `todo.md` 7.3.4 the codec's own source no longer does, its
  * tests and scripts still do, and nothing has been moved because of it), and an answerer there could only take the check as an argument: a gate a caller hands in
  * is a gate a caller can hand in empty, the lesson `CLAUDE.md` records for the configuration version check,
@@ -264,7 +264,7 @@ const isObject = (x: unknown): boolean => typeof x === 'object' && x !== null &&
  * `answering-a-sync.md` "What the remote checks of an answer", made stricter where `touch-host.test.ts`'s
  * envelope is: a document is a JSON object, a picture is a PNG in base64, a stated tag is not empty, and no
  * two answers share a key. **And a picture is one the codec lets through**, `pictureRefusals` in
- * `packages/codec/src/harmony-touch/favourites.ts`, since `todo-touch.md` 8.3 put the first picture of ours in a
+ * `packages/codec/src/families/harmony-touch/favourites.ts`, since `todo-touch.md` 8.3 put the first picture of ours in a
  * set: a channel logo, decoding, in the form every logo the remote was seen to draw has, and inside the box its
  * address asks for.
  */

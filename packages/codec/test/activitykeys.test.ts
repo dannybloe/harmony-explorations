@@ -22,7 +22,7 @@ import {
   placeholderList,
   placeholderMode,
   setActivityKey,
-} from '../src/families/four-slot/activitykeys.ts';
+} from '../src/families/harmony-600-650-700/activitykeys.ts';
 import {
   ACTIVITY_STATE_NAME,
   appendActionLists,

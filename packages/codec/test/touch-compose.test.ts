@@ -1,5 +1,5 @@
 /**
- * A Harmony Touch device written by us, `src/harmony-touch/compose.ts`, `todo-touch.md` 5.3.
+ * A Harmony Touch device written by us, `src/families/harmony-touch/compose.ts`, `todo-touch.md` 5.3.
  *
  * **What is held, and against what.** Three things, each by something that did not write the documents:
  *
@@ -31,16 +31,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { checkConfiguration } from '../src/harmony-touch/check.ts';
+import { checkConfiguration } from '../src/families/harmony-touch/check.ts';
 import {
   codeOfLearned, ComposeRefusal, composeTouchDevice, keysByName, BUTTON_KEYS, type OwnDevice,
-} from '../src/harmony-touch/compose.ts';
-import { rawOfLearned, readTouchRaw } from '../src/harmony-touch/learned.ts';
+} from '../src/families/harmony-touch/compose.ts';
+import { rawOfLearned, readTouchRaw } from '../src/families/harmony-touch/learned.ts';
 import { waveformOfArchiveCommand } from '../src/archive.ts';
 import { mergedIntervals, type Pulse } from '../src/irframe.ts';
 import { pulsesOfStatedRow, statedProtocol } from '../src/stated.ts';
-import { documentsOfAnswers, kindOf, type IrProtocol, type SyncDocuments } from '../src/harmony-touch/documents.ts';
-import { readConfiguration } from '../src/harmony-touch/read.ts';
+import { documentsOfAnswers, kindOf, type IrProtocol, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
+import { readConfiguration } from '../src/families/harmony-touch/read.ts';
 import { answersOf, FULL } from './touch-sync.ts';
 
 /**

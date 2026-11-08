@@ -387,7 +387,7 @@ each step, Volume Up to the Denon after Home, pressed twice as that step's note 
 
 **Found while landing it**: the engine model looped for ever when a start was walked from a clock at 0, sleeping a
 rounding residue of 4.5e-13 ms that did not move the clock; a wait under a microsecond now counts as none,
-`waitFor` in `packages/codec/src/harmony-touch/engine.ts`, and the test files came out unchanged by it.
+`waitFor` in `packages/codec/src/families/harmony-touch/engine.ts`, and the test files came out unchanged by it.
 
 The runs, the retest and the rule are held by `packages/bench/test/touch-full-bench-runs.test.ts`. 7.1 is done.
 

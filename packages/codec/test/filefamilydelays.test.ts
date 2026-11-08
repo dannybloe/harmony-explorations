@@ -44,7 +44,7 @@
  * old delay; on the bench Harmony 300 the activity's was the only copy any key reached, and the transition's none,
  * `docs/test-notes/harmony-300.md`.
  *
- * **What the edit changes now, 4.6**, the family's rule in `src/families/no-screen/delay.ts`: the device's own
+ * **What the edit changes now, 4.6**, the family's rule in `src/families/harmony-300-350/delay.ts`: the device's own
  * `0x7C` and, in Watch TV's list and every list it calls, each call of the list the device's switch on list calls
  * followed by a `0x7C` naming the device. Four measurements hold it, each with a control:
  *
@@ -104,7 +104,7 @@ import {
   trailerChecksum,
 } from '../src/index.ts';
 import { STATE_WRITE_BASE } from '../src/actions.ts';
-import { noScreenPowerOnDelayCopies } from '../src/families/no-screen/delay.ts';
+import { noScreenPowerOnDelayCopies } from '../src/families/harmony-300-350/delay.ts';
 import type { Container } from '../src/gspm.ts';
 import { stateRecords, taggedList } from '../src/sections.ts';
 import { TRAILER_CHECKSUM_OFFSET } from '../src/gspm.ts';

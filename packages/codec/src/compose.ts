@@ -7,8 +7,8 @@
  *
  * **The layout.** `shared/` holds what every family does alike: infrared groups, devices, activities,
  * power, spelling in a configuration's fonts, the menus' common records and the core edits. `families/`
- * holds one module set per kind of screen, `one/` for the Harmony One and `four-slot/` for the 600,
- * 650 and 700, and a family never imports another. The registry is the one place a family is chosen.
+ * holds one module set per family, each folder named after its remotes, `harmony-one/` for the Harmony One
+ * and `harmony-600-650-700/` for the 600, 650 and 700 among them, and a family never imports another. The registry is the one place a family is chosen.
  * Today it reads the architecture the container states; when the recipe names its model,
  * `todo-compile-650.md` 10.7.4, it reads the model's definition instead.
  */

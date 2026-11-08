@@ -43,7 +43,7 @@ import {
   valueMaps,
 } from '../src/index.ts';
 import { familyOf } from '../src/families/registry.ts';
-import { FOUR_SLOT_ITEMS, fourSlotCellAt } from '../src/families/four-slot/geometry.ts';
+import { FOUR_SLOT_ITEMS, fourSlotCellAt } from '../src/families/harmony-600-650-700/geometry.ts';
 import '../src/resources.node.ts';
 
 const COMPILES = ['h600_config', 'calibration_h600', 'h650_config_region',

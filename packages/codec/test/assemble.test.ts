@@ -40,16 +40,16 @@ import {
   stateVariables,
   takeApart,
   withWiring} from '../src/index.ts';
-import { FOUR_SLOT_CHOICES } from '../src/families/four-slot/choices.ts';
-import { DEVICES_KEY_TAG } from '../src/families/four-slot/chrome.ts';
-import { ladderOf, oxaniumLabelSizes } from '../src/families/four-slot/devicemode.ts';
-import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/four-slot/screentexts.ts';
-import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
-import { buildWiring, checkWiring, describeWiring } from '../src/families/four-slot/wiring.ts';
-import { type Assembled, assembleSetup, attributeBytes, compareDrawnTexts } from '../src/families/four-slot/assemble.ts';
-import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, withScreenRecords } from '../src/families/four-slot/screenrecords.ts';
-import { checkStateBackgrounds } from '../src/families/four-slot/backgrounds.ts';
-import { compareViews, setupView } from '../src/families/four-slot/compare.ts';
+import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
+import { DEVICES_KEY_TAG } from '../src/families/harmony-600-650-700/chrome.ts';
+import { ladderOf, oxaniumLabelSizes } from '../src/families/harmony-600-650-700/devicemode.ts';
+import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/harmony-600-650-700/screentexts.ts';
+import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/harmony-600-650-700/firmwarescreens.ts';
+import { buildWiring, checkWiring, describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
+import { type Assembled, assembleSetup, attributeBytes, compareDrawnTexts } from '../src/families/harmony-600-650-700/assemble.ts';
+import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, withScreenRecords } from '../src/families/harmony-600-650-700/screenrecords.ts';
+import { checkStateBackgrounds } from '../src/families/harmony-600-650-700/backgrounds.ts';
+import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
 
 /**

@@ -1,6 +1,6 @@
 /**
  * The Harmony Touch's bench test for a device of ours, `todo-touch.md` 8.1: device mode for the composed device,
- * each of its keys, with what the remote is predicted to send derived from the documents by `harmony-touch/engine.ts`,
+ * each of its keys, with what the remote is predicted to send derived from the documents by `families/harmony-touch/engine.ts`,
  * never written by hand. The same derivation as 7.1's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.1-device`, the bench set of 6.9 with the Test
