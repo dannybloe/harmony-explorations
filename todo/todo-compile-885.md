@@ -41,13 +41,14 @@ Written on 6 November 2026; linked from `todo-later.md` 5.6.
 ## 2. Devices, everything that can be checked in device mode
 
 - [x] 2.1 Compose a device from Logitech's catalogue onto the base: its infrared codes, its power, a device mode with its screen and key map, a row on the device list: the Sony HT through the side keys family (`14d374a9`), on a second page of every copy of the device list, written to unit B and checked there against the prediction (`tests/test_harmony_885_first_config_write.py`); what its keys send is measured with the Flirc later
-- [ ] 2.2 Power on and off as the catalogue states them, the long press version included
-- [ ] 2.3 The opening silence of every switching code, the 885's inter device delay (prepare 3.11)
+- [x] 2.2 Power on and off as the catalogue states them, the long press version included: the side keys family's `powerStep`, the power records opening with the device's silence and sent at a quantity of 1, measured against 44 power variables of 28 distinct devices in eight configurations and against Logitech's own power records for the catalogue's eight (`packages/codec/test/sidekeysdevice.test.ts`)
+- [x] 2.3 The opening silence of every switching code, the 885's inter device delay (prepare 3.11): both power records of a composed device; inputs and activity starts are not composed yet (2.6, chapter 3). The Sony HT recomposed and written to unit B, its power heard as Logitech's code (`tests/test_harmony_885_first_config_write.py`)
 - [ ] 2.4 A new device list page when the last one is full
 - [ ] 2.5 A full device: every command the catalogue holds, on as many device mode pages as it takes
 - [ ] 2.6 A device's inputs, directly or by stepping through them
 - [ ] 2.7 Several devices composed at once into one configuration
 - [ ] 2.8 A device on a device list whose last page has room: a free cell on an existing page, on every copy of the list
+- [ ] 2.9 A device page's keys send what Logitech's do: on these remotes a code with no held part opens with the device's silence, 1375 of 1375 (`sidekeysdevice.test.ts`), and most page keys send that form, where a composed device's keys send the 50 ms form with a repeat; also its power command's own record beside the step's, where Logitech keeps one
 
 ## 3. Activities
 

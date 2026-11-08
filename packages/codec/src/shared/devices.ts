@@ -54,9 +54,11 @@ export interface ComposeDevice {
    */
   readonly interKeyDelay?: number;
   /**
-   * Arch 14 only: the inter device delay in tenths of a second, 0 to 20, which an activity's start,
-   * All Off and Help queue in front of each of this device's commands, section 335. Default
-   * `INTER_DEVICE_DELAY_DEFAULT`.
+   * The inter device delay in tenths of a second. On arch 14, 0 to 20, which an activity's start, All Off
+   * and Help queue in front of each of this device's commands, section 335; default
+   * `INTER_DEVICE_DELAY_DEFAULT`. On the Harmony 880 and 885 the silence each power step's record opens
+   * with, `SendShape.powerStep` in the side keys family, `todo-compile-885.md` 2.3; default its
+   * `SIDE_KEYS_INTER_DEVICE_DEFAULT`. The Harmony One's composer reads none.
    */
   readonly interDeviceDelay?: number;
   /**
@@ -137,8 +139,16 @@ export interface DeviceRecords {
  * its own. `composeDeviceFor` composes the group from this, and `composeDonorDeviceInfrared` in
  * `composecatalogue.ts` puts the same records in a donor device's place, `todo-compile-one.md` 8.1.3, so the
  * order a composed device's records take is derived once.
+ *
+ * `stepLeadInUs` is the silence in front of every power step's record, held or not, the family's
+ * `SendShape.powerStep`: 0, the default, is the Harmony 650 and 700 compiles' power step, section 309; the
+ * Harmony 880 and 885 open it with the device's delay between devices, `todo-compile-885.md` 2.3. The two callers
+ * in `composecatalogue.ts` that compare records with a Harmony One's donor leave it at 0, as they always did. That
+ * the default gives the bytes it gave before is held by `test/devicepower.test.ts`, whose calibration against the
+ * Harmony 650 and 700 compiles reproduces the power records, held ones included, on 17 of its 18 test device
+ * instances and passes unchanged since the lead in became the family's.
  */
-export function deviceRecords(device: ComposeDevice): DeviceRecords {
+export function deviceRecords(device: ComposeDevice, stepLeadInUs = 0): DeviceRecords {
   // The power actions, each an ordered list of steps; a single step is an action of one.
   const onSteps = powerAction(device.powerOn, 'on');
   const offSteps = powerAction(device.powerOff, 'off');
@@ -156,9 +166,11 @@ export function deviceRecords(device: ComposeDevice): DeviceRecords {
   const sends: ComposeCommand[] = [
     ...device.commands,
     ...steps.map((step): ComposeCommand => ({
+      // A step is never held by the remote: its record is one block, the press or the long press version. The
+      // lead goes on a held step only where the family gives one, so the default's bytes stay what they were.
       ...(step.holdMs === undefined
-        ? { stated: step.stated, held: false, leadInUs: 0 }
-        : { stated: step.stated, holdMs: step.holdMs }),
+        ? { stated: step.stated, held: false, leadInUs: stepLeadInUs }
+        : { stated: step.stated, holdMs: step.holdMs, ...(stepLeadInUs === 0 ? {} : { leadInUs: stepLeadInUs }) }),
       ...(step.blocks === undefined ? {} : { blocks: step.blocks }),
       ...(step.read === undefined ? {} : { read: step.read }),
       ...(step.toggled === undefined ? {} : { toggled: step.toggled }),
@@ -203,12 +215,18 @@ export function composeDeviceFor(
 
   // The amount a power step's `0x7C` carries, the catalogue's inter key delay where the caller states
   // it, section 320; an ordinary command's stays 1. One byte of the operand, the group the other.
-  const quantity = device.interKeyDelay ?? DEVICE_QUANTITY_DEFAULT;
-  if (!Number.isInteger(quantity) || quantity < 0 || quantity > 0xff) {
-    throw new ComposeError(`an inter key delay is 0 to 255 tenths of a second, not ${quantity}`);
+  const keyDelay = device.interKeyDelay ?? DEVICE_QUANTITY_DEFAULT;
+  if (!Number.isInteger(keyDelay) || keyDelay < 0 || keyDelay > 0xff) {
+    throw new ComposeError(`an inter key delay is 0 to 255 tenths of a second, not ${keyDelay}`);
   }
+  // **How a power step is spelled is the family's where its compiles differ**, `SendShape.powerStep`: the
+  // Harmony 880 and 885's compiles open every power record with the device's delay between devices and send it at
+  // the device's own quantity, not the inter key delay, `todo-compile-885.md` 2.2 and 2.3. Absent, the Harmony
+  // 650 and 700 compiles' form, no lead in and the inter key delay, sections 309 and 320.
+  const spelling = shape.powerStep?.(device);
+  const quantity = spelling?.quantity ?? keyDelay;
 
-  const { onSteps, offSteps, steps, stepIndex, sends } = deviceRecords(device);
+  const { onSteps, offSteps, steps, stepIndex, sends } = deviceRecords(device, spelling?.leadInUs ?? 0);
 
   // The infrared half, then everything else on the reparsed result.
   const group = placement.group === undefined ? composeIrGroup(c, sends) : fillIrGroup(c, placement.group, sends);

@@ -10,7 +10,12 @@
  * own; and no wait anywhere in them is above 100 tenths, a longer delay being written as several waits of 100,
  * `todo/todo-prepare-885.md` 3.1's reading of the 880 Pro's 32 seconds. All three are asserted in
  * `sidekeysdevice.test.ts`. So one wait of at most 100 is composed and a longer delay is refused, until a device
- * that needs one is composed, `todo-compile-885.md` 2.2.
+ * that needs one is composed.
+ *
+ * **A power step is spelled as these remotes' compiles spell it**, `sideKeysPowerStep` below, `todo-compile-885.md`
+ * 2.2 and 2.3: its record opens with the device's delay between devices, the long press version included, and its
+ * send carries a quantity of 1. Before that a composed device's power went out with no silence in front, so a
+ * device switch could send back to back, and at the catalogue's inter key delay, the Harmony 650 and 700's form.
  *
  * **Two rails of this family's own are held here, before anything is built**, since the device half is the first
  * thing the shared device composer asks of a family:
@@ -34,7 +39,7 @@
  * `sequenceRecords` is a value and cannot refuse: it states the Harmony One's answer and is **not measured on
  * these remotes**, and only the sequence composer reads it, after `sendLists`, which refuses first.
  */
-import type { DeviceSends, SendShape } from '../family.ts';
+import type { DeviceSends, PowerStepSpelling, SendShape } from '../family.ts';
 import type { Container } from '../../gspm.ts';
 import { irGroupCount, irGroups } from '../../ir.ts';
 import { stateTable } from '../../sections.ts';
@@ -91,6 +96,74 @@ function sideKeysDevice(c: Container, group: number, device: ComposeDevice): Dev
   return pairDeviceSends(c, group, device, SIDE_KEYS_LONGEST_WAIT, SIDE_KEYS_NAME);
 }
 
+/**
+ * The delay between devices a composed device gets where it states none, in tenths: 500 ms, the catalogue's own
+ * on every one of the eight devices of the owners' sheets the archive names and on the Sony DAV-C540, and the
+ * silence 51 of the 84 device groups of the sixteen arch 8 containers open their switching codes with, copies of
+ * six configurations counted each time, `todo-prepare-885.md` 3.11; 20 of the 28 distinct devices with a power
+ * variable in the eight configurations, `sidekeysdevice.test.ts`. Ours: a device composed from the catalogue always states its own.
+ */
+export const SIDE_KEYS_INTER_DEVICE_DEFAULT = 5;
+
+/**
+ * The longest delay between devices composed, in tenths. The configurations' longest is 10, a second, on 12 of
+ * the 84 device groups, and no ceiling is read in the firmware, which plays a silence of any length word by word;
+ * 100, ten seconds, is the bound of the family's other wait, `SIDE_KEYS_LONGEST_WAIT`, taken so that a value
+ * nobody meant, a delay in milliseconds given as tenths, is refused rather than played for minutes. Ours.
+ */
+export const SIDE_KEYS_LONGEST_INTER_DEVICE = 100;
+
+/**
+ * The opening silence of a device whose delay between devices is 0, in microseconds: 50 ms, the silence every
+ * code with a held block opens with and the whole lead of four of the 84 device groups, 2850 of 2850 and 4 of
+ * 84, `todo-prepare-885.md` 3.11. No arch 8 record opens with a mark, 0 of 5792, so a lead of nothing is a shape
+ * Logitech's compiler never wrote. Ours: whether those four devices state 0 is not known.
+ */
+export const SIDE_KEYS_SHORTEST_LEAD_US = 50000;
+
+/**
+ * The quantity of a power step's send: 1, what 60 of the 88 power transitions of eight arch 8 configurations carry,
+ * and what every other send of a composed device carries, so its most common once only quantity, which Logitech's
+ * power send equals on 88 of 88. Ours.
+ */
+export const SIDE_KEYS_POWER_QUANTITY = 1;
+
+/**
+ * How the Harmony 880 and 885 spell a power step, `SendShape.powerStep`, `todo-compile-885.md` 2.2 and 2.3.
+ *
+ * **The silence in front is the device's delay between devices.** Every record a power transition sends in the
+ * eight configurations the lab holds of these remotes opens with its device's own silence and has no held block,
+ * 88 transitions of 44 power variables, which are 28 distinct devices since four of the configurations are copies
+ * of one account, `sidekeysdevice.test.ts`. The silence is the device's and not the power key's: every record of
+ * those devices with no held block opens with it. The reference's "The delay between devices on the Harmony 880
+ * and 885" reads it as that delay, inferred from the Harmony One's closure. The long press version gets it too:
+ * the one device of the eight the archive names whose catalogue entry holds the key, a Panasonic television's power
+ * on and off for a second, opens both seven frame records with the same 800 ms its other switching codes carry.
+ * Logitech's form, as the corpus spells it; that the value is the catalogue's `interDeviceDelay` is the inference,
+ * since the owners' devices carry edited values.
+ *
+ * **The quantity is 1, not the inter key delay.** Logitech's compiles for the Harmony 650 and 700 send a power step
+ * at the catalogue's inter key delay, section 320. These remotes' compiles do not: their power sends carry 0, 1 or
+ * 2, on 13, 30 and 1 of the 44 power variables (by model, the 880s' 1 on 13 of 24, 0 on 10 and 2 on 1, the 885s' 1
+ * on 17 of 20 and 0 on 3), each the most common quantity of the device's other once only sends. Of the eight
+ * devices the archive names, the two whose catalogue entry states an inter key delay of 500 ms, a VCR and a
+ * LaserDisc player in one configuration, are sent at 1; that is all the evidence against the inter key delay. The
+ * quantity is not a function of the records: one DVD player with identical power records is sent at 1 in one
+ * configuration and 0 in another. What chooses 0 or 2 is not read, so 1, the commonest and the most common of a
+ * composed device's own sends, is ours.
+ */
+function sideKeysPowerStep(device: ComposeDevice): PowerStepSpelling {
+  const tenths = device.interDeviceDelay ?? SIDE_KEYS_INTER_DEVICE_DEFAULT;
+  if (!Number.isInteger(tenths) || tenths < 0 || tenths > SIDE_KEYS_LONGEST_INTER_DEVICE) {
+    throw new ComposeError(`a delay between devices of ${tenths} tenths is not composed for ${SIDE_KEYS_NAME}: `
+      + `0 to ${SIDE_KEYS_LONGEST_INTER_DEVICE}`);
+  }
+  return {
+    leadInUs: tenths === 0 ? SIDE_KEYS_SHORTEST_LEAD_US : tenths * 100000,
+    quantity: SIDE_KEYS_POWER_QUANTITY,
+  };
+}
+
 /** A refusal for a shared composer's question nobody has run on this family yet, with the step that will. */
 const notYet = (what: string, step: string) => (): never => {
   throw new ComposeError(`${what} is not composed for ${SIDE_KEYS_NAME} yet, todo-compile-885.md ${step}`);
@@ -100,6 +173,7 @@ const notYet = (what: string, step: string) => (): never => {
 export const SIDE_KEYS_SENDS: SendShape = {
   listsPerSend: 1,
   device: sideKeysDevice,
+  powerStep: sideKeysPowerStep,
   switchOnList: notYet('a device\'s inputs', '2.6'),
   sendWriter: notYet('a device\'s inputs', '2.6'),
   sendLists: notYet('a sequence', '4.1'),

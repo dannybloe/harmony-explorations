@@ -321,6 +321,10 @@ const H885_B_DUMPS = new Set<string>([
   // sequence break, and the one read is checked against the written file and the region before it instead,
   // `tests/test_harmony_885_first_config_write.py`. Every write to B from 1.4 on compares against this.
   'h885_b_after_1_4_region',
+  // B's region after todo-compile-885.md 2.1 wrote unit A's configuration with the Sony HT onto it: the file
+  // written in its first 572238 bytes, and the region after 1.4 everywhere outside the nine sectors that write
+  // erased. Read once, no window retried, before 2.3's write; every write to B from 2.3 on compares against this.
+  'h885_b_after_2_1_region',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */

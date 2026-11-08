@@ -137,5 +137,67 @@ class TheComposedConfigurationOnB(unittest.TestCase):
         self.assertEqual(sum(1 for i in range(len(composed)) if composed[i] != written[i]), 6)
 
 
+class TheRecomposedConfigurationOnB(unittest.TestCase):
+    """Items 2.2 and 2.3: the same composition with the Sony HT's power records opening with its silence and
+    sent at a quantity of 1, written to unit B over 2.1's.
+
+    **Measured on a unit.** B's region was read first, once, no window retried (`h885_b_after_2_1_region`): it
+    holds 2.1's written file in its first 572238 bytes and differs from the region after 1.4 only in the nine
+    sectors 2.1 erased, so it is the compare base. The dry run and the commit each found seven sectors to
+    write, `0x020000` and `0x050000` to `0x0A0000`, every one matching that region before its erase. The
+    commit erased and wrote the seven, each erase staying inside its own block, read the whole configuration
+    back identical to the file (one window asked for again during a block compare and one during the read
+    back), read the status 0 before the first erase and before the restart, and sent `E1 02`. B came back on
+    the bus by itself; data memory `0x100` read the status 0 and the clock `16:51:19` against the stamp
+    `16:51:12`; `read-config.ts` read 572270 bytes identical to the file, six windows retried. At the bench,
+    with the infrared monitor, Power on the Sony HT page was heard as three frames of the Sony HT's power code,
+    matched against Logitech's own compile of that device. **Not observed**: the half second before it, since
+    the monitor times a frame from the one before it and not from the key press; the silence on the remote
+    rests on the read back above.
+    """
+
+    def setUp(self):
+        lab.require('h885_composed_2_3', 'h885_b_written_2_3', 'h885_b_after_2_3_config',
+                    'h885_b_after_2_1_region', 'h885_b_written_2_1', 'h885_b_after_1_4_region',
+                    'h885_b_clock_after_2_3')
+
+    def test_the_compare_base_is_2_1s_file_and_otherwise_the_region_before_it(self):
+        region = lab.load('h885_b_after_2_1_region')
+        written = lab.load('h885_b_written_2_1')
+        self.assertEqual(region[:len(written)], written)
+        before = lab.load('h885_b_after_1_4_region')
+        self.assertEqual(len(region), len(before))
+        moved = sorted({(REGION_BASE + i) & ~(SECTOR - 1) for i in range(len(region)) if region[i] != before[i]})
+        self.assertEqual(moved, [0x020000 + n * SECTOR for n in range(9)])
+
+    def test_b_holds_the_recomposed_file_with_only_its_stamp_changed(self):
+        written = lab.load('h885_b_written_2_3')
+        self.assertEqual(len(written), 572270)
+        self.assertEqual(lab.load('h885_b_after_2_3_config'), written)
+        composed = lab.load('h885_composed_2_3')
+        self.assertEqual(len(composed), len(written))
+        differing = [i for i in range(len(composed)) if composed[i] != written[i]]
+        # The stamp's fields that moved between composing and writing: two in the build timestamp in the first
+        # sector and two in the clock records, which sit in the sector at 0x060000 in this file. 2.1's moved six,
+        # three in each sector, since more of the stamp's fields changed between its compose and its write.
+        self.assertEqual(len(differing), 4)
+        self.assertEqual({(REGION_BASE + i) & ~(SECTOR - 1) for i in differing}, {0x020000, 0x060000})
+
+    def test_the_restart_reseeded_the_clock_from_the_new_stamp(self):
+        rows = [line.split() for line in lab.load('h885_b_clock_after_2_3').decode('utf-8').splitlines()
+                if line.strip() and not line.startswith('#')]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(int(rows[0][0], 16), 0x100)
+        row = bytes(int(v, 16) for v in rows[0][1:])
+        self.assertEqual(row[0], 0)
+        self.assertEqual(moment(row[8:15]), datetime.datetime(2026, 11, 7, 16, 51, 19))
+        c = gspm.parse(lab.load('h885_b_written_2_3'))
+        seeds = []
+        for record in c.state_records()[:7]:
+            at = c.blob_offset_of(record.address)
+            seeds.append(int.from_bytes(c.blob[at:at + 2], 'little'))
+        self.assertEqual(moment(seeds), datetime.datetime(2026, 11, 7, 16, 51, 12))
+
+
 if __name__ == '__main__':
     unittest.main()

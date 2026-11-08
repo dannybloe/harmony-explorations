@@ -62,6 +62,20 @@ export interface LaidDeviceSends {
   described(named: Container): Pick<ComposedDevice, 'delay' | 'powerOnDelay'>;
 }
 
+/**
+ * How a family spells a composed device's power steps, `SendShape.powerStep`: the silence in front of each step's
+ * record and the quantity its send list's `0x7C` carries.
+ */
+export interface PowerStepSpelling {
+  /**
+   * Microseconds of silence in front of every power step's record, a held one included, spelt as
+   * `compiledBlockWords` spells any long silence. 0 for none.
+   */
+  readonly leadInUs: number;
+  /** The amount of the `0x7C` paired with each power step's send, in tenths of a second. */
+  readonly quantity: number;
+}
+
 /** What the device composer gets from its family's send before it reads base slot 10, `SendShape.device`. */
 export interface DeviceSends {
   /** The configuration the lists go into: the infrared group's, with whatever the family's sends need first. */
@@ -99,6 +113,17 @@ export interface SendShape {
    * the device states none, `CommonChoices.delays`, refused by a family that needs them and has none.
    */
   device(c: Container, group: number, device: ComposeDevice, delays: DelayDefaults | undefined): DeviceSends;
+  /**
+   * How a composed device's power steps are spelled where the family's compiles spell them otherwise than the
+   * shared composer's default, which is the Harmony 650 and 700 compiles' form, section 309 and 320: the ordinary
+   * press with no lead in, or the long press version where the catalogue holds the key, sent at the catalogue's
+   * inter key delay. Absent keeps that default. The Harmony 880 and 885 open each with the device's delay between
+   * devices and send it at a quantity of 1, `families/side-keys/sends.ts`, `todo-compile-885.md` 2.2 and 2.3.
+   * The Harmony One's family states no `powerStep` yet, although its compiles open a power step with the catalogue's
+   * `interDeviceDelay` on 8 of 8 catalogue devices, section 433, so a power step composed for a One keeps the
+   * default. Asked before anything is built, so it is also where a family refuses a delay it cannot spell.
+   */
+  powerStep?(device: ComposeDevice): PowerStepSpelling;
   /**
    * The list a composed device's power variable runs to switch it on, which `composeDeviceInputs` appends its
    * resets to, read off the configuration or the composed device; `list` is the power on delay's list where

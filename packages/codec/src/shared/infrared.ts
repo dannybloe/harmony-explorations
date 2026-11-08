@@ -77,8 +77,11 @@ export interface ComposeCommand {
   readonly leadInUs?: number;
   /**
    * A power step the catalogue holds for this many milliseconds, sections 306 to 309: the record is
-   * `longPressBlockOfStatedCode`'s, its frames counted for the hold, with no lead in and no held block,
-   * the way Logitech's compiler writes one. `held` and `leadInUs` do not apply and are refused.
+   * `longPressBlockOfStatedCode`'s, its frames counted for the hold, with no held block, the way
+   * Logitech's compiler writes one. `held` does not apply and is refused. **The lead in defaults to none
+   * here**, as every long press version of the Harmony 650 and 700 compiles has none, section 309; a
+   * `leadInUs` given goes in front of the frames, which is how the Harmony 880 and 885 compiles open one,
+   * with the device's delay between devices, `todo-compile-885.md` 2.2.
    */
   readonly holdMs?: number;
   /**
@@ -301,9 +304,12 @@ function irGroupContent(commands: readonly ComposeCommand[]): IrGroupContent {
   type BuiltGroup = { once: Uint8Array; held?: Uint8Array; release?: Uint8Array };
   const groupOf = (command: ComposeCommand, read: StatedCode, given: StatedBlocks | undefined): BuiltGroup => {
     if (command.holdMs !== undefined) {
-      if (command.held === true || (command.leadInUs ?? 0) !== 0) {
-        throw new ComposeError('a held power step has no held block and no lead in');
-      }
+      // No held block: the record is played once, its frames counted for the hold. A lead in is the caller's,
+      // none by default, section 309, the device's delay between devices on the Harmony 880 and 885. The default
+      // path's bytes are held word for word against Logitech's Harmony 650 and 700 compiles, held steps included,
+      // by "a device composed from the catalogue switches with the records and the wiring Logitech compiles for
+      // it" in `test/devicepower.test.ts`, which passes unchanged since the lead in became the caller's.
+      if (command.held === true) throw new ComposeError('a held power step has no held block');
       // A held step is cut from the press, section 309, and no compile here holds a held step of a code
       // naming a release group, so where its release would go is not seen.
       if (given?.release !== undefined) {
@@ -314,7 +320,7 @@ function irGroupContent(commands: readonly ComposeCommand[]): IrGroupContent {
         throw new ComposeError(`${command.stated} cannot be composed held for ${command.holdMs} ms: `
           + 'its family has no measured press block or stated segment lengths, or the hold is shorter than a press');
       }
-      return { once: irBuildBlock(compiledBlockWords(block)) };
+      return { once: irBuildBlock(compiledBlockWords(block, command.leadInUs ?? 0)) };
     }
     // The caller's blocks, derived at the device's count, where it gives them, sections 348 and 350;
     // the table's block otherwise, whose count is the one device's it was measured on.

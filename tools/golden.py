@@ -291,6 +291,17 @@ CONTAINERS = (
     # The two bench Harmony 885s' configurations and regions, each read twice, todo-prepare-885.md 2.1.
     'h885_a_config', 'h885_a_config_2', 'h885_a_region', 'h885_a_region_2',
     'h885_b_config', 'h885_b_config_2', 'h885_b_region', 'h885_b_region_2',
+    # The bench 885s' later registrations, todo-compile-885.md: whole flash reads (each holds the
+    # configuration at 0x020000), the configuration read after each write, the file written, and our own
+    # compositions onto unit A's configuration. All parse, so each gets a vector; the compositions are
+    # containers this project's composer built, which makes a disagreement between the two codecs about them
+    # a claim about our own output. Registered in lab.py and packages/lab/src/index.ts, excluded from the
+    # corpus wide totals there.
+    'h885_a_flash', 'h885_a_flash_2', 'h885_a_after_block_config',
+    'h885_b_flash', 'h885_b_flash_2', 'h885_b_after_block_config',
+    'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region',
+    'h885_composed_2_1', 'h885_composed_2_3', 'h885_b_written_2_1', 'h885_b_after_2_1_config',
+    'h885_b_after_2_1_region', 'h885_b_written_2_3', 'h885_b_after_2_3_config',
 )
 
 

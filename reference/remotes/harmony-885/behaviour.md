@@ -26,6 +26,10 @@ time.[^t-885-delay] That this silence is the wait between devices a person sets 
 checked.[^unchecked] The configurations read carry one per device on the codes that switch devices, 200 ms to
 a second on 80 of the 84 device groups of the sixteen containers read, copies of six configurations,
 and 50 ms on the other 4, [sending](../../infrared/sending.md#the-delay-between-devices-on-the-harmony-880-and-885).[^t-885-delay-corpus]
+A power code that holds the key for a time, the long press version, opens with the same silence and is stored as
+one block of frames with no part repeated while a key is held,
+[sending](../../infrared/sending.md#holding-the-power-key-for-a-stated-time).[^t-885-power] That the remote plays
+those frames as one unbroken burst is not checked on a unit.[^unchecked]
 
 **A held key stops at the end of the copy being sent** when it is released, rather than after everything the
 remote had already read ahead, [sending](../../infrared/sending.md#how-the-harmony-880-and-885-play-a-record).[^t-885-infrared]
@@ -59,3 +63,4 @@ bootloader's own key scan restarts on the same three.[^t-885-end][^t-885-boot][^
 [^t-885-delay]: Read in the firmware. [The test](../../../tests/test_harmony_885_delay.py)
 [^t-885-delay-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_delay.py)
 [^t-885-infrared]: Read in the firmware. [The test](../../../tests/test_harmony_885_infrared.py)
+[^t-885-power]: Measured in configurations. [The test](../../../packages/codec/test/sidekeysdevice.test.ts)

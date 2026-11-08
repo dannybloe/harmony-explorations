@@ -278,6 +278,13 @@ const CONTAINERS = [
   // The two bench Harmony 885s' configurations and regions, each read twice, todo-prepare-885.md 2.1.
   'h885_a_config', 'h885_a_config_2', 'h885_a_region', 'h885_a_region_2',
   'h885_b_config', 'h885_b_config_2', 'h885_b_region', 'h885_b_region_2',
+  // Their later registrations, todo-compile-885.md: the whole flash reads, the configurations read after each
+  // write, the files written and our own compositions onto unit A's configuration. `tools/golden.py` says why.
+  'h885_a_flash', 'h885_a_flash_2', 'h885_a_after_block_config',
+  'h885_b_flash', 'h885_b_flash_2', 'h885_b_after_block_config',
+  'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region',
+  'h885_composed_2_1', 'h885_composed_2_3', 'h885_b_written_2_1', 'h885_b_after_2_1_config',
+  'h885_b_after_2_1_region', 'h885_b_written_2_3', 'h885_b_after_2_3_config',
 ];
 
 for (const name of CONTAINERS) {
@@ -390,8 +397,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 180 with the 68 other samples registered without one, listed at the end of `CONTAINERS`.
   // 188 with the spare Harmony One's eight region reads of todo-compile-one's last writes.
   // 189 with the Harmony 515 from onyiaic as it came, 191 with both copies of its application image.
-  // 199 with the two bench Harmony 885s' configurations and regions.
-  assert.equal(present.length, 199, 'every vector, which is what `make golden` compares');
+  // 199 with the two bench Harmony 885s' configurations and regions. 215 with their 16 later registrations of
+  // todo-compile-885.md: the whole flash reads, the reads after each write, the files written and our compositions.
+  assert.equal(present.length, 215, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -441,7 +449,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // that does not, an arch 9 container like the other Harmony 525 samples here.
   // 182 with the spare Harmony One's eight region reads of todo-compile-one's last writes, every one with a key table.
   // 190 with the two bench Harmony 885s' configurations and regions, every one with a key table.
-  assert.equal(complete, 190, 'the vectors whose container has a key table at all');
+  // 206 with their 16 later registrations, every one with a key table.
+  assert.equal(complete, 206, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -464,7 +473,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // on arch 16's map, so both its containers answer instead of refusing, and neither of the two
   // arriving cancels the one leaving. What is left is the five damaged arch 10 reads and the two
   // containers found inside arch 8 firmware images.
-  assert.equal(senders.filter((one) => one === null).length, 7, 'the containers with no readable slot');
+  // 11 with the bench Harmony 885s' four whole flash reads: each holds, at 0x01E000, a container that reports
+  // architecture 0, the same kind as the two found inside the arch 8 firmware images.
+  assert.equal(senders.filter((one) => one === null).length, 11, 'the containers with no readable slot');
   // 30 since section 215's pair, both of which declare none, like the two vectors they duplicate.
   // 31 since the factory Harmony 350, section 262: it left the unreadable column above rather than
   // arriving, since arch 16's base slot 16 is mapped now, and the answer it gives is a count of zero.
@@ -498,7 +509,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 145 with the Harmony 515 from onyiaic, which declares none either, and 147 with the safe mode container
   // in both copies of its application image, which declare none.
   // 151 with the first bench Harmony 885's configuration and region, each read twice, which declare none.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 151);
+  // 159 with eight of the bench 885s' later registrations: unit A's configuration after its block write, and
+  // every file built on A's configuration by todo-compile-885.md 2.1 and 2.3, composed, written and read back.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 159);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -544,7 +557,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // configurations, and the spare Harmony One's track start and look base regions.
   // 41 with the second bench Harmony 885's configuration and region, each read twice, which hold two records:
   // the first Harmony 880 or 885 configuration with favourite channels, `tests/test_harmony_885_bench_reads.py`.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 41,
+  // 45 with B's configuration after its block write and the three files of todo-compile-885.md 1.4, all B's own
+  // configuration, so the records survived B's first whole write. 2.1 replaced it with A's, which carries none.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 45,
     'the configs that populate base slot 16');
 });
 
@@ -583,8 +598,9 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 180 with the 68 other samples registered without a vector.
   // 188 with the spare Harmony One's eight region reads of todo-compile-one's last writes.
   // 189 with the Harmony 515 from onyiaic as it came, 191 with both copies of its application image.
-  // 199 with the two bench Harmony 885s' configurations and regions.
-  assert.equal(python.length, 199, 'the golden vectors, which is what `make golden` prints');
+  // 199 with the two bench Harmony 885s' configurations and regions. 215 with their 16 later registrations of
+  // todo-compile-885.md: the whole flash reads, the reads after each write, the files written and our compositions.
+  assert.equal(python.length, 215, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

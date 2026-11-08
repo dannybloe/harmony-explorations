@@ -1545,9 +1545,18 @@ IMAGES = {
     # DAV-C540 as "Sony HT", by compose-device.ts and stamped by it, in the lab's work folder.
     # packages/codec/test/sidekeysdevice.test.ts composes it again; test_harmony_885_start_check.py checks it.
     'h885_composed_2_1': 'h885-a-plus-sony-ht.bin',
+    # todo-compile-885.md 2.2 and 2.3: the same device composed again, its power step opening with its delay
+    # between devices and sent at a quantity of 1, by compose-device.ts and stamped, in writes/2.3/.
+    'h885_composed_2_3': 'h885-a-plus-sony-ht-2-3.bin',
     # Unit B after todo-compile-885.md 2.1: the composed configuration as written, and read back.
     'h885_b_written_2_1': 'h885-a-plus-sony-ht-to-write.bin',
     'h885_b_after_2_1_config': '20261107T1505Z-h885-b-after-2-1-config.bin',
+    # B's region read before 2.3's write, the compare base for every write to B from then on.
+    'h885_b_after_2_1_region': '20261107T154934Z-h885-b-after-2.1-region-region-0x20000-0x1d0000.bin',
+    # Unit B after todo-compile-885.md 2.3: the composed file as written, read back, and the clock after.
+    'h885_b_written_2_3': 'h885-a-plus-sony-ht-2-3-to-write.bin',
+    'h885_b_after_2_3_config': '20261107T1555Z-h885-b-after-2-3-config-config.bin',
+    'h885_b_clock_after_2_3': '20261107T1552Z-h885-b-clock-after-2-3.txt',
     # The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: watch-keys.ts polling data
     # memory 0x295 (the key held) and 0x3A1 (the last key pressed) while keys were pressed by hand, as
     # text. Unit A before its key contacts were cleaned, A opened and pressed freely, A's run through
@@ -1749,7 +1758,9 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region',
                       # A composition of ours onto unit A's configuration, todo-compile-885.md 2.1:
                       # not a configuration any remote was compiled to, so counted in no total.
-                      'h885_composed_2_1', 'h885_b_written_2_1', 'h885_b_after_2_1_config')
+                      'h885_composed_2_1', 'h885_b_written_2_1', 'h885_b_after_2_1_config',
+                      'h885_b_after_2_1_region', 'h885_composed_2_3',
+                      'h885_b_written_2_3', 'h885_b_after_2_3_config')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

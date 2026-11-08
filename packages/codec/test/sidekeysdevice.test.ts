@@ -28,6 +28,51 @@
  * **The device list is several copies**, one per activity, one for outside every activity and one that nothing
  * read enters, each listing every device; the census of them is below, and the device goes onto every copy.
  *
+ * **Power, `todo-compile-885.md` 2.2 and 2.3.** 2.1 composed the power step the way Logitech's compiles for the
+ * Harmony 650 and 700 spell it, sections 309 and 320: the press with no silence in front, sent at the catalogue's
+ * inter key delay, 5 tenths for the Sony. These remotes' compiles spell it otherwise, and the census below is the
+ * evidence. **Copies count twice**: `arch8_config_a` to `_d` are one account at four moments, so the 44 power
+ * variables of the eight configurations are 28 distinct devices, counted by their set of power records; figures
+ * below give both. Over the 88 transitions: every record a transition sends is one block with no held part, and a
+ * device's on and off records open with one silence, the device's own: 50 ms on 3 variables and 1 distinct device
+ * (one media centre PC in three containers), 200 ms on 3 and 3, 500 ms on 34 and 20, 800 ms on 1 and 1, a second
+ * on 3 and 3. Every power on transition ends in a wait of the device's own, 44 of 44, and no off transition does.
+ * **The silence is the device's, not the power key's**: on the infrared groups of the 41 power variables whose
+ * power code opens with more than 50 ms, every record without a held block opens with that device's silence, 1375
+ * of 1375, every record with a held block opens with 50 ms, 1140 of 1140, and no held or tail block opens with a
+ * silence at all, all counted over the eight configurations, copies included.
+ *
+ * **The quantity** after each power send is 0, 1 or 2, on 26, 60 and 2 transitions, and on every one it is the most
+ * common quantity of the device's other once only sends, 88 of 88, so there is no quantity of power's own. By
+ * model it splits: the 880s' (skin 15) 1 on 13 of 24 variables, 0 on 10 and 2 on 1, the 885s' (skin 17) 1 on 17 of
+ * 20 and 0 on 3, and 0 is the commonest in `arch8_config_a` and `_b`. **It is not a function of the records**: the
+ * `DVD_speler` of the two bench units has identical power records, sent at 1 on unit A and at 0 on unit B. So 1,
+ * what every other send of a composed device carries and so that device's most common, is ours. **The long press
+ * version** exists on one device: the Panasonic television whose catalogue entry holds power on and off for 1000
+ * ms each, the only hold the archive states for the eight devices of these configurations it names, and its two
+ * records are the only power records of seven frames, led by its 800 ms. The six frame power records of the
+ * `DVD_speler` and of the LaserDisc player are not holds as far as can be seen: the same code's records with a held
+ * block are six frames too (a scratch look, not asserted). The LaserDisc player's the catalogue rebuilds word for
+ * word, below; the `DVD_speler` is a device the archive does not name, so nothing explains its count.
+ *
+ * **The closure is the catalogue against the compile**, independent fields at both ends: the catalogue's codes and
+ * holds composed by the codec's own long press and spelling rules, and Logitech's bytes read out of the owners'
+ * configurations. Composed onto unit A with each device's own silence passed in (the owners edited their delays,
+ * `todo-prepare-885.md` 3.11, so the catalogue's 500 ms would test the edit, not the spelling), the power records
+ * of seven of the eight devices are Logitech's word for word, carrier included, 14 transitions, the long press
+ * version among them. The eighth, the 32AS500, matches in carrier, length and silence and differs in the code's
+ * bits; that the owner's two televisions share their codes is the owner's note, not asserted here. **The control**,
+ * in the calibration test: the same records with the silence one microsecond longer match none of Logitech's.
+ * **What stays inferred** is that the silence is the account's delay between devices; the calibration closes the
+ * spelling, not the value. And the quantity: on these eight devices Logitech's are 1 on 12 of 16 transitions and 0
+ * on 4, and never the inter key delay where the catalogue states one other than 100 ms; that rests on two devices of
+ * one configuration, the VCR and the LaserDisc player, 500 ms in the catalogue and sent at 1. What chooses 0 or 2 is
+ * not read. **Not changed**: a composed device still keeps the power command's own record as an ordinary press
+ * beside the step's, where Logitech's compile has one record and one list, which a device page's key binds too on
+ * 39 of the 44 power on transitions (asserted below: the send list the on transition calls is the operand of some
+ * mode page's tagged list). And a composed device's other page keys send the 50 ms form with a held block, where
+ * Logitech's page keys mostly send the device's silence and no held block, `todo-compile-885.md` 2.9.
+ *
  * **Width.** Arch 8: the Harmony 880 and 885, which run one application; of the eight configurations five are
  * 880s' and three 885s', by the skin byte each states (15 and 17), `arch8devicelist.test.ts`. The Harmony 720 and
  * 880 Pro, also arch 8, are not among them and nothing here covers them.
@@ -43,6 +88,8 @@ import {
   SIDE_KEYS_ROW_PITCH, SIDE_KEYS_ROW_TOP, SIDE_KEYS_SEPARATOR_X, SIDE_KEYS_TOTAL_X, SIDE_KEYS_ARROW_X,
   SIDE_KEYS_LABEL_WIDTH,
 } from '../src/families/side-keys/index.ts';
+import { catalogueDriving } from '../src/driving.ts';
+import { compiledBlockWords } from '../src/shared/infrared.ts';
 import { familyOf } from '../src/families/registry.ts';
 import { sideKeysCopyModes, sideKeysDeviceLists } from '../src/families/side-keys/devicescreen.ts';
 import { SIDE_KEYS_SENDS } from '../src/families/side-keys/sends.ts';
@@ -52,8 +99,8 @@ import {
   ACTION_LIST_INDEX_OPCODE, activities, activityBindings, archSlot, assertQueueFits, assertStateTableConsistent,
   BINDING_SLOT, characterMap, compilerTagOrder, ComposeError, composeCatalogueDevice, type Container, coverage,
   deviceListRows, deviceVariables, devices, fontSets, handlerSets, instructionSites, irBlockWords, irCarrier,
-  irGroupCount, irGroups, irRecordStart, logArea, modePages, modeRecords, pageListCopies, parameterGroupLengthsMatch,
-  parameterGroups, parse, roundTrip, saveEdits, screenProgram, screenStrings, stateRecords, stateTable,
+  irGroupCount, irGroups, irHeaderPointers, irRecordStart, logArea, modePages, modeRecords, pageListCopies,
+  parameterGroupLengthsMatch, parameterGroups, parse, roundTrip, saveEdits, screenProgram, screenStrings, stateRecords, stateTable,
   stateVariableSite, taggedList, timers, trailerAgrees,
 } from '../src/index.ts';
 
@@ -118,6 +165,245 @@ test('every send of an arch 8 configuration is the plain pair, every power varia
     assert.equal(onLists, 44);
     assert.deepEqual([...onShapes], ['7f,7c']);
     assert.equal(longest, 100);
+  });
+
+/** The silence a block opens with, in microseconds: its space words up to the first mark. */
+const leadOf = (words: readonly number[]): number => {
+  let sum = 0;
+  for (const word of words) {
+    if (word === 0 || (word & 0x8000) !== 0) break;
+    sum += word;
+  }
+  return sum;
+};
+
+/** The words of the record `send` names, one string per pointer of its groups, `-` for a null pointer. */
+const recordWords = (c: Container, send: number): string[] => {
+  const address = irGroups(c)![send >> 8]!.addresses[send & 0xff]!;
+  return irHeaderPointers(c, address).map((pointer) => (pointer === 0 ? '-' : irBlockWords(c, pointer)!.join(',')));
+};
+
+/**
+ * What a power transition runs, followed to its send: the transition's list, the send list it names (the list
+ * itself for an off transition, the first call of an on list), and that list's send and quantity.
+ */
+function powerSends(c: Container, variable: number): { from: number; to: number; list: number; send: number; quantity: number }[] {
+  const lists = c.actionLists() ?? [];
+  return stateRecords(c)![variable]!.values.filter((one) => one.from >= 0 && one.to >= 0).map((one) => {
+    assert.equal(one.opcode, ACTION_LIST_INDEX_OPCODE);
+    const first = lists[one.operand]![0]!;
+    const list = first.opcode === ACTION_LIST_INDEX_OPCODE ? first.operand : one.operand;
+    const [send, quantity] = lists[list]!;
+    assert.deepEqual([send!.opcode, quantity!.opcode], [SEND, QUANTITY]);
+    return { from: one.from, to: one.to, list, send: send!.operand, quantity: quantity!.operand & 0xff };
+  });
+}
+
+/** The skin byte of a configuration's architecture record, which names the model: 15 an 880, 17 an 885. */
+const skinOf = (c: Container): number => c.blob[c.blobOffsetOf(c.sections[archSlot(8, 1)]!.address)! + 2]!;
+
+test('todo-compile-885 2.2 and 2.3: every record an arch 8 power transition sends is one block opening with its device\'s silence, the same on and off, over 44 variables and 28 distinct devices; only the Panasonic television\'s are seven frames; every on transition ends in a wait; and the send\'s quantity is the device\'s most common once only one, 1 on 60 of 88',
+  skipUnless(...ARCH8), () => {
+    let transitions = 0;
+    let withHeld = 0;
+    let onOffDiffer = 0;
+    const leads = new Map<number, number>();
+    const quantities = new Map<number, number>();
+    let modal = 0;
+    let onWaits = 0;
+    let offWaits = 0;
+    let onBound = 0;
+    const longest: string[] = [];
+    // Distinct devices: a variable's set of power records, so the four copies of one account count once.
+    const distinct = new Map<string, number>();
+    // The quantity per model, by variable: the on transition's send stands for the variable.
+    const bySkin = new Map<string, number>();
+    // The silence census, on the groups whose power code opens with more than 50 ms.
+    let onceOnly = 0;
+    let onceOnlyLed = 0;
+    let withHeldBlock = 0;
+    let heldAt50 = 0;
+    let laterBlocksLed = 0;
+    const dvd = new Map<string, { records: string; quantity: number }>();
+    for (const name of ARCH8) {
+      const c = open(name);
+      const lists = c.actionLists() ?? [];
+      const bound = new Set(modePages(c).flatMap((page) => (taggedList(c, page.list)?.entries ?? [])
+        .filter((one) => one.opcode === ACTION_LIST_INDEX_OPCODE).map((one) => one.operand)));
+      const groupLeads = new Map<number, number>();
+      for (const variable of deviceVariables(c).filter((one) => one.property === 'Power')) {
+        const sends = powerSends(c, variable.index);
+        const variableLeads = new Set<number>();
+        const records: string[] = [];
+        for (const one of sends) {
+          transitions += 1;
+          const words = recordWords(c, one.send);
+          records.push(words.join('|'));
+          const [once, held, tail] = words;
+          if (held !== '-' || tail !== '-') withHeld += 1;
+          const onceWords = once!.split(',').map(Number);
+          variableLeads.add(leadOf(onceWords));
+          quantities.set(one.quantity, (quantities.get(one.quantity) ?? 0) + 1);
+          // The most common quantity of the device's other sends of a record with no held block, strictly.
+          const group = one.send >> 8;
+          const counts = new Map<number, number>();
+          lists.forEach((list, k) => {
+            if (k === one.list || list.length !== 2 || list[0]!.opcode !== SEND || list[0]!.operand >> 8 !== group) return;
+            if (recordWords(c, list[0]!.operand)[1] !== '-') return;
+            const quantity = list[1]!.operand & 0xff;
+            counts.set(quantity, (counts.get(quantity) ?? 0) + 1);
+          });
+          const ranked = [...counts].sort((x, y) => y[1] - x[1]);
+          if (ranked[0]?.[0] === one.quantity && (ranked[1] === undefined || ranked[1][1] < ranked[0][1])) modal += 1;
+          // The on transition's own list: a call of the send list and a wait; the off transition runs the send list.
+          const top = lists[stateRecords(c)![variable.index]!.values.find((t) => t.from === one.from && t.to === one.to)!.operand]!;
+          const waits = top !== lists[one.list] && top.some((step) => step.opcode === QUANTITY);
+          if (one.from === 0) {
+            if (waits) onWaits += 1;
+            if (bound.has(one.list)) onBound += 1;
+            const skin = `${skinOf(c)} ${one.quantity}`;
+            bySkin.set(skin, (bySkin.get(skin) ?? 0) + 1);
+          } else if (waits) offWaits += 1;
+          // Frames: runs of marks parted by more than 10 ms of silence.
+          let frames = 0;
+          let gap = Infinity;
+          for (const word of onceWords) {
+            if (word === 0) break;
+            if (word & 0x8000) {
+              if (gap > 10000) frames += 1;
+              gap = 0;
+            } else gap += word;
+          }
+          if (frames >= 7) longest.push(`${name} ${variable.device} ${frames}`);
+          groupLeads.set(group, leadOf(onceWords));
+        }
+        if (variableLeads.size !== 1) onOffDiffer += 1;
+        const lead = [...variableLeads][0]! / 1000;
+        leads.set(lead, (leads.get(lead) ?? 0) + 1);
+        const key = records.sort().join('#');
+        if (!distinct.has(key)) distinct.set(key, lead);
+        if (variable.device === 'DVD_speler') dvd.set(name, { records: key, quantity: sends[0]!.quantity });
+      }
+      for (const [group, lead] of groupLeads) {
+        if (lead <= 50000) continue;
+        for (const address of irGroups(c)![group]!.addresses) {
+          const pointers = irHeaderPointers(c, address);
+          const once = irBlockWords(c, pointers[0]!)!;
+          if (pointers[1] === 0) {
+            onceOnly += 1;
+            if (leadOf(once) === lead) onceOnlyLed += 1;
+          } else {
+            withHeldBlock += 1;
+            if (leadOf(once) === 50000) heldAt50 += 1;
+          }
+          for (const later of [pointers[1]!, pointers[2]!]) if (later !== 0 && leadOf(irBlockWords(c, later)!) > 0) laterBlocksLed += 1;
+        }
+      }
+    }
+    assert.equal(transitions, 88);
+    assert.equal(withHeld, 0, 'every power record is one block, played once');
+    assert.equal(onOffDiffer, 0, 'a device\'s power on and off open with one silence');
+    // By variable, then by distinct device: 50 ms is one media centre PC in three containers.
+    assert.deepEqual([...leads].sort((a, b) => a[0] - b[0]), [[50, 3], [200, 3], [500, 34], [800, 1], [1000, 3]]);
+    assert.equal(distinct.size, 28);
+    const distinctLeads = new Map<number, number>();
+    for (const lead of distinct.values()) distinctLeads.set(lead, (distinctLeads.get(lead) ?? 0) + 1);
+    assert.deepEqual([...distinctLeads].sort((a, b) => a[0] - b[0]), [[50, 1], [200, 3], [500, 20], [800, 1], [1000, 3]]);
+    // The silence is the device's: every once only record of those devices carries it, every held one 50 ms.
+    assert.deepEqual([onceOnlyLed, onceOnly, heldAt50, withHeldBlock, laterBlocksLed], [1375, 1375, 1140, 1140, 0]);
+    // A wait ends every on transition and no off transition; a page's key binds the on transition's send list on 39.
+    assert.deepEqual([onWaits, offWaits, onBound], [44, 0, 39]);
+    // The quantity: 0, 1 or 2, always the device's most common once only one; by model per variable.
+    assert.deepEqual([...quantities].sort((a, b) => a[0] - b[0]), [[0, 26], [1, 60], [2, 2]]);
+    assert.equal(modal, 88);
+    assert.deepEqual([...bySkin].sort(), [['15 0', 10], ['15 1', 13], ['15 2', 1], ['17 0', 3], ['17 1', 17]]);
+    // Not a function of the records: the bench units' DVD player, identical power records, 1 on A and 0 on B.
+    assert.equal(dvd.get('h885_a_config')!.records, dvd.get('h885_b_config')!.records);
+    assert.deepEqual([dvd.get('h885_a_config')!.quantity, dvd.get('h885_b_config')!.quantity], [1, 0]);
+    // The only power records of seven frames: the Panasonic television whose catalogue entry holds the key a second.
+    assert.deepEqual(longest, ['arch8_config_880 Pana_32AS600 7', 'arch8_config_880 Pana_32AS600 7']);
+  });
+
+/**
+ * The devices of the owners' sheets that Logitech's catalogue in the archive names, each with the configuration
+ * holding it, its name there, its power commands and the silence its codes open with there, in tenths: what the
+ * calibration composes with, since the owners' delays are edited, `todo-prepare-885.md` 3.11.
+ */
+const SHEET = [
+  ['arch8_config_880', 'Pana_32AS600', 'Panasonic', 'TX-32AS600B', 8, ['PowerOn', 'PowerOff']],
+  ['arch8_config_880', 'Pana_32AS500', 'Panasonic', 'TX-32AS500B', 5, ['PowerOn', 'PowerOff']],
+  ['arch8_config_885', 'TX-55GZ950B', 'Panasonic', 'TX-55GZ950B', 5, ['PowerOn', 'PowerOff']],
+  ['arch8_config_885', 'HR-S6855', 'JVC', 'HR-S6855', 2, ['PowerToggle']],
+  ['arch8_config_885', 'DTR-T2110', 'Humax', 'DTR-T2110', 5, ['PowerToggle']],
+  ['arch8_config_885', 'TX-NR626', 'Onkyo', 'TX-NR626', 10, ['PowerOn', 'PowerOff']],
+  ['arch8_config_885', 'DMP-BD60', 'Panasonic', 'DMP-BD60', 2, ['PowerToggle']],
+  ['arch8_config_885', 'DVL-909', 'Pioneer', 'DVL-909', 2, ['PowerToggle']],
+] as const;
+
+test('todo-compile-885 2.2 and 2.3: the catalogue\'s power of the eight sheet devices, composed onto unit A with each device\'s own silence, is Logitech\'s power record word for word on seven, the Panasonic\'s long press version included, and differs in the code alone on the eighth',
+  needing(skipUnless('h885_a_config', 'arch8_config_880', 'arch8_config_885'), skipWithoutIrArchive()), () => {
+    const a = open('h885_a_config');
+    const same: string[] = [];
+    const differ: string[] = [];
+    let atOne = 0;
+    let controlMatches = 0;
+    const theirQuantities: string[] = [];
+    for (const [config, device, manufacturer, model, lead, commands] of SHEET) {
+      const c = open(config);
+      const variable = deviceVariables(c).find((one) => one.device === device && one.property === 'Power')!;
+      const theirSends = powerSends(c, variable.index);
+      for (const one of theirSends) theirQuantities.push(`${device} ${one.quantity}`);
+      const theirs = new Map(theirSends.map((one) => [`${one.from}${one.to}`,
+        [irCarrier(c, irGroups(c)![one.send >> 8]!.addresses[one.send & 0xff]!)?.periodNs, ...recordWords(c, one.send)]]));
+      // The label and pad words are A's own letters; what is compared is the records.
+      const composed = parse(composeCatalogueDevice(a, IR_ARCHIVE!, {
+        manufacturer, model, label: 'Sony HT', commands: [...commands], labels: ['Power', 'Mute'].slice(0, commands.length),
+        interDeviceDelay: lead,
+      }).bytes);
+      const ours = deviceVariables(composed).find((one) => one.device === 'Sony_HT' && one.property === 'Power')!;
+      for (const one of powerSends(composed, ours.index)) {
+        const words = [irCarrier(composed, irGroups(composed)![one.send >> 8]!.addresses[one.send & 0xff]!)?.periodNs,
+          ...recordWords(composed, one.send)];
+        const key = `${one.from}${one.to}`;
+        if (one.quantity === 1) atOne += 1;
+        (JSON.stringify(words) === JSON.stringify(theirs.get(key)) ? same : differ).push(`${device} ${key}`);
+        // The control: the same record with its silence one microsecond longer, spelled by the same rule, must match
+        // nothing of Logitech's, or the comparison above could not tell a silence from its neighbour.
+        const onceWords = (words[1] as string).split(',').map(Number);
+        const silence = leadOf(onceWords);
+        const longer = compiledBlockWords([{ mark: false, us: silence + 1 }], 0, { carve: false }).map((one) => one.microseconds);
+        const body = onceWords.slice(onceWords.findIndex((word) => (word & 0x8000) !== 0));
+        const control = [words[0], [...longer, ...body].join(','), ...words.slice(2)];
+        if (JSON.stringify(control) === JSON.stringify(theirs.get(key))) controlMatches += 1;
+        if (device === 'Pana_32AS500') {
+          // The same carrier, length and silence, and other bits: the owner's two televisions share their codes.
+          const [period, once] = words as [number, string];
+          const [theirPeriod, theirOnce] = theirs.get(key) as [number, string];
+          assert.equal(period, theirPeriod);
+          assert.equal(once.split(',').length, theirOnce.split(',').length);
+          assert.equal(leadOf(once.split(',').map(Number)), leadOf(theirOnce.split(',').map(Number)));
+        }
+      }
+    }
+    assert.deepEqual(differ, ['Pana_32AS500 01', 'Pana_32AS500 10']);
+    assert.equal(same.length, 14);
+    assert.equal(controlMatches, 0, 'one microsecond more of silence loses every match');
+    assert.ok(same.includes('Pana_32AS600 01') && same.includes('Pana_32AS600 10'), 'the long press version, led');
+    // Ours sends every one at 1; Logitech's at 1 on all but the 32AS500's and the Blu-ray player's, at 0. Never at the
+    // catalogue's inter key delay where it is not 1: the VCR and the LaserDisc player state 500 ms and are sent at 1.
+    assert.equal(atOne, 16);
+    assert.deepEqual(theirQuantities.filter((one) => !one.endsWith(' 1')),
+      ['Pana_32AS500 0', 'Pana_32AS500 0', 'DMP-BD60 0', 'DMP-BD60 0']);
+    assert.equal(theirQuantities.length, 16);
+    assert.deepEqual(SHEET.map(([, , manufacturer, model]) => catalogueDriving(IR_ARCHIVE!, manufacturer, model).timing.interKeyDelay),
+      [100, 100, 100, 500, 100, 100, 100, 500]);
+    // The one device whose catalogue entry holds the power key, for a second each way: the seven frame records.
+    const held = SHEET.flatMap(([, device, manufacturer, model]) => {
+      const power = catalogueDriving(IR_ARCHIVE!, manufacturer, model).power!;
+      return [...(power.on ?? []), ...(power.off ?? []), ...(power.toggle ?? [])]
+        .flatMap((step) => (step.kind === 'send' && step.holdMs !== undefined ? [`${device} ${step.command} ${step.holdMs}`] : []));
+    });
+    assert.deepEqual(held, ['Pana_32AS600 PowerOn 1000', 'Pana_32AS600 PowerOff 1000']);
   });
 
 test('on every page of an arch 8 configuration a label line 18 below its row starts at x 3 in the left column or ends at x 125 in the right, is at most 59 wide and is followed by its column\'s separator, and a counter\'s number ends at 52, OF sits at 57, the total at 75 and the arrows at 25 and 88',
@@ -335,14 +621,24 @@ test('todo-compile-885 2.1: the Sony DAV-C540 composed onto unit A reads back as
     assert.deepEqual(devices(c).filter((one) => one.group !== 8).map((one) => [one.group, one.name, one.mode]),
       devices(base).map((one) => [one.group, one.name, one.mode]), 'the base\'s devices as they were');
 
-    // Its records: the eight commands and the power step, a record of its own sent at the inter key delay.
+    // Its records: the eight commands and the power step, a record of its own. Since 2.2 the step is sent at a
+    // quantity of 1 as every power send of these remotes' compiles but one device's, not at the catalogue's inter
+    // key delay of 5 as the Harmony 650 and 700's are; 2.1 sent it at 5.
     const lists = c.actionLists() ?? [];
     assert.equal(irGroups(c)![8]!.addresses.length, 9);
     composed.device.lists.forEach((list, k) => {
       assert.deepEqual(lists[list]!.map((one) => [one.opcode, one.operand]), [[SEND, 0x800 | k], [QUANTITY, 0x801]]);
     });
     const powerSteps = composed.device.powerSteps!;
-    assert.deepEqual(lists[powerSteps.off!]!.map((one) => [one.opcode, one.operand]), [[SEND, 0x808], [QUANTITY, 0x805]]);
+    assert.deepEqual(lists[powerSteps.off!]!.map((one) => [one.opcode, one.operand]), [[SEND, 0x808], [QUANTITY, 0x801]]);
+    // Since 2.3 the step's record opens with the catalogue's delay between devices, 500 ms, spelled as Logitech
+    // spells it, in front of the press: the ordinary command's record without its 50 ms. One block, no held part.
+    const [stepOnce, stepHeld] = recordWords(c, 0x808);
+    const [pressOnce] = recordWords(c, 0x800);
+    const halfSecond = [...Array(14).fill(32767), 20631, 20631];
+    assert.deepEqual(stepOnce!.split(',').map(Number), [...halfSecond, ...pressOnce!.split(',').map(Number).slice(2)]);
+    assert.deepEqual(pressOnce!.split(',').slice(0, 2).map(Number), [32767, 17233]);
+    assert.equal(stepHeld, '-');
 
     // Its power variable: off runs the power step, on calls it and waits the catalogue's 1.5 seconds.
     const power = deviceVariables(c).find((one) => one.device === 'Sony_HT' && one.property === 'Power')!;
@@ -420,10 +716,22 @@ test('todo-compile-885 2.1: the Sony DAV-C540 composed onto unit A reads back as
       [[1, 5, 'Sony HT']]);
   });
 
-test('todo-compile-885 2.1: the composed configuration holds the arch 8 rails of writing-a-config a composed device reaches, the opening silence of 2.3 excepted',
+test('todo-compile-885 2.1 and 2.3: the composed configuration holds the arch 8 rails of writing-a-config a composed device reaches, the opening silence of both its power records included',
   needing(skipUnless('h885_a_config'), skipWithoutIrArchive()), () => {
     const base = open('h885_a_config');
     const c = parse(composeSony().bytes);
+
+    // The opening silence, `writing-a-config` and 2.3: both records the device's power variable sends, on and off,
+    // the only switching codes this family composes yet (inputs are 2.6, activity starts chapter 3), open with the
+    // device's delay between devices, the catalogue's 500 ms. This was the one rail 2.1's composition did not hold:
+    // its power step opened with no silence at all. And the on transition ends in its wait, as all 44 of
+    // Logitech's do: a call of the step's list, then the catalogue's 1.5 seconds.
+    const power = deviceVariables(c).find((one) => one.device === 'Sony_HT' && one.property === 'Power')!;
+    const switching = powerSends(c, power.index);
+    assert.equal(switching.length, 2);
+    for (const one of switching) assert.equal(leadOf(recordWords(c, one.send)[0]!.split(',').map(Number)), 500000);
+    const onList = (c.actionLists() ?? [])[stateRecords(c)![power.index]!.values.find((one) => one.from === 0 && one.to === 1)!.operand]!;
+    assert.deepEqual(onList.map((one) => one.opcode), [ACTION_LIST_INDEX_OPCODE, QUANTITY]);
 
     // The container: every byte accounted for once, the checksum its own, the emitter reproducing it, the queue.
     const report = coverage(c);
@@ -553,12 +861,26 @@ test('todo-compile-885 2.1: the composed configuration holds the arch 8 rails of
     assert.equal(now.get(37), 4);
   });
 
-test('todo-compile-885 2.1: the lab\'s composed file is this composition, stamped',
-  needing(skipUnless('h885_a_config', 'h885_composed_2_1'), skipWithoutIrArchive()), () => {
-    const filed = parse(load('h885_composed_2_1') as Uint8Array);
+/**
+ * Rewritten for 2.3: this test said the lab's 2.1 file was this composition, stamped, which stopped being true by
+ * design when the power step gained its silence and lost its quantity of 5. The file is still the record of what
+ * unit B was given in 2.1, so what is held now is that it spells the power step the way 2.1 did, and that 2.3's file
+ * is this composition.
+ */
+test('todo-compile-885 2.1 and 2.3: the lab\'s 2.1 file spells the power step with no silence and at 5, and the 2.3 file is this composition, stamped, 32 bytes longer for the step\'s sixteen words of silence',
+  needing(skipUnless('h885_a_config', 'h885_composed_2_1', 'h885_composed_2_3'), skipWithoutIrArchive()), () => {
+    const first = parse(load('h885_composed_2_1') as Uint8Array);
+    const [once, held] = recordWords(first, 0x808);
+    const [press] = recordWords(first, 0x800);
+    assert.deepEqual([once, held], [press!.split(',').slice(2).join(','), '-'], '2.1: the press without its 50 ms, no silence');
+    const variable = deviceVariables(first).find((one) => one.device === 'Sony_HT' && one.property === 'Power')!;
+    assert.deepEqual(powerSends(first, variable.index).map((one) => [one.send, one.quantity]), [[0x808, 5], [0x808, 5]]);
+
+    const filed = parse(load('h885_composed_2_3') as Uint8Array);
     assert.ok(filed.builtAt !== undefined);
     const stamped = saveEdits(parse(composeSony().bytes), [], filed.builtAt).bytes;
     assert.ok(Buffer.from(stamped).equals(Buffer.from(filed.blob)));
+    assert.equal(filed.blob.length - first.blob.length, 32);
   });
 
 test('todo-compile-885 2.1: what the side keys family refuses rather than guesses',
@@ -623,4 +945,18 @@ test('todo-compile-885 2.1: the side keys family\'s send refuses past the 64 sta
     // A device in group 10, whose partner group 2 holds unit A's 53 codes of two forms; group 8's partner holds none.
     assert.deepEqual([0, 2].map((group) => irGroups(a)![group]!.addresses.filter((one) => irGroupCount(a, one) === 2).length), [0, 53]);
     assert.throws(() => send(a, 10), /group 2 holds 53 toggling codes/);
+  });
+
+test('todo-compile-885 2.2 and 2.3: the side keys family spells a power step with the device\'s delay between devices in front and a quantity of 1, 500 ms where none is stated, 50 ms for 0, and refuses past 100 tenths',
+  () => {
+    const step = (extra: Partial<ComposeDevice> = {}) => SIDE_KEYS_SENDS.powerStep!({ label: 'Probe', commands: [], ...extra });
+    assert.deepEqual(step(), { leadInUs: 500000, quantity: 1 });
+    assert.deepEqual(step({ interDeviceDelay: 8 }), { leadInUs: 800000, quantity: 1 });
+    // 0 is no silence, a shape no arch 8 record has; the 50 ms every code with a held block opens with stands in.
+    assert.deepEqual(step({ interDeviceDelay: 0 }), { leadInUs: 50000, quantity: 1 });
+    assert.deepEqual(step({ interDeviceDelay: 100 }), { leadInUs: 10000000, quantity: 1 });
+    // The inter key delay is not the power send's quantity here, whatever it states.
+    assert.deepEqual(step({ interKeyDelay: 5 }), { leadInUs: 500000, quantity: 1 });
+    assert.throws(() => step({ interDeviceDelay: 101 }), /101 tenths is not composed for the Harmony 880 and 885/);
+    assert.throws(() => step({ interDeviceDelay: 2.5 }), /2.5 tenths is not composed/);
   });

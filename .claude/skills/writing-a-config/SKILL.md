@@ -65,7 +65,7 @@ checklist that argues each.
 | a toggling code's record holds two groups, the code as stated and then with its toggle bit flipped | the firmware flips one bit per infrared group on each send and plays the first group while it is set, read on the Harmony 650 and the Harmony One, and on arch 8 (Harmony 880 and 885) with eight bits, `tests/test_harmony_885_infrared.py`; a release goes in the record's third pointer as its own block. Section 365 |
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device; on arch 8 (Harmony 880 and 885) the PWM rounds to 250 ns, so for a carrier in whole hundreds of hertz from 16 to 100 kHz either plays the same there |
 | on arch 8 (Harmony 880 and 885) the player reads a record through its own start | keep the own start exact, one or two pointer groups, at most 256 records a group, and a carrier from about 15.6 kHz up, since nothing clamps it; end every once and held block with a `0x0001` word, where a released key stops, and write no word whose duration bits are 0 to 5 other than the bare `0x0000` and `0x0001`, which plays as about 65.5 ms. Groups 8 and up toggle with groups 0 and up. `tests/test_harmony_885_infrared.py` |
-| on arch 8 (Harmony 880 and 885) the codes a switch sends open with a silence of the device's own, inferred to be the delay between devices | so changing it rewrites each such record's opening words, a length change through `relocate.ts`, and a device composed without it switches back to back. The silence holds every later code, to every device. `tests/test_harmony_885_delay.py` |
+| on arch 8 (Harmony 880 and 885) the codes a switch sends open with a silence of the device's own, inferred to be the delay between devices | so changing it rewrites each such record's opening words, a length change through `relocate.ts`, and a device composed without it switches back to back. The silence holds every later code, to every device; since `todo-compile-885.md` 2.3 the side keys family composes this silence in front of both power records of every device it composes, the long press version included, `SendShape.powerStep`; its other page keys still send the 50 ms form, 2.9. `tests/test_harmony_885_delay.py`, `packages/codec/test/sidekeysdevice.test.ts` |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |
 | on arch 8 (Harmony 880 and 885) the screen language is eleven opcodes and the end | 22 and 23 do not exist and any other byte ends a page silently; 21 inverts and carries no address; keep fills and inverts inside 128 by 160 and never a width of 0, since the fill clips only at `160 - x` and a 0 runs 256 pixels; the bytes after a switch are its default arm; a text byte is one code, with no wide code. `tests/test_harmony_885_screens.py` |
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
@@ -239,8 +239,10 @@ checklist that argues each.
   zero mark as one microsecond must not do it there. `reference/infrared/sending.md`, "How the Harmony 880 and
   885 play a record".
 * **On arch 8 the delay between devices is, by inference, the codes' opening silence**, `reference/infrared/sending.md`, "The
-  delay between devices on the Harmony 880 and 885": changing it is a relocation, and `composeDevice` gives a
-  power code no lead.
+  delay between devices on the Harmony 880 and 885": changing it is a relocation. A power step composed for these
+  remotes opens with the device's `interDeviceDelay` and is sent at a quantity of 1, as their compiles spell it, the
+  long press version included, `SendShape.powerStep` in `families/side-keys/sends.ts`, `todo-compile-885.md` 2.3;
+  `composeDevice` still gives a Harmony One's power step no lead, which its compiles do carry.
 * **A carrier period is truncated, not rounded**, per record.
 * **A frame can be rebuilt; its tail cannot be copied from a sibling**, which may carry the sibling's
   second command, `reference/infrared/families.md`. 62<!--fact:protocol_tails_all--> of the rhythm

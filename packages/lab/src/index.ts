@@ -1675,10 +1675,21 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // writer stamped and wrote it (the lab's work folder, journals beside it), and read back once.
   h885_b_written_2_1: 'h885-a-plus-sony-ht-to-write.bin',
   h885_b_after_2_1_config: '20261107T1505Z-h885-b-after-2-1-config.bin',
+  // B's region read before 2.3's write, the compare base for every write to B from then on.
+  h885_b_after_2_1_region: '20261107T154934Z-h885-b-after-2.1-region-region-0x20000-0x1d0000.bin',
+  // Unit B after todo-compile-885.md 2.3: the composed file as the writer stamped and wrote it (writes/2.3/, journals
+  // beside it), read back once, and data memory 0x100 to 0x10F read once after the restart, as text.
+  h885_b_written_2_3: 'h885-a-plus-sony-ht-2-3-to-write.bin',
+  h885_b_after_2_3_config: '20261107T1555Z-h885-b-after-2-3-config-config.bin',
+  h885_b_clock_after_2_3: '20261107T1552Z-h885-b-clock-after-2-3.txt',
   // todo-compile-885.md 2.1: the first catalogue device composed onto unit A's configuration, the Sony DAV-C540 as
   // `Sony HT`, by `compose-device.ts` and stamped by it, in the lab's work folder. The file written is a copy of
   // it, since the writer stamps over its input. `packages/codec/test/sidekeysdevice.test.ts` composes it again.
   h885_composed_2_1: 'h885-a-plus-sony-ht.bin',
+  // todo-compile-885.md 2.2 and 2.3: the same device composed again, its power step now opening with its delay
+  // between devices and sent at a quantity of 1, by `compose-device.ts` and stamped by it, in the lab's work folder
+  // `writes/2.3/` with a copy to write beside it. `sidekeysdevice.test.ts` composes it again.
+  h885_composed_2_3: 'h885-a-plus-sony-ht-2-3.bin',
   // The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: `watch-keys.ts` polling data memory
   // `0x295` (the key held) and `0x3A1` (the last key pressed) while keys were pressed by hand, as text. Unit A
   // before its key contacts were cleaned, A opened and pressed freely, A's run through every key in a set order,
@@ -1836,7 +1847,11 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // was compiled to, so it is counted in no corpus total.
     'h885_composed_2_1',
     // The composed configuration of 2.1 as written to B and read back: h885_composed_2_1 restamped.
-    'h885_b_written_2_1', 'h885_b_after_2_1_config'];
+    'h885_b_written_2_1', 'h885_b_after_2_1_config', 'h885_b_after_2_1_region',
+    // 2.3's composition as written to B and read back: h885_composed_2_3 restamped.
+    'h885_b_written_2_3', 'h885_b_after_2_3_config',
+    // 2.3's composition onto unit A's configuration, counted nowhere for 2.1's reason.
+    'h885_composed_2_3'];
 
 const cache = new Map<string, string[]>();
 

@@ -310,11 +310,17 @@ PINS = {
         'b06fd65bd1c63cfe be25bd1990b96158 c1a59489792d89fb d3a0c75816f42173 d7d1d08b2dbc4a26 '
         'd88be8ff30d1fe84 e07a5015c307ff1b eba99fab624d83e9'),
     ('bench a', 'PVR', 1): (0, ''),
-    ('bench a', 'Pwr', 34): (34, '73ce20582349375e'),
+    # Unit A's fifth device. The name reader took its name from the mode's top row and printed 'Pwr' until it
+    # was corrected on the 885 branch to read the device list's own label: Cd-speler, as
+    # packages/codec/test/arch8devicelist.test.ts argues. The count and the matching codeset are unchanged,
+    # since they come from the codes and not from the name.
+    ('bench a', 'Cd-speler', 34): (34, '73ce20582349375e'),
     ('bench a', 'Tv', 59): (59, '50aceab743e77976 78ac52739d3b8828'),
     ('bench a', 'old_media_Center', 54): (54,
         '4d7728a565bd1858 74551a1b041496e2 98e297c230c32e3d fa5890fb5dc0da01 fb3fd3a51475ec1d'),
-    ('bench b', '', 34): (34, '73ce20582349375e'),
+    # Unit B's third device, the same name and codeset as unit A's Cd-speler. B's file states no name for it,
+    # so the old reader gave an empty one; the device list draws it, and the corrected reader reads that.
+    ('bench b', 'Cd-speler', 34): (34, '73ce20582349375e'),
     ('bench b', 'CEC AMP', 9): (9, 'e941d9659ae6db3a'),
     ('bench b', 'DVD_speler', 6): (6,
         '057d699814967f41 0f8fed4a1f64ad99 1c62fcd39901e42b 260818f2d3c00212 4ab96b16e32ec585 '
@@ -589,12 +595,17 @@ class ThePopulation(unittest.TestCase):
         self.assertEqual(sizes, {1: 4871})
 
     def test_the_devices_with_no_decoded_number(self):
-        """Their frames decode to nothing `irFrame` reads, so none of their bindings carries a name."""
+        """Their frames decode to nothing `irFrame` reads, so none of their bindings carries a name.
+
+        Unit B's entry read as an empty name until the device name reader was corrected on the 885 branch. It is
+        Lichtcont.., the label the device list draws, whose two dots are the screen's own elision of a name too
+        long for its cell (`packages/codec/test/arch8devicelist.test.ts`). It has no decoded number either way.
+        """
         files, _ = probe()
         empty = sorted({(i, g['label']) for name, _, i in SKIN_15 + SKIN_17 + BENCH
                         for g in files[name]['groups'] if not g['numbers']})
         self.assertEqual(empty, [
-            ('bench a', 'Media_Center-pc'), ('bench b', ''), ('bench b', 'SAT_ontvanger'),
+            ('bench a', 'Media_Center-pc'), ('bench b', 'Lichtcont..'), ('bench b', 'SAT_ontvanger'),
             ('guyman70718', 'Media_Center_PC'), ('guyman70718', 'Media_Center_PC_2'),
         ])
 

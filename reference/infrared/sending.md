@@ -94,8 +94,8 @@ milliseconds,[^s305] and the compiler then fills that step's record with frames 
 
 **The rule: a held power press holds as many frames as start inside the hold, on the frame lengths the
 protocol definition states**, so the count is `ceil(hold / length)`.[^s308] Every step of a power action
-list is a record of its own, with no lead in and no held block, holding what an ordinary press sends; the
-ordinary press of the same command keeps its own record. A frame's stated length is its segment's
+list is a record of its own, with no held block and, on the Harmony 650 and 700, no lead in, holding what an
+ordinary press sends; the ordinary press of the same command keeps its own record. A frame's stated length is its segment's
 `TotalLength`, or else the segment's header, trailer and `NumberOfBits` times the mean of its two cell
 lengths; the frames are the definition's `KeyCode`, its `Start` segments and then its `Repeat` for as long
 as needed, an opening segment with no payload joining the frame after it. A frame is what lies between
@@ -116,6 +116,16 @@ lead in, the frames carrying the code's first slot once and the second slot's cy
 followed by the gap the press gives it, the last gap getting back the microsecond the press ends in. 26 of
 27 rebuild word for word, on the Harmony 650 and 700 only; `longPressBlockOfStatedCode` assumes the
 press's frames are the code's walk in order.
+
+**On the Harmony 880 and 885 the long press version opens with the device's delay between devices**, as every
+code a switch of a device sends there does, [below](#the-delay-between-devices-on-the-harmony-880-and-885), and is
+otherwise the same frames: a Panasonic television's power on and off, held a second each in the catalogue, are
+seven frames led by its 800 ms, and the catalogue's codes cycled to the count with that silence in front rebuild
+both records word for word.[^t-885-power] Of the eight devices of those configurations the catalogue names, this
+is the one whose entry holds the key, and its two records are the only power records of seven frames, so this
+rests on two records of one configuration.[^t-885-power] Two other devices' power records are six frames, a
+LaserDisc player's, which the catalogue rebuilds at its ordinary press, and a DVD player's the catalogue does not
+name, where nothing explains the count.[^unchecked]
 
 ## How Logitech's compiler spells a block
 
@@ -178,6 +188,19 @@ the on transition ends in are not composed.[^s320]
 * **The three delays are the catalogue entry's**, in tenths of a second: the `PowerOnDelay` variable's
   first value is `powerOnDelay`, the `InterDeviceDelay` variable's is `interDeviceDelay`, and the `0x7C`
   after a power step's send is `interKeyDelay`, on every device instance.[^s320]
+
+**The Harmony 880 and 885's compiles send power at a device's ordinary quantity instead**, measured over the 44
+power variables of eight configurations of those two models, five 880s' and three 885s', four of them copies of
+one account, so 28 distinct devices: the `0x7C` after each power send is 0, 1 or 2, on 26, 60 and 2 of the 88
+transitions, and on every one it is the most common quantity of the device's other sends of a record with no held
+block, 88 of 88.[^t-885-power] By model, per power variable: on the 880s' 1 on 13 of 24, 0 on 10 and 2 on 1, on the
+885s' 1 on 17 of 20 and 0 on 3.[^t-885-power] It is not a function of the code: one DVD player's identical power
+records are sent at 1 in one configuration and at 0 in another.[^t-885-power] Of the eight devices of these
+configurations the catalogue names, the two whose entry states an inter key delay of 500 ms, a VCR and a
+LaserDisc player of one configuration, are sent at 1, and those two are all the evidence that the power send does
+not follow the inter key delay here.[^t-885-power] What chooses 0 or 2 is not read.[^unchecked] The record each transition sends is one block,
+never with a held part, 88 of 88, a device's on and off records open with the same silence, and every on
+transition ends in the device's power on delay, 44 of 44, where no off transition has a wait.[^t-885-power]
 
 ## The carrier
 
@@ -251,6 +274,20 @@ device; a `0x7C` holds only its own device.[^t-885-delay] Each silence is spelle
 Harmony One's closure and this structure; no compile of an account with known delays and no timing on a unit
 confirms it here, and why four devices carry 50 ms is not known.[^unchecked]
 
+**A power code is that silence and the press, as one block.** Every record a power transition sends in the
+eight configurations of the Harmony 880 and 885 read with their power variables, 88 transitions of 44 power
+variables, 28 distinct devices since four of the configurations are copies of one account, is one block with no
+held part, and a device's on and off records open with the same silence: 50 ms on 3 variables and 1 distinct
+device, 200 ms on 3 and 3, 500 ms on 34 and 20, 800 ms on 1 and 1, a second on 3 and 3.[^t-885-power] **The silence
+is the device's, not the power key's**: on the codes of the 41 power variables whose power code opens with more
+than 50 ms, every code with no held part opens with that device's silence, 1375 of 1375, every code with a held part
+opens with 50 ms, 1140 of 1140, and no held or release part opens with a silence, copies counted each
+time.[^t-885-power] With
+each device's own silence put in front, the catalogue's power codes rebuild Logitech's records word for word on
+seven of the eight devices of those configurations the catalogue names, 14 transitions, the long press version
+among them; the eighth's records differ in the code's bits alone.[^t-885-power] That closes how the silence is
+spelled and placed, not what value an account gives it, which stays inferred.[^unchecked]
+
 [^s258]: Measured in configurations. [Section 258](../../docs/findings.md#s258)
 [^s127]: Measured in configurations. [Section 127](../../docs/findings.md#s127)
 [^s348]: Measured in configurations. [Section 348](../../docs/findings.md#s348)
@@ -276,4 +313,5 @@ confirms it here, and why four devices carry 50 ms is not known.[^unchecked]
 [^t-885-infrared-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_infrared.py)
 [^t-885-delay]: Read in the firmware. [The test](../../tests/test_harmony_885_delay.py)
 [^t-885-delay-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_delay.py)
+[^t-885-power]: Measured in configurations. [The test](../../packages/codec/test/sidekeysdevice.test.ts)
 [^t-touch-engine]: Read in the firmware. [The test](../../tests/test_harmony_touch_devices.py)

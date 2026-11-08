@@ -51,7 +51,8 @@ export const SIDE_KEYS: Family = {
   // calls its command's send list with nothing in front, on every arch 8 configuration read.
   traits: { screenItemsBeep: false },
   // No choice of ours yet: a device's power on delay is the catalogue's, and the delay between devices lives in its
-  // codes' opening silence, which is not composed yet, todo-compile-885.md 2.3.
+  // power codes' opening silence, the catalogue's too, `SIDE_KEYS_SENDS.powerStep`, todo-compile-885.md 2.3; the
+  // default for a device that states none is a constant beside it, since nothing but the send asks for it.
   choices: {},
   // A getter rather than a refusing object: the one caller iterates the table, and iterating asks for a symbol,
   // which `refusing` answers as absent, so the refusal would come out as a type error and not as this reason.
@@ -86,6 +87,7 @@ export {
   SIDE_KEYS_SEPARATOR_X, SIDE_KEYS_TITLE_XY, SIDE_KEYS_TOP_ROWS, SIDE_KEYS_TOTAL_X, sideKeysChrome, sideKeysCounter,
 } from './pages.ts';
 export {
-  SIDE_KEYS_GROUPS, SIDE_KEYS_LONGEST_WAIT, SIDE_KEYS_NAME, SIDE_KEYS_SENDS, SIDE_KEYS_SHARED_TOGGLE_FROM,
+  SIDE_KEYS_GROUPS, SIDE_KEYS_INTER_DEVICE_DEFAULT, SIDE_KEYS_LONGEST_INTER_DEVICE, SIDE_KEYS_LONGEST_WAIT,
+  SIDE_KEYS_NAME, SIDE_KEYS_POWER_QUANTITY, SIDE_KEYS_SENDS, SIDE_KEYS_SHARED_TOGGLE_FROM, SIDE_KEYS_SHORTEST_LEAD_US,
   SIDE_KEYS_STATE_BYTES,
 } from './sends.ts';

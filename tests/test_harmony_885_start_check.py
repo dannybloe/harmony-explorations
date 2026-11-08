@@ -553,18 +553,21 @@ class TheFirstComposedConfigurationPassesTheCheck(unittest.TestCase):
     derivation at both ends. What this adds is the other end: the check as the 885's application performs it,
     with the cookie, the marker, the end marker and the seeds decoded out of the code, so a configuration of
     ours that this passes is one the remote runs rather than replaces with its built in one at start. The
-    control is the file with one byte of its body changed, which the same check must refuse.
+    control is the file with one byte of its body changed, which the same check must refuse. 2.3's file, the
+    same device with its power step opening with its delay between devices, is checked the same way.
     """
 
     def test_the_composed_file_passes_and_a_changed_byte_does_not(self):
-        lab.require('h885_composed_2_1')
+        lab.require('h885_composed_2_1', 'h885_composed_2_3')
         check = CheckAsRead(application())
-        payload = bytearray(lab.load('h885_composed_2_1'))
-        verdict, end = check(Flash().place(USER_BASE, bytes(payload)), USER_BASE)
-        self.assertEqual(verdict, 'pass')
-        self.assertEqual(len(payload), end + 4 - USER_BASE)
-        payload[0x1000] ^= 0x01
-        self.assertEqual(check(Flash().place(USER_BASE, bytes(payload)), USER_BASE)[0], 'checksum')
+        for name in ('h885_composed_2_1', 'h885_composed_2_3'):
+            with self.subTest(name):
+                payload = bytearray(lab.load(name))
+                verdict, end = check(Flash().place(USER_BASE, bytes(payload)), USER_BASE)
+                self.assertEqual(verdict, 'pass')
+                self.assertEqual(len(payload), end + 4 - USER_BASE)
+                payload[0x1000] ^= 0x01
+                self.assertEqual(check(Flash().place(USER_BASE, bytes(payload)), USER_BASE)[0], 'checksum')
 
 
 class TheBuildsAgree(unittest.TestCase):

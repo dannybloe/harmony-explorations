@@ -281,3 +281,28 @@ decided; B's own configuration stays in the lab backup. In order:
 Filed as `h885_b_written_2_1` and `h885_b_after_2_1_config`; `tests/test_harmony_885_first_config_write.py`.
 **B's region has not been read since**, so the next write to B starts with a region read as its compare base.
 
+## 8 November 2026: the Sony HT's power with its silence, on unit B
+
+`todo/todo-compile-885.md` 2.2 and 2.3, **unit B on the cable**. The file is 2.1's composition again with the
+Sony HT's two power records opening with 500 ms of silence and sent at a quantity of 1 (`h885_composed_2_3`).
+In order:
+
+1. **`read-region.ts` over `0x020000` to `0x1D0000`, once**: no window retried; 2.1's written file in its first
+   572238 bytes, and the region after 1.4 outside the nine sectors 2.1 erased. Filed as `h885_b_after_2_1_region`,
+   the compare base from here on.
+2. **The dry run**: the unit matched `h885_b`; seven blocks differ, `0x020000` and `0x050000` to `0x0A0000`, each
+   matched the region; the status read 0.
+3. **The commit**, both write flags: the status 0; the drop; seven sectors erased, each staying inside its own
+   block, and written; one window asked for again during a block compare; the whole configuration read back
+   identical to the file, one window asked for again; the status 0; `E1 02`.
+4. **Back on the bus by itself**; data memory `0x100`: the status 0, the clock `16:51:19` against the stamp
+   `16:51:12`.
+5. **`read-config.ts`**: 572270 bytes, six windows retried, identical to the written file.
+6. **At the bench, with the infrared monitor**: on the Sony HT page, Vol + and Power pressed in turn, twice. Each
+   press was heard as three frames; Power as the Sony HT's power code, which the monitor matched against
+   Logitech's own compile of that device. The half second before Power was not observable at the bench: the
+   monitor times a frame from the one before it, not from the key press. The screens were not reported changed.
+
+Filed as `h885_b_written_2_3`, `h885_b_after_2_3_config` and `h885_b_clock_after_2_3`;
+`tests/test_harmony_885_first_config_write.py`.
+
