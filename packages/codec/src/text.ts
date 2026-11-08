@@ -47,6 +47,8 @@ import type { Alphabet } from './alphabets.ts';
 import {
   LETTERING_CHARACTERS, LETTERING_FACES, OXANIUM_WEIGHTS, coverageStructure, letterForm, letterStructure, maskForm,
 } from './lettering.ts';
+import { inflateZlib } from './deflate.ts';
+import { OXANIUM_ALPHABET_TABLES } from './oxaniumalphabet.ts';
 
 /**
  * The glyph code a font set starts at when the codes are ASCII rather than assigned.
@@ -396,21 +398,42 @@ function lettersInks(
   return { shadowed: shadowed ?? -1, plain: plain ?? -1 };
 }
 
+/** Our own letters' alphabet, with the faces and weights that draw each form, `oxaniumAlphabet`. */
+export type OxaniumAlphabet = LetteredAlphabet & { drawnIn: Readonly<Record<string, readonly string[]>> };
+
 /**
  * Our own letters' alphabet, `lettering.ts`: every face in every weight and both colourings, made from the
  * masks the letters are drawn from rather than seeded from a configuration, so it has no `codes` to fall
  * back on. A form two characters share carries both, as a seeded alphabet's shape does. The one bit letters
  * are named by form and the blended ones by structure, both made from the masks and the coverage alone, so
  * the alphabet is the same whatever inks a configuration chose; and every weight is in it, so the same
- * whatever weights, `todo-compile-650.md` 10.8.5. Built once, on first use.
+ * whatever weights, `todo-compile-650.md` 10.8.5.
  *
  * `drawnIn` says which faces draw a form, `F14/SemiBold` and so on, which is how a configuration's sets are
  * known as our faces in their weights, `oxaniumFacesOf`.
+ *
+ * **Read from the generated module `oxaniumalphabet.ts`, not drawn from the font**, a fix to `todo.md` 7.3.5.
+ * That step put Oxanium's files behind a resource only the Node entry supplies, and `characterMap` tries this
+ * alphabet on every configuration, Logitech's included, so every reader that names a device refused through the
+ * main entry: `devices` and `inventory` threw `ResourceError` in FreeHarmony, which imports the main entry alone.
+ * The tables are what `oxaniumAlphabetFromFont` computes, written once by `bin/oxaniumalphabet.ts`, and
+ * `test/oxaniumalphabet.test.ts` computes them from the font again and holds the module equal to them, so the
+ * copy cannot drift. Reading them is also cheaper than drawing them: about forty milliseconds of inflating and
+ * parsing against a second and more of rendering every face in every weight. Decoded once, on first use.
  */
-let oxanium: (LetteredAlphabet & { drawnIn: Readonly<Record<string, readonly string[]>> }) | undefined;
+let oxanium: OxaniumAlphabet | undefined;
 
-export function oxaniumAlphabet(): LetteredAlphabet & { drawnIn: Readonly<Record<string, readonly string[]>> } {
-  if (oxanium !== undefined) return oxanium;
+export function oxaniumAlphabet(): OxaniumAlphabet {
+  oxanium ??= unpackOxaniumAlphabet(OXANIUM_ALPHABET_TABLES);
+  return oxanium;
+}
+
+/**
+ * The same alphabet computed from the font itself, which needs Oxanium supplied, `resources.ts`. What the
+ * generator writes into `oxaniumalphabet.ts` and what its test holds the module to; a reader never calls it.
+ * Not kept, since each call draws every face in every weight again, and only those two ask.
+ */
+export function oxaniumAlphabetFromFont(): OxaniumAlphabet {
   const shapes: Record<string, string> = {};
   const structures: Record<string, string> = {};
   const add = (table: Record<string, string>, key: string, ch: string): void => {
@@ -435,8 +458,45 @@ export function oxaniumAlphabet(): LetteredAlphabet & { drawnIn: Readonly<Record
       }
     }
   }
-  oxanium = { name: 'oxanium', container: 'packages/codec/src/typeface.ts', shapes, forms, structures, drawnIn };
-  return oxanium;
+  return oxaniumAlphabetOf({ forms, structures, drawnIn }, shapes);
+}
+
+/** The three tables `oxaniumalphabet.ts` carries; the alphabet's name, container and empty `shapes` are fixed. */
+interface OxaniumTables {
+  readonly forms: Readonly<Record<string, string>>;
+  readonly structures: Readonly<Record<string, string>>;
+  readonly drawnIn: Readonly<Record<string, readonly string[]>>;
+}
+
+function oxaniumAlphabetOf(tables: OxaniumTables, shapes: Record<string, string> = {}): OxaniumAlphabet {
+  return { name: 'oxanium', container: 'packages/codec/src/typeface.ts', shapes, ...tables };
+}
+
+/**
+ * The alphabet's tables as `oxaniumalphabet.ts` carries them: their JSON as a zlib stream, `deflate`, written in
+ * base64. **Compressed because the tables are 4.2 MB of JSON**, every form and structure a string of rows, which
+ * as literals would be the largest file in the repository by far; deflated they are under 0.4 MB of base64 and
+ * decode in about forty milliseconds. Any zlib stream reads back the same, so the generator hands in Node's at
+ * its strongest level rather than the loader's, `resources.ts`, which is Node's at its defaults and a third
+ * larger here. The encoder sits beside its decoder, `unpackOxaniumAlphabet`, and only the generator calls it.
+ */
+export function packOxaniumAlphabet(alphabet: OxaniumAlphabet, deflate: (bytes: Uint8Array) => Uint8Array): string {
+  const { forms = {}, structures = {}, drawnIn } = alphabet;
+  const json = new TextEncoder().encode(JSON.stringify({ forms, structures, drawnIn } satisfies OxaniumTables));
+  const deflated = deflate(json);
+  // `btoa` takes a string of byte values, built in slices so no single call spreads half a megabyte of arguments.
+  let binary = '';
+  for (let k = 0; k < deflated.length; k += 0x8000) binary += String.fromCharCode(...deflated.subarray(k, k + 0x8000));
+  return btoa(binary);
+}
+
+/** The alphabet back from `packOxaniumAlphabet`'s text, with nothing supplied: the inflate is our own, `deflate.ts`. */
+export function unpackOxaniumAlphabet(packed: string): OxaniumAlphabet {
+  const binary = atob(packed);
+  const bytes = new Uint8Array(binary.length);
+  for (let k = 0; k < binary.length; k += 1) bytes[k] = binary.charCodeAt(k);
+  const tables = JSON.parse(new TextDecoder().decode(inflateZlib(bytes))) as OxaniumTables;
+  return oxaniumAlphabetOf(tables);
 }
 
 /** The character a code stands for, or `undefined` when nothing settles it. */

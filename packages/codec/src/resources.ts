@@ -9,6 +9,12 @@
  * `supplyResources`, once and before the first use, since a parsed font is kept. A builder that needs one nobody
  * supplied refuses naming it, `ResourceError`, at the first letter, icon or picture it draws, never at load.
  *
+ * **Reading a configuration asks for none of them.** Our letters' alphabet, which `characterMap` tries on every
+ * configuration, is generated data, `oxaniumalphabet.ts`, rather than drawn from Oxanium where it is read; until
+ * that fix to 7.3.5 every reader that names a device refused through the main entry. `test/mainentryreads.test.ts`
+ * reads every family with nothing supplied. What still asks is drawing and encoding: building letters, icons and
+ * pictures, the checks that rebuild a built file to attribute it, and a rendered screen written as a PNG.
+ *
  * **Why these five are supplied and not written here**, each for its own reason:
  *
  * * **The fonts and the icon list are files.** The core reads no disk, and a font's bytes are not source; a bundler

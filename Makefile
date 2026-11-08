@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes key-reader remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -77,6 +77,7 @@ help:
 	@echo "composecensus  which archive commands the catalogue composer writes, and why it refuses the rest"
 	@echo "devices      which devices a config drives, and what each one is called"
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
+	@echo "oxanium-alphabet  check our letters' alphabet against the font; OXANIUM_ALPHABET_ARGS=--write"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
 	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
 	@echo "test-partial the suite against a lab holding one sample: no test may pass partially"
@@ -418,6 +419,12 @@ devices:
 # Not part of `all`: it needs a lab, and the check it would run there is a test already.
 alphabets:
 	@node packages/codec/bin/alphabets.ts $(ALPHABETS_ARGS)
+
+# Our own letters' alphabet as generated data, src/oxaniumalphabet.ts, so a configuration is read with no
+# font supplied. Rerun with --write after a change to the faces, the weights or how a form is read; the
+# check it runs is a test already, test/oxaniumalphabet.test.ts, so it is not part of `all`. No lab.
+oxanium-alphabet:
+	@node packages/codec/bin/oxaniumalphabet.ts $(OXANIUM_ALPHABET_ARGS)
 
 # The button mapping experiment: poll the keypad scanner's own variable over USB while a human
 # presses every key. Read only, and long running like `bench`, so it is not part of `all`.

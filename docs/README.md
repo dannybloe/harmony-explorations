@@ -323,7 +323,11 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 the CatalogueSource a builder is handed in place of a path, and
                                 resources.node.ts, which supplies what src/resources.ts asks the
                                 loader for, the fonts, the icon list, a PNG's deflate and SHA-256.
-                                Inflating is our own, beside deflate.ts, test/inflate.test.ts
+                                Inflating is our own, beside deflate.ts, test/inflate.test.ts.
+                                Reading asks for none of them: our letters' alphabet is generated
+                                data, src/oxaniumalphabet.ts, held to the font by
+                                test/oxaniumalphabet.test.ts, and test/mainentryreads.test.ts
+                                reads every family through the main entry with nothing supplied
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when
@@ -937,6 +941,10 @@ make render        draw a config's screens as PNG files, into the lab and never 
 make activities    which activity each key starts and which drawn label is its name, per model
 make devices       which devices a config drives, what each is called and which route named it
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
+make oxanium-alphabet
+                   check src/oxaniumalphabet.ts, our own letters' alphabet computed from Oxanium and
+                   written as data so the main entry reads a configuration with no font supplied, a
+                   fix to todo.md 7.3.5; OXANIUM_ALPHABET_ARGS=--write regenerates it. No lab
 make remotes       list attached remotes, enumeration only, opens nothing. Four buckets, and the
                    three extra ones exist because each was once invisible or once wrongly claimed. A
                    device in a Microchip bootloader is reported separately, which is what a Harmony
