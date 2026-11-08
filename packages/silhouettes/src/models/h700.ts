@@ -16,7 +16,7 @@ export const H700: Model = {
   ...H600,
   id: 'h700',
   label: 'Harmony 700',
-  // MODELS_BY_SKIN in packages/usb/src/models.ts: the model and its EMEA twin.
+  // MODELS_BY_SKIN in packages/base/src/models.ts: the model and its EMEA twin.
   skins: [66, 69],
   nameplate: { ...H600.nameplate!, text: 'Harmony 700' },
 };

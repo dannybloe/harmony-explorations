@@ -8,7 +8,7 @@
  * that family's defaults, and favourite channels, which only Logitech's service is given so far, since no
  * composer of ours writes one. **What it never holds is what the model can do**: how many devices it
  * takes, its screen, which family builds for it. Those come from the model's definition,
- * `packages/usb/src/models.ts`, documented in `reference/remotes/`, so a recipe states a wish and the
+ * `packages/base/src/models.ts`, documented in `reference/remotes/`, so a recipe states a wish and the
  * model's definition says whether it can be granted.
  *
  * The model is named the way FreeHarmony names one, `RemoteModel`: Logitech's name, "Harmony 650", and
@@ -19,7 +19,7 @@
  * named the way the catalogue names them and the choices ones the family makes is for the steps that use
  * them, which already refuse each.
  */
-import type { Model } from '@harmony/usb/models';
+import type { Model } from '@harmony/base/models';
 import { ACTIVITY_ROLE_NAMES, type ActivityRoleName } from '../activityroles.ts';
 import type { Family } from '../families/family.ts';
 import { chooseByModel, NoFamilyError, type ModelChoice } from '../families/registry.ts';

@@ -7,7 +7,7 @@ and two stored copies of its firmware. This folder describes that design once, s
 share is stated in one place and named as the platform's.
 
 **Architecture 9** is the platform's number in concordance's table, in Logitech's own client and in this
-project.[^x-concordance][^s197] This library's model table, `MODELS_BY_SKIN` in `packages/usb/src/models.ts`,
+project.[^x-concordance][^s197] This library's model table, `MODELS_BY_SKIN` in `packages/base/src/models.ts`,
 places the seven models above on it, naming each skin as Logitech's client does;[^s207] Logitech's own
 protocol templates confirm one of them, the 510, and for the others the placement is not checked against a
 remote or a specification.[^unchecked] **Two of them have been measured**: the Harmony 525,[^s76] whose
@@ -39,7 +39,7 @@ record.[^x-concordance]
 | 67 | Harmony 515 | monochrome | 5 | none | 3.4.0 |
 | 68 | Harmony 510 | monochrome | 5 | none | 3.4.0 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 22 is measured in a remote's version block and in its firmware's literals,[^s76][^s57] and skin 67 in a

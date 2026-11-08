@@ -20,7 +20,7 @@ loses its application when safe mode is entered,[^s118] [firmware.md](firmware.m
 |---|---|---|---|---|---|---|
 | 22 | Harmony 525 | Harmony 520 | 9 | monochrome | no | 3.0 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 22 is measured in a remote's version block[^s76] and stated by its firmware's own
@@ -92,4 +92,4 @@ The architecture folder: [harmony-5xx](../../architectures/harmony-5xx/README.md
 [^s148]: Measured in configurations. [Section 148](../../../docs/findings.md#s148)
 [^s89]: Read in the firmware. [Section 89](../../../docs/findings.md#s89)
 [^s89b]: Measured on a unit. [Section 89](../../../docs/findings.md#s89)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)

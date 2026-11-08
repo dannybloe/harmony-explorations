@@ -20,7 +20,7 @@ the 600's face[^unchecked], the same 128 by 128 raster[^s129], the 700's colour,
 | 72 | Harmony 650 | Harmony 650 EMEA | 14 | colour | no | 0.2 |
 | 74 | Harmony 650 EMEA | Harmony 650 | 14 | colour | no | 0.2 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 72 is the 650's own. Its 0.2 firmware reports it as a constant of its own in the version

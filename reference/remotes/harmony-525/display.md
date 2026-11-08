@@ -11,8 +11,8 @@ commands, and the on remote help.[^x-manual]
 |---|---|---|
 | raster | 96 by 64 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, measured from the configurations' full screen pictures |
 | raster on the drawing | 96 by 64 | `h525.ts`, which must agree with the row above |
-| panel | monochrome | `packages/usb/src/models.ts` |
-| touch | no | `packages/usb/src/models.ts`, and `touch` on the drawing's screen is no |
+| panel | monochrome | `packages/base/src/models.ts` |
+| touch | no | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |
 
 Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->

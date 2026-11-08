@@ -1,0 +1,17 @@
+{
+  "name": "@harmony/base",
+  "version": "0.0.0",
+  "private": true,
+  "description": "What every other package needs and nothing native: the model table, the trailer checksum and the key codes",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./models": "./src/models.ts",
+    "./trailer": "./src/trailer.ts",
+    "./keys": "./src/keys.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  }
+}

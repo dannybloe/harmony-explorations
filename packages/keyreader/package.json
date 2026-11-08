@@ -9,6 +9,7 @@
     "typecheck": "tsc --build"
   },
   "devDependencies": {
+    "@harmony/base": "workspace:*",
     "@harmony/silhouettes": "workspace:*",
     "@harmony/usb": "workspace:*"
   }

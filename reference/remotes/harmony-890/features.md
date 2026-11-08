@@ -11,7 +11,7 @@ What a Harmony 890 or 895 can be set up to do, as far as its configurations and 
 | 23 | 15 | 16 | yes | yes | no | no |
 | 40 | 15 | 16 | yes | yes | yes | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **At most 15 devices** is the community comparison table's figure for both skins.[^x-forum-table] No

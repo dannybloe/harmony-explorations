@@ -11,7 +11,7 @@ Logitech rather than from the remote, so the footnotes matter more here than on 
 | 72 | 8 | 23 | yes | yes | no | no |
 | 74 | 8 | 23 | yes | yes | no | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **Max devices** and **favourite channel buttons** are Logitech's service, `MaxDevicesPerAccount` and

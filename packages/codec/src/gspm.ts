@@ -23,7 +23,7 @@
  *
  * Accepts a bare blob or a raw flash dump with the blob somewhere inside it.
  */
-import { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum } from '@harmony/usb/trailer';
+import { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum } from '@harmony/base/trailer';
 
 import { ascii, bytesOf, indexOf, matchesAt, u16, u24, u32, u8, uint } from './bytes.ts';
 
@@ -125,15 +125,16 @@ export const MINIMUM_HEADER_LENGTH =
   SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * LONGEST_POINTER_TABLE + 5;
 
 /**
- * The trailer checksum lives in `packages/usb/src/trailer.ts` and is re-exported here unchanged, so
+ * The trailer checksum lives in `packages/base/src/trailer.ts` and is re-exported here unchanged, so
  * every importer of the codec keeps the names it had.
  *
  * **Moved rather than copied, for the file family's write rail**, `todo-compile-350.md` 1.6. That rail
  * refuses a container whose stored checksum does not recompute, and it has to compute it itself: a rail
- * that asks its caller whether the checksum is right is a rail the caller answers, section 225. The
- * codec depends on `@harmony/usb` and not the other way round, so the one copy had to move to the
- * package both can reach. The parse below still reads the stored word, and the derivation's argument
- * stays with the function.
+ * that asks its caller whether the checksum is right is a rail the caller answers, section 225. So the
+ * one copy has to sit where both the codec and `packages/usb` can reach it. It went into
+ * `packages/usb` first, which made the codec depend on the transport and its native module, and since
+ * `todo.md` 7.3.4 it is in `packages/base`, which both depend on and which depends on nothing. The parse
+ * below still reads the stored word, and the derivation's argument stays with the function.
  */
 export { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum };
 

@@ -21,6 +21,7 @@
     "typecheck": "tsc --build"
   },
   "dependencies": {
+    "@harmony/base": "workspace:*",
     "node-hid": "3.4.0"
   },
   "devDependencies": {

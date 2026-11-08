@@ -34,7 +34,7 @@ and `h700.ts` in `packages/silhouettes/src/models/` take it by reference and pri
 | 74 | Harmony 650 EMEA | colour | 8 | 23 | 0.2 |
 | 75 | Harmony 665 | colour | 10 | 23 | 0.2 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skins 71 and 72 are what a Harmony 600 and a Harmony 650 report[^s281], and 66 what a Harmony 700
@@ -146,7 +146,7 @@ service does[^s136]. So the figure was raised between the two editions, and a re
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
 [^s430]: Measured in configurations. [Section 430](../../../docs/findings.md#s430)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^s340]: Read in the firmware. [Section 340](../../../docs/findings.md#s340)
 [^s212]: Read in the firmware. [Section 212](../../../docs/findings.md#s212)
 [^s340b]: Measured on a unit. [Section 340](../../../docs/findings.md#s340)

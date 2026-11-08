@@ -242,7 +242,7 @@ class ProductTable(unittest.TestCase):
         self.assertEqual(len({p['SkinId'] for p in self.products}), 97)
 
     def test_the_table_agrees_with_our_own_model_figures(self):
-        """The device and favourite counts, which `packages/usb/src/models.ts` already carries.
+        """The device and favourite counts, which `packages/base/src/models.ts` already carries.
 
         Asserted here rather than assumed: section 136 adopted the vendor's device counts, and this is
         the reply that was adopted from. The favourite counts were in our table too and had never been

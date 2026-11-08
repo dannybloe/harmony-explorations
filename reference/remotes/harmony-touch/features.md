@@ -13,7 +13,7 @@ This said "Little of it is measured"<!--superseded--> before those syncs.
 |---|---|---|---|---|---|---|
 | 99 | no record | no record | no record | no record | no record | yes |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 `MODELS_BY_SKIN` has no record for skin 99, so every column but the last says so, deliberately: a record
@@ -226,7 +226,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 
 [^unchecked]: Not checked.
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^s292]: Stated by Logitech, by their service. [Section 292](../../../docs/findings.md#s292)
 [^s202]: Stated by Logitech, by their service. [Section 202](../../../docs/findings.md#s202)

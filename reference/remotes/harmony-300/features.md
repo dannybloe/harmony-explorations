@@ -14,7 +14,7 @@ Harmony 350, with eight devices and a long press, once one entry is added,
 | 78 | no record | no record | no record | no record | no record | no |
 | 79 | no record | no record | no record | no record | no record | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 `MODELS_BY_SKIN` has no record for skins 78 and 79, so every column but the last says so. **Long press**
@@ -68,7 +68,7 @@ sender as integers[^s265d]; how the number sender works is
 * Whether the Watch TV shortcut is an activity in the file.
 * Learning, and any setting.
 
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^s264]: Stated by Logitech, by their service. [Section 264](../../../docs/findings.md#s264)
 [^s265]: Stated by Logitech, by their service. [Section 265](../../../docs/findings.md#s265)

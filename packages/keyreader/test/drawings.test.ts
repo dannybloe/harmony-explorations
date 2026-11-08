@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MODELS } from '@harmony/silhouettes';
 import type { Key } from '@harmony/silhouettes';
-import { WATCH_BY_SKIN } from '@harmony/usb/keys';
+import { WATCH_BY_SKIN } from '@harmony/base/keys';
 import { OUT_DIR } from '../bin/build.ts';
 import { NOT_ASKED, WORDS, faceOrder, printedWord, wordsFor } from '../bin/drawings.ts';
 import { publishedModule } from './built.ts';

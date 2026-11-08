@@ -332,7 +332,7 @@ export interface Screen {
 export interface Model {
   readonly id: string;
   readonly label: string;
-  /** The skins this drawing serves, from `packages/usb/src/models.ts`. A regional alias is not the
+  /** The skins this drawing serves, from `packages/base/src/models.ts`. A regional alias is not the
    * same hardware: the two members of a 5xx pair differ by exactly the four teletext keys. */
   readonly skins: readonly number[];
   readonly architecture: number;

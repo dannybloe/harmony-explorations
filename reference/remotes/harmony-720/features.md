@@ -9,7 +9,7 @@ What a Harmony 720 can be set up to do, as far as its configuration and Logitech
 |---|---|---|---|---|---|---|
 | 44 | 12 | 24 | yes | yes | no | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **At most 12 devices** is Logitech's service's figure, three fewer than the 880's and 885's.[^s136]

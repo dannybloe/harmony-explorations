@@ -1,6 +1,6 @@
 /**
  * The default addresses `watch-keys.ts` watches, chosen without a remote. The tables themselves are
- * `packages/usb/src/keys.ts` and pinned in `keys.test.ts`; this file pins the choice made from `bcdDevice`.
+ * `packages/base/src/keys.ts` and pinned in `keys.test.ts`; this file pins the choice made from `bcdDevice`.
  *
  * What is pinned is the choice, not the addresses' truth: the arch 8 ones are read in the images and the
  * 885's measured on two units in `tests/test_harmony_885_keys.py`, and the others have their own readings

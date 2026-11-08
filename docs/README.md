@@ -160,7 +160,7 @@ docs/test-notes/                this project's own units, accounts and configura
                                 the reference
 docs/predictions/               predictions written down before a measurement, then scored
 reference/remotes/README.md     every model: a generated index of every skin with its record from
-                                `packages/usb/src/models.ts`, where each column comes from and what
+                                `packages/base/src/models.ts`, where each column comes from and what
                                 it is worth, the skins without a record, and the long press list.
                                 With reference/logitech/product-line.md (the models Logitech retired
                                 in 2025, and its catalogue) and reference/architectures/README.md
@@ -313,11 +313,18 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 separate locator on purpose: both make their tests skip when
                                 absent and the rules about what may be copied out of each are
                                 opposite
+packages/base/                  TS: what every other package needs and nothing native, plan 013
+                                decision 4: the table that turns a reported skin into a model and
+                                its hardware capabilities, src/models.ts; the container's trailer
+                                checksum, src/trailer.ts; and where each model keeps the key being
+                                pressed, src/keys.ts, shared with the key reader page. Imports
+                                nothing outside Node's own and reads no disk, test/base.test.ts.
+                                The codec depends on it rather than on packages/usb
 packages/usb/                   TS: the command protocol and the write rails, read path measured.
                                 Also the **second** protocol, for the file based family openHarmony
-                                refuses, the table that turns a reported skin into a model and
-                                its hardware capabilities, and the one of where each model keeps the
-                                key being pressed, src/keys.ts, shared with the key reader page. The erase and write sequence has **one**
+                                refuses. Its src/models.ts, src/trailer.ts and src/keys.ts are
+                                re-exports of packages/base, kept for compatibility until 7.3.6,
+                                which FreeHarmony's `@harmony/usb/models` reaches. The erase and write sequence has **one**
                                 implementation, `writeBlock`, and a caller in this workspace reaches
                                 it through the `@harmony/usb/write` subpath rather than the barrel,
                                 so that a third write caller is a decision visible in a diff
@@ -393,8 +400,8 @@ packages/keyreader/             TS: the key reader page's sources, built into re
                                 then need the DOM: it is the one code of this repository that runs
                                 in a stranger's browser against their own remote. src/link.ts holds
                                 the one function that sends and its refusals; the page loads three
-                                modules of packages/usb that import nothing, protocol.ts, keys.ts and
-                                models.ts, through subpaths, and never the barrel. src/session.ts is
+                                modules that import nothing, protocol.ts of packages/usb and keys.ts
+                                and models.ts of packages/base, through subpaths, and never a barrel. src/session.ts is
                                 the learning and key test modes and the log, src/face.ts the drawing
                                 on the page, src/visit.ts the work kept per remote across a lost
                                 connection; the drawings of reference/silhouettes/ are inlined at
@@ -740,7 +747,7 @@ The evidence words that open a definition are listed for readers on `reference/R
 take "Stated by a third party", `d` labels "Chosen by this project" and `[^unchecked]` "Not checked".
 
 **Generated blocks.** Some facts already live in code, and those are generated into the documents rather
-than typed: the skin table and capability fields of `packages/usb/src/models.ts`, the key list and measured
+than typed: the skin table and capability fields of `packages/base/src/models.ts`, the key list and measured
 scan codes of the drawing in `packages/silhouettes`, the screen raster in `packages/codec/src/render.ts`,
 the product id in `packages/corpus/src/read.ts`, and the memory constants and write lists in
 `packages/usb/src/rails.ts`, `protocol.ts` and `settings.ts`. A generated block sits between two markers:

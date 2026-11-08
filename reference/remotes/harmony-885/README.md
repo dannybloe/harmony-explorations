@@ -23,7 +23,7 @@ footnote says.
 | 17 | Harmony 885 | Harmony 880 | 8 | colour | no | 4.4.2 |
 | 39 | Harmony 880 Pro |  | 8 | colour | no | 4.4.2 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 15 is the Harmony 880 and skin 17 the Harmony 885: each configuration's header states its skin, and

@@ -13,7 +13,7 @@ record, because the service has the product switched off, below.
 |---|---|---|---|---|---|---|
 | 22 | 12 | none | yes | no | no | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Standing of each column: **max devices** is Logitech's service, `MaxDevicesPerAccount`,[^s136] agreeing
@@ -93,7 +93,7 @@ a double buffer like the Harmony One's.[^s123] Learning on a 525 is not checked.
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 525 user manual](https://www.manualslib.com/manual/454951/Logitech-Harmony-525.html)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^x-forum]: Stated by a third party. [The forum comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^s34]: Read in the firmware. [Section 34](../../../docs/findings.md#s34)
 [^s135]: Stated by Logitech, by their service. [Section 135](../../../docs/findings.md#s135)

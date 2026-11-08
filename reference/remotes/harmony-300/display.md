@@ -11,8 +11,8 @@ no screen holds one activity at most,
 |---|---|---|
 | raster | none: no entry for architecture 16 | `SCREEN_SIZES` in `packages/codec/src/render.ts` |
 | raster on the drawing | no screen on the drawing | `h300.ts` |
-| panel | no record | `packages/usb/src/models.ts` |
-| touch | no record | `packages/usb/src/models.ts`, and `touch` on the drawing's screen is no |
+| panel | no record | `packages/base/src/models.ts` |
+| touch | no record | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |
 
 Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->

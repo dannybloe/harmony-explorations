@@ -21,7 +21,7 @@ Logitech's own client and service, as each footnote says.
 | 23 | Harmony 895 | Harmony 890 | 10 | colour | no | 4.9.0 |
 | 40 | Harmony 890 Pro |  | 10 | colour | no | 4.9.0 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 19 is the Harmony 890 and skin 23 the Harmony 895, each stated in its configuration's own

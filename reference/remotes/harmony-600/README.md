@@ -23,7 +23,7 @@ How a fact here is known is in its footnote, and the kinds of evidence are expla
 | 71 | Harmony 600 | Harmony 600 EMEA | 14 | monochrome | no | 0.2 |
 | 73 | Harmony 600 EMEA | Harmony 600 | 14 | monochrome | no | 0.2 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 A skin is the number Logitech gives a model in one region. Skin 71 is the one a 600 reports over USB, in

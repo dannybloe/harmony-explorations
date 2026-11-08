@@ -14,7 +14,7 @@ and where the remote itself was tried, what it did.
 | 71 | 5 | 23 | yes | yes | no | no |
 | 73 | 5 | 23 | yes | yes | no | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **Max devices** and **favourite channel buttons** are Logitech's service, `MaxDevicesPerAccount` and
@@ -125,7 +125,7 @@ and Product Specification[^x-manual]. Learning on a 600 is not checked[^unchecke
 
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^x-forum]: Stated by a third party. [The comparison table of harmony-remote-forum.de](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^s292]: Stated by Logitech, by their service. [Section 292](../../../docs/findings.md#s292)

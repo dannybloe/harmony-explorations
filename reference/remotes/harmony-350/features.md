@@ -11,7 +11,7 @@ states the model can be given, and how far a configuration bears it out.
 |---|---|---|---|---|---|---|
 | 104 | no record | no record | no record | no record | no record | yes |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 `MODELS_BY_SKIN` has no record for skin 104, so every column but the last says so; the **long press** comes
@@ -83,7 +83,7 @@ on transition[^s327]; how this architecture interprets it is **not read**.
 * The device and activity limits as the remote enforces them.
 * Learning, and any setting beyond those Logitech's service lists.
 
-[^t-models]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-models]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^s263]: Stated by Logitech, by their service. [Section 263](../../../docs/findings.md#s263)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)

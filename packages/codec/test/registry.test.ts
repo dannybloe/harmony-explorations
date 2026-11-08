@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs';
 
 import * as lab from '@harmony/lab';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
-import { MODELS_BY_SKIN } from '@harmony/usb/models';
+import { MODELS_BY_SKIN } from '@harmony/base/models';
 import { parse, type Container } from '../src/gspm.ts';
 import { inventory, irGroups } from '../src/index.ts';
 import {

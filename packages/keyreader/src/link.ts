@@ -45,8 +45,8 @@ import {
   readVersion,
 } from '@harmony/usb/protocol';
 import type { VersionReading } from '@harmony/usb/protocol';
-import { ARCH_8_PRODUCT, WATCH_BY_SKIN } from '@harmony/usb/keys';
-import { modelForSkin } from '@harmony/usb/models';
+import { ARCH_8_PRODUCT, WATCH_BY_SKIN } from '@harmony/base/keys';
+import { modelForSkin } from '@harmony/base/models';
 import type { WebHid, WebHidDevice, WebHidInputListener } from './webhid.ts';
 
 /** Logitech's USB vendor id. */

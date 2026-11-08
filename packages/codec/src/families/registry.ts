@@ -4,7 +4,7 @@
  * remote a configuration is for in order to pick behaviour; it asks for the family and calls it.
  *
  * **Two questions, two routes.** By model, `familyOfModel`: a model as a recipe or FreeHarmony names it, by
- * Logitech's name and the skin where known, looked up in the model table, `packages/usb/src/models.ts`, or among
+ * Logitech's name and the skin where known, looked up in the model table, `packages/base/src/models.ts`, or among
  * the models a family serves that the table holds no record of, `MODELS_OUTSIDE_THE_TABLE`; the answer is a family
  * of either kind, a compiled one, `Family`, or a document one, `DocumentFamily`. By container, `familyOf`: the
  * architecture a configuration states, which is how a configuration composed onto a donor or read off a remote
@@ -23,7 +23,7 @@
  * A switch rather than a table built at load time, so the choice never depends on the order the modules happen to
  * be evaluated in.
  */
-import { MODELS_BY_SKIN, modelForSkin, type Model } from '@harmony/usb/models';
+import { MODELS_BY_SKIN, modelForSkin, type Model } from '@harmony/base/models';
 import type { Container } from '../gspm.ts';
 import { ComposeError } from '../shared/core.ts';
 import { HARMONY_TOUCH_FAMILY } from '../harmony-touch/family.ts';

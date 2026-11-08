@@ -22,12 +22,12 @@ the Harmony 600, 650 and 700, so this library reads its configuration as a file;
 |---|---|---|---|---|---|---|
 | 104 | no record in models.ts |  | 16, the folder's | no record | no record |  |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 104 is the Harmony 350, with no regional twin[^s196]. A unit states it twice: in
 its USB descriptor, as `bcdDevice` `0x1104`[^s195], and in its own `/sys/sysinfo`[^s262]. It has no record
-in `packages/usb/src/models.ts`, which
+in `packages/base/src/models.ts`, which
 [the architecture's README](../../architectures/harmony-300-350/README.md#skins) explains; it does appear
 in `SKINS_WITH_A_LONG_PRESS`, [features.md](features.md).
 

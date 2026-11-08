@@ -148,7 +148,7 @@ on the screen is [display.md](display.md#where-a-touch-lands-the-hit-map).
 [^s127]: Read in the firmware. [Section 127](../../../docs/findings.md#s127)
 [^s127b]: Measured on a unit. [Section 127](../../../docs/findings.md#s127)
 [^s337]: Read in the firmware. [Section 337](../../../docs/findings.md#s337)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^s190]: Measured on a unit. [Section 190](../../../docs/findings.md#s190)
 [^s275]: Measured in configurations. [Section 275](../../../docs/findings.md#s275)
 [^s401]: Measured in configurations. [Section 401](../../../docs/findings.md#s401)

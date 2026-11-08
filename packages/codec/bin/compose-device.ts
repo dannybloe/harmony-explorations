@@ -69,8 +69,8 @@
  *
  * **A model holds as many devices as Logitech lets an account hold**, eight on a Harmony 650, five on a
  * Harmony 600: the model is the one the configuration's own skin names, `modelForSkin` in
- * `packages/usb`, and a composition past its `maxDevices` is refused before anything is composed. That
- * is why this bin depends on `@harmony/usb`, for its model table and nothing else.
+ * `packages/base`, and a composition past its `maxDevices` is refused before anything is composed. That
+ * is why this bin depends on `@harmony/base`, for its model table and nothing else.
  *
  * **The other bound is the state variables, and it is not a device count.** A write names its variable
  * in seven bits, so a configuration holds at most 128, and a device composed here costs three plus its
@@ -87,7 +87,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import { IR_ARCHIVE } from '@harmony/lab';
-import { modelForSkin } from '@harmony/usb/models';
+import { modelForSkin } from '@harmony/base/models';
 
 import {
   type CatalogueDeviceRequest,

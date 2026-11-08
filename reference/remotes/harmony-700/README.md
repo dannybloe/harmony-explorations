@@ -21,7 +21,7 @@ off a remote[^s13]. How evidence is marked is in [the reference's README](../../
 | 66 | Harmony 700 | Harmony 700 EMEA | 14 | colour | no | 2.5.0 |
 | 69 | Harmony 700 EMEA | Harmony 700 | 14 | colour | no | 2.5.0 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 66 is carried by two configurations a 700's owner published[^s16] and reported in a unit's version
@@ -85,4 +85,4 @@ The architecture folder: [harmony-600-650-700](../../architectures/harmony-600-6
 [^s384]: Read in the firmware. [Section 384](../../../docs/findings.md#s384)
 [^s295b]: Read in the firmware. [Section 295](../../../docs/findings.md#s295)
 [^s300]: Measured on a unit. [Section 300](../../../docs/findings.md#s300)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)

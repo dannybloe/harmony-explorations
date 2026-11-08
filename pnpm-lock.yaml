@@ -21,6 +21,8 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
 
+  packages/base: {}
+
   packages/bench:
     dependencies:
       '@harmony/codec':
@@ -42,9 +44,9 @@ importers:
 
   packages/codec:
     dependencies:
-      '@harmony/usb':
+      '@harmony/base':
         specifier: workspace:*
-        version: link:../usb
+        version: link:../base
       '@mdi/font':
         specifier: 7.4.47
         version: 7.4.47
@@ -55,6 +57,9 @@ importers:
       '@harmony/lab':
         specifier: workspace:*
         version: link:../lab
+      '@harmony/usb':
+        specifier: workspace:*
+        version: link:../usb
 
   packages/corpus:
     dependencies:
@@ -70,6 +75,9 @@ importers:
 
   packages/keyreader:
     devDependencies:
+      '@harmony/base':
+        specifier: workspace:*
+        version: link:../base
       '@harmony/silhouettes':
         specifier: workspace:*
         version: link:../silhouettes
@@ -105,6 +113,9 @@ importers:
 
   packages/usb:
     dependencies:
+      '@harmony/base':
+        specifier: workspace:*
+        version: link:../base
       node-hid:
         specifier: 3.4.0
         version: 3.4.0

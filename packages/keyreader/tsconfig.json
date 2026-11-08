@@ -12,9 +12,10 @@
   // `bin` and `test` included deliberately, for the reason `packages/silhouettes/tsconfig.json` gives: a
   // directory of TypeScript no tsconfig claims is typechecked by nothing.
   "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
-  // `@harmony/usb` is a dev dependency because the page's sources import three of its modules that import
-  // nothing, and the build publishes them beside the page; nothing here is consumed as a package.
+  // `@harmony/base` and `@harmony/usb` are dev dependencies because the page's sources import three of their
+  // modules that import nothing, keys and models from the first and protocol from the second, and the build
+  // publishes them beside the page; nothing here is consumed as a package.
   // `@harmony/silhouettes` is one because the build reads the drawn models' keys from it, `bin/drawings.ts`;
   // no module of it reaches the page.
-  "references": [{ "path": "../usb" }, { "path": "../silhouettes" }]
+  "references": [{ "path": "../base" }, { "path": "../usb" }, { "path": "../silhouettes" }]
 }

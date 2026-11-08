@@ -2,7 +2,7 @@
  * The generated blocks of the per remote reference, `reference/remotes/` and `reference/architectures/`.
  *
  * Those documents are hand written, one folder per model and one per architecture plus the model index
- * in `reference/remotes/README.md`, and a few of their facts already live in code: the skin table in `packages/usb/src/models.ts`, the key list and the
+ * in `reference/remotes/README.md`, and a few of their facts already live in code: the skin table in `packages/base/src/models.ts`, the key list and the
  * measured scan codes in this package's own drawings, the screen raster in `packages/codec`, the
  * product id in `packages/corpus` and every write list in `packages/usb/src/rails.ts`. Typing those
  * into a document a second time is the two copies state this repository refuses everywhere else, and
@@ -328,8 +328,8 @@ function skinTable(skins: readonly number[], architecture: number): string {
   // The provenance names `SKINS_WITHOUT_A_MODEL_RECORD` only where a row came from it.
   // Skin 104 has neither a record nor a catalogue name, so its folder cites the first table alone.
   const source = skins.every((s) => SKINS_WITHOUT_A_MODEL_RECORD[s] === undefined)
-    ? '`MODELS_BY_SKIN` in `packages/usb/src/models.ts`'
-    : '`MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/usb/src/models.ts`';
+    ? '`MODELS_BY_SKIN` in `packages/base/src/models.ts`'
+    : '`MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/base/src/models.ts`';
   const rows = skins.map((skin) => {
     const m = MODELS_BY_SKIN[skin];
     if (m === undefined) {
@@ -364,7 +364,7 @@ function featureTable(skins: readonly number[]): string {
     '|---|---|---|---|---|---|---|',
     ...rows,
     '',
-    provenance('`MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts`'),
+    provenance('`MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts`'),
   ].join('\n');
 }
 
@@ -481,8 +481,8 @@ function displayTable(remote: RemoteFolder, drawing: Drawing | undefined): strin
     '|---|---|---|',
     raster,
     drawn,
-    `| panel | ${panels} | \`packages/usb/src/models.ts\` |`,
-    `| touch | ${touch} | \`packages/usb/src/models.ts\`, and \`touch\` on the drawing's screen is ${yes(drawing.screen?.touch ?? false)} |`,
+    `| panel | ${panels} | \`packages/base/src/models.ts\` |`,
+    `| touch | ${touch} | \`packages/base/src/models.ts\`, and \`touch\` on the drawing's screen is ${yes(drawing.screen?.touch ?? false)} |`,
     '',
     provenance('`packages/codec`, `packages/usb` and the drawing'),
   ].join('\n');
@@ -509,8 +509,8 @@ function undrawnDisplayTable(remote: RemoteFolder): string {
     '|---|---|---|',
     raster,
     `| raster on the drawing | no drawing of this model exists yet | \`REMOTES\` in \`packages/silhouettes/bin/remotes.ts\` |`,
-    `| panel | ${panels} | \`packages/usb/src/models.ts\` |`,
-    `| touch | ${touch} | \`packages/usb/src/models.ts\` |`,
+    `| panel | ${panels} | \`packages/base/src/models.ts\` |`,
+    `| touch | ${touch} | \`packages/base/src/models.ts\` |`,
     '',
     provenance('`packages/codec`, `packages/usb` and the model folders\' rows'),
   ].join('\n');
@@ -651,8 +651,8 @@ function architectureSkins(architecture: number): string {
   // The provenance names the second table only where a row came from it, so a folder whose skins all
   // have a record reads exactly as it did before.
   const source = unrecorded.length === 0
-    ? '`MODELS_BY_SKIN` in `packages/usb/src/models.ts`'
-    : '`MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/usb/src/models.ts`, and the skins the model folders name';
+    ? '`MODELS_BY_SKIN` in `packages/base/src/models.ts`'
+    : '`MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/base/src/models.ts`, and the skins the model folders name';
   return [
     '| skin | model | panel | max devices | favourite channel buttons | newest firmware the forum table knows |',
     '|---|---|---|---|---|---|',
@@ -757,7 +757,7 @@ function modelIndex(): string {
     '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
     ...rows,
     '',
-    provenance('`MODELS_BY_SKIN` in `packages/usb/src/models.ts` and the folders\' rows in `REMOTES`'),
+    provenance('`MODELS_BY_SKIN` in `packages/base/src/models.ts` and the folders\' rows in `REMOTES`'),
   ].join('\n');
 }
 
@@ -786,7 +786,7 @@ function unrecordedSkins(): string {
     '|---|---|---|---|',
     ...rows,
     '',
-    provenance('`SKINS_WITHOUT_A_MODEL_RECORD` and `SKINS_WITH_A_LONG_PRESS` in `packages/usb/src/models.ts`, '
+    provenance('`SKINS_WITHOUT_A_MODEL_RECORD` and `SKINS_WITH_A_LONG_PRESS` in `packages/base/src/models.ts`, '
       + 'and the folders\' rows in `REMOTES`'),
   ].join('\n');
 }

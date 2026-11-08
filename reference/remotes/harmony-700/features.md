@@ -12,7 +12,7 @@ rather than from the remote, so the evidence matters more here than in any other
 | 66 | 8 | 23 | yes | yes | no | no |
 | 69 | 8 | 23 | yes | yes | no | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **Max devices** and **favourite channel buttons** are Logitech's service, `MaxDevicesPerAccount` and
@@ -103,7 +103,7 @@ its Product Specification[^x-manual]. Learning on a 700 is not checked[^unchecke
 
 [^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^x-forum]: Stated by a third party. [The forum comparison table](https://harmony-remote-forum.de/harmony_compare.php)
 [^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
 [^x-manual-2010]: Stated by Logitech, in the manual. [The 2010 edition, in English](https://cdn-cx-images.dynamite.myharmony.com/usermanuals/harmony700-usermanual-en.pdf)

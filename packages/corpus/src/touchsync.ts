@@ -13,8 +13,9 @@
  *
  * **Why this lives in `packages/corpus` and not in `packages/usb`.** The answerer has to refuse a set the
  * codec's reader and check reject before anything of it is written, and the reader and the check are the
- * codec's, `packages/codec/src/harmony-touch/`. The codec depends on `packages/usb`, so `packages/usb` cannot
- * import the codec, and an answerer there could only take the check as an argument: a gate a caller hands in
+ * codec's, `packages/codec/src/harmony-touch/`. The codec depended on `packages/usb` when this was written, so
+ * `packages/usb` could not import the codec (since `todo.md` 7.3.4 the codec's own source no longer does, its
+ * tests and scripts still do, and nothing has been moved because of it), and an answerer there could only take the check as an argument: a gate a caller hands in
  * is a gate a caller can hand in empty, the lesson `CLAUDE.md` records for the configuration version check,
  * "a rail that asks a caller a question is a rail the caller answers". Here the answerer calls
  * `refusalsBeforeASync` itself. `packages/corpus` already depends on both and already holds the other write

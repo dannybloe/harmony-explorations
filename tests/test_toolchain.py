@@ -72,8 +72,9 @@ class TypeScriptProjects(unittest.TestCase):
         # A guard on the guard: if the packages ever move, this test must fail rather than pass by
         # having found nothing to check. Exact, not a floor of 12, per section 143: the number is
         # decided by the workspace layout and moves only when a package or a directory is added,
-        # and then it moves in the diff rather than being absorbed.
-        self.assertEqual(found, 23, 'source directories claimed by a tsconfig')
+        # and then it moves in the diff rather than being absorbed. 25 since `todo.md` 7.3.4 added
+        # `packages/base`, with its `src` and `test`.
+        self.assertEqual(found, 25, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
         """`make ts` builds the root, so a package missing from it is a package nobody compiles."""
@@ -607,7 +608,7 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     ('packages/corpus/test/capabilities.test.ts', '(activityCount(c) ?? 0)', '>=', 1): 'per config',
     ('packages/usb/test/hardware.test.ts', 'new Set(timer).size', '>', 1): 'per remote, live',
     ('packages/usb/test/hardware.test.ts', 'varied.size', '>', 1): 'per remote, live',
-    ('packages/usb/test/models.test.ts', 'm.architecture', '>=', 2): 'per model',
+    ('packages/base/test/models.test.ts', 'm.architecture', '>=', 2): 'per model',
     ('packages/silhouettes/test/models.test.ts', 'rocker.keys.length', '>=', 2): 'per rocker',
     # A physical band, where being in range is the claim and the value is hardware's business.
     ('packages/bench/test/bench.test.ts', 'period', '>', 20): 'a repeat interval a finger can feel',

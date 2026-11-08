@@ -18,7 +18,7 @@ not yet to this model.
 |---|---|---|---|---|---|---|
 | 67 | Harmony 515 | Harmony 510 | 9 | monochrome | no | 3.4.0 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 67 is measured in a remote's `bcdDevice`, its version block and its firmware image, and in the

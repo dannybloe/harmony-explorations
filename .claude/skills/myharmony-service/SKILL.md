@@ -173,7 +173,7 @@ this list is how to use it and what to watch for.
   and a frame value, [the device catalogue is its own call](../../../reference/logitech/service.md#the-device-catalogue-is-its-own-call);
   a frame is rebuilt through the rhythm table `packages/codec/src/protocols.ts`.
 * **`ProductsManager/GetAllProducts`** is the product table, [which remotes the service serves](../../../reference/logitech/service.md#which-remotes-the-service-serves).
-  Its `MaxDevicesPerAccount` is adopted into `packages/usb/src/models.ts`. `CompilerArchitecture` is
+  Its `MaxDevicesPerAccount` is adopted into `packages/base/src/models.ts`. `CompilerArchitecture` is
   null on every record; do not go looking for the architecture map there again.
 * **The compile runs server side with the remote unplugged**: `compile.py` queues it, the reply carries
   a `DownloadUrl`, and swapping `/RemoteConfiguration` for `/json2/RemoteConfigurationInJson` fetches

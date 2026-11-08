@@ -33,7 +33,7 @@ record and every firmware image of it reports 8 in its version block.[^s182][^s1
 | 44 | Harmony 720 | colour | 12 | 24 | 4.4.2 |
 | 45 | Harmony 785 | colour | 12 | 24 | 4.4.2 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skins 15 and 17 are read in the firmware, the only value that differs between the two application

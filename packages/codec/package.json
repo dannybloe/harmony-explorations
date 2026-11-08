@@ -12,11 +12,12 @@
     "typecheck": "tsc --build"
   },
   "dependencies": {
-    "@harmony/usb": "workspace:*",
+    "@harmony/base": "workspace:*",
     "@mdi/font": "7.4.47",
     "opentype.js": "2.0.0"
   },
   "devDependencies": {
-    "@harmony/lab": "workspace:*"
+    "@harmony/lab": "workspace:*",
+    "@harmony/usb": "workspace:*"
   }
 }

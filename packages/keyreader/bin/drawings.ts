@@ -31,7 +31,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MODELS } from '@harmony/silhouettes';
 import type { Key, Model } from '@harmony/silhouettes';
-import { WATCH_BY_SKIN } from '@harmony/usb/keys';
+import { WATCH_BY_SKIN } from '@harmony/base/keys';
 import type { Drawing, FaceKey } from '../src/session.ts';
 
 /** One drawing's words, by the key's name. */

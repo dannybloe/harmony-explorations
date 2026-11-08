@@ -25,11 +25,11 @@ marked is in [the reference's README](../../README.md).
 | 78 | Harmony 300, no record |  | 16, the folder's | no record | no record |  |
 | 79 | Harmony 300 EMEA, no record |  | 16, the folder's | no record | no record |  |
 
-Generated from `MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skins 78 and 79 are the Harmony 300 and its European model[^s131].
-`SKINS_WITHOUT_A_MODEL_RECORD` in `packages/usb/src/models.ts` names both and gives neither a record, for
+`SKINS_WITHOUT_A_MODEL_RECORD` in `packages/base/src/models.ts` names both and gives neither a record, for
 the reason [the family's README](../../architectures/harmony-300-350/README.md) gives. **A remote reports
 its own regional skin, 79, in its `/sys/sysinfo` and its configuration, and the base skin, 78, in its USB
 descriptor**[^s195][^s264], [usb.md](usb.md). What decides 78 or 79 on a unit is not

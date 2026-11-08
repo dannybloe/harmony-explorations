@@ -33,12 +33,12 @@ folder](../../architectures/harmony-touch/README.md#which-architecture-number-17
 |---|---|---|---|---|---|---|
 | 99 | no record in models.ts |  | 17, the folder's | no record | no record |  |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 99 is the remote's own, from its `/sys/sysinfo` and from its `bcdDevice`, `0x1099`[^s195][^s200], and it
 is Logitech's product table's Harmony Touch, codename Juniper in the client's templates[^s197].
-`packages/usb/src/models.ts` has no record for it, deliberately: a record states what a model's hardware can
+`packages/base/src/models.ts` has no record for it, deliberately: a record states what a model's hardware can
 do, and nothing has read those fields out of its firmware[^unchecked]. A regional twin is **not
 checked**[^unchecked].
 
@@ -94,7 +94,7 @@ checked**[^unchecked].
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)

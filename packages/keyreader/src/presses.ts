@@ -2,7 +2,7 @@
  * Turning two polled bytes into key presses and releases.
  *
  * An arch 8 remote keeps the key held in one byte, zero when none, and copies every newly pressed key into
- * a second byte that nothing clears, `@harmony/usb/keys`. The page reads both on every poll, and what a
+ * a second byte that nothing clears, `@harmony/base/keys`. The page reads both on every poll, and what a
  * person cares about is the presses. So a press is the held byte going to a code, and a release is it
  * leaving one; and a change of the second byte alone is a key pressed and let go between two polls, too
  * quick for the held byte to show it, which is the reading the measurement of the 885's keypad used.

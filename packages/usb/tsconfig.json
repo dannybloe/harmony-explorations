@@ -5,5 +5,5 @@
     "outDir": "dist"
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
-  "references": [{ "path": "../lab" }]
+  "references": [{ "path": "../base" }, { "path": "../lab" }]
 }

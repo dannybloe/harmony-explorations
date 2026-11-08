@@ -12,8 +12,8 @@ shows, apart from one screen, comes out of the configuration and not out of the 
 |---|---|---|
 | raster | 176 by 220 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, measured from the configurations' full screen pictures |
 | raster on the drawing | 176 by 220 | `one.ts`, which must agree with the row above |
-| panel | colour | `packages/usb/src/models.ts` |
-| touch | yes | `packages/usb/src/models.ts`, and `touch` on the drawing's screen is yes |
+| panel | colour | `packages/base/src/models.ts` |
+| touch | yes | `packages/base/src/models.ts`, and `touch` on the drawing's screen is yes |
 
 Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->

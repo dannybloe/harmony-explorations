@@ -149,5 +149,5 @@ architecture is not checked; the repeat mechanism was read on the Harmony One.[^
 [^s128]: Measured in configurations. [Section 128](../../../docs/findings.md#s128)
 [^x-safe-mode]: Stated by a third party. [A repair shop's safe mode procedure](https://www.harmonyremoterepair.com/files/theme/Documents/Safe_Mode_Instructions.pdf)
 [^s118]: Measured on a unit. [Section 118](../../../docs/findings.md#s118)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^s127]: Read in the firmware. [Section 127](../../../docs/findings.md#s127)

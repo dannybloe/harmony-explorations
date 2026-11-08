@@ -17,7 +17,7 @@ Logitech's own client, service and manual, as each footnote says.
 |---|---|---|---|---|---|---|
 | 44 | Harmony 720 | Harmony 785 | 8 | colour | no | 4.4.2 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Logitech's live service names skin 44 the Harmony 720, and its classic client places skin 44 on the Espresso

@@ -14,7 +14,7 @@ assembly and not of the recipe, since it goes at 11.1.1.
 
 **A recipe states a wish; the model's definition says whether it can be granted.** It names its model
 and nothing of what the model can do: how many devices it holds, its screen and which family builds for
-it are in `packages/usb/src/models.ts`, documented per model in `reference/remotes/`. A recipe for a
+it are in `packages/base/src/models.ts`, documented per model in `reference/remotes/`. A recipe for a
 model no family serves is refused when its target is looked up, and so is a device past the model's
 count when the devices are composed.
 

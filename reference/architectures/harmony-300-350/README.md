@@ -32,10 +32,10 @@ architecture is not checked[^unchecked].
 | 79 | Harmony 300 EMEA, no record | no record | no record | no record |  |
 | 104 | no record in models.ts | no record | no record | no record |  |
 
-Generated from `MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/usb/src/models.ts`, and the skins the model folders name by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/base/src/models.ts`, and the skins the model folders name by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
-None of the three skins has a record in `packages/usb/src/models.ts`, deliberately: a record states what a
+None of the three skins has a record in `packages/base/src/models.ts`, deliberately: a record states what a
 model's hardware can do, and the table carries only models whose capability fields this library can stand
 behind[^t-models]. Skins 78 and 79 are a regional pair, the Harmony 300 and its European
 model[^s131]; 104 is the Harmony 350 alone[^s196]. Logitech's client names 78 "Pepsi" and 104
@@ -148,7 +148,7 @@ bootloaders and safe mode images are different builds, [firmware.md](firmware.md
 [^s262]: Measured on a unit. [Section 262](../../../docs/findings.md#s262)
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
 [^unchecked]: Not checked.
-[^t-models]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-models]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^s131]: Stated by Logitech, by their service. [Section 131](../../../docs/findings.md#s131)
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^s264]: Measured on a unit. [Section 264](../../../docs/findings.md#s264)

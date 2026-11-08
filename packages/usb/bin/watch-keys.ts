@@ -18,7 +18,7 @@
  *
  * The body runs only when this file is the program, so a test can import `defaultWatch` with no remote
  * attached, `packages/usb/test/watch-keys.test.ts`. The tables it chooses from are
- * `packages/usb/src/keys.ts`, shared with the key reader page.
+ * `packages/base/src/keys.ts`, shared with the key reader page.
  */
 import {
   ARCH_8_PRODUCT,
@@ -32,7 +32,7 @@ import {
 } from '@harmony/usb';
 
 // The tables of addresses lived here until the key reader page needed them too. They are in
-// `packages/usb/src/keys.ts` now, which imports nothing so that a browser can load it, and this script
+// `packages/base/src/keys.ts` now, which imports nothing so that a browser can load it, and this script
 // keeps only the choice of an entry from what node-hid reports.
 
 /**

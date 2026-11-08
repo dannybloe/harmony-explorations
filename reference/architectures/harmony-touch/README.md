@@ -23,7 +23,7 @@ before the image and the syncs were read.
 |---|---|---|---|---|---|
 | 99 | no record in models.ts | no record | no record | no record |  |
 
-Generated from `MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/usb/src/models.ts`, and the skins the model folders name by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/base/src/models.ts`, and the skins the model folders name by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 ## Which architecture number, 17 or 18
@@ -186,7 +186,7 @@ answers is a set of paths, [the model's memory page](../../remotes/harmony-touch
 [^d9]: Chosen by this project. [Decision 9](../../../docs/decisions.md#d9)
 [^s135]: Stated by Logitech, in their client. [Section 135](../../../docs/findings.md#s135)
 [^s131]: Stated by Logitech, by their service. [Section 131](../../../docs/findings.md#s131)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^t-touch-arch]: Read in the firmware. [The test](../../../tests/test_harmony_touch_architecture.py)
 [^t-touch-arch-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_architecture.py)
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)

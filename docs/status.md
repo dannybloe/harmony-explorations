@@ -400,7 +400,7 @@ every one.*
   remote down to four: a scan's command is per activity and its button is not, only an `ActivityButtonMap`
   may name an activity's set, and the assignment is globally injective because a button is one physical
   key. The four that remain are real, two up keys and two down keys sending one command each, and no
-  decoding breaks a symmetry. So the tables stay out of `packages/usb/src/models.ts`, since the rest is
+  decoding breaks a symmetry. So the tables stay out of `packages/base/src/models.ts`, since the rest is
   **unbound**: these configs drive three devices in two activities and a library answering for a scan
   they never bound would answer from nothing. The silhouettes were going to get no `data-scan` on the
   same ground and got them on 21 August 2026 anyway, for the measured keys only, which serves both: a

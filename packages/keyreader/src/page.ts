@@ -44,7 +44,7 @@ import type { Drawing, FaceKey, MapKey, Misfit } from './session.ts';
 import { Face } from './face.ts';
 import { STOPPED_ANSWERING, Visit } from './visit.ts';
 import { DRAWINGS } from './drawings.js';
-import { WATCH_BY_SKIN } from '@harmony/usb/keys';
+import { WATCH_BY_SKIN } from '@harmony/base/keys';
 import type { WebHid } from './webhid.ts';
 
 /**

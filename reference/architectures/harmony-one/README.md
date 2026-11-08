@@ -15,7 +15,7 @@ screen and behaviour, is [harmony-one](../../remotes/harmony-one/README.md).
 | 54 | Harmony One | colour | 15 | 24 | 3.4.0 |
 | 59 | Harmony One EMEA | colour | 15 | 24 | 3.4.0 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 ## Shared, in one table

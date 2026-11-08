@@ -9,7 +9,7 @@ What a Harmony 515 can be set up to do.
 |---|---|---|---|---|---|---|
 | 67 | 5 | none | yes | no | no | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **At most 5 devices** is the community comparison table's figure, against 12 for the Harmony 525.[^x-forum-table]

@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
-import { MODELS_BY_SKIN } from '@harmony/usb/models';
+import { MODELS_BY_SKIN } from '@harmony/base/models';
 import { RecipeError, modelName, readRecipe, recipeTarget } from '../src/index.ts';
 import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../src/families/four-slot/choices.ts';
 

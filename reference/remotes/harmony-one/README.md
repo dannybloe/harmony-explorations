@@ -25,7 +25,7 @@ How evidence is marked on these pages is in [the reference's README](../../READM
 | 54 | Harmony One | Harmony One EMEA | 12 | colour | yes | 3.4.0 |
 | 59 | Harmony One EMEA | Harmony One | 12 | colour | yes | 3.4.0 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skin 54 is what a live remote reports, in its version block and in its USB `bcdDevice`,
@@ -82,4 +82,4 @@ other is not checked[^unchecked].
 [^unchecked]: Not checked.
 [^s54]: Measured in configurations. [Section 54](../../../docs/findings.md#s54)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)

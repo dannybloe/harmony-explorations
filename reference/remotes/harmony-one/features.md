@@ -13,7 +13,7 @@ than on any other page: they say which statement a remote or a configuration has
 | 54 | 15 | 24 | yes | yes | no | no |
 | 59 | 15 | 24 | yes | yes | no | no |
 
-Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` and `hasLongPress` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **Max devices** is Logitech's service, its `MaxDevicesPerAccount`[^s136]; **long press** is Logitech's
@@ -108,7 +108,7 @@ are erased on both remotes read[^s150b].
 * Learning on a One[^unchecked].
 
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://harmony-remote-forum.de/harmony_compare.php)
 [^s34]: Read in the firmware. [Section 34](../../../docs/findings.md#s34)
 [^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)

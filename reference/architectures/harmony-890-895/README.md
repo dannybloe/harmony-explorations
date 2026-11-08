@@ -33,7 +33,7 @@ settle which architecture they are.[^s207]
 | 23 | Harmony 895 | colour | 15 | 16 | 4.9.0 |
 | 40 | Harmony 890 Pro | colour | 15 | 16 | 4.9.0 |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 Skins 19 and 23 are stated in each configuration's own architecture record, `0a 0a 13 0d` on a Harmony 890

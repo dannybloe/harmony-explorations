@@ -76,7 +76,7 @@ Logitech sold, and which of them its software stopped serving, is
 | 74 | Harmony 650 EMEA | Harmony 650 | 14 | colour | no | 8 | 23 |  | yes | yes | no | 0.2 | [harmony-650](harmony-650/README.md) |
 | 75 | Harmony 665 |  | 14 | colour | no | 10 | 23 |  | yes | yes | no | 0.2 |  |
 
-Generated from `MODELS_BY_SKIN` in `packages/usb/src/models.ts` and the folders' rows in `REMOTES` by `make remote-reference-write`. Change the source, not this block.
+Generated from `MODELS_BY_SKIN` in `packages/base/src/models.ts` and the folders' rows in `REMOTES` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **Where each column comes from**, which matters more than in most tables here, because most columns are
@@ -167,7 +167,7 @@ each face.
 | 114 | not named in models.ts | yes |  |
 | 116 | not named in models.ts | yes |  |
 
-Generated from `SKINS_WITHOUT_A_MODEL_RECORD` and `SKINS_WITH_A_LONG_PRESS` in `packages/usb/src/models.ts`, and the folders' rows in `REMOTES` by `make remote-reference-write`. Change the source, not this block.
+Generated from `SKINS_WITHOUT_A_MODEL_RECORD` and `SKINS_WITH_A_LONG_PRESS` in `packages/base/src/models.ts`, and the folders' rows in `REMOTES` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 A skin is here when Logitech names it and this library will not describe its hardware: the rebadged
@@ -304,6 +304,6 @@ it; [the architectures](../architectures/README.md#three-ways-a-host-talks-to-a-
 [^s86]: Measured in configurations. [Section 86](../../docs/findings.md#s86)
 [^s34]: Read in the firmware. [Section 34](../../docs/findings.md#s34)
 [^s127]: Read in the firmware. [Section 127](../../docs/findings.md#s127)
-[^t-long-press]: Stated by Logitech, by their service. [The test](../../packages/usb/test/models.test.ts)
+[^t-long-press]: Stated by Logitech, by their service. [The test](../../packages/base/test/models.test.ts)
 [^s88]: Read in the firmware. [Section 88](../../docs/findings.md#s88)
 [^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../tests/test_harmony_300_group_4_send.py)

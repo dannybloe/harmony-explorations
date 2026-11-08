@@ -16,8 +16,8 @@ configuration; it is a property of the model.
 |---|---|---|
 | raster | 128 by 128 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, measured from the configurations' full screen pictures |
 | raster on the drawing | 128 by 128 | `h600.ts`, which must agree with the row above |
-| panel | monochrome | `packages/usb/src/models.ts` |
-| touch | no | `packages/usb/src/models.ts`, and `touch` on the drawing's screen is no |
+| panel | monochrome | `packages/base/src/models.ts` |
+| touch | no | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |
 
 Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
