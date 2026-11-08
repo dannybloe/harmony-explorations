@@ -4,8 +4,8 @@
  * `@harmony/testkit/surface`, which shows the types a loaded module does not, and the loaded module is held to the
  * same values, so a reading of the source that missed a name fails here.
  *
- * An application reads a configuration off a remote through this entry; the reader module whole is `./read`, and
- * filing a read in the lab is `./file`.
+ * An application reads a configuration off a remote through this entry; the reader module whole is `./read`,
+ * filing a read in the lab is `./file`, and writing one to a remote is `./write`.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -25,9 +25,12 @@ const TYPES = [
   'ConfigRead', 'ConfigReader', 'ReadOptions', 'ReadProgress', 'RemoteProfile',
 ];
 
-/** Every subpath `package.json` exports, `.` the main entry. */
+/**
+ * Every subpath `package.json` exports, `.` the main entry. `./write` since `todo.md` 7.3.10: the configuration
+ * write and the Touch's sync as functions an application calls, held to their own list in `write-surface.test.ts`.
+ */
 const SUBPATHS = [
-  '.', './read', './file',
+  '.', './read', './file', './write',
 ];
 
 test('the main entry exports exactly its list, by explicit names', async () => {

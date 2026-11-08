@@ -64,44 +64,21 @@
  * `HARMONY_FIRST_WRITE=1`. Every rail `rehearse-block.ts` passes is passed here too: the unit is
  * identified off its own identity block, the architecture comes off the device, and the erase is
  * measured against both neighbours.
+ *
+ * **The sequence is the library's since `todo.md` 7.3.10**, `writeConfiguration` in `src/writeconfig.ts`, on
+ * `@harmony/corpus/write`, so an application writes a remote through the same function this script calls. What
+ * stays here is the bench's: the command line, the lab's names for the units and their region reads, reading
+ * the two files, finding a stopped run's journal, opening the one remote attached, the journal file, the signal
+ * handler and printing. Every line the library reports is printed and appended to the journal as before.
  */
 import { appendFileSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
 import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
-import {
-  HarmonyRemote,
-  RailError,
-  RemoteError,
-  architectureFromVersion,
-  compareIntendedVersion,
-  listHarmony,
-  openHarmony,
-  readVersion,
-  unitIdentityFromText,
-  unitIdentityText,
-  type StatedVersion,
-} from '@harmony/usb';
-import { ERASE_BLOCK_SIZE, WRITABLE_CEILING } from '@harmony/usb/rails';
-import {
-  CONFIG_REGION_BASE,
-  MAX_TRANSFER,
-  NOMINAL_FLASH_SIZE,
-  assertFirstWriteAllowed,
-  assertUnitIsPermitted,
-  blocksDiffering,
-  failureLine,
-  firstDifference,
-  neighbourBlocks,
-  reportCount,
-  transfersFor,
-  writeBlock,
-} from '@harmony/usb/write';
-import { readFlashWindow } from '@harmony/usb/readwindow';
-import { QueueError, StateTableError, assertQueueFits, assertStateTableConsistent, parse } from '@harmony/codec/node';
-import { ACTION_QUEUE_INSTRUCTIONS, trailerChecksum, worstQueueRun } from '@harmony/codec/internal';
-import { profileFor, readConfig } from '../src/index.ts';
-import { StampError, stampForWrite, stoppedAfterErase } from '../src/stamp.ts';
+import { HarmonyRemote, RailError, RemoteError, listHarmony, openHarmony } from '@harmony/usb';
+import { failureLine } from '@harmony/usb/write';
+import { ConfigWriteRefusal, writeConfiguration, type ConfigWriteUnit } from '../src/write.ts';
+import { stoppedAfterErase } from '../src/stamp.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -339,87 +316,28 @@ const H885_B_DUMPS = new Set<string>([
   'h885_b_after_2_1_region',
 ]);
 
-/** A remote this may run against, per architecture read off the device. */
-interface Target {
-  readonly model: string;
-  /** The lab's name for the unit, whose identity file the unit check compares against. */
-  readonly unitLabel: string;
-  readonly dumps: ReadonlySet<string>;
-  /**
-   * The firmware builds, as the remote reports them, in whose own image the cache drop and the
-   * restart this sends were read before either was sent. A unit reporting any other build is refused
-   * a commit, because both commands are the firmware's and not the format's: the 650's were read on
-   * its build 0.2 and sent once each before a write depended on them, section 282. The Harmony 700's
-   * 2.8 was read against that build, section 299, and has been sent neither. Empty for a unit whose
-   * build nobody has read yet.
-   */
-  readonly sequenceReadOn: readonly string[];
-  /**
-   * Why `--no-invalidate` is refused on this unit, or undefined where the control is offered.
-   *
-   * **The control is the Harmony One's**, section 250: there the drop clears a verdict and nothing the
-   * write needs. **On the Harmony 880 and 885 the drop is what keeps the remote off the region**: it moves
-   * every lookup to the built in configuration until the next start, and the firmware runs from the same
-   * flash part, so without it the remote can look up a block between its erase and its write and read it
-   * blank, `tests/test_harmony_885_write_end.py`. A control that measures that is not one to run on an
-   * irreplaceable remote, so it is refused rather than offered.
-   */
-  readonly dropRequired?: string;
-  /**
-   * The data memory address of the staged install's status byte, where a restart over USB can install
-   * firmware, or undefined where it cannot.
-   *
-   * **On the Harmony 880 and 885 the restart this script ends with is an install whenever that byte is
-   * not 0**, `reference/architectures/harmony-880-885/firmware.md` "What the bootloader does at power on":
-   * the byte at `0x100` survives the processor's `RESET` instruction, which is how `E1 02` ends, and the
-   * bootloader then erases the application at `0x010000` and copies 64 KiB over it, status 2 from the
-   * staging region and 6 from `0x020000`, 4 and 7 resuming them. A host sets it and the application never
-   * does, and nothing this package can send to arch 8 writes it, so 0 is expected. **It is read anyway,
-   * because the cost of being wrong is the application**: before the first erase, so a nonzero value stops
-   * the run with nothing written, and again immediately before the restart, which is withheld unless the
-   * byte is still 0. Read with `READ_MISC` selector 7, `readRam`, the path `read-ram.ts` read unit A's clock
-   * at `0x108` with, `tests/test_harmony_885_bench_reads.py`; on the Harmony One and the 600 series the
-   * install is a different mechanism and this stays undefined.
-   */
-  readonly installStatusAt?: number;
-}
-
-/** The refusal of `--no-invalidate` on an 885, `Target.dropRequired`. */
-const ARCH8_DROP_REQUIRED = 'on the Harmony 885 the cache drop moves every lookup to the built in '
-  + 'configuration until the restart, and the firmware runs from the same flash part, so without it the '
-  + 'remote can read a block between its erase and its write';
-
-/** Data memory `0x100`, the 885's staged install status, `Target.installStatusAt`. */
-const ARCH8_INSTALL_STATUS = 0x100;
-
 /**
- * Keyed by what the device says, never by an argument, for the reason `rehearse-block.ts` gives: an
- * argument would let an operator point one unit's allow list at another. **Several units per
- * architecture since Danny's decision of 29 September 2026**, and the 600 and the 650 enumerate
- * identically, so the dump names which unit is expected and the identity block read off the remote
- * is what refuses any other.
+ * The units this may write, each with its model and its own region reads. **Keyed by what the device says,
+ * never by an argument**, for the reason `rehearse-block.ts` gives: an argument would let an operator point one
+ * unit's allow list at another. So the library chooses among these by the architecture the remote reports and
+ * the region read `--dump` names, and the identity block read off the remote is what refuses any other unit,
+ * since the 600 and the 650 enumerate identically and so do two Harmony Ones. What each model's write end needs,
+ * the builds its drop and restart were read in, whether its drop is required and where an install status sits,
+ * is `CONFIG_WRITE_MODELS` in `src/writeconfig.ts`, a fact about the model rather than about a unit, since
+ * `todo.md` 7.3.10 moved the sequence into the library.
+ *
+ * **Several units per architecture since Danny's decision of 29 September 2026**, the Harmony 600 and the
+ * Harmony 700 beside the 650, and the two bench Harmony 885s since `todo-compile-885.md` 1.4, decision 30.
  */
-const TARGETS: Readonly<Record<number, readonly Target[]>> = {
-  // The two bench 885s, decision 30, `todo-compile-885.md` 1.4. **4.4 is the build their write end was
-  // read in**, the 885's application, `tests/test_harmony_885_write_end.py`; both units report it,
-  // version block `44 21 49 01 80 11 08`. The 880 runs the same application, but no 880 is a unit here.
-  8: [
-    { model: 'the Harmony 885 unit A', unitLabel: 'h885_a', dumps: H885_A_DUMPS, sequenceReadOn: ['4.4'],
-      dropRequired: ARCH8_DROP_REQUIRED, installStatusAt: ARCH8_INSTALL_STATUS },
-    { model: 'the Harmony 885 unit B', unitLabel: 'h885_b', dumps: H885_B_DUMPS, sequenceReadOn: ['4.4'],
-      dropRequired: ARCH8_DROP_REQUIRED, installStatusAt: ARCH8_INSTALL_STATUS },
-  ],
-  12: [{ model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS, sequenceReadOn: ['3.4'] }],
-  14: [
-    { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: ['0.2'] },
-    // The same build as the 650, `600-0.2-code-base0x9000-COMPLETE.bin`, read off this unit.
-    { model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: ['0.2'] },
-    // 2.8, which it runs since section 297: the drop is read in section 299 and the restart in 97.
-    // Its first configuration change, a power on delay raised and put back, is section 301.
-    { model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: ['2.8'] },
-  ],
-};
-const ALL_DUMPS = new Set(Object.values(TARGETS).flat().flatMap((t) => [...t.dumps]));
+const UNITS: readonly ConfigWriteUnit[] = [
+  { name: 'the Harmony 885 unit A', label: 'h885_a', model: 'Harmony 885', regions: H885_A_DUMPS },
+  { name: 'the Harmony 885 unit B', label: 'h885_b', model: 'Harmony 885', regions: H885_B_DUMPS },
+  { name: 'the spare Harmony One', label: 'one_spare', model: 'Harmony One', regions: SPARE_DUMPS },
+  { name: 'the Harmony 650', label: 'h650', model: 'Harmony 650', regions: H650_DUMPS },
+  { name: 'the Harmony 600', label: 'h600', model: 'Harmony 600', regions: H600_DUMPS },
+  { name: 'the Harmony 700', label: 'h700', model: 'Harmony 700', regions: H700_DUMPS },
+];
+const ALL_DUMPS = new Set(UNITS.flatMap((unit) => [...unit.regions]));
 
 /**
  * Every line this prints, appended to a file as it is printed.
@@ -434,16 +352,11 @@ const ALL_DUMPS = new Set(Object.values(TARGETS).flat().flatMap((t) => [...t.dum
  * because a write whose account can be lost is the state this exists to end.
  */
 let journalPath: string | undefined;
-/** Whether the restart has gone out, which is what makes a failing close expected. */
-let resetSent = false;
 
 function say(line: string): void {
   process.stdout.write(line);
   if (journalPath !== undefined) appendFileSync(journalPath, line);
 }
-
-/** A refusal raised after the device is open, so the `finally` still closes it. */
-class Refusal extends Error {}
 
 /** True from the moment the first erase is sent until the last block has been verified. */
 let pastTheErase = false;
@@ -517,10 +430,10 @@ async function main(): Promise<void> {
   const dumpPath = imagePath(dumpName);
   if (dumpPath === undefined) fail(`no lab image called ${dumpName}`);
   const dump = new Uint8Array(readFileSync(dumpPath));
-  let wanted: Uint8Array = new Uint8Array(readFileSync(configPath));
+  const wanted = new Uint8Array(readFileSync(configPath));
 
-  // The stamp, before every other check so that they all run on the bytes that will be written.
-  // `stampForWrite` checks the file's own checksum first, since stamping recomputes it.
+  // Which stamp: the file's own, the one a stopped run saved, or the moment of writing, which the library
+  // applies before every other check so that they all run on the bytes that will be written.
   const asIs = cli.flag('as-is') || dropOnly || restartOnly;
   const previous = readdirSync(dirname(configPath))
     .filter((name) => name.startsWith(`${basename(configPath)}.write-`) && name.endsWith('.log'))
@@ -529,537 +442,42 @@ async function main(): Promise<void> {
     .sort()
     .at(-1);
   const resuming = previous !== undefined && stoppedAfterErase(readFileSync(previous, 'utf8'));
-  let stamped = false;
-  if (asIs) {
-    say('--as-is: the file is written with its own stamp\n');
-  } else if (resuming) {
-    say(`${basename(previous!)} erased flash and never read the configuration back, so this is its `
-      + 'rerun: the file is written with the stamp that run saved, which is what its blocks hold\n');
-  } else {
-    try {
-      const result = stampForWrite(wanted, new Date());
-      wanted = result.bytes;
-      stamped = true;
-      say(`stamped ${result.at}: the build timestamp and the clock records, which the remote's `
-        + 'clock is set back to at every restart\n');
-    } catch (error) {
-      if (!(error instanceof StampError)) throw error;
-      fail(`${configPath}: ${error.message}. It would also be refused by the remote at boot`);
-    }
-  }
 
-  // **The one check the remote itself makes, performed before anything is erased.** A container
-  // whose trailer disagrees with its bytes is one the boot validator refuses, and the failure would
-  // be discovered with the configuration already half replaced. `applyEdits` stamps this, so a file
-  // that came out of the codec passes; a file that was truncated in transit does not.
-  const container = parse(wanted);
-  const computed = trailerChecksum(wanted);
-  if (container.trailerChecksum !== computed) {
-    fail(`${configPath} states checksum 0x${container.trailerChecksum.toString(16)} and its bytes `
-      + `give 0x${computed.toString(16)}: it is damaged, and the remote would refuse to boot it`);
-  }
-  say(`${configPath}: ${wanted.length} bytes, trailer checksum `
-    + `0x${computed.toString(16)}, which recomputes\n`);
-
-  // **A check the remote does not make, which is exactly why it is here.** An action list is
-  // spooled into a ring of forty instructions and every push into a full ring is discarded without
-  // a word, so a config that asks for more runs and quietly does less than it says. Section 238.
-  try {
-    assertQueueFits(container);
-  } catch (error) {
-    if (!(error instanceof QueueError)) throw error;
-    fail(`${configPath} overflows the remote's action queue: ${error.message}. The remote would `
-      + 'accept it and silently drop instructions, so it is refused here');
-  }
-  // **The second silent one, and ours produced it.** The firmware sizes the state variable storage
-  // from base slot 13's `narrow` and `wide` and paints `0xFE` over everything above it at each boot,
-  // while the seeding loop runs over `count`. So a config whose header does not add up carries
-  // variables that are seeded and then erased, with no error anywhere. Section 276.
-  try {
-    assertStateTableConsistent(container);
-  } catch (error) {
-    if (!(error instanceof StateTableError)) throw error;
-    fail(`${configPath} has an inconsistent state variable table: ${error.message}. The remote `
-      + 'would accept it and overwrite those variables at every boot, so it is refused here');
-  }
-  const worst = worstQueueRun(container);
-  if (worst !== undefined) {
-    say(`deepest action list: ${worst.peak} of ${ACTION_QUEUE_INSTRUCTIONS} queue `
-      + `slots, at list ${worst.list}\n`);
-  }
-
-  if (wanted.length > dump.length) {
-    fail(`the config is ${wanted.length} bytes and ${dumpName} covers ${dump.length}: the dump has `
-      + 'to reach at least as far as the config, since the blocks past its end are still erased');
-  }
-
-  const attached = await listHarmony();
-  if (attached.length === 0) fail('no remote is attached');
-  if (attached.length > 1) {
-    fail(`${attached.length} remotes are attached; this writes, so it refuses to guess`);
-  }
-  const productId = (attached[0] as { productId: number }).productId;
-
-  const remote = new HarmonyRemote(await openHarmony({ productId }));
-  try {
-    // A previous session that died mid read leaves the remote streaming, and the first question
-    // asked here would be answered with its leftovers. Section 242, the second device write.
-    await remote.drainLeftovers();
-    const versionBytes = await remote.getVersion();
-    const architecture = architectureFromVersion(versionBytes);
-    if (architecture === undefined) {
-      throw new Refusal('the remote did not say which architecture it is');
-    }
-    const identity = readVersion(versionBytes);
-    say(`firmware ${identity.firmware}, flash id ${identity.flash}, `
-      + `architecture ${architecture}, skin ${identity.skin}\n`);
-
-    const units = TARGETS[architecture];
-    if (units === undefined) {
-      throw new Refusal(`architecture ${architecture} has no unit this may write to `
-        + `(${Object.entries(TARGETS).map(([a, t]) => `${a}: ${t.map((one) => one.model).join(' or ')}`).join(', ')})`);
-    }
-    const unit = units.find((one) => one.dumps.has(dumpName));
-    if (unit === undefined) {
-      throw new Refusal(`${dumpName} is not one of the region reads of an architecture ${architecture} `
-        + `unit (${units.map((one) => `${one.model}: ${[...one.dumps].join(', ') || 'none registered yet'}`).join('; ')}). `
-        + "Refusing rather than comparing one unit against another's content.");
-    }
-    if (commit && !unit.sequenceReadOn.includes(identity.firmware)) {
-      throw new Refusal(`${unit.model} reports firmware ${identity.firmware}, and the cache drop and the `
-        + `restart this sends have been read in ${unit.sequenceReadOn.length === 0 ? 'no build of it yet'
-          : `build ${unit.sequenceReadOn.join(' and ')} only`}. Read both in that build's image first.`);
-    }
-    // Before the unit check and before any comparison, so that a run which would leave the remote reading
-    // a region while it is erased stops having read nothing but the version and the identity. Not only on
-    // a commit: a dry run that says what a commit would do should not describe a sequence this refuses.
-    if (!invalidate && unit.dropRequired !== undefined) {
-      throw new Refusal(`--no-invalidate is refused for ${unit.model}: ${unit.dropRequired}`);
-    }
-    const stored = unitIdentity(unit.unitLabel);
-    if (stored === undefined) {
-      throw new Refusal(`the lab has no recorded identity for ${unit.unitLabel}, so nothing `
-        + 'can say whether the remote on the cable is the one this may write to. Two remotes of one '
-        + `model enumerate identically. Write it to ${unitIdentityPath(unit.unitLabel)}`);
-    }
-    const permitted = unitIdentityFromText(stored);
-    const identityBlock = await remote.readUnitIdentity();
-    assertUnitIsPermitted({ identityBlock, permittedUnit: permitted });
-    say(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which `
-      + `matches the recorded ${unit.unitLabel}\n`);
-
-    const base = CONFIG_REGION_BASE[architecture];
-    const blockSize = ERASE_BLOCK_SIZE[architecture];
-    const ceiling = WRITABLE_CEILING[architecture];
-    if (base === undefined || blockSize === undefined || ceiling === undefined) {
-      throw new Refusal(`architecture ${architecture} has no write target`);
-    }
-
-    /**
-     * The compatibility gate, section 225, and here it has something to compare only sometimes.
-     *
-     * A container that came off a remote carries no XML wrapper and states none of the six fields,
-     * so a config derived from one states none either and the gate reports zero compared. That is
-     * the truth about the input rather than a pass, and it is printed so nobody assumes otherwise.
-     * A config that arrived as a file from Logitech's service does carry them, and then this is the
-     * check that refuses a config built for a different remote.
-     */
-    const statedVersion: StatedVersion = {};
-    const comparison = compareIntendedVersion(statedVersion, identity);
-    say(`compatibility: ${comparison.compared} of ${comparison.fields.length} `
-      + `fields stated by the config`
-      + (comparison.compared === 0
-        ? ', so there is nothing to compare: this container carries no wrapper\n'
-        : `, ${comparison.mismatched.length} disagreeing\n`));
-
-    /**
-     * Read the whole container off the remote and refuse unless it is the file, byte for byte.
-     *
-     * **One derivation with two callers**, which is why it is a local rather than two copies: it is
-     * the post write check that no per block read back can make, and it is `--drop-only`'s
-     * precondition, where its job is to establish what the remote holds before a control changes
-     * anything about it.
-     *
-     * **Through `readConfig` rather than a loop of `readFlash`, and that was learned here.** The
-     * first version read the range itself and the run failed at 24304 bytes with a chunk out of
-     * sequence, which is section 223's transient: HIDAPI's macOS backend holds about 31 input
-     * reports and discards the oldest, so a consumer that stalls loses a run. Both blocks had
-     * already been written and verified, so the write was fine and the verification was not, which
-     * is the worst way round to fail. `readConfig` retries a window, because a read is idempotent.
-     */
-    const containerMatchesTheFile = async (): Promise<void> => {
-      say('reading the configuration back to compare with the file\n');
-      const reread = await readConfig(remote, profileFor(productId));
-      if (reread.retries > 0) {
-        say(`${reread.retries} window(s) had to be asked for again\n`);
+  await writeConfiguration({
+    config: { name: configPath, bytes: wanted },
+    region: { name: dumpName, bytes: dump },
+    units: UNITS,
+    records: { text: unitIdentity, where: unitIdentityPath },
+    stamp: asIs ? { kind: 'as-is' }
+      : resuming ? { kind: 'resume', journal: basename(previous!) }
+        : { kind: 'now', at: new Date() },
+    commit,
+    invalidate,
+    restart,
+    ...(dropOnly ? { only: 'drop' as const } : restartOnly ? { only: 'restart' as const } : {}),
+    // Exactly one remote attached, since this writes and refuses to guess, opened through the guarded
+    // transport `openHarmony` returns. The library calls this once every check that needs no remote has
+    // passed, the point at which this script opened it before the sequence moved into the library.
+    open: async () => {
+      const attached = await listHarmony();
+      if (attached.length === 0) fail('no remote is attached');
+      if (attached.length > 1) {
+        fail(`${attached.length} remotes are attached; this writes, so it refuses to guess`);
       }
-      const back = reread.bytes;
-      if (back.length !== wanted.length) {
-        throw new Refusal(`the remote now holds ${back.length} bytes and the file is `
-          + `${wanted.length}: a same length edit cannot change a container's length`);
-      }
-      const wrong = firstDifference(back, wanted);
-      if (wrong !== undefined) {
-        throw new Refusal(`the configuration read back differs from ${configPath} at offset `
-          + `0x${wrong.toString(16)}: 0x${back[wrong]!.toString(16)} on the device, `
-          + `0x${wanted[wrong]!.toString(16)} in the file`);
-      }
-      say('the whole configuration reads back byte for byte identical to the file. '
-        + "A config we produced is on the remote.\n");
-    };
-
-    /**
-     * Read the staged install's status byte, journal it, and refuse unless it is 0, on a unit that has
-     * one, `Target.installStatusAt`. A no op elsewhere.
-     *
-     * **Two bytes from the status's address and not one**, the status and its neighbour, so that every
-     * read here is an even count the way the odd count rail asks of a read of program memory. That rail is
-     * about `READ_FLASH` into internal memory and `READ_MISC` selector 7 reads one byte per exchange, so
-     * nothing hangs on a single byte; the even pair is kept because it costs one exchange and leaves no
-     * read in this script that a reader has to argue is the exception. Only the first byte is judged.
-     *
-     * `readRam` is the path `read-ram.ts` uses, and it takes the value from the byte of the reply the
-     * architecture puts it in, which `getVersion` has already pinned for this handle above.
-     */
-    const installStatusIsClear = async (moment: 'before the first erase' | 'before the restart'): Promise<void> => {
-      const at = unit.installStatusAt;
-      if (at === undefined) return;
-      const status = await remote.readRam(at);
-      const neighbour = await remote.readRam(at + 1);
-      say(`install status at data 0x${at.toString(16)} ${moment}: ${status} `
-        + `(0x${(at + 1).toString(16)} holds ${neighbour})\n`);
-      if (status === 0) return;
-      throw new Refusal(moment === 'before the first erase'
-        ? `the staged install status at data 0x${at.toString(16)} reads ${status}, and on ${unit.model} the `
-          + 'restart a write ends with installs firmware over the application whenever it is not 0. Nothing '
-          + 'was erased or written. Do not restart the remote over USB; report the value before going on'
-        : `the configuration is written and reads back identical to the file, and the restart is withheld: `
-          + `the staged install status at data 0x${at.toString(16)} reads ${status}, and on ${unit.model} `
-          + 'E1 02 with that byte set erases the application and copies 64 KiB over it. Leave the remote '
-          + 'as it is, running on its built in configuration, and report the value. A battery pull restarts '
-          + 'it without an install, since the bootloader clears the request after any reset but the RESET '
-          + 'instruction, reference/architectures/harmony-880-885/firmware.md; decide that step once the '
-          + 'value is understood, and do not rerun this script');
-    };
-
-    /**
-     * One erase block, read in transfers the announce's count field can state.
-     *
-     * **Each transfer is asked for again on a failure, through the shared `readFlashWindow`**, since
-     * `todo-compile-885.md` 2.1's first commit stopped here: a `flash chunk out of sequence` during the
-     * compare before the first erase ended the run with nothing written, as such breaks had ended region
-     * reads on both bench 885s (`docs/test-notes/harmony-885.md`). Every read this helper makes is a read,
-     * whether it is the compare before an erase, a neighbour check or the read back after a write, so asking
-     * again is safe; the bound and the reasoning are `readwindow.ts`'s. Each retry is journalled, because a
-     * write whose read back needed a second go is one to know about.
-     */
-    const readBlock = async (address: number): Promise<Uint8Array> => {
-      const out = new Uint8Array(blockSize);
-      for (let done = 0; done < blockSize; done += MAX_TRANSFER) {
-        const length = Math.min(MAX_TRANSFER, blockSize - done);
-        const { bytes } = await readFlashWindow(remote, address + done, length, (retry) => {
-          say(`read of 0x${retry.at.toString(16)} asked for again (attempt ${retry.attempt}): ${String(retry.error)}\n`);
-        });
-        if (bytes.length !== length) {
-          throw new Refusal(`read ${bytes.length} of ${length} bytes at 0x${(address + done).toString(16)}`);
-        }
-        out.set(bytes, done);
-      }
-      return out;
-    };
-
-    /**
-     * What the region should hold afterwards: the dump, with the config laid over its front.
-     *
-     * Past the config's end the dump's own bytes are kept, which is what makes a **shorter** config
-     * safe to write: the tail of the last block it lands in is not part of the container and has to
-     * be reproduced rather than invented. A config longer than the dump was refused above.
-     */
-    const target = Uint8Array.from(dump);
-    target.set(wanted, 0);
-
-    // Which blocks differ, which is the arithmetic that decides what gets erased. In `rehearsal.ts`
-    // with a test, because a boundary read the wrong way erases one block of a pair and leaves the
-    // other holding the old byte, and every per block read back would still pass.
-    const blocks = blocksDiffering(dump, target, base, blockSize);
-    if (blocks.length === 0 && !dropOnly && !restartOnly) {
-      say('the config is byte identical to the dump: there is nothing to write\n');
-      return;
-    }
-    // **`--drop-only` wants exactly this case**, and that is the point rather than a leniency: the
-    // control sends a command to a remote whose configuration is already the file, so a run with
-    // blocks to write would be measuring the drop and the write together, which is the confusion it
-    // exists to resolve. Everything below then loops over an empty plan and the dump comparison
-    // measures nothing, so the precondition that matters is the container read the branch performs.
-    if ((dropOnly || restartOnly) && blocks.length !== 0) {
-      throw new Refusal(`${dropOnly ? '--drop-only' : '--restart-only'} wants a remote that already `
-        + `holds ${configPath}, and `
-        + `${blocks.length} block(s) differ from ${dumpName}. Write it first, or name the dump and `
-        + 'config that match what is on the device.');
-    }
-    const changedBytes = [...dump].reduce((n, b, at) => (b === target[at] ? n : n + 1), 0);
-    say(`${changedBytes} byte(s) differ from ${dumpName}, in `
-      + `${blocks.length} block(s): ${blocks.map((b) => `0x${b.toString(16)}`).join(', ')}\n`);
-
-    for (const block of blocks) {
-      if (block % blockSize !== 0) throw new Refusal(`0x${block.toString(16)} is not aligned`);
-      if (block < base) throw new Refusal(`0x${block.toString(16)} is below the config region`);
-      if (block + blockSize > ceiling) {
-        throw new Refusal(`0x${block.toString(16)} runs past the writable ceiling `
-          + `0x${ceiling.toString(16)}, below which the stored application firmware sits`);
-      }
-      if (block - base + blockSize > dump.length) {
-        throw new Refusal(`block 0x${block.toString(16)} runs past the end of ${dumpName}, so the `
-          + 'bytes the erase would destroy are not known. Read a region that covers it.');
-      }
-    }
-
-    const flashSize = NOMINAL_FLASH_SIZE[architecture];
-    const plans = blocks.map((block) => {
-      const offset = block - base;
-      const transfers = transfersFor(block, blockSize);
-      return {
-        block,
-        offset,
-        intended: dump.subarray(offset, offset + blockSize),
-        content: target.slice(offset, offset + blockSize),
-        neighbours: flashSize === undefined ? [] : neighbourBlocks(block, blockSize, flashSize),
-        transfers,
-        packets: reportCount(transfers),
-      };
-    });
-
-    // **Read and compare every block before erasing any of them.** Not per block as it goes: a
-    // second block that turns out not to match the dump would be discovered with the first already
-    // rewritten, which is the one state this script must not create.
-    let interrupted = 0;
-    for (const plan of plans) {
-      say(`reading 0x${plan.block.toString(16)} off the remote to compare\n`);
-      const live = await readBlock(plan.block);
-      const differs = firstDifference(live, plan.intended);
-      // **A block an earlier run erased and did not finish writing is known content too**, which the
-      // failure message below promised and this compare did not deliver until 3 September 2026:
-      // the first write that added a device timed out half way through its first block, and the
-      // rerun the message asked for refused, because the block matched neither the dump nor the
-      // file. Flash only clears bits and a report lands whole, so an interrupted write leaves every
-      // byte either what this file puts there or erased, and nothing else. That state is recognised
-      // byte by byte rather than as a prefix, since a byte the file wants at 0xff cannot say which.
-      //
-      // **A block that is entirely erased is the same case and was refused until 4 September 2026**,
-      // when a run failed between the erase and the first data report and left exactly that. The
-      // `some` clause was there to stop an all ones block being read as an interrupted write, on the
-      // reasoning that it says nothing about which file had been going in. That reasoning is wrong
-      // twice over: erased flash is the one state where **nothing** is at risk, since an erase
-      // destroys nothing that is not already gone, and refusing it is what turns a recoverable run
-      // into a restore from the lab. It is reported separately so the operator sees which it was.
-      const erasedWhole = live.every((byte) => byte === 0xff);
-      if (differs !== undefined
-          && live.every((byte, k) => byte === plan.content[k] || byte === 0xff)) {
-        interrupted += 1;
-        say(`0x${plan.block.toString(16)} holds ${erasedWhole ? 'erased flash, so an earlier run '
-          + 'erased it and wrote nothing' : 'an interrupted write of this file: this file\'s bytes '
-          + 'then erased flash'}, so what an erase would destroy is known\n`);
-        continue;
-      }
-      if (differs !== undefined) {
-        throw new Refusal(`the remote and ${dumpName} differ at `
-          + `0x${(plan.block + differs).toString(16)}: 0x${live[differs]!.toString(16)} on the `
-          + `device, 0x${plan.intended[differs]!.toString(16)} in the dump. Refusing: the dump is `
-          + "not this unit's current content, so what an erase would destroy is unknown. Take a "
-          + 'fresh region read.');
-      }
-    }
-    say(interrupted === 0
-      ? `every block matches ${dumpName} byte for byte, so what the erase would destroy is known\n`
-      : `every block matches ${dumpName} byte for byte but ${interrupted} holding an interrupted `
-        + 'write of this file, so what the erase would destroy is known\n');
-
-    for (const plan of plans) {
-      if (plan.neighbours.length !== 2) {
-        say(`0x${plan.block.toString(16)}: only ${plan.neighbours.length} `
-          + 'neighbouring block(s) can be checked\n');
-      }
-    }
-    const totalPackets = plans.reduce((n, p) => n + p.packets, 0);
-    say(`plan: per block, read the neighbours, erase 0x${blockSize.toString(16)} `
-      + `bytes, check the neighbours again, write it back and read it back. `
-      + `${plans.length} erase(s), ${totalPackets} reports in total\n`);
-
-    // **Before anything is sent that changes the remote**, and in a dry run too, so that a remote whose
-    // restart would be an install is found by the run that writes nothing. On the 885s only.
-    await installStatusIsClear('before the first erase');
-
-    if (!commit) {
-      say('dry run: nothing was written. Add --commit, with '
-        + 'HARMONY_ENABLE_WRITES=1 and HARMONY_FIRST_WRITE=1, to perform it\n');
-      return;
-    }
-
-    assertFirstWriteAllowed();
-    // Saved before the first command that changes the remote, so that whatever happens next the lab
-    // holds the bytes the remote is being given, and a rerun can find them. The journal says so.
-    if (stamped) {
-      writeFileSync(configPath, wanted);
-      say(`saved the stamped configuration over ${configPath}\n`);
-    }
-    const permission = {
-      architecture,
-      configLength: dump.length,
-      // Measured, block by block, in the loop above. **On a `--drop-only` run there are no blocks
-      // and this is measured by something else**: the config is byte identical to the dump, checked
-      // above, and the branch below reads the whole container off the remote and compares it before
-      // sending anything. That is a stronger statement than the block loop makes, not a weaker one,
-      // and nothing is erased either way.
-      originalDumpVerified: true,
-      intendedVersion: statedVersion,
-      versionBlock: versionBytes,
-      identityBlock,
-      permittedUnit: permitted,
-    };
-
-    // **Step 2 of a working write, and ours did not have it**, sections 245 and 246. concordance
-    // drops the remote's cached region descriptors before it erases anything, "so that nothing will
-    // attempt to reference it while we're working" in its own words, and arch 12 executes its
-    // configuration in place out of the flash the next line is about to erase. It writes no flash and
-    // nothing persistent, so a run that fails after this point leaves no marker behind.
-    // The control's precondition, measured before anything is sent: the remote holds the file.
-    if (dropOnly) {
-      await containerMatchesTheFile();
-      say('--drop-only: sending the cache drop and nothing else. No erase, no write, no restart\n');
-      await remote.invalidateCachedRegions(permission);
-      // Section 250's clock experiment is a Harmony One's; on arch 14 the next erase consumes the drop's
-      // flag instead, section 282, and on arch 8 the remote runs on its built in configuration until it
-      // next starts, `tests/test_harmony_885_write_end.py`, so the advice differs per architecture.
-      say(architecture === 12
-        ? 'the drop is sent. The remote keeps running; its verdict byte is now clear. Read its '
-          + 'clock, pull the cable, plug it back in, and read the clock again: a running time that '
-          + 'starts over is a restart the drop caused with no write anywhere in the chain\n'
-        : architecture === 8
-          ? 'the drop is sent. The remote now looks everything up in its built in configuration, and '
-            + 'goes on doing so until it next starts; --restart-only or a battery pull ends it\n'
-          : 'the drop is sent. The remote keeps running with its verdict clear and a flag set that the '
-            + 'next erase consumes; a restart or a battery pull clears both\n');
-      return;
-    }
-    if (restartOnly) {
-      await containerMatchesTheFile();
-      say('--restart-only: sending the restart and nothing else. No drop, no erase, no write\n');
-      await installStatusIsClear('before the restart');
-      await remote.resetDevice(permission);
-      resetSent = true;
-      say('the restart is sent. The remote leaves the bus and comes back on its own; '
-        + 'give it a few seconds before enumerating again\n');
-      return;
-    }
-
-    // **On arch 14 the drop also arms the first erase after it**, section 282: that erase clears the
-    // flag wherever it is, and only an erase at exactly `0x030000` then updates a setting in the
-    // remote's settings store. This writes only the blocks that differ, in ascending order, so a run
-    // that leaves the first block alone spends the flag on another block and never touches the store.
-    if (invalidate) {
-      say('dropping the cached region descriptors, so nothing references the config while it '
-        + 'changes, and so the remote re-checks what we write\n');
-      // **On arch 8 the drop is the whole of the protection while the blocks change**: the remote looks
-      // up the built in configuration from here until it restarts, so nothing it does reads a block this
-      // run is erasing. Said in the journal so that a run which stops part way says what the remote is
-      // running on, which is the first thing an operator looking at its screen will want to know.
-      if (architecture === 8) {
-        // Worded after the review of 1.4: the built in configuration covers only until the next start, and a
-        // battery pull is a start, which checks whatever the region then holds.
-        say('arch 8: from the drop until the restart the remote runs on its built in configuration; a run '
-          + 'that stops part way leaves the region half written, and the next start, a battery pull included, '
-          + 'checks it, so do not unplug or pull the batteries, report the stop\n');
-      }
-      if (architecture === 14) {
-        say(blocks[0] === base
-          ? 'arch 14: the first erase is the configuration\'s first block, so the remote will also '
-            + 'look at setting 0x80 in its settings store and write it if its bit 0 is set, section 282\n'
-          : `arch 14: the first erase is 0x${blocks[0]!.toString(16)}, not the configuration's first `
-            + 'block, so the drop\'s flag is spent there and the settings store is left alone, '
-            + 'section 282\n');
-      }
-      await remote.invalidateCachedRegions(permission);
-    } else {
-      say("--no-invalidate: the drop is deliberately not sent, which is section 250's control. "
-        + 'The remote is expected to keep its old verdict, check nothing, and show no screen\n');
-    }
-
-    for (const plan of plans) {
-      await writeBlock({
-        remote,
-        permission,
-        block: plan.block,
-        blockSize,
-        content: plan.content,
-        neighbours: plan.neighbours,
-        readBlock,
-        log: (line) => say(`${line}\n`),
-        onPastTheErase: (value) => { pastTheErase = value; },
-        coversBlock: (address) => address >= base && address - base + blockSize <= dump.length,
-        sourceName: dumpName,
-      });
-    }
-
-    // **The check the per block read backs cannot make.** Each block verified the range it wrote;
-    // this reads the whole container off the remote and compares it with the file, so a block that
-    // was never written, or written in the wrong order, or a run of the config that fell between two
-    // blocks, all show up here and nowhere else.
-    // **Through `readConfig` rather than a loop of `readFlash`, and that was learned here.** The
-    // first version read the range itself and the run failed at 24304 bytes with a chunk out of
-    // sequence, which is section 223's transient: HIDAPI's macOS backend holds about 31 input
-    // reports and discards the oldest, so a consumer that stalls loses a run. Both blocks had
-    // already been written and verified, so the write was fine and the verification was not, which
-    // is the worst way round to fail. `readConfig` retries a window, because a read is idempotent.
-    await containerMatchesTheFile();
-
-    // **Step 7, and it is the last thing this script does on purpose.** concordance ends a config
-    // write with a device reset and waits for the remote to come back, which is the battery pull
-    // this bench has performed by hand after every write, section 245. Nothing acknowledges a
-    // command that ends in a reset, so there is nothing to wait for here.
-    // **Measured on the first run that sent it, section 247: the close then succeeded.** This said
-    // the handle was finished and the close was expected to complain, and it is not: on macOS the
-    // handle survives the escape long enough to close cleanly, and the remote leaves the bus
-    // afterwards. The arm below still catches the other case rather than assuming this one.
-    if (restart) {
-      // **Immediately before the restart, on the 885s**: the configuration is written and verified by now,
-      // so a refusal here leaves it in place and withholds only the command that would install firmware.
-      await installStatusIsClear('before the restart');
-      say('restarting the remote, which is what a battery pull was doing by hand\n');
-      await remote.resetDevice(permission);
-      resetSent = true;
-      say('the restart is sent. The remote leaves the bus and comes back on its own; '
-        + 'give it a few seconds before enumerating again\n');
-      // **Only a start takes up a new configuration on arch 8**: the start check and the sizing of the
-      // state variables run at a start and at no other moment, so the restart is what makes the remote
-      // use what was just written, and it comes back through its bootloader.
-      if (architecture === 8) {
-        say('arch 8: the remote comes back through its bootloader and checks the new configuration at '
-          + 'its start, the only moment it does\n');
-      }
-    } else {
-      say('--no-restart: the restart is deliberately not sent, which is section 247\'s control. '
-        + 'The remote stays on the bus; a battery pull is the only other way to restart it\n');
-    }
-  } finally {
-    try {
-      await remote.close();
-    } catch (error: unknown) {
-      // A close that complains after a reset is the device having already left the bus, which is a
-      // platform's business rather than a fault. Section 247 measured the opposite on macOS, so this
-      // is the arm for a platform where the handle dies immediately: it says what happened without
-      // calling it a failure, because reporting it as one would teach an operator to ignore the line
-      // when it is real.
-      if (resetSent) {
-        say(`(the handle was already gone, which is what a restart does)\n`);
-      } else {
-        process.stderr.write(`(the device did not close cleanly: ${String(error)})\n`);
-      }
-    }
-  }
+      const productId = (attached[0] as { productId: number }).productId;
+      return { remote: new HarmonyRemote(await openHarmony({ productId })), productId };
+    },
+    // Saved over `--config` before the first command that changes the remote, so the lab holds what went
+    // onto it and a rerun after a run that stopped past its erase finds it, `stoppedAfterErase`.
+    saveStamped: (bytes) => writeFileSync(configPath, bytes),
+    say: (line) => say(`${line}\n`),
+    onPastTheErase: (value) => { pastTheErase = value; },
+    warn: (line) => { process.stderr.write(`${line}\n`); },
+  });
 }
 
 main().catch((error: unknown) => {
-  const known = error instanceof Refusal || error instanceof RailError || error instanceof RemoteError;
+  const known = error instanceof ConfigWriteRefusal || error instanceof RailError || error instanceof RemoteError;
   process.stderr.write(`${failureLine(known ? error.message : String(error), pastTheErase)}\n`);
   process.exit(1);
 });

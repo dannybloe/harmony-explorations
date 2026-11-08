@@ -44,6 +44,10 @@ the `writing-a-config` skill; this is the procedure on top of those, in the orde
    `packages/lab/src/index.ts` and in `tests/lab.py`, `PARSEABLE_EXCLUDED` in both (a region read is not
    a container), and `H650_DUMPS` in `packages/corpus/bin/write-config.ts`. Then raise the two counts
    in `packages/lab/test/parity.test.ts`. The test fails until all four agree.
+
+   The sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, on `@harmony/corpus/write`
+   since `todo.md` 7.3.10, so an application writes through the same function; the script is its bench
+   front, and the steps here stay the script's.
 3. **Dry run**, which reads only and prints which blocks would be written:
 
        node packages/corpus/bin/write-config.ts --config <file> --dump <base name>

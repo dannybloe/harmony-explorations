@@ -74,10 +74,12 @@ import {
 } from './filepipe.ts';
 import {
   FILE_WRITE_DOOR,
+  FILE_WRITE_PATHS,
   RailError,
   WRITES_ENABLED,
   assertFileFamilyContainer,
   assertFileWriteAllowed,
+  assertFileWriteTarget,
   type FileFamilyContainer,
 } from './rails.ts';
 import { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED } from './trailer.ts';
@@ -593,4 +595,157 @@ export async function writeFileConfig(
     readBackLength: back.length,
     rebooted,
   };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// The whole run, from the container to the closed transport, `todo.md` 7.3.10
+// ---------------------------------------------------------------------------------------------------
+
+/** The unit a file write is meant for, as the caller records it. */
+export interface FileFamilyUnit {
+  /** The name of its record, `h350` or `h300` in the lab, decision 26. */
+  readonly label: string;
+  /** `Harmony 350` or `Harmony 300`. */
+  readonly model: string;
+  /**
+   * The skin the model's identity file states, `0x68` for a Harmony 350 and `0x4f` for a Harmony 300: a second
+   * reading that costs nothing beside `/sys/guid`, which is the only thing on the cable that tells two units
+   * apart, since both models enumerate as `0xC124`.
+   */
+  readonly skin: number;
+  /** Where the record is kept, for the account's line that the unit matched it. */
+  readonly record: string;
+}
+
+/** What a caller has: the unit's record, the container and the backup, and what the script's flags say. */
+export interface FileFamilyWrite {
+  readonly unit: FileFamilyUnit;
+  /** The unit's identity, `/sys/guid` as recorded. */
+  readonly permittedUnit: Uint8Array;
+  /**
+   * The container to write, by the name the account calls it and its bytes: whole, or as a remote serves it,
+   * four bytes short, when the end marker is all that is missing; anything else is refused.
+   */
+  readonly container: { readonly name: string; readonly bytes: Uint8Array };
+  /** The caller's copy of what the unit holds now, as read or whole, `judgeCurrentContent`. */
+  readonly backup: Uint8Array;
+  /** Write. Without it the run reads only and says what a commit would do, the script's dry run. */
+  readonly commit: boolean;
+  /** Send the reboot after a verified write; the script's `--no-reboot` is false. */
+  readonly reboot: boolean;
+  /** Open the remote, `openFileBasedRemote` for the script; called once the container has passed. */
+  open(): Promise<Transport>;
+  /** Each line of the account, without its newline, as it happens, so a caller can journal it first. */
+  readonly say?: (line: string) => void;
+  /** Called once a commit has been judged and immediately before its first command, where a caller arms its interrupt. */
+  readonly onCommit?: () => void;
+}
+
+export interface FileFamilyWriteResult {
+  /** The container as written, or as a commit would write it: whole, its end marker included. */
+  readonly container: Uint8Array;
+  /** Whether the end marker had to be put back on bytes as a remote serves them. */
+  readonly markerPutBack: boolean;
+  readonly chunks: number;
+  readonly dataPackets: number;
+  /** What the remote held, judged before anything was sent that changes it. */
+  readonly before: CurrentContent;
+  /** The write's own result, when this was a commit. */
+  readonly written?: FileWriteResult;
+}
+
+/**
+ * Put a configuration onto a Harmony 300 or Harmony 350 and read it back: the library half of
+ * `bin/write-file-config.ts`, `todo.md` 7.3.10, so an application writes one through the same function.
+ *
+ * In order, and every line goes to `say` before the next step:
+ *
+ * 1. **The container**, before anything is opened: `assertFileFamilyContainer`, and when that refuses, the same
+ *    rail on the bytes with the end marker put back, which is what a file read off a remote needs.
+ * 2. **`open`**, the caller's.
+ * 3. **The facts**, `readFileWriteFacts`, reads only; the skin the remote states against the unit's model.
+ * 4. **The same judgement a commit makes, without the flags**, so a dry run refuses where a commit would:
+ *    `assertFileWriteTarget`, then `judgeCurrentContent`.
+ * 5. Without `commit`, the account of what a commit would send, and nothing more.
+ * 6. With it, `onCommit`, then `writeFileConfig`, whose own `assertFileWriteAllowed` is the rail with the two
+ *    flags, and whose docstring is the sequence. Its result is reported.
+ * 7. The transport closed, whatever happened.
+ *
+ * **The rails did not move**: each is asserted on the inputs and at the point the script asserted it, and
+ * every command still goes through `writeFileConfig` and the guard on the transport. A refusal is a
+ * `RailError` whose message is the line the script printed; a fault of the remote is the `FileWriteError` or
+ * transport error it was.
+ */
+export async function writeFileFamilyConfiguration(request: FileFamilyWrite): Promise<FileFamilyWriteResult> {
+  const say = request.say ?? ((): void => undefined);
+  const { unit, permittedUnit, backup, reboot } = request;
+  const configPath = request.container.name;
+
+  // The container: whole, or as read and short of its end marker by exactly four bytes.
+  let container: Uint8Array = request.container.bytes;
+  let markerPutBack = false;
+  try {
+    assertFileFamilyContainer(container);
+  } catch (whole: unknown) {
+    const marked = withEndMarker(container);
+    try {
+      assertFileFamilyContainer(marked);
+    } catch {
+      throw new RailError(`${configPath} is not a whole configuration for this family: ${
+        whole instanceof Error ? whole.message : String(whole)}`);
+    }
+    say(`${configPath} is ${container.length} bytes, as a remote serves it: the four byte end marker is put `
+      + 'back, since the remote\'s start up check demands it');
+    container = marked;
+    markerPutBack = true;
+  }
+
+  const chunks = chunksFor(container);
+  const packets = chunks.reduce((n, c) => n + c.payloads.length, 0);
+  const stored = assertFileFamilyContainer(container).storedChecksum;
+  const path = FILE_WRITE_PATHS[0] as string;
+  say(`${unit.model}, unit record ${unit.label}: writing ${container.length} bytes to ${path}, `
+    + `checksum 0x${stored.toString(16).padStart(4, '0')}, in ${chunks.length} chunks of ${packets} data packets`);
+
+  const transport = await request.open();
+  try {
+    const facts = await readFileWriteFacts(transport);
+    const skin = Number.parseInt(facts.sysinfo.get('skin') ?? '', 16);
+    say(`the remote states architecture ${facts.sysinfo.get('arch') ?? '?'}, skin ${facts.sysinfo.get('skin') ?? '?'}, `
+      + `firmware ${facts.sysinfo.get('fw_ver') ?? '?'}, and serves /cfg/usercfg as ${facts.current.length} bytes`);
+    if (skin !== unit.skin) {
+      throw new RailError(`the remote states skin 0x${Number.isNaN(skin) ? '?' : skin.toString(16)}, and a ${unit.model} `
+        + `states 0x${unit.skin.toString(16)}: this is not the unit ${unit.label} names`);
+    }
+
+    // The same judgement a commit makes, without the flags: a dry run refuses where a commit would.
+    let before: CurrentContent;
+    try {
+      assertFileWriteTarget({ path, sysinfo: facts.sysinfo, guid: facts.guid, permittedUnit, container });
+      say(`/sys/guid matches ${unit.record}`);
+      before = judgeCurrentContent(facts.current, backup, container);
+      say(`the remote holds ${before}`);
+    } catch (error: unknown) {
+      if (error instanceof RailError) throw new RailError(`refused: ${error.message}`);
+      throw error;
+    }
+
+    const planned = { container, markerPutBack, chunks: chunks.length, dataPackets: packets, before };
+    if (!request.commit) {
+      say('read only: nothing was sent that changes the remote. With --commit, '
+        + `HARMONY_ENABLE_WRITES=1 (${WRITES_ENABLED ? 'set' : 'not set'}) and HARMONY_FILE_WRITE=1 `
+        + `(${FILE_WRITE_DOOR ? 'set' : 'not set'}), the open for writing erases the configuration before `
+        + `it answers, then ${chunks.length} write commands, the check, the flush, the close, a read back`
+        + `${reboot ? ' and the reboot' : ''}`);
+      return planned;
+    }
+
+    request.onCommit?.();
+    const written = await writeFileConfig(transport, { path, container, permittedUnit, backup, reboot, log: say });
+    say(`verified: ${written.readBackLength} bytes read back identical, check answered ${written.checkAnswer}`
+      + `${written.rebooted ? ', reboot sent' : ', no reboot sent'}`);
+    return { ...planned, written };
+  } finally {
+    await transport.close().catch(() => undefined);
+  }
 }

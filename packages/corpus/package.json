@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./read": "./src/read.ts",
-    "./file": "./src/file.ts"
+    "./file": "./src/file.ts",
+    "./write": "./src/write.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"

@@ -11,6 +11,10 @@
  * container's size and checksum, and how many chunks and packets it would take. A refusal there is the
  * same refusal a commit would meet, since both ask `assertFileWriteTarget`.
  *
+ * **The run is `writeFileFamilyConfiguration` in `src/filewrite.ts`**, on `@harmony/usb/write` since `todo.md`
+ * 7.3.10, so an application writes one of these remotes through the same function; this script keeps its
+ * command line, the lab's unit records and models, the files and the journal.
+ *
  * **With `--commit` and both flags it runs `writeFileConfig`**, whose docstring is the sequence: the
  * file system reset, the open for writing, which erases the configuration before the remote answers it,
  * the chunks, the check, the flush on `m`, the close, a read back compared byte for byte, and the
@@ -37,22 +41,8 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import { unitIdentity, unitIdentityPath } from '@harmony/lab';
 
 import { openFileBasedRemote } from '../src/filepipe.ts';
-import {
-  chunksFor,
-  judgeCurrentContent,
-  readFileWriteFacts,
-  withEndMarker,
-  writeFileConfig,
-} from '../src/filewrite.ts';
+import { writeFileFamilyConfiguration } from '../src/filewrite.ts';
 import { unitIdentityFromText } from '../src/identity.ts';
-import {
-  FILE_WRITE_DOOR,
-  FILE_WRITE_PATHS,
-  RailError,
-  WRITES_ENABLED,
-  assertFileFamilyContainer,
-  assertFileWriteTarget,
-} from '../src/rails.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -110,86 +100,32 @@ async function main(): Promise<void> {
   }
   const permittedUnit = unitIdentityFromText(recorded);
 
-  // The container: whole, or as read and short of its end marker by exactly four bytes.
-  let container: Uint8Array = new Uint8Array(readFileSync(configPath));
-  try {
-    assertFileFamilyContainer(container);
-  } catch (whole: unknown) {
-    const marked = withEndMarker(container);
-    try {
-      assertFileFamilyContainer(marked);
-    } catch {
-      fail(`${configPath} is not a whole configuration for this family: ${
-        whole instanceof Error ? whole.message : String(whole)}`);
-    }
-    say(`${configPath} is ${container.length} bytes, as a remote serves it: the four byte end marker is put `
-      + 'back, since the remote\'s start up check demands it');
-    container = marked;
-  }
+  // The container and the backup, read here; what the container must be, and everything after it, is
+  // `writeFileFamilyConfiguration`'s since `todo.md` 7.3.10, which every line below is printed and journalled from.
+  const container = new Uint8Array(readFileSync(configPath));
   const backup = new Uint8Array(readFileSync(backupPath));
-
-  const chunks = chunksFor(container);
-  const packets = chunks.reduce((n, c) => n + c.payloads.length, 0);
-  const stored = assertFileFamilyContainer(container).storedChecksum;
-  say(`${unit.model}, unit record ${unitLabel}: writing ${container.length} bytes to ${FILE_WRITE_PATHS[0]}, `
-    + `checksum 0x${stored.toString(16).padStart(4, '0')}, in ${chunks.length} chunks of ${packets} data packets`);
 
   const select: { productId: number; path?: string } = { productId: FILE_FAMILY_PRODUCT };
   if (devicePath !== undefined) select.path = devicePath;
-  const transport = await openFileBasedRemote(select);
-  try {
-    const facts = await readFileWriteFacts(transport);
-    const skin = Number.parseInt(facts.sysinfo.get('skin') ?? '', 16);
-    say(`the remote states architecture ${facts.sysinfo.get('arch') ?? '?'}, skin ${facts.sysinfo.get('skin') ?? '?'}, `
-      + `firmware ${facts.sysinfo.get('fw_ver') ?? '?'}, and serves /cfg/usercfg as ${facts.current.length} bytes`);
-    if (skin !== unit.skin) {
-      fail(`the remote states skin 0x${Number.isNaN(skin) ? '?' : skin.toString(16)}, and a ${unit.model} `
-        + `states 0x${unit.skin.toString(16)}: this is not the unit ${unitLabel} names`);
-    }
-
-    // The same judgement a commit makes, without the flags: a dry run refuses where a commit would.
-    try {
-      assertFileWriteTarget({
-        path: FILE_WRITE_PATHS[0] as string,
-        sysinfo: facts.sysinfo,
-        guid: facts.guid,
-        permittedUnit,
-        container,
+  await writeFileFamilyConfiguration({
+    unit: { label: unitLabel, model: unit.model, skin: unit.skin, record: unitIdentityPath(unitLabel) },
+    permittedUnit,
+    container: { name: configPath, bytes: container },
+    backup,
+    commit,
+    reboot,
+    open: () => openFileBasedRemote(select),
+    say,
+    // Armed where it was before: once the dry run's judgement has passed and immediately before the commit's
+    // first command, which is the open for writing that erases.
+    onCommit: () => {
+      process.on('SIGINT', () => {
+        say('interrupted: if the open was sent, the remote holds no configuration until this path writes the '
+          + 'backup or this file again');
+        process.exit(130);
       });
-      say(`/sys/guid matches ${unitIdentityPath(unitLabel)}`);
-      say(`the remote holds ${judgeCurrentContent(facts.current, backup, container)}`);
-    } catch (error: unknown) {
-      if (error instanceof RailError) fail(`refused: ${error.message}`);
-      throw error;
-    }
-
-    if (!commit) {
-      say('read only: nothing was sent that changes the remote. With --commit, '
-        + `HARMONY_ENABLE_WRITES=1 (${WRITES_ENABLED ? 'set' : 'not set'}) and HARMONY_FILE_WRITE=1 `
-        + `(${FILE_WRITE_DOOR ? 'set' : 'not set'}), the open for writing erases the configuration before `
-        + `it answers, then ${chunks.length} write commands, the check, the flush, the close, a read back`
-        + `${reboot ? ' and the reboot' : ''}`);
-      return;
-    }
-
-    process.on('SIGINT', () => {
-      say('interrupted: if the open was sent, the remote holds no configuration until this path writes the '
-        + 'backup or this file again');
-      process.exit(130);
-    });
-    const result = await writeFileConfig(transport, {
-      path: FILE_WRITE_PATHS[0] as string,
-      container,
-      permittedUnit,
-      backup,
-      reboot,
-      log: say,
-    });
-    say(`verified: ${result.readBackLength} bytes read back identical, check answered ${result.checkAnswer}`
-      + `${result.rebooted ? ', reboot sent' : ', no reboot sent'}`);
-  } finally {
-    await transport.close().catch(() => undefined);
-  }
+    },
+  });
 }
 
 main().catch((error: unknown) => {

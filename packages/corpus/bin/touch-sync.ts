@@ -29,6 +29,7 @@
  * which flags are set; the steps a commit takes; and the line forms below.
  *
  * **With `--commit`, the two flags and the unit record it opens the Touch** through `openFileBasedRemote`,
+ * by way of `answerTouchSync` in `src/touchsync.ts`, on `@harmony/corpus/write` since `todo.md` 7.3.10,
  * opens a session, which reads the identity file and refuses any unit but the lab's `units/touch.txt`, and
  * runs the answerer, keeping every request, every answer and what the remote hands up in a new folder of the
  * lab's `reads/`. **It refuses with `HARMONY_TOUCH_RECOVERY` set**: a session driving a sync has no reason to
@@ -90,9 +91,9 @@ import { join, resolve, sep } from 'node:path';
 import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import { openFileBasedRemote, unitIdentityFromText } from '@harmony/usb';
 import { TOUCH_PRODUCT_ID, TOUCH_RECOVERY_DOOR, TOUCH_REQUEST_DOOR, WRITES_ENABLED } from '@harmony/usb/rails';
-import { openTouchRequestSession } from '@harmony/usb/touchsession';
 
-import { RECOVERY, SYNC_LINES, prepareSet, syncTouch, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
+import { RECOVERY, SYNC_LINES, prepareSet, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
+import { answerTouchSync, assertTouchSyncAllowed } from '../src/write.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -174,10 +175,12 @@ async function main(): Promise<void> {
     console.log('\ndry run: nothing was opened. --commit needs the unit record, HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1.');
     return;
   }
-  if (!WRITES_ENABLED || !TOUCH_REQUEST_DOOR) fail('--commit needs HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1');
-  if (TOUCH_RECOVERY_DOOR) {
-    fail('--commit refuses with HARMONY_TOUCH_RECOVERY set: a sync has no use for the recovery door, and the '
-      + 'recovery steps are run by hand, one per run of touch-recover.ts');
+  // The flags, first and with the library's words: `answerTouchSync` asks the same again before it opens
+  // anything, so a caller that skips this still meets it, and asking here keeps the order of the refusals.
+  try {
+    assertTouchSyncAllowed();
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
   }
   if (record === undefined) {
     fail(`no unit record at ${unitIdentityPath(UNIT)}: read one with read-file-identity.ts --product 0xc12b --record ${UNIT}`);
@@ -185,20 +188,18 @@ async function main(): Promise<void> {
   if (LAB === undefined) fail('no lab directory, so there is nowhere to keep the run');
   const folder = newReadFolder(LAB, `touch-sync-${unchanged ? 'unchanged' : 'set'}`);
 
-  const transport = await openFileBasedRemote({ productId: TOUCH_PRODUCT_ID });
-  let ending: string;
-  try {
-    const session = await openTouchRequestSession(transport, {
-      permittedUnit: unitIdentityFromText(record),
-      log: (text) => console.log(text),
-    });
-    const outcome = await syncTouch({ session, mode, folder, report: (line) => console.log(line) });
-    console.log(`\nkept in ${folder}`);
-    ending = outcome.ending;
-  } finally {
-    await transport.close();
-  }
-  if (ending !== 'finished') process.exit(1);
+  // The run is the library's since `todo.md` 7.3.10: the flags again, the open, the session with its unit
+  // check, the answerer, and the transport closed.
+  const outcome = await answerTouchSync({
+    mode,
+    folder,
+    permittedUnit: unitIdentityFromText(record),
+    open: () => openFileBasedRemote({ productId: TOUCH_PRODUCT_ID }),
+    log: (text) => console.log(text),
+    report: (line) => console.log(line),
+  });
+  console.log(`\nkept in ${folder}`);
+  if (outcome.ending !== 'finished') process.exit(1);
 }
 
 main().catch((error: unknown) => {

@@ -127,7 +127,8 @@ hold on each unit before choosing; the rule is that no neighbour of the block is
 ### The whole configuration, `todo-compile-885.md` 1.4
 
 The writer is `packages/corpus/bin/write-config.ts`, the one every other model uses, with both 885s among its
-targets since 1.4. **What it sends an 885**, in order: a read of the staged install status, data `0x100` and
+targets since 1.4; its sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts` since `todo.md`
+7.3.10, where `CONFIG_WRITE_MODELS` holds the 885's required drop and its install status address. **What it sends an 885**, in order: a read of the staged install status, data `0x100` and
 the byte after it over `READ_MISC` selector 7, journalled, and the run refused before anything is erased unless
 the status is 0 (in a dry run too); the cache drop, `WRITE_MISC` selector 2, answered `F0 A0`, after which the
 remote looks everything up in its built in configuration until it next starts; for each block that differs

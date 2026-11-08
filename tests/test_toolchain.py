@@ -1798,7 +1798,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # and that row now carries the map's history. Nothing widened; the list was re-read.
         # 32 with the Harmony 885's compile track: its skill, its test notes and `todo-compile-885.md`,
         # each naming `rehearse-block.ts` and the first block written on arch 8.
-        self.assertEqual(len(must), 32, 'the withhold list should resolve to 32 paths, got %s'
+        # 36 with `todo.md` 7.3.10: the configuration write's library function, which took the script's
+        # sequence, and its fake remote, runner and test, which drive it and name the flash write rail.
+        self.assertEqual(len(must), 36, 'the withhold list should resolve to 36 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1923,7 +1925,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 45 with `todo.md` 7.3.6: `packages/usb/test/surface.test.ts` holds the write subpath's names to a
         # list, `assertFirstWriteAllowed` among them. It is inside `packages/usb/`, withheld whole, so
         # nothing widens; the list was re-read.
-        self.assertEqual(len(stating), 45,
+        # 49 with `todo.md` 7.3.10: `packages/corpus/src/writeconfig.ts`, the configuration write as a library
+        # function, which states the sequence `write-config.ts` stated, and the three test files that drive it
+        # against a fake remote asserting the flash write rail. All four went on the withhold list in the same
+        # commit; the list was re-read.
+        self.assertEqual(len(stating), 49,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

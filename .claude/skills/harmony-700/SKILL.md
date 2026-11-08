@@ -50,6 +50,10 @@ as the Harmony 650's in `harmony-650` with the 700's names.
 2. **Register that read** under a name like `h700_<what>_region`: `IMAGES` in `packages/lab/src/index.ts`
    and in `tests/lab.py`, `PARSEABLE_EXCLUDED` in both, and `H700_DUMPS` in
    `packages/corpus/bin/write-config.ts`. Then raise the two counts in `packages/lab/test/parity.test.ts`.
+
+   The sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, on `@harmony/corpus/write`
+   since `todo.md` 7.3.10, so an application writes through the same function; the script is its bench
+   front, and the steps here stay the script's.
 3. **Dry run**, which reads only:
 
        node packages/corpus/bin/write-config.ts --config <file> --dump <region name>

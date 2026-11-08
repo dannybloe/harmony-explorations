@@ -382,7 +382,10 @@ packages/usb/                   TS: the command protocol and the write rails, re
                                 `writeBlock`, and a caller in this workspace reaches it through the
                                 `@harmony/usb/write` subpath, which carries the three rails a block
                                 writer asserts, so that a third write caller is a decision visible
-                                in a diff. `./internal` is the protocol and the transport's parts
+                                in a diff. The file write for the Harmony 300 and 350 is on it too,
+                                `writeFileConfig` and, since `todo.md` 7.3.10, the whole run an
+                                application calls, `writeFileFamilyConfiguration`, with
+                                bin/write-file-config.ts its script. `./internal` is the protocol and the transport's parts
                                 each module whole, for this repository's scripts and tests;
                                 `./touchsession` the Touch's request session, for the reason
                                 `write` is a subpath; `./touchrecording` the decoder of a recorded
@@ -400,7 +403,11 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 and file that, **and put one back**:
                                 since section 237 it also holds the config writer, which is here
                                 rather than in packages/usb because it needs the container parser
-                                to check the one field the remote itself checks. It is the write
+                                to check the one field the remote itself checks. Since `todo.md`
+                                7.3.10 its sequence is a library function, `writeConfiguration` in
+                                `src/writeconfig.ts`, with what each model's write end needs in
+                                `CONFIG_WRITE_MODELS`, and bin/write-config.ts keeps the command
+                                line, the lab's units and region reads and the journal. It is the write
                                 path's first caller outside that package, which is why the blind
                                 review's withhold list gained a row for it. It also holds the
                                 Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync
@@ -443,7 +450,10 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 and a Context description, which holds the account's values, only
                                 ever in the lab. The main entry is reading a configuration off a remote,
                                 test/surface.test.ts; `./read` the reader module whole, which loads
-                                without the transport; `./file` filing a read in the lab corpus
+                                without the transport; `./write` the configuration write and the
+                                Touch's sync, `writeConfiguration` and `answerTouchSync`, as functions
+                                an application calls, `todo.md` 7.3.10, test/write-surface.test.ts;
+                                `./file` filing a read in the lab corpus
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
@@ -1103,7 +1113,8 @@ node packages/usb/bin/write-file-config.ts --unit h350 --config <file> --backup 
                        `todo-compile-350.md` 1.6. Without `--commit` it reads the identity file,
                        `/sys/guid` and the configuration and says what a commit would do; a refusal
                        there is the one a commit would meet. `--commit` needs HARMONY_ENABLE_WRITES=1
-                       **and** HARMONY_FILE_WRITE=1, and runs `writeFileConfig`: the file system
+                       **and** HARMONY_FILE_WRITE=1, and runs `writeFileConfig`, by way of
+                       `writeFileFamilyConfiguration` since `todo.md` 7.3.10: the file system
                        reset, the open for writing (which erases the configuration before it is
                        answered), the chunks, the check, the flush, the close, a read back compared
                        byte for byte, and the reboot. A file read off a remote has its end marker put
@@ -1139,7 +1150,8 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        plan and the gate's verdict. `--commit` needs HARMONY_ENABLE_WRITES=1 **and**
                        HARMONY_TOUCH_REQUESTS=1 and the lab's `units/touch.txt`, refuses with
                        HARMONY_TOUCH_RECOVERY set, and keeps every request and answer in the lab's
-                       `reads/`. A refusal after the remote was acted on names `touch-recover.ts
+                       `reads/`; the run is `answerTouchSync` in `src/touchsync.ts` since `todo.md`
+                       7.3.10. A refusal after the remote was acted on names `touch-recover.ts
                        --step abort`. One line per step starting `sync:`, the forms in its header.
                        With a set, a document the hand over hands up that the set also holds stops the
                        run before the sync request, since the set would revert it, and so does a

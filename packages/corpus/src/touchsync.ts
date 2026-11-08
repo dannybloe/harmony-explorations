@@ -76,8 +76,8 @@
  * **A write of answers is announced with the whole line's length**, which is the session's default,
  * `TouchAnnouncement` in `touchsession.ts`: the remote's listener counts the line from the request's name on,
  * so that is the number it reaches exactly on the last chunk. Logitech's client announces the `responses`
- * argument alone and can be acted on one chunk early; the session is opened by the caller, and the script
- * opens it with the default.
+ * argument alone and can be acted on one chunk early; `syncTouch` takes a session its caller opened, and
+ * `answerTouchSync` opens it with the default.
  *
  * **`unchanged` is not write free**, and its first line says so: every document the remote hands up is
  * written back to it with a tag of ours, and the hand over then commits it, so the change made on the remote
@@ -115,6 +115,11 @@
  * each, a log of the lines above, and what the remote handed up, under `handed-up/`, written before the
  * answer that takes it. The folder has to be new or empty, so a run never writes over another's.
  *
+ * **`answerTouchSync` is the whole run an application calls**, `todo.md` 7.3.10, on `@harmony/corpus/write`:
+ * the two flags and the recovery flag checked before anything is opened, `assertTouchSyncAllowed`, the Touch
+ * opened by the caller's `open`, the session with its unit check, `syncTouch`, and the transport closed. It was
+ * the script's `--commit` until then, and `bin/touch-sync.ts` keeps its command line, the lab and the printing.
+ *
  * **`unchanged` has driven three syncs on the bench unit**, `todo-touch.md` 6.7 and 6.8, and a set one, 6.8, the
  * remote's own six documents delivered with 200 under tags of ours and committed,
  * `packages/usb/test/touch-own-set-sync.test.ts`. This
@@ -125,8 +130,16 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } fro
 import { join } from 'node:path';
 
 import { harmonyTouch } from '@harmony/codec/build';
-import { TOUCH_READ_REQUESTS, TOUCH_SYNC_REQUESTS } from '@harmony/usb/rails';
-import type { TouchRequestSession } from '@harmony/usb/touchsession';
+import type { Transport } from '@harmony/usb';
+import {
+  RailError,
+  TOUCH_READ_REQUESTS,
+  TOUCH_RECOVERY_DOOR,
+  TOUCH_REQUEST_DOOR,
+  TOUCH_SYNC_REQUESTS,
+  WRITES_ENABLED,
+} from '@harmony/usb/rails';
+import { openTouchRequestSession, type TouchRequestSession } from '@harmony/usb/touchsession';
 
 // ---------------------------------------------------------------------------------------------------
 // The requests, by the rail's own lists
@@ -795,5 +808,62 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     const reason = error instanceof Refusal ? error.message
       : `the run stopped on an error: ${error instanceof Error ? error.message : String(error)}`;
     return end(acted ? { ending: 'refused', reason, recovery: RECOVERY, abortCost: costOfAnAbort() } : { ending: 'refused', reason });
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// The whole run, from the flags to the closed transport, `todo.md` 7.3.10
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * Throws unless a sync may be driven: `HARMONY_ENABLE_WRITES=1` and `HARMONY_TOUCH_REQUESTS=1` set, and
+ * `HARMONY_TOUCH_RECOVERY` not.
+ *
+ * **Why the recovery flag refuses**: a session driving a sync has no reason to hold the recovery door,
+ * `TOUCH_RECOVERY_DOOR` in `rails.ts`, and the recovery steps are a person's, one per run of
+ * `packages/usb/bin/touch-recover.ts`; a sync run with that door open could reach the abort, the delete or the
+ * restart through a bug of ours. These two checks were the script's until 7.3.10 moved them here, where an
+ * application meets them too; the request rail under the session still checks the two flags on every line.
+ * The words are the script's, which its tests read.
+ */
+export function assertTouchSyncAllowed(): void {
+  if (!WRITES_ENABLED || !TOUCH_REQUEST_DOOR) {
+    throw new RailError('--commit needs HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1');
+  }
+  if (TOUCH_RECOVERY_DOOR) {
+    throw new RailError('--commit refuses with HARMONY_TOUCH_RECOVERY set: a sync has no use for the recovery door, '
+      + 'and the recovery steps are run by hand, one per run of touch-recover.ts');
+  }
+}
+
+/** What `answerTouchSync` needs: what `syncTouch` takes but the session, which it opens itself. */
+export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session'> {
+  /** The unit the session is meant for, the caller's record of the Touch it may sync. */
+  readonly permittedUnit: Uint8Array;
+  /** Open the Touch, `openFileBasedRemote` for the script; called once the flags have passed. */
+  open(): Promise<Transport>;
+  /** The session's own lines, one per request and the identity read, which do not start with `sync:`. */
+  readonly log?: (line: string) => void;
+}
+
+/**
+ * Answer one sync of a Harmony Touch, from the flags to the closed transport: the library half of
+ * `bin/touch-sync.ts`'s `--commit`, `todo.md` 7.3.10.
+ *
+ * In order: `assertTouchSyncAllowed`, before anything is opened; `open`; a session, which reads the identity
+ * file and refuses any unit but `permittedUnit`, `openTouchRequestSession`; `syncTouch`, which runs the gate
+ * before anything is sent and answers the sync as this file's header lists; and the transport closed, whatever
+ * happened. Resolves with the outcome, as `syncTouch` does; throws only when the flags refuse, the open or the
+ * session fails, or the folder cannot be used, each before anything that acts on the remote is sent.
+ */
+export async function answerTouchSync(run: TouchSyncRun): Promise<TouchSyncOutcome> {
+  assertTouchSyncAllowed();
+  const { open, permittedUnit, log, ...options } = run;
+  const transport = await open();
+  try {
+    const session = await openTouchRequestSession(transport, { permittedUnit, ...(log === undefined ? {} : { log }) });
+    return await syncTouch({ ...options, session });
+  } finally {
+    await transport.close();
   }
 }

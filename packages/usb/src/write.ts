@@ -37,7 +37,8 @@ export {
 export type { WritePermission } from './rails.ts';
 
 // The file based family's write path: the Harmony 300 and 350. A second protocol's writer beside the
-// first, behind its own rail, `assertFileWriteAllowed`.
+// first, behind its own rail, `assertFileWriteAllowed`. `writeFileFamilyConfiguration` is the whole run an
+// application calls, `todo.md` 7.3.10: the container, the open, the judgement and `writeFileConfig`.
 export {
   FileWriteError,
   chunksFor,
@@ -45,8 +46,17 @@ export {
   readFileWriteFacts,
   withEndMarker,
   writeFileConfig,
+  writeFileFamilyConfiguration,
 } from './filewrite.ts';
-export type { CurrentContent, FileConfigWrite, FileWriteFacts, FileWriteResult } from './filewrite.ts';
+export type {
+  CurrentContent,
+  FileConfigWrite,
+  FileFamilyUnit,
+  FileFamilyWrite,
+  FileFamilyWriteResult,
+  FileWriteFacts,
+  FileWriteResult,
+} from './filewrite.ts';
 
 export {
   NOMINAL_FLASH_SIZE,

@@ -14,8 +14,9 @@ three, each needing a battery pull.
 
 Before changing any byte of a container: an edit in `packages/codec/src/edit.ts`, a relocation through
 `relocate.ts`, a composer that builds a device, an activity, a sequence, a menu or a screen, the write path
-in `packages/usb` and `packages/corpus/bin/write-config.ts`, and whenever somebody asks whether an edit is
-safe. Before writing build code in `packages/codec/src`, load `code-for-a-family` as well.
+in `packages/usb` and the configuration write, `writeConfiguration` in `packages/corpus/src/writeconfig.ts`
+(on `@harmony/corpus/write` since `todo.md` 7.3.10) with `packages/corpus/bin/write-config.ts` its script,
+and whenever somebody asks whether an edit is safe. Before writing build code in `packages/codec/src`, load `code-for-a-family` as well.
 
 ## What frames it
 
@@ -157,7 +158,7 @@ checklist that argues each.
   warned about**, "The action queue holds forty instructions" and "A sequence is one action list of calls
   and per device pauses". A 25 step sequence, Logitech's own limit, hung a Harmony One three times out of
   three under heavy tapping (`docs/test-notes/harmony-one.md`, which says where the unpublished notes
-  are). `assertQueueFits` refuses and `write-config.ts` runs it before anything is erased; 40 is the hard
+  are). `assertQueueFits` refuses and `writeConfiguration`, which `write-config.ts` runs, calls it before anything is erased; 40 is the hard
   ceiling and a softer one is a decision nobody has taken. `composeSequence` builds the shape: a send
   carries the device's inter key delay, a 20 second wait is one `0x7C` of 200, and on the Harmony 650 a
   command sends its one block copy; `ARCH14_INFERRED` names the part still inferred on arch 14.

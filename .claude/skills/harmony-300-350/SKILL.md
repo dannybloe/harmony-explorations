@@ -48,7 +48,9 @@ silence about favourite channels was read as their absence.
   `assertFileWriteAllowed` in `rails.ts`, `HARMONY_ENABLE_WRITES=1` and `HARMONY_FILE_WRITE=1`. It opens
   `/cfg/usercfg` and nothing else, checks `/sys/guid` against the lab's `units/h350.txt` or `units/h300.txt`
   (recorded with `read-file-identity.ts --record`), writes the whole container **with** its end marker,
-  and reads it back. The script is `packages/usb/bin/write-file-config.ts`, read only without `--commit`.
+  and reads it back. The whole run, the container, the reads and the judgement around it, is
+  `writeFileFamilyConfiguration` beside it on `@harmony/usb/write` since `todo.md` 7.3.10, so an application
+  writes through it; the script is `packages/usb/bin/write-file-config.ts`, read only without `--commit`.
   A task that seems to need a write goes through it, not around it.
 * **Reading goes through `openFileBasedRemote`**, whose transport permits opening a file for reading,
   reading, closing and a ping and refuses everything else.

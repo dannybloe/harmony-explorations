@@ -37,17 +37,22 @@ const TYPES = [
   'RemoteSelector', 'StatedVersion', 'Transport', 'VersionReading',
 ];
 
-/** The write subpath, `./write`: the names that exist at run time. */
+/**
+ * The write subpath, `./write`: the names that exist at run time. `writeFileFamilyConfiguration` joined in
+ * `todo.md` 7.3.10, the whole file write for the Harmony 300 and 350 as one function an application calls, where
+ * the script's body had been; its rails are `writeFileConfig`'s and the transport's, unchanged.
+ */
 const WRITE_VALUES = [
   'BlockWriteError', 'CONFIG_REGION_BASE', 'FileWriteError', 'MAX_TRANSFER', 'NOMINAL_FLASH_SIZE',
   'assertFirstWriteAllowed', 'assertUnitIsPermitted', 'blocksDiffering', 'chunksFor', 'failureLine',
   'firstDifference', 'judgeCurrentContent', 'neighbourBlocks', 'readFileWriteFacts', 'reportCount', 'transfersFor',
-  'withEndMarker', 'writeBlock', 'writeFileConfig',
+  'withEndMarker', 'writeBlock', 'writeFileConfig', 'writeFileFamilyConfiguration',
 ];
 
-/** The write subpath, `./write`: the types and interfaces, which only the source shows. */
+/** The write subpath, `./write`: the types and interfaces, which only the source shows; the three `FileFamily` ones, 7.3.10. */
 const WRITE_TYPES = [
-  'BlockWrite', 'CurrentContent', 'FileConfigWrite', 'FileWriteFacts', 'FileWriteResult', 'WritePermission',
+  'BlockWrite', 'CurrentContent', 'FileConfigWrite', 'FileFamilyUnit', 'FileFamilyWrite', 'FileFamilyWriteResult',
+  'FileWriteFacts', 'FileWriteResult', 'WritePermission',
 ];
 
 /** Every subpath `package.json` exports, `.` the main entry. */
