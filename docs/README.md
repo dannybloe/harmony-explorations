@@ -221,6 +221,11 @@ bin/finding-gate-hook.py       the same shape for the `finding` skill: interrupt
                                 reviewers. Added 6 September 2026 because the gate covers the claim
                                 a session knows it is making and not the sentences beside it, which
                                 is how section 271 landed a wrong one. Fails open by design
+bin/test-output-hook.py        refuses a test run whose output is piped or redirected to a file,
+                                every time, since the band above the prompt reads the tool's own
+                                output file and shows no progress otherwise. Added 8 November 2026
+                                after a written rule against the pipe was worked around with a
+                                redirect three runs in a row. Fails open by design
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
 mkdocs.yml                      the reference website, todo-reference.md 7.1: built from reference/
                                 alone, the navigation of plan 009 section 1, every link check at

@@ -24,6 +24,17 @@
         ]
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/bin/test-output-hook.py\" --hook",
+            "timeout": 15,
+            "statusMessage": "Checking a test run's output reaches the band"
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write|MultiEdit|Bash",
         "hooks": [
           {

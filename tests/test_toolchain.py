@@ -2161,5 +2161,75 @@ class TheFindingGateHookFires(unittest.TestCase):
             self.assertIn(wanted, skill, 'the finding skill no longer describes %r' % wanted)
 
 
+class TheTestOutputHookKeepsTheBandFed(unittest.TestCase):
+    """A test run's output reaches the file the band above the prompt reads, or the command is refused.
+
+    Added 8 November 2026. The harmony-remote mod follows a test run by reading the output file of the
+    shell that started it. A rule in memory against piping test output existed since 30 October, and three
+    full runs in a row were redirected to a file of the session's own instead, which the rule did not
+    name and which blinded the bar the same way. So `bin/test-output-hook.py` refuses the command, every
+    time, and these tests hold what it refuses and what it lets through. The refused cases include the
+    three exact shapes that were sent; the allowed ones include the shapes this session uses daily that
+    only look alike, a grep over a saved file and a pgrep naming the runners in a quoted pattern.
+    """
+
+    HOOK = os.path.join(ROOT, 'bin', 'test-output-hook.py')
+
+    def _run(self, command):
+        payload = {'tool_name': 'Bash', 'tool_input': {'command': command}}
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input=json.dumps(payload), capture_output=True, text=True, cwd=ROOT)
+        return done.returncode, done.stderr
+
+    def test_a_test_run_piped_or_redirected_is_refused_naming_the_band(self):
+        for command in (
+            'node --test packages/codec/test/a.test.ts 2>&1 | tail -8',
+            'node --test x.test.ts | grep -E "pass"',
+            '(NO_COLOR=1 make test > $CLAUDE_JOB_DIR/tmp/py3.txt 2>&1; echo "exit $?" >> x)',
+            '(NO_COLOR=1 make ts-test > $CLAUDE_JOB_DIR/tmp/ts3.txt 2>&1; echo done)',
+            'make ts-test &> out.txt',
+            'python3 -m unittest tests.test_x > /dev/null',
+            'pnpm test >> log.txt',
+            '(make test; make ts-test) > file',
+            'NO_COLOR=1 python3 -m unittest tests.test_reference |& tail -2',
+        ):
+            with self.subTest(command=command):
+                code, err = self._run(command)
+                self.assertEqual(code, 2, 'a hidden test run has to be refused, not reminded about')
+                self.assertIn('band above the prompt', err)
+                self.assertIn('run_in_background', err)
+
+    def test_a_bare_run_and_commands_that_only_look_alike_go_through(self):
+        for command in (
+            'NO_COLOR=1 make test',
+            'NO_COLOR=1 make test; NO_COLOR=1 make ts-test',
+            'python3 -m unittest tests.test_x 2>&1',
+            'node --test a.test.ts 2> err.txt',
+            'make test || echo failed',
+            'echo {} | python3 -m unittest tests.test_a',
+            'make prose 2>&1 | tail -1',
+            'make tests > x',
+            'git commit -m "run make test | tail to see"',
+            'grep -E "pass|fail" $CLAUDE_JOB_DIR/tmp/ts3.txt',
+            'pgrep -fl "unittest discover|pnpm test|node --test" | head -3',
+            "git commit -q -F - <<'EOF'\nnode --test x | tail\nEOF\ngit log -1",
+        ):
+            with self.subTest(command=command):
+                code, _ = self._run(command)
+                self.assertEqual(code, 0)
+
+    def test_it_fails_open_on_a_payload_it_cannot_read(self):
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'], input='not json',
+                              capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(done.returncode, 0, 'a broken hook must not stop a session')
+
+    def test_the_settings_put_it_in_front_of_the_shell(self):
+        with open(os.path.join(ROOT, '.claude', 'settings.json'), encoding='utf-8') as handle:
+            data = json.load(handle)
+        matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
+                    if any('test-output-hook.py' in h['command'] for h in entry['hooks'])]
+        self.assertEqual(matchers, ['Bash'])
+
+
 if __name__ == '__main__':
     unittest.main()
