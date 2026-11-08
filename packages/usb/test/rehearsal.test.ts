@@ -217,29 +217,40 @@ test('the rehearsal names five units and keys them by the architecture off the r
 
 test('the config writer refuses a commit on a firmware build whose drop and restart nobody read', () => {
   // Danny's decision of 29 September 2026 made the Harmony 600 and 700 writable, and the 700 runs
-  // another build than the one the 650's drop and restart were read in, section 282. So each unit
+  // another build than the one the 650's drop and restart were read in, section 282. So each model
   // names the builds read, and a commit on any other is refused. The 700 named none until section
-  // 299 read its 2.8.
-  const text = readFileSync(fileURLToPath(new URL('../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
-  assert.match(text, /unitLabel: 'one_spare', dumps: SPARE_DUMPS, sequenceReadOn: \['3\.4'\] \}/);
-  assert.match(text, /unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
-  assert.match(text, /unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
-  assert.match(text, /unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: \['2\.8'\] \}/);
+  // 299 read its 2.8. **Since `todo.md` 7.3.10 the write is a library function**, `writeConfiguration`
+  // in `packages/corpus/src/writeconfig.ts`: the builds are its `CONFIG_WRITE_MODELS`, the units its
+  // `CONFIG_WRITE_UNITS`, and the script keeps only each unit's region reads, so this reads both files.
+  // Read as text rather than imported, since this package's tests cannot depend on `@harmony/corpus`.
+  const script = readFileSync(fileURLToPath(new URL('../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
+  const library = readFileSync(fileURLToPath(new URL('../../corpus/src/writeconfig.ts', import.meta.url)), 'utf8');
+  assert.match(library, /'Harmony One': \{ architecture: 12, sequenceReadOn: \['3\.4'\] \}/);
+  assert.match(library, /'Harmony 650': \{ architecture: 14, sequenceReadOn: \['0\.2'\] \}/);
+  assert.match(library, /'Harmony 600': \{ architecture: 14, sequenceReadOn: \['0\.2'\] \}/);
+  assert.match(library, /'Harmony 700': \{ architecture: 14, sequenceReadOn: \['2\.8'\] \}/);
+  assert.match(library, /one_spare: \{ name: 'the spare Harmony One', model: 'Harmony One' \}/);
+  assert.match(library, /h650: \{ name: 'the Harmony 650', model: 'Harmony 650' \}/);
+  assert.match(library, /h600: \{ name: 'the Harmony 600', model: 'Harmony 600' \}/);
+  assert.match(library, /h700: \{ name: 'the Harmony 700', model: 'Harmony 700' \}/);
+  assert.match(script, /one_spare: SPARE_DUMPS,\s*h650: H650_DUMPS,\s*h600: H600_DUMPS,\s*h700: H700_DUMPS,/);
   // What each may be written against starts with the read taken straight after its first block went
   // back unchanged, sections 302 and 300, then the read after its delay write. Every later write appends
   // the read it leaves behind, so the list is asserted from its start and not to its end, which is what
   // this asserted until the 600's empty configuration added the third.
-  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h600_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h600_kpn45_region',/);
-  assert.match(text, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h700_delay90_region',/);
-  assert.match(text, /if \(commit && !unit\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new Refusal/);
-  assert.match(text, /const unit = units\.find\(\(one\) => one\.dumps\.has\(dumpName\)\);/);
+  assert.match(script, /const H600_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h600_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h600_kpn45_region',/);
+  assert.match(script, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h700_delay90_region',/);
+  assert.match(library, /if \(commit && !model\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new ConfigWriteRefusal/);
+  assert.match(library, /const unit = candidates\.find\(\(one\) => one\.regions\.has\(dumpName\)\);/);
   // The two bench Harmony 885s since `todo-compile-885.md` 1.4: their write end was read in the 885's
   // application 4.4, `tests/test_harmony_885_write_end.py`, which both units report. Their compare bases
   // start with the region reads `rehearse-block.ts` takes, from the configuration's base to the staging region.
-  assert.match(text, /unitLabel: 'h885_a', dumps: H885_A_DUMPS, sequenceReadOn: \['4\.4'\],/);
-  assert.match(text, /unitLabel: 'h885_b', dumps: H885_B_DUMPS, sequenceReadOn: \['4\.4'\],/);
-  assert.match(text, /const H885_A_DUMPS = new Set<string>\(\[\s*'h885_a_region',\s*'h885_a_region_2',/);
-  assert.match(text, /const H885_B_DUMPS = new Set<string>\(\[\s*'h885_b_region',\s*'h885_b_region_2',/);
+  assert.match(library, /'Harmony 885': \{\s*architecture: 8, sequenceReadOn: \['4\.4'\],/);
+  assert.match(library, /h885_a: \{ name: 'the Harmony 885 unit A', model: 'Harmony 885' \}/);
+  assert.match(library, /h885_b: \{ name: 'the Harmony 885 unit B', model: 'Harmony 885' \}/);
+  assert.match(script, /h885_a: H885_A_DUMPS,\s*h885_b: H885_B_DUMPS,/);
+  assert.match(script, /const H885_A_DUMPS = new Set<string>\(\[\s*'h885_a_region',\s*'h885_a_region_2',/);
+  assert.match(script, /const H885_B_DUMPS = new Set<string>\(\[\s*'h885_b_region',\s*'h885_b_region_2',/);
 });
 
 test("the config writer ends an 885's write with the drop and the restart, and sends nothing an 885 must not get", () => {
@@ -248,8 +259,10 @@ test("the config writer ends an 885's write with the drop and the restart, and s
   // restart `E1 02` after the read back, and of the other Harmonys' eight steps neither selector `0x0A`,
   // which an 885 never answers, nor the update status set to 2, which turns its next restart into an
   // install over the application. `rails.test.ts` holds the library's half, that nothing in it can send
-  // them to arch 8; this holds the script's, that it does not ask, since it cannot be imported.
-  const text = readFileSync(fileURLToPath(new URL('../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
+  // them to arch 8; this holds the write's, that it does not ask. Since `todo.md` 7.3.10 the write is
+  // `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, read as text since this package's tests
+  // cannot depend on `@harmony/corpus`.
+  const text = readFileSync(fileURLToPath(new URL('../../corpus/src/writeconfig.ts', import.meta.url)), 'utf8');
   // Code only, so that the comments naming what is left out do not satisfy or defeat the checks.
   const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   // The two commands, each once on the ordinary path, the drop before the first block and the restart
@@ -264,12 +277,14 @@ test("the config writer ends an 885's write with the drop and the restart, and s
   // request built by hand, on any architecture.
   for (const forbidden of ['requestFirmwareReinstall', 'stageFirmware', 'writeRam', 'writeSettings',
     'endSession', 'encodeRequest', 'writeMiscRequest', 'updateStatusWriteRequest', '0x0a', '0x0A']) {
-    assert.ok(!code.includes(forbidden), `write-config.ts calls ${forbidden}`);
+    assert.ok(!code.includes(forbidden), `writeconfig.ts calls ${forbidden}`);
   }
   // And on an 885 the drop cannot be left out: the control `--no-invalidate` is the Harmony One's, and on
   // an 885 the drop is what keeps the remote off a block between its erase and its write.
-  assert.match(code, /if \(!invalidate && unit\.dropRequired !== undefined\) \{\s*throw new Refusal/);
-  assert.equal([...code.matchAll(/dropRequired: ARCH8_DROP_REQUIRED/g)].length, 2, 'both 885s');
+  assert.match(code, /if \(!invalidate && model\.dropRequired !== undefined\) \{\s*throw new ConfigWriteRefusal/);
+  // A fact of the model, and both bench 885s are that model: the one table row carries it.
+  assert.equal([...code.matchAll(/dropRequired: ARCH8_DROP_REQUIRED/g)].length, 1, 'the Harmony 885');
+  assert.equal([...code.matchAll(/model: 'Harmony 885'/g)].length, 2, 'both 885s');
 });
 
 test("the config writer's code reads an 885's install status before the first erase and before each restart, and refuses on a value other than 0", () => {
@@ -279,17 +294,19 @@ test("the config writer's code reads an 885's install status before the first er
   // `RESET` instruction `E1 02` ends in, and the bootloader then installs firmware over the application
   // unless it is 0, `reference/architectures/harmony-880-885/firmware.md` "What the bootloader does at power
   // on". Nothing this package can send to arch 8 sets it, and the script reads it anyway, because being
-  // wrong costs the application. Held here on the script's code, since the script cannot be imported.
-  const text = readFileSync(fileURLToPath(new URL('../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
+  // wrong costs the application. Held here on the code of `writeConfiguration`, which the script calls since
+  // `todo.md` 7.3.10, read as text since this package's tests cannot depend on `@harmony/corpus`.
+  const text = readFileSync(fileURLToPath(new URL('../../corpus/src/writeconfig.ts', import.meta.url)), 'utf8');
   const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   // A property of the two 885s, not a test of the architecture: both carry the address, nothing else does.
   assert.match(code, /const ARCH8_INSTALL_STATUS = 0x100;/);
-  assert.equal([...code.matchAll(/installStatusAt: ARCH8_INSTALL_STATUS/g)].length, 2, 'both 885s');
-  assert.equal([...code.matchAll(/installStatusAt:/g)].length, 2, 'and no other unit');
+  // A fact of the model, the one row both bench 885s take, and of no other model.
+  assert.equal([...code.matchAll(/installStatusAt: ARCH8_INSTALL_STATUS/g)].length, 1, 'the Harmony 885');
+  assert.equal([...code.matchAll(/installStatusAt:/g)].length, 1, 'and no other model');
   // The read: two bytes over `READ_MISC` selector 7, the first judged, and anything but 0 refused.
   const helper = code.slice(code.indexOf('const installStatusIsClear'));
-  assert.match(helper, /^const installStatusIsClear = async[^\n]*\{\s*const at = unit\.installStatusAt;\s*if \(at === undefined\) return;\s*const status = await remote\.readRam\(at\);\s*const neighbour = await remote\.readRam\(at \+ 1\);/);
-  assert.match(helper, /if \(status === 0\) return;\s*throw new Refusal\(/);
+  assert.match(helper, /^const installStatusIsClear = async[^\n]*\{\s*const at = model\.installStatusAt;\s*if \(at === undefined\) return;\s*const status = await remote\.readRam\(at\);\s*const neighbour = await remote\.readRam\(at \+ 1\);/);
+  assert.match(helper, /if \(status === 0\) return;\s*throw new ConfigWriteRefusal\(/);
   // Before the first erase: after the blocks are compared, before the dry run returns, and so before the
   // drop and the first block of a commit.
   const beforeErase = code.indexOf("await installStatusIsClear('before the first erase');");
