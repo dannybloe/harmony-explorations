@@ -25,22 +25,19 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
+import { type ContainerPiece, layOutContainer, restamped, takeApart } from '../src/build.ts';
 import {
-  type Container,
-  type ContainerPiece,
   characterMap,
   decode,
   glyphsReferencedBy,
-  layOutContainer,
   modeRecords,
-  parse,
   reachablePrograms,
   referencedStringAddress,
-  restamped,
   screenProgram,
-  takeApart,
   SCREEN_TEXT_AT,
-  SCREEN_TEXT_INLINE} from '../src/index.ts';
+  SCREEN_TEXT_INLINE,
+} from '../src/internal.ts';
 import { ScreenTextError, buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from '../src/families/harmony-600-650-700/screentexts.ts';
 import { buildFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/harmony-600-650-700/firmwarescreens.ts';
 import { describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';

@@ -15,17 +15,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { parse } from '../src/index.ts';
 import {
   type BuiltScreen,
   type ContainerPiece,
   assertRebuilt,
   layOutContainer,
-  parse,
   recordBuilding,
   recordReading,
   takeApart,
   withModeRecords,
-} from '../src/index.ts';
+} from '../src/build.ts';
 import { blobReader } from '../src/shared/spelling.ts';
 
 /** The nineteen Harmony One compiles: sixteen English of skin 54, two of skin 59 and one Dutch, section 405. */

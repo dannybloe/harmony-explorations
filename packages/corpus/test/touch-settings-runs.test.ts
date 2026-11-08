@@ -78,7 +78,7 @@ import * as lab from '@harmony/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written,
   type Request_,
-} from '@harmony/usb/test/touch-recording';
+} from '@harmony/testkit/touch-recording';
 
 import { differences } from '../experiments/touchchangedset.ts';
 import { settingsChanges } from '../experiments/touchsettingsset.ts';

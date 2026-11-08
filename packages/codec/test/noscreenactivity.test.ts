@@ -64,10 +64,17 @@ import { inflateRawSync } from 'node:zlib';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import {
-  bytes, catalogueDriving, ComposeError, composeNoScreenActivity, inputPlan, irBlockWords, irHeaderPointers, composeNoScreenDevice, type Container, devices, irGroups, mapOfGroup,
-  metadataArchive, parse, stateRecords, stateVariables, taggedList,
+  catalogueDriving,
+  ComposeError,
+  type Container,
+  devices,
+  irGroups,
+  metadataArchive,
+  parse,
   archiveAt,
 } from '../src/node.ts';
+import { bytes, irBlockWords, irHeaderPointers, stateRecords, stateVariables, taggedList } from '../src/internal.ts';
+import { composeNoScreenActivity, inputPlan, composeNoScreenDevice, mapOfGroup } from '../src/build.ts';
 import { recordKey } from './noscreenparts.ts';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';

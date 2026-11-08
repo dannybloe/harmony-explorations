@@ -17,12 +17,12 @@ import {
   COMPARABLE_FIELDS,
   CompatibilityError,
   RailError,
-  assertConfigIsForThisRemote,
   compareIntendedVersion,
   compareIntendedVersionAgainstBlock,
-  encodeVersionBlock,
   readVersion,
 } from '../src/index.ts';
+import { assertConfigIsForThisRemote } from '../src/rails.ts';
+import { encodeVersionBlock } from '../src/internal.ts';
 
 /**
  * A Harmony 525's own `GET_VERSION` reply, minus the report header byte `0x27`.

@@ -23,7 +23,7 @@ import {
   undecidedLists,
   worstQueueRun,
 } from '../src/queue.ts';
-import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../src/index.ts';
+import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../src/internal.ts';
 
 // The two opcodes come from the one place each is named, `sections.ts` and `inventory.ts`, rather
 // than being spelled again here. `ACTION_LIST_INDEX_OPCODE`'s own docstring argues that a test hard

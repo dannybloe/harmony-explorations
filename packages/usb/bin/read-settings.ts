@@ -16,15 +16,8 @@
  * the transport.
  */
 import { require_ } from '@harmony/lab';
-import {
-  DELAY_SETTINGS,
-  HarmonyRemote,
-  SETTING_0X80,
-  delaySlots,
-  latestSettings,
-  listHarmony,
-  openHarmony,
-} from '../src/index.ts';
+import { HarmonyRemote, delaySlots, latestSettings, listHarmony, openHarmony } from '../src/index.ts';
+import { DELAY_SETTINGS, SETTING_0X80 } from '../src/internal.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);

@@ -19,7 +19,8 @@ import { readFileSync } from 'node:fs';
 
 import { IMAGES, load } from '@harmony/lab';
 
-import { emit, parse, payloadOf, roundTrip } from '../src/index.ts';
+import { parse, payloadOf } from '../src/index.ts';
+import { emit, roundTrip } from '../src/internal.ts';
 import type { Container } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';

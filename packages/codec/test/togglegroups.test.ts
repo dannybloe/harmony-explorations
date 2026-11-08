@@ -27,22 +27,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { type Container, devices, irGroups, parse, payloadOf } from '../src/index.ts';
 import {
   archiveProtocolsByName,
   catalogueCommandBlocks,
   compiledBlockWords,
   composeCatalogueDevices,
-  type Container,
-  devices,
-  irGroups,
-  irHeaderPointers,
   namesReleaseGroup,
-  parse,
-  payloadOf,
-  statedCodeOfDefinition,
-  withToggleCleared,
-  withToggleFlipped,
-} from '../src/index.ts';
+} from '../src/build.ts';
+import { irHeaderPointers, statedCodeOfDefinition, withToggleCleared, withToggleFlipped } from '../src/internal.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';
 

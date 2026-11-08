@@ -36,31 +36,35 @@ import { join } from 'node:path';
 
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab, slow } from '@harmony/lab';
 import {
-  archiveProtocolsByName,
-  blockOfStatedCode,
-  catalogueCode,
-  catalogueCommandBlocks,
   catalogueCommands,
   catalogueDevice,
-  compiledBlockWords,
-  composableKeycode,
-  composeCatalogueDevices,
   type Container,
   devices,
   irGroups,
+  parse,
+  payloadOf,
+  type Pulse,
+  statedCode,
+  waveformOfArchiveCommand,
+  archiveAt,
+} from '../src/node.ts';
+import {
+  archiveProtocolsByName,
+  catalogueCode,
+  catalogueCommandBlocks,
+  compiledBlockWords,
+  composableKeycode,
+  composeCatalogueDevices,
+  sameTrain,
+} from '../src/build.ts';
+import {
+  blockOfStatedCode,
   irHeaderPointers,
   irBlockWords,
   joinedGaps,
   mergedIntervals,
-  parse,
-  payloadOf,
-  type Pulse,
-  sameTrain,
-  statedCode,
   statedCodeOfDefinition,
-  waveformOfArchiveCommand,
-  archiveAt,
-} from '../src/node.ts';
+} from '../src/internal.ts';
 
 const HARVEST_THREE = 'work/harvest/families-one/compile-003-Result.EzHex';
 

@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 
+import { irGroups, parse, payloadOf, devices } from '../src/index.ts';
 import {
   IR_CARRIER_AT,
   IR_CARRIER_MAX_NS,
@@ -24,7 +25,6 @@ import {
   irBuildRecord,
   irCarrier,
   irClass,
-  irGroups,
   irHeaderLength,
   irHeaderPointers,
   irPeriodFor,
@@ -32,12 +32,9 @@ import {
   irRecordStart,
   irRepeatBlock,
   irRepeatPeriod,
-  parse,
-  payloadOf,
   irRecordsByClosure,
   IR_RECORD_POINTER_BIAS,
-  devices,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import type { Container } from '../src/index.ts';
 import '../src/resources.node.ts';
 

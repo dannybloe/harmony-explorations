@@ -105,9 +105,10 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 
-import { harmonyTouch, readPng as readPngHeader } from '@harmony/codec/node';
-import { LAB } from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { readPng as readPngHeader } from '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
+import { LAB, require_ } from '@harmony/lab';
+import { answersWritten, commands, recordsOf, sessions } from '@harmony/usb/touchrecording';
 
 import {
   answersWhenHolding,
@@ -203,7 +204,7 @@ const documentsOf = (set: TouchSet): harmonyTouch.SyncDocuments => harmonyTouch.
 
 /** The favourites documents and pictures the recorded full sync delivered, the last of Logitech's on the bench unit. */
 const recordedContent = (): SetAnswer[] =>
-  (answersWritten(sessions(commands(records('touch_full_sync_recording'))).filter((x) => x.path === '/sys/hlapi')) as unknown as SetAnswer[])
+  (answersWritten(sessions(commands(recordsOf(require_('touch_full_sync_recording')))).filter((x) => x.path === '/sys/hlapi')) as unknown as SetAnswer[])
     .filter(isContent);
 /** What the remote holds at each favourites address and picture once the set in `folder` is committed. */
 const heldAfter = (folder: string | undefined): Map<string, SetAnswer> =>

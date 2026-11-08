@@ -12,7 +12,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { MODELS, SCAN_SOURCES, keyOf, keyOfScan, pathBounds, pathPolygon, transformPath } from '../src/index.ts';
+import { MODELS, SCAN_SOURCES, keyOf, keyOfScan, pathBounds, pathPolygon } from '../src/index.ts';
+import { transformPath } from '../src/internal.ts';
 import type { Model, ScanSource } from '../src/types.ts';
 
 /**

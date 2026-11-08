@@ -29,24 +29,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { LAB, load, skipUnless } from '@harmony/lab';
-import type { Claim, Container, ContainerLayout, ContainerPiece } from '../src/index.ts';
-import {
-  FRAME_ARCHITECTURES,
-  LayoutError,
-  applyEdits,
-  claims,
-  clockStateEdits,
-  inventory,
-  layOutContainer,
-  parse,
-  pointers,
-  relocate,
-  roundTrip,
-  saveEdits,
-  slotOf,
-  takeApart,
-  trailerAgrees,
-} from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { Claim } from '../src/internal.ts';
+import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
+import { applyEdits, clockStateEdits, inventory, parse, saveEdits } from '../src/index.ts';
+import { FRAME_ARCHITECTURES, LayoutError, layOutContainer, slotOf, takeApart } from '../src/build.ts';
+import { claims, pointers, relocate, roundTrip, trailerAgrees } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /**

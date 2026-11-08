@@ -119,7 +119,7 @@ import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written, type Request_,
-} from '@harmony/usb/test/touch-recording';
+} from '@harmony/testkit/touch-recording';
 
 import { CodeBook, frameNumber } from '../src/irmonitor.ts';
 

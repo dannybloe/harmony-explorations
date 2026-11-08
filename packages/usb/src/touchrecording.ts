@@ -1,6 +1,8 @@
 /**
- * The decoder of a sync of a Harmony Touch recorded through the lab's inspectable copy of Harmony Desktop,
- * shared by the tests that read a recording.
+ * The decoder of a sync of a Harmony Touch recorded through the lab's inspectable copy of Harmony Desktop:
+ * a library, `@harmony/usb/touchrecording`, because the bench's and the corpus's scripts that derive what a
+ * remote holds from a recorded sync run it as well as the tests do, `todo.md` 7.3.6. It lived in `test/` and was
+ * exported as `./test/touch-recording` until then, so a runnable script depended on a test file.
  *
  * A recording is one JSON object a line: what the page's recorder posted, which is every web request with
  * its answer and every call through the page's `prompt()` bridge to the USB layer. This file turns the
@@ -10,16 +12,11 @@
  * `touch-sync.test.ts`: a wrong packet boundary would garble documents that are compared whole with the
  * web side's answers.
  *
- * **The readers at the end are for a run of this project's own answerer**, `packages/corpus/bin/touch-sync.ts`,
- * whose folder in the lab keeps each request list, each write of answers and each reply as a file of its own:
- * one copy of them for every test that reads such a run, where the first and second sync's tests each held
- * their own until 6.8 added a third.
- *
- * Not a test file itself, so the runner does not pick it up.
+ * **It reads bytes and never the lab.** `recordsOf` takes a recording's bytes; a script reads them out of the
+ * lab itself, and a test through the test kit's `records`, `@harmony/testkit/touch-recording`, which also
+ * holds the readers of a run of this project's own answerer, `reply`, `list` and `written`. This package
+ * does not depend on the lab locator outside its tests, and a product that loads this module loads no lab.
  */
-import assert from 'node:assert/strict';
-
-import * as lab from '@harmony/lab';
 import {
   DONE_PACKET,
   FILE_CLOSE,
@@ -33,7 +30,7 @@ import {
   REPLY_ERROR,
   STRING_PREFIX,
   requestedPath,
-} from '../src/filepipe.ts';
+} from './filepipe.ts';
 
 /** One line of the recording: a record the page's recorder posted, or the shell's own. */
 export interface Line {
@@ -52,8 +49,9 @@ export interface Record_ {
   response?: unknown;
 }
 
-export function records(fixture: string): Record_[] {
-  const text = new TextDecoder().decode(lab.require_(fixture));
+/** The recorder's records of a recording, out of its bytes: one JSON object a line, the page recorder's own kept. */
+export function recordsOf(recording: Uint8Array): Record_[] {
+  const text = new TextDecoder().decode(recording);
   return text
     .split('\n')
     .filter((l) => l.length > 0)
@@ -252,35 +250,6 @@ export const FINISHED = 'proxy://Finished';
 export const CONFIGHASH = 'vnd.logitech.harmony/vnd.logitech.harmony.engine?getconfighash';
 /** The name of a write of answers, and of the remote's reply to one. */
 export const WRITE = 'vnd.logitech.proxy/vnd.logitech.response?write';
-
-/** A reply the remote's request file gave, `Response,` and its JSON. */
-export interface Reply {
-  errorCode: string;
-  errorMessage: string;
-  mime: string;
-  result: unknown;
-}
-
-/** A reply a run of the answerer kept, out of its file in the lab. */
-export function reply(fixture: string): Reply {
-  const text = new TextDecoder().decode(lab.require_(fixture));
-  assert.ok(text.startsWith('Response,'), `${fixture} is not a request answer`);
-  return JSON.parse(text.slice('Response,'.length)) as Reply;
-}
-
-/** A request list the remote handed out, as a run of the answerer kept it. */
-export function list(fixture: string): Request_[] {
-  const r = reply(fixture);
-  assert.equal(r.errorCode, '200');
-  return (JSON.parse(r.result as string) as { requests: Request_[] }).requests;
-}
-
-/** The answers one write carried, out of the request line as a run of the answerer wrote it. */
-export function written(fixture: string): Answer[] {
-  const line = new TextDecoder().decode(lab.require_(fixture));
-  assert.ok(line.startsWith(`${WRITE}&`), `${fixture} is not a write of answers`);
-  return (JSON.parse(decodeURIComponent(line.split('&responses=')[1]!)) as { responses: Answer[] }).responses;
-}
 
 /** What kind of request an address is, the scheme and the kind and never the identifiers after them. */
 export function kind(uri: string): string {

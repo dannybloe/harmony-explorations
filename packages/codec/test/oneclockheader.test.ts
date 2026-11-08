@@ -14,10 +14,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { parse } from '../src/index.ts';
+import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import {
-  type ContainerPiece, ScreenRecordError, archSlot, layOutContainer, modeRecords, parse, reachablePrograms,
-  screenProgram, screenProgramRoots, screenUnits, stateRecords, takeApart,
-} from '../src/index.ts';
+  archSlot,
+  modeRecords,
+  reachablePrograms,
+  screenProgram,
+  screenProgramRoots,
+  screenUnits,
+  stateRecords,
+} from '../src/internal.ts';
 import {
   CLOCK_HEADER_PICTURES, CLOCK_HEADER_PROGRAMS, buildOneClockHeader, checkOneClockHeader, describeOneClockHeader,
   oneClockHeaderEntries, withOneClockHeader,

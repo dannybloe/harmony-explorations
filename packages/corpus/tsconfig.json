@@ -5,5 +5,5 @@
     "outDir": "dist"
   },
   "include": ["src/**/*.ts", "experiments/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
-  "references": [{ "path": "../lab" }, { "path": "../codec" }, { "path": "../usb" }]
+  "references": [{ "path": "../base" }, { "path": "../lab" }, { "path": "../codec" }, { "path": "../usb" }, { "path": "../testkit" }]
 }

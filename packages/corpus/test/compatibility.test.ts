@@ -17,12 +17,12 @@ import {
   COMPARABLE_FIELDS,
   CompatibilityError,
   RailError,
-  assertConfigIsForThisRemote,
   compareIntendedVersion,
   compareIntendedVersionAgainstBlock,
-  encodeVersionBlock,
   readVersion,
 } from '@harmony/usb';
+import { assertConfigIsForThisRemote } from '@harmony/usb/rails';
+import { encodeVersionBlock } from '@harmony/usb/internal';
 
 /**
  * Every config in the corpus whose wrapper states a version, with the remote it was built for.

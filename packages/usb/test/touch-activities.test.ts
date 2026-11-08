@@ -14,7 +14,7 @@
  * the client wrote to the remote in its `proxy/response?write` answers, which that file shows equal, as
  * parsed JSON, to Logitech's web answers. `documents` below shapes the shared `answersWritten` walk of
  * `touch-recording.ts`, the one walk every test of what the remote received goes through, the codec's reader
- * tests among them, by the package's `./test/touch-recording` export.
+ * tests among them, through the test kit, `@harmony/testkit/touch-recording`.
  *
  * **What was measured, each against the reading it checks.**
  *
@@ -107,7 +107,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, resource, sessions } from './touch-recording.ts';
+import { answersWritten, commands, records, resource, sessions } from '@harmony/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 const MODEL = join(import.meta.dirname, '..', '..', '..', 'reference', 'logitech', 'data-model', 'model.json');

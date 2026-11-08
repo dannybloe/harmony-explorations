@@ -20,7 +20,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
-import { parse, screenProgram, stateVariables, valueMaps } from '../src/index.ts';
+import { parse } from '../src/index.ts';
+import { screenProgram, stateVariables, valueMaps } from '../src/internal.ts';
 
 /** The arch 14 containers, with how many delay variables each holds and how many use the store. */
 const HOSTS: [name: string, variables: number, stored: number][] = [

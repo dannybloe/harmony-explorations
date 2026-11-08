@@ -14,16 +14,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless, slow } from '@harmony/lab';
-import {
-  type Container,
-  caseQueued,
-  modeRecords,
-  parse,
-  renderPage,
-  screenProgram,
-  taggedList,
-  valueMaps,
-} from '../src/index.ts';
+import { type Container, parse, renderPage } from '../src/index.ts';
+import { caseQueued, modeRecords, screenProgram, taggedList, valueMaps } from '../src/internal.ts';
 import { checkFourSlotMenuPages, fourSlotMenus } from '../src/families/harmony-600-650-700/menus.ts';
 import {
   activityDeviceList,

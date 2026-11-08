@@ -63,10 +63,23 @@ import { inflateRawSync } from 'node:zlib';
 import { IR_ARCHIVE, LAB, load, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import {
-  type AccountDevice, bytes, catalogueDevice, catalogueCommands, catalogueDevicePlan, composeIrGroup, type Container, devices, DIGIT_COPIES_BY_TYPE, irGroups,
-  metadataArchive, parse, stateVariables, taggedList, volumeSource,
+  catalogueDevice,
+  catalogueCommands,
+  type Container,
+  devices,
+  irGroups,
+  metadataArchive,
+  parse,
   archiveAt,
 } from '../src/node.ts';
+import {
+  type AccountDevice,
+  catalogueDevicePlan,
+  composeIrGroup,
+  DIGIT_COPIES_BY_TYPE,
+  volumeSource,
+} from '../src/build.ts';
+import { bytes, stateVariables, taggedList } from '../src/internal.ts';
 import { DEVICE_KEYS, FAVOURITE_FIVE, INPUT_KEY, POWER_RESETS, START_UP_SELECT_ENTRY, VOLUME_SCANS } from '../src/families/harmony-300-350/keys.ts';
 import { SILENT_WRITE } from '../src/actions.ts';
 import { withoutStartUpSelect, withStartUpSelect } from '../src/families/harmony-300-350/devices.ts';

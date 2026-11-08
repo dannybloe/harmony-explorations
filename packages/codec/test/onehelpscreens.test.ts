@@ -16,10 +16,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
+import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import {
-  type Container, type ContainerPiece, SCREEN_CALL, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, ScreenRecordError,
-  characterMap, decode, layOutContainer, modeRecords, parse, screenProgram, stateVariables, taggedList, takeApart, timers, touchPages,
-} from '../src/index.ts';
+  SCREEN_CALL,
+  SCREEN_SELECT_FONT,
+  SCREEN_TEXT_AT,
+  SCREEN_TEXT_INLINE,
+  characterMap,
+  decode,
+  modeRecords,
+  screenProgram,
+  stateVariables,
+  taggedList,
+  timers,
+  touchPages,
+} from '../src/internal.ts';
 import { HELP_HIT_PARTS, hitPageAreasOf } from '../src/families/harmony-one/hitpages.ts';
 import { buildTemplateScreens, centred, font, wrapLines } from '../src/families/harmony-one/screentemplate.ts';
 import {

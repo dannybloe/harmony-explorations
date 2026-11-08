@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 import { readFile } from 'node:fs/promises';
 
+import { RailError, TransportError } from '../src/index.ts';
 import {
   ARCHITECTURES_WITH_AN_INVALIDATE_TARGET,
   ARCHITECTURES_WITH_A_RAM_WRITE_TARGET,
@@ -24,12 +25,6 @@ import {
   ARCHITECTURES_WITH_A_WRITE_TARGET,
   CONFIG_REGION_BASE,
   ERASE_BLOCK_SIZE,
-  ERASE_FLASH,
-  ESCAPE_RESET,
-  ESCAPE_SUB_COMMANDS,
-  READ_FLASH,
-  RailError,
-  TransportError,
   SFR_PAGE_START,
   WRITABLE_CEILING,
   WRITES_ENABLED,
@@ -42,20 +37,27 @@ import {
   assertRamWriteAllowed,
   assertResetAllowed,
   assertSessionEndAllowed,
+  eraseBoundsFor,
+  writableRange,
+  writableRangeFrom,
+} from '../src/rails.ts';
+import {
+  ERASE_FLASH,
+  ESCAPE_RESET,
+  ESCAPE_SUB_COMMANDS,
+  READ_FLASH,
   address24,
   encodeRequest,
   encodeVersionBlock,
-  eraseBoundsFor,
   IDENTITY_BYTES,
   IDENTITY_FIELDS,
   guardMutations,
   readFlashRequest,
-  writableRange,
-  writableRangeFrom,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import type { Transport } from '../src/index.ts';
 // Deep import on purpose: this is the hatch the barrel deliberately does not offer, section 224.
 import { authoriseReport } from '../src/authorise.ts';
+import { packageEntries } from './entries.ts';
 
 /**
  * A synthetic identity block in the shape a remote's really is: `0xEE` where the serial field is,
@@ -168,10 +170,13 @@ test('the package offers no way to build a request that changes a remote', async
   // permission object, no `WRITES_ENABLED` and no architecture check, and an erase takes an address
   // and no count: 64 KiB of a Harmony One (arch 12) at whichever address it lands on.
   //
-  // The four encoders are in `writes.ts` now, which the barrel does not re-export. This asserts the
-  // barrel rather than the file, because a list of names in a docstring is what drifted in the first
-  // place, and because the next write encoder somebody adds will be caught by it.
-  const barrel = (await import('../src/index.ts')) as Record<string, unknown>;
+  // The four encoders are in `writes.ts` now, which no entry re-exports. This asserts the entries
+  // rather than the file, because a list of names in a docstring is what drifted in the first place,
+  // and because the next write encoder somebody adds will be caught by it. **Every entry and not the
+  // barrel alone** since `todo.md` 7.3.6, which put most of the package under named subpaths: a rule
+  // checked against the main entry would pass with the same name one subpath away, `entries.ts`.
+  const entries = await packageEntries();
+  const barrel = Object.assign({}, ...entries.values()) as Record<string, unknown>;
   // Functions only. The command numbers and selector lists stay exported and have to: `rails.ts`
   // refuses `ESCAPE_RESET` **by number**, and `decodeReply` names what came back. A constant cannot be
   // sent; a request builder can.
@@ -182,7 +187,7 @@ test('the package offers no way to build a request that changes a remote', async
   const offered = Object.keys(barrel).filter(
     (name) => name.endsWith('Request') && /write|erase|escape/i.test(name),
   );
-  assert.deepEqual(offered, [], 'the barrel offers a request builder for a command that writes');
+  assert.deepEqual(offered, [], 'an entry of the package offers a request builder for a command that writes');
 
   // **What this test cannot see, found by an independent review on 27 August 2026.** Its rule is a
   // name shape, so it catches a builder called `eraseFlashRequest` and not the **generic** encoder
@@ -193,13 +198,15 @@ test('the package offers no way to build a request that changes a remote', async
   // below; this assertion stays because hiding the specific builders is still worth keeping.
   assert.equal(typeof barrel['encodeRequest'], 'function',
     'the generic encoder is still exported, which is why the guard below has to exist');
+  assert.equal(typeof entries.get('./protocol')?.['encodeRequest'], 'function', 'and it is the protocol subpath that has it');
+  assert.equal(entries.get('.')?.['encodeRequest'], undefined, 'and not the main entry, since todo.md 7.3.6');
 
   // The control: the encoders do exist, and importing them by path still works, so this is a boundary
   // rather than a deletion. `remote.ts` reaches them that way and the rails still gate every send.
   const writes = (await import('../src/writes.ts')) as Record<string, unknown>;
   for (const name of ['writeFlashRequest', 'eraseFlashRequest', 'writeMiscRequest', 'escapeRequest']) {
     assert.equal(typeof writes[name], 'function', name);
-    assert.equal(barrel[name], undefined, `${name} is not in the barrel`);
+    assert.equal(barrel[name], undefined, `${name} is on no entry`);
   }
 
   // **And the same hole a third time, found on 30 August 2026, section 224.** The guard below refuses
@@ -217,9 +224,10 @@ test('the package offers no way to build a request that changes a remote', async
   const permits = Object.keys(barrel)
     .filter((name) => /authoris|permit|allowReport/i.test(name))
     .filter((name) => !name.startsWith('assert'));
-  assert.deepEqual(permits, [], 'the barrel offers a way to authorise a report');
+  assert.deepEqual(permits, [], 'an entry of the package offers a way to authorise a report');
   assert.equal(typeof barrel['assertUnitIsPermitted'], 'function',
     'the unit rail is exported, which is why the filter above has to exclude it by name shape');
+  assert.equal(typeof entries.get('./rails')?.['assertUnitIsPermitted'], 'function', 'by the rails subpath');
 
   // The control, same shape as the one above: the hatch exists and a deep import reaches it, so this
   // is a boundary and not a deletion. `remote.ts` uses it on every send.
@@ -554,10 +562,13 @@ test('a config length that is missing or absurd does not produce a range', () =>
  */
 function withWritesEnabled(script: string, doors: Record<string, string> = {}): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
-  const railsPath = join(here, '..', 'src', 'index.ts').replaceAll('\\', '/');
+  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
+  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  const railsPath = join(here, '..', 'src', 'rails.ts').replaceAll('\\', '/');
+  const internalPath = join(here, '..', 'src', 'internal.ts').replaceAll('\\', '/');
   return execFileSync(
     process.execPath,
-    ['--input-type=module', '--eval', `import * as rails from '${railsPath}';\n${script}`],
+    ['--input-type=module', '--eval', `import * as railsOnly from '${railsPath}';\nimport * as internal from '${internalPath}';\nconst rails = { ...internal, ...railsOnly };\n${script}`],
     // `doors` opens further named doors on top of the write flag, for a test whose point is that a
     // refusal holds with every door open: the reinstall, the staging and the settings doors are each
     // checked before the architecture, so with them shut a refusal would say nothing about arch 8.
@@ -846,7 +857,7 @@ test('with the hang door open, it still refuses an even count', () => {
     [
       '--input-type=module',
       '--eval',
-      `import * as rails from '${join(fileURLToPath(new URL('.', import.meta.url)), '..', 'src', 'index.ts').replaceAll('\\\\', '/')}';
+      `import * as rails from '${join(fileURLToPath(new URL('.', import.meta.url)), '..', 'src', 'rails.ts').replaceAll('\\\\', '/')}';
        const out = [];
        for (const count of [63, 65, 1, 62, 64, 0]) {
          try { rails.assertDeliberateHangAllowed(count); out.push(count + ': allowed'); }
@@ -877,10 +888,13 @@ test('with the hang door open, it still refuses an even count', () => {
  */
 function withEnv(extra: Record<string, string>, script: string): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
-  const railsPath = join(here, '..', 'src', 'index.ts').replaceAll('\\', '/');
+  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
+  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  const railsPath = join(here, '..', 'src', 'rails.ts').replaceAll('\\', '/');
+  const internalPath = join(here, '..', 'src', 'internal.ts').replaceAll('\\', '/');
   return execFileSync(
     process.execPath,
-    ['--input-type=module', '--eval', `import * as rails from '${railsPath}';\n${script}`],
+    ['--input-type=module', '--eval', `import * as railsOnly from '${railsPath}';\nimport * as internal from '${internalPath}';\nconst rails = { ...internal, ...railsOnly };\n${script}`],
     { env: { ...process.env, ...extra }, encoding: 'utf8' },
   ).trim();
 }

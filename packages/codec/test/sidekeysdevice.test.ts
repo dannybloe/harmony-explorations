@@ -96,13 +96,50 @@ import { SIDE_KEYS_SENDS } from '../src/families/harmony-880-885/sends.ts';
 import type { ComposeDevice } from '../src/shared/devices.ts';
 import { textGlyphs, textWidth } from '../src/shared/spelling.ts';
 import {
-  ACTION_LIST_INDEX_OPCODE, activities, activityBindings, archSlot, assertQueueFits, assertStateTableConsistent,
-  BINDING_SLOT, characterMap, compilerTagOrder, ComposeError, composeCatalogueDevice, type Container, coverage,
-  deviceListRows, deviceVariables, devices, fontSets, handlerSets, instructionSites, irBlockWords, irCarrier,
-  irGroupCount, irGroups, irHeaderPointers, irRecordStart, logArea, modePages, modeRecords, pageListCopies,
-  parameterGroupLengthsMatch, parameterGroups, parse, roundTrip, saveEdits, screenProgram, screenStrings, stateRecords, stateTable,
-  stateVariableSite, taggedList, timers, trailerAgrees,
+  activities,
+  activityBindings,
+  assertQueueFits,
+  assertStateTableConsistent,
+  ComposeError,
+  type Container,
+  deviceListRows,
+  devices,
+  irGroups,
+  parse,
+  saveEdits,
 } from '../src/index.ts';
+import {
+  ACTION_LIST_INDEX_OPCODE,
+  archSlot,
+  BINDING_SLOT,
+  characterMap,
+  compilerTagOrder,
+  coverage,
+  deviceVariables,
+  fontSets,
+  handlerSets,
+  irBlockWords,
+  irCarrier,
+  irGroupCount,
+  irHeaderPointers,
+  irRecordStart,
+  logArea,
+  modePages,
+  modeRecords,
+  pageListCopies,
+  parameterGroupLengthsMatch,
+  parameterGroups,
+  roundTrip,
+  screenProgram,
+  screenStrings,
+  stateRecords,
+  stateTable,
+  stateVariableSite,
+  taggedList,
+  timers,
+  trailerAgrees,
+} from '../src/internal.ts';
+import { composeCatalogueDevice, instructionSites } from '../src/build.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';
 

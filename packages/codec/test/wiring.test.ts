@@ -26,27 +26,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import type { Container, ContainerLayout, ContainerPiece } from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
+import { activityCount, parse } from '../src/index.ts';
 import {
   ACTION_LIST_TABLE_SLOT,
-  WiringError,
-  activityCount,
   archSlot,
-  builtPieces,
-  describeStateTables,
   eventMap,
-  layOutContainer,
   logArea,
   modeRecords,
   parameterGroups,
-  parse,
   screenStrings,
   tagSlotOrder,
   taggedList,
   handlerSets,
-  takeApart,
-  withWiring,
-} from '../src/index.ts';
+} from '../src/internal.ts';
+import { WiringError, builtPieces, describeStateTables, layOutContainer, takeApart, withWiring } from '../src/build.ts';
 import { FOUR_SLOT_STATE_TABLES } from '../src/families/harmony-600-650-700/statetables.ts';
 import {
   type WiringSpec, ACTIVITY_KEY_SCANS, ALL_OFF_SCAN, EVENT_COUNT, FIRMWARE_SCREENS, LOG_AREA, PARAMETER_VALUES, buildWiring,

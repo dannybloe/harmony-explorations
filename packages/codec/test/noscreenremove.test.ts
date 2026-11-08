@@ -57,10 +57,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
+import { ComposeError, type Container, devices, irGroups, metadataArchive, parse } from '../src/index.ts';
 import {
-  type AccountDevice, catalogueDevicePlan, ComposeError, composeNoScreenDevice, type Container, devices, irGroups,
-  metadataArchive, parse, stateRecords, stateVariables, taggedList, volumeSource, withoutNoScreenDevice,
-} from '../src/index.ts';
+  type AccountDevice,
+  catalogueDevicePlan,
+  composeNoScreenDevice,
+  volumeSource,
+  withoutNoScreenDevice,
+} from '../src/build.ts';
+import { stateRecords, stateVariables, taggedList } from '../src/internal.ts';
 import { mapOfGroup } from '../src/families/harmony-300-350/devices.ts';
 import { allLists, maps, records, timerRecords, transitions, without } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';

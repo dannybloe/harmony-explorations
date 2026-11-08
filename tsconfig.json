@@ -5,6 +5,9 @@
       "path": "./packages/base"
     },
     {
+      "path": "./packages/base/test"
+    },
+    {
       "path": "./packages/lab"
     },
     {
@@ -15,6 +18,12 @@
     },
     {
       "path": "./packages/usb"
+    },
+    {
+      "path": "./packages/usb/test"
+    },
+    {
+      "path": "./packages/testkit"
     },
     {
       "path": "./packages/corpus"

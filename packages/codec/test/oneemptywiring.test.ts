@@ -16,8 +16,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import type { Container, ContainerPiece } from '../src/index.ts';
-import { activities, modeRecords, parse, takeApart } from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { ContainerPiece } from '../src/build.ts';
+import { activities, parse } from '../src/index.ts';
+import { modeRecords } from '../src/internal.ts';
+import { takeApart } from '../src/build.ts';
 import { describeStateTables, buildStateTables, hourListBytes } from '../src/statetables.ts';
 import { clockRecordFields } from '../src/gspm.ts';
 import { CLOCK_STATE_MAXIMA } from '../src/sections.ts';

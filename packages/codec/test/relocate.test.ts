@@ -24,7 +24,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless, slow } from '@harmony/lab';
-import type { Claim, Container } from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { Claim } from '../src/internal.ts';
+import { inventory, parse } from '../src/index.ts';
 import {
   END_MARKER_LENGTH,
   RelocateError,
@@ -32,15 +34,14 @@ import {
   claims,
   screenStrings,
   excise,
-  inventory,
-  parse,
   PICTURE_BANK_BIAS,
   pictureBankStart,
   pointers,
   rebase,
   relocate,
   relocationFloor,
-  trailerAgrees} from '../src/index.ts';
+  trailerAgrees,
+} from '../src/internal.ts';
 import { setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
 

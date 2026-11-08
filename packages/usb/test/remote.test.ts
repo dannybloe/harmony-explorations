@@ -10,16 +10,24 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  HarmonyRemote,
+  RailError,
+  RemoteError,
+  architectureFromVersion,
+  isFileBasedRemote,
+  isTunnelledRemote,
+  isHarmony,
+  isMicrochipBootloader,
+  skinId,
+  type Transport,
+} from '../src/index.ts';
+import {
   ERASE_FLASH,
   FLASH_CHUNK_DATA,
   FLASH_DATA,
-  HarmonyRemote,
   MISC_RAM,
   READ_FLASH,
-  RailError,
-  RemoteError,
   SOFTWARE_TYPE_SAFE_MODE,
-  architectureFromVersion,
   decodeReply,
   encodeVersionBlock,
   IDENTITY_BYTES,
@@ -27,19 +35,13 @@ import {
   FILE_BASED_PRODUCTS,
   HARMONY_PRODUCT_FIRST,
   HARMONY_PRODUCT_LAST,
-  isFileBasedRemote,
-  isTunnelledRemote,
   TUNNELLED_PRODUCTS,
-  isHarmony,
-  isMicrochipBootloader,
   MICROCHIP_BOOTLOADER_PRODUCT,
   MICROCHIP_VENDOR,
   nibbleForPayloadLength,
-  skinId,
   softwareTypeFromVersion,
   transportOver,
-  type Transport,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 
 /**
  * An identity block in the shape a remote's really is: `0xEE` where the serial field is, which is

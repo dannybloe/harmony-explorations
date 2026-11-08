@@ -8,7 +8,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateRegionByte, ADDRESSABLE_ARCHITECTURES } from '../src/index.ts';
+import { validateRegionByte, ADDRESSABLE_ARCHITECTURES } from '../src/internal.ts';
 import { MODELS_BY_SKIN } from '@harmony/base/models';
 
 test('a model states an architecture this library may not be able to address', () => {

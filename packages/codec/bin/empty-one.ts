@@ -34,11 +34,11 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { CONFIG_REGION_BASE, WRITABLE_CEILING } from '@harmony/usb';
+import { CONFIG_REGION_BASE, WRITABLE_CEILING } from '@harmony/usb/rails';
 import { IR_ARCHIVE } from '@harmony/lab';
-import {
-  type Container, type Raster, UNDRAWN, archSlot, composeSetup, modeRecords, rasterPng, readRecipe, renderPage, renderProgram,
-} from '../src/index.ts';
+import { type Container, type Raster, rasterPng, readRecipe, renderPage } from '../src/index.ts';
+import { UNDRAWN, archSlot, modeRecords, renderProgram } from '../src/internal.ts';
+import { composeSetup } from '../src/build.ts';
 import { assertStateTableConsistent } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
 import { oneDeviceModes } from '../src/families/harmony-one/devicepages.ts';

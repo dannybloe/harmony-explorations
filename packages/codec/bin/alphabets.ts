@@ -31,7 +31,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { load } from '@harmony/lab';
-import { parse, fontSets, glyphAt, shapeKey, isBlank, screenStrings, characterMap } from '../src/index.ts';
+import { parse } from '../src/index.ts';
+import { fontSets, glyphAt, shapeKey, isBlank, screenStrings, characterMap } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /** Where an alphabet's shapes come from: a container, and what its codes mean. */

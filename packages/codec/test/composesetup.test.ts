@@ -8,10 +8,18 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { type Container, deviceModeMaps, parse, readRecipe } from '../src/index.ts';
+import { type ComposedSetup, composeSetup } from '../src/build.ts';
 import {
-  type ComposedSetup, type Container, SCREEN_OWNERS, archSlot, claims, composeSetup, deviceModeMaps, modeRecords, parse, pointers,
-  readRecipe, screenUnits, taggedList, touchPages,
-} from '../src/index.ts';
+  SCREEN_OWNERS,
+  archSlot,
+  claims,
+  modeRecords,
+  pointers,
+  screenUnits,
+  taggedList,
+  touchPages,
+} from '../src/internal.ts';
 import { characterMap } from '../src/text.ts';
 import { timers } from '../src/tables.ts';
 import { oneScreenLightTimer } from '../src/families/harmony-one/screenlight.ts';

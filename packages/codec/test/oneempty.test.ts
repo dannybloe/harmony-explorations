@@ -22,10 +22,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
-import { CONFIG_REGION_BASE, WRITABLE_CEILING } from '@harmony/usb';
-import {
-  type Container, archSlot, layOutContainer, modeRecords, parse, renderPage, takeApart,
-} from '../src/index.ts';
+import { CONFIG_REGION_BASE, WRITABLE_CEILING } from '@harmony/usb/rails';
+import { type Container, parse, renderPage } from '../src/index.ts';
+import { archSlot, modeRecords } from '../src/internal.ts';
+import { layOutContainer, takeApart } from '../src/build.ts';
 import { describeStateTables } from '../src/statetables.ts';
 import { contentKey } from '../src/screencategories.ts';
 import { withReplacedPictures } from '../src/pictures.ts';

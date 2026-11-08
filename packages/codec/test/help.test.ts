@@ -13,27 +13,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { activities, activityBindings, type Container, deviceListRows, parse, payloadOf } from '../src/index.ts';
 import {
-  activities,
-  activityBindings,
   activityKeysFromRoles,
   activityRolesFromSends,
-  characterMap,
   composeActivity,
   composeActivityMenuRow,
   composeActivityScreen,
-  type Container,
-  deviceListRows,
+  nextActivityValue,
+} from '../src/build.ts';
+import {
+  characterMap,
   handlerSetRoles,
   handlerSets,
   modeRecords,
-  nextActivityValue,
-  parse,
-  payloadOf,
   screenStrings,
   stateRecords,
   taggedList,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import { startTargets } from './tagfive.ts';
 import '../src/resources.node.ts';
@@ -318,7 +315,7 @@ test('with MyHarmony\'s Remote Assistant off, Logitech\'s compile drops its six 
   skipUnless('h650_favourites_base', 'h650_assistant_off_config'), async () => {
     // Section 345, todo-compile-650 4.3.2. The same setup on the Harmony 650's test record, read off the
     // remote after MyHarmony's sync with the Assistant on, and compiled by Logitech with it off.
-    const { activities, characterMap, modeRecords, screenStrings, stateVariables } = await import('../src/index.ts');
+    const { activities, characterMap, modeRecords, screenStrings, stateVariables } = await import('../src/internal.ts');
     const shape = (name: string) => {
       const c = parse(require_(name));
       const strings = screenStrings(c, characterMap(c));
@@ -350,7 +347,7 @@ test('with MyHarmony\'s tilt sensor off, timer 0 queues 1F E900 alone and no lis
   skipUnless('h650_assistant_off_config', 'h650_tilt_off_config'), async () => {
     // Section 346, todo-compile-650 4.3.3. Two Logitech compiles of the same Harmony 650 setup, the
     // second with the tilt sensor disabled in MyHarmony's "Remote Backlight Settings".
-    const { modeRecords, parameterGroups, stateVariables, timers } = await import('../src/index.ts');
+    const { modeRecords, parameterGroups, stateVariables, timers } = await import('../src/internal.ts');
     const on = parse(require_('h650_assistant_off_config'));
     const off = parse(require_('h650_tilt_off_config'));
     const t0on = timers(on)!.records[0]!;

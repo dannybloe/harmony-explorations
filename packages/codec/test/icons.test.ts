@@ -7,8 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
-import {
-  IconError, drawIcon, iconNames, iconPath} from '../src/index.ts';
+import { IconError, drawIcon, iconNames, iconPath } from '../src/build.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import { STARTUP_FIXED_LINE_Y, STARTUP_TITLE_SECOND_Y } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import { OUR_PICTURE_PLACES, buildOurPictures } from '../src/families/harmony-600-650-700/pictures.ts';

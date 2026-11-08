@@ -6,7 +6,7 @@
  * configuration is the JSON documents a sync hands the remote, `reference/architectures/harmony-touch/`,
  * whose three pages `devices-and-infrared.md`, `activities-and-buttons.md` and `favourites-and-settings.md`
  * say field by field what the remote reads. The reader applies those rules; this file holds it against the
- * only documents that exist, the recordings `packages/usb/test/touch-recording.ts` decodes.
+ * only documents that exist, the recordings `packages/usb/src/touchrecording.ts` decodes.
  *
  * **What it asserts, and against what.**
  *

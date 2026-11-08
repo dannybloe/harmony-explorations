@@ -14,10 +14,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
 import {
-  type Container, type ContainerPiece, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, ScreenRecordError, assertRebuilt,
-  characterMap, decode, eventMap, layOutContainer, modeRecords, parse, reachablePrograms, takeApart, withModeRecords,
-} from '../src/index.ts';
+  type ContainerPiece,
+  ScreenRecordError,
+  assertRebuilt,
+  layOutContainer,
+  takeApart,
+  withModeRecords,
+} from '../src/build.ts';
+import {
+  SCREEN_SELECT_FONT,
+  SCREEN_TEXT_AT,
+  SCREEN_TEXT_INLINE,
+  characterMap,
+  decode,
+  eventMap,
+  modeRecords,
+  reachablePrograms,
+} from '../src/internal.ts';
 import { buildTemplateScreens, describeTemplateScreens } from '../src/families/harmony-one/screentemplate.ts';
 import { speller, textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow } from './screenlists.ts';

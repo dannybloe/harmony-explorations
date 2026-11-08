@@ -19,8 +19,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import type { Container, ContainerLayout, ContainerPiece } from '../src/index.ts';
-import { layOutContainer, parse, takeApart } from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
+import { parse } from '../src/index.ts';
+import { layOutContainer, takeApart } from '../src/build.ts';
 import { familyOf } from '../src/families/registry.ts';
 import { WiringError, builtPieces, compareWiring, withWiring, type BuiltWiring } from '../src/wiringparts.ts';
 import {

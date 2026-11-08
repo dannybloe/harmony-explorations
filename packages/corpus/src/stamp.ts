@@ -13,7 +13,8 @@
  * slot 13's clock records, through the codec's own rails, so this module adds no knowledge about the
  * format. What it adds is when to stamp and when not to.
  */
-import { localTimestamp, parse, saveEdits, trailerChecksum } from '@harmony/codec';
+import { localTimestamp, parse, saveEdits } from '@harmony/codec';
+import { trailerChecksum } from '@harmony/codec/internal';
 
 /** A configuration that cannot be stamped as it stands, with the reason. */
 export class StampError extends Error {}

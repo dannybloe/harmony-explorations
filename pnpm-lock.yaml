@@ -21,10 +21,17 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
 
-  packages/base: {}
+  packages/base:
+    devDependencies:
+      '@harmony/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/bench:
     dependencies:
+      '@harmony/base':
+        specifier: workspace:*
+        version: link:../base
       '@harmony/codec':
         specifier: workspace:*
         version: link:../codec
@@ -38,6 +45,9 @@ importers:
         specifier: workspace:*
         version: link:../usb
     devDependencies:
+      '@harmony/testkit':
+        specifier: workspace:*
+        version: link:../testkit
       playwright:
         specifier: 1.62.1
         version: 1.62.1
@@ -57,6 +67,9 @@ importers:
       '@harmony/lab':
         specifier: workspace:*
         version: link:../lab
+      '@harmony/testkit':
+        specifier: workspace:*
+        version: link:../testkit
       '@harmony/usb':
         specifier: workspace:*
         version: link:../usb
@@ -72,6 +85,13 @@ importers:
       '@harmony/usb':
         specifier: workspace:*
         version: link:../usb
+    devDependencies:
+      '@harmony/base':
+        specifier: workspace:*
+        version: link:../base
+      '@harmony/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/keyreader:
     devDependencies:
@@ -98,15 +118,34 @@ importers:
       '@harmony/usb':
         specifier: workspace:*
         version: link:../usb
+    devDependencies:
+      '@harmony/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/silhouettes:
     devDependencies:
+      '@harmony/base':
+        specifier: workspace:*
+        version: link:../base
       '@harmony/codec':
         specifier: workspace:*
         version: link:../codec
       '@harmony/corpus':
         specifier: workspace:*
         version: link:../corpus
+      '@harmony/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+      '@harmony/usb':
+        specifier: workspace:*
+        version: link:../usb
+
+  packages/testkit:
+    dependencies:
+      '@harmony/lab':
+        specifier: workspace:*
+        version: link:../lab
       '@harmony/usb':
         specifier: workspace:*
         version: link:../usb
@@ -123,6 +162,9 @@ importers:
       '@harmony/lab':
         specifier: workspace:*
         version: link:../lab
+      '@harmony/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
 packages:
 

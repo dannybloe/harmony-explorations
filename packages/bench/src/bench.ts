@@ -8,27 +8,26 @@
  * The hardware is injected rather than imported, so the whole surface is testable with a plain
  * object and no remote attached. `liveDeps()` is the one place that reaches for real USB.
  */
-import { fileRead, profileFor, readConfig, type ConfigReader, type ReadProgress } from '@harmony/corpus';
+import { profileFor, readConfig, type ConfigReader, type ReadProgress } from '@harmony/corpus';
+import { fileRead } from '@harmony/corpus/file';
 import {
   activities,
   devices,
   irGroups,
-  irRepeatPeriod,
   keyCodes,
   describeChoices,
   keyLabels,
   pageScans,
-  modePages,
   renderVariants,
   type Container,
-  type ModePage,
   rasterPng,
   renderPage,
-  idleActivityValue,
   parse,
   summary,
 } from '@harmony/codec/node';
-import { modelForSkin, VERSION_FIELD_NAMES } from '@harmony/usb';
+import { irRepeatPeriod, modePages, type ModePage, idleActivityValue } from '@harmony/codec/internal';
+import { VERSION_FIELD_NAMES } from '@harmony/usb';
+import { modelForSkin } from '@harmony/base/models';
 
 export interface AttachedRemote {
   readonly productId: number;

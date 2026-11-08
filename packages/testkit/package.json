@@ -1,0 +1,20 @@
+{
+  "name": "@harmony/testkit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "What this workspace's tests share across packages: a recorded Touch sync read out of the lab, a pretend Touch, and the names an entry exports. Never a product dependency",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./touch-recording": "./src/touch-recording.ts",
+    "./fake-touch-remote": "./src/fake-touch-remote.ts",
+    "./surface": "./src/surface.ts"
+  },
+  "dependencies": {
+    "@harmony/lab": "workspace:*",
+    "@harmony/usb": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  }
+}

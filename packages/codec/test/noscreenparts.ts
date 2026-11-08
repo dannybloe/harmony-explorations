@@ -4,10 +4,18 @@
  * channels, 4.3). Logitech's compiler numbers lists, maps, timers and records in an order no compile shows a rule
  * for, so a record is compared by what it sends and a list by what it does with every list it calls written out.
  */
+import { type Container, devices, irGroups } from '../src/index.ts';
 import {
-  bytes, type Container, devices, irBlockWords, irGroups, irHeaderPointers, irRecordStart, mapOfGroup, numberSenders, stateRecords,
-  stateVariables, taggedList,
-} from '../src/index.ts';
+  bytes,
+  irBlockWords,
+  irHeaderPointers,
+  irRecordStart,
+  numberSenders,
+  stateRecords,
+  stateVariables,
+  taggedList,
+} from '../src/internal.ts';
+import { mapOfGroup } from '../src/build.ts';
 
 /**
  * Each device of each Logitech file of the family by the catalogue entry its command names identify, and how many

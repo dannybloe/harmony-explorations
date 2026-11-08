@@ -56,6 +56,7 @@ import {
 import { trailerChecksum } from '../src/trailer.ts';
 import { TransportError, type Transport } from '../src/transport.ts';
 import { FakeFileRemote } from './fake-file-remote.ts';
+import { exportedNames } from './entries.ts';
 
 /** The bytes as a hex string, which is how an assertion about a packet is easiest to read. */
 function hex(bytes: Uint8Array, length = bytes.length): string {
@@ -351,11 +352,14 @@ describe('the guard: the write route reaches the transport only authorised, flag
     assert.deepEqual([...surface].sort(), ['close', 'read', 'write']);
   });
 
-  it('keeps the writer out of the barrel and in the write subpath', async () => {
-    const barrel = (await import('../src/index.ts')) as Record<string, unknown>;
+  it('keeps the writer out of every entry but the write subpath', async () => {
+    // Every entry and not the barrel alone since `todo.md` 7.3.6, which put most of the package under
+    // named subpaths, `entries.ts`.
+    const exported = await exportedNames();
     for (const name of ['writeFileConfig', 'openForWritingReport', 'dataPacket', 'resetFilesystemReport',
       'rebootReport', 'checkReport', 'flushReport', 'authoriseReport']) {
-      assert.equal(barrel[name], undefined, `${name} is in the barrel`);
+      const where = (exported.get(name) ?? []).filter((subpath) => subpath !== './write');
+      assert.deepEqual(where, [], `${name} is on an entry other than ./write`);
     }
     const write = (await import('../src/write.ts')) as Record<string, unknown>;
     assert.equal(typeof write['writeFileConfig'], 'function');

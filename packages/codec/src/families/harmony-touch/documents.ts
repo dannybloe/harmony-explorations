@@ -429,7 +429,7 @@ export interface SyncAnswer {
  * the object's prototype, and every later lookup of a document name would read through whatever that answer
  * held. On an object made by `Object.create(null)` the same assignment is an ordinary own key.
  *
- * **The derivation of a resource's name has a twin**, `resource` in `packages/usb/test/touch-recording.ts`,
+ * **The derivation of a resource's name has a twin**, `resource` in `packages/usb/src/touchrecording.ts`,
  * which the tests of the recordings in `packages/usb` key their answers by. It is kept there because
  * `packages/usb` cannot import the codec, which depends on it; the two are the same one line rule, and if one
  * changes the other has to.

@@ -30,8 +30,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFi
 import { basename, dirname, join, resolve, sep } from 'node:path';
 
 import { harmonyTouch } from '@harmony/codec/node';
-import { LAB } from '@harmony/lab';
-import { answersWritten, commands, records, sessions, text } from '@harmony/usb/test/touch-recording';
+import { LAB, require_ } from '@harmony/lab';
+import { answersWritten, commands, recordsOf, sessions, text } from '@harmony/usb/touchrecording';
 
 import { CONFIG_HASH_DOCUMENTS, OWN_SET_DOCUMENTS, buildOwnSet, compareConfigHash, compareRequestList, type OwnSource } from '../experiments/touchownset.ts';
 import { writeOfAnswersSize } from '../experiments/touchchangedset.ts';
@@ -81,7 +81,7 @@ function insideTheLab(path: string, what: string): string {
 
 /** The six documents of the recorded full sync's sync down, each with the tag Logitech's client delivered. */
 function recordedSources(): OwnSource[] {
-  const hlapi = sessions(commands(records(RECORDING))).filter((s) => s.path === '/sys/hlapi');
+  const hlapi = sessions(commands(recordsOf(require_(RECORDING)))).filter((s) => s.path === '/sys/hlapi');
   const at = hlapi.findIndex((s) => s.mode === 'W' && text(s.written) === SYNC);
   if (at < 0) fail(`the recording ${RECORDING} holds no sync down`);
   return answersWritten(hlapi.slice(at))
@@ -195,7 +195,7 @@ function check(folder: string): void {
     say(refused === 0 && statuses.every((s) => s === '200'), `the remote's last request list answered ${statuses.join(' ')}`);
     // One rule for the size of a write, shared with `touch-changed-set.ts`, rather than a copy here.
     const { line, perChunk, chunks, last: lastChunk } = writeOfAnswersSize(written);
-    const hlapi = sessions(commands(records(RECORDING))).filter((s) => s.path === '/sys/hlapi');
+    const hlapi = sessions(commands(recordsOf(require_(RECORDING)))).filter((s) => s.path === '/sys/hlapi');
     const theirs = Math.max(...hlapi.filter((s) => s.mode === 'W').map((s) => text(s.written)).filter((w) => w.startsWith(WRITE_ANSWERS)).map((w) => w.length));
     console.log(`write of answers: ${line.length} characters, ${chunks} chunks of ${perChunk}, the last ${lastChunk}; `
       + `the largest Logitech's client wrote in the recording, ${theirs}`);

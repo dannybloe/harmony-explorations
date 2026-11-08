@@ -4,5 +4,8 @@
     "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  // The library. The tests are a project of their own, `test/tsconfig.json`, since `todo.md` 7.3.6, for the
+  // reason `packages/usb/tsconfig.json` gives: they use the test kit, which is built on this package through
+  // `packages/usb`, so one project holding both would form a cycle `tsc --build` refuses.
+  "include": ["src/**/*.ts"]
 }

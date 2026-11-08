@@ -12,20 +12,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import type { Container, ContainerPiece } from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { ContainerPiece } from '../src/build.ts';
+import { parse } from '../src/index.ts';
 import {
   FirmwareSectionsError,
   LOG_AREAS,
   buildLogArea,
   buildParameterBlock,
   layOutContainer,
-  lightBandExtras,
-  logArea,
-  parameterGroups,
-  parse,
   takeApart,
   withFirmwareSections,
-} from '../src/index.ts';
+} from '../src/build.ts';
+import { lightBandExtras, logArea, parameterGroups } from '../src/internal.ts';
 import { ONE_PARAMETERS } from '../src/families/harmony-one/parameters.ts';
 import { PARAMETER_VALUES, describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
 

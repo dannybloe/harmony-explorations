@@ -25,9 +25,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
-import {
-  type ComposedSetup, type Container, archSlot, composeSetup, modeRecords, parse, readRecipe, takeApart, taggedList, touchPages,
-} from '../src/index.ts';
+import { type Container, parse, readRecipe } from '../src/index.ts';
+import { type ComposedSetup, composeSetup, takeApart } from '../src/build.ts';
+import { archSlot, modeRecords, taggedList, touchPages } from '../src/internal.ts';
 import { devices, handlerSetRoles } from '../src/inventory.ts';
 import { menuMarkerOf } from '../src/shared/menus.ts';
 import { assertStateTableConsistent, handlerSets } from '../src/sections.ts';

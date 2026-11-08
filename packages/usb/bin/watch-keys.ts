@@ -20,16 +20,8 @@
  * attached, `packages/usb/test/watch-keys.test.ts`. The tables it chooses from are
  * `packages/base/src/keys.ts`, shared with the key reader page.
  */
-import {
-  ARCH_8_PRODUCT,
-  HarmonyRemote,
-  WATCH,
-  WATCH_BY_SKIN,
-  listHarmony,
-  openHarmony,
-  skinId,
-  type Watch,
-} from '@harmony/usb';
+import { HarmonyRemote, listHarmony, openHarmony, skinId } from '@harmony/usb';
+import { ARCH_8_PRODUCT, WATCH, WATCH_BY_SKIN, type Watch } from '@harmony/base/keys';
 
 // The tables of addresses lived here until the key reader page needed them too. They are in
 // `packages/base/src/keys.ts` now, which imports nothing so that a browser can load it, and this script

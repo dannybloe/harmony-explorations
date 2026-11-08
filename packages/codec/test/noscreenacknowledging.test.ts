@@ -54,11 +54,22 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
+import { ComposeError, type Container, parse, type Recipe } from '../src/index.ts';
 import {
-  ACKNOWLEDGED_AS, buildEmptyNoScreenConfiguration, buildNoScreenSetup, bytes, ComposeError, composeNoScreenSetup, type Container,
-  EMPTY_LIST_NUMBERS, NO_SCREEN_ATTRIBUTIONS, noScreenAcknowledgingEntry, noScreenAttributedBytes, type NoScreenSendEventNumbers, parse, type Recipe, restamped,
-  SEND_EVENT_PINS, taggedList, UNMASKED_SEND_EVENT,
-} from '../src/index.ts';
+  ACKNOWLEDGED_AS,
+  buildEmptyNoScreenConfiguration,
+  buildNoScreenSetup,
+  composeNoScreenSetup,
+  EMPTY_LIST_NUMBERS,
+  NO_SCREEN_ATTRIBUTIONS,
+  noScreenAcknowledgingEntry,
+  noScreenAttributedBytes,
+  type NoScreenSendEventNumbers,
+  restamped,
+  SEND_EVENT_PINS,
+  UNMASKED_SEND_EVENT,
+} from '../src/build.ts';
+import { bytes, taggedList } from '../src/internal.ts';
 import { withAcknowledgingEntry } from '../src/families/harmony-300-350/empty.ts';
 import { maps } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';

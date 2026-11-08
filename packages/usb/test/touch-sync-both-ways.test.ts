@@ -88,8 +88,8 @@ import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
 import { FILE_HBUS, OFFSET_COMMAND } from '../src/filepipe.ts';
-import { SIX, answersWritten, commands, records, requestLists, requestName, resource, sessions, text } from './touch-recording.ts';
-import type { Record_, Request_, Session } from './touch-recording.ts';
+import { SIX, answersWritten, commands, records, requestLists, requestName, resource, sessions, text } from '@harmony/testkit/touch-recording';
+import type { Record_, Request_, Session } from '@harmony/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 const REVERSE = 'touch_reverse_sync_recording';

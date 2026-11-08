@@ -50,8 +50,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { SIX, answersWritten, commands, records, requestLists, requestName, resource, sessions, text } from './touch-recording.ts';
-import type { Answer, Session } from './touch-recording.ts';
+import { SIX, answersWritten, commands, records, requestLists, requestName, resource, sessions, text } from '@harmony/testkit/touch-recording';
+import type { Answer, Session } from '@harmony/testkit/touch-recording';
 
 const FIXTURES = ['touch_sync_recording', 'touch_full_sync_recording', 'touch_reverse_sync_recording'] as const;
 

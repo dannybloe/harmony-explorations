@@ -15,9 +15,8 @@ import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
 
-import {
-  activities, configLanguage, devices, LANGUAGE_MARKERS, LANGUAGE_MINIMUM_MARKERS, parse,
-} from '../src/index.ts';
+import { activities, configLanguage, devices, parse } from '../src/index.ts';
+import { LANGUAGE_MARKERS, LANGUAGE_MINIMUM_MARKERS } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /**

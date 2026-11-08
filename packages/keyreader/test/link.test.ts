@@ -20,7 +20,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FILE_BASED_PRODUCTS, LOGITECH_VENDOR, TUNNELLED_PRODUCTS, encodeVersionBlock, readVersion } from '@harmony/usb';
+import { LOGITECH_VENDOR, readVersion } from '@harmony/usb';
+import { FILE_BASED_PRODUCTS, TUNNELLED_PRODUCTS, encodeVersionBlock } from '@harmony/usb/internal';
 import { getVersionRequest, readRamRequest } from '@harmony/usb/protocol';
 import { buildKeyReader } from '../bin/build.ts';
 import { builtText, linkWithout, publishedLink, refusalOf } from './built.ts';

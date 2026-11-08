@@ -24,34 +24,36 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import type { Container, ContainerLayout, ContainerPiece, StateTableFacts, StateTablesSpec } from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { ContainerLayout, ContainerPiece, StateTableFacts, StateTablesSpec } from '../src/build.ts';
+import { activityNames, parse } from '../src/index.ts';
 import {
   FIRST_WIDE_VARIABLE,
   VALUE_MAP_LEAD,
   StateTablesError,
-  activityNames,
   buildStateRecord,
   composeDevice,
   composedNameTreeOrder,
   buildStateTables,
   buildValueMap,
   clockTransitions,
-  compilerCaseOrder,
   describeStateTables,
   hourListBytes,
   isWideVariable,
+  layOutContainer,
+  nameTreeOrder,
+  takeApart,
+  withStateTables,
+} from '../src/build.ts';
+import {
+  compilerCaseOrder,
   keyListCapacity,
   keyListHash,
-  layOutContainer,
   nameNodes,
-  nameTreeOrder,
-  parse,
   stateRecords,
   stateTable,
-  takeApart,
   valueMaps,
-  withStateTables,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import {
   FIRMWARE_STATE_RECORDS,
   FOUR_SLOT_STATE_TABLES,

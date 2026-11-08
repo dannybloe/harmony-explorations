@@ -124,8 +124,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { harmonyTouch } from '@harmony/codec';
-import { TOUCH_READ_REQUESTS, TOUCH_SYNC_REQUESTS } from '@harmony/usb';
+import { harmonyTouch } from '@harmony/codec/build';
+import { TOUCH_READ_REQUESTS, TOUCH_SYNC_REQUESTS } from '@harmony/usb/rails';
 import type { TouchRequestSession } from '@harmony/usb/touchsession';
 
 // ---------------------------------------------------------------------------------------------------

@@ -33,29 +33,29 @@ import { join } from 'node:path';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   type ArchiveProtocol,
-  archiveProtocolsByName,
-  blockOfStatedCode,
-  catalogueCode,
-  catalogueCommandBlocks,
   catalogueDevice,
   catalogueCommands,
-  catalogueProtocol,
-  composableKeycode,
-  composeCatalogueDevices,
   type Container,
   devices,
-  irBlockWords,
   irGroups,
-  irHeaderPointers,
   parse,
   payloadOf,
-  sameTrain,
   statedCode,
   statedProtocol,
-  TABLE_PRESS_REPEATS,
   waveformOfArchiveCommand,
   archiveAt,
 } from '../src/node.ts';
+import {
+  archiveProtocolsByName,
+  catalogueCode,
+  catalogueCommandBlocks,
+  catalogueProtocol,
+  composableKeycode,
+  composeCatalogueDevices,
+  sameTrain,
+  TABLE_PRESS_REPEATS,
+} from '../src/build.ts';
+import { blockOfStatedCode, irBlockWords, irHeaderPointers } from '../src/internal.ts';
 
 /** Every command of the archive with its keycode and the `protocol` field beside it, once per codeset. */
 let commands: { keycode: string; protocol: string }[] | undefined;

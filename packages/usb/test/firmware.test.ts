@@ -17,14 +17,9 @@ import { fileURLToPath } from 'node:url';
 
 import { imagePath, skipUnless } from '@harmony/lab';
 
-import {
-  HarmonyRemote,
-  REINSTALL_MAX_IMAGE,
-  RailError,
-  assertReinstallAllowed,
-  checkFirmwareImage,
-  firmwareImageChecksum,
-} from '../src/index.ts';
+import { HarmonyRemote, RailError } from '../src/index.ts';
+import { REINSTALL_MAX_IMAGE, assertReinstallAllowed } from '../src/rails.ts';
+import { checkFirmwareImage, firmwareImageChecksum } from '../src/internal.ts';
 import { updateStatusReadRequest } from '../src/protocol.ts';
 import { updateStatusWriteRequest } from '../src/writes.ts';
 
@@ -221,10 +216,14 @@ test('with writing disabled, a reinstall is refused before anything else is look
 
 function withEnv(extra: Record<string, string>, script: string): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
-  const index = join(here, '..', 'src', 'index.ts').replaceAll('\\', '/');
+  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
+  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  const rails = join(here, '..', 'src', 'rails.ts').replaceAll('\\', '/');
+  const internal = join(here, '..', 'src', 'internal.ts').replaceAll('\\', '/');
   return execFileSync(
     process.execPath,
-    ['--input-type=module', '--eval', `import * as usb from '${index}';\n${script}`],
+    ['--input-type=module', '--eval',
+      `import * as railsOnly from '${rails}';\nimport * as internal from '${internal}';\nconst usb = { ...internal, ...railsOnly };\n${script}`],
     { env: { ...process.env, ...extra }, encoding: 'utf8' },
   ).trim();
 }

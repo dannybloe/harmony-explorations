@@ -34,16 +34,12 @@
  * exists because reading the firmware region is a legitimate thing to want and should be a decision.
  */
 import { LAB } from '@harmony/lab';
-import {
-  CONFIG_REGION_BASE,
-  HarmonyRemote,
-  WRITABLE_CEILING,
-  listHarmony,
-  openHarmony,
-  readFlashWindow,
-} from '@harmony/usb';
+import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
+import { CONFIG_REGION_BASE, WRITABLE_CEILING } from '@harmony/usb/rails';
+import { readFlashWindow } from '@harmony/usb/internal';
 
-import { fileRegion, profileFor } from '../src/index.ts';
+import { profileFor } from '../src/index.ts';
+import { fileRegion } from '../src/file.ts';
 
 /** Bytes per `READ_FLASH`, matching what the config reader uses. */
 const CHUNK = 0x4000;

@@ -96,9 +96,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  bytes, devices, irBlockWords, irGroups, irHeaderPointers, numberSenders, parse, taggedList, type Container,
-} from '@harmony/codec/node';
+import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
+import { bytes, irBlockWords, irHeaderPointers, numberSenders, taggedList } from '@harmony/codec/internal';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import { BENCH_CODESETS, CodeBook } from '../src/irmonitor.ts';

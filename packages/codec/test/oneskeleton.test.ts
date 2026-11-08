@@ -20,10 +20,9 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
-import {
-  LETTERING_CHARACTERS, archSlot, characterMap, claims, describeStateTables, fontSets, glyphOf, inventory, layOutContainer,
-  parse, roundTrip, takeApart,
-} from '../src/index.ts';
+import { inventory, parse } from '../src/index.ts';
+import { LETTERING_CHARACTERS, describeStateTables, layOutContainer, takeApart } from '../src/build.ts';
+import { archSlot, characterMap, claims, fontSets, glyphOf, roundTrip } from '../src/internal.ts';
 import { clockSpec } from '../src/statetables.ts';
 import { countedTable } from '../src/frame.ts';
 import { SCREEN_END, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screen.ts';

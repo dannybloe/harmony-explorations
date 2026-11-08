@@ -12,29 +12,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
+import { type Container, irGroups, payloadOf, activityBindings, activityNames, parse } from '../src/index.ts';
 import {
   ACTION_LIST_INDEX_OPCODE,
-  type Container,
   EDGE_CODES,
   handlerSets,
   infraredCodesPerList,
   irBlockWords,
-  irGroups,
   irRecordBlocks,
   modeRecords,
-  payloadOf,
-  activityBindings,
-  activityNames,
   modePages,
   panelPoint,
-  parse,
   pixelPoint,
   screenStrings,
   taggedList,
   touchOwner,
   touchPageOf,
   touchPages,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 const SAMPLES = ['one_config', 'one_config_unprogrammed'];

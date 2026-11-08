@@ -17,10 +17,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
 import {
-  ACTIVITY_STATE_NAME, type Container, type ContainerPiece, ScreenRecordError, composeActivity, composeActivityMenuRow,
-  firmwareStateVariableMax, layOutContainer, modeRecords, parse, stateVariables, takeApart, touchPages,
-} from '../src/index.ts';
+  ACTIVITY_STATE_NAME,
+  firmwareStateVariableMax,
+  modeRecords,
+  stateVariables,
+  touchPages,
+} from '../src/internal.ts';
+import {
+  type ContainerPiece,
+  ScreenRecordError,
+  composeActivity,
+  composeActivityMenuRow,
+  layOutContainer,
+  takeApart,
+} from '../src/build.ts';
 import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { letterOneDonor } from '../src/families/harmony-one/look.ts';

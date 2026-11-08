@@ -86,7 +86,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
-import { type Container, irGroups, metadataArchive, parse, stateRecords, stateVariables } from '../src/index.ts';
+import { type Container, irGroups, metadataArchive, parse } from '../src/index.ts';
+import { stateRecords, stateVariables } from '../src/internal.ts';
 import { instructionsAt, mapOfGroup } from '../src/families/harmony-300-350/devices.ts';
 import { DEVICE_KEYS } from '../src/families/harmony-300-350/keys.ts';
 import { nameOfLabel } from '../src/shared/core.ts';

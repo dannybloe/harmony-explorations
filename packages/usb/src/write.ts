@@ -1,9 +1,11 @@
 /**
  * The write path's own entry point, for a caller in this workspace that composes two packages.
  *
- * **Why this exists rather than a deep import.** `blockwrite.ts`, `rails.ts` and `rehearsal.ts` are
- * all deliberately absent from the package barrel: a consumer of `@harmony/usb` gets the read path
- * and the protocol, not the machinery that erases flash. `bin/rehearse-block.ts` reaches them by
+ * **Why this exists rather than a deep import.** `blockwrite.ts`, `filewrite.ts` and `rehearsal.ts` are
+ * on no other entry of the package, and `rails.ts` is not on the main entry: a consumer of `@harmony/usb`
+ * gets the read path and `RailError`, the refusal it meets, and not the machinery that erases flash. The
+ * rails whole are their own subpath, `@harmony/usb/rails`, and this file carries the three a block writer
+ * asserts, `todo.md` 7.3.6, which made `index.ts` say the same. `bin/rehearse-block.ts` reaches them by
  * relative path because it lives inside this package. A script that also needs `@harmony/codec`
  * cannot, since the container parser is where the trailer checksum lives and a writer that does not
  * check it can produce a file the remote refuses to boot.
@@ -34,8 +36,8 @@ export {
 } from './rails.ts';
 export type { WritePermission } from './rails.ts';
 
-// The file based family's write path, `todo-compile-350.md` 1.6: the Harmony 300 and 350. A second
-// protocol's writer beside the first, behind its own rail, `assertFileWriteAllowed`.
+// The file based family's write path: the Harmony 300 and 350. A second protocol's writer beside the
+// first, behind its own rail, `assertFileWriteAllowed`.
 export {
   FileWriteError,
   chunksFor,

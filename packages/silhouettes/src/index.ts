@@ -5,15 +5,21 @@
  * device and say which key a click landed on, and the drawing itself. Both from the same table, which
  * is the point: a button list that lived only in the XML would have to be parsed back or copied into
  * a second table, and two copies of a derivation is this repository's oldest rule.
+ *
+ * **Explicit names**, held by `test/surface.test.ts`, `todo.md` 7.3.6. What a model's geometry table is written
+ * with, the shapes and the transforms of a path, is `./internal`, for the models here and this repository's
+ * scripts.
  */
+// The geometry table's types: a model, its keys and regions, and where each fact came from.
 export { CASE_HEIGHT, LAYERS, SCAN_SOURCES } from './types.ts';
 export type { Key, KeyKind, Label, LabelPlace, LayerName, Model, Provenance, Region, ScanSource, Screen, Shape }
   from './types.ts';
+// The icons a key is drawn with.
 export { ICONS, extentOf } from './icons.ts';
-export { pathBounds, transformPath, parseTransform, compose, pathPolygon, pointInPath, IDENTITY,
-  type Bounds, type Matrix } from './path.ts';
 export type { Icon, IconPart } from './icons.ts';
-export { arcRing, circle, contour, cross, ellipse, pill, poly, roundRect, rounded, segment, traced } from './shapes.ts';
+// Which key a point falls in, and a path's extent.
+export { pathBounds, pathPolygon, pointInPath, type Bounds } from './path.ts';
+// The drawing.
 export { DEFAULTS, DETAIL, elementId, toSvg } from './svg.ts';
 export type { SvgOptions } from './svg.ts';
 

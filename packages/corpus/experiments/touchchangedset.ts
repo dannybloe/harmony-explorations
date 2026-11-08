@@ -40,7 +40,7 @@
  * Nothing here opens a remote: it builds and compares. The bench scripts are `bin/touch-changed-set.ts` and, for
  * a device added or taken out, `bin/touch-device-set.ts`.
  */
-import { DATA_PACKET_PAYLOAD } from '@harmony/usb';
+import { DATA_PACKET_PAYLOAD } from '@harmony/usb/internal';
 import { TOUCH_REQUEST_SHAPES } from '@harmony/usb/touchsession';
 
 import { OWN_SET_DOCUMENTS } from './touchownset.ts';

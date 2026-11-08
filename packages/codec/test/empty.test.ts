@@ -7,11 +7,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { type Container } from '../src/index.ts';
 import {
-  type Container, ENTER_MODE, rgbTo565, LETTERING_CHARACTERS, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SCREEN_QUEUE_INSTRUCTION,
-  characterMap, claims, describeStateTables, fontSets, glyphOf, letterRows, modePages, modeRecords, oxaniumFace,
-  pageListCopies, screenProgram, stateVariables, takeApart, taggedList, valueMaps,
-} from '../src/index.ts';
+  ENTER_MODE,
+  rgbTo565,
+  MAP_VALUE_OPCODE,
+  RUN_SCREEN_PROGRAM,
+  SCREEN_QUEUE_INSTRUCTION,
+  characterMap,
+  claims,
+  fontSets,
+  glyphOf,
+  modePages,
+  modeRecords,
+  pageListCopies,
+  screenProgram,
+  stateVariables,
+  taggedList,
+  valueMaps,
+} from '../src/internal.ts';
+import { LETTERING_CHARACTERS, describeStateTables, letterRows, oxaniumFace, takeApart } from '../src/build.ts';
 import { FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import {
   EMPTY_FONT_SETS, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyModelOf, emptyModes, emptyVariable,
@@ -28,7 +43,8 @@ import { bitmapReference } from '../src/screen.ts';
 import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
 import { activityKeys } from '../src/families/harmony-600-650-700/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
-import { archSlot, parse, readRecipe, screenStrings} from '../src/index.ts';
+import { parse, readRecipe } from '../src/index.ts';
+import { archSlot, screenStrings } from '../src/internal.ts';
 import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/families/harmony-600-650-700/firmwarescreens.ts';
 
@@ -37,7 +53,8 @@ import type { Recipe } from '../src/index.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/harmony-600-650-700/chrome.ts';
 import { startupTitleYs } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
-import { allOffList, composeDevice, coverage, deviceIds, joinPowerOff } from '../src/index.ts';
+import { allOffList, coverage, deviceIds } from '../src/internal.ts';
+import { composeDevice, joinPowerOff } from '../src/build.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 import { FOUR_SLOT_STATE_TABLES } from '../src/families/harmony-600-650-700/statetables.ts';
 import { describeWiring, FIRMWARE_SCREENS, checkWiring } from '../src/families/harmony-600-650-700/wiring.ts';

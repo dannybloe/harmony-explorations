@@ -20,11 +20,45 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LAB, require_, skipUnless } from '@harmony/lab';
 import {
-  ACTION_QUEUE_INSTRUCTIONS, ARCH14_INFERRED, ComposeError, EditError, QueueError, SCREEN_ITEM_BEEP,
-  activities, activityPauseGroups, applyEdits, devices, assertQueueFits, bindKeyToList, composeSequence,
-  coverage, deviceKeypadLists, handlerSets, infraredCodesPerList, irCarrier, irFrames, irGroups, irRecordBlocks,
-  keepDeviceOn, modeRecords, parse, payloadOf, queueRun, roundTrip, sendPreludes, sequenceBody, taggedList, trailerAgrees,
-  type Container, type Instruction, type SequenceStep} from '../src/index.ts';
+  ComposeError,
+  EditError,
+  QueueError,
+  activities,
+  applyEdits,
+  devices,
+  assertQueueFits,
+  irFrames,
+  irGroups,
+  parse,
+  payloadOf,
+  type Container,
+} from '../src/index.ts';
+import {
+  ACTION_QUEUE_INSTRUCTIONS,
+  coverage,
+  handlerSets,
+  infraredCodesPerList,
+  irCarrier,
+  irRecordBlocks,
+  modeRecords,
+  queueRun,
+  roundTrip,
+  sendPreludes,
+  taggedList,
+  trailerAgrees,
+  type Instruction,
+} from '../src/internal.ts';
+import {
+  ARCH14_INFERRED,
+  SCREEN_ITEM_BEEP,
+  activityPauseGroups,
+  bindKeyToList,
+  composeSequence,
+  deviceKeypadLists,
+  keepDeviceOn,
+  sequenceBody,
+  type SequenceStep,
+} from '../src/build.ts';
 import { listSends, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
 

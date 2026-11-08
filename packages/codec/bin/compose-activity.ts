@@ -56,33 +56,37 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import {
-  ACTION_QUEUE_INSTRUCTIONS,
-  ACTIVITY_STATE_NAME,
-  firmwareStateVariableMax,
   activityBindings,
   assertQueueFits,
   assertStateTableConsistent,
+  activityScreens,
+  localTimestamp,
+  parse,
+  saveEdits,
+} from '../src/index.ts';
+import {
+  ACTION_QUEUE_INSTRUCTIONS,
+  ACTIVITY_STATE_NAME,
+  firmwareStateVariableMax,
+  caseQueued,
+  valueMaps,
+  coverage,
+  handlerSetRoles,
+  handlerSets,
+  roundTrip,
+  stateVariables,
+  trailerAgrees,
+  worstQueueRun,
+} from '../src/internal.ts';
+import {
   activityPowerTargets,
   activityKeysFromRoles,
   activityScreenRows,
-  activityScreens,
-  caseQueued,
-  valueMaps,
   composeActivity,
   composeActivityMenuRow,
   composeActivityScreen,
   nextActivityValue,
-  coverage,
-  handlerSetRoles,
-  handlerSets,
-  localTimestamp,
-  parse,
-  roundTrip,
-  saveEdits,
-  stateVariables,
-  trailerAgrees,
-  worstQueueRun,
-} from '../src/index.ts';
+} from '../src/build.ts';
 import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import '../src/resources.node.ts';
 

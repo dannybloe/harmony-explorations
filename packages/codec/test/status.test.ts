@@ -18,7 +18,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load, skipWithoutLab, require_ } from '@harmony/lab';
-import { bitmapReference, modeRecords, parse, pictureReference, screenProgram, screenStrings } from '../src/index.ts';
+import { parse } from '../src/index.ts';
+import { bitmapReference, modeRecords, pictureReference, screenProgram, screenStrings } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /** The status containers, by architecture, and where each one came from. */

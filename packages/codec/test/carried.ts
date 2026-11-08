@@ -6,7 +6,8 @@
  */
 import assert from 'node:assert/strict';
 
-import { type Container, type Recipe, SCREEN_OWNERS, claims, pointers, screenUnits } from '../src/index.ts';
+import { type Container, type Recipe } from '../src/index.ts';
+import { SCREEN_OWNERS, claims, pointers, screenUnits } from '../src/internal.ts';
 import { devices } from '../src/inventory.ts';
 import type { DonorDeviceRequest } from '../src/composecatalogue.ts';
 

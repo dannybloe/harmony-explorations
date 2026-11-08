@@ -30,19 +30,17 @@ import { join } from 'node:path';
 import { LAB, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import {
   HarmonyRemote,
-  STORE_BLOCK_BYTES,
   architectureFromVersion,
-  assertUnitIsPermitted,
-  clearSlotWrites,
   delaySlots,
   latestSettings,
   listHarmony,
   openHarmony,
-  predictStoreAfter,
   readVersion,
   unitIdentityFromText,
   unitIdentityText,
 } from '../src/index.ts';
+import { STORE_BLOCK_BYTES, clearSlotWrites, predictStoreAfter } from '../src/internal.ts';
+import { assertUnitIsPermitted } from '../src/rails.ts';
 import type { DelaySlot } from '../src/index.ts';
 
 /** The units whose firmware's settings write is read: the two 0.2 builds. */

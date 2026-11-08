@@ -71,11 +71,26 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
+import { type Container, parse } from '../src/index.ts';
 import {
-  buildLogArea, type Container, type ContainerPiece, HOLD_TIME, mapOfGroup, NO_SCREEN_PARAMETERS, noScreenDigitEntryTable,
-  noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries, noScreenSendEventLists, type NoScreenSendEventNumbers,
-  noScreenStartUpLists, type NoScreenStartUpNumbers, noScreenStartUpTable, parse, SEND_EVENT_PINS, startUpGroup, taggedList,
-} from '../src/index.ts';
+  buildLogArea,
+  type ContainerPiece,
+  HOLD_TIME,
+  mapOfGroup,
+  NO_SCREEN_PARAMETERS,
+  noScreenDigitEntryTable,
+  noScreenLogArea,
+  noScreenParameterBlock,
+  noScreenSendEventEntries,
+  noScreenSendEventLists,
+  type NoScreenSendEventNumbers,
+  noScreenStartUpLists,
+  type NoScreenStartUpNumbers,
+  noScreenStartUpTable,
+  SEND_EVENT_PINS,
+  startUpGroup,
+} from '../src/build.ts';
+import { taggedList } from '../src/internal.ts';
 
 /** The five bench fixtures, by the lab's names. */
 const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];

@@ -24,9 +24,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
-import {
-  archiveProtocols, prontoPairs, prontoUnits, readPronto, waveformOfArchiveCommand,
-} from '../src/node.ts';
+import { archiveProtocols, readPronto, waveformOfArchiveCommand } from '../src/node.ts';
+import { prontoPairs, prontoUnits } from '../src/internal.ts';
 import type { ArchiveProtocol } from '../src/index.ts';
 
 const args = process.argv.slice(2);

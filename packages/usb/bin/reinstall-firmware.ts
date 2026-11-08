@@ -59,18 +59,15 @@ import {
   HarmonyRemote,
   RailError,
   RemoteError,
-  SOFTWARE_TYPE_SAFE_MODE,
   architectureFromVersion,
-  checkFirmwareImage,
   listHarmony,
   openHarmony,
   readVersion,
-  softwareTypeFromVersion,
   unitIdentityFromText,
   unitIdentityText,
-  assertUnitIsPermitted,
-  REINSTALL_MAX_IMAGE,
 } from '../src/index.ts';
+import { SOFTWARE_TYPE_SAFE_MODE, checkFirmwareImage, softwareTypeFromVersion } from '../src/internal.ts';
+import { assertUnitIsPermitted, REINSTALL_MAX_IMAGE } from '../src/rails.ts';
 import { unitIdentity, unitIdentityPath } from '@harmony/lab';
 import { readFileSync } from 'node:fs';
 

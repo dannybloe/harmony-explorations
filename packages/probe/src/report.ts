@@ -33,6 +33,7 @@
  * slot count and the section table, and that is exactly the evidence needed to say whether the
  * pointer table rule holds on arch 10.
  */
+import { parse } from '@harmony/codec';
 import {
   FAMILIES,
   POINTER_SIZE,
@@ -41,12 +42,11 @@ import {
   SECTION_TABLE_OFFSET,
   bytes as byteUtil,
   findMarker,
-  parse,
   recoverFlashBase,
   containerExtent,
   END_MARKER_LENGTH,
   trailerChecksum,
-} from '@harmony/codec';
+} from '@harmony/codec/internal';
 
 /** Bumped when the shape of the report changes, so a contributed file says what produced it. */
 export const REPORT_VERSION = 1;

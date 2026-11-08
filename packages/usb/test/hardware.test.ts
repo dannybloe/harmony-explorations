@@ -22,7 +22,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load } from '@harmony/lab';
-import { HARMONY_PRODUCT_FIRST, HARMONY_PRODUCT_LAST, isHarmony, listHarmony } from '../src/index.ts';
+import { isHarmony, listHarmony } from '../src/index.ts';
+import { HARMONY_PRODUCT_FIRST, HARMONY_PRODUCT_LAST } from '../src/internal.ts';
 
 /** Product ids of the bench remotes, so a test can refuse to run against the wrong one. */
 const HARMONY_600 = 0xc122;

@@ -4,6 +4,9 @@
     "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
+  // The library and its scripts. The tests are a project of their own, `test/tsconfig.json`, since `todo.md`
+  // 7.3.6: they use the test kit, `packages/testkit`, which is built on this library, so one project holding
+  // both would reference the kit while the kit references it, a cycle `tsc --build` refuses.
+  "include": ["src/**/*.ts", "bin/**/*.ts"],
   "references": [{ "path": "../base" }, { "path": "../lab" }]
 }

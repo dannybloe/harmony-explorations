@@ -14,10 +14,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
-import {
-  type Container, type ContainerPiece, ScreenRecordError, characterMap, decode, layOutContainer, modeRecords, parse,
-  screenProgram, takeApart,
-} from '../src/index.ts';
+import { type Container, parse } from '../src/index.ts';
+import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
+import { characterMap, decode, modeRecords, screenProgram } from '../src/internal.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow, namedByRecords } from './screenlists.ts';
 import {

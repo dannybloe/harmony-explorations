@@ -129,9 +129,15 @@ function walk(entry: string, read: (file: string) => string = (file) => readFile
 const described = (uses: readonly Use[]): string => uses.map((one) => `${one.file}: ${one.what}`).join('\n');
 
 test('no module the codec\'s main entry reaches imports a Node module or names a Node global', () => {
-  const { reached, uses } = walk(ENTRY);
-  assert.deepEqual(uses, [], described(uses));
-  // The walk itself reached the codec, the families and the base package, so an empty list is not an empty walk.
+  // And none the two subpaths reach, `./build` and `./internal`, which load anywhere too since `todo.md` 7.3.6
+  // took most of the old barrel off the main entry and put it under them.
+  const reached: string[] = [];
+  for (const entry of [ENTRY, join(SOURCE, 'build.ts'), join(SOURCE, 'internal.ts')]) {
+    const walked = walk(entry);
+    assert.deepEqual(walked.uses, [], `${relative(PACKAGE, entry)}:\n${described(walked.uses)}`);
+    reached.push(...walked.reached);
+  }
+  // The walks reached the codec, the families and the base package, so an empty list is not an empty walk.
   for (const one of ['src/gspm.ts', 'src/families/registry.ts', 'src/families/harmony-touch/index.ts', 'src/archive.ts', 'src/typeface.ts']) {
     assert.ok(reached.includes(join(PACKAGE, one)), `the walk reached ${one}`);
   }

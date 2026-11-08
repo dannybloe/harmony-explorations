@@ -21,7 +21,7 @@ import {
   oxaniumFace,
   rasterise,
   type PathCommand,
-} from '../src/index.ts';
+} from '../src/build.ts';
 // Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
 import { HARMONY_650_FACES } from '../src/families/harmony-600-650-700/fonts.ts';
 import { HARMONY_ONE_FACES } from '../src/families/harmony-one/fonts.ts';

@@ -15,10 +15,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { parse } from '../src/index.ts';
+import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import {
-  type ContainerPiece, ScreenRecordError, attributeScreens, householdNames, layOutContainer, modeRecords, parse,
-  SCREEN_CALL, characterMap, decode, handlerSets, screenProgram, screenUnits, stateRecords, taggedList, takeApart, valueMaps,
-} from '../src/index.ts';
+  attributeScreens,
+  householdNames,
+  modeRecords,
+  SCREEN_CALL,
+  characterMap,
+  decode,
+  handlerSets,
+  screenProgram,
+  screenUnits,
+  stateRecords,
+  taggedList,
+  valueMaps,
+} from '../src/internal.ts';
 import {
   ONE_ASSISTANT_SCREENS, ONE_TOUR_SCREENS, buildOneTourScreens, checkOneTourScreens, describeOneTourScreens,
   oneTourScreenModes, withOneTourScreens,

@@ -65,12 +65,35 @@ import { join } from 'node:path';
 import { deflateRawSync } from 'node:zlib';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
+import { type Container, ComposeError, metadataArchive, parse, type Recipe } from '../src/index.ts';
 import {
-  type Container, type ContainerLayout, type ContainerPiece, ComposeError, FRAME_ARCHITECTURES, INFRARED_GROUPS_BY_SKIN,
-  LayoutError, NO_SCREEN_COUNT_WIDTHS, NO_SCREEN_FAMILY, architectureRecord, buildNameTree, buildTimestampSection, claims,
-  buildNoScreenSetup, composeNoScreenDevice, countedTable, frameArchitecture, layOutContainer, metadataArchive, nameNodes,
-  numberSenders, numberSenderTable, parse, type Recipe, type SectionPlacement, stateRecords, takeApart, taggedList, taggedListExtent,
-} from '../src/index.ts';
+  type ContainerLayout,
+  type ContainerPiece,
+  FRAME_ARCHITECTURES,
+  INFRARED_GROUPS_BY_SKIN,
+  LayoutError,
+  NO_SCREEN_COUNT_WIDTHS,
+  NO_SCREEN_FAMILY,
+  architectureRecord,
+  buildNameTree,
+  buildTimestampSection,
+  buildNoScreenSetup,
+  composeNoScreenDevice,
+  countedTable,
+  frameArchitecture,
+  layOutContainer,
+  type SectionPlacement,
+  takeApart,
+} from '../src/build.ts';
+import {
+  claims,
+  nameNodes,
+  numberSenders,
+  numberSenderTable,
+  stateRecords,
+  taggedList,
+  taggedListExtent,
+} from '../src/internal.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';

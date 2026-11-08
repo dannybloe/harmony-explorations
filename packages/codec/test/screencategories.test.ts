@@ -15,25 +15,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, devices, activityNames, parse, renderPage } from '../src/index.ts';
 import {
   type CensusMember,
-  type Container,
   FIXED_MODE_ROLES,
   SCREEN_OWNERS,
   attributeScreens,
   coverage,
-  devices,
-  activityNames,
   modeRecords,
   modeRoles,
-  parse,
-  renderPage,
   screenCategoryTotals,
   screenCensus,
   screenUnits,
   householdNames,
   sharesNoHousehold,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /** The four Harmony 650 compiles, in the order the per configuration figures below are listed. */

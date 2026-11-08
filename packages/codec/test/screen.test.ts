@@ -16,6 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { parse, SCREEN_SIZES } from '../src/index.ts';
 import {
   BITMAP_HEADER,
   BITMAP_NOTHING,
@@ -48,7 +49,6 @@ import {
   glyphOf,
   glyphs,
   modeProgramRoots,
-  parse,
   reachablePrograms,
   screenProgram,
   modePages,
@@ -57,12 +57,12 @@ import {
   valueMaps,
   pictureBankByClosure,
   PICTURE_CEILING,
-  SCREEN_SIZES,
   fontSetsByClosure,
   FONT_SET_MINIMUM,
   FONT_SET_MINIMUM_GLYPHS,
-} from '../src/index.ts';
-import type { Bitmap, Container, Glyph } from '../src/index.ts';
+} from '../src/internal.ts';
+import type { Container } from '../src/index.ts';
+import type { Bitmap, Glyph } from '../src/internal.ts';
 
 /** `[sample, reachable programs, decoded glyphs]`. Same walk as `tests/test_interpreter.py`. */
 const DECODED: readonly [string, number, number][] = [

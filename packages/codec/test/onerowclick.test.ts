@@ -6,7 +6,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import { deviceListRows, modeRecords, parse, taggedList } from '../src/index.ts';
+import { deviceListRows, parse } from '../src/index.ts';
+import { modeRecords, taggedList } from '../src/internal.ts';
 import { BEEP_OPCODE, SCREEN_ITEM_BEEP } from '../src/inventory.ts';
 import '../src/resources.node.ts';
 

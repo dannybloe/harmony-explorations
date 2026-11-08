@@ -94,12 +94,29 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
+import { type Container, metadataArchive, parse } from '../src/index.ts';
 import {
-  buildNoScreenStateTables, buildStateTables, type Container, type ContainerLayout, type ContainerPiece, describeStateTables,
-  layOutContainer, metadataArchive, nameNodes, NO_SCREEN_FAMILY, NO_SCREEN_FIRMWARE_STATE_RECORDS, NO_SCREEN_NARROW_MAX,
-  NO_SCREEN_STATE_TABLES, type NoScreenStateDevice, type NoScreenStateRequest, type NoScreenStateTables, noScreenStateVariables,
-  parse, stateRecords, StateTablesError, stateTable, stateVariableName, stateVariables, takeApart, WATCH_TV_SCAN, withStateTables,
-} from '../src/index.ts';
+  buildNoScreenStateTables,
+  buildStateTables,
+  type ContainerLayout,
+  type ContainerPiece,
+  describeStateTables,
+  layOutContainer,
+  NO_SCREEN_FAMILY,
+  NO_SCREEN_FIRMWARE_STATE_RECORDS,
+  NO_SCREEN_NARROW_MAX,
+  NO_SCREEN_STATE_TABLES,
+  type NoScreenStateDevice,
+  type NoScreenStateRequest,
+  type NoScreenStateTables,
+  noScreenStateVariables,
+  StateTablesError,
+  stateVariableName,
+  takeApart,
+  WATCH_TV_SCAN,
+  withStateTables,
+} from '../src/build.ts';
+import { nameNodes, stateRecords, stateTable, stateVariables } from '../src/internal.ts';
 import { keyMaps, PRESS } from '../src/families/harmony-300-350/devices.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { FIRMWARE_STATE_RECORDS, FOUR_SLOT_STATE_TABLES } from '../src/families/harmony-600-650-700/statetables.ts';

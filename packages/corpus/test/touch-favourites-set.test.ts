@@ -38,9 +38,10 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { encodePng, harmonyTouch } from '@harmony/codec/node';
+import { encodePng } from '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
 
 import { contentOfComposed, documentsHeld, heldContent, isContent, putBackContent, withContent, type Content } from '../experiments/touchfavouritesset.ts';
 import { keyOf, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet, type TouchSyncOutcome } from '../src/touchsync.ts';

@@ -6,18 +6,21 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./internal": "./src/internal.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"
   },
   "dependencies": {
+    "@harmony/base": "workspace:*",
     "@harmony/codec": "workspace:*",
     "@harmony/corpus": "workspace:*",
     "@harmony/lab": "workspace:*",
     "@harmony/usb": "workspace:*"
   },
   "devDependencies": {
+    "@harmony/testkit": "workspace:*",
     "playwright": "1.62.1"
   }
 }

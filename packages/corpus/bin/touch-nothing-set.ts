@@ -45,7 +45,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 
-import { harmonyTouch } from '@harmony/codec/node';
+// The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
+import '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
 import { IR_ARCHIVE, LAB } from '@harmony/lab';
 
 import { attributeNothingSet, attributionLines } from '../experiments/touchattribution.ts';

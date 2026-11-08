@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { IMAGES, PARSEABLE_EXCLUDED, imagePath, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
-import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../src/index.ts';
+import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../src/internal.ts';
 import {
   NUMBER_SENDER_DIGITS,
   NUMBER_SENDER_RECORD_LENGTH,
@@ -413,7 +413,7 @@ test('the KPN box\'s favourites appear in TV kijken alone, and the LG\'s only on
     // page, opened by "Favorite Channels" among its commands, since the KPN box changes channels there and
     // no activity has the LG do so.
     // A second activity with the LG changing channels, synced and read off the remote, holds the LG's.
-    const { activities, characterMap, modeRecords, screenStrings } = await import('../src/index.ts');
+    const { activities, characterMap, modeRecords, screenStrings } = await import('../src/internal.ts');
     const favouritesByActivity = (name: string): Record<string, string[]> => {
       const c = parse(require_(name));
       const strings = screenStrings(c, characterMap(c));

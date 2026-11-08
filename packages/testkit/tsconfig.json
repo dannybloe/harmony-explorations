@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  // `todo.md` 7.3.6: the helpers the tests of several packages share, moved out of `packages/usb/test`, which
+  // exported them through its package.json. It references `packages/usb`'s library project and not its tests,
+  // `packages/usb/test/tsconfig.json`, which reference this one in turn.
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../lab" }, { "path": "../usb" }]
+}

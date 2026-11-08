@@ -51,9 +51,11 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec/node';
+// The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
+import '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
 
 import { setDifferences } from '../experiments/touchchangedset.ts';
 import { compareSetup, comparisonLines, composedSetupDocuments, putBackSetup, SETUP_DOCUMENTS, SETUP_IDS, withSetup } from '../experiments/touchsetupset.ts';

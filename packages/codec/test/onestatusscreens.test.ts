@@ -19,8 +19,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
 import {
-  type Container,
   SCREEN_QUEUE_INSTRUCTION,
   archSlot,
   attributeScreens,
@@ -29,7 +29,6 @@ import {
   householdNames,
   modeRecords,
   modeRoles,
-  parse,
   reachablePrograms,
   screenStrings,
   screenUnits,
@@ -37,7 +36,7 @@ import {
   taggedList,
   timers,
   valueMaps,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405's population. */

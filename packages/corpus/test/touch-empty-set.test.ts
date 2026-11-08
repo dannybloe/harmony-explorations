@@ -45,9 +45,11 @@ import { describe, it } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec/node';
+// The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
+import '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
 
 import { answersWhenHolding, setDifferences, writeOfAnswersSize } from '../experiments/touchchangedset.ts';
 import { EMPTY_DOCUMENTS, emptyBackOf, withEmpty } from '../experiments/touchemptyset.ts';

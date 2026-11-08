@@ -12,10 +12,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse, renderPage } from '../src/index.ts';
+import { PictureError, withPictureFilled } from '../src/build.ts';
 import {
-  type Container, PictureError, SCREEN_DRAW_IMAGE, SCREEN_FILL, bitmapAt, fillRows, modePages, parse, pictureReference,
-  reachablePrograms, renderPage, withPictureFilled,
-} from '../src/index.ts';
+  SCREEN_DRAW_IMAGE,
+  SCREEN_FILL,
+  bitmapAt,
+  fillRows,
+  modePages,
+  pictureReference,
+  reachablePrograms,
+} from '../src/internal.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { readOnePictures, withOnePictures } from '../src/families/harmony-one/pictures.ts';
 import '../src/resources.node.ts';

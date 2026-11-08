@@ -15,7 +15,8 @@ import { join } from 'node:path';
 import { decodePayload } from '@harmony/codec/node';
 import { load, skipUnless } from '@harmony/lab';
 
-import { Bench, VERSION_FIELDS, type BenchDeps, type OpenRemote } from '../src/index.ts';
+import { Bench, type BenchDeps } from '../src/index.ts';
+import { VERSION_FIELDS, type OpenRemote } from '../src/internal.ts';
 
 const ONE = 0xc121;
 const H600 = 0xc122;

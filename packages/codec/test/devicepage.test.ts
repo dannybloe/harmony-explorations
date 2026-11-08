@@ -11,23 +11,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { type Container, ComposeError, deviceListRows, parse, payloadOf } from '../src/index.ts';
 import {
   type CensusMember,
-  type Container,
-  ComposeError,
   KEY_EVENT_PRESS,
   KEY_EVENT_SHIFT,
   archSlot,
   attributeScreens,
-  composeDevice,
-  composeDeviceScreen,
   compilerCaseOrder,
   compilerTagOrder,
   contentKey,
-  deviceListRows,
   modeRecords,
-  parse,
-  payloadOf,
   pictureBank,
   bitmaps,
   pictureReference,
@@ -36,7 +30,8 @@ import {
   screenUnits,
   taggedList,
   valueMaps,
-} from '../src/index.ts';
+} from '../src/internal.ts';
+import { composeDevice, composeDeviceScreen } from '../src/build.ts';
 import { deviceModeChrome, deviceModeKeyMap } from '../src/families/harmony-600-650-700/chrome.ts';
 import { activityKeyedRecords } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import {

@@ -95,8 +95,8 @@ import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, requestLists, resource, sessions } from './touch-recording.ts';
-import type { Answer, Request_, Session } from './touch-recording.ts';
+import { answersWritten, commands, records, requestLists, resource, sessions } from '@harmony/testkit/touch-recording';
+import type { Answer, Request_, Session } from '@harmony/testkit/touch-recording';
 
 const TRIAL = 'touch_sync_recording';
 const FULL = 'touch_full_sync_recording';

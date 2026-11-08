@@ -11,10 +11,21 @@
  *
  * Not a test file itself, the name does not end in `.test.ts`, so the runner does not pick it up.
  */
+import { type Container } from '../src/index.ts';
 import {
-  type Container, SCREEN_QUEUE_INSTRUCTION, archSlot, handlerSets, modePages, modeRecords, numberSenders, pageListCopies,
-  reachablePrograms, stateRecords, taggedList, timers, valueMaps,
-} from '../src/index.ts';
+  SCREEN_QUEUE_INSTRUCTION,
+  archSlot,
+  handlerSets,
+  modePages,
+  modeRecords,
+  numberSenders,
+  pageListCopies,
+  reachablePrograms,
+  stateRecords,
+  taggedList,
+  timers,
+  valueMaps,
+} from '../src/internal.ts';
 
 const CALL = 0x7f;
 

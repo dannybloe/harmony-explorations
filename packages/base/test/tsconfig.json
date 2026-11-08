@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    // Where these files went when they were part of the package's own project, so `dist/` holds the same.
+    "outDir": "../dist/test"
+  },
+  // `packages/base`'s tests, a project of their own since `todo.md` 7.3.6, `../tsconfig.json` says why.
+  "include": ["**/*.ts"],
+  "references": [{ "path": ".." }, { "path": "../../testkit" }]
+}

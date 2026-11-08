@@ -6,7 +6,8 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./internal": "./src/internal.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"
@@ -15,5 +16,8 @@
     "@harmony/codec": "workspace:*",
     "@harmony/lab": "workspace:*",
     "@harmony/usb": "workspace:*"
+  },
+  "devDependencies": {
+    "@harmony/testkit": "workspace:*"
   }
 }

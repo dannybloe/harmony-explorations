@@ -9,13 +9,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { StateTableError, assertStateTableConsistent, Container, irGroups, parse } from '../src/index.ts';
 import {
   ACCUMULATOR_LOAD_OPCODE,
   SCREEN_LIGHT_STEP,
   screenLightTimer,
-  StateTableError,
-  assertStateTableConsistent,
-  Container,
   FAMILIES,
   FRAME_HEADER,
   NAME_LEVEL_STATE_VARIABLE,
@@ -47,7 +45,6 @@ import {
   irGroupCount,
   irHeaderLength,
   irQuantity,
-  irGroups,
   irRecordBlocks,
   irBlockLength,
   irBlockWords,
@@ -63,7 +60,6 @@ import {
   modeTable,
   pageListCopies,
   parameterGroups,
-  parse,
   modeProgramRoots,
   taggedListExtent,
   screenProgram,
@@ -77,7 +73,7 @@ import {
   touchMapStart,
   touchPages,
   bytes,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 
 /** `[sample, event fallback, state header, modes, bindings, records per group]`. */
 const SECTIONS: readonly [string, number, number[], number, number, number[]][] = [

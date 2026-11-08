@@ -13,6 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { parse } from '../src/index.ts';
 import {
   ALPHABETS,
   ASCII_FIRST_CODE,
@@ -26,7 +27,6 @@ import {
   glyphAt,
   glyphRunAt,
   isBlank,
-  parse,
   reachablePrograms,
   referencedStringAddress,
   screenStrings,
@@ -34,8 +34,8 @@ import {
   stateVariables,
   textCoverage,
   usesAscii,
-} from '../src/index.ts';
-import type { CharacterMap } from '../src/index.ts';
+} from '../src/internal.ts';
+import type { CharacterMap } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /** Every container in the corpus, and which alphabet each is expected to be read by. */

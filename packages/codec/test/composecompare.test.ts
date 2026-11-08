@@ -21,7 +21,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
-import { type ComposedSetup, type Container, composeSetup, parse, readRecipe } from '../src/index.ts';
+import { type Container, parse, readRecipe } from '../src/index.ts';
+import { type ComposedSetup, composeSetup } from '../src/build.ts';
 import { SEND_INFRARED, devices } from '../src/inventory.ts';
 import { instructionSites } from '../src/assemble.ts';
 import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';

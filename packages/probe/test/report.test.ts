@@ -13,7 +13,8 @@ import assert from 'node:assert/strict';
 import { load, require_, skipUnless } from '@harmony/lab';
 import { parse } from '@harmony/codec/node';
 
-import { buildReport, containerReport, probeBase, probeRemote, usbReport } from '../src/index.ts';
+import { buildReport, containerReport, probeRemote, usbReport } from '../src/index.ts';
+import { probeBase } from '../src/internal.ts';
 
 const SAMPLES = [
   'h700_config',

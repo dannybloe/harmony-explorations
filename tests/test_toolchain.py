@@ -66,6 +66,13 @@ class TypeScriptProjects(unittest.TestCase):
                     continue
                 found += 1
                 with self.subTest(package=name, directory=directory):
+                    # Or a project of its own inside the directory, which is how a package's tests are kept
+                    # when they use the test kit that is built on the package, `todo.md` 7.3.6: one project
+                    # holding both would form a reference cycle.
+                    own = os.path.join(path, directory, 'tsconfig.json')
+                    if os.path.isfile(own):
+                        self.assertIn('**/*.ts', read_jsonc(own).get('include', []))
+                        continue
                     self.assertIn(f'{directory}/**/*.ts', globs,
                                   f'packages/{name}/{directory} is outside its own tsconfig, so it '
                                   f'is typechecked by nothing and an editor gives it defaults')
@@ -73,14 +80,24 @@ class TypeScriptProjects(unittest.TestCase):
         # having found nothing to check. Exact, not a floor of 12, per section 143: the number is
         # decided by the workspace layout and moves only when a package or a directory is added,
         # and then it moves in the diff rather than being absorbed. 25 since `todo.md` 7.3.4 added
-        # `packages/base`, with its `src` and `test`.
-        self.assertEqual(found, 25, 'source directories claimed by a tsconfig')
+        # `packages/base`, with its `src` and `test`; 26 since 7.3.6 added `packages/testkit`, its `src`.
+        self.assertEqual(found, 26, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
-        """`make ts` builds the root, so a package missing from it is a package nobody compiles."""
+        """`make ts` builds the root, so a package missing from it is a package nobody compiles.
+
+        And a directory with a project of its own, a package's tests since `todo.md` 7.3.6, is referenced
+        too, or nothing builds it.
+        """
         root = read_jsonc(os.path.join(ROOT, 'tsconfig.json'))
-        referenced = {os.path.basename(r['path']) for r in root.get('references', [])}
-        self.assertEqual(referenced, {name for name, _, _ in self.packages()})
+        referenced = {os.path.normpath(r['path']) for r in root.get('references', [])}
+        expected = set()
+        for name, path, _ in self.packages():
+            expected.add(os.path.join('packages', name))
+            for directory in SOURCE_DIRECTORIES:
+                if os.path.isfile(os.path.join(path, directory, 'tsconfig.json')):
+                    expected.add(os.path.join('packages', name, directory))
+        self.assertEqual(referenced, expected)
 
 
 class PyrightConfiguration(unittest.TestCase):
@@ -1903,7 +1920,10 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 44 with the Harmony 885's compile track: its skill, its test notes, `todo-compile-885.md` and
         # `tests/test_harmony_885_flash_backup.py` name `rehearse-block.ts`. The first three went on the
         # withhold list; the test sits under `tests/`, already withheld. The list was re-read.
-        self.assertEqual(len(stating), 44,
+        # 45 with `todo.md` 7.3.6: `packages/usb/test/surface.test.ts` holds the write subpath's names to a
+        # list, `assertFirstWriteAllowed` among them. It is inside `packages/usb/`, withheld whole, so
+        # nothing widens; the list was re-read.
+        self.assertEqual(len(stating), 45,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

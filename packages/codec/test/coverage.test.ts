@@ -10,11 +10,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { Container, parse } from '../src/index.ts';
 import {
   BINDING_SLOT,
   CLOCK_RECORD_LENGTH,
   CLOCK_SECTION_LENGTH,
-  Container,
   EMPTY_ARRAY_LIMIT,
   EMPTY_FRAME_LENGTH,
   FAMILIES,
@@ -34,13 +34,12 @@ import {
   logArea,
   modeRecords,
   parameterGroups,
-  parse,
   pictureBankStart,
   reachablePrograms,
   touchMapStart,
   touchPages,
   valueMaps,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 
 /** `[sample, accounted, total]`, every container in the corpus. */
 const ACCOUNTED: readonly [string, number, number][] = [

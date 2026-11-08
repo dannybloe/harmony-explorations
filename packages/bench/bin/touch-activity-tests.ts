@@ -16,8 +16,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { harmonyTouch } from '@harmony/codec/node';
-import { LAB } from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { LAB, require_ } from '@harmony/lab';
+import { answersWritten, commands, recordsOf, sessions } from '@harmony/usb/touchrecording';
 
 import { touch71Configuration } from '../src/touchbench.ts';
 import { TOUCH_8_2_SET, touch82Tests } from '../experiments/touchactivitytest.ts';
@@ -27,7 +27,7 @@ if (LAB === undefined || !existsSync(join(LAB, TOUCH_8_2_SET))) {
   process.exit(1);
 }
 const set = JSON.parse(readFileSync(join(LAB, TOUCH_8_2_SET), 'utf8')) as { answers: unknown[] };
-const recorded = answersWritten(sessions(commands(records('touch_full_sync_recording'))).filter((s) => s.path === '/sys/hlapi'));
+const recorded = answersWritten(sessions(commands(recordsOf(require_('touch_full_sync_recording')))).filter((s) => s.path === '/sys/hlapi'));
 const configuration = touch71Configuration(set, harmonyTouch.documentsOfAnswers(recorded));
 const tests = touch82Tests(configuration);
 

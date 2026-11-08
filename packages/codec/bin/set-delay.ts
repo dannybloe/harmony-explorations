@@ -28,15 +28,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-import {
-  applyEdits,
-  deviceDelays,
-  devices,
-  parse,
-  setPowerOnDelay,
-  setPowerOnDelayVariable,
-  trailerChecksum,
-} from '../src/index.ts';
+import { applyEdits, deviceDelays, devices, parse, setPowerOnDelay } from '../src/index.ts';
+import { setPowerOnDelayVariable, trailerChecksum } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {

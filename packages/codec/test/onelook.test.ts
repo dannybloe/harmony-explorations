@@ -10,7 +10,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import { type Container, activityScreens, composeDevice, composeDeviceScreen, deviceModeMaps, modeRecords, parse, taggedList, touchPages } from '../src/index.ts';
+import { type Container, activityScreens, deviceModeMaps, parse } from '../src/index.ts';
+import { composeDevice, composeDeviceScreen } from '../src/build.ts';
+import { modeRecords, taggedList, touchPages } from '../src/internal.ts';
 import { bitmapPixels, renderVariants } from '../src/render.ts';
 import { rgb565, rgbTo565 } from '../src/png.ts';
 import {

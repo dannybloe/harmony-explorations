@@ -19,12 +19,40 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  ACTIVITY_STATE_NAME, ComposeError, catalogueCommands, catalogueDevice, catalogueDriving, codeKey,
-  commandIndex, composeActivity, composeDevice, composeDeviceInputs, deviceDriving, deviceStateMachines,
-  deviceVariables, devices, handlerSets, inputPlan, inputTarget, irGroups, joinPowerOff,
-  activityStartTargets, parse, payloadOf, stateRecords, stateVariables, taggedList,
-  type Container, type HeldStep, type HeldVariable, type InputPlan,
+  ComposeError,
+  catalogueCommands,
+  catalogueDevice,
+  catalogueDriving,
+  codeKey,
+  deviceDriving,
+  devices,
+  irGroups,
+  parse,
+  payloadOf,
+  type Container,
 } from '../src/node.ts';
+import {
+  ACTIVITY_STATE_NAME,
+  deviceVariables,
+  handlerSets,
+  stateRecords,
+  stateVariables,
+  taggedList,
+} from '../src/internal.ts';
+import {
+  commandIndex,
+  composeActivity,
+  composeDevice,
+  composeDeviceInputs,
+  deviceStateMachines,
+  inputPlan,
+  inputTarget,
+  joinPowerOff,
+  activityStartTargets,
+  type HeldStep,
+  type HeldVariable,
+  type InputPlan,
+} from '../src/build.ts';
 import { irFrame } from '../src/irframe.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */

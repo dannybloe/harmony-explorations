@@ -17,7 +17,7 @@ import {
   TRAILER_CHECKSUM_OFFSET,
   trailerChecksum,
   type Family,
-} from '@harmony/codec';
+} from '@harmony/codec/internal';
 // The subpath rather than the barrel, deliberately: `readwindow.ts` imports nothing, and this module is
 // consumed on its own as `@harmony/corpus/read` precisely so that the read comes without the transport.
 import { MAX_WINDOW_RETRIES, readFlashWindow, type WindowRetry } from '@harmony/usb/readwindow';

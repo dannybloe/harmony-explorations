@@ -16,10 +16,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
+import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import {
-  type Container, type ContainerPiece, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, ScreenRecordError, bitmapAt, layOutContainer,
-  modeRecords, parse, pictureReference, reachablePrograms, takeApart, touchPages,
-} from '../src/index.ts';
+  SCREEN_TEXT_AT,
+  SCREEN_TEXT_INLINE,
+  bitmapAt,
+  modeRecords,
+  pictureReference,
+  reachablePrograms,
+  touchPages,
+} from '../src/internal.ts';
 import {
   HIT_CODES, HIT_EDGES, LEFT_KEY_AREA, RIGHT_KEY_AREA, ONE_HIT_PAGES, buildOneHitPages, buttonArea, checkOneHitPages,
   describeOneHitPages, oneHitPageAreas, withOneHitPages,

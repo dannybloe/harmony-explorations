@@ -93,16 +93,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LAB, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
-import {
-  applyEdits,
-  deviceDelays,
-  devices,
-  parse,
-  powerOnInstructions,
-  setPowerOnDelay,
-  stateVariables,
-  trailerChecksum,
-} from '../src/index.ts';
+import { applyEdits, deviceDelays, devices, parse, setPowerOnDelay } from '../src/index.ts';
+import { powerOnInstructions, stateVariables, trailerChecksum } from '../src/internal.ts';
 import { STATE_WRITE_BASE } from '../src/actions.ts';
 import { noScreenPowerOnDelayCopies } from '../src/families/harmony-300-350/delay.ts';
 import type { Container } from '../src/gspm.ts';

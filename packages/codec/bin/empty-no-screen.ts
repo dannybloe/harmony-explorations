@@ -35,9 +35,10 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { assertFileFamilyContainer } from '@harmony/usb';
+import { assertFileFamilyContainer } from '@harmony/usb/rails';
 
-import { buildEmptyNoScreenConfiguration, irGroups } from '../src/index.ts';
+import { irGroups } from '../src/index.ts';
+import { buildEmptyNoScreenConfiguration } from '../src/build.ts';
 import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {

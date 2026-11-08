@@ -45,10 +45,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
-import {
-  bytes, ComposeError, compilerHash, composeNoScreenDevice, composeNoScreenFavourites, type Container, inCompilerOrder, irGroups,
-  numberSenders, parse, stateRecords, taggedList,
-} from '../src/index.ts';
+import { ComposeError, type Container, irGroups, parse } from '../src/index.ts';
+import { bytes, compilerHash, numberSenders, stateRecords, taggedList } from '../src/internal.ts';
+import { composeNoScreenDevice, composeNoScreenFavourites, inCompilerOrder } from '../src/build.ts';
 import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 

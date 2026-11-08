@@ -39,7 +39,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { HarmonyRemote, listHarmony, openHarmony, ODD_READ_EXPERIMENT } from '../src/index.ts';
+import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
+import { ODD_READ_EXPERIMENT } from '../src/rails.ts';
 import { LAB } from '@harmony/lab';
 
 const PRODUCT_ONE = 0xc121;

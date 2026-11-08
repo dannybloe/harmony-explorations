@@ -111,7 +111,7 @@ import {
   requestOpenForWritingReport,
 } from '../src/touchsession.ts';
 import { TransportError } from '../src/transport.ts';
-import { FakeTouchRemote } from './fake-touch-remote.ts';
+import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
 
 /** A made up serial. */
 const SERIAL = '20000101000000-424242';
@@ -471,6 +471,9 @@ describe('the session, with the flags off', () => {
 function withEnv(extra: Record<string, string>, script: string): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
   const path = (relative: string): string => join(here, relative).replaceAll('\\', '/');
+  // The test kit by the file it resolves to, since the script runs from wherever the runner was started, where
+  // `@harmony/testkit` need not resolve; the kit imports this package's modules by the same files as the lines above.
+  const kit = fileURLToPath(import.meta.resolve('@harmony/testkit/fake-touch-remote')).replaceAll('\\', '/');
   return execFileSync(
     process.execPath,
     ['--input-type=module', '--eval', `
@@ -480,7 +483,7 @@ function withEnv(extra: Record<string, string>, script: string): string {
       import * as write from '${path('../src/filewrite.ts')}';
       import { unitIdentityFromSerial } from '${path('../src/identity.ts')}';
       import { authoriseReport } from '${path('../src/authorise.ts')}';
-      import { FakeTouchRemote, operationsOf } from '${path('./fake-touch-remote.ts')}';
+      import { FakeTouchRemote, operationsOf } from '${kit}';
       const SYSINFO = ${JSON.stringify(sysinfoText())};
       const UNIT = unitIdentityFromSerial(${JSON.stringify(SERIAL)});
       const hex = (r, n = 12) => Buffer.from(r.subarray(0, n)).toString('hex');

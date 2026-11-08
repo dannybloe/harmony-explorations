@@ -75,10 +75,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
+import { deviceListRows, devices, parse } from '../src/index.ts';
 import {
-  ACTION_LIST_INDEX_OPCODE, characterMap, deviceListRows, deviceModeMarker, deviceModeTitles, devices,
-  isDeviceListRowShape, modeRecords, parse, screenStrings, taggedList,
-} from '../src/index.ts';
+  ACTION_LIST_INDEX_OPCODE,
+  characterMap,
+  deviceModeMarker,
+  deviceModeTitles,
+  isDeviceListRowShape,
+  modeRecords,
+  screenStrings,
+  taggedList,
+} from '../src/internal.ts';
 import type { Container } from '../src/index.ts';
 import { SIDE_KEY_GRIDS, gridCellAt } from '../src/cornerlayout.ts';
 import type { LabelGrid } from '../src/cornerlayout.ts';

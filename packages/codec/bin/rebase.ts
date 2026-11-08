@@ -10,7 +10,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { load } from '@harmony/lab';
-import { parse, rebase } from '../src/index.ts';
+import { parse } from '../src/index.ts';
+import { rebase } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 const argument = (name: string): string | undefined => {

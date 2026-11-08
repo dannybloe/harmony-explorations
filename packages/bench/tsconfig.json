@@ -6,9 +6,11 @@
   },
   "include": ["src/**/*.ts", "experiments/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
   "references": [
+    { "path": "../base" },
     { "path": "../lab" },
     { "path": "../codec" },
     { "path": "../usb" },
-    { "path": "../corpus" }
+    { "path": "../corpus" },
+    { "path": "../testkit" }
   ]
 }

@@ -16,8 +16,9 @@ import { readFileSync } from 'node:fs';
 
 import { IMAGES, load } from '@harmony/lab';
 
-import { coverage, parse, payloadOf } from '../src/index.ts';
-import type { CoverageReport } from '../src/index.ts';
+import { parse, payloadOf } from '../src/index.ts';
+import { coverage } from '../src/internal.ts';
+import type { CoverageReport } from '../src/internal.ts';
 import { CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';
 

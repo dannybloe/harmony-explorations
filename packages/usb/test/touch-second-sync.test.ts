@@ -62,7 +62,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, requestLists, resource, sessions, SIX, written } from './touch-recording.ts';
+import { CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, requestLists, resource, sessions, SIX, written } from '@harmony/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 const FIRST_LIST = 'touch_first_sync_list';

@@ -18,6 +18,7 @@ import { HARMONY_ONE_FACES } from '../src/families/harmony-one/fonts.ts';
 import { characterMap } from '../src/text.ts';
 import { fontSets, glyphOf } from '../src/font.ts';
 import { measureSet } from '../src/fonttable.ts';
+import { parse } from '../src/index.ts';
 import {
   FontTableError,
   LETTERING_CHARACTERS,
@@ -28,11 +29,10 @@ import {
   layOutContainer,
   letterRows,
   maskForm,
-  oxaniumAlphabet,
-  parse,
-  screenStrings,
   takeApart,
-  withOxaniumFonts} from '../src/index.ts';
+  withOxaniumFonts,
+} from '../src/build.ts';
+import { oxaniumAlphabet, screenStrings } from '../src/internal.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';

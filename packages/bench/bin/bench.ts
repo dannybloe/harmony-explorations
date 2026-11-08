@@ -12,10 +12,15 @@ import { fileURLToPath } from 'node:url';
 
 import { IR_ARCHIVE, LAB, load } from '@harmony/lab';
 
+import { Bench, createServer, DEFAULT_PORT, HOST, IrMonitor, IrSessions, liveDeps } from '../src/index.ts';
 import {
-  BENCH_CONFIGS, BENCH_TOUCH_SETS, Bench, CodeBook, createServer, DEFAULT_PORT, HOST, IrMonitor, IrSessions, irtoolsSource, liveDeps,
-  monitorLogPath, runFilePath,
-} from '../src/index.ts';
+  BENCH_CONFIGS,
+  BENCH_TOUCH_SETS,
+  CodeBook,
+  irtoolsSource,
+  monitorLogPath,
+  runFilePath,
+} from '../src/internal.ts';
 
 const at = process.argv.indexOf('--port');
 const port = at < 0 ? DEFAULT_PORT : Number(process.argv[at + 1]);

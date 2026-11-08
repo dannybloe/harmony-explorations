@@ -41,9 +41,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch, waveformOfArchiveCommand, type Pulse } from '@harmony/codec/node';
+import { waveformOfArchiveCommand, type Pulse } from '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
 
 import { BENCH_CONFIGS, BENCH_TOUCH_SETS, CodeBook, framesOfTrain } from '../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';

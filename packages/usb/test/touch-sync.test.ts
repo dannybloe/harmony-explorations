@@ -71,7 +71,7 @@ import {
   FILE_WRITE,
   OFFSET_COMMAND,
 } from '../src/filepipe.ts';
-import { SIX, commands, records, requestLists, requestName, resource, sessions, text } from './touch-recording.ts';
+import { SIX, commands, records, requestLists, requestName, resource, sessions, text } from '@harmony/testkit/touch-recording';
 
 const FIXTURE = 'touch_sync_recording';
 

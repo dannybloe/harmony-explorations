@@ -106,7 +106,7 @@ import * as lab from '@harmony/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, resource, sessions, written,
   type Request_,
-} from '@harmony/usb/test/touch-recording';
+} from '@harmony/testkit/touch-recording';
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../src/irsession.ts';

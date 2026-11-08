@@ -13,10 +13,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { parse } from '../src/index.ts';
+import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import {
-  type ContainerPiece, ScreenRecordError, archSlot, handlerSets, layOutContainer, modeRecords, parse, reachablePrograms,
-  screenProgram, takeApart, taggedList, valueMaps,
-} from '../src/index.ts';
+  archSlot,
+  handlerSets,
+  modeRecords,
+  reachablePrograms,
+  screenProgram,
+  taggedList,
+  valueMaps,
+} from '../src/internal.ts';
 import { deviceVariables } from '../src/inventory.ts';
 import { stateRecords } from '../src/sections.ts';
 import {

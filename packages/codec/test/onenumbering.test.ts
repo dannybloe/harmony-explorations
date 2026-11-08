@@ -20,8 +20,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import type { Container, ContainerPiece } from '../src/index.ts';
-import { parse, takeApart } from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { ContainerPiece } from '../src/build.ts';
+import { parse } from '../src/index.ts';
+import { takeApart } from '../src/build.ts';
 import { stateRecords, stateTable } from '../src/sections.ts';
 import { type PieceTarget, describeStateTables } from '../src/statetables.ts';
 import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';

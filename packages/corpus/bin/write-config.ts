@@ -70,11 +70,9 @@ import { basename, dirname, join } from 'node:path';
 
 import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import {
-  ERASE_BLOCK_SIZE,
   HarmonyRemote,
   RailError,
   RemoteError,
-  WRITABLE_CEILING,
   architectureFromVersion,
   compareIntendedVersion,
   listHarmony,
@@ -84,6 +82,7 @@ import {
   unitIdentityText,
   type StatedVersion,
 } from '@harmony/usb';
+import { ERASE_BLOCK_SIZE, WRITABLE_CEILING } from '@harmony/usb/rails';
 import {
   CONFIG_REGION_BASE,
   MAX_TRANSFER,
@@ -99,10 +98,8 @@ import {
   writeBlock,
 } from '@harmony/usb/write';
 import { readFlashWindow } from '@harmony/usb/readwindow';
-import {
-  ACTION_QUEUE_INSTRUCTIONS, QueueError, StateTableError, assertQueueFits,
-  assertStateTableConsistent, parse, trailerChecksum, worstQueueRun,
-} from '@harmony/codec/node';
+import { QueueError, StateTableError, assertQueueFits, assertStateTableConsistent, parse } from '@harmony/codec/node';
+import { ACTION_QUEUE_INSTRUCTIONS, trailerChecksum, worstQueueRun } from '@harmony/codec/internal';
 import { profileFor, readConfig } from '../src/index.ts';
 import { StampError, stampForWrite, stoppedAfterErase } from '../src/stamp.ts';
 

@@ -13,18 +13,18 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
+import { parse } from '../src/index.ts';
 import {
   bitmapAt,
   bitmaps,
   contentKey,
-  layOutContainer,
   modeRecords,
-  parse,
   pictureReference,
   reachablePrograms,
   rgb565,
   rgbTo565,
-  takeApart} from '../src/index.ts';
+} from '../src/internal.ts';
+import { layOutContainer, takeApart } from '../src/build.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import { screenRecordModes } from '../src/families/harmony-600-650-700/screenrecords.ts';
 import { BackgroundError, checkStateBackgrounds, screenStates, withStateBackgrounds } from '../src/families/harmony-600-650-700/backgrounds.ts';

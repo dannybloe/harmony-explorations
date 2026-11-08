@@ -68,7 +68,7 @@ import assert from 'node:assert/strict';
 import * as lab from '@harmony/lab';
 import { DATA_PACKET_PAYLOAD } from '../src/filepipe.ts';
 import { TOUCH_REQUEST_SHAPES } from '../src/touchsession.ts';
-import { CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written, type Request_ } from './touch-recording.ts';
+import { CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written, type Request_ } from '@harmony/testkit/touch-recording';
 
 const SET = 'touch_own_set';
 const AFTER = 'touch_own_set_confighash_after';

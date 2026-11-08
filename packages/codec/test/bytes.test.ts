@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { bytes } from '../src/index.ts';
+import { bytes } from '../src/internal.ts';
 
 test('a 32 bit read with the top bit set is positive', () => {
   // `<< 24` in JavaScript produces a signed 32-bit result, so the obvious assembly of four bytes

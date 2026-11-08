@@ -11,5 +11,5 @@
   "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
   // `bin/remotes.ts` and its test read three other packages, as dev dependencies only: the library in
   // `src` stays free of them, which is what FreeHarmony consumes.
-  "references": [{ "path": "../codec" }, { "path": "../corpus" }, { "path": "../usb" }]
+  "references": [{ "path": "../base" }, { "path": "../codec" }, { "path": "../corpus" }, { "path": "../usb" }, { "path": "../testkit" }]
 }

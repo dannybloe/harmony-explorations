@@ -23,23 +23,18 @@ import {
   placeholderMode,
   setActivityKey,
 } from '../src/families/harmony-600-650-700/activitykeys.ts';
+import { applyEdits, ComposeError, EditError, parse } from '../src/index.ts';
 import {
   ACTIVITY_STATE_NAME,
-  appendActionLists,
-  applyEdits,
-  ComposeError,
-  composeActivity,
   coverage,
-  EditError,
   firmwareStateVariableMax,
   handlerSetRoles,
   idleActivityValue,
-  parse,
-  restamped,
   roundTrip,
   stateVariables,
   trailerAgrees,
-} from '../src/index.ts';
+} from '../src/internal.ts';
+import { appendActionLists, composeActivity, restamped } from '../src/build.ts';
 import '../src/resources.node.ts';
 
 /** The thirteen Logitech compiles section 314 measured, the same population as the inventory test's. */

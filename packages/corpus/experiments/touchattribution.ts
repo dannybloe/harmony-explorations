@@ -40,7 +40,8 @@
  * Nothing here opens a remote. **Which architectures**: the Harmony Touch alone, firmware 4.15.330; its firmware reports
  * 17 and Logitech's templates file it under 18.
  */
-import { catalogueCommands, catalogueDevice, catalogueDriving, harmonyTouch, statedCode, archiveAt } from '@harmony/codec/node';
+import { catalogueCommands, catalogueDevice, catalogueDriving, statedCode, archiveAt } from '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
 
 import { NOTHING_DOCUMENTS, type TouchAccountFile } from './touchnothingset.ts';
 import { keyOf, ourTag, type SetAnswer, type TouchSet } from '../src/touchsync.ts';

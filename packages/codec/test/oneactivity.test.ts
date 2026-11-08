@@ -17,7 +17,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless, slow } from '@harmony/lab';
-import { activities, activityScreens, type Container, modeRecords, parse, taggedList, touchPages, valueMaps } from '../src/index.ts';
+import { activities, activityScreens, type Container, parse } from '../src/index.ts';
+import { modeRecords, taggedList, touchPages, valueMaps } from '../src/internal.ts';
 import { touchOwner } from '../src/touch.ts';
 import {
   ENTER_MODE, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, activityBindings, caseQueued, deviceListRowMode, devices, idleActivityValue,

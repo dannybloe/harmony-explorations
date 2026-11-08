@@ -10,8 +10,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, require_, skipUnless } from '@harmony/lab';
-import { HEADER_WINDOW, allChecksPass, decodePayload, parse, parseEzhex, payloadChecksum,
-  payloadOf } from '../src/index.ts';
+import { allChecksPass, decodePayload, parse, parseEzhex, payloadOf } from '../src/index.ts';
+import { HEADER_WINDOW, payloadChecksum } from '../src/internal.ts';
 
 /**
  * Every sample that arrived as an EZHex file, which is all ten configs.

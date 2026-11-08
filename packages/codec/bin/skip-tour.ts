@@ -14,13 +14,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-import {
-  applyEdits,
-  introductionTour,
-  parse,
-  skipIntroductionTour,
-  trailerChecksum,
-} from '../src/index.ts';
+import { applyEdits, introductionTour, parse, skipIntroductionTour } from '../src/index.ts';
+import { trailerChecksum } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {

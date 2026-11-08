@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { IMAGES, PARSEABLE_EXCLUDED, load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { parse, type Container } from '../src/index.ts';
 import {
   ACTION_LIST_TABLE_SLOT,
   ARCH_RECORD_SLOT,
@@ -34,13 +35,11 @@ import {
   findClockRecords,
   keyListCapacity,
   keyListHash,
-  parse,
   recoverFlashBase,
   trailerChecksum,
   TRAILER_CHECKSUM_SEED,
   TRAILER_CHECKSUM_OFFSET,
-  type Container,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 
 interface Expectation {
   magic: string;

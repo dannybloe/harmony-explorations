@@ -8,6 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { UnitIdentityError, identifiesAUnit, sameUnit, unitIdentityFromText, unitIdentityText } from '../src/index.ts';
 import {
   DISCRIMINATOR_BYTES,
   IDENTITY_ADDRESS,
@@ -15,14 +16,9 @@ import {
   IDENTITY_FIELDS,
   IDENTITY_OFFSET,
   IDENTITY_PAGE,
-  UnitIdentityError,
-  identifiesAUnit,
   identityAddress,
-  sameUnit,
   unitDiscriminator,
-  unitIdentityFromText,
-  unitIdentityText,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 
 /** A block in a real one's shape: `0xEE` serial field, two written GUIDs, sixteen zeroes. */
 function block(seed: number): Uint8Array {

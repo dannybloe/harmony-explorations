@@ -28,15 +28,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 import { LAB, load } from '@harmony/lab';
-import {
-  UNDRAWN,
-  contactSheetPng,
-  modePages,
-  parse,
-  rasterPng,
-  renderPage,
-  type RenderedPage,
-} from '../src/index.ts';
+import { parse, rasterPng, renderPage, type RenderedPage } from '../src/index.ts';
+import { UNDRAWN, contactSheetPng, modePages } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 const argument = (name: string): string | undefined => {

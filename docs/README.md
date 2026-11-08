@@ -314,11 +314,21 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 receiver's cut of a frame is handed to it, and packages/bench's
                                 tests calibrate and hold it. The folder is not
                                 touch.ts, which is the Harmony One's touch screen.
-                                Two entries, plan 013 decision 5 and todo.md 7.3.5:
-                                @harmony/codec, src/index.ts, loads in a renderer, since nothing
-                                it reaches imports a Node module or names a Node global,
-                                test/mainentry.test.ts; @harmony/codec/node, src/node.ts, carries
-                                it whole and adds the disk, the files named *.node.ts: the
+                                Four entries, plan 013 decisions 5 and 6, todo.md 7.3.5 and 7.3.6:
+                                @harmony/codec, src/index.ts, is what an application reads, names,
+                                edits, starts a build with, checks before a write and learns codes
+                                with, in explicit names that test/surface.test.ts holds to a list,
+                                the Harmony Touch as the namespace harmonyTouch over
+                                src/families/harmony-touch/view.ts; @harmony/codec/build,
+                                src/build.ts, the composers and builders each module whole, off the
+                                main entry by plan 007, with the Touch's folder whole under the same
+                                namespace name; @harmony/codec/internal, src/internal.ts, the
+                                format's parts below the application's view each module whole, for
+                                this repository's scripts, tests and libraries. These three load in a
+                                renderer, since nothing they reach imports a Node module or names a
+                                Node global, test/mainentry.test.ts; @harmony/codec/node, src/node.ts,
+                                carries the main entry whole and adds the disk, the files named
+                                *.node.ts, so a Node caller of ./build or ./internal imports it too: the
                                 archive's readers by path beside the parsers they feed, archiveAt,
                                 the CatalogueSource a builder is handed in place of a path, and
                                 resources.node.ts, which supplies what src/resources.ts asks the
@@ -328,6 +338,15 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 data, src/oxaniumalphabet.ts, held to the font by
                                 test/oxaniumalphabet.test.ts, and test/mainentryreads.test.ts
                                 reads every family through the main entry with nothing supplied
+packages/testkit/               TS: what the tests of several packages share, todo.md 7.3.6, never a
+                                product's dependency, only a dev dependency: `./touch-recording`, a
+                                recorded Touch sync read out of the lab by name with the readers of
+                                a run of the answerer, over packages/usb's decoder;
+                                `./fake-touch-remote`, the pretend Touch the request session's and
+                                the answerer's tests drive; and `./surface`, the names an entry
+                                exports read off its source, for each package's
+                                test/surface.test.ts. Both moved out of packages/usb/test, which
+                                exported them through its package.json
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when
@@ -339,22 +358,35 @@ packages/base/                  TS: what every other package needs and nothing n
                                 checksum, src/trailer.ts; and where each model keeps the key being
                                 pressed, src/keys.ts, shared with the key reader page. Imports
                                 nothing outside Node's own and reads no disk, test/base.test.ts.
-                                The codec depends on it rather than on packages/usb
+                                The codec depends on it rather than on packages/usb. Its main entry
+                                names all three modules' exports explicitly, test/surface.test.ts,
+                                and each is its own subpath. Its tests are a project of their own,
+                                test/tsconfig.json, for the reason packages/usb's are
 packages/usb/                   TS: the command protocol and the write rails, read path measured.
                                 Also the **second** protocol, for the file based family openHarmony
-                                refuses. Its src/models.ts, src/trailer.ts and src/keys.ts are
-                                re-exports of packages/base, kept for compatibility until 7.3.6,
-                                which FreeHarmony's `@harmony/usb/models` reaches. The erase and write sequence has **one**
-                                implementation, `writeBlock`, and a caller in this workspace reaches
-                                it through the `@harmony/usb/write` subpath rather than the barrel,
-                                so that a third write caller is a decision visible in a diff
-                                The `./test/touch-recording` subpath is test support only: the
-                                decoder of a recorded Touch sync, shared with packages/codec's
-                                tests, which a test file cannot import across packages otherwise,
-                                and so is `./test/fake-touch-remote`, the pretend Touch the
-                                answerer's tests in packages/corpus drive. The Touch's request
-                                session is reached through `@harmony/usb/touchsession` and not the
-                                barrel, for the reason `write` is
+                                refuses. Its main entry, src/index.ts, is what an application finds,
+                                opens and reads a remote with and checks a configuration against,
+                                in explicit names held to a list by test/surface.test.ts, todo.md
+                                7.3.6. **The rails are not on it** but for `RailError`, the refusal
+                                a caller meets: they are `@harmony/usb/rails`, src/rails.ts whole.
+                                The erase and write sequence has **one** implementation,
+                                `writeBlock`, and a caller in this workspace reaches it through the
+                                `@harmony/usb/write` subpath, which carries the three rails a block
+                                writer asserts, so that a third write caller is a decision visible
+                                in a diff. `./internal` is the protocol and the transport's parts
+                                each module whole, for this repository's scripts and tests;
+                                `./touchsession` the Touch's request session, for the reason
+                                `write` is a subpath; `./touchrecording` the decoder of a recorded
+                                Touch sync, a library since 7.3.6 because scripts run it too;
+                                `./protocol` and `./readwindow` two modules that import nothing, for
+                                the key reader page and `@harmony/corpus/read`. No entry carries a
+                                request builder that writes or the authorisation of a report,
+                                test/rails.test.ts over every entry. Its src/models.ts,
+                                src/trailer.ts and src/keys.ts are re-exports of packages/base, kept
+                                as the subpaths FreeHarmony's `@harmony/usb/models` reaches until its
+                                half of 7.3.6. Its tests are a project of their own,
+                                test/tsconfig.json, since they use packages/testkit, which is built
+                                on this package
 packages/corpus/                TS: read a config off a remote and file it, read a **stated range**
                                 and file that, **and put one back**:
                                 since section 237 it also holds the config writer, which is here
@@ -400,7 +432,9 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 `touch-activities/`, `touch-favourites/`, `touch-settings/`,
                                 `touch-removals/` and `touch-setups/`,
                                 and a Context description, which holds the account's values, only
-                                ever in the lab
+                                ever in the lab. The main entry is reading a configuration off a remote,
+                                test/surface.test.ts; `./read` the reader module whole, which loads
+                                without the transport; `./file` filing a read in the lab corpus
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
@@ -412,8 +446,16 @@ packages/bench/                 TS: the bench instrument, a server plus two page
                                 7.1's bench tests from the documents the remote holds; the plans of
                                 the later bench tests, 8.1 to 9.1, are in `experiments/`, beside the
                                 scripts in `bin/` that write them, since `todo.md` 7.3.1; the monitor
-                                names a Touch's codes from those documents, `BENCH_TOUCH_SETS`
-packages/probe/                 TS: the contribution probe, a report with shape and no contents
+                                names a Touch's codes from those documents, `BENCH_TOUCH_SETS`.
+                                The main entry is what starts the instrument, test/surface.test.ts;
+                                `./internal` its modules whole
+packages/probe/                 TS: the contribution probe, a report with shape and no contents.
+                                The main entry is the probe and its report, test/surface.test.ts;
+                                `./internal` the two modules whole
+packages/silhouettes/           TS: each model's front face as a measured geometry table and the SVG
+                                generated from it, reference/silhouettes/. The main entry is the
+                                models, the key lookups and the drawing, test/surface.test.ts;
+                                `./internal` the shapes and path transforms a table is written with
 packages/keyreader/             TS: the key reader page's sources, built into reference/key-reader/.
                                 Its own package rather than a page of packages/bench, which is a
                                 local server instrument, or of packages/usb, whose tsconfig would

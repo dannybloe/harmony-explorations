@@ -13,18 +13,8 @@ import assert from 'node:assert/strict';
 import { decodePayload, parse } from '@harmony/codec/node';
 import { load, skipUnless } from '@harmony/lab';
 
-import {
-  DEFAULT_CHUNK_BYTES,
-  HEADER_PROBE,
-  MAX_WINDOW_RETRIES,
-  parseHeader,
-  PROFILES,
-  profileFor,
-  ReadError,
-  readConfig,
-  type ConfigReader,
-  type RemoteProfile,
-} from '../src/index.ts';
+import { PROFILES, profileFor, ReadError, readConfig, type ConfigReader, type RemoteProfile } from '../src/index.ts';
+import { DEFAULT_CHUNK_BYTES, HEADER_PROBE, MAX_WINDOW_RETRIES, parseHeader } from '../src/read.ts';
 
 const ONE = 0xc121;
 const H600 = 0xc122;

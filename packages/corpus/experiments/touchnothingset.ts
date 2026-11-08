@@ -39,7 +39,9 @@
  *
  * Nothing here opens a remote.
  */
-import { RecipeError, harmonyTouch, mergedIntervals, waveformOfArchiveCommand, type Pulse } from '@harmony/codec/node';
+import { RecipeError, waveformOfArchiveCommand, type Pulse } from '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
+import { mergedIntervals } from '@harmony/codec/internal';
 
 import { compareSetup, type ComparisonRules, type DocumentComparison, type Pair } from './touchsetupset.ts';
 import { keyOf, ourTag, prepareSet, type SetAnswer, type TouchSet } from '../src/touchsync.ts';

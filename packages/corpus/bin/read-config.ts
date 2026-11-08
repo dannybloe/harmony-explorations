@@ -13,7 +13,8 @@
 import { LAB } from '@harmony/lab';
 import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
 
-import { fileRead, profileFor, readConfig } from '../src/index.ts';
+import { profileFor, readConfig } from '../src/index.ts';
+import { fileRead } from '../src/file.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);

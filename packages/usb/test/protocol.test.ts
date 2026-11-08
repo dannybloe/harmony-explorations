@@ -9,8 +9,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as everything from '../src/index.ts';
+import { exportedNames } from './entries.ts';
 
+import { ProtocolError, architectureFromVersion, readVersion, VERSION_FIELD_NAMES } from '../src/index.ts';
 import {
   COMMAND_NAMES,
   COMMAND_STATES,
@@ -20,7 +21,6 @@ import {
   MISC_RAM,
   MISC_REPLY,
   MISC_REPLY_CODE,
-  ProtocolError,
   READ_FLASH,
   READ_MISC,
   READ_MISC_SELECTORS,
@@ -30,12 +30,9 @@ import {
   WRITE_FLASH,
   WRITE_MISC,
   WRITE_MISC_SELECTORS,
-  architectureFromVersion,
-  readVersion,
   SOFTWARE_TYPE_NAMES,
   SOFTWARE_TYPE_SAFE_MODE,
   VERSION_FIELD_COUNT,
-  VERSION_FIELD_NAMES,
   softwareTypeFromVersion,
   decodeReply,
   encodeRequest,
@@ -48,12 +45,10 @@ import {
   regionOf,
   ARCH8_FLASH_TOP,
   ARCH9_WINDOWS,
-  ARCHITECTURES_WITH_A_WRITE_TARGET,
-  CONFIG_REGION_BASE,
-  WRITABLE_CEILING,
   FLASH_TOP_BYTE_BOUND,
   validateRegionByte,
-} from '../src/index.ts';
+} from '../src/internal.ts';
+import { ARCHITECTURES_WITH_A_WRITE_TARGET, CONFIG_REGION_BASE, WRITABLE_CEILING } from '../src/rails.ts';
 // By path, because the barrel deliberately does not carry these: `writes.ts` is the rail.
 import { eraseFlashRequest, writeFlashRequest, writeMiscRequest } from '../src/writes.ts';
 
@@ -558,7 +553,7 @@ test('every named field has a name and every unnamed one does not, which is the 
   assert.equal(new Set(named).size, named.length, 'and no two fields share a name');
 });
 
-test('a flash id comes from the remote, because the client table disagrees with our hardware', () => {
+test('a flash id comes from the remote, because the client table disagrees with our hardware', async () => {
   // The arch 9 skin declares 0x12 and 0xFF and the bench 525 reports exactly that, which is the
   // agreement. The arch 12 skin declares 0xF9 and 0x01 and the bench One reports 0xC8 and 0x1F,
   // which is not. So the table is a hypothesis and the remote is the fact, and this test exists to
@@ -573,8 +568,9 @@ test('a flash id comes from the remote, because the client table disagrees with 
   // Both halves above are literals declared here, so they record the disagreement and cannot notice
   // anybody hard coding the client's figures. What can: the library exporting no flash id at all, so a
   // table smuggled in has a name to find. The reading has to come off the remote, per skin, and this
-  // is what says so in a way that fails.
-  const exported = Object.keys(everything);
+  // is what says so in a way that fails. Every entry of the package, since `todo.md` 7.3.6 put most of it
+  // under subpaths, `entries.ts`.
+  const exported = [...(await exportedNames()).keys()];
   assert.deepEqual(exported.filter((n) => /flash.*id/i.test(n)), [],
     'the library grew a flash id table, and a flash id is a property of the unit');
 });
@@ -611,7 +607,7 @@ test('the misc branch matches on the reply code, not on the whole first byte', (
 
 test('the battery read is READ_MISC selector 0x0C with its detail, a read the transport passes, and a detail without an arm is refused', async () => {
   const { hardwareFeatureRequest, isReadOnlyReport, HARDWARE_FEATURE_BATTERY, HARDWARE_FEATURE_FLAG, ProtocolError } =
-    await import('../src/index.ts');
+    await import('../src/internal.ts');
   // Section 212: the parameter's low byte picks the arm, 0 the flag byte and 1 the battery level.
   const battery = hardwareFeatureRequest(HARDWARE_FEATURE_BATTERY);
   assert.deepEqual([...battery.subarray(0, 4)], [...readMiscRequest(0x0c, 1).subarray(0, 4)]);

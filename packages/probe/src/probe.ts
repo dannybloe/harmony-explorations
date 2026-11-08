@@ -13,7 +13,7 @@
  * window.
  */
 import { skinId } from '@harmony/usb';
-import { FAMILIES, bytes as byteUtil } from '@harmony/codec';
+import { FAMILIES, bytes as byteUtil } from '@harmony/codec/internal';
 
 import { buildReport, type StructuralReport, type UsbReport } from './report.ts';
 

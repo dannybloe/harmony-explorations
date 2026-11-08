@@ -16,8 +16,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { load, skipUnless } from '@harmony/lab';
+import { Container, parse, saveEdits } from '../src/index.ts';
 import {
-  Container,
   KeyRecord,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
@@ -26,12 +26,10 @@ import {
   Writer,
   claims,
   emit,
-  parse,
   rebuilds,
   roundTrip,
-  saveEdits,
   valueMaps,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 
 /**
  * `[sample, framed, carried]` for every container in the corpus.

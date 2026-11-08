@@ -90,27 +90,21 @@ import { IR_ARCHIVE } from '@harmony/lab';
 import { modelForSkin } from '@harmony/base/models';
 
 import {
-  type CatalogueDeviceRequest,
-  type ComposedCatalogueDevice,
   ComposeError,
-  composeCatalogueDevices,
-  coverage,
   inventory,
   irGroups,
   parse,
-  roundTrip,
   statedCode,
-  trailerAgrees,
-  worstQueueRun,
   assertQueueFits,
   assertStateTableConsistent,
-  ACTION_QUEUE_INSTRUCTIONS,
   catalogueCommands,
   catalogueDevice,
   localTimestamp,
   saveEdits,
   archiveAt,
 } from '../src/node.ts';
+import { type CatalogueDeviceRequest, type ComposedCatalogueDevice, composeCatalogueDevices } from '../src/build.ts';
+import { coverage, roundTrip, trailerAgrees, worstQueueRun, ACTION_QUEUE_INSTRUCTIONS } from '../src/internal.ts';
 import { irFrame } from '../src/irframe.ts';
 
 /** The erase block a Harmony One clears in one go, which is what a write is counted in. */

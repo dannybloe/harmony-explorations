@@ -51,7 +51,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, list, records, reply, requestLists, resource, sessions, SIX, written } from './touch-recording.ts';
+import { answersWritten, commands, list, records, reply, requestLists, resource, sessions, SIX, written } from '@harmony/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 const REVERSE = 'touch_reverse_sync_recording';

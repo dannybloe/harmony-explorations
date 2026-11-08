@@ -29,7 +29,7 @@ import assert from 'node:assert/strict';
 
 import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
 
 import { testDefinitions, type TestDefinition } from '../src/irsession.ts';
 import { TOUCH_9_1_TESTS } from '../experiments/touchfromnothingtest.ts';

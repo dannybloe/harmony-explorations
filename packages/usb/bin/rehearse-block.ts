@@ -99,7 +99,6 @@ import { readFileSync } from 'node:fs';
 import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
 
 import {
-  ERASE_BLOCK_SIZE,
   HarmonyRemote,
   compareIntendedVersion,
   unitIdentityFromText,
@@ -107,12 +106,12 @@ import {
   type StatedVersion,
   RailError,
   RemoteError,
-  WRITABLE_CEILING,
   architectureFromVersion,
   listHarmony,
   openHarmony,
   readVersion,
 } from '../src/index.ts';
+import { ERASE_BLOCK_SIZE, WRITABLE_CEILING } from '../src/rails.ts';
 import { CONFIG_REGION_BASE, assertFirstWriteAllowed, assertUnitIsPermitted } from '../src/rails.ts';
 import { NOMINAL_FLASH_SIZE, failureLine, neighbourBlocks } from '../src/rehearsal.ts';
 import {

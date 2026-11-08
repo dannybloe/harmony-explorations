@@ -54,10 +54,9 @@ import { join } from 'node:path';
 import { deflateRawSync, inflateRawSync } from 'node:zlib';
 import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
-import {
-  type Container, deflateRaw, metadataArchive, metadataZip, metadataZipTime, noScreenMetadataSection, noScreenZipTime,
-  parse, zipTimeOf,
-} from '../src/index.ts';
+import { type Container, metadataArchive, parse } from '../src/index.ts';
+import { deflateRaw, metadataZip, metadataZipTime, zipTimeOf } from '../src/internal.ts';
+import { noScreenMetadataSection, noScreenZipTime } from '../src/build.ts';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
 const TWIN = 'work/setups/h350-test/first-compile/compile-Result.EzHex';

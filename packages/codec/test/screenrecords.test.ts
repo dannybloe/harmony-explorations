@@ -20,17 +20,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { require_, skipUnless } from '@harmony/lab';
-import {
-  type Container,
-  type ContainerPiece,
-  ScreenRecordError,
-  layOutContainer,
-  modeRecords,
-  parse,
-  restamped,
-  screenStrings,
-  taggedList,
-  takeApart} from '../src/index.ts';
+import { type Container, parse } from '../src/index.ts';
+import { type ContainerPiece, ScreenRecordError, layOutContainer, restamped, takeApart } from '../src/build.ts';
+import { modeRecords, screenStrings, taggedList } from '../src/internal.ts';
 import { describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
 import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, screenRecordModes, withScreenRecords } from '../src/families/harmony-600-650-700/screenrecords.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';

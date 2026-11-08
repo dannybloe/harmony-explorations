@@ -23,36 +23,33 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { activities, ComposeError, type Container, devices, irGroups, parse } from '../src/index.ts';
 import {
   ACTION_LIST_INDEX_OPCODE,
+  caseQueued,
+  deviceVariables,
+  handlerSets,
+  infraredCodesPerList,
+  irHeaderPointers,
+  modeRecords,
+  STATE_WRITE_BASE,
+  taggedList,
+  valueMaps,
+} from '../src/internal.ts';
+import {
   type ActivityDevice,
-  activities,
   activityFromRoles,
   activityKeysFromRoles,
   activityScreenRows,
-  caseQueued,
   composeActivity,
   composeActivityMenuRow,
   composeActivityScreen,
   composeCatalogueDevices,
-  ComposeError,
-  type Container,
   deviceStateMachines,
-  deviceVariables,
-  devices,
-  handlerSets,
-  infraredCodesPerList,
   inputTarget,
-  irGroups,
-  irHeaderPointers,
-  modeRecords,
   modeScreenItems,
   nextActivityValue,
-  parse,
-  STATE_WRITE_BASE,
-  taggedList,
-  valueMaps,
-} from '../src/index.ts';
+} from '../src/build.ts';
 import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import { activityKeyedRecords } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import { FOUR_SLOT_ITEMS } from '../src/families/harmony-600-650-700/geometry.ts';

@@ -88,14 +88,8 @@ import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 
 import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
-import {
-  TOUCH_PRODUCT_ID,
-  TOUCH_RECOVERY_DOOR,
-  TOUCH_REQUEST_DOOR,
-  WRITES_ENABLED,
-  openFileBasedRemote,
-  unitIdentityFromText,
-} from '@harmony/usb';
+import { openFileBasedRemote, unitIdentityFromText } from '@harmony/usb';
+import { TOUCH_PRODUCT_ID, TOUCH_RECOVERY_DOOR, TOUCH_REQUEST_DOOR, WRITES_ENABLED } from '@harmony/usb/rails';
 import { openTouchRequestSession } from '@harmony/usb/touchsession';
 
 import { RECOVERY, SYNC_LINES, prepareSet, syncTouch, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';

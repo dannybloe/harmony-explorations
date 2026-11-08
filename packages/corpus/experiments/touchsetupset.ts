@@ -31,7 +31,9 @@
  *
  * Nothing here opens a remote.
  */
-import { harmonyTouch } from '@harmony/codec/node';
+// The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
+import '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
 
 import { changeDocuments, differences } from './touchchangedset.ts';
 import { putBackRemoval } from './touchremovalset.ts';

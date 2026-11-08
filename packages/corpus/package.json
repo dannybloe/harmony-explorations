@@ -7,7 +7,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./read": "./src/read.ts"
+    "./read": "./src/read.ts",
+    "./file": "./src/file.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"
@@ -16,5 +17,9 @@
     "@harmony/codec": "workspace:*",
     "@harmony/lab": "workspace:*",
     "@harmony/usb": "workspace:*"
+  },
+  "devDependencies": {
+    "@harmony/base": "workspace:*",
+    "@harmony/testkit": "workspace:*"
   }
 }

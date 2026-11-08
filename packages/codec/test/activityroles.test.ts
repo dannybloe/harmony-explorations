@@ -10,38 +10,35 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless, skipWithoutLab, slow } from '@harmony/lab';
+import { activities, type Container, deviceModeMaps, devices, parse, payloadOf } from '../src/index.ts';
 import {
   ACTION_LIST_INDEX_OPCODE,
-  activities,
-  activityKeysFromRoles,
-  activityRolesFromSends,
-  activityScreenRows,
-  type ActivityRoles,
   bitmapReference,
   caseQueued,
   characterMap,
-  composeActivityScreen,
-  type Container,
   decode,
-  deviceKeypadLists,
-  deviceModeMaps,
-  deviceScreenItems,
-  devices,
   fontSets,
   glyphOf,
   glyphsReferencedBy,
   handlerSets,
   idleActivityValue,
   modeRecords,
-  modeScreenItems,
-  nextActivityValue,
-  parse,
-  payloadOf,
   screenProgram,
   screenStrings,
   taggedList,
   valueMaps,
-} from '../src/index.ts';
+} from '../src/internal.ts';
+import {
+  activityKeysFromRoles,
+  activityRolesFromSends,
+  activityScreenRows,
+  type ActivityRoles,
+  composeActivityScreen,
+  deviceKeypadLists,
+  deviceScreenItems,
+  modeScreenItems,
+  nextActivityValue,
+} from '../src/build.ts';
 import { familyOf } from '../src/families/registry.ts';
 import { FOUR_SLOT_ITEMS, fourSlotCellAt } from '../src/families/harmony-600-650-700/geometry.ts';
 import '../src/resources.node.ts';

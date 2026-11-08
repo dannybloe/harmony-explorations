@@ -37,33 +37,38 @@ import { HARD_KEYS } from '../src/families/harmony-600-650-700/devicemode.ts';
 import { ONE_HARD_KEYS } from '../src/families/harmony-one/devicekeys.ts';
 import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
 import {
-  type CatalogueDeviceRequest,
   ComposeError,
   type Container,
   catalogueCommands,
   catalogueDevice,
-  catalogueDevicePower,
   catalogueDriving,
-  characterMap,
+  deviceModeMaps,
+  devices,
+  irGroups,
+  parse,
+  payloadOf,
+  archiveAt,
+} from '../src/node.ts';
+import {
+  type CatalogueDeviceRequest,
+  catalogueDevicePower,
   composeCatalogueDevice,
   composeCatalogueDevices,
   composeDonorDeviceInputs,
   composedNameTreeOrder,
+  inputPlan,
+} from '../src/build.ts';
+import {
+  characterMap,
   deviceIdOfGroup,
   deviceIds,
   deviceListRowMode,
-  deviceModeMaps,
   deviceModeMarker,
   deviceVariables,
-  devices,
   irBlockWords,
-  irGroups,
   irHeaderPointers,
-  inputPlan,
   modeRecords,
   nameNodes,
-  parse,
-  payloadOf,
   SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT,
   SCREEN_TEXT_INLINE,
@@ -74,8 +79,7 @@ import {
   stateVariables,
   taggedList,
   valueMaps,
-  archiveAt,
-} from '../src/node.ts';
+} from '../src/internal.ts';
 
 const CALL = 0x7f;
 const SEND = 0x7d;

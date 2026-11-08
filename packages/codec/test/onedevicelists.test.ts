@@ -18,10 +18,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, activities, parse } from '../src/index.ts';
 import {
-  type Container, type ContainerPiece, SCREEN_CALL, SCREEN_END, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE, ScreenRecordError, activities,
-  caseQueued, composeDevice, composeDeviceScreen, layOutContainer, modeRecords, parse, screenProgram, takeApart, taggedList, touchPages, valueMaps,
-} from '../src/index.ts';
+  type ContainerPiece,
+  ScreenRecordError,
+  composeDevice,
+  composeDeviceScreen,
+  layOutContainer,
+  takeApart,
+} from '../src/build.ts';
+import {
+  SCREEN_CALL,
+  SCREEN_END,
+  SCREEN_SELECT_FONT,
+  SCREEN_TEXT_INLINE,
+  caseQueued,
+  modeRecords,
+  screenProgram,
+  taggedList,
+  touchPages,
+  valueMaps,
+} from '../src/internal.ts';
 import { deviceListRowMode } from '../src/inventory.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import { speller } from '../src/shared/spelling.ts';

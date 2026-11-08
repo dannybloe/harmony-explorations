@@ -31,12 +31,20 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { BASE_SLOT_COUNT, SCREEN_SIZES, SLOT_MAPS } from '@harmony/codec/node';
+import { SCREEN_SIZES } from '@harmony/codec/node';
+import { BASE_SLOT_COUNT, SLOT_MAPS } from '@harmony/codec/internal';
 import { PROFILES } from '@harmony/corpus/read';
 import {
   ARCH9_FLASH_TOP_MAX,
   ARCH9_FLASH_TOP_MIN,
   ARCH9_WINDOWS,
+  ESCAPE_SUB_COMMANDS,
+  FILE_BASED_PRODUCTS,
+  FLASH_TOP_BYTE_BOUND,
+  STORE_BLOCK_BYTES,
+  STORE_OFFSET_IN_PAGE,
+} from '@harmony/usb/internal';
+import {
   ARCHITECTURES_WITH_A_RAM_WRITE_TARGET,
   ARCHITECTURES_WITH_A_REINSTALL_TARGET,
   ARCHITECTURES_WITH_A_RESET_TARGET,
@@ -45,21 +53,18 @@ import {
   ARCHITECTURES_WITH_AN_INVALIDATE_TARGET,
   CONFIG_REGION_BASE,
   ERASE_BLOCK_SIZE,
-  ESCAPE_SUB_COMMANDS,
-  FILE_BASED_PRODUCTS,
-  FLASH_TOP_BYTE_BOUND,
-  MODELS_BY_SKIN,
   REINSTALL_MAX_IMAGE,
-  SKINS_WITHOUT_A_MODEL_RECORD,
-  SKINS_WITH_A_LONG_PRESS,
   SETTINGS_WRITE_READ_ON,
   STAGING_REGION,
   STATUS_BYTE_READ_ON_APPLICATION,
-  STORE_BLOCK_BYTES,
-  STORE_OFFSET_IN_PAGE,
   WRITABLE_CEILING,
+} from '@harmony/usb/rails';
+import {
+  MODELS_BY_SKIN,
+  SKINS_WITHOUT_A_MODEL_RECORD,
+  SKINS_WITH_A_LONG_PRESS,
   hasLongPress,
-} from '@harmony/usb';
+} from '@harmony/base/models';
 
 import { MODELS } from '../src/index.ts';
 import { SCAN_SOURCES, scanFootnote } from '../src/types.ts';

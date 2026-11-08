@@ -5,7 +5,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parse, trailerChecksum } from '@harmony/codec/node';
+import { parse } from '@harmony/codec/node';
+import { trailerChecksum } from '@harmony/codec/internal';
 import { require_, skipUnless } from '@harmony/lab';
 
 import { StampError, stampForWrite, stoppedAfterErase } from '../src/stamp.ts';

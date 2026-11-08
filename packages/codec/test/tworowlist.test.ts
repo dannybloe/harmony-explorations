@@ -26,6 +26,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { parse, type Container } from '../src/index.ts';
 import {
   characterMap,
   deviceListRowMode,
@@ -33,14 +34,12 @@ import {
   eventMap,
   handlerSets,
   modeRecords,
-  parse,
   reachablePrograms,
   screenProgramRoots,
   screenStrings,
   taggedList,
   timers,
-  type Container,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /**

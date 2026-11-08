@@ -88,7 +88,7 @@ import assert from 'node:assert/strict';
 
 import { harmonyTouch } from '@harmony/codec/node';
 import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
 
 import { CodeBook } from '../src/irmonitor.ts';
 import { judge, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../src/irsession.ts';

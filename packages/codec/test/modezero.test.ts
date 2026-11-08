@@ -10,13 +10,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
-import {
-  keyListBucket,
-  keyListCapacity,
-  keyListHash,
-  keyListOrder,
-  parse,
-} from '../src/index.ts';
+import { parse } from '../src/index.ts';
+import { keyListBucket, keyListCapacity, keyListHash, keyListOrder } from '../src/internal.ts';
 import { modeZeroEntries, modeZeroKeyList } from '../src/families/harmony-600-650-700/modezero.ts';
 
 /** Section 311's four plus the two Harmony 650 compiles no remote held, section 306. */

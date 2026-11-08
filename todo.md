@@ -145,7 +145,7 @@ After 3 produces something.
   - [x] 7.3.3 The registry chooses by model, two kinds of family, compiled and document, and an unserved architecture refused rather than given the Harmony One's shapes
   - [x] 7.3.4 A base package for the model table, the trailer checksum and the key codes; the codec off `packages/usb`
   - [x] 7.3.5 The codec's disk readers behind a Node entry point, so its core loads in a renderer
-  - [ ] 7.3.6 Explicit public surfaces per package, a test kit for the usb test helpers, `@harmony/lab` out of FreeHarmony's product dependencies, FreeHarmony's imports moved along
+  - [ ] 7.3.6 Explicit public surfaces per package, a test kit for the usb test helpers, `@harmony/lab` out of FreeHarmony's product dependencies, FreeHarmony's imports moved along; the library half done, the FreeHarmony half waits for the pass that opens it up again
   - [ ] 7.3.7 One CLI helper for the scripts and one byte comparison in `bytes.ts`
   - [ ] 7.3.8 The codec's top level grouped into folders and its largest files split, `inventory.ts` first; the families named after the remotes they serve, as `reference/architectures/` does (`harmony-one`, `harmony-600-650-700`, `harmony-300-350`, `harmony-880-885`), and the Harmony Touch's `src/harmony-touch/` moved in beside them as `families/harmony-touch/`
   - [ ] 7.3.9 The architecture rules as a skill with tests that enforce them, and the decision recorded

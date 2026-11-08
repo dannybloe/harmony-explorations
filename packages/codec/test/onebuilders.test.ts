@@ -19,10 +19,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
 import {
-  type Container, EVENT_MAP_SLOT, archSlot, claims, eventMap, modeRecords, parse, screenProgram, screenUnits, taggedList, touchPages,
+  EVENT_MAP_SLOT,
+  archSlot,
+  claims,
+  eventMap,
+  modeRecords,
+  screenProgram,
+  screenUnits,
+  taggedList,
+  touchPages,
   valueMaps,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import { saveEdits } from '../src/edit.ts';
 import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../src/screen.ts';
 import { ONE } from '../src/families/harmony-one/index.ts';

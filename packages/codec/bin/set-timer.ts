@@ -21,13 +21,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-import {
-  applyEdits,
-  parse,
-  setTimerDuration,
-  timers,
-  trailerChecksum,
-} from '../src/index.ts';
+import { applyEdits, parse, setTimerDuration } from '../src/index.ts';
+import { timers, trailerChecksum } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 function argument(name: string): string | undefined {

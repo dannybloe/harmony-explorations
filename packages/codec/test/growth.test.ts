@@ -13,6 +13,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { parse } from '../src/index.ts';
 import {
   IMPLIED_BY,
   IR_RECORD_POINTER_BIAS,
@@ -26,12 +27,11 @@ import {
   growthReport,
   impliedPositions,
   insertionCost,
-  parse,
   pointers,
   rebuilds,
   restamps,
   trailerChecksum,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 
 /**
  * `[sample, pointers, shared targets, packed structures, chained structures, rewrites at the bank]`,

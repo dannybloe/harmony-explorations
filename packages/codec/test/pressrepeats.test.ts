@@ -31,31 +31,35 @@ import { join } from 'node:path';
 
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  archiveProtocolsByName,
-  blockOfStatedCode,
-  catalogueCommandBlocks,
   catalogueCommands,
   catalogueDevice,
   catalogueDriving,
-  cataloguePressRepeats,
-  composableKeycode,
-  composeCatalogueDevices,
   type Container,
   devices,
-  irBlockWords,
   irGroups,
-  irHeaderPointers,
-  longPressBlockOfStatedCode,
-  mergedIntervals,
   parse,
   payloadOf,
   PROTOCOLS,
   type Pulse,
-  sameTrain,
-  TABLE_PRESS_REPEATS,
   waveformOfArchiveCommand,
   archiveAt,
 } from '../src/node.ts';
+import {
+  archiveProtocolsByName,
+  catalogueCommandBlocks,
+  cataloguePressRepeats,
+  composableKeycode,
+  composeCatalogueDevices,
+  sameTrain,
+  TABLE_PRESS_REPEATS,
+} from '../src/build.ts';
+import {
+  blockOfStatedCode,
+  irBlockWords,
+  irHeaderPointers,
+  longPressBlockOfStatedCode,
+  mergedIntervals,
+} from '../src/internal.ts';
 
 /** A device group of a Logitech compile and the catalogue device it is, known from outside its bytes. */
 interface Pin {

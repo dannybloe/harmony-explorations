@@ -112,14 +112,22 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { assertFileFamilyContainer } from '@harmony/usb';
+import { assertFileFamilyContainer } from '@harmony/usb/rails';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
+import { ComposeError, type Container, irGroups, metadataArchive, parse, type Recipe } from '../src/index.ts';
 import {
-  buildNoScreenSetup, buildNoScreenStateTables, catalogueDevicePlan, ComposeError, type ComposedNoScreenSetup, composeIrGroup, type Container,
-  irGroups, layOutContainer, metadataArchive, type NoScreenStateDevice, parse, type Recipe, stateRecords, stateVariables, taggedList, takeApart,
+  buildNoScreenSetup,
+  buildNoScreenStateTables,
+  catalogueDevicePlan,
+  type ComposedNoScreenSetup,
+  composeIrGroup,
+  layOutContainer,
+  type NoScreenStateDevice,
+  takeApart,
   withStateTables,
-} from '../src/index.ts';
+} from '../src/build.ts';
+import { stateRecords, stateVariables, taggedList } from '../src/internal.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { allLists, maps, records, recordKey, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';

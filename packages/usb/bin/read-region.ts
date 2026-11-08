@@ -23,9 +23,8 @@ import { join } from 'node:path';
 
 import { LAB } from '@harmony/lab';
 
-import {
-  HarmonyRemote, architectureFromVersion, listHarmony, openHarmony, readFlashWindow,
-} from '../src/index.ts';
+import { HarmonyRemote, architectureFromVersion, listHarmony, openHarmony } from '../src/index.ts';
+import { readFlashWindow } from '../src/internal.ts';
 import { CONFIG_REGION_BASE } from '../src/rails.ts';
 
 /** One read, chosen so a stall reports a range rather than the whole run. */

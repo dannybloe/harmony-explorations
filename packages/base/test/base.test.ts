@@ -35,11 +35,15 @@ test('the three modules import nothing, and the index only them', () => {
   for (const name of ['keys.ts', 'models.ts', 'trailer.ts']) {
     assert.deepEqual(specifiers(readFileSync(SRC + name, 'utf8')), [], name);
   }
-  assert.deepEqual(specifiers(readFileSync(SRC + 'index.ts', 'utf8')), ['./models.ts', './trailer.ts', './keys.ts']);
+  // The index may name a module more than once since `todo.md` 7.3.6, for its values and for its types,
+  // `test/surface.test.ts`; still the three modules and nothing else.
+  assert.deepEqual([...new Set(specifiers(readFileSync(SRC + 'index.ts', 'utf8')))], ['./models.ts', './trailer.ts', './keys.ts']);
 });
 
-test('the package depends on nothing', () => {
+test('the package depends on nothing, and its tests on the test kit alone', () => {
   const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8')) as Record<string, unknown>;
   assert.equal(manifest['dependencies'], undefined);
-  assert.equal(manifest['devDependencies'], undefined);
+  // The allow list test reads the main entry's names through `@harmony/testkit/surface`, `todo.md` 7.3.6. A dev
+  // dependency is not installed with the package and nothing in `src` may import it, which the test above holds.
+  assert.deepEqual(manifest['devDependencies'], { '@harmony/testkit': 'workspace:*' });
 });

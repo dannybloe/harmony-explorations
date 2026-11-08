@@ -18,10 +18,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
 import {
-  type Container, type ContainerPiece, ScreenRecordError, composeDevice, composeDeviceScreen, layOutContainer, modeRecords, parse,
-  takeApart, taggedList, touchPages,
-} from '../src/index.ts';
+  type ContainerPiece,
+  ScreenRecordError,
+  composeDevice,
+  composeDeviceScreen,
+  layOutContainer,
+  takeApart,
+} from '../src/build.ts';
+import { modeRecords, taggedList, touchPages } from '../src/internal.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { letterOneDonor } from '../src/families/harmony-one/look.ts';
 import {

@@ -8,13 +8,25 @@
  * nothing outside Node's own, and nothing in this package reads the disk or loads a native module;
  * `test/base.test.ts` holds that.
  *
- * * `models.ts`, the model table: a skin to a model and what its hardware can do.
- * * `trailer.ts`, the configuration container's trailer checksum, the one copy.
- * * `keys.ts`, where a running remote keeps the key being pressed, per model.
- *
- * Each is also its own subpath, `@harmony/base/models` and the rest, because the key reader page
- * loads them in a browser one module at a time and must not reach for anything else.
+ * Each module is also its own subpath, `@harmony/base/models` and the rest, because the key reader page
+ * loads them in a browser one module at a time and must not reach for anything else. **Explicit names**
+ * here, all three modules' whole, held by `test/surface.test.ts`, `todo.md` 7.3.6.
  */
-export * from './models.ts';
-export * from './trailer.ts';
-export * from './keys.ts';
+
+// The model table: a skin to a model and what its hardware can do.
+export {
+  architectureHasTouch,
+  hasLongPress,
+  modelForSkin,
+  MODELS_BY_SKIN,
+  MODELS_WITHOUT_A_SKIN,
+  OUT_OF_TRANSPORT_REACH,
+  SKINS_WITH_A_LONG_PRESS,
+  SKINS_WITHOUT_A_MODEL_RECORD,
+} from './models.ts';
+export type { Model, MotionSensor, Panel } from './models.ts';
+// The configuration container's trailer checksum, the one copy.
+export { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum } from './trailer.ts';
+// Where a running remote keeps the key being pressed, per model.
+export { ARCH_8_PRODUCT, WATCH, WATCH_BY_SKIN } from './keys.ts';
+export type { Watch } from './keys.ts';

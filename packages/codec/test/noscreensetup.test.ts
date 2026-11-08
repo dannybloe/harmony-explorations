@@ -66,13 +66,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { assertFileFamilyContainer } from '@harmony/usb';
+import { assertFileFamilyContainer } from '@harmony/usb/rails';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
-import {
-  ComposeError, composeNoScreenSetup, type ComposedNoScreenSetup, type Container, devicePlaces, metadataArchive,
-  parse, type Recipe, taggedList, withoutNoScreenDevice,
-} from '../src/index.ts';
+import { ComposeError, type Container, metadataArchive, parse, type Recipe } from '../src/index.ts';
+import { composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, withoutNoScreenDevice } from '../src/build.ts';
+import { taggedList } from '../src/internal.ts';
 import { allLists, maps, records, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 

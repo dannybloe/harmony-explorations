@@ -95,14 +95,21 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { assertFileFamilyContainer } from '@harmony/usb';
+import { assertFileFamilyContainer } from '@harmony/usb/rails';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
+import { type Container, ComposeError, parse, type Recipe } from '../src/index.ts';
 import {
-  buildEmptyNoScreenConfiguration, buildNoScreenSetup, type Container, ComposeError, NO_SCREEN_ATTRIBUTIONS, NO_SCREEN_LIST_KINDS,
+  buildEmptyNoScreenConfiguration,
+  buildNoScreenSetup,
+  NO_SCREEN_ATTRIBUTIONS,
+  NO_SCREEN_LIST_KINDS,
   type NoScreenAttributed,
-  type NoScreenAttribution, noScreenAttributedBytes, noScreenRegions, parse, type Recipe, restamped,
-} from '../src/index.ts';
+  type NoScreenAttribution,
+  noScreenAttributedBytes,
+  noScreenRegions,
+  restamped,
+} from '../src/build.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 
 const FIVE = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'] as const;

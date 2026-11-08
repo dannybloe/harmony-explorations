@@ -23,10 +23,11 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { guardFileProtocol, unitIdentityFromSerial } from '@harmony/usb';
+import { unitIdentityFromSerial } from '@harmony/usb';
+import { guardFileProtocol } from '@harmony/usb/internal';
 import { openTouchRequestSession } from '@harmony/usb/touchsession';
-import { FakeTouchRemote } from '@harmony/usb/test/fake-touch-remote';
-import { answersWritten, commands, records, sessions, text } from '@harmony/usb/test/touch-recording';
+import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
+import { answersWritten, commands, records, sessions, text } from '@harmony/testkit/touch-recording';
 
 import { HAND_OVER, PROVISIONING, READ_LIST, SYNC, WRITE_ANSWERS, syncTouch, type RemoteRequest, type TouchSyncMode } from '../src/touchsync.ts';
 

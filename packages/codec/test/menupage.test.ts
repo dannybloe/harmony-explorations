@@ -12,21 +12,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
 import {
-  type Container,
   ACTIVITY_STATE_NAME,
-  composeActivity,
-  composeActivityMenuRow,
-  composeDevice,
-  composeDeviceScreen,
   firmwareStateVariableMax,
   modeRecords,
-  parse,
   pictureReference,
   SCREEN_QUEUE_INSTRUCTION,
   screenProgram,
   stateVariables,
-} from '../src/index.ts';
+} from '../src/internal.ts';
+import { composeActivity, composeActivityMenuRow, composeDevice, composeDeviceScreen } from '../src/build.ts';
 import { checkFourSlotMenuPages, fourSlotMenuChrome, fourSlotMenus } from '../src/families/harmony-600-650-700/menus.ts';
 import { deviceModeChrome } from '../src/families/harmony-600-650-700/chrome.ts';
 import { activityMenuSingle } from '../src/families/harmony-600-650-700/activityscreen.ts';

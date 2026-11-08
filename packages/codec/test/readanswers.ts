@@ -7,8 +7,8 @@
  * ```
  *
  * `entry` is `main`, `src/index.ts`, which supplies no resource, or `node`, `src/node.ts`, which supplies all five,
- * `resources.ts`. **Nothing else in this file loads the codec**, so on `main` this process holds exactly what a
- * renderer holds: the core and no resource. It says so in its answer, `supplied`, by asking for each resource.
+ * `resources.ts`. **Nothing else in this file loads the codec** but `src/internal.ts`, which supplies no resource
+ * either, so on `main` this process holds exactly what a renderer holds: the core and no resource. It says so in its answer, `supplied`, by asking for each resource.
  *
  * `mode` is `as-written`, or `from-font`, the control: the reader's alphabet is taken from the font again, as it
  * was until the generated module, by a load hook that rewrites `text.ts` as it loads. The rewrite is checked to
@@ -40,7 +40,11 @@ if (mode === 'from-font') {
 }
 
 if (entry !== 'main' && entry !== 'node') throw new Error(`no entry called ${entry}`);
-const codec = (entry === 'node' ? await import('../src/node.ts') : await import('../src/index.ts')) as typeof import('../src/index.ts');
+// The entry first, so on `node` its resources are supplied as before; then `./internal`, which loads anywhere as the
+// main entry does and carries the two readers this file asks that the main entry does not since `todo.md` 7.3.6,
+// `characterMap` and `resource`.
+const chosen = entry === 'node' ? await import('../src/node.ts') : await import('../src/index.ts');
+const codec = { ...(await import('../src/internal.ts')), ...chosen };
 
 /** JSON for what the readers give: a map or a set as its entries, bytes as hexadecimal. */
 function replacer(_key: string, value: unknown): unknown {

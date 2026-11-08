@@ -55,11 +55,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
+import { devices, activityNames, parse } from '../src/index.ts';
+import { BORROW_PROOF_MINIMUM, borrowGlyphs, faceProofs, glyphDonors, provesOneFace } from '../src/build.ts';
 import {
-  BORROW_PROOF_MINIMUM, borrowGlyphs, characterMap, decodedSet, devices, activityNames, excise, faceProofs, fontSets,
-  glyphDonors, glyphOf, logArea, parse, provesOneFace, screenStrings, trailerChecksum,
-} from '../src/index.ts';
-import type { Container, GlyphDonor, GlyphWant } from '../src/index.ts';
+  characterMap,
+  decodedSet,
+  excise,
+  fontSets,
+  glyphOf,
+  logArea,
+  screenStrings,
+  trailerChecksum,
+} from '../src/internal.ts';
+import type { Container } from '../src/index.ts';
+import type { GlyphDonor, GlyphWant } from '../src/build.ts';
 import { IMAGE_SET_HEADER } from '../src/font.ts';
 import { TRAILER_CHECKSUM_OFFSET } from '../src/gspm.ts';
 import { Writer } from '../src/emit.ts';

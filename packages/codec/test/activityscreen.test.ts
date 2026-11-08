@@ -12,25 +12,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, deviceListRows, parse } from '../src/index.ts';
 import {
-  type Container,
   bitmapReference,
   bitmaps,
   caseQueued,
-  composeActivity,
-  composeActivityMenuRow,
-  composeActivityScreen,
   contentKey,
-  deviceListRows,
   deviceVariables,
   modeRecords,
-  nextActivityValue,
-  parse,
   SCREEN_QUEUE_INSTRUCTION,
   screenProgram,
   taggedList,
   valueMaps,
-} from '../src/index.ts';
+} from '../src/internal.ts';
+import { composeActivity, composeActivityMenuRow, composeActivityScreen, nextActivityValue } from '../src/build.ts';
 import { fourSlotMenus } from '../src/families/harmony-600-650-700/menus.ts';
 import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import {

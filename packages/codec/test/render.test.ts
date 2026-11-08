@@ -13,11 +13,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { SCREEN_SIZES, parse, renderPage, renderPages, renderVariants, describeChoices } from '../src/index.ts';
 import {
   GLYPH_ADVANCE,
   SCREEN_DRAW_IMAGE,
   SCREEN_DRAW_IMAGE_AT,
-  SCREEN_SIZES,
   UNDRAWN,
   BITMAP_ENCODED,
   BITMAP_NOTHING,
@@ -34,16 +34,11 @@ import {
   glyphs,
   modePages,
   namedContentEnd,
-  parse,
   pictureBank,
   reachablePrograms,
-  renderPage,
-  renderPages,
-  renderVariants,
   screenStrings,
   screenSwitch,
-  describeChoices,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import '../src/resources.node.ts';
 /**
  * The whole corpus, safe mode containers included, since those are the counterexamples that have

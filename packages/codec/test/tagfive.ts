@@ -10,10 +10,10 @@
  * Not a test file itself, the name does not end in `.test.ts`, so the runner does not pick it up.
  */
 
+import { type Container } from '../src/index.ts';
 import {
   ACTION_LIST_INDEX_OPCODE,
   ACTIVITY_STATE_NAME,
-  type Container,
   EVENT_MASK,
   handlerSets,
   INPUT_PROPERTY,
@@ -22,7 +22,7 @@ import {
   POWER_PROPERTY,
   STATE_WRITE_BASE,
   taggedList,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 
 /** Opcode `0x7E`, enter a mode: tag 1's first step, the start up screen. */
 const ENTER_MODE = 0x7e;

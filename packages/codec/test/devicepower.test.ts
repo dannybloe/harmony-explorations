@@ -18,30 +18,37 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { activities } from '../src/index.ts';
 import {
-  ACTION_LIST_INDEX_OPCODE as CALL_LIST, EVENT_MASK, STATE_WRITE_BASE, activities, activityPowerTargets, allOffList,
-  handlerSets, keepDeviceOn, nameNodes, taggedList,
-} from '../src/index.ts';
+  ACTION_LIST_INDEX_OPCODE as CALL_LIST,
+  EVENT_MASK,
+  STATE_WRITE_BASE,
+  allOffList,
+  handlerSets,
+  nameNodes,
+  taggedList,
+} from '../src/internal.ts';
+import { activityPowerTargets, keepDeviceOn } from '../src/build.ts';
 import {
   ComposeError,
   type Container,
-  DEVICE_QUANTITY_DEFAULT,
   catalogueCommands,
   catalogueDevice,
-  catalogueDevicePower,
-  composeCatalogueDevice,
   catalogueDriving,
-  composeDevice,
   deviceDriving,
-  deviceVariables,
-  irBlockWords,
   irGroups,
-  irHeaderPointers,
   parse,
   payloadOf,
-  stateRecords,
   archiveAt,
 } from '../src/node.ts';
+import {
+  DEVICE_QUANTITY_DEFAULT,
+  deviceVariables,
+  irBlockWords,
+  irHeaderPointers,
+  stateRecords,
+} from '../src/internal.ts';
+import { catalogueDevicePower, composeCatalogueDevice, composeDevice } from '../src/build.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 
 const CALL = 0x7f;

@@ -25,14 +25,8 @@
  * so the version exchange goes first and its failure is reported as the remote not answering
  * rather than as an empty window.
  */
-import {
-  HarmonyRemote,
-  SOFTWARE_TYPE_SAFE_MODE,
-  architectureFromVersion,
-  listHarmony,
-  openHarmony,
-  softwareTypeFromVersion,
-} from '../src/index.ts';
+import { HarmonyRemote, architectureFromVersion, listHarmony, openHarmony } from '../src/index.ts';
+import { SOFTWARE_TYPE_SAFE_MODE, softwareTypeFromVersion } from '../src/internal.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);

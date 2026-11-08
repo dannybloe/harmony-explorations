@@ -25,15 +25,8 @@
  * a read after it is the difference between "cleared a variable" and "left the command layer in a
  * state where the next read misbehaves".
  */
-import {
-  HarmonyRemote,
-  assertUnitIsPermitted,
-  listHarmony,
-  openHarmony,
-  unitIdentityFromText,
-  unitIdentityText,
-  WRITES_ENABLED,
-} from '../src/index.ts';
+import { HarmonyRemote, listHarmony, openHarmony, unitIdentityFromText, unitIdentityText } from '../src/index.ts';
+import { assertUnitIsPermitted, WRITES_ENABLED } from '../src/rails.ts';
 import { unitIdentity, unitIdentityPath } from '@harmony/lab';
 
 const CONFIG_BASE = 0x040000;

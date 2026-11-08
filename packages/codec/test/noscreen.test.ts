@@ -69,11 +69,20 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
+import { ComposeError, type Container, devices, irGroups, metadataArchive, parse } from '../src/index.ts';
 import {
-  type AccountDevice, bytes, catalogueDevicePlan, composeIrGroup, ComposeError, composeNoScreenDevice, type Container, deviceModeLayout, devices,
-  compilerHash, irGroups, metadataArchive, NO_SCREEN_FAMILY, NO_SCREEN_HARD_KEYS, parse, powerOnWaits, stateRecords, stateVariables,
-  taggedList, TELEVISION_TYPE, volumeSource,
-} from '../src/index.ts';
+  type AccountDevice,
+  catalogueDevicePlan,
+  composeIrGroup,
+  composeNoScreenDevice,
+  deviceModeLayout,
+  NO_SCREEN_FAMILY,
+  NO_SCREEN_HARD_KEYS,
+  powerOnWaits,
+  TELEVISION_TYPE,
+  volumeSource,
+} from '../src/build.ts';
+import { bytes, compilerHash, stateRecords, stateVariables, taggedList } from '../src/internal.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
 import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';

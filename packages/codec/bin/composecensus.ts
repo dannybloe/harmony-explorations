@@ -40,11 +40,19 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
+import { statedCode, statedProtocol, waveformOfArchiveCommand } from '../src/index.ts';
 import {
-  archiveProtocolsByName, blockOfStatedCode, catalogueCommandBlocks, cataloguePressRepeats, catalogueToggledCode,
-  composableKeycode, namesReleaseGroup, sameTrain, statedCode, statedCodeOfDefinition, statedProtocol, TABLE_PRESS_REPEATS, waveformOfArchiveCommand,
+  archiveProtocolsByName,
+  catalogueCommandBlocks,
+  cataloguePressRepeats,
+  catalogueToggledCode,
+  composableKeycode,
+  namesReleaseGroup,
+  sameTrain,
+  TABLE_PRESS_REPEATS,
   type PressRepeats,
-} from '../src/index.ts';
+} from '../src/build.ts';
+import { blockOfStatedCode, statedCodeOfDefinition } from '../src/internal.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';
 

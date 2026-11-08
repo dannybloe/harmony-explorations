@@ -7,7 +7,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { needing, require_, skipUnless } from '@harmony/lab';
-import { characterMap, decode, deviceModeMaps, modeRecords, parse, type Container } from '../src/index.ts';
+import { deviceModeMaps, parse, type Container } from '../src/index.ts';
+import { characterMap, decode, modeRecords } from '../src/internal.ts';
 import { fontSets } from '../src/font.ts';
 import {
   SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,

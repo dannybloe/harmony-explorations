@@ -10,9 +10,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { parse } from '../src/index.ts';
 import {
   archSlot,
-  parse,
   reading,
   readingCoverage,
   takesFollowingSlot,
@@ -30,8 +30,8 @@ import {
   stateVariableSite,
   SEND_INFRARED,
   DEVICE_QUANTITY,
-} from '../src/index.ts';
-import type { Instruction } from '../src/index.ts';
+} from '../src/internal.ts';
+import type { Instruction } from '../src/internal.ts';
 
 /**
  * Every action list a config's base slot 10 table names, with the architecture that reads them.

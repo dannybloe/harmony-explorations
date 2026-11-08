@@ -17,8 +17,9 @@ import { readFileSync } from 'node:fs';
 
 import { require_ } from '@harmony/lab';
 
-import { growthReport, parse, payloadOf } from '../src/index.ts';
-import type { GrowthReport } from '../src/index.ts';
+import { parse, payloadOf } from '../src/index.ts';
+import { growthReport } from '../src/internal.ts';
+import type { GrowthReport } from '../src/internal.ts';
 import { CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';
 

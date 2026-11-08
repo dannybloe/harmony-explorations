@@ -77,11 +77,27 @@ import { join } from 'node:path';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
 import {
-  buildNoScreenSetup, catalogueCommands, catalogueDevice, catalogueDevicePlan, catalogueDriving, composeIrGroup, ComposeError,
-  type Container, deviceModeLayout, devices, irGroups, metadataArchive, NO_SCREEN_HARD_KEYS, numberSenders, parse, type Recipe,
-  stateRecords, taggedList, TELEVISION_TYPE,
+  catalogueCommands,
+  catalogueDevice,
+  catalogueDriving,
+  ComposeError,
+  type Container,
+  devices,
+  irGroups,
+  metadataArchive,
+  parse,
+  type Recipe,
   archiveAt,
 } from '../src/node.ts';
+import {
+  buildNoScreenSetup,
+  catalogueDevicePlan,
+  composeIrGroup,
+  deviceModeLayout,
+  NO_SCREEN_HARD_KEYS,
+  TELEVISION_TYPE,
+} from '../src/build.ts';
+import { numberSenders, stateRecords, taggedList } from '../src/internal.ts';
 import { channelFinish } from '../src/families/harmony-300-350/digits.ts';
 import { TELEVISION_STORED_UNBOUND } from '../src/families/harmony-300-350/keys.ts';
 import { IDENTIFIED, onceWithoutLeadIn, recordKey } from './noscreenparts.ts';

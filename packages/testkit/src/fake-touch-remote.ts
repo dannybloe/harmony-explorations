@@ -21,7 +21,9 @@
  * the reading, not a remote.
  *
  * `operationsOf` turns a recording into what the replay needs. Not a test file itself, so the runner does
- * not pick it up; it is imported by `touchsession.test.ts`, including from its subprocesses.
+ * not pick it up; it is imported by `packages/usb/test/touchsession.test.ts`, including from its
+ * subprocesses, and by the answerer's tests in `packages/corpus`. It lived in `packages/usb/test/` and was
+ * exported from that package as `./test/fake-touch-remote` until `todo.md` 7.3.6 moved it into this kit.
  */
 import {
   DONE_PACKET,
@@ -30,11 +32,13 @@ import {
   FILE_READ,
   FILE_WRITE,
   READ_TERMINATOR,
+  TransportError,
   requestedPath,
-} from '../src/filepipe.ts';
-import { TOUCH_READ_REQUESTS, TOUCH_SYNC_REQUESTS, TOUCH_ANNOUNCEMENT } from '../src/rails.ts';
-import { TransportError, type Transport } from '../src/transport.ts';
-import { commands, payload, records, strings, type Command } from './touch-recording.ts';
+  type Transport,
+} from '@harmony/usb/internal';
+import { TOUCH_ANNOUNCEMENT, TOUCH_READ_REQUESTS, TOUCH_SYNC_REQUESTS } from '@harmony/usb/rails';
+import { commands, payload, strings, type Command } from '@harmony/usb/touchrecording';
+import { records } from './touch-recording.ts';
 
 const SERVICE = 0xff;
 const REPORT = 64;

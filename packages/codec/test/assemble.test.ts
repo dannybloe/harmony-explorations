@@ -19,27 +19,28 @@ import type { CatalogueSource, Container, Recipe, RecipeScreenItem } from '../sr
 import { archiveAt } from '../src/catalogue.node.ts';
 import { screenProgram } from '../src/screen.ts';
 import { valueMaps } from '../src/valuemap.ts';
+import { devices, parse, readRecipe } from '../src/index.ts';
 import {
   AssemblyError,
   checkBlendedLetters,
   checkOxaniumFonts,
+  dropLists,
+  layOutContainer,
+  listCallSites,
+  namedLists,
+  takeApart,
+  withWiring,
+} from '../src/build.ts';
+import {
   characterMap,
   claims,
   ACTIVITY_STATE_NAME,
   MAP_VALUE_OPCODE,
-  devices,
-  dropLists,
   fontSets,
-  layOutContainer,
-  listCallSites,
   modeRecords,
-  namedLists,
-  parse,
-  readRecipe,
   screenStrings,
   stateVariables,
-  takeApart,
-  withWiring} from '../src/index.ts';
+} from '../src/internal.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import { DEVICES_KEY_TAG } from '../src/families/harmony-600-650-700/chrome.ts';
 import { ladderOf, oxaniumLabelSizes } from '../src/families/harmony-600-650-700/devicemode.ts';

@@ -70,15 +70,34 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LAB, skipWithoutLab } from '@harmony/lab';
-import { assertFileFamilyContainer } from '@harmony/usb';
+import { assertFileFamilyContainer } from '@harmony/usb/rails';
 
+import { type Container, irGroups, metadataArchive, parse } from '../src/index.ts';
 import {
-  architectureRecord, buildEmptyNoScreenConfiguration, buildNoScreenStateTables, buildTimestampSection, type Container,
-  type ContainerPiece, EMPTY_LIST_NUMBERS, EMPTY_ZONE_HOURS, inCompilerOrder, INFRARED_GROUPS_BY_SKIN, irGroups,
-  layOutContainer, metadataArchive, nameNodes, noScreenDigitEntryTable, noScreenLogArea, noScreenMetadataSection,
-  noScreenAcknowledgingEntry, noScreenParameterBlock, noScreenSendEventEntries, noScreenSendEventLists, noScreenStartUpLists, noScreenStartUpTable,
-  noScreenZipTime, parse, restamped, stateRecords, takeApart, taggedListBytes, trailerChecksum,
-} from '../src/index.ts';
+  architectureRecord,
+  buildEmptyNoScreenConfiguration,
+  buildNoScreenStateTables,
+  buildTimestampSection,
+  type ContainerPiece,
+  EMPTY_LIST_NUMBERS,
+  EMPTY_ZONE_HOURS,
+  inCompilerOrder,
+  INFRARED_GROUPS_BY_SKIN,
+  layOutContainer,
+  noScreenDigitEntryTable,
+  noScreenLogArea,
+  noScreenMetadataSection,
+  noScreenAcknowledgingEntry,
+  noScreenParameterBlock,
+  noScreenSendEventEntries,
+  noScreenSendEventLists,
+  noScreenStartUpLists,
+  noScreenStartUpTable,
+  noScreenZipTime,
+  restamped,
+  takeApart,
+} from '../src/build.ts';
+import { nameNodes, stateRecords, taggedListBytes, trailerChecksum } from '../src/internal.ts';
 import { allLists, maps, namer, spelled } from './noscreenparts.ts';
 
 const MOMENT = '2026-11-01T12:00:00';

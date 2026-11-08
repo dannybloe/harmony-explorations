@@ -21,25 +21,26 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, introductionTour, parse } from '../src/index.ts';
 import {
-  type Container,
   type ContainerPiece,
   ScreenRecordError,
-  handlerSets,
-  introductionTour,
   layOutContainer,
-  modeRecords,
-  parse,
   recordReading,
   restamped,
+  takeApart,
+} from '../src/build.ts';
+import {
+  handlerSets,
+  modeRecords,
   screenProgram,
   screenStrings,
   stateRecords,
   stateVariableSite,
   taggedList,
-  takeApart,
   timers,
-  valueMaps} from '../src/index.ts';
+  valueMaps,
+} from '../src/internal.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from '../src/families/harmony-600-650-700/firmwarescreens.ts';
 import { FIRMWARE_SCREENS, describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
 import { modeZeroKeyList } from '../src/families/harmony-600-650-700/modezero.ts';

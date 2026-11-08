@@ -43,7 +43,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { skipUnless } from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/usb/test/touch-recording';
+import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
 
 import {
   CONFIG_HASH_DOCUMENTS,

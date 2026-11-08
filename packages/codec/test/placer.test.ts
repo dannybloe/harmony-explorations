@@ -23,18 +23,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { LAB, load, skipUnless } from '@harmony/lab';
-import type { Container, ContainerLayout, ContainerPiece } from '../src/index.ts';
-import {
-  LayoutError,
-  inventory,
-  layOutContainer,
-  loosen,
-  parse,
-  placePieces,
-  renderPages,
-  roundTrip,
-  takeApart,
-} from '../src/index.ts';
+import type { Container } from '../src/index.ts';
+import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
+import { inventory, parse, renderPages } from '../src/index.ts';
+import { LayoutError, layOutContainer, loosen, placePieces, takeApart } from '../src/build.ts';
+import { roundTrip } from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /** The thirteen arch 14 compiles of section 312, the population `frame.test.ts` lays out. */

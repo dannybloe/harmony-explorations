@@ -17,9 +17,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse, renderPage } from '../src/index.ts';
 import {
   type CensusMember,
-  type Container,
   SCREEN_OWNERS,
   attributeScreens,
   coverage,
@@ -27,13 +27,11 @@ import {
   householdNames,
   modeRecords,
   modeRoles,
-  parse,
-  renderPage,
   screenCategoryTotals,
   screenCensus,
   screenUnits,
   sharesNoHousehold,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import '../src/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, in the order the per configuration figures are listed. */

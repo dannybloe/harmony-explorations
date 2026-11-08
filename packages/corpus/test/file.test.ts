@@ -13,19 +13,8 @@ import { join } from 'node:path';
 import { decodePayload } from '@harmony/codec/node';
 import { load, require_, skipUnless } from '@harmony/lab';
 
-import {
-  describe,
-  fileNames,
-  fileRead,
-  fileRegion,
-  regionFileNames,
-  FileError,
-  profileFor,
-  readConfig,
-  slug,
-  stamp,
-  type ConfigReader,
-} from '../src/index.ts';
+import { profileFor, readConfig, type ConfigReader } from '../src/index.ts';
+import { describe, fileNames, fileRead, fileRegion, regionFileNames, FileError, slug, stamp } from '../src/file.ts';
 
 const H600 = 0xc122;
 const WHEN = new Date('2026-08-06T11:45:09.000Z');

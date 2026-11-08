@@ -19,24 +19,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { type Container, parse } from '../src/index.ts';
 import {
   BITMAP_ENCODED,
   BITMAP_RAW,
-  type Container,
-  PictureError,
-  type PictureEntry,
   bitmapPixels,
   bitmaps,
   contentKey,
   encodeBitmap,
   encodeGlyph,
   glyphs,
-  layOutContainer,
   namedContentEnd,
-  parse,
   pictureBank,
-  pictureRows,
-  takeApart} from '../src/index.ts';
+} from '../src/internal.ts';
+import { PictureError, type PictureEntry, layOutContainer, pictureRows, takeApart } from '../src/build.ts';
 import { HARMONY_650_PICTURES, buildPictures, checkPictures, describePictures, withPictures } from '../src/families/harmony-600-650-700/pictures.ts';
 
 /** Section 356's 22 Logitech compiles of the Harmony 600, 650 and 700. */

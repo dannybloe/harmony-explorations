@@ -10,20 +10,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { HarmonyRemote, delaySlots, latestSettings } from '../src/index.ts';
 import {
   DELAY_SETTINGS,
-  HarmonyRemote,
-  delaySlots,
   isReadOnlyReport,
   ACTIVE_BLOCK_HEADER,
   STORE_BLOCK_BYTES,
   STORE_OFFSET_IN_PAGE,
   clearSlotWrites,
   decodeSettingsWriteReply,
-  latestSettings,
   predictStoreAfter,
   settingsReadRequest,
-} from '../src/index.ts';
+} from '../src/internal.ts';
 import { settingsWriteRequest } from '../src/writes.ts';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -189,10 +187,14 @@ test('a slot whose key\'s high byte is 0xFF is empty, as the firmware\'s save te
 
 function withEnv(extra: Record<string, string>, script: string): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
-  const index = join(here, '..', 'src', 'index.ts').replaceAll('\\', '/');
+  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
+  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  const rails = join(here, '..', 'src', 'rails.ts').replaceAll('\\', '/');
+  const internal = join(here, '..', 'src', 'internal.ts').replaceAll('\\', '/');
   return execFileSync(
     process.execPath,
-    ['--input-type=module', '--eval', `import * as usb from '${index}';\n${script}`],
+    ['--input-type=module', '--eval',
+      `import * as railsOnly from '${rails}';\nimport * as internal from '${internal}';\nconst usb = { ...internal, ...railsOnly };\n${script}`],
     { env: { ...process.env, ...extra }, encoding: 'utf8' },
   ).trim();
 }

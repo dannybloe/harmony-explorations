@@ -52,12 +52,18 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { assertFileFamilyContainer } from '@harmony/usb';
+import { assertFileFamilyContainer } from '@harmony/usb/rails';
 
+import { parse, type Recipe } from '../src/index.ts';
 import {
-  buildNoScreenSetup, type ComposedNoScreenSetup, composeNoScreenSetup, devicePlaces, type DevicePlace, parse, type Recipe, restamped,
+  buildNoScreenSetup,
+  type ComposedNoScreenSetup,
+  composeNoScreenSetup,
+  devicePlaces,
+  type DevicePlace,
+  restamped,
   withoutNoScreenDevice,
-} from '../src/index.ts';
+} from '../src/build.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';

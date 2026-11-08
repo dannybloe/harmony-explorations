@@ -14,7 +14,8 @@
  */
 import assert from 'node:assert/strict';
 
-import { bytes, numberSenders, stateRecords, taggedList, type Container } from '@harmony/codec/node';
+import { type Container } from '@harmony/codec/node';
+import { bytes, numberSenders, stateRecords, taggedList } from '@harmony/codec/internal';
 
 /**
  * What a person does with one key, named by the drawing's key name, or by a scan code where the run is asked
