@@ -163,7 +163,7 @@ Each base slot's raw slot, by architecture; an empty cell is one the row above n
 | 18 | 19 | 18 | 21 | 20 | 18 |  |
 | 19 | 20 | 19 | 22 | 21 | 19 |  |
 
-Generated from `SLOT_MAPS` in `packages/codec/src/container/gspm.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `SLOT_MAPS` in `packages/codec/src/container/slots.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
  The base slot numbers are what these pages use. `gspm.base_slot` and
 `gspm.arch_slot` in `src/harmony/gspm.py` translate, and so does `SLOT_MAPS` in
@@ -369,7 +369,7 @@ slots are identified, nine of them in the slot map and the rest refused:[^s259b]
 | 12 | none | a digit entry table[^t-harmony-350-slots], empty in every configuration read[^t-harmony-350-slots-c] |
 | 14 | none | NULL, and no direct reference in the firmware reads it[^t-harmony-350-slots] |
 
-Raw slot 13 holds the metadata archive above. `ARCH16_SLOT_MAP` in `packages/codec/src/container/gspm.ts` carries the
+Raw slot 13 holds the metadata archive above. `ARCH16_SLOT_MAP` in `packages/codec/src/container/slots.ts` carries the
 eight rows with a base slot that were identified first and raw 9, and `archSlot` throws for every other base
 slot, so a slot the map does not carry refuses rather than answering wrongly; raw 6 and 8 are not in it
 yet.[^s259b][^t-file-family-delays] The firmware's section seeker at `0x10BCE` computes `0x0B + 4 * slot` from a literal its

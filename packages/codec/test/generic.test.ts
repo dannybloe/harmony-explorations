@@ -138,7 +138,7 @@ function census(): Record<string, Record<string, number>> {
 }
 
 /**
- * A module's text with the bodies of its per architecture tables left out, `PerArchitecture` in `gspm.ts`: a key
+ * A module's text with the bodies of its per architecture tables left out, `PerArchitecture` in `slots.ts`: a key
  * scan inside one is a reader's table holding a remote's fact, plan 007's sanctioned form, where a scan anywhere
  * else is code knowing one keypad. Only the scans are counted this way; a table indexed with a literal
  * architecture is still the architecture pattern's. Since `todo-compile-one.md` 3.3.3.6, whose corner layout is

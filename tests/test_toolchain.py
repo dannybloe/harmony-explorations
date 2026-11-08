@@ -984,7 +984,7 @@ class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
         arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
         self.assertEqual(arguments, ['blob', 'addresses'])
 
-        typescript = self._source('packages/codec/src/container/gspm.ts')
+        typescript = self._source('packages/codec/src/container/clock.ts')
         found = re.search(r'export function recoverFlashBase\(([^)]*)\)', typescript)
         self.assertIsNotNone(found, 'the TypeScript anchor is no longer called recoverFlashBase')
         arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]

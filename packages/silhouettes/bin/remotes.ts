@@ -579,7 +579,7 @@ function slotMapsTable(): string {
     `|---|${architectures.map(() => '---').join('|')}|`,
     ...rows,
     '',
-    provenance('`SLOT_MAPS` in `packages/codec/src/container/gspm.ts`'),
+    provenance('`SLOT_MAPS` in `packages/codec/src/container/slots.ts`'),
   ].join('\n');
 }
 

@@ -746,7 +746,7 @@ TypeScript codec on 10 August 2026 without anything failing: `emit.ts` and `edit
 base slot 3's day of week, with a different spelling of the same epoch and a different parser for the
 same string, both correct. **Two right copies is the state that precedes two diverging ones**, and no
 test can see it, so it is caught by looking. A field's encoder lives next to its decoder, once:
-`clockRecordFields` beside `clockRecord` in `packages/codec/src/container/gspm.ts`, with a test that walks the
+`clockRecordFields` beside `clockRecord` in `packages/codec/src/container/clock.ts`, with a test that walks the
 corpus asserting they invert.
 
 **When two copies are found already disagreeing, the disagreement is the finding, and it gets measured
