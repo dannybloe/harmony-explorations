@@ -28,6 +28,7 @@ import {
   activityStartOf, chooseByModel, choicesOf, familyKind, familyOf, familyOfArchitecture, familyOfModel, modelName, NoFamilyError, sendsOf, traitsOf,
 } from '../src/families/registry.ts';
 import { HARMONY_TOUCH_FAMILY } from '../src/harmony-touch/family.ts';
+import { NO_SCREEN_FAMILY } from '../src/families/no-screen/index.ts';
 import { composeTouchDeviceOfRow, withTouchDevice, type OwnActivity, type RowDevice } from '../src/harmony-touch/compose.ts';
 import { documentsOfAnswers, type SyncAnswer, type SyncDocuments } from '../src/harmony-touch/documents.ts';
 import { refusalsBeforeASync } from '../src/harmony-touch/check.ts';
@@ -37,7 +38,7 @@ import type { TouchAccount } from '../src/harmony-touch/fromnothing.ts';
 import { ComposeError } from '../src/shared/core.ts';
 import { answersOf, FULL } from './touch-sync.ts';
 
-test('every model of the model table is chosen a compiled family by its architecture or refused naming it, 14 and 21 of 35, and the Harmony Touch a document family outside the table', () => {
+test('every model of the model table is chosen a compiled family by its architecture or refused naming it, 14 and 21 of 35, the Harmony Touch a document family outside the table and the Harmony 300 and 350 a compiled one', () => {
   const served: string[] = [];
   const refused: string[] = [];
   for (const [skin, model] of Object.entries(MODELS_BY_SKIN)) {
@@ -69,6 +70,14 @@ test('every model of the model table is chosen a compiled family by its architec
   assert.equal(familyOfModel({ name: 'Harmony Touch' }), HARMONY_TOUCH_FAMILY);
   assert.equal(familyKind(HARMONY_TOUCH_FAMILY), 'document');
   assert.throws(() => familyOfModel({ name: 'Harmony One', skin: 99 }), /skin 99 is the Harmony Touch, not the Harmony One/);
+  // The Harmony 300 and 350, outside the table too since plan 013 step 7.3.3, and the no screen family's, a compiled one.
+  for (const [name, skin] of [['Harmony 300', 79], ['Harmony 350', 104]] as const) {
+    const choice = chooseByModel({ name, skin });
+    assert.deepEqual([choice.skin, choice.model, choice.family], [skin, undefined, NO_SCREEN_FAMILY]);
+    assert.equal(familyOfModel({ name }), NO_SCREEN_FAMILY);
+  }
+  assert.equal(familyKind(NO_SCREEN_FAMILY), 'compiled');
+  assert.throws(() => familyOfModel({ name: 'Harmony 300', skin: 104 }), /skin 104 is the Harmony 350, not the Harmony 300/);
   // And the refusals of the lookup itself, each naming what was asked.
   assert.throws(() => familyOfModel({ name: 'Harmony 650', skin: 9999 }), /no model has skin 9999/);
   assert.throws(() => familyOfModel({ name: 'Harmony 651' }), /no model is called Harmony 651/);

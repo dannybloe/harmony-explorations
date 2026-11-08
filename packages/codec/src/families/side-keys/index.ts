@@ -46,6 +46,7 @@ const notYet = (what: string, step: string) => (): never => {
 };
 
 export const SIDE_KEYS: Family = {
+  kind: 'compiled',
   name: SIDE_KEYS_NAME,
   // A device list row is `enter the mode, write the mark`, no beep, `DEVICE_LIST_ROW_BEEPS`; a device page's item
   // calls its command's send list with nothing in front, on every arch 8 configuration read.

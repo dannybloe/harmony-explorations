@@ -23,12 +23,11 @@ test('every setup file reads as a recipe: the three for the Harmony 650, skin 72
   assert.deepEqual(files.filter((file) => readRecipe(raw(file)).touch !== undefined), ['touch-test.json']);
   for (const file of files) {
     const recipe = readRecipe(raw(file));
-    // The Harmony 350's setup is sent to Logitech's service and built by nothing here: its skin is not in
-    // the model table, so its target is refused. This fails, and should be rewritten, when a family arrives.
-    // The Harmony 300's, todo-compile-300 3.4, is the recipe of the compile its bench unit holds, and is refused
-    // the same way, at skin 79.
+    // The Harmony 300's and 350's: the no screen family serves them, chosen by model since plan 013 step 7.3.3
+    // (the table holds no record of skins 79 and 104), and builds from a setup with its own builder, so their
+    // recipe target is refused naming it. Until that step the refusal was "no model has skin".
     if (file.startsWith('h350-') || file.startsWith('h300-')) {
-      assert.throws(() => recipeTarget(recipe), file.startsWith('h350-') ? /no model has skin 104/ : /no model has skin 79/);
+      assert.throws(() => recipeTarget(recipe), /built from a setup by its family's own builder, buildNoScreenSetup/);
       continue;
     }
     // The Harmony Touch's two: `touch-full.json`, todo-touch 2.2.1, put on its record by `build-setup.ts`, and

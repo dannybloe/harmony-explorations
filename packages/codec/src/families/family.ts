@@ -255,10 +255,9 @@ export type WithChoices<Options, Choices> = Options & { readonly choices?: Choic
 export interface Family<Choices extends CommonChoices = CommonChoices> {
   /**
    * Which of the two kinds of family this is, plan 013 decision 1: a compiled family builds the container the remote
-   * is written with, where a document family, `DocumentFamily` in `document.ts`, builds documents. Optional only until
-   * the Harmony 880 and 885's family states it, which its own branch adds when it is rebased; absent means compiled.
+   * is written with, where a document family, `DocumentFamily` in `document.ts`, builds documents.
    */
-  readonly kind?: 'compiled';
+  readonly kind: 'compiled';
   /** For a refusal or a report: the models this family serves, as a person names them. */
   readonly name: string;
   readonly traits: FamilyTraits;

@@ -138,8 +138,12 @@ export function recipeTarget(recipe: Recipe): RecipeTarget {
     throw error;
   }
   const { family, model, skin } = choice;
-  if (family.kind === 'document' || model === undefined) {
+  if (family.kind === 'document') {
     throw new RecipeError(`the ${recipe.model.name} is given documents, which its family builds from its own setup file and not from a recipe target`);
+  }
+  if (model === undefined) {
+    // The Harmony 300 and 350: a compiled family serves them and builds from a setup with its own builder.
+    throw new RecipeError(`the ${recipe.model.name} is built from a setup by its family's own builder, buildNoScreenSetup, and not from a recipe target`);
   }
   return { skin, model, family };
 }

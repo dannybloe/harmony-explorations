@@ -38,11 +38,10 @@ import { ONE } from './one/index.ts';
 export type AnyFamily = Family | DocumentFamily;
 
 /**
- * A family's kind: `document` where it says so, and `compiled` otherwise, since a compiled family states its kind
- * except the Harmony 880 and 885's until its branch adds it, `Family.kind`.
+ * A family's kind, `Family.kind` or `DocumentFamily.kind`, which every family states.
  */
 export function familyKind(family: AnyFamily): 'compiled' | 'document' {
-  return family.kind === 'document' ? 'document' : 'compiled';
+  return family.kind;
 }
 
 /**
@@ -97,12 +96,14 @@ export function modelName(model: Model): string {
  * not in it, so the Touch is chosen here: skin 99, the remote's own, read off its `/sys/sysinfo` and its `bcdDevice`,
  * `reference/remotes/harmony-touch/README.md`. Not by product id: `0xc12b` is the Harmony Ultimate's too.
  *
- * **The Harmony 300 and 350 are not here**, though the no screen family serves their architecture: no recipe target
- * has been built for them, `recipe.test.ts` holds their setups refused, and adding them is that choice, not this
- * step's.
+ * **The Harmony 300 and 350 are here too**, skins 79 and 104, which the table holds no record of: the no screen family
+ * serves their architecture and builds a configuration from a setup with its own builder, `buildNoScreenSetup`, so
+ * choosing them by model answers that family, and `recipeTarget` refuses them as a recipe target, naming that builder.
  */
 const MODELS_OUTSIDE_THE_TABLE: readonly { readonly name: string; readonly skin: number; readonly family: () => AnyFamily }[] = [
   { name: 'Harmony Touch', skin: 99, family: () => HARMONY_TOUCH_FAMILY },
+  { name: 'Harmony 300', skin: 79, family: () => NO_SCREEN_FAMILY },
+  { name: 'Harmony 350', skin: 104, family: () => NO_SCREEN_FAMILY },
 ];
 
 /** What choosing by model found: the skin, the model table's record where it has one, and the family. */
