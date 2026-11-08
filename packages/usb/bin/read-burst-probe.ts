@@ -25,15 +25,17 @@
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 import { READ_FLASH, decodeReply, nextFlashSequence, readFlashRequest } from '../src/protocol.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const arg = (name: string): string | undefined => {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-};
-const stallAfter = Number(arg('stall-after') ?? '-1');
-const stallMs = Number(arg('stall-ms') ?? '0');
-const count = Number(arg('count') ?? '16384');
-const address = Number(arg('address') ?? '0x040000');
+const cli = commandLine({
+  usage: 'usage: node packages/usb/bin/read-burst-probe.ts [--address 0x040000] [--count 16384] [--stall-after 50] [--stall-ms 200]',
+  values: ['stall-after', 'stall-ms', 'count', 'address'],
+});
+
+const stallAfter = Number(cli.value('stall-after') ?? '-1');
+const stallMs = Number(cli.value('stall-ms') ?? '0');
+const count = Number(cli.value('count') ?? '16384');
+const address = Number(cli.value('address') ?? '0x040000');
 
 const attached = await listHarmony();
 if (attached.length !== 1) throw new Error(`${attached.length} remotes attached, want exactly one`);

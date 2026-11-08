@@ -39,6 +39,15 @@ import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups, irHeaderPo
 import { irdaString, pulsesOfWords, untilSilence } from '../src/irda.ts';
 import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/codec/bin/analyze.ts [--config h600_config] [--limit 25] [--out report.json]',
+    '         [--records 0x4282d,0x428fe] [--per-kind 12] [--file <path.EzHex>]',
+  ].join('\n'),
+  values: ['config', 'limit', 'records', 'file', 'per-kind', 'out'],
+});
 
 const SECURITY = 'https://svcs.myharmony.com/CompositeSecurityServices/Security.svc/json/';
 /**
@@ -47,11 +56,6 @@ const SECURITY = 'https://svcs.myharmony.com/CompositeSecurityServices/Security.
  * `GetTeachingRequest` and `GetTeachingStatus`, which are the rest of the learning flow.
  */
 const ANALYSIS = 'https://svcs.myharmony.com/InfraredAnalysisPlatform/InfraredAnalysisManager.svc/json/';
-
-function flag(name: string, fallback: string): string {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? fallback : (process.argv[at + 1] ?? fallback);
-}
 
 /** The session cookie, and nothing else kept. */
 const jar = new Map<string, string>();
@@ -129,10 +133,10 @@ if (login.status !== 200 || jar.size === 0) {
 }
 console.log(`signed in, ${jar.size} cookie(s)`);
 
-const config = flag('config', 'h600_config');
-const limit = Number(flag('limit', '25'));
+const config = cli.value('config') ?? 'h600_config';
+const limit = Number(cli.value('limit') ?? '25');
 /** Named records, for a question about a specific reading rather than about a sample. */
-const only = new Set(flag('records', '').split(',').filter((one) => one !== '')
+const only = new Set((cli.value('records') ?? '').split(',').filter((one) => one !== '')
   .map((one) => Number.parseInt(one, 16)));
 /**
  * A container by path rather than by name, which is what the compiled samples need.
@@ -142,7 +146,7 @@ const only = new Set(flag('records', '').split(',').filter((one) => one !== '')
  * about: the appliances were chosen here, so the account's own command catalogue states what each code
  * should be. `--file` takes the `.EzHex` and `--config` then only names the report's rows.
  */
-const file = flag('file', '');
+const file = cli.value('file') ?? '';
 const path = file === '' ? imagePath(config) : file;
 if (path === undefined) throw new Error(`no ${config} in the lab`);
 const blob = new Uint8Array(readFileSync(path));
@@ -168,7 +172,7 @@ interface Row {
 }
 const rows: Row[] = [];
 const per = new Map<string, number>();
-const perKind = Number(flag('per-kind', String(limit)));
+const perKind = Number(cli.value('per-kind') ?? String(limit));
 let agreed = 0;
 let asked = 0;
 outer: for (const group of irGroups(c) ?? []) {
@@ -228,7 +232,7 @@ outer: for (const group of irGroups(c) ?? []) {
 }
 
 console.log(`\n${agreed} of ${asked} agree on the number`);
-const out = flag('out', '');
+const out = cli.value('out') ?? '';
 if (out !== '') {
   writeFileSync(out, JSON.stringify({ config, asked, agreed, rows }, null, 1));
   console.log(`report written to ${out}`);

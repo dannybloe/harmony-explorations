@@ -23,13 +23,19 @@ import { LAB, load } from '@harmony/lab';
 import { parse, activities } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/activities.ts [--detail]',
+  flags: ['detail'],
+});
 
 // The two arch 8 configs of 12 August 2026 are in, for the reason `bin/text.ts` states: the 880 is
 // the corpus's only container with a written description of what is in it, so it is the one place a
 // count of activities can be checked against something outside this codebase.
 const SAMPLES = [...CONTAINERS, 'arch8_config_880', 'arch8_config_885'];
 
-const detail = process.argv.includes('--detail');
+const detail = cli.flag('detail');
 
 if (LAB === undefined) {
   console.log('no lab directory, so there is nothing to read');

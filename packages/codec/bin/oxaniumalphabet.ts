@@ -23,6 +23,12 @@ import { isDeepStrictEqual } from 'node:util';
 import { deflateSync } from 'node:zlib';
 import '../src/resources.node.ts';
 import { oxaniumAlphabet, oxaniumAlphabetFromFont, packOxaniumAlphabet } from '../src/text.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/oxaniumalphabet.ts [--write]',
+  flags: ['write'],
+});
 
 const OUT = new URL('../src/oxaniumalphabet.ts', import.meta.url);
 
@@ -51,7 +57,7 @@ const count = (table: Readonly<Record<string, unknown>> | undefined): number => 
 console.log(`${count(alphabet.forms)} forms, ${count(alphabet.structures)} structures, ${count(alphabet.drawnIn)} forms with their faces`);
 console.log(`${packed.length} characters of base64 in ${lines.length} lines`);
 
-if (process.argv.includes('--write')) {
+if (cli.flag('write')) {
   writeFileSync(OUT, text);
   console.log(`wrote ${OUT.pathname}`);
 } else {

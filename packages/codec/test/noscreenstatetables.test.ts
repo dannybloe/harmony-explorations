@@ -121,6 +121,7 @@ import { keyMaps, PRESS } from '../src/families/harmony-300-350/devices.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { FIRMWARE_STATE_RECORDS, FOUR_SLOT_STATE_TABLES } from '../src/families/harmony-600-650-700/statetables.ts';
 import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
+import { sameBytes } from '../src/bytes.ts';
 
 /** The five bench fixtures, by the lab's names. */
 const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
@@ -154,7 +155,8 @@ const thirteen = (): [string, Container][] => [
   ...NAMED.map((name): [string, Container] => [name, parse(require_(name))]),
 ];
 
-const same = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((x, k) => x === b[k]);
+// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+const same = sameBytes;
 
 /** Describe by a family's facts, build, put back and lay out. */
 function rebuilt(layout: ContainerLayout, described: ContainerLayout = layout): Uint8Array {

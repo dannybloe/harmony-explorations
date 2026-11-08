@@ -69,6 +69,7 @@ import {
 import { MODELS } from '../src/index.ts';
 import { SCAN_SOURCES, scanFootnote } from '../src/types.ts';
 import type { Key, Model as Drawing, ScanSource } from '../src/types.ts';
+import { commandLine } from '@harmony/lab/cli';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -888,7 +889,11 @@ export function run(write: boolean): string[] {
 }
 
 if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const write = process.argv.includes('--write');
+  const cli = commandLine({
+    usage: 'usage: node packages/silhouettes/bin/remotes.ts [--write]',
+    flags: ['write'],
+  });
+  const write = cli.flag('write');
   const problems = run(write);
   for (const p of problems) console.log(p);
   if (write) {

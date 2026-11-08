@@ -40,6 +40,7 @@
 import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
 import { type Container } from '../../gspm.ts';
 import { encodeBitmap } from '../../screen.ts';
+import { sameBytes } from '../../bytes.ts';
 import { contentKey } from '../../screencategories.ts';
 import { PictureError, type BandRow, type IconDrawing, type PictureEntry, pictureRows, withReplacedPictures } from '../../pictures.ts';
 
@@ -197,10 +198,6 @@ export function checkOurPictures(before: Container, after: Container, ours: Read
   const missing = [...ours.keys()].filter((name) => !placed.includes(name));
   if (missing.length > 0) throw new PictureError(`the configuration holds no ${missing.join(', ')} to draw ours over`);
   return placed;
-}
-
-function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
-  return a.length === b.length && a.every((v, k) => v === b[k]);
 }
 
 /** Every rule picture of `entries` drawn and encoded, by name. */

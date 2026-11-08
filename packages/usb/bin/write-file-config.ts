@@ -53,6 +53,17 @@ import {
   assertFileFamilyContainer,
   assertFileWriteTarget,
 } from '../src/rails.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/usb/bin/write-file-config.ts --unit h350 --config <file> --backup <file> [--path <device path>]',
+    '       HARMONY_ENABLE_WRITES=1 HARMONY_FILE_WRITE=1 node packages/usb/bin/write-file-config.ts \\',
+    '         --unit h350 --config <file> --backup <file> --commit [--no-reboot]',
+  ].join('\n'),
+  values: ['unit', 'config', 'backup', 'path'],
+  flags: ['commit', 'no-reboot'],
+});
 
 /** The units decision 26 permits, and the skin each one's identity file states. */
 const UNITS: Readonly<Record<string, { readonly model: string; readonly skin: number }>> = {
@@ -62,11 +73,6 @@ const UNITS: Readonly<Record<string, { readonly model: string; readonly skin: nu
 
 /** The family's one product id, which both models report. */
 const FILE_FAMILY_PRODUCT = 0xc124;
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
 
 let journalPath: string | undefined;
 
@@ -83,19 +89,19 @@ function fail(message: string): never {
 }
 
 async function main(): Promise<void> {
-  const unitLabel = argument('unit') ?? fail(`--unit names the lab record: ${Object.keys(UNITS).join(' or ')}`);
+  const unitLabel = cli.value('unit') ?? fail(`--unit names the lab record: ${Object.keys(UNITS).join(' or ')}`);
   const unit = UNITS[unitLabel] ?? fail(`--unit ${unitLabel} is not a permitted unit of this family `
     + `(${Object.keys(UNITS).join(', ')}), decision 26`);
-  const configPath = argument('config') ?? fail('--config is the container to put on the remote');
-  const backupPath = argument('backup') ?? fail("--backup is the lab's copy of what the unit holds now");
-  const commit = process.argv.includes('--commit');
-  const reboot = !process.argv.includes('--no-reboot');
-  const devicePath = argument('path');
+  const configPath = cli.value('config') ?? fail('--config is the container to put on the remote');
+  const backupPath = cli.value('backup') ?? fail("--backup is the lab's copy of what the unit holds now");
+  const commit = cli.flag('commit');
+  const reboot = !cli.flag('no-reboot');
+  const devicePath = cli.value('path');
 
   // The journal first, so that even a refusal is on record. A journal that cannot be opened is a
   // refusal rather than a warning, the reasoning of `write-config.ts`.
   journalPath = `${configPath}.write-${new Date().toISOString().replace(/[:.]/g, '')}.log`;
-  appendFileSync(journalPath, `# ${process.argv.slice(1).join(' ')}\n`);
+  appendFileSync(journalPath, `# ${cli.argv.slice(1).join(' ')}\n`);
 
   const recorded = unitIdentity(unitLabel);
   if (recorded === undefined) {

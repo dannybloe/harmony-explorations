@@ -51,20 +51,17 @@ import {
 } from '../experiments/touchchangedset.ts';
 import { OWN_SET_DOCUMENTS, compareConfigHash, compareRequestList } from '../experiments/touchownset.ts';
 import { WRITE_ANSWERS, keyOf, prepareSet, setTag, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function arguments_(name: string): string[] {
-  return process.argv.flatMap((a, i) => (a === `--${name}` && process.argv[i + 1] !== undefined ? [process.argv[i + 1]!] : []));
-}
+const cli = commandLine({
+  usage: [
+    'usage: node packages/corpus/bin/touch-changed-set.ts --build <new lab folder> --from <set folder> \\',
+    '         --document <name> --pointer <JSON Pointer> --was <value> --to <value>',
+    '       node packages/corpus/bin/touch-changed-set.ts --check <set folder> [--same-as <set folder>]... \\',
+    "         [--written <a run's kept write of answers>] [--hash <getconfighash answer>] [--list <request list answer>]",
+  ].join('\n'),
+  values: ['from', 'document', 'pointer', 'was', 'to', 'same-as', 'written', 'hash', 'list', 'build', 'check'],
+});
 
 /** A path inside the lab, resolved through its links, or a refusal; the same rule as `touch-own-set.ts`. */
 function insideTheLab(path: string, what: string): string {
@@ -117,11 +114,11 @@ function leafLike(text: string, like: unknown, what: string): Leaf {
 function build(folder: string): void {
   const out = insideTheLab(folder, 'the set folder');
   if (existsSync(out) && readdirSync(out).length > 0) fail(`${out} already holds files, and a set is never written over`);
-  const fromFolder = argument('from');
-  const document = argument('document');
-  const pointer = argument('pointer');
-  const was = argument('was');
-  const to = argument('to');
+  const fromFolder = cli.value('from');
+  const document = cli.value('document');
+  const pointer = cli.value('pointer');
+  const was = cli.value('was');
+  const to = cli.value('to');
   if (fromFolder === undefined || document === undefined || pointer === undefined || was === undefined || to === undefined) {
     fail('--build needs --from <set folder> --document <name> --pointer <JSON Pointer> --was <value> --to <value>');
   }
@@ -201,7 +198,7 @@ function check(folder: string): void {
       'no chunk carries Content-Length, and no chunk after the first opens with a request name');
   }
 
-  for (const other of arguments_('same-as')) {
+  for (const other of cli.values('same-as')) {
     const otherDir = insideTheLab(other, 'the set to compare with');
     const d = setDifferences(readSet(otherDir), set);
     const differing = d.filter((x) => x.values.length > 0).map((x) => x.document);
@@ -211,7 +208,7 @@ function check(folder: string): void {
   }
   // A run's kept write of answers for the six, against the set: the changed document 200 with the set's content
   // and tag, the other five 304.
-  for (const file of arguments_('written')) {
+  for (const file of cli.values('written')) {
     const line = readFileSync(insideTheLab(file, 'the kept write of answers'), 'utf8');
     if (!line.startsWith(`${WRITE_ANSWERS}&`)) fail(`${file} is not a kept write of answers`);
     const responses = (JSON.parse(decodeURIComponent(line.split('&responses=')[1] ?? '')) as { responses: { statusCode?: string; uri?: string; etag?: string; resource?: unknown }[] }).responses
@@ -225,16 +222,16 @@ function check(folder: string): void {
       `the kept write answered ${responses.map((a) => `${keyOf(a.uri!)} ${a.statusCode ?? 'none'}`).join(', ')}; `
       + `${right ? `${change.document} with this set's content and tag` : 'not this set\'s one document alone'}`);
   }
-  for (const file of arguments_('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
-  for (const file of arguments_('list')) {
+  for (const file of cli.values('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
+  for (const file of cli.values('list')) {
     console.log('request list against the set\'s tags:');
     for (const line of compareRequestList(readFileSync(insideTheLab(file, 'the request list'), 'utf8'), set)) console.log(`  ${line}`);
   }
   if (bad > 0) process.exit(1);
 }
 
-const toBuild = argument('build');
-const toCheck = argument('check');
+const toBuild = cli.value('build');
+const toCheck = cli.value('check');
 if ((toBuild === undefined) === (toCheck === undefined)) fail('one of --build <new lab folder> or --check <set folder>');
 if (toBuild !== undefined) build(toBuild);
 else check(toCheck!);

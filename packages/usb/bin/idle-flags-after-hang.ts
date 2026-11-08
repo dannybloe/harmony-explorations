@@ -42,6 +42,15 @@ import { join } from 'node:path';
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 import { ODD_READ_EXPERIMENT } from '../src/rails.ts';
 import { LAB } from '@harmony/lab';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+commandLine({
+  usage: [
+    'usage: HARMONY_ODD_READ_EXPERIMENT=1 node packages/usb/bin/idle-flags-after-hang.ts',
+    '',
+    'It takes no options.',
+  ].join('\n'),
+});
 
 const PRODUCT_ONE = 0xc121;
 
@@ -75,11 +84,6 @@ const RUNAWAY_START = HANG_OFFSET + 62;
  */
 const WINDOW_START = 0x0480;
 const WINDOW_LENGTH = 48;
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 

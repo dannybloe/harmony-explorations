@@ -16,6 +16,7 @@
     "@harmony/base": "workspace:*",
     "@harmony/codec": "workspace:*",
     "@harmony/corpus": "workspace:*",
+    "@harmony/lab": "workspace:*",
     "@harmony/testkit": "workspace:*",
     "@harmony/usb": "workspace:*"
   }

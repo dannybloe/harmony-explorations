@@ -2,7 +2,7 @@
  * The base every other package stands on: facts about a Harmony that are neither a transport nor a
  * codec, and that a browser, an Electron window and the command line all need alike.
  *
- * Plan 013, decision 4. These three modules lived in `packages/usb` until `todo.md` 7.3.4, and the
+ * Plan 013, decision 4. The first three modules lived in `packages/usb` until `todo.md` 7.3.4, and the
  * codec depended on that package for two of them, so a program that only wanted to parse a
  * configuration pulled in `node-hid`, a native module with an install step. Here they depend on
  * nothing outside Node's own, and nothing in this package reads the disk or loads a native module;
@@ -10,7 +10,8 @@
  *
  * Each module is also its own subpath, `@harmony/base/models` and the rest, because the key reader page
  * loads them in a browser one module at a time and must not reach for anything else. **Explicit names**
- * here, all three modules' whole, held by `test/surface.test.ts`, `todo.md` 7.3.6.
+ * here, all four modules' whole, held by `test/surface.test.ts`, `todo.md` 7.3.6; the byte comparison joined them
+ * in `todo.md` 7.3.7.
  */
 
 // The model table: a skin to a model and what its hardware can do.
@@ -30,3 +31,5 @@ export { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum } from 
 // Where a running remote keeps the key being pressed, per model.
 export { ARCH_8_PRODUCT, WATCH, WATCH_BY_SKIN } from './keys.ts';
 export type { Watch } from './keys.ts';
+// Whether two byte arrays hold the same bytes, the one copy, `todo.md` 7.3.7.
+export { sameBytes } from './bytes.ts';

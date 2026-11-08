@@ -22,13 +22,15 @@ import { growthReport } from '../src/internal.ts';
 import type { GrowthReport } from '../src/internal.ts';
 import { CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/growth.ts [--file <config>] [--detail]',
+  values: ['file'],
+  flags: ['detail'],
+});
 
-const detail = process.argv.includes('--detail');
+const detail = cli.flag('detail');
 
 /** Nonzero exit if any container has an implied structure nobody can explain. */
 let unexplained = 0;
@@ -89,7 +91,7 @@ function show(label: string, report: GrowthReport, architecture: number | undefi
   process.stdout.write('\n');
 }
 
-const file = argument('file');
+const file = cli.value('file');
 if (file === undefined) {
   for (const name of CONTAINERS) {
     const container = parse(payloadOf(require_(name)));

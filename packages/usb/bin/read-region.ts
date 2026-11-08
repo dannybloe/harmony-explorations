@@ -26,19 +26,15 @@ import { LAB } from '@harmony/lab';
 import { HarmonyRemote, architectureFromVersion, listHarmony, openHarmony } from '../src/index.ts';
 import { readFlashWindow } from '../src/internal.ts';
 import { CONFIG_REGION_BASE } from '../src/rails.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/usb/bin/read-region.ts --label <name> --to 0x1e0000 [--from 0x040000] [--product <id>]',
+  values: ['label', 'product', 'from', 'to'],
+});
 
 /** One read, chosen so a stall reports a range rather than the whole run. */
 const CHUNK = 0x8000;
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 function address(text: string | undefined, what: string): number {
   if (text === undefined) fail(`${what} is required`);
@@ -47,12 +43,12 @@ function address(text: string | undefined, what: string): number {
   return value;
 }
 
-const label = argument('label') ?? fail('--label says which unit this came off, and ends up in the '
+const label = cli.value('label') ?? fail('--label says which unit this came off, and ends up in the '
   + 'filename: a lab full of reads called the same thing is a lab you cannot use');
 if (LAB === undefined) fail('no lab directory found; set HARMONY_LAB');
 
 const attached = await listHarmony();
-const wanted = argument('product');
+const wanted = cli.value('product');
 const candidates = wanted === undefined
   ? attached
   : attached.filter((d) => d.productId === Number.parseInt(wanted, 16));
@@ -75,8 +71,8 @@ try {
   const base = CONFIG_REGION_BASE[architecture];
   if (base === undefined) fail(`no config region base for architecture ${architecture}`);
 
-  const from = argument('from') === undefined ? base : address(argument('from'), '--from');
-  const to = address(argument('to'), '--to');
+  const from = cli.value('from') === undefined ? base : address(cli.value('from'), '--from');
+  const to = address(cli.value('to'), '--to');
   if (to <= from) fail(`--to 0x${to.toString(16)} is not above --from 0x${from.toString(16)}`);
   // **Arch 8 (Harmony 880 and 885) reached this script with `todo-compile-885.md` 1.2**, which gave it a
   // config region base for a write, and until then the missing base refused it. Two reads there are not

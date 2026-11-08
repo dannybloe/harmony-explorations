@@ -93,19 +93,20 @@ import { TOUCH_PRODUCT_ID, TOUCH_RECOVERY_DOOR, TOUCH_REQUEST_DOOR, WRITES_ENABL
 import { openTouchRequestSession } from '@harmony/usb/touchsession';
 
 import { RECOVERY, SYNC_LINES, prepareSet, syncTouch, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder>',
+    '       HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 \\',
+    '         node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> --commit',
+  ].join('\n'),
+  values: ['set'],
+  flags: ['unchanged', 'commit'],
+});
 
 /** The lab record the request channel compares against. */
 const UNIT = 'touch';
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 /** Why `folder` is not a set this script reads, or the set: a folder inside the lab holding `set.json`. */
 function readSet(folder: string): TouchSet {
@@ -128,10 +129,10 @@ function readSet(folder: string): TouchSet {
 const kindOfKey = (key: string): string => (key.includes(':') ? key.split(':')[0] as string : key);
 
 async function main(): Promise<void> {
-  const unchanged = process.argv.includes('--unchanged');
-  const setFolder = argument('set');
+  const unchanged = cli.flag('unchanged');
+  const setFolder = cli.value('set');
   if (unchanged === (setFolder !== undefined)) fail('one of --unchanged or --set <lab folder>, not both and not neither');
-  const commit = process.argv.includes('--commit');
+  const commit = cli.flag('commit');
 
   let mode: TouchSyncMode;
   if (setFolder !== undefined) {

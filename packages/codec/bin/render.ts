@@ -31,23 +31,28 @@ import { LAB, load } from '@harmony/lab';
 import { parse, rasterPng, renderPage, type RenderedPage } from '../src/index.ts';
 import { UNDRAWN, contactSheetPng, modePages } from '../src/internal.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const argument = (name: string): string | undefined => {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-};
+const cli = commandLine({
+  usage: [
+    'usage: node packages/codec/bin/render.ts (--config one_config | --file <path>) (--page 45 | --pages 45,46 | --sheet)',
+    '         [--every 13] [--columns 6] [--undrawn] [--out <directory>]',
+  ].join('\n'),
+  values: ['file', 'config', 'out', 'every', 'columns', 'pages', 'page'],
+  flags: ['undrawn', 'sheet'],
+});
 
-const file = argument('file');
-const config = file === undefined ? argument('config') ?? 'one_config' : basename(file).replace(/\.[^.]*$/, '');
-const undrawnVisible = process.argv.includes('--undrawn');
-const sheet = process.argv.includes('--sheet');
+const file = cli.value('file');
+const config = file === undefined ? cli.value('config') ?? 'one_config' : basename(file).replace(/\.[^.]*$/, '');
+const undrawnVisible = cli.flag('undrawn');
+const sheet = cli.flag('sheet');
 
 if (LAB === undefined) {
   console.log('no lab directory, so there is nothing to render');
   process.exit(0);
 }
 
-const out = argument('out') ?? join(LAB, 'work', 'render');
+const out = cli.value('out') ?? join(LAB, 'work', 'render');
 mkdirSync(out, { recursive: true });
 
 const blob = file === undefined ? load(config) : new Uint8Array(readFileSync(file));
@@ -58,14 +63,14 @@ if (blob === undefined) {
 const c = parse(blob);
 const pages = modePages(c);
 
-const every = Number(argument('every') ?? 1);
-const columns = Number(argument('columns') ?? 6);
+const every = Number(cli.value('every') ?? 1);
+const columns = Number(cli.value('columns') ?? 6);
 
 const chosen = ((): number[] => {
   if (sheet) return pages.map((_, index) => index).filter((index) => index % every === 0);
-  const list = argument('pages');
+  const list = cli.value('pages');
   if (list !== undefined) return list.split(',').map(Number);
-  return [Number(argument('page') ?? 0)];
+  return [Number(cli.value('page') ?? 0)];
 })();
 
 /**

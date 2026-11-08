@@ -45,6 +45,17 @@ import {
   requestReadReport,
   requestWriteChunkReport,
 } from '../src/touchsession.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/usb/bin/touch-request.ts --request provisioning|confighash',
+    '       HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/usb/bin/touch-request.ts \\',
+    '         --request provisioning|confighash --commit',
+  ].join('\n'),
+  values: ['request'],
+  flags: ['commit'],
+});
 
 /** The two reads, by the short names this script takes. */
 const REQUESTS: Readonly<Record<string, string>> = {
@@ -54,16 +65,6 @@ const REQUESTS: Readonly<Record<string, string>> = {
 
 /** The lab record the request channel compares against. */
 const UNIT = 'touch';
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 const hex = (report: Uint8Array, length = 24): string =>
   [...report.subarray(0, length)].map((b) => b.toString(16).padStart(2, '0')).join(' ');
@@ -100,10 +101,10 @@ function outline(value: unknown, depth = 0): string {
 }
 
 async function main(): Promise<void> {
-  const which = argument('request');
+  const which = cli.value('request');
   const line = which === undefined ? undefined : REQUESTS[which];
   if (line === undefined) fail(`--request takes ${Object.keys(REQUESTS).join(' or ')}`);
-  const commit = process.argv.includes('--commit');
+  const commit = cli.flag('commit');
   const record = unitIdentity(UNIT);
 
   console.log(`request: ${line}`);

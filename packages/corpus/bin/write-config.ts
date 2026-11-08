@@ -102,6 +102,21 @@ import { QueueError, StateTableError, assertQueueFits, assertStateTableConsisten
 import { ACTION_QUEUE_INSTRUCTIONS, trailerChecksum, worstQueueRun } from '@harmony/codec/internal';
 import { profileFor, readConfig } from '../src/index.ts';
 import { StampError, stampForWrite, stoppedAfterErase } from '../src/stamp.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/corpus/bin/write-config.ts --config <file> --dump <lab region read>',
+    '       HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 ... --commit',
+    "       ... --commit --no-restart      section 247's control: every step but the last",
+    "       ... --commit --no-invalidate   section 250's control: every step but the first",
+    "       ... --commit --drop-only       section 250's isolating control: the drop and nothing else",
+    '       ... --commit --restart-only    section 282: the restart and nothing else',
+    "       ... --as-is                    write the file's own stamp, for putting a compile back unchanged",
+  ].join('\n'),
+  values: ['config', 'dump'],
+  flags: ['commit', 'no-restart', 'no-invalidate', 'drop-only', 'restart-only', 'as-is'],
+});
 
 /**
  * The lab images this may be written against, which are the spare Harmony One's own reads.
@@ -406,16 +421,6 @@ const TARGETS: Readonly<Record<number, readonly Target[]>> = {
 };
 const ALL_DUMPS = new Set(Object.values(TARGETS).flat().flatMap((t) => [...t.dumps]));
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
 /**
  * Every line this prints, appended to a file as it is printed.
  *
@@ -449,12 +454,12 @@ async function main(): Promise<void> {
     process.exit(130);
   });
 
-  const configPath = argument('config') ?? fail('--config is the container to put on the remote');
+  const configPath = cli.value('config') ?? fail('--config is the container to put on the remote');
   journalPath = `${configPath}.write-${new Date().toISOString().replace(/[:.]/g, '')}.log`;
-  appendFileSync(journalPath, `# ${process.argv.slice(1).join(' ')}\n`);
-  const dumpName = argument('dump')
+  appendFileSync(journalPath, `# ${cli.argv.slice(1).join(' ')}\n`);
+  const dumpName = cli.value('dump')
     ?? fail("--dump names the lab region read holding this unit's current content");
-  const commit = process.argv.includes('--commit');
+  const commit = cli.flag('commit');
   // **The control for section 247, and it exists because that write proved two things at once.**
   // The invalidate and the restart went in together, so the screen coming back clean could have
   // been either. **What that run actually showed is not what section 248 concluded**, section 250:
@@ -462,7 +467,7 @@ async function main(): Promise<void> {
   // anything and the state the remote was already in was doing the work. This flag stays because a
   // run without the restart is still worth being able to perform deliberately.
   // It only ever **skips** a command, so it needs no rail of its own.
-  const restart = !process.argv.includes('--no-restart');
+  const restart = !cli.flag('no-restart');
   // **The control for section 250, which is the counterfactual section 248 never ran.** That
   // section credited the invalidate with keeping the sync screen away, and reading the firmware
   // afterwards found that no write clears the flag a status screen needs to be gone, so a write
@@ -471,7 +476,7 @@ async function main(): Promise<void> {
   //
   // **It is a control and not an option**, and the difference matters: leaving the invalidate out
   // is what both working implementations do not do, so an ordinary write sends it.
-  const invalidate = !process.argv.includes('--no-invalidate');
+  const invalidate = !cli.flag('no-invalidate');
 
   // **The isolating control for section 250, added 4 September 2026, and it writes no flash at
   // all.** That section's mechanism was argued from the firmware and then measured twice with
@@ -490,7 +495,7 @@ async function main(): Promise<void> {
   // This is that commit: the drop touches three records in data memory and no flash gate, section
   // 246, so what the permission is protecting here is the **unit**, and that is exactly the check
   // worth keeping.
-  const dropOnly = process.argv.includes('--drop-only');
+  const dropOnly = cli.flag('drop-only');
   if (dropOnly && !invalidate) {
     fail('--drop-only and --no-invalidate ask for opposite things: the first sends only the drop '
       + 'and the second sends everything but');
@@ -498,7 +503,7 @@ async function main(): Promise<void> {
   // **The restart alone, section 282**, the other half of sending the two commands once each on the
   // Harmony 650 before any write depends on them. Same precondition as `--drop-only`: the remote
   // holds the file, read whole and compared, and nothing is erased.
-  const restartOnly = process.argv.includes('--restart-only');
+  const restartOnly = cli.flag('restart-only');
   if (restartOnly && (dropOnly || !restart)) {
     fail('--restart-only sends the restart and nothing else, so it cannot be combined with '
       + '--drop-only or --no-restart');
@@ -516,7 +521,7 @@ async function main(): Promise<void> {
 
   // The stamp, before every other check so that they all run on the bytes that will be written.
   // `stampForWrite` checks the file's own checksum first, since stamping recomputes it.
-  const asIs = process.argv.includes('--as-is') || dropOnly || restartOnly;
+  const asIs = cli.flag('as-is') || dropOnly || restartOnly;
   const previous = readdirSync(dirname(configPath))
     .filter((name) => name.startsWith(`${basename(configPath)}.write-`) && name.endsWith('.log'))
     .map((name) => join(dirname(configPath), name))

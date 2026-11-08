@@ -17,19 +17,15 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { applyEdits, introductionTour, parse, skipIntroductionTour } from '../src/index.ts';
 import { trailerChecksum } from '../src/internal.ts';
 import '../src/resources.node.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/skip-tour.ts --in <config> --out <file>',
+  values: ['in', 'out'],
+});
 
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-const input = argument('in') ?? fail('--in is the container to edit');
-const output = argument('out') ?? fail('--out is where the result goes');
+const input = cli.value('in') ?? fail('--in is the container to edit');
+const output = cli.value('out') ?? fail('--out is where the result goes');
 
 const container = parse(new Uint8Array(readFileSync(input)));
 const tour = introductionTour(container);

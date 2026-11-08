@@ -19,11 +19,12 @@
  *     node packages/usb/bin/read-file.ts --file /rf/deviceinfo [--product 0xc12b] [--device <path>]
  */
 import { INERT_PATHS, openFileBasedRemote, readFile } from '../src/filepipe.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-function arg(name: string): string | undefined {
-  const at = process.argv.indexOf(name);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: 'usage: node packages/usb/bin/read-file.ts --file /rf/deviceinfo [--product 0xc12b] [--device <path>]',
+  values: ['file', 'product', 'device'],
+});
 
 /** A hex and ASCII dump, sixteen bytes to a line, because a text file and a packed one look alike. */
 function dump(bytes: Uint8Array): string {
@@ -43,14 +44,14 @@ function isText(bytes: Uint8Array): boolean {
 }
 
 async function main(): Promise<void> {
-  const file = arg('--file');
+  const file = cli.value('file');
   if (file === undefined) {
     console.error('--file is required. Paths this script will open without the named door:');
     for (const path of INERT_PATHS) console.error(`  ${path}`);
     process.exit(2);
   }
-  const product = arg('--product');
-  const device = arg('--device');
+  const product = cli.value('product');
+  const device = cli.value('device');
 
   // Built by parts rather than with undefined members, because `exactOptionalPropertyTypes` makes
   // "absent" and "present and undefined" different types, and the selector means the first.

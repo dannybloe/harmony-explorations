@@ -6,7 +6,8 @@
   },
   // `todo.md` 7.3.6: the helpers the tests of several packages share, moved out of `packages/usb/test`, which
   // exported them through its package.json. It references `packages/usb`'s library project and not its tests,
-  // `packages/usb/test/tsconfig.json`, which reference this one in turn.
+  // `packages/usb/test/tsconfig.json`, which reference this one in turn. `packages/base` for the one byte comparison,
+  // `todo.md` 7.3.7.
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../lab" }, { "path": "../usb" }]
+  "references": [{ "path": "../base" }, { "path": "../lab" }, { "path": "../usb" }]
 }

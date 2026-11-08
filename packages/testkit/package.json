@@ -11,6 +11,7 @@
     "./surface": "./src/surface.ts"
   },
   "dependencies": {
+    "@harmony/base": "workspace:*",
     "@harmony/lab": "workspace:*",
     "@harmony/usb": "workspace:*"
   },

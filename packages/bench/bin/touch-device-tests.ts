@@ -19,6 +19,15 @@ import { answersWritten, commands, recordsOf, sessions } from '@harmony/usb/touc
 
 import { touch71Configuration } from '../src/touchbench.ts';
 import { TOUCH_8_1_SET, touch81Tests } from '../experiments/touchdevicetest.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/bench/bin/touch-device-tests.ts            print the steps and expectations, write nothing',
+    '       node packages/bench/bin/touch-device-tests.ts --write    write them to packages/bench/irtests/',
+  ].join('\n'),
+  flags: ['write'],
+});
 
 if (LAB === undefined || !existsSync(join(LAB, TOUCH_8_1_SET))) {
   process.stderr.write(`no lab, or no ${TOUCH_8_1_SET} in it\n`);
@@ -30,7 +39,7 @@ const configuration = touch71Configuration(set, harmonyTouch.documentsOfAnswers(
 const tests = touch81Tests(configuration);
 
 const directory = fileURLToPath(new URL('../irtests/', import.meta.url));
-const write = process.argv.includes('--write');
+const write = cli.flag('write');
 for (const { id, definition } of tests) {
   const expected = definition.steps.reduce((n, s) => n + (s.expect?.length ?? 0), 0);
   process.stdout.write(`${id}: ${definition.steps.length} steps, ${expected} expectations\n`);

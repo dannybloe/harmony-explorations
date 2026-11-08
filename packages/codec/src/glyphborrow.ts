@@ -64,6 +64,7 @@ import { characterMap, isBlank, type CharacterMap } from './text.ts';
 import { FONT_CODE_CEILING } from './fonttable.ts';
 import { relocate } from './relocate.ts';
 import { Writer } from './emit.ts';
+import { sameBytes } from './bytes.ts';
 
 /** A refusal, named so a caller can tell a borrow that cannot be proved from a bug. */
 export class GlyphBorrowError extends Error {}
@@ -165,8 +166,6 @@ function glyphsByCharacter(c: Container, map: CharacterMap, set: FontSet): Map<s
   }
   return out;
 }
-
-const sameBytes = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((v, k) => v === b[k]);
 
 /**
  * Whether each set of one configuration is the face of each set of another, by the glyphs both already draw, per

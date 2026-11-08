@@ -45,11 +45,17 @@ import {
 } from '../src/catalogueraw.ts';
 import { catalogueRules, rawCaptureLine, rawDerivedState, statedSha256 } from '../src/catalogueraw.node.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/catalogue-raw.ts [--no-pull] [--offline] [--force]',
+  flags: ['offline', 'no-pull', 'force'],
+});
 
 const RELEASES = 'https://api.github.com/repos/pickysysadmin/logitech-harmony-ir-archive/releases';
-const offline = process.argv.includes('--offline');
-const noPull = offline || process.argv.includes('--no-pull');
-const force = process.argv.includes('--force');
+const offline = cli.flag('offline');
+const noPull = offline || cli.flag('no-pull');
+const force = cli.flag('force');
 
 if (IR_ARCHIVE === undefined) {
   console.error('no infrared archive: clone logitech-harmony-ir-archive beside this repository, or set HARMONY_IR_ARCHIVE');

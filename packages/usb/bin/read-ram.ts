@@ -20,16 +20,16 @@
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 import { MISC_RAM, architectureFromVersion, readMiscRequest } from '../src/protocol.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
+const cli = commandLine({
+  usage: [
+    'usage: node packages/usb/bin/read-ram.ts --address 0x000 [--count 64] [--product 0xc111] [--path <path>]',
+    '         [--selector <n>] [--summary]',
+  ].join('\n'),
+  values: ['address', 'count', 'product', 'path', 'selector'],
+  flags: ['summary'],
+});
 
 function number(text: string | undefined, what: string): number | undefined {
   if (text === undefined) return undefined;
@@ -38,15 +38,15 @@ function number(text: string | undefined, what: string): number | undefined {
   return value;
 }
 
-const address = number(argument('address'), 'the address');
-const count = number(argument('count'), 'the count') ?? 64;
+const address = number(cli.value('address'), 'the address');
+const count = number(cli.value('count'), 'the count') ?? 64;
 if (address === undefined) {
   fail('usage: read-ram.ts --address 0x000 [--count 64] [--product 0xc111] [--summary]');
 }
 if (count <= 0 || count > 0x1000) fail(`a count of ${count} is outside what this tool will do`);
 
-const wanted = argument('product');
-const wantedPath = argument('path');
+const wanted = cli.value('product');
+const wantedPath = cli.value('path');
 const attached = await listHarmony();
 const candidates = attached.filter(
   (d) =>
@@ -100,7 +100,7 @@ try {
   // own client both name `0x06` as the RAM one and `0x07` as something else. On arch 12 and arch
   // 14 that naming is simply wrong about behaviour, but it is a reason to try `0x06` on an
   // architecture where `0x07` answers nothing. `docs/findings.md` section 90.
-  const selector = number(argument('selector'), 'the selector') ?? MISC_RAM;
+  const selector = number(cli.value('selector'), 'the selector') ?? MISC_RAM;
   const readOne = async (at: number): Promise<number> => {
     if (selector === MISC_RAM) return remote.readRam(at);
     const reply = await (
@@ -115,7 +115,7 @@ try {
   const data = new Uint8Array(count);
   for (let i = 0; i < count; i += 1) data[i] = await readOne(address + i);
 
-  if (process.argv.includes('--summary')) {
+  if (cli.flag('summary')) {
     const nonzero = [...data].filter((b) => b !== 0).length;
     const distinct = new Set(data).size;
     process.stdout.write(

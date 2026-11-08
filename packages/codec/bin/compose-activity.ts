@@ -89,32 +89,34 @@ import {
 } from '../src/build.ts';
 import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import '../src/resources.node.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/codec/bin/compose-activity.ts --in <config> --out <file> --label <label> --targets <variable=value,...>',
+    '         [--keys <scan:list,...>] [--pads <label:list,...>] [--roles volume=<group>,control=<group>]',
+    '         [--commands <scan:command,...>] [--icon-like <activity>] [--startup-like <activity>] [--keep-on <variable,...>]',
+    '         [--no-screen] [--leave-others-on]',
+  ].join('\n'),
+  values: ['in', 'out', 'label', 'targets', 'keys', 'icon-like', 'startup-like', 'pads', 'roles', 'commands', 'keep-on'],
+  flags: ['no-screen', 'leave-others-on'],
+});
 
 /** The erase block a Harmony One, 525 and 650 clear in one go, which is what a write is counted in. */
 const ERASE_BLOCK = 0x10000;
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-const input = argument('in') ?? fail('--in is the container to add to');
-const output = argument('out') ?? fail('--out is where the result goes');
-const label = argument('label') ?? fail('--label is what the menu row will say');
-const targetsArg = argument('targets')
+const input = cli.value('in') ?? fail('--in is the container to add to');
+const output = cli.value('out') ?? fail('--out is where the result goes');
+const label = cli.value('label') ?? fail('--label is what the menu row will say');
+const targetsArg = cli.value('targets')
   ?? fail('--targets is variable=value pairs, comma separated, the devices this activity sets up');
-const keysArg = argument('keys') ?? '';
+const keysArg = cli.value('keys') ?? '';
 // Which existing activity menu row's icon the new row wears, by its drawn label, so a television
 // activity gets the television's. Without it the first row's icon is copied, whatever it shows.
-const iconLike = argument('icon-like');
-const withScreen = !process.argv.includes('--no-screen');
-const startupLike = argument('startup-like');
-const padsArg = argument('pads') ?? '';
+const iconLike = cli.value('icon-like');
+const withScreen = !cli.flag('no-screen');
+const startupLike = cli.value('startup-like');
+const padsArg = cli.value('pads') ?? '';
 
 const targets = targetsArg.split(',').map((one) => {
   const [variable, value] = one.split('=');
@@ -136,8 +138,8 @@ const pads = padsArg === '' ? [] : padsArg.split(',').map((one) => {
 const before = parse(new Uint8Array(readFileSync(input)));
 
 // Section 323: the keypad from roles and the screen from commands, in place of the two lists above.
-const rolesArg = argument('roles');
-const commandsArg = argument('commands');
+const rolesArg = cli.value('roles');
+const commandsArg = cli.value('commands');
 if (rolesArg !== undefined && keys.length > 0) fail('--roles builds the keypad, so --keys is not also taken');
 if (commandsArg !== undefined && pads.length > 0) fail('--commands builds the screen, so --pads is not also taken');
 if (rolesArg !== undefined) {
@@ -156,9 +158,9 @@ if (commandsArg !== undefined) {
   })));
 }
 const named = new Set(targets.map((one) => one.variable));
-const keepOnArg = argument('keep-on');
+const keepOnArg = cli.value('keep-on');
 const keepOn = keepOnArg === undefined ? [] : keepOnArg.split(',').map(Number);
-const othersOff = process.argv.includes('--leave-others-on') ? [] : activityPowerTargets(
+const othersOff = cli.flag('leave-others-on') ? [] : activityPowerTargets(
   before, targets.filter((one) => one.value !== 0).map((one) => one.variable), keepOn,
 ).filter((one) => one.value === 0 && !named.has(one.variable));
 targets.push(...othersOff);

@@ -46,6 +46,7 @@
  */
 
 import { createHash } from 'node:crypto';
+import { sameBytes } from '@harmony/base/bytes';
 
 /** The internal page the block sits in. `0xFE` is a different page and maps program address zero. */
 export const IDENTITY_PAGE = 0xff;
@@ -239,7 +240,7 @@ export function sameUnit(a: Uint8Array, b: Uint8Array): boolean {
   }
   const left = unitDiscriminator(a);
   const right = unitDiscriminator(b);
-  return left.length === right.length && left.every((byte, i) => byte === right[i]);
+  return sameBytes(left, right);
 }
 
 // ---------------------------------------------------------------------------------------------------

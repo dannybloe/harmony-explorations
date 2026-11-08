@@ -40,19 +40,16 @@ import { readFlashWindow } from '@harmony/usb/internal';
 
 import { profileFor } from '../src/index.ts';
 import { fileRegion } from '../src/file.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/corpus/bin/read-region.ts --label <name> --address 0x820000 [--count 0x10000] [--product <id>] [--anywhere]',
+  values: ['label', 'address', 'count', 'product'],
+  flags: ['anywhere'],
+});
 
 /** Bytes per `READ_FLASH`, matching what the config reader uses. */
 const CHUNK = 0x4000;
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 function number(text: string | undefined, what: string): number | undefined {
   if (text === undefined) return undefined;
@@ -61,10 +58,10 @@ function number(text: string | undefined, what: string): number | undefined {
   return value;
 }
 
-const label = argument('label');
-const address = number(argument('address'), 'the address');
-const count = number(argument('count'), 'the count') ?? 0x10000;
-const anywhere = process.argv.includes('--anywhere');
+const label = cli.value('label');
+const address = number(cli.value('address'), 'the address');
+const count = number(cli.value('count'), 'the count') ?? 0x10000;
+const anywhere = cli.flag('anywhere');
 if (label === undefined || address === undefined) {
   fail('usage: read-region.ts --label <name> --address 0x820000 [--count 0x10000] '
     + '[--product 0xc121] [--anywhere]');
@@ -72,7 +69,7 @@ if (label === undefined || address === undefined) {
 if (count <= 0) fail(`a count of ${count} is not a read`);
 if (LAB === undefined) fail('no lab directory found; set HARMONY_LAB');
 
-const wanted = argument('product');
+const wanted = cli.value('product');
 const attached = await listHarmony();
 const candidates = wanted === undefined
   ? attached

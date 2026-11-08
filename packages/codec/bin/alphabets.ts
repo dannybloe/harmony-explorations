@@ -34,6 +34,12 @@ import { load } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { fontSets, glyphAt, shapeKey, isBlank, screenStrings, characterMap } from '../src/internal.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/alphabets.ts [--write]',
+  flags: ['write'],
+});
 
 /** Where an alphabet's shapes come from: a container, and what its codes mean. */
 interface Source {
@@ -314,7 +320,7 @@ const built = SEEDS.map((seed) => {
 });
 
 const text = render(built);
-if (process.argv.includes('--write')) {
+if (cli.flag('write')) {
   writeFileSync(OUT, text);
   console.log(`\nwrote ${OUT.pathname}`);
 } else {

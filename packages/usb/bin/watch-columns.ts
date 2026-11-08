@@ -18,22 +18,18 @@
  * `docs/findings.md` section 13.
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/usb/bin/watch-columns.ts [--product 0xc122]',
+  values: ['product'],
+});
 
 /** `PORTB`. The column lines are its top nibble; the low nibble belongs to something else. */
 const PORTB = 0x0f81;
 const COLUMN_MASK = 0xf0;
 const FIRST_COLUMN_BIT = 4;
 const POLL_INTERVAL_MS = 15;
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 /** Which columns are active, as 1 to 4. Active low, so a clear bit is a pressed column. */
 function columnsOf(portb: number): number[] {
@@ -44,7 +40,7 @@ function columnsOf(portb: number): number[] {
   return out;
 }
 
-const wanted = argument('product');
+const wanted = cli.value('product');
 const attached = await listHarmony();
 const candidates =
   wanted === undefined

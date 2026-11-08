@@ -47,6 +47,7 @@
  *
  * Nothing in this file has been sent to a remote.
  */
+import { sameBytes } from '@harmony/base/bytes';
 import { authoriseReport } from './authorise.ts';
 import {
   DATA_PACKET_PAYLOAD,
@@ -266,10 +267,6 @@ export function withEndMarker(asRead: Uint8Array): Uint8Array {
   return whole;
 }
 
-function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
-  return a.length === b.length && a.every((byte, i) => byte === b[i]);
-}
-
 /** Whether these bytes, as read off a remote, are a whole configuration once the marker is back. */
 function holdsAConfiguration(asRead: Uint8Array): boolean {
   if (asRead.length === 0) return false;
@@ -323,8 +320,8 @@ export function judgeCurrentContent(
     }
     backupAsRead = backup.subarray(0, backup.length - FILE_FAMILY_END_MARKER.length);
   }
-  if (equalBytes(current, backupAsRead)) return 'the backup';
-  if (equalBytes(current, container.subarray(0, container.length - FILE_FAMILY_END_MARKER.length))) {
+  if (sameBytes(current, backupAsRead)) return 'the backup';
+  if (sameBytes(current, container.subarray(0, container.length - FILE_FAMILY_END_MARKER.length))) {
     return 'this configuration';
   }
   if (!holdsAConfiguration(current)) return 'no configuration';

@@ -18,6 +18,15 @@ import {
   listTunnelledRemotes,
   skinId,
 } from '../src/index.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+commandLine({
+  usage: [
+    'usage: node packages/usb/bin/list-remotes.ts',
+    '',
+    'It takes no options.',
+  ].join('\n'),
+});
 
 function describe(remote: FoundRemote): void {
   console.log(

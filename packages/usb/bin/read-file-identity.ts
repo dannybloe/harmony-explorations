@@ -68,23 +68,23 @@ import {
 import { identifiesAUnit, unitIdentityFromSerial, unitIdentityText } from '../src/identity.ts';
 import { TOUCH_REQUEST_ARCHITECTURES, TOUCH_REQUEST_SKINS } from '../src/rails.ts';
 import { TransportError } from '../src/transport.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function arg(name: string): string | undefined {
-  const at = process.argv.indexOf(name);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
+const cli = commandLine({
+  usage: [
+    'usage: node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--path <path>] [--raw]',
+    '       node packages/usb/bin/read-file-identity.ts --product 0xc124 --record h350 [--force]',
+  ].join('\n'),
+  values: ['product', 'path', 'record'],
+  flags: ['raw', 'force'],
+});
 
 async function main(): Promise<void> {
-  const product = arg('--product');
-  const path = arg('--path');
-  const raw = process.argv.includes('--raw');
-  const record = arg('--record');
-  const force = process.argv.includes('--force');
+  const product = cli.value('product');
+  const path = cli.value('path');
+  const raw = cli.flag('raw');
+  const record = cli.value('record');
+  const force = cli.flag('force');
   if (record !== undefined && !/^[a-z0-9_]+$/.test(record)) {
     fail(`--record takes a label of lower case letters, digits and underscores, not ${record}`);
   }

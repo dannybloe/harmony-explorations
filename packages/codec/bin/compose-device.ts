@@ -106,22 +106,25 @@ import {
 import { type CatalogueDeviceRequest, type ComposedCatalogueDevice, composeCatalogueDevices } from '../src/build.ts';
 import { coverage, roundTrip, trailerAgrees, worstQueueRun, ACTION_QUEUE_INSTRUCTIONS } from '../src/internal.ts';
 import { irFrame } from '../src/irframe.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/codec/bin/compose-device.ts --in <config> --out <file> --manufacturer <folder> --model <device>',
+    '         --label <label> (--commands <a,b,...> [--labels <a,b,...>] | --full) [--title <title>] [--icon-like <device>]',
+    '         [--keys-like <device>] [--power-on-delay <tenths>] [--inter-device-delay <tenths>] [--inputs]',
+    '         [--no-power-steps] [--no-power-off]',
+    '       node packages/codec/bin/compose-device.ts --in <config> --out <file> --catalogue <devices.json>',
+  ].join('\n'),
+  values: ['in', 'out', 'commands', 'labels', 'title', 'icon-like', 'keys-like', 'manufacturer', 'model', 'label', 'catalogue', 'power-on-delay', 'inter-device-delay'],
+  flags: ['full', 'no-power-steps', 'no-power-off', 'inputs', 'manufacturer', 'model', 'label', 'title', 'commands', 'labels', 'icon-like', 'keys-like', 'power-on-delay', 'inter-device-delay'],
+});
 
 /** The erase block a Harmony One clears in one go, which is what a write is counted in. */
 const ERASE_BLOCK = 0x10000;
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-const input = argument('in') ?? fail('--in is the container to add to');
-const output = argument('out') ?? fail('--out is where the result goes');
+const input = cli.value('in') ?? fail('--in is the container to add to');
+const output = cli.value('out') ?? fail('--out is where the result goes');
 if (IR_ARCHIVE === undefined) {
   fail('no infrared archive: clone logitech-harmony-ir-archive beside this repository, '
     + 'or set HARMONY_IR_ARCHIVE');
@@ -131,12 +134,12 @@ const archive: string = IR_ARCHIVE;
 /** The flags that describe one device, which `--catalogue` replaces with a file of them. */
 const DEVICE_FLAGS = ['manufacturer', 'model', 'label', 'title', 'commands', 'labels', 'icon-like', 'keys-like',
   'power-on-delay', 'inter-device-delay'] as const;
-const DEVICE_SWITCHES = ['--full', '--inputs', '--no-power-steps', '--no-power-off'] as const;
+const DEVICE_SWITCHES = ['full', 'inputs', 'no-power-steps', 'no-power-off'] as const;
 
 // Arch 14 only: the two delays in tenths of a second, given on the command line to override the
 // catalogue's.
-const tenths = (name: string): number | undefined => {
-  const given = argument(name);
+const tenths = (name: 'power-on-delay' | 'inter-device-delay'): number | undefined => {
+  const given = cli.value(name);
   if (given === undefined) return undefined;
   const value = Number(given);
   return Number.isInteger(value) ? value : fail(`--${name} is a whole number of tenths of a second`);
@@ -144,41 +147,43 @@ const tenths = (name: string): number | undefined => {
 
 /** The one device the flags describe, as the library takes it. */
 function requestFromFlags(): CatalogueDeviceRequest {
-  const full = process.argv.includes('--full');
-  if (full && (argument('commands') !== undefined || argument('labels') !== undefined)) {
+  const full = cli.flag('full');
+  if (full && (cli.value('commands') !== undefined || cli.value('labels') !== undefined)) {
     fail('--full takes every command the catalogue holds, so --commands and --labels are not given');
   }
-  const commands = argument('commands')?.split(',');
+  const commands = cli.value('commands')?.split(',');
   if (!full && commands === undefined) fail('--commands is a comma separated list, or --full for every command');
-  const labels = argument('labels')?.split(',');
+  const labels = cli.value('labels')?.split(',');
   const powerOnDelay = tenths('power-on-delay');
   const interDeviceDelay = tenths('inter-device-delay');
-  const title = argument('title');
-  const iconLike = argument('icon-like');
-  const keysLike = argument('keys-like');
+  const title = cli.value('title');
+  const iconLike = cli.value('icon-like');
+  const keysLike = cli.value('keys-like');
   return {
-    manufacturer: argument('manufacturer') ?? fail('--manufacturer names the catalogue folder'),
-    model: argument('model') ?? fail('--model names the catalogue device'),
-    label: argument('label') ?? fail('--label is what the config will call it'),
+    manufacturer: cli.value('manufacturer') ?? fail('--manufacturer names the catalogue folder'),
+    model: cli.value('model') ?? fail('--model names the catalogue device'),
+    label: cli.value('label') ?? fail('--label is what the config will call it'),
     ...(title === undefined ? {} : { title }),
     ...(full ? { full } : {}),
     ...(commands === undefined ? {} : { commands }),
     ...(labels === undefined ? {} : { labels }),
     ...(iconLike === undefined ? {} : { iconLike }),
     ...(keysLike === undefined ? {} : { keysLike }),
-    ...(process.argv.includes('--no-power-steps') ? { powerSteps: false } : {}),
-    ...(process.argv.includes('--no-power-off') ? { powerOff: false } : {}),
-    ...(process.argv.includes('--inputs') ? { inputs: true } : {}),
+    ...(cli.flag('no-power-steps') ? { powerSteps: false } : {}),
+    ...(cli.flag('no-power-off') ? { powerOff: false } : {}),
+    ...(cli.flag('inputs') ? { inputs: true } : {}),
     ...(powerOnDelay === undefined ? {} : { powerOnDelay }),
     ...(interDeviceDelay === undefined ? {} : { interDeviceDelay }),
   };
 }
 
-const listFile = argument('catalogue');
+const listFile = cli.value('catalogue');
 let requests: CatalogueDeviceRequest[];
 if (listFile !== undefined) {
-  const given = [...DEVICE_FLAGS.map((one) => `--${one}`), ...DEVICE_SWITCHES]
-    .filter((flag) => process.argv.includes(flag));
+  const given = [
+    ...DEVICE_FLAGS.filter((one) => cli.flag(one)),
+    ...DEVICE_SWITCHES.filter((one) => cli.flag(one)),
+  ].map((one) => `--${one}`);
   if (given.length > 0) fail(`--catalogue names every device in its file, so ${given.join(', ')} is not given`);
   const parsed: unknown = JSON.parse(readFileSync(listFile, 'utf8'));
   if (!Array.isArray(parsed) || parsed.length === 0) fail('--catalogue is a JSON array of devices');
@@ -212,7 +217,7 @@ try {
     model === undefined ? {} : { maxDevices: model.maxDevices });
 } catch (error) {
   if (!(error instanceof ComposeError)) throw error;
-  const steps = process.argv.includes('--no-power-steps') ? '' : '. --no-power-steps sends the first command both ways';
+  const steps = cli.flag('no-power-steps') ? '' : '. --no-power-steps sends the first command both ways';
   fail(`${error.message}${/power/i.test(error.message) ? steps : ''}`);
 }
 

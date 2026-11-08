@@ -32,6 +32,12 @@
  * watching a screen.
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/usb/bin/session-end-control.ts [--from-charger]',
+  flags: ['from-charger'],
+});
 
 const CONFIG_BASE = 0x040000;
 const WINDOW = 32;
@@ -50,11 +56,6 @@ const PRODUCT_ONE = 0xc121;
  */
 const REPLUG_WAIT_MS = 120_000;
 const POLL_MS = 1000;
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 function hex(data: Uint8Array): string {
   return [...data].map((b) => b.toString(16).padStart(2, '0')).join(' ');
@@ -76,7 +77,7 @@ async function waitUntil(wanted: boolean, limitMs: number): Promise<number | und
   return undefined;
 }
 
-const FROM_CHARGER = process.argv.includes('--from-charger');
+const FROM_CHARGER = cli.flag('from-charger');
 /** Long, because it covers charging the remote and carrying it to the desk. */
 const CHARGER_WAIT_MS = 300_000;
 

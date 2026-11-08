@@ -49,6 +49,7 @@ import { layOutContainer } from '../../frame.ts';
 import type { Container } from '../../gspm.ts';
 import { archSlot } from '../../gspm.ts';
 import { pictureRows } from '../../pictures.ts';
+import { sameBytes } from '../../bytes.ts';
 import {
   BITMAP_ENCODED, BITMAP_END, BITMAP_HEADER, BITMAP_RAW, SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, bitmapAt, encodeBitmap, pictureReference, reachablePrograms, screenProgram,
 } from '../../screen.ts';
@@ -173,7 +174,7 @@ export function ourPictureName(bytes: Uint8Array, icons: Readonly<Record<OurPict
   const colours = pictureColours(bytes);
   const [first, second] = colours;
   if (first === undefined) return undefined;
-  const same = (built: Uint8Array): boolean => built.length === bytes.length && built.every((value, k) => value === bytes[k]);
+  const same = (built: Uint8Array): boolean => sameBytes(built, bytes);
   if (colours.length === 1 && bytes[0] === BITMAP_RAW) {
     if (same(stateBackgroundBytes(first))) return 'state background';
     if (same(statePatchBytes(first))) return 'state corner patch';
@@ -548,7 +549,7 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
     if (b === undefined || b.length === undefined || off === undefined) return false;
     const expected = flat(width, height, colour);
     const bytes = c.blob.subarray(off, off + b.length);
-    return bytes.length === expected.length && bytes.every((value, k) => value === expected[k]);
+    return sameBytes(bytes, expected);
   };
   for (const [mode, state] of states) {
     counts[state] += 1;

@@ -77,7 +77,7 @@
  */
 import { type Recipe, recipeTarget } from '../../recipe/recipe.ts';
 import { AssemblyError, type AssembleOptions, type AssemblyStep, checkComposed, composeSetupParts } from '../../shared/setup.ts';
-import { u16 } from '../../bytes.ts';
+import { sameBytes, u16 } from '../../bytes.ts';
 import { archSlot } from '../../gspm.ts';
 import { ARCH_RECORD_LENGTH, CLOCK_SECTION_LENGTH, END_MARKER_LENGTH, TRAILER_CHECKSUM_OFFSET, parse, type Container } from '../../gspm.ts';
 import { claims } from '../../coverage.ts';
@@ -412,10 +412,6 @@ function modeZeroOf(wiring: WiringSpec): Uint8Array {
   const variable = wiring.variables.lowBattery;
   if (variable === undefined) throw new AssemblyError('the wiring names no low battery variable for mode 0');
   return modeZeroKeyList(wiring.model, { variable });
-}
-
-function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
-  return a.length === b.length && a.every((x, k) => x === b[k]);
 }
 
 /**

@@ -60,6 +60,17 @@ import {
   requestReadReport,
   requestWriteChunkReport,
 } from '../src/touchsession.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/usb/bin/touch-recover.ts --step abort|delete|reboot [--backup <lab folder>]',
+    '       HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 HARMONY_TOUCH_RECOVERY=1 \\',
+    '         node packages/usb/bin/touch-recover.ts --step abort|delete|reboot [--backup <lab folder>] --commit',
+  ].join('\n'),
+  values: ['step', 'backup'],
+  flags: ['commit'],
+});
 
 /** One step: its request line, what it does, and what each answer it can give means. */
 interface Step {
@@ -112,16 +123,6 @@ const STEPS: Readonly<Record<'abort' | 'delete' | 'reboot', Step>> = {
 
 /** The lab record the request channel compares against. */
 const UNIT = 'touch';
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 const hex = (report: Uint8Array, length = 24): string =>
   [...report.subarray(0, length)].map((b) => b.toString(16).padStart(2, '0')).join(' ');
@@ -190,13 +191,13 @@ function statusOf(text: string): string | undefined {
 }
 
 async function main(): Promise<void> {
-  const which = argument('step');
+  const which = cli.value('step');
   if (which !== 'abort' && which !== 'delete' && which !== 'reboot') {
     fail(`--step takes ${Object.keys(STEPS).join(', ')}, one per run, in that order`);
   }
   const step = STEPS[which];
-  const commit = process.argv.includes('--commit');
-  const backup = argument('backup');
+  const commit = cli.flag('commit');
+  const backup = cli.value('backup');
 
   // The delete's backup first, before the flags and before anything is opened, so the refusal a person
   // meets for a missing backup is the same in a dry run and a commit.

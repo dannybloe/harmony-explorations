@@ -19,6 +19,12 @@ import { parse } from '../src/index.ts';
 import { characterMap, drawnCodes, screenStrings, textCoverage, stateVariables } from '../src/internal.ts';
 import { CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/text.ts [--detail] [--names]',
+  flags: ['detail', 'names'],
+});
 
 // The byte accounting's stated population, plus the two arch 8 configs of 12 August 2026. They are
 // here and not there on purpose: their text is what section 124 read, and admitting them to the byte
@@ -27,8 +33,8 @@ import '../src/resources.node.ts';
 // list that defines them, so this cannot quietly drift away from `CONTAINERS`.
 const SAMPLES = [...CONTAINERS, 'arch8_config_880', 'arch8_config_885'];
 
-const detail = process.argv.includes('--detail');
-const names = process.argv.includes('--names');
+const detail = cli.flag('detail');
+const names = cli.flag('names');
 
 if (LAB === undefined) {
   console.log('no lab directory, so there is nothing to read');

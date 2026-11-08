@@ -91,6 +91,7 @@ import {
   startUpGroup,
 } from '../src/build.ts';
 import { taggedList } from '../src/internal.ts';
+import { sameBytes } from '../src/bytes.ts';
 
 /** The five bench fixtures, by the lab's names. */
 const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
@@ -138,7 +139,8 @@ const listBytes = (c: Container, index: number): Uint8Array => {
 };
 const calls = (c: Container, index: number): number[] => opsAt(c, listAt(c, index)).filter((one) => one.opcode === CALL).map((one) => one.operand);
 const sectionAt = (c: Container, slot: number): number => c.blobOffsetOf(c.sections[slot]!.address)!;
-const same = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((x, k) => x === b[k]);
+// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+const same = sameBytes;
 
 /** A piece's bytes with its address fields filled: an absolute address as stated, a piece by where `placed` puts it. */
 function resolved(piece: ContainerPiece, placed: (to: ContainerPiece) => number = () => { throw new Error('no piece is placed'); }): Uint8Array {

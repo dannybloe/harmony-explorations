@@ -40,16 +40,12 @@ import { assertFileFamilyContainer } from '@harmony/usb/rails';
 import { irGroups } from '../src/index.ts';
 import { buildEmptyNoScreenConfiguration } from '../src/build.ts';
 import '../src/resources.node.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/empty-no-screen.ts --out <file> [--skin 104] [--built-at YYYY-MM-DDTHH:MM:SS]',
+  values: ['out', 'skin', 'built-at'],
+});
 
 /** The moment of running in local time, the spelling base slot 3 takes, as `empty-one.ts` stamps the Harmony One's. */
 function now(): string {
@@ -58,10 +54,10 @@ function now(): string {
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}T${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
 }
 
-const output = argument('out') ?? fail('--out <file> is required');
-const skin = Number(argument('skin') ?? '104');
+const output = cli.value('out') ?? fail('--out <file> is required');
+const skin = Number(cli.value('skin') ?? '104');
 if (!Number.isInteger(skin)) fail('--skin is a number, 104 for a Harmony 350 or 79 for a European Harmony 300');
-const builtAt = argument('built-at') ?? now();
+const builtAt = cli.value('built-at') ?? now();
 
 const built = buildEmptyNoScreenConfiguration({ skin, builtAt });
 const c = built.container;

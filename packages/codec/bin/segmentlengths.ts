@@ -12,6 +12,12 @@ import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
 import { segmentLengthsModule } from '../src/archive.node.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/segmentlengths.ts [--write]',
+  flags: ['write'],
+});
 
 if (IR_ARCHIVE === undefined) {
   console.error('no infrared archive checkout; clone logitech-harmony-ir-archive alongside or set HARMONY_IR_ARCHIVE');
@@ -21,7 +27,7 @@ const target = join(import.meta.dirname, '..', 'src', 'segmentlengths.ts');
 const want = segmentLengthsModule(IR_ARCHIVE);
 let have = '';
 try { have = readFileSync(target, 'utf8'); } catch { /* absent until the first --write */ }
-if (process.argv.includes('--write')) {
+if (cli.flag('write')) {
   writeFileSync(target, want);
   console.log(`wrote ${target}`);
 } else if (have === want) {

@@ -131,6 +131,7 @@ import { stateRecords, stateVariables, taggedList } from '../src/internal.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { allLists, maps, records, recordKey, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
+import { sameBytes } from '../src/bytes.ts';
 
 const needsArchive = needing(skipWithoutIrArchive());
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
@@ -212,7 +213,8 @@ function stateRequest(c: Container): NoScreenStateDevice[] {
   });
 }
 
-const same = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((x, k) => x === b[k]);
+// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+const same = sameBytes;
 
 test('the whole test setup builds with no Logitech file: every device, Watch TV with its flag and inputs, and the favourites, and passes the writer\'s checks',
   needsArchive, () => {

@@ -28,14 +28,18 @@
 import { HarmonyRemote, listHarmony, openHarmony, unitIdentityFromText, unitIdentityText } from '../src/index.ts';
 import { assertUnitIsPermitted, WRITES_ENABLED } from '../src/rails.ts';
 import { unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+commandLine({
+  usage: [
+    'usage: HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts',
+    '',
+    'It takes no options.',
+  ].join('\n'),
+});
 
 const CONFIG_BASE = 0x040000;
 const WINDOW = 32;
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
 
 function hex(data: Uint8Array): string {
   return [...data].map((b) => b.toString(16).padStart(2, '0')).join(' ');

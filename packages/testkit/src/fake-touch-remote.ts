@@ -36,6 +36,7 @@ import {
   requestedPath,
   type Transport,
 } from '@harmony/usb/internal';
+import { sameBytes } from '@harmony/base/bytes';
 import { TOUCH_ANNOUNCEMENT, TOUCH_READ_REQUESTS, TOUCH_SYNC_REQUESTS } from '@harmony/usb/rails';
 import { commands, payload, strings, type Command } from '@harmony/usb/touchrecording';
 import { records } from './touch-recording.ts';
@@ -51,10 +52,6 @@ function padded(bytes: readonly number[]): Uint8Array {
 
 function be32(value: number): number[] {
   return [(value >>> 24) & 0xff, (value >>> 16) & 0xff, (value >>> 8) & 0xff, value & 0xff];
-}
-
-function same(a: Uint8Array, b: Uint8Array): boolean {
-  return a.length === b.length && a.every((x, i) => x === b[i]);
 }
 
 export interface FakeTouchRemoteOptions {
@@ -120,7 +117,7 @@ export class FakeTouchRemote implements Transport {
   private replayOne(report: Uint8Array): void {
     const recorded = this.options.replay ?? [];
     const expected = recorded[this.command]?.request[this.report];
-    if (expected === undefined || !same(expected, report)) {
+    if (expected === undefined || !sameBytes(expected, report)) {
       this.mismatch ??= `command ${this.command} report ${this.report}: sent `
         + `${Buffer.from(report.subarray(0, 12)).toString('hex')}, recorded `
         + `${expected === undefined ? 'nothing' : Buffer.from(expected.subarray(0, 12)).toString('hex')}`;

@@ -55,6 +55,12 @@ import {
 import { blockOfStatedCode, statedCodeOfDefinition } from '../src/internal.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/composecensus.ts [--families]',
+  flags: ['families'],
+});
 
 const root = IR_ARCHIVE;
 if (root === undefined) {
@@ -337,7 +343,7 @@ console.log(`\ncodes the family's name cannot read, section 359: ${unnamed} comm
   + `and ${unnamedWhole} every one`);
 for (const [why, n] of [...unnamedWhy].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(7)}  ${why}`);
 // `--families` lists them one by one: commands the name cannot read, and how many of those now write.
-if (process.argv.includes('--families')) {
+if (cli.flag('families')) {
   for (const [family, row] of [...unnamedFamilies].sort((a, b) => b[1].commands - a[1].commands)) {
     console.log(`    ${String(row.written).padStart(6)} of ${String(row.commands).padStart(6)}  ${family}`);
   }

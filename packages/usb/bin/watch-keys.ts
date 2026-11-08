@@ -22,6 +22,7 @@
  */
 import { HarmonyRemote, listHarmony, openHarmony, skinId } from '@harmony/usb';
 import { ARCH_8_PRODUCT, WATCH, WATCH_BY_SKIN, type Watch } from '@harmony/base/keys';
+import { commandLine, fail } from '@harmony/lab/cli';
 
 // The tables of addresses lived here until the key reader page needed them too. They are in
 // `packages/base/src/keys.ts` now, which imports nothing so that a browser can load it, and this script
@@ -43,18 +44,12 @@ export function defaultWatch(productId: number, release: number | undefined): Wa
 /** Health check: a byte whose value the firmware fixes, so a wrong answer is visible. */
 const POLL_INTERVAL_MS = 25;
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
 async function main(): Promise<void> {
-  const wanted = argument('product');
+  const cli = commandLine({
+    usage: 'usage: node packages/usb/bin/watch-keys.ts [--product 0xc122] [--address 0x2fb,0x202] [--mask 0xf3]',
+    values: ['product', 'address', 'mask'],
+  });
+  const wanted = cli.value('product');
   const attached = await listHarmony();
   const candidates =
     wanted === undefined
@@ -69,7 +64,7 @@ async function main(): Promise<void> {
 
   const found = candidates[0] as (typeof attached)[number];
   const known = defaultWatch(found.productId, found.release);
-  const override = argument('address');
+  const override = cli.value('address');
   const addresses =
     override === undefined
       ? known?.addresses
@@ -83,7 +78,7 @@ async function main(): Promise<void> {
   // Watching a port rather than a variable means watching a byte with unrelated traffic in it: the
   // Harmony 600 and the One both toggle PORTB bit 2 independently of the keypad, which doubles the
   // line count and makes a press easy to miscount. A mask keeps the bits that are being studied.
-  const maskArgument = argument('mask');
+  const maskArgument = cli.value('mask');
   const mask = maskArgument === undefined ? 0xff : Number.parseInt(maskArgument, 16);
 
   const remote = new HarmonyRemote(await openHarmony({ productId: found.productId }), {

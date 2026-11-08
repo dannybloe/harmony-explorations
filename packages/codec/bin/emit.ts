@@ -24,13 +24,15 @@ import { emit, roundTrip } from '../src/internal.ts';
 import type { Container } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const detail = process.argv.includes('--detail');
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/emit.ts [--file <config>] [--detail]',
+  values: ['file'],
+  flags: ['detail'],
+});
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const detail = cli.flag('detail');
 
 function show(label: string, c: Container): void {
   const result = roundTrip(c);
@@ -49,7 +51,7 @@ function show(label: string, c: Container): void {
   process.stdout.write('\n');
 }
 
-const file = argument('file');
+const file = cli.value('file');
 if (file !== undefined) {
   const data = new Uint8Array(readFileSync(file));
   let blob: Uint8Array;

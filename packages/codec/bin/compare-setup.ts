@@ -18,11 +18,14 @@ import { load } from '@harmony/lab';
 import { parse} from '../src/index.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const argument = (name: string): string | undefined => {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-};
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/compare-setup.ts --a <lab name or file> --b <lab name or file> [--records] [--menu-order]',
+  values: ['a', 'b'],
+  flags: ['menu-order', 'records'],
+});
+
 const open = (name: string | undefined): Uint8Array => {
   if (name === undefined) throw new Error('--a and --b name a lab fixture or a file');
   if (existsSync(name)) return new Uint8Array(readFileSync(name));
@@ -31,9 +34,9 @@ const open = (name: string | undefined): Uint8Array => {
   return blob;
 };
 
-const a = setupView(parse(open(argument('a'))));
-const b = setupView(parse(open(argument('b'))));
-const menuOrder = process.argv.includes('--menu-order');
+const a = setupView(parse(open(cli.value('a'))));
+const b = setupView(parse(open(cli.value('b'))));
+const menuOrder = cli.flag('menu-order');
 const differences = compareViews(a, b, { menuOrder });
 console.log(`a: ${a.size} slots, b: ${b.size} slots, ${differences.length} differences` +
   (menuOrder ? '' : ', the activity menu compared by which activities it holds'));
@@ -41,7 +44,7 @@ const kinds = ['only in a', 'only in b', 'label', 'frames', 'records'] as const;
 for (const kind of kinds) {
   const of = differences.filter((one) => one.kind === kind);
   console.log(`\n${kind}: ${of.length}`);
-  if (kind === 'records' && !process.argv.includes('--records')) continue;
+  if (kind === 'records' && !cli.flag('records')) continue;
   for (const one of of) {
     const show = (item: typeof one.a): string => item === undefined ? '' :
       `${item.label === undefined ? '' : `"${item.label}" `}${item.frames.join(', ') || 'sends nothing'}`;

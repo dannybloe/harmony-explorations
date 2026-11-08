@@ -31,37 +31,31 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { applyEdits, deviceDelays, devices, parse, setPowerOnDelay } from '../src/index.ts';
 import { setPowerOnDelayVariable, trailerChecksum } from '../src/internal.ts';
 import '../src/resources.node.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-if (process.argv.includes('--help') || process.argv.length <= 2) {
-  process.stdout.write([
+const cli = commandLine({
+  usage: [
     'usage: node packages/codec/bin/set-delay.ts --in <config> --group <n> --tenths <t> --out <file>',
     '',
     'Writes <config> with the power on delay of the device in infrared group <n> set to <t> tenths of a second.',
     'It changes every copy of that delay a key reaches, and prints each one:',
-    '  Harmony One, 525: the 0x7C in the device\'s power on list, up to 100 tenths.',
-    '  Harmony 300, 350: that 0x7C and, for a device with one power code for on and off, Watch TV\'s own wait',
+    "  Harmony One, 525: the 0x7C in the device's power on list, up to 100 tenths.",
+    "  Harmony 300, 350: that 0x7C and, for a device with one power code for on and off, Watch TV's own wait",
     '    after that code; a device with separate codes is switched through its power variable, one copy.',
     '  Harmony 600, 650, 700: the stored delay setting, up to 450 tenths.',
     'Nothing is written to a remote; the build timestamp is not stamped.',
     '',
-  ].join('\n'));
-  process.exit(0);
-}
+  ].join('\n'),
+  values: ['in', 'out', 'group', 'tenths'],
+});
 
-const input = argument('in') ?? fail('--in is the container to edit');
-const output = argument('out') ?? fail('--out is where the result goes');
-const group = Number(argument('group') ?? fail('--group is the device\'s infrared group'));
-const tenths = Number(argument('tenths') ?? fail('--tenths is the delay, in tenths of a second'));
+// Given nothing, it says how it is used, as `--help` does.
+if (cli.words.length === 0) cli.help();
+
+const input = cli.value('in') ?? fail('--in is the container to edit');
+const output = cli.value('out') ?? fail('--out is where the result goes');
+const group = Number(cli.value('group') ?? fail('--group is the device\'s infrared group'));
+const tenths = Number(cli.value('tenths') ?? fail('--tenths is the delay, in tenths of a second'));
 
 const container = parse(new Uint8Array(readFileSync(input)));
 const named = new Map(devices(container).map((one) => [one.group, one.name ?? '?']));

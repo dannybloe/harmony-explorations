@@ -57,25 +57,22 @@ import {
   unitIdentityText,
 } from '../src/index.ts';
 import { VERSION_FIELD_NAMES, readVersion } from '../src/protocol.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: 'usage: node packages/usb/bin/read-identity.ts [--product 0xc121] [--path <path>] [--record <label>] [--force]',
+  values: ['record', 'product', 'path'],
+  flags: ['force'],
+});
 
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-const record = argument('record');
-const force = process.argv.includes('--force');
+const record = cli.value('record');
+const force = cli.flag('force');
 if (record !== undefined && !/^[a-z0-9_]+$/.test(record)) {
   fail(`--record takes a label of lower case letters, digits and underscores, not ${record}`);
 }
 
-const wanted = argument('product');
-const wantedPath = argument('path');
+const wanted = cli.value('product');
+const wantedPath = cli.value('path');
 const attached = await listHarmony();
 const candidates = attached.filter(
   (d) =>

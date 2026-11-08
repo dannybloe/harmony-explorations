@@ -21,9 +21,16 @@ import {
   monitorLogPath,
   runFilePath,
 } from '../src/internal.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const at = process.argv.indexOf('--port');
-const port = at < 0 ? DEFAULT_PORT : Number(process.argv[at + 1]);
+const cli = commandLine({
+  usage: 'usage: node packages/bench/bin/bench.ts [--port 8731]',
+  values: ['port'],
+  flags: ['port'],
+});
+
+// `--port` with nothing after it is NaN rather than the default, as it was before `todo.md` 7.3.7.
+const port = cli.flag('port') ? Number(cli.value('port')) : DEFAULT_PORT;
 
 // The infrared monitor's code book is built on first use, since it parses every bench remote's
 // configuration, and its catalogue names follow straight after, which is a full pass over the archive

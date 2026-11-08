@@ -18,22 +18,18 @@
 import { require_ } from '@harmony/lab';
 import { HarmonyRemote, delaySlots, latestSettings, listHarmony, openHarmony } from '../src/index.ts';
 import { DELAY_SETTINGS, SETTING_0X80 } from '../src/internal.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
+const cli = commandLine({
+  usage: 'usage: node packages/usb/bin/read-settings.ts [--product 0xc122] [--path <path>] [--compare <lab image>]',
+  values: ['product', 'path', 'compare'],
+});
 
 const hex = (n: number, width = 2) => `0x${n.toString(16).padStart(width, '0')}`;
 
-const wanted = argument('product');
-const wantedPath = argument('path');
-const compare = argument('compare');
+const wanted = cli.value('product');
+const wantedPath = cli.value('path');
+const compare = cli.value('compare');
 // Loaded before the remote is opened, so a wrong lab name costs nothing on the cable.
 const dump = compare === undefined ? undefined : latestSettings(require_(compare));
 

@@ -63,27 +63,38 @@ import {
   HarvestRefusal, PROTECTED_RECORDS, addDeviceOperation, addRefusal, deviceName, operationBag,
   readZip, splitBatch, type HarvestDevice,
 } from '../src/harvest.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-function flag(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
+const cli = commandLine({
+  usage: [
+    'usage: node packages/corpus/bin/harvest.ts --record <record> --model <model> --label <label>',
+    '         --device <manufacturer/file.json>... [--devices list.json] [--account 2] [--batch 15] [--pause 30]',
+    '         [--empty-record] [--skip-unresolved] [--commit]',
+  ].join('\n'),
+  values: ['device', 'account', 'batch', 'pause', 'devices', 'record', 'model', 'label'],
+  flags: ['commit', 'empty-record', 'skip-unresolved'],
+});
+
+/**
+ * Every `--device`, as `cli.values` reads them, and an empty one for a `--device` with nothing after it, which the
+ * check below then refuses: what this script's own reader did before `todo.md` 7.3.7.
+ */
+function devicesGiven(): string[] {
+  return cli.argv.at(-1) === '--device' ? [...cli.values('device'), ''] : cli.values('device');
 }
-function flags(name: string): string[] {
-  return process.argv.flatMap((arg, i) => (arg === `--${name}` ? [process.argv[i + 1] ?? ''] : []));
-}
-function required(name: string): string {
-  const value = flag(name);
+function required(name: Parameters<typeof cli.value>[0]): string {
+  const value = cli.value(name);
   if (value === undefined) throw new HarvestRefusal(`--${name} is required`);
   return value;
 }
 
-const commit = process.argv.includes('--commit');
-const selector = flag('account') ?? '2';
+const commit = cli.flag('commit');
+const selector = cli.value('account') ?? '2';
 const record = Number(required('record'));
 const model = required('model');
 const label = required('label');
-const batchSize = Number(flag('batch') ?? 15);
-const pauseSeconds = Number(flag('pause') ?? 30);
+const batchSize = Number(cli.value('batch') ?? 15);
+const pauseSeconds = Number(cli.value('pause') ?? 30);
 if (LAB === undefined) throw new HarvestRefusal('no lab: a harvest files everything there');
 if (IR_ARCHIVE === undefined) throw new HarvestRefusal('no archive checkout: devices are named out of it');
 if (!/^[\w.-]+$/.test(label)) throw new HarvestRefusal(`--label ${label} is not a plain folder name`);
@@ -91,12 +102,12 @@ if (PROTECTED_RECORDS.has(record)) throw new HarvestRefusal(`record ${record} is
 
 // The devices, named as the archive names them, and resolved out of it so the id is the archive's.
 const named: { manufacturer: string; file: string }[] = [
-  ...flags('device').map((one) => {
+  ...devicesGiven().map((one) => {
     const [manufacturer, file] = one.split('/');
     if (!manufacturer || !file) throw new HarvestRefusal(`--device ${one} is not <manufacturer>/<file>`);
     return { manufacturer, file };
   }),
-  ...(flag('devices') ? JSON.parse(readFileSync(flag('devices')!, 'utf8')) as { manufacturer: string; file: string }[] : []),
+  ...(cli.value('devices') ? JSON.parse(readFileSync(cli.value('devices')!, 'utf8')) as { manufacturer: string; file: string }[] : []),
 ];
 if (named.length === 0) throw new HarvestRefusal('no devices named');
 const wanted: HarvestDevice[] = named.map(({ manufacturer, file }) => {
@@ -160,7 +171,7 @@ const remote = chosen.Remotes?.[0]?.Id.Value;
 if (remote === undefined || (chosen.Remotes?.length ?? 0) !== 1) {
   throw new HarvestRefusal(`record ${record} holds ${chosen.Remotes?.length ?? 0} remotes, not 1`);
 }
-const emptyRecord = process.argv.includes('--empty-record');
+const emptyRecord = cli.flag('empty-record');
 const already = await devicesOnRecord();
 if (already.length > 0 && !emptyRecord) {
   throw new HarvestRefusal(`record ${record} holds ${already.length} devices; a harvest only uses an empty record`);
@@ -170,7 +181,7 @@ console.log(`record ${record}: model ${model}, remote ${remote}, `
 
 // Every device resolved before anything is written.
 const matches = new Map<HarvestDevice, Record<string, unknown>>();
-const skipUnresolved = process.argv.includes('--skip-unresolved');
+const skipUnresolved = cli.flag('skip-unresolved');
 const unresolved: HarvestDevice[] = [];
 for (const device of wanted) {
   try {

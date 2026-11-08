@@ -51,13 +51,14 @@ import { activities, activityScreens, caseQueued, ENTER_MODE } from '../src/inve
 import { valueMaps } from '../src/valuemap.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const argument = (name: string): string | undefined => {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-};
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/empty-one.ts --out <file.bin> [--built-at YYYY-MM-DDTHH:MM:SS] [--setup <recipe.json>] [--screens <directory>]',
+  values: ['out', 'built-at', 'setup', 'screens'],
+});
 
-const out = argument('out');
+const out = cli.value('out');
 if (out === undefined) {
   console.error('usage: node packages/codec/bin/empty-one.ts --out <file.bin> [--built-at YYYY-MM-DDTHH:MM:SS] [--setup <recipe.json>] [--screens <directory>]');
   process.exit(2);
@@ -68,9 +69,9 @@ const now = (): string => {
   const two = (n: number): string => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}T${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
 };
-const builtAt = argument('built-at') ?? now();
+const builtAt = cli.value('built-at') ?? now();
 
-const setupPath = argument('setup');
+const setupPath = cli.value('setup');
 // The region a write to the Harmony One may cover, `rails.ts`: from the configuration's base to the stored firmware.
 const room = (WRITABLE_CEILING[12] as number) - (CONFIG_REGION_BASE[12] as number);
 let c: Container;
@@ -98,7 +99,7 @@ if (setupPath === undefined) {
   console.log(`${out}  ${composed.bytes.length} bytes, ${setupPath} composed onto the empty One, built at ${builtAt}, ${room - composed.bytes.length} bytes of the region left`);
 }
 
-const screens = argument('screens');
+const screens = cli.value('screens');
 if (screens !== undefined) {
   mkdirSync(screens, { recursive: true });
   const records = modeRecords(c) ?? [];

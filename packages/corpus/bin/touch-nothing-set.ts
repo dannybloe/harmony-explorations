@@ -57,21 +57,19 @@ import { compareConfigHash, compareRequestList } from '../experiments/touchownse
 import { comparisonLines } from '../experiments/touchsetupset.ts';
 import { compareNothing, describeTouchAccount, putBackNothing, waveformClosure, withNothing, type TouchAccountFile } from '../experiments/touchnothingset.ts';
 import { WRITE_ANSWERS, keyOf, prepareSet, resultOf, type RemoteRequest, type TouchSet } from '../src/touchsync.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-/** Every value a repeatable option is given. */
-function arguments_(name: string): string[] {
-  return process.argv.flatMap((a, i) => (a === `--${name}` && process.argv[i + 1] !== undefined ? [process.argv[i + 1]!] : []));
-}
+const cli = commandLine({
+  usage: [
+    'usage: node packages/corpus/bin/touch-nothing-set.ts --describe-account <set folder> --out <new lab file>',
+    '       ... --build <new lab folder> --setup <setup file> --account <lab file> [--archive <checkout>]',
+    '       ... --build <new lab folder> --back <set folder> --from <9.1 set folder>',
+    '       ... --check <set folder> --against <set folder> [--held <set folder>] [--archive <checkout>]',
+    '         [--attribute --setup <setup file> --account <lab file>] [--hash <answer>] [--list <request list>]... [--written <write>]...',
+  ].join('\n'),
+  values: ['archive', 'out', 'back', 'from', 'setup', 'account', 'against', 'held', 'hash', 'list', 'written', 'describe-account', 'build', 'check'],
+  flags: ['attribute'],
+});
 
 /** A path inside the lab, resolved through its links, or a refusal; the same rule as `touch-device-set.ts`. */
 function insideTheLab(path: string, what: string): string {
@@ -90,7 +88,7 @@ function insideTheLab(path: string, what: string): string {
 
 const readSet = (folder: string): TouchSet => JSON.parse(readFileSync(join(folder, 'set.json'), 'utf8')) as TouchSet;
 const documentsOf = (set: TouchSet): harmonyTouch.SyncDocuments => harmonyTouch.documentsOfAnswers(set.answers as unknown as harmonyTouch.SyncAnswer[]);
-const archive = (): string => argument('archive') ?? IR_ARCHIVE ?? fail('no archive of the catalogue: set HARMONY_IR_ARCHIVE or pass --archive');
+const archive = (): string => cli.value('archive') ?? IR_ARCHIVE ?? fail('no archive of the catalogue: set HARMONY_IR_ARCHIVE or pass --archive');
 
 function newFolder(folder: string): string {
   const out = insideTheLab(folder, 'the set folder');
@@ -99,7 +97,7 @@ function newFolder(folder: string): string {
 }
 
 function describeAccount(folder: string): void {
-  const outFile = argument('out') ?? fail('--describe-account needs --out <new lab file>');
+  const outFile = cli.value('out') ?? fail('--describe-account needs --out <new lab file>');
   const out = insideTheLab(outFile, 'the account file');
   if (existsSync(out)) fail(`${out} exists, and an account file is never written over`);
   const described = describeTouchAccount(readSet(insideTheLab(folder, 'the set')));
@@ -111,9 +109,9 @@ function describeAccount(folder: string): void {
 
 function build(folder: string): void {
   const out = newFolder(folder);
-  const back = argument('back');
+  const back = cli.value('back');
   if (back !== undefined) {
-    const from = insideTheLab(argument('from') ?? fail('--build --back needs --from <9.1 set folder>'), 'the set put back');
+    const from = insideTheLab(cli.value('from') ?? fail('--build --back needs --from <9.1 set folder>'), 'the set put back');
     const before = insideTheLab(back, 'the set before');
     const put = putBackNothing(readSet(from), readSet(before));
     if ('refusals' in put) fail(put.refusals.join('\n'));
@@ -123,8 +121,8 @@ function build(folder: string): void {
     console.log(`written: the put back of ${basename(from)}, ${put.set.answers.length} documents as ${basename(before)} holds them`);
     return;
   }
-  const setupFile = resolve(argument('setup') ?? fail('--build needs --setup <setup file> and --account <lab file>, or --back'));
-  const accountFile = insideTheLab(argument('account') ?? fail('--build needs --account <lab file>'), 'the account file');
+  const setupFile = resolve(cli.value('setup') ?? fail('--build needs --setup <setup file> and --account <lab file>, or --back'));
+  const accountFile = insideTheLab(cli.value('account') ?? fail('--build needs --account <lab file>'), 'the account file');
   const account = (JSON.parse(readFileSync(accountFile, 'utf8')) as { account: TouchAccountFile }).account;
   const built = withNothing({ file: JSON.parse(readFileSync(setupFile, 'utf8')), archive: archive(), account });
   if ('refusals' in built) fail(built.refusals.join('\n'));
@@ -152,7 +150,7 @@ function check(folder: string): void {
   const findings = harmonyTouch.checkConfiguration(read);
   say(!findings.some((f) => f.effect === 'refused'), `check: ${findings.length} findings, ${findings.filter((f) => f.effect === 'refused').length} refused, rules ${[...new Set(findings.map((f) => f.rule))].join(', ') || 'none'}`);
 
-  const againstFolder = argument('against');
+  const againstFolder = cli.value('against');
   if (againstFolder !== undefined) {
     const against = readSet(insideTheLab(againstFolder, 'the set compared with'));
     const comparison = compareNothing(documentsOf(set), documentsOf(against));
@@ -164,7 +162,7 @@ function check(folder: string): void {
     console.log(`families of ${basename(againstFolder)} stating a toggle bit, which ours do not: ${closure.toggling.join(', ') || 'none'}`);
   }
 
-  const heldFolder = argument('held');
+  const heldFolder = cli.value('held');
   if (heldFolder !== undefined && !('refusals' in gate)) {
     // The six documents the held set holds, which the remote asks for in one list; a picture is asked in another.
     const whole = readSet(insideTheLab(heldFolder, 'the set held'));
@@ -185,10 +183,10 @@ function check(folder: string): void {
       console.log(`write of those answers alone: ${p.length} characters, ${p.chunks} ${p.chunks === 1 ? 'chunk' : 'chunks'}, the last ${p.last}`);
     }
   }
-  if (process.argv.includes('--attribute')) {
+  if (cli.flag('attribute')) {
     if (againstFolder === undefined) fail('--attribute needs --against <set folder>, the Logitech documents a field no generator reproduces is looked up in');
-    const setupFile = resolve(argument('setup') ?? fail('--attribute needs --setup <setup file> and --account <lab file>'));
-    const accountFile = insideTheLab(argument('account') ?? fail('--attribute needs --account <lab file>'), 'the account file');
+    const setupFile = resolve(cli.value('setup') ?? fail('--attribute needs --setup <setup file> and --account <lab file>'));
+    const accountFile = insideTheLab(cli.value('account') ?? fail('--attribute needs --account <lab file>'), 'the account file');
     const account = (JSON.parse(readFileSync(accountFile, 'utf8')) as { account: TouchAccountFile }).account;
     const fields = attributeNothingSet(set, { file: JSON.parse(readFileSync(setupFile, 'utf8')), archive: archive(), account },
       readSet(insideTheLab(againstFolder, 'the set compared with')));
@@ -199,8 +197,8 @@ function check(folder: string): void {
   }
 
   // A run's kept files, against the set.
-  for (const file of arguments_('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
-  for (const file of arguments_('list')) {
+  for (const file of cli.values('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
+  for (const file of cli.values('list')) {
     const text = readFileSync(insideTheLab(file, 'the request list'), 'utf8');
     const requests = (resultOf(text)?.['requests'] ?? []) as RemoteRequest[];
     console.log(`request list ${basename(file)} against the set's tags:`);
@@ -209,7 +207,7 @@ function check(folder: string): void {
     const others = requests.filter((r) => typeof r?.uri === 'string' && !r.uri.startsWith('harmony://') && !set.answers.some((a) => a.uri === r.uri));
     if (others.length > 0) console.log(`  and ${others.length} the set does not hold: ${[...new Set(others.map((r) => (r.uri.startsWith('proxy://') ? 'the finish' : contentKind(r.uri))))].join(', ')}`);
   }
-  for (const file of arguments_('written')) {
+  for (const file of cli.values('written')) {
     const line = readFileSync(insideTheLab(file, 'the kept write of answers'), 'utf8');
     if (!line.startsWith(`${WRITE_ANSWERS}&`)) fail(`${file} is not a kept write of answers`);
     const responses = (JSON.parse(decodeURIComponent(line.split('&responses=')[1] ?? '')) as { responses: { statusCode?: string; uri?: string; etag?: string; resource?: unknown }[] }).responses
@@ -233,9 +231,9 @@ function check(folder: string): void {
   if (!ok) process.exit(1);
 }
 
-const describeFolder = argument('describe-account');
-const buildFolder = argument('build');
-const checkFolder = argument('check');
+const describeFolder = cli.value('describe-account');
+const buildFolder = cli.value('build');
+const checkFolder = cli.value('check');
 if (describeFolder !== undefined) describeAccount(describeFolder);
 else if (buildFolder !== undefined) build(buildFolder);
 else if (checkFolder !== undefined) check(checkFolder);

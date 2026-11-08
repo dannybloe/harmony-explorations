@@ -351,15 +351,24 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when
                                 absent and the rules about what may be copied out of each are
-                                opposite
+                                opposite. And src/cli.ts, `@harmony/lab/cli`, the one reader of a
+                                script's command line, todo.md 7.3.7: every script under
+                                packages/<name>/bin reads its options through it, so each answers
+                                --help with its usage and exits 0 before doing anything, and an
+                                option is read as the 68 hand written readers it replaced read it
+                                (the first occurrence wins, an unknown option is ignored, no
+                                --name=value). test/cli.test.ts holds the shapes, and
+                                test/scripts.test.ts that no script reads process.argv itself
 packages/base/                  TS: what every other package needs and nothing native, plan 013
                                 decision 4: the table that turns a reported skin into a model and
                                 its hardware capabilities, src/models.ts; the container's trailer
                                 checksum, src/trailer.ts; and where each model keeps the key being
-                                pressed, src/keys.ts, shared with the key reader page. Imports
+                                pressed, src/keys.ts, shared with the key reader page; and the one
+                                byte comparison, src/bytes.ts, `sameBytes`, since todo.md 7.3.7, which
+                                the codec re-exports and packages/usb's guards use. Imports
                                 nothing outside Node's own and reads no disk, test/base.test.ts.
                                 The codec depends on it rather than on packages/usb. Its main entry
-                                names all three modules' exports explicitly, test/surface.test.ts,
+                                names all four modules' exports explicitly, test/surface.test.ts,
                                 and each is its own subpath. Its tests are a project of their own,
                                 test/tsconfig.json, for the reason packages/usb's are
 packages/usb/                   TS: the command protocol and the write rails, read path measured.
@@ -1043,6 +1052,7 @@ tools/reference_guards.py [--counts] [--pin]   the five guards of reference/ (no
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
+node packages/<name>/bin/<script>.ts --help   any script's usage, printed before it does anything
 node packages/usb/bin/read-burst-probe.ts [--count 16384] [--stall-after N] [--stall-ms MS]
                        the positive control for a dropped chunk, section 223: read one window report
                        by report and optionally hold the process up in the middle, which makes the

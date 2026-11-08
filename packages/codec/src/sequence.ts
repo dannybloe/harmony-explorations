@@ -91,6 +91,7 @@ import { ACTION_TABLE_SLOT, ComposeError, appendActionLists, restamped } from '.
 import { relocate } from './relocate.ts';
 import { Writer } from './emit.ts';
 import { EditError } from './edit.ts';
+import { sameBytes } from './bytes.ts';
 import type { Edit } from './edit.ts';
 
 export { SCREEN_ITEM_BEEP };
@@ -199,9 +200,6 @@ function blockBytes(c: Container, address: number): Uint8Array | undefined {
   const length = irBlockLength(c, address);
   return off === undefined || length === undefined ? undefined : c.blob.subarray(off, off + length);
 }
-
-const sameBytes = (a: Uint8Array, b: Uint8Array): boolean =>
-  a.length === b.length && a.every((byte, k) => byte === b[k]);
 
 /**
  * The record a sequence sends for one command on the Harmony 600, 650 and 700: the code of its one

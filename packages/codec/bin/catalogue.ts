@@ -37,8 +37,14 @@ import { catalogueCommands, catalogueDevice, catalogueManufacturers, codeIndex }
 import { CONTAINERS } from './corpus.ts';
 import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnScans } from './drawings.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const detail = process.argv.includes('--detail');
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/catalogue.ts [--detail]',
+  flags: ['detail'],
+});
+
+const detail = cli.flag('detail');
 
 if (IR_ARCHIVE === undefined) {
   console.error('no infrared archive: clone logitech-harmony-ir-archive beside this repository, '

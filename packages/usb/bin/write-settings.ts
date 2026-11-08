@@ -42,21 +42,27 @@ import {
 import { STORE_BLOCK_BYTES, clearSlotWrites, predictStoreAfter } from '../src/internal.ts';
 import { assertUnitIsPermitted } from '../src/rails.ts';
 import type { DelaySlot } from '../src/index.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    "usage: node packages/usb/bin/write-settings.ts --unit <label> --table 'power on'|'inter device' --key 0x....",
+    '       HARMONY_ENABLE_WRITES=1 HARMONY_SETTINGS_WRITE=1 \\',
+    "         node packages/usb/bin/write-settings.ts --unit <label> --table 'power on'|'inter device' --key 0x.... --commit",
+  ].join('\n'),
+  values: ['unit', 'table', 'key'],
+  flags: ['commit'],
+});
 
 /** The units whose firmware's settings write is read: the two 0.2 builds. */
 const UNITS = ['h600', 'h650'];
 
 class Refusal extends Error {}
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-const unitLabel = argument('unit');
-const table = argument('table') as DelaySlot['table'] | undefined;
-const keyText = argument('key');
-const commit = process.argv.includes('--commit');
+const unitLabel = cli.value('unit');
+const table = cli.value('table') as DelaySlot['table'] | undefined;
+const keyText = cli.value('key');
+const commit = cli.flag('commit');
 
 if (unitLabel === undefined || keyText === undefined || (table !== 'power on' && table !== 'inter device')) {
   process.stderr.write("usage: write-settings.ts --unit <label> --table 'power on'|'inter device' --key 0x.... [--commit]\n");

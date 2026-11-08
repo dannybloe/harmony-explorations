@@ -56,6 +56,7 @@ import { PictureError, iconOverRows, withPictureFilled, withReplacedPictures } f
 import { rgbTo565 } from '../../png.ts';
 import { bitmapPixels } from '../../render.ts';
 import { bitmapAt, encodeBitmap } from '../../screen.ts';
+import { sameBytes } from '../../bytes.ts';
 import { contentKey } from '../../screencategories.ts';
 import { activityBoxRows } from './activitypictures.ts';
 import type { OneChoices } from './choices.ts';
@@ -358,7 +359,7 @@ export function withOnePictures(c: Container, choices: OneChoices): OnePicturesP
   // 5.3.4: the background, ours and all black, drawn by one fill where it was drawn, and out of the bank.
   const ours = replace.get(one.piece) as Uint8Array;
   const background = readOnePictures(placed.container).pictures
-    .find((picture) => picture.piece.bytes.length === ours.length && picture.piece.bytes.every((byte, k) => byte === ours[k]));
+    .find((picture) => sameBytes(picture.piece.bytes, ours));
   if (background === undefined) throw new PictureError('the background put in the bank does not read back');
   const filled = withPictureFilled(placed.container, background.address);
   return { container: filled.container, replaced, merged: onto.size, filled: filled.filled };

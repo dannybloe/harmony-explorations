@@ -27,6 +27,7 @@ import {
 import { lightBandExtras, logArea, parameterGroups } from '../src/internal.ts';
 import { ONE_PARAMETERS } from '../src/families/harmony-one/parameters.ts';
 import { PARAMETER_VALUES, describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
+import { sameBytes } from '../src/bytes.ts';
 
 /** The 19 distinct Harmony One compiles, `todo-compile-one.md` 2.2, as `startupassistant.test.ts` lists them. */
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
@@ -43,7 +44,8 @@ const ARCH14_COMPILES = [
 ] as const;
 
 const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
-const same = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((v, i) => v === b[i]);
+// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+const same = sameBytes;
 const targets = (table: ContainerPiece): ContainerPiece[] =>
   [...table.refs].sort((a, b) => a.at - b.at).map((ref) => ('to' in ref ? ref.to : undefined)!);
 

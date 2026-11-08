@@ -15,22 +15,18 @@ import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
 
 import { profileFor, readConfig } from '../src/index.ts';
 import { fileRead } from '../src/file.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: 'usage: node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]',
+  values: ['label', 'product'],
+});
 
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-const label = argument('label');
+const label = cli.value('label');
 if (label === undefined) fail('usage: read-config.ts --label <name> [--product 0xc121]');
 if (LAB === undefined) fail('no lab directory found; set HARMONY_LAB');
 
-const wanted = argument('product');
+const wanted = cli.value('product');
 const attached = await listHarmony();
 const candidates =
   wanted === undefined

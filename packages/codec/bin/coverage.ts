@@ -21,13 +21,15 @@ import { coverage } from '../src/internal.ts';
 import type { CoverageReport } from '../src/internal.ts';
 import { CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/coverage.ts [--file <config>] [--detail]',
+  values: ['file'],
+  flags: ['detail'],
+});
 
-const detail = process.argv.includes('--detail');
+const detail = cli.flag('detail');
 
 /**
  * Whether any sample reported an overlap, so the process can exit nonzero.
@@ -79,7 +81,7 @@ function show(label: string, report: CoverageReport, architecture: number | unde
   process.stdout.write('\n');
 }
 
-const file = argument('file');
+const file = cli.value('file');
 if (file !== undefined) {
   const data = new Uint8Array(readFileSync(file));
   let blob: Uint8Array;

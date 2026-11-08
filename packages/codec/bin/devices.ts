@@ -24,13 +24,19 @@ import { parse, devices } from '../src/index.ts';
 import { powerOnDelayReach } from '../src/internal.ts';
 import { CONTAINERS, INLINE_DELAY_CONTAINERS } from './corpus.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/devices.ts [--detail]',
+  flags: ['detail'],
+});
 
 // The same population as `bin/activities.ts`, for the same reason: the 880 is the one container whose
 // contents are described in writing by their owner, so it is the one place a device count can be
 // checked against something outside this codebase.
 const SAMPLES = [...CONTAINERS, 'arch8_config_880', 'arch8_config_885'];
 
-const detail = process.argv.includes('--detail');
+const detail = cli.flag('detail');
 
 if (LAB === undefined) {
   console.log('no lab directory, so there is nothing to read');

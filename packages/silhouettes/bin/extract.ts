@@ -25,6 +25,7 @@ import { readFileSync } from 'node:fs';
 
 import { pathBounds, parseTransform, compose, transformPath, IDENTITY } from '../src/path.ts';
 import type { Bounds, Matrix } from '../src/path.ts';
+import { commandLine } from '@harmony/lab/cli';
 
 interface Traced {
   readonly d: string;
@@ -266,10 +267,14 @@ export function extract(file: string, height = 1000): Extracted {
 }
 
 if (process.argv[1] !== undefined && import.meta.filename === process.argv[1]) {
-  const file = process.argv[2];
+  const cli = commandLine({
+    usage: 'usage: node packages/silhouettes/bin/extract.ts <traced.svg> [--paths]',
+    flags: ['paths'],
+  });
+  const file = cli.words[0];
   if (file === undefined) throw new Error('usage: extract.ts <traced.svg> [--paths]');
   const e = extract(file);
-  const showPaths = process.argv.includes('--paths');
+  const showPaths = cli.flag('paths');
   console.log(`# ${file}`);
   console.log(`# width ${e.width} at height 1000, ${e.shapes.length} shapes besides the case`);
   if (showPaths) console.log(`case: '${e.caseOutline}'`);

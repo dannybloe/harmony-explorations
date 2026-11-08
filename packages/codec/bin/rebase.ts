@@ -13,14 +13,16 @@ import { load } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { rebase } from '../src/internal.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const argument = (name: string): string | undefined => {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-};
-const name = argument('in');
-const out = argument('out');
-const base = Number(argument('base'));
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/rebase.ts --in <lab name or file> --base 0x30000 --out <file>',
+  values: ['in', 'out', 'base'],
+});
+
+const name = cli.value('in');
+const out = cli.value('out');
+const base = Number(cli.value('base'));
 if (name === undefined || out === undefined || !Number.isInteger(base)) {
   throw new Error('--in <lab name or file> --base <address> --out <file>');
 }

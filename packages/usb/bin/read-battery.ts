@@ -13,20 +13,17 @@
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 import { HARDWARE_FEATURE_BATTERY, HARDWARE_FEATURE_FLAG, architectureFromVersion } from '../src/protocol.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/usb/bin/read-battery.ts [--product 0xc122]',
+  values: ['product'],
+});
 
 /** The data memory byte detail 0 answers with on the Harmony 650's 0.2 build, `0x0CB4E`. */
 const FLAG_ADDRESS = 0x3ff;
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-const wanted = argument('product');
+const wanted = cli.value('product');
 const attached = await listHarmony();
 const candidates = attached.filter((d) => wanted === undefined || d.productId === Number.parseInt(wanted, 16));
 if (candidates.length !== 1) fail(candidates.length === 0 ? 'no matching Harmony remote attached' : 'more than one remote matches; pass --product');

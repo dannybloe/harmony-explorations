@@ -63,19 +63,25 @@ import {
   customPayload, favouriteIndexBase, favouritesOnMap, favouritesPayload, favouritesSavedProblems, getButtonMapsRequest,
   keepOnPayload, saveActivityPayload, type Setup,
 } from '../src/setup.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-function flag(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-function required(name: string): string {
-  const value = flag(name);
+const cli = commandLine({
+  usage: [
+    'usage: node packages/corpus/bin/build-setup.ts --setup <setup.json> --record <record> --model <model> --label <label>',
+    '         --stage devices|activities|options|favourites|compile [--account 1] [--poll <download address>] [--commit]',
+  ].join('\n'),
+  values: ['account', 'poll', 'setup', 'record', 'model', 'label', 'stage'],
+  flags: ['commit'],
+});
+
+function required(name: Parameters<typeof cli.value>[0]): string {
+  const value = cli.value(name);
   if (value === undefined) throw new HarvestRefusal(`--${name} is required`);
   return value;
 }
 
-const commit = process.argv.includes('--commit');
-const selector = flag('account') ?? '1';
+const commit = cli.flag('commit');
+const selector = cli.value('account') ?? '1';
 const record = Number(required('record'));
 const model = required('model');
 const label = required('label');
@@ -317,7 +323,7 @@ if (stage === 'favourites') {
 }
 
 if (stage === 'compile') {
-  const earlier = flag('poll');
+  const earlier = cli.value('poll');
   if (!commit && earlier === undefined) {
     console.log('dry run: the record would be compiled once; nothing was written');
     process.exit(0);

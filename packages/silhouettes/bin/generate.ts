@@ -11,6 +11,12 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DETAIL, MODELS, toSvg } from '../src/index.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/silhouettes/bin/generate.ts [--preview]',
+  flags: ['preview'],
+});
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '..', '..', '..');
@@ -110,4 +116,4 @@ ${parts.join('\n')}
 }
 
 write();
-if (process.argv.includes('--preview')) preview();
+if (cli.flag('preview')) preview();

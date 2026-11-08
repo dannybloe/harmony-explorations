@@ -47,6 +47,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { drawingsModule } from './drawings.ts';
+import { commandLine } from '@harmony/lab/cli';
 
 const PACKAGE = fileURLToPath(new URL('..', import.meta.url));
 const ROOT = resolve(PACKAGE, '..', '..');
@@ -299,8 +300,15 @@ export function driftFrom(built: ReadonlyMap<string, string>, directory = OUT_DI
 }
 
 function main(): void {
+  const cli = commandLine({
+    usage: [
+      'usage: node packages/keyreader/bin/build.ts           write the page (make key-reader)',
+      '       node packages/keyreader/bin/build.ts --check   say whether the written page matches its sources',
+    ].join('\n'),
+    flags: ['check'],
+  });
   const built = buildKeyReader();
-  if (process.argv.includes('--check')) {
+  if (cli.flag('check')) {
     const drift = driftFrom(built);
     for (const line of drift) process.stderr.write(`reference/key-reader/${line}\n`);
     if (drift.length > 0) process.exit(1);

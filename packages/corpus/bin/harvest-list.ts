@@ -31,16 +31,18 @@ import { IR_ARCHIVE, LAB } from '@harmony/lab';
 import '@harmony/codec/node';
 import { composableKeycode } from '@harmony/codec/build';
 import { HarvestRefusal } from '../src/harvest.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-function flag(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: 'usage: node packages/corpus/bin/harvest-list.ts [--second 20] [--out <lab path>]',
+  values: ['second', 'out'],
+});
+
 if (IR_ARCHIVE === undefined) throw new HarvestRefusal('no archive checkout');
 if (LAB === undefined) throw new HarvestRefusal('no lab to write the list into');
 const ARCHIVE = IR_ARCHIVE;
-const second = Number(flag('second') ?? 20);
-const out = flag('out') ?? join(LAB, 'work', 'harvest', 'lists', 'families.json');
+const second = Number(cli.value('second') ?? 20);
+const out = cli.value('out') ?? join(LAB, 'work', 'harvest', 'lists', 'families.json');
 
 /** A family's name out of a keycode, `G:<family>:<code>`, or undefined for one stating none. */
 function familyOf(keycode: string): string | undefined {

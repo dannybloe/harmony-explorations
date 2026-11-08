@@ -121,6 +121,17 @@ import {
   transfersFor,
   writeBlock,
 } from '../src/blockwrite.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/usb/bin/rehearse-block.ts --dump <lab image> --block <64 KiB aligned address>',
+    '       HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/usb/bin/rehearse-block.ts \\',
+    '         --dump <lab image> --block <address> [--set <flash address>=<byte>]... --commit',
+  ].join('\n'),
+  values: ['set', 'dump', 'block'],
+  flags: ['commit'],
+});
 
 /**
  * The lab images that are the **spare** Harmony One's own configuration, and the only ones `--dump`
@@ -386,23 +397,6 @@ function permittedUnit(target: Target): Uint8Array {
   return unitIdentityFromText(stored);
 }
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-/** Every occurrence of a repeatable option, in the order given. */
-function arguments_(name: string): string[] {
-  const out: string[] = [];
-  process.argv.forEach((one, at) => {
-    if (one === `--${name}`) {
-      const value = process.argv[at + 1];
-      if (value !== undefined) out.push(value);
-    }
-  });
-  return out;
-}
-
 /** One `--set <flash address>=<byte>`. */
 interface ByteChange {
   address: number;
@@ -416,7 +410,7 @@ interface ByteChange {
  * `Uint8Array.set` and land as zero, which is a byte this would then write and verify happily.
  */
 function byteChanges(): ByteChange[] {
-  return arguments_('set').map((text) => {
+  return cli.values('set').map((text) => {
     const [left, right] = text.split('=');
     if (left === undefined || right === undefined) {
       fail(`--set wants <flash address>=<byte>, not ${text}`);
@@ -429,11 +423,6 @@ function byteChanges(): ByteChange[] {
     }
     return { address, value };
   });
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
 }
 
 /**
@@ -466,12 +455,12 @@ async function main(): Promise<void> {
     process.exit(130);
   });
 
-  const dumpName = argument('dump')
+  const dumpName = cli.value('dump')
     ?? fail("--dump names the lab image holding this unit's config");
-  const blockText = argument('block') ?? fail('--block is the 64 KiB aligned flash address');
+  const blockText = cli.value('block') ?? fail('--block is the 64 KiB aligned flash address');
   const block = Number(blockText);
   if (!Number.isInteger(block) || block < 0) fail(`--block is not an address: ${blockText}`);
-  const commit = process.argv.includes('--commit');
+  const commit = cli.flag('commit');
   const changes = byteChanges();
 
   // **Two checks, and they answer different questions.** This one is spelling: is the name a dump

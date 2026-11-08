@@ -26,8 +26,14 @@ import { parse } from '../src/index.ts';
 import { archSlot, readingCoverage } from '../src/internal.ts';
 import type { ReadingCoverage } from '../src/internal.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const detail = process.argv.includes('--detail');
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/reading.ts [--detail]',
+  flags: ['detail'],
+});
+
+const detail = cli.flag('detail');
 
 /** The corpus, in the order `packages/codec/bin/coverage.ts` prints it. */
 const CONTAINERS = [

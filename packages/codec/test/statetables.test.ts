@@ -65,6 +65,7 @@ import {
 import { ONE_FIRMWARE_STATE_RECORDS, ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
 import '../src/resources.node.ts';
+import { sameBytes } from '../src/bytes.ts';
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
 const ARCH14_COMPILES = [
@@ -593,7 +594,8 @@ const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_
 
 const pieceTargets = (table: ContainerPiece): ContainerPiece[] =>
   [...table.refs].sort((a, b) => a.at - b.at).map((ref) => ('to' in ref ? ref.to : undefined)!);
-const same = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((v, i) => v === b[i]);
+// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+const same = sameBytes;
 
 test('todo-compile-one 6.4: base slots 0, 13 and 14 of all 19 Harmony One compiles are rebuilt byte for byte from a description, part by part',
      skipUnless(...ONE_COMPILES), () => {

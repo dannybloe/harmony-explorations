@@ -67,16 +67,17 @@ import {
 import { nameOfLabel } from '../src/shared/core.ts';
 import { archiveAt } from '../src/catalogue.node.ts';
 import '../src/resources.node.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
+const cli = commandLine({
+  usage: [
+    "usage: node packages/codec/bin/compose-no-screen-setup.ts --donor <config> --setup <recipe.json> --out <file> [--take-out 'a,b,...']",
+    '       node packages/codec/bin/compose-no-screen-setup.ts --from-nothing --setup <recipe.json> --keys <keys> --out <file>',
+    '         [--built-at YYYY-MM-DDTHH:MM:SS]',
+  ].join('\n'),
+  values: ['setup', 'out', 'donor', 'take-out', 'keys', 'built-at'],
+  flags: ['from-nothing'],
+});
 
 /** The moment of running in local time, the spelling base slot 3 takes, as `empty-no-screen.ts` stamps it. */
 function now(): string {
@@ -98,22 +99,22 @@ function keysOf(text: string): Record<string, DevicePlace> {
   return out;
 }
 
-const fromNothing = process.argv.includes('--from-nothing');
-const setupPath = argument('setup') ?? fail('--setup <recipe.json> is required');
-const output = argument('out') ?? fail('--out <file> is required');
+const fromNothing = cli.flag('from-nothing');
+const setupPath = cli.value('setup') ?? fail('--setup <recipe.json> is required');
+const output = cli.value('out') ?? fail('--out <file> is required');
 const archive = process.env.HARMONY_IR_ARCHIVE ?? fail('HARMONY_IR_ARCHIVE names the catalogue checkout');
 const recipe = JSON.parse(readFileSync(setupPath, 'utf8')) as Recipe;
 
 let out: ComposedNoScreenSetup;
 if (fromNothing) {
-  if (argument('donor') !== undefined || argument('take-out') !== undefined) fail('--from-nothing takes no --donor and no --take-out');
-  const keys = keysOf(argument('keys') ?? fail('--from-nothing needs --keys, since there is no donor to read them off'));
-  const builtAt = argument('built-at') ?? now();
+  if (cli.value('donor') !== undefined || cli.value('take-out') !== undefined) fail('--from-nothing takes no --donor and no --take-out');
+  const keys = keysOf(cli.value('keys') ?? fail('--from-nothing needs --keys, since there is no donor to read them off'));
+  const builtAt = cli.value('built-at') ?? now();
   process.stdout.write(`from nothing, built at ${builtAt}\n`);
   out = buildNoScreenSetup(archiveAt(archive), { recipe, keys, builtAt });
 } else {
-  const donorPath = argument('donor') ?? fail('--donor <config> or --from-nothing is required');
-  const takeOut = (argument('take-out') ?? '').split(',').map((one) => one.trim()).filter((one) => one !== '');
+  const donorPath = cli.value('donor') ?? fail('--donor <config> or --from-nothing is required');
+  const takeOut = (cli.value('take-out') ?? '').split(',').map((one) => one.trim()).filter((one) => one !== '');
   let c = parse(new Uint8Array(readFileSync(donorPath)));
   const placed = devicePlaces(c);
   for (const name of takeOut) {

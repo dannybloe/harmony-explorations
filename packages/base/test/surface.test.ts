@@ -4,7 +4,7 @@
  * `@harmony/testkit/surface`, which shows the types a loaded module does not, and the loaded module is held to the
  * same values, so a reading of the source that missed a name fails here.
  *
- * The base is the model table, the trailer checksum and the key codes, each module whole, and each is also its own
+ * The base is the model table, the trailer checksum, the key codes and the byte comparison, each module whole, and each is also its own
  * subpath for a browser page that loads one module at a time.
  */
 import { test } from 'node:test';
@@ -19,7 +19,7 @@ const MANIFEST = new URL('../package.json', import.meta.url);
 const VALUES = [
   'ARCH_8_PRODUCT', 'MODELS_BY_SKIN', 'MODELS_WITHOUT_A_SKIN', 'OUT_OF_TRANSPORT_REACH',
   'SKINS_WITHOUT_A_MODEL_RECORD', 'SKINS_WITH_A_LONG_PRESS', 'TRAILER_CHECKSUM_OFFSET', 'TRAILER_CHECKSUM_SEED',
-  'WATCH', 'WATCH_BY_SKIN', 'architectureHasTouch', 'hasLongPress', 'modelForSkin', 'trailerChecksum',
+  'WATCH', 'WATCH_BY_SKIN', 'architectureHasTouch', 'hasLongPress', 'modelForSkin', 'sameBytes', 'trailerChecksum',
 ];
 
 /** The main entry's types and interfaces, which only the source shows. */
@@ -29,7 +29,7 @@ const TYPES = [
 
 /** Every subpath `package.json` exports, `.` the main entry. */
 const SUBPATHS = [
-  '.', './models', './trailer', './keys',
+  '.', './models', './trailer', './keys', './bytes',
 ];
 
 test('the main entry exports exactly its list, by explicit names', async () => {

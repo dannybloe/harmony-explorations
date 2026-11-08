@@ -17,18 +17,17 @@ import { payloadOf } from '@harmony/codec/node';
 import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
 
 import { buildReport, probeRemote, usbReport } from '../src/index.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: [
+    'usage: node packages/probe/bin/probe.ts [--product 0xc122]',
+    '       node packages/probe/bin/probe.ts --file <config.EZHex>     no remote needed',
+  ].join('\n'),
+  values: ['file', 'product'],
+});
 
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-const file = argument('file');
+const file = cli.value('file');
 if (file !== undefined) {
   // An EZHex declares its own payload length in its XML header, so the split is read rather than
   // guessed. A bare container has no header and `payloadOf` hands it back whole.
@@ -43,7 +42,7 @@ if (file !== undefined) {
   process.exit(0);
 }
 
-const wanted = argument('product');
+const wanted = cli.value('product');
 const attached = await listHarmony();
 const candidates =
   wanted === undefined

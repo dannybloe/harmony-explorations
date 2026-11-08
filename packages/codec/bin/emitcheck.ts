@@ -30,14 +30,18 @@ import { irdaString } from '../src/irda.ts';
 import { PROTOCOLS } from '../src/protocols.ts';
 import { pulsesOfStatedCode, statedCode } from '../src/stated.ts';
 import '../src/resources.node.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/codec/bin/emitcheck.ts [--limit 40] [--out report.json] [--census wide|narrow]',
+    '         [--per-family 3] [--only <family,...>]',
+  ].join('\n'),
+  values: ['census', 'per-family', 'only', 'limit', 'out'],
+});
 
 const SECURITY = 'https://svcs.myharmony.com/CompositeSecurityServices/Security.svc/json/';
 const ANALYSIS = 'https://svcs.myharmony.com/InfraredAnalysisPlatform/InfraredAnalysisManager.svc/json/';
-
-function flag(name: string, fallback: string): string {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? fallback : (process.argv[at + 1] ?? fallback);
-}
 
 function credentials(): { email: string; password: string } {
   const fromEnv = process.env['MYHARMONY_EMAIL'];
@@ -95,17 +99,17 @@ interface Census {
 // first model prefix that answers, so the families this check exists to settle are the ones it is
 // thinnest on. `--census narrow` asks the older file.
 const censusPath = join(LAB ?? '.', 'work', 'myharmony', 'responses',
-  flag('census', 'wide') === 'narrow' ? 'ProtocolCensus.json' : 'ProtocolCensusWide.json');
+  (cli.value('census') ?? 'wide') === 'narrow' ? 'ProtocolCensus.json' : 'ProtocolCensusWide.json');
 const raw = JSON.parse(readFileSync(censusPath, 'utf8')) as Census & {
   rows?: { family: string; keyCode: string }[];
 };
 // The wide file is one row per command and the narrow one a hand picked few, so a cap per family keeps
 // the ask proportionate either way and the number asked is printed rather than implied.
-const perFamily = Number(flag('per-family', '3'));
+const perFamily = Number(cli.value('per-family') ?? '3');
 // `--only` narrows to the families whose name contains it, comma separated. The whole point of a run is
 // usually one family's rhythm, and without this the budget is spent in census order on families that
 // were settled weeks ago.
-const only = flag('only', '').split(',').map((one) => one.trim()).filter((one) => one !== '');
+const only = (cli.value('only') ?? '').split(',').map((one) => one.trim()).filter((one) => one !== '');
 const kept = new Map<string, number>();
 const census: Census = {
   devices: raw.devices ?? [],
@@ -136,7 +140,7 @@ if (codes.length === 0) {
  * A catalogue family is looked up in the table first, and where the name is not there, which is the
  * ordinary case, every entry of the right convention and bit width is tried. Their answer picks.
  */
-const limit = Number(flag('limit', '40'));
+const limit = Number(cli.value('limit') ?? '40');
 interface Row {
   family: string;
   bits: number;
@@ -220,7 +224,7 @@ outer: for (const code of codes) {
 console.log(`\n${readBack} of ${asked} answers carry the number the code was built from`);
 console.log(`${namedRight} of ${codes.length} codes were also named as the family they came from, `
   + 'which is the claim that says the rhythm is right and not only the bits');
-const out = flag('out', '');
+const out = cli.value('out') ?? '';
 if (out !== '') {
   writeFileSync(out, JSON.stringify({ asked, readBack, rows }, null, 1));
   console.log(`report written to ${out}`);

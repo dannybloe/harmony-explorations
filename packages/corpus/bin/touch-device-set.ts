@@ -130,6 +130,32 @@ import { REMOVAL_DOCUMENTS, putBackRemoval, removalChanges, withRemoval } from '
 import { SETUP_DOCUMENTS, SETUP_IDS, compareSetup, comparisonLines, putBackSetup, withSetup } from '../experiments/touchsetupset.ts';
 import { EMPTY_DOCUMENTS, emptyBackOf, withEmpty } from '../experiments/touchemptyset.ts';
 import { WRITE_ANSWERS, answerOf, keyOf, prepareSet, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --device <description>',
+    '       ... --build <new lab folder> --from <set folder> --remove <device id>',
+    '       ... --build <new lab folder> --from <set folder> --activity <description>',
+    '       ... --build <new lab folder> --from <set folder> --remove-activity <activity id>',
+    '       ... --build <new lab folder> --from <set folder> --favourites <description>',
+    '       ... --build <new lab folder> --from <favourites set folder> --favourites-back',
+    '       ... --build <new lab folder> --from <set folder> --settings <description> --context <lab description>',
+    '       ... --build <new lab folder> --from <settings set folder> --settings-back',
+    '       ... --describe-context <set folder> --out <new lab file>',
+    '       ... --build <new lab folder> --from <set folder> --removal <description>',
+    '       ... --build <new lab folder> --from <removal set folder> --removal-back',
+    '       ... --build <new lab folder> --from <set folder> --setup <description>',
+    '       ... --build <new lab folder> --from <setup set folder> --setup-back',
+    '       ... --describe-setup <set folder> --out <new description file>',
+    '       ... --build <new lab folder> --from <set folder> --empty',
+    '       ... --build <new lab folder> --from <empty set folder> --empty-back',
+    "       ... --check <set folder> [--same-as <set folder>]... [--written <a run's kept write of answers>]",
+    '         [--hash <getconfighash answer>] [--list <request list answer>]',
+  ].join('\n'),
+  values: ['from', 'device', 'remove', 'activity', 'remove-activity', 'favourites', 'settings', 'removal', 'setup', 'context', 'out', 'list', 'same-as', 'written', 'hash', 'build', 'check', 'describe-context', 'describe-setup'],
+  flags: ['favourites-back', 'settings-back', 'removal-back', 'setup-back', 'empty', 'empty-back'],
+});
 
 /** The three documents a device is told to a Touch in, and the list in each that holds it. */
 export const DEVICE_DOCUMENTS: readonly (readonly [string, string])[] = [
@@ -139,20 +165,6 @@ export const DEVICE_DOCUMENTS: readonly (readonly [string, string])[] = [
 export const ACTIVITY_DOCUMENTS: readonly (readonly [string, string])[] = [
   ['ActivityList', 'Activities'], ['MapList', 'ButtonMaps'],
 ];
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function arguments_(name: string): string[] {
-  return process.argv.flatMap((a, i) => (a === `--${name}` && process.argv[i + 1] !== undefined ? [process.argv[i + 1]!] : []));
-}
 
 /** A path inside the lab, resolved through its links, or a refusal; the same rule as `touch-own-set.ts`. */
 function insideTheLab(path: string, what: string): string {
@@ -213,21 +225,21 @@ const heldAfter = (folder: string | undefined): Map<string, SetAnswer> =>
 function build(folder: string): void {
   const out = insideTheLab(folder, 'the set folder');
   if (existsSync(out) && readdirSync(out).length > 0) fail(`${out} already holds files, and a set is never written over`);
-  const fromFolder = argument('from');
-  const description = argument('device');
-  const removeId = argument('remove');
-  const activityDescription = argument('activity');
-  const removeActivityId = argument('remove-activity');
-  const favouritesDescription = argument('favourites');
-  const favouritesBack = process.argv.includes('--favourites-back') ? true : undefined;
-  const settingsDescription = argument('settings');
-  const settingsBack = process.argv.includes('--settings-back') ? true : undefined;
-  const removalDescription = argument('removal');
-  const removalBack = process.argv.includes('--removal-back') ? true : undefined;
-  const setupDescription = argument('setup');
-  const setupBack = process.argv.includes('--setup-back') ? true : undefined;
-  const empty = process.argv.includes('--empty') ? true : undefined;
-  const emptyBack = process.argv.includes('--empty-back') ? true : undefined;
+  const fromFolder = cli.value('from');
+  const description = cli.value('device');
+  const removeId = cli.value('remove');
+  const activityDescription = cli.value('activity');
+  const removeActivityId = cli.value('remove-activity');
+  const favouritesDescription = cli.value('favourites');
+  const favouritesBack = cli.flag('favourites-back') ? true : undefined;
+  const settingsDescription = cli.value('settings');
+  const settingsBack = cli.flag('settings-back') ? true : undefined;
+  const removalDescription = cli.value('removal');
+  const removalBack = cli.flag('removal-back') ? true : undefined;
+  const setupDescription = cli.value('setup');
+  const setupBack = cli.flag('setup-back') ? true : undefined;
+  const empty = cli.flag('empty') ? true : undefined;
+  const emptyBack = cli.flag('empty-back') ? true : undefined;
   const given = [description, removeId, activityDescription, removeActivityId, favouritesDescription, favouritesBack, settingsDescription, settingsBack,
     removalDescription, removalBack, setupDescription, setupBack, empty, emptyBack].filter((x) => x !== undefined).length;
   if (fromFolder === undefined || given !== 1) {
@@ -351,7 +363,7 @@ function buildSettings(out: string, from: string, source: TouchSet, name: string
   if (description !== undefined) {
     const settings = (JSON.parse(readFileSync(description, 'utf8')) as { settings?: harmonyTouch.OwnSettings }).settings;
     if (settings === undefined) fail(`${description} holds no settings`);
-    const contextFile = argument('context');
+    const contextFile = cli.value('context');
     if (contextFile === undefined) fail('--settings needs --context <lab description>, the seven Context fields a Touch reads');
     const contextPath = insideTheLab(contextFile, 'the Context description');
     const context = (JSON.parse(readFileSync(contextPath, 'utf8')) as { context?: harmonyTouch.OwnContext }).context;
@@ -471,7 +483,7 @@ function buildEmpty(out: string, from: string, source: TouchSet, name: string, f
 
 /** `--describe-setup`, the header: a set's setup described, written into a new file; it holds no value of the account. */
 function describeSetup(folder: string): void {
-  const outFile = argument('out');
+  const outFile = cli.value('out');
   if (outFile === undefined) fail('--describe-setup needs --out <new description file>');
   const out = resolve(outFile!);
   if (existsSync(out)) fail(`${out} exists, and a description is never written over`);
@@ -511,7 +523,7 @@ function setupJson(x: unknown, indent: string): string {
 
 /** `--describe-context`, the header: a set's Context as a description, written into a new lab file and never printed. */
 function describeContext(folder: string): void {
-  const outFile = argument('out');
+  const outFile = cli.value('out');
   if (outFile === undefined) fail('--describe-context needs --out <new lab file>');
   const out = insideTheLab(outFile, 'the description file');
   if (existsSync(out)) fail(`${out} exists, and a description is never written over`);
@@ -780,7 +792,7 @@ function checkEmpty(set: TouchSet, record: Partial<DeviceRecord> & SetRecord, sa
       `the favourites: ${favourites.map((f) => `${f.activity.name ?? 'an activity'} through ${f.device?.name ?? 'no device'}, ${f.favourites.length} channels, ${f.missing.length} documents missing`).join('; ') || 'none'}`);
   }
   checkTheRuns(set, source, from, EMPTY_DOCUMENTS, say);
-  for (const file of arguments_('list')) {
+  for (const file of cli.values('list')) {
     const requests = (resultOf(readFileSync(insideTheLab(file, 'the request list'), 'utf8'))?.['requests'] ?? []) as RemoteRequest[];
     console.log(`content asked for against the set, ${requests.length} requests:`);
     for (const l of compareContentRequests(requests, set).filter((x) => !x.endsWith('not asked for'))) console.log(`  ${l}`);
@@ -897,12 +909,12 @@ function checkFavourites(dir: string, set: TouchSet, record: Partial<DeviceRecor
     console.log(`write of answers, the logos as one list: ${size.length} characters, ${size.chunks} ${size.chunks === 1 ? 'chunk' : 'chunks'}, the last ${size.last}`);
   }
 
-  for (const other of arguments_('same-as')) {
+  for (const other of cli.values('same-as')) {
     const otherSet = readSet(insideTheLab(other, 'the set to compare with'));
     const d = setDifferences({ answers: otherSet.answers.filter((a) => !isContent(a)) }, { answers: six });
     say(d.every((x) => x.values.length === 0), `the six against ${basename(other)}: ${d.filter((x) => x.values.length > 0).map((x) => x.document).join(', ') || 'equal'}`);
   }
-  for (const file of arguments_('written')) {
+  for (const file of cli.values('written')) {
     const line = readFileSync(insideTheLab(file, 'the kept write of answers'), 'utf8');
     if (!line.startsWith(`${WRITE_ANSWERS}&`)) fail(`${file} is not a kept write of answers`);
     const responses = (JSON.parse(decodeURIComponent(line.split('&responses=')[1] ?? '')) as { responses: { statusCode?: string; uri?: string; etag?: string; resource?: unknown }[] }).responses;
@@ -914,8 +926,8 @@ function checkFavourites(dir: string, set: TouchSet, record: Partial<DeviceRecor
       say(right && (ours !== undefined && isContent(ours) ? delivered : true), `the kept write answered ${what} ${r.statusCode ?? 'none'}${delivered ? (right ? ', with this set\'s content and tag' : ', NOT with this set\'s content and tag') : ''}`);
     }
   }
-  for (const file of arguments_('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
-  for (const file of arguments_('list')) {
+  for (const file of cli.values('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
+  for (const file of cli.values('list')) {
     const text = readFileSync(insideTheLab(file, 'the request list'), 'utf8');
     const requests = (resultOf(text)?.['requests'] ?? []) as RemoteRequest[];
     console.log('request list against the set\'s tags:');
@@ -948,7 +960,7 @@ function checkTheRuns(set: TouchSet, source: TouchSet, from: string, touched: re
       'no chunk carries Content-Length, and no chunk after the first opens with a request name');
   }
 
-  for (const other of arguments_('same-as')) {
+  for (const other of cli.values('same-as')) {
     const otherDir = insideTheLab(other, 'the set to compare with');
     // The six alone: a set compared with may carry favourites or pictures, whose addresses hold the account's
     // identifiers and are never printed, `todo-touch.md` 8.4.
@@ -960,7 +972,7 @@ function checkTheRuns(set: TouchSet, source: TouchSet, from: string, touched: re
   }
   // A run's kept write of answers for the six, against the set: the changed documents 200 with the set's content
   // and tag, the others 304.
-  for (const file of arguments_('written')) {
+  for (const file of cli.values('written')) {
     const line = readFileSync(insideTheLab(file, 'the kept write of answers'), 'utf8');
     if (!line.startsWith(`${WRITE_ANSWERS}&`)) fail(`${file} is not a kept write of answers`);
     const responses = (JSON.parse(decodeURIComponent(line.split('&responses=')[1] ?? '')) as { responses: { statusCode?: string; uri?: string; etag?: string; resource?: unknown }[] }).responses
@@ -980,8 +992,8 @@ function checkTheRuns(set: TouchSet, source: TouchSet, from: string, touched: re
       `the kept write answered ${responses.map((a) => `${keyOf(a.uri!)} ${a.statusCode ?? 'none'}`).join(', ')}; `
       + `${right ? `the ${touched.length} with this set's content and tags` : `not this set's ${touched.length} documents alone`}`);
   }
-  for (const file of arguments_('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
-  for (const file of arguments_('list')) {
+  for (const file of cli.values('hash')) console.log(`config hash against the set's tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
+  for (const file of cli.values('list')) {
     console.log('request list against the set\'s tags:');
     for (const line of compareRequestList(readFileSync(insideTheLab(file, 'the request list'), 'utf8'), set)) console.log(`  ${line}`);
   }
@@ -1128,10 +1140,10 @@ function check(folder: string): void {
   if (bad > 0) process.exit(1);
 }
 
-const toBuild = argument('build');
-const toCheck = argument('check');
-const toDescribe = argument('describe-context');
-const toDescribeSetup = argument('describe-setup');
+const toBuild = cli.value('build');
+const toCheck = cli.value('check');
+const toDescribe = cli.value('describe-context');
+const toDescribeSetup = cli.value('describe-setup');
 if ([toBuild, toCheck, toDescribe, toDescribeSetup].filter((x) => x !== undefined).length !== 1) {
   fail('one of --build <new lab folder>, --check <set folder>, --describe-context <set folder> --out <new lab file> '
     + 'or --describe-setup <set folder> --out <new description file>');

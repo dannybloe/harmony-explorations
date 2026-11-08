@@ -46,22 +46,18 @@ import {
   type RemoteRequest,
   type TouchSet,
 } from '../src/touchsync.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/corpus/bin/touch-own-set.ts --build <new lab folder> --requests <request list answer> \\',
+    '         [--handed-up <answers request of a hand over>]...',
+    '       node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <getconfighash answer>] [--list <request list answer>]',
+  ].join('\n'),
+  values: ['requests', 'handed-up', 'hash', 'list', 'build', 'check'],
+});
 
 const RECORDING = 'touch_full_sync_recording';
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function arguments_(name: string): string[] {
-  return process.argv.flatMap((a, i) => (a === `--${name}` && process.argv[i + 1] !== undefined ? [process.argv[i + 1]!] : []));
-}
 
 /** A path inside the lab, resolved, or a refusal: nothing this script reads or writes is outside it. */
 function insideTheLab(path: string, what: string): string {
@@ -117,10 +113,10 @@ interface Sources {
 function build(folder: string): void {
   const out = insideTheLab(folder, 'the set folder');
   if (existsSync(out) && readdirSync(out).length > 0) fail(`${out} already holds files, and a set is never written over`);
-  const requestsFile = argument('requests');
+  const requestsFile = cli.value('requests');
   if (requestsFile === undefined) fail('--build needs --requests <request list answer>, the last list the remote asked for the six in');
   const requests = requestsOf(insideTheLab(requestsFile, 'the request list'));
-  const handedUp = arguments_('handed-up').map((f) => insideTheLab(f, 'the hand over\'s answers'));
+  const handedUp = cli.values('handed-up').map((f) => insideTheLab(f, 'the hand over\'s answers'));
   const sources = [...recordedSources(), ...handedUp.flatMap(handedUpSources)];
   const name = basename(out);
   const built = buildOwnSet({ sources, requests, name });
@@ -206,16 +202,16 @@ function check(folder: string): void {
       'no chunk carries Content-Length, and no chunk after the first opens with a request name');
   }
 
-  for (const file of arguments_('hash')) console.log(`config hash against the set's ${CONFIG_HASH_DOCUMENTS.join(', ')} tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
-  for (const file of arguments_('list')) {
+  for (const file of cli.values('hash')) console.log(`config hash against the set's ${CONFIG_HASH_DOCUMENTS.join(', ')} tags: ${compareConfigHash(readFileSync(insideTheLab(file, 'the hash answer'), 'utf8'), set)}`);
+  for (const file of cli.values('list')) {
     console.log('request list against the set\'s tags:');
     for (const line of compareRequestList(readFileSync(insideTheLab(file, 'the request list'), 'utf8'), set)) console.log(`  ${line}`);
   }
   if (bad > 0) process.exit(1);
 }
 
-const toBuild = argument('build');
-const toCheck = argument('check');
+const toBuild = cli.value('build');
+const toCheck = cli.value('check');
 if ((toBuild === undefined) === (toCheck === undefined)) fail('one of --build <new lab folder> or --check <set folder>');
 if (toBuild !== undefined) build(toBuild);
 else check(toCheck!);

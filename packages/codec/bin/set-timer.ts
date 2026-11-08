@@ -24,21 +24,17 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { applyEdits, parse, setTimerDuration } from '../src/index.ts';
 import { timers, trailerChecksum } from '../src/internal.ts';
 import '../src/resources.node.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/set-timer.ts --in <config> --timer 1 --seconds 20 --out <file>',
+  values: ['in', 'out', 'timer', 'seconds'],
+});
 
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-const input = argument('in') ?? fail('--in is the container to edit');
-const output = argument('out') ?? fail('--out is where the result goes');
-const index = Number(argument('timer') ?? fail('--timer is the base slot 12 record index'));
-const seconds = Number(argument('seconds') ?? fail('--seconds is the new duration'));
+const input = cli.value('in') ?? fail('--in is the container to edit');
+const output = cli.value('out') ?? fail('--out is where the result goes');
+const index = Number(cli.value('timer') ?? fail('--timer is the base slot 12 record index'));
+const seconds = Number(cli.value('seconds') ?? fail('--seconds is the new duration'));
 
 const container = parse(new Uint8Array(readFileSync(input)));
 const before = timers(container);

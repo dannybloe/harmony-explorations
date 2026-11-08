@@ -27,15 +27,17 @@ import { IR_ARCHIVE } from '@harmony/lab';
 import { archiveProtocols, readPronto, waveformOfArchiveCommand } from '../src/node.ts';
 import { prontoPairs, prontoUnits } from '../src/internal.ts';
 import type { ArchiveProtocol } from '../src/index.ts';
+import { commandLine } from '@harmony/lab/cli';
 
-const args = process.argv.slice(2);
-const option = (name: string): string | undefined => {
-  const at = args.indexOf(`--${name}`);
-  return at === -1 ? undefined : args[at + 1];
-};
-const limit = Number(option('codesets') ?? '0');
-const only = option('only');
-const detail = args.includes('--detail');
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/prontocheck.ts [--codesets <n>] [--only <family>] [--detail]',
+  values: ['codesets', 'only'],
+  flags: ['detail'],
+});
+
+const limit = Number(cli.value('codesets') ?? '0');
+const only = cli.value('only');
+const detail = cli.flag('detail');
 
 const root = IR_ARCHIVE;
 if (root === undefined) {

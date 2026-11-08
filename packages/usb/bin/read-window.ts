@@ -27,16 +27,16 @@
  */
 import { HarmonyRemote, architectureFromVersion, listHarmony, openHarmony } from '../src/index.ts';
 import { SOFTWARE_TYPE_SAFE_MODE, softwareTypeFromVersion } from '../src/internal.ts';
+import { commandLine, fail } from '@harmony/lab/cli';
+import { sameBytes } from '@harmony/base/bytes';
 
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
-
-function fail(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
+const cli = commandLine({
+  usage: [
+    'usage: node packages/usb/bin/read-window.ts --address 0x... [--count 16] [--compare 0x...] [--product 0xc122]',
+    '         [--path <path>] [--architecture <n>]',
+  ].join('\n'),
+  values: ['address', 'count', 'compare', 'product', 'path', 'architecture'],
+});
 
 function number(text: string | undefined, what: string): number | undefined {
   if (text === undefined) return undefined;
@@ -54,16 +54,16 @@ function ascii(data: Uint8Array): string {
   return [...data].map((b) => (b >= 0x20 && b < 0x7f ? String.fromCharCode(b) : '.')).join('');
 }
 
-const address = number(argument('address'), 'the address');
-const count = number(argument('count'), 'the count') ?? 16;
-const compare = number(argument('compare'), 'the compare address');
+const address = number(cli.value('address'), 'the address');
+const count = number(cli.value('count'), 'the count') ?? 16;
+const compare = number(cli.value('compare'), 'the compare address');
 if (address === undefined) {
   fail('usage: read-window.ts --address 0x... [--count 16] [--compare 0x...] [--product 0xc122]');
 }
 if (count <= 0 || count > 0x1000) fail(`a count of ${count} is outside what this tool will do`);
 
-const wanted = argument('product');
-const wantedPath = argument('path');
+const wanted = cli.value('product');
+const wantedPath = cli.value('path');
 const attached = await listHarmony();
 const candidates = attached.filter(
   (d) =>
@@ -83,7 +83,7 @@ if (candidates.length > 1) {
 const found = candidates[0] as { productId: number; path: string | undefined };
 process.stdout.write(`product 0x${found.productId.toString(16)} at ${found.path}\n`);
 
-const architecture = number(argument('architecture'), 'the architecture');
+const architecture = number(cli.value('architecture'), 'the architecture');
 const remote = new HarmonyRemote(
   await openHarmony(
     found.path === undefined
@@ -137,7 +137,7 @@ try {
     process.stdout.write(
       `0x${compare.toString(16).padStart(6, '0')}  ${hex(second)}  |${ascii(second)}|\n`,
     );
-    const same = first.length === second.length && first.every((b, i) => b === second[i]);
+    const same = sameBytes(first, second);
     process.stdout.write(same ? '\nidentical\n' : '\ndifferent\n');
   }
 } finally {

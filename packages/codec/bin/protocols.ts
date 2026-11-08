@@ -46,18 +46,22 @@ import {
   type LongToggleTimings, type Pulse,
   type QuadTimings,
 } from '../src/irframe.ts';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: 'usage: node packages/codec/bin/protocols.ts [--detail] [--family "Sony 12 Bit"] [--write]',
+  values: ['family'],
+  flags: ['detail', 'write'],
+});
 
 if (LAB === undefined) {
   console.error('no lab: this reads the analyser reports in work/myharmony/analyzed/');
   process.exit(1);
 }
 
-const detail = process.argv.includes('--detail');
-const write = process.argv.includes('--write');
-const only = (() => {
-  const at = process.argv.indexOf('--family');
-  return at < 0 ? undefined : process.argv[at + 1];
-})();
+const detail = cli.flag('detail');
+const write = cli.flag('write');
+const only = cli.value('family');
 
 interface Row { config: string; record: string; ours: string; theirs?: string }
 

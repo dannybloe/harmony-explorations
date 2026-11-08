@@ -70,14 +70,21 @@ import { SOFTWARE_TYPE_SAFE_MODE, checkFirmwareImage, softwareTypeFromVersion } 
 import { assertUnitIsPermitted, REINSTALL_MAX_IMAGE } from '../src/rails.ts';
 import { unitIdentity, unitIdentityPath } from '@harmony/lab';
 import { readFileSync } from 'node:fs';
+import { commandLine } from '@harmony/lab/cli';
+
+const cli = commandLine({
+  usage: [
+    'usage: node packages/usb/bin/reinstall-firmware.ts --unit <label> [--image <file> --backup <lab region read>]',
+    '       HARMONY_ENABLE_WRITES=1 HARMONY_FIRMWARE_REINSTALL=1 node packages/usb/bin/reinstall-firmware.ts \\',
+    '         --unit <label> [--image <file> --backup <lab region read>] --commit',
+    '       (staging an image with --commit also needs HARMONY_FIRMWARE_STAGE=1)',
+  ].join('\n'),
+  values: ['unit', 'image', 'backup'],
+  flags: ['commit'],
+});
 
 /** A refusal an operator reads, thrown so that the `finally` below still closes the device. */
 class Refusal extends Error {}
-
-function argument(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at < 0 ? undefined : process.argv[at + 1];
-}
 
 /**
  * The units this may be pointed at: the arch 14 (Harmony 600, 650 and 700) remotes on the write list,
@@ -87,10 +94,10 @@ function argument(name: string): string | undefined {
  */
 const UNITS = ['h600', 'h650', 'h700'];
 
-const unitLabel = argument('unit');
-const commit = process.argv.includes('--commit');
-const imagePath = argument('image');
-const backupPath = argument('backup');
+const unitLabel = cli.value('unit');
+const commit = cli.flag('commit');
+const imagePath = cli.value('image');
+const backupPath = cli.value('backup');
 if ((imagePath === undefined) !== (backupPath === undefined)) {
   process.stderr.write('--image and --backup go together: staging erases the copy the backup restores\n');
   process.exit(2);

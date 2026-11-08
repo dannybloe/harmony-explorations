@@ -7,6 +7,7 @@
  * them reach a device.
  */
 
+import { sameBytes } from '@harmony/base/bytes';
 import { takeAuthorisation } from './authorise.ts';
 import { isReadOnlyReport } from './protocol.ts';
 
@@ -50,12 +51,6 @@ export interface Transport {
  * in `authorise.ts`, which the barrel does not re-export.
  */
 export type GuardedTransport = Transport;
-
-function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
-  return true;
-}
 
 export function guardMutations(inner: Transport): GuardedTransport {
   const guarded: Transport = {
