@@ -23,7 +23,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, skipUnless, slow } from '@harmony/lab';
 import type { Claim, Container } from '../src/index.ts';
 import {
   END_MARKER_LENGTH,
@@ -331,7 +331,7 @@ const reading = (c: Container): string => {
 };
 
 test('a rebase that leaves out any one kind of field is caught by the census on six containers, and by the readers wherever a reader reads that kind',
-  skipUnless('h650_safemode_gspm', 'h525_config', 'calibration_favchannels', 'one_config', 'arch8_config_a', 'h350_programmed_config'), () => {
+  slow(skipUnless('h650_safemode_gspm', 'h525_config', 'calibration_favchannels', 'one_config', 'arch8_config_a', 'h350_programmed_config')), () => {
     // Per container: the kinds no reader here reads, so only the census notices them.
     const unread: Record<string, string[]> = {
       h650_safemode_gspm: [], h525_config: ['slot-11-table', 'slot-14-record'], calibration_favchannels: [],

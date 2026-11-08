@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, skipUnless, slow } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 // Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
 import { HARMONY_650_FACES } from '../src/families/four-slot/fonts.ts';
@@ -158,7 +158,7 @@ test('flatColour takes a box of one colour, or dithered by one step, and nothing
 });
 
 test('withBlendedLetters blends every text of all 13 Harmony 650 compiles into the colour under it, the setup and every word unchanged',
-     skipUnless(...H650), () => {
+     slow(skipUnless(...H650)), () => {
   const totals = { copies: 0, repointed: 0, kept: 0, glyphs: 0, strings: 0, checked: 0 };
   const backgrounds = new Map<number, number>();
   for (const name of H650) {

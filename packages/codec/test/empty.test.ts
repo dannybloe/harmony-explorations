@@ -27,7 +27,7 @@ import { bitmapReference } from '../src/screen.ts';
 
 import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
 import { activityKeys } from '../src/families/four-slot/activitykeys.ts';
-import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { archSlot, parse, readRecipe, screenStrings} from '../src/index.ts';
 import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/families/four-slot/firmwarescreens.ts';
@@ -503,7 +503,7 @@ function drawnDeviceLists(c: Container): string[][][] {
       .filter((text) => !['Devices', 'Activities', 'Activity', '1', '2', '/'].includes(text))));
 }
 
-test('todo-compile-700.md 2.1: the whole test setup assembles on the Harmony 700\'s empty configuration in our look, and the setup comparison finds nothing different from the Harmony 650\'s in 627 slots, nor in the activity keys and the six drawn device lists, smoothed letters or not', skipWithoutIrArchive(), () => {
+test('todo-compile-700.md 2.1: the whole test setup assembles on the Harmony 700\'s empty configuration in our look, and the setup comparison finds nothing different from the Harmony 650\'s in 627 slots, nor in the activity keys and the six drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   const on = (skin: number, name: string, blendLetters: boolean) => assembleSetup({
     ...setup, model: { name, skin }, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters },
@@ -545,7 +545,7 @@ test('todo-compile-700.md 2.1: Logitech\'s seven Harmony 700 compiles do not rea
     /on a donor of ours alone, an empty configuration, and this donor is Logitech's/);
 });
 
-test('decision 20 on a build from nothing: the state colours are a choice, written over the defaults the composers draw in, read back off the file\'s own pages, and nothing a person does changes', skipWithoutIrArchive(), () => {
+test('decision 20 on a build from nothing: the state colours are a choice, written over the defaults the composers draw in, read back off the file\'s own pages, and nothing a person does changes', slow(skipWithoutIrArchive()), () => {
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   // The 650's bench test colours, for a colourblind tester on a dim panel.
   const bright = { device: rgbTo565(255, 0, 0), activity: rgbTo565(0, 96, 255), idle: rgbTo565(255, 140, 0) };
@@ -667,7 +667,7 @@ function fiveDeviceSetup(): Recipe {
   } as Recipe;
 }
 
-test('todo-compile-600.md 2.1: the five device test setup assembles on the Harmony 600\'s empty configuration with every page in its one grey, smaller than the 650\'s by exactly its two further looks, and the setup comparison finds nothing different from the 650\'s in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not', skipWithoutIrArchive(), () => {
+test('todo-compile-600.md 2.1: the five device test setup assembles on the Harmony 600\'s empty configuration with every page in its one grey, smaller than the 650\'s by exactly its two further looks, and the setup comparison finds nothing different from the 650\'s in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
   const setup = fiveDeviceSetup();
   const on = (skin: number, name: string, colour: number) => assembleSetup({
     ...setup, model: { name, skin }, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false },

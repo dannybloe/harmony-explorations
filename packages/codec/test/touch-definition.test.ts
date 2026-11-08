@@ -64,7 +64,7 @@ import assert from 'node:assert';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
-import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   archiveProtocols, frameSlots, frameWidths, keyCodeOfStatedCode, rhythmKey, rhythmOfDefinition, statedCodeOfDefinition, withStatedWidths,
   withToggleCleared, waveformOfArchiveCommand, type ArchiveKeyCode, type ArchiveProtocol,
@@ -473,7 +473,7 @@ test('the carrier a row\'s period gives is Logitech\'s own for 641 of the table\
   assert.strictEqual(same_, 641);
 });
 
-test('against Logitech\'s own definitions, the 29 measured rows send the same on 89139 of the 93107 archive codes they place, the stated rows are a round trip, and every other code is named by why', { ...skipWithoutIrArchive() }, () => {
+test('against Logitech\'s own definitions, the 29 measured rows send the same on 89139 of the 93107 archive codes they place, the stated rows are a round trip, and every other code is named by why', slow({ ...skipWithoutIrArchive() }), () => {
   const theirs = new Map(archiveProtocols(IR_ARCHIVE!).map((p) => [p.name, p]));
   const ours = new Map<string, IrProtocol>();
   // **A row the name gives no usable width is written at the widths Logitech's definition states**, one per

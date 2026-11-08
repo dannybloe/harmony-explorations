@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   archiveProtocolsByName,
   catalogueCommandBlocks,
@@ -113,7 +113,7 @@ const join3 = (blocks: readonly string[]) => blocks.join('|');
 const swapped = (blocks: readonly string[]) => (blocks.length === 6 ? [...blocks.slice(3), ...blocks.slice(0, 3)] : blocks);
 
 test('a toggling code\'s record is two groups, the code as stated and then flipped, and the composer\'s records are Logitech\'s on 774 of 797, 623 of its 639 two group records among them',
-  needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config', ...FIXTURES)), () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config', ...FIXTURES))), () => {
     const base = open('h650_panasonic_config');
     const results: string[] = [];
     let all = 0; let whole = 0; let firstOnly = 0; let swap = 0; let two = 0;

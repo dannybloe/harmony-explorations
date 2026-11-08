@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { require_, skipUnless, slow } from '@harmony/lab';
 import {
   type Container,
   caseQueued,
@@ -82,7 +82,7 @@ test('section 352: every activity device list of Logitech\'s arch 14 compiles is
 });
 
 test('section 352: each real activity list composed again is the compiler\'s on the screen, 149 pages of 149, and differs only where the compiler\'s own list holds a text the new one points at',
-     skipUnless(...ALL.filter((name) => name !== 'h650_issue8_config')), () => {
+     slow(skipUnless(...ALL.filter((name) => name !== 'h650_issue8_config'))), () => {
   // The calibration. Every real activity's two cases under Devices are pointed back at the idle list and
   // its list composed again. The composed pages draw what the compiler's draw, and their programs are the
   // compiler's byte for byte except where the compiler's list is the one inline copy of a text: the

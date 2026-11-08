@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import type { Container, Recipe, RecipeScreenItem } from '../src/index.ts';
 import { screenProgram } from '../src/screen.ts';
 import { valueMaps } from '../src/valuemap.ts';
@@ -132,7 +132,7 @@ const unreached = (c: Container): number[] => {
 // ---------------------------------------------------------------------------------------------------
 
 test('dropping every list a Logitech compile reaches by nothing changes nothing a person sees and passes the wiring, screen record, firmware screen and text checks wherever they read the compile, on 22 compiles of three models',
-     skipUnless(...TWENTY_TWO), () => {
+     slow(skipUnless(...TWENTY_TWO)), () => {
   let dropped = 0;
   let bytes = 0;
   let sites = 0;
@@ -512,7 +512,7 @@ test('10.7.3: the four slot family\'s choices reach the assembly: state colours 
 });
 
 test('10.7.5: the letters\' colours are a choice, and letters in other inks are read back as ours, by every reader that reads letters',
-     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+     slow(needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean'))), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
   // Yellow letters on a red shadow and blue ones on the bars: three inks no compile of Logitech's letters in.
@@ -550,7 +550,7 @@ test('10.7.5: the letters\' colours are a choice, and letters in other inks are 
 });
 
 test('10.8.5: the weight each face is drawn in is a choice, and a configuration in other weights is read and measured in them with no memory of the build',
-     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+     slow(needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean'))), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
   // Bolder labels, lighter regular screens: every face moved from the weight decided in 8.2.

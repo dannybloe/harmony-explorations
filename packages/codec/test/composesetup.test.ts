@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   type ComposedSetup, type Container, SCREEN_OWNERS, archSlot, claims, composeSetup, deviceModeMaps, modeRecords, parse, pointers,
   readRecipe, screenUnits, taggedList, touchPages,
@@ -55,7 +55,7 @@ const composed = (): ComposedSetup => {
 };
 
 test('the One test setup composed onto Logitech\'s compile of two devices comes out lettered in ours, in the family\'s look, placed by the placer, with every check passing',
-     NEEDS, () => {
+     slow(NEEDS), () => {
   const out = composed();
   const c = out.container;
   // The look's two halves, in place: lettered before anything is composed, the look after, then the placement of
@@ -364,7 +364,7 @@ test('todo-compile-one 4.10: the composed setup holds no tour and no Remote Assi
 });
 
 test('todo-compile-one 4.10: with the tour kept the composed setup does not keep the texts\' form rule, "pages" at 35, 18 drawn inline where the rule draws it by reference',
-     NEEDS, () => {
+     slow(NEEDS), () => {
   // The other half of the sentence in section 421: the path as it stood before the step. It composes a second time,
   // with the family's choice flipped for the length of the composition and put back whatever happens.
   const choices = ONE_CHOICES as { welcomeTour: boolean };

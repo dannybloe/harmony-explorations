@@ -34,7 +34,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab, slow } from '@harmony/lab';
 import {
   archiveProtocolsByName,
   blockOfStatedCode,
@@ -125,7 +125,7 @@ function renderedKeycodes(): Set<string> {
 }
 
 test('the codes a family\'s name cannot read are 52658 commands of 156 families, and the definition reads all but 172, none of them an infrared code the catalogue renders',
-  needing(skipWithoutIrArchive()), () => {
+  slow(needing(skipWithoutIrArchive())), () => {
     const rendered = renderedKeycodes();
     const protocols = archiveProtocolsByName(IR_ARCHIVE!);
     const families = new Set<string>();

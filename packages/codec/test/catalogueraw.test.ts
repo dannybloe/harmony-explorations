@@ -18,7 +18,7 @@ import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
 import test from 'node:test';
-import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { deviceDriving } from '../src/driving.ts';
 import {
   RAW_BLOCKS_FILE, RAW_DERIVED_DIRECTORY, RAW_FIELDS, RAW_FIELDS_FILE, RAW_FIELDS_FORMAT, RAW_INDEX_FILE,
@@ -149,7 +149,7 @@ test('derived files are absent without a manifest and stale when SHA256SUMS stat
  * different `next` lists, where the archive kept the first; the projection refuses it rather than pick.
  */
 test('every per input and per state action list in the archive is in the service\'s Order sequence, and none in stored order',
-  needing(skipWithoutIrArchive(), skipUnless('ir_archive_raw_features')), async () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless('ir_archive_raw_features'))), async () => {
     const where = new Map<number, string>();
     const root = join(IR_ARCHIVE!, 'devices');
     // Folders only: Finder leaves a .DS_Store beside them, which is not a device.

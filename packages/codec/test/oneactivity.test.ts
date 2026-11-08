@@ -16,7 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, skipUnless, slow } from '@harmony/lab';
 import { activities, activityScreens, type Container, modeRecords, parse, taggedList, touchPages, valueMaps } from '../src/index.ts';
 import { touchOwner } from '../src/touch.ts';
 import {
@@ -101,7 +101,7 @@ function shapeOf(c: Container, mode: number, self: { working: number; startup: n
 }
 
 test('section 402: our builder rebuilds 52 of the 64 activities of Logitech\'s One compiles part for part, and each of the other 12 is a feature it does not build or a letter ours lack',
-     skipUnless(...WITH_ACTIVITIES), () => {
+     slow(skipUnless(...WITH_ACTIVITIES)), () => {
   const tally = { activities: 0, same: 0, favourites: 0, gaps: 0, picturePads: 0, notLettered: 0, instructionOne: 0, other: [] as string[] };
   for (const name of WITH_ACTIVITIES) {
     const original = parse(load(name) as Uint8Array);

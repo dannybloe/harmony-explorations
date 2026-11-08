@@ -24,7 +24,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   type ComposedSetup, type Container, archSlot, composeSetup, modeRecords, parse, readRecipe, takeApart, taggedList, touchPages,
 } from '../src/index.ts';
@@ -127,7 +127,7 @@ const NEEDS_DONOR = { skip: skipUnless('harvest_one_two_devices').skip || skipWi
 // 8.1.2, the composition.
 
 test('8.1.2: the One test setup composed onto the empty One is not lettered and draws no Logitech picture over, its letters the stated table\'s, and passes every check at 905173 bytes',
-     NEEDS, () => {
+     slow(NEEDS), () => {
   const out = composed();
   const c = out.container;
   const names = out.steps.map((one) => one.step);

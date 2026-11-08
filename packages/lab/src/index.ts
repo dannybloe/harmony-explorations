@@ -2155,6 +2155,27 @@ export function needing(...options: readonly { skip: string | false }[]): { skip
   return { skip: reason ?? false };
 }
 
+/** The variable that runs the slow tier, set by `make ts-test-all` and so by `make all`. */
+export const SLOW_TESTS = 'HARMONY_SLOW_TESTS';
+
+/**
+ * A test of the slow tier: it runs only when `HARMONY_SLOW_TESTS=1`, and otherwise skips naming how to run it.
+ * Wraps the test's own skip options, whose reason wins when they skip anyway.
+ *
+ * **Why a tier.** Measured on 8 November 2026 over a full run on a quiet machine: 30 of 3633 tests did 2304 of
+ * the 4849 seconds the tests ran in total, each composing every device or activity of the corpus again and
+ * comparing the result with Logitech's byte for byte. They ran on every step however small the change, so
+ * waiting for them was most of the work. They still run, in `make ts-test-all` and in `make all` before a push;
+ * a step checks the fast tier, `make ts-test`, and the tests it touches. A test joins the tier only by a
+ * measurement of its time, never to make a run pass.
+ */
+export function slow(options: { skip: string | false } = { skip: false }): { skip: string | false } {
+  if (options.skip !== false) return options;
+  return process.env[SLOW_TESTS] === '1'
+    ? options
+    : { skip: `slow tier, run by make ts-test-all (${SLOW_TESTS}=1)` };
+}
+
 /**
  * Make a new folder for one read off a remote, `<lab>/reads/<YYYYMMDDTHHMM>Z-<name>`, and return its path.
  *

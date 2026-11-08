@@ -26,7 +26,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   type Container,
@@ -697,7 +697,7 @@ function composeWhole(f: Found, order: 'compiler' | 'catalogue'):
 const CONTROL: readonly string[] = ['Sony_TV', 'Panasonic_TV', 'Sony_KE-50MR1E'];
 
 test('section 325: a catalogue device composed whole reads back as the compiler\'s device mode',
-  needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless(...FIXTURES))), () => {
     const s = score();
     const control = score();
     const notWhole: string[] = [];
@@ -808,7 +808,7 @@ const SEVERAL: readonly { compile: string; refused?: { message: string; keep: nu
 ];
 
 test('section 331: several catalogue devices composed in one run each read back as the same device composed alone, and Logitech\'s differ only where named',
-  needing(skipWithoutIrArchive(), skipUnless(...SEVERAL.map((one) => one.compile))), () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless(...SEVERAL.map((one) => one.compile)))), () => {
     // Against the same device composed alone into the same compile, against Logitech's, and the control.
     const alike = score();
     const logitech = score();

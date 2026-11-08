@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE as CALL_LIST, EVENT_MASK, STATE_WRITE_BASE, activities, activityPowerTargets, allOffList,
   handlerSets, keepDeviceOn, nameNodes, taggedList,
@@ -256,7 +256,7 @@ test('a device composed from the catalogue switches with the records and the wir
  * compared with the rest.
  */
 test('the states a power on resets are composed as Logitech compiles them, silent and in order, on all 14 reset lists of the 9 instances that have one',
-  needing(skipWithoutIrArchive(), skipUnless('h650_config_region', ...FIXTURES)), () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless('h650_config_region', ...FIXTURES))), () => {
     const pristine = parse(require_('h650_config_region'));
     /** The calls after the power on delay, read as `<property>=<value>` with `silent ` in front where flagged. */
     const resetsOf = (c: Container, label: string): string[] => {
@@ -480,7 +480,7 @@ test('a power action of several steps is a list calling each step in order, on t
  * its reason. Exact counts, so a reader change or an archive change moves them in the diff.
  */
 test('the mapping takes the power of 235572 of the archive\'s 276236 devices, and every refusal is counted by its reason',
-  skipWithoutIrArchive(), () => {
+  slow(skipWithoutIrArchive()), () => {
     const outcomes = new Map<string, number>();
     let several = 0;
     let held = 0;

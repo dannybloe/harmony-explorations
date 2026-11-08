@@ -855,7 +855,9 @@ make lab-check     what the lab register already says about a path, PATH_ARG=<la
                    fixed the sixth, each having checked the paths it meant to open and then followed
                    a name into one it had not, sections 209 and 213
 make ghidra        build or refresh the Ghidra project
-make ts            typecheck and test the TypeScript packages
+make ts            typecheck and test the TypeScript packages, the slow tier included
+make ts-test       the TypeScript tests without the slow tier, `slow()` in packages/lab: what a step runs
+make ts-test-all   all of them, the slow tier's 30 corpus wide compositions included: before a push
 make audit         check the npm dependency tree for known vulnerabilities
 make hooks         install .githooks/pre-commit, once per clone
 make golden        compare the golden vectors; golden-write regenerates them. Since section 139

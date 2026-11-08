@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes key-reader remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes key-reader remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -190,13 +190,19 @@ ghidra:
 # compiler plus its type definitions: nothing else is installed and nothing else can go stale.
 # Node's type stripping runs the sources directly, so `ts-test` does not need `ts-typecheck`
 # first; they check different things and both are wanted.
-ts: ts-typecheck ts-test
+ts: ts-typecheck ts-test-all
 
 ts-typecheck:
 	@$(PNPM) run typecheck && echo "typechecks clean"
 
 ts-test:
 	@$(PNPM) test
+
+# The slow tier too: the 30 tests that compose the whole corpus again and compare it with Logitech's,
+# measured on 8 November 2026 at half of all the time the tests took. `slow()` in packages/lab skips them
+# unless HARMONY_SLOW_TESTS=1. Run before a push, and by `make all`; a step runs `make ts-test`.
+ts-test-all:
+	@HARMONY_SLOW_TESTS=1 $(PNPM) test
 
 audit:
 	@$(PNPM) audit

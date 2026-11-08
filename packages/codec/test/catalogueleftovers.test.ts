@@ -30,7 +30,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   type ArchiveProtocol,
   archiveProtocolsByName,
@@ -215,7 +215,7 @@ const CLOSURE = [
 ] as const;
 
 test('a Pioneer receiver and a Philips television holding such codes, composed whole, are Logitech\'s records on a Harmony One but for the Philips power step\'s long press version, the three codes included, and at the other count none of the three is',
-  needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config')), () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config'))), () => {
     const base = open('h650_panasonic_config');
     const protocols = archiveProtocolsByName(IR_ARCHIVE!);
     const results: string[] = [];

@@ -16,7 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { require_, skipUnless, slow } from '@harmony/lab';
 import { u16 } from '../src/bytes.ts';
 import { BINDING_SLOT, archSlot, parse, type Container } from '../src/gspm.ts';
 import { dropLists, instructionSites, listCallSites, namedLists } from '../src/assemble.ts';
@@ -178,7 +178,7 @@ const LEFT_OUT: Readonly<Record<string, [number, number, number, number, number]
 };
 
 test('todo-compile-one 4.10: on the sixteen English compiles of skin 54 the tour\'s eleven screens and the Remote Assistant\'s five go with what only they reach, nothing left names any of it, every check holds, and every builder of the family rebuilds the result byte for byte',
-     skipUnless(...SKIN_54), () => {
+     slow(skipUnless(...SKIN_54)), () => {
   const got: Record<string, [number, number, number, number, number]> = {};
   for (const name of SKIN_54) {
     const c = containerOf(name);

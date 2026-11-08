@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { require_, skipUnless, skipWithoutLab, slow } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   activities,
@@ -316,7 +316,7 @@ function startupTitle(c: Container, name: string): string[] | undefined {
   return undefined;
 }
 
-test('an activity\'s screens composed from its commands are Logitech\'s page for page, but where a user left a gap', skipWithoutLab(), () => {
+test('an activity\'s screens composed from its commands are Logitech\'s page for page, but where a user left a gap', slow(skipWithoutLab()), () => {
   const pages = { same: 0, differ: 0 };
   const records = { same: 0, differ: 0 };
   const titles = { same: 0, differ: 0 };

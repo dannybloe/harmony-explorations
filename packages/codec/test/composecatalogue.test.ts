@@ -29,7 +29,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { layOutContainer, takeApart } from '../src/frame.ts';
 import { withOxaniumFonts } from '../src/fonttable.ts';
 import { deviceModeLayout } from '../src/devicemode.ts';
@@ -149,7 +149,7 @@ function requestOf(one: Added): CatalogueDeviceRequest {
 // 1. One run is the same as one at a time
 
 test('several catalogue devices composed in one run are the bytes of composing them one at a time, in the order given',
-  needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config')), () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config'))), () => {
     const base = open('h650_panasonic_config');
     const requests = PAIRS[0]!.devices.map(requestOf);
     const together = composeCatalogueDevices(base, IR_ARCHIVE!, requests);
@@ -313,7 +313,7 @@ function treeInOrder(c: Container): boolean {
 const RESETS_COMPARED = 11;
 
 test('devices composed several at a time are where Logitech\'s compile of the same devices put them, and send what it sends',
-  needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless(...FIXTURES))), () => {
     const named: string[] = [];
     let lists = 0;
     let devicesCompared = 0;
@@ -507,7 +507,7 @@ function recordBlocks(c: Container, group: number): string[][] {
 }
 
 test('the test setup\'s seven devices composed whole are infrared records Logitech compiled for them, three blocks word for word',
-  needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config', 'h650_start_config')), () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config', 'h650_start_config'))), () => {
     const base = open('h650_panasonic_config');
     const theirs = open('h650_start_config');
     const theirGroup = new Map(devices(theirs).map((one) => [one.name, one.group!]));

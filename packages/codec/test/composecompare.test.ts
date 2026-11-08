@@ -20,7 +20,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { type ComposedSetup, type Container, composeSetup, parse, readRecipe } from '../src/index.ts';
 import { SEND_INFRARED, devices } from '../src/inventory.ts';
 import { instructionSites } from '../src/assemble.ts';
@@ -147,7 +147,7 @@ const offOrder = (value: string | undefined): string[] =>
 
 // ---------------------------------------------------------------------------------------------------------
 
-test('8.1.5: the two compositions differ in 388 places, every one of them one of seven causes and none unexplained', NEEDS, () => {
+test('8.1.5: the two compositions differ in 388 places, every one of them one of seven causes and none unexplained', slow(NEEDS), () => {
   const differences = compareOneViews(a(), b());
   const counted = Object.fromEntries([...causes(differences)].map(([cause, list]) => [cause, list.length]));
   assert.deepEqual(counted, {

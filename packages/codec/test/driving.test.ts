@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
 import test from 'node:test';
-import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { ArchiveError, archiveManifest } from '../src/archive.ts';
 import { catalogueDriving, deviceDriving, driveSteps } from '../src/driving.ts';
 import type { DeviceDriving, DriveStep } from '../src/driving.ts';
@@ -124,7 +124,7 @@ test('the archive states what Logitech\'s service answered for the same televisi
  * a record the reader refuses fails by name, and a count that moves says the archive changed under us.
  */
 test('every device record in the archive reads, and the power and input counts are what was surveyed',
-  skipWithoutIrArchive(), () => {
+  slow(skipWithoutIrArchive()), () => {
     assert.equal(archiveManifest(IR_ARCHIVE!).schemaVersion, 2);
     const powerTypes = new Map<string, number>();
     let records = 0;
@@ -196,7 +196,7 @@ test('every device record in the archive reads, and the power and input counts a
  * of the checkout, 329 MB, so this skips without it.
  */
 test('the archive puts every power, input and channel action list in the service\'s own step order',
-  needing(skipWithoutIrArchive(), skipUnless('ir_archive_raw_features')), async () => {
+  slow(needing(skipWithoutIrArchive(), skipUnless('ir_archive_raw_features'))), async () => {
     const where = new Map<number, string>();
     const root = join(IR_ARCHIVE!, 'devices');
     // Folders only: Finder leaves a .DS_Store beside them, which is not a device.
