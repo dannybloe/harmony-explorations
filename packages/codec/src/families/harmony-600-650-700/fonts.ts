@@ -29,8 +29,8 @@
 import type { FamilyFonts } from '../family.ts';
 // Types alone: the font table asks the family through the registry, so a value import back would close a
 // cycle that leaves this module's constant unset when it is the first one loaded.
-import type { FaceOrRefusal, SetMeasurement } from '../../fonttable.ts';
-import type { OxaniumFaceName } from '../../lettering.ts';
+import type { FaceOrRefusal, SetMeasurement } from '../../drawing/fonttable.ts';
+import type { OxaniumFaceName } from '../../drawing/lettering.ts';
 import { HARMONY_650_SKINS } from './skins.ts';
 
 /** The nine faces measured on the Harmony 650, `todo-compile-650.md` 8.2. `lettering.ts` held this until 3.3.3.5. */

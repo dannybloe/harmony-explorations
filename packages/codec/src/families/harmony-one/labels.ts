@@ -41,17 +41,17 @@
  * Measured in the lab's `work/one-track/labels/`. The Harmony One only: the 600 family lays its labels out
  * with a ladder of sizes and two lines, `fourSlotLabelLines`.
  */
-import { type FontSet, fontSets } from '../../font.ts';
-import { isSmoothedSet, measureSet } from '../../fonttable.ts';
-import type { Container } from '../../gspm.ts';
-import { type BytesMemo, memoOverBytes } from '../../memo.ts';
+import { type FontSet, fontSets } from '../../screens/font.ts';
+import { isSmoothedSet, measureSet } from '../../drawing/fonttable.ts';
+import type { Container } from '../../container/gspm.ts';
+import { type BytesMemo, memoOverBytes } from '../../container/memo.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { codesFor, textWidth } from '../../shared/spelling.ts';
-import { type CharacterMap, characterMap } from '../../text.ts';
-import { modeRecords } from '../../sections.ts';
-import { SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
+import { type CharacterMap, characterMap } from '../../screens/text.ts';
+import { modeRecords } from '../../container/sections.ts';
+import { SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screens/screen.ts';
 import { DEVICE_LABEL_DROP, DEVICE_PAGE_SLOTS } from './menus.ts';
-import { deviceModeMaps } from '../../inventory.ts';
+import { deviceModeMaps } from '../../inventory/inventory.ts';
 
 /** A line may take another word only while it stays this wide, its separator included. */
 export const ONE_LABEL_JOIN_WIDTH = 72;

@@ -88,7 +88,7 @@ import {
   nextActivityValue,
 } from '../src/build.ts';
 import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({

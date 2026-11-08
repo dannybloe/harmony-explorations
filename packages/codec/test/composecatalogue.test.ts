@@ -30,12 +30,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
-import { layOutContainer, takeApart } from '../src/frame.ts';
-import { withOxaniumFonts } from '../src/fonttable.ts';
-import { deviceModeLayout } from '../src/devicemode.ts';
+import { layOutContainer, takeApart } from '../src/assembly/frame.ts';
+import { withOxaniumFonts } from '../src/drawing/fonttable.ts';
+import { deviceModeLayout } from '../src/compose/devicemode.ts';
 import { HARD_KEYS } from '../src/families/harmony-600-650-700/devicemode.ts';
 import { ONE_HARD_KEYS } from '../src/families/harmony-one/devicekeys.ts';
-import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
+import { composeDonorDeviceInfrared } from '../src/compose/composecatalogue.ts';
 import {
   ComposeError,
   type Container,

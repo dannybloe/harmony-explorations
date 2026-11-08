@@ -8,7 +8,7 @@ only, `tests/test_harmony_885_start_check.py`). **Measured in configurations** o
 distinct arch 8 containers of that file's `CALIBRATION`, six configurations' lineages, one of them a
 Harmony 720's. No remote was opened. Instructions decode through `harmony.pic18.isa`, switches through
 `harmony.pic18.chains`, configurations through `harmony.gspm`; the power transitions are read through the
-codec, `packages/codec/src/inventory.ts`, run under node, because the name tree that says which variable
+codec, `packages/codec/src/inventory/inventory.ts`, run under node, because the name tree that says which variable
 is a device's `Power` is read there and nowhere in Python. Addresses are the 885 application's.
 
 **Sources checked before the work**: `reference/config-format/actions.md`, whose interpreter section is
@@ -216,9 +216,9 @@ ACK = (0x07, 0xFFFA)
 NODE_PROBE = r'''
 import { readFileSync } from 'node:fs';
 const [codecDir, ...paths] = process.argv.slice(1);
-const { parse } = await import(codecDir + '/gspm.ts');
-const { worstQueueRun, overflowingLists, undecidedLists } = await import(codecDir + '/queue.ts');
-const { stateVariables } = await import(codecDir + '/inventory.ts');
+const { parse } = await import(codecDir + '/container/gspm.ts');
+const { worstQueueRun, overflowingLists, undecidedLists } = await import(codecDir + '/container/queue.ts');
+const { stateVariables } = await import(codecDir + '/inventory/inventory.ts');
 const out = [];
 for (const path of paths) {
   const c = parse(new Uint8Array(readFileSync(path)));

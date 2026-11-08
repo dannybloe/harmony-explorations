@@ -43,9 +43,9 @@
  * **Which architectures**: the Harmony Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's
  * templates file it under 18. The screens read are the production image's `juniper` skin.
  */
-import { encodePng, readPng } from '../../png.ts';
-import { rasterise } from '../../raster.ts';
-import { oxanium } from '../../typeface.ts';
+import { encodePng, readPng } from '../../screens/png.ts';
+import { rasterise } from '../../drawing/raster.ts';
+import { oxanium } from '../../drawing/typeface.ts';
 import { ComposeRefusal } from './compose.ts';
 import { CONTENT_DEVICE, CONTENT_SERVICE, CONTENT_USER, type ContentUser, type SyncDocuments } from './documents.ts';
 import { readConfiguration, type ReadFavourites } from './read.ts';

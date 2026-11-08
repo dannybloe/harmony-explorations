@@ -3,30 +3,30 @@
  * compiler's rules, `devicemode.ts`, and a mode added for them. Plan 007's four slot family, cut out of
  * `compose.ts` unchanged.
  */
-import { u24 } from '../../bytes.ts';
+import { u24 } from '../../support/bytes.ts';
 import {
   deviceModeTitle, fontsBySize, LABEL_WIDTH, labelLayout, ladderOf, pageCounter, placeLabel, TITLE_RUNG,
   TWO_LINE_RISE,
 } from './devicemode.ts';
-import { Writer } from '../../emit.ts';
+import { Writer } from '../../container/emit.ts';
 import {
   DEVICE_PAGE_BACKGROUND_AT, deviceModeKeyMap, FOUR_SLOT_TITLE_XY, fourSlotCounterX, inOurLook, sentFrame,
-} from '../../families/harmony-600-650-700/chrome.ts';
+} from './chrome.ts';
 import {
   FOUR_SLOT_MAX_PAGES, fourSlotMenus, fourSlotPageList, type FourSlotTemplate, fourSlotTemplate, growFourSlotMenu,
   menuLayout, openFourSlotMenuPage,
-} from '../../families/harmony-600-650-700/menus.ts';
-import { type FontSet, fontSets } from '../../font.ts';
-import { archSlot, Container, parse, SCAN_MASK } from '../../gspm.ts';
+} from './menus.ts';
+import { type FontSet, fontSets } from '../../screens/font.ts';
+import { archSlot, Container, parse, SCAN_MASK } from '../../container/gspm.ts';
 import {
   ENTER_MODE,
   KEY_EVENT_PRESS, KEY_EVENT_SHIFT,
-} from '../../inventory.ts';
-import { relocate } from '../../relocate.ts';
-import { SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE } from '../../screen.ts';
+} from '../../inventory/inventory.ts';
+import { relocate } from '../../edit/relocate.ts';
+import { SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE } from '../../screens/screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, modePages, modeRecords, modeTable, taggedList, taggedListPools,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import { appendMode, type ModeProgram } from '../../shared/modes.ts';
@@ -34,7 +34,7 @@ import {
   type ComposedScreen, type ComposeRow, type ComposeScreenOptions, deviceListMenus,
 } from '../../shared/menus.ts';
 import { codesFor, textWidth } from '../../shared/spelling.ts';
-import { characterMap } from '../../text.ts';
+import { characterMap } from '../../screens/text.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
 import { ourStateColours, withStateLook } from './statelook.ts';
 import { FOUR_SLOT_ITEMS, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y, FOUR_SLOT_ROWS } from './geometry.ts';

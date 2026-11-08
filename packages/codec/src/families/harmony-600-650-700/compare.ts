@@ -22,10 +22,10 @@
  * which 5.2 leaves out; and screen text other than a corner item's label, a page's title included. A
  * binding that sends nothing, navigation, is compared by its presence and not by where it leads.
  */
-import type { Container } from '../../gspm.ts';
-import { STATE_WRITE_BASE } from '../../actions.ts';
-import { characterMap, screenStrings } from '../../text.ts';
-import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, nameNodes, taggedList } from '../../sections.ts';
+import type { Container } from '../../container/gspm.ts';
+import { STATE_WRITE_BASE } from '../../container/actions.ts';
+import { characterMap, screenStrings } from '../../screens/text.ts';
+import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, nameNodes, taggedList } from '../../container/sections.ts';
 import {
   activities,
   activityScreens,
@@ -34,12 +34,12 @@ import {
   devices,
   handlerSetRoles,
   infraredCodesPerList, ENTER_MODE,
-} from '../../inventory.ts';
-import { irGroups } from '../../ir.ts';
-import { recordSent } from '../../irframe.ts';
-import { caseQueued } from '../../inventory.ts';
-import { valueMaps } from '../../valuemap.ts';
-import { cornerCellAt, cornerLayoutOf } from '../../cornerlayout.ts';
+} from '../../inventory/inventory.ts';
+import { irGroups } from '../../infrared/ir.ts';
+import { recordSent } from '../../infrared/irframe.ts';
+import { caseQueued } from '../../inventory/inventory.ts';
+import { valueMaps } from '../../container/valuemap.ts';
+import { cornerCellAt, cornerLayoutOf } from '../../inventory/cornerlayout.ts';
 import { activityKeyedRecords } from './activityscreen.ts';
 
 /** What one binding shows and does, in names that mean the same in both files. */

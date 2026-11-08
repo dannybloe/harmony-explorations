@@ -123,7 +123,7 @@ test('a Writer reports a short write and an overrun, and the rebuild guard refus
   // sized from the same value it then fills, so a short write cannot be provoked through the public
   // API at all. It arises from a coding error inside a rebuilder, which is what the guard is for and
   // what no test can construct from outside.
-  const source = readFileSync(new URL('../src/emit.ts', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../src/container/emit.ts', import.meta.url), 'utf8')
     .replace(/\s+/g, ' ');
   assert.match(source, /if \(w\.remaining !== 0\) \{ throw new GspmError/,
     'rebuilds no longer refuses a writer that did not fill its extent');

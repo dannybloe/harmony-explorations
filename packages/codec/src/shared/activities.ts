@@ -6,28 +6,28 @@
  * the four slot family's readers of its start, `startSequenceOf` and `arch14Starts`, moved to
  * that family's `start.ts` with them.
  */
-import { SILENT_WRITE } from '../actions.ts';
+import { SILENT_WRITE } from '../container/actions.ts';
 import type { ActivityStart, Family, ListBody } from '../families/family.ts';
-import { STATE_WRITE_BASE } from '../actions.ts';
-import { u24 } from '../bytes.ts';
-import { applyEdits } from '../edit.ts';
-import { Writer } from '../emit.ts';
-import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../gspm.ts';
+import { STATE_WRITE_BASE } from '../container/actions.ts';
+import { u24 } from '../support/bytes.ts';
+import { applyEdits } from '../edit/edit.ts';
+import { Writer } from '../container/emit.ts';
+import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../container/gspm.ts';
 import {
   activities, ACTIVITY_STATE_NAME, caseQueued, devices, deviceVariables, ENTER_MODE, firmwareStateVariableMax,
   infraredGroupsPerList, INPUT_PROPERTY, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, POWER_PROPERTY,
   SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, stateVariables,
-} from '../inventory.ts';
-import { relocate } from '../relocate.ts';
+} from '../inventory/inventory.ts';
+import { relocate } from '../edit/relocate.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, HANDLER_TAG_LEAVE, handlerSets, NAME_NODE_HEADER, type NameNode,
   modeRecords, nameNodes, stateTable, taggedList,
-} from '../sections.ts';
+} from '../container/sections.ts';
 import {
   ACTION_TABLE_SLOT, ComposeError, HANDLER_TAG_RESUME, restamped, STATE_WRITE_LIMIT,
-} from '../shared/core.ts';
-import { appendTableEntries } from '../shared/infrared.ts';
-import { valueMaps } from '../valuemap.ts';
+} from './core.ts';
+import { appendTableEntries } from './infrared.ts';
+import { valueMaps } from '../container/valuemap.ts';
 
 /**
  * One device's target state when an activity is running: a base slot 13 variable and its value.

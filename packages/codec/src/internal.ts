@@ -10,50 +10,50 @@
  */
 
 // Byte helpers, one namespace.
-export * as bytes from './bytes.ts';
+export * as bytes from './support/bytes.ts';
 // The container: its header, pointers, base slots and clock, Logitech's EzHex file, and the trailer checksum.
-export * from './gspm.ts';
-export * from './ezhex.ts';
-export * from './growth.ts';
-export * from './relocate.ts';
+export * from './container/gspm.ts';
+export * from './container/ezhex.ts';
+export * from './edit/growth.ts';
+export * from './edit/relocate.ts';
 // The sections: value maps, state tables, modes, the tagged lists, the tables, and the action lists.
-export * from './valuemap.ts';
-export * from './sections.ts';
-export * from './tables.ts';
-export * from './actions.ts';
-export * from './queue.ts';
-export * from './modezero.ts';
+export * from './container/valuemap.ts';
+export * from './container/sections.ts';
+export * from './container/tables.ts';
+export * from './container/actions.ts';
+export * from './container/queue.ts';
+export * from './container/modezero.ts';
 // What a configuration holds, read whole: devices, activities, keys, delays and the state variables.
-export * from './inventory.ts';
-export * from './summary.ts';
-export * from './language.ts';
-export * from './metadata.ts';
-export * from './deflate.ts';
+export * from './inventory/inventory.ts';
+export * from './container/summary.ts';
+export * from './inventory/language.ts';
+export * from './container/metadata.ts';
+export * from './support/deflate.ts';
 // The screen language, the fonts and the text, and the Harmony One's touch panel.
-export * from './screen.ts';
-export * from './font.ts';
-export * from './alphabets.ts';
-export * from './text.ts';
-export * from './render.ts';
-export * from './png.ts';
-export * from './touch.ts';
+export * from './screens/screen.ts';
+export * from './screens/font.ts';
+export * from './screens/alphabets.ts';
+export * from './screens/text.ts';
+export * from './screens/render.ts';
+export * from './screens/png.ts';
+export * from './inventory/touch.ts';
 // Infrared: the records, the frame decoder and encoder, IrDA, our rhythm table and the stated codes.
-export * from './ir.ts';
-export * from './irframe.ts';
-export * from './irda.ts';
-export * from './protocols.ts';
-export * from './stated.ts';
-export * from './pronto.ts';
+export * from './infrared/ir.ts';
+export * from './infrared/irframe.ts';
+export * from './infrared/irda.ts';
+export * from './infrared/protocols.ts';
+export * from './infrared/stated.ts';
+export * from './infrared/pronto.ts';
 // Logitech's protocol archive and device catalogue, parsed from what a caller hands over, and the raw capture
 // behind the catalogue.
-export * from './archive.ts';
-export * from './catalogue.ts';
-export * from './driving.ts';
-export * from './catalogueraw.ts';
+export * from './catalogue/archive.ts';
+export * from './catalogue/catalogue.ts';
+export * from './catalogue/driving.ts';
+export * from './catalogue/catalogueraw.ts';
 // The byte accounting behind M2, what the screen bytes are, the emitter, and in place edits.
-export * from './coverage.ts';
-export * from './screencategories.ts';
-export * from './emit.ts';
-export * from './edit.ts';
+export * from './container/coverage.ts';
+export * from './screens/screencategories.ts';
+export * from './container/emit.ts';
+export * from './edit/edit.ts';
 // What the codec asks its loader for.
-export * from './resources.ts';
+export * from './support/resources.ts';

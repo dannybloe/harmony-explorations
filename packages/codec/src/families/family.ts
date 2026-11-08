@@ -11,18 +11,18 @@
  * `todo-compile-650.md` 10.7.3: a composer takes its family's choices in its options and falls back to
  * these.
  */
-import type { HardKey } from '../devicemode.ts';
-import type { ActivityKeyRules, DeviceScreenItem } from '../activityroles.ts';
-import type { Container, Instruction } from '../gspm.ts';
-import type { Edit } from '../edit.ts';
-import type { FaceOrRefusal, SetFace, SetMeasurement } from '../fonttable.ts';
-import type { OxaniumFaceName } from '../lettering.ts';
-import type { StateTableFacts } from '../statetables.ts';
-import type { Writer } from '../emit.ts';
+import type { HardKey } from '../compose/devicemode.ts';
+import type { ActivityKeyRules, DeviceScreenItem } from '../compose/activityroles.ts';
+import type { Container, Instruction } from '../container/gspm.ts';
+import type { Edit } from '../edit/edit.ts';
+import type { FaceOrRefusal, SetFace, SetMeasurement } from '../drawing/fonttable.ts';
+import type { OxaniumFaceName } from '../drawing/lettering.ts';
+import type { StateTableFacts } from '../assembly/statetables.ts';
+import type { Writer } from '../container/emit.ts';
 import type { ComposeActivity } from '../shared/activities.ts';
 import type { ComposeDevice, ComposedDevice } from '../shared/devices.ts';
-import type { WiringChecked } from '../wiringparts.ts';
-import type { BlendedSet } from '../blending.ts';
+import type { WiringChecked } from '../assembly/wiringparts.ts';
+import type { BlendedSet } from '../drawing/blending.ts';
 import type {
   ComposeActivityRowOptions, ComposeActivityScreenOptions, ComposedActivityRow, ComposedActivityScreen, ComposedScreen,
   ComposeRow, ComposeScreenOptions,

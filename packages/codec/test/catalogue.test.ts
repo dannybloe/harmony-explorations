@@ -19,23 +19,23 @@ import { fileURLToPath } from 'node:url';
 import { IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
   codeKey, identifyCodeset, DEVICE_TYPE_NAMES,
-} from '../src/catalogue.ts';
+} from '../src/catalogue/catalogue.ts';
 import {
   catalogueCommands, catalogueDevice, catalogueManufacturers, catalogueModels, codeIndex,
-} from '../src/catalogue.node.ts';
+} from '../src/catalogue/catalogue.node.ts';
 import { parse, payloadOf } from '../src/index.ts';
-import { irGroups } from '../src/ir.ts';
-import { devices, keyCodes } from '../src/inventory.ts';
-import { metadataArchive } from '../src/metadata.ts';
-import { archiveProtocols } from '../src/archive.node.ts';
+import { irGroups } from '../src/infrared/ir.ts';
+import { devices, keyCodes } from '../src/inventory/inventory.ts';
+import { metadataArchive } from '../src/container/metadata.ts';
+import { archiveProtocols } from '../src/catalogue/archive.node.ts';
 import { CONTAINERS as CATALOGUE_CORPUS } from '../bin/corpus.ts';
 import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnScans } from '../bin/drawings.ts';
-import { irHeaderPointers, irBlockWords, irCarrier } from '../src/ir.ts';
-import { biphaseFrames } from '../src/irframe.ts';
-import { pulsesOfWords } from '../src/irda.ts';
-import { irFrame } from '../src/irframe.ts';
-import { statedCode } from '../src/stated.ts';
-import '../src/resources.node.ts';
+import { irHeaderPointers, irBlockWords, irCarrier } from '../src/infrared/ir.ts';
+import { biphaseFrames } from '../src/infrared/irframe.ts';
+import { pulsesOfWords } from '../src/infrared/irda.ts';
+import { irFrame } from '../src/infrared/irframe.ts';
+import { statedCode } from '../src/infrared/stated.ts';
+import '../src/support/resources.node.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -373,7 +373,7 @@ test('a Harmony 300 device group is indexed by its device type button',
  * section 265: the Chromecast has no infrared codes at all, and asking the catalogue about it crashed.
  *
  * **The fix is that the declared type is now true**: `codeset` is omitted rather than null, which is
- * what makes the `states no codeset` refusal in `src/composecatalogue.ts`, which was `codeset ?? fail(...)`
+ * what makes the `states no codeset` refusal in `src/compose/composecatalogue.ts`, which was `codeset ?? fail(...)`
  * in `bin/compose-device.ts` until section 331 lifted the composition into the library, and `codeset!`
  * elsewhere behave the way their callers already assume, and `model` says it can be null.
  */

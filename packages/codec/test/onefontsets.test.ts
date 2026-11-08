@@ -15,9 +15,9 @@ import { require_, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { layOutContainer, takeApart } from '../src/build.ts';
 import { modeRecords } from '../src/internal.ts';
-import { IMAGE_TABLE_SLOT, fontSets, glyphOf } from '../src/font.ts';
-import { measureSet } from '../src/fonttable.ts';
-import { characterMap } from '../src/text.ts';
+import { IMAGE_TABLE_SLOT, fontSets, glyphOf } from '../src/screens/font.ts';
+import { measureSet } from '../src/drawing/fonttable.ts';
+import { characterMap } from '../src/screens/text.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { letterOneDonor } from '../src/families/harmony-one/look.ts';
 import {
@@ -33,7 +33,7 @@ import { describeOneDevicePages } from '../src/families/harmony-one/devicepages.
 import { describeOneClockHeader } from '../src/families/harmony-one/clockheader.ts';
 import { oneActivityScreenModes } from '../src/families/harmony-one/activityscreens.ts';
 import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The sixteen English Harmony One compiles of skin 54, `onewithouttour.test.ts`' list. */
 const SKIN_54 = [

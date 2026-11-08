@@ -29,15 +29,15 @@ import { imagePath, IR_ARCHIVE, LAB } from '@harmony/lab';
 import {
   ArchiveError, blockOfDefinition, familiesOfRhythm, rhythmOfDefinition, type ArchiveBlock, type ArchiveRhythm,
   type BlockRefusal, type CatalogueFamily, type ConversionRefusal,
-} from '../src/archive.ts';
-import { archiveProtocols, catalogueByRhythm } from '../src/archive.node.ts';
-import { parse, type Container } from '../src/gspm.ts';
-import { payloadOf } from '../src/ezhex.ts';
-import { statedCode } from '../src/stated.ts';
-import { devices } from '../src/inventory.ts';
+} from '../src/catalogue/archive.ts';
+import { archiveProtocols, catalogueByRhythm } from '../src/catalogue/archive.node.ts';
+import { parse, type Container } from '../src/container/gspm.ts';
+import { payloadOf } from '../src/container/ezhex.ts';
+import { statedCode } from '../src/infrared/stated.ts';
+import { devices } from '../src/inventory/inventory.ts';
 import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups,
-         irHeaderPointers } from '../src/ir.ts';
-import { pulsesOfWords } from '../src/irda.ts';
+         irHeaderPointers } from '../src/infrared/ir.ts';
+import { pulsesOfWords } from '../src/infrared/irda.ts';
 import {
   biphaseFrames, frameSegments, framesOfPulses, framesOfSegments, fromFirstMark, mergedIntervals,
   pulsesOfBiphaseFrame, pulsesOfBlock, pulsesOfFrame, pulsesOfLongToggle, pulsesOfQuad,
@@ -45,7 +45,7 @@ import {
   timingsOfFrame, type BiphaseTimings, type BlockTail, type BlockTailItem, type FrameTimings,
   type LongToggleTimings, type Pulse,
   type QuadTimings,
-} from '../src/irframe.ts';
+} from '../src/infrared/irframe.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -1717,7 +1717,7 @@ const GENERATED = `/**
  * identical to a config Logitech built.
  */
 import type { FrameCarrier, FrameShape } from './irframe.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 export interface StatedProtocol {
   /** Logitech's own name for it, as their analyser and their catalogue spell it. */
@@ -2072,7 +2072,7 @@ const DOCUMENTED: {
  */
 
 if (write) {
-  const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'protocols.ts');
+  const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'infrared', 'protocols.ts');
   const blockOut = (block: BlockTail): string => `{ items: [${block.items.map((item) => {
     if ('copy' in item) {
       // **Every field of the item, named one by one, and that is a trap this has fallen into twice.**
@@ -2224,7 +2224,7 @@ if (write) {
     + `\n  // the rest carry no \`tail\`, so \`blockOfStatedCode\` refuses their press, and carry instead the two`
     + `\n  // blocks that state no count, \`held\` and \`opening\`, which a Harmony Touch's definition is written from,`
     + `\n  // todo-touch 5.3.4. The count is`
-    + `\n  // never guessed: see blockOfDefinition in src/archive.ts.\n${statedOut}`;
+    + `\n  // never guessed: see blockOfDefinition in src/catalogue/archive.ts.\n${statedOut}`;
 
   const seedsOut = DOCUMENTED.map((e) =>
     `  { family: '${e.family}', periodNs: ${e.periodNs}, `
@@ -2252,5 +2252,5 @@ if (write) {
     console.log(`  ${String(n).padStart(4)}  ${why}`);
   }
   console.log(`\n${entries.length} measured and ${DOCUMENTED.length} documented entries `
-    + 'written to src/protocols.ts');
+    + 'written to src/infrared/protocols.ts');
 }

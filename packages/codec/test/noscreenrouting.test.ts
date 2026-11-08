@@ -81,7 +81,7 @@ import {
 } from '../src/build.ts';
 import { bytes, stateVariables, taggedList } from '../src/internal.ts';
 import { DEVICE_KEYS, FAVOURITE_FIVE, INPUT_KEY, POWER_RESETS, START_UP_SELECT_ENTRY, VOLUME_SCANS } from '../src/families/harmony-300-350/keys.ts';
-import { SILENT_WRITE } from '../src/actions.ts';
+import { SILENT_WRITE } from '../src/container/actions.ts';
 import { withoutStartUpSelect, withStartUpSelect } from '../src/families/harmony-300-350/devices.ts';
 import { IDENTIFIED, onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
 

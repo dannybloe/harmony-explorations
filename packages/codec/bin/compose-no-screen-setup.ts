@@ -65,8 +65,8 @@ import {
   withoutNoScreenDevice,
 } from '../src/build.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({

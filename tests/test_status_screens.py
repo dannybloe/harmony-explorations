@@ -923,7 +923,7 @@ class TheHarmony525ActionRingClosesOnItself(unittest.TestCase):
         silent divergence. Read out of the TypeScript source, since that is where the codec's copy
         lives and a second Python copy is exactly what this repository forbids.
         """
-        source = pathlib.Path(__file__).resolve().parent.parent / 'packages/codec/src/queue.ts'
+        source = pathlib.Path(__file__).resolve().parent.parent / 'packages/codec/src/container/queue.ts'
         stated = re.search(r'ACTION_QUEUE_BYTES\s*=\s*(0x[0-9a-fA-F]+|\d+)', source.read_text())
         self.assertIsNotNone(stated, 'the codec still exports ACTION_QUEUE_BYTES')
         self.assertEqual(int(stated.group(1), 0), H525_RING_BYTES)

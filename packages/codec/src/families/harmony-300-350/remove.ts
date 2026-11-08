@@ -40,21 +40,21 @@
  * composing it back, `packages/codec/test/noscreenremove.test.ts`. The Harmony 350 alone; the Harmony 300 has no long
  * press and has not been run.
  */
-import { instructionSites } from '../../assemble.ts';
-import { START_TIMER_BAND, STATE_BAND, stateVariableSite } from '../../actions.ts';
-import { u8, u16 } from '../../bytes.ts';
-import { Writer } from '../../emit.ts';
-import { archSlot, type Container, type Instruction, parse } from '../../gspm.ts';
+import { instructionSites } from '../../assembly/assemble.ts';
+import { START_TIMER_BAND, STATE_BAND, stateVariableSite } from '../../container/actions.ts';
+import { u8, u16 } from '../../support/bytes.ts';
+import { Writer } from '../../container/emit.ts';
+import { archSlot, type Container, type Instruction, parse } from '../../container/gspm.ts';
 import {
   devices, firmwareStateVariableMax, SELECT_BINDING_SET_MASK, SEND_INFRARED, stateVariables,
-} from '../../inventory.ts';
-import { irBlockLength, irGroups, irHeaderLength, irRecordBlocks, irRecordStart } from '../../ir.ts';
-import { withoutMetadataDevice } from '../../metadata.ts';
-import { excise } from '../../relocate.ts';
+} from '../../inventory/inventory.ts';
+import { irBlockLength, irGroups, irHeaderLength, irRecordBlocks, irRecordStart } from '../../infrared/ir.ts';
+import { withoutMetadataDevice } from '../../container/metadata.ts';
+import { excise } from '../../edit/relocate.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, assertStateTableConsistent, nameNodes, NAME_LEVEL_STATE_VARIABLE, STATE_RECORD_HEADER,
   STATE_TABLE_HEADER, STATE_VALUE_LENGTH, stateRecords, stateTable, taggedListBytes, taggedListExtent,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import { ACTION_TABLE_SLOT, ComposeError, nameOfLabel, orderNameTree, renumberStateVariables, restamped } from '../../shared/core.ts';
 import { HELD, instructionsAt, keyMaps, mapOfGroup, PRESS, RELEASE } from './devices.ts';
 import { DEVICE_KEYS, KEY_MAP_SLOT, KEY_TIMERS, LONG_PRESS_GROUP_BASE, START_UP_SLOT, TIMER_SLOT } from './keys.ts';

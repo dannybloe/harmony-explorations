@@ -6,7 +6,7 @@ One's model exactly, and two pops that do not look before they take.
 application 4.4 (`arch8_code_885`, base `0x010000`; the 880's and the 880 Pro's differ in the two skin bytes
 only, `tests/test_harmony_885_start_check.py`) and the Harmony 720's application. **Measured in
 configurations** over the sixteen distinct arch 8 containers of that file's `CALIBRATION`, the peaks by the
-codec's own model, `packages/codec/src/queue.ts`, run under node through
+codec's own model, `packages/codec/src/container/queue.ts`, run under node through
 `tests/test_harmony_885_actions.py`'s probe rather than copied. No remote was opened.
 
 **Sources checked before the work**: `reference/config-format/actions.md`, "The action queue holds forty

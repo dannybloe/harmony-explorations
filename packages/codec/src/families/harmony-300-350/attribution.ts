@@ -49,16 +49,16 @@
  * Measured on the seven compiles of `noscreenattribution.test.ts` and on our own build; both models alike, decision
  * 28, and its counts per compile are in that test, with why each remainder is not ours.
  */
-import { ByteLedger, type Attributed, describedByChange, differing } from '../../attribution.ts';
-import { claims, type Claim } from '../../coverage.ts';
-import { architectureRecord, buildTimestampSection, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
-import { actionListBytes, type Container, type Instruction } from '../../gspm.ts';
-import { irBlockWords, irBuildBlock, irBuildRecord, irGroups, irHeaderPointers, IR_RECORD_POINTER_BIAS, irRecordStart } from '../../ir.ts';
-import { metadataArchive, metadataZipTime } from '../../metadata.ts';
-import { stateTable, taggedList, taggedListBytes, taggedListExtent } from '../../sections.ts';
+import { ByteLedger, type Attributed, describedByChange, differing } from '../../assembly/attribution.ts';
+import { claims, type Claim } from '../../container/coverage.ts';
+import { architectureRecord, buildTimestampSection, type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { actionListBytes, type Container, type Instruction } from '../../container/gspm.ts';
+import { irBlockWords, irBuildBlock, irBuildRecord, irGroups, irHeaderPointers, IR_RECORD_POINTER_BIAS, irRecordStart } from '../../infrared/ir.ts';
+import { metadataArchive, metadataZipTime } from '../../container/metadata.ts';
+import { stateTable, taggedList, taggedListBytes, taggedListExtent } from '../../container/sections.ts';
 import { ComposeError } from '../../shared/core.ts';
-import { buildStateTables, builtStatePieces, describeStateTables, withStateTables } from '../../statetables.ts';
-import { numberSenders } from '../../tables.ts';
+import { buildStateTables, builtStatePieces, describeStateTables, withStateTables } from '../../assembly/statetables.ts';
+import { numberSenders } from '../../container/tables.ts';
 import { WATCH_TV_SCAN } from './activity.ts';
 import {
   noScreenAcknowledgingEntry, noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries,

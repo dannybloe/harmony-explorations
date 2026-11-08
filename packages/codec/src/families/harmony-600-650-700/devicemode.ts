@@ -14,13 +14,13 @@
  *   a size, because no configuration here draws it there or because the character map names no code
  *   for it, as with `J` and `#`, is measured as not fitting that size.
  */
-import type { Container } from '../../gspm.ts';
-import { fontSets, glyphOf, type FontSet } from '../../font.ts';
+import type { Container } from '../../container/gspm.ts';
+import { fontSets, glyphOf, type FontSet } from '../../screens/font.ts';
 
 import {
   OXANIUM_WEIGHTS, defaultWeight, oxaniumFace, type OxaniumFaceName, type OxaniumWeight,
-} from '../../lettering.ts';
-import { type HardKey, oxaniumFacesOf } from '../../devicemode.ts';
+} from '../../drawing/lettering.ts';
+import { type HardKey, oxaniumFacesOf } from '../../compose/devicemode.ts';
 import { FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y } from './geometry.ts';
 
 // ---------------------------------------------------------------------------------------------------

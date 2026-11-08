@@ -70,9 +70,9 @@ import { INFRARED_TRANSPORT, mapIdentifier, readConfiguration, type ReadDevice }
 import { idText, kindOf } from './documents.ts';
 import { definitionOfRow, isDefinitionRefusal, keyCodeText } from './definition.ts';
 import { rawOfLearned, rhythmOfLearned, type LearnedRaw, type LearnedRow } from './learned.ts';
-import type { Pulse } from '../../irframe.ts';
-import { statedProtocol, type StatedCode, type StatedItem } from '../../stated.ts';
-import type { StatedProtocol } from '../../protocols.ts';
+import type { Pulse } from '../../infrared/irframe.ts';
+import { statedProtocol, type StatedCode, type StatedItem } from '../../infrared/stated.ts';
+import type { StatedProtocol } from '../../infrared/protocols.ts';
 
 /**
  * The names a Touch's documents give its 26 keys: the drawing's 27 keypad keys less Off, which the screens

@@ -138,14 +138,14 @@ test('no module the codec\'s main entry reaches imports a Node module or names a
     reached.push(...walked.reached);
   }
   // The walks reached the codec, the families and the base package, so an empty list is not an empty walk.
-  for (const one of ['src/gspm.ts', 'src/families/registry.ts', 'src/families/harmony-touch/index.ts', 'src/archive.ts', 'src/typeface.ts']) {
+  for (const one of ['src/container/gspm.ts', 'src/families/registry.ts', 'src/families/harmony-touch/index.ts', 'src/catalogue/archive.ts', 'src/drawing/typeface.ts']) {
     assert.ok(reached.includes(join(PACKAGE, one)), `the walk reached ${one}`);
   }
   assert.ok(reached.some((file) => file.includes(`${join('packages', 'base')}`)), 'the walk reached packages/base');
 });
 
 test('the control: a node:fs import or a Buffer added to a module the entry reaches fails the walk', () => {
-  const bytes = join(SOURCE, 'bytes.ts');
+  const bytes = join(SOURCE, 'support', 'bytes.ts');
   const deep = join(SOURCE, 'families', 'harmony-one', 'sends.ts');
   for (const [file, added, expected] of [
     [bytes, "import { readFileSync } from 'node:fs';\n", 'an import of node:fs'],
@@ -182,7 +182,8 @@ test('a source file that uses Node is named *.node.ts or is the Node entry, so t
   assert.deepEqual(misnamed, []);
   // And the Node half is what the step moved there, so a new one is a decision someone sees.
   assert.deepEqual(using, [
-    'archive.node.ts', 'catalogue.node.ts', 'catalogueraw.node.ts', 'driving.node.ts', 'resources.node.ts',
+    'catalogue/archive.node.ts', 'catalogue/catalogue.node.ts', 'catalogue/catalogueraw.node.ts', 'catalogue/driving.node.ts',
+    'support/resources.node.ts',
   ]);
 });
 

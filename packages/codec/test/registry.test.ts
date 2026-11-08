@@ -22,7 +22,7 @@ import { readFileSync } from 'node:fs';
 import * as lab from '@harmony/lab';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import { MODELS_BY_SKIN } from '@harmony/base/models';
-import { parse, type Container } from '../src/gspm.ts';
+import { parse, type Container } from '../src/container/gspm.ts';
 import { inventory, irGroups } from '../src/index.ts';
 import {
   activityStartOf, chooseByModel, choicesOf, familyKind, familyOf, familyOfArchitecture, familyOfModel, modelName, NoFamilyError, sendsOf, traitsOf,
@@ -37,8 +37,8 @@ import { emptyTouchDocuments } from '../src/families/harmony-touch/empty.ts';
 import type { TouchAccount } from '../src/families/harmony-touch/fromnothing.ts';
 import { ComposeError } from '../src/shared/core.ts';
 import { answersOf, FULL } from './touch-sync.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 test('every model of the model table is chosen a compiled family by its architecture or refused naming it, 14 and 21 of 35, the Harmony Touch a document family outside the table and the Harmony 300 and 350 a compiled one', () => {
   const served: string[] = [];

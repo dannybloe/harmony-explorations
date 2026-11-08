@@ -7,11 +7,11 @@
  * 60 with its partner at 120, kept the screen lit about 60 seconds. **Which timer that is varies**, 2 on thirteen
  * compiles and 3 on six, so it is found by the pair's shape and never by its number.
  */
-import { u24 } from '../../bytes.ts';
-import { Writer } from '../../emit.ts';
-import { type Container, parse } from '../../gspm.ts';
+import { u24 } from '../../support/bytes.ts';
+import { Writer } from '../../container/emit.ts';
+import { type Container, parse } from '../../container/gspm.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
-import { timers } from '../../tables.ts';
+import { timers } from '../../container/tables.ts';
 
 /** A timer's duration is clamped to sixteen bits by the firmware, `writing-a-config`'s rail, so a longer one is refused. */
 const LONGEST_TIMER = 0xffff;

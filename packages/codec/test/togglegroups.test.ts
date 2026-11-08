@@ -36,8 +36,8 @@ import {
   namesReleaseGroup,
 } from '../src/build.ts';
 import { irHeaderPointers, statedCodeOfDefinition, withToggleCleared, withToggleFlipped } from '../src/internal.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 /** A device group of a Logitech compile and the catalogue device it is, known from outside its bytes. */
 const CASES = [

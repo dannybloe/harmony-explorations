@@ -31,7 +31,7 @@ Three rules a reader has to get right:[^s87]
   measurement.
 
 The split taken from the terminator and the split taken from the declared length agree on every
-configuration file in the corpus; `src/harmony/ezfile.py` and `packages/codec/src/ezhex.ts` compute
+configuration file in the corpus; `src/harmony/ezfile.py` and `packages/codec/src/container/ezhex.ts` compute
 both.[^t-ezfile] The payload checksum is not the container's own [trailer checksum](container.md#the-trailer-checksum):
 this one covers the whole payload and is checked by the host, that one is what the remote validates.[^s87]
 

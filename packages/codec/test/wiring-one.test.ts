@@ -24,7 +24,7 @@ import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
 import { parse } from '../src/index.ts';
 import { layOutContainer, takeApart } from '../src/build.ts';
 import { familyOf } from '../src/families/registry.ts';
-import { WiringError, builtPieces, compareWiring, withWiring, type BuiltWiring } from '../src/wiringparts.ts';
+import { WiringError, builtPieces, compareWiring, withWiring, type BuiltWiring } from '../src/assembly/wiringparts.ts';
 import {
   ONE_FIRMWARE_SCREENS, buildOneWiring, checkOneWiring, describeOneWiring, oneWiringNeeds, type OneWiringSpec,
 } from '../src/families/harmony-one/wiring.ts';

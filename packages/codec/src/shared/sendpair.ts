@@ -21,10 +21,10 @@
  * served by this; their family composes its own sends.
  */
 import type { DeviceSends } from '../families/family.ts';
-import { Writer } from '../emit.ts';
-import type { Container } from '../gspm.ts';
-import { DEVICE_QUANTITY, SEND_INFRARED } from '../inventory.ts';
-import { ACTION_LIST_INDEX_OPCODE } from '../sections.ts';
+import { Writer } from '../container/emit.ts';
+import type { Container } from '../container/gspm.ts';
+import { DEVICE_QUANTITY, SEND_INFRARED } from '../inventory/inventory.ts';
+import { ACTION_LIST_INDEX_OPCODE } from '../container/sections.ts';
 import { ComposeError } from './core.ts';
 import type { ComposeDevice } from './devices.ts';
 

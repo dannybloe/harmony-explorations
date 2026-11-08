@@ -8,32 +8,32 @@
  */
 import { type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget } from '../recipe/recipe.ts';
 import { familyOf, sendsOf } from '../families/registry.ts';
-import { saveEdits } from '../edit.ts';
-import { coverage } from '../coverage.ts';
-import { trailerAgrees } from '../growth.ts';
-import { roundTrip } from '../emit.ts';
-import { assertQueueFits } from '../queue.ts';
-import type { BlendedSet } from '../blending.ts';
-import { assertStateTableConsistent } from '../sections.ts';
+import { saveEdits } from '../edit/edit.ts';
+import { coverage } from '../container/coverage.ts';
+import { trailerAgrees } from '../edit/growth.ts';
+import { roundTrip } from '../container/emit.ts';
+import { assertQueueFits } from '../container/queue.ts';
+import type { BlendedSet } from '../drawing/blending.ts';
+import { assertStateTableConsistent } from '../container/sections.ts';
 import type { CommonChoices, ComposedDeviceNote, Family } from '../families/family.ts';
-import { parse, type Container } from '../gspm.ts';
-import { layOutContainer, takeApart } from '../frame.ts';
-import { composedIntoBody, loosen, placePieces } from '../placer.ts';
-import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from '../inventory.ts';
+import { parse, type Container } from '../container/gspm.ts';
+import { layOutContainer, takeApart } from '../assembly/frame.ts';
+import { composedIntoBody, loosen, placePieces } from '../assembly/placer.ts';
+import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from '../inventory/inventory.ts';
 import {
   ComposeError, type ComposeRow, composeActivity, composeActivityMenuRow, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
-} from '../compose.ts';
+} from '../compose/compose.ts';
 import {
   activityFromRoles, activityKeysFromRoles, activityScreenRows, deviceKeypadLists, type ActivityDevice,
-} from '../activityroles.ts';
+} from '../compose/activityroles.ts';
 import {
   composeCatalogueDevices, composeDonorDeviceInfrared, composeDonorDeviceInputs, type ComposedCatalogueDevice,
   type ComposedDonorInfrared,
-} from '../composecatalogue.ts';
-import { inputPlan, inputTarget, type ComposedInputs } from '../inputs.ts';
-import type { CatalogueSource } from '../catalogue.ts';
-import { activityPauseGroups, composeSequence } from '../sequence.ts';
+} from '../compose/composecatalogue.ts';
+import { inputPlan, inputTarget, type ComposedInputs } from '../compose/inputs.ts';
+import type { CatalogueSource } from '../catalogue/catalogue.ts';
+import { activityPauseGroups, composeSequence } from '../compose/sequence.ts';
 
 /**
  * A donor device whose infrared records were composed from the catalogue, `SetupParts.donorInfraredFromCatalogue`:

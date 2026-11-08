@@ -5,7 +5,7 @@
  *
  * **What it settled.**
  *
- * * **The stream.** Our deflate, `src/deflate.ts`, writes the stream of the six distinct archives of the seven named
+ * * **The stream.** Our deflate, `src/support/deflate.ts`, writes the stream of the six distinct archives of the seven named
  *   compiles byte for byte from their texts, 6 of 6: the factory 350, the three device 350, the programmed 350, the test setup's
  *   compile (whose twin without favourites holds the same text), the programmed 300 and the 2011 300. Stock zlib
  *   1.2.12 at its defaults does the same, `tests/test_harmony_350_metadata_deflate.py`; Node's zlib does not, here
@@ -40,7 +40,7 @@
  * `DEFLATE_MAX_INPUT`, which the deflate refuses; a name holding a character XML escapes, which no compile holds; a
  * ZIP time near midnight; and whether anything reads the archive at all, plan 011's open list.
  *
- * **Sources checked first.** Plan 011 step 4; `src/metadata.ts` and its reader; `reference/config-format/
+ * **Sources checked first.** Plan 011 step 4; `src/container/metadata.ts` and its reader; `reference/config-format/
  * container.md` on the archive; `tests/test_harmony_350_metadata_deflate.py` for which zlib; the census's two tests of
  * the frame and the time, `noscreencensus.test.ts`. Logitech's client compiles nothing for this family. **Which
  * architectures**: the frame and the device element on arch 16 alone, the ZIP's shape on arch 16 and arch 10.

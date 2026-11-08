@@ -14,11 +14,11 @@
  * It was also the start a configuration no family serves got, `activityStartOf` in the registry, from before
  * plan 007 until plan 013 decision 2, which refuses such a configuration.
  */
-import { DEFERRED } from '../../actions.ts';
+import { DEFERRED } from '../../container/actions.ts';
 import type { ActivityStart, ListBody } from '../family.ts';
-import type { Container } from '../../gspm.ts';
-import { ENTER_MODE } from '../../inventory.ts';
-import { ACTION_LIST_INDEX_OPCODE } from '../../sections.ts';
+import type { Container } from '../../container/gspm.ts';
+import { ENTER_MODE } from '../../inventory/inventory.ts';
+import { ACTION_LIST_INDEX_OPCODE } from '../../container/sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 
 /** `0x07` band `0xFB`: cancel every running timer, the second instruction of every enter list that

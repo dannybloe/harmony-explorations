@@ -1,10 +1,10 @@
 /**
- * Regenerate `src/oxaniumalphabet.ts`, our own letters' alphabet as data, so reading a configuration needs no
+ * Regenerate `src/screens/oxaniumalphabet.ts`, our own letters' alphabet as data, so reading a configuration needs no
  * font, a fix to `todo.md` 7.3.5.
  *
  * ```
  * node packages/codec/bin/oxaniumalphabet.ts            check the module against the font
- * node packages/codec/bin/oxaniumalphabet.ts --write    rewrite src/oxaniumalphabet.ts
+ * node packages/codec/bin/oxaniumalphabet.ts --write    rewrite src/screens/oxaniumalphabet.ts
  * ```
  *
  * **Why the alphabet is generated rather than drawn where it is read.** `characterMap` tries every alphabet on
@@ -21,8 +21,8 @@
 import { writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { deflateSync } from 'node:zlib';
-import '../src/resources.node.ts';
-import { oxaniumAlphabet, oxaniumAlphabetFromFont, packOxaniumAlphabet } from '../src/text.ts';
+import '../src/support/resources.node.ts';
+import { oxaniumAlphabet, oxaniumAlphabetFromFont, packOxaniumAlphabet } from '../src/screens/text.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -30,7 +30,7 @@ const cli = commandLine({
   flags: ['write'],
 });
 
-const OUT = new URL('../src/oxaniumalphabet.ts', import.meta.url);
+const OUT = new URL('../src/screens/oxaniumalphabet.ts', import.meta.url);
 
 /** The base64 is cut into lines this wide, so the file opens in an editor and a change shows as lines. */
 const LINE = 112;
@@ -70,5 +70,5 @@ if (cli.flag('write')) {
       return undefined;
     }
   })();
-  console.log(isDeepStrictEqual(tables, alphabet) ? 'src/oxaniumalphabet.ts is up to date' : 'src/oxaniumalphabet.ts DIFFERS, rerun with --write');
+  console.log(isDeepStrictEqual(tables, alphabet) ? 'src/screens/oxaniumalphabet.ts is up to date' : 'src/screens/oxaniumalphabet.ts DIFFERS, rerun with --write');
 }

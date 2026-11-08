@@ -39,8 +39,8 @@
  *
  * The Harmony One alone, the One family's. Read only towards hardware: the result is numbers and descriptions.
  */
-import type { StateVariableSpec, PieceTarget } from '../../statetables.ts';
-import { ScreenRecordError } from '../../screenrecords.ts';
+import type { StateVariableSpec, PieceTarget } from '../../assembly/statetables.ts';
+import { ScreenRecordError } from '../../compose/screenrecords.ts';
 import {
   ONE_FIRMWARE_HIT_PAGES, ONE_FIRMWARE_OWN_LISTS, ONE_FIRMWARE_SCREENS, type OneFirmwareScreensSpec,
   oneFirmwarePicturePlaces,

@@ -36,9 +36,9 @@ import {
   codeOfLearned, ComposeRefusal, composeTouchDevice, keysByName, BUTTON_KEYS, type OwnDevice,
 } from '../src/families/harmony-touch/compose.ts';
 import { rawOfLearned, readTouchRaw } from '../src/families/harmony-touch/learned.ts';
-import { waveformOfArchiveCommand } from '../src/archive.ts';
-import { mergedIntervals, type Pulse } from '../src/irframe.ts';
-import { pulsesOfStatedRow, statedProtocol } from '../src/stated.ts';
+import { waveformOfArchiveCommand } from '../src/catalogue/archive.ts';
+import { mergedIntervals, type Pulse } from '../src/infrared/irframe.ts';
+import { pulsesOfStatedRow, statedProtocol } from '../src/infrared/stated.ts';
 import { documentsOfAnswers, kindOf, type IrProtocol, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
 import { readConfiguration } from '../src/families/harmony-touch/read.ts';
 import { answersOf, FULL } from './touch-sync.ts';

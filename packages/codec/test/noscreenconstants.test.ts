@@ -91,7 +91,7 @@ import {
   startUpGroup,
 } from '../src/build.ts';
 import { taggedList } from '../src/internal.ts';
-import { sameBytes } from '../src/bytes.ts';
+import { sameBytes } from '../src/support/bytes.ts';
 
 /** The five bench fixtures, by the lab's names. */
 const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];

@@ -11,20 +11,20 @@
  * The donor input matcher has no answer here, `SendShape.donorSendList` absent: it matches a send and its
  * quantity alone, and nothing has matched a send behind this prelude.
  */
-import { STATE_BAND } from '../../actions.ts';
+import { STATE_BAND } from '../../container/actions.ts';
 import type { DelayDefaults, DeviceSends, ListBody, SendList, SendShape } from '../family.ts';
-import { Writer } from '../../emit.ts';
-import { Container, type Instruction, parse } from '../../gspm.ts';
+import { Writer } from '../../container/emit.ts';
+import { Container, type Instruction, parse } from '../../container/gspm.ts';
 import {
   CONDITION_OPCODE, DEVICE_QUANTITY, INTER_DEVICE_DELAY_VALUES, interDeviceDelayCases, MAP_VALUE_OPCODE,
   POWER_ON_DELAY_CASES, POWER_ON_DELAY_CHUNK, POWER_ON_DELAY_VALUES, powerOnDelayAmounts, powerOnDelayCases,
   powerOnDelays, QUEUE_INTER_DEVICE_DELAY, SEND_INFRARED, SEND_PRELUDE_LOAD, sendPreludeCondition, sendPreludes,
-} from '../../inventory.ts';
-import { relocate } from '../../relocate.ts';
-import { SCREEN_END } from '../../screen.ts';
+} from '../../inventory/inventory.ts';
+import { relocate } from '../../edit/relocate.ts';
+import { SCREEN_END } from '../../screens/screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, assertStateTableConsistent, STATE_RECORD_HEADER, STATE_TABLE_HEADER, stateTable,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import {
   appendActionLists, appendNameNode, appendValueMap, ComposeError, nextDeviceIdentifier, queueing, STATE_WRITE_LIMIT,
   stateRecordEnd,

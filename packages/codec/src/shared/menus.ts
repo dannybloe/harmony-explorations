@@ -6,24 +6,24 @@
  */
 import type { FamilyTraits } from '../families/family.ts';
 import { familyOf, traitsOf } from '../families/registry.ts';
-import { STATE_WRITE_BASE } from '../actions.ts';
-import { u24 } from '../bytes.ts';
-import { Writer } from '../emit.ts';
-import { type FontSet, fontSets, glyphOf } from '../font.ts';
-import { Container, type Instruction, parse } from '../gspm.ts';
+import { STATE_WRITE_BASE } from '../container/actions.ts';
+import { u24 } from '../support/bytes.ts';
+import { Writer } from '../container/emit.ts';
+import { type FontSet, fontSets, glyphOf } from '../screens/font.ts';
+import { Container, type Instruction, parse } from '../container/gspm.ts';
 import {
   BEEP_OPCODE, deviceListRowMode, isDeviceListRowShape, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
-} from '../inventory.ts';
-import { excise, relocate } from '../relocate.ts';
+} from '../inventory/inventory.ts';
+import { excise, relocate } from '../edit/relocate.ts';
 import {
   SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
-} from '../screen.ts';
-import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../sections.ts';
-import { assertGeneratedRecord, ComposeError, restamped } from '../shared/core.ts';
-import { codesFor, fontThatSpells, textGlyphs, textWidth } from '../shared/spelling.ts';
-import { menuMarkerVariable } from '../statetables.ts';
-import { characterMap, decode, screenStrings } from '../text.ts';
-import { VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, valueMaps } from '../valuemap.ts';
+} from '../screens/screen.ts';
+import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../container/sections.ts';
+import { assertGeneratedRecord, ComposeError, restamped } from './core.ts';
+import { codesFor, fontThatSpells, textGlyphs, textWidth } from './spelling.ts';
+import { menuMarkerVariable } from '../assembly/statetables.ts';
+import { characterMap, decode, screenStrings } from '../screens/text.ts';
+import { VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, valueMaps } from '../container/valuemap.ts';
 
 /**
  * What an **activity** row writes into the device mode marker, against a device row's 1.

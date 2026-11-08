@@ -41,8 +41,8 @@
  * The four slot family's own since `todo-compile-one.md` 3.3.3.3: a shared composer reaches it through the
  * family's `activityKeyEditor`, `FOUR_SLOT_ACTIVITY_KEY_EDITOR` below, and never by importing it.
  */
-import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, taggedList } from '../../sections.ts';
-import type { TaggedList } from '../../sections.ts';
+import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, taggedList } from '../../container/sections.ts';
+import type { TaggedList } from '../../container/sections.ts';
 import {
   ACTIVITY_STATE_NAME,
   idleActivityValue,
@@ -51,12 +51,12 @@ import {
   SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK,
   stateVariables, ENTER_MODE,
-} from '../../inventory.ts';
-import { PUSH_MODE, STATE_WRITE_BASE } from '../../actions.ts';
-import { characterMap, screenStrings } from '../../text.ts';
-import { EditError } from '../../edit.ts';
-import type { Edit } from '../../edit.ts';
-import type { Container, Instruction } from '../../gspm.ts';
+} from '../../inventory/inventory.ts';
+import { PUSH_MODE, STATE_WRITE_BASE } from '../../container/actions.ts';
+import { characterMap, screenStrings } from '../../screens/text.ts';
+import { EditError } from '../../edit/edit.ts';
+import type { Edit } from '../../edit/edit.ts';
+import type { Container, Instruction } from '../../container/gspm.ts';
 import type { ActivityKeyEditor } from '../family.ts';
 
 /**

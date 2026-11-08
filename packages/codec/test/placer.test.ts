@@ -28,7 +28,7 @@ import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
 import { inventory, parse, renderPages } from '../src/index.ts';
 import { LayoutError, layOutContainer, loosen, placePieces, takeApart } from '../src/build.ts';
 import { roundTrip } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The thirteen arch 14 compiles of section 312, the population `frame.test.ts` lays out. */
 const ARCH14_COMPILES = [

@@ -2,7 +2,7 @@
 """The metadata archive's deflate stream on the Harmony 300 and 350, and which zlib writes it.
 
 `todo-compile-350.md` 5.1, measured for plan 011. Raw slot 13 of every configuration of this family is a ZIP of
-one file, `MetaData.xml`, deflated, `packages/codec/src/metadata.ts`. A configuration built with nothing copied
+one file, `MetaData.xml`, deflated, `packages/codec/src/container/metadata.ts`. A configuration built with nothing copied
 has to write that archive, and the first question is whether the deflate stream is something we can write
 byte for byte or only something that inflates to the same text. `packages/codec/test/noscreencensus.test.ts`
 found that Node's zlib reproduces none of three streams at 3465 settings of level, strategy, memory level and
@@ -26,7 +26,7 @@ differs, which is only observed.
 general; and the archive is found by its signature, of which each file holds exactly one, so the stream compared is
 the archive's and not one that happened to be nearby.
 
-**Sources checked first.** `packages/codec/src/metadata.ts` ("The deflated bytes are this machine's zlib's and not
+**Sources checked first.** `packages/codec/src/container/metadata.ts` ("The deflated bytes are this machine's zlib's and not
 Logitech's"); `reference/config-format/container.md` on the archive; the lab's `work/setups/h350-test/
 chapter4-reading.md`, which reads the archive's shape and does not look at its stream. Logitech's client compiles
 nothing for this family. **Which architectures**: architecture 16 alone, six archives of one generation of the

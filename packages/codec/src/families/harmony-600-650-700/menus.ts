@@ -3,40 +3,40 @@
  * and bytes, a menu grown by a page, and the check that every page is the one built for it. Plan 007's
  * four slot family, cut out of `compose.ts` unchanged.
  */
-import { u24 } from '../../bytes.ts';
+import { u24 } from '../../support/bytes.ts';
 import { TWO_LINE_RISE } from './devicemode.ts';
-import { Writer } from '../../emit.ts';
+import { Writer } from '../../container/emit.ts';
 import {
   cornerPrograms, bottomWord, builtChrome, DEVICE_PAGE_BACKGROUND_AT, DEVICE_PAGE_BOTTOM_BAR_AT, DEVICE_PAGE_LOOKS,
   DEVICE_PAGE_TOP_BAR_AT, type DeviceModeChrome, deviceModeChrome, type DevicePageLook, DEVICES_KEY_TAG, inOurLook,
   FOUR_SLOT_PREFIX, FOUR_SLOT_SUFFIX_OPCODES, FOUR_SLOT_TITLE_XY, fourSlotCounterX, inlineHomes, MENU_BOTTOM_LINE_Y,
   MENU_TOP_LINE_Y, type PageChrome, picturesByContent, programDraws,
-} from '../../families/harmony-600-650-700/chrome.ts';
-import { type FontSet, fontSets, glyphOf } from '../../font.ts';
+} from './chrome.ts';
+import { type FontSet, fontSets, glyphOf } from '../../screens/font.ts';
 import { fontsBySize, ladderOf, TITLE_RUNG } from './devicemode.ts';
-import { letterForm } from '../../lettering.ts';
-import { Container, parse, SCAN_MASK } from '../../gspm.ts';
+import { letterForm } from '../../drawing/lettering.ts';
+import { Container, parse, SCAN_MASK } from '../../container/gspm.ts';
 import {
   activities, ACTIVITY_STATE_NAME, caseQueued, deviceListRows, ENTER_MODE, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, stateVariables,
-} from '../../inventory.ts';
-import { relocate } from '../../relocate.ts';
+} from '../../inventory/inventory.ts';
+import { relocate } from '../../edit/relocate.ts';
 import {
   bitmapReference, SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
-} from '../../screen.ts';
+} from '../../screens/screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, type ModePage, modePages, type ModeRecord, modeRecords, pageListCopies, type TaggedEntry,
   taggedList, taggedListExtent,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { activityMenus, deviceListMenus, pageTexts } from '../../shared/menus.ts';
 import { appendModePage } from '../../shared/modes.ts';
 import {
   blobReader, codesFor, textAt, textGlyphs, textValues, textWidth, type ValueReader,
 } from '../../shared/spelling.ts';
-import { characterMap, referencedStringAddress } from '../../text.ts';
-import { valueMaps } from '../../valuemap.ts';
-import { type MenuPart, menuPartsBytes } from '../../screenparts.ts';
+import { characterMap, referencedStringAddress } from '../../screens/text.ts';
+import { valueMaps } from '../../container/valuemap.ts';
+import { type MenuPart, menuPartsBytes } from '../../compose/screenparts.ts';
 import { FOUR_SLOT_ITEMS, FOUR_SLOT_STORED_ORDER, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y, TWO_ROW_LABEL_Y, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_ROWS, fourSlotCellAt } from './geometry.ts';
 
 /**

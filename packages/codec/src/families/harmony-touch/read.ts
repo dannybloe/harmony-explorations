@@ -42,9 +42,9 @@
 import {
   keyCodeOfStatedCode, periodOfCarrier, segmentRefs, statedCodeOfDefinition, roundedPeriodOfCarrier,
   type ArchiveKeyCode, type ArchiveProtocol,
-} from '../../archive.ts';
-import type { StatedProtocol } from '../../protocols.ts';
-import { statedProtocol, type StatedCode } from '../../stated.ts';
+} from '../../catalogue/archive.ts';
+import type { StatedProtocol } from '../../infrared/protocols.ts';
+import { statedProtocol, type StatedCode } from '../../infrared/stated.ts';
 import {
   CONFIGURATION_DOCUMENTS, CONTENT_DEVICE, CONTENT_SERVICE, CONTENT_USER, idText, kindOf,
   type Activity, type ActivityAction, type Button, type ButtonActionDocument, type ButtonMap, type Channel,

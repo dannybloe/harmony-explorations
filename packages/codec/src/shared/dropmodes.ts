@@ -27,11 +27,11 @@
  * that remote, and on the Harmony 600, 650 and 700 it has not been run. A caller draws its texts away from what goes
  * first, since a kept text drawn by reference into a dropped program is refused here.
  */
-import { type Container, parse } from '../gspm.ts';
-import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContainer, takeApart } from '../frame.ts';
-import { type InstructionSite, instructionSites, listCallSites, namedLists } from '../assemble.ts';
-import { eventMap, modePages, modeProgramRoots, modeRecords, modeTable, pageListCopies, taggedListExtent } from '../sections.ts';
-import { bitmapAt, reachablePrograms, screenProgramRoots } from '../screen.ts';
+import { type Container, parse } from '../container/gspm.ts';
+import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContainer, takeApart } from '../assembly/frame.ts';
+import { type InstructionSite, instructionSites, listCallSites, namedLists } from '../assembly/assemble.ts';
+import { eventMap, modePages, modeProgramRoots, modeRecords, modeTable, pageListCopies, taggedListExtent } from '../container/sections.ts';
+import { bitmapAt, reachablePrograms, screenProgramRoots } from '../screens/screen.ts';
 import { ComposeError } from './core.ts';
 
 /** Opcode `0x7E`, entering a mode by number, `inventory.ts`' `ENTER_MODE`, named here to keep this module's imports small. */

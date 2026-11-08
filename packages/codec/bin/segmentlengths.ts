@@ -1,5 +1,5 @@
 /**
- * Generate `src/segmentlengths.ts`: every protocol family's segment lengths as Logitech's definitions
+ * Generate `src/infrared/segmentlengths.ts`: every protocol family's segment lengths as Logitech's definitions
  * state them, which is what a held power press is counted against, section 308.
  *
  * `make segmentlengths` compares the file with the archive and `--write` rewrites it. **It reads the
@@ -10,8 +10,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
-import { segmentLengthsModule } from '../src/archive.node.ts';
-import '../src/resources.node.ts';
+import { segmentLengthsModule } from '../src/catalogue/archive.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -23,7 +23,7 @@ if (IR_ARCHIVE === undefined) {
   console.error('no infrared archive checkout; clone logitech-harmony-ir-archive alongside or set HARMONY_IR_ARCHIVE');
   process.exit(1);
 }
-const target = join(import.meta.dirname, '..', 'src', 'segmentlengths.ts');
+const target = join(import.meta.dirname, '..', 'src', 'infrared', 'segmentlengths.ts');
 const want = segmentLengthsModule(IR_ARCHIVE);
 let have = '';
 try { have = readFileSync(target, 'utf8'); } catch { /* absent until the first --write */ }
@@ -31,8 +31,8 @@ if (cli.flag('write')) {
   writeFileSync(target, want);
   console.log(`wrote ${target}`);
 } else if (have === want) {
-  console.log('src/segmentlengths.ts agrees with the archive');
+  console.log('src/infrared/segmentlengths.ts agrees with the archive');
 } else {
-  console.error('src/segmentlengths.ts differs from the archive; run with --write');
+  console.error('src/infrared/segmentlengths.ts differs from the archive; run with --write');
   process.exit(1);
 }

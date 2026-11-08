@@ -51,18 +51,18 @@
  * six for a Harmony 350 and one for a Harmony 300, given its own activity's devices again and compared with what
  * Logitech wrote.
  */
-import type { CatalogueSource } from '../../catalogue.ts';
-import { catalogueDevicePlan } from '../../composecatalogue.ts';
-import { type Container, type Instruction, parse } from '../../gspm.ts';
-import { commandIndex, encodeStateRecord, FROM_ANY } from '../../inputs.ts';
+import type { CatalogueSource } from '../../catalogue/catalogue.ts';
+import { catalogueDevicePlan } from '../../compose/composecatalogue.ts';
+import { type Container, type Instruction, parse } from '../../container/gspm.ts';
+import { commandIndex, encodeStateRecord, FROM_ANY } from '../../compose/inputs.ts';
 import {
   DEVICE_QUANTITY, DEVICE_QUANTITY_DEFAULT, deviceVariables, devices, INPUT_PROPERTY, POWER_PROPERTY, stateVariables,
-} from '../../inventory.ts';
-import { metadataArchive } from '../../metadata.ts';
-import { ACTION_LIST_INDEX_OPCODE, stateRecords, taggedListExtent } from '../../sections.ts';
+} from '../../inventory/inventory.ts';
+import { metadataArchive } from '../../container/metadata.ts';
+import { ACTION_LIST_INDEX_OPCODE, stateRecords, taggedListExtent } from '../../container/sections.ts';
 import { appendActionLists, appendNarrowStateVariable, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
-import { irGroups } from '../../ir.ts';
-import { appendCopyRecord, oneBlockCopy } from '../../sequence.ts';
+import { irGroups } from '../../infrared/ir.ts';
+import { appendCopyRecord, oneBlockCopy } from '../../compose/sequence.ts';
 import { composeIrGroup } from '../../shared/infrared.ts';
 import {
   type ActivityStepWrite, activityList, type Body, bodyOf, type ConditionArm, conditionList, flipList, gateList,

@@ -51,14 +51,14 @@
  * order changes nothing on the remote. Ours is the switch on first, as `composeDeviceFor` writes it, and an
  * input's values ascending, as `composeNoScreenActivity` does.
  */
-import { FROM_ANY } from '../../inputs.ts';
-import { firmwareStateVariableMax, INPUT_PROPERTY, POWER_PROPERTY } from '../../inventory.ts';
-import { ACTION_LIST_INDEX_OPCODE } from '../../sections.ts';
+import { FROM_ANY } from '../../compose/inputs.ts';
+import { firmwareStateVariableMax, INPUT_PROPERTY, POWER_PROPERTY } from '../../inventory/inventory.ts';
+import { ACTION_LIST_INDEX_OPCODE } from '../../container/sections.ts';
 import { nameOfLabel } from '../../shared/core.ts';
 import {
   type BuiltStateTables, buildStateTables, clockSpec, type StateTableFacts, StateTablesError, type StateTablesSpec,
   type StateTransitionSpec, type StateVariableSpec,
-} from '../../statetables.ts';
+} from '../../assembly/statetables.ts';
 import { ACTIVITY_FLAG } from './activity.ts';
 
 /** The architecture of the family's remotes, which the readers' per architecture tables are keyed by. */

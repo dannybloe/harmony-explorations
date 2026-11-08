@@ -49,10 +49,10 @@
  * and nothing else does, so this folder is the Touch's own, as `documents.ts` says, and no family of
  * `families/` is asked anything.
  */
-import { segmentRefs, type ArchiveProtocol } from '../../archive.ts';
-import type { BiphaseTimings, BlockTail, CellTimings, FrameShape, FrameTimings } from '../../irframe.ts';
-import type { StatedProtocol } from '../../protocols.ts';
-import { biphaseOf, cellsOf, statedCode, timingsOf, type StatedCode, type StatedWord } from '../../stated.ts';
+import { segmentRefs, type ArchiveProtocol } from '../../catalogue/archive.ts';
+import type { BiphaseTimings, BlockTail, CellTimings, FrameShape, FrameTimings } from '../../infrared/irframe.ts';
+import type { StatedProtocol } from '../../infrared/protocols.ts';
+import { biphaseOf, cellsOf, statedCode, timingsOf, type StatedCode, type StatedWord } from '../../infrared/stated.ts';
 import type { Atom, CodeSegment, Encoding, Id, IrProtocol, IrSegment, SegmentReference } from './documents.ts';
 
 /** Why a row could not be written as a definition. Counted by the closure rather than thrown. */

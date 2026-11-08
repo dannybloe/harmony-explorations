@@ -50,14 +50,14 @@
  * Measured on the sixteen English compiles of skin 54, which hold every picture named here byte for byte; arch 12
  * (Harmony One) alone. Read only towards hardware: the result is a configuration's bytes.
  */
-import { type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
-import { type Container } from '../../gspm.ts';
-import { PictureError, iconOverRows, withPictureFilled, withReplacedPictures } from '../../pictures.ts';
-import { rgbTo565 } from '../../png.ts';
-import { bitmapPixels } from '../../render.ts';
-import { bitmapAt, encodeBitmap } from '../../screen.ts';
-import { sameBytes } from '../../bytes.ts';
-import { contentKey } from '../../screencategories.ts';
+import { type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { type Container } from '../../container/gspm.ts';
+import { PictureError, iconOverRows, withPictureFilled, withReplacedPictures } from '../../drawing/pictures.ts';
+import { rgbTo565 } from '../../screens/png.ts';
+import { bitmapPixels } from '../../screens/render.ts';
+import { bitmapAt, encodeBitmap } from '../../screens/screen.ts';
+import { sameBytes } from '../../support/bytes.ts';
+import { contentKey } from '../../screens/screencategories.ts';
 import { activityBoxRows } from './activitypictures.ts';
 import type { OneChoices } from './choices.ts';
 

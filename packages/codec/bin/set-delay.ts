@@ -30,7 +30,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 import { applyEdits, deviceDelays, devices, parse, setPowerOnDelay } from '../src/index.ts';
 import { setPowerOnDelayVariable, trailerChecksum } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({

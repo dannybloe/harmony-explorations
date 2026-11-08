@@ -40,14 +40,14 @@
  * screen and Options showed one page of three rows, section 421; whether the everyday One's own compile, which already
  * holds no Remote Assistant, starts alike after this step has not been tried.
  */
-import type { Container } from '../../gspm.ts';
-import { u16 } from '../../bytes.ts';
-import { BINDING_SLOT, archSlot, parse } from '../../gspm.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { dropLists, listCallSites, namedLists } from '../../assemble.ts';
-import { modeProgramRoots, modeRecords } from '../../sections.ts';
-import { reachablePrograms, screenProgramRoots } from '../../screen.ts';
-import { ScreenRecordError } from '../../screenrecords.ts';
+import type { Container } from '../../container/gspm.ts';
+import { u16 } from '../../support/bytes.ts';
+import { BINDING_SLOT, archSlot, parse } from '../../container/gspm.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { dropLists, listCallSites, namedLists } from '../../assembly/assemble.ts';
+import { modeProgramRoots, modeRecords } from '../../container/sections.ts';
+import { reachablePrograms, screenProgramRoots } from '../../screens/screen.ts';
+import { ScreenRecordError } from '../../compose/screenrecords.ts';
 import { dropModes } from '../../shared/dropmodes.ts';
 import { withScreenTexts } from '../../shared/screentexts.ts';
 import { blobReader } from '../../shared/spelling.ts';

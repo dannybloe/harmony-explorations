@@ -32,25 +32,25 @@
  * activity's Devices key enters the idle device list, the one every device is on, where Logitech's enters a
  * list of the activity's own holding every device too, some first and the rest in the idle order, section 402.
  */
-import { u24 } from '../../bytes.ts';
-import { Writer } from '../../emit.ts';
-import { type FontSet, fontSets } from '../../font.ts';
-import { type Container, type Instruction, parse } from '../../gspm.ts';
+import { u24 } from '../../support/bytes.ts';
+import { Writer } from '../../container/emit.ts';
+import { type FontSet, fontSets } from '../../screens/font.ts';
+import { type Container, type Instruction, parse } from '../../container/gspm.ts';
 import {
   activityBindings, caseQueued, compilerTagOrder, deviceModeMaps, ENTER_MODE, handlerSetRoles, MAP_VALUE_OPCODE,
   SCREEN_ITEM_BEEP,
   SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, stateVariables, ACTIVITY_STATE_NAME, idleActivityValue,
-} from '../../inventory.ts';
-import { fillBytes, picturesByContent, withBankPictures } from '../../pictures.ts';
-import { bitmapPixels } from '../../render.ts';
+} from '../../inventory/inventory.ts';
+import { fillBytes, picturesByContent, withBankPictures } from '../../drawing/pictures.ts';
+import { bitmapPixels } from '../../screens/render.ts';
 import {
   bitmapAt, bitmaps, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN,
   SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
-} from '../../screen.ts';
-import { contentKey } from '../../screencategories.ts';
+} from '../../screens/screen.ts';
+import { contentKey } from '../../screens/screencategories.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modePages, modeRecords, modeTable, taggedList, taggedListBytes,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import { activityKeyedMaps } from '../../shared/activities.ts';
 import { appendActionLists, ComposeError, restamped } from '../../shared/core.ts';
 import {
@@ -58,18 +58,18 @@ import {
 } from '../../shared/menus.ts';
 import { appendMode, type ModeProgram } from '../../shared/modes.ts';
 import { codesFor, textGlyphs, textWidth } from '../../shared/spelling.ts';
-import type { TouchArea } from '../../tables.ts';
-import { characterMap, decode } from '../../text.ts';
-import { valueMaps } from '../../valuemap.ts';
+import type { TouchArea } from '../../container/tables.ts';
+import { characterMap, decode } from '../../screens/text.ts';
+import { valueMaps } from '../../container/valuemap.ts';
 import type { WithChoices } from '../family.ts';
 import {
   activityIconOf, activityPadBox, colourBehind, colourUnder, STARTUP_ICON_AT, STARTUP_ICON_SIZE, startupIcon,
 } from './activitypictures.ts';
-import { type ExtraFontSet, fontSetOn, measureSet } from '../../fonttable.ts';
-import type { LetterInks } from '../../lettering.ts';
+import { type ExtraFontSet, fontSetOn, measureSet } from '../../drawing/fonttable.ts';
+import type { LetterInks } from '../../drawing/lettering.ts';
 import { ONE_CHOICES, type OneChoices } from './choices.ts';
 import { oneValueMapRoles, withOneScreenTable } from './caseprograms.ts';
-import { ScreenRecordError } from '../../screenrecords.ts';
+import { ScreenRecordError } from '../../compose/screenrecords.ts';
 import {
   fontOfFace, fontsOfFace, padFontOf, ONE_PAD_HEIGHT, ONE_PAD_WIDTH, type OneLabelLine, oneLabelLength, oneLabelLines,
 } from './labels.ts';

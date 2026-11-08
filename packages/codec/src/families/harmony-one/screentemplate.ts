@@ -51,22 +51,22 @@
  *
  * The Harmony One alone, the One family's. Read only towards hardware: the result is pieces.
  */
-import type { Container, Instruction } from '../../gspm.ts';
-import { actionListBytes } from '../../gspm.ts';
-import type { ContainerLayout, ContainerPiece, PieceRef } from '../../frame.ts';
-import type { PieceTarget } from '../../statetables.ts';
-import { taggedListBytes } from '../../sections.ts';
+import type { Container, Instruction } from '../../container/gspm.ts';
+import { actionListBytes } from '../../container/gspm.ts';
+import type { ContainerLayout, ContainerPiece, PieceRef } from '../../assembly/frame.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
+import { taggedListBytes } from '../../container/sections.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN,
   SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
-} from '../../screen.ts';
-import { fillBytes, fillOf, fillTarget } from '../../pictures.ts';
-import { keyListOrder, keyListOrderInserted } from '../../modezero.ts';
+} from '../../screens/screen.ts';
+import { fillBytes, fillOf, fillTarget } from '../../drawing/pictures.ts';
+import { keyListOrder, keyListOrderInserted } from '../../container/modezero.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, type RecordReading, ScreenRecordError, recordBuilding, recordReading,
-} from '../../screenrecords.ts';
+} from '../../compose/screenrecords.ts';
 import { type ValueReader, blobReader, speller, textGlyphs } from '../../shared/spelling.ts';
-import { type CharacterMap, characterMap, decode } from '../../text.ts';
+import { type CharacterMap, characterMap, decode } from '../../screens/text.ts';
 
 export const CALL = 0x7f;
 export const BAND = 0x1f;

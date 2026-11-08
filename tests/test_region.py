@@ -15,7 +15,7 @@ import unittest
 import lab
 from harmony import gspm, region
 
-#: `[sample, where the named content stops]`, from `packages/codec/src/coverage.ts` with every
+#: `[sample, where the named content stops]`, from `packages/codec/src/container/coverage.ts` with every
 #: reader landed. The trailer and the bitmaps are excluded: the first sits at the very end and the
 #: second are inside the region rather than below it.
 REGION_START = {

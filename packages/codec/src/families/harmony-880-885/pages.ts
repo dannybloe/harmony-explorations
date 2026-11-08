@@ -35,21 +35,21 @@
  * configuration's device modes, the device list's new page off the list itself. Nothing here draws a picture or a
  * glyph of ours.
  */
-import { u24 } from '../../bytes.ts';
-import { SIDE_KEY_GRIDS, type LabelGrid } from '../../cornerlayout.ts';
-import { Writer } from '../../emit.ts';
-import { type FontSet, fontSets } from '../../font.ts';
-import type { Container } from '../../gspm.ts';
-import { ACTION_LIST_INDEX_OPCODE, type ModeRecord, modeRecords } from '../../sections.ts';
+import { u24 } from '../../support/bytes.ts';
+import { SIDE_KEY_GRIDS, type LabelGrid } from '../../inventory/cornerlayout.ts';
+import { Writer } from '../../container/emit.ts';
+import { type FontSet, fontSets } from '../../screens/font.ts';
+import type { Container } from '../../container/gspm.ts';
+import { ACTION_LIST_INDEX_OPCODE, type ModeRecord, modeRecords } from '../../container/sections.ts';
 import {
   SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_END, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
-} from '../../screen.ts';
-import { RUN_SCREEN_PROGRAM } from '../../inventory.ts';
+} from '../../screens/screen.ts';
+import { RUN_SCREEN_PROGRAM } from '../../inventory/inventory.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { ModeProgram } from '../../shared/modes.ts';
 import { codesFor, textGlyphs, textWidth } from '../../shared/spelling.ts';
-import { characterMap } from '../../text.ts';
+import { characterMap } from '../../screens/text.ts';
 import { SIDE_KEYS_NAME } from './sends.ts';
 
 /** The eight keys beside the screen with their cells, in the order a page fills them: the reader's table. */

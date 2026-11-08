@@ -17,7 +17,7 @@
  * refused, since no compile of this family holds a sequence.
  */
 import type { DeviceSends, SendShape } from '../family.ts';
-import type { Container } from '../../gspm.ts';
+import type { Container } from '../../container/gspm.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { ComposeDevice } from '../../shared/devices.ts';
 import { powerOnList, sendList, writerOf } from './lists.ts';

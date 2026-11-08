@@ -14,10 +14,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { framesOfPulses, pulsesOfFrame } from '../src/irframe.ts';
-import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
+import { framesOfPulses, pulsesOfFrame } from '../src/infrared/irframe.ts';
+import { PROTOCOLS, type StatedProtocol } from '../src/infrared/protocols.ts';
 import { blockOfStatedCode, closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
-  from '../src/stated.ts';
+  from '../src/infrared/stated.ts';
 import { LAB, skipWithoutLab } from '@harmony/lab';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -10,17 +10,17 @@
  * readers changed; the one test of which family a configuration is in, `startSequenceOf`'s, reads the
  * architecture as the family's other modules do rather than asking the registry, which a family never imports.
  */
-import { DEFERRED, STATE_WRITE_BASE } from '../../actions.ts';
+import { DEFERRED, STATE_WRITE_BASE } from '../../container/actions.ts';
 import type { ActivityStart, ListBody } from '../family.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { type Container, type Instruction, parse } from '../../gspm.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { type Container, type Instruction, parse } from '../../container/gspm.ts';
 import {
   ACTIVITY_STATE_NAME, activityBindings, ENTER_MODE, firmwareStateVariableMax, handlerSetRoles, MAP_VALUE_OPCODE,
   stateVariables,
-} from '../../inventory.ts';
-import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, taggedList } from '../../sections.ts';
+} from '../../inventory/inventory.ts';
+import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, taggedList } from '../../container/sections.ts';
 import { assertGeneratedRecord, ComposeError, HANDLER_TAG_RESUME, STATE_WRITE_LIMIT } from '../../shared/core.ts';
-import { type StateVariableSpec } from '../../statetables.ts';
+import { type StateVariableSpec } from '../../assembly/statetables.ts';
 import { describeWiring, rewiredForActivities } from './wiring.ts';
 import { FOUR_SLOT_ACTIVITY_KEY_EDITOR } from './activitykeys.ts';
 import { startSequenceVariables } from './statetables.ts';

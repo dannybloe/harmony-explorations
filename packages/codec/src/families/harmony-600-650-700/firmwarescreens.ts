@@ -55,27 +55,27 @@
  * Arch 14 only, the Harmony 600, 650 and 700, and English only. Read only towards hardware: the result is
  * pieces.
  */
-import type { Container, Instruction } from '../../gspm.ts';
-import { actionListBytes } from '../../gspm.ts';
+import type { Container, Instruction } from '../../container/gspm.ts';
+import { actionListBytes } from '../../container/gspm.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { type ValueReader, blobReader, spelledText } from '../../shared/spelling.ts';
-import type { MenuPart } from '../../screenparts.ts';
+import type { MenuPart } from '../../compose/screenparts.ts';
 import { bottomLineParts } from './chrome.ts';
-import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
+import type { ContainerLayout, ContainerPiece } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
 import {
   BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, KEY_EVENT_PRESS, KEY_EVENT_SHIFT,
-} from '../../inventory.ts';
-import { POP_MODE, SILENT_WRITE, STATE_BAND, STATE_WRITE_BASE } from '../../actions.ts';
+} from '../../inventory/inventory.ts';
+import { POP_MODE, SILENT_WRITE, STATE_BAND, STATE_WRITE_BASE } from '../../container/actions.ts';
 import { keyMapEntries } from './modezero.ts';
-import { ACTION_LIST_INDEX_OPCODE, taggedListBytes } from '../../sections.ts';
+import { ACTION_LIST_INDEX_OPCODE, taggedListBytes } from '../../container/sections.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, ScreenRecordError, assertRebuilt, recordBuilding, recordReading,
   withModeRecords,
-} from '../../screenrecords.ts';
-import type { PieceTarget } from '../../statetables.ts';
+} from '../../compose/screenrecords.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
 import { FIRMWARE_SCREENS, type WiringModel, type WiringSpec, describeWiring, wiringFrontIndex } from './wiring.ts';
-import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_SELECT_FONT } from '../../screen.ts';
+import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_SELECT_FONT } from '../../screens/screen.ts';
 import { FOUR_SLOT_SCREEN_WIDTH } from './geometry.ts';
 
 /** Which of the five own key maps a firmware screen has. */

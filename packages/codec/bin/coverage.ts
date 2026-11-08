@@ -7,7 +7,7 @@
  *
  * The progress measure for milestone M2: an emitter can only rebuild what the reader can
  * attribute, so this fraction has to reach 100 before a byte exact round trip is possible. See
- * `packages/codec/src/coverage.ts` for why a claim is made by the reader that knows the size.
+ * `packages/codec/src/container/coverage.ts` for why a claim is made by the reader that knows the size.
  *
  * `--detail` is the working view. The largest gaps are where the next reader should go, and any
  * overlap at all is a defect in one of the two claims rather than something to interpret.
@@ -20,7 +20,7 @@ import { parse, payloadOf } from '../src/index.ts';
 import { coverage } from '../src/internal.ts';
 import type { CoverageReport } from '../src/internal.ts';
 import { CONTAINERS } from './corpus.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

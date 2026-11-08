@@ -122,13 +122,13 @@
  * Arch 12 (Harmony One) alone, skin 54 as `composeSetup` takes it; every builder here is the One family's but the
  * state tables', which is shared and takes the family's facts.
  */
-import type { Container } from '../../gspm.ts';
-import { type ContainerLayout, layOutContainer, takeApart } from '../../frame.ts';
-import { type BlendedSet, unblendedSelects } from '../../blending.ts';
-import { ScreenRecordError, assertRebuilt } from '../../screenrecords.ts';
-import { StateTablesError, buildStateTables, builtStatePieces, describeStateTables, withStateTables } from '../../statetables.ts';
-import { WiringError, builtPieces, compareWiring, withWiring } from '../../wiringparts.ts';
-import { FirmwareSectionsError } from '../../firmwaresections.ts';
+import type { Container } from '../../container/gspm.ts';
+import { type ContainerLayout, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { type BlendedSet, unblendedSelects } from '../../drawing/blending.ts';
+import { ScreenRecordError, assertRebuilt } from '../../compose/screenrecords.ts';
+import { StateTablesError, buildStateTables, builtStatePieces, describeStateTables, withStateTables } from '../../assembly/statetables.ts';
+import { WiringError, builtPieces, compareWiring, withWiring } from '../../assembly/wiringparts.ts';
+import { FirmwareSectionsError } from '../../assembly/firmwaresections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { buildOneFirmwareScreens, describeOneFirmwareScreens, withOneFirmwareScreens } from './firmwarescreens.ts';
 import { buildOneFixedScreens, describeOneFixedScreens, withOneFixedScreens } from './fixedscreens.ts';
@@ -150,7 +150,7 @@ import { type WithGenerated, withNumberSenderTable, withOneInsertedSection } fro
 import { ONE_CHOICES, type OneChoices } from './choices.ts';
 import { withoutTourAndAssistant } from './withouttour.ts';
 import { oneOurPictures, withOnePictures } from './pictures.ts';
-import { PictureError } from '../../pictures.ts';
+import { PictureError } from '../../drawing/pictures.ts';
 
 /** A builder on the composed path refusing the configuration, with the part it was building. */
 export class OneBuildError extends Error {}

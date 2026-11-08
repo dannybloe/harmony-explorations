@@ -49,25 +49,25 @@
  *
  * The Harmony One alone, the One family's: the four slot family compares through `families/harmony-600-650-700/compare.ts`.
  */
-import { type Container, BINDING_SLOT, archSlot } from '../../gspm.ts';
+import { type Container, BINDING_SLOT, archSlot } from '../../container/gspm.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, type ModeRecord, type TaggedEntry, eventMap, handlerSets, modePages, modeRecords, pageListCopies,
   stateRecords, taggedList,
-} from '../../sections.ts';
-import { valueMaps } from '../../valuemap.ts';
-import { numberSenders, timers } from '../../tables.ts';
-import { SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, reachablePrograms } from '../../screen.ts';
-import { screenStrings } from '../../text.ts';
-import { renderVariants } from '../../render.ts';
+} from '../../container/sections.ts';
+import { valueMaps } from '../../container/valuemap.ts';
+import { numberSenders, timers } from '../../container/tables.ts';
+import { SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, reachablePrograms } from '../../screens/screen.ts';
+import { screenStrings } from '../../screens/text.ts';
+import { renderVariants } from '../../screens/render.ts';
 import {
   DEVICE_QUANTITY, ENTER_MODE, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SEND_INFRARED, activities, deviceModeMaps, devices,
   firmwareStateVariableMax, handlerSetRoles, stateVariables,
-} from '../../inventory.ts';
-import { STATE_BAND, STATE_WRITE_BASE, stateVariableSite } from '../../actions.ts';
-import { contentKey, modeRoles } from '../../screencategories.ts';
-import { touchOwner, touchPageOf } from '../../touch.ts';
-import { irGroups } from '../../ir.ts';
-import { recordSent } from '../../irframe.ts';
+} from '../../inventory/inventory.ts';
+import { STATE_BAND, STATE_WRITE_BASE, stateVariableSite } from '../../container/actions.ts';
+import { contentKey, modeRoles } from '../../screens/screencategories.ts';
+import { touchOwner, touchPageOf } from '../../inventory/touch.ts';
+import { irGroups } from '../../infrared/ir.ts';
+import { recordSent } from '../../infrared/irframe.ts';
 import { oneCharacterMap } from './screentexts.ts';
 
 /** A configuration as a person meets it: a name to what is there, `oneView`. */

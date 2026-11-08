@@ -4,7 +4,7 @@ The action list language's arithmetic: multiply, divide and modulo. `docs/findin
 Four images and three architectures, because the point of the section is a **divergence**: arch 14
 implements the opcode block `0x65` to `0x6E` and arch 9 and arch 12 test every one of those opcodes
 in the same descending ladder and branch to the dispatcher's exit. A test on one image could not see
-that, and the reading table in `packages/codec/src/actions.ts` now answers differently per
+that, and the reading table in `packages/codec/src/container/actions.ts` now answers differently per
 architecture because of it.
 
 Addresses are recorded per image because finding them again is a search, the same reason

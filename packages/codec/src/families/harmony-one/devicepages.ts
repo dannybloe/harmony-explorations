@@ -62,34 +62,34 @@
  * alone, the One family's; the Harmony 600, 650 and 700 draw their device pages with `screenrecords.ts`.
  * Read only towards hardware: the result is pieces.
  */
-import { u24 } from '../../bytes.ts';
-import { type Container, parse } from '../../gspm.ts';
-import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
-import type { PieceTarget } from '../../statetables.ts';
-import { devices } from '../../inventory.ts';
+import { u24 } from '../../support/bytes.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
+import { devices } from '../../inventory/inventory.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
-} from '../../screen.ts';
+} from '../../screens/screen.ts';
 import {
   type BuiltScreen, type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords,
-} from '../../screenrecords.ts';
-import { modeRecords } from '../../sections.ts';
+} from '../../compose/screenrecords.ts';
+import { modeRecords } from '../../container/sections.ts';
 import { appendActionLists, ComposeError } from '../../shared/core.ts';
 import { appendMode } from '../../shared/modes.ts';
 import { type ValueReader, blobReader, fontThatSpells, textGlyphs } from '../../shared/spelling.ts';
-import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
-import { characterMap, decode } from '../../text.ts';
+import { TOUCH_AREA_LENGTH, touchPages } from '../../container/tables.ts';
+import { characterMap, decode } from '../../screens/text.ts';
 import { type HitPart, hitPageAreasOf, hitPageRunOf, oneHitPagesPlace, withOneHitPages } from './hitpages.ts';
 import { ONE_PAD_HEIGHT, ONE_PAD_WIDTH, padLineY } from './labels.ts';
 import { DEVICE_PAGE_SLOTS, pagingStyle, withHitPage } from './menus.ts';
 import { describeOneActivityMenu, pageKeysOn } from './activitymenu.ts';
-import { STATE_WRITE_BASE } from '../../actions.ts';
-import { fontSets } from '../../font.ts';
-import { measureSet } from '../../fonttable.ts';
-import { fillTarget, picturesByContent, withBankPictures } from '../../pictures.ts';
-import { contentKey } from '../../screencategories.ts';
-import { SCREEN_HEIGHT, SCREEN_WIDTH } from '../../touch.ts';
+import { STATE_WRITE_BASE } from '../../container/actions.ts';
+import { fontSets } from '../../screens/font.ts';
+import { measureSet } from '../../drawing/fonttable.ts';
+import { fillTarget, picturesByContent, withBankPictures } from '../../drawing/pictures.ts';
+import { contentKey } from '../../screens/screencategories.ts';
+import { SCREEN_HEIGHT, SCREEN_WIDTH } from '../../inventory/touch.ts';
 import { ONE_CHOICES, type OneChoices } from './choices.ts';
 import { activityPadBox } from './activitypictures.ts';
 import { padsBehindBackground } from './activityscreen.ts';

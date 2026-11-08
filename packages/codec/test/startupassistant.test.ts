@@ -7,12 +7,12 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import { parse } from '../src/index.ts';
-import { characterMap, screenStrings } from '../src/text.ts';
-import { stateRecords } from '../src/sections.ts';
+import { characterMap, screenStrings } from '../src/screens/text.ts';
+import { stateRecords } from '../src/container/sections.ts';
 import {
   ASSISTANT_HIDDEN, oneStartupVariables, withoutStartupAssistant,
 } from '../src/families/harmony-one/startupassistant.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
   'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',

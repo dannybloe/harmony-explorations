@@ -353,7 +353,7 @@ Strokes carry `vector-effect="non-scaling-stroke"`, so a thumbnail keeps its lin
 grey.
 
 The screen area is a rectangle with the **real aspect ratio of that architecture's display**, from
-`SCREEN_SIZES` in `packages/codec/src/render.ts`: 176 by 220 for a Harmony One, 128 by 128 for a
+`SCREEN_SIZES` in `packages/codec/src/screens/render.ts`: 176 by 220 for a Harmony One, 128 by 128 for a
 Harmony 600, 96 by 64 for a Harmony 525. It also carries the transform from display pixels into
 drawing coordinates, so anything expressed in screen pixels lands in the right place later.
 

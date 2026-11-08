@@ -19,8 +19,8 @@
  * Starting the assistant at 3 starts the remote with a value its own screens write, so the firmware is asked for no
  * state it cannot reach.
  */
-import { type Container, parse } from '../../gspm.ts';
-import { stateRecords } from '../../sections.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { stateRecords } from '../../container/sections.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
 
 const LOAD_BYTE = 0x1f;

@@ -82,7 +82,7 @@ boot loader's choice and was not read. The drawing library scales the touch cont
 and 320 (`mov r3, #240` and `mov r3, #320`, right after the two `EVIOCGABS` requests), and the Juniper
 touch handler reports a finger's height on the display as 320 minus the sensor's (`rsb r3, r8, #320`).
 Four files written for different jobs. `SCREEN_SIZES[17]` in
-`packages/codec/src/render.ts` is asserted equal to them here, so the codec's row cannot drift from the
+`packages/codec/src/screens/render.ts` is asserted equal to them here, so the codec's row cannot drift from the
 firmware.
 
 **4. Off held for 8 seconds restarts the remote.** In the MSP430 handler, a press of bit 0, the Off key,
@@ -794,7 +794,7 @@ class TheRootFilesystem(unittest.TestCase):
         value, size = elf_functions(module)['clearpad_irq_juniper01_work']
         start = sections['.text'][2] + value
         self.assertIn(RSB_320, words(module[start:start + size]))
-        codec = (REPO / 'packages/codec/src/render.ts').read_text()
+        codec = (REPO / 'packages/codec/src/screens/render.ts').read_text()
         self.assertEqual(re.findall(r'^\s*17: \{ width: (\d+), height: (\d+) \},$', codec, re.M), [('240', '320')])
 
     # Fact 4

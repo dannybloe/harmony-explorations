@@ -30,7 +30,7 @@ import {
   householdNames,
   sharesNoHousehold,
 } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The four Harmony 650 compiles, in the order the per configuration figures below are listed. */
 const H650 = ['h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile',

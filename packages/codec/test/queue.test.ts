@@ -10,8 +10,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { IMAGES, PARSEABLE_EXCLUDED, require_, skipWithoutLab, skipUnless } from '@harmony/lab';
-import { parse, INSTRUCTION_LENGTH } from '../src/gspm.ts';
-import type { Instruction } from '../src/gspm.ts';
+import { parse, INSTRUCTION_LENGTH } from '../src/container/gspm.ts';
+import type { Instruction } from '../src/container/gspm.ts';
 import {
   ACTION_QUEUE_BYTES,
   ACTION_QUEUE_INSTRUCTIONS,
@@ -22,7 +22,7 @@ import {
   STEP_CEILING,
   undecidedLists,
   worstQueueRun,
-} from '../src/queue.ts';
+} from '../src/container/queue.ts';
 import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../src/internal.ts';
 
 // The two opcodes come from the one place each is named, `sections.ts` and `inventory.ts`, rather

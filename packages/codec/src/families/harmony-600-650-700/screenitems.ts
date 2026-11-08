@@ -3,12 +3,12 @@
  * `screenItems` and `drawsName`: an item per corner, `FOUR_SLOT_ITEMS`, its label read back with a space
  * between its two lines. Moved here unchanged from `activityroles.ts`, plan 007.
  */
-import type { Container } from '../../gspm.ts';
-import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../../sections.ts';
+import type { Container } from '../../container/gspm.ts';
+import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../../container/sections.ts';
 
-import { characterMap, screenStrings } from '../../text.ts';
+import { characterMap, screenStrings } from '../../screens/text.ts';
 import { ComposeError } from '../../shared/core.ts';
-import type { DeviceScreenItem } from '../../activityroles.ts';
+import type { DeviceScreenItem } from '../../compose/activityroles.ts';
 import { FOUR_SLOT_ITEMS, fourSlotCellAt } from './geometry.ts';
 
 export function fourSlotScreenItems(c: Container, mode: number): DeviceScreenItem[] {

@@ -3,7 +3,7 @@
  * `activityKeyRules`. The scans are the Harmony 600 drawing's, `packages/silhouettes/src/models/h600.ts`,
  * where the arrow pairs are settled by section 323. Moved here from `activityroles.ts`, plan 007.
  */
-import type { ActivityKeyRules } from '../../activityroles.ts';
+import type { ActivityKeyRules } from '../../compose/activityroles.ts';
 
 export const FOUR_SLOT_ACTIVITY_KEYS: ActivityKeyRules = {
   volume: [14, 15, 16],

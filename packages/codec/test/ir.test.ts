@@ -36,7 +36,7 @@ import {
   IR_RECORD_POINTER_BIAS,
 } from '../src/internal.ts';
 import type { Container } from '../src/index.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** Every container in the corpus that has an infrared section. */
 const WITH_INFRARED = [

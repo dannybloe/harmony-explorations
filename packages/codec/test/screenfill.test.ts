@@ -25,7 +25,7 @@ import {
 } from '../src/internal.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { readOnePictures, withOnePictures } from '../src/families/harmony-one/pictures.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
 const SIXTEEN = [

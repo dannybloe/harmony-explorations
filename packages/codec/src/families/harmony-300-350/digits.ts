@@ -17,16 +17,16 @@
  * device's commands, `deviceCopyLists`, because Logitech stores one more one block copy beside the digits, the
  * channel tuning's finish, `channelFinish`; the digits stay its first caller, with their own entry.
  */
-import type { CatalogueSource } from '../../catalogue.ts';
-import { catalogueDevicePlan } from '../../composecatalogue.ts';
-import type { DeviceDriving } from '../../driving.ts';
-import { type Container, parse } from '../../gspm.ts';
-import { irGroups } from '../../ir.ts';
-import { DEVICE_QUANTITY_DEFAULT } from '../../inventory.ts';
-import { appendCopyRecord, oneBlockCopy } from '../../sequence.ts';
+import type { CatalogueSource } from '../../catalogue/catalogue.ts';
+import { catalogueDevicePlan } from '../../compose/composecatalogue.ts';
+import type { DeviceDriving } from '../../catalogue/driving.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { irGroups } from '../../infrared/ir.ts';
+import { DEVICE_QUANTITY_DEFAULT } from '../../inventory/inventory.ts';
+import { appendCopyRecord, oneBlockCopy } from '../../compose/sequence.ts';
 import { appendActionLists, ComposeError, nameOfLabel } from '../../shared/core.ts';
 import { composeIrGroup } from '../../shared/infrared.ts';
-import { NUMBER_SENDER_DIGITS } from '../../tables.ts';
+import { NUMBER_SENDER_DIGITS } from '../../container/tables.ts';
 import { arraysStart, highestEnd, instructionsAt, listExtents } from './devices.ts';
 import { bodyOf, sendList } from './lists.ts';
 

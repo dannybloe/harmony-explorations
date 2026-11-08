@@ -5,24 +5,24 @@
  * cut out of `compose.ts` unchanged; it patches a container in place, as everything here does until the
  * families serialize from a description (`todo-compile-650.md` 11.1.1).
  */
-import { STATE_WRITE_BASE, stateVariableSite } from '../actions.ts';
-import { u16 as u16le, u24 } from '../bytes.ts';
-import { Writer } from '../emit.ts';
-import { archSlot, Container, parse, TRAILER_CHECKSUM_OFFSET, trailerChecksum } from '../gspm.ts';
-import { deviceIds, firmwareStateVariableMax, stateVariables } from '../inventory.ts';
-import { relocate } from '../relocate.ts';
-import { SCREEN_END, SCREEN_QUEUE_INSTRUCTION, screenProgram } from '../screen.ts';
+import { STATE_WRITE_BASE, stateVariableSite } from '../container/actions.ts';
+import { u16 as u16le, u24 } from '../support/bytes.ts';
+import { Writer } from '../container/emit.ts';
+import { archSlot, Container, parse, TRAILER_CHECKSUM_OFFSET, trailerChecksum } from '../container/gspm.ts';
+import { deviceIds, firmwareStateVariableMax, stateVariables } from '../inventory/inventory.ts';
+import { relocate } from '../edit/relocate.ts';
+import { SCREEN_END, SCREEN_QUEUE_INSTRUCTION, screenProgram } from '../screens/screen.ts';
 import {
   assertStateTableConsistent, NAME_LEVEL_STATE_VARIABLE, nameNodes, STATE_RECORD_HEADER, STATE_TABLE_HEADER,
   STATE_VALUE_LENGTH, stateRecords, stateTable,
-} from '../sections.ts';
-import { appendTableEntries } from '../shared/infrared.ts';
-import { headerOf } from '../shared/spelling.ts';
-import { composedNameTreeOrder, type StateVariableSpec, VALUE_MAP_LEAD } from '../statetables.ts';
+} from '../container/sections.ts';
+import { appendTableEntries } from './infrared.ts';
+import { headerOf } from './spelling.ts';
+import { composedNameTreeOrder, type StateVariableSpec, VALUE_MAP_LEAD } from '../assembly/statetables.ts';
 import {
   countedPointers, VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, VALUE_MAP_SECTION_COUNT_WIDTH, VALUE_MAP_SLOT,
   valueMaps,
-} from '../valuemap.ts';
+} from '../container/valuemap.ts';
 
 export class ComposeError extends Error {}
 

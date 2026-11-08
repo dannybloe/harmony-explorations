@@ -12,13 +12,13 @@
  * * the resources the core asks its loader for, supplied as this module loads, `resources.node.ts`: Oxanium, the icon
  *   font and its list, Node's deflate for a PNG and SHA-256.
  */
-import './resources.node.ts';
+import './support/resources.node.ts';
 
 // The main entry whole: its names are its own explicit list, `index.ts`, so this adds none by default.
 export * from './index.ts';
 // The infrared archive and the catalogue read off the disk by path, and the source a builder is handed for a
 // checkout.
-export { archiveManifest, archiveProtocols, catalogueByRhythm, segmentLengthsModule } from './archive.node.ts';
+export { archiveManifest, archiveProtocols, catalogueByRhythm, segmentLengthsModule } from './catalogue/archive.node.ts';
 export {
   archiveAt,
   catalogueCommands,
@@ -26,8 +26,8 @@ export {
   catalogueManufacturers,
   catalogueModels,
   codeIndex,
-} from './catalogue.node.ts';
-export { catalogueDriving } from './driving.node.ts';
-export { catalogueRules, rawCaptureDevice, rawCaptureLine, rawDerivedState, statedSha256 } from './catalogueraw.node.ts';
+} from './catalogue/catalogue.node.ts';
+export { catalogueDriving } from './catalogue/driving.node.ts';
+export { catalogueRules, rawCaptureDevice, rawCaptureLine, rawDerivedState, statedSha256 } from './catalogue/catalogueraw.node.ts';
 // The resources as Node supplies them, supplied as this module loads.
-export { NODE_RESOURCES } from './resources.node.ts';
+export { NODE_RESOURCES } from './support/resources.node.ts';

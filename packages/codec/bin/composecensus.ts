@@ -53,8 +53,8 @@ import {
   type PressRepeats,
 } from '../src/build.ts';
 import { blockOfStatedCode, statedCodeOfDefinition } from '../src/internal.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

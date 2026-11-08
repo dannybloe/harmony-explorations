@@ -19,24 +19,24 @@ import assert from 'node:assert/strict';
 import { load, skipUnless, slow } from '@harmony/lab';
 import { activities, activityScreens, type Container, parse } from '../src/index.ts';
 import { modeRecords, taggedList, touchPages, valueMaps } from '../src/internal.ts';
-import { touchOwner } from '../src/touch.ts';
+import { touchOwner } from '../src/inventory/touch.ts';
 import {
   ENTER_MODE, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, activityBindings, caseQueued, deviceListRowMode, devices, idleActivityValue,
-} from '../src/inventory.ts';
-import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_JUMP, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screen.ts';
+} from '../src/inventory/inventory.ts';
+import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_JUMP, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screens/screen.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import { startSwitchedOn } from '../src/shared/activities.ts';
 import { ComposeError } from '../src/shared/core.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
-import { characterMap, decode } from '../src/text.ts';
-import { fontSets } from '../src/font.ts';
-import { measureSet } from '../src/fonttable.ts';
+import { characterMap, decode } from '../src/screens/text.ts';
+import { fontSets } from '../src/screens/font.ts';
+import { measureSet } from '../src/drawing/fonttable.ts';
 import { buildOneActivityScreens, oneActivityFonts } from '../src/families/harmony-one/activityscreen.ts';
 import { checkOneCasePrograms, oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { fontsOfFace } from '../src/families/harmony-one/labels.ts';
 import { letterOneDonor } from '../src/families/harmony-one/look.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The Harmony One compiles that hold an activity, fifteen of the nineteen. */
 const WITH_ACTIVITIES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

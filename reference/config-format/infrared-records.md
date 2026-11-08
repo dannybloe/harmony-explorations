@@ -68,7 +68,7 @@ is needed: a plain table of ascending pointers crosses `value == base + offset` 
 one Harmony 890 configuration and 198 times in a Harmony 895, and none of those positions is record
 shaped[^s181]. The search is how the records are read on the
 [Harmony 890 and 895](../architectures/harmony-890-895/memory.md), whose slot map is otherwise unsettled.
-`irRecordsByClosure` in `packages/codec/src/ir.ts` is the reader.
+`irRecordsByClosure` in `packages/codec/src/infrared/ir.ts` is the reader.
 
 **On the Harmony 880 and 885 the firmware itself goes through the own start**: the loader reads the class byte
 where the pointer lands, follows the `u24` at `+0x08` and reads the header from there, so a wrong own start
@@ -227,7 +227,7 @@ along it. A once block commonly holds the code, a gap, the protocol's own repeat
 block is more than one transmission and every class 1 record measured has a gap somewhere other than at its
 end[^s139]. Some records open with a run of `0x7FFF` words of varying length, so a reader locates the frame
 rather than assuming an offset[^s32]. How the frame decodes into bits is [frames](../infrared/frames.md),
-read with `irFrame` in `packages/codec/src/irframe.ts`, the one frame decoder here.
+read with `irFrame` in `packages/codec/src/infrared/irframe.ts`, the one frame decoder here.
 
 **The decoded bit count closes against the header's timings**, two quantities from opposite ends of a record,
 over all fifteen user configurations[^s139]:

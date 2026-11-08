@@ -25,7 +25,7 @@ behind raw 8's zero), 276 (the state variable bound, which names `0x172A4` on th
 176 (base slot 9's stack on arch 14), 43 (base slot 12), 35, 138 and 274 (base slot 13 and its seeder),
 74 (opcode `0x74` is the One's digit accumulator, and nothing in the corpus issues it). The reference:
 `reference/config-format/modes-and-keys.md`, `state.md` and `container.md`, and this family's
-`memory.md` and `firmware.md`. The library: `ARCH16_SLOT_MAP` in `packages/codec/src/gspm.ts`, which
+`memory.md` and `firmware.md`. The library: `ARCH16_SLOT_MAP` in `packages/codec/src/container/gspm.ts`, which
 names none of these six and is not changed here.
 
 **The processor.** The image is an ordinary PIC18 program, and which part it runs on is not checked,

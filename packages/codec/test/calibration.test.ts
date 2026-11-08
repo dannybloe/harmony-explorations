@@ -28,11 +28,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { imagePath, require_, skipUnless } from '@harmony/lab';
-import { parse } from '../src/gspm.ts';
-import { devices, activities, inventory } from '../src/inventory.ts';
-import { coverage } from '../src/coverage.ts';
-import { emit } from '../src/emit.ts';
-import '../src/resources.node.ts';
+import { parse } from '../src/container/gspm.ts';
+import { devices, activities, inventory } from '../src/inventory/inventory.ts';
+import { coverage } from '../src/container/coverage.ts';
+import { emit } from '../src/container/emit.ts';
+import '../src/support/resources.node.ts';
 
 /** What was chosen, before any of these bytes existed. */
 const CHOSEN = {

@@ -258,6 +258,31 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 writing a container, the byte accounting behind M2, the emitter that
                                 reads it back, same length edits with their refusals, the screen's
                                 text, the renderer, and the infrared frame decoder and encoder.
+                                Outside the families the source is grouped by what a module is
+                                for, todo.md 7.3.8, with the four entries left at the top:
+                                src/container/, the container and its sections, read and
+                                encoded (gspm, ezhex, sections, tables, valuemap, actions, queue,
+                                memo, modezero, emit, coverage, summary, metadata);
+                                src/inventory/, what a configuration is for, as an application
+                                reads it (inventory and its parts, cornerlayout, touch, language);
+                                src/infrared/, pulses, frames and protocols (ir, irframe, irda,
+                                protocols, pronto, stated, segmentlengths); src/catalogue/,
+                                Logitech's device catalogue and infrared archive with their
+                                *.node.ts readers (archive, catalogue, catalogueraw, driving);
+                                src/screens/, the remote's screens read and drawn (screen, font,
+                                text, alphabets, oxaniumalphabet, render, png, screencategories);
+                                src/drawing/, our letters, pictures and icons (raster, typeface,
+                                lettering, blending, fonttable, glyphborrow, icons, pictures);
+                                src/edit/, a configuration changed in place (edit, relocate,
+                                growth); src/compose/, the composers outside a family (compose,
+                                composecatalogue, devicepower, inputs, sequence, activityroles,
+                                devicemode, screenrecords, screenparts); src/assembly/, a
+                                container built from nothing (frame, placer, assemble,
+                                statetables, firmwaresections, wiringparts, attribution); and
+                                src/support/, what everything leans on (bytes, deflate, the
+                                resources and their Node supplier). ./internal carries the
+                                modules of container, inventory, infrared, catalogue, screens,
+                                edit and support, ./build those of drawing, compose and assembly.
                                 The composers are laid out by plan 007: src/shared/ holds what
                                 every remote's configuration is built from (devices, activities,
                                 infrared, power, spelling text, menus), src/families/<name>/
@@ -281,9 +306,9 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 of ours a family makes, with its default, is in that family's
                                 choices.ts, and src/recipe/ reads the recipe a build starts from,
                                 docs/recipe.md. Our letters are drawn from the typeface in fonts/
-                                (Oxanium, with its OFL.txt) by src/typeface.ts on src/raster.ts, the
+                                (Oxanium, with its OFL.txt) by src/drawing/typeface.ts on src/drawing/raster.ts, the
                                 one rasteriser for outlines, with opentype.js reading the font;
-                                src/icons.ts draws icons of Material Design Icons (@mdi/font) on
+                                src/drawing/icons.ts draws icons of Material Design Icons (@mdi/font) on
                                 the same rasteriser, for the pictures of 9.1.2.2.
                                 src/families/harmony-touch/ reads a Harmony Touch's configuration, which
                                 is Logitech's documents rather than a container: a view over the
@@ -331,11 +356,11 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 *.node.ts, so a Node caller of ./build or ./internal imports it too: the
                                 archive's readers by path beside the parsers they feed, archiveAt,
                                 the CatalogueSource a builder is handed in place of a path, and
-                                resources.node.ts, which supplies what src/resources.ts asks the
+                                resources.node.ts, which supplies what src/support/resources.ts asks the
                                 loader for, the fonts, the icon list, a PNG's deflate and SHA-256.
                                 Inflating is our own, beside deflate.ts, test/inflate.test.ts.
                                 Reading asks for none of them: our letters' alphabet is generated
-                                data, src/oxaniumalphabet.ts, held to the font by
+                                data, src/screens/oxaniumalphabet.ts, held to the font by
                                 test/oxaniumalphabet.test.ts, and test/mainentryreads.test.ts
                                 reads every family through the main entry with nothing supplied
 packages/testkit/               TS: what the tests of several packages share, todo.md 7.3.6, never a
@@ -560,7 +585,7 @@ demanded group lengths and the check over them existed only in Python. That is n
 **rail**, and it is the one whose failure is silent, since a group of the wrong length is replaced by
 compiled in defaults with no error anywhere. So the only checker for it sat in the language that
 never writes, while TypeScript owns the codec and the whole write path. It is ported now,
-`parameterGroupLengthsMatch` in `packages/codec/src/tables.ts`, and the two copies of the table are
+`parameterGroupLengthsMatch` in `packages/codec/src/container/tables.ts`, and the two copies of the table are
 compared entry for entry by `TheTwoParameterGroupTablesAgree` so they cannot drift. When judging this
 claim again, count the rails and not the readers. The number sender was left out on the
 grounds that its count is zero in every config, which was true of every config that had been
@@ -570,7 +595,7 @@ true**, section 139: the Python
 side reads infrared durations and does not decode them into a bit frame, because for a day it did and
 the two decoders disagreed about 37 records of one arch 8 (Harmony 880) config. A reader that exists
 twice is the state this file's oldest rule forbids, so the direction to add one is towards
-`packages/codec` and the direction to remove one is away from Python. `packages/codec/src/coverage.ts` is the M2 progress number and
+`packages/codec` and the direction to remove one is away from Python. `packages/codec/src/container/coverage.ts` is the M2 progress number and
 `make coverage` prints it; the current figures are in `docs/status.md`.
 
 **This paragraph used to end "it stops there and another reader will not move it", and that was<!--superseded-->
@@ -721,7 +746,7 @@ TypeScript codec on 10 August 2026 without anything failing: `emit.ts` and `edit
 base slot 3's day of week, with a different spelling of the same epoch and a different parser for the
 same string, both correct. **Two right copies is the state that precedes two diverging ones**, and no
 test can see it, so it is caught by looking. A field's encoder lives next to its decoder, once:
-`clockRecordFields` beside `clockRecord` in `packages/codec/src/gspm.ts`, with a test that walks the
+`clockRecordFields` beside `clockRecord` in `packages/codec/src/container/gspm.ts`, with a test that walks the
 corpus asserting they invert.
 
 **When two copies are found already disagreeing, the disagreement is the finding, and it gets measured
@@ -831,7 +856,7 @@ take "Stated by a third party", `d` labels "Chosen by this project" and `[^unche
 
 **Generated blocks.** Some facts already live in code, and those are generated into the documents rather
 than typed: the skin table and capability fields of `packages/base/src/models.ts`, the key list and measured
-scan codes of the drawing in `packages/silhouettes`, the screen raster in `packages/codec/src/render.ts`,
+scan codes of the drawing in `packages/silhouettes`, the screen raster in `packages/codec/src/screens/render.ts`,
 the product id in `packages/corpus/src/read.ts`, and the memory constants and write lists in
 `packages/usb/src/rails.ts`, `protocol.ts` and `settings.ts`. A generated block sits between two markers:
 
@@ -1005,7 +1030,7 @@ make activities    which activity each key starts and which drawn label is its n
 make devices       which devices a config drives, what each is called and which route named it
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
 make oxanium-alphabet
-                   check src/oxaniumalphabet.ts, our own letters' alphabet computed from Oxanium and
+                   check src/screens/oxaniumalphabet.ts, our own letters' alphabet computed from Oxanium and
                    written as data so the main entry reads a configuration with no font supplied, a
                    fix to todo.md 7.3.5; OXANIUM_ALPHABET_ARGS=--write regenerates it. No lab
 make remotes       list attached remotes, enumeration only, opens nothing. Four buckets, and the

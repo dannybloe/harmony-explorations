@@ -26,17 +26,17 @@
  */
 import { IR_ARCHIVE, load } from '@harmony/lab';
 import { parse, payloadOf } from '../src/index.ts';
-import { irGroups } from '../src/ir.ts';
-import { devices, keyCodes } from '../src/inventory.ts';
-import { irFrame } from '../src/irframe.ts';
-import { ArchiveError } from '../src/archive.ts';
+import { irGroups } from '../src/infrared/ir.ts';
+import { devices, keyCodes } from '../src/inventory/inventory.ts';
+import { irFrame } from '../src/infrared/irframe.ts';
+import { ArchiveError } from '../src/catalogue/archive.ts';
 import {
   codeKey, identifyCodeset, DEVICE_TYPE_NAMES, type Identification,
-} from '../src/catalogue.ts';
-import { catalogueCommands, catalogueDevice, catalogueManufacturers, codeIndex } from '../src/catalogue.node.ts';
+} from '../src/catalogue/catalogue.ts';
+import { catalogueCommands, catalogueDevice, catalogueManufacturers, codeIndex } from '../src/catalogue/catalogue.node.ts';
 import { CONTAINERS } from './corpus.ts';
 import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnScans } from './drawings.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

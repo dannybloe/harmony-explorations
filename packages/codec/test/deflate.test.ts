@@ -1,5 +1,5 @@
 /**
- * Our own deflate, `src/deflate.ts`, writes the stream stock zlib 1.2.12 writes at its defaults, `todo-compile-350.md`
+ * Our own deflate, `src/support/deflate.ts`, writes the stream stock zlib 1.2.12 writes at its defaults, `todo-compile-350.md`
  * 5.1.4. The six metadata archives the lab holds are the calibration that matters and `metadatabuild.test.ts` holds
  * them; this file holds the format half with no lab, and the calibration against stock zlib itself on inputs nobody
  * chose for being easy.
@@ -42,7 +42,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { inflateRawSync } from 'node:zlib';
-import { DEFLATE_MAX_INPUT, deflateRaw } from '../src/deflate.ts';
+import { DEFLATE_MAX_INPUT, deflateRaw } from '../src/support/deflate.ts';
 
 /** A small seeded generator, so the inputs are the same on every run and on every machine. */
 function generator(seed: number): () => number {

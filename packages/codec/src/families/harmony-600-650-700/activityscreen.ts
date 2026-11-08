@@ -5,35 +5,35 @@
  */
 import type { WithChoices } from '../family.ts';
 import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
-import { Writer } from '../../emit.ts';
+import { Writer } from '../../container/emit.ts';
 import {
   bottomWord, builtChrome, checkPageFrames, DEVICE_MODE_PROGRAM_TAG, DEVICE_PAGE_LOOKS, deviceModeChrome,
   type DevicePageLook, DEVICES_KEY_TAG, devicesKeyOperand, FOUR_SLOT_TITLE_XY, fourSlotCounterX, fourSlotLabelLines,
   inlineHomes, inOurLook, type KeyMapEntry, OUR_LOOK, type PageFrame, picturesByContent, smallerLabelFonts,
-} from '../../families/harmony-600-650-700/chrome.ts';
-import { activityRowListBody } from '../../families/harmony-600-650-700/devicelist.ts';
-import { fourSlotPageProgram } from '../../families/harmony-600-650-700/devicescreen.ts';
+} from './chrome.ts';
+import { activityRowListBody } from './devicelist.ts';
+import { fourSlotPageProgram } from './devicescreen.ts';
 import { appendMode } from '../../shared/modes.ts';
 import {
   assertTextsAtHome, FOUR_SLOT_MAX_PAGES, fourSlotMenuChrome, fourSlotMenus, fourSlotPageList, type FourSlotTemplate,
   fourSlotTemplate, growFourSlotMenu, idleDeviceList, menuLayout, menuPageBytes, openFourSlotMenuPage,
   pageRecordDifference, partsDifference,
-} from '../../families/harmony-600-650-700/menus.ts';
-import { type FontSet, fontSets } from '../../font.ts';
-import { archSlot, Container, type Instruction, parse } from '../../gspm.ts';
+} from './menus.ts';
+import { type FontSet, fontSets } from '../../screens/font.ts';
+import { archSlot, Container, type Instruction, parse } from '../../container/gspm.ts';
 import {
   activities, ACTIVITY_STATE_NAME, activityBindings, activityNames, caseQueued, compilerCaseOrder, compilerTagOrder,
   ENTER_MODE,
   KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK, stateVariables,
-} from '../../inventory.ts';
+} from '../../inventory/inventory.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
-import { relocate } from '../../relocate.ts';
+import { relocate } from '../../edit/relocate.ts';
 import {
   bitmapReference, SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT,
   screenProgram,
-} from '../../screen.ts';
-import { handlerSets, modeRecords, modeTable, type TaggedEntry, taggedList } from '../../sections.ts';
+} from '../../screens/screen.ts';
+import { handlerSets, modeRecords, modeTable, type TaggedEntry, taggedList } from '../../container/sections.ts';
 import { activityKeyedMaps, type ActivityMaps, nextActivityValue } from '../../shared/activities.ts';
 import { arch14Starts, type Arch14Starts } from './start.ts';
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
@@ -43,15 +43,15 @@ import {
   type ComposedActivityScreen, type ComposeRow,
 } from '../../shared/menus.ts';
 import { codesFor, fontThatSpells, textWidth } from '../../shared/spelling.ts';
-import { stateVariableName } from '../../statetables.ts';
-import { characterMap, screenStrings } from '../../text.ts';
-import { type ValueMap, valueMaps } from '../../valuemap.ts';
+import { stateVariableName } from '../../assembly/statetables.ts';
+import { characterMap, screenStrings } from '../../screens/text.ts';
+import { type ValueMap, valueMaps } from '../../container/valuemap.ts';
 import { ourStateColours, stateLookOf, withStateLook } from './statelook.ts';
 
-import { takeApart } from '../../frame.ts';
-import { u24 } from '../../bytes.ts';
+import { takeApart } from '../../assembly/frame.ts';
+import { u24 } from '../../support/bytes.ts';
 import { FOUR_SLOT_ITEMS, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_ROWS } from './geometry.ts';
-import type { MenuPart } from '../../screenparts.ts';
+import type { MenuPart } from '../../compose/screenparts.ts';
 import { screenRecordModes } from './screenrecords.ts';
 
 /**

@@ -40,7 +40,7 @@ const USB_SPECIFIER = /['"]@harmony\/usb(?:\/[^'"]*)?['"]/;
 test('no file in the codec source imports @harmony/usb', () => {
   const files = sources(SRC);
   // The walk found the source rather than nothing, which would make the check below pass vacuously.
-  assert.ok(files.some((f) => f.endsWith(join('src', 'gspm.ts'))), 'the walk found gspm.ts');
+  assert.ok(files.some((f) => f.endsWith(join('src', 'container', 'gspm.ts'))), 'the walk found gspm.ts');
   const offending = files
     .filter((f) => readFileSync(f, 'utf8').split('\n').some((line) => !/^\s*(\*|\/\/)/.test(line) && USB_SPECIFIER.test(line)))
     .map((f) => f.slice(SRC.length));

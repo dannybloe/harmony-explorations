@@ -19,8 +19,8 @@ import { require_, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { encodeBitmap } from '../src/internal.ts';
 import { layOutContainer, picturesByContent, takeApart } from '../src/build.ts';
-import { contentKey } from '../src/screencategories.ts';
-import { PictureError, withReplacedPictures } from '../src/pictures.ts';
+import { contentKey } from '../src/screens/screencategories.ts';
+import { PictureError, withReplacedPictures } from '../src/drawing/pictures.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import {
   ONE_PICTURES, type OnePictureEntry, readOnePictures, oneFixedPictures, oneOurPictures, onePictureBytes,
@@ -28,7 +28,7 @@ import {
 } from '../src/families/harmony-one/pictures.ts';
 import { withOneBuilders, withOneComposedBuilders } from '../src/families/harmony-one/builders.ts';
 import { withoutTourAndAssistant } from '../src/families/harmony-one/withouttour.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
 const SIXTEEN = [

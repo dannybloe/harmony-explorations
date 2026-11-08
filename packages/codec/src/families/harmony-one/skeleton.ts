@@ -68,18 +68,18 @@
  * The Harmony One, skin 54, the spare's, decision 23, and the One family alone: the Harmony 600, 650 and 700's
  * skeleton is `families/harmony-600-650-700/empty.ts`. Read only towards hardware: the result is bytes in memory.
  */
-import type { Container } from '../../gspm.ts';
-import { BASE_SLOT_COUNT, actionListBytes } from '../../gspm.ts';
-import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
-import { FRAME_ARCHITECTURES, countedTable, layOutContainer } from '../../frame.ts';
-import { placePieces } from '../../placer.ts';
-import { type BuiltStateTables, type StateTablesSpec, buildStateTables, clockSpec } from '../../statetables.ts';
-import { numberSenderTable } from '../../tables.ts';
-import { taggedListBytes } from '../../sections.ts';
-import { buildEventMap } from '../../wiringparts.ts';
-import { buildLogArea } from '../../firmwaresections.ts';
-import { SCREEN_END, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE } from '../../screen.ts';
-import type { SetFace } from '../../fonttable.ts';
+import type { Container } from '../../container/gspm.ts';
+import { BASE_SLOT_COUNT, actionListBytes } from '../../container/gspm.ts';
+import type { ContainerLayout, ContainerPiece } from '../../assembly/frame.ts';
+import { FRAME_ARCHITECTURES, countedTable, layOutContainer } from '../../assembly/frame.ts';
+import { placePieces } from '../../assembly/placer.ts';
+import { type BuiltStateTables, type StateTablesSpec, buildStateTables, clockSpec } from '../../assembly/statetables.ts';
+import { numberSenderTable } from '../../container/tables.ts';
+import { taggedListBytes } from '../../container/sections.ts';
+import { buildEventMap } from '../../assembly/wiringparts.ts';
+import { buildLogArea } from '../../assembly/firmwaresections.ts';
+import { SCREEN_END, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE } from '../../screens/screen.ts';
+import type { SetFace } from '../../drawing/fonttable.ts';
 import type { OneChoices } from './choices.ts';
 import { ONE_GLYPH_ORDER, type OneFontTable, type OneFontTableOptions, buildOneFontTable } from './fontsets.ts';
 import { ONE_STATE_TABLES } from './statetables.ts';

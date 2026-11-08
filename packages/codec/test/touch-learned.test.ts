@@ -60,9 +60,9 @@ import assert from 'node:assert/strict';
 import {
   LEARNED_TOLERANCE, readTouchRaw, rawOfLearned, rhythmOfLearned, type LearnedRow,
 } from '../src/families/harmony-touch/learned.ts';
-import { mergedIntervals, type Pulse } from '../src/irframe.ts';
-import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
-import { pulsesOfStatedRow, statedCode, statedProtocol } from '../src/stated.ts';
+import { mergedIntervals, type Pulse } from '../src/infrared/irframe.ts';
+import { PROTOCOLS, type StatedProtocol } from '../src/infrared/protocols.ts';
+import { pulsesOfStatedRow, statedCode, statedProtocol } from '../src/infrared/stated.ts';
 
 const mark = (us: number): Pulse => ({ mark: true, us });
 const space = (us: number): Pulse => ({ mark: false, us });

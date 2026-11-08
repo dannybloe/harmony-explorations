@@ -53,24 +53,24 @@
  *
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */
-import type { Container } from '../../gspm.ts';
+import type { Container } from '../../container/gspm.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts';
 import { DEVICE_PAGE_BACK_Y, FOUR_SLOT_TITLE_XY } from './chrome.ts';
 import { STARTUP_FIXED_LINE_Y, STARTUP_TITLE_MAX, activityKeyedRecords, startupTitleYs } from './activityscreen.ts';
 import { TWO_ROW_COUNTER_X, fourSlotMenus } from './menus.ts';
-import type { ContainerLayout } from '../../frame.ts';
+import type { ContainerLayout } from '../../assembly/frame.ts';
 import {
   type BuiltDraw, type BuiltScreenTexts, INLINE_HEAD, ScreenTextError, type ScreenTextsPlace, pieceLocator, shareRuns, withScreenTexts,
 } from '../../shared/screentexts.ts';
 import { arch14Starts } from './start.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { fontSets, glyphOf } from '../../font.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { fontSets, glyphOf } from '../../screens/font.ts';
 import {
   caseQueued, ENTER_MODE,
-} from '../../inventory.ts';
+} from '../../inventory/inventory.ts';
 import { TWO_LINE_RISE } from './devicemode.ts';
-import { modeRecords } from '../../sections.ts';
+import { modeRecords } from '../../container/sections.ts';
 import {
   type ScreenInstruction,
   SCREEN_SELECT_FONT,
@@ -78,10 +78,10 @@ import {
   SCREEN_TEXT_INLINE,
   reachablePrograms,
   screenProgram,
-} from '../../screen.ts';
-import { modeRoles } from '../../screencategories.ts';
-import { type CharacterMap, characterMap, glyphsReferencedBy } from '../../text.ts';
-import { valueMaps } from '../../valuemap.ts';
+} from '../../screens/screen.ts';
+import { modeRoles } from '../../screens/screencategories.ts';
+import { type CharacterMap, characterMap, glyphsReferencedBy } from '../../screens/text.ts';
+import { valueMaps } from '../../container/valuemap.ts';
 import { FIRMWARE_SCREEN_TEMPLATES } from './firmwarescreens.ts';
 import { FIRMWARE_SCREENS, describeWiring } from './wiring.ts';
 import { FOUR_SLOT_ITEMS, FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y, TWO_ROW_LABEL_Y, FOUR_SLOT_SCREEN_WIDTH, fourSlotCellAt } from './geometry.ts';

@@ -42,9 +42,9 @@ import {
   textWidthIn,
   wrapAtSpaces,
 } from '../src/families/harmony-600-650-700/devicemode.ts';
-import { namedContentEnd } from '../src/coverage.ts';
+import { namedContentEnd } from '../src/container/coverage.ts';
 import { FOUR_SLOT_ITEMS, FOUR_SLOT_STORED_ORDER } from '../src/families/harmony-600-650-700/geometry.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

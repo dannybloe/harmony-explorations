@@ -12,7 +12,7 @@ the manual's and the drawing's<!--superseded--> until the firmware was read.
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | 240 by 320 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, read in the firmware, since no configuration of this model has been read: the screens' own constants, the kernel's panel entry, the drawing library and the touch driver, `tests/test_harmony_touch_keys.py` |
+| raster | 240 by 320 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, read in the firmware, since no configuration of this model has been read: the screens' own constants, the kernel's panel entry, the drawing library and the touch driver, `tests/test_harmony_touch_keys.py` |
 | raster on the drawing | 240 by 320 | `touch.ts`, which must agree with the row above |
 | panel | no record | `packages/base/src/models.ts` |
 | touch | no record | `packages/base/src/models.ts`, and `touch` on the drawing's screen is yes |

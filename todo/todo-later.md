@@ -88,7 +88,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [x] 6.2 `blockOfStatedCode` builds a one frame press for the Memorex 32 Bit family where Logitech's compiled press holds three (was L13); done (section 350, todo.md L13): the composer builds at the device's own count, the Dell 35 of 35
 - [ ] 6.3 A delay saved on a Harmony 600, 650 or 700 wins over the configuration's: left are why the bench gap moved only 0.1 of 0.5 seconds, how the compiler picks a device's key, and what wrote the Harmony 600's two saved delays (was L9)
 - [ ] 6.4 Fix `deviceModeMaps`, which picks a help screen for the 700s' A/V switch, and restate section 271's counts (was 1.4.3's last item)
-- [ ] 6.5 `make protocols --write` no longer reproduces `src/protocols.ts`: a measured row's counts move and four tests fail (was L12)
+- [ ] 6.5 `make protocols --write` no longer reproduces `src/infrared/protocols.ts`: a measured row's counts move and four tests fail (was L12)
 - [ ] 6.6 The bench's infrared monitor names no KPN frame whose first flashes the receiver merged; match it by its tail (was L11)
 - [ ] 6.7 Flash reads stop out of sequence now and then in a write run, and the writer's journal does not record the error (was L8)
 - [ ] 6.8 A black screen on the Harmony 650 after unplugging, once, cleared by a battery pull (was L5)

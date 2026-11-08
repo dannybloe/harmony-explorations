@@ -17,10 +17,10 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { LAB, skipWithoutLab } from '@harmony/lab';
-import { parse } from '../src/gspm.ts';
-import { IR_CLASS_STREAM, irBlockWords, irClass, irHeaderPointers } from '../src/ir.ts';
-import { pulsesOfWords } from '../src/irda.ts';
-import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
+import { parse } from '../src/container/gspm.ts';
+import { IR_CLASS_STREAM, irBlockWords, irClass, irHeaderPointers } from '../src/infrared/ir.ts';
+import { pulsesOfWords } from '../src/infrared/irda.ts';
+import { frameKey, framesOfPulses, fromFirstMark } from '../src/infrared/irframe.ts';
 import { imagePath } from '@harmony/lab';
 
 interface Row {

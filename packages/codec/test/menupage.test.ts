@@ -27,9 +27,9 @@ import { checkFourSlotMenuPages, fourSlotMenuChrome, fourSlotMenus } from '../sr
 import { deviceModeChrome } from '../src/families/harmony-600-650-700/chrome.ts';
 import { activityMenuSingle } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import { MENU_EDGE_SCANS, MENU_ROW_SCAN, menuRowCapacity } from '../src/families/harmony-one/menus.ts';
-import { touchPages } from '../src/tables.ts';
+import { touchPages } from '../src/container/tables.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

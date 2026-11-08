@@ -1,7 +1,7 @@
 /**
  * The configuration container's trailer checksum, the one copy.
  *
- * **It lived in `packages/codec/src/gspm.ts` until the file family's write rail needed it**,
+ * **It lived in `packages/codec/src/container/gspm.ts` until the file family's write rail needed it**,
  * `todo-compile-350.md` 1.6. That rail, `assertFileFamilyContainer` in `packages/usb/src/rails.ts`,
  * refuses a container whose stored checksum does not recompute, and it has to compute the checksum
  * itself rather than be told: a rail that asks its caller is a rail the caller answers, section 225. So

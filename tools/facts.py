@@ -163,7 +163,7 @@ def sources():
 def coverage_facts():
     """Per sample byte accounting, taken from the codec rather than recomputed here.
 
-    Shelling out to the TypeScript tool is deliberate. `packages/codec/src/coverage.ts` is the one
+    Shelling out to the TypeScript tool is deliberate. `packages/codec/src/container/coverage.ts` is the one
     implementation of the byte accounting, and a second one in Python would be a second opcode
     table by another name: the two would diverge and both would look right.
     """
@@ -206,7 +206,7 @@ def emit_facts():
 def growth_facts():
     """What a length change would move, corpus wide. `reference/config-format/relocation.md` quotes these.
 
-    Shelled out for the reason the two above are: `packages/codec/src/growth.ts` is the one census
+    Shelled out for the reason the two above are: `packages/codec/src/edit/growth.ts` is the one census
     of a container's addresses, and a second count here would be free to disagree with it.
     """
     try:
@@ -252,7 +252,7 @@ def reading_facts():
 def text_facts():
     """How much of the corpus's on screen text reads back as characters.
 
-    Shelled out for the same reason as the three above: `packages/codec/src/text.ts` is the one
+    Shelled out for the same reason as the three above: `packages/codec/src/screens/text.ts` is the one
     decoder and the one glyph shape table, and a Python copy of either would be free to disagree.
     """
     try:
@@ -275,7 +275,7 @@ def activity_facts():
     """How many of the corpus's activities have a drawn name attributed to them.
 
     Shelled out for the same reason as the four above, and it is a number two documents quote: the
-    naming rule in `packages/codec/src/inventory.ts` is the only thing that decides it, so a copy in
+    naming rule in `packages/codec/src/inventory/inventory.ts` is the only thing that decides it, so a copy in
     Python would be free to disagree with the reader the application uses.
     """
     try:
@@ -482,11 +482,11 @@ def protocol_facts():
     number for a better reason than the one this docstring gave.
     None of them is a corpus total, so none was covered by anything here.
 
-    Computed from `packages/codec/src/protocols.ts`, which is generated, so these track the
+    Computed from `packages/codec/src/infrared/protocols.ts`, which is generated, so these track the
     generator rather than a hand written list. That is the point: a `--write` of the table moves
     them and `make facts` then names every document that has not kept up.
     """
-    path = os.path.join(ROOT, 'packages', 'codec', 'src', 'protocols.ts')
+    path = os.path.join(ROOT, 'packages', 'codec', 'src', 'infrared', 'protocols.ts')
     try:
         with open(path, encoding='utf-8') as fh:
             body = fh.read()

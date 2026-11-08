@@ -65,10 +65,10 @@
  * else does, so this folder is the Touch's own. Which architectures: the Harmony Touch alone, firmware 4.15.330; its
  * firmware reports 17 and Logitech's templates file it under 18. **Nothing here sends anything.**
  */
-import type { CatalogueSource } from '../../catalogue.ts';
-import { encodePng } from '../../png.ts';
+import type { CatalogueSource } from '../../catalogue/catalogue.ts';
+import { encodePng } from '../../screens/png.ts';
 import { readRecipe, type Recipe, type RecipeActivity } from '../../recipe/recipe.ts';
-import { resource } from '../../resources.ts';
+import { resource } from '../../support/resources.ts';
 import { deviceRecordOfArchive } from './archivedevice.ts';
 import {
   ACTIVITY_START_SCREENS, ACTIVITY_TYPES, ComposeRefusal, isOwnId, OWN_IDS,

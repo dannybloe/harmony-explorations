@@ -21,16 +21,16 @@
  * Runs before the letters are blended, while every set is an ink and at most a shadow, which is what tells a
  * letter's ink from its shadow.
  */
-import { fontSets, glyphOf } from '../../font.ts';
-import { measureSet } from '../../fonttable.ts';
-import { type Container, parse } from '../../gspm.ts';
-import { renderVariants, type TextDrawn } from '../../render.ts';
+import { fontSets, glyphOf } from '../../screens/font.ts';
+import { measureSet } from '../../drawing/fonttable.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { renderVariants, type TextDrawn } from '../../screens/render.ts';
 import {
   reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
-} from '../../screen.ts';
-import { modeRecords } from '../../sections.ts';
+} from '../../screens/screen.ts';
+import { modeRecords } from '../../container/sections.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
-import { characterMap } from '../../text.ts';
+import { characterMap } from '../../screens/text.ts';
 import { ONE_PAD_HEIGHT, ONE_PAD_WIDTH } from './labels.ts';
 import { DEVICE_PAGE_SLOTS } from './menus.ts';
 

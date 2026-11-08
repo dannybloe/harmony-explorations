@@ -29,13 +29,13 @@
  *
  * Read only towards hardware: the result is bytes and pieces that `layOutContainer` places.
  */
-import { PIN_BAND, STATE_BAND } from '../../actions.ts';
-import { sameBytes } from '../../bytes.ts';
-import { buildLogArea, type BuiltParameterBlock, parameterGroupWriter } from '../../firmwaresections.ts';
-import { countedTable, type ContainerPiece } from '../../frame.ts';
-import { actionListBytes, type Instruction } from '../../gspm.ts';
-import { BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK } from '../../inventory.ts';
-import { ACTION_LIST_INDEX_OPCODE } from '../../sections.ts';
+import { PIN_BAND, STATE_BAND } from '../../container/actions.ts';
+import { sameBytes } from '../../support/bytes.ts';
+import { buildLogArea, type BuiltParameterBlock, parameterGroupWriter } from '../../assembly/firmwaresections.ts';
+import { countedTable, type ContainerPiece } from '../../assembly/frame.ts';
+import { actionListBytes, type Instruction } from '../../container/gspm.ts';
+import { BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK } from '../../inventory/inventory.ts';
+import { ACTION_LIST_INDEX_OPCODE } from '../../container/sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { KeyEntry } from './devices.ts';
 

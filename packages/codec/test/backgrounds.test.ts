@@ -30,7 +30,7 @@ import { screenRecordModes } from '../src/families/harmony-600-650-700/screenrec
 import { BackgroundError, checkStateBackgrounds, screenStates, withStateBackgrounds } from '../src/families/harmony-600-650-700/backgrounds.ts';
 import { HARMONY_650_PICTURES } from '../src/families/harmony-600-650-700/pictures.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 const H650 = [
   'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',

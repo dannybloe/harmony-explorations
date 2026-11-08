@@ -30,14 +30,14 @@ import {
 } from '../src/internal.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { letterOneDonor } from '../src/families/harmony-one/look.ts';
-import { activityBindings } from '../src/inventory.ts';
+import { activityBindings } from '../src/inventory/inventory.ts';
 import { buildOneActivityScreens } from '../src/families/harmony-one/activityscreen.ts';
 import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import {
   type ActivityWorking, buildOneActivityScreenSet, checkOneActivityScreens, describeOneActivityScreens,
   oneActivityScreenModes, withOneActivityScreenSet,
 } from '../src/families/harmony-one/activityscreens.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

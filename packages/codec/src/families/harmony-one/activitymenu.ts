@@ -54,24 +54,24 @@
  * menus out as two rows of keys, section 316, built by `screenrecords.ts`. Read only towards hardware: the result is
  * pieces.
  */
-import { u24 } from '../../bytes.ts';
-import { type Container, type Instruction, parse } from '../../gspm.ts';
-import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
-import type { PieceTarget } from '../../statetables.ts';
-import { fillTarget, picturesByContent, withBankPictures } from '../../pictures.ts';
-import { renderProgram } from '../../render.ts';
-import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram } from '../../screen.ts';
-import { contentKey } from '../../screencategories.ts';
+import { u24 } from '../../support/bytes.ts';
+import { type Container, type Instruction, parse } from '../../container/gspm.ts';
+import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
+import { fillTarget, picturesByContent, withBankPictures } from '../../drawing/pictures.ts';
+import { renderProgram } from '../../screens/render.ts';
+import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram } from '../../screens/screen.ts';
+import { contentKey } from '../../screens/screencategories.ts';
 import {
   type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords,
-} from '../../screenrecords.ts';
-import { modePages, modeRecords, pageListCopies } from '../../sections.ts';
+} from '../../compose/screenrecords.ts';
+import { modePages, modeRecords, pageListCopies } from '../../container/sections.ts';
 import { appendActionLists, ComposeError, restamped } from '../../shared/core.ts';
 import type { ComposeActivityRowOptions, ComposedActivityRow } from '../../shared/menus.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
-import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
-import { characterMap, decode } from '../../text.ts';
-import { SCREEN_ROW_PITCH } from '../../touch.ts';
+import { TOUCH_AREA_LENGTH, touchPages } from '../../container/tables.ts';
+import { characterMap, decode } from '../../screens/text.ts';
+import { SCREEN_ROW_PITCH } from '../../inventory/touch.ts';
 import type { WithChoices } from '../family.ts';
 import { oneActivityMenu } from './activityscreen.ts';
 import {

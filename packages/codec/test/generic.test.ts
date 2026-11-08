@@ -94,9 +94,9 @@ const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {};
 
 /** The names `compose.ts` passes through from a family's modules, read off its own `export { ... } from` lists. */
 function familyNamesThroughCompose(): Set<string> {
-  const text = readFileSync(join(SOURCE, 'compose.ts'), 'utf8');
+  const text = readFileSync(join(SOURCE, 'compose', 'compose.ts'), 'utf8');
   const names = new Set<string>();
-  for (const match of text.matchAll(/export\s*\{([^}]*)\}\s*from\s*'\.\/families\/(harmony-600-650-700|harmony-one)\//g)) {
+  for (const match of text.matchAll(/export\s*\{([^}]*)\}\s*from\s*'(?:\.\.?\/)+families\/(harmony-600-650-700|harmony-one)\//g)) {
     for (const one of match[1]!.split(',')) {
       const name = one.replace(/\btype\b/, '').split(/\s+as\s+/).at(-1)!.trim();
       if (name !== '') names.add(name);
@@ -125,7 +125,7 @@ function census(): Record<string, Record<string, number>> {
       }
       if (name !== 'compose.ts') {
         let through = 0;
-        for (const match of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*'(\.\.?\/)+compose\.ts'/g)) {
+        for (const match of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*'(\.\.?\/)+(compose\/)?compose\.ts'/g)) {
           through += match[1]!.split(',').map((one) => one.replace(/\btype\b/, '').split(/\s+as\s+/)[0]!.trim())
             .filter((one) => passed.has(one)).length;
         }

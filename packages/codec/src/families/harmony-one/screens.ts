@@ -5,28 +5,28 @@
  */
 import type { WithChoices } from '../family.ts';
 import { ONE_CHOICES, type OneChoices } from './choices.ts';
-import { STATE_WRITE_BASE } from '../../actions.ts';
-import { u24 } from '../../bytes.ts';
-import { Writer } from '../../emit.ts';
+import { STATE_WRITE_BASE } from '../../container/actions.ts';
+import { u24 } from '../../support/bytes.ts';
+import { Writer } from '../../container/emit.ts';
 import {
   DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT, MENU_EDGE_SCANS, MENU_ICON_OFFSET, MENU_LABEL_X, MENU_ROW1_BG,
   MENU_ROW1_LABEL_Y, MENU_ROW_PITCH, paginate, pictureDrawnAt, withHitPage,
-} from '../../families/harmony-one/menus.ts';
-import { type FontSet, fontSets } from '../../font.ts';
-import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
+} from './menus.ts';
+import { type FontSet, fontSets } from '../../screens/font.ts';
+import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../container/gspm.ts';
 import {
   activityBindings, activityNames, activityScreens, type ActivityScreens, BEEP_OPCODE, ENTER_MODE, SCREEN_ITEM_BEEP,
   SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
-} from '../../inventory.ts';
-import { relocate } from '../../relocate.ts';
+} from '../../inventory/inventory.ts';
+import { relocate } from '../../edit/relocate.ts';
 import {
   bitmapAt, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN, SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
-} from '../../screen.ts';
+} from '../../screens/screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, type ModePage, modePages, type ModeRecord, modeRecords,
   modeTable, pageListCopies, type TaggedEntry, taggedList, taggedListPools,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import { SILENT_WRITE } from '../../shared/activities.ts';
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
@@ -37,16 +37,16 @@ import {
 } from '../../shared/menus.ts';
 import { codesFor, fontThatSpells, headerOf } from '../../shared/spelling.ts';
 import { padFontOf, ONE_PAD_WIDTH, type OneLabelLine, oneLabelLength, oneLabelLines } from './labels.ts';
-import { type TouchArea, type TouchPage, touchPages } from '../../tables.ts';
-import { characterMap } from '../../text.ts';
-import { EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, touchOwner, touchPageOf } from '../../touch.ts';
+import { type TouchArea, type TouchPage, touchPages } from '../../container/tables.ts';
+import { characterMap } from '../../screens/text.ts';
+import { EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, touchOwner, touchPageOf } from '../../inventory/touch.ts';
 import { buildOneActivityScreens } from './activityscreen.ts';
 import { firstDevicePageFonts, oneDeviceModes, withOneDevicePage } from './devicepages.ts';
 import { oneDeviceLists, withOneDeviceListRow } from './devicelists.ts';
 import { activityPadBox } from './activitypictures.ts';
 import { activityPadBehind } from './activityscreen.ts';
-import { picturesByContent } from '../../pictures.ts';
-import { contentKey } from '../../screencategories.ts';
+import { picturesByContent } from '../../drawing/pictures.ts';
+import { contentKey } from '../../screens/screencategories.ts';
 
 /**
  * The Harmony One's half of `composeDeviceScreen`, whose docstring describes it.

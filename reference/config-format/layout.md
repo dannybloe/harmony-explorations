@@ -20,7 +20,7 @@ where.
 ## The frame
 
 On the Harmony 600, 650 and 700 every byte of the frame is decided by the content, the skin and the build
-time[^s318]. `layOutContainer` in `packages/codec/src/frame.ts` lays a container out and `takeApart` takes one
+time[^s318]. `layOutContainer` in `packages/codec/src/assembly/frame.ts` lays a container out and `takeApart` takes one
 apart, and between them they rebuild all thirteen of Logitech's compiles for these models byte for byte, with
 every address field zeroed first[^s318].
 
@@ -90,7 +90,7 @@ checked[^unchecked]. This listed the parameter groups as not checked too, until 
 
 **What is parked, and in what order, is decided by the content**: a parked structure follows everything it names,
 and the parked pieces of a table come in the table's own field order[^s328]. `placePieces` in
-`packages/codec/src/placer.ts` places them from an unordered bag and gives Logitech's order exactly for base slots
+`packages/codec/src/assembly/placer.ts` places them from an unordered bag and gives Logitech's order exactly for base slots
 5, 7, 10 and 15, on all thirteen arch 14 compiles[^s328] and on all nineteen of the Harmony One's[^s426]. On the
 One no glyph is shared between font sets, and the parked action lists are base slot 10's tail, as on arch 14[^s426].
 

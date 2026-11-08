@@ -46,7 +46,7 @@ import { FIRMWARE_SCREENS, describeWiring } from '../src/families/harmony-600-65
 import { modeZeroKeyList } from '../src/families/harmony-600-650-700/modezero.ts';
 import { activityEntriesByName, buildScreenRecords, describeScreenRecords, inActivityOrder, screenRecordModes, withScreenRecords } from '../src/families/harmony-600-650-700/screenrecords.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
 const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

@@ -71,8 +71,8 @@ import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
 
 import * as lab from '@harmony/lab';
-import { segmentRefs } from '../src/archive.ts';
-import { statedCode } from '../src/stated.ts';
+import { segmentRefs } from '../src/catalogue/archive.ts';
+import { statedCode } from '../src/infrared/stated.ts';
 import { checkConfiguration, findingsByRule, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
 import { documentsOfAnswers, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
 import { FIRMWARE_SETTINGS, readConfiguration, type Configuration } from '../src/families/harmony-touch/read.ts';

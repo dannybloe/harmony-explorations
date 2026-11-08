@@ -13,7 +13,7 @@
  * They are facts measured on Logitech's compiles, one set on all 19, and not choices of ours; whether any
  * MyHarmony setting changes them is not established.
  */
-import type { ParameterBlockSpec } from '../../firmwaresections.ts';
+import type { ParameterBlockSpec } from '../../assembly/firmwaresections.ts';
 
 export const ONE_PARAMETERS: ParameterBlockSpec = {
   groups: [

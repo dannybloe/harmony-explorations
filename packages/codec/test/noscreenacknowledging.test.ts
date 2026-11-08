@@ -72,7 +72,7 @@ import {
 import { bytes, taggedList } from '../src/internal.ts';
 import { withAcknowledgingEntry } from '../src/families/harmony-300-350/empty.ts';
 import { maps } from './noscreenparts.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 
 const MOMENT = '2026-11-01T12:00:00';
 const RECIPE = JSON.parse(readFileSync(new URL('../../corpus/setups/h350-test.json', import.meta.url), 'utf8')) as Recipe;

@@ -53,7 +53,7 @@ import {
   type HeldVariable,
   type InputPlan,
 } from '../src/build.ts';
-import { irFrame } from '../src/irframe.ts';
+import { irFrame } from '../src/infrared/irframe.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

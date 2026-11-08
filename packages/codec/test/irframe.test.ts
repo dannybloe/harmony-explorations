@@ -13,9 +13,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, skipWithoutLab, require_ } from '@harmony/lab';
-import { catalogueDriving } from '../src/driving.node.ts';
-import { parse } from '../src/gspm.ts';
-import { payloadOf } from '../src/ezhex.ts';
+import { catalogueDriving } from '../src/catalogue/driving.node.ts';
+import { parse } from '../src/container/gspm.ts';
+import { payloadOf } from '../src/container/ezhex.ts';
 import {
   IR_CLASS_STREAM,
   IR_PULSE_MARK,
@@ -27,20 +27,20 @@ import {
   irGroups,
   irHeaderPointers,
   irRecordBlocks,
-} from '../src/ir.ts';
-import type { FrameTimings, Pulse } from '../src/irframe.ts';
+} from '../src/infrared/ir.ts';
+import type { FrameTimings, Pulse } from '../src/infrared/irframe.ts';
 import { biphaseFrames, blockCopies, frameKey, frameSegments, framesOfPulses, framesOfSegments,
          fromFirstMark, irSendsPerPress,
          irFrame, irFrames, mergedIntervals, pulsesOfBlock, pulsesOfFrame, pulsesOfBiphaseFrame, pulsesOfLongToggle,
          pulsesOfQuad,
          timingsOfBiphase,
          timingsOfFrame }
-  from '../src/irframe.ts';
-import { pulsesOfWords } from '../src/irda.ts';
-import { compiledBlockWords } from '../src/compose.ts';
-import { keyCodes } from '../src/inventory.ts';
+  from '../src/infrared/irframe.ts';
+import { pulsesOfWords } from '../src/infrared/irda.ts';
+import { compiledBlockWords } from '../src/compose/compose.ts';
+import { keyCodes } from '../src/inventory/inventory.ts';
 import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnKeys, drawnScans } from '../bin/drawings.ts';
-import { longPressBlockOfStatedCode, longPressFramesOfStatedCode, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
+import { longPressBlockOfStatedCode, longPressFramesOfStatedCode, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/infrared/stated.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 

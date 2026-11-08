@@ -49,9 +49,9 @@
  * the same compile part by part. The Harmony 350 alone, one setup; the Harmony 300 has no long press and no favourite
  * key table, and its devices on short presses alone are not run through here.
  */
-import type { CatalogueSource } from '../../catalogue.ts';
-import { type Container, parse } from '../../gspm.ts';
-import { devices } from '../../inventory.ts';
+import type { CatalogueSource } from '../../catalogue/catalogue.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { devices } from '../../inventory/inventory.ts';
 import type { Recipe } from '../../recipe/recipe.ts';
 import { ComposeError, nameOfLabel } from '../../shared/core.ts';
 import { type ComposedNoScreenActivity, composeNoScreenActivity, type NoScreenActivityDevice, WATCH_TV_SCAN } from './activity.ts';

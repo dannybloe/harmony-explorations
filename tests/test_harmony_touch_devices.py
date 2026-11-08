@@ -46,7 +46,7 @@ character is `x` is a segment id, its first character, and a value, the rest; an
 id whole. **So the `0x` in front of a code is not a hexadecimal prefix**: it is segment `0` and the
 separator. Segment ids come from segment names by the protocol model's rule: the segment named exactly like
 the family is `0`, a name holding `KeyCode` gives what follows that word, and any other the text after the
-family name and a space. That is the rule `segmentRefs` in `packages/codec/src/archive.ts` already states,
+family name and a space. That is the rule `segmentRefs` in `packages/codec/src/catalogue/archive.ts` already states,
 read there off Logitech's own names; here it is read in Logitech's code, so the position digit the
 reference called unread (`reference/infrared/families.md`) is a segment id.
 

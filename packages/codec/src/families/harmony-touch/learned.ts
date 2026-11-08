@@ -53,13 +53,13 @@
  * ordinary infrared over the rhythm table and would serve any family, and it lives here because the raw text it
  * falls back to is the Touch's alone.
  */
-import { periodOfCarrier, roundedPeriodOfCarrier } from '../../archive.ts';
+import { periodOfCarrier, roundedPeriodOfCarrier } from '../../catalogue/archive.ts';
 import {
   GAP_US, biphaseFrames, framesOfPulses, framesOfSegments, fromFirstMark, mergedIntervals, pulsesOfBlock,
   type BlockTail, type Pulse,
-} from '../../irframe.ts';
-import { PROTOCOLS, type StatedProtocol } from '../../protocols.ts';
-import { pulsesOfStatedRow, statedCode, timingsOf } from '../../stated.ts';
+} from '../../infrared/irframe.ts';
+import { PROTOCOLS, type StatedProtocol } from '../../infrared/protocols.ts';
+import { pulsesOfStatedRow, statedCode, timingsOf } from '../../infrared/stated.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // The raw text

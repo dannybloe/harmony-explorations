@@ -1,0 +1,413 @@
+/**
+ * The metadata archive a configuration carries, section 260.
+ *
+ * **A config can name its own devices and commands, and two architectures do it.** Everywhere else in
+ * this repository a command is a number: a record in base slot 5 with no name anywhere, which is why
+ * section 229 had to identify a device by the numbers its records decode to and then look the name up
+ * in a 2.2 GB catalogue. Arch 16 (Harmony 300 and 350) does not need any of that. It carries a **ZIP
+ * archive** holding one file, `MetaData.xml`, and that file lists every device by name and
+ * every command by index and name.
+ *
+ * The framing is a `u32` length and then the archive, and it is the same on both architectures that
+ * have one. **Each gives it a slot of its own and neither slot is a base slot**: raw 13 on arch 16 and
+ * raw **3** on arch 10 (Harmony 890 and 895), which is one of the eight raw slots sections 178 to 184
+ * placed no base slot on and left unexplained. This file said arch 10 parked it in implied space for
+ * about an hour, on the strength of comparing a slot's offset against the ZIP signature rather than
+ * against the length word four bytes before it.
+ *
+ * **The names are not a drop in replacement for section 229's catalogue matching**, which is the
+ * limit to keep in view: the archive names more commands than the container holds records, 61 against
+ * 52 on the one device where both can be counted, and its device order is not the group order, since
+ * its third device is group 3 and group 2 is empty. So it says what a command is **called** and not
+ * which record sends it, and joining the two is open.
+ *
+ * **What is in it differs by generation and only the newer one is useful.** Arch 10's is 270 bytes and
+ * describes one thing, whether an assistant menu is shown. Arch 16's is ten kilobytes: the record
+ * layout of the log area plus the whole naming layer.
+ *
+ * **It is Logitech's document, so it is data and never instruction**, per the standing rule about text
+ * from outside this repository. It states facts about a configuration that take the ordinary route: a
+ * hypothesis to test. In particular a name in it is what the **owner** or Logitech called something,
+ * so nothing here is asserted from it without a second source, and the device half identifies a real
+ * person's equipment and must not be published.
+ *
+ * The archive is deflated with a data descriptor, so the local header's sizes are zero and the
+ * compressed length comes from the central directory. `inflateRaw` in `deflate.ts` inflates it, our own
+ * since `todo.md` 7.3.5 so that this reader loads where there is no Node, and held to `node:zlib`'s answer
+ * on every archive here, `inflate.test.ts`; no dependency is added for this, which is deliberate, since a
+ * ZIP reader would be a large tree for one file. **Writing one deflates with `deflate.ts`, our own**,
+ * since the stream Logitech's compiler writes is stock zlib's at its defaults and Node's zlib writes
+ * another, `todo-compile-350.md` 5.1.4.
+ */
+import { deflateRaw, inflateRaw } from '../support/deflate.ts';
+import type { Container } from './gspm.ts';
+import { GspmError, parse, TRAILER_CHECKSUM_OFFSET, trailerChecksum } from './gspm.ts';
+import { bytesOf, concatBytes, crc32, u16, u32 } from '../support/bytes.ts';
+import { Writer } from './emit.ts';
+import { excise, relocate } from '../edit/relocate.ts';
+
+/**
+ * The raw slot the archive sits in, per architecture, and **not** a base slot on either.
+ *
+ * Stated per architecture rather than as a base slot, because that is what it is: no other
+ * architecture has anything at these positions, so there is nothing for a base slot number to mean.
+ * An architecture absent from this table gets the search below instead of a pointer.
+ */
+export const METADATA_SLOT: Readonly<Record<number, number>> = { 10: 3, 16: 13 };
+
+/** A ZIP local file header, and the only signature this reader looks for. */
+const LOCAL_HEADER = 0x04034b50;
+/** A central directory entry, which is where the compressed length is when a descriptor is used. */
+const CENTRAL_HEADER = 0x02014b50;
+
+export interface MetadataCommand {
+  /** The index a base slot 5 record is addressed by, as the archive states it. */
+  readonly index: number;
+  readonly name: string;
+}
+
+export interface MetadataDevice {
+  readonly name: string;
+  readonly index: number;
+  /**
+   * The archive's `DeviceId`, which is **not** a catalogue id and was written up as one for an hour.
+   *
+   * The three on the one container that has any are 83244049, 83244050 and 83244051, consecutive, and
+   * the public infrared archive's own `globalDeviceId` runs from 763 to about 523634, so this number
+   * is outside that space entirely. It is account scoped, so it identifies a device on the owner's
+   * account and cannot be looked up anywhere. Kept because it is what the file says.
+   */
+  readonly deviceId?: string;
+  readonly commands: readonly MetadataCommand[];
+}
+
+export interface Metadata {
+  /** The file's whole text, so a caller can read what this reader does not model. */
+  readonly xml: string;
+  /** Where the length word sits in the blob, for the byte accounting. */
+  readonly offset: number;
+  /** The length the `u32` states, the archive only, excluding the word itself. */
+  readonly length: number;
+  readonly devices: readonly MetadataDevice[];
+}
+
+/**
+ * Inflate the one entry of a ZIP whose first bytes are at `at`.
+ *
+ * Returns undefined rather than throwing for anything that is not the shape measured on both
+ * architectures, because this is called on candidate offsets when searching an arch 10 container.
+ */
+function inflateOneEntry(blob: Uint8Array, at: number): string | undefined {
+  if (at + 30 > blob.length || u32(blob, at) !== LOCAL_HEADER) return undefined;
+  const nameLength = u16(blob, at + 26);
+  const extraLength = u16(blob, at + 28);
+  const data = at + 30 + nameLength + extraLength;
+  // The compressed length lives in the central directory when the local header defers it, which is
+  // what a data descriptor means and what both containers here use.
+  let compressed = u32(blob, at + 18);
+  if (compressed === 0) {
+    let central = -1;
+    for (let scan = data; scan + 46 <= blob.length; scan += 1) {
+      if (u32(blob, scan) === CENTRAL_HEADER) { central = scan; break; }
+    }
+    if (central < 0) return undefined;
+    compressed = u32(blob, central + 20);
+  }
+  if (compressed === 0 || data + compressed > blob.length) return undefined;
+  try {
+    // `ignoreBOM` keeps a byte order mark in the text, as `Buffer`'s decoding did, where a `TextDecoder` would drop it.
+    return new TextDecoder('utf-8', { ignoreBOM: true }).decode(inflateRaw(blob.subarray(data, data + compressed)));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Every `<Tag>text</Tag>` value of one name inside `xml`, in order. */
+function elements(xml: string, tag: string): string[] {
+  const out: string[] = [];
+  const open = `<${tag}>`;
+  const close = `</${tag}>`;
+  let at = 0;
+  for (;;) {
+    const start = xml.indexOf(open, at);
+    if (start < 0) return out;
+    const end = xml.indexOf(close, start + open.length);
+    if (end < 0) return out;
+    out.push(xml.slice(start + open.length, end));
+    at = end + close.length;
+  }
+}
+
+/** The devices and their commands, or an empty list where the archive names none. */
+function devicesOf(xml: string): MetadataDevice[] {
+  const half = xml.slice(xml.indexOf('<Devices>'), xml.indexOf('</Devices>'));
+  if (!half) return [];
+  const out: MetadataDevice[] = [];
+  // `<Device>` blocks do not nest, so splitting on the open tag is enough and keeps this free of a
+  // parser. A malformed block contributes nothing rather than throwing.
+  for (const block of half.split('<Device>').slice(1)) {
+    const name = elements(block, 'Name')[0];
+    const index = elements(block, 'Index')[0];
+    if (name === undefined || index === undefined) continue;
+    const commands: MetadataCommand[] = [];
+    for (const one of block.split('<Command>').slice(1)) {
+      const at = elements(one, 'Index')[0];
+      const called = elements(one, 'Name')[0];
+      if (at === undefined || called === undefined) continue;
+      commands.push({ index: Number(at), name: called });
+    }
+    const id = elements(block, 'DeviceId')[0];
+    out.push({ name, index: Number(index), ...(id === undefined ? {} : { deviceId: id }), commands });
+  }
+  return out;
+}
+
+/**
+ * The metadata archive of a container, or undefined where it holds none.
+ *
+ * **The pointer first and a search behind it.** On the two architectures that are known to carry one
+ * the slot is followed, which is the reading; the search is what would find one on an architecture
+ * nobody has looked at, and it is deliberately kept rather than removed now that both slots are known,
+ * because it is also the control: it finds the same offset the pointer does, so a slot that moved
+ * would be noticed rather than turning into a silent undefined. A candidate is only tried when the
+ * `u32` in front of it states the archive's own length, which is what makes a hit a hit rather than a
+ * `PK` inside picture data.
+ */
+export function metadataArchive(c: Container): Metadata | undefined {
+  const candidates: number[] = [];
+  if (c.architecture !== undefined) {
+    try {
+      const at = METADATA_SLOT[c.architecture];
+      const slot = at === undefined ? undefined : c.sections[at];
+      const off = slot === undefined || slot.address === 0
+        ? undefined : c.blobOffsetOf(slot.address);
+      if (off !== undefined) candidates.push(off);
+    } catch (error) {
+      if (!(error instanceof GspmError)) throw error;
+    }
+  }
+  // The search half. Only offsets whose preceding word states the archive's length are tried, so a
+  // container with no archive costs one scan and answers undefined rather than guessing.
+  for (let at = 4; at + 30 <= c.blob.length; at += 1) {
+    if (u32(c.blob, at) !== LOCAL_HEADER) continue;
+    candidates.push(at - 4);
+  }
+  for (const off of candidates) {
+    if (off < 0 || off + 4 > c.blob.length) continue;
+    const length = u32(c.blob, off);
+    if (length < 30 || off + 4 + length > c.blob.length) continue;
+    const xml = inflateOneEntry(c.blob.subarray(off + 4, off + 4 + length), 0);
+    if (xml === undefined) continue;
+    return { xml, offset: off, length, devices: devicesOf(xml) };
+  }
+  return undefined;
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Writing one: the ZIP around a text, todo-compile-350.md 5.1.4, and a device's names added, 4.1
+
+/** A data descriptor, which the archives here carry after the compressed bytes, and the end of the directory. */
+const DESCRIPTOR = 0x08074b50;
+const END_OF_DIRECTORY = 0x06054b50;
+/** The local header's flags bit saying the sizes and checksum follow the data, in a descriptor. */
+const FLAG_DESCRIPTOR = 0x0008;
+/** The one entry's name, the version that made it and the version needed, and its method, deflate. */
+const ENTRY_NAME = 'MetaData.xml';
+const ZIP_VERSION = 20;
+const METHOD_DEFLATE = 8;
+
+/** What `withMetadataDevice` adds: the device's name and every command name the catalogue holds for it. */
+export interface MetadataDeviceEntry {
+  readonly name: string;
+  readonly commands: readonly string[];
+}
+
+/** Text as an XML element's content: the three characters that would end it escaped. */
+function escaped(text: string): string {
+  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/**
+ * The time a ZIP entry states, in the MS-DOS form a ZIP header holds: two seconds' resolution, years from 1980 to
+ * 2107. Which time an archive should state is a choice, plan 011 step 4; this is only its spelling.
+ */
+export interface ZipTime {
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+  /** An odd second is written as the even one below it, which is all the field holds. */
+  readonly second: number;
+}
+
+/** The two words a ZIP header holds, the time and then the date. */
+export interface ZipTimeWords {
+  readonly time: number;
+  readonly date: number;
+}
+
+/** The two words a ZIP header holds for `time`, refusing a time the form cannot hold. */
+export function zipTimeWords(time: ZipTime): ZipTimeWords {
+  const { year, month, day, hour, minute, second } = time;
+  const within = (value: number, low: number, high: number) => Number.isInteger(value) && value >= low && value <= high;
+  if (!within(year, 1980, 2107) || !within(month, 1, 12) || !within(day, 1, 31) || !within(hour, 0, 23)
+    || !within(minute, 0, 59) || !within(second, 0, 59)) {
+    throw new GspmError(`a ZIP header cannot state ${JSON.stringify(time)}`);
+  }
+  return { time: (hour << 11) | (minute << 5) | (second >> 1), date: ((year - 1980) << 9) | (month << 5) | day };
+}
+
+/** The time a ZIP header's two words state, the inverse of `zipTimeWords`. */
+export function zipTimeOf(words: ZipTimeWords): ZipTime {
+  const { time, date } = words;
+  return {
+    year: 1980 + (date >> 9), month: (date >> 5) & 15, day: date & 31,
+    hour: time >> 11, minute: (time >> 5) & 63, second: (time & 31) * 2,
+  };
+}
+
+/**
+ * A ZIP of one file, `MetaData.xml`, holding `xml`, in the shape of every metadata archive read: ten files of two
+ * architectures, the Harmony 300 and 350's seven and the Harmony 890 and 895's three, equal byte for byte but for the
+ * time and what the text makes, `metadatabuild.test.ts`. A local header stating version 2.0, the descriptor flag
+ * alone, deflate, the time, and no sizes or checksum; the stream, `deflateRaw`, which is stock zlib's; a data
+ * descriptor with its signature, the checksum and both sizes; one central directory entry repeating the header
+ * with the checksum and sizes and every attribute zero; and the end of the directory, one entry and no comment.
+ */
+export function metadataZip(xml: string, time: ZipTime | ZipTimeWords): Uint8Array {
+  const words = 'year' in time ? zipTimeWords(time) : time;
+  const text = new TextEncoder().encode(xml);
+  const data = deflateRaw(text);
+  const check = crc32(text);
+  const name = bytesOf(ENTRY_NAME);
+  const local = new Writer(30 + name.length).u32(LOCAL_HEADER).u16(ZIP_VERSION).u16(FLAG_DESCRIPTOR).u16(METHOD_DEFLATE)
+    .u16(words.time).u16(words.date).u32(0).u32(0).u32(0).u16(name.length).u16(0).raw(name);
+  const descriptor = new Writer(16).u32(DESCRIPTOR).u32(check).u32(data.length).u32(text.length);
+  const directoryAt = local.bytes.length + data.length + descriptor.bytes.length;
+  const directory = new Writer(46 + name.length).u32(CENTRAL_HEADER).u16(ZIP_VERSION).u16(ZIP_VERSION)
+    .u16(FLAG_DESCRIPTOR).u16(METHOD_DEFLATE).u16(words.time).u16(words.date).u32(check).u32(data.length).u32(text.length)
+    .u16(name.length).u16(0).u16(0).u16(0).u16(0).u32(0).u32(0).raw(name);
+  const end = new Writer(22).u32(END_OF_DIRECTORY).u16(0).u16(0).u16(1).u16(1)
+    .u32(directory.bytes.length).u32(directoryAt).u16(0);
+  return concatBytes([local.bytes, data, descriptor.bytes, directory.bytes, end.bytes]);
+}
+
+/** The archive as its section: the `u32` length the reader finds it by, then the ZIP, on both architectures. */
+export function metadataSection(xml: string, time: ZipTime | ZipTimeWords): Uint8Array {
+  const zip = metadataZip(xml, time);
+  return concatBytes([new Writer(4).u32(zip.length).bytes, zip]);
+}
+
+/** A ZIP's time, its first entry's, read from its local header. */
+export function metadataZipTime(zip: Uint8Array): ZipTimeWords {
+  if (zip.length < 30 || u32(zip, 0) !== LOCAL_HEADER) throw new GspmError('not a ZIP local header');
+  return { time: u16(zip, 10), date: u16(zip, 12) };
+}
+
+/**
+ * One `Device` element as the Harmony 300 and 350's archives spell it: the name, the `Index`, the `DeviceId`, and
+ * the commands sorted by character code, numbered from 0, or `<Commands/>` where there are none. Measured over the
+ * seven Logitech files of the family, 32 devices, whose command names are sorted and distinct in every one, and two of
+ * whose devices name no command, `metadatabuild.test.ts`; this wrote an open and a close tag for a device with no
+ * command until the archive was built whole and those two were met.
+ */
+export function metadataDeviceElement(name: string, index: number, deviceId: number, commands: readonly string[]): string {
+  const names = [...new Set(commands)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const listed = names.length === 0 ? '<Commands/>'
+    : `<Commands>${names.map((one, k) => `<Command><Index>${k}</Index><Name>${escaped(one)}</Name></Command>`).join('')}</Commands>`;
+  return `<Device><Name>${escaped(name)}</Name><Index>${index}</Index><DeviceId>${deviceId}</DeviceId>${listed}</Device>`;
+}
+
+/**
+ * The archive again around new text: one entry with the old archive's time, in the shape `metadataZip` writes,
+ * which is every archive's this reader has met, and refused for any other. Since `todo-compile-350.md` 5.1.4 the
+ * stream is our own deflate's, which is stock zlib's, so where the text is what Logitech's would be the archive is
+ * theirs byte for byte; until then it was this machine's zlib's, and only its inflated text could be compared.
+ */
+function rezipped(old: Uint8Array, xml: string): Uint8Array {
+  if (u32(old, 0) !== LOCAL_HEADER || (u16(old, 6) & FLAG_DESCRIPTOR) === 0 || u16(old, 8) !== METHOD_DEFLATE) {
+    throw new GspmError('the metadata archive is not one deflated entry with a data descriptor, the only shape written');
+  }
+  return metadataZip(xml, metadataZipTime(old));
+}
+
+/**
+ * The `DeviceId` a device composed here is given: one above the highest the archive holds, or this where it holds
+ * none. Logitech's is its account's number for the device, and a device composed without an account has none, so
+ * this keeps what every Logitech file shows rather than inventing an account: the numbers ascend strictly along the
+ * archive, `todo-compile-350.md` 4.1.4.
+ */
+const FIRST_DEVICE_ID = 1;
+
+/**
+ * The configuration with a device's names added to its metadata archive: one `Device` element after the ones it
+ * holds, its `Index` the count before it, its `DeviceId` one above the highest there, and every command the
+ * catalogue names for it, sorted by character code and numbered from 0. The archive is rewritten whole in place
+ * and its length word restated; nothing else moves but what follows it, which on the Harmony 300 and 350 is the
+ * trailer alone.
+ *
+ * **What it rests on**, `packages/codec/test/noscreen.test.ts`: Logitech's compile of the Harmony 350 test setup
+ * names its eight devices in the order the setup lists them, each with every command of its catalogue codeset in
+ * that order, numbered from 0, and the archive is the configuration's last section. In all seven Logitech files of
+ * the family read, five Harmony 350 and two Harmony 300, 32 devices: `Index` is the device's position in the
+ * archive, and `DeviceId` ascends strictly along it; in the one account whose replies are in the lab, the test
+ * setup's, `DeviceId` is the account's number for the device, 8 of 8, section 260. A composed device has no account,
+ * so it is given the next number above the archive's highest, which keeps the order every file shows,
+ * `FIRST_DEVICE_ID`; this omitted `DeviceId` until `todo-compile-350.md` 4.1.4, a file Logitech never produced.
+ *
+ * **No reader of either number is known**, which is why the choice is to copy the shape and not a meaning: the
+ * Harmony 350's 1.4 firmware never seeks raw slot 13 (its section seeker's fourteen callers ask for slots 3 to 12)
+ * and holds no ZIP signature and no `DeviceId`, `Index` or `xml` string; MyHarmony's decompiled source and Harmony
+ * Desktop's skin 104 templates treat the configuration as an opaque file and never read it back from the remote;
+ * the lab's `work/setups/h350-test/metadata-reading.md` is that search. Nothing in the container outside the
+ * archive carries either number. Run on the Harmony 350 alone, the one architecture whose archive names devices;
+ * the Harmony 890's names none and is refused.
+ */
+export function withMetadataDevice(c: Container, entry: MetadataDeviceEntry): Uint8Array {
+  const metadata = metadataArchive(c);
+  if (metadata === undefined) throw new GspmError('the configuration carries no metadata archive');
+  const close = metadata.xml.indexOf('</Devices>');
+  if (close < 0) throw new GspmError('the metadata archive names no devices, so there is no list to add one to');
+  if (metadata.devices.some((one) => one.name === entry.name)) throw new GspmError(`the metadata archive names ${entry.name} already`);
+  const ids = metadata.devices.map((one) => (one.deviceId === undefined ? Number.NaN : Number(one.deviceId)));
+  if (ids.some((one) => !Number.isSafeInteger(one))) throw new GspmError('a device of the metadata archive states no numeric DeviceId');
+  const id = ids.length === 0 ? FIRST_DEVICE_ID : Math.max(...ids) + 1;
+  const element = metadataDeviceElement(entry.name, metadata.devices.length, id, entry.commands);
+  return withMetadataXml(c, metadata, metadata.xml.slice(0, close) + element + metadata.xml.slice(close));
+}
+
+/**
+ * The configuration with one device's element taken out of its metadata archive and every later device's `Index`
+ * moved down one, so that `Index` stays the position, as it does in every Logitech file and as it did in the one pair
+ * of Logitech's compiles of one account with a device taken out, the bench Harmony 350's, where its KPN went from
+ * `Index` 1 to 0 and its `DeviceId` stayed, `todo-compile-350.md` 4.1.3.
+ */
+export function withoutMetadataDevice(c: Container, name: string): Uint8Array {
+  const metadata = metadataArchive(c);
+  if (metadata === undefined) throw new GspmError('the configuration carries no metadata archive');
+  const open = metadata.xml.indexOf('<Devices>');
+  const close = metadata.xml.indexOf('</Devices>');
+  if (open < 0 || close < 0) throw new GspmError('the metadata archive names no devices');
+  const blocks = metadata.xml.slice(open + '<Devices>'.length, close).split('</Device>').slice(0, -1).map((one) => `${one}</Device>`);
+  const gone = blocks.findIndex((one) => elements(one, 'Name')[0] === escaped(name));
+  if (gone < 0) throw new GspmError(`the metadata archive names no device ${name}`);
+  const kept = blocks.filter((_, k) => k !== gone).map((block, k) =>
+    block.replace(/^<Device><Name>(.*?)<\/Name><Index>\d+<\/Index>/, (_, called: string) => `<Device><Name>${called}</Name><Index>${k}</Index>`));
+  return withMetadataXml(c, metadata, metadata.xml.slice(0, open + '<Devices>'.length) + kept.join('') + metadata.xml.slice(close));
+}
+
+/** The archive rewritten around new text, in place, its length word and the trailer restated. */
+function withMetadataXml(c: Container, metadata: Metadata, xml: string): Uint8Array {
+  const at = metadata.offset + 4;
+  const zip = rezipped(c.blob.subarray(at, at + metadata.length), xml);
+  // The new archive in front of the old one, then the old one cut, then the length word: each step a container
+  // the census can walk, and nothing points inside an archive.
+  const grown = relocate(c, at, zip.length);
+  grown.bytes.set(zip, at);
+  const cut = excise(parse(grown.bytes), at + zip.length, metadata.length);
+  cut.bytes.set(new Writer(4).u32(zip.length).bytes, metadata.offset);
+  // The length word changed after the cut restamped the trailer, so the checksum is recomputed last.
+  cut.bytes.set(new Writer(2).u16(trailerChecksum(cut.bytes)).bytes, cut.bytes.length - TRAILER_CHECKSUM_OFFSET);
+  return cut.bytes;
+}

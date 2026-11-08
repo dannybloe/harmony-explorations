@@ -2,11 +2,11 @@
 // presses is then two or more bursts that are not the same code.
 import { readFileSync } from 'node:fs';
 import { imagePath } from '@harmony/lab';
-import { parse } from '../src/gspm.ts';
-import { IR_CLASS_STREAM, irBlockWords, irClass, irGroups, irHeaderPointers } from '../src/ir.ts';
-import { pulsesOfWords } from '../src/irda.ts';
-import { frameKey, framesOfPulses, fromFirstMark, mergedIntervals } from '../src/irframe.ts';
-import type { Pulse } from '../src/irframe.ts';
+import { parse } from '../src/container/gspm.ts';
+import { IR_CLASS_STREAM, irBlockWords, irClass, irGroups, irHeaderPointers } from '../src/infrared/ir.ts';
+import { pulsesOfWords } from '../src/infrared/irda.ts';
+import { frameKey, framesOfPulses, fromFirstMark, mergedIntervals } from '../src/infrared/irframe.ts';
+import type { Pulse } from '../src/infrared/irframe.ts';
 
 const CONTAINERS = ['one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config',
   'h700_config_2', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',

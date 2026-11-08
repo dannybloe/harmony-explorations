@@ -6,16 +6,16 @@
  * the delays this module composed until then.
  */
 import type { DelayDefaults, SendShape } from '../families/family.ts';
-import { u24 } from '../bytes.ts';
-import { Writer } from '../emit.ts';
-import { archSlot, Container, parse } from '../gspm.ts';
-import { DEVICE_QUANTITY_DEFAULT } from '../inventory.ts';
-import { relocate } from '../relocate.ts';
-import { ACTION_LIST_INDEX_OPCODE, STATE_RECORD_HEADER, STATE_VALUE_LENGTH } from '../sections.ts';
+import { u24 } from '../support/bytes.ts';
+import { Writer } from '../container/emit.ts';
+import { archSlot, Container, parse } from '../container/gspm.ts';
+import { DEVICE_QUANTITY_DEFAULT } from '../inventory/inventory.ts';
+import { relocate } from '../edit/relocate.ts';
+import { ACTION_LIST_INDEX_OPCODE, STATE_RECORD_HEADER, STATE_VALUE_LENGTH } from '../container/sections.ts';
 import {
   ACTION_TABLE_SLOT, appendNarrowStateVariable, ComposeError, nameOfLabel, restamped,
-} from '../shared/core.ts';
-import { appendTableEntries, type ComposeCommand, composeIrGroup, type ComposePowerStep, fillIrGroup } from '../shared/infrared.ts';
+} from './core.ts';
+import { appendTableEntries, type ComposeCommand, composeIrGroup, type ComposePowerStep, fillIrGroup } from './infrared.ts';
 
 /** A device to compose whole: its label, its commands, and which command toggles the power. */
 export interface ComposeDevice {

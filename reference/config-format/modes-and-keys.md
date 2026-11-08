@@ -141,7 +141,7 @@ configurations the mode's own list holds 47 entries, the mode's two navigation e
 out[^s285].
 
 How a device's map relates to the activities' maps is [base slot 9](#a-set-is-one-activitys-keypad-map)
-below. Read with `deviceModeMaps` in `packages/codec/src/inventory.ts`.
+below. Read with `deviceModeMaps` in `packages/codec/src/inventory/inventory.ts`.
 
 ### The key table is the first mode record
 
@@ -303,7 +303,7 @@ chain and binds the Devices key, which is consistent with its being the idle map
 
 How an activity is numbered and where its entry goes is
 [Activities and devices](activities-and-devices.md#1-a-value-of-the-activity-counter). Read with
-`handlerSetRoles` in `packages/codec/src/inventory.ts`.
+`handlerSetRoles` in `packages/codec/src/inventory/inventory.ts`.
 
 **The Harmony 300 and 350 fill the table differently**, read in their firmware and measured on their five
 configurations, outside the fifteen above: entry 0 is the key table, entries 1 to N are the devices' maps,

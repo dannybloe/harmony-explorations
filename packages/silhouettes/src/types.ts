@@ -310,7 +310,7 @@ export interface Rocker {
  * The display, with the size the architecture's own firmware uses.
  *
  * The rectangle is where the glass sits in model coordinates and `pixels` is the raster size from
- * `SCREEN_SIZES` in `packages/codec/src/render.ts`. Carrying both is what lets something expressed
+ * `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`. Carrying both is what lets something expressed
  * in screen pixels, a rendered page or a touch rectangle out of the config, land in the right place
  * without whoever draws it knowing this model's coordinates.
  */

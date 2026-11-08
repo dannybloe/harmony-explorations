@@ -19,12 +19,12 @@ import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
 import test from 'node:test';
 import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
-import { deviceDriving } from '../src/driving.ts';
+import { deviceDriving } from '../src/catalogue/driving.ts';
 import {
   RAW_BLOCKS_FILE, RAW_DERIVED_DIRECTORY, RAW_FIELDS, RAW_FIELDS_FILE, RAW_FIELDS_FORMAT, RAW_INDEX_FILE,
   RAW_MANIFEST_FILE, RAW_SUMS_FILE, type RawDeviceRecord, alignDevice, rawFieldsEntry, rawProjection,
-} from '../src/catalogueraw.ts';
-import { catalogueRules, rawCaptureDevice, rawDerivedState } from '../src/catalogueraw.node.ts';
+} from '../src/catalogue/catalogueraw.ts';
+import { catalogueRules, rawCaptureDevice, rawDerivedState } from '../src/catalogue/catalogueraw.node.ts';
 
 /** The timing block every archive record carries, made up. */
 const TIMING = {

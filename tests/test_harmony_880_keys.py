@@ -28,7 +28,7 @@ scored, because every one of its keys was pressed on a unit, `MEASURED` in `test
 * **The firmware**: the 880's keypad routines are the 885's byte for byte, `TheSameOnTheOtherBuilds` in
   `tests/test_harmony_885_keys.py`, so the arithmetic from line and input to code is shared; which key the
   board wires to which line and input is not in the firmware.
-* **The archive**, read through `packages/codec/src/catalogue.ts` as `packages/codec/test/catalogue.test.ts`
+* **The archive**, read through `packages/codec/src/catalogue/catalogue.ts` as `packages/codec/test/catalogue.test.ts`
   does, and the earlier scratch of this step, a lead re-derived here rather than adopted.
 
 ## The population
@@ -280,7 +280,7 @@ PER_FILE = {
 
 #: Per installation, per device by its own label and its count of decoded numbers: how many of those numbers
 #: the codesets below hold, and every codeset holding that many, which is the most any codeset in the archive
-#: holds. Found by a full pass over the archive, `codeIndex` in `packages/codec/src/catalogue.ts`, and pinned,
+#: holds. Found by a full pass over the archive, `codeIndex` in `packages/codec/src/catalogue/catalogue.ts`, and pinned,
 #: as `packages/codec/test/catalogue.test.ts` pins its own, so the test reads named files rather than all of
 #: them. A codeset is `codesets/<first two>/<name>.json`.
 PINS = {
@@ -387,13 +387,13 @@ const { IR_ARCHIVE } = await import(labDir + '/index.ts');
 if (IR_ARCHIVE === undefined || !existsSync(IR_ARCHIVE)) { console.log(JSON.stringify({ skip: 'no infrared archive' })); process.exit(0); }
 // Reading a character map can draw our own letters to recognise them, from the font files the codec's Node
 // resources supply.
-await import(codecDir + '/resources.node.ts');
-const { parse } = await import(codecDir + '/gspm.ts');
-const { irGroups } = await import(codecDir + '/ir.ts');
-const { irFrame } = await import(codecDir + '/irframe.ts');
-const { keyCodes, deviceModeMaps, devices } = await import(codecDir + '/inventory.ts');
-const { codeKey } = await import(codecDir + '/catalogue.ts');
-const { catalogueCommands } = await import(codecDir + '/catalogue.node.ts');
+await import(codecDir + '/support/resources.node.ts');
+const { parse } = await import(codecDir + '/container/gspm.ts');
+const { irGroups } = await import(codecDir + '/infrared/ir.ts');
+const { irFrame } = await import(codecDir + '/infrared/irframe.ts');
+const { keyCodes, deviceModeMaps, devices } = await import(codecDir + '/inventory/inventory.ts');
+const { codeKey } = await import(codecDir + '/catalogue/catalogue.ts');
+const { catalogueCommands } = await import(codecDir + '/catalogue/catalogue.node.ts');
 const pins = JSON.parse(readFileSync(pinsPath, 'utf8'));
 const tables = new Map();
 const namesOf = (name) => {

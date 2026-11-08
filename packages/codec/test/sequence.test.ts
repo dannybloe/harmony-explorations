@@ -60,7 +60,7 @@ import {
   type SequenceStep,
 } from '../src/build.ts';
 import { listSends, setupView } from '../src/families/harmony-600-650-700/compare.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',

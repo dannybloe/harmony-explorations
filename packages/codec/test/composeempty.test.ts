@@ -28,12 +28,12 @@ import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@h
 import { type Container, parse, readRecipe } from '../src/index.ts';
 import { type ComposedSetup, composeSetup, takeApart } from '../src/build.ts';
 import { archSlot, modeRecords, taggedList, touchPages } from '../src/internal.ts';
-import { devices, handlerSetRoles } from '../src/inventory.ts';
+import { devices, handlerSetRoles } from '../src/inventory/inventory.ts';
 import { menuMarkerOf } from '../src/shared/menus.ts';
-import { assertStateTableConsistent, handlerSets } from '../src/sections.ts';
-import { assertQueueFits } from '../src/queue.ts';
-import { listCallSites } from '../src/assemble.ts';
-import { catalogueInfraredBytes } from '../src/composecatalogue.ts';
+import { assertStateTableConsistent, handlerSets } from '../src/container/sections.ts';
+import { assertQueueFits } from '../src/container/queue.ts';
+import { listCallSites } from '../src/assembly/assemble.ts';
+import { catalogueInfraredBytes } from '../src/compose/composecatalogue.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { ONE_BUILT, oneBuiltBytes } from '../src/families/harmony-one/builders.ts';
 import { buildEmptyOneConfiguration, oneAttributedBytes } from '../src/families/harmony-one/empty.ts';
@@ -42,18 +42,18 @@ import { oneMenuMarkerWriter } from '../src/families/harmony-one/menus.ts';
 import { namedHitPages } from '../src/families/harmony-one/hitpages.ts';
 import { describeOneWiring } from '../src/families/harmony-one/wiring.ts';
 import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
-import { valueMaps } from '../src/valuemap.ts';
+import { valueMaps } from '../src/container/valuemap.ts';
 import { describeOneFixedScreens } from '../src/families/harmony-one/fixedscreens.ts';
 import { describeOneDeviceLists, oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
-import { SCREEN_CALL, SCREEN_SWITCH_NARROW, screenProgram } from '../src/screen.ts';
+import { SCREEN_CALL, SCREEN_SWITCH_NARROW, screenProgram } from '../src/screens/screen.ts';
 import { FIRST_DEVICE_HELP_LISTS, describeOneHelpScreens, helpNumbering } from '../src/families/harmony-one/helpscreens.ts';
 import {
   FIRST_DEVICE_KEYS, describeOneDevicePages, devicePageSlotRoles, firstDevicePageFonts, firstDeviceRoles,
 } from '../src/families/harmony-one/devicepages.ts';
 import { carried, catalogueDevices } from './carried.ts';
 import { listsReached } from './screenlists.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 

@@ -9,7 +9,7 @@
  * `generic.test.ts`'s among them, are about containers. The registry imports it from here, as it imports each
  * compiled family from its own folder.
  */
-import type { CatalogueSource } from '../../catalogue.ts';
+import type { CatalogueSource } from '../../catalogue/catalogue.ts';
 import type { DocumentFamily } from '../document.ts';
 import { refusalsBeforeASync, type Finding } from './check.ts';
 import {

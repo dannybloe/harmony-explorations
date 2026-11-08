@@ -2,7 +2,7 @@
 Unit A's configuration with the letters it lacked borrowed in still passes the Harmony 885's start check.
 
 `todo-compile-885.md` 1.6 decided to copy the glyphs bench unit A's fonts lack from other Harmony 880 and 885
-configurations, and `packages/codec/src/glyphborrow.ts` does it; `packages/codec/test/glyphborrow.test.ts` holds the
+configurations, and `packages/codec/src/drawing/glyphborrow.ts` does it; `packages/codec/test/glyphborrow.test.ts` holds the
 same face proof, the donor table, and that every glyph and text A had reads back unchanged. What that test cannot
 hold is the remote's own verdict at start, since the check is read out of the firmware here, in Python:
 `tests/test_harmony_885_start_check.py`'s `CheckAsRead`, which takes its cookie, markers, offsets and checksum
@@ -44,9 +44,9 @@ NODE_PROBE = r'''
 import { readFileSync, writeFileSync } from 'node:fs';
 const [codecDir, wantsJson, out, target, ...donorArgs] = process.argv.slice(1);
 // Letters are drawn from the font files, which the codec's Node resources supply.
-await import(codecDir + '/resources.node.ts');
-const { parse } = await import(codecDir + '/gspm.ts');
-const { borrowGlyphs } = await import(codecDir + '/glyphborrow.ts');
+await import(codecDir + '/support/resources.node.ts');
+const { parse } = await import(codecDir + '/container/gspm.ts');
+const { borrowGlyphs } = await import(codecDir + '/drawing/glyphborrow.ts');
 const donors = [];
 for (let k = 0; k < donorArgs.length; k += 2) {
   donors.push({ name: donorArgs[k], container: parse(new Uint8Array(readFileSync(donorArgs[k + 1]))) });

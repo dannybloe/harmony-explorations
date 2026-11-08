@@ -9,7 +9,7 @@
  * table below says the Harmony 350 where the family is the Harmony 300's as well: the 300's keypad is smaller
  * and no 300 compile has been fitted. `packages/codec/test/noscreen.test.ts` holds the fit.
  */
-import type { HardKey } from '../../devicemode.ts';
+import type { HardKey } from '../../compose/devicemode.ts';
 
 /**
  * Which command each hard key takes in a device's own key map, the family's `deviceModeKeys`, `deviceModeLayout`

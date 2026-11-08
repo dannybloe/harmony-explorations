@@ -26,7 +26,7 @@
  * and 26 the down arrow, section 398; 36 takes PageUp on the 2 of the 33 that bind it, and 26 binds nothing
  * on all 33.
  */
-import type { HardKey } from '../../devicemode.ts';
+import type { HardKey } from '../../compose/devicemode.ts';
 
 export const ONE_HARD_KEYS: readonly HardKey[] = [
   { scan: 40, button: 'Menu', prefer: ['Menu', 'Home'] },

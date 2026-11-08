@@ -85,7 +85,7 @@ import {
 import { bytes, compilerHash, stateRecords, stateVariables, taggedList } from '../src/internal.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
 import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 
 /** Logitech's compile of the test setup, by its path in the lab, as `packages/bench/test/setup350.test.ts` names it. */
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';

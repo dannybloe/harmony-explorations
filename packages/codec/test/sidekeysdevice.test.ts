@@ -81,14 +81,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
-import { u24 } from '../src/bytes.ts';
-import { gridCellAt } from '../src/cornerlayout.ts';
+import { u24 } from '../src/support/bytes.ts';
+import { gridCellAt } from '../src/inventory/cornerlayout.ts';
 import {
   SIDE_KEYS_GRID, SIDE_KEYS_LEFT_X, SIDE_KEYS_LINE_Y, SIDE_KEYS_NUMBER_END, SIDE_KEYS_OF_X, SIDE_KEYS_RIGHT_END,
   SIDE_KEYS_ROW_PITCH, SIDE_KEYS_ROW_TOP, SIDE_KEYS_SEPARATOR_X, SIDE_KEYS_TOTAL_X, SIDE_KEYS_ARROW_X,
   SIDE_KEYS_LABEL_WIDTH,
 } from '../src/families/harmony-880-885/index.ts';
-import { catalogueDriving } from '../src/driving.node.ts';
+import { catalogueDriving } from '../src/catalogue/driving.node.ts';
 import { compiledBlockWords } from '../src/shared/infrared.ts';
 import { familyOf } from '../src/families/registry.ts';
 import { sideKeysCopyModes, sideKeysDeviceLists } from '../src/families/harmony-880-885/devicescreen.ts';
@@ -140,8 +140,8 @@ import {
   trailerAgrees,
 } from '../src/internal.ts';
 import { composeCatalogueDevice, instructionSites } from '../src/build.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 /** Every arch 8 configuration the lab holds of the 880 and 885: six contributed, the two bench units'. */
 const ARCH8 = ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d', 'arch8_config_880',

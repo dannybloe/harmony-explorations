@@ -59,25 +59,25 @@
  * 650 and 700 are the four slot family, whose help is postponed (`todo-later.md` 3.3) and not built anywhere.
  * Read only towards hardware: the result is pieces.
  */
-import type { Container } from '../../gspm.ts';
-import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { parse } from '../../gspm.ts';
-import { modePages, modeRecords, pageListCopies, stateRecords, taggedList } from '../../sections.ts';
+import type { Container } from '../../container/gspm.ts';
+import type { ContainerLayout, ContainerPiece } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { parse } from '../../container/gspm.ts';
+import { modePages, modeRecords, pageListCopies, stateRecords, taggedList } from '../../container/sections.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE,
   type ScreenInstruction, screenProgram,
-} from '../../screen.ts';
-import { u24 } from '../../bytes.ts';
-import { fillTarget } from '../../pictures.ts';
-import type { PieceTarget } from '../../statetables.ts';
-import { characterMap, decode } from '../../text.ts';
-import { type BuiltScreen, type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../screenrecords.ts';
+} from '../../screens/screen.ts';
+import { u24 } from '../../support/bytes.ts';
+import { fillTarget } from '../../drawing/pictures.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
+import { characterMap, decode } from '../../screens/text.ts';
+import { type BuiltScreen, type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../compose/screenrecords.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
-import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
-import { deviceVariables } from '../../inventory.ts';
+import { TOUCH_AREA_LENGTH, touchPages } from '../../container/tables.ts';
+import { deviceVariables } from '../../inventory/inventory.ts';
 import { appendActionLists } from '../../shared/core.ts';
-import { STATE_WRITE_BASE } from '../../actions.ts';
+import { STATE_WRITE_BASE } from '../../container/actions.ts';
 import { describeOneWiring } from './wiring.ts';
 import { withHitPage } from './menus.ts';
 import { grownList } from './menupages.ts';

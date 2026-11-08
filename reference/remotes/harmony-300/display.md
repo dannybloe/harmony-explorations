@@ -9,7 +9,7 @@ no screen holds one activity at most,
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | none: no entry for architecture 16 | `SCREEN_SIZES` in `packages/codec/src/render.ts` |
+| raster | none: no entry for architecture 16 | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts` |
 | raster on the drawing | no screen on the drawing | `h300.ts` |
 | panel | no record | `packages/base/src/models.ts` |
 | touch | no record | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |

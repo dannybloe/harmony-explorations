@@ -15,15 +15,15 @@ import { activityRowListBody, deviceListRowBody } from './devicelist.ts';
 import { describeWiring } from './wiring.ts';
 import { fixedLineScreenParts, startupPicture } from './activityscreen.ts';
 import { FOUR_SLOT_ITEMS, FOUR_SLOT_ROWS } from './geometry.ts';
-import { MAP_VALUE_OPCODE, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, activities, compilerTagOrder, ENTER_MODE, RUN_SCREEN_PROGRAM } from '../../inventory.ts';
-import { type Container } from '../../gspm.ts';
-import { ComposeError, type ValueReader, blobReader } from '../../compose.ts';
-import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
-import { STATE_WRITE_BASE } from '../../actions.ts';
-import { ACTION_LIST_INDEX_OPCODE, taggedListBytes } from '../../sections.ts';
-import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, type ScreenInstruction } from '../../screen.ts';
-import { type PieceTarget } from '../../statetables.ts';
-import { ScreenRecordError, type RecordFrame, type RecordPlace, recordReading, type BuiltScreen, recordBuilding, withModeRecords, assertRebuilt } from '../../screenrecords.ts';
+import { MAP_VALUE_OPCODE, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, activities, compilerTagOrder, ENTER_MODE, RUN_SCREEN_PROGRAM } from '../../inventory/inventory.ts';
+import { type Container } from '../../container/gspm.ts';
+import { ComposeError, type ValueReader, blobReader } from '../../compose/compose.ts';
+import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { STATE_WRITE_BASE } from '../../container/actions.ts';
+import { ACTION_LIST_INDEX_OPCODE, taggedListBytes } from '../../container/sections.ts';
+import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, type ScreenInstruction } from '../../screens/screen.ts';
+import { type PieceTarget } from '../../assembly/statetables.ts';
+import { ScreenRecordError, type RecordFrame, type RecordPlace, recordReading, type BuiltScreen, recordBuilding, withModeRecords, assertRebuilt } from '../../compose/screenrecords.ts';
 
 /** The three screens, in the words of section 356. */
 export type ScreenRecordKind = 'idle device list' | 'activity menu' | 'off';

@@ -8,8 +8,8 @@ import assert from 'node:assert/strict';
 
 import { type Container, type Recipe } from '../src/index.ts';
 import { SCREEN_OWNERS, claims, pointers, screenUnits } from '../src/internal.ts';
-import { devices } from '../src/inventory.ts';
-import type { DonorDeviceRequest } from '../src/composecatalogue.ts';
+import { devices } from '../src/inventory/inventory.ts';
+import type { DonorDeviceRequest } from '../src/compose/composecatalogue.ts';
 
 /**
  * The bytes nothing on the composed path takes from the donor: the frame computes the header, the section table,

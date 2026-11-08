@@ -39,15 +39,15 @@
  *    `todo-compile-885.md` 2.8, and so is a copy of two pages or more, whose counters a further page restates,
  *    2.4.
  */
-import { Writer } from '../../emit.ts';
-import { type Container, parse } from '../../gspm.ts';
+import { Writer } from '../../container/emit.ts';
+import { type Container, parse } from '../../container/gspm.ts';
 import {
   compilerTagOrder, deviceListRowMode, deviceListRows, deviceModeMarker, devices, ENTER_MODE, KEY_EVENT_PRESS,
   KEY_EVENT_SHIFT,
-} from '../../inventory.ts';
-import { relocate } from '../../relocate.ts';
-import { screenProgram, SCREEN_END } from '../../screen.ts';
-import { ACTION_LIST_INDEX_OPCODE, modeRecords, modeTable, taggedList, type TaggedEntry } from '../../sections.ts';
+} from '../../inventory/inventory.ts';
+import { relocate } from '../../edit/relocate.ts';
+import { screenProgram, SCREEN_END } from '../../screens/screen.ts';
+import { ACTION_LIST_INDEX_OPCODE, modeRecords, modeTable, taggedList, type TaggedEntry } from '../../container/sections.ts';
 import { appendActionLists, ComposeError, restamped } from '../../shared/core.ts';
 import type { ComposedScreen, ComposeRow, ComposeScreenOptions } from '../../shared/menus.ts';
 import { appendMode, appendModePage } from '../../shared/modes.ts';

@@ -163,11 +163,11 @@ Each base slot's raw slot, by architecture; an empty cell is one the row above n
 | 18 | 19 | 18 | 21 | 20 | 18 |  |
 | 19 | 20 | 19 | 22 | 21 | 19 |  |
 
-Generated from `SLOT_MAPS` in `packages/codec/src/gspm.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `SLOT_MAPS` in `packages/codec/src/container/gspm.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
  The base slot numbers are what these pages use. `gspm.base_slot` and
 `gspm.arch_slot` in `src/harmony/gspm.py` translate, and so does `SLOT_MAPS` in
-`packages/codec/src/gspm.ts`, which refuses an architecture whose alignment is not established rather than
+`packages/codec/src/container/gspm.ts`, which refuses an architecture whose alignment is not established rather than
 guessing.[^s16]
 
 Three fingerprints in the containers agree on this alignment: the six pointer array sections below land on
@@ -322,7 +322,7 @@ and holds two things: the **record layout of the log area**, an infrared event t
 command and a three byte time, and a device selected event; and the **naming layer**, every device by name
 and every command by index and name. The naming half is **not joined to base slot 5**: there are more named
 commands than records, 61 against 52 on one device, and the device index is not the group index.[^s260]
-`metadataArchive` in `packages/codec/src/metadata.ts` reads it. Its `DeviceId` is scoped to the account
+`metadataArchive` in `packages/codec/src/container/metadata.ts` reads it. Its `DeviceId` is scoped to the account
 and is **not** an id in Logitech's device catalogue.[^s260] In a compile of eight devices by Logitech's current
 service each device's `Index` is its position in the list, and each device's commands
 are every command its catalogue entry names, sorted by character code and numbered from 0, records or
@@ -334,7 +334,7 @@ device.[^t-noscreen-routing]
 **The metadata archive can be written byte for byte, and its stream is stock zlib's.** The deflate stream in every
 distinct metadata archive of the Harmony 300 and 350 in seven configurations, six, is what zlib 1.2.12 writes at its default level, memory level 8
 and the default strategy; Node's zlib writes another.[^t-metadata-deflate] `deflateRaw` in
-`packages/codec/src/deflate.ts` writes that stream, its own code and not zlib's, and equals all six, along with
+`packages/codec/src/support/deflate.ts` writes that stream, its own code and not zlib's, and equals all six, along with
 stock zlib itself on 61 synthetic inputs.[^t-deflate][^t-metadatabuild] The ZIP around the text has one shape in
 all ten metadata archives of both architectures: version 2.0, the data descriptor flag alone, deflate, the descriptor with
 its signature, one central directory entry with every attribute zero, and no comment.[^t-metadatabuild] On the
@@ -369,7 +369,7 @@ slots are identified, nine of them in the slot map and the rest refused:[^s259b]
 | 12 | none | a digit entry table[^t-harmony-350-slots], empty in every configuration read[^t-harmony-350-slots-c] |
 | 14 | none | NULL, and no direct reference in the firmware reads it[^t-harmony-350-slots] |
 
-Raw slot 13 holds the metadata archive above. `ARCH16_SLOT_MAP` in `packages/codec/src/gspm.ts` carries the
+Raw slot 13 holds the metadata archive above. `ARCH16_SLOT_MAP` in `packages/codec/src/container/gspm.ts` carries the
 eight rows with a base slot that were identified first and raw 9, and `archSlot` throws for every other base
 slot, so a slot the map does not carry refuses rather than answering wrongly; raw 6 and 8 are not in it
 yet.[^s259b][^t-file-family-delays] The firmware's section seeker at `0x10BCE` computes `0x0B + 4 * slot` from a literal its

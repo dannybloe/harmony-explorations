@@ -77,30 +77,30 @@
  */
 import { type Recipe, recipeTarget } from '../../recipe/recipe.ts';
 import { AssemblyError, type AssembleOptions, type AssemblyStep, checkComposed, composeSetupParts } from '../../shared/setup.ts';
-import { sameBytes, u16 } from '../../bytes.ts';
-import { archSlot } from '../../gspm.ts';
-import { ARCH_RECORD_LENGTH, CLOCK_SECTION_LENGTH, END_MARKER_LENGTH, TRAILER_CHECKSUM_OFFSET, parse, type Container } from '../../gspm.ts';
-import { claims } from '../../coverage.ts';
-import { pointers } from '../../growth.ts';
-import { saveEdits } from '../../edit.ts';
-import { SCREEN_TABLE_SLOT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
-import { characterMap, decode, glyphsReferencedBy, oxaniumAlphabet } from '../../text.ts';
-import type { ContainerLayout } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { composedIntoBody, loosen, placePieces } from '../../placer.ts';
+import { sameBytes, u16 } from '../../support/bytes.ts';
+import { archSlot } from '../../container/gspm.ts';
+import { ARCH_RECORD_LENGTH, CLOCK_SECTION_LENGTH, END_MARKER_LENGTH, TRAILER_CHECKSUM_OFFSET, parse, type Container } from '../../container/gspm.ts';
+import { claims } from '../../container/coverage.ts';
+import { pointers } from '../../edit/growth.ts';
+import { saveEdits } from '../../edit/edit.ts';
+import { SCREEN_TABLE_SLOT, SCREEN_TEXT_INLINE, screenProgram } from '../../screens/screen.ts';
+import { characterMap, decode, glyphsReferencedBy, oxaniumAlphabet } from '../../screens/text.ts';
+import type { ContainerLayout } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { composedIntoBody, loosen, placePieces } from '../../assembly/placer.ts';
 import {
   buildStateTables, builtStatePieces, describeStateTables, hourListBytes, type StateTableFacts, withStateTables,
-} from '../../statetables.ts';
+} from '../../assembly/statetables.ts';
 
-import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from '../../fonttable.ts';
-import { LETTERING_FACES, letterForm, maskForm } from '../../lettering.ts';
-import { type FontSet, IMAGE_SET_HEADER, fontSets, glyphOf } from '../../font.ts';
+import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from '../../drawing/fonttable.ts';
+import { LETTERING_FACES, letterForm, maskForm } from '../../drawing/lettering.ts';
+import { type FontSet, IMAGE_SET_HEADER, fontSets, glyphOf } from '../../screens/font.ts';
 
 import { caseProgram } from '../../shared/menus.ts';
-import { valueMaps } from '../../valuemap.ts';
-import { type BlendedSet, checkBlendedLetters, type LettersBlended, withBlendedLetters } from '../../blending.ts';
+import { valueMaps } from '../../container/valuemap.ts';
+import { type BlendedSet, checkBlendedLetters, type LettersBlended, withBlendedLetters } from '../../drawing/blending.ts';
 // The renumbering the chain's step 12 runs, which names no remote and stayed shared.
-import { dropLists, namedLists } from '../../assemble.ts';
+import { dropLists, namedLists } from '../../assembly/assemble.ts';
 import { FOUR_SLOT } from './index.ts';
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from './screentexts.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from './firmwarescreens.ts';
@@ -113,7 +113,7 @@ import { cornerProgramAt, emptyFontTable } from './empty.ts';
 import { FOUR_SLOT_STATE_TABLES } from './statetables.ts';
 import { ASSEMBLY_SKINS, OUR_DONOR_SKINS } from './skins.ts';
 import { buildWiring, checkWiring, describeWiring, wiringModelOfSkin, type WiringSettings, type WiringSpec } from './wiring.ts';
-import { builtPieces, withWiring } from '../../wiringparts.ts';
+import { builtPieces, withWiring } from '../../assembly/wiringparts.ts';
 import { modeZeroKeyList } from './modezero.ts';
 import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, withScreenRecords } from './screenrecords.ts';
 import { SCREEN_STATES, checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
@@ -394,7 +394,7 @@ export function checkAssembled(c: Container): void {
 }
 
 /**
- * The facts the state tables are built from: this family's own, `Family.stateTables`. In `src/assemble.ts` this
+ * The facts the state tables are built from: this family's own, `Family.stateTables`. In `src/assembly/assemble.ts` this
  * asked the registry for the configuration's family, which a family never imports; every caller has run the
  * wiring's check or the architecture's first, which refuses any skin but a Harmony 600, 650 or 700's, so the
  * answer was always this family's and is the same here.

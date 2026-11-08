@@ -15,7 +15,7 @@ application's unless named.
 (section 43: four entries on the Harmony 700, 600, 650 and One, the start `1F EBxx` and cancel `1F EAxx`, the
 seven byte record, one instruction fired, and "the scheduled kind clamps the duration to sixteen bits"<!--superseded-->),
 the `writing-a-config` skill's timer row, `TIMER_SLOTS_IN_RAM` in `src/harmony/gspm.py` and
-`packages/codec/src/tables.ts`, and section 43 in the archive, which states the clamp at its line about the
+`packages/codec/src/container/tables.ts`, and section 43 in the archive, which states the clamp at its line about the
 scheduled path and gives the one second tick. **Logitech's client, decision 2**: not searched; how many
 timers the firmware holds and what it does with a long duration are the firmware's alone.
 

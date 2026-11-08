@@ -9,12 +9,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { skipWithoutLab, require_ } from '@harmony/lab';
-import { parse } from '../src/gspm.ts';
+import { parse } from '../src/container/gspm.ts';
 import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups, irHeaderPointers }
-  from '../src/ir.ts';
-import { irdaString, pulsesOfWords, untilSilence } from '../src/irda.ts';
-import type { Pulse } from '../src/irframe.ts';
-import { frameKey, framesOfPulses, fromFirstMark, mergedIntervals } from '../src/irframe.ts';
+  from '../src/infrared/ir.ts';
+import { irdaString, pulsesOfWords, untilSilence } from '../src/infrared/irda.ts';
+import type { Pulse } from '../src/infrared/irframe.ts';
+import { frameKey, framesOfPulses, fromFirstMark, mergedIntervals } from '../src/infrared/irframe.ts';
 
 const CONTAINERS = [
   'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',

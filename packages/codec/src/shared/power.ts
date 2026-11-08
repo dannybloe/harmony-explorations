@@ -2,19 +2,19 @@
  * Joining power off across activities and keeping a device on between them: edits of existing lists that
  * every family makes the same way. Plan 007's shared part, cut out of `compose.ts` unchanged.
  */
-import { STATE_WRITE_BASE } from '../actions.ts';
-import { Writer } from '../emit.ts';
-import { archSlot, Container, type Instruction, parse } from '../gspm.ts';
+import { STATE_WRITE_BASE } from '../container/actions.ts';
+import { Writer } from '../container/emit.ts';
+import { archSlot, Container, type Instruction, parse } from '../container/gspm.ts';
 import {
   activities, ACTIVITY_STATE_NAME, allOffList, caseQueued, deviceVariables, handlerSetRoles, MAP_VALUE_OPCODE, stateVariables,
-} from '../inventory.ts';
-import { valueMaps } from '../valuemap.ts';
+} from '../inventory/inventory.ts';
+import { valueMaps } from '../container/valuemap.ts';
 import { appendValueMapCase, caseProgram } from './menus.ts';
-import { excise, relocate } from '../relocate.ts';
-import { pointers } from '../growth.ts';
-import { SCREEN_END, screenProgram } from '../screen.ts';
-import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, taggedList } from '../sections.ts';
-import { ACTION_TABLE_SLOT, appendActionLists, ComposeError, restamped } from '../shared/core.ts';
+import { excise, relocate } from '../edit/relocate.ts';
+import { pointers } from '../edit/growth.ts';
+import { SCREEN_END, screenProgram } from '../screens/screen.ts';
+import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, taggedList } from '../container/sections.ts';
+import { ACTION_TABLE_SLOT, appendActionLists, ComposeError, restamped } from './core.ts';
 
 /*
  * ---- Switching a device off, section 280 ----

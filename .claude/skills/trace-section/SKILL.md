@@ -103,7 +103,7 @@ How to find it on an image nobody has scanned:
 Two things to keep straight when this is used again. **The literal set is not the whole map**, because
 a slot can be sought through a variable rather than a literal, so an absent slot is a lead and not a
 proof. And **name only the slots the callers actually reach**: `ARCH16_SLOT_MAP` in
-`packages/codec/src/gspm.ts` leaves thirteen entries `undefined` meaning **unread**, which is the
+`packages/codec/src/container/gspm.ts` leaves thirteen entries `undefined` meaning **unread**, which is the
 opposite of arch 10's map where `undefined` means the slot does not exist. Getting those two senses
 of `undefined` confused would silently claim a slot.
 
@@ -187,7 +187,7 @@ it anyway. So this check is not only for cross architecture work.
 
 **The library answers faster than the prose**, and both re-derivations were sitting in it as named
 constants with the section number in the comment: `OPERAND_HIGH_BAND` in `src/harmony/gspm.py` and
-`BANDS_3F_ARCH9` in `packages/codec/src/actions.ts`. Grep `src/harmony/` and `packages/*/src/` first
+`BANDS_3F_ARCH9` in `packages/codec/src/container/actions.ts`. Grep `src/harmony/` and `packages/*/src/` first
 for that reason, and read the comment rather than only the value.
 
 **A collision is not a contradiction, and check it anyway.** Two constants in section 257's audit hit

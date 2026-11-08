@@ -10,7 +10,7 @@ shows, apart from one screen, comes out of the configuration and not out of the 
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | 176 by 220 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, measured from the configurations' full screen pictures |
+| raster | 176 by 220 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, measured from the configurations' full screen pictures |
 | raster on the drawing | 176 by 220 | `one.ts`, which must agree with the row above |
 | panel | colour | `packages/base/src/models.ts` |
 | touch | yes | `packages/base/src/models.ts`, and `touch` on the drawing's screen is yes |
@@ -152,7 +152,7 @@ AM or PM[^s414].
   paired rows within five pixels[^s125]. **Horizontally**, `panel_x = 1257 + ((3556 - 1257) / 176) *
   pixel_x` takes the display to span the gap between the inner edges of the two side strips; almost every
   rectangle is full width and barely constrains it, and no activity name depends on it[^unchecked].
-  `packages/codec/src/touch.ts` is the executable form.
+  `packages/codec/src/inventory/touch.ts` is the executable form.
 * **A rectangle follows from what the screen draws** where it is a button or a key: a 50 pixel button
   picture on the grid has a rectangle of its own place and column, and a word drawn below the screen on the
   right half has the right key's rectangle. Rectangles drawn around text or pictures follow no such rule. How

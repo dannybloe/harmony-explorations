@@ -39,7 +39,7 @@ IMAGES = {
     },
 }
 
-#: The opcodes this file reads, `SCREEN_FILL` and `SCREEN_DRAW_IMAGE` in `packages/codec/src/screen.ts`.
+#: The opcodes this file reads, `SCREEN_FILL` and `SCREEN_DRAW_IMAGE` in `packages/codec/src/screens/screen.ts`.
 FILL = 1
 DRAW = 2
 

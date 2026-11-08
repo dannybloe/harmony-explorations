@@ -37,7 +37,7 @@
  * The Harmony One alone, the One family's; the Harmony 600, 650 and 700 number theirs in `harmony-600-650-700/empty.ts`.
  * Read only towards hardware: the result is numbers.
  */
-import { ScreenRecordError } from '../../screenrecords.ts';
+import { ScreenRecordError } from '../../compose/screenrecords.ts';
 import { ONE_FIRMWARE_SCREENS, oneFirmwareSlots } from './firmwarescreens.ts';
 import { oneFixedScreenTemplates } from './fixedscreens.ts';
 import { ONE_STATUS_TEMPLATES } from './statusscreens.ts';

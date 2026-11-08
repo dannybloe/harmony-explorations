@@ -58,13 +58,13 @@
  * The Harmony One, skin 54, the One family's: the Harmony 600, 650 and 700's assembly is `families/harmony-600-650-700/empty.ts`.
  * Read only towards hardware: the result is bytes in memory.
  */
-import type { Container } from '../../gspm.ts';
-import { type ContainerPiece, countedTable, layOutContainer, takeApart } from '../../frame.ts';
-import type { BuiltScreen } from '../../screenrecords.ts';
-import type { PieceTarget } from '../../statetables.ts';
-import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../blending.ts';
-import { withPictureFilled } from '../../pictures.ts';
-import type { SetFace } from '../../fonttable.ts';
+import type { Container } from '../../container/gspm.ts';
+import { type ContainerPiece, countedTable, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import type { BuiltScreen } from '../../compose/screenrecords.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
+import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../drawing/blending.ts';
+import { withPictureFilled } from '../../drawing/pictures.ts';
+import type { SetFace } from '../../drawing/fonttable.ts';
 import { ONE_CHOICES, type OneChoices } from './choices.ts';
 import { ONE_COUNT_WIDTHS, layOutOneSkeleton, oneSpellingContainer } from './skeleton.ts';
 import { ONE_STATE_TABLES } from './statetables.ts';
@@ -84,10 +84,10 @@ import { oneLabelWeight } from './activitypictures.ts';
 import type { OneScreenSet } from './numbering.ts';
 import { ONE_BUILT, type OneBuilt, oneBuiltBytes } from './builders.ts';
 import { ONE_GLYPH_ORDER, buildOneFontTable } from './fontsets.ts';
-import { claims } from '../../coverage.ts';
-import { IMAGE_SET_HEADER, encodeGlyph, fontSets, glyphOf } from '../../font.ts';
-import { letterRows } from '../../lettering.ts';
-import { lettered, letterFaceOf } from '../../fonttable.ts';
+import { claims } from '../../container/coverage.ts';
+import { IMAGE_SET_HEADER, encodeGlyph, fontSets, glyphOf } from '../../screens/font.ts';
+import { letterRows } from '../../drawing/lettering.ts';
+import { lettered, letterFaceOf } from '../../drawing/fonttable.ts';
 
 /** A refusal, named so a caller can tell a request this does not assemble from a bug. */
 export class EmptyOneError extends Error {}

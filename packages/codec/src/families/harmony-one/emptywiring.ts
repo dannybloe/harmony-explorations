@@ -50,16 +50,16 @@
  * The Harmony One alone, the One family's, arch 12: the Harmony 600, 650 and 700's is `families/harmony-600-650-700/empty.ts`.
  * Read only towards hardware: the result is pieces.
  */
-import { archSlot, type Container, parse } from '../../gspm.ts';
-import type { ContainerPiece } from '../../frame.ts';
-import { modeRecords } from '../../sections.ts';
-import { TIMER_RECORD_LENGTH, TIMER_SLOT, timers } from '../../tables.ts';
-import { Writer } from '../../emit.ts';
-import { relocate } from '../../relocate.ts';
+import { archSlot, type Container, parse } from '../../container/gspm.ts';
+import type { ContainerPiece } from '../../assembly/frame.ts';
+import { modeRecords } from '../../container/sections.ts';
+import { TIMER_RECORD_LENGTH, TIMER_SLOT, timers } from '../../container/tables.ts';
+import { Writer } from '../../container/emit.ts';
+import { relocate } from '../../edit/relocate.ts';
 import { appendActionLists } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
-import { type StateVariableSpec, type ValueMapSpec, hourListBytes } from '../../statetables.ts';
-import { type BuiltWiring, WiringError } from '../../wiringparts.ts';
+import { type StateVariableSpec, type ValueMapSpec, hourListBytes } from '../../assembly/statetables.ts';
+import { type BuiltWiring, WiringError } from '../../assembly/wiringparts.ts';
 import { ONE_STATE_TABLES } from './statetables.ts';
 import { buildOneWiring, oneWiringNeeds, type OneWiringSettings, type OneWiringSpec } from './wiring.ts';
 import {

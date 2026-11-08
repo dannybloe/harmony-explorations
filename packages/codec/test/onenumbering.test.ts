@@ -24,10 +24,10 @@ import type { Container } from '../src/index.ts';
 import type { ContainerPiece } from '../src/build.ts';
 import { parse } from '../src/index.ts';
 import { takeApart } from '../src/build.ts';
-import { stateRecords, stateTable } from '../src/sections.ts';
-import { type PieceTarget, describeStateTables } from '../src/statetables.ts';
+import { stateRecords, stateTable } from '../src/container/sections.ts';
+import { type PieceTarget, describeStateTables } from '../src/assembly/statetables.ts';
 import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
-import { ScreenRecordError } from '../src/screenrecords.ts';
+import { ScreenRecordError } from '../src/compose/screenrecords.ts';
 import { buildOneWiring, describeOneWiring } from '../src/families/harmony-one/wiring.ts';
 import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import {
@@ -52,7 +52,7 @@ import {
 import {
   BLANK_TIMERS, EMPTY_ONE_FONTS, EMPTY_ONE_SCREENS, emptyOneNumbering, emptyOneSpecs,
 } from '../src/families/harmony-one/emptynumbering.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
 const SIXTEEN = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

@@ -23,8 +23,8 @@ import { require_, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import { stateRecords } from '../src/internal.ts';
-import { STATE_TABLE_SLOT } from '../src/sections.ts';
-import { WiringError, compareWiring, tablePiece, tableTargets } from '../src/wiringparts.ts';
+import { STATE_TABLE_SLOT } from '../src/container/sections.ts';
+import { WiringError, compareWiring, tablePiece, tableTargets } from '../src/assembly/wiringparts.ts';
 import { buildOneFirmwareScreens, describeOneFirmwareScreens } from '../src/families/harmony-one/firmwarescreens.ts';
 import {
   ONE_FIXED_SCREENS, buildOneFixedScreens, describeOneFixedScreens, oneFixedScreenModes, withOneFixedScreens,
@@ -35,7 +35,7 @@ import {
 import { buildOneWiring, describeOneWiring } from '../src/families/harmony-one/wiring.ts';
 import { oneStartupVariables } from '../src/families/harmony-one/startupassistant.ts';
 import { leftBelow, namedByRecords } from './screenlists.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405, and of them the five where "Devices Off Again" stops. */
 const SIXTEEN = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

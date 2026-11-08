@@ -12,7 +12,7 @@ three, each needing a battery pull.
 
 ## When to load it
 
-Before changing any byte of a container: an edit in `packages/codec/src/edit.ts`, a relocation through
+Before changing any byte of a container: an edit in `packages/codec/src/edit/edit.ts`, a relocation through
 `relocate.ts`, a composer that builds a device, an activity, a sequence, a menu or a screen, the write path
 in `packages/usb` and the configuration write, `writeConfiguration` in `packages/corpus/src/writeconfig.ts`
 (on `@harmony/corpus/write` since `todo.md` 7.3.10) with `packages/corpus/bin/write-config.ts` its script,

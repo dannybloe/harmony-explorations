@@ -16,9 +16,9 @@ import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import type { CatalogueSource, Container, Recipe, RecipeScreenItem } from '../src/index.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import { screenProgram } from '../src/screen.ts';
-import { valueMaps } from '../src/valuemap.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import { screenProgram } from '../src/screens/screen.ts';
+import { valueMaps } from '../src/container/valuemap.ts';
 import { devices, parse, readRecipe } from '../src/index.ts';
 import {
   AssemblyError,
@@ -51,7 +51,7 @@ import { type Assembled, assembleSetup, attributeBytes, compareDrawnTexts } from
 import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder, withScreenRecords } from '../src/families/harmony-600-650-700/screenrecords.ts';
 import { checkStateBackgrounds } from '../src/families/harmony-600-650-700/backgrounds.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /**
  * The 22 arch 14 compiles sections 356 to 360 measure, by the skin each states: 13 Harmony 650, 2 Harmony

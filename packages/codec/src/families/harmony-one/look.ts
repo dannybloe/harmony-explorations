@@ -7,13 +7,13 @@
  * has to find its letters in the configuration's sets, section 396, so the donor is lettered first, and the rest
  * runs on the composed file, the blending last, since it smooths each label against what ends up behind it.
  */
-import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../blending.ts';
-import { type FontSet, IMAGE_SET_HEADER, fontSets, glyphOf } from '../../font.ts';
-import { type SetFace, withOxaniumFonts } from '../../fonttable.ts';
+import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../drawing/blending.ts';
+import { type FontSet, IMAGE_SET_HEADER, fontSets, glyphOf } from '../../screens/font.ts';
+import { type SetFace, withOxaniumFonts } from '../../drawing/fonttable.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { buildOneFontTable } from './fontsets.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import type { Container } from '../../gspm.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import type { Container } from '../../container/gspm.ts';
 import { oneLabelWeight } from './activitypictures.ts';
 import { oneActivityFonts } from './activityscreen.ts';
 import { withCentredPadLabels } from './centring.ts';

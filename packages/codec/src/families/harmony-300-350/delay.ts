@@ -25,9 +25,9 @@
  * the television's delay set to 100 tenths reproduces the file heard on the bench at 11.5 s, byte for byte; on
  * Logitech's compile of the Harmony 350 test setup, the copies are exactly the one toggle device's in the activity.
  */
-import type { Container } from '../../gspm.ts';
-import { DEVICE_QUANTITY, powerOnInstructions } from '../../inventory.ts';
-import { ACTION_LIST_INDEX_OPCODE } from '../../sections.ts';
+import type { Container } from '../../container/gspm.ts';
+import { DEVICE_QUANTITY, powerOnInstructions } from '../../inventory/inventory.ts';
+import { ACTION_LIST_INDEX_OPCODE } from '../../container/sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { WATCH_TV_SCAN } from './activity.ts';
 import { keyMaps, PRESS } from './devices.ts';

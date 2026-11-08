@@ -22,7 +22,7 @@
 import { LAB, load } from '@harmony/lab';
 import { parse, activities } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

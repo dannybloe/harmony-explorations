@@ -17,7 +17,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { load } from '@harmony/lab';
 import { parse} from '../src/index.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

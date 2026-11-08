@@ -9,9 +9,9 @@
  * count, where the width line falls, and a second transition on the minute. Its family states them,
  * `families/harmony-one/statetables.ts`, since chapter 6 of that plan.
  */
-import { firmwareStateVariableMax } from '../../inventory.ts';
-import { VALUE_MAP_COUNT_WIDTH } from '../../valuemap.ts';
-import { StateTablesError, type StateTableFacts, type StateVariableSpec } from '../../statetables.ts';
+import { firmwareStateVariableMax } from '../../inventory/inventory.ts';
+import { VALUE_MAP_COUNT_WIDTH } from '../../container/valuemap.ts';
+import { StateTablesError, type StateTableFacts, type StateVariableSpec } from '../../assembly/statetables.ts';
 
 /** The architecture of the family's remotes, which the readers' per architecture tables are keyed by. */
 const ARCHITECTURE = 14;

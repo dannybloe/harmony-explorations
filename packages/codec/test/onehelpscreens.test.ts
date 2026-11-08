@@ -41,7 +41,7 @@ import {
 import { speller, textGlyphs } from '../src/shared/spelling.ts';
 import { listsBelow } from './screenlists.ts';
 import { ONE } from '../src/families/harmony-one/index.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 test('todo-compile-one 3.2.2.4: on the test setup\'s donor lettered in ours the attempt line, 177 pixels, breaks in two by the questions\' wrap at 171 and the "If not" paragraph flows onto three lines of its own, each block centred again, where the engine refused the attempt line, which would start at x -1',
      skipUnless('harvest_one_two_devices'), () => {

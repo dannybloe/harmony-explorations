@@ -270,8 +270,8 @@ built in 2023 the record is 23 with a max of 24, and saved in 2026 it would be 2
 24[^s130]. The day of the month does not move its maximum: it counts from 0, so the 31st is stored as 30
 and fits, and a Harmony 700 configuration built on a 31st stores 30 against 30[^s322]. A save writes a day
 of at most 30, and puts a 31 an older save of ours left back to 30. The transitions on the clock records
-are not touched. `clockStateEdits` in `packages/codec/src/edit.ts`, and `CLOCK_STATE_MAXIMA` in
-`src/sections.ts` is the table it both writes and checks against.
+are not touched. `clockStateEdits` in `packages/codec/src/edit/edit.ts`, and `CLOCK_STATE_MAXIMA` in
+`src/container/sections.ts` is the table it both writes and checks against.
 
 ### Variables 18 and up are the configuration's own
 
@@ -330,7 +330,7 @@ call lists, of a purpose not established[^s288]. `powerOnDelays` and `powerOnDel
 
 **Changing an arch 14 delay is a two byte edit of the record's `first`**, `u16`, plus the trailer
 checksum. **The record's `max` does not bound it**: it is 65277 on some devices' records, and the range is
-the 451 case table's, 0 to 450. `setPowerOnDelayVariable` in `packages/codec/src/edit.ts` refuses
+the 451 case table's, 0 to 450. `setPowerOnDelayVariable` in `packages/codec/src/edit/edit.ts` refuses
 anything else. A changed value is in force after the restart that follows a write, measured in memory on
 a Harmony 650[^s283] and by infrared timing on a Harmony 700[^s301].
 
@@ -385,7 +385,7 @@ delay.
 devices, because one that nothing switches on has no such list. That `0x72`'s base slot 14 record has 451
 entries, which states the 0 to 450 range a third time[^s235b].
 
-`deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
+`deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory/inventory.ts`.
 
 ### On the other architectures, one instruction
 
@@ -588,7 +588,7 @@ timing the screen; on the Harmony 600 a configuration's value agrees with the sa
 and also its default, and on the Harmony 700 both timers of the pair hold 10, so its pick is the rule's and
 not established[^s292]. The two are the arms of one test of state variable 9; when the other arm is taken
 is not established. Arch 8 and arch 10 carry the same pair, not measured[^s292]. `screenLightTimer` in
-`packages/codec/src/tables.ts`. What a person sees is each model's display page, such as
+`packages/codec/src/container/tables.ts`. What a person sees is each model's display page, such as
 [the Harmony 650's](../remotes/harmony-650/features.md).
 
 **Every arch 14 timer but a device's is the firmware's, in a fixed order**, 13 of 13: light off, the
@@ -839,7 +839,7 @@ entries included. The groups the table above does not read hold `60`, `80`, `250
 `129, 21, 3, 1, 0, 0, 0, 0` (groups 2, 3, 8 and 10)[^s407]. `ONE_PARAMETERS` in
 `packages/codec/src/families/harmony-one/parameters.ts`.
 
-`buildParameterBlock` in `packages/codec/src/firmwaresections.ts` builds the section from the model's values
+`buildParameterBlock` in `packages/codec/src/assembly/firmwaresections.ts` builds the section from the model's values
 and checks it against `PARAMETER_GROUP_COUNTS`, refusing a group of another length, byte for byte on the 19
 Harmony One compiles and the thirteen arch 14 ones[^s407].
 
@@ -988,7 +988,7 @@ when, and which device was picked[^s260]. Its base slot 2 is byte for byte the H
 
 ### Built
 
-`buildLogArea` in `packages/codec/src/firmwaresections.ts` writes the section from the per architecture
+`buildLogArea` in `packages/codec/src/assembly/firmwaresections.ts` writes the section from the per architecture
 table `LOG_AREAS`, which holds the user configuration rows of arch 12 and arch 14: byte for byte on all 19
 distinct Harmony One compiles, with its `u24` capacity[^s407], and on the thirteen arch 14 compiles[^s347].
 The safe mode row is not built.

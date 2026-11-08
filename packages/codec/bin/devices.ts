@@ -23,7 +23,7 @@ import { LAB, load } from '@harmony/lab';
 import { parse, devices } from '../src/index.ts';
 import { powerOnDelayReach } from '../src/internal.ts';
 import { CONTAINERS, INLINE_DELAY_CONTAINERS } from './corpus.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

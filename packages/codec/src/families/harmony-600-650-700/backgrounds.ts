@@ -44,25 +44,25 @@
  * The Harmony 650 alone, by its two skins: the 2026 Harmony 700 compiles share the look and nobody has checked
  * one built this way. Read only towards hardware: the result is a layout.
  */
-import type { ContainerLayout, ContainerPiece, PieceRef } from '../../frame.ts';
-import { layOutContainer } from '../../frame.ts';
-import type { Container } from '../../gspm.ts';
-import { archSlot } from '../../gspm.ts';
-import { pictureRows } from '../../pictures.ts';
-import { sameBytes } from '../../bytes.ts';
+import type { ContainerLayout, ContainerPiece, PieceRef } from '../../assembly/frame.ts';
+import { layOutContainer } from '../../assembly/frame.ts';
+import type { Container } from '../../container/gspm.ts';
+import { archSlot } from '../../container/gspm.ts';
+import { pictureRows } from '../../drawing/pictures.ts';
+import { sameBytes } from '../../support/bytes.ts';
 import {
   BITMAP_ENCODED, BITMAP_END, BITMAP_HEADER, BITMAP_RAW, SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, bitmapAt, encodeBitmap, pictureReference, reachablePrograms, screenProgram,
-} from '../../screen.ts';
-import { contentKey, modeRoles } from '../../screencategories.ts';
+} from '../../screens/screen.ts';
+import { contentKey, modeRoles } from '../../screens/screencategories.ts';
 import { buildScreenRecords, describeScreenRecords, screenRecordModes, withScreenRecords } from './screenrecords.ts';
 // The Harmony 650's skins are the family's since `todo-compile-one.md` 3.3.3.5, `families/harmony-600-650-700/skins.ts`,
 // where the font table asks for them too.
 import { DEVICE_MODE_PROGRAM_TAG } from './chrome.ts';
 import { HARMONY_650_SKINS } from './skins.ts';
 import { activityKeyedRecords } from './activityscreen.ts';
-import { valueMaps } from '../../valuemap.ts';
-import { modeRecords } from '../../sections.ts';
-import { ENTER_MODE, RUN_SCREEN_PROGRAM } from '../../inventory.ts';
+import { valueMaps } from '../../container/valuemap.ts';
+import { modeRecords } from '../../container/sections.ts';
+import { ENTER_MODE, RUN_SCREEN_PROGRAM } from '../../inventory/inventory.ts';
 import { HARMONY_650_PICTURES, type OurPictureName, buildOurPictures } from './pictures.ts';
 
 /** A refusal, named so a caller can tell a configuration this does not handle from a bug. */

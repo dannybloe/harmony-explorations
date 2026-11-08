@@ -9,7 +9,7 @@ keys below it. **It shows no clock**, below.
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | 128 by 128 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, measured from the configurations' full screen pictures |
+| raster | 128 by 128 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, measured from the configurations' full screen pictures |
 | raster on the drawing | 128 by 128 | `h650.ts`, which must agree with the row above |
 | panel | colour | `packages/base/src/models.ts` |
 | touch | no | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |

@@ -10,43 +10,43 @@
 
 // The composers of a device, an activity, a menu row and a screen, every family's shared steps, plan 007; the
 // family's traits and choices they ask.
-export * from './compose.ts';
+export * from './compose/compose.ts';
 // The setup's devices and activities composed onto a donor, and the checks of the result.
 export * from './shared/setup.ts';
 // The parts those composers are built from: a catalogue device whole and several in one run, its power, its
 // inputs and its device mode; a sequence within the action queue; an activity's map and screen from its roles.
-export * from './composecatalogue.ts';
-export * from './devicepower.ts';
-export * from './inputs.ts';
-export * from './devicemode.ts';
-export * from './sequence.ts';
-export * from './activityroles.ts';
+export * from './compose/composecatalogue.ts';
+export * from './compose/devicepower.ts';
+export * from './compose/inputs.ts';
+export * from './compose/devicemode.ts';
+export * from './compose/sequence.ts';
+export * from './compose/activityroles.ts';
 // The assembly's renumbering, the container's frame laid out from content, and what is placed in front of a
 // table and in the picture bank.
-export * from './assemble.ts';
-export * from './frame.ts';
-export * from './placer.ts';
+export * from './assembly/assemble.ts';
+export * from './assembly/frame.ts';
+export * from './assembly/placer.ts';
 // The state variables, value maps and name tree; the log area and the parameter block; the engine the families'
 // wiring is built on.
-export * from './statetables.ts';
-export * from './firmwaresections.ts';
-export { WiringError, builtPieces, withWiring } from './wiringparts.ts';
-export type { BuiltWiring, DeviceTimer, WiringChecked, WiringInstruction } from './wiringparts.ts';
+export * from './assembly/statetables.ts';
+export * from './assembly/firmwaresections.ts';
+export { WiringError, builtPieces, withWiring } from './assembly/wiringparts.ts';
+export type { BuiltWiring, DeviceTimer, WiringChecked, WiringInstruction } from './assembly/wiringparts.ts';
 // The machinery every family builds a mode record with, and the screen part encoder.
-export * from './screenrecords.ts';
-export * from './screenparts.ts';
+export * from './compose/screenrecords.ts';
+export * from './compose/screenparts.ts';
 // Pictures and letters: the pictures drawn by rule, the rasteriser, our typeface and its lettering, the blended
 // sets, the font table, letters borrowed from another compile, and the icons.
-export * from './pictures.ts';
-export * from './raster.ts';
-export * from './typeface.ts';
-export * from './lettering.ts';
-export * from './blending.ts';
-export * from './fonttable.ts';
-export * from './glyphborrow.ts';
-export * from './icons.ts';
+export * from './drawing/pictures.ts';
+export * from './drawing/raster.ts';
+export * from './drawing/typeface.ts';
+export * from './drawing/lettering.ts';
+export * from './drawing/blending.ts';
+export * from './drawing/fonttable.ts';
+export * from './drawing/glyphborrow.ts';
+export * from './drawing/icons.ts';
 // The bookkeeping of an attribution, which generator wrote each byte, the ledger every family's could share.
-export * from './attribution.ts';
+export * from './assembly/attribution.ts';
 // The Harmony 300 and 350's family, plan 007: its composers of a device, its favourite channels, its activity and
 // a whole setup; its constant sections and lists; its state tables and the allocator of a setup's variables; its
 // metadata archive; the configuration with no device and no activity and a whole setup built from nothing; and

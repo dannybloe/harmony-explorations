@@ -29,8 +29,8 @@ import { lstatSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { constants, deflateRawSync, deflateSync, inflateRawSync, inflateSync } from 'node:zlib';
 import { IMAGES, LAB, imagePath, skipWithoutLab } from '@harmony/lab';
-import { adler32, inflateRaw, inflateZlib } from '../src/deflate.ts';
-import { payloadOf } from '../src/ezhex.ts';
+import { adler32, inflateRaw, inflateZlib } from '../src/support/deflate.ts';
+import { payloadOf } from '../src/container/ezhex.ts';
 
 type Outcome = Uint8Array | 'refused';
 

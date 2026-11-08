@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { imagePath } from '@harmony/lab';
-import { parse } from '../src/gspm.ts';
-import { keyCodes } from '../src/inventory.ts';
-import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
-import { pulsesOfWords } from '../src/irda.ts';
-import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
+import { parse } from '../src/container/gspm.ts';
+import { keyCodes } from '../src/inventory/inventory.ts';
+import { irBlockWords, irGroups, irHeaderPointers } from '../src/infrared/ir.ts';
+import { pulsesOfWords } from '../src/infrared/irda.ts';
+import { frameKey, framesOfPulses, fromFirstMark } from '../src/infrared/irframe.ts';
 const name = process.argv[2] ?? 'h600_config';
 const c = parse(new Uint8Array(readFileSync(imagePath(name)!)));
 const read = (record: number): string => {

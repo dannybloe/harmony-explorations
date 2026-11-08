@@ -45,8 +45,8 @@
  * `packages/bench/src/irmonitor.ts`, through `BenchTouchEngine` in `packages/bench/src/touchbench.ts`. Everything
  * else here, the lamp's whole time included, is the remote's.
  */
-import { waveformOfArchiveCommand } from '../../archive.ts';
-import type { Pulse } from '../../irframe.ts';
+import { waveformOfArchiveCommand } from '../../catalogue/archive.ts';
+import type { Pulse } from '../../infrared/irframe.ts';
 import { kindOf } from './documents.ts';
 import {
   INFRARED_TRANSPORT,

@@ -20,7 +20,7 @@
  * them, which already refuse each.
  */
 import type { Model } from '@harmony/base/models';
-import { ACTIVITY_ROLE_NAMES, type ActivityRoleName } from '../activityroles.ts';
+import { ACTIVITY_ROLE_NAMES, type ActivityRoleName } from '../compose/activityroles.ts';
 import type { Family } from '../families/family.ts';
 import { chooseByModel, NoFamilyError, type ModelChoice } from '../families/registry.ts';
 

@@ -3,26 +3,26 @@
  * paging a menu that has filled. Plan 007's One family, cut out of `compose.ts` unchanged; it still
  * copies its chrome, fonts and pictures off the donor's own pages.
  */
-import { u24 } from '../../bytes.ts';
-import { Writer } from '../../emit.ts';
-import { fontSets } from '../../font.ts';
-import { ACTION_LIST_TABLE_SLOT, archSlot, Container, INSTRUCTION_LENGTH, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
-import { deviceListRows, handlerSetRoles } from '../../inventory.ts';
-import { STATE_WRITE_BASE } from '../../actions.ts';
-import { excise, relocate } from '../../relocate.ts';
+import { u24 } from '../../support/bytes.ts';
+import { Writer } from '../../container/emit.ts';
+import { fontSets } from '../../screens/font.ts';
+import { ACTION_LIST_TABLE_SLOT, archSlot, Container, INSTRUCTION_LENGTH, type Instruction, parse, SCAN_MASK } from '../../container/gspm.ts';
+import { deviceListRows, handlerSetRoles } from '../../inventory/inventory.ts';
+import { STATE_WRITE_BASE } from '../../container/actions.ts';
+import { excise, relocate } from '../../edit/relocate.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
-} from '../../screen.ts';
+} from '../../screens/screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, handlerSets, type ModePage, modePages, type ModeRecord, modeRecords, pageListCopies, taggedList,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
 import { DEVICE_MENU_MARKER_VALUE, pageTexts } from '../../shared/menus.ts';
 import { codesFor, headerOf, textAt, textGlyphs } from '../../shared/spelling.ts';
-import { TOUCH_AREA_LENGTH, type TouchArea, touchPages } from '../../tables.ts';
-import { characterMap, decode } from '../../text.ts';
-import { SCREEN_ROW_PITCH } from '../../touch.ts';
+import { TOUCH_AREA_LENGTH, type TouchArea, touchPages } from '../../container/tables.ts';
+import { characterMap, decode } from '../../screens/text.ts';
+import { SCREEN_ROW_PITCH } from '../../inventory/touch.ts';
 
 /*
  * ---- The screen half, Harmony One (arch 12) only ----

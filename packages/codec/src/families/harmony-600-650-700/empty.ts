@@ -21,16 +21,16 @@
  *
  * Arch 14 only, the Harmony 650. Read only towards hardware: the result is bytes in memory.
  */
-import type { Container } from '../../gspm.ts';
-import type { ContainerPiece, PieceRef } from '../../frame.ts';
-import { countedTable, layOutContainer } from '../../frame.ts';
-import { placePieces } from '../../placer.ts';
-import { encodeGlyph } from '../../font.ts';
+import type { Container } from '../../container/gspm.ts';
+import type { ContainerPiece, PieceRef } from '../../assembly/frame.ts';
+import { countedTable, layOutContainer } from '../../assembly/frame.ts';
+import { placePieces } from '../../assembly/placer.ts';
+import { encodeGlyph } from '../../screens/font.ts';
 import {
   buildStateTables, clockSpec, menuMarkerVariable,
   type BuiltStateTables, type PieceTarget, type StateVariableSpec, type ValueMapSpec,
   hourListBytes,
-} from '../../statetables.ts';
+} from '../../assembly/statetables.ts';
 import {
   FIRMWARE_STATE_VARIABLE_COUNT, FOUR_SLOT_STATE_TABLES, activityStateVariables, startSequenceVariables,
 } from './statetables.ts';
@@ -38,26 +38,26 @@ import {
   ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringFrontIndex, wiringNeeds, type WiringSettings,
   type WiringSpec,
 } from './wiring.ts';
-import type { BuiltWiring } from '../../wiringparts.ts';
+import type { BuiltWiring } from '../../assembly/wiringparts.ts';
 import {
   SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
   SCREEN_TEXT_INLINE,
-} from '../../screen.ts';
+} from '../../screens/screen.ts';
 import { modeZeroKeyList } from './modezero.ts';
-import { type SetFace, letterFaceOf } from '../../fonttable.ts';
+import { type SetFace, letterFaceOf } from '../../drawing/fonttable.ts';
 import {
   LETTERING_CHARACTERS, OXANIUM_FACE_SPECS, defaultWeight, letterRows, type LetterInks, type Lettering,
   type OxaniumFaceName, type OxaniumWeight,
-} from '../../lettering.ts';
-import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../blending.ts';
+} from '../../drawing/lettering.ts';
+import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../drawing/blending.ts';
 
-import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory.ts';
-import { STATE_WRITE_BASE } from '../../actions.ts';
+import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory/inventory.ts';
+import { STATE_WRITE_BASE } from '../../container/actions.ts';
 import { SENDING_FLAG_VARIABLE } from './chrome.ts';
 import { caseProgram as caseProgramBytes } from '../../shared/menus.ts';
 import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplates } from './firmwarescreens.ts';
 import {
-  type BuiltScreen} from '../../screenrecords.ts';
+  type BuiltScreen} from '../../compose/screenrecords.ts';
 import { type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords } from './screenrecords.ts';
 import { barBytes, stateBackgroundBytes, statePatchBytes } from './backgrounds.ts';
 import { type OurPictureChoices, type OurPictureName, buildOurPictures, buildPictures } from './pictures.ts';

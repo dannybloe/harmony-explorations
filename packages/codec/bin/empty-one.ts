@@ -39,18 +39,18 @@ import { IR_ARCHIVE } from '@harmony/lab';
 import { type Container, type Raster, rasterPng, readRecipe, renderPage } from '../src/index.ts';
 import { UNDRAWN, archSlot, modeRecords, renderProgram } from '../src/internal.ts';
 import { composeSetup } from '../src/build.ts';
-import { assertStateTableConsistent } from '../src/sections.ts';
-import { assertQueueFits } from '../src/queue.ts';
+import { assertStateTableConsistent } from '../src/container/sections.ts';
+import { assertQueueFits } from '../src/container/queue.ts';
 import { oneDeviceModes } from '../src/families/harmony-one/devicepages.ts';
 import { buildEmptyOneConfiguration, oneAttributedBytes } from '../src/families/harmony-one/empty.ts';
 import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import { oneFixedScreenModes, ONE_FIXED_SCREENS } from '../src/families/harmony-one/fixedscreens.ts';
 import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
 import { oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
-import { activities, activityScreens, caseQueued, ENTER_MODE } from '../src/inventory.ts';
-import { valueMaps } from '../src/valuemap.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { activities, activityScreens, caseQueued, ENTER_MODE } from '../src/inventory/inventory.ts';
+import { valueMaps } from '../src/container/valuemap.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

@@ -13,9 +13,9 @@
  * every address into a piece whose texts changed length and pointing every reference at its home's inline copy
  * is the frame's business and names no screen.
  */
-import type { ContainerLayout, ContainerPiece, PieceRef } from '../frame.ts';
-import { layOutContainer } from '../frame.ts';
-import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../screen.ts';
+import type { ContainerLayout, ContainerPiece, PieceRef } from '../assembly/frame.ts';
+import { layOutContainer } from '../assembly/frame.ts';
+import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../screens/screen.ts';
 
 /** A refusal, named so a caller can tell a configuration a text pass does not describe from a bug. */
 export class ScreenTextError extends Error {}

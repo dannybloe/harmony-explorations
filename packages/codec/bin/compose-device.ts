@@ -105,7 +105,7 @@ import {
 } from '../src/node.ts';
 import { type CatalogueDeviceRequest, type ComposedCatalogueDevice, composeCatalogueDevices } from '../src/build.ts';
 import { coverage, roundTrip, trailerAgrees, worstQueueRun, ACTION_QUEUE_INSTRUCTIONS } from '../src/internal.ts';
-import { irFrame } from '../src/irframe.ts';
+import { irFrame } from '../src/infrared/irframe.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({

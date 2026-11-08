@@ -26,14 +26,14 @@ import { CONFIG_REGION_BASE, WRITABLE_CEILING } from '@harmony/usb/rails';
 import { type Container, parse, renderPage } from '../src/index.ts';
 import { archSlot, modeRecords } from '../src/internal.ts';
 import { layOutContainer, takeApart } from '../src/build.ts';
-import { describeStateTables } from '../src/statetables.ts';
-import { contentKey } from '../src/screencategories.ts';
-import { withReplacedPictures } from '../src/pictures.ts';
-import { unblendedSelects } from '../src/blending.ts';
-import { claims } from '../src/coverage.ts';
-import { fontSets, glyphOf } from '../src/font.ts';
-import { touchPages } from '../src/tables.ts';
-import { ScreenRecordError, assertRebuilt, withModeRecords } from '../src/screenrecords.ts';
+import { describeStateTables } from '../src/assembly/statetables.ts';
+import { contentKey } from '../src/screens/screencategories.ts';
+import { withReplacedPictures } from '../src/drawing/pictures.ts';
+import { unblendedSelects } from '../src/drawing/blending.ts';
+import { claims } from '../src/container/coverage.ts';
+import { fontSets, glyphOf } from '../src/screens/font.ts';
+import { touchPages } from '../src/container/tables.ts';
+import { ScreenRecordError, assertRebuilt, withModeRecords } from '../src/compose/screenrecords.ts';
 import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
 import { ONE_PICTURES, readOnePictures, oneFixedPictures } from '../src/families/harmony-one/pictures.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
@@ -56,9 +56,9 @@ import { EMPTY_ONE_REDRAW_CLASSES, oneRedrawStarters } from '../src/families/har
 import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import { buildTemplateScreens, describeTemplateScreens } from '../src/families/harmony-one/screentemplate.ts';
 import { readKeys, templateWalk } from '../src/families/harmony-one/numbering.ts';
-import { activities, caseQueued, devices, ENTER_MODE } from '../src/inventory.ts';
-import { valueMaps } from '../src/valuemap.ts';
-import '../src/resources.node.ts';
+import { activities, caseQueued, devices, ENTER_MODE } from '../src/inventory/inventory.ts';
+import { valueMaps } from '../src/container/valuemap.ts';
+import '../src/support/resources.node.ts';
 
 /** The stamp the file is built at: a year whose Year picker offers 2025 to 2027 and no leap year. */
 const BUILT_AT = '2026-10-23T12:00:00';

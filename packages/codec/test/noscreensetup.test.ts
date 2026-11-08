@@ -73,7 +73,7 @@ import { ComposeError, type Container, metadataArchive, parse, type Recipe } fro
 import { composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, withoutNoScreenDevice } from '../src/build.ts';
 import { taggedList } from '../src/internal.ts';
 import { allLists, maps, records, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 

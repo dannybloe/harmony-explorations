@@ -984,7 +984,7 @@ class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
         arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
         self.assertEqual(arguments, ['blob', 'addresses'])
 
-        typescript = self._source('packages/codec/src/gspm.ts')
+        typescript = self._source('packages/codec/src/container/gspm.ts')
         found = re.search(r'export function recoverFlashBase\(([^)]*)\)', typescript)
         self.assertIsNotNone(found, 'the TypeScript anchor is no longer called recoverFlashBase')
         arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
@@ -1012,7 +1012,7 @@ class TheTwoParameterGroupTablesAgree(unittest.TestCase):
             return fh.read()
 
     def _typescript_table(self):
-        body = self._source('packages/codec/src/tables.ts')
+        body = self._source('packages/codec/src/container/tables.ts')
         start = body.index('export const PARAMETER_GROUP_COUNTS')
         stop = body.index(']);', start)
         table = {}
@@ -1035,7 +1035,7 @@ class TheTwoParameterGroupTablesAgree(unittest.TestCase):
 
     def test_the_check_exists_on_the_side_that_writes(self):
         """The reason for the port. A table with no checker beside it closes nothing."""
-        body = self._source('packages/codec/src/tables.ts')
+        body = self._source('packages/codec/src/container/tables.ts')
         self.assertIn('export function parameterGroupLengthsMatch', body)
 
 

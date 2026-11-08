@@ -64,8 +64,8 @@ import {
 } from '../src/families/harmony-600-650-700/statetables.ts';
 import { ONE_FIRMWARE_STATE_RECORDS, ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
 import { familyOf, familyOfArchitecture } from '../src/families/registry.ts';
-import '../src/resources.node.ts';
-import { sameBytes } from '../src/bytes.ts';
+import '../src/support/resources.node.ts';
+import { sameBytes } from '../src/support/bytes.ts';
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
 const ARCH14_COMPILES = [

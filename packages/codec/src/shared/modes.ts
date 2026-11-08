@@ -8,12 +8,12 @@
  * byte naming its hit page, the lead, which the Harmony 600, 650 and 700 have no use for, and the Harmony
  * One's pages call a chrome program the mode carries once, where a four slot page draws its chrome itself.
  */
-import { Writer } from '../emit.ts';
-import { type Container, parse } from '../gspm.ts';
-import { relocate } from '../relocate.ts';
+import { Writer } from '../container/emit.ts';
+import { type Container, parse } from '../container/gspm.ts';
+import { relocate } from '../edit/relocate.ts';
 import {
   type ModeRecord, modePages, modeRecords, modeTable, pageListCopies, taggedList, taggedListPools,
-} from '../sections.ts';
+} from '../container/sections.ts';
 import { ComposeError } from './core.ts';
 
 /** A program of the mode's, sized before the block is placed and built once its addresses are known. */

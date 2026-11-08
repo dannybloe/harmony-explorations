@@ -10,21 +10,21 @@ import assert from 'node:assert/strict';
 import { load, require_, skipUnless } from '@harmony/lab';
 
 import { parse } from '../src/index.ts';
-import { keyCodes } from '../src/inventory.ts';
-import { archSlot, baseSlot, BASE_SLOT_COUNT, EVENT_PRESS } from '../src/gspm.ts';
-import { pictureBankByClosure, screenProgram, SCREEN_FIXED_OPERANDS } from '../src/screen.ts';
-import { fontSets, fontSetsByClosure, glyphAt, glyphHeight } from '../src/font.ts';
-import { shapeKey, isBlank, usesAscii, characterMap, screenStrings } from '../src/text.ts';
-import { ALPHABETS } from '../src/alphabets.ts';
-import { taggedList, modeRecords } from '../src/sections.ts';
+import { keyCodes } from '../src/inventory/inventory.ts';
+import { archSlot, baseSlot, BASE_SLOT_COUNT, EVENT_PRESS } from '../src/container/gspm.ts';
+import { pictureBankByClosure, screenProgram, SCREEN_FIXED_OPERANDS } from '../src/screens/screen.ts';
+import { fontSets, fontSetsByClosure, glyphAt, glyphHeight } from '../src/screens/font.ts';
+import { shapeKey, isBlank, usesAscii, characterMap, screenStrings } from '../src/screens/text.ts';
+import { ALPHABETS } from '../src/screens/alphabets.ts';
+import { taggedList, modeRecords } from '../src/container/sections.ts';
 import {
   irGroups, irRecordsByClosure, irCarrier, irGroupCount, irRecordBlocks, irBlockWords,
   IR_RECORD_POINTER_BIAS,
-} from '../src/ir.ts';
-import { u8, u16, u24 } from '../src/bytes.ts';
-import { claims, coverage } from '../src/coverage.ts';
-import { lightBandExtras, parameterGroups } from '../src/tables.ts';
-import '../src/resources.node.ts';
+} from '../src/infrared/ir.ts';
+import { u8, u16, u24 } from '../src/support/bytes.ts';
+import { claims, coverage } from '../src/container/coverage.ts';
+import { lightBandExtras, parameterGroups } from '../src/container/tables.ts';
+import '../src/support/resources.node.ts';
 
 /** Every user config, with the device count `make devices` reports for it. Section 178. */
 const DEVICE_COUNTS: readonly [string, number][] = [

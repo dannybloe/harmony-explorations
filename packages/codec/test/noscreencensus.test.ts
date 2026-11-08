@@ -94,7 +94,7 @@ import {
   taggedList,
   taggedListExtent,
 } from '../src/internal.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
 

@@ -53,8 +53,8 @@ import {
 import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import { activityKeyedRecords } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import { FOUR_SLOT_ITEMS } from '../src/families/harmony-600-650-700/geometry.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 const START = 'h650_start_config';
 const BASE = 'h650_panasonic_config';

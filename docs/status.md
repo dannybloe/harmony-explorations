@@ -64,7 +64,7 @@ documents is what the retirement of that document was for, so the full one moved
 went. `tests/test_documents.py` holds this table's shape.*
 
 **The fraction of a configuration attributed to a structure the codec understands**, with any two
-structures claiming the same byte reported as the defect it is. `packages/codec/src/coverage.ts` answers it
+structures claiming the same byte reported as the defect it is. `packages/codec/src/container/coverage.ts` answers it
 and `make coverage` prints it. Each column is named by the archive section that moved it:
 
 | sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 | header groups, 75 | class 5, 82 | the residue, 83 |
@@ -391,7 +391,7 @@ every one.*
   landed on 21 August 2026: the 600 its 36 mapped buttons, the One its 32 plus the two touch arrows
   section 125 placed, which corrects the next paragraph's original ending in place.
   **A scan code has a name now, read only, and it still has no place**, section 133: the code a scan
-  sends decodes back into the **bit frame** the device sees, `packages/codec/src/irframe.ts`, and a frame
+  sends decodes back into the **bit frame** the device sees, `packages/codec/src/infrared/irframe.ts`, and a frame
   matched against the command catalogue and button maps of the account that generated a config names the
   button. 32 buttons of a Harmony One and 36 of a Harmony 600, the drawings' keys pages, with nothing
   written to anything. **It is a calibration instrument and not a reader**: it needs the generating

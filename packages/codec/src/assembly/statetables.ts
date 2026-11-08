@@ -1,0 +1,819 @@
+/**
+ * The state variables built from a description: base slot 13's table and records, base slot 14's
+ * value maps and base slot 0's name tree, `todo-compile-650.md` 10.3.
+ *
+ * Section 318's frame lays a container out from pieces, and until this module the pieces of these
+ * three slots could only come out of a Logitech compile. Here they are built: a caller describes the
+ * configuration's own variables and value maps, and everything the format or the firmware decides is
+ * generated rather than carried.
+ *
+ * **The builder is generic and a family brings what differs**, `todo-compile-one.md` 3.3.3.3: the values
+ * a family's tables hold that another's do not are its `StateTableFacts`, `Family.stateTables`, and the
+ * builder and reader here take them as an argument. The four slot family's, the Harmony 600, 650 and 700's,
+ * are measured over the thirteen compiles section 312 lists, `families/harmony-600-650-700/statetables.ts`; the One
+ * family's, the Harmony One's, over its 19 distinct compiles since `todo-compile-one.md` 6.4,
+ * `families/harmony-one/statetables.ts`, where they differ in records 13 and 14, the width line, a one byte case
+ * count and a second transition on the minute. What is written below about the thirteen is that
+ * measurement, and the rest of it holds on the One's 19 as well. The no screen family's, the Harmony 300 and
+ * 350's, over the 13 compiles of that family the lab holds since `todo-compile-350.md` 5.1.2,
+ * `families/harmony-300-350/statetables.ts`, where the clock carries nothing, there are no value maps and every
+ * variable above the firmware's block but the compiler's first is one byte, with maxima up to 18.
+ *
+ * **What is generated**, each measured on the thirteen and each a place a carried copy could have
+ * hidden a stale byte:
+ *
+ * * **The firmware's block, variables 0 to 17**, section 284. Records 7 to 17 are constants on arch
+ *   14 and are written from the family's `firmwareRecords`. Records 0 to 6 are the clock, section
+ *   130: their values and maxima are the caller's, since stamping them is `edit.ts`'s rule and two
+ *   copies of that rule would be two copies until one moved, and their **transitions** are generated:
+ *   the minute, the day and the month increment the hour, the month and the year respectively when
+ *   they roll over to 0, and the hour calls a list, which increments the day and the weekday and
+ *   whose index is the caller's because the list is base slot 10's.
+ * * **The variable the compiler emits after that block**, an unnamed two byte variable holding 0
+ *   with a maximum of 65277 and no transitions, which takes index `narrow`, the first two byte index,
+ *   and sits straight after record 17 in the file on all thirteen. What it is for is unread.
+ * * **Every variable's width**, from its maximum: on the thirteen, every one byte variable above the
+ *   firmware's block has a maximum of at most 100 and every two byte one at least 254, so the width
+ *   is generated and `narrow`, `wide`, `count` and the repeated `narrow` follow from it, section 276.
+ *   **Where between 100 and 254 the line falls is not pinned**, and a maximum in that gap is refused; the
+ *   two ends are the family's, `narrowMax` and `wideMin`. On the Harmony One's 19 one byte maxima reach 121
+ *   and no variable but the compiler's first is two bytes, so a maximum past 121 is refused there.
+ * * **The name of a named variable**, which is its stem plus `_` plus the number of values, its
+ *   maximum plus one, section 86; and the two level 0 nodes, `Root` and `State`, which open every
+ *   name tree of the thirteen in that order.
+ * * **The order of the name tree's level 1 nodes**: the bucket order of a Java 6 hash map keyed by
+ *   the variable's index, the rule section 315 found for the key list after the end marker, with the
+ *   capacity grown from 16 at three quarters full. **The capacity is pinned here and was not
+ *   there**: the two Harmony 600 compiles, 32 and 41 named variables, fit 64 buckets and fail at 128;
+ *   the eleven others, 51 to 90, fit 128 and fail at 64. A tie in a bucket is refused, since its
+ *   order is the insertion order of a compiler nobody here has read, and none of the thirteen has one.
+ * * **A value map's case order**, `compilerCaseOrder`, section 319, and its leading byte, 2 on every
+ *   record; arch 14 states its case count in two bytes and the Harmony One in one, the family's
+ *   `caseCountWidth`.
+ * * **The minute's call**, on the Harmony One: a second transition on the minute calling a list on every
+ *   write, whose index is the description's like the hour's, `StateTablesSpec.minuteList`; whether a
+ *   family's minute has it is the family's `minuteCall`.
+ *
+ * **What is carried**, the description: which variables the configuration has, in the order their
+ * indices run within each width; each one's stem if it is named, its value when the configuration is
+ * generated, its maximum and its transitions in stored order; and the value maps in table order, each
+ * a set of cases naming a piece of the container. The transitions are the composers' business, a
+ * device's power and inputs among them, sections 288 and 321, and so is the order of the variables,
+ * which is no hash order of their names: the thirteen were scored against Java's string hash of five
+ * spellings of the name at six capacities and none fits better than chance.
+ *
+ * `describeStateTables` reads a description back off a laid out container, so that what is generated
+ * can be checked against Logitech's own: `test/statetables.test.ts` rebuilds all thirteen byte for
+ * byte, every byte the generator owns overwritten first.
+ *
+ * Read only towards hardware, like everything in this package. The result is pieces in memory.
+ */
+import { Writer } from '../container/emit.ts';
+import { CLOCK_FIELD_COUNT, FRAME_COOKIE, FRAME_END, actionListBytes, clockRecordFields } from '../container/gspm.ts';
+import { u16, u24, u8 } from '../support/bytes.ts';
+import type { ContainerLayout, ContainerPiece, PieceRef, SectionPlacement } from './frame.ts';
+import { compilerCaseOrder } from '../inventory/inventory.ts';
+import { STATE_BAND } from '../container/actions.ts';
+import { keyListCapacity, keyListHash } from '../container/modezero.ts';
+import {
+  ACTION_LIST_INDEX_OPCODE,
+  CLOCK_STATE_MAXIMA,
+  FRAME_HEADER,
+  NAME_LEVEL_STATE_VARIABLE,
+  NAME_NODE_FIELDS,
+  NAME_NODE_HEADER,
+  NAME_NODE_TAG,
+  STATE_RECORD_HEADER,
+  STATE_TABLE_HEADER,
+  STATE_TABLE_SLOT,
+  STATE_VALUE_LENGTH,
+} from '../container/sections.ts';
+import { VALUE_MAP_KEY_WIDTH, VALUE_MAP_RANGE_BYTES, VALUE_MAP_SLOT } from '../container/valuemap.ts';
+
+/** A refusal, named so a caller can tell a bad description from a bug. */
+export class StateTablesError extends Error {}
+
+/** Base slot 0, the name tree. */
+export const NAME_TREE_SLOT = 0;
+
+/**
+ * What a family's state tables hold that another family's do not, which `buildStateTables` and
+ * `describeStateTables` take from the family, `Family.stateTables`. The four slot family's are
+ * `FOUR_SLOT_STATE_TABLES` and the One family's `ONE_STATE_TABLES`, `todo-compile-one.md` 6.4: the
+ * Harmony One's differ in records 13 and 14, a one byte case count, where the width line falls and a second
+ * transition on the minute, each a member here, so the builder tests no architecture.
+ */
+export interface StateTableFacts {
+  /** For a refusal: the compiles these facts were measured on. */
+  readonly measuredOn: string;
+  /** How many variables the firmware owns, the clock's seven and the records after them, section 284. */
+  readonly firmwareVariables: number;
+  /** The firmware's records after the clock, 7 upward, as `[first, max]`, none with a transition. */
+  readonly firmwareRecords: readonly (readonly [number, number])[];
+  /**
+   * The widest maximum a one byte variable above the firmware's block has, and the narrowest a two byte one
+   * other than `FIRST_WIDE_VARIABLE` has. Where between the two the line falls is not pinned, so a maximum
+   * strictly between them is refused. `wideMin` is undefined where no compile holds such a two byte
+   * variable, the Harmony One's, so that every maximum above `narrowMax` is refused.
+   */
+  readonly narrowMax: number;
+  readonly wideMin: number | undefined;
+  /**
+   * A value map's case count, in bytes; undefined where the family keeps no value maps at all, the Harmony 300
+   * and 350's, whose configurations hold no base slot 14, `ARCH16_SLOT_MAP`. A description with a value map is
+   * refused there, and the builder builds no value map table.
+   */
+  readonly caseCountWidth: number | undefined;
+  /**
+   * Whether the clock's records carry the carry: the minute, day and month incrementing the next field when they
+   * roll over and the hour calling a list, `clockTransitions`. On every compile of the four slot and One
+   * families, 13 and 19; on none of the 13 Harmony 300 and 350 compiles, whose seven clock records hold no
+   * transition at all, so a description there names no hour list. `reference/architectures/harmony-300-350/memory.md`
+   * under the state variables.
+   */
+  readonly clockCarry: boolean;
+  /**
+   * The minute calls a list on every write besides incrementing the hour, `StateTablesSpec.minuteList`: on
+   * all 19 Harmony One compiles, whose screens show a clock, and on none of the thirteen arch 14 ones, whose
+   * screens show none. A description that disagrees with its family here is refused.
+   */
+  readonly minuteCall: boolean;
+}
+
+/**
+ * The variable the compiler emits straight after the firmware's block: index `narrow`, the first two
+ * byte index, holding 0 with a maximum of 65277 and no transitions, unnamed, on all thirteen arch 14
+ * compiles and on all 19 of the Harmony One's, `todo-compile-one.md` 6.4. On the Harmony One it is the
+ * clock pickers' variable, the one their tag `0x29` handlers and the `grid` and `column` value maps read,
+ * on the sixteen English compiles of skin 54, section 432; what reads it on the Harmony 600, 650 and 700
+ * is not read.
+ */
+export const FIRST_WIDE_VARIABLE = { first: 0, max: 65277 } as const;
+
+/** `0x1F` sub opcode `0xF2` increments the state variable its operand's low byte names, section 73. */
+const INCREMENT = 0xf2;
+/** `0x7F` calls the action list its operand names, section 238. */
+const CALL = ACTION_LIST_INDEX_OPCODE;
+/** The sentinel a transition's `from` holds when it fires on reaching `to` from any value. */
+const FROM_ANY = -2;
+/** The same sentinel in `to`: it matches any new value, so `FROM_ANY` to `TO_ANY` fires on every write. */
+const TO_ANY = -2;
+
+/**
+ * The clock's indices, section 130. The second, the minute and the hour are exported for the Harmony One's
+ * clock header, which switches on them, `families/harmony-one/clockheader.ts`, section 414.
+ */
+export const CLOCK_SECOND = 0;
+export const CLOCK_MINUTE = 1;
+export const CLOCK_HOUR = 2;
+const CLOCK_DAY = 3;
+const CLOCK_MONTH = 5;
+const CLOCK_YEAR = 6;
+
+/**
+ * The leading byte of every value map record on the thirteen arch 14 compiles and the 19 Harmony One
+ * compiles, which the firmware steps over.
+ */
+export const VALUE_MAP_LEAD = 2;
+
+/** The two level 0 nodes every name tree of the thirteen opens with, in this order, and of the One's 19. */
+export const NAME_TREE_ROOTS: readonly string[] = ['Root', 'State'];
+
+/** A transition of a state record: from one value to another, and the one instruction it runs. */
+export interface StateTransitionSpec {
+  /** The value moved away from, or a negative sentinel, `-2` or `-3`. */
+  from: number;
+  to: number;
+  operand: number;
+  opcode: number;
+}
+
+/** One of the configuration's own variables. */
+export interface StateVariableSpec {
+  /** Base slot 0's name less its value count, `TV_Power` for `TV_Power_2`; absent when unnamed. */
+  stem?: string;
+  /** The value it holds when the configuration is generated, section 130. */
+  first: number;
+  /** The highest value it takes, which decides its width. */
+  max: number;
+  transitions?: readonly StateTransitionSpec[];
+}
+
+/** Where a value map case points: a piece of the container and an offset into it. */
+export interface PieceTarget {
+  to: ContainerPiece;
+  offset: number;
+}
+
+export interface ValueMapSpec {
+  /** The cases by value; their stored order is generated. */
+  cases: readonly { value: number; target: PieceTarget }[];
+  /** Inclusive ranges, tried when no case matched, in stored order. None on the thirteen. */
+  ranges?: readonly { low: number; high: number; target: PieceTarget }[];
+}
+
+export interface StateTablesSpec {
+  /** Records 0 to 6, `first` and `max`: second, minute, hour, day, weekday, month, year. */
+  clock: readonly { first: number; max: number }[];
+  /**
+   * The base slot 10 list the hour calls when it rolls over, which increments the day and weekday. Given exactly
+   * where the family's clock carries, `StateTableFacts.clockCarry`: the Harmony 300 and 350's hour calls nothing.
+   */
+  hourList?: number;
+  /**
+   * The base slot 10 list the minute calls on every change, `-2` to `-2`, after its increment of the hour:
+   * on all 19 Harmony One compiles, the clock's screen side, a list calling two short lists, `todo-compile-one.md` 2.2,
+   * and since both ends are the sentinel it fires on every write of the minute that is not silent;
+   * on none of the thirteen arch 14 compiles, whose screens show no clock. Given exactly where the family's
+   * `minuteCall` says the minute calls one.
+   */
+  minuteList?: number;
+  /**
+   * The configuration's own variables. Their indices run in this order within each width, the one
+   * byte variables first: a variable's width is generated from its maximum.
+   */
+  variables: readonly StateVariableSpec[];
+  valueMaps: readonly ValueMapSpec[];
+}
+
+export interface BuiltStateTables {
+  nameTree: ContainerPiece;
+  stateTable: ContainerPiece;
+  /** One record per variable, by index. */
+  records: ContainerPiece[];
+  /** Absent where the family keeps no value maps, `StateTableFacts.caseCountWidth`. */
+  valueMapTable?: ContainerPiece;
+  /** One record per value map, by the index `0x72`'s high byte names. */
+  valueMaps: ContainerPiece[];
+  /** The index each of the description's variables was given, in the description's order. */
+  indexOf: number[];
+  narrow: number;
+  wide: number;
+}
+
+/** Whether a maximum makes a two byte variable in a family's tables; refuses the unpinned gap. */
+export function isWideVariable(max: number, facts: StateTableFacts): boolean {
+  if (max <= facts.narrowMax) return false;
+  if (facts.wideMin !== undefined && max >= facts.wideMin) return true;
+  throw new StateTablesError(facts.wideMin === undefined
+    ? `a maximum of ${max} is past ${facts.narrowMax}, the widest one byte variable on ${facts.measuredOn}, `
+      + 'which hold no two byte variable but the compiler\'s first, so its width is not established'
+    : `a maximum of ${max} falls between ${facts.narrowMax}, the widest one byte variable on ${facts.measuredOn}, `
+      + `and ${facts.wideMin}, the narrowest two byte one, so its width is not established`);
+}
+
+/** The name base slot 0 gives a variable: its stem and its number of values, section 86. */
+export function stateVariableName(stem: string, max: number): string {
+  return `${stem}_${max + 1}`;
+}
+
+/**
+ * The order the name tree stores its level 1 nodes in: ascending bucket of the variable's index in a
+ * hash table sized for the node count, the rule `keyListCapacity` and `keyListHash` state for the
+ * key list after the end marker. Refuses a tie.
+ */
+export function nameTreeOrder(indices: readonly number[]): number[] {
+  const capacity = keyListCapacity(indices.length);
+  const bucketOf = (index: number): number => keyListHash(index) & (capacity - 1);
+  const seen = new Map<number, number>();
+  for (const index of indices) {
+    // The hash spells out the two terms that can be nonzero below 4096; the table's count is a `u16`
+    // but nothing above 255 can be named by an instruction, so the guard is the instruction's limit.
+    if (!Number.isInteger(index) || index < 0 || index > 0xff) {
+      throw new StateTablesError(`a state variable index is 0 to 255, not ${index}`);
+    }
+    const other = seen.get(bucketOf(index));
+    if (other !== undefined) {
+      throw new StateTablesError(
+        `variables ${other} and ${index} share bucket ${bucketOf(index)} of ${capacity}, and their order there `
+        + 'is the insertion order of a compiler nobody here has read');
+    }
+    seen.set(bucketOf(index), index);
+  }
+  return [...indices].sort((a, b) => bucketOf(a) - bucketOf(b));
+}
+
+/**
+ * The order a **composer** puts a name tree's level 1 nodes in: `nameTreeOrder`'s, and within a shared
+ * bucket the larger index first rather than a refusal, section 331.
+ *
+ * **Why a composer needs what the generator refuses.** `nameTreeOrder` builds a tree from a description
+ * and refuses a tie, because no arch 14 compile holds one and so the arch 14 compiler's order there is
+ * unread. A composer extends a tree that already exists, one node at a time, and cannot decline the
+ * indices it is given: a device composed onto a Harmony 600's tree of 32 nodes, in 64 buckets, can land
+ * two variables in one. What it can do is follow every tie Logitech's compilers did write: 15
+ * occurrences over the Harmony One's and the Harmony 880's and 885's trees, every one larger first,
+ * section 324. Sorted that way, every one of the 48 trees Logitech built that the lab holds, on arch 8,
+ * 9, 12, 14 and 16, comes back in its stored order, 34 distinct ones, ties included. So the tie order is
+ * observed on arch 8 and 12 and inferred for arch 14, where it only arises on trees of 48 nodes or
+ * fewer, the Harmony 600's; at 128 buckets or more no two indices below 128 share one.
+ *
+ * Base slot 0 is read by the host and by no firmware, so nothing on the remote depends on this order;
+ * it is kept so that a composed tree is one the compiler could have written, which is what reading a
+ * composed configuration against a Logitech compile of the same devices compares.
+ */
+export function composedNameTreeOrder(indices: readonly number[]): number[] {
+  const capacity = keyListCapacity(indices.length);
+  const bucketOf = (index: number): number => keyListHash(index) & (capacity - 1);
+  for (const index of indices) {
+    if (!Number.isInteger(index) || index < 0 || index > 0xff) {
+      throw new StateTablesError(`a state variable index is 0 to 255, not ${index}`);
+    }
+  }
+  if (new Set(indices).size !== indices.length) throw new StateTablesError('two nodes name one variable');
+  return [...indices].sort((a, b) => bucketOf(a) - bucketOf(b) || b - a);
+}
+
+/** A name, as the frame stores it: one byte a character, printable ASCII. */
+function checkName(name: string): void {
+  for (let i = 0; i < name.length; i += 1) {
+    const code = name.charCodeAt(i);
+    if (code < 0x20 || code > 0x7e) throw new StateTablesError(`a name is printable ASCII, and ${JSON.stringify(name)} is not`);
+  }
+}
+
+/** One name node: tag, `4 + length`, level, index, the name. */
+function nameNode(level: number, index: number, name: string): Uint8Array {
+  checkName(name);
+  return new Writer(NAME_NODE_HEADER + name.length)
+    .u8(NAME_NODE_TAG).u16(NAME_NODE_FIELDS + name.length).u16(level).u16(index).ascii(name).bytes;
+}
+
+/**
+ * Base slot 0 for these named variables: `0xFEED`, the length, the nodes, `0xBEEF`.
+ *
+ * The length is read as three bytes by both codecs, which is client sourced and unconfirmed, and no
+ * tree here reaches the 65536 bytes that would separate it from two; so the frame refuses a tree
+ * that would, rather than choose.
+ */
+export function buildNameTree(named: readonly { index: number; name: string }[]): Uint8Array {
+  const byIndex = new Map<number, string>();
+  for (const one of named) {
+    if (byIndex.has(one.index)) throw new StateTablesError(`variable ${one.index} is named twice`);
+    byIndex.set(one.index, one.name);
+  }
+  const nodes = [
+    ...NAME_TREE_ROOTS.map((name, index) => nameNode(0, index, name)),
+    // A shared bucket in the composers' order, larger index first, since a configuration of ours rebuilds a
+    // tree composers extended: an empty configuration's tree is small, so a composed device's variables can
+    // share a bucket, where no Logitech arch 14 tree does. The order is the one observed on every tie
+    // Logitech's compilers wrote, `composedNameTreeOrder`, and only the host reads it. Section 378.
+    ...composedNameTreeOrder([...byIndex.keys()]).map((index) => nameNode(NAME_LEVEL_STATE_VARIABLE, index, byIndex.get(index)!)),
+  ];
+  const body = nodes.reduce((sum, node) => sum + node.length, 0);
+  const length = FRAME_HEADER + body;
+  if (length > 0xffff) throw new StateTablesError(`a name tree of ${length} bytes is past what any sample here states`);
+  const out = new Writer(length + FRAME_END.length).raw(FRAME_COOKIE).u24(length);
+  for (const node of nodes) out.raw(node);
+  return out.raw(FRAME_END).bytes;
+}
+
+/** A state record: `first`, `max`, the transition count, a zero, the transitions. */
+export function buildStateRecord(first: number, max: number, transitions: readonly StateTransitionSpec[] = []): Uint8Array {
+  for (const [what, value] of [['first', first], ['max', max]] as const) {
+    if (!Number.isInteger(value) || value < 0 || value > 0xffff) throw new StateTablesError(`a record's ${what} is a u16, not ${value}`);
+  }
+  // Not refused when `first` exceeds `max`: Logitech's compiler writes one such record on the
+  // thirteen, a default power on delay of 65535 under a maximum of 254 in `h650_power_hold_compile_2`,
+  // so a refusal would reject their own output. Keeping the clock inside its range is `edit.ts`'s rail.
+  const out = new Writer(STATE_RECORD_HEADER + STATE_VALUE_LENGTH * transitions.length)
+    .u16(first).u16(max).u16(transitions.length).u8(0);
+  for (const t of transitions) {
+    for (const end of [t.from, t.to]) {
+      if (!Number.isInteger(end) || end < -0x8000 || end > 0x7fff) throw new StateTablesError(`a transition's end is an i16, not ${end}`);
+    }
+    // The transition's own leading byte is zero in 569 of 569 and is not an enable bit, section 277.
+    out.u8(0).u16(t.from & 0xffff).u16(t.to & 0xffff).u16(t.operand).u8(t.opcode);
+  }
+  return out.bytes;
+}
+
+/** The weekday, the clock's record 4, which the hour list increments beside the day. */
+export const CLOCK_WEEKDAY = 4;
+
+/**
+ * The clock's hour list, the action list the hour's rollover calls: increment the day, then the weekday,
+ * `[0x1F 0xF203, 0x1F 0xF204]`, `reference/config-format/state.md` under the clock's transitions. Its index is the
+ * configuration's, `StateTablesSpec.hourList`.
+ */
+export function hourListBytes(): Uint8Array {
+  return actionListBytes([CLOCK_DAY, CLOCK_WEEKDAY].map((variable) => ({ opcode: STATE_BAND, operand: (INCREMENT << 8) | variable })));
+}
+
+/**
+ * The seven clock records stamped from the moment of building: each field its `first`, its maximum
+ * `CLOCK_STATE_MAXIMA`'s and the year's one above it, `edit.ts`' stamping rule for a configuration built
+ * from nothing. The same on every family a configuration is built from nothing for, the Harmony 600, 650
+ * and 700's and the Harmony One's, since the maxima are the same in every container, section 130; moved
+ * here out of `families/harmony-600-650-700/empty.ts` when the Harmony One came to need it, `todo-compile-one.md`
+ * 7.1.3, so the two families stamp through one copy.
+ */
+export function clockSpec(builtAt: string): StateTablesSpec['clock'] {
+  const fields = clockRecordFields(builtAt);
+  if (fields === undefined) throw new StateTablesError(`${builtAt} is not a time base slot 3 can hold`);
+  return Array.from({ length: CLOCK_FIELD_COUNT }, (_, k) => ({
+    first: fields[k]!, max: CLOCK_STATE_MAXIMA[k] ?? fields[k]! + 1,
+  }));
+}
+
+/**
+ * The clock's transitions, section 130: the three rollovers that increment, and the hour's call; and with
+ * `minuteList`, the minute's call of it on every change after its increment, `StateTablesSpec.minuteList`,
+ * which the One family's tables have and the four slot family's do not, `StateTableFacts.minuteCall`.
+ */
+export function clockTransitions(index: number, hourList: number, minuteList?: number): StateTransitionSpec[] {
+  const increment = (variable: number): StateTransitionSpec[] =>
+    [{ from: FROM_ANY, to: 0, operand: (INCREMENT << 8) | variable, opcode: STATE_BAND }];
+  switch (index) {
+    case CLOCK_MINUTE: return minuteList === undefined ? increment(CLOCK_HOUR)
+      : [...increment(CLOCK_HOUR), { from: FROM_ANY, to: TO_ANY, operand: minuteList, opcode: CALL }];
+    case CLOCK_HOUR: return [{ from: FROM_ANY, to: 0, operand: hourList, opcode: CALL }];
+    case CLOCK_DAY: return increment(CLOCK_MONTH);
+    case CLOCK_MONTH: return increment(CLOCK_YEAR);
+    default: return [];
+  }
+}
+
+/**
+ * The variable every menu row writes last, section 329: 1 by a device list row and 0 by an activity
+ * row, section 275. It holds 0 with a maximum of 3, no name and no transition, on every configuration
+ * of those models in the lab that has a menu row, the 27 of section 329, although no list writes it
+ * anything but 0 or 1 and none reads it. Which index it takes is per configuration, ten different
+ * ones over the eighteen of the marker census, sections 239 and 285, and fifteen over the 27, so it
+ * is the description's, like the two above.
+ */
+export function menuMarkerVariable(): StateVariableSpec {
+  return { first: 0, max: 3 };
+}
+
+const piece = (bytes: Uint8Array, owner: string, refs: PieceRef[] = []): ContainerPiece => ({ bytes, refs, owner });
+
+/**
+ * Build base slots 0, 13 and 14 from a description, as pieces `layOutContainer` places, with the facts of
+ * the configuration's family, `Family.stateTables`.
+ *
+ * Refuses a clock that is not seven records, a variable whose width is not established, a minute's
+ * list where the family's minute calls none or none where it does, a field wider than its bytes, a name
+ * tree tie, a value map case key set `compilerCaseOrder` does not pin, and more variables or value maps
+ * than an instruction can name.
+ */
+export function buildStateTables(spec: StateTablesSpec, facts: StateTableFacts): BuiltStateTables {
+  if (spec.clock.length !== CLOCK_FIELD_COUNT) {
+    throw new StateTablesError(`the clock is ${CLOCK_FIELD_COUNT} records, not ${spec.clock.length}`);
+  }
+  if (CLOCK_FIELD_COUNT + facts.firmwareRecords.length !== facts.firmwareVariables) {
+    throw new StateTablesError(`the firmware owns ${facts.firmwareVariables} variables and the facts state `
+      + `${CLOCK_FIELD_COUNT + facts.firmwareRecords.length} records for them`);
+  }
+  const firmwareCount = facts.firmwareVariables;
+  // Indices: the firmware's block, the one byte variables, the compiler's first two byte variable,
+  // then the other two byte ones. A stable partition, so the description's order is kept per width.
+  const narrowSpecs: number[] = [];
+  const wideSpecs: number[] = [];
+  spec.variables.forEach((v, k) => (isWideVariable(v.max, facts) ? wideSpecs : narrowSpecs).push(k));
+  const narrow = firmwareCount + narrowSpecs.length;
+  const wide = 1 + wideSpecs.length;
+  const count = narrow + wide;
+  // `0x72` names a variable in a byte, and the write band `0x80 | n` reaches 127; a table past 256
+  // holds variables nothing can name.
+  if (count > 0x100) throw new StateTablesError(`${count} state variables is more than a byte can name`);
+  const indexOf: number[] = new Array(spec.variables.length);
+  narrowSpecs.forEach((k, i) => { indexOf[k] = firmwareCount + i; });
+  wideSpecs.forEach((k, i) => { indexOf[k] = narrow + 1 + i; });
+
+  // Whether the clock carries and the minute calls a list is the family's; which lists, the description's.
+  if (facts.clockCarry !== (spec.hourList !== undefined)) {
+    throw new StateTablesError(facts.clockCarry
+      ? `the hour calls a list on ${facts.measuredOn} and the description names none`
+      : `the clock carries nothing on ${facts.measuredOn} and the description names hour list ${spec.hourList}`);
+  }
+  if (facts.minuteCall && !facts.clockCarry) throw new StateTablesError(`the facts for ${facts.measuredOn} call a list on the minute of a clock that carries nothing`);
+  if (facts.minuteCall !== (spec.minuteList !== undefined)) {
+    throw new StateTablesError(facts.minuteCall
+      ? `the minute calls a list on ${facts.measuredOn} and the description names none`
+      : `the minute calls no list on ${facts.measuredOn} and the description names list ${spec.minuteList}`);
+  }
+  const recordBytes: Uint8Array[] = new Array(count);
+  spec.clock.forEach((field, index) => {
+    recordBytes[index] = buildStateRecord(field.first, field.max,
+      spec.hourList === undefined ? [] : clockTransitions(index, spec.hourList, spec.minuteList));
+  });
+  facts.firmwareRecords.forEach(([first, max], i) => {
+    recordBytes[CLOCK_FIELD_COUNT + i] = buildStateRecord(first, max);
+  });
+  recordBytes[narrow] = buildStateRecord(FIRST_WIDE_VARIABLE.first, FIRST_WIDE_VARIABLE.max);
+  spec.variables.forEach((v, k) => { recordBytes[indexOf[k]!] = buildStateRecord(v.first, v.max, v.transitions); });
+  const records = recordBytes.map((bytes) => piece(bytes, 'slot-13-record'));
+
+  // The table: count, narrow, wide, narrow again, and a pointer per record, section 276.
+  const table = new Writer(STATE_TABLE_HEADER + 3 * count).u16(count).u16(narrow).u16(wide).u16(narrow);
+  const tableRefs: PieceRef[] = records.map((to, index) => ({ at: STATE_TABLE_HEADER + 3 * index, to, offset: 0 }));
+  for (let index = 0; index < count; index += 1) table.u24(0);
+
+  const named: { index: number; name: string }[] = [];
+  spec.variables.forEach((v, k) => {
+    if (v.stem !== undefined) named.push({ index: indexOf[k]!, name: stateVariableName(v.stem, v.max) });
+  });
+
+  const built: BuiltStateTables = {
+    nameTree: piece(buildNameTree(named), 'slot-0-tree'),
+    stateTable: piece(table.bytes, 'slot-13-table', tableRefs),
+    records,
+    valueMaps: [],
+    indexOf,
+    narrow,
+    wide,
+  };
+  // A family with no base slot 14 gets no table for it, and a description with a value map is refused there.
+  if (facts.caseCountWidth === undefined) {
+    if (spec.valueMaps.length > 0) throw new StateTablesError(`${facts.measuredOn} keep no value maps, and the description holds ${spec.valueMaps.length}`);
+    return built;
+  }
+  if (spec.valueMaps.length > 0xff) throw new StateTablesError(`${spec.valueMaps.length} value maps is more than its one byte count holds`);
+  const valueMaps = spec.valueMaps.map((map) => buildValueMap(map, facts));
+  const mapTable = new Writer(1 + 3 * valueMaps.length).u8(valueMaps.length);
+  for (let k = 0; k < valueMaps.length; k += 1) mapTable.u24(0);
+  const mapRefs: PieceRef[] = valueMaps.map((to, k) => ({ at: 1 + 3 * k, to, offset: 0 }));
+  return { ...built, valueMapTable: piece(mapTable.bytes, 'slot-14-table', mapRefs), valueMaps };
+}
+
+/** Every piece `buildStateTables` built, the tables first: what a caller counts as the state tables' bytes. */
+export function builtStatePieces(built: BuiltStateTables): ContainerPiece[] {
+  return [
+    built.nameTree, built.stateTable, ...(built.valueMapTable === undefined ? [] : [built.valueMapTable]),
+    ...built.records, ...built.valueMaps,
+  ];
+}
+
+/**
+ * One value map record: the lead, the case count in the family's width, the cases in the compiler's order,
+ * the ranges.
+ */
+export function buildValueMap(map: ValueMapSpec, facts: Pick<StateTableFacts, 'caseCountWidth'>): ContainerPiece {
+  const caseCountWidth = facts.caseCountWidth;
+  if (caseCountWidth === undefined) throw new StateTablesError('this family keeps no value maps');
+  const ranges = map.ranges ?? [];
+  if (ranges.length > 0xff) throw new StateTablesError(`${ranges.length} ranges is more than a one byte count holds`);
+  const byValue = new Map<number, PieceTarget>();
+  for (const one of map.cases) {
+    if (!Number.isInteger(one.value) || one.value < 0 || one.value > 0xffff) {
+      throw new StateTablesError(`a case key is a u16, not ${one.value}`);
+    }
+    if (byValue.has(one.value)) throw new StateTablesError(`a value map cannot hold the case ${one.value} twice`);
+    byValue.set(one.value, one.target);
+  }
+  let order: number[];
+  try {
+    order = compilerCaseOrder([...byValue.keys()]);
+  } catch (error) {
+    if (error instanceof RangeError) throw new StateTablesError(error.message);
+    throw error;
+  }
+  const stride = VALUE_MAP_KEY_WIDTH + 3;
+  const casesAt = 1 + caseCountWidth;
+  const length = casesAt + stride * order.length + 1 + VALUE_MAP_RANGE_BYTES * ranges.length;
+  const head = new Writer(length).u8(VALUE_MAP_LEAD);
+  if (caseCountWidth === 1 && order.length > 0xff) throw new StateTablesError(`${order.length} cases is more than a one byte count holds`);
+  const out = caseCountWidth === 1 ? head.u8(order.length) : head.u16(order.length);
+  const refs: PieceRef[] = [];
+  order.forEach((value, k) => {
+    out.u16(value).u24(0);
+    const target = byValue.get(value)!;
+    refs.push({ at: casesAt + stride * k + VALUE_MAP_KEY_WIDTH, to: target.to, offset: target.offset });
+  });
+  out.u8(ranges.length);
+  const rangesAt = casesAt + stride * order.length + 1;
+  ranges.forEach((range, k) => {
+    if (range.low > range.high) throw new StateTablesError(`a range from ${range.low} to ${range.high} is empty`);
+    out.u16(range.low).u16(range.high).u24(0);
+    refs.push({ at: rangesAt + VALUE_MAP_RANGE_BYTES * k + 4, to: range.target.to, offset: range.target.offset });
+  });
+  return piece(out.bytes, 'slot-14-record', refs);
+}
+
+/** The one piece a slot's table is, or a refusal. */
+function tablePiece(layout: ContainerLayout, slot: number): ContainerPiece {
+  const head = layout.sections[slot]?.head;
+  if (head === undefined || head.length !== 1) throw new StateTablesError(`base slot ${slot}'s table is not one piece`);
+  return head[0]!;
+}
+
+/** A piece's references in the order of the fields they fill. */
+function refsByPosition(p: ContainerPiece): PieceRef[] {
+  return [...p.refs].sort((a, b) => a.at - b.at);
+}
+
+/** The piece and offset a reference names, refusing an absolute address. */
+function targetOf(ref: PieceRef | undefined): PieceTarget {
+  if (ref === undefined || !('to' in ref)) throw new StateTablesError('a value map case names no piece of the container');
+  return { to: ref.to, offset: ref.offset };
+}
+
+/**
+ * Read a description back off a laid out container, `takeApart`'s result, by the facts of its family,
+ * `Family.stateTables`: an arch 14 container's by the four slot family's and a Harmony One's by the One
+ * family's. A reader, so it takes the facts it is handed and decides nothing about which; the caller asks
+ * the container's family, `familyOf`.
+ *
+ * Reads only what the description carries: the clock's seven values and maxima, the hour's list and
+ * the minute's where it calls one, and every variable above the firmware's block, 18 upward, but the first two byte one, with its stem, value, maximum and
+ * transitions; and every value map's cases by value. Of the header it reads `count` and the first
+ * `narrow`, to find the records and to know which index is the first two byte one. Nothing else the
+ * generator writes is read, the firmware's records 7 to 17, the first two byte variable, the
+ * header's `wide` and repeated `narrow`, the names' value counts, the node order and the case order
+ * among them, so a rebuild that matches the container computed every one of them.
+ */
+export function describeStateTables(layout: ContainerLayout, facts: StateTableFacts): StateTablesSpec {
+  const firmwareCount = facts.firmwareVariables;
+  const caseCountWidth = facts.caseCountWidth;
+  const table = tablePiece(layout, STATE_TABLE_SLOT);
+  const count = u16(table.bytes, 0);
+  const narrow = u16(table.bytes, 2);
+  const recordRefs = refsByPosition(table);
+  if (recordRefs.length !== count) throw new StateTablesError(`base slot 13 states ${count} variables and points at ${recordRefs.length}`);
+  const recordOf = (index: number): { first: number; max: number; transitions: StateTransitionSpec[] } => {
+    const ref = recordRefs[index]!;
+    if (!('to' in ref) || ref.offset !== 0) throw new StateTablesError(`state record ${index} is not a piece of its own`);
+    const b = ref.to.bytes;
+    const transitions: StateTransitionSpec[] = [];
+    for (let k = 0; k < u16(b, 4); k += 1) {
+      const at = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * k;
+      transitions.push({
+        from: (u16(b, at + 1) << 16) >> 16, to: (u16(b, at + 3) << 16) >> 16, operand: u16(b, at + 5), opcode: u8(b, at + 7),
+      });
+    }
+    return { first: u16(b, 0), max: u16(b, 2), transitions };
+  };
+  if (count <= narrow || narrow < firmwareCount) {
+    throw new StateTablesError(`base slot 13 splits ${count} variables at ${narrow}, which leaves no room for the firmware's block`);
+  }
+
+  const clock = Array.from({ length: CLOCK_FIELD_COUNT }, (_, index) => {
+    const { first, max } = recordOf(index);
+    return { first, max };
+  });
+  // A clock that carries: the hour calls one list, which is the description's. One that does not: no clock
+  // record holds a transition, which is the family's fact and so is checked rather than read.
+  const hour = recordOf(CLOCK_HOUR).transitions;
+  if (facts.clockCarry) {
+    if (hour.length !== 1 || hour[0]!.opcode !== CALL) throw new StateTablesError('record 2 is not the clock\'s hour, which calls one list');
+  } else {
+    for (let index = 0; index < CLOCK_FIELD_COUNT; index += 1) {
+      if (recordOf(index).transitions.length > 0) throw new StateTablesError(`clock record ${index} holds a transition, which ${facts.measuredOn} do not`);
+    }
+  }
+
+  // Names from level 1, read as stems: whatever follows the last underscore is the generator's.
+  const names = new Map<number, string>();
+  const tree = tablePiece(layout, 0).bytes;
+  for (let at = FRAME_HEADER; at < tree.length - FRAME_END.length;) {
+    const stated = u16(tree, at + 1);
+    const level = u16(tree, at + 3);
+    const index = u16(tree, at + 5);
+    let name = '';
+    for (let i = at + NAME_NODE_HEADER; i < at + 3 + stated; i += 1) name += String.fromCharCode(tree[i]!);
+    if (level === NAME_LEVEL_STATE_VARIABLE) names.set(index, name);
+    at += 3 + stated;
+  }
+  const variables: StateVariableSpec[] = [];
+  for (let index = firmwareCount; index < count; index += 1) {
+    if (index === narrow) continue;
+    const { first, max, transitions } = recordOf(index);
+    const name = names.get(index);
+    const variable: StateVariableSpec = { first, max, transitions };
+    if (name !== undefined) {
+      const cut = name.lastIndexOf('_');
+      if (cut < 0) throw new StateTablesError(`the name ${JSON.stringify(name)} has no value count`);
+      variable.stem = name.slice(0, cut);
+    }
+    variables.push(variable);
+  }
+
+  if (caseCountWidth === undefined && layout.sections[VALUE_MAP_SLOT] !== undefined) {
+    throw new StateTablesError(`${facts.measuredOn} keep no value maps, and this layout holds base slot ${VALUE_MAP_SLOT}`);
+  }
+  const maps = caseCountWidth === undefined ? [] : refsByPosition(tablePiece(layout, VALUE_MAP_SLOT));
+  const valueMaps: ValueMapSpec[] = maps.map((ref, k) => {
+    if (!('to' in ref) || ref.offset !== 0) throw new StateTablesError(`value map ${k} is not a piece of its own`);
+    const b = ref.to.bytes;
+    const fields = refsByPosition(ref.to);
+    const fieldAt = (at: number): PieceRef | undefined => fields.find((one) => one.at === at);
+    const stride = VALUE_MAP_KEY_WIDTH + 3;
+    // Reached only where the family keeps value maps, so the width is stated.
+    if (caseCountWidth === undefined) throw new StateTablesError('this family keeps no value maps');
+    const casesAt = 1 + caseCountWidth;
+    const n = caseCountWidth === 1 ? u8(b, 1) : u16(b, 1);
+    const cases = Array.from({ length: n }, (_, i) => ({
+      value: u16(b, casesAt + stride * i),
+      target: targetOf(fieldAt(casesAt + stride * i + VALUE_MAP_KEY_WIDTH)),
+    }));
+    const rangesAt = casesAt + stride * n + 1;
+    const ranges = Array.from({ length: u8(b, rangesAt - 1) }, (_, i) => ({
+      low: u16(b, rangesAt + VALUE_MAP_RANGE_BYTES * i),
+      high: u16(b, rangesAt + VALUE_MAP_RANGE_BYTES * i + 2),
+      target: targetOf(fieldAt(rangesAt + VALUE_MAP_RANGE_BYTES * i + 4)),
+    }));
+    return ranges.length > 0 ? { cases, ranges } : { cases };
+  });
+
+  // The minute's second transition, where it has one, is a call: only the list it names is read, so the
+  // rest of it is generated and a rebuild that matches computed it.
+  const minute = recordOf(CLOCK_MINUTE).transitions;
+  if (minute.length > 2) throw new StateTablesError(`record 1, the clock's minute, holds ${minute.length} transitions`);
+  const spec: StateTablesSpec = { clock, ...(facts.clockCarry ? { hourList: hour[0]!.operand } : {}), variables, valueMaps };
+  if (minute.length === 2) spec.minuteList = minute[1]!.operand;
+  return spec;
+}
+
+/**
+ * A layout with its state tables swapped for built ones.
+ *
+ * Each record built takes the place of the record of the same index in the body, or of the same
+ * value map, which keeps the caller's emission order: where a record sits is the frame's carried
+ * order, section 318, and not this module's. A built record with no counterpart goes at the end of
+ * the body; a counterpart with no built record is dropped. Content `takeApart` left inside the old state table's
+ * piece past the table's own length, the Harmony 300 and 350's parameter groups, is kept behind the built table.
+ * A piece other than the tables that names a replaced piece is refused.
+ */
+export function withStateTables(layout: ContainerLayout, built: BuiltStateTables): ContainerLayout {
+  const replace = new Map<ContainerPiece, ContainerPiece[]>();
+  const swap = (slot: number, table: ContainerPiece, records: ContainerPiece[]): ContainerPiece[] => {
+    const old = tablePiece(layout, slot);
+    replace.set(old, [table]);
+    const oldRecords = refsByPosition(old).map((ref) => ('to' in ref ? ref.to : undefined));
+    oldRecords.forEach((p, k) => { if (p !== undefined) replace.set(p, records[k] === undefined ? [] : [records[k]!]); });
+    return records.slice(oldRecords.length);
+  };
+
+  // **Content parked behind the state table.** On the Harmony 300 and 350 the parameter block's five groups sit
+  // straight after base slot 13's table in all 13 compiles, and since nothing claims them `takeApart` leaves them in
+  // the table's piece, where the parameter table names them by an offset past the table's own length. They are
+  // not the state tables' bytes, so they are kept as a piece of their own behind the built table, and every piece
+  // that named them through the old table is copied to name that piece instead.
+  const oldTable = tablePiece(layout, STATE_TABLE_SLOT);
+  const stated = STATE_TABLE_HEADER + 3 * u16(oldTable.bytes, 0);
+  const parked: ContainerPiece | undefined = oldTable.bytes.length <= stated ? undefined : {
+    bytes: oldTable.bytes.slice(stated),
+    refs: oldTable.refs.filter((r) => r.at >= stated).map((r) => ({ ...r, at: r.at - stated })),
+  };
+  if (parked !== undefined && oldTable.refs.some((r) => r.at < stated && r.at + 3 > stated)) {
+    throw new StateTablesError('a field straddles the end of base slot 13\'s table');
+  }
+
+  const surplus13 = swap(STATE_TABLE_SLOT, built.stateTable, built.records);
+  if (parked !== undefined) replace.set(oldTable, [built.stateTable, parked]);
+  // Base slot 14 where the family keeps it: a built table and a layout holding one, or neither.
+  if ((built.valueMapTable === undefined) !== (layout.sections[VALUE_MAP_SLOT] === undefined)) {
+    throw new StateTablesError(built.valueMapTable === undefined
+      ? `the layout holds base slot ${VALUE_MAP_SLOT} and the tables built none`
+      : `the tables built a value map table and the layout holds no base slot ${VALUE_MAP_SLOT}`);
+  }
+  const surplus14 = built.valueMapTable === undefined ? [] : swap(VALUE_MAP_SLOT, built.valueMapTable, built.valueMaps);
+  replace.set(tablePiece(layout, NAME_TREE_SLOT), [built.nameTree]);
+
+  // Every piece of the layout, its inserted sections among them, so that nothing naming a replaced piece is missed.
+  const inserted = Object.entries(layout.inserted ?? {});
+  const every = [
+    layout.keyTable, ...layout.body, ...layout.pictures,
+    ...[...layout.sections, ...inserted.map(([, s]) => s)].flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])),
+  ];
+  // A piece naming the parked content through the old table is copied to name the parked piece.
+  const redirected = new Map<ContainerPiece, ContainerPiece>();
+  if (parked !== undefined) {
+    for (const p of every) {
+      if (!p.refs.some((r) => 'to' in r && r.to === oldTable && r.offset >= stated)) continue;
+      redirected.set(p, {
+        ...p,
+        refs: p.refs.map((r) => ('to' in r && r.to === oldTable && r.offset >= stated ? { ...r, to: parked, offset: r.offset - stated } : r)),
+      });
+    }
+  }
+
+  // Rewrite a run of pieces in place; a built record with no counterpart goes at the end of the body.
+  const rewrite = (run: readonly ContainerPiece[]): ContainerPiece[] =>
+    run.flatMap((p) => replace.get(p) ?? [redirected.get(p) ?? p]);
+  const place = (s: SectionPlacement | undefined): SectionPlacement | undefined =>
+    (s === undefined ? s : { before: rewrite(s.before), head: rewrite(s.head) });
+  const sections = layout.sections.map(place);
+  const body = [...rewrite(layout.body), ...surplus13, ...surplus14];
+  const pictures = rewrite(layout.pictures);
+  const out: ContainerLayout = { ...layout, body, sections, pictures };
+  if (layout.inserted !== undefined) out.inserted = Object.fromEntries(inserted.map(([raw, s]) => [raw, place(s)!]));
+
+  // Nothing but its own table names a state record or a value map on the thirteen, and nothing names
+  // a table but for the content parked behind it, so a piece that does would be left naming a piece the layout
+  // no longer holds. Refused rather than redirected, since redirecting means copying that piece and then every
+  // piece naming it; and a piece copied above that is itself named is refused for the same reason.
+  const kept = [
+    out.keyTable, ...body, ...pictures,
+    ...[...sections, ...Object.values(out.inserted ?? {})].flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])),
+  ];
+  const ours = new Set<ContainerPiece>(builtStatePieces(built));
+  for (const p of kept) {
+    if (ours.has(p)) continue;
+    if (p.refs.some((r) => 'to' in r && (replace.has(r.to) || redirected.has(r.to)))) {
+      throw new StateTablesError(`a piece${p.owner === undefined ? '' : ` (${p.owner})`} names a state table or record being replaced`);
+    }
+  }
+  return out;
+}

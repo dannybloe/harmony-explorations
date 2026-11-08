@@ -11,10 +11,10 @@
  * row box with no icon, and the icon as a picture of its own drawn over the row box's pixels where it sits,
  * so the menu row is the row box with the icon drawn over it, as Logitech's is.
  */
-import { rgb565, rgbTo565 } from '../../png.ts';
-import { iconOverRows } from '../../pictures.ts';
-import { encodeBitmap } from '../../screen.ts';
-import type { WeightFor } from '../../blending.ts';
+import { rgb565, rgbTo565 } from '../../screens/png.ts';
+import { iconOverRows } from '../../drawing/pictures.ts';
+import { encodeBitmap } from '../../screens/screen.ts';
+import type { WeightFor } from '../../drawing/blending.ts';
 import { ONE_PAD_HEIGHT, ONE_PAD_WIDTH } from './labels.ts';
 import { MENU_ICON_OFFSET } from './menus.ts';
 import type { OneChoices } from './choices.ts';

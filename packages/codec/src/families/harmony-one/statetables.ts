@@ -14,9 +14,9 @@
  * maximum is measured and anything past 121 is refused; and the minute calls a list on every write, the
  * clock's screen side, which the four slot screens do not have since they show no clock.
  */
-import { firmwareStateVariableMax } from '../../inventory.ts';
-import { VALUE_MAP_COUNT_WIDTH } from '../../valuemap.ts';
-import type { StateTableFacts } from '../../statetables.ts';
+import { firmwareStateVariableMax } from '../../inventory/inventory.ts';
+import { VALUE_MAP_COUNT_WIDTH } from '../../container/valuemap.ts';
+import type { StateTableFacts } from '../../assembly/statetables.ts';
 
 /** The architecture of the family's remote, which the readers' per architecture tables are keyed by. */
 const ARCHITECTURE = 12;

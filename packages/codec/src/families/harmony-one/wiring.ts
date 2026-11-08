@@ -35,22 +35,22 @@
  *
  * Read only towards hardware: the result is pieces `withWiring` puts in a layout.
  */
-import { u16, u24, u8 } from '../../bytes.ts';
-import { Writer } from '../../emit.ts';
-import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import type { Container } from '../../gspm.ts';
-import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from '../../gspm.ts';
-import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from '../../inventory.ts';
-import { HANDLER_TABLE_SLOT, STATE_RECORD_HEADER, STATE_TABLE_SLOT, STATE_VALUE_LENGTH } from '../../sections.ts';
-import { TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from '../../tables.ts';
-import { buildLogArea, buildParameterBlock } from '../../firmwaresections.ts';
+import { u16, u24, u8 } from '../../support/bytes.ts';
+import { Writer } from '../../container/emit.ts';
+import type { ContainerLayout, ContainerPiece } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import type { Container } from '../../container/gspm.ts';
+import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from '../../container/gspm.ts';
+import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from '../../inventory/inventory.ts';
+import { HANDLER_TABLE_SLOT, STATE_RECORD_HEADER, STATE_TABLE_SLOT, STATE_VALUE_LENGTH } from '../../container/sections.ts';
+import { TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from '../../container/tables.ts';
+import { buildLogArea, buildParameterBlock } from '../../assembly/firmwaresections.ts';
 import {
   SYMBOL_KINDS, WiringError, buildEventMap, checkRange, compareWiring, decodeEntry, decodeList, emptySymbols, encode,
   encodeEntry, encodeList, lookup, namedBy, orderOf, piece, tablePiece, tableTargets, tie, wiringList, withWiring,
   type BuiltWiring, type DeviceTimer, type EntryTemplate, type SymbolKind, type Symbols, type WiringChecked,
   type WiringInstruction,
-} from '../../wiringparts.ts';
+} from '../../assembly/wiringparts.ts';
 import { ONE_PARAMETERS } from './parameters.ts';
 import { ONE_FIRMWARE_KEYPAD, ONE_FIRMWARE_SCREENS } from './firmwarescreens.ts';
 

@@ -37,10 +37,10 @@ import { CORNER_PLACES, cornerPlaceAt, cornerProgramAt, emptyFont } from '../src
 import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/harmony-600-650-700/chrome.ts';
 import { fourSlotMenus, fourSlotTemplate } from '../src/families/harmony-600-650-700/menus.ts';
 import { ourStateColours, recolouredStates, stateLookOf } from '../src/families/harmony-600-650-700/statelook.ts';
-import { composeCatalogueDevices } from '../src/composecatalogue.ts';
-import { bitmapReference } from '../src/screen.ts';
+import { composeCatalogueDevices } from '../src/compose/composecatalogue.ts';
+import { bitmapReference } from '../src/screens/screen.ts';
 
-import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
+import { activities, activityNames, deviceListRows } from '../src/inventory/inventory.ts';
 import { activityKeys } from '../src/families/harmony-600-650-700/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { parse, readRecipe } from '../src/index.ts';
@@ -48,7 +48,7 @@ import { archSlot, screenStrings } from '../src/internal.ts';
 import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/families/harmony-600-650-700/firmwarescreens.ts';
 
-import { stateRecords } from '../src/sections.ts';
+import { stateRecords } from '../src/container/sections.ts';
 import type { Recipe } from '../src/index.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/harmony-600-650-700/chrome.ts';
 import { startupTitleYs } from '../src/families/harmony-600-650-700/activityscreen.ts';
@@ -63,8 +63,8 @@ import { assembleSetup, attributeBytes } from '../src/families/harmony-600-650-7
 import { checkScreenRecords } from '../src/families/harmony-600-650-700/screenrecords.ts';
 import { stateBackgroundColour } from '../src/families/harmony-600-650-700/backgrounds.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 const BUILT_AT = '2026-10-12T12:00:00';
 

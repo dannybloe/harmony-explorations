@@ -272,7 +272,7 @@ in a bank is the display size**, which agrees on all four architectures that sta
 
 Every architecture's drawn text stops just inside its own figure, and **the pen advances nothing past a
 glyph's stated width**: the gap between letters is a background column the glyph itself carries.[^s129]
-`packages/codec/src/render.ts` draws a page from these, and every mode page of every container renders with
+`packages/codec/src/screens/render.ts` draws a page from these, and every mode page of every container renders with
 no picture and no glyph unresolved.[^s129]
 
 ### Writing a picture or a glyph back
@@ -378,7 +378,7 @@ of skin 15 and three of skin 17, every pair of sets of one height either draws e
 in the same bytes, 280 pairs sharing 5 to 67 such characters, or draws none of them alike, 294 pairs; no pair agrees
 on some and not others.[^t-glyph-borrow] So a glyph one configuration's set lacks can be copied from another
 configuration's set that agrees with it on every glyph they share, which is how `borrowGlyphs` in
-`packages/codec/src/glyphborrow.ts` fills a letter a compile never drew, refusing a donor set that shares fewer
+`packages/codec/src/drawing/glyphborrow.ts` fills a letter a compile never drew, refusing a donor set that shares fewer
 than three. A code given to a character this way is NULL in every set it was not copied into, and the arch 8
 firmware checks neither a NULL pointer nor the count[^t-885-screens], so a text may use it only in those sets.
 Whether sets agree the same way across configurations of the other architectures is not checked.[^unchecked]
@@ -460,8 +460,8 @@ were wrong, each showing up as a character sitting on two codes at once. As a re
 pair no shape distinguishes, `I` against `l`, and the other, `O` against a zero drawn without a slash:
 whichever member another code has already settled is not available to this one.[^s124]
 
-Read with `characterMap`, `screenStrings` and `textCoverage` in `packages/codec/src/text.ts`, the alphabets
-in `packages/codec/src/alphabets.ts`, and `make text` for the per container figures.
+Read with `characterMap`, `screenStrings` and `textCoverage` in `packages/codec/src/screens/text.ts`, the alphabets
+in `packages/codec/src/screens/alphabets.ts`, and `make text` for the per container figures.
 
 ### The language a configuration is in
 

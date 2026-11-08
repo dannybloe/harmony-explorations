@@ -1,6 +1,6 @@
 /**
  * Borrowing the letters unit A's fonts lack from other Harmony 880 and 885 configurations, `todo-compile-885.md` 1.6
- * (decided at the bench) for 2.7, `src/glyphborrow.ts`.
+ * (decided at the bench) for 2.7, `src/drawing/glyphborrow.ts`.
  *
  * **The question.** Of the test setup's names, "LG TV" (L, G), "KPN" (N), "Switch" (w, h) and "Film kijken" (F)
  * cannot be drawn in bench unit A's title font, and "Muziek" (z) not in its two label fonts: a Logitech compile
@@ -69,11 +69,11 @@ import {
 } from '../src/internal.ts';
 import type { Container } from '../src/index.ts';
 import type { GlyphDonor, GlyphWant } from '../src/build.ts';
-import { IMAGE_SET_HEADER } from '../src/font.ts';
-import { TRAILER_CHECKSUM_OFFSET } from '../src/gspm.ts';
-import { Writer } from '../src/emit.ts';
+import { IMAGE_SET_HEADER } from '../src/screens/font.ts';
+import { TRAILER_CHECKSUM_OFFSET } from '../src/container/gspm.ts';
+import { Writer } from '../src/container/emit.ts';
 import { spelledText } from '../src/shared/spelling.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** Every Harmony 880 and 885 configuration the lab holds, the measurement's population. */
 const ARCH8 = [

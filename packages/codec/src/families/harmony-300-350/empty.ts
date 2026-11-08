@@ -60,11 +60,11 @@
  * Both models alike but for the skin and the infrared allocation, decision 28. Read only towards hardware: the result
  * is bytes in memory, and the write is `packages/usb/bin/write-file-config.ts`'s.
  */
-import { countedTable, type ContainerPiece, layOutContainer } from '../../frame.ts';
-import { BASE_SLOT_COUNT, type Container, parse } from '../../gspm.ts';
-import { taggedListBytes } from '../../sections.ts';
+import { countedTable, type ContainerPiece, layOutContainer } from '../../assembly/frame.ts';
+import { BASE_SLOT_COUNT, type Container, parse } from '../../container/gspm.ts';
+import { taggedListBytes } from '../../container/sections.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
-import { numberSenderTable } from '../../tables.ts';
+import { numberSenderTable } from '../../container/tables.ts';
 import {
   ACKNOWLEDGED_AS, noScreenAcknowledgingEntry, noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries,
   noScreenSendEventLists, type NoScreenSendEventNumbers, noScreenStartUpLists, type NoScreenStartUpNumbers, noScreenStartUpTable, SEND_EVENT_PINS,

@@ -16,16 +16,16 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
-import { type ContainerPiece, layOutContainer, takeApart } from '../src/frame.ts';
-import { fontSets, glyphOf } from '../src/font.ts';
-import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screen.ts';
+import { type ContainerPiece, layOutContainer, takeApart } from '../src/assembly/frame.ts';
+import { fontSets, glyphOf } from '../src/screens/font.ts';
+import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screens/screen.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
-import { characterMap } from '../src/text.ts';
+import { characterMap } from '../src/screens/text.ts';
 import { ScreenTextError, withScreenTexts } from '../src/shared/screentexts.ts';
 import {
   TITLE_JOINER, buildOneScreenTexts, checkOneScreenTexts, describeOneScreenTexts, titleJoinerCode, oneCharacterMap,
 } from '../src/families/harmony-one/screentexts.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** `ONE_COMPILES` of `startupassistant.test.ts` without the Dutch `one_friend_asfound_config`. */
 const ENGLISH = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

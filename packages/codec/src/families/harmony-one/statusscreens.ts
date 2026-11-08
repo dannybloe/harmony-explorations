@@ -40,11 +40,11 @@
  * One alone, the One family's; the Harmony 600, 650 and 700 are the four slot family, whose configurations of
  * ours leave the status screens out (section 405's correction), and are not built here. Read only towards hardware: the result is pieces.
  */
-import type { Container } from '../../gspm.ts';
-import type { ContainerLayout } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { eventMap } from '../../sections.ts';
-import { ScreenRecordError, assertRebuilt, withModeRecords } from '../../screenrecords.ts';
+import type { Container } from '../../container/gspm.ts';
+import type { ContainerLayout } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { eventMap } from '../../container/sections.ts';
+import { ScreenRecordError, assertRebuilt, withModeRecords } from '../../compose/screenrecords.ts';
 import type { ValueReader } from '../../shared/spelling.ts';
 import {
   ARROWS, type BuiltTemplateScreens, HEADER, type Part, TAG_ENTER, TAG_HEADER, TAG_LEAVE, TIMER_CANCEL,

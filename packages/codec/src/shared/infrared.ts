@@ -30,20 +30,20 @@
 // `sections.ts`. All correct, none able to see the others: the state `isa.py`'s docstring forbids.
 // Plan 007 removed the screen opcodes `compose.ts` still spelled and the seven private copies of
 // `0x7E` across the codec, which `inventory.ts` names as `ENTER_MODE` now.
-import { joinedGaps } from '../archive.ts';
-import { hexOf, u24 } from '../bytes.ts';
-import { Writer } from '../emit.ts';
-import { archSlot, Container, parse } from '../gspm.ts';
+import { joinedGaps } from '../catalogue/archive.ts';
+import { hexOf, u24 } from '../support/bytes.ts';
+import { Writer } from '../container/emit.ts';
+import { archSlot, Container, parse } from '../container/gspm.ts';
 import {
   IR_CLASS_STREAM, IR_POINTERS_PER_GROUP, IR_PULSE_MAX, IR_TABLE_SLOT, irBuildBlock, irBuildRecord, irGroups,
   type IrPulse,
-} from '../ir.ts';
-import { type Pulse } from '../irframe.ts';
-import { relocate } from '../relocate.ts';
-import { ComposeError, restamped } from '../shared/core.ts';
+} from '../infrared/ir.ts';
+import { type Pulse } from '../infrared/irframe.ts';
+import { relocate } from '../edit/relocate.ts';
+import { ComposeError, restamped } from './core.ts';
 import {
   blockOfStatedCode, longPressBlockOfStatedCode, statedCode, type StatedCode, statedProtocol,
-} from '../stated.ts';
+} from '../infrared/stated.ts';
 
 /** One command to put on the new device, as the catalogue spells it. */
 export interface ComposeCommand {

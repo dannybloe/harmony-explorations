@@ -51,10 +51,10 @@
  * else does, so this folder is the Touch's own, and no family of `families/` is asked anything. Which architectures:
  * the Harmony Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it under 18.
  */
-import { ArchiveError } from '../../archive.ts';
-import type { CatalogueDevice, CatalogueSource } from '../../catalogue.ts';
-import type { DeviceDriving, DeviceState, DriveStep } from '../../driving.ts';
-import { statedCode, statedProtocol } from '../../stated.ts';
+import { ArchiveError } from '../../catalogue/archive.ts';
+import type { CatalogueDevice, CatalogueSource } from '../../catalogue/catalogue.ts';
+import type { DeviceDriving, DeviceState, DriveStep } from '../../catalogue/driving.ts';
+import { statedCode, statedProtocol } from '../../infrared/stated.ts';
 import { ComposeRefusal, isOwnId, OWN_IDS } from './compose.ts';
 import { definitionOfRow, isDefinitionRefusal, keyCodeText } from './definition.ts';
 import type { Command, DeviceFeature, DeviceWithFeatures, FeatureAction, IrProtocol } from './documents.ts';

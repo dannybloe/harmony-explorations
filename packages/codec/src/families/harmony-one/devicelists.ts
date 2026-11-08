@@ -64,14 +64,14 @@
  * the One family's; the Harmony 600, 650 and 700 lay their device lists out in corners, section 294, built by
  * `families/harmony-600-650-700/devicelist.ts`. Read only towards hardware: the result is pieces.
  */
-import { u24 } from '../../bytes.ts';
-import { Writer } from '../../emit.ts';
-import { ACTION_LIST_TABLE_SLOT, type Container, archSlot, parse } from '../../gspm.ts';
-import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
-import type { PieceTarget } from '../../statetables.ts';
-import { ENTER_MODE, activities, activityScreens, caseQueued } from '../../inventory.ts';
-import { fillTarget, picturesByContent, withBankPictures } from '../../pictures.ts';
-import { contentKey } from '../../screencategories.ts';
+import { u24 } from '../../support/bytes.ts';
+import { Writer } from '../../container/emit.ts';
+import { ACTION_LIST_TABLE_SLOT, type Container, archSlot, parse } from '../../container/gspm.ts';
+import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
+import { ENTER_MODE, activities, activityScreens, caseQueued } from '../../inventory/inventory.ts';
+import { fillTarget, picturesByContent, withBankPictures } from '../../drawing/pictures.ts';
+import { contentKey } from '../../screens/screencategories.ts';
 import { ONE_CHOICES, type OneChoices } from './choices.ts';
 import { ACTIVITY_ROW_SIZE, activityRowBox, activityRowIcon } from './activitypictures.ts';
 import { colourBehindBackground } from './activityscreen.ts';
@@ -79,20 +79,20 @@ import { describeOneFixedScreens } from './fixedscreens.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_JUMP, SCREEN_RETURN, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT,
   SCREEN_TEXT_INLINE, screenProgram,
-} from '../../screen.ts';
+} from '../../screens/screen.ts';
 import {
   type BuiltScreen, type ModeRecordsPlace, ScreenRecordError, assertRebuilt, recordReading, withModeRecords,
-} from '../../screenrecords.ts';
-import { handlerSets, modePages, modeRecords, modeTable, pageListCopies, taggedList } from '../../sections.ts';
+} from '../../compose/screenrecords.ts';
+import { handlerSets, modePages, modeRecords, modeTable, pageListCopies, taggedList } from '../../container/sections.ts';
 import { startSwitchedOn } from '../../shared/activities.ts';
 import { appendActionLists, ComposeError, restamped } from '../../shared/core.ts';
 import { appendMode } from '../../shared/modes.ts';
 import { deviceListMenus } from '../../shared/menus.ts';
 import { type ValueReader, blobReader, fontThatSpells, speller, textGlyphs } from '../../shared/spelling.ts';
-import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
-import { characterMap, decode } from '../../text.ts';
-import { SCREEN_ROW_PITCH } from '../../touch.ts';
-import { valueMaps } from '../../valuemap.ts';
+import { TOUCH_AREA_LENGTH, touchPages } from '../../container/tables.ts';
+import { characterMap, decode } from '../../screens/text.ts';
+import { SCREEN_ROW_PITCH } from '../../inventory/touch.ts';
+import { valueMaps } from '../../container/valuemap.ts';
 import {
   type HitPart, hitPageAreasOf, hitPageRunOf, namedHitPages, oneHitPagesPlace, whole, withOneHitPages, withoutHitPages,
 } from './hitpages.ts';

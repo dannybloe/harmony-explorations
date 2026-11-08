@@ -46,22 +46,22 @@
  * English only; skin 54, the Harmony One the spare reports, and the European factory file of skin 59. Read only towards hardware: the result is
  * pieces.
  */
-import type { Container, Instruction } from '../../gspm.ts';
-import { actionListBytes } from '../../gspm.ts';
-import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import type { PieceTarget } from '../../statetables.ts';
-import { taggedListBytes } from '../../sections.ts';
+import type { Container, Instruction } from '../../container/gspm.ts';
+import { actionListBytes } from '../../container/gspm.ts';
+import type { ContainerLayout, ContainerPiece } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
+import { taggedListBytes } from '../../container/sections.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_FILL, SCREEN_QUEUE_INSTRUCTION, SCREEN_RETURN, SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT, SCREEN_TEXT_INLINE,
-} from '../../screen.ts';
-import { fillBytes, fillOf, fillTarget } from '../../pictures.ts';
-import { keyListOrderInserted } from '../../modezero.ts';
+} from '../../screens/screen.ts';
+import { fillBytes, fillOf, fillTarget } from '../../drawing/pictures.ts';
+import { keyListOrderInserted } from '../../container/modezero.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, ScreenRecordError, assertRebuilt, recordBuilding,
   recordReading, withModeRecords,
-} from '../../screenrecords.ts';
+} from '../../compose/screenrecords.ts';
 import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts';
 import {
   CLICK, LIGHT_7_OFF, LIST, MAP, PAGE_KEYS_OFF, SET, SWALLOW, type Step as TemplateStep, TEST, k, named, owns, readStep, stepKinds, write,

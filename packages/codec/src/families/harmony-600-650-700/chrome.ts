@@ -4,38 +4,38 @@
  * checked against the configuration's own pages. Plan 007's four slot family, cut out of `compose.ts`
  * unchanged.
  */
-import { u24 } from '../../bytes.ts';
-import { namedContentEnd } from '../../coverage.ts';
+import { u24 } from '../../support/bytes.ts';
+import { namedContentEnd } from '../../container/coverage.ts';
 import {
   fontsBySize, HARD_KEYS, LABEL_WIDTH, LABEL_WRAP_WIDTH, ladderOf, pageCounter, sizeOfSet, TITLE_RUNG, wrapAtSpaces,
 } from './devicemode.ts';
-import { Writer } from '../../emit.ts';
-import { activityKeyedRecords } from '../../families/harmony-600-650-700/activityscreen.ts';
-import { idleDeviceList } from '../../families/harmony-600-650-700/menus.ts';
-import type { MenuPart } from '../../screenparts.ts';
-import { type FontSet, fontSets, glyphOf } from '../../font.ts';
-import { archSlot, Container, type Instruction } from '../../gspm.ts';
+import { Writer } from '../../container/emit.ts';
+import { activityKeyedRecords } from './activityscreen.ts';
+import { idleDeviceList } from './menus.ts';
+import type { MenuPart } from '../../compose/screenparts.ts';
+import { type FontSet, fontSets, glyphOf } from '../../screens/font.ts';
+import { archSlot, Container, type Instruction } from '../../container/gspm.ts';
 import {
   activities, ACTIVITY_STATE_NAME, compilerTagOrder, deviceListRows, KEY_EVENT_PRESS,
   KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SEND_INFRARED, stateVariables,
-} from '../../inventory.ts';
-import { irGroups } from '../../ir.ts';
-import { irFrame } from '../../irframe.ts';
-import { type BytesMemo, memoOverBytes } from '../../memo.ts';
+} from '../../inventory/inventory.ts';
+import { irGroups } from '../../infrared/ir.ts';
+import { irFrame } from '../../infrared/irframe.ts';
+import { type BytesMemo, memoOverBytes } from '../../container/memo.ts';
 import {
   bitmapReference, bitmaps, pictureBank, pictureReference, reachablePrograms, SCREEN_DRAW_IMAGE,
   SCREEN_DRAW_IMAGE_AT, SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
   SCREEN_TABLE_SLOT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
-} from '../../screen.ts';
-import { contentKey } from '../../screencategories.ts';
-import { picturesByContent } from '../../pictures.ts';
-import { ACTION_LIST_INDEX_OPCODE, handlerSets, modeRecords, type TaggedEntry, taggedList } from '../../sections.ts';
-import { STATE_WRITE_BASE } from '../../actions.ts';
+} from '../../screens/screen.ts';
+import { contentKey } from '../../screens/screencategories.ts';
+import { picturesByContent } from '../../drawing/pictures.ts';
+import { ACTION_LIST_INDEX_OPCODE, handlerSets, modeRecords, type TaggedEntry, taggedList } from '../../container/sections.ts';
+import { STATE_WRITE_BASE } from '../../container/actions.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { activityMenus } from '../../shared/menus.ts';
 import { codesFor, spellsIn, textWidth } from '../../shared/spelling.ts';
-import { characterMap, glyphsReferencedBy, referencedStringAddress } from '../../text.ts';
-import { valueMaps } from '../../valuemap.ts';
+import { characterMap, glyphsReferencedBy, referencedStringAddress } from '../../screens/text.ts';
+import { valueMaps } from '../../container/valuemap.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
 import { ourStateColours, stateLookOf } from './statelook.ts';
 

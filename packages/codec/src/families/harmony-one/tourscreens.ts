@@ -56,14 +56,14 @@
  * English only; skin 54 and the European skin 59, whose tour and assistant are skin 54's. Read only towards
  * hardware: the result is pieces.
  */
-import type { Container } from '../../gspm.ts';
-import type { ContainerLayout } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { ACTION_LIST_TABLE_SLOT, archSlot } from '../../gspm.ts';
-import { modeRecords, taggedList } from '../../sections.ts';
-import { SCREEN_CALL, screenProgram } from '../../screen.ts';
-import { characterMap, decode } from '../../text.ts';
-import { ScreenRecordError, assertRebuilt, withModeRecords } from '../../screenrecords.ts';
+import type { Container } from '../../container/gspm.ts';
+import type { ContainerLayout } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { ACTION_LIST_TABLE_SLOT, archSlot } from '../../container/gspm.ts';
+import { modeRecords, taggedList } from '../../container/sections.ts';
+import { SCREEN_CALL, screenProgram } from '../../screens/screen.ts';
+import { characterMap, decode } from '../../screens/text.ts';
+import { ScreenRecordError, assertRebuilt, withModeRecords } from '../../compose/screenrecords.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
 import {
   ARROWS, ASSISTANT_ON, BAND, type BuiltTemplateScreens, CALL, CLICK, ENTER, type Entry, HEADER, LIGHT_5_OFF, LIGHT_7_OFF, LIST, MAP,

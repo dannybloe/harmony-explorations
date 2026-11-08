@@ -133,7 +133,7 @@ identified from the numbers its codes decode to, and why a name is taken from th
 and never from the catalogue at large, is Logitech's catalogue's own shape and lives with it:
 [the device catalogue](../reference/logitech/device-catalogue.md#how-it-names-a-devices-commands) and
 [naming the commands a configuration sends](../reference/infrared/families.md#naming-the-commands-a-configuration-sends).
-`make catalogue` is the measurement, `packages/codec/src/catalogue.ts` the reader, and every reader in it
+`make catalogue` is the measurement, `packages/codec/src/catalogue/catalogue.ts` the reader, and every reader in it
 is lazy except the code index, because the copy is 2.2 GB.
 
 **A community device database is a direction now, decision 11 in `docs/decisions.md`, and almost all of

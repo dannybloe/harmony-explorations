@@ -55,7 +55,7 @@ import {
   timers,
   trailerChecksum,
 } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 const SAMPLE = 'h600_config';
 

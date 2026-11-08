@@ -817,7 +817,7 @@ up by other owners it is Logitech's on 4 of 6 activities and 223 of 226 keys, th
 activity each that a user may have edited[^s323]. A display device that neither changes channels nor plays
 contributes no key. Scans 26 and 27 are `UpArrow` and `DownArrow` and 50 and 42 the pad's, decided from the
 device maps, [the 600's keys](../../remotes/harmony-600/keys.md). `activityKeysFromRoles` in
-`packages/codec/src/activityroles.ts`. **Help, scan 3, is the one key the roles do not give**: every
+`packages/codec/src/compose/activityroles.ts`. **Help, scan 3, is the one key the roles do not give**: every
 activity's map binds its release to the activity's own "Attempting to fix the problem" mode and its repeat
 to `[07 FFFD, 7E <Delay Fixing>]`, 40 of 40, while no device mode binds scan 3 at all, 0 of 83, so Help
 is the running activity's own binding and not a device's[^s333].
@@ -827,7 +827,7 @@ passes through, is switched on in the activity's start and set to its input, and
 item[^s339]. Measured on one Logitech compile with the role stated, a Harmony 650's; a contributed Harmony
 700 configuration has the same shape with the role inferred. Nothing in a configuration states the role: a
 display device with no key and no screen item looks the same. `activityFromRoles` in
-`packages/codec/src/activityroles.ts`.
+`packages/codec/src/compose/activityroles.ts`.
 
 Read with `gspm.handler_sets` and `gspm.handler_index`[^s39].
 
@@ -912,10 +912,10 @@ The catalogue's fields named here are Logitech's[^s321b].
   and is not identified[^s321].
 
 `inputPlan`, `composeDeviceInputs`, `activityStartTargets` and `deviceStateMachines` in
-`packages/codec/src/inputs.ts`; `packages/codec/test/inputs.test.ts`.
+`packages/codec/src/compose/inputs.ts`; `packages/codec/test/inputs.test.ts`.
 
 **The state tables, built from a description**[^s324]. `buildStateTables` in
-`packages/codec/src/statetables.ts`, with the four slot family's facts of
+`packages/codec/src/assembly/statetables.ts`, with the four slot family's facts of
 `packages/codec/src/families/harmony-600-650-700/statetables.ts`, rebuilds all thirteen compiles' base slots 0, 13
 and 14 byte for byte. What it generates rather than carries:
 

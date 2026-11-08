@@ -73,11 +73,11 @@ import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
   frameSlots, keyCodeOfStatedCode, roundedPeriodOfCarrier, segmentRefs, statedCodeOfDefinition, withStatedWidths,
   withToggleCleared, type ArchiveKeyCode, type ArchiveProtocol,
-} from '../src/archive.ts';
-import { archiveProtocols } from '../src/archive.node.ts';
-import { mergedIntervals, pulsesOfBlock, type BlockTail, type FrameShape, type Pulse } from '../src/irframe.ts';
-import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
-import { biphaseOf, cellsOf, timingsOf, type StatedCode, type StatedItem } from '../src/stated.ts';
+} from '../src/catalogue/archive.ts';
+import { archiveProtocols } from '../src/catalogue/archive.node.ts';
+import { mergedIntervals, pulsesOfBlock, type BlockTail, type FrameShape, type Pulse } from '../src/infrared/irframe.ts';
+import { PROTOCOLS, type StatedProtocol } from '../src/infrared/protocols.ts';
+import { biphaseOf, cellsOf, timingsOf, type StatedCode, type StatedItem } from '../src/infrared/stated.ts';
 import {
   carrierOfPeriod, definitionOfRow, isDefinitionRefusal, keyCodeText, storedMicrosecondOf,
 } from '../src/families/harmony-touch/definition.ts';

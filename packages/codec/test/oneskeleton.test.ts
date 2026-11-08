@@ -23,10 +23,10 @@ import type { Container } from '../src/index.ts';
 import { inventory, parse } from '../src/index.ts';
 import { LETTERING_CHARACTERS, describeStateTables, layOutContainer, takeApart } from '../src/build.ts';
 import { archSlot, characterMap, claims, fontSets, glyphOf, roundTrip } from '../src/internal.ts';
-import { clockSpec } from '../src/statetables.ts';
-import { countedTable } from '../src/frame.ts';
-import { SCREEN_END, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screen.ts';
-import { stateRecords, taggedList } from '../src/sections.ts';
+import { clockSpec } from '../src/assembly/statetables.ts';
+import { countedTable } from '../src/assembly/frame.ts';
+import { SCREEN_END, SCREEN_SELECT_FONT, SCREEN_TEXT_INLINE, screenProgram } from '../src/screens/screen.ts';
+import { stateRecords, taggedList } from '../src/container/sections.ts';
 import { speller, blobReader } from '../src/shared/spelling.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
@@ -44,7 +44,7 @@ import { buildOneTourScreens, describeOneTourScreens } from '../src/families/har
 import { buildOneDevicePages, describeOneDevicePages } from '../src/families/harmony-one/devicepages.ts';
 import { buildOneDeviceLists, describeOneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
 import { buildOneActivityMenu, describeOneActivityMenu } from '../src/families/harmony-one/activitymenu.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 const BUILT_AT = '2026-10-23T12:00:00';
 const OPTIONS = { skin: 54, builtAt: BUILT_AT, choices: ONE_CHOICES };

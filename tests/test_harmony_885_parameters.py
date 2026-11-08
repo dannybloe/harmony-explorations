@@ -11,7 +11,7 @@ are the 885 application's.
 **Sources checked before the work**: `reference/config-format/state.md`, "Base slot 15: the parameter
 block" (section 44: the guard on the Harmony 700 at `0x0F8F0` and the One at `0x23262`, count 9 and 11,
 arch 8 "carries the section and no image read here reads it"), section 105 (the two arm call site the arch
-12 scan once missed), `src/harmony/gspm.py` and `packages/codec/src/tables.ts`, `PARAMETER_GROUP_COUNTS`,
+12 scan once missed), `src/harmony/gspm.py` and `packages/codec/src/container/tables.ts`, `PARAMETER_GROUP_COUNTS`,
 which had no arch 8 row, and `tests/test_toolchain.py`'s `TheTwoParameterGroupTablesAgree`. **Logitech's
 client, decision 2**: not searched; the guard's literals are the firmware's own answer and no client
 builds this section differently per model.

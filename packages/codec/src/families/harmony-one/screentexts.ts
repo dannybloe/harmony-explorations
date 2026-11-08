@@ -30,14 +30,14 @@
  * `ValueReader` that records what it reads, `buildOneScreenTexts` generates the rest, `withScreenTexts` writes it
  * into a `takeApart` layout and `layOutContainer` lays the container out again. Read only towards hardware.
  */
-import type { Container } from '../../gspm.ts';
-import type { ContainerLayout } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { fontSets, glyphOf } from '../../font.ts';
+import type { Container } from '../../container/gspm.ts';
+import type { ContainerLayout } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { fontSets, glyphOf } from '../../screens/font.ts';
 import {
   type ScreenInstruction, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, reachablePrograms, screenProgram,
-} from '../../screen.ts';
-import { type CharacterMap, characterMap } from '../../text.ts';
+} from '../../screens/screen.ts';
+import { type CharacterMap, characterMap } from '../../screens/text.ts';
 import { type ValueReader, blobReader, speller } from '../../shared/spelling.ts';
 import {
   type BuiltDraw, type BuiltScreenTexts, INLINE_HEAD, ScreenTextError, type ScreenTextsPlace, pieceLocator, shareRuns,

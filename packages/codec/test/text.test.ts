@@ -36,7 +36,7 @@ import {
   usesAscii,
 } from '../src/internal.ts';
 import type { CharacterMap } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** Every container in the corpus, and which alphabet each is expected to be read by. */
 const EXPECTED: Readonly<Record<string, string>> = {

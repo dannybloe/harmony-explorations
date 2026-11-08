@@ -253,7 +253,7 @@ analyze:
 # What rhythm each protocol family uses, measured off the corpus against the family names Logitech's own
 # analyser gave it, and the generated table that lets a code stated as a name and a number be emitted.
 # Needs a lab because it reads the analyser reports, needs no network. PROTOCOLS_ARGS=--detail, or
-# --write to regenerate packages/codec/src/protocols.ts.
+# --write to regenerate packages/codec/src/infrared/protocols.ts.
 # The recovered MyHarmony model, drawn. Both outputs are generated from
 # reference/logitech/data-model/model.json and never hand edited, so `myharmony-model` checks they still agree
 # and MYHARMONY_ARGS=--write regenerates them. No lab and no network: the model is in the repository.
@@ -290,7 +290,7 @@ protocols:
 # Every family's segment lengths as Logitech's definitions state them, which is what a held power press
 # is counted against, section 308. Reads the public archive checkout only, no lab and no network, so the
 # same archive always gives the same file. SEGMENTLENGTHS_ARGS=--write regenerates
-# packages/codec/src/segmentlengths.ts.
+# packages/codec/src/infrared/segmentlengths.ts.
 segmentlengths:
 	@node packages/codec/bin/segmentlengths.ts $(SEGMENTLENGTHS_ARGS)
 
@@ -420,7 +420,7 @@ devices:
 alphabets:
 	@node packages/codec/bin/alphabets.ts $(ALPHABETS_ARGS)
 
-# Our own letters' alphabet as generated data, src/oxaniumalphabet.ts, so a configuration is read with no
+# Our own letters' alphabet as generated data, src/screens/oxaniumalphabet.ts, so a configuration is read with no
 # font supplied. Rerun with --write after a change to the faces, the weights or how a form is read; the
 # check it runs is a test already, test/oxaniumalphabet.test.ts, so it is not part of `all`. No lab.
 oxanium-alphabet:

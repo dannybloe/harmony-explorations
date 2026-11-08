@@ -28,7 +28,7 @@ if (mode === 'from-font') {
   registerHooks({
     load(url, context, nextLoad) {
       const loaded = nextLoad(url, context);
-      if (!url.endsWith('/codec/src/text.ts')) return loaded;
+      if (!url.endsWith('/codec/src/screens/text.ts')) return loaded;
       const source = String(loaded.source);
       if (!source.includes(READER)) throw new Error(`text.ts no longer says ${READER}: the control has nothing to rewrite`);
       rewritten = true;

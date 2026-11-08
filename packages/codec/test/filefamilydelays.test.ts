@@ -95,12 +95,12 @@ import { LAB, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
 import { applyEdits, deviceDelays, devices, parse, setPowerOnDelay } from '../src/index.ts';
 import { powerOnInstructions, stateVariables, trailerChecksum } from '../src/internal.ts';
-import { STATE_WRITE_BASE } from '../src/actions.ts';
+import { STATE_WRITE_BASE } from '../src/container/actions.ts';
 import { noScreenPowerOnDelayCopies } from '../src/families/harmony-300-350/delay.ts';
-import type { Container } from '../src/gspm.ts';
-import { stateRecords, taggedList } from '../src/sections.ts';
-import { TRAILER_CHECKSUM_OFFSET } from '../src/gspm.ts';
-import '../src/resources.node.ts';
+import type { Container } from '../src/container/gspm.ts';
+import { stateRecords, taggedList } from '../src/container/sections.ts';
+import { TRAILER_CHECKSUM_OFFSET } from '../src/container/gspm.ts';
+import '../src/support/resources.node.ts';
 
 const CONFIGS = ['h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config',
   'h300_programmed_config'] as const;

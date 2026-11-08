@@ -1,0 +1,616 @@
+/**
+ * What the screen actually says: turning a string's glyph codes back into characters.
+ *
+ * A `SCREEN_TEXT_INLINE` instruction carries glyph codes, and a code is **not** a character. It is
+ * an index into base slot 7, assigned per config in the order characters first appear in the
+ * generator's own string list, which is not the order the strings sit in the file. So four Harmony
+ * One configs agree about the first nineteen codes, because the list starts with the same
+ * boilerplate in all of them, and then diverge: code 20 is a colon in one and the digit 1 in
+ * another. A fixed code table is therefore wrong, and that is why this module keys on the glyph's
+ * pixels instead.
+ *
+ * The shape of the derivation:
+ *
+ * 1. One config per typeface had its alphabet read off the rendered glyphs by eye. That is the
+ *    seed, and it lives in `packages/codec/bin/alphabets.ts` beside the reasoning.
+ * 2. `alphabets.ts` in this directory is generated from those seeds: per typeface, a table from a
+ *    glyph's pixels to the character it draws.
+ * 3. Any config is then decoded by looking its own glyphs up in that table, which works whatever
+ *    codes its generator handed out.
+ *
+ * The closure is that the decoded text reproduces strings the container also carries as **ASCII**
+ * in base slot 0, a section this module never reads. `docs/findings.md` section 112.
+ *
+ * Two honest limits, both reported rather than hidden:
+ *
+ * * **`I` and `l` are the same shape** in these typefaces at several sizes, so a code that only
+ *   ever appears at those sizes cannot be told apart by pixels. Such a code lands in `ambiguous`,
+ *   and `decode` falls back to what the seed config assigned to the same code, which is right
+ *   whenever the two agree about that part of the list.
+ * * **A typeface with no seed decodes to nothing at all**, rather than to plausible nonsense: the
+ *   alphabet is chosen by how much of the container it explains, and a container it explains
+ *   nothing of gets no alphabet.
+ */
+import { Container } from '../container/gspm.ts';
+import { decodedSet, fontSets } from './font.ts';
+import { type BytesMemo, memoOverBytes } from '../container/memo.ts';
+import type { Glyph } from './font.ts';
+import {
+  reachablePrograms,
+  SCREEN_TEXT_AT,
+  SCREEN_TEXT_INLINE,
+  SCREEN_SELECT_FONT,
+} from './screen.ts';
+import type { ScreenInstruction } from './screen.ts';
+import { ALPHABETS } from './alphabets.ts';
+import type { Alphabet } from './alphabets.ts';
+import {
+  LETTERING_CHARACTERS, LETTERING_FACES, OXANIUM_WEIGHTS, coverageStructure, letterForm, letterStructure, maskForm,
+} from '../drawing/lettering.ts';
+import { inflateZlib } from '../support/deflate.ts';
+import { OXANIUM_ALPHABET_TABLES } from './oxaniumalphabet.ts';
+
+/**
+ * The glyph code a font set starts at when the codes are ASCII rather than assigned.
+ *
+ * The arch 9 safe mode container's sets start here and its strings are ASCII outright, which is
+ * how that alphabet was seeded without reading a single glyph. Everything else in the corpus
+ * starts at 1. Resting on one container, so it is used only to break a tie, never to pick the
+ * alphabet.
+ */
+export const ASCII_FIRST_CODE = 32;
+
+/** FNV-1a, so a shape key needs no dependency and is stable across platforms. */
+function fnv1a(text: string, seed: number): number {
+  let hash = seed;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    // The multiply is done in halves because the FNV prime overflows a double's integer range.
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+/**
+ * A glyph's identity: its height, its pixels, and nothing else.
+ *
+ * Height is part of the key because `I` and `l` are one shape at some sizes and two at others, so
+ * a size blind table reads a tall `l` as an `I` from a smaller set. That happened, and it is what
+ * the height prefix prevents.
+ */
+export function shapeKey(height: number, glyph: Glyph): string {
+  // Each pixel is hashed with its two bytes swapped, as `glyphAt` read it before section 367 found glyphs
+  // are stored high byte first. A key is an identity and not a colour, and every key in `alphabets.ts` was
+  // made that way, so the key keeps its form rather than the table being regenerated. Arch 9's packed
+  // glyphs hold grey levels, not RGB565, and were never swapped.
+  const legacy = (p: number): number => (glyph.packed ? p : ((p & 0xff) << 8) | (p >> 8));
+  const body = glyph.rows
+    .map((row) => row.map((p) => (p === undefined ? '_' : legacy(p).toString(36))).join(','))
+    .join(';');
+  const low = fnv1a(body, 0x811c9dc5).toString(16).padStart(8, '0');
+  const high = fnv1a(body, 0x01000193).toString(16).padStart(8, '0');
+  return `${height}:${low}${high}`;
+}
+
+/**
+ * Whether a glyph draws nothing: every pixel the same, so there is no shape to recognise.
+ *
+ * Such a glyph is a space for decoding purposes whatever the generator meant by it, and it must
+ * not be evidence about anything else: a font set carries a blank slot for codes it does not draw,
+ * and the same code is a real letter in another set. Treating a blank as evidence made arch 8's
+ * `V`, `?` and `x` decode as spaces.
+ */
+export function isBlank(glyph: Glyph): boolean {
+  const first = glyph.rows[0]?.[0];
+  return glyph.rows.every((row) => row.every((p) => p === first));
+}
+
+/** A container's codes, resolved as far as the pixels allow. */
+export interface CharacterMap {
+  /** Which alphabet was used, by name. */
+  alphabet: string;
+  /** Code to character, for the codes one character explains. */
+  codes: Map<number, string>;
+  /**
+   * Codes the pixels cannot settle, with every character still in the running. `codes` holds the
+   * seed's own answer for these when it is among the candidates, so decoding still produces a
+   * string; the entry here is what says not to trust that character.
+   */
+  ambiguous: Map<number, string[]>;
+  /** How many of the codes the container's strings draw were resolved, and how many there are. */
+  drawn: { resolved: number; total: number };
+}
+
+/** Every glyph code a container's strings actually draw. */
+/**
+ * The address a `SCREEN_TEXT_AT` names: two position bytes, then a `u24` little endian.
+ *
+ * Returns undefined for any other opcode, so a caller can hand it every instruction of a program
+ * without filtering first.
+ */
+export function referencedStringAddress(instruction: ScreenInstruction): number | undefined {
+  if (instruction.opcode !== SCREEN_TEXT_AT) return undefined;
+  const o = instruction.operands;
+  if (o.length < 5) return undefined;
+  return (o[2] as number) + ((o[3] as number) << 8) + ((o[4] as number) << 16);
+}
+
+/**
+ * The glyph run at a flash address, read the way the inline one is read.
+ *
+ * Terminated by a zero byte, with a code whose bit 7 is set taking a second byte with it, exactly as
+ * `SCREEN_TEXT_INLINE` is decoded. Sharing that rule matters: every target in the corpus **is** an
+ * inline instruction's payload, so a different terminator here would mean two readings of the same
+ * bytes.
+ */
+export function glyphRunAt(c: Container, address: number): Uint8Array | undefined {
+  const start = c.blobOffsetOf(address);
+  if (start === undefined || start >= c.blob.length) return undefined;
+  let end = start;
+  while (end < c.blob.length && c.blob[end] !== 0) end += (c.blob[end] as number) & 0x80 ? 2 : 1;
+  // The loop leaves `end` either on the terminator or past the blob, and the guard was `end >
+  // c.blob.length`, so a run that walked to the last byte **without** a terminator came back as a
+  // string rather than as a refusal. Silently truncated text is the worst answer available here.
+  // Unreachable in the corpus, since every container ends in a six byte trailer. Section 139.
+  if (end >= c.blob.length) return undefined;
+  return c.blob.subarray(start, end);
+}
+
+export function drawnCodes(c: Container): Set<number> {
+  const out = new Set<number>();
+  for (const [, program] of reachablePrograms(c)) {
+    for (const instruction of program) {
+      // Both text opcodes, because a code that only ever appears in a referenced string is still
+      // drawn on the screen. Counting the inline ones alone was an undercount and not a definition:
+      // it hid 131 unreadable strings in one container and 12052 draws across the corpus.
+      const glyphs =
+        instruction.opcode === SCREEN_TEXT_INLINE
+          ? instruction.glyphs
+          : glyphsReferencedBy(c, instruction);
+      if (glyphs === undefined) continue;
+      for (const code of glyphs) out.add(code);
+    }
+  }
+  return out;
+}
+
+/** The glyph run a `SCREEN_TEXT_AT` draws, or undefined for any other instruction. */
+export function glyphsReferencedBy(c: Container, instruction: ScreenInstruction): Uint8Array | undefined {
+  const address = referencedStringAddress(instruction);
+  return address === undefined ? undefined : glyphRunAt(c, address);
+}
+
+/**
+ * Resolve a container's codes against one alphabet.
+ *
+ * Evidence is intersected across font sets rather than counted, because a size where two
+ * characters share a shape says less than a size where they do not, and what survives every size
+ * is the answer. An empty intersection means the two disagree, which is a contradiction rather
+ * than an ambiguity, so it is reported as such by leaving the code out of `codes`.
+ */
+function resolveWith(alphabet: LetteredAlphabet, context: ResolveContext): CharacterMap {
+  const candidates = new Map<number, Set<string>>();
+  const blankOnly = new Map<number, boolean>();
+  // Our letters are named by their form, whatever colours they are in, and the inks the one bit ones were
+  // drawn in are what tells a blended letter's full coverage apart, `letterStructure`.
+  const inks = alphabet.forms === undefined ? undefined : lettersInks(alphabet.forms, context);
+  for (const shape of context.shapes) {
+      const { code, blank, key } = shape;
+      if (blank) {
+        if (!blankOnly.has(code)) blankOnly.set(code, true);
+        continue;
+      }
+      blankOnly.set(code, false);
+      // A glyph no shape names may still be one of our letters blended into a background, which only its
+      // structure can say, and only our alphabet has structures to ask.
+      const character = alphabet.shapes[key]
+        ?? (alphabet.forms === undefined ? undefined : alphabet.forms[formOf(shape)?.form ?? ''])
+        ?? (alphabet.structures === undefined || inks === undefined ? undefined : alphabet.structures[structureOf(shape, inks)]);
+      if (character === undefined) continue;
+      const had = candidates.get(code);
+      candidates.set(
+        code,
+        had === undefined
+          ? new Set(character)
+          : new Set([...had].filter((one) => character.includes(one))),
+      );
+  }
+
+  // **A container gives one code to one character**, so a character some other code has settled is
+  // not available to an ambiguous one. That is the generator's own rule, not an assumption about
+  // typography: a code is the position of a character in the string list the generator walks, and no
+  // character is in it twice. Section 112. Measured over the corpus: no container assigns two codes
+  // to one character once this has run, and three that did were hand reading errors in the seeds.
+  //
+  // It settles `I` against `l`, which is the one pair no shape here distinguishes, and it does it
+  // without the seed fallback below, whose weakness is that a second config of the same skin does not
+  // have to number its codes the same way. That fallback read `one_config`'s code 50 as `l` where the
+  // container already had one, and a lowercase word therefore came out with a capital in it.
+  for (let progress = true; progress; ) {
+    progress = false;
+    const settled = new Set<string>();
+    for (const found of candidates.values()) if (found.size === 1) settled.add([...found][0] as string);
+    for (const [code, found] of candidates) {
+      if (found.size < 2) continue;
+      const left = new Set([...found].filter((one) => !settled.has(one)));
+      // An empty result would be a contradiction manufactured by this rule rather than found by it,
+      // so the code keeps its candidates and stays ambiguous.
+      if (left.size === 0 || left.size === found.size) continue;
+      candidates.set(code, left);
+      progress = true;
+    }
+  }
+
+  const codes = new Map<number, string>();
+  const ambiguous = new Map<number, string[]>();
+  for (const [code, found] of candidates) {
+    if (found.size === 1) {
+      codes.set(code, [...found][0] as string);
+      continue;
+    }
+    // An empty intersection is a contradiction rather than an ambiguity: two sizes name two
+    // characters and no shape draws both. It is left unresolved on purpose, since guessing which
+    // size to believe is exactly what the intersection was there to avoid.
+    if (found.size === 0) continue;
+    ambiguous.set(code, [...found]);
+    // A code the pixels cannot settle. Two fallbacks, in order: the ASCII convention decides it
+    // outright when the container's sets state ASCII, and otherwise the seed config's own
+    // assignment is the best evidence there is, since the codes of one skin share a prefix.
+    const ascii = String.fromCharCode(code);
+    if (context.ascii && found.has(ascii)) {
+      codes.set(code, ascii);
+      continue;
+    }
+    const seeded = alphabet.codes?.[code - 1];
+    if (seeded !== undefined && found.has(seeded)) codes.set(code, seeded);
+  }
+  // A code whose every glyph is blank draws nothing, so it is a space. Nothing else can be said
+  // about it and nothing else needs to be.
+  for (const [code, blank] of blankOnly) if (blank && !codes.has(code)) codes.set(code, ' ');
+
+  const drawn = context.drawn;
+  let resolved = 0;
+  for (const code of drawn) if (codes.has(code)) resolved += 1;
+  return { alphabet: alphabet.name, codes, ambiguous, drawn: { resolved, total: drawn.size } };
+}
+
+/**
+ * Everything `resolveWith` needs that does not vary with the alphabet, computed once.
+ *
+ * **The review that prompted this named the wrong two inputs, and measuring is what said so.** It
+ * called out `usesAscii` re-reading every font set inside the ambiguity loop and `drawnCodes`
+ * re-walking every reachable program, seven times each. Both are real repetitions and both are
+ * free: `characterMap` on `one_config` was 31.2 ms before the hoist and 33.4 ms after, because
+ * `drawnCodes` costs 1.13 ms and `usesAscii` 0.01 ms.
+ *
+ * What costs is `shapeKey`, which hashes every glyph's pixels and was doing it once per glyph **per
+ * alphabet**, so seven times for a table that cannot change with the alphabet. Hoisting that is what
+ * moves the number. The hoists the review asked for are kept because they are correct and now cost
+ * nothing to keep, but the entry in `docs/findings.md` records the measurement rather than the
+ * proposal, since a fix adopted on a premise nobody checked is the shape this project keeps
+ * catching. Section 139.
+ */
+interface ResolveContext {
+  /**
+   * One entry per decoded glyph, in set then address order, with its shape already hashed. Its structure,
+   * `letterStructure`, is worked out on first asking and kept, since only our alphabet asks for it.
+   */
+  shapes: {
+    code: number; blank: boolean; key: string; height: number; glyph: Glyph;
+    form?: ReturnType<typeof letterForm> | null; structure?: string;
+  }[];
+  ascii: boolean;
+  drawn: Set<number>;
+}
+
+function resolveContext(c: Container): ResolveContext {
+  const shapes: ResolveContext['shapes'] = [];
+  for (const set of fontSets(c) ?? []) {
+    for (const { index, glyph } of decodedSet(c, set)) {
+      // A glyph that does not decode, or whose height contradicts its set's header. It used to be
+      // decoded here with `glyphAt(c, address)` and **no bound**, so the one route that turns pixels
+      // into a character was the one route nothing constrained. Section 139.
+      if (glyph === undefined) continue;
+      const blank = isBlank(glyph);
+      // The key's height prefix is the set's declared height, which `decodedSet` has just refused to
+      // return a glyph disagreeing with, so it is now the decoded height as well.
+      shapes.push({ code: set.first + index, blank, key: blank ? '' : shapeKey(set.height, glyph), height: set.height, glyph });
+    }
+  }
+  return { shapes, ascii: usesAscii(c), drawn: drawnCodes(c) };
+}
+
+/** Whether the container's font sets state ASCII codes, per `ASCII_FIRST_CODE`. */
+export function usesAscii(c: Container): boolean {
+  const sets = fontSets(c) ?? [];
+  return sets.length > 0 && sets.every((set) => set.first >= ASCII_FIRST_CODE);
+}
+
+/**
+ * The alphabet that explains the most of a container's drawn codes, resolved.
+ *
+ * Undefined when no alphabet explains anything, which is what a typeface with no seed looks like:
+ * the three safe mode typefaces were each a separate seed for exactly this reason, and a container
+ * drawn with a fourth would return undefined rather than nonsense.
+ *
+ * Worked out once per container and its bytes, `memo.ts`, since one container is asked many times: a
+ * screen item matcher asks once per item and name. The map handed back is shared between those
+ * callers, so it is read and never changed; `oneCharacterMap` copies before adding its joiner.
+ */
+export function characterMap(c: Container): CharacterMap | undefined {
+  return memoOverBytes(CHARACTER_MAPS, c, readCharacterMap);
+}
+
+const CHARACTER_MAPS: BytesMemo<CharacterMap | undefined> = new WeakMap();
+
+function readCharacterMap(c: Container): CharacterMap | undefined {
+  let best: CharacterMap | undefined;
+  const context = resolveContext(c);
+  for (const alphabet of [...ALPHABETS, oxaniumAlphabet()]) {
+    const found = resolveWith(alphabet, context);
+    if (found.drawn.resolved === 0) continue;
+    if (best === undefined || found.drawn.resolved > best.drawn.resolved) best = found;
+  }
+  return best;
+}
+
+/**
+ * An alphabet that names a glyph by its form, `letterForm`, and by its `letterStructure`, keyed
+ * `height:structure`, as well as by its pixels. Only ours has either: our letters may be in any inks, and a
+ * blended letter's pixels depend on what it was blended into, where its form and structure do not.
+ */
+interface LetteredAlphabet extends Alphabet {
+  forms?: Readonly<Record<string, string>>;
+  structures?: Readonly<Record<string, string>>;
+}
+
+function formOf(shape: ResolveContext['shapes'][number]): ReturnType<typeof letterForm> {
+  if (shape.form === undefined) shape.form = letterForm(shape.glyph.rows) ?? null;
+  return shape.form ?? undefined;
+}
+
+function structureOf(shape: ResolveContext['shapes'][number], inks: { shadowed: number; plain: number }): string {
+  shape.structure ??= `${shape.height}:${letterStructure(shape.glyph.rows, inks)}`;
+  return shape.structure;
+}
+
+/**
+ * The inks a configuration's one bit letters of ours were drawn in: the most common ink among the glyphs
+ * whose form is one of ours, per colouring. Undefined where there are none, and then no blended letter is
+ * read either, since a blended set is always a copy of a one bit one, `blending.ts`.
+ */
+function lettersInks(
+  forms: Readonly<Record<string, string>>, context: ResolveContext,
+): { shadowed: number; plain: number } | undefined {
+  const counts = { shadowed: new Map<number, number>(), plain: new Map<number, number>() };
+  for (const shape of context.shapes) {
+    if (shape.blank) continue;
+    const form = formOf(shape);
+    if (form === undefined || forms[form.form] === undefined) continue;
+    counts[form.lettering].set(form.ink, (counts[form.lettering].get(form.ink) ?? 0) + 1);
+  }
+  const most = (m: Map<number, number>): number | undefined => [...m].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const shadowed = most(counts.shadowed);
+  const plain = most(counts.plain);
+  if (shadowed === undefined && plain === undefined) return undefined;
+  // A colouring with no one bit letter has no ink to find, and none of its letters is blended either; a
+  // value no RGB565 pixel has keeps its structure symbol from matching anything.
+  return { shadowed: shadowed ?? -1, plain: plain ?? -1 };
+}
+
+/** Our own letters' alphabet, with the faces and weights that draw each form, `oxaniumAlphabet`. */
+export type OxaniumAlphabet = LetteredAlphabet & { drawnIn: Readonly<Record<string, readonly string[]>> };
+
+/**
+ * Our own letters' alphabet, `lettering.ts`: every face in every weight and both colourings, made from the
+ * masks the letters are drawn from rather than seeded from a configuration, so it has no `codes` to fall
+ * back on. A form two characters share carries both, as a seeded alphabet's shape does. The one bit letters
+ * are named by form and the blended ones by structure, both made from the masks and the coverage alone, so
+ * the alphabet is the same whatever inks a configuration chose; and every weight is in it, so the same
+ * whatever weights, `todo-compile-650.md` 10.8.5.
+ *
+ * `drawnIn` says which faces draw a form, `F14/SemiBold` and so on, which is how a configuration's sets are
+ * known as our faces in their weights, `oxaniumFacesOf`.
+ *
+ * **Read from the generated module `oxaniumalphabet.ts`, not drawn from the font**, a fix to `todo.md` 7.3.5.
+ * That step put Oxanium's files behind a resource only the Node entry supplies, and `characterMap` tries this
+ * alphabet on every configuration, Logitech's included, so every reader that names a device refused through the
+ * main entry: `devices` and `inventory` threw `ResourceError` in FreeHarmony, which imports the main entry alone.
+ * The tables are what `oxaniumAlphabetFromFont` computes, written once by `bin/oxaniumalphabet.ts`, and
+ * `test/oxaniumalphabet.test.ts` computes them from the font again and holds the module equal to them, so the
+ * copy cannot drift. Reading them is also cheaper than drawing them: about forty milliseconds of inflating and
+ * parsing against a second and more of rendering every face in every weight. Decoded once, on first use.
+ */
+let oxanium: OxaniumAlphabet | undefined;
+
+export function oxaniumAlphabet(): OxaniumAlphabet {
+  oxanium ??= unpackOxaniumAlphabet(OXANIUM_ALPHABET_TABLES);
+  return oxanium;
+}
+
+/**
+ * The same alphabet computed from the font itself, which needs Oxanium supplied, `resources.ts`. What the
+ * generator writes into `oxaniumalphabet.ts` and what its test holds the module to; a reader never calls it.
+ * Not kept, since each call draws every face in every weight again, and only those two ask.
+ */
+export function oxaniumAlphabetFromFont(): OxaniumAlphabet {
+  const shapes: Record<string, string> = {};
+  const structures: Record<string, string> = {};
+  const add = (table: Record<string, string>, key: string, ch: string): void => {
+    const had = table[key] ?? '';
+    if (!had.includes(ch)) table[key] = had + ch;
+  };
+  const forms: Record<string, string> = {};
+  const drawnIn: Record<string, string[]> = {};
+  for (const name of LETTERING_FACES) {
+    for (const weight of OXANIUM_WEIGHTS) {
+      const face = { name, weight };
+      for (const lettering of ['shadowed', 'plain'] as const) {
+        for (const ch of LETTERING_CHARACTERS) {
+          const form = maskForm(face, ch, lettering);
+          if (!form.includes('#')) continue;
+          add(forms, form, ch);
+          const where = (drawnIn[form] ??= []);
+          if (!where.includes(`${name}/${weight}`)) where.push(`${name}/${weight}`);
+          const structure = coverageStructure(face, ch, lettering);
+          add(structures, `${structure.split('/').length}:${structure}`, ch);
+        }
+      }
+    }
+  }
+  return oxaniumAlphabetOf({ forms, structures, drawnIn }, shapes);
+}
+
+/** The three tables `oxaniumalphabet.ts` carries; the alphabet's name, container and empty `shapes` are fixed. */
+interface OxaniumTables {
+  readonly forms: Readonly<Record<string, string>>;
+  readonly structures: Readonly<Record<string, string>>;
+  readonly drawnIn: Readonly<Record<string, readonly string[]>>;
+}
+
+function oxaniumAlphabetOf(tables: OxaniumTables, shapes: Record<string, string> = {}): OxaniumAlphabet {
+  return { name: 'oxanium', container: 'packages/codec/src/drawing/typeface.ts', shapes, ...tables };
+}
+
+/**
+ * The alphabet's tables as `oxaniumalphabet.ts` carries them: their JSON as a zlib stream, `deflate`, written in
+ * base64. **Compressed because the tables are 4.2 MB of JSON**, every form and structure a string of rows, which
+ * as literals would be the largest file in the repository by far; deflated they are under 0.4 MB of base64 and
+ * decode in about forty milliseconds. Any zlib stream reads back the same, so the generator hands in Node's at
+ * its strongest level rather than the loader's, `resources.ts`, which is Node's at its defaults and a third
+ * larger here. The encoder sits beside its decoder, `unpackOxaniumAlphabet`, and only the generator calls it.
+ */
+export function packOxaniumAlphabet(alphabet: OxaniumAlphabet, deflate: (bytes: Uint8Array) => Uint8Array): string {
+  const { forms = {}, structures = {}, drawnIn } = alphabet;
+  const json = new TextEncoder().encode(JSON.stringify({ forms, structures, drawnIn } satisfies OxaniumTables));
+  const deflated = deflate(json);
+  // `btoa` takes a string of byte values, built in slices so no single call spreads half a megabyte of arguments.
+  let binary = '';
+  for (let k = 0; k < deflated.length; k += 0x8000) binary += String.fromCharCode(...deflated.subarray(k, k + 0x8000));
+  return btoa(binary);
+}
+
+/** The alphabet back from `packOxaniumAlphabet`'s text, with nothing supplied: the inflate is our own, `deflate.ts`. */
+export function unpackOxaniumAlphabet(packed: string): OxaniumAlphabet {
+  const binary = atob(packed);
+  const bytes = new Uint8Array(binary.length);
+  for (let k = 0; k < binary.length; k += 1) bytes[k] = binary.charCodeAt(k);
+  const tables = JSON.parse(new TextDecoder().decode(inflateZlib(bytes))) as OxaniumTables;
+  return oxaniumAlphabetOf(tables);
+}
+
+/** The character a code stands for, or `undefined` when nothing settles it. */
+export function character(map: CharacterMap, code: number): string | undefined {
+  return map.codes.get(code);
+}
+
+/**
+ * One string, decoded. Codes with no character become `replacement`, which defaults to a question
+ * mark in guillemets so an unread code cannot be mistaken for a character the config carried.
+ */
+export function decode(glyphs: Uint8Array, map: CharacterMap, replacement = '¿'): string {
+  let out = '';
+  for (const code of glyphs) out += map.codes.get(code) ?? replacement;
+  return out;
+}
+
+/** A string a screen program draws, with where it is drawn and what draws it. */
+export interface ScreenString {
+  /** The program the instruction belongs to, as the container addresses it. */
+  program: number;
+  /** Blob offset of the instruction, so two copies of the same text can be told apart. */
+  at: number;
+  /**
+   * The address the glyphs were read from when the instruction was a `SCREEN_TEXT_AT`, and undefined
+   * when it carried them inline.
+   *
+   * The distinction is what a writer needs: the bytes behind a referenced string belong to another
+   * program, so editing them in place changes every draw that names them. Section 121.
+   */
+  referencedFrom?: number;
+  /** The base slot 7 entry the last `SCREEN_SELECT_FONT` chose, or -1 before any. */
+  font: number;
+  x: number;
+  y: number;
+  text: string;
+  /** How many of the string's codes had no character, so `text` has that many replacements. */
+  unread: number;
+}
+
+/**
+ * Every string the container's reachable screen programs draw, decoded.
+ *
+ * Font selection is per program and carries forward within it, which is how the remote reads it:
+ * the opcode sets a variable the text opcode uses. It does not carry between programs here,
+ * because the walk order is not the run order.
+ *
+ * **Both text opcodes**, since section 121. One draw is one entry, so a string referenced twenty
+ * times appears twenty times with twenty positions, which is what a reader asking "what does this
+ * page say" wants. `referencedFrom` tells the two apart, and the shared bytes appear once as the
+ * inline draw and once per reference on purpose.
+ */
+export function screenStrings(c: Container, map = characterMap(c)): ScreenString[] {
+  if (map === undefined) return [];
+  const out: ScreenString[] = [];
+  for (const [program, instructions] of reachablePrograms(c)) {
+    let font = -1;
+    for (const instruction of instructions) {
+      if (instruction.opcode === SCREEN_SELECT_FONT) font = instruction.operands[0] ?? -1;
+      const referencedFrom = referencedStringAddress(instruction);
+      const glyphs =
+        instruction.opcode === SCREEN_TEXT_INLINE
+          ? instruction.glyphs
+          : glyphsReferencedBy(c, instruction);
+      if (glyphs === undefined) continue;
+      let unread = 0;
+      for (const code of glyphs) if (!map.codes.has(code)) unread += 1;
+      out.push({
+        program,
+        at: instruction.start,
+        ...(referencedFrom === undefined ? {} : { referencedFrom }),
+        font,
+        x: instruction.operands[0] ?? 0,
+        y: instruction.operands[1] ?? 0,
+        text: decode(glyphs, map),
+        unread,
+      });
+    }
+  }
+  return out.sort((a, b) => a.at - b.at);
+}
+
+/**
+ * How much of a container's drawn text has a character behind it.
+ *
+ * **Counted per draw and over both text opcodes**, since section 121, so `referenced` is included in
+ * `strings` and its glyphs in `glyphs`. The figures grew by roughly a factor of four when the
+ * referenced draws were added, and the growth is a correction of an undercount: opcode 4 is the
+ * commoner of the two and nothing had followed its pointer.
+ */
+export function textCoverage(c: Container): {
+  glyphs: number;
+  read: number;
+  strings: number;
+  /** Of `strings`, how many were drawn by reference rather than inline. */
+  referenced: number;
+} {
+  const map = characterMap(c);
+  let glyphs = 0;
+  let read = 0;
+  let strings = 0;
+  let referenced = 0;
+  for (const [, program] of reachablePrograms(c)) {
+    for (const instruction of program) {
+      const inline = instruction.opcode === SCREEN_TEXT_INLINE;
+      const codes = inline ? instruction.glyphs : glyphsReferencedBy(c, instruction);
+      if (codes === undefined) continue;
+      strings += 1;
+      if (!inline) referenced += 1;
+      for (const code of codes) {
+        glyphs += 1;
+        if (map !== undefined && map.codes.has(code)) read += 1;
+      }
+    }
+  }
+  return { glyphs, read, strings, referenced };
+}

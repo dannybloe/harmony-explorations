@@ -18,8 +18,8 @@
 import type { FamilyFonts } from '../family.ts';
 // Types alone: the font table asks the family through the registry, so a value import back would close a
 // cycle that leaves this module's constant unset when it is the first one loaded.
-import type { FaceOrRefusal, SetMeasurement } from '../../fonttable.ts';
-import type { OxaniumFaceName } from '../../lettering.ts';
+import type { FaceOrRefusal, SetMeasurement } from '../../drawing/fonttable.ts';
+import type { OxaniumFaceName } from '../../drawing/lettering.ts';
 
 /** The five faces measured on the Harmony One, `todo-compile-one.md` 5.2. `lettering.ts` held this until 3.3.3.5. */
 export const HARMONY_ONE_FACES: readonly OxaniumFaceName[] = ['One16', 'One15', 'OneR15', 'One14', 'One11'];

@@ -65,11 +65,11 @@ import {
 } from '../src/families/harmony-touch/fromnothing.ts';
 import { pictureRefusals } from '../src/families/harmony-touch/favourites.ts';
 import { readConfiguration } from '../src/families/harmony-touch/read.ts';
-import { readPng } from '../src/png.ts';
+import { readPng } from '../src/screens/png.ts';
 import type { TouchSetup } from '../src/families/harmony-touch/setup.ts';
 import { RecipeError } from '../src/recipe/recipe.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 // The setup file and the documents are JSON; the broken ones are built as such.
 type Json = any;

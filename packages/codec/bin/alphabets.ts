@@ -1,9 +1,9 @@
 /**
- * Regenerate `src/alphabets.ts`, the table from a glyph's pixels to the character it draws.
+ * Regenerate `src/screens/alphabets.ts`, the table from a glyph's pixels to the character it draws.
  *
  * ```
  * node packages/codec/bin/alphabets.ts            report what the seeds produce and check the file
- * node packages/codec/bin/alphabets.ts --write    rewrite src/alphabets.ts
+ * node packages/codec/bin/alphabets.ts --write    rewrite src/screens/alphabets.ts
  * ```
  *
  * **The seeds below are the only hand read thing in this codec**, and they are the reason the rest
@@ -33,7 +33,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { load } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { fontSets, glyphAt, shapeKey, isBlank, screenStrings, characterMap } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -210,7 +210,7 @@ const SEEDS: Seed[] = [
   },
 ];
 
-const OUT = new URL('../src/alphabets.ts', import.meta.url);
+const OUT = new URL('../src/screens/alphabets.ts', import.meta.url);
 
 function shapesOf(seed: Seed): { shapes: Record<string, string>; blank: number; unread: string[] } {
   const shapes = new Map<string, Set<string>>();

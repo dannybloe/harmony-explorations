@@ -32,12 +32,12 @@ import {
   touchPages,
   valueMaps,
 } from '../src/internal.ts';
-import { saveEdits } from '../src/edit.ts';
-import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../src/screen.ts';
+import { saveEdits } from '../src/edit/edit.ts';
+import { SCREEN_TEXT_AT, SCREEN_TEXT_INLINE } from '../src/screens/screen.ts';
 import { ONE } from '../src/families/harmony-one/index.ts';
 import { ONE_BUILT, OneBuildError, oneBuiltBytes, withOneBuilders, withOneComposedBuilders } from '../src/families/harmony-one/builders.ts';
 import { ATTEMPT_LINE, NO, YES, checkOneHelpScreens, oneHelpScreenModes, withOneHelpChain } from '../src/families/harmony-one/helpscreens.ts';
-import { characterMap, decode } from '../src/text.ts';
+import { characterMap, decode } from '../src/screens/text.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { oneFixedScreenModes } from '../src/families/harmony-one/fixedscreens.ts';
 import { oneTourScreenModes } from '../src/families/harmony-one/tourscreens.ts';
@@ -48,14 +48,14 @@ import { oneDeviceModes } from '../src/families/harmony-one/devicepages.ts';
 import { oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
 import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import { withCentredPadLabels } from '../src/families/harmony-one/centring.ts';
-import { ENTER_MODE, caseQueued } from '../src/inventory.ts';
+import { ENTER_MODE, caseQueued } from '../src/inventory/inventory.ts';
 import { appendValueMapCase, caseProgram } from '../src/shared/menus.ts';
 import { restamped } from '../src/shared/core.ts';
-import { layOutContainer, takeApart } from '../src/frame.ts';
-import { numberSenders } from '../src/tables.ts';
+import { layOutContainer, takeApart } from '../src/assembly/frame.ts';
+import { numberSenders } from '../src/container/tables.ts';
 import { ONE_INSERTED_SECTION, withNumberSenderTable, withOneInsertedSection } from '../src/families/harmony-one/smalltables.ts';
 import { listsReached } from './screenlists.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 const DONOR = 'harvest_one_two_devices';
 

@@ -1,0 +1,877 @@
+/**
+ * The tabular sections, ported from `src/harmony/gspm.py` for milestone M2.
+ *
+ * Five slots whose shape is a header and a run of fixed size records: the firmware event map
+ * (base slot 4), the mode table (6), the binding table (9), the state variable table (13) and the
+ * tagged lists that 6 and 9 both point at. None of them is large, but every one of them states its
+ * own length, so each is a claim the byte accounting can make exactly rather than by inference.
+ *
+ * The reason they are worth porting as a group is that they share one hazard: **a section's size
+ * is not the gap to the next pointer.** Base slot 4 is 125 bytes and the gap after it runs to 1532,
+ * because base slot 5's arrays are laid out inside it. `docs/findings.md` section 36.
+ */
+import { Container, GspmError, archSlot } from './gspm.ts';
+import { u16, u24, u8 } from '../support/bytes.ts';
+
+export const EVENT_MAP_SLOT = 4;
+export const MODE_TABLE_SLOT = 6;
+export const HANDLER_TABLE_SLOT = 9;
+export const STATE_TABLE_SLOT = 13;
+/** The firmware runs this tag on the entry being left and `..._ENTER` on the one being entered. */
+export const MODE_TAG_LEAVE = 7;
+export const MODE_TAG_ENTER = 6;
+/**
+ * Architectures where a mode record carries a screen program immediately after its tagged list.
+ *
+ * Every record does on all four, 2515 of 2515 across the corpus: 536 of 536 on arch 8 (Harmony 880),
+ * 233 of 233 on arch 9 (Harmony 525), 656 of 656 on arch 12 (Harmony One) and 1090 of 1090 on arch 14
+ * (Harmony 600 and 700). Arch 12 looked like the exception until section 54 found that the only thing
+ * stopping it was opcode 23's missing operand count. `docs/findings.md` sections 53 and 54.
+ *
+ * **This said "all three" and "arch 9 still manages only 43 of 114 ... and is not established" while
+ * the set below held four**, which is section 54's own before column left standing next to the set it
+ * changed: that section moved arch 9 from 0 of 114 to 114 of 114 and wrote "`MODE_PROGRAM_ARCHITECTURES`
+ * is now all four" in the same breath. A docstring stating a reading is unestablished, over code that
+ * relies on it in every container of that architecture, is the shape a reader has no way to doubt. The
+ * counts here are asserted in `test/sections.test.ts` so the next corpus change moves them in a diff.
+ */
+export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 10, 12, 14]);
+export const HANDLER_TAG_ENTER = 1;
+export const HANDLER_TAG_LEAVE = 2;
+/**
+ * A page record is `{ u24 list; u24 program }` everywhere except arch 12, which puts one byte
+ * in front of it.
+ *
+ * Read from the consumer rather than from the layout, because the layout cannot tell the two
+ * apart: the arch 14 reader at `0x16918` follows the `u24` at page offset 0 and the arch 12 one
+ * at `0x28422` follows the `u24` at offset **1**, having read a single byte at offset 0 first
+ * (`0x28166`). Nothing in either image reads that byte back, so what it selects is not known.
+ * `docs/findings.md` section 66.
+ */
+export const MODE_PAGE_LEAD_ARCHITECTURES: ReadonlySet<number> = new Set([12]);
+/** The two `u24`s a page always carries; the arch 12 lead byte is on top of this. */
+export const MODE_PAGE_POINTERS = 6;
+/** An entry's fixed head: the kind byte, the record back pointer and the page count. */
+export const MODE_ENTRY_HEADER = 6;
+
+/** The blob offset of a section's own address, or undefined when the slot is absent or NULL. */
+function sectionStart(c: Container, base: number): number | undefined {
+  if (c.architecture === undefined) return undefined;
+  let slot: number;
+  try {
+    slot = archSlot(c.architecture, base);
+  } catch (error) {
+    if (error instanceof GspmError) return undefined;
+    throw error;
+  }
+  const section = c.sections[slot];
+  if (section === undefined || section.isNull) return undefined;
+  return c.blobOffsetOf(section.address);
+}
+
+export interface EventMap {
+  /** What the firmware uses when no key matches. */
+  fallback: number;
+  entries: Map<number, number>;
+  /** The whole section, so the byte accounting needs no second copy of the layout. */
+  length: number;
+  /** Where the section starts, a blob offset: the fallback, then each entry's key and its `u24` from `start + 5`. */
+  start: number;
+}
+
+/**
+ * Base slot 4: what each of the thirty firmware events maps to.
+ *
+ * ```
+ * +0x00  u24  fallback
+ * +0x03  u16  count
+ * +0x05  { u8 key; u24 value }[count]
+ * ```
+ *
+ * The value goes where opcode `0x7E`'s operand goes, which is what names the section.
+ */
+export function eventMap(c: Container): EventMap | undefined {
+  const off = sectionStart(c, EVENT_MAP_SLOT);
+  if (off === undefined || off + 5 > c.blob.length) return undefined;
+  const count = u16(c.blob, off + 3);
+  const length = 5 + 4 * count;
+  if (off + length > c.blob.length) return undefined;
+  const entries = new Map<number, number>();
+  for (let k = 0; k < count; k += 1) {
+    const p = off + 5 + 4 * k;
+    entries.set(u8(c.blob, p), u24(c.blob, p + 1));
+  }
+  return { fallback: u24(c.blob, off), entries, length, start: off };
+}
+
+/** Base slot 0's node tag. Every node in every frame in the corpus opens with it. */
+export const NAME_NODE_TAG = 0xa7;
+/** Bytes of a node before its name: the tag, the length, and the two `u16` fields. */
+export const NAME_NODE_HEADER = 7;
+/** What the stated length counts besides the name: the two `u16` fields. */
+export const NAME_NODE_FIELDS = 4;
+/** The level whose nodes index base slot 13. */
+export const NAME_LEVEL_STATE_VARIABLE = 1;
+/** Bytes of the frame before the first node: the cookie, the length, and a zero byte. */
+export const FRAME_HEADER = 5;
+
+export interface NameNode {
+  /** Nesting level. 0 is the containers, 1 the state variables, 2 a menu below one of them. */
+  level: number;
+  /**
+   * An index. At level 0 it is the node's own place among the level 0 nodes, a permutation of
+   * `0..n-1` on every container. At level 1 it is the **base slot 13 state variable** the name
+   * belongs to, which is what makes this section the naming of that table.
+   */
+  index: number;
+  name: string;
+  /** Blob offset of the tag, and the whole node's length. */
+  start: number;
+  length: number;
+}
+
+/**
+ * Base slot 0: the `0xFEED` frame, as the list of named nodes it is.
+ *
+ * ```
+ * +0x00  u16   0xFEED
+ * +0x02  u24   length, from the cookie, terminator excluded
+ * +0x05        nodes, packed end to end, up to +length
+ * +len   u16   0xBEEF
+ *
+ * a node:
+ * +0x00  u8    0xA7
+ * +0x01  u16   4 + the name's length
+ * +0x03  u16   level
+ * +0x05  u16   index
+ * +0x07  char  name[]
+ * ```
+ *
+ * **This section was "understood only as far as how many bytes it has" until 8 August 2026**, and
+ * the emitter is what said so: the byte accounting counted it because the frame states its own
+ * length, and no field inside it had ever been read. What opened it was a sample whose first node
+ * is not called `Root`, which showed that `Root` was never a prologue but simply the first node.
+ *
+ * The closure is that the nodes tile the frame exactly on all fifteen framed containers, that
+ * level 0's indices are a permutation of `0..n-1` on every one, and that every level 1 index is
+ * inside base slot 13's state variable count. `docs/findings.md` section 77.
+ */
+export function nameNodes(c: Container): NameNode[] | undefined {
+  if (c.frameLength === undefined || c.frameLength === 0) return undefined;
+  const section = c.sections[0];
+  if (section === undefined || section.isNull) return undefined;
+  const start = c.blobOffsetOf(section.address);
+  if (start === undefined) return undefined;
+  const end = start + c.frameLength;
+  if (end > c.blob.length) return undefined;
+
+  const out: NameNode[] = [];
+  let at = start + FRAME_HEADER;
+  while (at < end) {
+    if (u8(c.blob, at) !== NAME_NODE_TAG) return undefined;
+    const stated = u16(c.blob, at + 1);
+    if (stated < NAME_NODE_FIELDS) return undefined;
+    const length = 3 + stated;
+    if (at + length > end) return undefined;
+    let name = '';
+    for (let i = at + NAME_NODE_HEADER; i < at + length; i += 1) {
+      name += String.fromCharCode(u8(c.blob, i));
+    }
+    out.push({ level: u16(c.blob, at + 3), index: u16(c.blob, at + 5), name, start: at, length });
+    at += length;
+  }
+  // A frame whose nodes do not land on its stated end is a misread, not a short list.
+  return at === end ? out : undefined;
+}
+
+export const LOG_AREA_SLOT = 2;
+/** The capacity field is a `u24` on arch 12, where the section is nine bytes rather than eight. */
+export const LOG_AREA_WIDE_ARCHITECTURES: ReadonlySet<number> = new Set([12]);
+
+export interface LogArea {
+  capacity: number;
+  /** The first byte of the reserved region, and one past its last. */
+  start: number;
+  limit: number;
+  length: number;
+}
+
+/**
+ * Base slot 2: three numbers reserving flash **above** the config rather than inside it.
+ *
+ * ```
+ * +0x00  u16  capacity        u24 on arch 12, where the section is nine bytes
+ * +0x02  u24  start           the first byte of the region
+ * +0x05  u24  limit           one past its last byte
+ * ```
+ *
+ * The writer refuses an address outside `[0x040000, 0x400000)` by zeroing the remaining count
+ * rather than erroring, which is a rail rather than a curiosity. `docs/findings.md` section 47.
+ */
+export function logArea(c: Container): LogArea | undefined {
+  const off = sectionStart(c, LOG_AREA_SLOT);
+  if (off === undefined || c.architecture === undefined) return undefined;
+  const wide = LOG_AREA_WIDE_ARCHITECTURES.has(c.architecture);
+  const width = wide ? 3 : 2;
+  const length = width + 6;
+  if (off + length > c.blob.length) return undefined;
+  return {
+    capacity: wide ? u24(c.blob, off) : u16(c.blob, off),
+    start: u24(c.blob, off + width),
+    limit: u24(c.blob, off + width + 3),
+    length,
+  };
+}
+
+export interface CountedSection {
+  addresses: number[];
+  /** Where the section starts in the blob, and how long its own table is. */
+  start: number;
+  length: number;
+}
+
+/**
+ * Base slot 6: the address of every mode the remote can switch between.
+ *
+ * ```
+ * +0x00  u24  count
+ * +0x03  u24  address[count]
+ * ```
+ *
+ * A `u24` count, not the `u8` or `u16` the six recognised pointer arrays use, which is why
+ * `pointerArray` does not pick this slot up. The entries are not laid out after the table, so the
+ * section is `3 + 3 * count` bytes and no more.
+ */
+export function modeTable(c: Container): CountedSection | undefined {
+  const off = sectionStart(c, MODE_TABLE_SLOT);
+  if (off === undefined || off + 3 > c.blob.length) return undefined;
+  const count = u24(c.blob, off);
+  const length = 3 + 3 * count;
+  if (off + length > c.blob.length) return undefined;
+  const addresses: number[] = [];
+  for (let p = off + 3; p < off + length; p += 3) addresses.push(u24(c.blob, p));
+  return { addresses, start: off, length };
+}
+
+/**
+ * Base slot 9: the address of each tagged handler set, `u8 count` then `u24 address[count]`.
+ *
+ * Each address is a tagged list in the encoding base slot 6's mode entries use, so `taggedList`
+ * reads both. `docs/findings.md` section 39.
+ */
+export function handlerSets(c: Container): CountedSection | undefined {
+  const off = sectionStart(c, HANDLER_TABLE_SLOT);
+  if (off === undefined || off + 1 > c.blob.length) return undefined;
+  const count = u8(c.blob, off);
+  const length = 1 + 3 * count;
+  if (off + length > c.blob.length) return undefined;
+  const addresses: number[] = [];
+  for (let p = off + 1; p < off + length; p += 3) addresses.push(u24(c.blob, p));
+  return { addresses, start: off, length };
+}
+
+export interface StateTable {
+  count: number;
+  /** Variables stored as one byte, indices 0 to `narrow - 1`. */
+  narrow: number;
+  /**
+   * Variables stored as two bytes, indices `narrow` to `count - 1`.
+   *
+   * **`narrow + 2 * wide` is the storage the firmware allocates, and `count` plays no part in it**,
+   * section 276. So this word is load bearing rather than redundant: a variable above the storage is
+   * seeded and then painted over with `0xFE` at every boot, silently.
+   * `assertStateTableConsistent` below is the refusal.
+   */
+  wide: number;
+  /**
+   * The header repeats `narrow`.
+   *
+   * Arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) fetch this word and store it nowhere,
+   * section 276, so nothing on those remotes uses it; arch 9 (Harmony 525) reads it, section 274.
+   * `count` is kept only in a scratch byte on both, so nothing compares an index against it either.
+   * Whether the host software used it is unknown, and it equals `narrow` on 19 of 19 containers.
+   */
+  narrowAgain: number;
+  entries: number[];
+  start: number;
+  length: number;
+}
+
+/**
+ * Base slot 13: how many state variables there are and how wide each one is.
+ *
+ * ```
+ * +0x00  u16  count
+ * +0x02  u16  narrow
+ * +0x04  u16  wide
+ * +0x06  u16  narrow, again
+ * +0x08  u24  entry[count]
+ * ```
+ *
+ * The split is what the firmware's lookup uses: an index below `narrow` reads one byte and an
+ * index at or above it reads two, so the width belongs to the index and not to the value.
+ */
+export class StateTableError extends Error {}
+
+/**
+ * Refuse a container whose base slot 13 header does not add up.
+ *
+ * **`narrow` and `wide` size the state variable storage and `count` does not**, section 276. The
+ * firmware computes `narrow + 2 * wide` as the RAM the variables occupy, which is what the store's
+ * own width arithmetic needs, and then **fills every byte above it with `0xFE` at each boot**. The
+ * seeding loop runs first and over `count`, so a container whose `count` exceeds the sum seeds
+ * variables into bytes the fill then paints over: they hold 65278 rather than what their record
+ * says, and nothing anywhere reports it. Measured on arch 12 (Harmony One) at `0x2A330` and arch 14
+ * (Harmony 700 reference image) at `0x17A42`, and confirmed on a connected Harmony One where the
+ * `0xFE` run begins at the computed byte and not one either side.
+ *
+ * A separate bound check does exist, `0x2A694` and `0x17DCA`, and it is **not** what fires here:
+ * its callers are host command handlers, and a configuration's own state write reaches the store
+ * with no bound check at all. The first version of this rail had that backwards.
+ *
+ * Arch 9 (Harmony 525) reads all four words and guards per variable, section 274, so none of this
+ * is its rule.
+ *
+ * `narrow + wide === count` holds on 19 of 19 containers in the corpus and `narrowAgain === narrow`
+ * on 19 of 19, so a header that breaks either is one no generator here has ever emitted. This
+ * exists because ours did: `composeDevice` raised `count` alone, and the device it added to the
+ * spare Harmony One appeared on the activity menu, beeped and started nothing, because the one
+ * variable the whole activity turns on sat one index above the bound.
+ *
+ * A rail rather than a warning, for the reason every rail in `writing-a-config` is: the failure is
+ * silent on the remote, so the last place it can be caught is before the bytes leave here.
+ */
+export function assertStateTableConsistent(c: Container): void {
+  const t = stateTable(c);
+  if (t === undefined) return;
+  if (t.narrow + t.wide !== t.count) {
+    throw new StateTableError(
+      `base slot 13 says ${t.count} state variables and splits them ${t.narrow} narrow and ${t.wide} `
+      + `wide, which is ${t.narrow + t.wide}: the firmware sizes the storage from the split, so `
+      + `variables ${t.narrow + t.wide} to ${t.count - 1} are seeded and then overwritten with 0xFE `
+      + 'at every boot');
+  }
+  if (t.narrowAgain !== t.narrow) {
+    throw new StateTableError(
+      `base slot 13 states its narrow count twice and the two disagree, ${t.narrow} and `
+      + `${t.narrowAgain}; what reads the second is unestablished, so they are kept equal`);
+  }
+}
+
+/**
+ * Base slot 13's header: four `u16` words in front of the entry pointers.
+ *
+ * Named because it was three literal 8s in the reader below and a fourth in `compose.ts`, which
+ * inserts a pointer at a computed position and so has to know where the array starts.
+ */
+export const STATE_TABLE_HEADER = 8;
+
+export function stateTable(c: Container): StateTable | undefined {
+  const off = sectionStart(c, STATE_TABLE_SLOT);
+  if (off === undefined || off + STATE_TABLE_HEADER > c.blob.length) return undefined;
+  const count = u16(c.blob, off);
+  const length = STATE_TABLE_HEADER + 3 * count;
+  if (off + length > c.blob.length) return undefined;
+  const entries: number[] = [];
+  for (let p = off + STATE_TABLE_HEADER; p < off + length; p += 3) entries.push(u24(c.blob, p));
+  return {
+    count,
+    narrow: u16(c.blob, off + 2),
+    wide: u16(c.blob, off + 4),
+    narrowAgain: u16(c.blob, off + 6),
+    entries,
+    start: off,
+    length,
+  };
+}
+
+/** A base slot 13 record: seven byte header then `count` values of eight bytes. */
+export const STATE_RECORD_HEADER = 7;
+export const STATE_VALUE_LENGTH = 8;
+
+/**
+ * One eight byte value of a base slot 13 record: a transition, and what to run on it.
+ *
+ * ```
+ * +0x00  u8   zero in all 551 of them, the same spare byte the section table carries
+ * +0x01  i16  from, or a negative sentinel
+ * +0x03  i16  to, or a negative sentinel
+ * +0x05  u16  operand   the three bytes are one action list instruction
+ * +0x07  u8   opcode
+ * ```
+ *
+ * `docs/findings.md` section 86.
+ */
+export interface StateValue {
+  /** Where the value sits, as a blob offset. */
+  start: number;
+  /** The value moved away from, or a negative sentinel: `-2` and `-3` both occur. */
+  from: number;
+  /** The value moved to, or `-2`. */
+  to: number;
+  /** What runs on that transition, in the action list language. */
+  operand: number;
+  opcode: number;
+}
+
+export interface StateRecord {
+  address: number;
+  count: number;
+  length: number;
+  /**
+   * The `u16` at +0x02: the **highest value** the variable takes, section 86.
+   *
+   * The name base slot 0 gives the variable ends in the number of values it has, and that number
+   * is this one plus one in all 250 named variables of the corpus. Every non negative `from` and
+   * `to` in the record's own values is inside `0` to here, which is the second closure.
+   */
+  second: number;
+  /**
+   * The `u16` at +0x00: the value the variable holds **when the config is generated**, section 130.
+   *
+   * At most `second` in all 735 records and zero in most, which is what it looked like before it had
+   * a reading, and section 60 marked it unconfirmed on exactly that basis. Two findings closed it
+   * from different directions: for `CurrentActivityState` it is the idle value, the one no binding
+   * writes, section 120, and for the first seven records it is the corresponding field of base slot
+   * 3's build timestamp in every container, section 130. The generated value and the idle value
+   * coincide for the activity variable because nothing is running when a config is compiled.
+   */
+  first: number;
+  /** The transitions, decoded. Empty when the record enumerates none. */
+  values: StateValue[];
+}
+
+/**
+ * The maxima of base slot 13's first six records, which are the firmware's clock, section 130.
+ *
+ * Fixed, and the same in every container: they describe a second, a minute, an hour, a day of the
+ * month, a day of the week and a zero based month. The **seventh** is not here because it is not
+ * fixed: the year's maximum is that year plus one, so it moves when the year is stamped, which is
+ * one of two places a save has to write a `second` and not only a `first`. `edit.ts` reads this table
+ * both to write those maxima and to refuse a base slot 13 whose others disagree, since whatever that
+ * is, it is not the clock.
+ *
+ * **The day's maximum is fixed too**, section 322. `first` is the day of the month counted from 0, so
+ * the 30 every container declares is the 31st, which is also the last index the firmware's month end
+ * routine allows. This said the day was one based and that a config built on a 31st would declare a
+ * value outside its own range<!--superseded-->, and a save raised the maximum to 31 on such a day. Both
+ * rested on the misreading: `h700_config` was built on 31 July 2021 and stores 30 against a maximum of
+ * 30, which is what Logitech's generator does on a 31st.
+ */
+export const CLOCK_STATE_MAXIMA = [59, 59, 23, 30, 6, 11] as const;
+/**
+ * The day of the month, the one clock field whose stored maximum a save may have to put back: a save of
+ * ours on a 31st raised it to 31 until section 322, and `clockStateEdits` accepts that 31 and writes 30.
+ */
+export const CLOCK_DAY_INDEX = 3;
+
+/**
+ * The record each base slot 13 pointer lands on, in table order.
+ *
+ * Nothing in the container declares the length, so `7 + 8 * count` is the reader. The evidence is
+ * a config whose contents were chosen deliberately plus a corpus wide check that no record
+ * overruns the next: `docs/findings.md` section 60.
+ *
+ * The eight byte values are **transitions**, `u8 zero; i16 from; i16 to; u16 operand; u8 opcode`,
+ * where the last three are an action list instruction, section 86. This docstring said they are not
+ * decoded until section 139, which they have been since section 86: `stateTransitions` reads them.
+ */
+export function stateRecords(c: Container): StateRecord[] | undefined {
+  const table = stateTable(c);
+  if (table === undefined) return undefined;
+  const records: StateRecord[] = [];
+  for (const address of table.entries) {
+    const off = c.blobOffsetOf(address);
+    if (off === undefined || off + STATE_RECORD_HEADER > c.blob.length) continue;
+    const count = u16(c.blob, off + 4);
+    const length = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * count;
+    const values: StateValue[] = [];
+    if (off + length <= c.blob.length) {
+      for (let k = 0; k < count; k += 1) {
+        const at = off + STATE_RECORD_HEADER + STATE_VALUE_LENGTH * k;
+        values.push({
+          start: at,
+          from: (u16(c.blob, at + 1) << 16) >> 16,
+          to: (u16(c.blob, at + 3) << 16) >> 16,
+          operand: u16(c.blob, at + 5),
+          opcode: u8(c.blob, at + 7),
+        });
+      }
+    }
+    records.push({
+      address,
+      count,
+      second: u16(c.blob, off + 2),
+      first: u16(c.blob, off),
+      values,
+      length,
+    });
+  }
+  return records;
+}
+
+/**
+ * One page of a mode: a tagged list of its own and the screen program that draws it.
+ *
+ * The firmware looks a tag up in `list` first and falls back to the mode record's list when it
+ * finds nothing, so a page overrides rather than replaces. `program` goes straight to the screen
+ * interpreter, `0x1879C` on arch 14 and `0x295AC` on arch 12.
+ */
+export interface ModePage {
+  /** The page record's own address, as the entry's pointer array holds it. */
+  address: number;
+  /** The arch 12 byte in front of the two pointers, absent elsewhere. */
+  lead: number | undefined;
+  /** A tagged list, in the same encoding the mode record's list uses. */
+  list: number;
+  /** A screen program, stated rather than computed. */
+  program: number;
+  length: number;
+}
+
+export interface ModeRecord {
+  /** What base slot 6's array holds: the entry, which is not the record's start. */
+  address: number;
+  /** Where the record actually begins, read from the `u24` beside the pointer. */
+  start: number;
+  kind: number;
+  entries: TaggedEntry[];
+  /** The tagged list only: `1 + 4 * entries`. The rest of the record is not decoded. */
+  length: number;
+  /** The `u16` at the entry's offset 4, which is how many pages follow it. */
+  pageCount: number;
+  pages: ModePage[];
+  /** The entry itself: `6 + 3 * pageCount`, which is what the byte accounting claims. */
+  entryLength: number;
+}
+
+/**
+ * Base slot 6's entries, located the way the firmware locates them.
+ *
+ * **The pointer does not land on the entry.** It lands inside the record, on a discriminator byte
+ * with a `u24` back pointer to the record's start immediately after, which is the shape base slot
+ * 5's infrared records have. The tagged list is at the **start**.
+ *
+ * Reading it at the pointer instead is what made every mode look like the wide form with counts
+ * running to 255: the byte there is usually zero, and so is the wide form's marker.
+ * `docs/findings.md` section 52.
+ *
+ * The entry does not stop at that back pointer. Four bytes further sit a `u16` page count and an
+ * array of that many page addresses, which is how the consumer at `0x16816` reads it: it loads a
+ * literal 6 into the stride helper's offset register and indexes from there with stride 3.
+ * `docs/findings.md` section 66.
+ */
+export function modeRecords(c: Container): ModeRecord[] | undefined {
+  const table = modeTable(c);
+  if (table === undefined) return undefined;
+  const lead = c.architecture !== undefined && MODE_PAGE_LEAD_ARCHITECTURES.has(c.architecture);
+  const pageLength = MODE_PAGE_POINTERS + (lead ? 1 : 0);
+  const out: ModeRecord[] = [];
+  for (const address of table.addresses) {
+    const off = c.blobOffsetOf(address);
+    if (off === undefined || off + MODE_ENTRY_HEADER > c.blob.length) return undefined;
+    const start = u24(c.blob, off + 1);
+    const startOff = c.blobOffsetOf(start);
+    if (startOff === undefined || startOff >= off) return undefined;
+    const list = taggedList(c, start);
+    if (list === undefined) return undefined;
+    const pageCount = u16(c.blob, off + 4);
+    const entryLength = MODE_ENTRY_HEADER + 3 * pageCount;
+    if (off + entryLength > c.blob.length) return undefined;
+    const pages: ModePage[] = [];
+    for (let k = 0; k < pageCount; k += 1) {
+      const page = u24(c.blob, off + MODE_ENTRY_HEADER + 3 * k);
+      const pageOff = c.blobOffsetOf(page);
+      if (pageOff === undefined || pageOff + pageLength > c.blob.length) return undefined;
+      pages.push({
+        address: page,
+        lead: lead ? u8(c.blob, pageOff) : undefined,
+        list: u24(c.blob, pageOff + (lead ? 1 : 0)),
+        program: u24(c.blob, pageOff + (lead ? 1 : 0) + 3),
+        length: pageLength,
+      });
+    }
+    out.push({
+      address,
+      start,
+      kind: u8(c.blob, off),
+      entries: list.entries,
+      length: list.length,
+      pageCount,
+      pages,
+      entryLength,
+    });
+  }
+  return out;
+}
+
+/** Every page of every mode, flattened, in table order. */
+export function modePages(c: Container): ModePage[] {
+  return (modeRecords(c) ?? []).flatMap((record) => record.pages);
+}
+
+/** One run of tagged lists packed end to end, as blob offsets. */
+export interface TaggedListPool {
+  start: number;
+  end: number;
+  lists: { start: number; length: number }[];
+}
+
+/**
+ * The runs of tagged lists packed end to end, which hold base slot 9's sets among others.
+ *
+ * **Both ends are derived, and that is the whole difficulty.** The start is a mode entry's end:
+ * every one of the 29 runs in the corpus begins on the byte after some entry's page array, which
+ * is what makes it a stated position rather than a searched one. The end is the lowest address
+ * above that start which any other reader already names, so the walk is bounded by structures
+ * rather than by the byte accounting, which would be circular.
+ *
+ * Section 67 first concluded these were not claimable, on the grounds that section 55's
+ * derivation for the picture bank gives 35 to 1275 candidate starts here rather than one. That
+ * was measuring the wrong thing: the start does not have to be searched for, because a mode entry
+ * states it. The exact landing is then a check on the reading and not the way it was found.
+ *
+ * A pool run has to contain at least one base slot 9 set, on a list boundary. Without that the
+ * rule accepts spans that tile by accident, since a tagged list walk is permissive: two of seven
+ * candidate runs on a Harmony One, two of 206 on the 525.
+ */
+export function taggedListPools(c: Container): TaggedListPool[] {
+  const records = modeRecords(c);
+  if (records === undefined) return [];
+  const offsetOf = (address: number): number | undefined => c.blobOffsetOf(address);
+  const inside = (offset: number | undefined): boolean =>
+    offset !== undefined && offset >= 0 && offset < c.blob.length;
+
+  // Everything another reader names, which is what bounds a run from above.
+  const bounds = new Set<number>();
+  const note = (offset: number | undefined): void => {
+    if (inside(offset)) bounds.add(offset as number);
+  };
+  for (const record of records) {
+    note(offsetOf(record.start));
+    note(offsetOf(record.address));
+    for (const page of record.pages) {
+      note(offsetOf(page.address));
+      note(offsetOf(page.list));
+      note(offsetOf(page.program));
+    }
+  }
+  for (const address of modeTable(c)?.addresses ?? []) note(offsetOf(address));
+  // Base slots 10 and 11 by base number and never by raw slot: raw slot 10 is base slot 9 on arch
+  // 8 and arch 12, and slot 9's sets are *inside* a pool, so bounding with them stops the walk on
+  // the very thing the run is meant to contain.
+  for (const base of [10, 11]) {
+    if (c.architecture === undefined) break;
+    let slot: number;
+    try {
+      slot = archSlot(c.architecture, base);
+    } catch (error) {
+      if (error instanceof GspmError) continue;
+      throw error;
+    }
+    for (const address of c.pointerArray(slot) ?? []) note(offsetOf(address));
+  }
+  const ordered = [...bounds].sort((a, b) => a - b);
+
+  const sets = (handlerSets(c)?.addresses ?? [])
+    .map(offsetOf)
+    .filter((offset): offset is number => offset !== undefined);
+
+  const pools: TaggedListPool[] = [];
+  for (const record of records) {
+    const entry = offsetOf(record.address);
+    if (entry === undefined) continue;
+    const start = entry + record.entryLength;
+    const end = ordered.find((offset) => offset > start);
+    if (end === undefined) continue;
+    const lists: { start: number; length: number }[] = [];
+    const starts = new Set<number>();
+    let at = start;
+    while (at < end) {
+      const extent = taggedListExtent(c.blob, at);
+      if (extent === undefined) break;
+      const { length } = extent;
+      if (length <= 0 || at + length > end) break;
+      lists.push({ start: at, length });
+      starts.add(at);
+      at += length;
+    }
+    if (at !== end) continue;
+    const held = sets.filter((offset) => offset >= start && offset < end);
+    if (held.length === 0 || !held.every((offset) => starts.has(offset))) continue;
+    pools.push({ start, end, lists });
+  }
+  return pools;
+}
+
+/**
+ * The action list language opcode whose operand indexes base slot 10's table.
+ *
+ * Named here rather than in the opcode inventory because it is the one field a page list and its
+ * copy are allowed to disagree on, and a test that hard codes `0x7f` reads like a magic number.
+ *
+ * **This is the only name for that opcode and the others are gone.** On 6 September 2026 it had
+ * three: this, `ACTION_LIST_INDEX` in `inventory.ts` and `RUN_ACTION_LIST` in `compose.ts`, all
+ * `0x7f`, all correct, and none of them able to see the others. Three right copies is the state
+ * that precedes three disagreeing ones and no test can catch it, which is `isa.py`'s rule applied
+ * to a constant. Import this one.
+ */
+export const ACTION_LIST_INDEX_OPCODE = 0x7f;
+
+/**
+ * The second copy of every mode page's tagged list, as blob offsets in page order.
+ *
+ * The pools of `taggedListPools` hold two kinds of list: base slot 9's sets, which that section's
+ * table names, and one list per mode page, which nothing names at all. Strip the sets and what is
+ * left is a **copy of each page's own list**, the k-th copy belonging to the k-th page in mode
+ * table order. Section 69.
+ *
+ * The copy is a copy in meaning rather than in bytes. Form, entry count, tags, flags and opcodes
+ * all agree, and so does every operand except opcode `0x7F`'s, which is an index into base slot
+ * 10: there the two copies name **different table entries holding identical action lists**. So
+ * comparing the two runs byte for byte says they differ, which is what section 67 did and why it
+ * concluded they were not copies.
+ *
+ * No firmware path reads them. Both call sites of the tagged list runner that concern a mode read
+ * a pointer taken from the current page record or from the mode record, and an exhaustive scan
+ * finds fewer three byte values naming a copy than chance predicts. They still have to be
+ * reproduced byte for byte by an emitter, which is why this exists.
+ */
+export function pageListCopies(c: Container): number[] {
+  const sets = new Set(
+    (handlerSets(c)?.addresses ?? [])
+      .map((address) => c.blobOffsetOf(address))
+      .filter((offset): offset is number => offset !== undefined),
+  );
+  const out: number[] = [];
+  for (const pool of taggedListPools(c)) {
+    for (const list of pool.lists) {
+      if (!sets.has(list.start)) out.push(list.start);
+    }
+  }
+  return out;
+}
+
+/**
+ * The screen program each base slot 6 record carries after its tagged list, or nothing off
+ * `MODE_PROGRAM_ARCHITECTURES`.
+ *
+ * The third source of screen programs section 40 suspected and could not place. The address is the
+ * record's own start plus the length of its list, so it needs section 52's correction to the
+ * record start before it can be computed at all.
+ */
+export function modeProgramRoots(c: Container): number[] {
+  if (c.architecture === undefined || !MODE_PROGRAM_ARCHITECTURES.has(c.architecture)) return [];
+  return (modeRecords(c) ?? []).map((record) => record.start + record.length);
+}
+
+export interface TaggedEntry {
+  tag: number;
+  operand: number;
+  opcode: number;
+  /** Only the second form carries one. */
+  flags: number | undefined;
+}
+
+export interface TaggedList {
+  entries: TaggedEntry[];
+  start: number;
+  length: number;
+  /**
+   * Which of the two forms it is, decided once by the reader and read by everyone else.
+   *
+   * **This existed as three separate derivations.** `taggedListPools` took it from the first byte,
+   * `emit.ts`'s writer took it from the length arithmetic, `1 + 4 * count` against `2 + 5 * count`,
+   * and `edit.ts` took it from whether the parsed entry carries a flags byte. All three agree on the
+   * corpus, which is the state this repository's oldest rule is about rather than an argument that it
+   * is fine. The firmware decides it from the first byte, so that is the one derivation and this
+   * carries the answer.
+   */
+  wide: boolean;
+}
+
+/**
+ * The form, entry count and extent of the tagged list at a blob offset, without decoding its entries.
+ *
+ * Split out of `taggedList` so the pool scan can use it: that walk has no `Container` addresses to
+ * work from, only a run of bytes, and it spelled the same three lines out again. Exported because a
+ * test asserts the two agree on every pool list in the corpus.
+ */
+export function taggedListExtent(
+  blob: Uint8Array,
+  at: number,
+): { wide: boolean; count: number; length: number } | undefined {
+  if (at < 0 || at >= blob.length) return undefined;
+  const first = u8(blob, at);
+  const wide = first === 0;
+  if (wide && at + 2 > blob.length) return undefined;
+  const count = wide ? u8(blob, at + 1) : first;
+  const length = (wide ? 2 : 1) + (wide ? 5 : 4) * count;
+  return { wide, count, length };
+}
+
+/**
+ * A tagged list's bytes, `taggedListExtent`'s and `taggedList`'s inverse for a list without flags: the
+ * narrow form, a count and four bytes an entry, the tag, the operand low byte first and the opcode; and
+ * an empty list as the wide form's two zero bytes, since a narrow count of zero would read as the wide
+ * form's marker. Every empty list of a mode record or a page in the corpus is those two bytes. The one
+ * encoder of the form since section 357; the mode records of sections 356 and 357 and mode 0's list
+ * after the end marker, section 315, all spell through it.
+ */
+export function taggedListBytes(entries: readonly { tag: number; operand: number; opcode: number }[]): Uint8Array {
+  if (entries.length === 0) return new Uint8Array([0, 0]);
+  if (entries.length > 0xff) throw new RangeError(`a narrow tagged list counts to 255, not ${entries.length}`);
+  const out = new Uint8Array(1 + 4 * entries.length);
+  out[0] = entries.length;
+  entries.forEach((one, k) => {
+    if (one.tag < 0 || one.tag > 0xff || one.opcode < 0 || one.opcode > 0xff || one.operand < 0 || one.operand > 0xffff) {
+      throw new RangeError(`entry ${k} does not fit a tagged list's four bytes`);
+    }
+    out.set([one.tag, one.operand & 0xff, one.operand >>> 8, one.opcode], 1 + 4 * k);
+  });
+  return out;
+}
+
+/**
+ * The tagged list at an absolute flash address, in either of its two forms.
+ *
+ * ```
+ * +0x00  u8   count
+ * +0x01  { u8 tag; u16 operand; u8 opcode }[count]
+ * ```
+ *
+ * and, when that count is zero, a second count follows and the entries carry a flags byte:
+ *
+ * ```
+ * +0x00  u8   0
+ * +0x01  u8   count
+ * +0x02  { u8 flags; u8 tag; u16 operand; u8 opcode }[count]
+ * ```
+ *
+ * Which form applies is decided by the first byte, exactly as the firmware decides it, rather than
+ * by anything about the caller.
+ */
+export function taggedList(c: Container, address: number): TaggedList | undefined {
+  const off = c.blobOffsetOf(address);
+  if (off === undefined) return undefined;
+  const extent = taggedListExtent(c.blob, off);
+  if (extent === undefined) return undefined;
+  const { wide, count, length } = extent;
+  const base = wide ? off + 2 : off + 1;
+  const stride = wide ? 5 : 4;
+  if (off + length > c.blob.length) return undefined;
+  const entries: TaggedEntry[] = [];
+  for (let k = 0; k < count; k += 1) {
+    const p = base + stride * k;
+    // The last three bytes of an entry are an action list instruction, laid out the same way
+    // whichever form the list takes, which is why the offset is measured from the end.
+    const at = p + stride - 3;
+    entries.push({
+      flags: wide ? u8(c.blob, p) : undefined,
+      tag: wide ? u8(c.blob, p + 1) : u8(c.blob, p),
+      operand: u16(c.blob, at),
+      opcode: u8(c.blob, at + 2),
+    });
+  }
+  return { entries, start: off, length, wide };
+}

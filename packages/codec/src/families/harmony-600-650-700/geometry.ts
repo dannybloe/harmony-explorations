@@ -4,8 +4,8 @@
  * `CORNER_LAYOUTS` in `cornerlayout.ts`, which reads Logitech's pages with them; these are handles onto that
  * entry and hold nothing of their own. `todo-compile-one.md` 3.3.3.6.
  */
-import { CORNER_LAYOUTS, cornerCellAt } from '../../cornerlayout.ts';
-import type { CornerLayout } from '../../cornerlayout.ts';
+import { CORNER_LAYOUTS, cornerCellAt } from '../../inventory/cornerlayout.ts';
+import type { CornerLayout } from '../../inventory/cornerlayout.ts';
 
 /** The family's architecture's entry; the table is a reader's, keyed by architecture, and this family is arch 14's. */
 export const FOUR_SLOT_LAYOUT: CornerLayout = CORNER_LAYOUTS[14] as CornerLayout;

@@ -37,15 +37,15 @@
  * Measured on the Harmony One, skin 54, alone: the four slot family states its own table in
  * `harmony-600-650-700/empty.ts`. Read only towards hardware: the result is pieces.
  */
-import type { ContainerPiece, PieceRef } from '../../frame.ts';
-import { FONT_TABLE_COUNT_WIDTH, encodeGlyph } from '../../font.ts';
-import { Writer } from '../../emit.ts';
-import { type CharacterMap } from '../../text.ts';
-import { type SetFace, FontTableError, letterFaceOf, letteredCodes } from '../../fonttable.ts';
+import type { ContainerPiece, PieceRef } from '../../assembly/frame.ts';
+import { FONT_TABLE_COUNT_WIDTH, encodeGlyph } from '../../screens/font.ts';
+import { Writer } from '../../container/emit.ts';
+import { type CharacterMap } from '../../screens/text.ts';
+import { type SetFace, FontTableError, letterFaceOf, letteredCodes } from '../../drawing/fonttable.ts';
 import {
   LETTERING_CHARACTERS, OXANIUM_FACE_SPECS, defaultWeight, letterRows, type LetterInks, type OxaniumFaceName,
   type OxaniumWeight,
-} from '../../lettering.ts';
+} from '../../drawing/lettering.ts';
 import type { OneChoices } from './choices.ts';
 import { ONE_FONTS } from './fonts.ts';
 

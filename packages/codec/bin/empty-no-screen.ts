@@ -39,7 +39,7 @@ import { assertFileFamilyContainer } from '@harmony/usb/rails';
 
 import { irGroups } from '../src/index.ts';
 import { buildEmptyNoScreenConfiguration } from '../src/build.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({

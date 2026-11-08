@@ -809,7 +809,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         anchor refuses, the base comes from the marker fallback and can land above slot 0, and
         then this would have reported the frame length of whatever the blob's tail holds. No
         sample in the corpus reaches it, so the demonstration is built rather than loaded, and
-        the guard costs no reading. `packages/codec/src/gspm.ts` has bounded it since it was
+        the guard costs no reading. `packages/codec/src/container/gspm.ts` has bounded it since it was
         written.
         """
         # A blob whose tail is a well formed frame of four body bytes, with three bytes after it so

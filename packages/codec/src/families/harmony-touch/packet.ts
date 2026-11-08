@@ -37,8 +37,8 @@
  * architectures: the Harmony Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it
  * under 18.
  */
-import { roundedPeriodOfCarrier } from '../../archive.ts';
-import type { Pulse } from '../../irframe.ts';
+import { roundedPeriodOfCarrier } from '../../catalogue/archive.ts';
+import type { Pulse } from '../../infrared/irframe.ts';
 import type { Atom, IrProtocol } from './documents.ts';
 
 /** The longest duration one word holds, fifteen bits of microseconds. */

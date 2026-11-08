@@ -9,16 +9,16 @@ import assert from 'node:assert/strict';
 import { needing, require_, skipUnless } from '@harmony/lab';
 import { deviceModeMaps, parse, type Container } from '../src/index.ts';
 import { characterMap, decode, modeRecords } from '../src/internal.ts';
-import { fontSets } from '../src/font.ts';
+import { fontSets } from '../src/screens/font.ts';
 import {
   SCREEN_DRAW_IMAGE, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram,
-} from '../src/screen.ts';
+} from '../src/screens/screen.ts';
 import { DEVICE_PAGE_SLOTS } from '../src/families/harmony-one/menus.ts';
 import {
   padFontOf, ONE_PAD_HEIGHT, ONE_PAD_WIDTH, oneLabelLines, oneLabelWords,
 } from '../src/families/harmony-one/labels.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** A drawn line: its text, where its first glyph goes, and the font it was drawn in. */
 interface Drawn { text: string; x: number; y: number; font: number }

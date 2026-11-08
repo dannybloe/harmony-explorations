@@ -37,17 +37,17 @@
  * favourite key, `todo-compile-350.md` 4.1.1, is read on one compile only, another owner's, whose LG television
  * holds a channel there and has a Home command, and one sample is not a rule.
  */
-import type { CatalogueSource } from '../../catalogue.ts';
-import { Writer } from '../../emit.ts';
-import { archSlot, type Container, parse } from '../../gspm.ts';
-import { devices } from '../../inventory.ts';
-import { relocate } from '../../relocate.ts';
-import { ACTION_LIST_INDEX_OPCODE, stateRecords } from '../../sections.ts';
+import type { CatalogueSource } from '../../catalogue/catalogue.ts';
+import { Writer } from '../../container/emit.ts';
+import { archSlot, type Container, parse } from '../../container/gspm.ts';
+import { devices } from '../../inventory/inventory.ts';
+import { relocate } from '../../edit/relocate.ts';
+import { ACTION_LIST_INDEX_OPCODE, stateRecords } from '../../container/sections.ts';
 import { appendActionLists, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import {
   NUMBER_SENDER_RECORD_LENGTH, NUMBER_SENDER_SLOT, NUMBER_SENDER_TABLE_LENGTH, numberSenders,
-} from '../../tables.ts';
+} from '../../container/tables.ts';
 import {
   highestEnd, type KeyEntry, keyMaps, listExtents, mapOfGroup, PRESS, SCAN_MASK, withMapEntries,
 } from './devices.ts';

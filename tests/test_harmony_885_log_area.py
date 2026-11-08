@@ -40,7 +40,7 @@ Opcode `0x0F` (the opcode at data `0x3B4` at or above `0x0F`, `0x1383C`) with an
 | `0xE3` to `0xEF` | nothing, the chain's default | `BRA 0x139B2` |
 
 Which register `0x30A` and the pair `0x30B`, `0x30C` are (the codec's byte register and accumulator on
-other platforms) is not read here. This is the band `packages/codec/src/actions.ts` places on arch 14 as
+other platforms) is not read here. This is the band `packages/codec/src/container/actions.ts` places on arch 14 as
 the flash journal, section 108; on arch 14 the firmware chooses the region from the chip size and the
 configuration's end, and here it takes it from the configuration.
 

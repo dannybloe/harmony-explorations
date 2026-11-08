@@ -12,7 +12,7 @@
  * classic Denon's `PageDown` and the PlayStation 3's `StepBack`. The order of the two names is a choice of
  * ours, since no control device among them draws both. Corrected per review, section 398.
  */
-import type { ActivityKeyRules } from '../../activityroles.ts';
+import type { ActivityKeyRules } from '../../compose/activityroles.ts';
 
 export const ONE_ACTIVITY_KEYS: ActivityKeyRules = {
   volume: [3, 4, 9],

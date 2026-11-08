@@ -212,10 +212,10 @@ which are where a stale moment shows: a clock wrong after every power cycle by e
 Harmony One shows it on its screen.[^s111] A Harmony 600, 650 or 700 shows no clock at all, and on the
 Harmony 650 a restart sets the clock in memory back to the stamp.[^s283] Reproducing an input configuration's timestamp is right
 for a round trip and wrong for a save, and that distinction is in the code: `FIELD_RULES` in
-`packages/codec/src/edit.ts` lists every field whose treatment on a write is not "carry it unchanged",
+`packages/codec/src/edit/edit.ts` lists every field whose treatment on a write is not "carry it unchanged",
 `applyEdits` is the faithful path and `saveEdits` stamps, and `emit.ts` is deliberately the round trip
 side, since its whole measurement is byte equality with its input. The record is encoded in exactly one
-place, `clockRecordFields` in `packages/codec/src/gspm.ts`, the inverse of `clockRecord`; the day of week
+place, `clockRecordFields` in `packages/codec/src/container/gspm.ts`, the inverse of `clockRecord`; the day of week
 is computed there and never taken from a caller.[^t-edit]
 
 ### What the Harmony 880 and 885 do with it

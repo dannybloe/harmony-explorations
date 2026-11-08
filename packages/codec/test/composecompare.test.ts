@@ -23,19 +23,19 @@ import { readFileSync } from 'node:fs';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { type Container, parse, readRecipe } from '../src/index.ts';
 import { type ComposedSetup, composeSetup } from '../src/build.ts';
-import { SEND_INFRARED, devices } from '../src/inventory.ts';
-import { instructionSites } from '../src/assemble.ts';
-import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
+import { SEND_INFRARED, devices } from '../src/inventory/inventory.ts';
+import { instructionSites } from '../src/assembly/assemble.ts';
+import { composeDonorDeviceInfrared } from '../src/compose/composecatalogue.ts';
 import { buildEmptyOneConfiguration } from '../src/families/harmony-one/empty.ts';
 import {
   type OneView, type OneViewDifference, type OneViewOptions, type OneViewResult, compareOneViews, oneView,
 } from '../src/families/harmony-one/view.ts';
-import { modeRecords, stateRecords } from '../src/sections.ts';
-import { timers } from '../src/tables.ts';
-import { valueMaps } from '../src/valuemap.ts';
+import { modeRecords, stateRecords } from '../src/container/sections.ts';
+import { timers } from '../src/container/tables.ts';
+import { valueMaps } from '../src/container/valuemap.ts';
 import { listsReached } from './screenlists.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 

@@ -21,7 +21,7 @@
  * would guess. `--out` chooses the directory, and it defaults to the lab's `work/render`, because a
  * rendered screen is a picture of somebody's own equipment and this repository is public.
  *
- * The PNG encoding is `src/png.ts`, shared with the bench instrument, which serves the same rasters
+ * The PNG encoding is `src/screens/png.ts`, shared with the bench instrument, which serves the same rasters
  * over HTTP. Two encoders would be two things to keep right.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -30,7 +30,7 @@ import { basename, join } from 'node:path';
 import { LAB, load } from '@harmony/lab';
 import { parse, rasterPng, renderPage, type RenderedPage } from '../src/index.ts';
 import { UNDRAWN, contactSheetPng, modePages } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

@@ -35,7 +35,7 @@ import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
 import { applyEdits, clockStateEdits, inventory, parse, saveEdits } from '../src/index.ts';
 import { FRAME_ARCHITECTURES, LayoutError, layOutContainer, slotOf, takeApart } from '../src/build.ts';
 import { claims, pointers, relocate, roundTrip, trailerAgrees } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /**
  * Every Harmony 600, 650 and 700 configuration Logitech compiled that the lab holds once each, the

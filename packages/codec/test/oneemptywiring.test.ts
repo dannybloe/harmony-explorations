@@ -21,11 +21,11 @@ import type { ContainerPiece } from '../src/build.ts';
 import { activities, parse } from '../src/index.ts';
 import { modeRecords } from '../src/internal.ts';
 import { takeApart } from '../src/build.ts';
-import { describeStateTables, buildStateTables, hourListBytes } from '../src/statetables.ts';
-import { clockRecordFields } from '../src/gspm.ts';
-import { CLOCK_STATE_MAXIMA } from '../src/sections.ts';
+import { describeStateTables, buildStateTables, hourListBytes } from '../src/assembly/statetables.ts';
+import { clockRecordFields } from '../src/container/gspm.ts';
+import { CLOCK_STATE_MAXIMA } from '../src/container/sections.ts';
 import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
-import { WiringError, type BuiltWiring } from '../src/wiringparts.ts';
+import { WiringError, type BuiltWiring } from '../src/assembly/wiringparts.ts';
 import { ONE_FIRMWARE_SCREENS, buildOneWiring, describeOneWiring } from '../src/families/harmony-one/wiring.ts';
 import { buildOneCasePrograms, describeOneCasePrograms, oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import { oneClockHeaderEntries } from '../src/families/harmony-one/clockheader.ts';
@@ -40,7 +40,7 @@ import {
   BLANK_SCREEN_SYMBOLS, EMPTY_ONE_MODES, EMPTY_ONE_REDRAW_CLASSES, EMPTY_ONE_VALUE_MAPS, WIRING_MAP_ROLES,
   emptyOneWiring, oneRedrawStarters, type EmptyOneMode, type EmptyOneWiring,
 } from '../src/families/harmony-one/emptywiring.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The nineteen distinct Harmony One compiles of section 405, `test/wiring-one.test.ts`' list. */
 const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

@@ -68,7 +68,7 @@ import {
 import { stateRecords, stateVariables, taggedList } from '../src/internal.ts';
 import { mapOfGroup } from '../src/families/harmony-300-350/devices.ts';
 import { allLists, maps, records, timerRecords, transitions, without } from './noscreenparts.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 

@@ -35,7 +35,7 @@ import {
   trailerAgrees,
 } from '../src/internal.ts';
 import { appendActionLists, composeActivity, restamped } from '../src/build.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The thirteen Logitech compiles section 314 measured, the same population as the inventory test's. */
 const COMPILES = ['h600_config', 'calibration_h600', 'h650_config_region',

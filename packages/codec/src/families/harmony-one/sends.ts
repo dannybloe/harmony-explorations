@@ -17,9 +17,9 @@
  * shape itself; nothing in what is built or matched changed.
  */
 import type { DeviceSends, ListBody, SendList, SendShape } from '../family.ts';
-import type { Container, Instruction } from '../../gspm.ts';
-import { DEVICE_QUANTITY, SEND_INFRARED, stateVariables } from '../../inventory.ts';
-import { ACTION_LIST_INDEX_OPCODE } from '../../sections.ts';
+import type { Container, Instruction } from '../../container/gspm.ts';
+import { DEVICE_QUANTITY, SEND_INFRARED, stateVariables } from '../../inventory/inventory.ts';
+import { ACTION_LIST_INDEX_OPCODE } from '../../container/sections.ts';
 import type { ComposeDevice, ComposedDevice } from '../../shared/devices.ts';
 import { pairDeviceSends } from '../../shared/sendpair.ts';
 

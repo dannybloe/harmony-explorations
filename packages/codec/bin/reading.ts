@@ -6,7 +6,7 @@
  *
  * The step 6 progress number, with its depth. `meaning` is an instruction whose effect is tied to
  * something a config describes; `placement` is one whose handler is found and whose effect is not.
- * See `packages/codec/src/actions.ts` for why the distinction exists.
+ * See `packages/codec/src/container/actions.ts` for why the distinction exists.
  *
  * **This exists because the number it prints was quoted in prose with nothing recomputing it.**
  * `CLAUDE.md`, `docs/plans/002-the-roadmap.md` and `docs/findings.md` all said "97537 instructions" and "97.9%",
@@ -25,7 +25,7 @@ import { IMAGES, load } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { archSlot, readingCoverage } from '../src/internal.ts';
 import type { ReadingCoverage } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

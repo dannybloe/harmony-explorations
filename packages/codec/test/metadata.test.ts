@@ -14,13 +14,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { skipUnless, require_ } from '@harmony/lab';
 import { ACTION_LIST_TABLE_SLOT, archSlot, baseSlot, clockRecord, CLOCK_RECORD_SLOT, parse }
-  from '../src/gspm.ts';
-import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
-import { biphaseFrames, framesOfSegments, irFrames, mergedIntervals } from '../src/irframe.ts';
-import { pulsesOfWords } from '../src/irda.ts';
-import { PROTOCOLS } from '../src/protocols.ts';
-import { metadataArchive } from '../src/metadata.ts';
-import { numberSenders } from '../src/tables.ts';
+  from '../src/container/gspm.ts';
+import { irBlockWords, irGroups, irHeaderPointers } from '../src/infrared/ir.ts';
+import { biphaseFrames, framesOfSegments, irFrames, mergedIntervals } from '../src/infrared/irframe.ts';
+import { pulsesOfWords } from '../src/infrared/irda.ts';
+import { PROTOCOLS } from '../src/infrared/protocols.ts';
+import { metadataArchive } from '../src/container/metadata.ts';
+import { numberSenders } from '../src/container/tables.ts';
 
 const WITH = ['h350_config', 'h890_config', 'h895_config'];
 const WITHOUT = ['one_config', 'h600_config', 'h700_config', 'h525_config', 'arch8_config_885'];

@@ -130,8 +130,8 @@ import {
 import { stateRecords, stateVariables, taggedList } from '../src/internal.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { allLists, maps, records, recordKey, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import { sameBytes } from '../src/bytes.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import { sameBytes } from '../src/support/bytes.ts';
 
 const needsArchive = needing(skipWithoutIrArchive());
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());

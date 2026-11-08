@@ -20,25 +20,25 @@ import {
   taggedList,
   touchPages,
 } from '../src/internal.ts';
-import { characterMap } from '../src/text.ts';
-import { timers } from '../src/tables.ts';
+import { characterMap } from '../src/screens/text.ts';
+import { timers } from '../src/container/tables.ts';
 import { oneScreenLightTimer } from '../src/families/harmony-one/screenlight.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import { ONE_BUILT, type OneBuiltBytes, oneBuiltBytes } from '../src/families/harmony-one/builders.ts';
 import { describeOneHelpScreens, oneHelpScreenModes } from '../src/families/harmony-one/helpscreens.ts';
-import { layOutContainer, takeApart } from '../src/frame.ts';
-import { loosen, placePieces } from '../src/placer.ts';
-import { dropLists, instructionSites, listCallSites } from '../src/assemble.ts';
-import { assertStateTableConsistent, handlerSets } from '../src/sections.ts';
-import { assertQueueFits } from '../src/queue.ts';
+import { layOutContainer, takeApart } from '../src/assembly/frame.ts';
+import { loosen, placePieces } from '../src/assembly/placer.ts';
+import { dropLists, instructionSites, listCallSites } from '../src/assembly/assemble.ts';
+import { assertStateTableConsistent, handlerSets } from '../src/container/sections.ts';
+import { assertQueueFits } from '../src/container/queue.ts';
 import { oneTourScreenModes } from '../src/families/harmony-one/tourscreens.ts';
-import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
+import { irBlockWords, irGroups, irHeaderPointers } from '../src/infrared/ir.ts';
 import { checkOneWiring } from '../src/families/harmony-one/wiring.ts';
 import { checkOneScreenTexts } from '../src/families/harmony-one/screentexts.ts';
 import { withoutTourAndAssistant } from '../src/families/harmony-one/withouttour.ts';
 import { listsReached } from './screenlists.ts';
 import { carried, catalogueDevices as catalogueDevicesOf } from './carried.ts';
-import { IMAGE_TABLE_SLOT, fontSets } from '../src/font.ts';
+import { IMAGE_TABLE_SLOT, fontSets } from '../src/screens/font.ts';
 import { buildOneFontTable, donorGlyphOrder } from '../src/families/harmony-one/fontsets.ts';
 import { colour565 } from '../src/families/harmony-one/activitypictures.ts';
 import { oneDeviceLists } from '../src/families/harmony-one/devicelists.ts';
@@ -46,11 +46,11 @@ import { namedHitPages } from '../src/families/harmony-one/hitpages.ts';
 import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import { startSwitchedOn } from '../src/shared/activities.ts';
-import { ENTER_MODE, activities, activityScreens, caseQueued, deviceListRowMode, devices } from '../src/inventory.ts';
-import { valueMaps } from '../src/valuemap.ts';
-import { type DonorDeviceRequest, catalogueInfraredBytes, composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
-import '../src/resources.node.ts';
+import { ENTER_MODE, activities, activityScreens, caseQueued, deviceListRowMode, devices } from '../src/inventory/inventory.ts';
+import { valueMaps } from '../src/container/valuemap.ts';
+import { type DonorDeviceRequest, catalogueInfraredBytes, composeDonorDeviceInfrared } from '../src/compose/composecatalogue.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
+import '../src/support/resources.node.ts';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 

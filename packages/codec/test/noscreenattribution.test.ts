@@ -110,7 +110,7 @@ import {
   noScreenRegions,
   restamped,
 } from '../src/build.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 
 const FIVE = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'] as const;
 const SETUP = 'work/setups/h350-test/compile-Result.EzHex';

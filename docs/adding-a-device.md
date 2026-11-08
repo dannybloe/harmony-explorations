@@ -239,7 +239,7 @@ one tail shape across every record. What varies is the closing silence.
       it refuses every Samsung code, dropping it refuses every Sony code. Explained whole goes from 1373
       of 2777 records to 1848, and `Samsung 16 and 20 Bit`, `Pioneer 32 Bit 2`, `MemorexV2 32 Bit Dual`
       and `Sharp 48 Bit` read for the first time
-- [x] the rule lands in `packages/codec/src/irframe.ts` with tests, after the merge and **not** in the
+- [x] the rule lands in `packages/codec/src/infrared/irframe.ts` with tests, after the merge and **not** in the
       biphase reader, for the same reason the merge is not: adjacent cells of one kind are cells there.
       `frameSegments` and `framesOfSegments`, and the generator reads through the second now. Two more
       families measured, `Samsung 16 and 20 Bit` on 46 records and `MitsubishiO1 Dual 8 16 Bit` on 40,
@@ -436,7 +436,7 @@ lifts that refusal.
 
 - [x] `relocate(container, at, delta)`: shift the bytes, then rewrite every **stated** address at or above
       the insertion. The census in `growth.ts` is the list of address classes and is already exhaustive.
-      `packages/codec/src/relocate.ts`, 25 August 2026, section 172. **The census was not exhaustive**:
+      `packages/codec/src/edit/relocate.ts`, 25 August 2026, section 172. **The census was not exhaustive**:
       it missed base slot 16's records and digit tables, which only the two made configs populate, so
       the corpus could never have shown it, and both made configs are in the check's population now
 - [x] the **implied** positions, each named rather than swept up: the picture bank's walk, every mode
@@ -478,7 +478,7 @@ The screen half is `composeDeviceScreen`, section 173, Harmony One (arch 12) alo
 A device is not a list of codes. Seven pieces, and each one is an insertion that phase 5 has to carry.
 
 - [x] base slot 5: a new device group and one record per command, built by `irBuildRecord` and
-      `irBuildBlock`, which exist and are tested. `composeIrGroup` in `packages/codec/src/compose.ts`,
+      `irBuildBlock`, which exist and are tested. `composeIrGroup` in `packages/codec/src/compose/compose.ts`,
       25 August 2026: blocks derived from the stated codes and deduplicated the way the corpus shares
       them, the group appended because a device is its group's index, and the held block chosen per
       command since nothing states it, phase 4's audit gap 2

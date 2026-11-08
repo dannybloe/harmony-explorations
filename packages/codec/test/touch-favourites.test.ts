@@ -39,7 +39,7 @@ import { deflateSync, inflateSync } from 'node:zlib';
 
 import * as lab from '@harmony/lab';
 
-import { encodePng, readPng } from '../src/png.ts';
+import { encodePng, readPng } from '../src/screens/png.ts';
 import { favouritesAddressFindings, refusalsBeforeASync } from '../src/families/harmony-touch/check.ts';
 import { ComposeRefusal } from '../src/families/harmony-touch/compose.ts';
 import { CONTENT_SERVICE, CONTENT_USER, documentsOfAnswers, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
@@ -48,7 +48,7 @@ import {
 } from '../src/families/harmony-touch/favourites.ts';
 import { readConfiguration, stationLogo } from '../src/families/harmony-touch/read.ts';
 import { FULL, answersOf } from './touch-sync.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 const SIX = 'touch_activity_set_back';
 const STATION = stationLogo('station');

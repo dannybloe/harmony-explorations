@@ -17,16 +17,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless, slow } from '@harmony/lab';
-import { u16 } from '../src/bytes.ts';
-import { BINDING_SLOT, archSlot, parse, type Container } from '../src/gspm.ts';
-import { dropLists, instructionSites, listCallSites, namedLists } from '../src/assemble.ts';
-import { assertStateTableConsistent, modeRecords, taggedList } from '../src/sections.ts';
-import { touchPages } from '../src/tables.ts';
-import { assertQueueFits } from '../src/queue.ts';
-import { takeApart } from '../src/frame.ts';
-import { recordReading } from '../src/screenrecords.ts';
+import { u16 } from '../src/support/bytes.ts';
+import { BINDING_SLOT, archSlot, parse, type Container } from '../src/container/gspm.ts';
+import { dropLists, instructionSites, listCallSites, namedLists } from '../src/assembly/assemble.ts';
+import { assertStateTableConsistent, modeRecords, taggedList } from '../src/container/sections.ts';
+import { touchPages } from '../src/container/tables.ts';
+import { assertQueueFits } from '../src/container/queue.ts';
+import { takeApart } from '../src/assembly/frame.ts';
+import { recordReading } from '../src/compose/screenrecords.ts';
 import { blobReader } from '../src/shared/spelling.ts';
-import { reachablePrograms } from '../src/screen.ts';
+import { reachablePrograms } from '../src/screens/screen.ts';
 import { dropModes } from '../src/shared/dropmodes.ts';
 import { withoutTourAndAssistant } from '../src/families/harmony-one/withouttour.ts';
 import { oneTourScreenModes } from '../src/families/harmony-one/tourscreens.ts';
@@ -35,7 +35,7 @@ import { checkOneScreenTexts, describeOneScreenTexts } from '../src/families/har
 import { ONE_FIXED_SCREENS, oneFixedScreenModes, withOneOptionsWithoutTour } from '../src/families/harmony-one/fixedscreens.ts';
 import { withOneBuilders, withOneComposedBuilders } from '../src/families/harmony-one/builders.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, the population every builder of the One family rebuilds. */
 const SKIN_54 = [

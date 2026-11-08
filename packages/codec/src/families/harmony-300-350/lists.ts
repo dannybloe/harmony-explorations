@@ -25,17 +25,17 @@
  * Both models alike, decision 28; the Harmony 300's own press list, which selects on the press, is not here because
  * no composer of ours writes it, and the attribution reports it as no generator's.
  */
-import { CANCEL_TIMERS, PIN_BAND, SILENT_WRITE, START_TIMER_BAND, STATE_BAND, STATE_WRITE_BASE } from '../../actions.ts';
-import { Writer } from '../../emit.ts';
-import type { Instruction } from '../../gspm.ts';
+import { CANCEL_TIMERS, PIN_BAND, SILENT_WRITE, START_TIMER_BAND, STATE_BAND, STATE_WRITE_BASE } from '../../container/actions.ts';
+import { Writer } from '../../container/emit.ts';
+import type { Instruction } from '../../container/gspm.ts';
 import {
   BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, DEVICE_QUANTITY, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, SEND_INFRARED,
-} from '../../inventory.ts';
-import { ACCUMULATOR_LOAD_OPCODE } from '../../ir.ts';
-import { ACTION_LIST_INDEX_OPCODE } from '../../sections.ts';
+} from '../../inventory/inventory.ts';
+import { ACCUMULATOR_LOAD_OPCODE } from '../../infrared/ir.ts';
+import { ACTION_LIST_INDEX_OPCODE } from '../../container/sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { callingList } from '../../shared/devices.ts';
-import { NUMBER_SENDER_RECORD_LENGTH, NUMBER_SENDER_TABLE_LENGTH } from '../../tables.ts';
+import { NUMBER_SENDER_RECORD_LENGTH, NUMBER_SENDER_TABLE_LENGTH } from '../../container/tables.ts';
 import { KEY_TIMERS, POWER_RESETS } from './keys.ts';
 
 /**

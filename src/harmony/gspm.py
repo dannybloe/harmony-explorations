@@ -142,7 +142,7 @@ EMPTY_FRAME_LENGTH = 5
 # fixed nine byte header**, which is what kept the section unread: `0xA7` is a node tag and the
 # `\x08` after it is that node's own length field, `4 + len('Root')`. An arch 9 safe mode container
 # found in the 525's firmware region puts `Root` third. See `docs/findings.md` section 77; the
-# node walk itself lives in `packages/codec/src/sections.ts`, per decision 3.
+# node walk itself lives in `packages/codec/src/container/sections.ts`, per decision 3.
 ROOT_NODE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
 
 # Section slot 1 is a seven byte record that states the architecture twice over. Confirmed
@@ -491,7 +491,7 @@ IR_BLOCK_LIMIT = 8192
 # a 15 bit one, which frames to 34 pulses.
 IR_MIN_PULSES = 8
 # **There is no frame decoder here, deliberately, since section 139.** Turning a duration stream into
-# a bit frame is `packages/codec/src/irframe.ts`, and it is one derivation rather than two on the
+# a bit frame is `packages/codec/src/infrared/irframe.ts`, and it is one derivation rather than two on the
 # rule this repository is named after. There were two for a day, and the golden vector caught them
 # disagreeing about 37 records of one arch 8 (Harmony 880) config: this side assumed pulse distance
 # and counted pairs, where `irframe.ts` tries both conventions and refuses a record that reads as
@@ -915,8 +915,9 @@ class StateRecord:
     or covers every value the same number of times, so `count` is a multiple of `second + 1`.
 
     The values stay raw here: this is the research library and `packages/codec` owns the codec.
-    `packages/codec/src/sections.ts` decodes them and `src/inventory.ts` is what reads a config's
-    devices and activities out of them.
+    `packages/codec/src/container/sections.ts` decodes them and
+    `packages/codec/src/inventory/inventory.ts` is what reads a config's devices and activities out of
+    them.
     """
     address: int
     count: int

@@ -118,7 +118,7 @@ Harmony One's, so forty is measured twice with nothing in common[^s254][^s255]. 
 [the Harmony 5xx memory page](../architectures/harmony-5xx/memory.md).
 
 Nothing measured overflows, so forty is a limit for what a writer produces rather than a description of the
-configurations. `packages/codec/src/queue.ts` computes it and `assertQueueFits` refuses; the figure it reports
+configurations. `packages/codec/src/container/queue.ts` computes it and `assertQueueFits` refuses; the figure it reports
 follows `0x7F` only and is therefore a lower bound, since a write to a state variable also pushes[^s238].
 **The rail carries over to arch 8 (Harmony 880 and 885) unchanged, as the same floor**: its main loop
 executes one instruction and rotates what it pushed, as the Harmony One's does, and the model's peak for each
@@ -403,7 +403,7 @@ checked[^t-885-actions][^unchecked].
 queue per call, three calls, so the instruction's second half is an ordinary instruction read as data, `0x7F` in
 55 of its 75 uses, `0x7E` in 19 and `0x72` once[^s73]. Every one of the 75 heads a **two slot list**, so the
 whole list is the one instruction, and a reader has to skip the second half rather than report it as an
-instruction of its own[^s139]. `takesFollowingSlot` in `packages/codec/src/actions.ts` is the predicate; a byte
+instruction of its own[^s139]. `takesFollowingSlot` in `packages/codec/src/container/actions.ts` is the predicate; a byte
 level reader still returns both slots, because an emitter reproduces the argument.
 
 **On arch 8 (Harmony 880 and 885) it defers its argument until the infrared queue has sent what is ahead of

@@ -21,7 +21,7 @@
  * rectangle the firmware answers for, which is bigger, and it read as two boxes that are not on the
  * remote. So the region is recorded here and not drawn. It comes from base slot 17's own hit map,
  * `docs/findings.md` section 125: codes 46 and 47 hold one rectangle across all 74 hit pages of the two
- * Harmony One configs, and `packages/codec/src/touch.ts` maps a panel point to a display pixel, which
+ * Harmony One configs, and `packages/codec/src/inventory/touch.ts` maps a panel point to a display pixel, which
  * the screen rectangle below turns into 11.568 to 45.978 by 126.661 to 240.617 on the left and its
  * mirror on the right. What the codes are for is what that buys, and the arrows are what is drawn.
  *

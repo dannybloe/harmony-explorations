@@ -21,7 +21,7 @@ import { parse, payloadOf } from '../src/index.ts';
 import { growthReport } from '../src/internal.ts';
 import type { GrowthReport } from '../src/internal.ts';
 import { CONTAINERS } from './corpus.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

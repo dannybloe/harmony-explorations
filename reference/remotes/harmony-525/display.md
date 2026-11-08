@@ -9,7 +9,7 @@ commands, and the on remote help.[^x-manual]
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | 96 by 64 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, measured from the configurations' full screen pictures |
+| raster | 96 by 64 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, measured from the configurations' full screen pictures |
 | raster on the drawing | 96 by 64 | `h525.ts`, which must agree with the row above |
 | panel | monochrome | `packages/base/src/models.ts` |
 | touch | no | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |

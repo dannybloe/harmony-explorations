@@ -2,35 +2,35 @@
  * An activity's own device list on the Harmony 600, 650 and 700, built from the activity and the idle
  * list, composed and checked. Plan 007's four slot family, cut out of `compose.ts` unchanged.
  */
-import { Writer } from '../../emit.ts';
-import { activityMaps } from '../../families/harmony-600-650-700/activityscreen.ts';
+import { Writer } from '../../container/emit.ts';
+import { activityMaps } from './activityscreen.ts';
 import {
   DEVICE_MODE_PROGRAM_TAG, DEVICES_KEY_TAG, inlineHomes, type KeyMapEntry,
-} from '../../families/harmony-600-650-700/chrome.ts';
+} from './chrome.ts';
 import { appendMode } from '../../shared/modes.ts';
 import { startSwitchedOn } from '../../shared/activities.ts';
 import {
   fourSlotMenuChrome, type FourSlotMenuChrome, type FourSlotMenuLabel, type FourSlotMenuPageContent,
   fourSlotPageList, idleDeviceList, menuPageBytes, menuPageContent, menuPageParts, pageRecordDifference,
   partsDifference,
-} from '../../families/harmony-600-650-700/menus.ts';
-import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
+} from './menus.ts';
+import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../container/gspm.ts';
 import {
   caseQueued, compilerTagOrder, deviceListRowMode, deviceModeMarker,
   ENTER_MODE, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE,
   RUN_SCREEN_PROGRAM, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK, stateVariables,
-} from '../../inventory.ts';
-import { relocate } from '../../relocate.ts';
-import { screenProgram } from '../../screen.ts';
+} from '../../inventory/inventory.ts';
+import { relocate } from '../../edit/relocate.ts';
+import { screenProgram } from '../../screens/screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, modePages, modeRecords, modeTable, pageListCopies,
   type TaggedEntry, taggedList,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import { arch14Starts, type Arch14Starts, LOCATION_STATE_NAME } from './start.ts';
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import { ACTIVITY_MENU_MARKER_VALUE } from '../../shared/menus.ts';
-import { valueMaps } from '../../valuemap.ts';
+import { valueMaps } from '../../container/valuemap.ts';
 import { FOUR_SLOT_ITEMS } from './geometry.ts';
 
 /** What `composeActivityDeviceList` built. */

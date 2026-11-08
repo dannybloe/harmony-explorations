@@ -1,5 +1,5 @@
 /**
- * Our letters' alphabet as generated data, `src/oxaniumalphabet.ts`, held to the font it was computed from, a fix
+ * Our letters' alphabet as generated data, `src/screens/oxaniumalphabet.ts`, held to the font it was computed from, a fix
  * to `todo.md` 7.3.5.
  *
  * **Why the copy exists.** 7.3.5 put Oxanium's files behind a resource only the Node entry supplies, and
@@ -22,18 +22,18 @@ import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
 import { deflateSync } from 'node:zlib';
 
-import '../src/resources.node.ts';
-import { OXANIUM_ALPHABET_TABLES } from '../src/oxaniumalphabet.ts';
+import '../src/support/resources.node.ts';
+import { OXANIUM_ALPHABET_TABLES } from '../src/screens/oxaniumalphabet.ts';
 import {
   oxaniumAlphabet, oxaniumAlphabetFromFont, packOxaniumAlphabet, unpackOxaniumAlphabet, type OxaniumAlphabet,
-} from '../src/text.ts';
+} from '../src/screens/text.ts';
 
 const fromFont: OxaniumAlphabet = oxaniumAlphabetFromFont();
 
 test('the generated alphabet is the one the font gives, every form, structure and face', () => {
   const generated = unpackOxaniumAlphabet(OXANIUM_ALPHABET_TABLES);
   assert.deepStrictEqual(generated, fromFont,
-    'src/oxaniumalphabet.ts differs from the font: run node packages/codec/bin/oxaniumalphabet.ts --write');
+    'src/screens/oxaniumalphabet.ts differs from the font: run node packages/codec/bin/oxaniumalphabet.ts --write');
   // And the reader's door gives the same, so no caller of `oxaniumAlphabet` sees anything else.
   assert.deepStrictEqual(oxaniumAlphabet(), fromFont);
   // The counts, exact, so an alphabet that lost a weight on both sides at once is still seen to move.

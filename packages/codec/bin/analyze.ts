@@ -32,13 +32,13 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { imagePath, LAB } from '@harmony/lab';
-import { parse } from '../src/gspm.ts';
-import { payloadOf } from '../src/ezhex.ts';
+import { parse } from '../src/container/gspm.ts';
+import { payloadOf } from '../src/container/ezhex.ts';
 import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups, irHeaderPointers }
-  from '../src/ir.ts';
-import { irdaString, pulsesOfWords, untilSilence } from '../src/irda.ts';
-import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
-import '../src/resources.node.ts';
+  from '../src/infrared/ir.ts';
+import { irdaString, pulsesOfWords, untilSilence } from '../src/infrared/irda.ts';
+import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark } from '../src/infrared/irframe.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

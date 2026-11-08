@@ -78,17 +78,17 @@
  *
  * English only; skin 54, the Harmony One the spare reports. Read only towards hardware: the result is pieces.
  */
-import type { Container } from '../../gspm.ts';
-import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { ACTION_LIST_INDEX_OPCODE, eventMap, modeRecords, taggedList } from '../../sections.ts';
-import { ENTER_MODE as ENTER_OPCODE } from '../../inventory.ts';
-import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
-import { characterMap, decode } from '../../text.ts';
-import { ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../screenrecords.ts';
+import type { Container } from '../../container/gspm.ts';
+import type { ContainerLayout, ContainerPiece } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { ACTION_LIST_INDEX_OPCODE, eventMap, modeRecords, taggedList } from '../../container/sections.ts';
+import { ENTER_MODE as ENTER_OPCODE } from '../../inventory/inventory.ts';
+import { SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screens/screen.ts';
+import { characterMap, decode } from '../../screens/text.ts';
+import { ScreenRecordError, assertRebuilt, recordReading, withModeRecords } from '../../compose/screenrecords.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
 import { dropModePages } from '../../shared/dropmodes.ts';
-import type { PieceTarget } from '../../statetables.ts';
+import type { PieceTarget } from '../../assembly/statetables.ts';
 import {
   ARROWS, ASSISTANT_ON, BAND, CLICK, ENTER, type Entry, HALF, HEADER, LIGHT_5_OFF, LIGHT_7_OFF, LIST, MAP, PAGE_KEYS_OFF, type Part,
   SCAN_38, SET, STATE_WRITE, SWALLOW, type Step, TAG_CLOCK, TAG_ENTER, TAG_HEADER, TAG_LEAVE, TIMER_CANCEL, TIMER_START, TITLE_AT,

@@ -24,8 +24,8 @@ import {
   taggedList,
   valueMaps,
 } from '../src/internal.ts';
-import { deviceVariables } from '../src/inventory.ts';
-import { stateRecords } from '../src/sections.ts';
+import { deviceVariables } from '../src/inventory/inventory.ts';
+import { stateRecords } from '../src/container/sections.ts';
 import {
   ONE_VALUE_MAP_ROLES, buildOneCasePrograms, buildOneScreenTable, checkOneCasePrograms, describeOneCasePrograms,
   oneValueMapRoles, withOneCasePrograms,

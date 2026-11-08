@@ -33,7 +33,7 @@ import {
 } from '../src/internal.ts';
 import { composeActivityDeviceList } from '../src/families/harmony-600-650-700/devicelist.ts';
 import { startTargets } from './tagfive.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The thirteen Logitech compiles section 312 measured, the same population as the inventory test's. */
 const COMPILES = ['h600_config', 'calibration_h600', 'h650_config_region',

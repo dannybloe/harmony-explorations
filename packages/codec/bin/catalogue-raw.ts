@@ -14,7 +14,7 @@
  *    independent gzip members of `RAW_BLOCK_LINES` lines, an index of every device's member, and the side
  *    file of `RAW_FIELDS`. The pass also projects every raw action list the way the archive does and
  *    compares it with the archive's, which is item 1.4's measurement and the alignment the side file
- *    depends on, `packages/codec/src/catalogueraw.ts`.
+ *    depends on, `packages/codec/src/catalogue/catalogueraw.ts`.
  * 4. **A lookup is timed**, the cold one that loads the index and the warm ones after it.
  *
  * Step 3 runs only when the derived files are absent, stale against `SHA256SUMS`, built with another
@@ -35,16 +35,16 @@ import { pipeline } from 'node:stream/promises';
 import { execFileSync } from 'node:child_process';
 import { createGunzip, gzipSync } from 'node:zlib';
 import { IR_ARCHIVE, LAB, imagePath } from '@harmony/lab';
-import { archiveManifest } from '../src/archive.node.ts';
-import { deviceDriving } from '../src/driving.ts';
+import { archiveManifest } from '../src/catalogue/archive.node.ts';
+import { deviceDriving } from '../src/catalogue/driving.ts';
 import {
   RAW_BLOCKS_FILE, RAW_BLOCK_LINES, RAW_DERIVED_DIRECTORY, RAW_FEATURES_FILE, RAW_FIELDS, RAW_FIELDS_FILE,
   RAW_FIELDS_FORMAT, RAW_INDEX_ENTRY, RAW_INDEX_FILE, RAW_INDEX_HEADER, RAW_INDEX_MAGIC, RAW_MANIFEST_FILE,
   RAW_SUMS_FILE, type RawDeviceRecord, type RawFieldsEntry, type RawManifest, alignDevice, rawFieldsEntry,
   rawProjection,
-} from '../src/catalogueraw.ts';
-import { catalogueRules, rawCaptureLine, rawDerivedState, statedSha256 } from '../src/catalogueraw.node.ts';
-import '../src/resources.node.ts';
+} from '../src/catalogue/catalogueraw.ts';
+import { catalogueRules, rawCaptureLine, rawDerivedState, statedSha256 } from '../src/catalogue/catalogueraw.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

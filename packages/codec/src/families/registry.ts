@@ -24,7 +24,7 @@
  * be evaluated in.
  */
 import { MODELS_BY_SKIN, modelForSkin, type Model } from '@harmony/base/models';
-import type { Container } from '../gspm.ts';
+import type { Container } from '../container/gspm.ts';
 import { ComposeError } from '../shared/core.ts';
 import { HARMONY_TOUCH_FAMILY } from './harmony-touch/family.ts';
 import type { DocumentFamily } from './document.ts';

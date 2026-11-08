@@ -27,7 +27,7 @@
  * A data member that cannot be stated refuses when it is read, `refusing` below, so a shared composer that asks
  * this family a question it has no answer to stops there with the reason, not with another family's answer.
  */
-import type { ActivityKeyRules } from '../../activityroles.ts';
+import type { ActivityKeyRules } from '../../compose/activityroles.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { ActivityStart, Family, FamilyFonts, FamilyTraits } from '../family.ts';
 import { noScreenPowerOnDelayCopies } from './delay.ts';

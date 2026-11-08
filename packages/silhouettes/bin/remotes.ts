@@ -477,8 +477,8 @@ function displayTable(remote: RemoteFolder, drawing: Drawing | undefined): strin
     return m === undefined ? NO_RECORD : yes(m.touch);
   }))].join(', ');
   const raster = size === undefined
-    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\` |`
-    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\`, ${remote.rasterFrom ?? 'measured from the configurations\' full screen pictures'} |`;
+    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/screens/render.ts\` |`
+    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/screens/render.ts\`, ${remote.rasterFrom ?? 'measured from the configurations\' full screen pictures'} |`;
   const drawn = drawing.screen === undefined
     ? `| raster on the drawing | no screen on the drawing | \`${drawing.id}.ts\` |`
     : `| raster on the drawing | ${drawing.screen.pixels.width} by ${drawing.screen.pixels.height} | \`${drawing.id}.ts\`, which must agree with the row above |`;
@@ -508,8 +508,8 @@ function undrawnDisplayTable(remote: RemoteFolder): string {
     return m === undefined ? NO_RECORD : yes(m.touch);
   }))].join(', ');
   const raster = size === undefined
-    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\` |`
-    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\`, measured from the configurations' full screen pictures |`;
+    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/screens/render.ts\` |`
+    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/screens/render.ts\`, measured from the configurations' full screen pictures |`;
   return [
     '| field | value | from |',
     '|---|---|---|',
@@ -579,7 +579,7 @@ function slotMapsTable(): string {
     `|---|${architectures.map(() => '---').join('|')}|`,
     ...rows,
     '',
-    provenance('`SLOT_MAPS` in `packages/codec/src/gspm.ts`'),
+    provenance('`SLOT_MAPS` in `packages/codec/src/container/gspm.ts`'),
   ].join('\n');
 }
 

@@ -44,21 +44,21 @@
  * already there, which Logitech's service would give it, and the test setup's LG television's second stored but
  * unbound record, its Back, is not reproduced, since no rule read says why it is there.
  */
-import type { CatalogueSource } from '../../catalogue.ts';
-import { stateVariableSite } from '../../actions.ts';
-import { u8, u16 } from '../../bytes.ts';
-import { catalogueDevicePlan } from '../../composecatalogue.ts';
-import { Writer } from '../../emit.ts';
-import { type Container, type Instruction, parse } from '../../gspm.ts';
-import { irGroups } from '../../ir.ts';
+import type { CatalogueSource } from '../../catalogue/catalogue.ts';
+import { stateVariableSite } from '../../container/actions.ts';
+import { u8, u16 } from '../../support/bytes.ts';
+import { catalogueDevicePlan } from '../../compose/composecatalogue.ts';
+import { Writer } from '../../container/emit.ts';
+import { type Container, type Instruction, parse } from '../../container/gspm.ts';
+import { irGroups } from '../../infrared/ir.ts';
 import {
   compilerHash, devices, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
-} from '../../inventory.ts';
-import { withMetadataDevice } from '../../metadata.ts';
-import { excise, relocate } from '../../relocate.ts';
+} from '../../inventory/inventory.ts';
+import { withMetadataDevice } from '../../container/metadata.ts';
+import { excise, relocate } from '../../edit/relocate.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, stateTable, taggedList, taggedListBytes, taggedListExtent,
-} from '../../sections.ts';
+} from '../../container/sections.ts';
 import { appendActionLists, ComposeError, nameOfLabel, restamped } from '../../shared/core.ts';
 import { composeDeviceFor, type ComposeDevice, type ComposedDevice } from '../../shared/devices.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';

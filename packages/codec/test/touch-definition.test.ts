@@ -68,13 +68,13 @@ import { IR_ARCHIVE, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   frameSlots, frameWidths, keyCodeOfStatedCode, rhythmKey, rhythmOfDefinition, statedCodeOfDefinition,
   withStatedWidths, withToggleCleared, waveformOfArchiveCommand, type ArchiveKeyCode, type ArchiveProtocol,
-} from '../src/archive.ts';
-import { archiveProtocols } from '../src/archive.node.ts';
-import { mergedIntervals, pulsesOfBlock, pulsesOfFrame, type Pulse } from '../src/irframe.ts';
-import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
+} from '../src/catalogue/archive.ts';
+import { archiveProtocols } from '../src/catalogue/archive.node.ts';
+import { mergedIntervals, pulsesOfBlock, pulsesOfFrame, type Pulse } from '../src/infrared/irframe.ts';
+import { PROTOCOLS, type StatedProtocol } from '../src/infrared/protocols.ts';
 import {
   biphaseOf, blockOfStatedCode, cellsOf, pulsesOfStatedCode, statedCode, timingsOf, type StatedCode, type StatedItem,
-} from '../src/stated.ts';
+} from '../src/infrared/stated.ts';
 import { carrierOfPeriod, isDefinitionRefusal, definitionOfRow, keyCodeText } from '../src/families/harmony-touch/definition.ts';
 import type { IrProtocol } from '../src/families/harmony-touch/documents.ts';
 import { readConfiguration } from '../src/families/harmony-touch/read.ts';

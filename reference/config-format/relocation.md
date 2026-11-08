@@ -94,7 +94,7 @@ The marker after the pointer table does not move, since its offset depends on th
 
 ## What a relocation does
 
-`relocate` in `packages/codec/src/relocate.ts` makes room in a container: it shifts everything at or above one
+`relocate` in `packages/codec/src/edit/relocate.ts` makes room in a container: it shifts everything at or above one
 offset, rewrites every stated address out of the pointer census, and restamps `end_addr` and the trailer
 checksum[^s172]. The census is the single source of what gets rewritten, so a reader added later joins the rewrite
 by joining the census. Its header lists the steps a relocation takes. It is checked by inserting filler into every

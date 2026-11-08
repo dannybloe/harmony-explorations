@@ -29,11 +29,11 @@
  * Arch 12 (Harmony One) alone: raw slot 18 is the One family's own section, `FRAME_ARCHITECTURES`, and the
  * number sender table is the format's on every family but is put on the One's composed path only here.
  */
-import { hexOf } from '../../bytes.ts';
-import type { ContainerLayout, ContainerPiece } from '../../frame.ts';
-import { RAW_SLOT_PREFIX } from '../../coverage.ts';
+import { hexOf } from '../../support/bytes.ts';
+import type { ContainerLayout, ContainerPiece } from '../../assembly/frame.ts';
+import { RAW_SLOT_PREFIX } from '../../container/coverage.ts';
 import { ComposeError } from '../../shared/core.ts';
-import { NUMBER_SENDER_SLOT, numberSenderTable } from '../../tables.ts';
+import { NUMBER_SENDER_SLOT, numberSenderTable } from '../../container/tables.ts';
 
 /** Raw slot 18 of every Harmony One container in the lab, 36 of 36: two zero bytes. */
 export const ONE_INSERTED_SECTION: Readonly<Uint8Array> = Uint8Array.of(0, 0);

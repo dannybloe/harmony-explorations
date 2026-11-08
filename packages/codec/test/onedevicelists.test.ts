@@ -39,7 +39,7 @@ import {
   touchPages,
   valueMaps,
 } from '../src/internal.ts';
-import { deviceListRowMode } from '../src/inventory.ts';
+import { deviceListRowMode } from '../src/inventory/inventory.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import { speller } from '../src/shared/spelling.ts';
 import { startSwitchedOn } from '../src/shared/activities.ts';
@@ -54,7 +54,7 @@ import {
 } from '../src/families/harmony-one/devicelists.ts';
 import { activityMenuRoles, describeOneActivityMenu } from '../src/families/harmony-one/activitymenu.ts';
 import { oneValueMapRoles } from '../src/families/harmony-one/caseprograms.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The first offset two files differ at, or undefined where they are the same. */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {

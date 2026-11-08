@@ -16,7 +16,7 @@
  * state variable to 1, the low battery flag every battery screen sets on entry, section 357, and every one of its 162
  * is a swallow, scan 25 included, since the 700's placeholder is another mode.
  *
- * **The order is the shared rule**, section 315, `keyListOrder` in `../../modezero.ts`, which is measured on
+ * **The order is the shared rule**, section 315, `keyListOrder` in `../../container/modezero.ts`, which is measured on
  * five architectures and stays there. Mode 0's list on the 600, 650 and 700 has no tie: at 256 buckets the
  * hash is a bijection on a byte, so every tag has a bucket of its own.
  *
@@ -31,10 +31,10 @@
  * stayed shared. `screenrecords.ts`, a four slot module still outside the family, takes the scan range through
  * the family's index.
  */
-import { POP_MODE, STATE_WRITE_BASE } from '../../actions.ts';
-import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from '../../inventory.ts';
-import { keyListOrder } from '../../modezero.ts';
-import { taggedListBytes } from '../../sections.ts';
+import { POP_MODE, STATE_WRITE_BASE } from '../../container/actions.ts';
+import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from '../../inventory/inventory.ts';
+import { keyListOrder } from '../../container/modezero.ts';
+import { taggedListBytes } from '../../container/sections.ts';
 
 /** The models whose mode 0 list this generates. */
 export type ModeZeroModel = 'harmony-600' | 'harmony-650' | 'harmony-700';

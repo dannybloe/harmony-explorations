@@ -21,18 +21,18 @@
  * Runs on a composed configuration, after the device look and before the letters are blended, and reaches
  * every page that draws a pad: the activity screens and the device pages, Logitech's donor pages included.
  */
-import { Writer } from '../../emit.ts';
-import { type Container, parse } from '../../gspm.ts';
-import { deviceModeMaps } from '../../inventory.ts';
-import { picturesByContent, withBankPictures } from '../../pictures.ts';
-import { rgb565, rgbTo565 } from '../../png.ts';
-import { excise, RelocateError } from '../../relocate.ts';
-import { contentKey } from '../../screencategories.ts';
-import { encodeBitmap, reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screen.ts';
-import { modeRecords } from '../../sections.ts';
+import { Writer } from '../../container/emit.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { deviceModeMaps } from '../../inventory/inventory.ts';
+import { picturesByContent, withBankPictures } from '../../drawing/pictures.ts';
+import { rgb565, rgbTo565 } from '../../screens/png.ts';
+import { excise, RelocateError } from '../../edit/relocate.ts';
+import { contentKey } from '../../screens/screencategories.ts';
+import { encodeBitmap, reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, screenProgram } from '../../screens/screen.ts';
+import { modeRecords } from '../../container/sections.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
 import { textGlyphs } from '../../shared/spelling.ts';
-import { characterMap, decode } from '../../text.ts';
+import { characterMap, decode } from '../../screens/text.ts';
 import { activityBoxRows } from './activitypictures.ts';
 import { activityPadBehind } from './activityscreen.ts';
 import type { OneChoices } from './choices.ts';

@@ -46,15 +46,15 @@
  * there by `families/harmony-600-650-700/empty.ts`' `cornerProgram`; whether one encoder serves both is left to plan 007. English only. Read only towards hardware: the result
  * is pieces.
  */
-import type { Container } from '../../gspm.ts';
-import { archSlot } from '../../gspm.ts';
-import type { ContainerLayout } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { stateRecords } from '../../sections.ts';
-import { SCREEN_DRAW_IMAGE, SCREEN_JUMP, SCREEN_SWITCH_NARROW, SCREEN_TABLE_SLOT, screenProgram } from '../../screen.ts';
-import { characterMap, decode } from '../../text.ts';
-import { ScreenRecordError, assertRebuilt } from '../../screenrecords.ts';
-import { CLOCK_HOUR, CLOCK_MINUTE, CLOCK_SECOND, CLOCK_WEEKDAY, hourListBytes } from '../../statetables.ts';
+import type { Container } from '../../container/gspm.ts';
+import { archSlot } from '../../container/gspm.ts';
+import type { ContainerLayout } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { stateRecords } from '../../container/sections.ts';
+import { SCREEN_DRAW_IMAGE, SCREEN_JUMP, SCREEN_SWITCH_NARROW, SCREEN_TABLE_SLOT, screenProgram } from '../../screens/screen.ts';
+import { characterMap, decode } from '../../screens/text.ts';
+import { ScreenRecordError, assertRebuilt } from '../../compose/screenrecords.ts';
+import { CLOCK_HOUR, CLOCK_MINUTE, CLOCK_SECOND, CLOCK_WEEKDAY, hourListBytes } from '../../assembly/statetables.ts';
 import { type ValueReader, blobReader, textGlyphs, textValues } from '../../shared/spelling.ts';
 import {
   BAND, type BuiltTemplatePrograms, CALL, type Part, type Step, type TemplateCall, type TemplateProgram,

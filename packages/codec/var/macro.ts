@@ -1,8 +1,8 @@
 // Where does a command made of several presses live? At the button, not inside a record.
 import { readFileSync } from 'node:fs';
 import { imagePath } from '@harmony/lab';
-import { parse } from '../src/gspm.ts';
-import { keyCodes } from '../src/inventory.ts';
+import { parse } from '../src/container/gspm.ts';
+import { keyCodes } from '../src/inventory/inventory.ts';
 const CONTAINERS = ['one_config', 'h600_config', 'h700_config', 'arch8_config_885',
   'arch8_config_a', 'h525_config', 'one_spare_after_sync', 'calibration_one'];
 for (const name of CONTAINERS) {

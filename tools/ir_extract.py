@@ -11,7 +11,7 @@ form is read by `packages/codec` instead. Records with no durations are reported
 dropped, because a silent count is how a partial extraction gets mistaken for a complete one.
 
 **This used to print a bit count per record and no longer does**, section 139: turning durations
-into a frame is `packages/codec/src/irframe.ts` and having a second decoder here made the two
+into a frame is `packages/codec/src/infrared/irframe.ts` and having a second decoder here made the two
 disagree about 37 records of one arch 8 (Harmony 880) config. What it prints is the durations,
 which is what the firmware sends.
 

@@ -20,13 +20,13 @@ import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
   bitsPerDigit, blockOfDefinition, frameDigitBases, frameSlots, frameWidths, keyCodeOfStatedCode, rhythmOfDefinition,
   waveformOfArchiveCommand, withStatedWidths, withToggleCleared,
-} from '../src/archive.ts';
-import { archiveProtocols } from '../src/archive.node.ts';
-import { pulsesOfBlock } from '../src/irframe.ts';
+} from '../src/catalogue/archive.ts';
+import { archiveProtocols } from '../src/catalogue/archive.node.ts';
+import { pulsesOfBlock } from '../src/infrared/irframe.ts';
 import {
   PRONTO_CLOCK, prontoCarrier, prontoPairs, prontoUnits, readPronto, writePronto,
-} from '../src/pronto.ts';
-import { statedCode } from '../src/stated.ts';
+} from '../src/infrared/pronto.ts';
+import { statedCode } from '../src/infrared/stated.ts';
 
 test('a Pronto header states the carrier as a count and the sections as pairs', () => {
   // A real learned code, `Sony 12 Bit`, from the archive's own README. 0x0068 is 104, and 104 units of

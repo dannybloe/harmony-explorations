@@ -8,12 +8,12 @@
  * the parts, and a word too wide is cut with `..`, section 394. So a name is matched the other way round:
  * laid out by the same rule, `oneLabelLines`, in the configuration's pad font, and compared line for line.
  */
-import type { Container } from '../../gspm.ts';
-import { fontSets } from '../../font.ts';
-import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../../sections.ts';
-import { characterMap, screenStrings } from '../../text.ts';
+import type { Container } from '../../container/gspm.ts';
+import { fontSets } from '../../screens/font.ts';
+import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../../container/sections.ts';
+import { characterMap, screenStrings } from '../../screens/text.ts';
 import { ComposeError } from '../../shared/core.ts';
-import type { DeviceScreenItem } from '../../activityroles.ts';
+import type { DeviceScreenItem } from '../../compose/activityroles.ts';
 import { DEVICE_PAGE_SCANS, DEVICE_PAGE_SLOTS } from './menus.ts';
 import { padFontOf, ONE_PAD_HEIGHT, ONE_PAD_WIDTH, oneLabelLines } from './labels.ts';
 

@@ -44,7 +44,7 @@ import {
 } from '../src/families/harmony-touch/compose.ts';
 import { documentsOfAnswers, type SyncDocuments } from '../src/families/harmony-touch/documents.ts';
 import { readConfiguration } from '../src/families/harmony-touch/read.ts';
-import { pulsesOfStatedRow, statedProtocol } from '../src/stated.ts';
+import { pulsesOfStatedRow, statedProtocol } from '../src/infrared/stated.ts';
 import { answersOf, FULL } from './touch-sync.ts';
 
 /** A device of ours in the shape of 8.1's: Sony 12 Bit, numbers of ours, keys by name, one entry screen only. */

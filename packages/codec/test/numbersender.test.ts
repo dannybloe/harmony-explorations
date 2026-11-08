@@ -17,21 +17,21 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { IMAGES, PARSEABLE_EXCLUDED, imagePath, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
-import { parse } from '../src/gspm.ts';
+import { parse } from '../src/container/gspm.ts';
 import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../src/internal.ts';
 import {
   NUMBER_SENDER_DIGITS,
   NUMBER_SENDER_RECORD_LENGTH,
   NUMBER_SENDER_TABLE_LENGTH,
   numberSenders,
-} from '../src/tables.ts';
-import { claims, coverage } from '../src/coverage.ts';
-import { stateRecords } from '../src/sections.ts';
-import { emit } from '../src/emit.ts';
-import { IR_CLASS_STREAM, irBlockWords, irClass, irGroups, irHeaderPointers } from '../src/ir.ts';
-import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
-import { pulsesOfWords } from '../src/irda.ts';
-import '../src/resources.node.ts';
+} from '../src/container/tables.ts';
+import { claims, coverage } from '../src/container/coverage.ts';
+import { stateRecords } from '../src/container/sections.ts';
+import { emit } from '../src/container/emit.ts';
+import { IR_CLASS_STREAM, irBlockWords, irClass, irGroups, irHeaderPointers } from '../src/infrared/ir.ts';
+import { frameKey, framesOfPulses, fromFirstMark } from '../src/infrared/irframe.ts';
+import { pulsesOfWords } from '../src/infrared/irda.ts';
+import '../src/support/resources.node.ts';
 
 const SAMPLE = 'calibration_favchannels';
 /** The same account and remote before the channels existed. */

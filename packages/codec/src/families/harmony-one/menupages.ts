@@ -7,11 +7,11 @@
  *
  * The Harmony One alone, the One family's: its page records carry a lead byte, section 275.
  */
-import { Writer } from '../../emit.ts';
-import { type Container, parse } from '../../gspm.ts';
-import { relocate } from '../../relocate.ts';
-import { SCREEN_CALL, SCREEN_END, screenProgram } from '../../screen.ts';
-import { modePages, modeRecords, pageListCopies } from '../../sections.ts';
+import { Writer } from '../../container/emit.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { relocate } from '../../edit/relocate.ts';
+import { SCREEN_CALL, SCREEN_END, screenProgram } from '../../screens/screen.ts';
+import { modePages, modeRecords, pageListCopies } from '../../container/sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 
 /** A page record's length on the Harmony One: the lead, the list and the program. */

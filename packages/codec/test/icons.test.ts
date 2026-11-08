@@ -11,7 +11,7 @@ import { IconError, drawIcon, iconNames, iconPath } from '../src/build.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import { STARTUP_FIXED_LINE_Y, STARTUP_TITLE_SECOND_Y } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import { OUR_PICTURE_PLACES, buildOurPictures } from '../src/families/harmony-600-650-700/pictures.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The ink's box on a drawing `width` wide: leftmost, rightmost, top and bottom ink pixel, and the count. */
 function inkBox(ink: Uint8Array, width: number): [number, number, number, number, number] {

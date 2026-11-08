@@ -15,9 +15,9 @@ import type { Container } from '../src/index.ts';
 // Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
 import { HARMONY_650_FACES } from '../src/families/harmony-600-650-700/fonts.ts';
 import { HARMONY_ONE_FACES } from '../src/families/harmony-one/fonts.ts';
-import { characterMap } from '../src/text.ts';
-import { fontSets, glyphOf } from '../src/font.ts';
-import { measureSet } from '../src/fonttable.ts';
+import { characterMap } from '../src/screens/text.ts';
+import { fontSets, glyphOf } from '../src/screens/font.ts';
+import { measureSet } from '../src/drawing/fonttable.ts';
 import { parse } from '../src/index.ts';
 import {
   FontTableError,
@@ -35,7 +35,7 @@ import {
 import { oxaniumAlphabet, screenStrings } from '../src/internal.ts';
 import { FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;

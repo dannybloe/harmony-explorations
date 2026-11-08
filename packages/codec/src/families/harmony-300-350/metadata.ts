@@ -22,8 +22,8 @@
  * for, so both choices are copied for their shape and nothing is known to depend on either. What the builder writes
  * is checked against all seven compiles byte for byte given each compile's own choices, `metadatabuild.test.ts`.
  */
-import { GspmError } from '../../gspm.ts';
-import { metadataDeviceElement, metadataSection, type ZipTime, type ZipTimeWords } from '../../metadata.ts';
+import { GspmError } from '../../container/gspm.ts';
+import { metadataDeviceElement, metadataSection, type ZipTime, type ZipTimeWords } from '../../container/metadata.ts';
 
 /** The text before the first device, the same in seven of seven of the family's compiles. */
 export const NO_SCREEN_METADATA_BEFORE = '<Section class="com.logitech.harmony.compiler.binarysubsystems.binarizer.pepsi.MetaDataSection"'

@@ -18,9 +18,9 @@
  * neither has an item of a device's page, which calls the command's send list itself, on every arch 8
  * configuration read.
  */
-import type { ActivityKeyRules } from '../../activityroles.ts';
-import type { HardKey } from '../../devicemode.ts';
-import type { StateTableFacts } from '../../statetables.ts';
+import type { ActivityKeyRules } from '../../compose/activityroles.ts';
+import type { HardKey } from '../../compose/devicemode.ts';
+import type { StateTableFacts } from '../../assembly/statetables.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { ActivityStart, Family, FamilyFonts } from '../family.ts';
 import { composeSideKeysDeviceScreen } from './devicescreen.ts';

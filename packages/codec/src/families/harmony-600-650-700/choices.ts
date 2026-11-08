@@ -23,12 +23,12 @@
  */
 import type { ActivityKey } from './activitykeys.ts';
 
-import { rgbTo565 } from '../../png.ts';
+import { rgbTo565 } from '../../screens/png.ts';
 import {
   LETTERING_FACES, OXANIUM_WEIGHTS, defaultWeight, type LetterInks, type OxaniumFaceName, type OxaniumWeight,
-} from '../../lettering.ts';
+} from '../../drawing/lettering.ts';
 import type { WiringSettings } from './wiring.ts';
-import { iconNames } from '../../icons.ts';
+import { iconNames } from '../../drawing/icons.ts';
 
 import type { CommonChoices, DelayDefaults } from '../family.ts';
 import { type BackgroundColours } from './backgrounds.ts';

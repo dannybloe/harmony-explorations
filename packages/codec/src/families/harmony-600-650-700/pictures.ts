@@ -37,12 +37,12 @@
  * Arch 14 only, the Harmony 650's colour look of 2026, which the 2026 Harmony 700 compiles share. Read
  * only towards hardware: the result is pieces.
  */
-import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
-import { type Container } from '../../gspm.ts';
-import { encodeBitmap } from '../../screen.ts';
-import { sameBytes } from '../../bytes.ts';
-import { contentKey } from '../../screencategories.ts';
-import { PictureError, type BandRow, type IconDrawing, type PictureEntry, pictureRows, withReplacedPictures } from '../../pictures.ts';
+import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { type Container } from '../../container/gspm.ts';
+import { encodeBitmap } from '../../screens/screen.ts';
+import { sameBytes } from '../../support/bytes.ts';
+import { contentKey } from '../../screens/screencategories.ts';
+import { PictureError, type BandRow, type IconDrawing, type PictureEntry, pictureRows, withReplacedPictures } from '../../drawing/pictures.ts';
 
 /** Full width rows of one colour each, the top bar's shape. */
 const solidRows = (colours: readonly number[]): BandRow[] => colours.map((colour) => ({ inset: 0, end: colour, fill: colour }));

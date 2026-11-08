@@ -59,15 +59,15 @@
  * English only, skin 54; the Harmony One alone, the One family's: the Harmony 600, 650 and 700 have no touch map
  * (base slot 17 names their picture bank, section 62). Read only towards hardware: the result is pieces.
  */
-import { type Container, parse } from '../../gspm.ts';
-import type { ContainerLayout, ContainerPiece, PieceRef } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { modeRecords } from '../../sections.ts';
-import { TOUCH_AREA_LENGTH, TOUCH_AREA_SELF_AT, touchPages } from '../../tables.ts';
-import { EDGE_CODES, LIST_ROW_PITCH, SCREEN_ROW_PITCH } from '../../touch.ts';
-import { ScreenRecordError, assertRebuilt } from '../../screenrecords.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import type { ContainerLayout, ContainerPiece, PieceRef } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { modeRecords } from '../../container/sections.ts';
+import { TOUCH_AREA_LENGTH, TOUCH_AREA_SELF_AT, touchPages } from '../../container/tables.ts';
+import { EDGE_CODES, LIST_ROW_PITCH, SCREEN_ROW_PITCH } from '../../inventory/touch.ts';
+import { ScreenRecordError, assertRebuilt } from '../../compose/screenrecords.ts';
 import { type ValueReader, blobReader } from '../../shared/spelling.ts';
-import { Writer } from '../../emit.ts';
+import { Writer } from '../../container/emit.ts';
 import { withoutRanges } from '../../shared/dropmodes.ts';
 import { ONE_FIRMWARE_SCREENS } from './firmwarescreens.ts';
 import { ONE_FIXED_SCREENS, oneFixedScreenModes, oneFixedScreenNames } from './fixedscreens.ts';

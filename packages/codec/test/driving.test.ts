@@ -14,11 +14,11 @@ import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
 import test from 'node:test';
 import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
-import { ArchiveError } from '../src/archive.ts';
-import { archiveManifest } from '../src/archive.node.ts';
-import { deviceDriving, driveSteps } from '../src/driving.ts';
-import { catalogueDriving } from '../src/driving.node.ts';
-import type { DeviceDriving, DriveStep } from '../src/driving.ts';
+import { ArchiveError } from '../src/catalogue/archive.ts';
+import { archiveManifest } from '../src/catalogue/archive.node.ts';
+import { deviceDriving, driveSteps } from '../src/catalogue/driving.ts';
+import { catalogueDriving } from '../src/catalogue/driving.node.ts';
+import type { DeviceDriving, DriveStep } from '../src/catalogue/driving.ts';
 
 /** A minimal version 2 record, made up: only the timing block every record carries. */
 const TIMING = {

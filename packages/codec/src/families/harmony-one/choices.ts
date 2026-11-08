@@ -6,7 +6,7 @@
  * One survives the sort. The row fonts `menus.ts` keeps are the corpus's own, font 9 for a device page's
  * rows and font 7 for a menu's; the title is where this project departs from it.
  */
-import type { OxaniumWeight } from '../../lettering.ts';
+import type { OxaniumWeight } from '../../drawing/lettering.ts';
 import type { CommonChoices } from '../family.ts';
 import type { OneIconPicture } from './pictures.ts';
 

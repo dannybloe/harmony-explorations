@@ -133,8 +133,8 @@ infrared group; the 720's twenty four lists called favourite channels as a measu
 is not asserted; and assertions missing for the picture row's clip, a height of 0, opcode 19 sharing the switch,
 the toggle flag handed to the loader, the record's field order and the value added to the base, the alignment
 loop, `0x10C14` seeking raw 15, and the picker's test on variable 17, all added. It also listed two codec
-comments that still state the old readings, `NumberSender.flags` in `packages/codec/src/tables.ts` (never fires)
-and the wide code comment in `packages/codec/src/screen.ts`; `packages/` is outside this landing, so they are
+comments that still state the old readings, `NumberSender.flags` in `packages/codec/src/container/tables.ts` (never fires)
+and the wide code comment in `packages/codec/src/screens/screen.ts`; `packages/` is outside this landing, so they are
 reported as candidates.
 """
 import collections

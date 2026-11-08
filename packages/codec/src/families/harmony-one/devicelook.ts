@@ -22,17 +22,17 @@
  * but a device page draws, and only at that place, which is refused otherwise, since repointing a picture a
  * help screen also draws would recolour the help screen.
  */
-import { u24 } from '../../bytes.ts';
-import { Writer } from '../../emit.ts';
-import { type Container, parse } from '../../gspm.ts';
-import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../../sections.ts';
-import { deviceListRowMode, deviceModeMaps, devices } from '../../inventory.ts';
+import { u24 } from '../../support/bytes.ts';
+import { Writer } from '../../container/emit.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../../container/sections.ts';
+import { deviceListRowMode, deviceModeMaps, devices } from '../../inventory/inventory.ts';
 import { deviceListMenus } from '../../shared/menus.ts';
-import { picturesByContent, withBankPictures } from '../../pictures.ts';
+import { picturesByContent, withBankPictures } from '../../drawing/pictures.ts';
 import { withoutUndrawnPictures } from '../../shared/dropmodes.ts';
-import { contentKey } from '../../screencategories.ts';
-import { renderProgram, renderVariants, type TextDrawn } from '../../render.ts';
-import { reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, type ScreenInstruction, screenProgram } from '../../screen.ts';
+import { contentKey } from '../../screens/screencategories.ts';
+import { renderProgram, renderVariants, type TextDrawn } from '../../screens/render.ts';
+import { reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, type ScreenInstruction, screenProgram } from '../../screens/screen.ts';
 import { ComposeError, restamped } from '../../shared/core.ts';
 import {
   ACTIVITY_ROW_SIZE, activityPadBox, activityRowBox, activityRowIcon, colourBehind,

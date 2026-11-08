@@ -171,7 +171,7 @@ this list is how to use it and what to watch for.
 * **The device catalogue opens for a plain login** with no registered remote:
   `SearchGlobalDevices` then `GetGlobalLanguageCommands`. What it serves is **symbolic**, a family name
   and a frame value, [the device catalogue is its own call](../../../reference/logitech/service.md#the-device-catalogue-is-its-own-call);
-  a frame is rebuilt through the rhythm table `packages/codec/src/protocols.ts`.
+  a frame is rebuilt through the rhythm table `packages/codec/src/infrared/protocols.ts`.
 * **`ProductsManager/GetAllProducts`** is the product table, [which remotes the service serves](../../../reference/logitech/service.md#which-remotes-the-service-serves).
   Its `MaxDevicesPerAccount` is adopted into `packages/base/src/models.ts`. `CompilerArchitecture` is
   null on every record; do not go looking for the architecture map there again.

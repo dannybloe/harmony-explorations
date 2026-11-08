@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { imagePath } from '@harmony/lab';
-import { parse, archSlot } from '../src/gspm.ts';
-import { devices } from '../src/inventory.ts';
+import { parse, archSlot } from '../src/container/gspm.ts';
+import { devices } from '../src/inventory/inventory.ts';
 const CONTAINERS = ['one_config', 'h600_config', 'h700_config', 'one_spare_after_sync',
   'arch8_config_885', 'h525_config'];
 for (const name of CONTAINERS) {

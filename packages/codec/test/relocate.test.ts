@@ -43,7 +43,7 @@ import {
   trailerAgrees,
 } from '../src/internal.ts';
 import { setupView } from '../src/families/harmony-600-650-700/compare.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The whole corpus, the same nineteen as every corpus wide claim. */
 const SAMPLES = [

@@ -20,16 +20,16 @@
  *
  * The Harmony 650 and 700, the models the state colours are built for. Read only towards hardware.
  */
-import { u24 } from '../../bytes.ts';
-import type { ContainerPiece, PieceRef } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { archSlot, type Container, parse } from '../../gspm.ts';
+import { u24 } from '../../support/bytes.ts';
+import type { ContainerPiece, PieceRef } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { archSlot, type Container, parse } from '../../container/gspm.ts';
 
-import { deviceListRows } from '../../inventory.ts';
-import { SCREEN_TABLE_SLOT, bitmapReference, screenProgram } from '../../screen.ts';
-import { modeRecords } from '../../sections.ts';
+import { deviceListRows } from '../../inventory/inventory.ts';
+import { SCREEN_TABLE_SLOT, bitmapReference, screenProgram } from '../../screens/screen.ts';
+import { modeRecords } from '../../container/sections.ts';
 import { activityMenus } from '../../shared/menus.ts';
-import { contentKey } from '../../screencategories.ts';
+import { contentKey } from '../../screens/screencategories.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { cornerPrograms, picturesByContent } from './chrome.ts';
 import { cornerPlaceAt, cornerProgram, cornerProgramAt } from './empty.ts';

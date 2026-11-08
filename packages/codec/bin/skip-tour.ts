@@ -5,7 +5,7 @@
  *
  * **Why it exists**: a Harmony 650 opens Logitech's ten screen introduction tour every time its
  * configuration is reloaded, which is after every write, and it has to be pressed through before the
- * remote can be used. `skipIntroductionTour` in `src/edit.ts` finds the list that starts it and
+ * remote can be used. `skipIntroductionTour` in `src/edit/edit.ts` finds the list that starts it and
  * turns its second instruction into a call to the list the tour's last screen runs, section 286.
  *
  * Same shape as `set-delay.ts` and for the same reason: one instruction of content, no length change,
@@ -16,7 +16,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 import { applyEdits, introductionTour, parse, skipIntroductionTour } from '../src/index.ts';
 import { trailerChecksum } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({

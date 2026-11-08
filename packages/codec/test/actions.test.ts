@@ -2,7 +2,7 @@
  * The action list language, once both dispatchers had been read to the end.
  *
  * `docs/findings.md` section 73. Every number here was measured before the table in
- * `packages/codec/src/actions.ts` existed, so these are checks rather than restatements, and the
+ * `packages/codec/src/container/actions.ts` existed, so these are checks rather than restatements, and the
  * two closures are the ones the section rests on: an index that never leaves its table, and a
  * width the generator never violates.
  */

@@ -55,16 +55,16 @@
  * catalogue and a base slot 11 of several thousand entries, section 369, and are not read here. Read only towards
  * hardware: the result is pieces.
  */
-import type { Container, Instruction } from '../../gspm.ts';
-import { actionListBytes } from '../../gspm.ts';
-import type { ContainerLayout, ContainerPiece, PieceRef } from '../../frame.ts';
-import { layOutContainer, takeApart } from '../../frame.ts';
-import { Writer } from '../../emit.ts';
-import { SCREEN_END, SCREEN_TABLE_SLOT, screenProgram } from '../../screen.ts';
-import { type ValueMap, valueMaps } from '../../valuemap.ts';
-import { ENTER_MODE, MAP_VALUE_OPCODE, SELECT_BINDING_SET, caseQueued, compilerCaseOrder } from '../../inventory.ts';
-import { type PieceTarget, type ValueMapSpec, describeStateTables } from '../../statetables.ts';
-import { ScreenRecordError, assertRebuilt, recordReading } from '../../screenrecords.ts';
+import type { Container, Instruction } from '../../container/gspm.ts';
+import { actionListBytes } from '../../container/gspm.ts';
+import type { ContainerLayout, ContainerPiece, PieceRef } from '../../assembly/frame.ts';
+import { layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { Writer } from '../../container/emit.ts';
+import { SCREEN_END, SCREEN_TABLE_SLOT, screenProgram } from '../../screens/screen.ts';
+import { type ValueMap, valueMaps } from '../../container/valuemap.ts';
+import { ENTER_MODE, MAP_VALUE_OPCODE, SELECT_BINDING_SET, caseQueued, compilerCaseOrder } from '../../inventory/inventory.ts';
+import { type PieceTarget, type ValueMapSpec, describeStateTables } from '../../assembly/statetables.ts';
+import { ScreenRecordError, assertRebuilt, recordReading } from '../../compose/screenrecords.ts';
 import { type ValueReader, blobReader } from '../../shared/spelling.ts';
 import { caseProgram } from '../../shared/menus.ts';
 import { CALL, CLICK, STATE_WRITE, withTemplatePrograms } from './screentemplate.ts';

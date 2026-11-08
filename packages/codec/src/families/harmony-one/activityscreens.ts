@@ -64,20 +64,20 @@
  * device list is `devicelists.ts`', section 424. Read
  * only towards hardware: the result is pieces.
  */
-import { u24 } from '../../bytes.ts';
-import { type Container, parse } from '../../gspm.ts';
-import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../frame.ts';
-import { ENTER_MODE, caseQueued } from '../../inventory.ts';
-import { valueMaps } from '../../valuemap.ts';
+import { u24 } from '../../support/bytes.ts';
+import { type Container, parse } from '../../container/gspm.ts';
+import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
+import { ENTER_MODE, caseQueued } from '../../inventory/inventory.ts';
+import { valueMaps } from '../../container/valuemap.ts';
 import {
   SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_FILL, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction,
   screenProgram,
-} from '../../screen.ts';
-import { type ModeRecordsPlace, ScreenRecordError, assertRebuilt, withModeRecords } from '../../screenrecords.ts';
-import { modeRecords, taggedList } from '../../sections.ts';
+} from '../../screens/screen.ts';
+import { type ModeRecordsPlace, ScreenRecordError, assertRebuilt, withModeRecords } from '../../compose/screenrecords.ts';
+import { modeRecords, taggedList } from '../../container/sections.ts';
 import { type ValueReader, blobReader, textGlyphs } from '../../shared/spelling.ts';
-import { TOUCH_AREA_LENGTH, touchPages } from '../../tables.ts';
-import { decode } from '../../text.ts';
+import { TOUCH_AREA_LENGTH, touchPages } from '../../container/tables.ts';
+import { decode } from '../../screens/text.ts';
 import { type HitPart, hitPageAreasOf, hitPageRunOf, oneHitPagesPlace, withOneHitPages } from './hitpages.ts';
 import { ONE_PAD_HEIGHT, ONE_PAD_WIDTH, padLineY } from './labels.ts';
 import { TITLE_JOINER, oneCharacterMap } from './screentexts.ts';

@@ -23,7 +23,7 @@ import { parse, payloadOf } from '../src/index.ts';
 import { emit, roundTrip } from '../src/internal.ts';
 import type { Container } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

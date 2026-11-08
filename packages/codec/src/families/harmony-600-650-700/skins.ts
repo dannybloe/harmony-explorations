@@ -23,7 +23,7 @@ export const HARMONY_650_SKINS: ReadonlySet<number> = new Set([72, 74]);
  * The skins the assembly takes, `assemble.ts`. The Harmony 650 alone, skin 72, which is the one model every
  * step was run on together; each generator states its own wider scope, and what the Harmony 600 and 700 would
  * need is in section 362: the 700's wiring refuses the Remote Assistant off, and neither model has had this
- * chain run on one of its compiles. Held in `src/assemble.ts` until `todo-compile-one.md` 3.3.3.2.
+ * chain run on one of its compiles. Held in `src/assembly/assemble.ts` until `todo-compile-one.md` 3.3.3.2.
  */
 export const ASSEMBLY_SKINS: ReadonlySet<number> = new Set([72]);
 

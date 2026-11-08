@@ -40,9 +40,9 @@
  * these remotes**, and only the sequence composer reads it, after `sendLists`, which refuses first.
  */
 import type { DeviceSends, PowerStepSpelling, SendShape } from '../family.ts';
-import type { Container } from '../../gspm.ts';
-import { irGroupCount, irGroups } from '../../ir.ts';
-import { stateTable } from '../../sections.ts';
+import type { Container } from '../../container/gspm.ts';
+import { irGroupCount, irGroups } from '../../infrared/ir.ts';
+import { stateTable } from '../../container/sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import type { ComposeDevice } from '../../shared/devices.ts';
 import { pairDeviceSends } from '../../shared/sendpair.ts';

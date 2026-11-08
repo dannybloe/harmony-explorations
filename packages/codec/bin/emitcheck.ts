@@ -4,7 +4,7 @@
  * **The closed loop this project has wanted for the infrared side.** `bin/analyze.ts` goes one way: it
  * sends a rhythm the corpus already holds and takes their reading of it. This goes the other way. It takes
  * a code as their **catalogue** states it, a family and a number with no rhythm at all, builds the rhythm
- * from the measured table in `src/protocols.ts`, and sends that to their analyser. If the answer is the
+ * from the measured table in `src/infrared/protocols.ts`, and sends that to their analyser. If the answer is the
  * same family and the same number, a code nobody has ever recorded has been manufactured correctly and
  * their own decoder says so.
  *
@@ -26,10 +26,10 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LAB } from '@harmony/lab';
-import { irdaString } from '../src/irda.ts';
-import { PROTOCOLS } from '../src/protocols.ts';
-import { pulsesOfStatedCode, statedCode } from '../src/stated.ts';
-import '../src/resources.node.ts';
+import { irdaString } from '../src/infrared/irda.ts';
+import { PROTOCOLS } from '../src/infrared/protocols.ts';
+import { pulsesOfStatedCode, statedCode } from '../src/infrared/stated.ts';
+import '../src/support/resources.node.ts';
 import { commandLine } from '@harmony/lab/cli';
 
 const cli = commandLine({

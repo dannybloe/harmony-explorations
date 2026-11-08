@@ -13,13 +13,13 @@ import { load, skipUnless } from '@harmony/lab';
 import { type Container, activityScreens, deviceModeMaps, parse } from '../src/index.ts';
 import { composeDevice, composeDeviceScreen } from '../src/build.ts';
 import { modeRecords, taggedList, touchPages } from '../src/internal.ts';
-import { bitmapPixels, renderVariants } from '../src/render.ts';
-import { rgb565, rgbTo565 } from '../src/png.ts';
+import { bitmapPixels, renderVariants } from '../src/screens/render.ts';
+import { rgb565, rgbTo565 } from '../src/screens/png.ts';
 import {
   bitmapAt, reachablePrograms, SCREEN_CALL, SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_SWITCH_NARROW, SCREEN_TEXT_AT,
   SCREEN_TEXT_INLINE, screenProgram,
-} from '../src/screen.ts';
-import { characterMap, decode } from '../src/text.ts';
+} from '../src/screens/screen.ts';
+import { characterMap, decode } from '../src/screens/text.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { activityTitleFont } from '../src/families/harmony-one/activityscreen.ts';
 import { padLabelShifts, withCentredPadLabels } from '../src/families/harmony-one/centring.ts';
@@ -28,11 +28,11 @@ import { withColourButtons } from '../src/families/harmony-one/colourbuttons.ts'
 import { withOneDeviceLook } from '../src/families/harmony-one/devicelook.ts';
 import { ONE_PAD_HEIGHT, ONE_PAD_WIDTH } from '../src/families/harmony-one/labels.ts';
 import { DEVICE_PAGE_SLOTS, MODE_TITLE_X, MODE_TITLE_Y, withPageKeyLights } from '../src/families/harmony-one/menus.ts';
-import { ACTION_LIST_TABLE_SLOT, archSlot } from '../src/gspm.ts';
+import { ACTION_LIST_TABLE_SLOT, archSlot } from '../src/container/gspm.ts';
 import { oneScreenLightTimer, withScreenLight } from '../src/families/harmony-one/screenlight.ts';
-import { timers } from '../src/tables.ts';
+import { timers } from '../src/container/tables.ts';
 import { restamped } from '../src/shared/core.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /** The nineteen Harmony One compiles, as `fonttable.test.ts`'s. */
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',

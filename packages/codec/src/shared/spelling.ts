@@ -4,15 +4,15 @@
  * program. Every family that draws glyph fonts uses these. Plan 007's shared part, cut out of
  * `compose.ts` unchanged.
  */
-import { u24 } from '../bytes.ts';
-import { type FontSet, fontSets, glyphOf } from '../font.ts';
-import { Container } from '../gspm.ts';
+import { u24 } from '../support/bytes.ts';
+import { type FontSet, fontSets, glyphOf } from '../screens/font.ts';
+import { Container } from '../container/gspm.ts';
 import {
   SCREEN_CALL, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
-} from '../screen.ts';
-import { type ModePage } from '../sections.ts';
-import { ComposeError } from '../shared/core.ts';
-import { characterMap, type CharacterMap, glyphsReferencedBy } from '../text.ts';
+} from '../screens/screen.ts';
+import { type ModePage } from '../container/sections.ts';
+import { ComposeError } from './core.ts';
+import { characterMap, type CharacterMap, glyphsReferencedBy } from '../screens/text.ts';
 
 /** The glyph codes that spell `text` in `set`, or a refusal naming the first missing character. */
 export function codesFor(

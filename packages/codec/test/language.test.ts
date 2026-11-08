@@ -17,7 +17,7 @@ import { require_, skipUnless } from '@harmony/lab';
 
 import { activities, configLanguage, devices, parse } from '../src/index.ts';
 import { LANGUAGE_MARKERS, LANGUAGE_MINIMUM_MARKERS } from '../src/internal.ts';
-import '../src/resources.node.ts';
+import '../src/support/resources.node.ts';
 
 /**
  * Every user config, with the language it turns out to be in.

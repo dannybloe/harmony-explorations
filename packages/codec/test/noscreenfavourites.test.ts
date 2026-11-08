@@ -49,7 +49,7 @@ import { ComposeError, type Container, irGroups, parse } from '../src/index.ts';
 import { bytes, compilerHash, numberSenders, stateRecords, taggedList } from '../src/internal.ts';
 import { composeNoScreenDevice, composeNoScreenFavourites, inCompilerOrder } from '../src/build.ts';
 import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
-import { archiveAt } from '../src/catalogue.node.ts';
+import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
 const SECOND = 'work/setups/h350-test/compile-Result.EzHex';

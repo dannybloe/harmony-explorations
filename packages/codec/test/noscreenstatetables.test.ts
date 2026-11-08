@@ -121,7 +121,7 @@ import { keyMaps, PRESS } from '../src/families/harmony-300-350/devices.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 import { FIRMWARE_STATE_RECORDS, FOUR_SLOT_STATE_TABLES } from '../src/families/harmony-600-650-700/statetables.ts';
 import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
-import { sameBytes } from '../src/bytes.ts';
+import { sameBytes } from '../src/support/bytes.ts';
 
 /** The five bench fixtures, by the lab's names. */
 const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
