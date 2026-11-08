@@ -10,9 +10,9 @@
  * **The builder is generic and a family brings what differs**, `todo-compile-one.md` 3.3.3.3: the values
  * a family's tables hold that another's do not are its `StateTableFacts`, `Family.stateTables`, and the
  * builder and reader here take them as an argument. The four slot family's, the Harmony 600, 650 and 700's,
- * are measured over the thirteen compiles section 312 lists, `families/four-slot/statetables.ts`; the touch
+ * are measured over the thirteen compiles section 312 lists, `families/four-slot/statetables.ts`; the One
  * family's, the Harmony One's, over its 19 distinct compiles since `todo-compile-one.md` 6.4,
- * `families/touch/statetables.ts`, where they differ in records 13 and 14, the width line, a one byte case
+ * `families/one/statetables.ts`, where they differ in records 13 and 14, the width line, a one byte case
  * count and a second transition on the minute. What is written below about the thirteen is that
  * measurement, and the rest of it holds on the One's 19 as well. The no screen family's, the Harmony 300 and
  * 350's, over the 13 compiles of that family the lab holds since `todo-compile-350.md` 5.1.2,
@@ -99,7 +99,7 @@ export const NAME_TREE_SLOT = 0;
 /**
  * What a family's state tables hold that another family's do not, which `buildStateTables` and
  * `describeStateTables` take from the family, `Family.stateTables`. The four slot family's are
- * `FOUR_SLOT_STATE_TABLES` and the touch family's `TOUCH_STATE_TABLES`, `todo-compile-one.md` 6.4: the
+ * `FOUR_SLOT_STATE_TABLES` and the One family's `ONE_STATE_TABLES`, `todo-compile-one.md` 6.4: the
  * Harmony One's differ in records 13 and 14, a one byte case count, where the width line falls and a second
  * transition on the minute, each a member here, so the builder tests no architecture.
  */
@@ -126,7 +126,7 @@ export interface StateTableFacts {
   readonly caseCountWidth: number | undefined;
   /**
    * Whether the clock's records carry the carry: the minute, day and month incrementing the next field when they
-   * roll over and the hour calling a list, `clockTransitions`. On every compile of the four slot and touch
+   * roll over and the hour calling a list, `clockTransitions`. On every compile of the four slot and One
    * families, 13 and 19; on none of the 13 Harmony 300 and 350 compiles, whose seven clock records hold no
    * transition at all, so a description there names no hour list. `reference/architectures/harmony-300-350/memory.md`
    * under the state variables.
@@ -161,7 +161,7 @@ const TO_ANY = -2;
 
 /**
  * The clock's indices, section 130. The second, the minute and the hour are exported for the Harmony One's
- * clock header, which switches on them, `families/touch/clockheader.ts`, section 414.
+ * clock header, which switches on them, `families/one/clockheader.ts`, section 414.
  */
 export const CLOCK_SECOND = 0;
 export const CLOCK_MINUTE = 1;
@@ -419,7 +419,7 @@ export function clockSpec(builtAt: string): StateTablesSpec['clock'] {
 /**
  * The clock's transitions, section 130: the three rollovers that increment, and the hour's call; and with
  * `minuteList`, the minute's call of it on every change after its increment, `StateTablesSpec.minuteList`,
- * which the touch family's tables have and the four slot family's do not, `StateTableFacts.minuteCall`.
+ * which the One family's tables have and the four slot family's do not, `StateTableFacts.minuteCall`.
  */
 export function clockTransitions(index: number, hourList: number, minuteList?: number): StateTransitionSpec[] {
   const increment = (variable: number): StateTransitionSpec[] =>
@@ -611,7 +611,7 @@ function targetOf(ref: PieceRef | undefined): PieceTarget {
 
 /**
  * Read a description back off a laid out container, `takeApart`'s result, by the facts of its family,
- * `Family.stateTables`: an arch 14 container's by the four slot family's and a Harmony One's by the touch
+ * `Family.stateTables`: an arch 14 container's by the four slot family's and a Harmony One's by the One
  * family's. A reader, so it takes the facts it is handed and decides nothing about which; the caller asks
  * the container's family, `familyOf`.
  *

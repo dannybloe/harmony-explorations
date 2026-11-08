@@ -26,7 +26,7 @@ export interface Unit { kind: string; key: string; skeleton: string; bytes: numb
  * bytes with every address field the census knows zeroed. A unit's skeleton is its key with the texts, fonts,
  * text positions and pictures abstracted, which is what is left of a screen once ours are put in.
  *
- * `built`, per byte, is nonzero where a builder on the composed path reproduces the byte, `touchBuiltBytes`, since
+ * `built`, per byte, is nonzero where a builder on the composed path reproduces the byte, `oneBuiltBytes`, since
  * `todo-compile-one.md` 3.2.2: a unit counts only its bytes no builder reproduces, and a unit every byte of which
  * a builder reproduces is left out, so it neither counts nor takes a donor unit a carried one could match. A
  * builder's part comes out byte for byte as Logitech's in places, the wiring whole, and only this tells it from

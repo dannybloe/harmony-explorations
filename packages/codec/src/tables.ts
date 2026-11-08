@@ -131,7 +131,7 @@ export const SCREEN_LIGHT_STEP_ARCHITECTURES: ReadonlySet<number> = new Set([14]
  * carry the same pair on every user configuration, unmeasured, the Harmony 525 has one such timer
  * and the Harmony One none of this shape. Firmware embedded containers have no timers, so it answers nothing
  * there. **The Harmony One has a pair of another shape**, two timers queueing two lists of the same content,
- * and its ten second one is the screen light, measured on the spare One, section 400: `touchScreenLightTimer` in the touch family.
+ * and its ten second one is the screen light, measured on the spare One, section 400: `oneScreenLightTimer` in the One family.
  */
 export function screenLightTimer(c: Container): number | undefined {
   if (c.architecture === undefined || !SCREEN_LIGHT_STEP_ARCHITECTURES.has(c.architecture)) return undefined;

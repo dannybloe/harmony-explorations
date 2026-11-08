@@ -410,7 +410,7 @@ export interface ComposeScreenOptions {
    * where the compiler draws one, and the key map is `keys`, a list per scan, with every other key
    * bound to nothing. On the Harmony 600, 650 and 700 `keysLike` is still the mode whose key map's shape
    * is copied, its 47 tags and its two navigation entries, but none of its bindings. On the Harmony One the
-   * rows are laid out by the touch family's own rules, section 394, and of this only `keys` is read, into
+   * rows are laid out by the One family's own rules, section 394, and of this only `keys` is read, into
    * the shape of an existing device mode of as many pages, `todo-compile-one.md` 1.2.10.
    */
   compiled?: { title: string; keys: ReadonlyMap<number, number> };
@@ -441,7 +441,7 @@ export function activityMenus(c: Container): { menu: number | undefined; marker:
 
 /**
  * The activity menu found by its rows: the mode whose rows select the most base slot 9 entries,
- * `todo-compile-650.md` 6.2.9. The touch family's rule, and the four slot family's before section 375,
+ * `todo-compile-650.md` 6.2.9. The One family's rule, and the four slot family's before section 375,
  * kept there as its calibration. A menu with no row is not found.
  */
 export function activityMenuByRows(c: Container): number | undefined {
@@ -529,7 +529,7 @@ export interface ComposeActivityRowOptions {
   iconLike?: string;
   /**
    * The activity's MyHarmony type: on the Harmony One the row is then drawn in our pictures, the row box and
-   * the type's icon, `TouchChoices.activityIcons`, rather than copied off the first row; a menu with no row
+   * the type's icon, `OneChoices.activityIcons`, rather than copied off the first row; a menu with no row
    * needs it. The Harmony 600, 650 and 700 draw no icon on a row and ignore it.
    */
   type?: string;
@@ -546,7 +546,7 @@ export interface ComposeActivityScreenOptions {
   startupLike?: string;
   /**
    * The activity's MyHarmony type, `WatchTV`, `ListenToMusic` and so on, which decides the icon a built
-   * screen draws: the Harmony One's, `TouchChoices.activityIcons`. The Harmony 600, 650 and 700 draw one
+   * screen draws: the Harmony One's, `OneChoices.activityIcons`. The Harmony 600, 650 and 700 draw one
    * picture for every type and ignore it.
    */
   type?: string;

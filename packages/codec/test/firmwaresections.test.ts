@@ -26,7 +26,7 @@ import {
   takeApart,
   withFirmwareSections,
 } from '../src/index.ts';
-import { TOUCH_PARAMETERS } from '../src/families/touch/parameters.ts';
+import { ONE_PARAMETERS } from '../src/families/one/parameters.ts';
 import { PARAMETER_VALUES, describeWiring } from '../src/families/four-slot/wiring.ts';
 
 /** The 19 distinct Harmony One compiles, `todo-compile-one.md` 2.2, as `startupassistant.test.ts` lists them. */
@@ -56,7 +56,7 @@ test('todo-compile-one 6.4: the log area and the parameter block of all 19 Harmo
     const c = containerOf(name);
     const layout = takeApart(c);
     const log = buildLogArea(12);
-    const block = buildParameterBlock(12, TOUCH_PARAMETERS);
+    const block = buildParameterBlock(12, ONE_PARAMETERS);
     // Each built piece against Logitech's, whose address fields `takeApart` zeroed as the builder leaves its own.
     const theirLog = layout.sections[2]!.head[0]!;
     if (same(log.bytes, theirLog.bytes)) tally.log += 1;
@@ -87,9 +87,9 @@ test('todo-compile-one 6.4: the Harmony One\'s log area and parameter values are
     const c = containerOf(name);
     const area = logArea(c)!;
     if (area.capacity === LOG_AREAS[12]!.capacity && area.start === LOG_AREAS[12]!.start && area.limit === LOG_AREAS[12]!.limit && area.length === 9) log += 1;
-    if (JSON.stringify(parameterGroups(c)!.map((g) => g.values)) === JSON.stringify(TOUCH_PARAMETERS.groups)) values += 1;
+    if (JSON.stringify(parameterGroups(c)!.map((g) => g.values)) === JSON.stringify(ONE_PARAMETERS.groups)) values += 1;
     const extras = lightBandExtras(c)!;
-    if (JSON.stringify([extras.pair.values, extras.fields.bytes]) === JSON.stringify([TOUCH_PARAMETERS.lightBand!.pair, TOUCH_PARAMETERS.lightBand!.fields])) band += 1;
+    if (JSON.stringify([extras.pair.values, extras.fields.bytes]) === JSON.stringify([ONE_PARAMETERS.lightBand!.pair, ONE_PARAMETERS.lightBand!.fields])) band += 1;
   }
   assert.deepEqual({ log, values, band }, { log: 19, values: 19, band: 19 });
 });
@@ -112,20 +112,20 @@ test('todo-compile-one 6.4: the other architecture\'s log area fails every Harmo
   for (const name of ONE_COMPILES) {
     const c = containerOf(name);
     const layout = takeApart(c);
-    const laid = layOutContainer(withFirmwareSections(layout, buildLogArea(14), buildParameterBlock(12, TOUCH_PARAMETERS))).bytes;
+    const laid = layOutContainer(withFirmwareSections(layout, buildLogArea(14), buildParameterBlock(12, ONE_PARAMETERS))).bytes;
     if (!same(laid, c.blob)) differs += 1;
   }
   assert.equal(differs, 19);
   // Without the twelve bytes past group 9, which the Harmony One's firmware reads whatever is there.
-  assert.throws(() => buildParameterBlock(12, { groups: TOUCH_PARAMETERS.groups }), /reads past group 9 and nothing is given/);
+  assert.throws(() => buildParameterBlock(12, { groups: ONE_PARAMETERS.groups }), /reads past group 9 and nothing is given/);
   // With them on arch 14, whose firmware is not read past its groups.
-  assert.throws(() => buildParameterBlock(14, { groups: PARAMETER_VALUES['harmony-650'], lightBand: TOUCH_PARAMETERS.lightBand! }), /not read past group 9/);
+  assert.throws(() => buildParameterBlock(14, { groups: PARAMETER_VALUES['harmony-650'], lightBand: ONE_PARAMETERS.lightBand! }), /not read past group 9/);
   // A group whose length the firmware does not demand: arch 14's four light levels in the One's group 1.
-  const short = TOUCH_PARAMETERS.groups.map((g, k) => (k === 1 ? PARAMETER_VALUES['harmony-650'][1]! : g));
-  assert.throws(() => buildParameterBlock(12, { ...TOUCH_PARAMETERS, groups: short }), /demands 6 values in group 1, not 4/);
+  const short = ONE_PARAMETERS.groups.map((g, k) => (k === 1 ? PARAMETER_VALUES['harmony-650'][1]! : g));
+  assert.throws(() => buildParameterBlock(12, { ...ONE_PARAMETERS, groups: short }), /demands 6 values in group 1, not 4/);
   // A value past two bytes, and architectures with no reading.
-  const wide = TOUCH_PARAMETERS.groups.map((g, k) => (k === 8 ? [70000, 10980] : g));
-  assert.throws(() => buildParameterBlock(12, { ...TOUCH_PARAMETERS, groups: wide }), /a parameter is a u16, not 70000/);
+  const wide = ONE_PARAMETERS.groups.map((g, k) => (k === 8 ? [70000, 10980] : g));
+  assert.throws(() => buildParameterBlock(12, { ...ONE_PARAMETERS, groups: wide }), /a parameter is a u16, not 70000/);
   assert.throws(() => buildLogArea(9), FirmwareSectionsError);
   assert.throws(() => buildParameterBlock(9, { groups: [] }), FirmwareSectionsError);
 });

@@ -34,7 +34,7 @@ import { layOutContainer, takeApart } from '../src/frame.ts';
 import { withOxaniumFonts } from '../src/fonttable.ts';
 import { deviceModeLayout } from '../src/devicemode.ts';
 import { HARD_KEYS } from '../src/families/four-slot/devicemode.ts';
-import { TOUCH_HARD_KEYS } from '../src/families/touch/devicekeys.ts';
+import { ONE_HARD_KEYS } from '../src/families/one/devicekeys.ts';
 import { composeDonorDeviceInfrared } from '../src/composecatalogue.ts';
 import {
   type CatalogueDeviceRequest,
@@ -785,7 +785,7 @@ test('a device of more than six commands composed onto a Harmony One takes a pag
 
 test('a catalogue device composed whole onto a Harmony One binds its keys in device mode as Logitech\'s compile of it does, by the code each key sends',
      needing(skipWithoutIrArchive(), skipUnless(...new Set(ONE_POWER.map(([config]) => config)))), () => {
-  // `TOUCH_HARD_KEYS`, fitted to 33 device modes of seven compiles, section 397; here every device of the
+  // `ONE_HARD_KEYS`, fitted to 33 device modes of seven compiles, section 397; here every device of the
   // harvest is composed whole onto its own compile and each key's record compared with the one Logitech's key
   // sends, three blocks word for word, which names nothing and so cannot be fitted to a naming. The eight are
   // devices of the fit's own population, so this checks the composer against the compiles, not the table
@@ -841,7 +841,7 @@ test('a catalogue device composed whole onto a Harmony One binds its keys in dev
   // shows the old composer's output wrong; it is not the 650's table carried over by key name, which section 397
   // compares in scratch only.
   const denon = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Denon', 'AVR-X4800H').codeset!).map((one) => one.name);
-  const asOne = deviceModeLayout(denon, TOUCH_HARD_KEYS).keys;
+  const asOne = deviceModeLayout(denon, ONE_HARD_KEYS).keys;
   const as650 = deviceModeLayout(denon, HARD_KEYS).keys;
   assert.equal(asOne.size, 30);
   assert.equal(as650.size, 31);

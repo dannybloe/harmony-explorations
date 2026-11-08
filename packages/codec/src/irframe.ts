@@ -245,8 +245,8 @@ export function irFrame(
  * joined, which is what the remote stores, so two records that send one frame a different number of times or with a
  * different hold still differ there, section 343.
  *
- * One derivation for both families' comparisons, the four slot family's `setupView` and the touch family's
- * `touchView`, `todo-compile-one.md` 8.1.5: the second needed it per send where the first had it per list.
+ * One derivation for both families' comparisons, the four slot family's `setupView` and the One family's
+ * `oneView`, `todo-compile-one.md` 8.1.5: the second needed it per send where the first had it per list.
  */
 export function recordSent(c: Container, record: number): { frame: string; stored: string } {
   const frame = irFrame(c, record);

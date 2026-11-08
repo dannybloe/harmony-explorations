@@ -19,15 +19,15 @@ import {
 } from '../src/screen.ts';
 import { characterMap, decode } from '../src/text.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
-import { activityTitleFont } from '../src/families/touch/activityscreen.ts';
-import { padLabelShifts, withCentredPadLabels } from '../src/families/touch/centring.ts';
-import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
-import { withColourButtons } from '../src/families/touch/colourbuttons.ts';
-import { withTouchDeviceLook } from '../src/families/touch/devicelook.ts';
-import { TOUCH_PAD_HEIGHT, TOUCH_PAD_WIDTH } from '../src/families/touch/labels.ts';
-import { DEVICE_PAGE_SLOTS, MODE_TITLE_X, MODE_TITLE_Y, withPageKeyLights } from '../src/families/touch/menus.ts';
+import { activityTitleFont } from '../src/families/one/activityscreen.ts';
+import { padLabelShifts, withCentredPadLabels } from '../src/families/one/centring.ts';
+import { ONE_CHOICES } from '../src/families/one/choices.ts';
+import { withColourButtons } from '../src/families/one/colourbuttons.ts';
+import { withOneDeviceLook } from '../src/families/one/devicelook.ts';
+import { ONE_PAD_HEIGHT, ONE_PAD_WIDTH } from '../src/families/one/labels.ts';
+import { DEVICE_PAGE_SLOTS, MODE_TITLE_X, MODE_TITLE_Y, withPageKeyLights } from '../src/families/one/menus.ts';
 import { ACTION_LIST_TABLE_SLOT, archSlot } from '../src/gspm.ts';
-import { touchScreenLightTimer, withScreenLight } from '../src/families/touch/screenlight.ts';
+import { oneScreenLightTimer, withScreenLight } from '../src/families/one/screenlight.ts';
 import { timers } from '../src/tables.ts';
 import { restamped } from '../src/shared/core.ts';
 
@@ -58,8 +58,8 @@ function pads(c: Container, program: number) {
     .map((draw) => {
       const [x, y] = [draw.operands[0] as number, draw.operands[1] as number];
       const texts = all.filter((one) => (one.opcode === SCREEN_TEXT_INLINE || one.opcode === SCREEN_TEXT_AT)
-        && (one.operands[0] as number) >= x && (one.operands[0] as number) < x + TOUCH_PAD_WIDTH
-        && (one.operands[1] as number) >= y && (one.operands[1] as number) < y + TOUCH_PAD_HEIGHT);
+        && (one.operands[0] as number) >= x && (one.operands[0] as number) < x + ONE_PAD_WIDTH
+        && (one.operands[1] as number) >= y && (one.operands[1] as number) < y + ONE_PAD_HEIGHT);
       return { draw, x, y, picture: u24(draw.operands, 2), texts };
     });
 }
@@ -222,10 +222,10 @@ test('section 399: centring moves each pad label of Logitech\'s compile of two d
 test('section 399: the device look points every device page pad at a box in the family\'s device colour, and leaves the rest of the screen',
      skipUnless('harvest_one_two_devices'), () => {
   const c = containerOf('harvest_one_two_devices');
-  const looked = withTouchDeviceLook(c, TOUCH_CHOICES, () => undefined);
+  const looked = withOneDeviceLook(c, ONE_CHOICES, () => undefined);
   assert.ok(looked.allChecksPass);
   const records = modeRecords(looked)!;
-  const fill = to565(TOUCH_CHOICES.deviceBox.fill);
+  const fill = to565(ONE_CHOICES.deviceBox.fill);
   let n = 0;
   for (const { mode } of new Map(deviceModeMaps(looked).map((one) => [one.mode, one])).values()) {
     for (const page of records[mode]!.pages) {
@@ -246,7 +246,7 @@ test('section 399: the device look points every device page pad at a box in the 
 test('section 399: the colour buttons turn every pad draw named Red, Green, Yellow or Blue into a circle in the family\'s colour, cut its word, and leave every other draw',
      skipUnless('one_config'), () => {
   const c = containerOf('one_config');
-  const colours = Object.values(TOUCH_CHOICES.colourButtons).map((one) => to565(one.colour));
+  const colours = Object.values(ONE_CHOICES.colourButtons).map((one) => to565(one.colour));
   // Per configuration: the pad draws under a colour word, those drawing one of our circles, and every other
   // picture draw of every page, neither a colour word's pad nor a circle.
   const census = (x: Container) => {
@@ -271,10 +271,10 @@ test('section 399: the colour buttons turn every pad draw named Red, Green, Yell
     return { named, circles, others };
   };
   const before = census(c);
-  const circled = withColourButtons(c, TOUCH_CHOICES);
+  const circled = withColourButtons(c, ONE_CHOICES);
   assert.ok(circled.allChecksPass);
   const after = census(circled);
-  assert.equal(TOUCH_CHOICES.colourButtonLabels, false);
+  assert.equal(ONE_CHOICES.colourButtonLabels, false);
   assert.deepEqual(before, { named: 20, circles: 0, others: before.others });
   // Every colour pad draw now a circle, every word gone, and no other draw lost or gained.
   assert.deepEqual(after, { named: 0, circles: 20, others: before.others });
@@ -471,7 +471,7 @@ test('section 400: the screen light is the lower of the One pair of timers queue
   const at = new Map<number, number>();
   for (const name of ONE_COMPILES) {
     const c = containerOf(name);
-    const index = touchScreenLightTimer(c);
+    const index = oneScreenLightTimer(c);
     assert.notEqual(index, undefined, name);
     at.set(index!, (at.get(index!) ?? 0) + 1);
     const records = timers(c)!.records;
@@ -490,14 +490,14 @@ test('section 400: the screen light is the lower of the One pair of timers queue
 test('section 400: the screen light choice rewrites that one timer and nothing else, and refuses what a timer cannot hold',
      skipUnless('one_config'), () => {
   const c = containerOf('one_config');
-  const index = touchScreenLightTimer(c)!;
+  const index = oneScreenLightTimer(c)!;
   const lit = withScreenLight(c, 60);
   assert.equal(lit.blob.length, c.blob.length);
   const durations = (one: Container) => timers(one)!.records.map((t) => t.duration);
   assert.deepEqual(durations(lit), durations(c).map((d, k) => (k === index ? 60 : d)));
   assert.ok(lit.allChecksPass);
   assert.equal(withScreenLight(lit, 60), lit);
-  assert.equal(TOUCH_CHOICES.screenLightSeconds, 10);
+  assert.equal(ONE_CHOICES.screenLightSeconds, 10);
   assert.throws(() => withScreenLight(c, 0x10000), /outside a timer/);
   assert.throws(() => withScreenLight(c, 0), /outside a timer/);
 });

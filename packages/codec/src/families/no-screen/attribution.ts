@@ -1,7 +1,7 @@
 /**
  * Which generator of ours writes each byte of a Harmony 300 or 350 configuration, `todo-compile-350.md` 5.2.1 and
  * plan 011's "The check that proves 5.2": the no screen family's counterpart of the four slot family's
- * `attributeBytes` and the touch family's `touchAttributedBytes`, over the generic ledger of `attribution.ts`.
+ * `attributeBytes` and the One family's `oneAttributedBytes`, over the generic ledger of `attribution.ts`.
  *
  * **What it measures, and what it does not remember.** It takes a finished file and nothing else: no description of
  * the setup, no memory of how the file was made, no Logitech file to compare with. Each generator reads its part's
@@ -186,7 +186,7 @@ export function noScreenAttributedBytes(c: Container, options: NoScreenAttributi
     return at === undefined ? undefined : instructionsAt(c.blob, at);
   };
 
-  // The frame. The file has to lay out again into itself before anything is credited, as `touchAttributedBytes`
+  // The frame. The file has to lay out again into itself before anything is credited, as `oneAttributedBytes`
   // checks first: laying out generates the header, the section table, its marker and the trailer from the pieces, so
   // where it gives the file back those bytes are the frame's.
   const layout = takeApart(c);
@@ -212,7 +212,7 @@ export function noScreenAttributedBytes(c: Container, options: NoScreenAttributi
     ledger.markRebuilt(clockAt, buildTimestampSection(c.builtAt), 'frame', fields);
   }
 
-  // The state tables, the generic builder over the family's facts, as `touchBuiltBytes` takes the One's: described off
+  // The state tables, the generic builder over the family's facts, as `oneBuiltBytes` takes the One's: described off
   // the file, built, laid out again and held to the file whole, then each built piece credited where it landed. What a
   // record holds is the description's and the builder makes every byte of it from that, so none is counted apart.
   attempt(() => {

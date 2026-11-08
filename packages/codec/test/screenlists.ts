@@ -1,7 +1,7 @@
 /**
  * Which base slot 10 lists a set of screens owns, shared by the Harmony One's fixed screens test
- * (`touchfixedscreens.test.ts`, findings section 411) and its tour and Remote Assistant test
- * (`touchtourscreens.test.ts`, section 412), and since `todo-compile-one.md` 6.7 the lists anything can run,
+ * (`onefixedscreens.test.ts`, findings section 411) and its tour and Remote Assistant test
+ * (`onetourscreens.test.ts`, section 412), and since `todo-compile-one.md` 6.7 the lists anything can run,
  * `listsReached`, by the composed setup's test (`composesetup.test.ts`).
  *
  * **It lives in one file because it is one derivation**, as `tagfive.ts` is: both tests claim that the lists a

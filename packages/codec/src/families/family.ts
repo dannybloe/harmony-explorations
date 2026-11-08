@@ -57,7 +57,7 @@ export interface LaidDeviceSends {
   readonly switchOn: number | undefined;
   /**
    * The family's own fields of `ComposedDevice`, read off the configuration once the power variable went in and
-   * renumbered whatever sits above it: the four slot family's two delays, nothing on the touch family.
+   * renumbered whatever sits above it: the four slot family's two delays, nothing on the One family.
    */
   described(named: Container): Pick<ComposedDevice, 'delay' | 'powerOnDelay'>;
 }
@@ -280,22 +280,22 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * The family's own wiring, the event map, the leading list, the timers, base slot 9's fixed entries and the
    * lists they reach: a configuration's checked against what the family's builder makes from the description
    * read off it, byte for byte, refused at the first difference. The Harmony 600, 650 and 700's is
-   * `families/four-slot/wiring.ts`, sections 347 and 360; the Harmony One's `families/touch/wiring.ts`, section 410.
+   * `families/four-slot/wiring.ts`, sections 347 and 360; the Harmony One's `families/one/wiring.ts`, section 410.
    */
   readonly wiring: { check(c: Container): WiringChecked };
   /**
    * How the family's font sets become our letters: the Harmony 600, 650 and 700's nine faces, measured on the
-   * 650 alone, `families/four-slot/fonts.ts`; the Harmony One's five, `families/touch/fonts.ts`, section 396.
+   * 650 alone, `families/four-slot/fonts.ts`; the Harmony One's five, `families/one/fonts.ts`, section 396.
    */
   readonly fonts: FamilyFonts;
   /**
    * How the family's commands are sent: the Harmony 600, 650 and 700's delay prelude,
-   * `families/four-slot/sends.ts`, and the Harmony One's send and quantity alone, `families/touch/sends.ts`.
+   * `families/four-slot/sends.ts`, and the Harmony One's send and quantity alone, `families/one/sends.ts`.
    */
   readonly sends: SendShape;
   /**
    * The shape of an activity's start: the Harmony 600, 650 and 700's, `families/four-slot/start.ts`, and the
-   * Harmony One's, `families/touch/start.ts`.
+   * Harmony One's, `families/one/start.ts`.
    */
   readonly activityStart: ActivityStart;
   /**
@@ -339,7 +339,7 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   /**
    * The device list an activity's Devices key opens, given after the activity has its row: one of the activity's
    * own on both families, every device with those its start switches on first, `startSwitchedOn`; the Harmony 600,
-   * 650 and 700's `composeActivityDeviceList`, section 352, and the Harmony One's `withTouchActivityDeviceList`,
+   * 650 and 700's `composeActivityDeviceList`, section 352, and the Harmony One's `withOneActivityDeviceList`,
    * section 424. Returns the configuration's bytes.
    */
   activityDeviceList(c: Container, activity: number): Uint8Array;
@@ -376,7 +376,7 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * so its bytes come out of the builder rather than out of the donor. Refuses with the builder's refusal where
    * a builder refuses the configuration, never falling back to the donor's part; returns the configuration and
    * the names of the parts built, in the order built. The Harmony One's, `todo-compile-one.md` 3.2.2:
-   * `families/touch/builders.ts`. Absent, every part no composer writes stays the donor's.
+   * `families/one/builders.ts`. Absent, every part no composer writes stays the donor's.
    *
    * `composed` is the devices the composers added, in the order composed, since `todo-compile-one.md` 3.2.2.4:
    * a part that asks about every device, the Harmony One's power off help, has to be told which devices are new

@@ -7,10 +7,10 @@
  * documents and the pictures, `reference/architectures/harmony-touch/usb.md`. So this folder reads JSON, and
  * nothing in it touches the container readers the other remotes go through.
  *
- * **The name of the folder is the remote's whole name, and it is not the touch family.** Elsewhere in this
- * codec "touch" names the Harmony One's touch panel: its family, `families/touch/`, and its hit map,
- * `touch.ts` beside this folder. A folder called `touch/` next to `touch.ts` would have read as that file's
- * own, so this one is `harmony-touch/`, after the model. Nothing here is that family's and nothing here
+ * **The name of the folder is the remote's whole name, and it is not the One family.** Elsewhere in this
+ * codec "touch" names the Harmony One's touch panel: its hit map, `touch.ts` beside this folder, and its family
+ * until plan 013 step 7.3.2 renamed `families/touch/` to `families/one/`. A folder called `touch/` next to
+ * `touch.ts` would have read as that file's own, so this one is `harmony-touch/`, after the model. Nothing here is that family's and nothing here
  * imports it; the barrel exports this folder as one namespace, `harmonyTouch`, so the two vocabularies cannot
  * collide by name either.
  *

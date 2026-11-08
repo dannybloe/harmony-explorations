@@ -14,7 +14,7 @@ import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 // Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
 import { HARMONY_650_FACES } from '../src/families/four-slot/fonts.ts';
-import { HARMONY_ONE_FACES } from '../src/families/touch/fonts.ts';
+import { HARMONY_ONE_FACES } from '../src/families/one/fonts.ts';
 import { characterMap } from '../src/text.ts';
 import { fontSets, glyphOf } from '../src/font.ts';
 import { measureSet } from '../src/fonttable.ts';

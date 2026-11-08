@@ -36,8 +36,8 @@
  * maps do: findings section 398 read the calibration account's three devices, whose stated maps hold
  * `DirectionUp` and `DirectionDown` and whose own records bind 27 and 29, so 27 is `DirectionUp`, 29
  * `DirectionDown`, 36 `UpArrow` and 26 `DownArrow`. The keys below carried the candidates until plan
- * 009's step 3.3 settled them here; the codec's touch family states the same four in its activity key
- * rules, `packages/codec/src/families/touch/keypadrules.ts`.
+ * 009's step 3.3 settled them here; the codec's One family states the same four in its activity key
+ * rules, `packages/codec/src/families/one/keypadrules.ts`.
  *
  * The Menu, Exit, Info and Guide keys are **sharp cornered quadrilaterals** here because that is what
  * the drawing states; the product rounds them. Changing that would mean inventing a radius, so it is

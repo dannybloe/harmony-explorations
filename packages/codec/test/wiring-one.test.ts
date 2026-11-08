@@ -4,7 +4,7 @@
  * and 700's against theirs.
  *
  * **The measurement is the same round trip.** `takeApart` cuts each compile into pieces,
- * `describeTouchWiring` reads back only the numbering and the three settings, `buildTouchWiring` builds the
+ * `describeOneWiring` reads back only the numbering and the three settings, `buildOneWiring` builds the
  * log area, the event map, the parameter block, the timers, base slot 8's leading list, base slot 9's seven
  * fixed entries and the leftover entry, and the lists those reach, `withWiring` puts them where Logitech's
  * sat, and `layOutContainer` lays the container out again. Byte equality says the generator computed
@@ -24,8 +24,8 @@ import { layOutContainer, parse, takeApart } from '../src/index.ts';
 import { familyOf } from '../src/families/registry.ts';
 import { WiringError, builtPieces, compareWiring, withWiring, type BuiltWiring } from '../src/wiringparts.ts';
 import {
-  TOUCH_FIRMWARE_SCREENS, buildTouchWiring, checkTouchWiring, describeTouchWiring, touchWiringNeeds, type TouchWiringSpec,
-} from '../src/families/touch/wiring.ts';
+  ONE_FIRMWARE_SCREENS, buildOneWiring, checkOneWiring, describeOneWiring, oneWiringNeeds, type OneWiringSpec,
+} from '../src/families/one/wiring.ts';
 import { describeWiring } from '../src/families/four-slot/wiring.ts';
 
 /** The nineteen Harmony One compiles of section 405, `test/screenrecords-one.test.ts`' list. */
@@ -75,8 +75,8 @@ function pairsIn(layout: ContainerLayout, built: BuiltWiring): [ContainerPiece, 
   return pairs;
 }
 
-const rebuilt = (layout: ContainerLayout, spec: TouchWiringSpec): Uint8Array =>
-  layOutContainer(withWiring(layout, buildTouchWiring(spec))).bytes;
+const rebuilt = (layout: ContainerLayout, spec: OneWiringSpec): Uint8Array =>
+  layOutContainer(withWiring(layout, buildOneWiring(spec))).bytes;
 
 test('sections 410 and 418: the wiring of each of the 19 Harmony One compiles is rebuilt byte for byte from a description, 6697 lists, 152 entries and 579 timers, the front 168 lists starting three past the start list',
      skipUnless(...ONES), () => {
@@ -86,8 +86,8 @@ test('sections 410 and 418: the wiring of each of the 19 Harmony One compiles is
   for (const name of ONES) {
     const c = containerOf(name);
     const layout = takeApart(c);
-    const spec = describeTouchWiring(layout);
-    const built = buildTouchWiring(spec);
+    const spec = describeOneWiring(layout);
+    const built = buildOneWiring(spec);
     assert.equal(firstDifference(layOutContainer(withWiring(layout, built)).bytes, c.blob), undefined, `${name} differs`);
     lists += built.lists.size;
     entries += built.entries.size;
@@ -108,7 +108,7 @@ test('section 410: the rebuild reads none of the bytes the generator owns: a bli
   for (const name of [...ONES, ...OUR_WRITES]) {
     const c = containerOf(name);
     const layout = takeApart(c);
-    const built = buildTouchWiring(describeTouchWiring(layout));
+    const built = buildOneWiring(describeOneWiring(layout));
     const pairs = pairsIn(layout, built);
     assert.equal(pairs.length, builtPieces(built).length, `${name}: every built piece has a counterpart`);
     const logitech = ONES.includes(name as (typeof ONES)[number]);
@@ -126,7 +126,7 @@ test('section 410: the rebuild reads none of the bytes the generator owns: a bli
     // Described off the blinded layout, built and written back into it. Not so on our writes: six of the seven
     // carry the page lists' copies behind a handler set, section 378, which `withWiring` finds by the set's own
     // count, a byte the blind overwrites, so theirs is written into a layout taken apart afresh.
-    const spec = describeTouchWiring(layout);
+    const spec = describeOneWiring(layout);
     assert.equal(firstDifference(rebuilt(logitech ? layout : takeApart(c), spec), c.blob), undefined, `${name} differs`);
   }
   // Over the 19: what the generator wrote and what the description decided.
@@ -145,7 +145,7 @@ test('section 410: the settings the 19 carry: the Remote Assistant on all but on
   const orders = new Set<string>();
   const ordersWithShow3 = new Set<string>();
   for (const name of ONES) {
-    const spec = describeTouchWiring(takeApart(containerOf(name)));
+    const spec = describeOneWiring(takeApart(containerOf(name)));
     if (!spec.settings.startupAssistant) noAssistant.push(name);
     if (spec.settings.ladderCancelsTimers) cancels.push(name);
     lights.add(`${spec.settings.screenLight}/${spec.settings.screenLightAgain}`);
@@ -173,16 +173,16 @@ test('section 410: the settings the 19 carry: the Remote Assistant on all but on
 test('section 410: the description carries exactly the symbols the catalogue names and does not generate, and of the ten head screens it generates the wiring enters 0, 1 and 9',
      skipUnless(...ONES), () => {
   for (const name of ONES) {
-    const spec = describeTouchWiring(takeApart(containerOf(name)));
-    const needs = touchWiringNeeds(spec.settings, spec.timers);
+    const spec = describeOneWiring(takeApart(containerOf(name)));
+    const needs = oneWiringNeeds(spec.settings, spec.timers);
     for (const kind of ['lists', 'modes', 'variables', 'maps', 'entries', 'programs'] as const) {
       assert.deepEqual(Object.keys(spec[kind]).sort(), [...needs[kind]].sort(), `${name}: ${kind}`);
     }
     // The three head screens the wiring enters are generated, section 408's modes 0, 1 and 9.
     assert.ok(!('lowBattery' in spec.modes) && !('usbConnected' in spec.modes) && !('chargingProblem' in spec.modes), name);
   }
-  assert.equal(TOUCH_FIRMWARE_SCREENS.length, 10);
-  assert.deepEqual(['lowBattery', 'usbConnected', 'chargingProblem'].map((s) => TOUCH_FIRMWARE_SCREENS.indexOf(s)), [0, 1, 9]);
+  assert.equal(ONE_FIRMWARE_SCREENS.length, 10);
+  assert.deepEqual(['lowBattery', 'usbConnected', 'chargingProblem'].map((s) => ONE_FIRMWARE_SCREENS.indexOf(s)), [0, 1, 9]);
 });
 
 test('section 410: a shared caller asks the family for its wiring check, and each family\'s passes one compile of its own',
@@ -199,7 +199,7 @@ test('section 410: the controls fail: two timers swapped, a list missing, a firm
      skipUnless('harvest_one_two_devices', 'one_config'), () => {
   const c = containerOf('harvest_one_two_devices');
   const layout = takeApart(c);
-  const spec = describeTouchWiring(layout);
+  const spec = describeOneWiring(layout);
   const refuses = (make: () => unknown, pattern: RegExp): void =>
     assert.throws(make, (e: unknown) => e instanceof WiringError && pattern.test(e.message), String(pattern));
 
@@ -208,29 +208,29 @@ test('section 410: the controls fail: two timers swapped, a list missing, a firm
   const a = timers.indexOf('lightTick');
   const b = timers.indexOf('lightsOut');
   [timers[a], timers[b]] = [timers[b]!, timers[a]!];
-  refuses(() => compareWiring(c, takeApart(c), buildTouchWiring({ ...spec, timers })), /^the built wiring differs from the configuration's at byte \d+, in slot-12-record$/);
+  refuses(() => compareWiring(c, takeApart(c), buildOneWiring({ ...spec, timers })), /^the built wiring differs from the configuration's at byte \d+, in slot-12-record$/);
   // A list the description lacks.
   const { ready: _ready, ...lists } = spec.lists;
-  refuses(() => buildTouchWiring({ ...spec, lists }), /^the description names no list "ready"$/);
+  refuses(() => buildOneWiring({ ...spec, lists }), /^the description names no list "ready"$/);
   // A redraw timer out of its numbering in the tick's place, and the tick missing.
-  refuses(() => buildTouchWiring({ ...spec, timers: spec.timers.map((t) => (t === 'lightTick' ? 'redraw99' : t)) }), /^timer \d+, redraw99, is out of order/);
-  refuses(() => buildTouchWiring({ ...spec, timers: spec.timers.filter((t) => t !== 'lightTick') }), /^the timer table holds no lightTick$/);
+  refuses(() => buildOneWiring({ ...spec, timers: spec.timers.map((t) => (t === 'lightTick' ? 'redraw99' : t)) }), /^timer \d+, redraw99, is out of order/);
+  refuses(() => buildOneWiring({ ...spec, timers: spec.timers.filter((t) => t !== 'lightTick') }), /^the timer table holds no lightTick$/);
   // A timer whose duration no firmware timer has, in the compile's own bytes.
   const tick = targets(layout.sections[12]!.head[0]!)[a]!;
   // Any length but the firmware's own is read as a screen light, the one setting a timer's length is, so the
   // tick at 7 seconds makes three of those.
   tick.bytes[1] = 7;
-  refuses(() => describeTouchWiring(layout), /^the timer table holds 2 five second timers calling a list and 3 of the screen light's, where the One holds two of each$/);
+  refuses(() => describeOneWiring(layout), /^the timer table holds 2 five second timers calling a list and 3 of the screen light's, where the One holds two of each$/);
   // And an enter of a length none has is refused as itself.
   const second = targets(layout.sections[12]!.head[0]!)[spec.timers.indexOf('second0')]!;
   tick.bytes[1] = 2;
   second.bytes[1] = 9;
-  refuses(() => describeTouchWiring(layout), /^timer \d+ is none the One's firmware holds: enter 9 seconds$/);
+  refuses(() => describeOneWiring(layout), /^timer \d+ is none the One's firmware holds: enter 9 seconds$/);
   // The ladder's 07 FFFB where no compile shows it.
-  const plain = describeTouchWiring(takeApart(containerOf('one_config')));
-  refuses(() => buildTouchWiring({ ...plain, settings: { ...plain.settings, ladderCancelsTimers: true } }), /^no compile opens the ladder with 07 FFFB where it has no Remote Assistant$/);
+  const plain = describeOneWiring(takeApart(containerOf('one_config')));
+  refuses(() => buildOneWiring({ ...plain, settings: { ...plain.settings, ladderCancelsTimers: true } }), /^no compile opens the ladder with 07 FFFB where it has no Remote Assistant$/);
   // The Harmony 600 family's builder does not read a One.
   refuses(() => describeWiring(takeApart(c)), /^skin 54 is not a Harmony 600, 650 or 700 measured here$/);
-  // And the description a One compile gives is checked whole: checkTouchWiring passes it.
-  assert.ok(checkTouchWiring(c).lists > 0);
+  // And the description a One compile gives is checked whole: checkOneWiring passes it.
+  assert.ok(checkOneWiring(c).lists > 0);
 });

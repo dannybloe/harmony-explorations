@@ -116,7 +116,7 @@ runs are the four `one-*.json` in `packages/bench/irtests/done/`, listed in
 ## Related
 
 * `code-for-a-family`: before writing build code for the One, since most of what differs from the 600
-  family belongs in the touch family and nowhere else.
+  family belongs in the One family and nowhere else.
 * `writing-a-config`: every rail a configuration must respect, before changing any byte.
 * `recovering-a-remote`: safe mode, the bootloader and the latch on this model.
 * `probe-remote`: reading a remote read only, and the gate before any experimental packet.

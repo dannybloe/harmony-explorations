@@ -1,6 +1,6 @@
 /**
  * The test setup composed onto the empty Harmony One, `todo-compile-one.md` 8.1.1, 8.1.2 and 8.1.4, findings section
- * 435: the seven devices and five activities of `composesetup.test.ts`, onto `buildEmptyTouchConfiguration` (section
+ * 435: the seven devices and five activities of `composesetup.test.ts`, onto `buildEmptyOneConfiguration` (section
  * 434) rather than a Logitech compile, so the donor holds no byte of Logitech's and nothing is lettered or redrawn.
  *
  * **What is held on the composition**: its steps, with no lettering step and no step turning Logitech's pictures into
@@ -34,22 +34,22 @@ import { assertStateTableConsistent, handlerSets } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
 import { listCallSites } from '../src/assemble.ts';
 import { catalogueInfraredBytes } from '../src/composecatalogue.ts';
-import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
-import { TOUCH_BUILT, touchBuiltBytes } from '../src/families/touch/builders.ts';
-import { buildEmptyTouchConfiguration, touchAttributedBytes } from '../src/families/touch/empty.ts';
-import { touchDonorFaces } from '../src/families/touch/look.ts';
-import { touchMenuMarkerWriter } from '../src/families/touch/menus.ts';
-import { namedHitPages } from '../src/families/touch/hitpages.ts';
-import { describeTouchWiring } from '../src/families/touch/wiring.ts';
-import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
+import { ONE_CHOICES } from '../src/families/one/choices.ts';
+import { ONE_BUILT, oneBuiltBytes } from '../src/families/one/builders.ts';
+import { buildEmptyOneConfiguration, oneAttributedBytes } from '../src/families/one/empty.ts';
+import { oneDonorFaces } from '../src/families/one/look.ts';
+import { oneMenuMarkerWriter } from '../src/families/one/menus.ts';
+import { namedHitPages } from '../src/families/one/hitpages.ts';
+import { describeOneWiring } from '../src/families/one/wiring.ts';
+import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
 import { valueMaps } from '../src/valuemap.ts';
-import { describeTouchFixedScreens } from '../src/families/touch/fixedscreens.ts';
-import { describeTouchDeviceLists, touchDeviceLists } from '../src/families/touch/devicelists.ts';
+import { describeOneFixedScreens } from '../src/families/one/fixedscreens.ts';
+import { describeOneDeviceLists, oneDeviceLists } from '../src/families/one/devicelists.ts';
 import { SCREEN_CALL, SCREEN_SWITCH_NARROW, screenProgram } from '../src/screen.ts';
-import { FIRST_DEVICE_HELP_LISTS, describeTouchHelpScreens, helpNumbering } from '../src/families/touch/helpscreens.ts';
+import { FIRST_DEVICE_HELP_LISTS, describeOneHelpScreens, helpNumbering } from '../src/families/one/helpscreens.ts';
 import {
-  FIRST_DEVICE_KEYS, describeTouchDevicePages, devicePageSlotRoles, firstDevicePageFonts, firstDeviceRoles,
-} from '../src/families/touch/devicepages.ts';
+  FIRST_DEVICE_KEYS, describeOneDevicePages, devicePageSlotRoles, firstDevicePageFonts, firstDeviceRoles,
+} from '../src/families/one/devicepages.ts';
 import { carried, catalogueDevices } from './carried.ts';
 import { listsReached } from './screenlists.ts';
 
@@ -59,9 +59,9 @@ const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../corpus/se
 const BUILT_AT = '2026-10-15T12:00:00';
 
 /** The empty One as a donor: unblended, since the look blends once, last, over every text the composers add. */
-let emptyOnce: ReturnType<typeof buildEmptyTouchConfiguration> | undefined;
-const empty = (): ReturnType<typeof buildEmptyTouchConfiguration> => {
-  emptyOnce ??= buildEmptyTouchConfiguration({ skin: 54, builtAt: BUILT_AT, blend: false });
+let emptyOnce: ReturnType<typeof buildEmptyOneConfiguration> | undefined;
+const empty = (): ReturnType<typeof buildEmptyOneConfiguration> => {
+  emptyOnce ??= buildEmptyOneConfiguration({ skin: 54, builtAt: BUILT_AT, blend: false });
   return emptyOnce;
 };
 
@@ -72,12 +72,12 @@ const composed = (): ComposedSetup => {
   return composedOnce;
 };
 
-/** The bytes something on the composed path writes: a builder's, `touchBuiltBytes`, or the catalogue's infrared. */
+/** The bytes something on the composed path writes: a builder's, `oneBuiltBytes`, or the catalogue's infrared. */
 let writtenOnce: Uint8Array | undefined;
 const written = (): Uint8Array => {
   if (writtenOnce !== undefined) return writtenOnce;
   const out = composed();
-  const built = touchBuiltBytes(out.container, out.blended).owners;
+  const built = oneBuiltBytes(out.container, out.blended).owners;
   const infrared = catalogueInfraredBytes(out.container, IR_ARCHIVE!, catalogueDevices(out.container, recipe())).owners;
   writtenOnce = built.map((one, k) => (one !== 0 || infrared[k] !== 0 ? 1 : 0));
   return writtenOnce;
@@ -99,7 +99,7 @@ const compile = (name: string): Container => {
 };
 
 /** The sixteen less the one holding no device page, harvest_one_families_1, measured rather than named. */
-const withDevicePages = (): string[] => SIXTEEN.filter((name) => describeTouchDevicePages(compile(name), takeApart(compile(name))).spec.devices.length > 0);
+const withDevicePages = (): string[] => SIXTEEN.filter((name) => describeOneDevicePages(compile(name), takeApart(compile(name))).spec.devices.length > 0);
 
 /** A list switching `channels` off and writing `variable` 0, section 400's form of an off list. */
 const offList = (channels: readonly number[], variable: number) => [
@@ -137,7 +137,7 @@ test('8.1.2: the One test setup composed onto the empty One is not lettered and 
   assert.deepEqual(names, ['donor', 'a donor of ours', 'devices composed', 'activity composed', 'activity composed', 'activity composed',
     'activity composed', 'activity composed', 'built', 'look', 'placed', 'stamped']);
   assert.equal(out.steps[1]?.detail, '18 sets of our letters');
-  assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.filter((one) => one !== 'pictures').join(', '));
+  assert.equal(out.steps.find((one) => one.step === 'built')?.detail, ONE_BUILT.filter((one) => one !== 'pictures').join(', '));
   assert.equal(out.steps.find((one) => one.step === 'devices composed')?.detail, 'LG TV, Plasma, Denon, KPN, Kodi, Switch, Sony HT');
   assert.equal(out.steps.find((one) => one.step === 'placed')?.detail, '1053 composed pieces moved into the body first');
   assert.ok(c.allChecksPass);
@@ -155,7 +155,7 @@ test('8.1.2: the One test setup composed onto the empty One is not lettered and 
   assert.equal(namedHitPages(c).size, pages);
   // The unread copy of the Devices record, which the empty One holds by role, section 432, took each activity's case as
   // the record that is looked up did: the idle case and five more in both.
-  const roles = touchValueMapRoles(c);
+  const roles = oneValueMapRoles(c);
   const cases = (role: 'devices' | 'devices unread'): number[] => valueMaps(c)![roles.records.get(role)!]!.entries.map(([key]) => key);
   assert.equal(cases('devices unread').length, 6);
   assert.deepEqual(cases('devices unread'), cases('devices'));
@@ -165,16 +165,16 @@ test('8.1.2: the One test setup composed onto the empty One is not lettered and 
 
 test('8.1.2: a donor is ours where its font table is the stated one, the empty One unblended, and not a Logitech compile or the empty One blended',
      NEEDS_DONOR, () => {
-  assert.equal(touchDonorFaces(empty().container, TOUCH_CHOICES)?.length, 18);
-  assert.equal(touchDonorFaces(compile('harvest_one_two_devices'), TOUCH_CHOICES), undefined);
+  assert.equal(oneDonorFaces(empty().container, ONE_CHOICES)?.length, 18);
+  assert.equal(oneDonorFaces(compile('harvest_one_two_devices'), ONE_CHOICES), undefined);
   // The control: the empty One as section 434 builds it by default, blended, holds the stated sets and more.
-  assert.throws(() => touchDonorFaces(buildEmptyTouchConfiguration({ skin: 54, builtAt: BUILT_AT }).container, TOUCH_CHOICES),
+  assert.throws(() => oneDonorFaces(buildEmptyOneConfiguration({ skin: 54, builtAt: BUILT_AT }).container, ONE_CHOICES),
     /a donor of ours holds 29 font sets where the stated table holds 18, so it is blended/);
 });
 
 test('8.1.2: the unblended empty One, the donor, is every byte made by a generator and none carried',
      () => {
-  const a = touchAttributedBytes(empty().container, []);
+  const a = oneAttributedBytes(empty().container, []);
   assert.deepEqual(Object.fromEntries(a.carried), {});
   assert.equal(empty().bytes.length, 362248);
 });
@@ -188,7 +188,7 @@ test('8.1.4: the setup composed onto the empty One carries no byte of its donor,
   assert.deepEqual(carried(c, empty().container, written()), {});
   // The control: the census matches, so the zero is the builders' attribution and not a census that finds nothing.
   // What the empty One's own parts look like on the composed file, each unchanged where no builder is credited. It
-  // does not show the attribution is not too generous; that is `touchBuiltBytes`' own, which credits a part only
+  // does not show the attribution is not too generous; that is `oneBuiltBytes`' own, which credits a part only
   // where its rebuild is the file byte for byte.
   const uncredited = carried(c, empty().container);
   assert.equal(Object.values(uncredited).reduce((n, one) => n + one, 0), UNCREDITED);
@@ -250,7 +250,7 @@ test('8.1.1: the composed setup\'s power off help asks about its seven devices i
      NEEDS, () => {
   const c = composed().container;
   const layout = takeApart(c);
-  const d = describeTouchHelpScreens(c, layout);
+  const d = describeOneHelpScreens(c, layout);
   assert.deepEqual(d.spec.devices.map((one) => one.name), ['LG TV', 'Plasma', 'Denon', 'KPN', 'Kodi', 'Switch', 'Sony HT']);
   // 4n + 2 screens.
   assert.equal(d.spec.screens.length, 30);
@@ -262,9 +262,9 @@ test('8.1.1: the composed setup\'s power off help asks about its seven devices i
  * two its enter handler runs the wiring's `keyLights.4.1.1` and `keyLights.5.1.1`, the list after `07 FFFB` the
  * wiring's `lights`, and the two its leave handler runs each the only list switching channel 5, or 7, off.
  */
-function helpListsHold(c: Container, d: ReturnType<typeof describeTouchHelpScreens>): void {
+function helpListsHold(c: Container, d: ReturnType<typeof describeOneHelpScreens>): void {
   const roles = helpNumbering(d).roles;
-  const wiring = describeTouchWiring(takeApart(c));
+  const wiring = describeOneWiring(takeApart(c));
   for (const [role, name] of Object.entries(FIRST_DEVICE_HELP_LISTS)) assert.equal(roles.get(role), wiring.lists[name], role);
   assert.equal(roles.get('enter list 2'), wiring.lists['keyLights.5.1.1']);
   assert.deepEqual(listsHolding(c, offList([5], wiring.variables.keyLight4!)), [roles.get('leave list 1')]);
@@ -278,7 +278,7 @@ test('8.1.1: on all nineteen Harmony One compiles the menu marker the rows write
      skipUnless(...NINETEEN), () => {
   const markers = NINETEEN.map((name) => {
     const c = compile(name);
-    assert.equal(touchMenuMarkerWriter(c), menuMarkerOf(c), name);
+    assert.equal(oneMenuMarkerWriter(c), menuMarkerOf(c), name);
     return menuMarkerOf(c);
   });
   assert.equal(new Set(markers).size, 9);
@@ -292,7 +292,7 @@ test('8.1.1: on all nineteen Harmony One compiles the menu marker the rows write
   const length = bytes[at]!;
   // The last instruction's operand's low byte, after the count and three bytes an instruction: its value 1 made 2.
   bytes[at + 3 * length - 2] = 2;
-  assert.equal(touchMenuMarkerWriter(parse(bytes)), undefined);
+  assert.equal(oneMenuMarkerWriter(parse(bytes)), undefined);
 });
 
 test('8.1.1: on the fifteen English compiles holding a device page, every device page\'s shared numbers are the ones its key names, and they are not one set of numbers',
@@ -304,7 +304,7 @@ test('8.1.1: on the fifteen English compiles holding a device page, every device
   for (const name of names) {
     const c = compile(name);
     const roles = firstDeviceRoles(c);
-    const d = describeTouchDevicePages(c, takeApart(c));
+    const d = describeOneDevicePages(c, takeApart(c));
     d.spec.devices.forEach((device, s) => {
       const numbers = d.spec.screen.screens[s]!.numbers;
       devicePageSlotRoles(device).forEach((role, k) => {
@@ -327,22 +327,22 @@ test('8.1.1: on the fifteen, each off list a device page or a power off question
   for (const name of withDevicePages()) {
     const c = compile(name);
     const layout = takeApart(c);
-    const wiring = describeTouchWiring(layout);
-    const d = describeTouchDevicePages(c, layout);
+    const wiring = describeOneWiring(layout);
+    const d = describeOneDevicePages(c, layout);
     const roles = new Map<string, number>();
     d.spec.devices.forEach((device, s) => devicePageSlotRoles(device).forEach((role, k) => roles.set(role, d.spec.screen.screens[s]!.numbers[k]!)));
     assert.deepEqual(listsHolding(c, offList([4], wiring.variables.keyLight6!)), [roles.get('light 4 off')], name);
     assert.deepEqual(listsHolding(c, offList([6], wiring.variables.keyLight7!)), [roles.get('light 6 off')], name);
     assert.deepEqual(listsHolding(c, offList([2, 0], wiring.variables.keyLightsB!)), [roles.get('page keys off')], name);
-    const help = describeTouchHelpScreens(c, layout);
+    const help = describeOneHelpScreens(c, layout);
     if (help.spec.devices.length > 0) helpListsHold(c, help);
   }
   // The control: each role's content names it alone, light 4's off list is not light 6's role, so a rule that took
   // the wrong channel or variable would fail above.
   const c = compile('harvest_one_two_devices');
   const layout = takeApart(c);
-  const wiring = describeTouchWiring(layout);
-  const d = describeTouchDevicePages(c, layout);
+  const wiring = describeOneWiring(layout);
+  const d = describeOneDevicePages(c, layout);
   const roles = new Map<string, number>();
   d.spec.devices.forEach((device, s) => devicePageSlotRoles(device).forEach((role, k) => roles.set(role, d.spec.screen.screens[s]!.numbers[k]!)));
   assert.notDeepEqual(listsHolding(c, offList([4], wiring.variables.keyLight6!)), [roles.get('light 6 off')]);
@@ -355,7 +355,7 @@ test('8.1.1: on the fifteen, a device page draws in the device lists\' title and
   for (const name of withDevicePages()) {
     const c = compile(name);
     const fonts = firstDevicePageFonts(c);
-    const described = describeTouchDevicePages(c, takeApart(c)).spec.screen.fonts as Record<string, number | undefined>;
+    const described = describeOneDevicePages(c, takeApart(c)).spec.screen.fonts as Record<string, number | undefined>;
     for (const [role, font] of Object.entries(described)) {
       if (font === undefined) continue;
       const want = role.startsWith('title ') ? fonts.title : role === 'count' ? fonts.count : fonts[role as 'row' | 'left' | 'right'];
@@ -377,8 +377,8 @@ test('8.1.1: on the sixteen, a device list\'s rows are drawn in the fixed screen
   for (const name of SIXTEEN) {
     const c = compile(name);
     const layout = takeApart(c);
-    const row = describeTouchDeviceLists(c, layout).spec.screen.fonts.row;
-    const fixed = describeTouchFixedScreens(c, layout).spec.fonts;
+    const row = describeOneDeviceLists(c, layout).spec.screen.fonts.row;
+    const fixed = describeOneFixedScreens(c, layout).spec.fonts;
     assert.equal(row, fixed.wide, name);
     // The control: the other font a row could be in.
     assert.notEqual(row, fixed.item, name);
@@ -393,7 +393,7 @@ test('section 435: on all nineteen compiles a device list lays its chrome first,
   const order = (c: Container): number => {
     const records = modeRecords(c)!;
     let lists = 0;
-    for (const list of touchDeviceLists(c)) {
+    for (const list of oneDeviceLists(c)) {
       const record = records[list.mode]!;
       const first = screenProgram(c, record.pages[0]!.program)!;
       const chrome = first.find((one) => one.opcode === SCREEN_CALL)!.targets[0]!;
@@ -421,12 +421,12 @@ test('section 435: no compile of the nineteen holds a hit page no screen page na
 
 test('section 435: of the sixteen, only the compile whose power off help asks about no device holds its show timer',
      skipUnless(...SIXTEEN), () => {
-  const holding = SIXTEEN.filter((name) => describeTouchWiring(takeApart(compile(name))).timers.includes('show3'));
+  const holding = SIXTEEN.filter((name) => describeOneWiring(takeApart(compile(name))).timers.includes('show3'));
   assert.deepEqual(holding, ['harvest_one_families_1']);
-  assert.deepEqual(SIXTEEN.filter((name) => describeTouchHelpScreens(compile(name), takeApart(compile(name))).spec.devices.length === 0), holding);
+  assert.deepEqual(SIXTEEN.filter((name) => describeOneHelpScreens(compile(name), takeApart(compile(name))).spec.devices.length === 0), holding);
   // And the composed setup keeps it, started by nothing once its help asks about devices.
   const c = composed().container;
-  const timer = describeTouchWiring(takeApart(c)).timers.indexOf('show3');
+  const timer = describeOneWiring(takeApart(c)).timers.indexOf('show3');
   assert.ok(timer >= 0);
   const starts = (c.actionLists() ?? []).filter((list) => list.some((one) => one.opcode === 0x1f && one.operand === (0xeb00 | timer)));
   assert.equal(starts.length, 0);

@@ -10,8 +10,8 @@ import { parse } from '../src/index.ts';
 import { characterMap, screenStrings } from '../src/text.ts';
 import { stateRecords } from '../src/sections.ts';
 import {
-  ASSISTANT_HIDDEN, touchStartupVariables, withoutStartupAssistant,
-} from '../src/families/touch/startupassistant.ts';
+  ASSISTANT_HIDDEN, oneStartupVariables, withoutStartupAssistant,
+} from '../src/families/one/startupassistant.ts';
 
 const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
   'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
@@ -23,7 +23,7 @@ test('section 403: 18 of the 19 Harmony One compiles hold the Remote Assistant\'
   const tally = { assistant: 0, welcome: 0 };
   for (const name of ONE_COMPILES) {
     const c = parse(load(name) as Uint8Array);
-    const found = touchStartupVariables(c);
+    const found = oneStartupVariables(c);
     const records = stateRecords(c)!;
     if (found.assistant !== undefined) {
       tally.assistant += 1;
@@ -54,7 +54,7 @@ test('section 403: the welcome screen\'s variable is written 0 silently by a lis
   let reset = 0;
   for (const name of ONE_COMPILES) {
     const c = parse(load(name) as Uint8Array);
-    const welcome = touchStartupVariables(c).welcome!;
+    const welcome = oneStartupVariables(c).welcome!;
     // `07 FFFF`, the next write silent, then the variable written 0.
     const silent = c.actionLists()!.some((list) => list.some((one, k) =>
       one.opcode === 0x80 + welcome && one.operand === 0 && list[k - 1]?.opcode === 0x07 && list[k - 1]?.operand === 0xffff));
@@ -66,7 +66,7 @@ test('section 403: the welcome screen\'s variable is written 0 silently by a lis
 test('section 403: started past the assistant, a compile starts its assistant at 3 and nothing else moves, and one with no assistant is left as it is',
      skipUnless('harvest_one_two_devices', 'one_config'), () => {
   const c = parse(load('harvest_one_two_devices') as Uint8Array);
-  const assistant = touchStartupVariables(c).assistant!;
+  const assistant = oneStartupVariables(c).assistant!;
   const after = withoutStartupAssistant(c);
   assert.ok(after.allChecksPass);
   const before = stateRecords(c)!;

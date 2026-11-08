@@ -14,7 +14,7 @@ import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../src/families/four-slot/ch
 const SETUPS = new URL('../../corpus/setups/', import.meta.url);
 const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(new URL(file, SETUPS), 'utf8'));
 
-test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the touch family\'s, and the Harmony 300\'s, 350\'s and Touch\'s, which no recipe target serves yet',
+test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the One family\'s, and the Harmony 300\'s, 350\'s and Touch\'s, which no recipe target serves yet',
   () => {
   const files = readdirSync(SETUPS).filter((one) => one.endsWith('.json')).sort();
   assert.deepEqual(files, ['h300-test.json', 'h350-test.json', 'h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json', 'touch-full.json', 'touch-test.json']);

@@ -27,7 +27,10 @@
  * here, and nothing writes to one. The renderer is the codec's one reading of a catalogue definition, held
  * against 13 million of the archive's own renderings by `make prontocheck`; the Touch's engine is read in its
  * firmware, `tests/test_harmony_touch_devices.py`. Where the reference's reading of the engine says something
- * the renderer does not, the test says so below rather than assuming the two agree:
+ * the renderer does not, the test says so below rather than assuming the two agree. **Since `todo-touch.md` 10.1
+ * the engine's own reading is in the codec too**, `enginePacketOf` in `src/harmony-touch/packet.ts`, and
+ * `test/touch-rhythm-table.test.ts` holds every written definition through it against the row; this test keeps
+ * the archive's renderer, whose closure against Logitech's own definitions is the one below:
  *
  * * **padding**: the engine pads a segment to its `TotalLength` from the segment's own start, its header
  *   included, when that is longer; the renderer pads a copy from the copy's start the same way. Agree.

@@ -121,7 +121,7 @@ import { composeActivityDeviceList } from '../src/families/four-slot/devicelist.
 import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
 import { activityKeyedRecords } from '../src/families/four-slot/activityscreen.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
-import { namedHitPages } from '../src/families/touch/hitpages.ts';
+import { namedHitPages } from '../src/families/one/hitpages.ts';
 import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 import { textGlyphs } from '../src/shared/spelling.ts';
 import { FOUR_SLOT_ITEMS } from '../src/families/four-slot/geometry.ts';

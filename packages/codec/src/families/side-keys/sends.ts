@@ -1,7 +1,7 @@
 /**
  * The side keys family's send, the Harmony 880 and 885: the plain pair, `{0x7D, 0x7C}` naming one device, with the
  * device's power on delay as one bare `0x7C` wait at the end of its on list, `pairDeviceSends` in
- * `shared/sendpair.ts`, which the touch family shares. `SIDE_KEYS_SENDS` is what the shared composers ask,
+ * `shared/sendpair.ts`, which the One family shares. `SIDE_KEYS_SENDS` is what the shared composers ask,
  * `Family.sends`.
  *
  * **What it rests on.** Every send list of the eight arch 8 configurations the lab holds, six contributed and the

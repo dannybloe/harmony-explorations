@@ -333,7 +333,7 @@ export function usesAscii(c: Container): boolean {
  *
  * Worked out once per container and its bytes, `memo.ts`, since one container is asked many times: a
  * screen item matcher asks once per item and name. The map handed back is shared between those
- * callers, so it is read and never changed; `touchCharacterMap` copies before adding its joiner.
+ * callers, so it is read and never changed; `oneCharacterMap` copies before adding its joiner.
  */
 export function characterMap(c: Container): CharacterMap | undefined {
   return memoOverBytes(CHARACTER_MAPS, c, readCharacterMap);

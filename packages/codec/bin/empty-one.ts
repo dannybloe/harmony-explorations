@@ -9,9 +9,9 @@
  * ```
  *
  * The file is a configuration for the Harmony One the spare reports, skin 54, decision 23, built by
- * `buildEmptyTouchConfiguration` with the touch family's default choices and nothing read off a compile; it is held to
+ * `buildEmptyOneConfiguration` with the One family's default choices and nothing read off a compile; it is held to
  * the checks a container takes before it is written: every parse check, the whole file attributed with no byte
- * carried, `touchAttributedBytes`, and the Harmony One's writable region. `--built-at` stamps the clock and picks the
+ * carried, `oneAttributedBytes`, and the Harmony One's writable region. `--built-at` stamps the clock and picks the
  * Year picker's three years, the moment of running unless given; the writer stamps the file again when it writes it.
  *
  * `--setup` composes a setup onto the empty One, `todo-compile-one.md` 8.1.2, findings section 435: the empty One built
@@ -41,12 +41,12 @@ import {
 } from '../src/index.ts';
 import { assertStateTableConsistent } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
-import { touchDeviceModes } from '../src/families/touch/devicepages.ts';
-import { buildEmptyTouchConfiguration, touchAttributedBytes } from '../src/families/touch/empty.ts';
-import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
-import { touchFixedScreenModes, TOUCH_FIXED_SCREENS } from '../src/families/touch/fixedscreens.ts';
-import { touchActivityMenu } from '../src/families/touch/activityscreen.ts';
-import { touchDeviceLists } from '../src/families/touch/devicelists.ts';
+import { oneDeviceModes } from '../src/families/one/devicepages.ts';
+import { buildEmptyOneConfiguration, oneAttributedBytes } from '../src/families/one/empty.ts';
+import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
+import { oneFixedScreenModes, ONE_FIXED_SCREENS } from '../src/families/one/fixedscreens.ts';
+import { oneActivityMenu } from '../src/families/one/activityscreen.ts';
+import { oneDeviceLists } from '../src/families/one/devicelists.ts';
 import { activities, activityScreens, caseQueued, ENTER_MODE } from '../src/inventory.ts';
 import { valueMaps } from '../src/valuemap.ts';
 
@@ -73,17 +73,17 @@ const setupPath = argument('setup');
 const room = (WRITABLE_CEILING[12] as number) - (CONFIG_REGION_BASE[12] as number);
 let c: Container;
 if (setupPath === undefined) {
-  const built = buildEmptyTouchConfiguration({ skin: 54, builtAt });
+  const built = buildEmptyOneConfiguration({ skin: 54, builtAt });
   c = built.container;
   if (!c.allChecksPass) throw new Error('the empty One fails a container check');
-  const attributed = touchAttributedBytes(c, built.blended);
+  const attributed = oneAttributedBytes(c, built.blended);
   if (attributed.carried.size > 0) throw new Error(`the empty One carries bytes: ${JSON.stringify(Object.fromEntries(attributed.carried))}`);
   if (built.bytes.length > room) throw new Error(`the empty One is ${built.bytes.length} bytes and the region holds ${room}`);
   writeFileSync(out, built.bytes);
   console.log(`${out}  ${built.bytes.length} bytes, built at ${builtAt}, ${built.numbering.modes.size} modes, every byte attributed, ${room - built.bytes.length} bytes of the region left`);
 } else {
   if (IR_ARCHIVE === undefined) throw new Error('no infrared archive: clone logitech-harmony-ir-archive beside this repository, or set HARMONY_IR_ARCHIVE');
-  const donor = buildEmptyTouchConfiguration({ skin: 54, builtAt, blend: false });
+  const donor = buildEmptyOneConfiguration({ skin: 54, builtAt, blend: false });
   const setup = readRecipe(JSON.parse(readFileSync(setupPath, 'utf8')));
   const composed = composeSetup(setup, { donor: donor.bytes, archive: IR_ARCHIVE, builtAt });
   c = composed.container;
@@ -101,23 +101,23 @@ if (screens !== undefined) {
   mkdirSync(screens, { recursive: true });
   const records = modeRecords(c) ?? [];
   // The start: the ready map's case for the location the remote starts at, the menu role's, section 430.
-  const roles = touchValueMapRoles(c);
+  const roles = oneValueMapRoles(c);
   const ready = valueMaps(c)?.[roles.records.get('menu') as number];
   const target = ready?.entries.find(([key]) => key === 0)?.[1];
   const start = target === undefined ? undefined : caseQueued(c, target);
   if (start?.opcode !== ENTER_MODE) throw new Error('the start enters no screen this reads');
   const chosen: [string, number][] = [
     ['start', start.operand],
-    ['activity-menu', touchActivityMenu(c) as number],
-    ['idle-device-list', touchDeviceLists(c).find((one) => one.idle === true)?.mode as number],
+    ['activity-menu', oneActivityMenu(c) as number],
+    ['idle-device-list', oneDeviceLists(c).find((one) => one.idle === true)?.mode as number],
   ];
-  if (setupPath === undefined) chosen.push(['options', touchFixedScreenModes(c)[TOUCH_FIXED_SCREENS.indexOf('Options')] as number]);
+  if (setupPath === undefined) chosen.push(['options', oneFixedScreenModes(c)[ONE_FIXED_SCREENS.indexOf('Options')] as number]);
   else {
     // The first activity's working screen and the first device's page.
     const first = activities(c)[0]?.activity;
     const working = first === undefined ? undefined : activityScreens(c)?.screens.get(first);
     if (working === undefined) throw new Error('the composed setup\'s first activity has no working screen this reads');
-    chosen.push(['working-screen', working], ['device-page', touchDeviceModes(c)[0] as number]);
+    chosen.push(['working-screen', working], ['device-page', oneDeviceModes(c)[0] as number]);
   }
   for (const [name, mode] of chosen) {
     const page = records[mode]?.pages[0];

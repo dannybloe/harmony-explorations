@@ -170,7 +170,11 @@ Written on 2 November 2026, and placed in `todo.md`'s sequence the same day as 3
 
 Follow ups from 9.4, not part of the finish line; the restructuring around them is `todo.md` 7.3.
 
-- [ ] 10.1 Every family of the rhythm table, 681, written into the Touch's code description and read back through our renderer, no remote: which rows fit and render alike, which shapes need a bench run
+- [x] 10.1 Every family of the rhythm table, 681, written into the Touch's code description and read back through our renderer, no remote: which rows fit and render alike, which shapes need a bench run; done: 577 written and every code alike but for the engine's spelling of a duration (8 families) and 3 codes the table's renderer declines, 104 refused, every one a gap of ours; the shapes no played family covers are cell tables and several rhythms in one press, and the quaternary, long toggle and sections rows are not written; `packages/codec/test/touch-rhythm-table.test.ts`
+  - [x] 10.1.1 The engine's reading of a definition and a code beside the writer: `enginePacketOf` in `packages/codec/src/harmony-touch/packet.ts`, calibrated on Logitech's definitions against the 29 measured rows, 89367 of 93422 codes alike and the rest named
+  - [x] 10.1.2 Every row classified: 577 written; 96 refused for a width the name does not give, all written at a stated width; 5 measured as a frame alone and 3 whole record shapes; Logitech's definition of every refused family held by the description
+  - [x] 10.1.3 Every written row compared code by code, every cell at every place, press and held: 4773 alike, 64 alike under the engine's spelling, 3 declined by the row's renderer, none different; a moved cell and a short pad show as different
+  - [x] 10.1.4 Grouped by shape and evidence, the played families covering pulse distance, pulse width and biphase of one rhythm; `devices-and-infrared.md` "Every family of the rhythm table"
 - [ ] 10.2 Key layouts composed by rule from the activity's type, the devices' roles and the catalogue, as the Harmony One's and the 650's families do, so the setup file holds only what a person chooses
 - [ ] 10.3 Whether the Xbox acts on the same key twice under our definition without its toggle bit, at the bench
 

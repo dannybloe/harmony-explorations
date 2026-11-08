@@ -13,7 +13,7 @@ import type { ActivityStart, CommonChoices, Family, FamilyTraits, SendShape } fr
 import { FOUR_SLOT } from './four-slot/index.ts';
 import { NO_SCREEN_FAMILY } from './no-screen/index.ts';
 import { SIDE_KEYS } from './side-keys/index.ts';
-import { TOUCH } from './touch/index.ts';
+import { ONE } from './one/index.ts';
 
 /**
  * The family of the remotes of an architecture, or undefined for one no family serves yet. The Harmony 300 and
@@ -23,7 +23,7 @@ import { TOUCH } from './touch/index.ts';
 export function familyOfArchitecture(architecture: number | undefined): Family | undefined {
   switch (architecture) {
     case 8: return SIDE_KEYS;
-    case 12: return TOUCH;
+    case 12: return ONE;
     case 14: return FOUR_SLOT;
     case 16: return NO_SCREEN_FAMILY;
     default: return undefined;
@@ -49,12 +49,12 @@ export function traitsOf(c: Container): FamilyTraits {
 
 /**
  * How a configuration's commands are sent, its family's or, where no family serves it, the send and its
- * quantity alone, which is how every architecture but the Harmony 600, 650 and 700's sends: the touch family's,
+ * quantity alone, which is how every architecture but the Harmony 600, 650 and 700's sends: the One family's,
  * as before plan 007. Read at the call and not held in a constant, so the order the families' modules are
  * evaluated in never leaves it unset.
  */
 export function sendsOf(c: Container): SendShape {
-  return familyOf(c)?.sends ?? TOUCH.sends;
+  return familyOf(c)?.sends ?? ONE.sends;
 }
 
 /**
@@ -63,7 +63,7 @@ export function sendsOf(c: Container): SendShape {
  * writes are built there, which every start shares.
  */
 export function activityStartOf(c: Container): ActivityStart {
-  return familyOf(c)?.activityStart ?? TOUCH.activityStart;
+  return familyOf(c)?.activityStart ?? ONE.activityStart;
 }
 
 /** The choices a shared composer asks about, of the configuration's family or none. */

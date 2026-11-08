@@ -746,7 +746,7 @@ export interface CatalogueInfraredBytes {
  * blocks are word for word one the catalogue composes for that device whole, `composeCatalogueDevice`'s records,
  * counts with its blocks, and the group's own record array counts where every record is the composed one at the
  * same place, which is what a group the composer laid out holds. An attribution for a measurement of what a
- * configuration still carries from a donor, as the touch family's `touchBuiltBytes` is for its builders,
+ * configuration still carries from a donor, as the One family's `oneBuiltBytes` is for its builders,
  * `todo-compile-one.md` 8.1.3: measured on the result and blind to how it was made, so it says what the catalogue
  * can write and not what wrote it, and a caller holds it to the path separately.
  */

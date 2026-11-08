@@ -78,8 +78,8 @@
  * activity of no steps, the start up's first list read as one too, 10 bytes more contested on every compile.
  *
  * **Sources checked first**: plan 011 and chapter 5 of `todo-compile-350.md`; the two other families' attributions,
- * `attributeBytes` in `families/four-slot/assemble.ts` and `touchBuiltBytes` and `touchAttributedBytes` in
- * `families/touch/`, and their tests, `touchempty.test.ts` for the planted controls; `noscreenempty.test.ts`, whose
+ * `attributeBytes` in `families/four-slot/assemble.ts` and `oneBuiltBytes` and `oneAttributedBytes` in
+ * `families/one/`, and their tests, `oneempty.test.ts` for the planted controls; `noscreenempty.test.ts`, whose
  * accounting of the empty configuration this generalises; `noscreencensus.test.ts`; `noscreennumbering.test.ts` for
  * why lists are not credited by index; `reference/architectures/harmony-300-350/memory.md`. Logitech's client compiles
  * nothing for this family, `reference/logitech/clients.md`, so it has no attribution to read.

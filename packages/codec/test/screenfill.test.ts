@@ -1,7 +1,7 @@
 /**
  * Screen opcode 1, a filled rectangle, findings section 425: how the renderer draws it, a closure over Logitech's
  * compiles that the operands are read in the right order, and the Harmony One's black background made one fill per
- * draw, `withPictureFilled` through `withTouchPictures`, `todo-compile-one.md` 5.3.4.
+ * draw, `withPictureFilled` through `withOnePictures`, `todo-compile-one.md` 5.3.4.
  *
  * **The closure has two ends that share no field.** Logitech's pickers frame a button with four fills two pixels wide,
  * section 416. Read as `x, y, width, height`, the firmware's order, the four close into a ring whose inside is exactly a
@@ -16,8 +16,8 @@ import {
   type Container, PictureError, SCREEN_DRAW_IMAGE, SCREEN_FILL, bitmapAt, fillRows, modePages, parse, pictureReference,
   reachablePrograms, renderPage, withPictureFilled,
 } from '../src/index.ts';
-import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
-import { readTouchPictures, withTouchPictures } from '../src/families/touch/pictures.ts';
+import { ONE_CHOICES } from '../src/families/one/choices.ts';
+import { readOnePictures, withOnePictures } from '../src/families/one/pictures.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
 const SIXTEEN = [
@@ -125,15 +125,15 @@ test('todo-compile-one 5.3.4: read as x, y, width and height, every picker frame
 
 test('todo-compile-one 5.3.4: on each of the sixteen the background of ours becomes one fill per draw and leaves the bank, the file 77445 bytes less a byte a draw shorter, and every page draws the same',
      skipUnless(...SIXTEEN), () => {
-  const pictureChoices = { ...TOUCH_CHOICES, backgroundFill: false };
+  const pictureChoices = { ...ONE_CHOICES, backgroundFill: false };
   let draws = 0;
   for (const name of SIXTEEN) {
     const c = parse(require_(name));
-    const picture = withTouchPictures(c, pictureChoices).container;
-    const fill = withTouchPictures(c, TOUCH_CHOICES);
+    const picture = withOnePictures(c, pictureChoices).container;
+    const fill = withOnePictures(c, ONE_CHOICES);
     assert.ok(fill.container.allChecksPass, name);
     assert.equal(picture.blob.length - fill.container.blob.length, 77445 - fill.filled, name);
-    assert.equal(readTouchPictures(fill.container).pictures.some((one) => one.entry?.name === 'whole screen background'), false, name);
+    assert.equal(readOnePictures(fill.container).pictures.some((one) => one.entry?.name === 'whole screen background'), false, name);
     draws += fill.filled;
     const before = modePages(picture);
     const after = modePages(fill.container);
@@ -150,7 +150,7 @@ test('todo-compile-one 5.3.4: on each of the sixteen the background of ours beco
 test('todo-compile-one 5.3.4: a picture a fill does not draw exactly is refused, one of more than one colour, an encoded one, and one drawn where the fill\'s rows would wrap',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
-  const { pictures } = readTouchPictures(c);
+  const { pictures } = readOnePictures(c);
   // The charging screen is 176 by 220 too, and drawn in more than one colour.
   const charging = pictures.find((one) => one.entry?.name === 'charging screen')!;
   assert.throws(() => withPictureFilled(c, charging.address), (error: unknown) => error instanceof PictureError && /not one colour/.test(error.message));

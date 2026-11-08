@@ -14,28 +14,28 @@ import {
 } from '../src/index.ts';
 import { characterMap } from '../src/text.ts';
 import { timers } from '../src/tables.ts';
-import { touchScreenLightTimer } from '../src/families/touch/screenlight.ts';
-import { TOUCH_CHOICES } from '../src/families/touch/choices.ts';
-import { TOUCH_BUILT, type TouchBuiltBytes, touchBuiltBytes } from '../src/families/touch/builders.ts';
-import { describeTouchHelpScreens, touchHelpScreenModes } from '../src/families/touch/helpscreens.ts';
+import { oneScreenLightTimer } from '../src/families/one/screenlight.ts';
+import { ONE_CHOICES } from '../src/families/one/choices.ts';
+import { ONE_BUILT, type OneBuiltBytes, oneBuiltBytes } from '../src/families/one/builders.ts';
+import { describeOneHelpScreens, oneHelpScreenModes } from '../src/families/one/helpscreens.ts';
 import { layOutContainer, takeApart } from '../src/frame.ts';
 import { loosen, placePieces } from '../src/placer.ts';
 import { dropLists, instructionSites, listCallSites } from '../src/assemble.ts';
 import { assertStateTableConsistent, handlerSets } from '../src/sections.ts';
 import { assertQueueFits } from '../src/queue.ts';
-import { touchTourScreenModes } from '../src/families/touch/tourscreens.ts';
+import { oneTourScreenModes } from '../src/families/one/tourscreens.ts';
 import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
-import { checkTouchWiring } from '../src/families/touch/wiring.ts';
-import { checkTouchScreenTexts } from '../src/families/touch/screentexts.ts';
-import { withoutTourAndAssistant } from '../src/families/touch/withouttour.ts';
+import { checkOneWiring } from '../src/families/one/wiring.ts';
+import { checkOneScreenTexts } from '../src/families/one/screentexts.ts';
+import { withoutTourAndAssistant } from '../src/families/one/withouttour.ts';
 import { listsReached } from './screenlists.ts';
 import { carried, catalogueDevices as catalogueDevicesOf } from './carried.ts';
 import { IMAGE_TABLE_SLOT, fontSets } from '../src/font.ts';
-import { buildTouchFontTable, donorGlyphOrder } from '../src/families/touch/fontsets.ts';
-import { colour565 } from '../src/families/touch/activitypictures.ts';
-import { touchDeviceLists } from '../src/families/touch/devicelists.ts';
-import { namedHitPages } from '../src/families/touch/hitpages.ts';
-import { touchValueMapRoles } from '../src/families/touch/caseprograms.ts';
+import { buildOneFontTable, donorGlyphOrder } from '../src/families/one/fontsets.ts';
+import { colour565 } from '../src/families/one/activitypictures.ts';
+import { oneDeviceLists } from '../src/families/one/devicelists.ts';
+import { namedHitPages } from '../src/families/one/hitpages.ts';
+import { oneValueMapRoles } from '../src/families/one/caseprograms.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 import { startSwitchedOn } from '../src/shared/activities.ts';
 import { ENTER_MODE, activities, activityScreens, caseQueued, deviceListRowMode, devices } from '../src/inventory.ts';
@@ -77,7 +77,7 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   assert.ok(c.allChecksPass);
   assert.equal(characterMap(c)?.alphabet, 'oxanium');
   // The screen light at the family's default.
-  assert.equal(timers(c)!.records[touchScreenLightTimer(c)!]!.duration, TOUCH_CHOICES.screenLightSeconds);
+  assert.equal(timers(c)!.records[oneScreenLightTimer(c)!]!.duration, ONE_CHOICES.screenLightSeconds);
   // Every device page binds both keys below the screen, the composed ones included, section 401: seven devices, the
   // two the donor held and the five composed. The keys are the two codes its hit page offers after the pads, 43 and
   // 44 on a page of six and the next two codes on a short page, section 420, so all 41 pages are held, the short
@@ -183,7 +183,7 @@ test('the One test setup composed onto Logitech\'s compile of two devices comes 
   // own drawing leaves a pixel empty and no longer inside Logitech's masks. The charging problem's cross, its paper its
   // circle, 2069 bytes where it was 2945, 876 fewer; the thirteen gauge copies a net 93 more, each 417 bytes now, level
   // 0's 28 shorter, level 3's 70 longer and the other eleven 4 or 5 longer. 991585 at 7.1.2's first commit, the cross on
-  // black paper the picture wide and raw at 10793. 983694 with `TouchChoices.logitechMasks`, measured and not asserted
+  // black paper the picture wide and raw at 10793. 983694 with `OneChoices.logitechMasks`, measured and not asserted
   // here.
   // 980473 since `todo-compile-one.md` 8.1.3, section 433, 2438 bytes fewer: the LG's and the Denon's infrared the
   // catalogue's, 99218 bytes where Logitech's were 101656. The LG's group 11367 where it was 13741, eleven records
@@ -212,25 +212,25 @@ const writtenBytes = (): Uint8Array => {
 };
 
 /** What the builders on the composed path reproduce of the composed setup, measured on it once: about half a minute. */
-let builtOnce: TouchBuiltBytes | undefined;
-const builtBytes = (): TouchBuiltBytes => {
-  builtOnce ??= touchBuiltBytes(composed().container, composed().blended);
+let builtOnce: OneBuiltBytes | undefined;
+const builtBytes = (): OneBuiltBytes => {
+  builtOnce ??= oneBuiltBytes(composed().container, composed().blended);
   return builtOnce;
 };
 
-test('todo-compile-one 3.2.2, 4.3, 4.3.3 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the device lists, the activity screens, the case programs, the hit pages, the wiring, the state tables, raw slot 18, base slot 16\'s table and the pictures of the composed setup come out of the touch family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
+test('todo-compile-one 3.2.2, 4.3, 4.3.3 and 4.10: the firmware screens, the fixed screens, the status screens, the clock header, the help screens, the activity menu, the device pages, the device lists, the activity screens, the case programs, the hit pages, the wiring, the state tables, raw slot 18, base slot 16\'s table and the pictures of the composed setup come out of the One family\'s builders, run on the composed path and measured on the result, and the tour and Remote Assistant are left out',
      NEEDS, () => {
   const out = composed();
   // On the path: one step after the composers and before the look, naming the sixteen parts in the order built.
   const names = out.steps.map((one) => one.step);
-  assert.equal(out.steps.find((one) => one.step === 'built')?.detail, TOUCH_BUILT.join(', '));
+  assert.equal(out.steps.find((one) => one.step === 'built')?.detail, ONE_BUILT.join(', '));
   assert.ok(names.indexOf('activity composed') < names.indexOf('built') && names.indexOf('built') < names.indexOf('look'));
   // The look blended our letters for fifteen backgrounds, and a screen's description reads the result only with
   // those selects pointed back: as the look left it, the firmware screens' body text is in two fonts. Thirteen until
   // `todo-compile-one.md` 5.3.1, section 422: the settings screens' buttons are one orange of ours, which the labels
   // of the clock pickers' pads and the rows of Options are blended against, two sets more.
   assert.equal(out.blended.length, 15);
-  assert.throws(() => touchBuiltBytes(out.container, []), /firmware screens: the firmware screens select two fonts for one role/);
+  assert.throws(() => oneBuiltBytes(out.container, []), /firmware screens: the firmware screens select two fonts for one role/);
   // Measured on the finished file, no memory of the path: each part described, rebuilt and held to the file byte
   // for byte, through the look's blending and centring; then its bytes, and of those the description's.
   const a = builtBytes();
@@ -274,7 +274,7 @@ test('todo-compile-one 3.2.2, 4.3, 4.3.3 and 4.10: the firmware screens, the fix
   // moving inline copies; since 4.10.2 14081 and 4152, Options' entering list without the page keys' on list, two
   // steps and its two numbers fewer. The device pages' 16155 to 16139 and their 6269 described to 6273 the same way. With the
   // tour kept the composed setup breaks that rule ("pages" drawn inline where the rule draws it by reference), and
-  // without it the setup keeps it, `checkTouchScreenTexts`, the test below. The hit pages' 2010 to
+  // without it the setup keeps it, `checkOneScreenTexts`, the test below. The hit pages' 2010 to
   // 863, the twelve pages only the sixteen were touched through and their entries in the table; and the wiring's
   // 4625 to 4560 and its 1274 described to 1250, the start's ladder in the form of Logitech's compile without the
   // Remote Assistant.
@@ -342,7 +342,7 @@ test('todo-compile-one 3.2.2, 4.3, 4.3.3 and 4.10: the firmware screens, the fix
 test('todo-compile-one 4.10: the composed setup holds no tour and no Remote Assistant, every list call, mode it enters and hit page it names resolves, and the state table, the queue, the wiring and the texts\' form hold',
      NEEDS, () => {
   const c = composed().container;
-  assert.deepEqual(touchTourScreenModes(c).modes, []);
+  assert.deepEqual(oneTourScreenModes(c).modes, []);
   const lists = c.actionLists()!.length;
   const records = modeRecords(c)!;
   const pages = touchPages(c)!.records.length;
@@ -355,11 +355,11 @@ test('todo-compile-one 4.10: the composed setup holds no tour and no Remote Assi
   assert.equal(namedHitPages(c).size, pages);
   assertStateTableConsistent(c);
   assertQueueFits(c);
-  checkTouchWiring(c);
+  checkOneWiring(c);
   // 471 texts drawn inline and 1020 by reference, each inline copy the first draw of its codes in address order; 878
   // by reference until 4.3.3 built the device lists and gave the five activities one each: 142 texts more, every one
   // drawn by reference to a copy before it.
-  const texts = checkTouchScreenTexts(c);
+  const texts = checkOneScreenTexts(c);
   assert.deepEqual([texts.inline, texts.references], [471, 1020]);
 });
 
@@ -367,7 +367,7 @@ test('todo-compile-one 4.10: with the tour kept the composed setup does not keep
      NEEDS, () => {
   // The other half of the sentence in section 421: the path as it stood before the step. It composes a second time,
   // with the family's choice flipped for the length of the composition and put back whatever happens.
-  const choices = TOUCH_CHOICES as { welcomeTour: boolean };
+  const choices = ONE_CHOICES as { welcomeTour: boolean };
   choices.welcomeTour = true;
   let kept: Container;
   try {
@@ -375,13 +375,13 @@ test('todo-compile-one 4.10: with the tour kept the composed setup does not keep
   } finally {
     choices.welcomeTour = false;
   }
-  assert.equal(touchTourScreenModes(kept).modes.length, 16);
+  assert.equal(oneTourScreenModes(kept).modes.length, 16);
   // The program's address is where the placement of `todo-compile-one.md` 6.2 leaves it, 0x5b421 before, since a composer's
   // parked infrared records and key maps go into the body in front of it, section 426 (0x722cc then); and the fills of 5.3.4 before
   // it are a byte longer a draw each, section 425. 0x722f8 until 8.1.3, section 433: the body holds no infrared record
   // of the donor's any more, so every composed one goes at the body's end, after the program, where they went after the
   // donor's last, in front of it.
-  assert.throws(() => checkTouchScreenTexts(kept), /the program at 0x42987's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
+  assert.throws(() => checkOneScreenTexts(kept), /the program at 0x42987's text 'pages' at 35, 18 is drawn inline where it is built by reference/);
 });
 
 test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about its seven devices, the donor\'s two and then the five composed in the order composed, each discrete one sent unasked and each toggle not',
@@ -392,13 +392,13 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
   // in the order composed, a choice of ours. The catalogue states the Plasma and the Switch discrete and the KPN,
   // Kodi and the Sony HT toggles, so only the first two are sent unasked, by the measured rule and its exception.
   assert.deepEqual(out.composed.devices, ['Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT']);
-  const d = describeTouchHelpScreens(c, takeApart(c));
+  const d = describeOneHelpScreens(c, takeApart(c));
   assert.deepEqual(d.spec.devices.map((one) => `${one.name}: ${one.resend ? 'sent unasked' : 'asked'}`), [
     'Denon AVR-X4800H: sent unasked', 'LG OLED65G26LA: sent unasked', 'Plasma: sent unasked', 'KPN: asked', 'Kodi: asked',
     'Switch: sent unasked', 'Sony HT: asked',
   ]);
   // 4n + 2 screens, the donor's ten where they were and the twenty new ones the next free modes in chain order.
-  const modes = touchHelpScreenModes(c).modes;
+  const modes = oneHelpScreenModes(c).modes;
   assert.equal(modes.length, 30);
   // 108 to 127 until `todo-compile-one.md` 4.10 left out the tour's and the Remote Assistant's sixteen modes below,
   // and 92 to 111 until 4.3.3 gave the five activities a device list each below them.
@@ -409,8 +409,8 @@ test('todo-compile-one 3.2.2.4: the composed setup\'s power off help asks about 
 test('todo-compile-one 4.3.3: each of the composed setup\'s five activities opens a device list of its own, every device with those its start switches on first in that order, and the idle list and the list nothing enters stay',
      NEEDS, () => {
   const c = composed().container;
-  const lists = touchDeviceLists(c);
-  const { records, idle } = touchValueMapRoles(c);
+  const lists = oneDeviceLists(c);
+  const { records, idle } = oneValueMapRoles(c);
   const maps = valueMaps(c)!;
   const names = new Map(devices(c).map((one) => [one.mode, one.name]));
   const all = c.actionLists() ?? [];
@@ -527,7 +527,7 @@ test('todo-compile-one 3.2: the One\'s composed test setup carries 1431 of its 9
   // match: two header lists of three programs, 20, two lists the chrome queues, 14, and the left key's list of the
   // list nothing enters and its copy's, 14.
   //
-  // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/touch/smalltables.ts`.
+  // `raw-18-table` 2 and `slot-16-table` 1 went with 6.7, generated on the path by `families/one/smalltables.ts`.
   //
   // **8.1.3 gave the donor's LG and Denon the catalogue's infrared**, section 433: the three `slot-5` rows went, 101656,
   // since every record of the seven devices is one the catalogue composes for that device whole and both groups are
@@ -725,11 +725,11 @@ test('todo-compile-one 7.1.1: the composed setup\'s font table is 33 sets of 95 
   assert.deepEqual([sets.length, ...new Set(sets.map((set) => set.count))], [33, 95]);
   const section = takeApart(c).sections[IMAGE_TABLE_SLOT]!;
   assert.equal([...section.before, ...section.head].reduce((sum, one) => sum + one.bytes.length, 0), 354176);
-  // The first 18 are the statement, built in the donor's code order: every glyph the bytes `buildTouchFontTable`
+  // The first 18 are the statement, built in the donor's code order: every glyph the bytes `buildOneFontTable`
   // draws. The donor's order is read off Logitech's compile, since its codes past the first 60 follow its names.
   const donor = parse(require_('harvest_one_two_devices'));
   const highest = Math.max(...fontSets(donor)!.map((set) => set.first + set.count - 1));
-  const stated = buildTouchFontTable(TOUCH_CHOICES, { characters: donorGlyphOrder(characterMap(donor)!, highest) });
+  const stated = buildOneFontTable(ONE_CHOICES, { characters: donorGlyphOrder(characterMap(donor)!, highest) });
   let glyphs = 0;
   stated.sets.forEach((set, k) => set.refs.forEach((ref, n) => {
     const at = c.blobOffsetOf(sets[k]!.glyphs[n]!)!;
@@ -742,9 +742,9 @@ test('todo-compile-one 7.1.1: the composed setup\'s font table is 33 sets of 95 
   assert.deepEqual(out.blended.map((one) => one.set), Array.from({ length: 15 }, (_, k) => 18 + k));
   const on = (background: number): number[] => out.blended.filter((one) => one.background === background).map((one) => one.source).sort((a, b) => a - b);
   assert.deepEqual(on(0x0000), [0, 1, 2, 3, 4, 5, 6, 8, 13]);
-  for (const box of [TOUCH_CHOICES.activityBox, TOUCH_CHOICES.deviceBox, TOUCH_CHOICES.settingsBox]) {
+  for (const box of [ONE_CHOICES.activityBox, ONE_CHOICES.deviceBox, ONE_CHOICES.settingsBox]) {
     const colour = colour565(box.fill);
     assert.deepEqual(on(colour), [7, 11], box.fill);
-    assert.ok(out.blended.filter((one) => one.background === colour).every((one) => one.weight === TOUCH_CHOICES.labelWeight));
+    assert.ok(out.blended.filter((one) => one.background === colour).every((one) => one.weight === ONE_CHOICES.labelWeight));
   }
 });

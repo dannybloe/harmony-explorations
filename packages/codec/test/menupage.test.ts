@@ -30,7 +30,7 @@ import {
 import { checkFourSlotMenuPages, fourSlotMenuChrome, fourSlotMenus } from '../src/families/four-slot/menus.ts';
 import { deviceModeChrome } from '../src/families/four-slot/chrome.ts';
 import { activityMenuSingle } from '../src/families/four-slot/activityscreen.ts';
-import { MENU_EDGE_SCANS, MENU_ROW_SCAN, menuRowCapacity } from '../src/families/touch/menus.ts';
+import { MENU_EDGE_SCANS, MENU_ROW_SCAN, menuRowCapacity } from '../src/families/one/menus.ts';
 import { touchPages } from '../src/tables.ts';
 import { deviceListMenus } from '../src/shared/menus.ts';
 
@@ -226,7 +226,7 @@ const HOLDING: Readonly<Record<string, number>> = { 1: 7, 2: 5, 3: 13 };
 
 test('a Harmony One device menu\'s hit page of one, two or three rows is one geometry over every compile, each the one before with a row 872 units below its last',
      skipUnless(...ONE_MENU_COMPILES), () => {
-  // What `composeTouchDeviceScreen` grows a page of one or two rows by, `todo-compile-one.md` 1.2.9: the page of a
+  // What `composeOneDeviceScreen` grows a page of one or two rows by, `todo-compile-one.md` 1.2.9: the page of a
   // row more is this page with a row added a step below its last, the bottom key moved one scan up and the edges
   // unmoved. Few compiles hold two of the sizes, so the evidence is that each size has **one** geometry over all
   // of them, compared without the areas' own addresses, which only say where each is stored; the three are then
