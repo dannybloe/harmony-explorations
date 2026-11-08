@@ -37,7 +37,7 @@ import { fileURLToPath } from 'node:url';
 import { devices, irBlockWords, irGroups, irHeaderPointers, parse, type Container } from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
-import { BENCH_CONFIGS, CodeBook } from '../src/irmonitor.ts';
+import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../src/irsession.ts';
 import { Remote, type Action, type Key, type Send } from './filemodel.ts';
 
@@ -186,7 +186,7 @@ test('every expectation in the from nothing bench test is what the monitor will 
     assert.ok(BENCH_CONFIGS.includes(COMPILE));
     assert.ok(BENCH_CONFIGS.includes(OURS));
     const book = new CodeBook((name) => (name === COMPILE ? blob : name === OURS ? ourBlob : undefined), [COMPILE, OURS], IR_ARCHIVE);
-    book.nameFromCatalogue();
+    book.nameFromCatalogue(BENCH_CODESETS);
     // A code as the compile's code of the same bytes in the same group, where it stores one; there is at most one.
     const inCompile = (send: Send): Send | undefined => {
       const want = bytesOf(ours, send);

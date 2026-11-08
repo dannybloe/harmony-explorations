@@ -18,8 +18,10 @@ import { join } from 'node:path';
 
 import type { Pulse } from '@harmony/codec/node';
 
+import { IR_ARCHIVE, LAB, needing, require_, skipWithoutIrArchive, skipWithoutLab, slow } from '@harmony/lab';
+
 import {
-  frameNumber, framesOfTrain, IrMonitor, parseListenLine, REPEAT_WINDOW_US, sameFrame, withinTolerance,
+  BENCH_CODESETS, CodeBook, frameNumber, knownCodeset, framesOfTrain, IrMonitor, parseListenLine, REPEAT_WINDOW_US, sameFrame, withinTolerance,
   type FrameBook, type HeardFrame, type KnownCode, type LineSource, type MonitorEvent,
 } from '../src/irmonitor.ts';
 
@@ -252,3 +254,39 @@ test('the monitor keeps what it heard for a page that opens later', () => {
   assert.equal(m.recent().length, 2);
   assert.deepEqual(m.status, { listening: true, detail: 'listening' });
 });
+
+/**
+ * `BENCH_CODESETS` is a copy of what the whole archive pass finds, written down so the bench tests can
+ * skip that pass, and a copy nobody compares drifts. So this test runs the pass, once, over every
+ * configuration the tests that pass the table read, and holds the table to it: every device named from
+ * the archive, by the codeset the table states, and the one the archive cannot name, as `null`. In the
+ * slow tier, since the pass is the cost the table exists to avoid.
+ */
+test('the bench codeset table is what the whole archive pass identifies for every bench device',
+  slow(needing(skipWithoutLab(), skipWithoutIrArchive())), () => {
+    const names = [
+      'work/setups/h350-test/compile-Result.EzHex', 'work/setups/h350-test/from-nothing-5.4.bin',
+      'work/setups/h350-test/from-nothing-5.1.6.bin', 'h350_config', 'h350_programmed_config',
+      'h350_three_devices_config', 'h300_config', 'h300_programmed_config',
+    ];
+    const load = (name: string): Uint8Array => (name.startsWith('work/')
+      ? new Uint8Array(readFileSync(join(LAB!, name)))
+      : require_(name));
+    const book = new CodeBook(load, names, IR_ARCHIVE);
+    assert.deepEqual(book.configs, names, 'every configuration loads');
+    book.nameFromCatalogue();
+    // Every device the pass named, named by the table alike, and nothing the table states left over.
+    const used = new Set<string>();
+    for (const [at, codeset] of book.identified) {
+      const space = at.lastIndexOf(' ');
+      const config = at.slice(0, space);
+      const device = at.slice(space + 1);
+      assert.equal(knownCodeset(BENCH_CODESETS, config, device), codeset, at);
+      used.add(BENCH_CODESETS.has(at) ? at : device);
+    }
+    assert.equal(book.identified.size, 31);
+    const unnamed = [...BENCH_CODESETS].filter(([, codeset]) => codeset === null).map(([device]) => device);
+    assert.deepEqual(unnamed, ['PS'], 'one device the archive names none of the codes of');
+    assert.deepEqual([...BENCH_CODESETS.keys()].filter((key) => !used.has(key)), unnamed);
+  });
+

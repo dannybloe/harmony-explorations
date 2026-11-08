@@ -197,6 +197,45 @@ export function frameNumber(frame: readonly Pulse[]): { key: string; bits: numbe
   return one === undefined || one.bits === 0 ? undefined : { key: codeKey(one.value.toString(16)), bits: one.bits };
 }
 
+/**
+ * The codeset of the infrared archive each bench device's codes came from, by the device's name as its
+ * configuration states it, for `CodeBook.nameFromCatalogue`: the Harmony 300 and 350 test setup's devices,
+ * and those of the Harmony 300 and 350 configurations `keys350.test.ts` reads. Found once by the whole
+ * archive pass and written down, since a device's codes do not change; `null` for a device the archive
+ * states none of the numbers of. Held against that pass by a slow test, so it cannot drift unseen.
+ *
+ * **One entry is per configuration.** Logitech's compile of the test setup holds 15 of the KPN's codes and
+ * two codesets state all 15, so the pass takes the first by name, a tie broken alphabetically; our own
+ * builds of the setup hold 45 and settle it on the other. The compile's entry keeps its name, so a code is
+ * named as the pass named it when the bench test's expectations were written (`KPN List`, not `Select`).
+ */
+export const BENCH_CODESETS: ReadonlyMap<string, string | null> = new Map([
+  ['Denon', 'codesets/d5/d5ef7355a399626d.json'],
+  ['KPN', 'codesets/16/16195a125730fb59.json'],
+  ['work/setups/h350-test/compile-Result.EzHex KPN', 'codesets/01/01d77ca78a30aff7.json'],
+  ['Knoll', 'codesets/01/0179ceb621d5e7ff.json'],
+  ['Kodi', 'codesets/cd/cdab49cb0013d6d3.json'],
+  ['LG_TV', 'codesets/00/0021f2f8d0237725.json'],
+  ['Panasonic_DVD', 'codesets/01/01e3c33b6f57b3c3.json'],
+  ['Panasonic_TV', 'codesets/05/0550e75a7943cd2f.json'],
+  ['Panasonic_TX-29PS11P', 'codesets/19/1955ed219a38fb93.json'],
+  ['Plasma', 'codesets/05/0550e75a7943cd2f.json'],
+  ['PS', null],
+  ['Sagem_ITAD-83_SD', 'codesets/0a/0a8924875b3d98ac.json'],
+  ['Sony_HT', 'codesets/22/22296a7606010372.json'],
+  ['Sony_VCR', 'codesets/03/036c74a3cb5fe10c.json'],
+  ['Switch', 'codesets/01/01b772891663865a.json'],
+  ['TV', 'codesets/05/0550e75a7943cd2f.json'],
+]);
+
+/** The codeset `known` states for one device of one configuration: `config device` first, then `device`. */
+export function knownCodeset(
+  known: ReadonlyMap<string, string | null>, config: string, device: string,
+): string | null | undefined {
+  const qualified = `${config} ${device}`;
+  return known.has(qualified) ? known.get(qualified) : known.get(device);
+}
+
 /** What the catalogue gives a number: per command name, how many codesets use it under that name. */
 export interface CatalogueGuess {
   readonly name: string;
@@ -212,6 +251,12 @@ export interface CatalogueGuess {
 export class CodeBook implements FrameBook {
   private readonly frames: StoredFrame[] = [];
   private index: Map<string, string[]> | undefined;
+  private catalogueRead = false;
+  /**
+   * The codeset each device was named from after `nameFromCatalogue`, by its configuration's name and the
+   * device's name as the configuration states it, `config device`; what `BENCH_CODESETS` is held against.
+   */
+  readonly identified = new Map<string, string>();
   private readonly archive: string | undefined;
   /** The Touch sets among `configs`, whose names come from their documents and never from the catalogue. */
   private readonly touchSets = new Set<string>();
@@ -299,7 +344,7 @@ export class CodeBook implements FrameBook {
   get size(): number { return this.frames.length; }
 
   /** Whether the catalogue's names are in yet. */
-  get named(): boolean { return this.index !== undefined; }
+  get named(): boolean { return this.catalogueRead; }
 
   /**
    * What the monitor will report for one stored code: its device and its command name, taken from the
@@ -319,10 +364,24 @@ export class CodeBook implements FrameBook {
    *
    * Per device rather than per number, the rule `make catalogue` follows: identify the device's codeset
    * from all the numbers it sends, then take the name from that codeset only.
+   *
+   * **A device whose codeset is already known is read from that one file.** A configuration states the
+   * numbers a device sends and not which codeset they came from, so finding out means `codeIndex`, a pass
+   * over every codeset of the archive, about fourteen seconds. The bench's devices never change, so
+   * `known` names each one's codeset by the device name its configuration states, `BENCH_CODESETS`, and
+   * the pass runs only for a device it does not name; `null` is a device the archive states none of the
+   * numbers of, which the pass would only confirm. An entry `config device` wins over `device` where one
+   * configuration's codes do not settle the codeset, see `BENCH_CODESETS`. A known codeset is used when it
+   * states more than half
+   * the numbers the device sends, since the best codeset need not state all of them (the bench Denon's
+   * states 132 of its 150) and a codeset of another device states next to none; otherwise the device is
+   * identified from the index as before, so a stale entry costs time and not a wrong name.
+   * `BENCH_CODESETS` is held against the index by a slow test in `irmonitor.test.ts`.
    */
-  nameFromCatalogue(): void {
-    if (this.archive === undefined || !existsSync(this.archive)) return;
-    const index = codeIndex(this.archive);
+  nameFromCatalogue(known: ReadonlyMap<string, string | null> = new Map()): void {
+    const archive = this.archive;
+    if (archive === undefined || !existsSync(archive)) return;
+    const index = (): Map<string, string[]> => (this.index ??= codeIndex(archive));
     const byDevice = new Map<string, StoredFrame[]>();
     for (const one of this.frames) {
       if (this.touchSets.has(one.config)) continue;
@@ -337,22 +396,35 @@ export class CodeBook implements FrameBook {
         const key = one.repeat ? undefined : frameNumber(one.stored)?.key;
         if (key !== undefined) numbers.push(key);
       }
-      const found = identifyCodeset(index, numbers);
-      if (found === undefined) continue;
-      const names = new Map<string, string>();
-      for (const command of catalogueCommands(this.archive, found.codeset)) {
-        for (const value of command.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
-          const key = codeKey(value[1]!);
-          if (!names.has(key)) names.set(key, command.name);
+      const device = list[0]!.device;
+      const config = list[0]!.config;
+      const namesIn = (codeset: string): Map<string, string> => {
+        const names = new Map<string, string>();
+        for (const command of catalogueCommands(archive, codeset)) {
+          for (const value of command.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
+            const key = codeKey(value[1]!);
+            if (!names.has(key)) names.set(key, command.name);
+          }
         }
+        return names;
+      };
+      const stated = knownCodeset(known, config, device);
+      if (stated === null) continue;
+      let codeset = stated;
+      let names = codeset === undefined ? undefined : namesIn(codeset);
+      if (names === undefined || 2 * numbers.filter((number) => names!.has(number)).length <= numbers.length) {
+        codeset = identifyCodeset(index(), numbers)?.codeset;
+        names = codeset === undefined ? undefined : namesIn(codeset);
       }
+      if (codeset === undefined || names === undefined) continue;
+      this.identified.set(`${config} ${device}`, codeset);
       for (const one of list) {
         const key = frameNumber(one.stored)?.key;
         const command = key === undefined ? undefined : names.get(key);
         if (command !== undefined) one.command = command;
       }
     }
-    this.index = index;
+    this.catalogueRead = true;
   }
 
   /** Every bench device a heard frame matches, one entry per device and code. */

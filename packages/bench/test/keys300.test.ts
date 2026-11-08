@@ -101,7 +101,7 @@ import {
 } from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
-import { CodeBook } from '../src/irmonitor.ts';
+import { BENCH_CODESETS, CodeBook } from '../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type Verdict } from '../src/irsession.ts';
 import { PRESS, Remote, type Action, type Key, type Send } from './filemodel.ts';
 
@@ -239,7 +239,7 @@ function rematched(name: string, named = false): readonly RunFileStep[] {
   if (book === undefined) {
     const bytes = blob(NAMED_BY);
     book = new CodeBook((one) => (one === NAMED_BY ? bytes : undefined), [NAMED_BY], IR_ARCHIVE);
-    if (named) book.nameFromCatalogue();
+    if (named) book.nameFromCatalogue(BENCH_CODESETS);
     BOOKS.set(named, book);
   }
   const b = book;

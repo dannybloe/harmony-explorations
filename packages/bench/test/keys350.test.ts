@@ -54,7 +54,7 @@ import { fileURLToPath } from 'node:url';
 import { bytes, parse, taggedList, type Container } from '@harmony/codec/node';
 import { IR_ARCHIVE, load, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 
-import { CodeBook } from '../src/irmonitor.ts';
+import { BENCH_CODESETS, CodeBook } from '../src/irmonitor.ts';
 
 const CONFIGS = [
   'h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config', 'h300_programmed_config',
@@ -180,7 +180,7 @@ function census(): Map<number, Map<string, number>> {
   // One book for all five, as the bench builds one for every remote on it: the catalogue's index is
   // the slow part and is built once, and names are still identified per configuration and device.
   const book = new CodeBook(load, CONFIGS, IR_ARCHIVE);
-  book.nameFromCatalogue();
+  book.nameFromCatalogue(BENCH_CODESETS);
   for (const name of CONFIGS) {
     const c = parse(load(name)!);
     for (const [entry, address] of c.pointerArray(6)!.entries()) {

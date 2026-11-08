@@ -38,7 +38,7 @@ import { fileURLToPath } from 'node:url';
 import { devices, irBlockWords, irGroups, irHeaderPointers, parse, taggedList, type Container } from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
-import { BENCH_CONFIGS, CodeBook } from '../src/irmonitor.ts';
+import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../src/irsession.ts';
 import { Remote, type Action, type Key, type Send } from './filemodel.ts';
 
@@ -184,7 +184,7 @@ test('every expectation in both files is what the monitor will name the code the
     const { c: ours, blob } = container(OURS);
     assert.ok(BENCH_CONFIGS.includes(OURS), 'the file is on the bench\'s list, so the monitor names its codes');
     const book = new CodeBook((name) => (name === OURS ? blob : undefined), [OURS], IR_ARCHIVE);
-    book.nameFromCatalogue();
+    book.nameFromCatalogue(BENCH_CODESETS);
     const names = new Map(devices(ours).map((d) => [d.group, d.name]));
     const expectation = (send: Send): Expectation => {
       const command = book.storedName(OURS, send.group, send.code)?.command;

@@ -128,7 +128,7 @@ import {
 } from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
-import { BENCH_CONFIGS, CodeBook, REPEAT_WINDOW_US } from '../src/irmonitor.ts';
+import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook, REPEAT_WINDOW_US } from '../src/irmonitor.ts';
 import { PRESS, RELEASE, Remote, type Action, type Instruction, type Key, type Send } from './filemodel.ts';
 import {
   judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict,
@@ -431,7 +431,7 @@ test('every expectation in the bench test is what the monitor will name the code
     const { c, blob } = container();
     const names = new Map(devices(c).map((one) => [one.group, one.name]));
     const book = new CodeBook((name) => (name === BENCH_FILE ? blob : undefined), [BENCH_FILE], IR_ARCHIVE);
-    book.nameFromCatalogue();
+    book.nameFromCatalogue(BENCH_CODESETS);
     const commandOf = (send: Send): string | undefined => book.storedName(BENCH_FILE, send.group, send.code)?.command;
     // A name the catalogue gives two codes of one device does not say which was heard, so such a code is
     // expected by its number; the KPN's OK and DVR are both `List`.
@@ -498,7 +498,7 @@ function rematched(name: RunName): readonly RunFileStep[] {
     // Built once: naming the codes from the catalogue is a pass over the whole archive.
     const { blob } = container();
     BOOK = new CodeBook((one) => (one === BENCH_FILE ? blob : undefined), [BENCH_FILE], IR_ARCHIVE);
-    BOOK.nameFromCatalogue();
+    BOOK.nameFromCatalogue(BENCH_CODESETS);
   }
   const book = BOOK;
   const steps = runFile(name).steps.map((step) => ({

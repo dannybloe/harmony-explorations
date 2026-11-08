@@ -32,7 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { devices, irBlockWords, irGroups, irHeaderPointers, parse, type Container } from '@harmony/codec/node';
 import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 
-import { BENCH_CONFIGS, CodeBook } from '../src/irmonitor.ts';
+import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../src/irsession.ts';
 import { Remote, type Action, type Key, type Send } from './filemodel.ts';
 
@@ -147,7 +147,7 @@ test('every expectation in the bench test is what the monitor, loading Logitech\
     assert.ok(BENCH_CONFIGS.includes(COMPILE));
     assert.ok(!BENCH_CONFIGS.includes(COMPOSED));
     const book = new CodeBook((name) => (name === COMPILE ? blob : undefined), [COMPILE], IR_ARCHIVE);
-    book.nameFromCatalogue();
+    book.nameFromCatalogue(BENCH_CODESETS);
     const names = new Map(devices(theirs).map((one) => [one.group, one.name]));
     // Each composed code as the compile's code of the same bytes in the same group; there is exactly one.
     const inCompile = (send: Send): Send => {
