@@ -855,3 +855,49 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    `tests/test_harmony_885_log_area.py`. The first write follows the order every unit has taken: the identity
    read, which is done; one block of A's own configuration written back unchanged; then a real write.
 
+31. <a id="d31"></a>**The libraries are a base an application builds on, and their structure is a rule with tests.**
+   *Taken in plan 013, `docs/plans/013-the-libraries-as-a-base.md`, on 7 November 2026, and recorded on 8 November
+   2026, `todo.md` 7.3.9, once its steps but the FreeHarmony half of 7.3.6 were built.* The packages here are the
+   specification in executable form (decision 4) and what FreeHarmony is built on, so their structure is held as
+   firmly as a fact about a remote. The choices of plan 013 that are built:
+
+   * **Two kinds of family, chosen in one registry by model**: a compiled family builds the container a remote is
+     written with, a document family the documents a remote assembles itself, and a model no family serves is refused
+     rather than given the Harmony One's shapes (plan 013 decisions 1 and 2, `todo.md` 7.3.3). The families' folders
+     are named after their remotes, as `reference/architectures/` names them, so "touch" no longer names a family
+     (7.3.2, 7.3.8).
+   * **A base package below everything**, `packages/base`, the model table, the trailer checksum, the key codes and the
+     one byte comparison, so the codec no longer depends on the USB package and its native module (decision 4 of the
+     plan, 7.3.4 and 7.3.7).
+   * **The codec's core loads anywhere and reads with no resource**: what uses Node sits in `*.node.ts` files behind
+     `@harmony/codec/node`, and reading a configuration through the main entry asks its host for nothing (decision 5
+     of the plan, 7.3.5).
+   * **Explicit public surfaces**: each package's main entry is a list of names held by its surface test, everything
+     else under a named subpath; test helpers in `@harmony/testkit`, which no product imports; `@harmony/lab` a test,
+     bench and script dependency (decision 6 of the plan, 7.3.6, its library half).
+   * **The write paths as library functions on write subpaths**, never on a main entry, with the units each may write
+     held by the library and the journal required, the rails unchanged (7.3.10).
+   * **Experiments beside their scripts**, never in a library's `src`; one reader for every script's command line,
+     whose `--help` runs nothing; files named by subject rather than by todo step; and the codec's modules grouped
+     into folders by what each is for, a large file split by re-exporting its parts (decisions 3 and 7 of the plan,
+     7.3.1, 7.3.7 and 7.3.8).
+
+   **The rules are the `architecture` skill**, `.claude/skills/architecture/SKILL.md`, which lists the packages and
+   their dependency direction, says where a new model goes, and names the test that holds each rule and the few no
+   test holds. 7.3.9 wrote the missing checks where a rule could be stated as a pattern, each with a control: the
+   dependencies between packages held to a table with no cycle, what a library's `src` loads declared for run time,
+   no relative import across packages, the test kit and the lab kept out of what a product loads, every module of a
+   library's `src` reached from an entry or listed, no family importing another, one byte comparison, `experiments`
+   typechecked, and names by subject. `code-for-a-family` stays a skill of its own, for the moment build code is
+   written, and points to the new one for the families' kinds, the registry and the folders.
+
+   **Why.** Five groups of remotes were added by the tracks that needed them, and three reviews from three angles
+   found the same faults without seeing each other's work: one word for two remotes, the codec standing on the
+   transport, a codec that could not load in a renderer, surfaces that made every helper public, test helpers and
+   numbered experiments in library code, small helpers copied many times. None of them failed a test, so the rules
+   are written where a session meets them and held by tests where a pattern can state them.
+
+   **What it does not change.** No behaviour, no format reading and no rail: a step that would change an output is not
+   a restructuring step. The write rails stay in `packages/usb/src/rails.ts` and on the transport, and `CLAUDE.md`
+   "Never write to a remote" is unchanged. The FreeHarmony half of 7.3.6, its imports moved and `@harmony/lab` out of
+   its product dependencies, waits for the pass that opens it up again, `todo.md` 7.3.

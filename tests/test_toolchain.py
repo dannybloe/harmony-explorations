@@ -31,8 +31,10 @@ sys.path.insert(0, os.path.join(ROOT, 'src'))
 #: Directories of TypeScript in a package, all of which a `tsconfig.json` must include when present.
 #: `bin` is here because of the bug in the module docstring, and `web` is not: it is a browser page,
 #: served as it is, and `packages/bench` deliberately has no DOM types so that a server file cannot
-#: reference `window` and typecheck.
-SOURCE_DIRECTORIES = ('src', 'test', 'bin')
+#: reference `window` and typecheck. `experiments` since `todo.md` 7.3.9: plan 013 decision 7 put a
+#: package's experiments there, beside its scripts, and both packages that have one include it, which
+#: nothing held until then.
+SOURCE_DIRECTORIES = ('src', 'test', 'bin', 'experiments')
 
 
 def read_repo_file(relative):
@@ -80,8 +82,9 @@ class TypeScriptProjects(unittest.TestCase):
         # having found nothing to check. Exact, not a floor of 12, per section 143: the number is
         # decided by the workspace layout and moves only when a package or a directory is added,
         # and then it moves in the diff rather than being absorbed. 25 since `todo.md` 7.3.4 added
-        # `packages/base`, with its `src` and `test`; 26 since 7.3.6 added `packages/testkit`, its `src`.
-        self.assertEqual(found, 26, 'source directories claimed by a tsconfig')
+        # `packages/base`, with its `src` and `test`; 26 since 7.3.6 added `packages/testkit`, its `src`;
+        # 28 since 7.3.9 counts the `experiments` of `packages/bench` and `packages/corpus`.
+        self.assertEqual(found, 28, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
         """`make ts` builds the root, so a package missing from it is a package nobody compiles.
@@ -98,6 +101,57 @@ class TypeScriptProjects(unittest.TestCase):
                 if os.path.isfile(os.path.join(path, directory, 'tsconfig.json')):
                     expected.add(os.path.join('packages', name, directory))
         self.assertEqual(referenced, expected)
+
+
+#: TypeScript files whose name carries a todo step, each with why it stays. A name by step tells a reader
+#: nothing without the todo file, plan 013 decision 3, and `todo.md` 7.3.1 renamed the Harmony Touch's
+#: tests by subject; this one is older than the rule and was found by the check below in 7.3.9.
+NAMED_BY_STEP = {
+    'packages/bench/test/final53.test.ts': '`todo-compile-350.md` 5.3, the two final bench tests of the Harmony 300 and 350',
+}
+
+
+def step_numbers(name):
+    """The numbers in a file name that are no model and no architecture, which is what a todo step looks like.
+
+    A Harmony's model is three digits, `keys300`, `h885base`, and an architecture follows `arch`, `arch10`;
+    a step is one or two digits, `touch82`, `final53`, or a dotted pair, `8.6-setup`, each part of which is
+    one or two digits. The recorded run inputs that keep a step in their name, the JSON under
+    `packages/corpus/touch-*` and `packages/bench/irtests`, are not TypeScript and are not read here.
+    """
+    stem = re.sub(r'(\.(test|node|d))?\.ts$', '', name)
+    found = []
+    for match in re.finditer(r'\d+', stem):
+        if len(match.group()) == 3 or stem[:match.start()].endswith('arch'):
+            continue
+        found.append(match.group())
+    return found
+
+
+class FilesAreNamedBySubject(unittest.TestCase):
+    """Names by subject, never by todo step: plan 013 decision 3 and the `architecture` skill."""
+
+    def test_no_typescript_file_is_named_by_a_todo_step_but_those_listed(self):
+        found = {}
+        base = os.path.join(ROOT, 'packages')
+        for package in sorted(os.listdir(base)):
+            for directory in SOURCE_DIRECTORIES:
+                top = os.path.join(base, package, directory)
+                for folder, subfolders, files in os.walk(top):
+                    subfolders[:] = [s for s in subfolders if s != 'node_modules']
+                    for name in files:
+                        if name.endswith('.ts') and step_numbers(name):
+                            found[os.path.relpath(os.path.join(folder, name), ROOT)] = step_numbers(name)
+        self.assertEqual(sorted(found), sorted(NAMED_BY_STEP))
+
+    def test_the_control_a_step_is_found_and_a_model_or_an_architecture_is_not(self):
+        for name in ('touch82.test.ts', 'final53.test.ts', '8.6-setup.ts', 'step4.ts'):
+            with self.subTest(name=name):
+                self.assertTrue(step_numbers(name), name)
+        for name in ('keys300.test.ts', 'h885base.test.ts', 'eventff300.test.ts', 'arch10.test.ts',
+                     'arch8devicelist.test.ts', 'h880pro.ts', 'touch-device-runs.test.ts', 'index.ts'):
+            with self.subTest(name=name):
+                self.assertEqual(step_numbers(name), [], name)
 
 
 class PyrightConfiguration(unittest.TestCase):

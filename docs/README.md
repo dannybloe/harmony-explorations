@@ -236,8 +236,10 @@ tools/site/                     what that build needs: hooks.py publishes docs/f
                                 reference/ to the file on GitHub; requirements.txt pins MkDocs,
                                 Material and all they pull in, by hash, with the check of each
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
-                                second agent runs the same rituals rather than a copy of them. All
-                                eleven skills are there. `py-lsp` and `ts-lsp` are there too, as real
+                                second agent runs the same rituals rather than a copy of them. Not
+                                every skill is: this said "all eleven" until `todo.md` 7.3.9, when
+                                the per remote skills had long been missing, so the directory's own
+                                listing is the list. `py-lsp` and `ts-lsp` are there too, as real
                                 tracked directories rather than symlinks, which this said they
                                 deliberately were not until 29 August 2026. They are a hand
                                 maintained second copy of files that point into node_modules, so
@@ -883,8 +885,9 @@ change the code it comes from and run the write target. The names are `remote-re
 
 ## Commands
 
-Eleven project skills carry the rituals that are easy to half-perform, and three of them exist
-because the guidance was too long to keep in this file:
+The project skills carry the rituals that are easy to half-perform, and three of them exist
+because the guidance was too long to keep in this file. Among them (this said "eleven" until
+`todo.md` 7.3.9, with more than that in `.claude/skills/`, which is the list):
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
@@ -931,6 +934,17 @@ needing the batteries out.
   family or tests the remote, whether the other family's half is stated) and a check over the diff for a
   new architecture test or an import across families. Written on 15 October 2026 after two such slips in
   one stretch of the Harmony One's track, both caught by reading along rather than by the code.
+* **`architecture`**, where code goes and what each package may reach, plan 013 and decision 31: the
+  packages bottom up and their dependency direction, the two kinds of family chosen by model, the
+  codec's folders, a codec core that loads anywhere and reads with no resource, explicit public
+  surfaces with the write paths on write subpaths, the test kit and the lab kept out of what a product
+  loads, one reader for every script, experiments beside their scripts, names by subject, and where a
+  new model goes, with the test that holds each rule. Load it before adding a package, a module, a
+  public name, a subpath, a dependency, a script or an experiment. Written in `todo.md` 7.3.9 with the
+  checks it names: `packages/lab/test/dependencies.test.ts` holds the dependencies between packages,
+  what a library's `src` loads and reaches, the test kit and the lab; `packages/codec/test/generic.test.ts`
+  every family's folder; `packages/base/test/bytes.test.ts` the one byte comparison; and
+  `tests/test_toolchain.py` the `experiments` folders and names by subject.
 * **`recovering-a-remote`**, what a restore consists of per architecture: safe mode, the
   bootloader, the flash programmer, the EEPROM latch and the write protect interlock. Invoke it
   before planning a write and before entering safe mode on any model, since on a Harmony 525 that is

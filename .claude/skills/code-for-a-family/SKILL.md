@@ -34,23 +34,12 @@ code, whatever the task was.
 
 ## Two kinds of family, chosen by model
 
-**Plan 013 decisions 1 and 2.** A *compiled* family builds the one container a remote is written with, the
-`Family` interface in `families/family.ts`, `kind: 'compiled'`: the Harmony One's, the 600, 650 and 700's, the
-300 and 350's and the 880 and 885's. A *document* family builds the documents a remote assembles its
-configuration from, the `DocumentFamily` interface in `families/document.ts`, `kind: 'document'`: the Harmony
-Touch's, `families/harmony-touch/family.ts`. The two interfaces name nothing of each other's; what both share
-sits below them, the setup, the infrared definitions, the catalogue and the archive. A new remote that is given
-documents gets a `DocumentFamily`, never a `Family` of members that refuse. **Each family's folder is named after
-its remotes**, as `reference/architectures/` names them: `harmony-one/`, `harmony-600-650-700/`,
-`harmony-300-350/`, `harmony-880-885/` and `harmony-touch/`, `todo.md` 7.3.8. The identifiers inside keep the
-older names for now (`FOUR_SLOT`, `fourSlot...`, `noScreen...`, `sideKeys...`).
-
-**The registry chooses by model**, `familyOfModel` in `families/registry.ts`: a model by Logitech's name and its
-skin, looked up in the model table or, for a model the table holds no record of, `MODELS_OUTSIDE_THE_TABLE`
-beside it, answered with a family of either kind or refused with the model named. `recipeTarget` asks it. **The
-container route stays**, `familyOf(c)` by the architecture a container states, and answers with a compiled family
-alone, since a container is compiled for one architecture. Never choose by architecture number where a model is
-in hand: the Harmony Touch's firmware reports 17, which it shares with the hubs.
+**The kinds, the registry by model, the families' folder names and who may reach a family's modules are the
+`architecture` skill's**, plan 013 decisions 1 and 2, and live there since `todo.md` 7.3.9. What matters at the moment a
+builder is written: a compiled family implements `Family` in `families/family.ts`, a document family `DocumentFamily`
+in `families/document.ts`, and a remote that is given documents never gets a `Family` of members that refuse. A family
+is chosen by model, `familyOfModel`, or by the architecture a container states, `familyOf(c)`, and never by an
+architecture number where a model is in hand.
 
 ## Before writing, answer four questions
 
@@ -80,18 +69,16 @@ in hand: the Harmony Touch's firmware reports 17, which it shares with the hubs.
 
 ## Checks before committing
 
-Run these over the change; each prints nothing when the change keeps the split.
+Run this over the change; it prints nothing when the change keeps the split.
 
     # a new test of which remote it is, in build code
     git diff -U0 -- packages/codec/src | grep -nE '^\+.*(architecture (===|!==) ?[0-9]|archSlot\((12|14),|\.skin (===|!==))'
 
-    # a family importing another family, or a shared part importing a family
-    grep -rn "from '\.\./harmony-600-650-700\|from '\.\./harmony-one/" packages/codec/src/families/
-    grep -rn "families/\(harmony-600-650-700\|harmony-one\)" packages/codec/src/shared/
-
 A hit in a builder needs moving behind the family before it is committed. **`test/generic.test.ts` is the
 executable half**: it lists every module outside `families/` that still names a remote, with what it names,
-and fails when a module joins the list or a count on it rises. The list is the debt, `todo-compile-one.md`
+and fails when a module joins the list or a count on it rises. Since `todo.md` 7.3.9 it also fails on a family
+importing another family's module, or a module outside `families/` but the entries importing any family's, every
+family's folder read off the directory, which is what two greps here used to check by hand for two families. The list is the debt, `todo-compile-one.md`
 3.3, and it is empty since that item was finished: a module that would join it moves its part into a family instead.
 **Never add a module to that list to make a commit pass**; move the part instead.
 
@@ -148,6 +135,8 @@ Add a row when a new kind of difference lands.
 
 ## Related
 
+* `architecture`: where code goes and what each package may reach; the families' kinds, the registry, the folder
+  names and who may import a family's module, and where a new model goes.
 * `writing-a-config`: the rails a configuration must respect, whichever family built it.
 * `finding`: a measurement that becomes a builder's fact goes through the finding gate first.
 * `harmony-one`, `harmony-650`, `harmony-600`, `harmony-700`: where each remote's facts are.

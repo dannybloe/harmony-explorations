@@ -11,9 +11,16 @@
  *
  * `packages/usb/src/blockwrite.ts`'s `firstDifference`, the write's read back compare, is not one of the copies and
  * was not moved: it answers where two blocks differ and refuses two of different lengths, which this cannot.
+ *
+ * The last test, `todo.md` 7.3.9 and the `architecture` skill, holds that no ninth copy is written: no module defines
+ * a function of two byte arrays answering whether they agree, but this one and those listed. It reads the shape of
+ * a declaration, so a copy written inline, as several that 7.3.7 replaced were, or under another signature passes it.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { sameBytes } from '../src/bytes.ts';
 
@@ -88,4 +95,44 @@ test('it answers what every replaced copy answered, over many arrays', () => {
   assert.equal(agreed, 4000);
   // The population has both answers in it, so agreeing is not agreeing on false alone.
   assert.equal(same, 539, 'the same in 539 of 4000');
+});
+
+/** A declared function of two byte arrays that answers a boolean, the shape the declared copies had. */
+const COMPARISON = /\(\s*\w+\s*:\s*(?:Readonly)?Uint8Array\s*,\s*\w+\s*:\s*(?:Readonly)?Uint8Array\s*\)\s*:\s*boolean/;
+
+const PACKAGES = fileURLToPath(new URL('../../', import.meta.url));
+
+/** Every TypeScript file of the workspace's packages, `node_modules` left out, by its path below `packages/`. */
+function sources(directory: string): string[] {
+  const found: string[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.name === 'node_modules') continue;
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) found.push(...sources(path));
+    else if (entry.name.endsWith('.ts')) found.push(relative(PACKAGES, path).split(sep).join('/'));
+  }
+  return found;
+}
+
+test('no module defines a byte comparison of its own, but this one and those listed', () => {
+  const LISTED: Readonly<Record<string, string>> = {
+    'base/src/bytes.ts': 'the one comparison',
+    'base/test/bytes.test.ts': 'the reference every copy computed, which this file holds the comparison to',
+    // Whether two identity blocks came off one unit, which refuses a block that identifies nothing rather than
+    // answering false, and compares through `sameBytes`.
+    'usb/src/identity.ts': 'sameUnit, the unit check, which is not a comparison of bytes alone',
+  };
+  const found = sources(PACKAGES).filter((file) => readFileSync(join(PACKAGES, file), 'utf8')
+    .split('\n').some((line) => !/^\s*(\*|\/\/)/.test(line) && COMPARISON.test(line)));
+  assert.deepEqual(found.sort(), Object.keys(LISTED).sort());
+});
+
+test('the control: the declaration shape is found as the copies wrote it, and a reader of one array is not', () => {
+  for (const line of [
+    'function sameBytes(a: Uint8Array, b: Uint8Array): boolean {',
+    'const sameBytes = (a: Uint8Array, b: Uint8Array): boolean =>',
+    'function equalBytes(left: Uint8Array, right: Uint8Array): boolean {',
+  ]) assert.ok(COMPARISON.test(line), line);
+  assert.ok(!COMPARISON.test('export function firstDifference(a: Uint8Array, b: Uint8Array): number {'));
+  assert.ok(!COMPARISON.test('function isErased(block: Uint8Array): boolean {'));
 });

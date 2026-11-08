@@ -15,13 +15,31 @@
  * The counts are asserted exactly, so a module joining the list or a count rising fails, and so does one falling,
  * which is the moment to lower the list and keep the gain. **Never add a module or raise a count to make a commit
  * pass**: move the remote specific part into its family.
+ *
+ * **Since `todo.md` 7.3.9 the families are read off the directory**, so the import pattern covers every family and
+ * not the two it named when it was written: until then a shared module importing the Harmony 300 and 350's, the
+ * Harmony 880 and 885's or the Harmony Touch's folder passed. The four entries at the top are exempt from that one
+ * pattern, since publishing a family's parts is what an entry is for, the `architecture` skill. And the last test
+ * holds that no family imports another, which the skill's check over a diff was the only thing holding before.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import ts from 'typescript';
 
 const SOURCE = new URL('../src/', import.meta.url).pathname;
+
+/**
+ * Every family's folder, read off `families/` rather than listed, so a family added there is covered by the import
+ * pattern and the cross family check below without anybody remembering to name it. The control holds the list to
+ * the five folders there are, so a read that found nothing fails rather than passing everything.
+ */
+const FAMILY_FOLDERS: readonly string[] = readdirSync(join(SOURCE, 'families'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+
+/** The entries at the top of `src`, the one place outside the families that may name a family's module. */
+const ENTRIES: ReadonlySet<string> = new Set(['index.ts', 'build.ts', 'internal.ts', 'node.ts']);
 
 /**
  * The Harmony One family's own names, read off its modules' exports. Until plan 013 step 7.3.2 the family was
@@ -47,8 +65,9 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
   scans: /^(export )?const [A-Z_]*(SCAN|SCANS)\b|\bscan:\s*\d+/gm,
   // A set of skins or a model named by its string: which remote, by another name.
   models: /_SKINS\b[^\n]*new (Set|Map)\(\[|(===|!==)\s*'harmony-\d{3}'/g,
-  // A family's module imported from outside the families, which reaches its internals past `familyOf`.
-  imports: /from '(\.\.?\/)+families\/(harmony-600-650-700|harmony-one)\//g,
+  // A family's module imported from outside the families, which reaches its internals past `familyOf`. Every
+  // family's folder since `todo.md` 7.3.9, where it named the Harmony 600 family's and the Harmony One's alone.
+  imports: new RegExp(`from '(\\.\\.?\\/)+families\\/(${FAMILY_FOLDERS.join('|')})\\/`, 'g'),
 };
 
 /**
@@ -96,7 +115,8 @@ const DEBT: Readonly<Record<string, Readonly<Record<string, number>>>> = {};
 function familyNamesThroughCompose(): Set<string> {
   const text = readFileSync(join(SOURCE, 'compose', 'compose.ts'), 'utf8');
   const names = new Set<string>();
-  for (const match of text.matchAll(/export\s*\{([^}]*)\}\s*from\s*'(?:\.\.?\/)+families\/(harmony-600-650-700|harmony-one)\//g)) {
+  const fromFamily = new RegExp(`export\\s*\\{([^}]*)\\}\\s*from\\s*'(?:\\.\\.?\\/)+families\\/(${FAMILY_FOLDERS.join('|')})\\/`, 'g');
+  for (const match of text.matchAll(fromFamily)) {
     for (const one of match[1]!.split(',')) {
       const name = one.replace(/\btype\b/, '').split(/\s+as\s+/).at(-1)!.trim();
       if (name !== '') names.add(name);
@@ -120,6 +140,8 @@ function census(): Record<string, Record<string, number>> {
       // Comments are where a module says which remotes a fact was measured on, which is what they are for.
       const text = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\n]*/g, '$1');
       for (const [kind, pattern] of Object.entries(PATTERNS)) {
+        // An entry publishes a family's parts, `./build` the Harmony 300 and 350's and the Touch's, which is its job.
+        if (kind === 'imports' && directory === SOURCE && ENTRIES.has(name)) continue;
         const count = ((kind === 'scans' ? withoutArchitectureTables(text) : text).match(pattern) ?? []).length;
         if (count > 0) (out[relative(SOURCE, path)] ??= {})[kind] = count;
       }
@@ -168,12 +190,75 @@ test('code outside the families names no remote but in the modules of the debt l
 
 test('the census finds each shape it counts, so an empty count is the code\'s and not a blind pattern', () => {
   // The control: one line of each shape, which every pattern has to find once.
+  // The second import is a family the pattern named no folder of before `todo.md` 7.3.9.
   const sample = 'if (c.architecture === 14) x = archSlot(12, 9);\nconst y = FOUR_SLOT_ITEMS;\nexport const EXIT_SCAN = 12;\n'
-    + "const S_SKINS = new Set([72]);\nimport { a } from '../families/harmony-one/menus.ts';\n";
+    + "const S_SKINS = new Set([72]);\nimport { a } from '../families/harmony-one/menus.ts';\n"
+    + "import { b } from '../families/harmony-880-885/pages.ts';\n";
   const found = Object.fromEntries(Object.entries(PATTERNS).map(([kind, pattern]) => [kind, (sample.match(pattern) ?? []).length]));
-  assert.deepEqual(found, { architecture: 2, family: 1, scans: 1, models: 1, imports: 1 });
+  assert.deepEqual(found, { architecture: 2, family: 1, scans: 1, models: 1, imports: 2 });
+  // The folders were read off the directory rather than found empty, which would make the pattern match nothing.
+  assert.deepEqual(FAMILY_FOLDERS, ['harmony-300-350', 'harmony-600-650-700', 'harmony-880-885', 'harmony-one', 'harmony-touch']);
   // A scan inside a per architecture table is the table's, and the same entry outside one is counted.
   const table = 'const T: PerArchitecture<Item[]> = { 14: [{ scan: 8 }, { scan: 2 }] };\n';
   assert.equal((withoutArchitectureTables(table).match(PATTERNS.scans!) ?? []).length, 0);
   assert.equal((withoutArchitectureTables(`const u = [{ scan: 8 }];\n${table}`).match(PATTERNS.scans!) ?? []).length, 1);
+});
+
+/**
+ * The module specifiers of a family's file that land in another family's folder, resolved against the file's own
+ * folder, so `../harmony-one/x.ts` and `../../families/harmony-one/x.ts` are the same reach. Read by the compiler's
+ * own scanner, so a comment naming another family's module, which is how a fact says where its other half is, and
+ * a string that reads like an import are left alone; the scanner skips `export * as name from`, which a pattern
+ * anchored at a line's start adds.
+ */
+function otherFamilies(family: string, file: string, text: string): string[] {
+  const specifiers = ts.preProcessFile(text, true, true).importedFiles.map((one) => one.fileName);
+  for (const match of text.matchAll(/^\s*export\s+\*\s+as\s+\w+\s+from\s+['"]([^'"]+)['"]/gm)) specifiers.push(match[1]!);
+  const reached: string[] = [];
+  for (const specifier of specifiers.filter((one) => one.startsWith('.'))) {
+    const target = relative(join(SOURCE, 'families'), join(file, '..', specifier));
+    const folder = target.split('/')[0]!;
+    if (FAMILY_FOLDERS.includes(folder) && folder !== family) reached.push(`${folder}: ${specifier}`);
+  }
+  return reached;
+}
+
+test('no family imports another family\'s module, so each is reached through the registry alone', () => {
+  // Plan 007 "The rules the structure keeps" and the `architecture` skill: a family that needs what another has
+  // takes it from below both, `shared/` or a generic module, or states its own. The registry and the two
+  // interfaces at the top of `families/` are not a family and are not scanned.
+  const offending: string[] = [];
+  const walked: string[] = [];
+  for (const family of FAMILY_FOLDERS) {
+    const walk = (directory: string): void => {
+      for (const name of readdirSync(directory)) {
+        const path = join(directory, name);
+        if (statSync(path).isDirectory()) { walk(path); continue; }
+        if (!name.endsWith('.ts')) continue;
+        walked.push(relative(SOURCE, path));
+        for (const reach of otherFamilies(family, path, readFileSync(path, 'utf8'))) offending.push(`${relative(SOURCE, path)} -> ${reach}`);
+      }
+    };
+    walk(join(SOURCE, 'families', family));
+  }
+  // The walk reached every family, by its index, rather than finding nothing and passing.
+  for (const family of FAMILY_FOLDERS) assert.ok(walked.includes(`families/${family}/index.ts`), family);
+  assert.deepEqual(offending, []);
+});
+
+test('the control: an import of another family is found however it is spelled, and a family\'s own is not', () => {
+  const file = join(SOURCE, 'families', 'harmony-300-350', 'empty.ts');
+  const text = "import { a } from '../harmony-one/empty.ts';\n"
+    + "export { b } from '../../families/harmony-touch/view.ts';\n"
+    + "const c = await import('../harmony-880-885/pages.ts');\n"
+    + "export * as d from '../harmony-600-650-700/index.ts';\n"
+    + "import { e } from './keys.ts';\nimport { f } from '../registry.ts';\nimport { g } from '../../shared/devices.ts';\n"
+    + "/** See `../harmony-one/empty.ts`, from '../harmony-one/empty.ts'. */\n"
+    + "const h = \"import { i } from '../harmony-one/empty.ts'\";\n";
+  assert.deepEqual(otherFamilies('harmony-300-350', file, text), [
+    'harmony-one: ../harmony-one/empty.ts',
+    'harmony-touch: ../../families/harmony-touch/view.ts',
+    'harmony-880-885: ../harmony-880-885/pages.ts',
+    'harmony-600-650-700: ../harmony-600-650-700/index.ts',
+  ]);
 });
