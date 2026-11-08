@@ -188,17 +188,14 @@ export function sendPreludes(c: Container): SendPrelude[] {
  * start variable against: 1, the value a start, All Off or a Help screen holds it at while it runs.
  */
 const SEND_PRELUDE_LOADED = 1;
-
 /**
  * A prelude's `load` operand, built rather than copied, section 319: `0x1F` sub opcode `0xFB`, load
  * the byte register, with 1. `0xFB01` on 6100 preludes of 6100 send lists over the thirteen arch 14
  * compiles, where each configuration's own lists are counted and the Harmony 700 pair twice.
  */
 export const SEND_PRELUDE_LOAD = (BYTE_REGISTER_LOAD << 8) | SEND_PRELUDE_LOADED;
-
 /** `0x71`'s comparison field, operand bits 8 to 11, for equality with the byte register; section 34. */
 const CONDITION_EQUAL = 0;
-
 /**
  * A prelude's `condition` operand for a configuration whose start sequence variable is `start`,
  * section 319: compare `start` for equality with what `load` put in the byte register, one arm, so
@@ -253,13 +250,11 @@ export function interDeviceDelayCases(c: Container, table: number): InterDeviceD
  * it is an inference.
  */
 export const POWER_ON_DELAY_CHUNK = 100;
-
 /**
  * The values a power on delay table has a case for: 0 to 450 tenths, 45 seconds, on the 15 tables of
  * the 15 devices with a `Power` variable on the four distinct arch 14 configurations.
  */
 export const POWER_ON_DELAY_CASES = 451;
-
 /**
  * The values a power on delay table has a case for, in the order the compiler stores them, which is
  * `compilerCaseOrder`'s, section 319: one order on all 71 power on tables of the thirteen arch 14
@@ -465,7 +460,6 @@ export const INPUT_PROPERTY = 'Input';
 
 /** The transition that switches a device on: its off value to its on value. */
 const POWER_OFF = 0;
-
 const POWER_ON = 1;
 
 /**

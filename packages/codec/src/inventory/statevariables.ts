@@ -49,7 +49,6 @@ export interface StateVariable {
 }
 
 const DEVICE_ID = /^\d{6,}$/;
-
 const TRAILING_COUNT = /_(\d+)$/;
 
 /** Every named state variable, joined to the base slot 13 record its index names. */

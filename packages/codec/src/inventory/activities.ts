@@ -732,7 +732,6 @@ function continuations(one: ScreenString, rows: readonly ScreenString[]): string
  * list may name another, so an unbounded walk would visit most of base slot 10 for every activity.
  */
 const CHAIN_DEPTH_LIMIT = 3;
-
 /**
  * `resolveLabel` was here and is gone, which is a removal this file records rather than performs
  * quietly.
