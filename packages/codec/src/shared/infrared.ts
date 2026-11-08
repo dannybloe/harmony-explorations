@@ -92,7 +92,7 @@ export interface ComposeCommand {
    * **The table cannot hold these because the count is the device's and not the family's.** A whole block
    * is the family's shape plus how many repetitions a press sends, and for the families whose definition
    * states no count the compiler takes it from the device, so one family has as many blocks as its
-   * devices have counts. `catalogueCommandBlocks` in `composecatalogue.ts` derives them from the
+   * devices have counts. `catalogueCommandBlocks` in `cataloguecodes.ts` derives them from the
    * family's definition at the device's count, where the table holds no block for the family and where
    * its block was measured on a device stating another count; a caller without the archive leaves this
    * out and gets the table's block, or a refusal where it has none. **Given, they win over the table's

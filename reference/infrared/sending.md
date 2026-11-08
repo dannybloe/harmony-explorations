@@ -50,7 +50,7 @@ and is unconfirmed, since no compile shows one.[^s348]
 
 **The rhythm table's whole blocks for the 26 families stating no count carry the count their measured
 records repeat**:[^s350] 1 for `Memorex 32 Bit`, `MemorexO1 32 Bit` and `Samsung 38 Bit`, 3 for the other
-23, `TABLE_PRESS_REPEATS` in `composecatalogue.ts`. That is the count most of a family's codes rebuild at
+23, `TABLE_PRESS_REPEATS` in `cataloguecodes.ts`. That is the count most of a family's codes rebuild at
 when its table blocks are rebuilt from the definition; for `MemorexO1 32 Bit` and `Samsung 38 Bit` a
 minority rebuild at any count. Where a device states another count, the composer builds the command from
 the definition at the device's count, both blocks; it sends the table's block where the counts agree or
