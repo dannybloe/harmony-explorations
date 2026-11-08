@@ -93,3 +93,38 @@ test('the ranking rule decides, not the alphabet or the traversal order', async 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('the walk follows no linked folder out of the lab and ends on a loop of links', async () => {
+  // A scratch checkout in the lab links its `node_modules` to this repository's, and once two packages
+  // depended on each other those links made a loop the walk followed without end; see `labIndex`. Here
+  // a lab holds one image of its own, a link to a folder outside it holding another, and a link from a
+  // folder back to its parent. The control is the first assertion: the image inside is found, so the
+  // walk ran; the outside one is not, so the link out was not followed; and the call returns at all.
+  const root = mkdtempSync(join(tmpdir(), 'harmony-lab-'));
+  const outside = mkdtempSync(join(tmpdir(), 'harmony-outside-'));
+  try {
+    const own = IMAGES['h525_config'] as string;
+    const elsewhere = IMAGES['h650_config_region'] as string;
+    mkdirSync(join(root, 'dumps', 'deep'), { recursive: true });
+    writeFileSync(join(root, 'dumps', 'deep', own), 'inside');
+    writeFileSync(join(outside, elsewhere), 'outside');
+    symlinkSync(outside, join(root, 'dumps', 'linked-out'));
+    symlinkSync(join(root, 'dumps'), join(root, 'dumps', 'deep', 'back-up'));
+    const previous = process.env['HARMONY_LAB'];
+    process.env['HARMONY_LAB'] = root;
+    try {
+      const url = new URL('../src/index.ts', import.meta.url).href + `?loop=${Date.now()}`;
+      const fresh: typeof import('../src/index.ts') = await import(url);
+      const found = fresh.imagePaths('h525_config');
+      assert.equal(found.length, 1, found.join(', '));
+      assert.ok(found[0]!.endsWith(join('deep', own)), found[0]);
+      assert.deepEqual(fresh.imagePaths('h650_config_region'), [], 'a file outside the lab was found through a link');
+    } finally {
+      if (previous === undefined) delete process.env['HARMONY_LAB'];
+      else process.env['HARMONY_LAB'] = previous;
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});

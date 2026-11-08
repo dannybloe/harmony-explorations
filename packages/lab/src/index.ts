@@ -10,7 +10,7 @@
  * point of the golden vector cross-check is that both suites read the same file and say the
  * same thing about it. A name that exists on one side only cannot be cross-checked at all.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -1887,6 +1887,16 @@ function rank(path: string): [number, number, string] {
  * file pays it again in its own process. Measured on 23 October 2026. The rules are the walk's as
  * before: dot entries skipped, symlinks followed, a dangling one passed over, only a regular file
  * matching, so a name finds exactly the paths the per name walk found, and `findAll` still sorts them.
+ *
+ * **A linked folder is followed only when it stays inside the lab, and no folder twice.** A scratch
+ * checkout in the lab, `work/review-382-prose/head`, links its `node_modules` to this repository's, and
+ * when `todo.md` 7.3.6 made `@harmony/usb` and `@harmony/testkit` depend on each other those links
+ * became a loop: the walk followed `usb/node_modules/@harmony/testkit/node_modules/@harmony/usb/...` for
+ * as long as the paths could grow. Every test file that named a lab image hung in it, nine of them for
+ * over an hour of a full run with nothing printed, and two agents saw a bare lab lookup never finish.
+ * Nothing outside the lab is a lab image, so a folder whose real path leaves the lab is not walked, and
+ * the real paths walked are remembered so a loop inside the lab ends too. A linked **file** is still
+ * followed wherever it points, as before.
  */
 let byName: Map<string, string[]> | undefined;
 
@@ -1894,9 +1904,14 @@ function labIndex(): Map<string, string[]> {
   if (byName !== undefined) return byName;
   byName = new Map();
   if (LAB && existsSync(LAB)) {
-    const queue: string[] = [LAB];
+    const root = realpathSync(LAB);
+    const inside = (real: string): boolean => real === root || real.startsWith(root + sep);
+    const walked = new Set<string>([root]);
+    // Each folder with its real path: a plain folder's is its parent's joined with its name, so only a
+    // linked one costs a `realpathSync`.
+    const queue: [string, string][] = [[LAB, root]];
     while (queue.length) {
-      const dir = queue.shift() as string;
+      const [dir, dirReal] = queue.shift() as [string, string];
       let entries: string[];
       try {
         entries = readdirSync(dir);
@@ -1922,7 +1937,16 @@ function labIndex(): Map<string, string[]> {
           if (same === undefined) byName.set(entry, [full]);
           else same.push(full);
         } else if (entryStat.isDirectory()) {
-          queue.push(full);
+          // A plain folder is inside the lab by construction; only a linked one needs its real path.
+          let real = join(dirReal, entry);
+          try {
+            if (lstatSync(full).isSymbolicLink()) real = realpathSync(full);
+          } catch {
+            continue;
+          }
+          if (!inside(real) || walked.has(real)) continue;
+          walked.add(real);
+          queue.push([full, real]);
         }
       }
     }
