@@ -385,11 +385,15 @@ import { readFileSync, existsSync } from 'node:fs';
 const [codecDir, labDir, pinsPath, ...rest] = process.argv.slice(1);
 const { IR_ARCHIVE } = await import(labDir + '/index.ts');
 if (IR_ARCHIVE === undefined || !existsSync(IR_ARCHIVE)) { console.log(JSON.stringify({ skip: 'no infrared archive' })); process.exit(0); }
+// Reading a character map can draw our own letters to recognise them, from the font files the codec's Node
+// resources supply.
+await import(codecDir + '/resources.node.ts');
 const { parse } = await import(codecDir + '/gspm.ts');
 const { irGroups } = await import(codecDir + '/ir.ts');
 const { irFrame } = await import(codecDir + '/irframe.ts');
 const { keyCodes, deviceModeMaps, devices } = await import(codecDir + '/inventory.ts');
-const { catalogueCommands, codeKey } = await import(codecDir + '/catalogue.ts');
+const { codeKey } = await import(codecDir + '/catalogue.ts');
+const { catalogueCommands } = await import(codecDir + '/catalogue.node.ts');
 const pins = JSON.parse(readFileSync(pinsPath, 'utf8'));
 const tables = new Map();
 const namesOf = (name) => {

@@ -43,6 +43,8 @@ STAGING = 0x1D0000
 NODE_PROBE = r'''
 import { readFileSync, writeFileSync } from 'node:fs';
 const [codecDir, wantsJson, out, target, ...donorArgs] = process.argv.slice(1);
+// Letters are drawn from the font files, which the codec's Node resources supply.
+await import(codecDir + '/resources.node.ts');
 const { parse } = await import(codecDir + '/gspm.ts');
 const { borrowGlyphs } = await import(codecDir + '/glyphborrow.ts');
 const donors = [];
