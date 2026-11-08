@@ -24,7 +24,7 @@
  * measured ones: 5 are refused for that, and 3 earlier as whole record shapes; 577 are written, and the 96 refused for a width the family's name does not give write at the
  * widths a caller states, `test/touch-definition.test.ts`.
  *
- * **Reading a block back into segments is the inverse of `blockOfDefinition` in `archive.ts`**, which built
+ * **Reading a block back into segments is the inverse of `blockOfDefinition` in `archiveblock.ts`**, which built
  * those blocks out of Logitech's definitions in the first place, and of `pulsesOfBlock` in `irframe.ts`, which
  * plays them. Each emission of a block is one copy of a frame with what directly follows it, its trailer and
  * its pad, or one run of literal words; `blockOfDefinition` pushes each emission as its own items, which is

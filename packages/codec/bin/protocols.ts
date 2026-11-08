@@ -2224,7 +2224,7 @@ if (write) {
     + `\n  // the rest carry no \`tail\`, so \`blockOfStatedCode\` refuses their press, and carry instead the two`
     + `\n  // blocks that state no count, \`held\` and \`opening\`, which a Harmony Touch's definition is written from,`
     + `\n  // todo-touch 5.3.4. The count is`
-    + `\n  // never guessed: see blockOfDefinition in src/catalogue/archive.ts.\n${statedOut}`;
+    + `\n  // never guessed: see blockOfDefinition in src/catalogue/archiveblock.ts.\n${statedOut}`;
 
   const seedsOut = DOCUMENTED.map((e) =>
     `  { family: '${e.family}', periodNs: ${e.periodNs}, `

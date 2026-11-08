@@ -368,7 +368,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   // the rest carry no `tail`, so `blockOfStatedCode` refuses their press, and carry instead the two
   // blocks that state no count, `held` and `opening`, which a Harmony Touch's definition is written from,
   // todo-touch 5.3.4. The count is
-  // never guessed: see blockOfDefinition in src/catalogue/archive.ts.
+  // never guessed: see blockOfDefinition in src/catalogue/archiveblock.ts.
   { family: '3B Technology 27 Bit', periodNs: 27777, biphase: { mark: 270, space: 250, lead: [{ mark: true, us: 260 }, { mark: false, us: 265 }], setIsMark: true }, held: { items: [{ copy: 'full', at: 1 }, { words: [-32767, -32767, -19902] }] }, opening: { items: [{ copy: 'full' }, { words: [-32767, -32767, -19901] }, { copy: 'full', at: 1 }, { words: [-32767, -32767, -19902] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Abacus 13 Bit', periodNs: 28818, biphase: { mark: 1160, space: 900, lead: [{ mark: true, us: 1180 }], setIsMark: true }, held: { items: [{ copy: 'full' }, { words: [-4500] }, { copy: 'full', at: 1 }, { words: [-4501] }] }, opening: { items: [{ copy: 'full' }, { words: [-4500] }, { copy: 'full', at: 1 }, { words: [-4501] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Accuscreens 48 Bit', periodNs: 26315, header: [5000, 620], flat: 410, oneMark: 1210, zero: 1210, one: 410, carries: 'space', held: { items: [{ copy: 'full' }] }, opening: { items: [{ copy: 'full' }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },

@@ -185,7 +185,7 @@ export function compiledBlockWords(
   options: { readonly carve?: boolean } = {},
 ): IrPulse[] {
   // **A silence handed over in chunks is spelt whole**, section 359: Logitech's definition route states a
-  // gap longer than a word as chunks of one word each, `joinedGaps` in `archive.ts`, and the rule below
+  // gap longer than a word as chunks of one word each, `joinedGaps` in `archiveblock.ts`, and the rule below
   // can only be applied to a silence it sees whole. Spelt chunk by chunk, `Microsoft 30 Bit`'s 68643 was
   // 32767, 32767 and 3109 where Logitech writes 32767, 17938 and 17938.
   const joined = joinedGaps(pulses);
