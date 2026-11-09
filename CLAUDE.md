@@ -244,6 +244,11 @@ net, not a policy:
   `.hfw` packages contain a `Data.xml` with a stranger's Logitech `UserId`, account GUIDs,
   `ServerID` and `ASPSESSIONID` session cookie. Publish checksums, never files. See
   `docs/checksums.md`.
+* **Our own builds are the one exception**, decision 32: a configuration built from nothing by this
+  repository's code may be committed as a reference in `packages/codec/test/references/`, beside the recipe
+  that builds it, and its test rebuilds it from that recipe byte for byte. A compile of Logitech's, or a
+  build composed onto one, stays out however much is scrubbed from it, since the reason is copyright. The
+  pre-commit hook lets a `.bin` in there only with its recipe staged beside it.
 * **No config dumps or `concordance -i` output.** Decided on 7 August 2026, and **not for the
   reason everyone assumes**: a config carries no account data at all, only an equipment inventory
   its owner published knowingly, and `samples/README.md` now records the check. What blocks it is

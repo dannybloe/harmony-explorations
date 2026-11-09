@@ -34,6 +34,15 @@ staged=$(git diff --cached --name-only --diff-filter=ACM)
 #    .gitignore, deliberately duplicated: this catches the case where .gitignore was edited in
 #    the same commit that adds the file.
 for f in $staged; do
+	# Decision 32: a configuration we built ourselves is committed as a reference beside the recipe that
+	# builds it, and only there. Its own test rebuilds it from that recipe byte for byte, which a compile
+	# of Logitech's cannot pass, so the recipe is required in the same index.
+	case "$f" in
+	packages/codec/test/references/*.bin)
+		git cat-file -e ":${f%.bin}.json" 2>/dev/null ||
+			note "$f is a reference with no recipe ${f%.bin}.json beside it (decision 32)"
+		continue ;;
+	esac
 	case "$f" in
 	*.bin | *.hfw | *.EZHex | *.EZUp | *.EzHex | *.EzUpgrade | *.gpr | *-info.txt | *-safe.bin)
 		note "$f is a firmware, config or dump file and cannot be committed" ;;
