@@ -21,6 +21,7 @@
 import { carriedCatalogue } from '../catalogue/carried.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import { readRecipe, RecipeError } from '../recipe/recipe.ts';
+import { resource } from '../support/resources.ts';
 import type { SyncDocuments } from './harmony-touch/documents.ts';
 import type { OwnPicture } from './harmony-touch/favourites.ts';
 import type { TouchAccount } from './harmony-touch/fromnothing.ts';
@@ -105,4 +106,22 @@ export function unstatedChoices(json: unknown): readonly string[] {
   if (family.kind === 'document') return [];
   const given = (json as { choices?: Readonly<Record<string, unknown>> }).choices ?? {};
   return Object.keys(family.choices).filter((name) => !(name in given)).sort();
+}
+
+/**
+ * **A build's fingerprint**, plan 014 and decision 32: the SHA-256 of what is sent, so two builds are the same exactly
+ * when their fingerprints are. A configuration's is that of its bytes. A set of documents' is that of one text
+ * holding each document as JSON in the order the build gives them, and each picture's address and the SHA-256 of its
+ * bytes, so a document or a picture changed anywhere changes it. The references are held by these: the bytes a
+ * reference stood for are rebuilt from its recipe at the commit that recorded it, which is what `bin/reference.ts`
+ * does to show where two builds differ.
+ */
+export function builtDigest(built: Built): string {
+  const sha256 = resource('sha256');
+  if (built.kind === 'configuration') return sha256(built.bytes);
+  const text = JSON.stringify({
+    documents: built.documents,
+    pictures: built.pictures.map((p) => [p.uri, sha256(p.png)]),
+  });
+  return sha256(new TextEncoder().encode(text));
 }

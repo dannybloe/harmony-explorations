@@ -59,7 +59,7 @@ import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplate
 import {
   type BuiltScreen} from '../../compose/screenrecords.ts';
 import { type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords } from './screenrecords.ts';
-import { barBytes, stateBackgroundBytes, statePatchBytes } from './backgrounds.ts';
+import { barBytes, ONE_LOOK_SKINS, stateBackgroundBytes, statePatchBytes } from './backgrounds.ts';
 import { type OurPictureChoices, type OurPictureName, buildOurPictures, buildPictures } from './pictures.ts';
 import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
 
@@ -835,13 +835,17 @@ export interface EmptyFourSlotOptions {
  */
 export function buildEmptyFourSlotConfiguration(options: EmptyFourSlotOptions): EmptyConfiguration {
   const choices = options.choices ?? FOUR_SLOT_CHOICES;
+  // A model drawn in one look, the Harmony 600, draws its idle state, as every other, in `oneLookColour`, as every
+  // empty Harmony 600 configuration of ours that a remote ran did, `todo-compile-600.md` 1.2.4 and plan 014's
+  // references; the others draw the idle state colour.
+  const idleColour = ONE_LOOK_SKINS.has(options.skin) ? choices.oneLookColour : choices.stateColours.idle;
   return buildEmptyConfiguration({
     skin: options.skin,
     builtAt: options.builtAt,
     inks: choices.letterInks,
     settings: choices.settings,
     look: {
-      idleColour: choices.stateColours.idle,
+      idleColour,
       barColour: choices.barColour,
       pictures: { icons: choices.icons, colour: choices.iconColour, background: choices.iconBackground },
     },

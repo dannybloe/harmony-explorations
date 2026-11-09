@@ -1,6 +1,6 @@
 # Plan 014: one build from a recipe, for every remote served
 
-**Status: open.** Written 9 November 2026, after `todo.md` 7.3.10 put the write paths in the libraries. Its items
+**Status: done.** The references are held as recipes and fingerprints rather than as committed builds, decision 32 as corrected the same day. Written 9 November 2026, after `todo.md` 7.3.10 put the write paths in the libraries. Its items
 are `todo.md` 7.3.11. Plan 013 holds the families and the registry this builds on; plan 007 the family model.
 
 ## Why

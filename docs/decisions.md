@@ -902,20 +902,22 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    "Never write to a remote" is unchanged. The FreeHarmony half of 7.3.6, its imports moved and `@harmony/lab` out of
    its product dependencies, waits for the pass that opens it up again, `todo.md` 7.3.
 
-32. <a id="d32"></a>**Configurations we built ourselves may be committed, as references beside the recipes that build
-   them; Logitech's compiles may not.** *Taken on 9 November 2026, in the conversation that asked for one build from a
-   recipe, plan 014, `todo.md` 7.3.11.* The tests of what this repository delivers, compiling and syncing, must run
-   on a checkout with no lab, so the bytes a recipe built before are committed beside the recipe, and the recipes
-   may carry the codes their few devices send.
+32. <a id="d32"></a>**Our own builds are held as references by their recipes and fingerprints, with the few codes
+   their devices send; Logitech's compiles are not held at all.** *Taken on 9 November 2026, in the conversation that
+   asked for one build from a recipe, plan 014, `todo.md` 7.3.11; corrected the same day, before anything was held
+   under it, from committing the builds themselves.* The tests of what this repository delivers, compiling and
+   syncing, must run on a checkout with no lab, so each reference is a recipe in `packages/codec/test/references/`,
+   carrying its devices' codes, and in `references.json` the stamp it is built with and the SHA-256 of its build.
+
+   **Why a fingerprint and not the file.** The first version of this decision committed the builds, which would have
+   been about 5.4 MB for the first eleven, with another copy each time a change to the build moved one; five such
+   changes came between the bench runs and the first references. A fingerprint loses nothing: a reference is fully
+   determined by its recipe and the code at a commit, both in git, so the bytes it stood for are rebuilt there, and
+   `packages/codec/bin/reference.ts --diff` does it and names the parts of the configuration that differ.
 
    **What stays out, and why it is not a matter of scrubbing.** The rule against committing a configuration was
    always about copyright: a compile of Logitech's is their generated data, and a configuration carries no account
    data in the first place, `samples/README.md`. So a compile of theirs, and a build composed onto one, stays in the
-   lab however much is scrubbed from it. A configuration of ours carries no serial and no account name, and a
-   Harmony Touch document of ours only identifiers we composed.
-
-   **What holds it.** A reference's own test rebuilds it from its recipe byte for byte, which a compile of
-   Logitech's cannot pass, so the test is the proof that a committed file is ours. The pre-commit hook lets a
-   configuration file in only in the references folder and only beside a recipe of the same name. This narrows the
-   reason given in `CLAUDE.md` "This repository is public", whose text already said a synthetic corpus would change
-   the answer; nothing else there changes.
+   lab. A recipe's carried codes are the archive's, a few devices' worth, no more than learning them off a remote
+   would give, which the person judged acceptable for the tests; a Harmony Touch reference uses an invented account,
+   John Doe's, never a real one's identifiers.

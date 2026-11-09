@@ -18,6 +18,7 @@ import {
   buildEmptyFourSlotConfiguration, FOUR_SLOT_CHOICES, fourSlotChoices,
 } from '../src/build.ts';
 import { buildEmptyConfiguration } from '../src/families/harmony-600-650-700/empty.ts';
+import { ONE_LOOK_SKINS } from '../src/families/harmony-600-650-700/backgrounds.ts';
 
 const BUILT_AT = '2026-10-23T12:00:00';
 
@@ -29,7 +30,8 @@ function assembled(skin: number, blendLetters: boolean): Uint8Array {
     inks: FOUR_SLOT_CHOICES.letterInks,
     settings: FOUR_SLOT_CHOICES.settings,
     look: {
-      idleColour: FOUR_SLOT_CHOICES.stateColours.idle,
+      // The Harmony 600 is drawn in one look, so its idle state is the one grey; the others draw the idle colour.
+      idleColour: ONE_LOOK_SKINS.has(skin) ? FOUR_SLOT_CHOICES.oneLookColour : FOUR_SLOT_CHOICES.stateColours.idle,
       barColour: FOUR_SLOT_CHOICES.barColour,
       pictures: {
         icons: FOUR_SLOT_CHOICES.icons, colour: FOUR_SLOT_CHOICES.iconColour, background: FOUR_SLOT_CHOICES.iconBackground,
@@ -45,6 +47,11 @@ test('the empty configuration from the family\'s choices is the one the tests as
     const built = buildEmptyFourSlotConfiguration({ skin, builtAt: BUILT_AT }).bytes;
     assert.deepEqual(built, assembled(skin, FOUR_SLOT_CHOICES.blendLetters), `skin ${skin}`);
   }
+});
+
+test('the Harmony 600 is drawn in its one grey and the 650 and 700 in the idle colour, which differ', () => {
+  assert.ok(ONE_LOOK_SKINS.has(71) && !ONE_LOOK_SKINS.has(72) && !ONE_LOOK_SKINS.has(66));
+  assert.notEqual(FOUR_SLOT_CHOICES.oneLookColour, FOUR_SLOT_CHOICES.stateColours.idle);
 });
 
 test('the control: a changed choice reaches the bytes, so the comparison above can fail', () => {

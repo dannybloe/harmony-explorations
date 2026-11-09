@@ -25,7 +25,7 @@ const VALUES = [
   'EzFileError', 'GspmError', 'INTENDED_VERSION_FIELDS', 'NoFamilyError', 'PROTOCOLS', 'QueueError', 'RecipeError',
   'ResourceError', 'SCREEN_SIZES', 'StateTableError', 'activities', 'activityBindings', 'activityCount',
   'activityNames', 'activityScreens', 'allChecksPass', 'applyEdits', 'assertQueueFits',
-  'assertStateTableConsistent', 'buildFromRecipe', 'chooseByModel', 'clockStateEdits', 'codeKey', 'commandsOfCodeset',
+  'assertStateTableConsistent', 'buildFromRecipe', 'builtDigest', 'chooseByModel', 'clockStateEdits', 'codeKey', 'commandsOfCodeset',
   'configLanguage', 'decodePayload', 'describeChoices', 'deviceCount', 'deviceDelays', 'deviceDriving',
   'deviceListRows', 'deviceModeMaps', 'deviceOfRecord', 'devices', 'encodePng', 'familyKind', 'familyOfModel',
   'framesOfPulses', 'fromFirstMark', 'harmonyTouch', 'identifyCodeset', 'introductionTour', 'inventory', 'irFrame',

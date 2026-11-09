@@ -248,5 +248,10 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}, defaults: Four
     letterInks: { ...FOUR_SLOT_CHOICES.letterInks, ...given.letterInks },
     faceWeights: { ...FOUR_SLOT_CHOICES.faceWeights, ...given.faceWeights },
     icons: { ...FOUR_SLOT_CHOICES.icons, ...given.icons },
+    // A recipe is JSON, which has no undefined: a type of activity given no activity key is written `null` there,
+    // plan 014, and read as the absent key the composers take.
+    ...(given.activityKeys === undefined ? {} : {
+      activityKeys: Object.fromEntries(Object.entries(given.activityKeys).map(([type, key]) => [type, key ?? undefined])),
+    }),
   };
 }

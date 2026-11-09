@@ -1,0 +1,13 @@
+{
+ "about": "An invented account for the Harmony Touch's references, decision 32: John Doe, a number and an address that belong to nobody, on a domain that resolves nowhere. Never a real account's identifiers, which stay in the lab.",
+ "context": {
+  "AccountId-": "1000001",
+  "CountryCode": "NL",
+  "Email": "john.doe@example.com",
+  "HouseholdUserProfileUri": null,
+  "InstallerId": null,
+  "Language": "en-GB",
+  "SetupSession": { "Type": 0, "SetupType": null }
+ },
+ "tuning": { "DeviceProfileUri": "https://example.invalid/john-doe/favourites", "ContentProfileKey": 1 }
+}

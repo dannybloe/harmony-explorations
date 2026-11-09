@@ -78,7 +78,3 @@ reference/logitech/data-model/catalogue-model.pdf
 # committed; a GitHub Action publishes it. Anchored with a leading slash, since a bare `site/` would also
 # ignore `tools/site/`, which holds the build itself.
 /site/
-
-# Decision 32: our own builds, committed as references beside the recipes that build them. The pre-commit
-# hook requires the recipe; Logitech's compiles stay out whatever is scrubbed from them.
-!packages/codec/test/references/*.bin

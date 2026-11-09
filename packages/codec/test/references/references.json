@@ -1,0 +1,101 @@
+[
+ {
+  "name": "one-empty",
+  "about": "The empty Harmony One",
+  "builtAt": "2026-10-24T10:10:02",
+  "sha256": "01e78320ae5ed1e6f950fb13a56f72ae2c34152cdebfe598d4112de571ea6320",
+  "size": 486460,
+  "onRemote": "written to the spare Harmony One, todo-compile-one.md 7.2: read back identical, starts on My Activities",
+  "benchFile": "work/one-track/empty/empty-one.bin",
+  "stampedAt": "2026-10-24T10:10:02"
+ },
+ {
+  "name": "one-test",
+  "about": "The Harmony One test setup",
+  "builtAt": "2026-10-24T10:23:01",
+  "sha256": "a998441ed59734047eef5579e8eab1fd5c818df8ce988e672bdb244e6b64e254",
+  "size": 905173,
+  "onRemote": "written to the spare Harmony One, todo-compile-one.md 8.2: all 16 codes heard are the file's own",
+  "benchFile": "work/one-track/empty/setup-on-empty.bin",
+  "stampedAt": "2026-10-24T10:23:01"
+ },
+ {
+  "name": "h650-empty",
+  "about": "The empty Harmony 650",
+  "builtAt": "2026-10-12T12:00:00",
+  "sha256": "6e62b7911075bad8ca9a92ca1f72a04e8ccb65c7f7c942ea36b06ab4a789b6d3",
+  "size": 380078,
+  "onRemote": "not as it is: the build written to the Harmony 650, todo-compile-650.md 11.1.1, differs from this one only by four later fixes, c4069e91, cda1bd82, 5c16715e and c9848a29"
+ },
+ {
+  "name": "h650-test",
+  "about": "The Harmony 650 test setup",
+  "builtAt": "2026-10-13T12:00:00",
+  "sha256": "f5703037bebaf548fe1f054e4a996690762fc8315746207a12f144f795afa487",
+  "size": 851139,
+  "onRemote": "not as it is: the build written to the Harmony 650, todo-compile-650.md 11.2.4, differs from this one by 9 bytes, the later fixes 5c16715e and c9848a29"
+ },
+ {
+  "name": "h600-empty",
+  "about": "The empty Harmony 600, in its one grey",
+  "builtAt": "2026-10-14T12:00:00",
+  "sha256": "850e902c8825fdd013ee73376120e422523917e57ec26a4996a0b57a35a4a7b8",
+  "size": 380078,
+  "onRemote": "written to the Harmony 600, section 387: grey 2 and blended letters seen and kept",
+  "benchFile": "work/h600-from-nothing/empty-600-73-grey2-blended.bin",
+  "stampedAt": "2026-10-14T17:41:47"
+ },
+ {
+  "name": "h600-five",
+  "about": "Five devices of the test setup on the Harmony 600",
+  "builtAt": "2026-10-14T12:00:00",
+  "sha256": "92b2d6ddb5e46e26421f1a6dd0cbc4fa629a7002819f29e89f6d9aa23ab21e06",
+  "size": 692195,
+  "onRemote": "written to the Harmony 600, section 389: every code as predicted in all eleven steps",
+  "benchFile": "work/h600-from-nothing/setup5-600-blended.bin",
+  "stampedAt": "2026-10-14T19:07:03"
+ },
+ {
+  "name": "h700-empty",
+  "about": "The empty Harmony 700",
+  "builtAt": "2026-10-13T12:00:00",
+  "sha256": "f1d966a8dc9fbbccf2a95950f62865049e0bab8d2f70baa3781810fdae697ec2",
+  "size": 548006,
+  "onRemote": "not as it is: the build written to the Harmony 700, section 383, differs from this one by 4 bytes, the later fixes 5c16715e and c9848a29"
+ },
+ {
+  "name": "h700-test-bright",
+  "about": "The test setup on the Harmony 700, in the bench test colours",
+  "builtAt": "2026-10-14T12:00:00",
+  "sha256": "86a358a45102373fd57a6c739b4121c2282528e472e0a88c8ad31fcb5b2841f0",
+  "size": 1019067,
+  "onRemote": "written to the Harmony 700, section 386: every code as before, titles two rows lower",
+  "benchFile": "work/h700-from-nothing/setup7-lower-700.bin",
+  "stampedAt": "2026-10-14T15:34:01"
+ },
+ {
+  "name": "h350-empty",
+  "about": "The empty Harmony 350",
+  "builtAt": "2026-11-01T17:46:31",
+  "sha256": "a768d0cfb6e0d6827be3306c51817efa4ab48be166fc7ca7641ec500014e3c28",
+  "size": 1105,
+  "onRemote": "not as it is: the empty build written to the Harmony 350, todo-compile-350.md 5.1.5, came before the event 0xFF binding of a01d84ab, decision 28"
+ },
+ {
+  "name": "h350-test",
+  "about": "The Harmony 350 test setup, which ran on the Harmony 300 too",
+  "builtAt": "2026-11-01T17:46:24",
+  "sha256": "0eca8ffb90e3d5627ff0d9593d8758bad909e9b543baac4067750d15a8e328cb",
+  "size": 124170,
+  "onRemote": "written to the Harmony 350 and the Harmony 300, todo-compile-350.md 5.3: 33 of 33 on both",
+  "benchFile": "work/setups/h350-test/from-nothing-5.4.bin"
+ },
+ {
+  "name": "touch-test",
+  "about": "The Harmony Touch test setup, built with John Doe's account",
+  "builtAt": "2026-11-09T12:00:00",
+  "sha256": "b613c0dfcbfc7b2dbcc482d32b8ec8cee667c110a715107aaa0eb3ccc2bb0a79",
+  "size": 260643,
+  "onRemote": "not as it is: todo-touch.md 9.4 ran the same set, 38 of 38, built with the account's own identifiers, so it differs in Context and in the tuning device's favourites address and key"
+ }
+]

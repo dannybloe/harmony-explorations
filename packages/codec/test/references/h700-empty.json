@@ -1,0 +1,78 @@
+{
+ "about": "The empty Harmony 700",
+ "model": {
+  "name": "Harmony 700",
+  "skin": 66
+ },
+ "devices": [],
+ "activities": [],
+ "choices": {
+  "letters": "oxanium",
+  "blendLetters": true,
+  "letterInks": {
+   "shadowed": 65535,
+   "plain": 8452,
+   "shadow": 0
+  },
+  "faceWeights": {
+   "F15": "SemiBold",
+   "F14W": "SemiBold",
+   "F14": "SemiBold",
+   "F13": "SemiBold",
+   "F11": "SemiBold",
+   "F10": "SemiBold",
+   "R15": "Regular",
+   "R14": "Regular",
+   "R13": "Regular",
+   "One16": "Bold",
+   "One15": "Bold",
+   "OneR15": "Regular",
+   "One14": "Bold",
+   "One11": "SemiBold"
+  },
+  "pictures": "ours",
+  "icons": {
+   "start up picture": "remote",
+   "corner mark": "wifi",
+   "USB Connected": "usb",
+   "Low Battery": "battery-alert-variant-outline",
+   "battery blank screen": "battery-off-outline",
+   "upgrade and learn blank screens": "sync",
+   "charging 1": "battery-charging-20",
+   "charging 2": "battery-charging-50",
+   "charging 3": "battery-charging-80",
+   "charging 4": "battery-charging-100",
+   "charged": "battery-check-outline"
+  },
+  "iconColour": 65535,
+  "iconBackground": 10565,
+  "backgrounds": "state colours",
+  "stateColours": {
+   "device": 45319,
+   "activity": 4408,
+   "idle": 1094
+  },
+  "oneLookColour": 8452,
+  "barColour": 65535,
+  "labelTooWide": "smaller font",
+  "activityKeys": {
+   "WatchTV": "Watch TV",
+   "WatchDvd": "Watch a Movie",
+   "ListenToMusic": "Listen to Music",
+   "Custom": null
+  },
+  "settings": {
+   "glowTime": 20,
+   "tiltSensor": true,
+   "remoteAssistant": false,
+   "bootStep": false,
+   "tourShown": false,
+   "delayRestore": false,
+   "help": false
+  },
+  "delays": {
+   "powerOn": 15,
+   "interDevice": 5
+  }
+ }
+}

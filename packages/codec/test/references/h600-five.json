@@ -1,0 +1,2970 @@
+{
+ "about": "The Harmony 650's test setup as todo-compile-650.md 5.1 composed it onto the starting compile, for 5.2's Logitech compile: h650-start.json plus the KPN box kept on when switching activities and Plasma kijken, a Custom activity on the menu only. Set by hand in MyHarmony, since build-setup.ts sends neither: the screen light, 10 s for 5.1 and 5.2 and set back to 20 s, the default, in the account after them, since 10 s made bench runs hard to perform, and Plasma kijken's screen with its sequence called Radio, KPN 1, a 2 s pause, KPN 2. The screen is stated here since todo-compile-650.md 10.7.4, for the codec's assembly, and the screen light is the Harmony 650's choice of 20 s by default. Plan 006 is the source of every name and input. The other four activities' screens are stated since todo-compile-650.md 11.2.1, as Logitech's compile of the setup draws them, since a configuration built from nothing has no compile to take them from.",
+ "model": {
+  "name": "Harmony 600 EMEA",
+  "skin": 73
+ },
+ "devices": [
+  {
+   "name": "LG TV",
+   "device": "LG/OLED65G26LA",
+   "definition": {
+    "record": {
+     "channelTuning": {
+      "finish": [
+       "OK"
+      ]
+     },
+     "codeset": "codesets/37/37833bfcdf110089.json",
+     "deviceType": 1,
+     "globalDeviceId": 512015,
+     "inputs": {
+      "list": [
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "Antenna"
+         },
+         {
+          "set": "TVInput",
+          "to": "TV"
+         }
+        ],
+        "name": "TV"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "Antenna"
+         },
+         {
+          "set": "TVInput",
+          "to": "DTV"
+         }
+        ],
+        "name": "DTV"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "Antenna"
+         },
+         {
+          "set": "TVInput",
+          "to": "Radio"
+         }
+        ],
+        "name": "Radio"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "HDMI1"
+         }
+        ],
+        "name": "HDMI 1"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "HDMI2"
+         }
+        ],
+        "name": "HDMI 2"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "HDMI3"
+         }
+        ],
+        "name": "HDMI 3"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "HDMI4"
+         }
+        ],
+        "name": "HDMI 4"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "SmartTV"
+         }
+        ],
+        "name": "Smart TV"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "Prime Video"
+         }
+        ],
+        "name": "Prime Video"
+       },
+       {
+        "commands": [
+         {
+          "set": "Screen",
+          "to": "Netflix"
+         }
+        ],
+        "name": "Netflix"
+       }
+      ],
+      "type": 5
+     },
+     "manufacturer": "LG",
+     "model": "OLED65G26LA",
+     "power": {
+      "off": [
+       "PowerOff"
+      ],
+      "on": [
+       "PowerOn"
+      ],
+      "type": "discrete"
+     },
+     "states": {
+      "Screen": {
+       "values": [
+        {
+         "name": "Antenna",
+         "select": [
+          {
+           "commands": [
+            "InputTv",
+            {
+             "delayMs": 2000
+            }
+           ],
+           "setType": 1
+          }
+         ]
+        },
+        {
+         "name": "HDMI1",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi1"
+           ],
+           "setType": 1
+          }
+         ]
+        },
+        {
+         "name": "HDMI2",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi2"
+           ],
+           "setType": 1
+          }
+         ]
+        },
+        {
+         "name": "HDMI3",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi3"
+           ],
+           "setType": 1
+          }
+         ]
+        },
+        {
+         "name": "HDMI4",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi4"
+           ],
+           "setType": 1
+          }
+         ]
+        },
+        {
+         "name": "SmartTV",
+         "select": [
+          {
+           "commands": [
+            "Home"
+           ],
+           "setType": 1
+          }
+         ]
+        },
+        {
+         "name": "Prime Video",
+         "select": [
+          {
+           "commands": [
+            "PrimeVideo"
+           ],
+           "setType": 1
+          }
+         ]
+        },
+        {
+         "name": "Netflix",
+         "select": [
+          {
+           "commands": [
+            "Netflix"
+           ],
+           "setType": 1
+          }
+         ]
+        }
+       ]
+      },
+      "TVInput": {
+       "next": [
+        "InputTv"
+       ],
+       "values": [
+        {
+         "name": "TV"
+        },
+        {
+         "name": "DTV"
+        },
+        {
+         "name": "Radio"
+        }
+       ]
+      }
+     },
+     "timing": {
+      "connectedAppPowerOnDelay": 30000,
+      "holdInterDeviceDelay": 0,
+      "inputDelay": 0,
+      "interDeviceDelay": 500,
+      "interKeyDelay": 100,
+      "isInterKeyDelayOptimized": false,
+      "minRepeats": 1,
+      "powerOnDelay": 10000,
+      "pressMinRepeats": 1
+     }
+    },
+    "commands": [
+     {
+      "name": "-",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF32CD)(Repeat)():3"
+     },
+     {
+      "name": ".",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF32CD)(Repeat)():3"
+     },
+     {
+      "name": "0",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF08F7)(Repeat)():3"
+     },
+     {
+      "name": "1",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF8877)(Repeat)():3"
+     },
+     {
+      "name": "2",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF48B7)(Repeat)():3"
+     },
+     {
+      "name": "3",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFC837)(Repeat)():3"
+     },
+     {
+      "name": "4",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF28D7)(Repeat)():3"
+     },
+     {
+      "name": "5",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFA857)(Repeat)():3"
+     },
+     {
+      "name": "6",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF6897)(Repeat)():3"
+     },
+     {
+      "name": "7",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFE817)(Repeat)():3"
+     },
+     {
+      "name": "8",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF18E7)(Repeat)():3"
+     },
+     {
+      "name": "9",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF9867)(Repeat)():3"
+     },
+     {
+      "name": "Back",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF14EB)(Repeat)():3"
+     },
+     {
+      "name": "Blue",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF8679)(Repeat)():3"
+     },
+     {
+      "name": "Caption",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF9C63)(Repeat)():3"
+     },
+     {
+      "name": "ChannelDown",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF807F)(Repeat)():3"
+     },
+     {
+      "name": "ChannelPrev",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF58A7)(Repeat)():3"
+     },
+     {
+      "name": "ChannelUp",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF00FF)(Repeat)():3"
+     },
+     {
+      "name": "DirectionDown",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF827D)(Repeat)():3"
+     },
+     {
+      "name": "DirectionLeft",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFE01F)(Repeat)():3"
+     },
+     {
+      "name": "DirectionRight",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF609F)(Repeat)():3"
+     },
+     {
+      "name": "DirectionUp",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF02FD)(Repeat)():3"
+     },
+     {
+      "name": "Exit",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFDA25)(Repeat)():3"
+     },
+     {
+      "name": "FastForward",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF718E)(Repeat)():3"
+     },
+     {
+      "name": "Green",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF8E71)(Repeat)():3"
+     },
+     {
+      "name": "Guide",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFD52A)(Repeat)():3"
+     },
+     {
+      "name": "Home",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF3EC1)(Repeat)():3"
+     },
+     {
+      "name": "In-Start",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFDF20)(Repeat)():3"
+     },
+     {
+      "name": "In-Stop",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF5FA0)(Repeat)():3"
+     },
+     {
+      "name": "Info",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF55AA)(Repeat)():3"
+     },
+     {
+      "name": "InputAv1",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF5AA5)(Repeat)():3"
+     },
+     {
+      "name": "InputComponent1",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFFD02)(Repeat)():3"
+     },
+     {
+      "name": "InputHdmi1",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF738C)(Repeat)():3"
+     },
+     {
+      "name": "InputHdmi2",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF33CC)(Repeat)():3"
+     },
+     {
+      "name": "InputHdmi3",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF9768)(Repeat)():3"
+     },
+     {
+      "name": "InputHdmi4",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF5BA4)(Repeat)():3"
+     },
+     {
+      "name": "InputNext",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFD02F)(Repeat)():3"
+     },
+     {
+      "name": "InputTv",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF6B94)(Repeat)():3"
+     },
+     {
+      "name": "Mute",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF906F)(Repeat)():3"
+     },
+     {
+      "name": "Netflix",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF6A95)(Repeat)():3"
+     },
+     {
+      "name": "OK",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF22DD)(Repeat)():3"
+     },
+     {
+      "name": "Pause",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF5DA2)(Repeat)():3"
+     },
+     {
+      "name": "PictureMode",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFB24D)(Repeat)():3"
+     },
+     {
+      "name": "Play",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF0DF2)(Repeat)():3"
+     },
+     {
+      "name": "PowerOff",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFA35C)(Repeat)():3"
+     },
+     {
+      "name": "PowerOn",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF23DC)(Repeat)():3"
+     },
+     {
+      "name": "PowerToggle",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF10EF)(Repeat)():3"
+     },
+     {
+      "name": "PrimeVideo",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF3AC5)(Repeat)():3"
+     },
+     {
+      "name": "Record",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFBD42)(Repeat)():3"
+     },
+     {
+      "name": "Red",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF4EB1)(Repeat)():3"
+     },
+     {
+      "name": "Return",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF14EB)(Repeat)():3"
+     },
+     {
+      "name": "Rewind",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFF10E)(Repeat)():3"
+     },
+     {
+      "name": "ServiceMenu",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFFF00)(Repeat)():3"
+     },
+     {
+      "name": "Settings",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFC23D)(Repeat)():3"
+     },
+     {
+      "name": "Signal",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF6996)(Repeat)():3"
+     },
+     {
+      "name": "Simplink",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF7E81)(Repeat)():3"
+     },
+     {
+      "name": "Sleep",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF708F)(Repeat)():3"
+     },
+     {
+      "name": "SmartMenu",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF3EC1)(Repeat)():3"
+     },
+     {
+      "name": "SoundMode",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF4AB5)(Repeat)():3"
+     },
+     {
+      "name": "Stop",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF8D72)(Repeat)():3"
+     },
+     {
+      "name": "VolumeDown",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFC03F)(Repeat)():3"
+     },
+     {
+      "name": "VolumeUp",
+      "keycode": "G:Toshiba 32 Bit:(0x20DF40BF)(Repeat)():3"
+     },
+     {
+      "name": "Yellow",
+      "keycode": "G:Toshiba 32 Bit:(0x20DFC639)(Repeat)():3"
+     }
+    ]
+   }
+  },
+  {
+   "name": "Plasma",
+   "device": "Panasonic/TX-P42GT30E",
+   "definition": {
+    "record": {
+     "channelTuning": {
+      "fixedDigits": 2
+     },
+     "codeset": "codesets/bb/bb879b30b00efa87.json",
+     "deviceType": 1,
+     "globalDeviceId": 219481,
+     "inputs": {
+      "list": [
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "AV1"
+         }
+        ],
+        "name": "AV 1"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "AV2"
+         }
+        ],
+        "name": "AV 2"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "Component"
+         }
+        ],
+        "name": "Component"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "HDMI1"
+         }
+        ],
+        "name": "HDMI 1"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "HDMI2"
+         }
+        ],
+        "name": "HDMI 2"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "HDMI3"
+         }
+        ],
+        "name": "HDMI 3"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "HDMI4"
+         }
+        ],
+        "name": "HDMI 4"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "TV"
+         },
+         {
+          "set": "TVInput",
+          "to": "DVBS"
+         }
+        ],
+        "name": "DVB-S"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "TV"
+         },
+         {
+          "set": "TVInput",
+          "to": "DVBC"
+         }
+        ],
+        "name": "DVB-C"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "TV"
+         },
+         {
+          "set": "TVInput",
+          "to": "DVBT"
+         }
+        ],
+        "name": "DVB-T"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "TV"
+         },
+         {
+          "set": "TVInput",
+          "to": "TV"
+         }
+        ],
+        "name": "TV"
+       },
+       {
+        "commands": [
+         {
+          "set": "InputType",
+          "to": "SD Card/USB"
+         }
+        ],
+        "name": "SD Card/USB"
+       }
+      ],
+      "type": 5
+     },
+     "manufacturer": "Panasonic",
+     "model": "TX-P42GT30E",
+     "power": {
+      "off": [
+       {
+        "command": "PowerOff",
+        "durationMs": 1000
+       }
+      ],
+      "on": [
+       {
+        "command": "PowerOn",
+        "durationMs": 1000
+       }
+      ],
+      "onReset": [
+       {
+        "set": "InputType",
+        "to": "TV"
+       }
+      ],
+      "type": "discrete"
+     },
+     "states": {
+      "InputType": {
+       "values": [
+        {
+         "name": "AV1",
+         "select": [
+          {
+           "commands": [
+            "InputVideo1"
+           ],
+           "setType": 2
+          }
+         ]
+        },
+        {
+         "name": "AV2",
+         "select": [
+          {
+           "commands": [
+            "InputVideo2"
+           ],
+           "setType": 2
+          }
+         ]
+        },
+        {
+         "name": "Component",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi1",
+            "AV",
+            "DirectionUp",
+            "OK"
+           ],
+           "setType": 2
+          }
+         ]
+        },
+        {
+         "name": "HDMI1",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi1"
+           ],
+           "setType": 2
+          }
+         ]
+        },
+        {
+         "name": "HDMI2",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi2"
+           ],
+           "setType": 2
+          }
+         ]
+        },
+        {
+         "name": "HDMI3",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi3"
+           ],
+           "setType": 2
+          }
+         ]
+        },
+        {
+         "name": "HDMI4",
+         "select": [
+          {
+           "commands": [
+            "InputHdmi4"
+           ],
+           "setType": 2
+          }
+         ]
+        },
+        {
+         "name": "TV",
+         "select": [
+          {
+           "commands": [
+            "TV"
+           ],
+           "setType": 2
+          }
+         ]
+        },
+        {
+         "name": "SD Card/USB",
+         "select": [
+          {
+           "commands": [
+            "InputVideo1",
+            "AV",
+            "DirectionUp",
+            "OK"
+           ],
+           "setType": 2
+          }
+         ]
+        }
+       ]
+      },
+      "TVInput": {
+       "next": [
+        "TV"
+       ],
+       "values": [
+        {
+         "name": "DVBS"
+        },
+        {
+         "name": "DVBC"
+        },
+        {
+         "name": "DVBT"
+        },
+        {
+         "name": "TV"
+        }
+       ]
+      }
+     },
+     "timing": {
+      "connectedAppPowerOnDelay": 0,
+      "holdInterDeviceDelay": 0,
+      "inputDelay": 1000,
+      "interDeviceDelay": 500,
+      "interKeyDelay": 100,
+      "isInterKeyDelayOptimized": false,
+      "powerOnDelay": 5000,
+      "pressMinRepeats": 3
+     }
+    },
+    "commands": [
+     {
+      "name": "0",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401009899)():3"
+     },
+     {
+      "name": "1",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401000809)():3"
+     },
+     {
+      "name": "2",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401008889)():3"
+     },
+     {
+      "name": "3",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401004849)():3"
+     },
+     {
+      "name": "3D",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040190ED7C)():3"
+     },
+     {
+      "name": "4",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100C8C9)():3"
+     },
+     {
+      "name": "5",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401002829)():3"
+     },
+     {
+      "name": "6",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100A8A9)():3"
+     },
+     {
+      "name": "7",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401006869)():3"
+     },
+     {
+      "name": "8",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100E8E9)():3"
+     },
+     {
+      "name": "9",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401001819)():3"
+     },
+     {
+      "name": "AV",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100A0A1)():3"
+     },
+     {
+      "name": "Aspect",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401207B5A)():3"
+     },
+     {
+      "name": "Blue",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100CECF)():3"
+     },
+     {
+      "name": "ChannelDown",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100ACAD)():3"
+     },
+     {
+      "name": "ChannelPrev",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100ECED)():3"
+     },
+     {
+      "name": "ChannelUp",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401002C2D)():3"
+     },
+     {
+      "name": "ChapterNext",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040190BB2A)():3"
+     },
+     {
+      "name": "ChapterPrev",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401903BAA)():3"
+     },
+     {
+      "name": "DirectTvRecord",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401909100)():3"
+     },
+     {
+      "name": "DirectionDown",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100D2D3)():3"
+     },
+     {
+      "name": "DirectionLeft",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401007273)():3"
+     },
+     {
+      "name": "DirectionRight",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100F2F3)():3"
+     },
+     {
+      "name": "DirectionUp",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401005253)():3"
+     },
+     {
+      "name": "Exit",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100CBCA)():3"
+     },
+     {
+      "name": "FastForward",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040190C352)():3"
+     },
+     {
+      "name": "Green",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401008E8F)():3"
+     },
+     {
+      "name": "Guide",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040190E170)():3"
+     },
+     {
+      "name": "Info",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401009C9D)():3"
+     },
+     {
+      "name": "InputComponent",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401203E1F)():3"
+     },
+     {
+      "name": "InputHDMI3",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401204D6C)():3"
+     },
+     {
+      "name": "InputHdmi1",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401200D2C)():3"
+     },
+     {
+      "name": "InputHdmi2",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401208DAC)():3"
+     },
+     {
+      "name": "InputHdmi4",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040120CDEC)():3"
+     },
+     {
+      "name": "InputPc",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401005E5F)():3"
+     },
+     {
+      "name": "InputVideo1",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401008081)():3"
+     },
+     {
+      "name": "InputVideo2",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401004041)():3"
+     },
+     {
+      "name": "Internet",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040190C958)():3"
+     },
+     {
+      "name": "Menu",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401004A4B)():3"
+     },
+     {
+      "name": "Mute",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401004C4D)():3"
+     },
+     {
+      "name": "OK",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401009293)():3"
+     },
+     {
+      "name": "Option",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040190E574)():3"
+     },
+     {
+      "name": "Pause",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401908312)():3"
+     },
+     {
+      "name": "Play",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401900392)():3"
+     },
+     {
+      "name": "PowerOff",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100FCFD)():3"
+     },
+     {
+      "name": "PowerOn",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401007C7D)():3"
+     },
+     {
+      "name": "PowerToggle",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100BCBD)():3"
+     },
+     {
+      "name": "Record",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040190A332)():3"
+     },
+     {
+      "name": "Red",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401000E0F)():3"
+     },
+     {
+      "name": "Return",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401002B2A)():3"
+     },
+     {
+      "name": "Rewind",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x4004019023B2)():3"
+     },
+     {
+      "name": "Stop",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x4004019043D2)():3"
+     },
+     {
+      "name": "Surround",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401008C8D)():3"
+     },
+     {
+      "name": "TV",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401400C4D)():3"
+     },
+     {
+      "name": "Teletext",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040180C041)():3"
+     },
+     {
+      "name": "TeletextHold",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401809011)():3"
+     },
+     {
+      "name": "TeletextIndex",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401801091)():3"
+     },
+     {
+      "name": "TeletextSubtitle",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040180A021)():3"
+     },
+     {
+      "name": "VieraLink",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401908D1C)():3"
+     },
+     {
+      "name": "VieraTools",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x40040100F7F6)():3"
+     },
+     {
+      "name": "VolumeDown",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401008485)():3"
+     },
+     {
+      "name": "VolumeUp",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401000405)():3"
+     },
+     {
+      "name": "Yellow",
+      "keycode": "G:PanasonicV2 48 Bit:()(0x400401004E4F)():3"
+     }
+    ]
+   }
+  },
+  {
+   "name": "Denon",
+   "device": "Denon/AVR-X4800H",
+   "definition": {
+    "record": {
+     "codeset": "codesets/d5/d5ef7355a399626d.json",
+     "deviceType": 5,
+     "globalDeviceId": 512420,
+     "inputs": {
+      "list": [
+       {
+        "commands": [
+         "InputCbl/Sat"
+        ],
+        "name": "CBL/SAT"
+       },
+       {
+        "commands": [
+         "InputGame2"
+        ],
+        "name": "Game2"
+       },
+       {
+        "commands": [
+         "InputTvAudio"
+        ],
+        "name": "TV Audio"
+       },
+       {
+        "commands": [
+         "InputBlu-ray"
+        ],
+        "name": "Blu-ray"
+       },
+       {
+        "commands": [
+         "InputAux1"
+        ],
+        "name": "AUX1"
+       },
+       {
+        "commands": [
+         "InputBluetooth"
+        ],
+        "name": "Bluetooth"
+       },
+       {
+        "commands": [
+         "InputGame1"
+        ],
+        "name": "Game1"
+       },
+       {
+        "commands": [
+         "InputAux2"
+        ],
+        "name": "AUX 2"
+       },
+       {
+        "commands": [
+         "InputPhono"
+        ],
+        "name": "Phono"
+       },
+       {
+        "commands": [
+         "InputUSB"
+        ],
+        "name": "USB"
+       },
+       {
+        "commands": [
+         "InputMediaPlayer"
+        ],
+        "name": "Media Player"
+       },
+       {
+        "commands": [
+         "InputCd"
+        ],
+        "name": "CD"
+       },
+       {
+        "commands": [
+         "InputHeos"
+        ],
+        "name": "HEOS"
+       },
+       {
+        "commands": [
+         "InputInternetRadio"
+        ],
+        "name": "Internet Radio"
+       },
+       {
+        "commands": [
+         "QuickSelect1"
+        ],
+        "name": "QuickSelect1"
+       },
+       {
+        "commands": [
+         "QuickSelect2"
+        ],
+        "name": "QuickSelect2"
+       },
+       {
+        "commands": [
+         "QuickSelect3"
+        ],
+        "name": "QuickSelect3"
+       },
+       {
+        "commands": [
+         "QuickSelect4"
+        ],
+        "name": "QuickSelect4"
+       },
+       {
+        "commands": [
+         "InputTuner"
+        ],
+        "name": "Tuner"
+       }
+      ],
+      "type": 1
+     },
+     "manufacturer": "Denon",
+     "model": "AVR-X4800H",
+     "power": {
+      "off": [
+       "PowerOff"
+      ],
+      "on": [
+       "PowerOn"
+      ],
+      "type": "discrete"
+     },
+     "timing": {
+      "connectedAppPowerOnDelay": 0,
+      "holdInterDeviceDelay": 0,
+      "inputDelay": 1000,
+      "interDeviceDelay": 500,
+      "interKeyDelay": 100,
+      "isInterKeyDelayOptimized": false,
+      "minRepeats": 3,
+      "powerOnDelay": 2000,
+      "pressMinRepeats": 3
+     }
+    },
+    "commands": [
+     {
+      "name": "+10",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028240C0)():3"
+     },
+     {
+      "name": "0",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0289800B)():3"
+     },
+     {
+      "name": "1",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02808002)():3"
+     },
+     {
+      "name": "2",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0288800A)():3"
+     },
+     {
+      "name": "3",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02848006)():3"
+     },
+     {
+      "name": "4",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028C800E)():3"
+     },
+     {
+      "name": "5",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02828000)():3"
+     },
+     {
+      "name": "6",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028A8008)():3"
+     },
+     {
+      "name": "7",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02868004)():3"
+     },
+     {
+      "name": "8",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028E800C)():3"
+     },
+     {
+      "name": "9",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02818003)():3"
+     },
+     {
+      "name": "AllBaseDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x1804_0x1BFB)():3"
+     },
+     {
+      "name": "AllBassUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x1BF4_0x180B)():3"
+     },
+     {
+      "name": "AllZoneStereoOff",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028ECC40)():3"
+     },
+     {
+      "name": "AllZoneStereoOn",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0286CC48)():3"
+     },
+     {
+      "name": "Back",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028440C6)():3"
+     },
+     {
+      "name": "CenterLevelDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x21BC_0x2243)():3"
+     },
+     {
+      "name": "CenterLevelUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x22BC_0x2143)():3"
+     },
+     {
+      "name": "DTSNEO:XToggle",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028FC845)():3"
+     },
+     {
+      "name": "Dimmer",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02809416)():3"
+     },
+     {
+      "name": "DirectionDown",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02838001)():3"
+     },
+     {
+      "name": "DirectionLeft",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028B8009)():3"
+     },
+     {
+      "name": "DirectionRight",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02878005)():3"
+     },
+     {
+      "name": "DirectionUp",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028D800F)():3"
+     },
+     {
+      "name": "DolbyAtmos",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0283A829)():3"
+     },
+     {
+      "name": "Eco",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02816CEF)():3"
+     },
+     {
+      "name": "Enter",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028F800D)():3"
+     },
+     {
+      "name": "FLLevelDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x238C_0x2073)():3"
+     },
+     {
+      "name": "FLLevelUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x210C_0x22F3)():3"
+     },
+     {
+      "name": "FRLevelDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x202C_0x23D3)():3"
+     },
+     {
+      "name": "FRLevelUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x234C_0x20B3)():3"
+     },
+     {
+      "name": "HdmiMonitorSel1",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028B941D)():3"
+     },
+     {
+      "name": "HdmiMonitorSel2",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02879411)():3"
+     },
+     {
+      "name": "HdmiMonitorSelAuto",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028F9419)():3"
+     },
+     {
+      "name": "Info",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0280E466)():3"
+     },
+     {
+      "name": "InputAm",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02859017)():3"
+     },
+     {
+      "name": "InputAux1",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0289B43F)():3"
+     },
+     {
+      "name": "InputAux2",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0285B433)():3"
+     },
+     {
+      "name": "InputBlu-ray",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0288B43E)():3"
+     },
+     {
+      "name": "InputBluetooth",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028F74F9)():3"
+     },
+     {
+      "name": "InputCbl/Sat",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028CB43A)():3"
+     },
+     {
+      "name": "InputCd",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028434B2)():3"
+     },
+     {
+      "name": "InputDvd",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0280B436)():3"
+     },
+     {
+      "name": "InputFm",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0289901B)():3"
+     },
+     {
+      "name": "InputGame1",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028AB43C)():3"
+     },
+     {
+      "name": "InputGame2",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028EB438)():3"
+     },
+     {
+      "name": "InputHEOS",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028E34B8)():3"
+     },
+     {
+      "name": "InputInternetRadio",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028A74FC)():3"
+     },
+     {
+      "name": "InputMediaPlayer",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0286B430)():3"
+     },
+     {
+      "name": "InputPhono",
+      "keycode": "G:Sharp 15 Bit 2:()(0x230C_0x20F3)():3"
+     },
+     {
+      "name": "InputTVAudio",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0284B432)():3"
+     },
+     {
+      "name": "InputTuner",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028F34B9)():3"
+     },
+     {
+      "name": "InputUsb",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028734B1)():3"
+     },
+     {
+      "name": "ModeDSPSimulation",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0280A82A)():3"
+     },
+     {
+      "name": "ModeDTSNeo6Cinema",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028428AE)():3"
+     },
+     {
+      "name": "ModeDTSNeo6Music",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028C28A6)():3"
+     },
+     {
+      "name": "ModeDTSSurround",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028028AA)():3"
+     },
+     {
+      "name": "ModeDirect/Stereo",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0288C842)():3"
+     },
+     {
+      "name": "ModeDolbyPLIICinema",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0285C84F)():3"
+     },
+     {
+      "name": "ModeDolbyPLIIMusic",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028DC847)():3"
+     },
+     {
+      "name": "ModeDolbyPrologic",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0283C849)():3"
+     },
+     {
+      "name": "ModeGame",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028D28A7)():3"
+     },
+     {
+      "name": "ModeJazzClub",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028AA820)():3"
+     },
+     {
+      "name": "ModeMatrix",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0281A82B)():3"
+     },
+     {
+      "name": "ModeMonoMovie",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028EA824)():3"
+     },
+     {
+      "name": "ModeMovie",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028928A3)():3"
+     },
+     {
+      "name": "ModeMultiChStereo",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0288A822)():3"
+     },
+     {
+      "name": "ModeMusic",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028528AF)():3"
+     },
+     {
+      "name": "ModePure",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028AC840)():3"
+     },
+     {
+      "name": "ModePureDirect",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028CC846)():3"
+     },
+     {
+      "name": "ModeRockArena",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0282A828)():3"
+     },
+     {
+      "name": "ModeStandard",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0282C848)():3"
+     },
+     {
+      "name": "ModeStereo",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0280C84A)():3"
+     },
+     {
+      "name": "ModeVideoGame",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0289A823)():3"
+     },
+     {
+      "name": "ModeVirtual",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0285A82F)():3"
+     },
+     {
+      "name": "Mute",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0284E86E)():3"
+     },
+     {
+      "name": "Option",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028ADC54)():3"
+     },
+     {
+      "name": "PageDown",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0284DC5A)():3"
+     },
+     {
+      "name": "PageUp",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0288DC56)():3"
+     },
+     {
+      "name": "Pause",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02807CFE)():3"
+     },
+     {
+      "name": "Play",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02807CFE)():3"
+     },
+     {
+      "name": "PowerOff",
+      "keycode": "G:Sharp 15 Bit 2:()(0x2178_0x2287)():3"
+     },
+     {
+      "name": "PowerOff-All",
+      "keycode": "G:Sharp 15 Bit 2:()(0x211C_0x22E3)():3"
+     },
+     {
+      "name": "PowerOff-MainZone",
+      "keycode": "G:Sharp 15 Bit 2:()(0x2178_0x2287)():3"
+     },
+     {
+      "name": "PowerOn",
+      "keycode": "G:Sharp 15 Bit 2:()(0x2278_0x2187)():3"
+     },
+     {
+      "name": "PowerOn-All",
+      "keycode": "G:Sharp 15 Bit 2:()(0x221C_0x21E3)():3"
+     },
+     {
+      "name": "PowerOn-MainZone",
+      "keycode": "G:Sharp 15 Bit 2:()(0x2278_0x2187)():3"
+     },
+     {
+      "name": "PowerToggle",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028A0088)():3"
+     },
+     {
+      "name": "PresetNext",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0288DC56)():3"
+     },
+     {
+      "name": "PresetPrev",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0284DC5A)():3"
+     },
+     {
+      "name": "QuickSelect1",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028248C8)():3"
+     },
+     {
+      "name": "QuickSelect2",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028A48C0)():3"
+     },
+     {
+      "name": "QuickSelect3",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028648CC)():3"
+     },
+     {
+      "name": "QuickSelect4",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028E48C4)():3"
+     },
+     {
+      "name": "RestorerMode",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028244C4)():3"
+     },
+     {
+      "name": "Return",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028440C6)():3"
+     },
+     {
+      "name": "SBL-LevelDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x235C_0x20A3)():3"
+     },
+     {
+      "name": "SBL-LevelUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x239C_0x2063)():3"
+     },
+     {
+      "name": "SBR-LevelDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x207C_0x2383)():3"
+     },
+     {
+      "name": "SBR-LevelUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x23BC_0x2043)():3"
+     },
+     {
+      "name": "SLLevelDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x20BC_0x2343)():3"
+     },
+     {
+      "name": "SLLevelUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x233C_0x20C3)():3"
+     },
+     {
+      "name": "SRLevelDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x23AC_0x2053)():3"
+     },
+     {
+      "name": "SRLevelUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x21AC_0x2253)():3"
+     },
+     {
+      "name": "SW1LevelDown",
+      "keycode": "G:Sharp 15 Bit 2:()(0x229C_0x2163)():3"
+     },
+     {
+      "name": "SW1LevelUp",
+      "keycode": "G:Sharp 15 Bit 2:()(0x20DC_0x2323)():3"
+     },
+     {
+      "name": "Setup",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028C40CE)():3"
+     },
+     {
+      "name": "SkipBack",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028C7CF2)():3"
+     },
+     {
+      "name": "SkipForward",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02827CFC)():3"
+     },
+     {
+      "name": "Sleep",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02822CAC)():3"
+     },
+     {
+      "name": "SpeakerA",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028644C0)():3"
+     },
+     {
+      "name": "SpeakerA+B",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028544C3)():3"
+     },
+     {
+      "name": "SpeakerB",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028144C7)():3"
+     },
+     {
+      "name": "SuuroundBack",
+      "keycode": "G:Sharp 15 Bit 2:()(0x1904_0x1AFB)():3"
+     },
+     {
+      "name": "TuneDown",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C028C7CF2)():3"
+     },
+     {
+      "name": "TuneUp",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C02827CFC)():3"
+     },
+     {
+      "name": "VolumeDown",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0288E862)():3"
+     },
+     {
+      "name": "VolumeUp",
+      "keycode": "G:Sharp 48 Bit 2:()(0x2A4C0280E86A)():3"
+     }
+    ]
+   }
+  },
+  {
+   "name": "KPN",
+   "device": "KPN/TV6000COK",
+   "poweredOnBetweenActivities": true,
+   "definition": {
+    "record": {
+     "codeset": "codesets/8c/8c024abd1c717482.json",
+     "deviceType": 18,
+     "globalDeviceId": 202289,
+     "inputs": {
+      "list": [
+       {
+        "name": "Tuner"
+       }
+      ],
+      "type": 6
+     },
+     "manufacturer": "KPN",
+     "model": "TV6000COK",
+     "power": {
+      "toggle": [
+       "PowerToggle"
+      ],
+      "type": "toggle"
+     },
+     "timing": {
+      "connectedAppPowerOnDelay": 0,
+      "holdInterDeviceDelay": 0,
+      "inputDelay": 0,
+      "interDeviceDelay": 500,
+      "interKeyDelay": 100,
+      "isInterKeyDelayOptimized": false,
+      "minRepeats": 1,
+      "powerOnDelay": 1500,
+      "pressMinRepeats": 1
+     }
+    },
+    "commands": [
+     {
+      "name": "0",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF08F7)(Repeat)():3"
+     },
+     {
+      "name": "1",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF8877)(Repeat)():3"
+     },
+     {
+      "name": "2",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF48B7)(Repeat)():3"
+     },
+     {
+      "name": "3",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFC837)(Repeat)():3"
+     },
+     {
+      "name": "4",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF28D7)(Repeat)():3"
+     },
+     {
+      "name": "5",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFA857)(Repeat)():3"
+     },
+     {
+      "name": "6",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF6897)(Repeat)():3"
+     },
+     {
+      "name": "7",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFE817)(Repeat)():3"
+     },
+     {
+      "name": "8",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF18E7)(Repeat)():3"
+     },
+     {
+      "name": "9",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF9867)(Repeat)():3"
+     },
+     {
+      "name": "Advance",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF4AB5)(Repeat)():3"
+     },
+     {
+      "name": "Blue",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFF00F)(Repeat)():3"
+     },
+     {
+      "name": "ChannelDown",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF807F)(Repeat)():3"
+     },
+     {
+      "name": "ChannelPrev",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF7887)(Repeat)():3"
+     },
+     {
+      "name": "ChannelUp",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF00FF)(Repeat)():3"
+     },
+     {
+      "name": "DVR",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFF807)(Repeat)():3"
+     },
+     {
+      "name": "DirectionDown",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF807F)(Repeat)():3"
+     },
+     {
+      "name": "DirectionLeft",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFC03F)(Repeat)():3"
+     },
+     {
+      "name": "DirectionRight",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF40BF)(Repeat)():3"
+     },
+     {
+      "name": "DirectionUp",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF00FF)(Repeat)():3"
+     },
+     {
+      "name": "Exit",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF38C7)(Repeat)():3"
+     },
+     {
+      "name": "FastForward",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF12ED)(Repeat)():3"
+     },
+     {
+      "name": "Green",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFB04F)(Repeat)():3"
+     },
+     {
+      "name": "Guide",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFD827)(Repeat)():3"
+     },
+     {
+      "name": "Info",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFB847)(Repeat)():3"
+     },
+     {
+      "name": "Menu",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF58A7)(Repeat)():3"
+     },
+     {
+      "name": "Mute",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF30CF)(Repeat)():3"
+     },
+     {
+      "name": "Pause",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF609F)(Repeat)():3"
+     },
+     {
+      "name": "Play",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF629D)(Repeat)():3"
+     },
+     {
+      "name": "PowerToggle",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF50AF)(Repeat)():3"
+     },
+     {
+      "name": "Record",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFD22D)(Repeat)():3"
+     },
+     {
+      "name": "Red",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFD02F)(Repeat)():3"
+     },
+     {
+      "name": "Replay",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF0AF5)(Repeat)():3"
+     },
+     {
+      "name": "Rewind",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFA25D)(Repeat)():3"
+     },
+     {
+      "name": "Select",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFF807)(Repeat)():3"
+     },
+     {
+      "name": "Stop",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF52AD)(Repeat)():3"
+     },
+     {
+      "name": "Teletext",
+      "keycode": "G:Toshiba 32 Bit:(0x20FFE21D)(Repeat)():3"
+     },
+     {
+      "name": "Yellow",
+      "keycode": "G:Toshiba 32 Bit:(0x20FF708F)(Repeat)():3"
+     }
+    ]
+   }
+  },
+  {
+   "name": "Kodi",
+   "device": "Plex/Plex_Player",
+   "definition": {
+    "record": {
+     "channelTuning": {
+      "fixedDigits": 3
+     },
+     "codeset": "codesets/cd/cdab49cb0013d6d3.json",
+     "deviceType": 35,
+     "globalDeviceId": 174311,
+     "inputs": {
+      "list": [
+       {
+        "name": "Media"
+       }
+      ],
+      "type": 6
+     },
+     "manufacturer": "Plex",
+     "model": "Plex Player",
+     "power": {
+      "toggle": [
+       "PowerToggle"
+      ],
+      "type": "toggle"
+     },
+     "timing": {
+      "connectedAppPowerOnDelay": 0,
+      "holdInterDeviceDelay": 0,
+      "inputDelay": 0,
+      "interDeviceDelay": 500,
+      "interKeyDelay": 100,
+      "isInterKeyDelayOptimized": false,
+      "minRepeats": 1,
+      "powerOnDelay": 1500,
+      "pressMinRepeats": 1
+     }
+    },
+    "commands": [
+     {
+      "name": "0",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1E059)(Repeat)():3"
+     },
+     {
+      "name": "1",
+      "keycode": "G:Toshiba 32 Bit:(0x77E150E9)(Repeat)():3"
+     },
+     {
+      "name": "2",
+      "keycode": "G:Toshiba 32 Bit:(0x77E130E9)(Repeat)():3"
+     },
+     {
+      "name": "3",
+      "keycode": "G:Toshiba 32 Bit:(0x77E190E9)(Repeat)():3"
+     },
+     {
+      "name": "4",
+      "keycode": "G:Toshiba 32 Bit:(0x77E160E9)(Repeat)():3"
+     },
+     {
+      "name": "5",
+      "keycode": "G:Toshiba 32 Bit:(0x77E19019)(Repeat)():3"
+     },
+     {
+      "name": "6",
+      "keycode": "G:Toshiba 32 Bit:(0x77E16019)(Repeat)():3"
+     },
+     {
+      "name": "7",
+      "keycode": "G:Toshiba 32 Bit:(0x77E11099)(Repeat)():3"
+     },
+     {
+      "name": "8",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1E099)(Repeat)():3"
+     },
+     {
+      "name": "9",
+      "keycode": "G:Toshiba 32 Bit:(0x77E11059)(Repeat)():3"
+     },
+     {
+      "name": "Aspect",
+      "keycode": "G:Toshiba 32 Bit:(0x77E150B9)(Repeat)():3"
+     },
+     {
+      "name": "Blue",
+      "keycode": "G:Toshiba 32 Bit:(0x77E140F9)(Repeat)():3"
+     },
+     {
+      "name": "ChannelDown",
+      "keycode": "G:Toshiba 32 Bit:(0x77E13079)(Repeat)():3"
+     },
+     {
+      "name": "ChannelUp",
+      "keycode": "G:Toshiba 32 Bit:(0x77E15079)(Repeat)():3"
+     },
+     {
+      "name": "Clear",
+      "keycode": "G:Toshiba 32 Bit:(0x77E12059)(Repeat)():3"
+     },
+     {
+      "name": "DirectionDown",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1B069)(Repeat)():3"
+     },
+     {
+      "name": "DirectionLeft",
+      "keycode": "G:Toshiba 32 Bit:(0x77E11069)(Repeat)():3"
+     },
+     {
+      "name": "DirectionRight",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1E069)(Repeat)():3"
+     },
+     {
+      "name": "DirectionUp",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1D069)(Repeat)():3"
+     },
+     {
+      "name": "Enter",
+      "keycode": "G:Toshiba 32 Bit:(0x77E14099)(Repeat)():3"
+     },
+     {
+      "name": "Exit",
+      "keycode": "G:Toshiba 32 Bit:(0x77E150D9)(Repeat)():3"
+     },
+     {
+      "name": "F1",
+      "keycode": "G:Toshiba 32 Bit:(0x77E190D9)(Repeat)():3"
+     },
+     {
+      "name": "F10",
+      "keycode": "G:Toshiba 32 Bit:(0x77E16079)(Repeat)():3"
+     },
+     {
+      "name": "F11",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1A079)(Repeat)():3"
+     },
+     {
+      "name": "F12",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1C079)(Repeat)():3"
+     },
+     {
+      "name": "F13",
+      "keycode": "G:Toshiba 32 Bit:(0x77E190B9)(Repeat)():3"
+     },
+     {
+      "name": "F14",
+      "keycode": "G:Toshiba 32 Bit:(0x77E160B9)(Repeat)():3"
+     },
+     {
+      "name": "F2",
+      "keycode": "G:Toshiba 32 Bit:(0x77E160D9)(Repeat)():3"
+     },
+     {
+      "name": "F3",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1A0D9)(Repeat)():3"
+     },
+     {
+      "name": "F4",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1C0D9)(Repeat)():3"
+     },
+     {
+      "name": "F5",
+      "keycode": "G:Toshiba 32 Bit:(0x77E11005)(Repeat)():3"
+     },
+     {
+      "name": "F6",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1E005)(Repeat)():3"
+     },
+     {
+      "name": "F7",
+      "keycode": "G:Toshiba 32 Bit:(0x77E12005)(Repeat)():3"
+     },
+     {
+      "name": "F8",
+      "keycode": "G:Toshiba 32 Bit:(0x77E14005)(Repeat)():3"
+     },
+     {
+      "name": "F9",
+      "keycode": "G:Toshiba 32 Bit:(0x77E19079)(Repeat)():3"
+     },
+     {
+      "name": "FastForward",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1B059)(Repeat)():3"
+     },
+     {
+      "name": "Green",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1E0F9)(Repeat)():3"
+     },
+     {
+      "name": "Guide",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1A0B9)(Repeat)():3"
+     },
+     {
+      "name": "Info",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1D099)(Repeat)():3"
+     },
+     {
+      "name": "LargeDown",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1B0F9)(Repeat)():3"
+     },
+     {
+      "name": "LargeUp",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1D0F9)(Repeat)():3"
+     },
+     {
+      "name": "Menu",
+      "keycode": "G:Toshiba 32 Bit:(0x77E14069)(Repeat)():3"
+     },
+     {
+      "name": "Mute",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1A019)(Repeat)():3"
+     },
+     {
+      "name": "Ok",
+      "keycode": "G:Toshiba 32 Bit:(0x77E12069)(Repeat)():3"
+     },
+     {
+      "name": "Pause",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1C019)(Repeat)():3"
+     },
+     {
+      "name": "Play",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1C0E9)(Repeat)():3"
+     },
+     {
+      "name": "PowerToggle",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1C0B9)(Repeat)():3"
+     },
+     {
+      "name": "Prev",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1B099)(Repeat)():3"
+     },
+     {
+      "name": "Queue",
+      "keycode": "G:Toshiba 32 Bit:(0x77E130B9)(Repeat)():3"
+     },
+     {
+      "name": "Record",
+      "keycode": "G:Toshiba 32 Bit:(0x77E130D9)(Repeat)():3"
+     },
+     {
+      "name": "Red",
+      "keycode": "G:Toshiba 32 Bit:(0x77E110F9)(Repeat)():3"
+     },
+     {
+      "name": "Rewind",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1D059)(Repeat)():3"
+     },
+     {
+      "name": "SkipBackward",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1D005)(Repeat)():3"
+     },
+     {
+      "name": "SkipForward",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1B005)(Repeat)():3"
+     },
+     {
+      "name": "Sleep",
+      "keycode": "G:Toshiba 32 Bit:(0x77E14059)(Repeat)():3"
+     },
+     {
+      "name": "Stop",
+      "keycode": "G:Toshiba 32 Bit:(0x77E1A0E9)(Repeat)():3"
+     },
+     {
+      "name": "VolumeDown",
+      "keycode": "G:Toshiba 32 Bit:(0x77E13019)(Repeat)():3"
+     },
+     {
+      "name": "VolumeUp",
+      "keycode": "G:Toshiba 32 Bit:(0x77E15019)(Repeat)():3"
+     },
+     {
+      "name": "Yellow",
+      "keycode": "G:Toshiba 32 Bit:(0x77E120F9)(Repeat)():3"
+     }
+    ]
+   }
+  }
+ ],
+ "activities": [
+  {
+   "name": "TV kijken",
+   "type": "WatchTV",
+   "devices": [
+    {
+     "device": "LG TV",
+     "input": "HDMI 1",
+     "roles": [
+      "Display"
+     ]
+    },
+    {
+     "device": "KPN",
+     "roles": [
+      "ChannelChanging"
+     ]
+    },
+    {
+     "device": "Denon",
+     "input": "CBL/SAT",
+     "roles": [
+      "Volume"
+     ]
+    }
+   ],
+   "screen": [
+    {
+     "device": "KPN",
+     "command": "Teletext"
+    },
+    {
+     "device": "KPN",
+     "command": "DVR"
+    }
+   ]
+  },
+  {
+   "name": "Film kijken",
+   "type": "WatchDvd",
+   "devices": [
+    {
+     "device": "Plasma",
+     "input": "HDMI 2",
+     "roles": [
+      "Display"
+     ]
+    },
+    {
+     "device": "Kodi",
+     "roles": [
+      "PlayMovie"
+     ]
+    },
+    {
+     "device": "Denon",
+     "input": "Media Player",
+     "roles": [
+      "Volume"
+     ]
+    }
+   ],
+   "screen": [
+    {
+     "device": "Plasma",
+     "command": "Aspect"
+    },
+    {
+     "device": "Plasma",
+     "command": "3D"
+    },
+    {
+     "device": "Kodi",
+     "command": "Sleep"
+    }
+   ]
+  },
+  {
+   "name": "Kodi kijken",
+   "type": "Custom",
+   "devices": [
+    {
+     "device": "LG TV",
+     "input": "HDMI 3",
+     "roles": [
+      "Display",
+      "Volume"
+     ]
+    },
+    {
+     "device": "Kodi",
+     "roles": [
+      "PlayMovie"
+     ]
+    }
+   ],
+   "screen": [
+    {
+     "device": "Kodi",
+     "command": "Sleep"
+    }
+   ]
+  },
+  {
+   "name": "Plasma kijken",
+   "type": "Custom",
+   "devices": [
+    {
+     "device": "Plasma",
+     "input": "HDMI 1",
+     "roles": [
+      "Display",
+      "Volume"
+     ]
+    },
+    {
+     "device": "KPN",
+     "roles": [
+      "ChannelChanging"
+     ]
+    }
+   ],
+   "screen": [
+    {
+     "device": "KPN",
+     "command": "Teletext"
+    },
+    {
+     "device": "KPN",
+     "command": "DVR"
+    },
+    {
+     "device": "Plasma",
+     "command": "Aspect"
+    },
+    {
+     "sequence": "Radio",
+     "steps": [
+      {
+       "device": "KPN",
+       "scan": 24
+      },
+      {
+       "pause": 20
+      },
+      {
+       "device": "KPN",
+       "scan": 47
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "choices": {
+  "letters": "oxanium",
+  "blendLetters": true,
+  "letterInks": {
+   "shadowed": 65535,
+   "plain": 8452,
+   "shadow": 0
+  },
+  "faceWeights": {
+   "F15": "SemiBold",
+   "F14W": "SemiBold",
+   "F14": "SemiBold",
+   "F13": "SemiBold",
+   "F11": "SemiBold",
+   "F10": "SemiBold",
+   "R15": "Regular",
+   "R14": "Regular",
+   "R13": "Regular",
+   "One16": "Bold",
+   "One15": "Bold",
+   "OneR15": "Regular",
+   "One14": "Bold",
+   "One11": "SemiBold"
+  },
+  "pictures": "ours",
+  "icons": {
+   "start up picture": "remote",
+   "corner mark": "wifi",
+   "USB Connected": "usb",
+   "Low Battery": "battery-alert-variant-outline",
+   "battery blank screen": "battery-off-outline",
+   "upgrade and learn blank screens": "sync",
+   "charging 1": "battery-charging-20",
+   "charging 2": "battery-charging-50",
+   "charging 3": "battery-charging-80",
+   "charging 4": "battery-charging-100",
+   "charged": "battery-check-outline"
+  },
+  "iconColour": 65535,
+  "iconBackground": 10565,
+  "backgrounds": "state colours",
+  "stateColours": {
+   "device": 45319,
+   "activity": 4408,
+   "idle": 1094
+  },
+  "oneLookColour": 8452,
+  "barColour": 65535,
+  "labelTooWide": "smaller font",
+  "activityKeys": {
+   "WatchTV": "Watch TV",
+   "WatchDvd": "Watch a Movie",
+   "ListenToMusic": "Listen to Music",
+   "Custom": null
+  },
+  "settings": {
+   "glowTime": 20,
+   "tiltSensor": true,
+   "remoteAssistant": false,
+   "bootStep": false,
+   "tourShown": false,
+   "delayRestore": false,
+   "help": false
+  },
+  "delays": {
+   "powerOn": 15,
+   "interDevice": 5
+  }
+ },
+ "protocols": [
+  {
+   "carrierHz": 36400,
+   "definition": {
+    "Attributes": [],
+    "CarrierFrequency": 36400,
+    "CodeSegments": [],
+    "ControlSection": null,
+    "Flags": [],
+    "HoldDelay": null,
+    "HoldMinimumRepeats": null,
+    "IRSegments": [
+     {
+      "Header": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 3480
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 1730
+       }
+      ],
+      "Name": "PanasonicV2 48 Bit",
+      "Payload": {
+       "EncodingType": 0,
+       "Encodings": [
+        {
+         "Atoms": [
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 1,
+           "Value": 425
+          },
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 0,
+           "Value": 450
+          }
+         ],
+         "BitType": 0
+        },
+        {
+         "Atoms": [
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 1,
+           "Value": 425
+          },
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 0,
+           "Value": 1320
+          }
+         ],
+         "BitType": 1
+        }
+       ],
+       "NumberOfBits": 48,
+       "ToggleBit": null
+      },
+      "TotalLength": 0,
+      "Trailer": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 425
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 74800
+       }
+      ]
+     }
+    ],
+    "Id-": 234,
+    "IsFullSequence": null,
+    "IsPadded": null,
+    "IsPublic": true,
+    "KeyCode": {
+     "Finish": null,
+     "Repeat": [
+      {
+       "SegmentName": "PanasonicV2 48 Bit",
+       "SegmentType": 1
+      }
+     ],
+     "Start": null
+    },
+    "Name": "PanasonicV2 48 Bit",
+    "NumberOfLinkedLanguage": 0,
+    "PressMinimumRepeats": null,
+    "Rating": null,
+    "RelatedProtocols": [],
+    "SendingType": 0,
+    "Status": null,
+    "__type": "IrProtocol"
+   },
+   "irp": "{36.4k,msb}<425u,-450u|425u,-1320u>(3480u,-1730u,Code0:48,425u,-74800u)*",
+   "keycodeFields": {
+    "Code0": {
+     "bits": 48,
+     "segment": "0",
+     "sequence": "repeat",
+     "toggleBit": null,
+     "token": 0
+    }
+   },
+   "logitechProtocolId": 234,
+   "name": "PanasonicV2 48 Bit",
+   "pressMinimumRepeats": null,
+   "standardProtocol": "Denon-K"
+  },
+  {
+   "carrierHz": 37000,
+   "definition": {
+    "Attributes": [],
+    "CarrierFrequency": 37000,
+    "CodeSegments": [
+     {
+      "Atoms": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 100000
+       }
+      ],
+      "Header": [],
+      "Name": "Sharp 15 Bit 2 KeyCodeSpace",
+      "Payload": null,
+      "TotalLength": 0,
+      "Trailer": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 100000
+       }
+      ]
+     }
+    ],
+    "ControlSection": null,
+    "Flags": [],
+    "HoldDelay": null,
+    "HoldMinimumRepeats": null,
+    "IRSegments": [
+     {
+      "Header": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 270
+       }
+      ],
+      "Name": "Sharp 15 Bit 2",
+      "Payload": {
+       "EncodingType": 0,
+       "Encodings": [
+        {
+         "Atoms": [
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 0,
+           "Value": 790
+          },
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 1,
+           "Value": 260
+          }
+         ],
+         "BitType": 0
+        },
+        {
+         "Atoms": [
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 0,
+           "Value": 1850
+          },
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 1,
+           "Value": 260
+          }
+         ],
+         "BitType": 1
+        }
+       ],
+       "NumberOfBits": 15,
+       "ToggleBit": null
+      },
+      "TotalLength": 67792,
+      "Trailer": []
+     }
+    ],
+    "Id-": 195,
+    "IsFullSequence": null,
+    "IsPadded": null,
+    "IsPublic": true,
+    "KeyCode": {
+     "Finish": null,
+     "Repeat": [
+      {
+       "SegmentName": "Sharp 15 Bit 2",
+       "SegmentType": 1
+      },
+      {
+       "SegmentName": "Sharp 15 Bit 2",
+       "SegmentType": 1
+      }
+     ],
+     "Start": null
+    },
+    "Name": "Sharp 15 Bit 2",
+    "NumberOfLinkedLanguage": 0,
+    "PressMinimumRepeats": null,
+    "Rating": null,
+    "RelatedProtocols": [],
+    "SendingType": 0,
+    "Status": null,
+    "__type": "IrProtocol"
+   },
+   "irp": "{37.0k,msb}<-790u,260u|-1850u,260u>(270u,Code0:15,^67792u,270u,Code1:15,^67792u)*",
+   "keycodeFields": {
+    "Code0": {
+     "bits": 15,
+     "segment": "0",
+     "sequence": "repeat",
+     "toggleBit": null,
+     "token": 0
+    },
+    "Code1": {
+     "bits": 15,
+     "segment": "0",
+     "sequence": "repeat",
+     "toggleBit": null,
+     "token": 1
+    }
+   },
+   "logitechProtocolId": 195,
+   "name": "Sharp 15 Bit 2",
+   "pressMinimumRepeats": null,
+   "standardProtocol": "Denon"
+  },
+  {
+   "carrierHz": 38000,
+   "definition": {
+    "Attributes": [],
+    "CarrierFrequency": 38000,
+    "CodeSegments": [],
+    "ControlSection": null,
+    "Flags": [],
+    "HoldDelay": null,
+    "HoldMinimumRepeats": null,
+    "IRSegments": [
+     {
+      "Header": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 3364
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 1682
+       }
+      ],
+      "Name": "Sharp 48 Bit 2",
+      "Payload": {
+       "EncodingType": 0,
+       "Encodings": [
+        {
+         "Atoms": [
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 1,
+           "Value": 408
+          },
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 0,
+           "Value": 431
+          }
+         ],
+         "BitType": 0
+        },
+        {
+         "Atoms": [
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 1,
+           "Value": 408
+          },
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 0,
+           "Value": 1272
+          }
+         ],
+         "BitType": 1
+        }
+       ],
+       "NumberOfBits": 48,
+       "ToggleBit": null
+      },
+      "TotalLength": 0,
+      "Trailer": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 408
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 73611
+       }
+      ]
+     }
+    ],
+    "Id-": 476,
+    "IsFullSequence": null,
+    "IsPadded": null,
+    "IsPublic": false,
+    "KeyCode": {
+     "Finish": null,
+     "Repeat": [
+      {
+       "SegmentName": "Sharp 48 Bit 2",
+       "SegmentType": 1
+      }
+     ],
+     "Start": null
+    },
+    "Name": "Sharp 48 Bit 2",
+    "NumberOfLinkedLanguage": 0,
+    "PressMinimumRepeats": null,
+    "Rating": null,
+    "RelatedProtocols": [],
+    "SendingType": 0,
+    "Status": null,
+    "__type": "IrProtocol"
+   },
+   "irp": "{38.0k,msb}<408u,-431u|408u,-1272u>(3364u,-1682u,Code0:48,408u,-73611u)*",
+   "keycodeFields": {
+    "Code0": {
+     "bits": 48,
+     "segment": "0",
+     "sequence": "repeat",
+     "toggleBit": null,
+     "token": 0
+    }
+   },
+   "logitechProtocolId": 476,
+   "name": "Sharp 48 Bit 2",
+   "pressMinimumRepeats": null,
+   "standardProtocol": "Denon-K"
+  },
+  {
+   "carrierHz": 38000,
+   "definition": {
+    "Attributes": [],
+    "CarrierFrequency": 38000,
+    "CodeSegments": [
+     {
+      "Atoms": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 8990
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 2230
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 568
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 96077
+       }
+      ],
+      "Header": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 8990
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 2230
+       }
+      ],
+      "Name": "Toshiba 32 Bit KeyCodeRepeat",
+      "Payload": null,
+      "TotalLength": 0,
+      "Trailer": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 568
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 96077
+       }
+      ]
+     }
+    ],
+    "ControlSection": null,
+    "Flags": [],
+    "HoldDelay": null,
+    "HoldMinimumRepeats": null,
+    "IRSegments": [
+     {
+      "Header": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 8990
+       },
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 0,
+        "Value": 4490
+       }
+      ],
+      "Name": "Toshiba 32 Bit",
+      "Payload": {
+       "EncodingType": 0,
+       "Encodings": [
+        {
+         "Atoms": [
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 1,
+           "Value": 568
+          },
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 0,
+           "Value": 552
+          }
+         ],
+         "BitType": 0
+        },
+        {
+         "Atoms": [
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 1,
+           "Value": 568
+          },
+          {
+           "MaxValue": null,
+           "MinValue": null,
+           "Type": 0,
+           "Value": 1662
+          }
+         ],
+         "BitType": 1
+        }
+       ],
+       "NumberOfBits": 32,
+       "ToggleBit": null
+      },
+      "TotalLength": 107870,
+      "Trailer": [
+       {
+        "MaxValue": null,
+        "MinValue": null,
+        "Type": 1,
+        "Value": 568
+       }
+      ]
+     }
+    ],
+    "Id-": 2,
+    "IsFullSequence": true,
+    "IsPadded": true,
+    "IsPublic": true,
+    "KeyCode": {
+     "Finish": null,
+     "Repeat": [
+      {
+       "SegmentName": "Toshiba 32 Bit KeyCodeRepeat",
+       "SegmentType": 0
+      }
+     ],
+     "Start": [
+      {
+       "SegmentName": "Toshiba 32 Bit",
+       "SegmentType": 1
+      }
+     ]
+    },
+    "Name": "Toshiba 32 Bit",
+    "NumberOfLinkedLanguage": 0,
+    "PressMinimumRepeats": 1,
+    "Rating": null,
+    "RelatedProtocols": [],
+    "SendingType": 0,
+    "Status": null,
+    "__type": "IrProtocol"
+   },
+   "irp": "{38.0k,msb}<568u,-552u|568u,-1662u>(8990u,-4490u,Code0:32,568u,^107870u)(8990u,-2230u,568u,-96077u)*",
+   "keycodeFields": {
+    "Code0": {
+     "bits": 32,
+     "segment": "0",
+     "sequence": "start",
+     "toggleBit": null,
+     "token": 0
+    }
+   },
+   "logitechProtocolId": 2,
+   "name": "Toshiba 32 Bit",
+   "pressMinimumRepeats": 1,
+   "standardProtocol": "NEC1"
+  }
+ ]
+}
