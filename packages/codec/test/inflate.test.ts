@@ -154,7 +154,8 @@ test('every PNG file in the lab inflates to node:zlib\'s bytes', skipWithoutLab(
     assert.ok(sameOutcome(outcome(() => new Uint8Array(inflateSync(data))), outcome(() => inflateZlib(data))), path);
   }
   // Two of the files are not one whole PNG, so there is no image data to compare.
-  assert.deepEqual({ files: pngs.length, whole }, { files: 4354, whole: 4352 });
+  // Two more on 9 November 2026: the Harmony Touch's background and its twin, rebuilt into `work/recipe-references/`.
+  assert.deepEqual({ files: pngs.length, whole }, { files: 4356, whole: 4354 });
 });
 
 const u16 = (bytes: Uint8Array, at: number): number => bytes[at]! | (bytes[at + 1]! << 8);

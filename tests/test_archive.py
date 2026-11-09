@@ -58,10 +58,14 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # before it was 5c191c6b.
 # Repinned for a paragraph added in place under decision 29, `todo-touch.md` 6.3.1: the recovery requests on
 # the Touch's request rail behind a flag of their own. The digest before it was 5eb71fc4.
-DECISIONS_DIGEST = "3a59f41f1a3e15e1c07b33c6b0b01734f29d2fff8cbc5fe582adae7b06bb9c72"
+# Repinned for decisions 31 and 32, two new entries: the libraries' structure as a rule with tests, `todo.md`
+# 7.3.9, and our own builds held as references by recipe and fingerprint, plan 014, corrected in place the day it
+# was taken. 31 had been added without repinning, so this check failed from 7.3.9 until 7.3.11. The digest before
+# them was 3a59f41f.
+DECISIONS_DIGEST = "ca39582a6b7056331834fa87f39bb8b154e2602076f0e50db69fb7eaf3d324af"
 
 SECTIONS = 436
-DECISIONS = 30
+DECISIONS = 32
 
 
 def anchor_problems(findings, decisions):
