@@ -1212,6 +1212,113 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         self.assertIn('const USER_CONFIGS = INVENTORY.map(([name]) => name);', source,
                       'section 151 stopped deriving its population from the table')
 
+    #: The families of compiles in `packages/lab/src/tiers.ts`, each with its count. A test walks a family's
+    #: pair on a step and its whole list in the slow tier, so these are the populations every per family
+    #: claim is made over. They replace the hand written copies in the test files, which nothing compared:
+    #: 127 lists of five or more names in 86 files when the test review counted them, one commented "as
+    #: `fonttable.test.ts`'s". The counts are the lists the copies held on 9 November 2026.
+    FAMILIES = {
+        'ONE_FAMILY': 19,
+        'ONE_SKIN_54_FAMILY': 16,
+        'ARCH14_FAMILY': 13,
+        'LATER_650_FAMILY': 8,
+        'ARCH14_22_FAMILY': 22,
+        'H650_FAMILY': 13,
+        'FILE_BASED_FAMILY': 5,
+        'ARCH8_FAMILY': 8,
+    }
+
+    def _family(self, constant):
+        """A family's `full` and `pair` names, read out of `packages/lab/src/tiers.ts` statically."""
+        source = read_repo_file('packages/lab/src/tiers.ts')
+        declaration = 'export const %s: Family = {' % constant
+        self.assertIn(declaration, source, 'packages/lab no longer declares %s' % constant)
+        body = source[source.index(declaration):]
+        body = body[:body.index('\n};')]
+
+        def names(field):
+            part = body[body.index('%s: [' % field):]
+            return re.findall(r"'([a-z0-9_]+)'", part[:part.index(']')])
+        return names('full'), names('pair')
+
+    def test_the_family_lists_are_every_family_the_module_declares(self):
+        """No family is declared in the module and left out of the counts above, so none goes unchecked."""
+        source = read_repo_file('packages/lab/src/tiers.ts')
+        declared = re.findall(r'^export const ([A-Z0-9_]+): Family = \{', source, re.M)
+        self.assertEqual(sorted(declared), sorted(self.FAMILIES))
+
+    def test_each_family_list_holds_its_count_and_its_pair_inside_it(self):
+        import lab
+        for constant, count in self.FAMILIES.items():
+            full, pair = self._family(constant)
+            self.assertEqual(len(full), count, '%s holds %d names, not %d' % (constant, len(full), count))
+            self.assertEqual(len(set(full)), len(full), '%s names a compile twice' % constant)
+            self.assertEqual(len(set(pair)), 2, '%s: a pair is two different compiles' % constant)
+            self.assertLessEqual(set(pair), set(full), '%s: its pair is outside its list' % constant)
+            self.assertLessEqual(set(full), set(lab.IMAGES),
+                                 '%s names a fixture the lab does not register' % constant)
+
+    def test_the_family_lists_nest_and_hold_the_user_configs_of_their_models(self):
+        """Which family is inside which, and the user configs of each model inside its family.
+
+        The second half is this class's comparison one boundary further in: the corpus lists above and the
+        family lists are populations of the same files, so a user config of a family's model that its list
+        leaves out would make a claim about every compile of the family skip one the corpus counts.
+        """
+        import lab
+        full = {constant: set(self._family(constant)[0]) for constant in self.FAMILIES}
+        self.assertLess(full['ONE_SKIN_54_FAMILY'], full['ONE_FAMILY'])
+        self.assertEqual(sorted(full['ONE_FAMILY'] - full['ONE_SKIN_54_FAMILY']),
+                         ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'],
+                         'the three outside skin 54: the European pair and the Dutch one')
+        self.assertLess(full['ARCH14_FAMILY'], full['ARCH14_22_FAMILY'])
+        self.assertEqual(full['ARCH14_22_FAMILY'] - full['ARCH14_FAMILY'],
+                         full['LATER_650_FAMILY'] | {'h650_issue36_config'})
+        self.assertLess(full['H650_FAMILY'], full['ARCH14_22_FAMILY'])
+        self.assertEqual(sorted(full['H650_FAMILY']),
+                         sorted(n for n in full['ARCH14_22_FAMILY'] if n.startswith('h650_')))
+        users = set(lab.USER_CONFIGS)
+        # `one_spare_before_sync` is the container `one_config_unprogrammed` holds, read twice, so the One's
+        # list names the one and not the other.
+        self.assertEqual(sorted(users & full['ONE_FAMILY']),
+                         ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync'])
+        self.assertEqual(sorted(u for u in users if u.startswith('one_')),
+                         ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_before_sync'])
+        self.assertEqual(sorted(u for u in users if u[:5] in ('h600_', 'h650_', 'h700_')),
+                         sorted(users & full['ARCH14_FAMILY']))
+        self.assertEqual(sorted(u for u in users if u.startswith('arch8_')), sorted(users & full['ARCH8_FAMILY']))
+
+    def test_no_test_file_writes_a_family_list_out_again(self):
+        """The drift the module was made against: a family's whole list written out again in a test file.
+
+        A list holding exactly a family's names is a copy, and a copy nobody compares is how one list held
+        eighteen names for as long as a sample had existed. A narrower list, a family less the compiles one
+        claim leaves out, is a different population and is allowed; it says why beside it.
+        """
+        families = {constant: frozenset(self._family(constant)[0]) for constant in self.FAMILIES}
+        copies = []
+        scanned = set()
+        for path in sorted(glob.glob(os.path.join(ROOT, 'packages', '*', 'test', '*.ts'))):
+            relative = os.path.relpath(path, ROOT)
+            scanned.add(relative)
+            source = read_repo_file(relative)
+            for literal in re.findall(r'\[([^\[\]]*)\]', source):
+                # Every quoted string of the literal, so a list that holds a family and a path besides is a
+                # different list and is not counted as a copy.
+                names = frozenset(re.findall(r"'([^'\n]*)'", literal))
+                copies.extend('%s: %s' % (relative, constant)
+                              for constant, family in families.items() if names == family)
+        self.assertEqual(scanned, git_listed_typescript_tests(self), 'the scan read every TypeScript test file')
+        self.assertEqual(copies, [], 'these test files write a family\'s list out again; import it from '
+                                     '@harmony/lab instead: %s' % '; '.join(copies))
+
+    def test_the_control_a_family_list_written_out_again_is_found(self):
+        """The scan above, fed one test file's text with a family's list written into it, finds the copy."""
+        full, _ = self._family('H650_FAMILY')
+        literal = 'const H650 = [%s] as const;' % ', '.join("'%s'" % n for n in reversed(full))
+        names = [frozenset(re.findall(r"'([^'\n]*)'", one)) for one in re.findall(r'\[([^\[\]]*)\]', literal)]
+        self.assertIn(frozenset(full), names)
+
     def test_the_user_config_population_is_the_same_in_both_languages(self):
         """Section 140: `lab.USER_CONFIGS` and the fifteen `irframe.test.ts` asserts over.
 

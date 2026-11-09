@@ -14,7 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_FAMILY, ONE_SKIN_54_FAMILY, require_, skipUnless } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import {
   type BuiltScreen,
@@ -29,11 +29,9 @@ import {
 import { blobReader } from '../src/shared/spelling.ts';
 
 /** The nineteen Harmony One compiles: sixteen English of skin 54, two of skin 59 and one Dutch, section 405. */
-const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after', 'one_config', 'one_config_unprogrammed',
-  'one_friend_asfound_config'] as const;
+// The nineteen in the order this file's per compile tables are written in: skin 54's sixteen, then the three of
+// other skins.
+const ONES = [...ONE_SKIN_54_FAMILY.full, ...ONE_FAMILY.full.filter((name) => !ONE_SKIN_54_FAMILY.full.includes(name))];
 
 /** The head of a One mode table, the 10 firmware screens and the 30 status screens, section 405. */
 const HEAD = 40;

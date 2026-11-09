@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, ONE_FAMILY, ONE_SKIN_54_FAMILY, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import type { ContainerPiece } from '../src/build.ts';
 import { activities, parse } from '../src/index.ts';
@@ -43,11 +43,9 @@ import {
 import '../src/support/resources.node.ts';
 
 /** The nineteen distinct Harmony One compiles of section 405, `test/wiring-one.test.ts`' list. */
-const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after', 'one_config', 'one_config_unprogrammed',
-  'one_friend_asfound_config'] as const;
+// The nineteen in the order this file's per compile tables are written in: skin 54's sixteen, then the three of
+// other skins.
+const ONES = [...ONE_SKIN_54_FAMILY.full, ...ONE_FAMILY.full.filter((name) => !ONE_SKIN_54_FAMILY.full.includes(name))];
 /** The sixteen English compiles of skin 54, section 405: the first sixteen of `ONES`. */
 const SIXTEEN = ONES.slice(0, 16);
 /** The four with no activity. */

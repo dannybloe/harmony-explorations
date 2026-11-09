@@ -92,7 +92,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { FILE_BASED_FAMILY, LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
 import { type Container, metadataArchive, parse } from '../src/index.ts';
 import {
@@ -124,7 +124,7 @@ import { ONE_STATE_TABLES } from '../src/families/harmony-one/statetables.ts';
 import { sameBytes } from '../src/support/bytes.ts';
 
 /** The five bench fixtures, by the lab's names. */
-const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
+const NAMED = FILE_BASED_FAMILY.full;
 /** The other eight, by their path in the lab, as `noscreenconstants.test.ts` reads them. */
 const PATHS = [
   'work/setups/h350-test/compile-Result.EzHex',

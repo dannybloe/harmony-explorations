@@ -14,7 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, ONE_FAMILY, sampled, skipUnless, slow } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { type ContainerPiece, layOutContainer, takeApart } from '../src/assembly/frame.ts';
 import { fontSets, glyphOf } from '../src/screens/font.ts';
@@ -27,12 +27,9 @@ import {
 } from '../src/families/harmony-one/screentexts.ts';
 import '../src/support/resources.node.ts';
 
-/** `ONE_COMPILES` of `startupassistant.test.ts` without the Dutch `one_friend_asfound_config`. */
-const ENGLISH = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
 const DUTCH = 'one_friend_asfound_config';
+/** The nineteen Harmony One compiles without the Dutch one. */
+const ENGLISH = ONE_FAMILY.full.filter((name) => name !== DUTCH);
 /** The four compiles with no activity, so no start up screen. */
 const WITHOUT_ACTIVITIES = new Set(['harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3']);
 
@@ -44,10 +41,11 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
   return a.length === b.length ? undefined : length;
 }
 
-test('section 406: on the 18 English Harmony One compiles every text instruction of every screen program is spelled from its word in its font and drawn inline or by reference by the first copy rule, and each compile comes back byte for byte',
-     skipUnless(...ENGLISH), () => {
+test('section 406: on each English Harmony One compile walked, the pair on a step and all 18 and their total in the slow tier, every text instruction of every screen program is spelled from its word in its font and drawn inline or by reference by the first copy rule, and each compile comes back byte for byte',
+     skipUnless(...sampled(ONE_FAMILY, ENGLISH)), () => {
+  const walked = sampled(ONE_FAMILY, ENGLISH);
   const total = { compiles: 0, inline: 0, references: 0, joined: 0, bytes: 0, unresolved: 0 };
-  for (const name of ENGLISH) {
+  for (const name of walked) {
     const c = containerOf(name);
     const checked = checkOneScreenTexts(c);
     total.compiles += 1;
@@ -57,12 +55,17 @@ test('section 406: on the 18 English Harmony One compiles every text instruction
     total.bytes += checked.bytes;
     total.unresolved += checked.unresolved;
   }
-  // 33907 draws, 9674 of them inline; no code goes unread, so no text keeps its codes.
+  // 33907 draws, 9674 of them inline; no code goes unread, so no text keeps its codes. A total of all 18, so asserted
+  // when the slow tier walks all 18; on a step no code goes unread either.
+  if (walked.length !== ENGLISH.length) {
+    assert.equal(total.unresolved, 0);
+    return;
+  }
   assert.deepEqual(total, { compiles: 18, inline: 9674, references: 24233, joined: 63, bytes: 279701, unresolved: 0 });
 });
 
 test('section 406: a Harmony One start up title joins "Starting" and the name with a blank of its own, held by the title\'s set alone and a pixel wider than the space there, which a character map reading it as a space spells wrong in 126 draws and nowhere else',
-     skipUnless(...ENGLISH), () => {
+     slow(skipUnless(...ENGLISH)), () => {
   const tally = { withJoiner: 0, withoutJoiner: 0, titles: 0, titleDraws: 0, plainDiffers: 0, plainDiffersElsewhere: 0 };
   for (const name of ENGLISH) {
     const c = containerOf(name);
@@ -102,10 +105,11 @@ test('section 406: a Harmony One start up title joins "Starting" and the name wi
   assert.deepEqual(tally, { withJoiner: 14, withoutJoiner: 4, titles: 63, titleDraws: 126, plainDiffers: 126, plainDiffersElsewhere: 0 });
 });
 
-test('section 406: blinded to every byte of the texts it does not read, the opcodes, terminators and reference addresses, the description still rebuilds the 18 English compiles byte for byte',
-     skipUnless(...ENGLISH), () => {
+test('section 406: blinded to every byte of the texts it does not read, the opcodes, terminators and reference addresses, the description still rebuilds each English compile walked byte for byte: the pair on a step, all 18 and their tally in the slow tier',
+     skipUnless(...sampled(ONE_FAMILY, ENGLISH)), () => {
+  const walked = sampled(ONE_FAMILY, ENGLISH);
   const tally = { structure: 0, read: 0, blinded: 0, changed: 0, unchangedInAddresses: 0 };
-  for (const name of ENGLISH) {
+  for (const name of walked) {
     const c = containerOf(name);
     const first = describeOneScreenTexts(c, takeApart(c));
     const addressBytes = new Set<number>();
@@ -140,8 +144,9 @@ test('section 406: blinded to every byte of the texts it does not read, the opco
   }
   // Read: every inline text's codes, a reference's copy's codes, and every place.
   // 116280 bytes blinded, all but 52 of them something else first; those 52 are bytes of a reference's address
-  // field, which the frame writes whatever a piece holds there.
-  assert.deepEqual(tally, { structure: 279701, read: 163421, blinded: 116280, changed: 116228, unchangedInAddresses: 52 });
+  // field, which the frame writes whatever a piece holds there. A tally of all 18, so asserted when the slow tier
+  // walks all 18.
+  if (walked.length === ENGLISH.length) assert.deepEqual(tally, { structure: 279701, read: 163421, blinded: 116280, changed: 116228, unchangedInAddresses: 52 });
 });
 
 test('section 406: checkOneScreenTexts refuses a Harmony One compile with a reference pointed one code into its copy',

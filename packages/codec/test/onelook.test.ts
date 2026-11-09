@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, ONE_FAMILY, skipUnless } from '@harmony/lab';
 import { type Container, activityScreens, deviceModeMaps, parse } from '../src/index.ts';
 import { composeDevice, composeDeviceScreen } from '../src/build.ts';
 import { modeRecords, taggedList, touchPages } from '../src/internal.ts';
@@ -35,10 +35,7 @@ import { restamped } from '../src/shared/core.ts';
 import '../src/support/resources.node.ts';
 
 /** The nineteen Harmony One compiles, as `fonttable.test.ts`'s. */
-const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const ONE_COMPILES = ONE_FAMILY.full;
 
 const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
 

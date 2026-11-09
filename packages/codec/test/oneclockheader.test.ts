@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import {
@@ -40,12 +40,7 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
 }
 
 /** The sixteen English compiles of skin 54, section 405. */
-const NAMES = [
-  'harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830', 'calibration_one',
-  'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
-  'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3', 'one_friend_legacy_sync_config',
-  'phase7_before', 'phase7_after',
-];
+const NAMES = ONE_SKIN_54_FAMILY.full;
 /** The three Harmony One compiles beyond the sixteen: the everyday One's and the European factory file, skin 59, and the Dutch one. */
 const BEYOND = ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'];
 
@@ -134,10 +129,10 @@ test('todo-compile-one 4.7: who runs the four agrees with what they are found to
   assert.deepEqual(Object.fromEntries(queued), { sending: 3195 });
 });
 
-test('todo-compile-one 4.7: the sixteen shared pictures sit at sixteen addresses, exactly the pictures section 405 found only the clock\'s programs draw, and hold thirteen images, the full gauge stored three times and level 4 twice, on the sixteen',
-     skipUnless(...NAMES), () => {
+test('todo-compile-one 4.7: the sixteen shared pictures sit at sixteen addresses, exactly the pictures section 405 found only the clock\'s programs draw, and hold thirteen images, the full gauge stored three times and level 4 twice, on each of the sixteen walked, the pair on a step and all sixteen in the slow tier',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   assert.equal(CLOCK_HEADER_PICTURES, 16);
-  for (const name of NAMES) {
+  for (const name of sampled(ONE_SKIN_54_FAMILY)) {
     const c = parse(require_(name));
     const layout = takeApart(c);
     const d = describeOneClockHeader(c, layout);
@@ -205,10 +200,11 @@ test('todo-compile-one 4.7: the six lists the minute and the hour call are 42 by
   }
 });
 
-test('todo-compile-one 4.7: a blinded input rebuilds all sixteen: no byte of the programs or lists outside the description reaches the build',
-     skipUnless(...NAMES), () => {
+test('todo-compile-one 4.7: a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the programs or lists outside the description reaches the build',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  const walked = sampled(ONE_SKIN_54_FAMILY);
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
-  for (const name of NAMES) {
+  for (const name of walked) {
     const c = parse(require_(name));
     const first = describeOneClockHeader(c, takeApart(c));
     totals.structure += first.structure.size;
@@ -239,7 +235,8 @@ test('todo-compile-one 4.7: a blinded input rebuilds all sixteen: no byte of the
   // 56928 bytes of programs and lists over the sixteen, 3558 each; the description reads 5392 of them, and 1984
   // outside them: the homes' glyph codes and the two lists' indices the state records hold. Every other byte,
   // 51536, is the builder's and blinded.
-  assert.deepEqual(totals, { structure: 56928, inside: 5392, outside: 1984, blinded: 51536 });
+  // Totals of all sixteen, so asserted when the slow tier walks all sixteen.
+  if (walked.length === NAMES.length) assert.deepEqual(totals, { structure: 56928, inside: 5392, outside: 1984, blinded: 51536 });
 });
 
 test('todo-compile-one 4.7: a description with two gauge pictures swapped, a twenty four hour clock, or a counted variable moved is refused by the rebuild, the clock\'s font moved by its speller and a shared picture short by the builder; the entries order the build alone and change nothing it compares',

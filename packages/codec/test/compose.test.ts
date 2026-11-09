@@ -18,7 +18,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IMAGES, PARSEABLE_EXCLUDED, imagePath, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { ARCH14_FAMILY, IMAGES, PARSEABLE_EXCLUDED, imagePath, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ComposeError,
   assertStateTableConsistent,
@@ -1286,11 +1286,7 @@ test('the arch 14 screen half opens a page on a full last page and refuses a let
  * region read equal to one of these is left out rather than counted twice. Five until a sentence
  * audit of section 312 found the other eight, which obey the same rule.
  */
-const ARCH14_LISTS = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-                      'h700_config', 'h700_config_2', 'h700_28_config_region',
-                      'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-                      'h700_power_hold_compile_2', 'h700_power_hold_compile_3',
-                      'h700_power_hold_compile_4'] as const;
+const ARCH14_LISTS = ARCH14_FAMILY.full;
 
 /**
  * The device list menus of an arch 14 configuration, each with its layout: a two row list binds both

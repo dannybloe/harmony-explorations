@@ -5,16 +5,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, ONE_FAMILY, skipUnless } from '@harmony/lab';
 import { deviceListRows, parse } from '../src/index.ts';
 import { modeRecords, taggedList } from '../src/internal.ts';
 import { BEEP_OPCODE, SCREEN_ITEM_BEEP } from '../src/inventory/inventory.ts';
 import '../src/support/resources.node.ts';
 
-const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const ONE_COMPILES = ONE_FAMILY.full;
 
 test('section 404: every row of the device pages of Logitech\'s One compiles opens with the click, 3545 rows over 19 compiles, 3495 of them the click and a call and 50 the click and a 0x72',
      skipUnless(...ONE_COMPILES), () => {

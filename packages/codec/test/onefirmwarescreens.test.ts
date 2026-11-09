@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import {
@@ -27,10 +27,7 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
 }
 
 /** The sixteen English compiles of skin 54, section 405. */
-const SKIN_54 = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const SKIN_54 = ONE_SKIN_54_FAMILY.full;
 
 test('todo-compile-one 4.4.3 and 6.5: the ten firmware screens of the sixteen English Harmony One compiles of skin 54 are rebuilt byte for byte from a description, 196 lists among them, 18 more than before section 418',
      skipUnless(...SKIN_54), () => {
@@ -54,10 +51,11 @@ test('todo-compile-one 4.4.3: beyond the sixteen, the European factory file rebu
     (error: Error) => error instanceof ScreenRecordError && /a reference names the inside of a replaced structure/.test(error.message));
 });
 
-test('todo-compile-one 4.4.3: a blinded input rebuilds all sixteen: no byte the builder writes is taken from the screens\' own bytes',
-     skipUnless(...SKIN_54), () => {
+test('todo-compile-one 4.4.3: a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte the builder writes is taken from the screens\' own bytes',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  const walked = sampled(ONE_SKIN_54_FAMILY);
   const totals = { structure: 0, described: 0, readAddresses: 0, blinded: 0 };
-  for (const name of SKIN_54) {
+  for (const name of walked) {
     const c = parse(require_(name));
     const first = describeOneFirmwareScreens(c, takeApart(c));
     totals.structure += first.structure.size;
@@ -94,7 +92,9 @@ test('todo-compile-one 4.4.3: a blinded input rebuilds all sixteen: no byte the 
   // `todo-compile-one.md` 6.5, section 418: 439 the description reads, 39 of them the addresses of thirteen
   // pictures and 400 the numbers, the fonts and the hit pages, 38 of those the indices and variables of the lists
   // below; and 2798 the builder writes, every one blinded. No address is read without being described.
-  assert.deepEqual(totals, { structure: 16 * 3237, described: 16 * 439, readAddresses: 0, blinded: 16 * 2798 });
+  // The same on each of the sixteen, so exact per compile walked.
+  const n = walked.length;
+  assert.deepEqual(totals, { structure: n * 3237, described: n * 439, readAddresses: 0, blinded: n * 2798 });
 });
 
 test('todo-compile-one 4.4.3 and 6.5: a description with one number moved, or a picture swapped, is refused by the byte comparison, and a list below moved to an index the screens do not reach by their placing',

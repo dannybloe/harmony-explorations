@@ -10,7 +10,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { H650_FAMILY, load, ONE_FAMILY, sampled, skipUnless, slow } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 // Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
 import { HARMONY_650_FACES } from '../src/families/harmony-600-650-700/fonts.ts';
@@ -40,12 +40,7 @@ import '../src/support/resources.node.ts';
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;
 
-const H650 = [
-  'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
-  'h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
-  'h650_issue36_config',
-] as const;
+const H650 = H650_FAMILY.full;
 
 const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
 
@@ -118,12 +113,13 @@ test('our alphabet tells every character apart by form but I from l in the weigh
   assert.deepEqual(shared, { '!Il': 6, '5S': 12, DO: 10, Il: 16 });
 });
 
-test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text reading the same, the setup unchanged',
-     skipUnless(...H650), () => {
+test('withOxaniumFonts re-letters each Harmony 650 compile walked, every text reading the same, the setup unchanged: the pair on a step, all 13 and their tallies in the slow tier',
+     skipUnless(...sampled(H650_FAMILY)), () => {
+  const walked = sampled(H650_FAMILY);
   const faces = new Map<string, number>();
   let added = 0;
   let glyphs = 0;
-  for (const name of H650) {
+  for (const name of walked) {
     const original = containerOf(name);
     const made = withOxaniumFonts(takeApart(containerOf(name)), INKS);
     const out = parse(layOutContainer(made.layout).bytes);
@@ -143,6 +139,8 @@ test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text readin
     }
     added += made.added.length;
   }
+  // The tallies are of all thirteen, so they are asserted when the slow tier walks all thirteen.
+  if (walked.length !== H650.length) return;
   // The same tally as Logitech's measured faces in `work/fonts-8-2/faces.ts`: 39 sets on the bars, plain.
   assert.deepEqual(Object.fromEntries([...faces].sort()), {
     'F10 shadowed': 13, 'F11 shadowed': 14, 'F13 shadowed': 25, 'F14 plain': 39, 'F14 shadowed': 39,
@@ -188,10 +186,7 @@ test('a Harmony 700 compile is refused, since its fonts were not measured', skip
  * Logitech's Harmony One compiles, one of each distinct container, section 395's nineteen: the faces were
  * measured on nine of them and hold on all nineteen, section 396 as corrected per review.
  */
-const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const ONE_COMPILES = ONE_FAMILY.full;
 
 test('section 396: every font set of the nineteen Harmony One compiles is one of the One\'s five faces, on that face\'s rows, and every glyph names its character',
      skipUnless(...ONE_COMPILES), () => {
@@ -227,7 +222,7 @@ test('section 396: every font set of the nineteen Harmony One compiles is one of
 });
 
 test('section 396: eighteen of the nineteen Harmony One compiles lettered in ours read the same, each set read back as its face, and the Dutch one refused by name',
-     skipUnless(...ONE_COMPILES), () => {
+     slow(skipUnless(...ONE_COMPILES)), () => {
   let same = 0;
   for (const name of ONE_COMPILES) {
     const logitech = containerOf(name);

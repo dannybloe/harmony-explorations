@@ -17,7 +17,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { ARCH14_FAMILY, IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
   ComposeError,
   catalogueCommands,
@@ -56,11 +56,7 @@ import {
 import { irFrame } from '../src/infrared/irframe.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */
-const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-                'h700_config', 'h700_config_2', 'h700_28_config_region',
-                'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-                'h700_power_hold_compile_2', 'h700_power_hold_compile_3',
-                'h700_power_hold_compile_4'] as const;
+const ARCH14 = ARCH14_FAMILY.full;
 
 /** A compile as the lab holds it: a bare container, or one inside Logitech's EZHex wrapping. */
 function open(name: string): Container {

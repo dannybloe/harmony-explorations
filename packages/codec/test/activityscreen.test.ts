@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ARCH14_FAMILY, require_, skipUnless, slow } from '@harmony/lab';
 import { type Container, deviceListRows, parse } from '../src/index.ts';
 import {
   bitmapReference,
@@ -35,11 +35,8 @@ import {
 } from '../src/families/harmony-600-650-700/activityscreen.ts';
 import '../src/support/resources.node.ts';
 
-/** The thirteen arch 14 compiles, as `menupage.test.ts`'s `ARCH14`. */
-const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
+/** The thirteen arch 14 compiles. */
+const ARCH14 = ARCH14_FAMILY.full;
 
 /** The two bytes at `at`, a case program's operand. */
 function b16(c: Container, at: number): Uint8Array {
@@ -55,7 +52,7 @@ function workingModes(c: Container): number[] {
 }
 
 test('section 336: every start up screen, working screen page\'s chrome and activity keyed case of the thirteen compiles is the one built',
-     skipUnless(...ARCH14), () => {
+     slow(skipUnless(...ARCH14)), () => {
   // The calibration. Each start up screen is built whole from its activity's name and compared part for
   // part, its texts at the compiler's one inline copy; each working screen page's chrome byte for byte,
   // its middle being section 323's; each screen's key map entry for entry; and every case of the four
@@ -83,7 +80,7 @@ test('section 336: every start up screen, working screen page\'s chrome and acti
 });
 
 test('section 336: what the working screens queue, draw and map, read off the pages rather than through the builder',
-     skipUnless(...ARCH14), () => {
+     slow(skipUnless(...ARCH14)), () => {
   // The working screen's queued program is the activity menu's, and its key under Devices maps through
   // the record the device modes map it through: each read here off a page or a record of the other kind
   // of screen, not off the builder. And which picture, by content, the working pages draw for one

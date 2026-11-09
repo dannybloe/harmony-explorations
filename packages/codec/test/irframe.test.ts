@@ -12,7 +12,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, skipWithoutLab, require_ } from '@harmony/lab';
+import {
+  FILE_BASED_FAMILY, imagePath, IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+} from '@harmony/lab';
 import { catalogueDriving } from '../src/catalogue/driving.node.ts';
 import { parse } from '../src/container/gspm.ts';
 import { payloadOf } from '../src/container/ezhex.ts';
@@ -1679,8 +1681,7 @@ test('a Harmony 350 states a send count too, and it is three',
   });
 
 /** The five arch 16 containers, which sit outside every corpus wide population, section 194. */
-const ARCH16 = ['h350_config', 'h350_programmed_config', 'h350_three_devices_config',
-  'h300_config', 'h300_programmed_config'];
+const ARCH16 = FILE_BASED_FAMILY.full;
 
 /**
  * `biphaseFrames` gives the same answer whether or not its caller trims the leading gap, section 266.

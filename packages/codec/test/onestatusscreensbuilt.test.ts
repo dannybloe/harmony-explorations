@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import {
   type ContainerPiece,
@@ -54,12 +54,7 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
  * reads the same: the screens are 3872 bytes and the description 712 on each, since no text of these screens is
  * inline on one compile and by reference on another.
  */
-const SKIN_54 = [
-  'harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830', 'calibration_one',
-  'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
-  'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3', 'one_friend_legacy_sync_config',
-  'phase7_before', 'phase7_after',
-];
+const SKIN_54 = ONE_SKIN_54_FAMILY.full;
 /** The two European compiles of skin 59, the factory file and the everyday One's, and the Dutch one. */
 const EUROPEAN = ['one_config', 'one_config_unprogrammed'];
 const DUTCH = 'one_friend_asfound_config';
@@ -146,10 +141,11 @@ test('todo-compile-one 4.5: every line of the thirty status screens is centred o
   }
 });
 
-test('todo-compile-one 4.5: a blinded input rebuilds all sixteen: no byte of the screens outside the description reaches the build',
-     skipUnless(...SKIN_54), () => {
+test('todo-compile-one 4.5: a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the screens outside the description reaches the build',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  const walked = sampled(ONE_SKIN_54_FAMILY);
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
-  for (const name of SKIN_54) {
+  for (const name of walked) {
     const c = parse(require_(name));
     const first = describeOneStatusScreens(c, takeApart(c));
     totals.structure += first.structure.size;
@@ -181,7 +177,8 @@ test('todo-compile-one 4.5: a blinded input rebuilds all sixteen: no byte of the
   }
   // 61952 bytes of screens over the sixteen, 61952 - 11184 = 50768 of them written by the builder and every one
   // blinded; the description reads 11184 bytes inside them and 208 outside, the home's thirteen glyph codes.
-  assert.deepEqual(totals, { structure: 61952, inside: 11184, outside: 208, blinded: 50768 });
+  // Totals of all sixteen, so asserted when the slow tier walks all sixteen.
+  if (walked.length === SKIN_54.length) assert.deepEqual(totals, { structure: 61952, inside: 11184, outside: 208, blinded: 50768 });
 });
 
 test('todo-compile-one 4.5: a description with a timer moved, a list moved, the two fonts swapped, the home dropped or two screens\' modes swapped is refused, by the builder or the byte comparison',

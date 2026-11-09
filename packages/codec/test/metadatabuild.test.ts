@@ -52,7 +52,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { deflateRawSync, inflateRawSync } from 'node:zlib';
-import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { FILE_BASED_FAMILY, LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
 import { type Container, metadataArchive, parse } from '../src/index.ts';
 import { deflateRaw, metadataZip, metadataZipTime, zipTimeOf } from '../src/internal.ts';
@@ -60,7 +60,7 @@ import { noScreenMetadataSection, noScreenZipTime } from '../src/build.ts';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
 const TWIN = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
-const FIVE = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
+const FIVE = FILE_BASED_FAMILY.full;
 const HARMONY_300 = new Set(['h300_config', 'h300_programmed_config']);
 const ARCH10 = ['h890_config', 'h890_config_2', 'h895_config'];
 

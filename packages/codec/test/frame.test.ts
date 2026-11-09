@@ -28,7 +28,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LAB, load, skipUnless } from '@harmony/lab';
+import { ARCH14_FAMILY, FILE_BASED_FAMILY, LAB, load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import type { Claim } from '../src/internal.ts';
 import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
@@ -42,12 +42,7 @@ import '../src/support/resources.node.ts';
  * thirteen section 312 names. Region reads of the same content are left out rather than counted
  * twice, which is the same choice `compose.test.ts` makes for `ARCH14_LISTS`.
  */
-const ARCH14_COMPILES = [
-  'h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
-] as const;
+const ARCH14_COMPILES = ARCH14_FAMILY.full;
 
 /** The skin each compile's architecture record states. Two Harmony 600 compiles disagree. */
 const SKINS: Readonly<Record<(typeof ARCH14_COMPILES)[number], number>> = {
@@ -492,7 +487,7 @@ test('a Harmony One section that grows moves every address above it, end_addr an
  * container.md` and `layout.md`, `reference/architectures/harmony-300-350/memory.md`, plan 011's census; Logitech's
  * client compiles nothing for this family, so it has no layout of its own to read.
  */
-const FAMILY_16 = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'] as const;
+const FAMILY_16 = FILE_BASED_FAMILY.full;
 const FAMILY_16_SETUP = ['work/setups/h350-test/compile-Result.EzHex', 'work/setups/h350-test/first-compile/compile-Result.EzHex'];
 /** The skin each states: 104 on the five Harmony 350 compiles, 79 on the two of the European Harmony 300. */
 const SKIN_16: Readonly<Record<string, number>> = { h300_config: 79, h300_programmed_config: 79 };

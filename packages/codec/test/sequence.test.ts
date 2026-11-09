@@ -18,7 +18,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LAB, require_, skipUnless } from '@harmony/lab';
+import { ARCH14_FAMILY, LAB, require_, sampled, skipUnless } from '@harmony/lab';
 import {
   ComposeError,
   EditError,
@@ -63,11 +63,7 @@ import { listSends, setupView } from '../src/families/harmony-600-650-700/compar
 import '../src/support/resources.node.ts';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */
-const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-                'h700_config', 'h700_config_2', 'h700_28_config_region',
-                'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-                'h700_power_hold_compile_2', 'h700_power_hold_compile_3',
-                'h700_power_hold_compile_4'] as const;
+const ARCH14 = ARCH14_FAMILY.full;
 
 /** A compile as the lab holds it: a bare container, or one inside Logitech's EZHex wrapping. */
 function open(name: string): Container {
@@ -184,8 +180,8 @@ test('none of the thirteen earlier Harmony 600, 650 and 700 compiles holds a pau
   assert.equal(ARCH14_INFERRED.length, 1);
 });
 
-test('no screen item on a Harmony 600, 650 or 700 opens with the beeper every spare Harmony One screen item opens with',
-     skipUnless('one_spare_20260830', ...ARCH14), () => {
+test('no screen item on a Harmony 600, 650 or 700 compile walked, the pair on a step and all thirteen in the slow tier, opens with the beeper every spare Harmony One screen item opens with',
+     skipUnless('one_spare_20260830', ...sampled(ARCH14_FAMILY)), () => {
   // The ground for the third inference, that a sequence's screen copy on arch 14 is its key copy, which
   // Logitech's compile of the 650's test setup then showed, section 349.
   const opened = (c: Container): { all: number; beeped: number } => {
@@ -205,7 +201,7 @@ test('no screen item on a Harmony 600, 650 or 700 opens with the beeper every sp
   const one = opened(parse(require_('one_spare_20260830')));
   assert.equal(one.beeped, one.all, 'every Harmony One screen item beeps');
   assert.equal(one.all, 929);
-  for (const name of ARCH14) {
+  for (const name of sampled(ARCH14_FAMILY)) {
     const counted = opened(open(name));
     assert.equal(counted.beeped, 0, name);
     assert.ok(counted.all > 0, `${name} binds screen items at all`);

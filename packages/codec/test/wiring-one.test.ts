@@ -18,7 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, ONE_FAMILY, ONE_SKIN_54_FAMILY, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
 import { parse } from '../src/index.ts';
@@ -31,11 +31,9 @@ import {
 import { describeWiring } from '../src/families/harmony-600-650-700/wiring.ts';
 
 /** The nineteen Harmony One compiles of section 405, `test/screenrecords-one.test.ts`' list. */
-const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after', 'one_config', 'one_config_unprogrammed',
-  'one_friend_asfound_config'] as const;
+// The nineteen in the order this file's per compile tables are written in: skin 54's sixteen, then the three of
+// other skins.
+const ONES = [...ONE_SKIN_54_FAMILY.full, ...ONE_FAMILY.full.filter((name) => !ONE_SKIN_54_FAMILY.full.includes(name))];
 /** Configurations of ours written to the spare Harmony One, five of them with the screen light raised. */
 const OUR_WRITES = ['one_spare_light60_written', 'one_spare_noassistant_written', 'one_spare_glow_written',
   'one_spare_look_written', 'one_spare_written_by_us', 'one_spare_arrows_written', 'one_spare_bottom_written'] as const;

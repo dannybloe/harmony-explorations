@@ -69,7 +69,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { FILE_BASED_FAMILY, LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
 import { type Container, parse } from '../src/index.ts';
 import {
@@ -94,7 +94,7 @@ import { taggedList } from '../src/internal.ts';
 import { sameBytes } from '../src/support/bytes.ts';
 
 /** The five bench fixtures, by the lab's names. */
-const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
+const NAMED = FILE_BASED_FAMILY.full;
 /** The census's two compiles of the test setup, by their path in the lab, which has no name for them. */
 const SETUP = ['work/setups/h350-test/compile-Result.EzHex', 'work/setups/h350-test/first-compile/compile-Result.EzHex'];
 /** The six further compiles of the family, as `tests/test_harmony_300_350_send_events.py` reads them. */

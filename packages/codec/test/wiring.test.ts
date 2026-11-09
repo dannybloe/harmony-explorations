@@ -25,7 +25,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { ARCH14_22_FAMILY, ARCH14_FAMILY, load, sampled, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
 import { activityCount, parse } from '../src/index.ts';
@@ -50,12 +50,7 @@ import {
 import '../src/support/resources.node.ts';
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
-const ARCH14_COMPILES = [
-  'h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
-] as const;
+const ARCH14_COMPILES = ARCH14_FAMILY.full;
 /**
  * Logitech's later compiles of the test record's Harmony 650, made after section 312's population was
  * fixed: two of them with the Remote Assistant off and one of those with the tilt sensor off too,
@@ -368,9 +363,7 @@ test('the wiring refuses what it cannot build', skipUnless('h650_config_region',
 // ---------------------------------------------------------------------------------------------------
 
 /** The 22 compiles sections 356 to 358 measure, and the one compile with no activities. */
-const TWENTY_TWO = [
-  ...ARCH14_COMPILES, ...LATER_650_COMPILES, 'h650_test_config', 'h650_test_config_clean', 'h650_issue36_config',
-] as const;
+const TWENTY_TWO = ARCH14_22_FAMILY.full;
 const NO_ACTIVITIES = 'harvest_650_two_devices';
 const SECTION_360 = [...TWENTY_TWO, NO_ACTIVITIES] as const;
 
@@ -422,10 +415,11 @@ function carried(c: Container, spec: WiringSpec, built: ReturnType<typeof buildW
   return counts;
 }
 
-test('section 360: the wiring of the 22 compiles of sections 356 to 358 and of the compile with no activities is rebuilt byte for byte with the tree its lists call, 64 lists on a Harmony 600 or 650 and 112 on a Harmony 700, one more per empty activity key and two fewer with the tilt sensor off',
-     skipUnless(...SECTION_360), () => {
+test('section 360: the wiring of each compile walked, the pair of the 22 of sections 356 to 358 on a step and all of them and the compile with no activities in the slow tier, is rebuilt byte for byte with the tree its lists call, 64 lists on a Harmony 600 or 650 and 112 on a Harmony 700, one more per empty activity key and two fewer with the tilt sensor off',
+     skipUnless(...sampled(ARCH14_22_FAMILY, SECTION_360)), () => {
+  const walked = sampled(ARCH14_22_FAMILY, SECTION_360);
   const perModel: Record<string, number[]> = {};
-  for (const name of SECTION_360) {
+  for (const name of walked) {
     const c = containerOf(name);
     const layout = takeApart(c);
     const spec = describeWiring(layout);
@@ -437,7 +431,8 @@ test('section 360: the wiring of the 22 compiles of sections 356 to 358 and of t
     (perModel[spec.model] ??= []).push(built.lists.size);
   }
   const sum = (xs: number[]): number => xs.reduce((a, b) => a + b, 0);
-  assert.deepEqual(Object.fromEntries(Object.entries(perModel).map(([m, xs]) => [m, [xs.length, sum(xs)]])), PER_MODEL_360);
+  // A tally of all 23, so asserted when the slow tier walks all 23.
+  if (walked.length === SECTION_360.length) assert.deepEqual(Object.fromEntries(Object.entries(perModel).map(([m, xs]) => [m, [xs.length, sum(xs)]])), PER_MODEL_360);
 });
 
 test('section 360: the settings the 23 carry: the tour shown on three, the Assistant off on three, the restore of saved delays and Help on all 23, and no activity, with every activity key empty, on one Harmony 650 compile alone; the activity count is base slot 9\'s entry count less six on all 23',
@@ -513,11 +508,12 @@ function blindForReading(c: Container, built: ReturnType<typeof buildWiring>, un
   return { layout, marked, blinded };
 }
 
-test('section 360: blinded to the frame and the skin, the 23 still rebuild: every byte of the configuration the description reads is blinded, the carried lists included, but the bytes the built pieces mark, and so is every unmarked byte of the built pieces in the layout the rebuild is written into; and with the opcode of scan 6\'s binding, read as All Off\'s, unmarked the description refuses, so the marks are what it reads',
-     skipUnless(...SECTION_360), () => {
+test('section 360: blinded to the frame and the skin, each compile walked still rebuilds, the pair on a step and the 23 and their tally in the slow tier: every byte of the configuration the description reads is blinded, the carried lists included, but the bytes the built pieces mark, and so is every unmarked byte of the built pieces in the layout the rebuild is written into; and with the opcode of scan 6\'s binding, read as All Off\'s, unmarked the description refuses, so the marks are what it reads',
+     skipUnless(...sampled(ARCH14_22_FAMILY, SECTION_360)), () => {
+  const walked = sampled(ARCH14_22_FAMILY, SECTION_360);
   let marked = 0;
   let blinded = 0;
-  for (const name of SECTION_360) {
+  for (const name of walked) {
     const c = containerOf(name);
     const built = buildWiring(describeWiring(takeApart(c)));
     // Not blinded, since `takeApart` reads it before any byte: which piece each table entry points at,
@@ -546,7 +542,8 @@ test('section 360: blinded to the frame and the skin, the 23 still rebuild: ever
     assert.ok(dropped.marked < read.marked, name);
     assert.throws(() => describeWiring(dropped.layout), (e: unknown) => e instanceof WiringError && /^entry "idle" is \d+ in one place and \d+ in another$/.test(e.message), name);
   }
-  assert.deepEqual([marked, blinded], BLIND_360);
+  // A tally of all 23, so asserted when the slow tier walks all 23.
+  if (walked.length === SECTION_360.length) assert.deepEqual([marked, blinded], BLIND_360);
 });
 
 test('section 360: the wiring calls three lists it does not build, each belonging to something this track leaves out: the restore of saved delays, one list and four per saved delay, on 23 of 23; the Assistant\'s gate, four lists, on the 20 with the Assistant on; the Help list of scan 6, read as All Off\'s, eight, on 23 of 23; and on the Harmony 700 one list the firmware screens build',

@@ -53,13 +53,11 @@ import { fileURLToPath } from 'node:url';
 
 import { parse, type Container } from '@harmony/codec/node';
 import { bytes, taggedList } from '@harmony/codec/internal';
-import { IR_ARCHIVE, load, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { FILE_BASED_FAMILY, IR_ARCHIVE, load, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 
 import { BENCH_CODESETS, CodeBook } from '../src/irmonitor.ts';
 
-const CONFIGS = [
-  'h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config', 'h300_programmed_config',
-] as const;
+const CONFIGS = FILE_BASED_FAMILY.full;
 
 /** A key map tag's type bits, the firmware's press. */
 const PRESS = 0x80;

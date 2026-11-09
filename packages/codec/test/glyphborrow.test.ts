@@ -54,7 +54,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { ARCH8_FAMILY, load, skipUnless } from '@harmony/lab';
 import { devices, activityNames, parse } from '../src/index.ts';
 import { BORROW_PROOF_MINIMUM, borrowGlyphs, faceProofs, glyphDonors, provesOneFace } from '../src/build.ts';
 import {
@@ -76,10 +76,7 @@ import { spelledText } from '../src/shared/spelling.ts';
 import '../src/support/resources.node.ts';
 
 /** Every Harmony 880 and 885 configuration the lab holds, the measurement's population. */
-const ARCH8 = [
-  'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d', 'arch8_config_880', 'arch8_config_885',
-  'h885_a_config', 'h885_b_config',
-];
+const ARCH8 = ARCH8_FAMILY.full;
 /** The donors, every one but unit A: the other bench unit first, then the contributed 885, then the rest. */
 const DONORS = ['h885_b_config', 'arch8_config_885', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d', 'arch8_config_880'];
 

@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { needing, require_, skipUnless } from '@harmony/lab';
+import { needing, ONE_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { deviceModeMaps, parse, type Container } from '../src/index.ts';
 import { characterMap, decode, modeRecords } from '../src/internal.ts';
 import { fontSets } from '../src/screens/font.ts';
@@ -107,18 +107,16 @@ test('a join of 73 breaks, a cut word takes its own line and the next word anoth
  * nothing `deviceModeMaps` counts, so no page of it is known as a device page. Eight until the review of
  * section 394, which ran the other ten.
  */
-const COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const COMPILES = ONE_FAMILY.full.filter((name) => name !== 'harvest_one_families_1');
 
-test('every label the device pages of eighteen Logitech Harmony One compiles draw is where the rule puts it, its lines rejoined',
-     skipUnless(...COMPILES), () => {
+test('every label the device pages of each Logitech Harmony One compile walked draw is where the rule puts it, its lines rejoined: the pair on a step, all eighteen in the slow tier',
+     skipUnless(...sampled(ONE_FAMILY, COMPILES)), () => {
+  const walked = sampled(ONE_FAMILY, COMPILES);
   // The name is not in the file, so each pad's drawn lines are joined back, with or without a space at
   // each break, and a pad counts as reproduced when one joining lays out to exactly the drawn lines. A cut
   // line or a glyph the character map cannot name has no name to join back and is counted apart.
   const counts: Record<string, string> = {};
-  for (const name of COMPILES) {
+  for (const name of walked) {
     const c = parse(require_(name));
     let reproduced = 0;
     let considered = 0;
@@ -140,12 +138,13 @@ test('every label the device pages of eighteen Logitech Harmony One compiles dra
   // `reproduced/considered+skipped` per compile, every considered pad reproduced. The skips are pads with a
   // cut line, whose names cannot be rejoined, or a glyph the map cannot name; they fell as the Harmony One's
   // alphabet learnt the shapes of section 396.
-  assert.deepEqual(counts, {
+  const expected: Record<string, string> = {
     one_config: '81/81+0', one_config_unprogrammed: '50/50+0', one_spare_after_sync: '79/79+2', one_spare_myharmony: '188/188+3',
     one_spare_20260830: '195/195+3', calibration_one: '109/109+1', calibration_favchannels: '109/109+1',
     calibration_favzero: '195/195+3', compiled_protocols: '598/598+5', compiled_protocols_2: '399/399+3',
     compiled_protocols_3: '328/328+4', harvest_one_two_devices: '120/120+3', harvest_one_families_2: '96/96+0',
     harvest_one_families_3: '205/205+2', one_friend_asfound_config: '33/33+0', one_friend_legacy_sync_config: '158/158+3',
     phase7_before: '109/109+1', phase7_after: '145/145+1',
-  });
+  };
+  assert.deepEqual(counts, Object.fromEntries(walked.map((name) => [name, expected[name]])));
 });

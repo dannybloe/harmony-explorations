@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ARCH14_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { activities as activityList, parse as parseConfig } from '../src/index.ts';
 import {
   activityKeys as keysOf,
@@ -38,10 +38,13 @@ import { appendActionLists, composeActivity, restamped } from '../src/build.ts';
 import '../src/support/resources.node.ts';
 
 /** The thirteen Logitech compiles section 314 measured, the same population as the inventory test's. */
-const COMPILES = ['h600_config', 'calibration_h600', 'h650_config_region',
-  'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_config',
-  'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile', 'h700_power_hold_compile_2',
-  'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
+const COMPILES = ARCH14_FAMILY.full;
+/**
+ * The ones the two edit tests walk: the family's pair on a step, one compile with three activities and one
+ * with Listen to Music empty, and all thirteen in the slow tier. Their totals are exact on both.
+ */
+const WALKED = sampled(ARCH14_FAMILY);
+const WHOLE = WALKED.length === COMPILES.length;
 
 const KEYS = Object.keys(ACTIVITY_KEYS) as ActivityKey[];
 
@@ -102,9 +105,9 @@ test('the reader finds what section 314 counted: a select on Watch TV and Watch 
 });
 
 test('moving an activity onto another activity key writes the bytes Logitech wrote for it on its own key',
-     skipUnless(...COMPILES), () => {
+     skipUnless(...WALKED), () => {
   let moved = 0;
-  for (const name of COMPILES) {
+  for (const name of WALKED) {
     const c = parse(require_(name));
     const before = coverage(c);
     const keys = activityKeys(c);
@@ -131,15 +134,15 @@ test('moving an activity onto another activity key writes the bytes Logitech wro
   }
   // Every key holding an activity is moved onto each of the other two keys, the empty one included:
   // the 7 compiles with three distinct activities give six moves each, and the 6 with Listen to Music
-  // empty give four, two of them onto the empty key.
-  assert.equal(moved, 7 * 6 + 6 * 4);
+  // empty give four, two of them onto the empty key. The pair is one of each.
+  assert.equal(moved, WHOLE ? 7 * 6 + 6 * 4 : 6 + 4);
 });
 
 test('emptying a key writes the call Logitech wrote for an empty key, and is refused where no such list exists',
-     skipUnless(...COMPILES), () => {
+     skipUnless(...WALKED), () => {
   let emptied = 0;
   let refused = 0;
-  for (const name of COMPILES) {
+  for (const name of WALKED) {
     const c = parse(require_(name));
     const keys = activityKeys(c);
     const empty = keys.find((one) => one.kind === 'placeholder');
@@ -174,8 +177,8 @@ test('emptying a key writes the call Logitech wrote for an empty key, and is ref
     assertWhole(`${name} Watch a Movie emptied after filling`, before, again.bytes);
     emptied += 1;
   }
-  assert.equal(emptied, 6);
-  assert.equal(refused, 7);
+  assert.equal(emptied, WHOLE ? 6 : 1);
+  assert.equal(refused, WHOLE ? 7 : 1);
 });
 
 test('only an activity\'s entry goes on a key, and only on a Harmony 600, 650 or 700',

@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LAB, load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { ARCH14_FAMILY, LAB, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   activities,
   deviceModeMaps,
@@ -2166,10 +2166,7 @@ test("picking the running activity again runs tag 5: the start without its scree
  * Section 314's population: every Harmony 600, 650 and 700 configuration Logitech compiled that the lab
  * holds once each, the same thirteen as section 312's.
  */
-const ACTIVITY_KEY_CONTAINERS = ['h600_config', 'calibration_h600', 'h650_config_region',
-  'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_config',
-  'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile', 'h700_power_hold_compile_2',
-  'h700_power_hold_compile_3', 'h700_power_hold_compile_4'];
+const ACTIVITY_KEY_CONTAINERS = ARCH14_FAMILY.full;
 
 test('an activity key is one select in base slot 9 entry 1, or the placeholder when it has none',
      skipUnless(...ACTIVITY_KEY_CONTAINERS), () => {

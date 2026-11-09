@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { ARCH14_22_FAMILY, IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import type { CatalogueSource, Container, Recipe, RecipeScreenItem } from '../src/index.ts';
 import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 import { screenProgram } from '../src/screens/screen.ts';
@@ -57,15 +57,7 @@ import '../src/support/resources.node.ts';
  * The 22 arch 14 compiles sections 356 to 360 measure, by the skin each states: 13 Harmony 650, 2 Harmony
  * 600, 7 Harmony 700. Section 360's 23 adds `harvest_650_two_devices`, which holds no activity to compare.
  */
-const TWENTY_TWO = [
-  'h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
-  'h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
-  'h650_issue36_config',
-] as const;
+const TWENTY_TWO = ARCH14_22_FAMILY.full;
 
 const containerOf = (name: string): Container => parse(new Uint8Array(require_(name)));
 /** What composing needs beside the donor: the catalogue's archive. The device count is the recipe's model's. */

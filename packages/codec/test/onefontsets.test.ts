@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { layOutContainer, takeApart } from '../src/build.ts';
 import { modeRecords } from '../src/internal.ts';
@@ -36,12 +36,7 @@ import { oneActivityMenu } from '../src/families/harmony-one/activityscreen.ts';
 import '../src/support/resources.node.ts';
 
 /** The sixteen English Harmony One compiles of skin 54, `onewithouttour.test.ts`' list. */
-const SKIN_54 = [
-  'harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830', 'calibration_one',
-  'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
-  'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3', 'one_friend_legacy_sync_config',
-  'phase7_before', 'phase7_after',
-] as const;
+const SKIN_54 = ONE_SKIN_54_FAMILY.full;
 const DONOR = 'harvest_one_two_devices';
 
 const containerOf = (name: string): Container => parse(new Uint8Array(require_(name)));
@@ -91,13 +86,14 @@ function misfits(c: Container, roles: ReadonlyMap<string, number>, stated: reado
   });
 }
 
-test('the sixteen compiles of skin 54 hold the sixteen stated sets, each found by its role, and the start up title set exactly where an activity is and the page count set where the menu or a working screen has several pages',
-     skipUnless(...SKIN_54), () => {
+test('each compile of skin 54 walked holds the sixteen stated sets, each found by its role, and the start up title set exactly where an activity is and the page count set where the menu or a working screen has several pages: the pair on a step, all sixteen and their census in the slow tier',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  const walked = sampled(ONE_SKIN_54_FAMILY);
   const orders = new Set<string>();
   const relative = new Set<string>();
   const totals = { sets: 0, startTitle: 0, pageCount: 0 };
   const unnamed: string[] = [];
-  for (const name of SKIN_54) {
+  for (const name of walked) {
     const c = containerOf(name);
     const map = characterMap(c)!;
     const sets = fontSets(c)!;
@@ -135,13 +131,17 @@ test('the sixteen compiles of skin 54 hold the sixteen stated sets, each found b
     // Every set's header is the count at +1 and a zero after it, so its first code is 1.
     assert.ok(sets.every((set) => set.countAt === 1 && set.first === 1), name);
   }
-  assert.deepEqual(totals, { sets: 279, startTitle: 12, pageCount: 11 });
   // One compile's inventory reads no name or mode for its two devices, so the device pages' description names no
   // font there.
-  assert.deepEqual(unnamed, ['harvest_one_families_1 device title', 'harvest_one_families_1 device count']);
-  // Only the order moves: the sixteen sets alone sit in eight orders relative to each other, and with the places
-  // the two content sets take the tables are in nine.
-  assert.deepEqual([relative.size, orders.size], [8, 9]);
+  assert.deepEqual(unnamed, ['harvest_one_families_1 device title', 'harvest_one_families_1 device count']
+    .filter((one) => walked.includes(one.split(' ')[0]!)));
+  // The census of all sixteen, asserted when the slow tier walks all sixteen.
+  if (walked.length === SKIN_54.length) {
+    assert.deepEqual(totals, { sets: 279, startTitle: 12, pageCount: 11 });
+    // Only the order moves: the sixteen sets alone sit in eight orders relative to each other, and with the places
+    // the two content sets take the tables are in nine.
+    assert.deepEqual([relative.size, orders.size], [8, 9]);
+  }
   // The stated order is the two device compile's.
   const donorRoles = rolesOf(containerOf(DONOR));
   assert.deepEqual(ROLES.map(([what, role]) => donorRoles.get(`${what} ${role}`)), ONE_FONT_SETS.map((_, k) => k));

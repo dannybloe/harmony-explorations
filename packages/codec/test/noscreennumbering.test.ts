@@ -84,7 +84,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { FILE_BASED_FAMILY, LAB, needing, require_, skipUnless, skipWithoutLab, slow } from '@harmony/lab';
 
 import { type Container, irGroups, metadataArchive, parse } from '../src/index.ts';
 import { stateRecords, stateVariables } from '../src/internal.ts';
@@ -92,7 +92,7 @@ import { instructionsAt, mapOfGroup } from '../src/families/harmony-300-350/devi
 import { DEVICE_KEYS } from '../src/families/harmony-300-350/keys.ts';
 import { nameOfLabel } from '../src/shared/core.ts';
 
-const NAMED = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
+const NAMED = FILE_BASED_FAMILY.full;
 const PATHS = [
   'work/setups/h350-test/compile-Result.EzHex',
   'work/setups/h350-test/first-compile/compile-Result.EzHex',
@@ -341,7 +341,7 @@ function sends(w: Walk): { list: number; group: number; record: number; id: numb
   return out;
 }
 
-test('the send lists ascend with the record number inside each group in 12 of 12, and no key sweep orders them across groups: best 2 of 12', needsLab, () => {
+test('the send lists ascend with the record number inside each group in 12 of 12, and no key sweep orders them across groups: best 2 of 12', slow(needsLab), () => {
   const per = walks().map((w) => ({ w, items: sends(w) }));
   const holding = per.filter((p) => p.items.length > 0);
   assert.equal(holding.length, 12);

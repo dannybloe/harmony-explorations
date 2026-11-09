@@ -80,7 +80,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { ARCH8_FAMILY, IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import { u24 } from '../src/support/bytes.ts';
 import { gridCellAt } from '../src/inventory/cornerlayout.ts';
 import {
@@ -144,8 +144,7 @@ import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 import '../src/support/resources.node.ts';
 
 /** Every arch 8 configuration the lab holds of the 880 and 885: six contributed, the two bench units'. */
-const ARCH8 = ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d', 'arch8_config_880',
-  'arch8_config_885', 'h885_a_config', 'h885_b_config'] as const;
+const ARCH8 = ARCH8_FAMILY.full;
 
 const SEND = 0x7d;
 const QUANTITY = 0x7c;

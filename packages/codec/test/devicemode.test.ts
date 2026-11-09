@@ -26,7 +26,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { ARCH14_FAMILY, H650_FAMILY, IR_ARCHIVE, needing, require_, sampled, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   type Container,
   catalogueCommands,
@@ -548,15 +548,13 @@ test('8.2.3: the six sizes in our letters are Logitech\'s heights with every pri
     assert.deepEqual(labelLayout('Teletext', oxaniumLabelSizes()), { size: 1, lines: ['Teletext'] });
   });
 
-const H650_13 = ['h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
-  'h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
-  'h650_issue36_config'] as const;
+const H650_13 = H650_FAMILY.full;
 
-test('8.2.3: re-lettered, every set of the 13 Harmony 650 compiles is the size it was, by our table and by nothing of Logitech\'s',
-  needing(skipUnless(...H650_13)), () => {
+test('8.2.3: re-lettered, every set of each Harmony 650 compile walked is the size it was, by our table and by nothing of Logitech\'s: the pair on a step, all 13 and their tally in the slow tier',
+  needing(skipUnless(...sampled(H650_FAMILY))), () => {
+    const walked = sampled(H650_FAMILY);
     const tally = new Map<string, number>();
-    for (const name of H650_13) {
+    for (const name of walked) {
       const c = open(name);
       const built = withOxaniumFonts(takeApart(c), INKS);
       const ours = parse(layOutContainer(built.layout).bytes);
@@ -573,14 +571,14 @@ test('8.2.3: re-lettered, every set of the 13 Harmony 650 compiles is the size i
       });
     }
     // Before, after and the face: the six label faces keep their rungs, and the regular faces are of no size.
-    assert.deepEqual(Object.fromEntries([...tally].sort()), {
+    // A tally of all thirteen, so asserted when the slow tier walks all thirteen.
+    if (walked.length === H650_13.length) assert.deepEqual(Object.fromEntries([...tally].sort()), {
       '0 0 F15': 13, '1 1 F14W': 26, '2 2 F14': 78, '3 3 F13': 25, '4 4 F11': 14, '5 5 F10': 13,
       'undefined undefined R13': 1, 'undefined undefined R14': 39, 'undefined undefined R15': 26,
     });
   });
 
-const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600', 'h700_config',
-  'h700_config_2', 'h700_28_config_region', ...FIXTURES.filter((one) => one !== 'calibration_h600')];
+const ARCH14 = ARCH14_FAMILY.full;
 
 test('section 325: the size table is every glyph width the thirteen arch 14 configurations draw in those sizes',
   needing(skipUnless(...ARCH14)), () => {

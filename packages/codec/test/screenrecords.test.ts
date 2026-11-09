@@ -19,7 +19,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ARCH14_22_FAMILY, require_, sampled, skipUnless, slow } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { type ContainerPiece, ScreenRecordError, layOutContainer, restamped, takeApart } from '../src/build.ts';
 import { modeRecords, screenStrings, taggedList } from '../src/internal.ts';
@@ -28,17 +28,15 @@ import { activityEntriesByName, buildScreenRecords, checkScreenRecords, describe
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/support/resources.node.ts';
 
-/** The thirteen arch 14 compiles section 312 names. */
-const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
-/** Logitech's later compiles of the test record's Harmony 650. */
-const LATER_650 = ['h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean'] as const;
-/** Another owner's Harmony 650, harmony-decompiler issue 36; issue 8's is in French and refused below. */
-const OTHER_OWNER = ['h650_issue36_config'] as const;
-const ALL = [...THIRTEEN, ...LATER_650, ...OTHER_OWNER] as const;
+/**
+ * The thirteen arch 14 compiles section 312 names, Logitech's later compiles of the test record's Harmony 650 and
+ * another owner's Harmony 650, harmony-decompiler issue 36; issue 8's is in French and refused below.
+ */
+const ALL = ARCH14_22_FAMILY.full;
+/** The ones a per compile test walks: the family's pair on a step, all 22 in the slow tier. */
+const WALKED = sampled(ARCH14_22_FAMILY);
+/** Whether this run walks all 22, so a total of all 22 is asserted. */
+const WHOLE = WALKED.length === ALL.length;
 
 const containerOf = (name: string): Container => parse(require_(name));
 
@@ -67,10 +65,10 @@ test('section 383: Logitech\'s compile with no activity rebuilds byte for byte, 
   assert.equal(spec.menu.backKey, spec.idle.backKey);
 });
 
-test('the three screen records of 22 arch 14 Logitech compiles are rebuilt byte for byte from a description',
-     skipUnless(...ALL), () => {
+test('the three screen records of each arch 14 Logitech compile walked are rebuilt byte for byte from a description: the pair on a step, all 22 and their totals in the slow tier',
+     skipUnless(...WALKED), () => {
   const totals = { deviceRows: 0, activityRows: 0, idlePages: 0, menuPages: 0, offPages: 0, structure: 0, rowLists: 0 };
-  for (const name of ALL) {
+  for (const name of WALKED) {
     const c = containerOf(name);
     const layout = takeApart(c);
     const d = describeScreenRecords(c, layout);
@@ -86,7 +84,7 @@ test('the three screen records of 22 arch 14 Logitech compiles are rebuilt byte 
     // Laid out in mode order on every compile: the idle list, the menu, Off.
     assert.deepEqual(d.spec.order, ['idle device list', 'activity menu', 'off'], name);
   }
-  assert.deepEqual(totals, {
+  if (WHOLE) assert.deepEqual(totals, {
     deviceRows: 143, activityRows: 78, idlePages: 41, menuPages: 43, offPages: 22, structure: 22464, rowLists: 598,
   });
 });
@@ -97,15 +95,15 @@ test('a French Harmony 650 configuration is refused, since the menus are built i
   assert.throws(() => rebuilt(containerOf('h650_issue8_config')), /spells 'Back'/);
 });
 
-test('the rebuild takes no value from the bytes the builder owns: a blinded input rebuilds all 22',
-     skipUnless(...ALL), () => {
+test('the rebuild takes no value from the bytes the builder owns: a blinded input rebuilds each compile walked, the pair on a step and all 22 and their tallies in the slow tier',
+     skipUnless(...WALKED), () => {
   let values = 0;
   let readAddresses = 0;
   let generated = 0;
   let changed = 0;
   let blindedCount = 0;
   let readOutside = 0;
-  for (const name of ALL) {
+  for (const name of WALKED) {
     const c = containerOf(name);
     const first = describeScreenRecords(c, takeApart(c));
     // Every byte of the three records the description did not read, overwritten.
@@ -142,7 +140,9 @@ test('the rebuild takes no value from the bytes the builder owns: a blinded inpu
     generated += first.structure.size - inside.length - [...first.addresses.read].filter((at) => !first.described.has(at)).length;
   }
   // Of the 22464 bytes: values the description reads, addresses naming a picture or a text kept
-  // elsewhere, and the builder's. The reads outside are labels' codes at a copy another screen holds.
+  // elsewhere, and the builder's. The reads outside are labels' codes at a copy another screen holds. Tallies of
+  // all 22, so asserted when the slow tier walks all 22.
+  if (!WHOLE) return;
   assert.equal(values, 3686);
   assert.equal(readAddresses, 2274);
   assert.equal(generated, 16504);
@@ -157,8 +157,8 @@ test('the rebuild takes no value from the bytes the builder owns: a blinded inpu
 });
 
 test('Off is All Off\'s working screen: the first mode the Off key map\'s first called list enters, drawing "Turning system off" over the three lines',
-     skipUnless(...ALL), () => {
-  for (const name of ALL) {
+     skipUnless(...WALKED), () => {
+  for (const name of WALKED) {
     const c = containerOf(name);
     const modes = screenRecordModes(c, takeApart(c));
     const record = (modeRecords(c) ?? [])[modes.off];
@@ -170,7 +170,7 @@ test('Off is All Off\'s working screen: the first mode the Off key map\'s first 
 });
 
 test('"Do you want to turn off your system now?" is not Off but a screen before it: one per compile, none of the three, entered by 27 to 67 lists, its Yes selecting the Off key map',
-     skipUnless(...ALL), () => {
+     slow(skipUnless(...ALL)), () => {
   const entering: number[] = [];
   for (const name of ALL) {
     const c = containerOf(name);

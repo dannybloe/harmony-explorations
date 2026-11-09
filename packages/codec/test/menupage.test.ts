@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ARCH14_FAMILY, ONE_FAMILY, require_, sampled, skipUnless, slow } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import {
   ACTIVITY_STATE_NAME,
@@ -32,15 +32,13 @@ import { deviceListMenus } from '../src/shared/menus.ts';
 import '../src/support/resources.node.ts';
 
 /** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */
-const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
+const ARCH14 = ARCH14_FAMILY.full;
 
 const TELEVISION = [{ stated: 'G:Toshiba 32 Bit:(0x20DF10EF)(Repeat)():3', held: false }] as const;
 
-test('section 334: every page of every menu of the thirteen compiles is the page built for it',
-     skipUnless(...ARCH14), () => {
+test('section 334: every page of every menu of each arch 14 compile walked is the page built for it: the pair on a step, all thirteen and their tallies in the slow tier',
+     skipUnless(...sampled(ARCH14_FAMILY)), () => {
+  const walked = sampled(ARCH14_FAMILY);
   // The calibration. Every menu page is built from its kind, its number, its menu's page count, its
   // fonts and its labels, and compared instruction for instruction, every instruction that is not a
   // text byte for byte; every text drawn by reference points at the compiler's one inline copy of it
@@ -48,7 +46,7 @@ test('section 334: every page of every menu of the thirteen compiles is the page
   const pages = new Map<string, number>();
   const menus = new Map<string, number>();
   let checked = 0;
-  for (const host of ARCH14) {
+  for (const host of walked) {
     const c = parse(require_(host));
     checked += checkFourSlotMenuPages(c);
     for (const { menu, kind } of fourSlotMenus(c)) {
@@ -56,6 +54,8 @@ test('section 334: every page of every menu of the thirteen compiles is the page
       pages.set(kind, (pages.get(kind) ?? 0) + modeRecords(c)![menu]!.pages.length);
     }
   }
+  // The tallies are of all thirteen, so they are asserted when the slow tier walks all thirteen.
+  if (walked.length !== ARCH14.length) return;
   assert.equal(checked, 164);
   assert.deepEqual(Object.fromEntries([...menus].sort()), {
     'activity device list': 40, 'activity menu': 13, 'idle device list': 13, 'two row device list': 13,
@@ -66,7 +66,7 @@ test('section 334: every page of every menu of the thirteen compiles is the page
 });
 
 test('section 334: the program each kind of menu queues, the two row picture on every page, and the one activity picture by two routes',
-     skipUnless(...ARCH14), () => {
+     slow(skipUnless(...ARCH14)), () => {
   // What `fourSlotMenuChrome` locates per compile: the queued program per kind, as an index into base
   // slot 11 and against the device mode pages' own; and whether the configuration holds the picture of
   // a page of one activity. Where the working screens' route of section 316 answers, it names the same
@@ -211,12 +211,7 @@ test('section 334: grown and opened menu pages are the built pages, every menu o
 });
 
 /** Logitech's compiles for the Harmony One, the nineteen distinct files `test/frame.test.ts` rebuilds. */
-const ONE_MENU_COMPILES = [
-  'one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'one_friend_asfound_config', 'one_friend_legacy_sync_config',
-  'phase7_before', 'phase7_after', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-] as const;
+const ONE_MENU_COMPILES = ONE_FAMILY.full;
 
 /** How many of them hold a device menu page of each size. */
 const HOLDING: Readonly<Record<string, number>> = { 1: 7, 2: 5, 3: 13 };

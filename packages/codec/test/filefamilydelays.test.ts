@@ -91,7 +91,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LAB, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { FILE_BASED_FAMILY, LAB, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 
 import { applyEdits, deviceDelays, devices, parse, setPowerOnDelay } from '../src/index.ts';
 import { powerOnInstructions, stateVariables, trailerChecksum } from '../src/internal.ts';
@@ -102,8 +102,7 @@ import { stateRecords, taggedList } from '../src/container/sections.ts';
 import { TRAILER_CHECKSUM_OFFSET } from '../src/container/gspm.ts';
 import '../src/support/resources.node.ts';
 
-const CONFIGS = ['h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config',
-  'h300_programmed_config'] as const;
+const CONFIGS = FILE_BASED_FAMILY.full;
 
 /** Every power on delay `deviceDelays` reads, as `[group, name, tenths]`, per configuration. */
 const EXPECTED: Readonly<Record<(typeof CONFIGS)[number], readonly (readonly [number, string, number])[]>> = {

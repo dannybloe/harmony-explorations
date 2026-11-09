@@ -200,8 +200,10 @@ ts-test:
 	@$(PNPM) test
 
 # The slow tier too: the 30 tests that compose the whole corpus again and compare it with Logitech's,
-# measured on 8 November 2026 at half of all the time the tests took. `slow()` in packages/lab skips them
-# unless HARMONY_SLOW_TESTS=1. Run before a push, and by `make all`; a step runs `make ts-test`.
+# measured on 8 November 2026 at half of all the time the tests took, and the censuses over a family's
+# whole list of compiles. `slow()` in packages/lab skips them unless HARMONY_SLOW_TESTS=1, and the same
+# switch makes `sampled()` walk every compile of a family where a step walks two. Run before a push, and
+# by `make all`; a step runs `make ts-test`.
 ts-test-all:
 	@HARMONY_SLOW_TESTS=1 $(PNPM) test
 

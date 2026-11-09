@@ -19,7 +19,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, ONE_SKIN_54_FAMILY, sampled, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import type { ContainerPiece } from '../src/build.ts';
 import { parse } from '../src/index.ts';
@@ -55,10 +55,7 @@ import {
 import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
-const SIXTEEN = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const SIXTEEN = ONE_SKIN_54_FAMILY.full;
 
 /**
  * Per compile in `SIXTEEN`' order: the names read, the numbers compared, the numbers among them that are lists the
@@ -165,20 +162,23 @@ function renumber(walks: Record<OneScreenSet, ScreenWalk[]>, read: Record<OneScr
 // ---------------------------------------------------------------------------------------------------------
 // The closure on Logitech's compiles.
 
-test('on all sixteen English compiles, every number of every screen set an empty One holds is made again from its names', skipUnless(...SIXTEEN), () => {
-  const got = SIXTEEN.map((name) => {
+test('on each English compile walked, the pair on a step and all sixteen in the slow tier, every number of every screen set an empty One holds is made again from its names', skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  const walked = sampled(ONE_SKIN_54_FAMILY);
+  // The per compile tables below are in `SIXTEEN`'s order, so each is read at the compiles walked.
+  const of = (table: readonly number[]): number[] => walked.map((name) => table[SIXTEEN.indexOf(name)]!);
+  const got = walked.map((name) => {
     const { walks, read } = readOff(containerOf(name));
     const keys = keysOf(walks, read);
     const result = renumber(walks, read, keys);
     assert.deepEqual(result.bad, [], name);
     return { keys: keys.size, compared: result.compared, lists: result.lists, listNumbers: result.listNumbers };
   });
-  assert.deepEqual(got.map((one) => one.keys), KEYS);
-  assert.deepEqual(got.map((one) => one.compared), COMPARED);
-  assert.deepEqual(got.map((one) => one.lists), LISTS);
+  assert.deepEqual(got.map((one) => one.keys), of(KEYS));
+  assert.deepEqual(got.map((one) => one.compared), of(COMPARED));
+  assert.deepEqual(got.map((one) => one.lists), of(LISTS));
   // Of the numbers compared, those that are lists the screens own, numbered by the rule; the rest are names' values,
   // read off the compile itself, for which the closure checks only that one name is one number.
-  assert.deepEqual(got.map((one) => one.listNumbers), LIST_NUMBERS);
+  assert.deepEqual(got.map((one) => one.listNumbers), of(LIST_NUMBERS));
 });
 
 test('control: the names read off one compile do not number another', skipUnless('harvest_one_two_devices', 'compiled_protocols'), () => {

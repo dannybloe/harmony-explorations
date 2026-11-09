@@ -18,7 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import {
   EVENT_MAP_SLOT,
@@ -359,15 +359,13 @@ test('todo-compile-one 3.2.2: the attribution refuses the donor lettered in ours
 // ---------------------------------------------------------------------------------------------------------
 // The two small tables and the lists nothing reaches, `todo-compile-one.md` 6.7, over every One compile.
 
-const NINETEEN = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const NINETEEN = ONE_FAMILY.full;
 
-test('todo-compile-one 6.7: raw slot 18 and base slot 16\'s table rebuild byte for byte on all nineteen One compiles, two zero bytes on each and a count with an address per number sender, one on eight of them; a raw slot 18 holding anything else is refused',
-     skipUnless(...NINETEEN), () => {
+test('todo-compile-one 6.7: raw slot 18 and base slot 16\'s table rebuild byte for byte on each One compile walked, two zero bytes on each and a count with an address per number sender, one on eight of all nineteen in the slow tier and the pair on a step; a raw slot 18 holding anything else is refused',
+     skipUnless(...sampled(ONE_FAMILY)), () => {
+  const walked = sampled(ONE_FAMILY);
   const senders: Record<number, number> = {};
-  for (const name of NINETEEN) {
+  for (const name of walked) {
     const c = parse(require_(name));
     for (const build of [withOneInsertedSection, withNumberSenderTable]) {
       const { layout, piece } = build(takeApart(c));
@@ -386,8 +384,9 @@ test('todo-compile-one 6.7: raw slot 18 and base slot 16\'s table rebuild byte f
     records.forEach((record, k) => assert.equal(laid.bytes[at + 1 + 3 * k]! | (laid.bytes[at + 2 + 3 * k]! << 8)
       | (laid.bytes[at + 3 + 3 * k]! << 16), record.address, name));
   }
-  // Eight of the nineteen hold one favourite channel sender, which the builder keeps; none holds two.
-  assert.deepEqual(senders, { 0: 11, 1: 8 });
+  // Eight of the nineteen hold one favourite channel sender, which the builder keeps; none holds two. A census of
+  // all nineteen, so asserted when the slow tier walks all nineteen.
+  if (walked.length === NINETEEN.length) assert.deepEqual(senders, { 0: 11, 1: 8 });
   // The control: raw slot 18 holding 00 01 is a configuration nothing here has seen, and is refused, not rebuilt.
   const layout = takeApart(parse(require_(DONOR)));
   const raw = Number(Object.keys(layout.inserted!)[0]);

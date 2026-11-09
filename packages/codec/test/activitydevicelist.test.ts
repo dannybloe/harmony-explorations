@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless, slow } from '@harmony/lab';
+import { ARCH14_FAMILY, LATER_650_FAMILY, require_, skipUnless, slow } from '@harmony/lab';
 import { type Container, parse, renderPage } from '../src/index.ts';
 import { caseQueued, modeRecords, screenProgram, taggedList, valueMaps } from '../src/internal.ts';
 import { checkFourSlotMenuPages, fourSlotMenus } from '../src/families/harmony-600-650-700/menus.ts';
@@ -26,22 +26,18 @@ import { activityKeyedRecords } from '../src/families/harmony-600-650-700/activi
 import { FOUR_SLOT_ITEMS } from '../src/families/harmony-600-650-700/geometry.ts';
 import '../src/support/resources.node.ts';
 
-/** The thirteen arch 14 compiles, as `compose.test.ts`'s `ARCH14_LISTS`. */
-const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
+/** The thirteen arch 14 compiles. */
+const THIRTEEN = ARCH14_FAMILY.full;
 /** Logitech's later compiles of the test record's Harmony 650, sections 337 to 351. */
-const LATER_650 = ['h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean'] as const;
+const LATER_650 = LATER_650_FAMILY.full;
 /** Two Harmony 650 configurations posted by other owners, harmony-decompiler issues 36 and 8. */
 const OTHER_OWNERS = ['h650_issue36_config', 'h650_issue8_config'] as const;
-const ALL = [...THIRTEEN, ...LATER_650, ...OTHER_OWNERS] as const;
+const ALL = [...THIRTEEN, ...LATER_650, ...OTHER_OWNERS];
 /** Each Harmony 650's skin, 72, against the 600's 71 and 73 and the 700's 66. */
 const isHarmony650 = (c: Container): boolean => ((c.versionWord ?? -1) & 0xff) === 72;
 
 test('section 352: every activity device list of Logitech\'s arch 14 compiles is the one built for its activity off the idle list\'s rows and labels, 78 of 82, 53 of 57 on the Harmony 650',
-     skipUnless(...ALL), () => {
+     slow(skipUnless(...ALL)), () => {
   // Per configuration, the lists it holds and what the check compared. One configuration is refused,
   // and why: its screens are in French, its device pages' bottom line saying "Sélection pr.." where every
   // other says "Back", so the chrome cannot be built in English, which is the builders' language and not

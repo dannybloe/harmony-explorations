@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { H650_FAMILY, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import { SCREEN_SIZES, parse, renderPage, renderPages, renderVariants, describeChoices } from '../src/index.ts';
 import {
   GLYPH_ADVANCE,
@@ -508,12 +508,7 @@ test('a contact sheet refuses rasters of mixed sizes rather than drawing them wr
   assert.equal(contactSheetPng([], 2), undefined, 'and an empty sheet is still nothing');
 });
 
-const H650_GLYPH_COMPILES = [
-  'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
-  'h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
-  'h650_issue36_config',
-] as const;
+const H650_GLYPH_COMPILES = H650_FAMILY.full;
 
 test('a glyph\'s pixel is high byte first like a picture\'s: every Harmony 650 letter colour is a neutral grey, and three are not when swapped',
      skipUnless(...H650_GLYPH_COMPILES), () => {

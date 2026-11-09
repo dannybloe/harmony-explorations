@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, slow } from '@harmony/lab';
+import { H650_FAMILY, load, skipUnless, slow } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 // Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
 import { HARMONY_650_FACES } from '../src/families/harmony-600-650-700/fonts.ts';
@@ -44,12 +44,7 @@ import '../src/support/resources.node.ts';
 /** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;
 
-const H650 = [
-  'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
-  'h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
-  'h650_issue36_config',
-] as const;
+const H650 = H650_FAMILY.full;
 
 const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
 

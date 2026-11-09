@@ -18,7 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ARCH14_22_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import {
   BITMAP_ENCODED,
@@ -36,13 +36,7 @@ import { PictureError, type PictureEntry, layOutContainer, pictureRows, takeApar
 import { HARMONY_650_PICTURES, buildPictures, checkPictures, describePictures, withPictures } from '../src/families/harmony-600-650-700/pictures.ts';
 
 /** Section 356's 22 Logitech compiles of the Harmony 600, 650 and 700. */
-const COMPILES = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
-  'h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
-  'h650_issue36_config'] as const;
+const COMPILES = ARCH14_22_FAMILY.full;
 const H650 = COMPILES.filter((name) => name.startsWith('h650_'));
 /** The nineteen containers the codec's corpus wide claims are made over, `edit.test.ts`'s `ALL_CONTAINERS`. */
 const CORPUS = [
@@ -243,21 +237,23 @@ test('the six rule pictures are Logitech\'s bytes wherever a compile of the Harm
   assert.equal([...built.values()].reduce((sum, bytes) => sum + bytes.length, 0), 41066);
 });
 
-test('all 22 compiles of the Harmony 600, 650 and 700 rebuild byte for byte with their rule pictures built',
-     skipUnless(...COMPILES), () => {
+test('each compile of the Harmony 600, 650 and 700 walked rebuilds byte for byte with its rule pictures built: the pair on a step, all 22 and their count in the slow tier',
+     skipUnless(...sampled(ARCH14_22_FAMILY)), () => {
+  const walked = sampled(ARCH14_22_FAMILY);
   const builtPer: Record<string, number> = {};
-  for (const name of COMPILES) {
+  for (const name of walked) {
     const result = checkPictures(containerOf(name));
     builtPer[result.built.length] = (builtPer[result.built.length] ?? 0) + 1;
   }
   // 13 Harmony 650 and 5 Harmony 700 compiles with all six, two older 700s with two, two 600s with one.
-  assert.deepEqual(builtPer, { 6: 18, 2: 2, 1: 2 });
+  if (walked.length === COMPILES.length) assert.deepEqual(builtPer, { 6: 18, 2: 2, 1: 2 });
 });
 
-test('with every byte of the rule pictures overwritten in the layout once they are named, all 22 still rebuild byte for byte',
-     skipUnless(...COMPILES), () => {
+test('with every byte of the rule pictures overwritten in the layout once they are named, each compile walked still rebuilds byte for byte: the pair on a step, all 22 and their count in the slow tier',
+     skipUnless(...sampled(ARCH14_22_FAMILY)), () => {
+  const walked = sampled(ARCH14_22_FAMILY);
   let blinded = 0;
-  for (const name of COMPILES) {
+  for (const name of walked) {
     const c = containerOf(name);
     const layout = takeApart(c);
     const described = describePictures(layout);
@@ -270,7 +266,7 @@ test('with every byte of the rule pictures overwritten in the layout once they a
     assert.notEqual(firstDifference(layOutContainer(layout).bytes, c.blob), undefined, `${name}: the blind control does not bite`);
     assert.equal(firstDifference(layOutContainer(withPictures(layout, described)).bytes, c.blob), undefined, `${name} differs`);
   }
-  assert.equal(blinded, 18 * 41066 + 2 * (4101 + 245) + 2 * 4101);
+  if (walked.length === COMPILES.length) assert.equal(blinded, 18 * 41066 + 2 * (4101 + 245) + 2 * 4101);
 });
 
 test('the crossed device page differs from the one item page in 98 pixels off column 64 and row 63',

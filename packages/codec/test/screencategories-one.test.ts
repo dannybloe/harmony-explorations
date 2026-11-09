@@ -16,7 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, skipUnless, slow } from '@harmony/lab';
 import { type Container, parse, renderPage } from '../src/index.ts';
 import {
   type CensusMember,
@@ -35,10 +35,7 @@ import {
 import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, in the order the per configuration figures are listed. */
-const SKIN_54 = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const SKIN_54 = ONE_SKIN_54_FAMILY.full;
 /** The two English compiles of skin 59, the European Harmony One: the everyday One's and its factory file. */
 const SKIN_59 = ['one_config', 'one_config_unprogrammed'] as const;
 /** The Dutch compile, the friend's One as found. */
@@ -60,7 +57,7 @@ function loaded(name: string): Loaded {
 const population = (names: readonly string[]): Loaded[] => names.map(loaded);
 
 test('section 405: every screen byte of a Harmony One configuration is in exactly one unit, and fixed is 795792 to 795925 bytes on each of the sixteen of skin 54',
-     skipUnless(...SKIN_54, ...SKIN_59, DUTCH), () => {
+     slow(skipUnless(...SKIN_54, ...SKIN_59, DUTCH)), () => {
   const sixteen = population(SKIN_54);
   // screen bytes, fixed, dynamic, setup
   const expected: Record<(typeof SKIN_54)[number], [number, number, number, number]> = {
@@ -128,7 +125,7 @@ test('section 405: the head of a Harmony One mode table is the event map\'s 10 f
 });
 
 test('section 405: the 78 fixed modes of skin 54 are the 40 of the head and 38 others, every one re-encoded per compile, and each renders to its twin\'s pixels, 1170 pairs',
-     skipUnless(...SKIN_54), () => {
+     slow(skipUnless(...SKIN_54)), () => {
   const sixteen = population(SKIN_54);
   for (const one of sixteen) {
     const modes = attributeScreens(one.units, sixteen).filter((a) => a.unit.kind === 'mode' && a.category === 'fixed');

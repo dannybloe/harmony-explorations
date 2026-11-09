@@ -96,7 +96,9 @@ import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { assertFileFamilyContainer } from '@harmony/usb/rails';
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import {
+  FILE_BASED_FAMILY, IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+} from '@harmony/lab';
 
 import { type Container, ComposeError, parse, type Recipe } from '../src/index.ts';
 import {
@@ -112,7 +114,7 @@ import {
 } from '../src/build.ts';
 import { archiveAt } from '../src/catalogue/catalogue.node.ts';
 
-const FIVE = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'] as const;
+const FIVE = FILE_BASED_FAMILY.full;
 const SETUP = 'work/setups/h350-test/compile-Result.EzHex';
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
 

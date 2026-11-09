@@ -20,7 +20,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ARCH14_22_FAMILY, require_, sampled, skipUnless, slow } from '@harmony/lab';
 import { type Container, introductionTour, parse } from '../src/index.ts';
 import {
   type ContainerPiece,
@@ -48,16 +48,15 @@ import { activityEntriesByName, buildScreenRecords, describeScreenRecords, inAct
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/support/resources.node.ts';
 
-/** The thirteen arch 14 compiles section 312 names. */
-const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
-/** Logitech's later compiles of the test record's Harmony 650. */
-const LATER_650 = ['h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean'] as const;
-/** Section 356's 22: those and another owner's Harmony 650, issue 36, refused for its "I" until section 368. */
-const BUILT = [...THIRTEEN, ...LATER_650, 'h650_issue36_config'] as const;
+/**
+ * Section 356's 22: the thirteen arch 14 compiles section 312 names, Logitech's later compiles of the test record's
+ * Harmony 650, and another owner's Harmony 650, issue 36, refused for its "I" until section 368.
+ */
+const BUILT = ARCH14_22_FAMILY.full;
+/** The ones a per compile test walks: the family's pair on a step, all 22 in the slow tier. */
+const WALKED = sampled(ARCH14_22_FAMILY);
+/** Whether this run walks all 22, so a total of all 22 is asserted. */
+const WHOLE = WALKED.length === BUILT.length;
 const SEVEN_HUNDREDS = ['h700_config', 'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile',
   'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
 
@@ -76,10 +75,10 @@ function rebuilt(c: Container): Uint8Array {
   return layOutContainer(withFirmwareScreens(layout, buildFirmwareScreens(d.spec, c), d.place)).bytes;
 }
 
-test('the firmware screens of 22 arch 14 Logitech compiles are rebuilt byte for byte from a description',
-     skipUnless(...BUILT), () => {
+test('the firmware screens of each arch 14 Logitech compile walked are rebuilt byte for byte from a description: the pair on a step, all 22 and their totals in the slow tier',
+     skipUnless(...WALKED), () => {
   const perModel = new Map<string, { compiles: number; screens: number; structure: number; lists: number }>();
-  for (const name of BUILT) {
+  for (const name of WALKED) {
     const c = containerOf(name);
     const layout = takeApart(c);
     const d = describeFirmwareScreens(c, layout);
@@ -96,7 +95,7 @@ test('the firmware screens of 22 arch 14 Logitech compiles are rebuilt byte for 
     assert.deepEqual(d.spec.order, FIRMWARE_SCREENS[model].map((_, k) => k), name);
     assert.equal(d.spec.homes.size, 0, name);
   }
-  assert.deepEqual(Object.fromEntries(perModel), {
+  if (WHOLE) assert.deepEqual(Object.fromEntries(perModel), {
     'harmony-650': { compiles: 13, screens: 182, structure: 13 * 5435, lists: 130 },
     'harmony-600': { compiles: 2, screens: 28, structure: 2 * 5435, lists: 20 },
     'harmony-700': { compiles: 7, screens: 133, structure: 7 * 8864, lists: 70 },
@@ -111,8 +110,8 @@ test('a French Harmony 650 is refused for its words',
     (error: Error) => error instanceof ScreenRecordError && /addActivityHere: font 0 has no glyph for 'w'/.test(error.message));
 });
 
-test('a blinded input rebuilds all 22: no byte the builder generates is taken from the screens\' own bytes, though the description finds its way through them',
-     skipUnless(...BUILT), () => {
+test('a blinded input rebuilds each compile walked, the pair on a step and all 22 and their tallies in the slow tier: no byte the builder generates is taken from the screens\' own bytes, though the description finds its way through them',
+     skipUnless(...WALKED), () => {
   let values = 0;
   let readAddresses = 0;
   let generated = 0;
@@ -120,7 +119,7 @@ test('a blinded input rebuilds all 22: no byte the builder generates is taken fr
   let blindedCount = 0;
   let structure = 0;
   const already = { tags: 0, addresses: 0 };
-  for (const name of BUILT) {
+  for (const name of WALKED) {
     const c = containerOf(name);
     const first = describeFirmwareScreens(c, takeApart(c));
     structure += first.structure.size;
@@ -168,6 +167,9 @@ test('a blinded input rebuilds all 22: no byte the builder generates is taken fr
   // Connected"'s variable and list indices, 21 bytes a Harmony 600 or 650 and 19 a Harmony 700, whose leave
   // list's index is the wiring's; addresses naming a picture, 1227, three bytes for each of 17 pictures on a
   // 600 or 650 and 22 on a 700; and the builder's, 141854, every one of them blinded.
+  assert.equal(values + readAddresses + generated, structure);
+  // Tallies of all 22, so asserted when the slow tier walks all 22.
+  if (!WHOLE) return;
   assert.deepEqual({ structure, values, readAddresses, generated, blindedCount }, {
     structure: 143573, values: 15 * (2 + 21) + 7 * (2 + 19), readAddresses: 3 * (15 * 17 + 7 * 22), generated: 141854,
     blindedCount: 141854,
@@ -238,7 +240,7 @@ test('checkFirmwareScreens passes Logitech\'s clean compile and refuses a moved 
 });
 
 test('the welcome tour, measured and not built: in Logitech\'s skipped form nothing enters its ten screens, its start list is called by the wiring\'s startTour and, with the Remote Assistant on, the Assistant\'s gate, and its mark is read by that gate and by the test before Off',
-     skipUnless(...BUILT), () => {
+     slow(skipUnless(...BUILT)), () => {
   const forms = { shown: 0, skipped: 0 };
   const assistant = { on: 0, off: 0 };
   const sizes = new Set<number>();

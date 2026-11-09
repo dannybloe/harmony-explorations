@@ -16,7 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, slow } from '@harmony/lab';
+import { load, ONE_FAMILY, sampled, skipUnless, slow } from '@harmony/lab';
 import { activities, activityScreens, type Container, parse } from '../src/index.ts';
 import { modeRecords, taggedList, touchPages, valueMaps } from '../src/internal.ts';
 import { touchOwner } from '../src/inventory/touch.ts';
@@ -330,12 +330,13 @@ test('section 402: screen instruction 1 stands on the working screens of 23 of L
 /** The four records an activity's case goes in, by the One family's catalogue, section 416. */
 const ACTIVITY_ROLES = ['devices', 'devices unread', 'working', 'select'] as const;
 
-test('todo-compile-one 3.2.2.3: an activity our builder composes onto each Logitech One compile takes a case in the four records every activity of theirs has one in, the unread copy of the Devices record among them, and base slot 11\'s table then names its cases as their compiler names every case, the case programs\' builder rebuilding the file with the table it generates',
+test('todo-compile-one 3.2.2.3: an activity our builder composes onto each Logitech One compile walked, the pair on a step and all nineteen and their tally in the slow tier, takes a case in the four records every activity of theirs has one in, the unread copy of the Devices record among them, and base slot 11\'s table then names its cases as their compiler names every case, the case programs\' builder rebuilding the file with the table it generates',
      skipUnless(...WITH_ACTIVITIES, ...WITHOUT_ACTIVITIES), () => {
   // Section 402's method: each compile lettered in ours, as `composeSetup` letters its donor, and an activity built
   // onto it under a fresh number. Its pads do not matter here, so it has none.
   const tally = { compiles: 0, theirs: 0, notLettered: [] as string[] };
-  for (const name of [...WITH_ACTIVITIES, ...WITHOUT_ACTIVITIES]) {
+  const walked = sampled(ONE_FAMILY, [...WITH_ACTIVITIES, ...WITHOUT_ACTIVITIES]);
+  for (const name of walked) {
     let c: Container;
     try {
       c = parse(letterOneDonor(parse(load(name) as Uint8Array), ONE_CHOICES).bytes);
@@ -379,6 +380,10 @@ test('todo-compile-one 3.2.2.3: an activity our builder composes onto each Logit
   }
   // The Dutch compile draws a letter ours lack and one compile of two devices has no single device mode header to
   // letter by, both refused by the letterer and not composed onto; the 63 of theirs are the 64 of section 402 but
-  // the Dutch compile's one.
-  assert.deepEqual(tally, { compiles: 17, theirs: 63, notLettered: ['one_friend_asfound_config', 'harvest_one_families_1'] });
+  // the Dutch compile's one. A tally of all nineteen, so asserted when the slow tier walks all nineteen.
+  if (walked.length === ONE_FAMILY.full.length) {
+    assert.deepEqual(tally, { compiles: 17, theirs: 63, notLettered: ['one_friend_asfound_config', 'harvest_one_families_1'] });
+  } else {
+    assert.equal(tally.compiles, walked.length, 'the pair are both lettered and composed onto');
+  }
 });

@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LAB, load, skipUnless } from '@harmony/lab';
+import { ARCH14_FAMILY, LAB, load, ONE_FAMILY, sampled, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import type { ContainerLayout, ContainerPiece } from '../src/build.ts';
 import { inventory, parse, renderPages } from '../src/index.ts';
@@ -31,12 +31,7 @@ import { roundTrip } from '../src/internal.ts';
 import '../src/support/resources.node.ts';
 
 /** The thirteen arch 14 compiles of section 312, the population `frame.test.ts` lays out. */
-const ARCH14_COMPILES = [
-  'h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
-] as const;
+const ARCH14_COMPILES = ARCH14_FAMILY.full;
 
 /** The base slots whose table has its descendants parked in front of it in an order the content states. */
 const STATED_SLOTS = [5, 7, 10, 15] as const;
@@ -200,9 +195,9 @@ test('the controls bite: a reversed table order and an unnamed address field bot
   assert.equal(left, 2674);
 });
 
-test('with the two free orders substituted the thirteen come back byte for byte, and as placed every difference is named',
-     skipUnless(...ARCH14_COMPILES), () => {
-  for (const name of ARCH14_COMPILES) {
+test('with the two free orders substituted each arch 14 compile walked comes back byte for byte, and as placed every difference is named: the pair on a step, all thirteen in the slow tier',
+     skipUnless(...sampled(ARCH14_FAMILY)), () => {
+  for (const name of sampled(ARCH14_FAMILY)) {
     const c = containerOf(name);
     const logitech = takeApart(c);
     const placed = placePieces(loosen(logitech, shuffled(3))).layout;
@@ -457,11 +452,12 @@ test('on the Harmony One the action lists parked in front of base slot 10 are th
 /** The page lists of the twenty Harmony One fixtures: placed by the lists they call, and left to the placer. */
 const ONE_PAGE_LISTS = [3912, 1050];
 
-test('on the Harmony One with the two free orders substituted the nineteen distinct compiles, twenty fixtures, come back byte for byte, and as placed every difference is named, every page draws as Logitech\'s and the bank is found again',
+test('on the Harmony One with the two free orders substituted each compile walked comes back byte for byte, and as placed every difference is named, every page draws as Logitech\'s and the bank is found again: the pair on a step, the nineteen distinct compiles in twenty fixtures and their page count in the slow tier',
      skipUnless(...ONE_COMPILES), () => {
+  const walked = sampled(ONE_FAMILY, ONE_FIXTURES);
   let pages = 0;
   const key = (piece: ContainerPiece): string => Buffer.from(piece.bytes).toString('hex');
-  for (const name of ONE_FIXTURES) {
+  for (const name of walked) {
     const c = oneContainer(name);
     const logitech = takeApart(c);
     const placed = placePieces(loosen(logitech, shuffled(3))).layout;
@@ -506,7 +502,7 @@ test('on the Harmony One with the two free orders substituted the nineteen disti
       pages += 1;
     });
   }
-  assert.equal(pages, ONE_PAGES_DRAWN);
+  if (walked.length === ONE_FIXTURES.length) assert.equal(pages, ONE_PAGES_DRAWN);
 });
 
 test('on the Harmony One the placement does not depend on the order the bag arrives in',

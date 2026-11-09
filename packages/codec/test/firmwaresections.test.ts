@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { ARCH14_FAMILY, load, ONE_FAMILY, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import type { ContainerPiece } from '../src/build.ts';
 import { parse } from '../src/index.ts';
@@ -30,18 +30,10 @@ import { PARAMETER_VALUES, describeWiring } from '../src/families/harmony-600-65
 import { sameBytes } from '../src/support/bytes.ts';
 
 /** The 19 distinct Harmony One compiles, `todo-compile-one.md` 2.2, as `startupassistant.test.ts` lists them. */
-const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const ONE_COMPILES = ONE_FAMILY.full;
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
-const ARCH14_COMPILES = [
-  'h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
-] as const;
+const ARCH14_COMPILES = ARCH14_FAMILY.full;
 
 const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
 // The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.

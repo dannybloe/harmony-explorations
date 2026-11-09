@@ -393,7 +393,12 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 option is read as the 68 hand written readers it replaced read it
                                 (the first occurrence wins, an unknown option is ignored, no
                                 --name=value). test/cli.test.ts holds the shapes, and
-                                test/scripts.test.ts that no script reads process.argv itself
+                                test/scripts.test.ts that no script reads process.argv itself.
+                                And src/tiers.ts, the two tiers of the suite: `slow()`, and each
+                                family's compiles once, whole and with a pair, so a per compile
+                                test walks `sampled(family)`, the pair on a step and the whole
+                                list under HARMONY_SLOW_TESTS=1. tests/test_toolchain.py's
+                                TheCorpusWidePopulationsAgree holds the lists and refuses a copy
 packages/base/                  TS: what every other package needs and nothing native, plan 013
                                 decision 4: the table that turns a reported skin into a model and
                                 its hardware capabilities, src/models.ts; the container's trailer
@@ -981,8 +986,10 @@ make lab-check     what the lab register already says about a path, PATH_ARG=<la
                    a name into one it had not, sections 209 and 213
 make ghidra        build or refresh the Ghidra project
 make ts            typecheck and test the TypeScript packages, the slow tier included
-make ts-test       the TypeScript tests without the slow tier, `slow()` in packages/lab: what a step runs
-make ts-test-all   all of them, the slow tier's 30 corpus wide compositions included: before a push
+make ts-test       the TypeScript tests without the slow tier, `slow()` in packages/lab, and each family's
+                   per compile tests on its pair, `sampled()`: what a step runs
+make ts-test-all   all of them, the slow tier's corpus wide compositions and family censuses included,
+                   and every compile of each family: before a push
 make audit         check the npm dependency tree for known vulnerabilities
 make hooks         install .githooks/pre-commit, once per clone
 make golden        compare the golden vectors; golden-write regenerates them. Since section 139

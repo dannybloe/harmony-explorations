@@ -18,7 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, ONE_FAMILY, ONE_SKIN_54_FAMILY, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import { inventory, parse } from '../src/index.ts';
 import { LETTERING_CHARACTERS, describeStateTables, layOutContainer, takeApart } from '../src/build.ts';
@@ -56,11 +56,9 @@ const FONT_TABLE_LENGTH = 183518;
 /** The key table sits straight after the end marker: the 11 byte header, 22 four byte table items, the four byte marker. */
 const KEY_TABLE_AT = 0x0b + 4 * 22 + 4;
 /** The nineteen distinct Harmony One compiles of section 405, `test/oneemptywiring.test.ts`' list. */
-const ONES = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after', 'one_config', 'one_config_unprogrammed',
-  'one_friend_asfound_config'] as const;
+// The nineteen in the order this file's per compile tables are written in: skin 54's sixteen, then the three of
+// other skins.
+const ONES = [...ONE_SKIN_54_FAMILY.full, ...ONE_FAMILY.full.filter((name) => !ONE_SKIN_54_FAMILY.full.includes(name))];
 
 /** Every unclaimed run of a container, `[start, length]`. */
 function gapsOf(c: Container): [number, number][] {

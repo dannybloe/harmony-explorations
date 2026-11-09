@@ -23,7 +23,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, slow } from '@harmony/lab';
+import { FILE_BASED_FAMILY, load, skipUnless, slow } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import type { Claim } from '../src/internal.ts';
 import { inventory, parse } from '../src/index.ts';
@@ -262,9 +262,7 @@ const landings = (c: Container): string[] => pointers(c).map((p) => `${p.holder}
  * these readers parse, and they carry fields naming flash outside themselves that no corpus
  * container does.
  */
-const FILE_FAMILY = [
-  'h300_config', 'h300_programmed_config', 'h350_config', 'h350_programmed_config', 'h350_three_devices_config',
-] as const;
+const FILE_FAMILY = FILE_BASED_FAMILY.full;
 
 test('a rebase links every container for another address and back again byte for byte, todo-compile-650 7.1.1',
   skipUnless(...SAMPLES, ...MADE, ...FILE_FAMILY), () => {

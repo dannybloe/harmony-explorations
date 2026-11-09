@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { H650_FAMILY, load, sampled, skipUnless, slow } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import { parse } from '../src/index.ts';
 import {
@@ -32,12 +32,7 @@ import { HARMONY_650_PICTURES } from '../src/families/harmony-600-650-700/pictur
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/support/resources.node.ts';
 
-const H650 = [
-  'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
-  'h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
-  'h650_issue36_config',
-] as const;
+const H650 = H650_FAMILY.full;
 
 const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
 
@@ -53,7 +48,7 @@ test('the colours decided are rgb(184 32 55), rgb(18 37 200) and rgb(1 136 53) i
 });
 
 test('on the 13 Harmony 650 compiles the device and activity screens draw Logitech\'s grey and red looks, and the idle ones both',
-     skipUnless(...H650), () => {
+     slow(skipUnless(...H650)), () => {
   // Logitech's five designed backgrounds come in two looks, a grey curve and a red one. The states are read
   // by structure; the look from each page's own program. Device and activity agree with the looks on every
   // page, and the idle state has no look of its own, which is why a swap of pictures could not do it.
@@ -86,11 +81,12 @@ test('on the 13 Harmony 650 compiles the device and activity screens draw Logite
   assert.deepEqual(Object.fromEntries(tally), { 'device on grey': 813, 'activity on red': 67, 'idle on grey': 25, 'idle on red': 29 });
 });
 
-test('withStateBackgrounds gives every state its colour on all 13 compiles and changes nothing else a setup shows',
-     skipUnless(...H650), () => {
+test('withStateBackgrounds gives every state its colour on each Harmony 650 compile walked and changes nothing else a setup shows: the pair on a step, all 13 and their totals in the slow tier',
+     skipUnless(...sampled(H650_FAMILY)), () => {
+  const walked = sampled(H650_FAMILY);
   const totals = { device: 0, activity: 0, idle: 0, pictures: 0, dropped: 0 };
   const entries: number[] = [];
-  for (const name of H650) {
+  for (const name of walked) {
     const original = containerOf(name);
     const made = withStateBackgrounds(takeApart(containerOf(name)), FOUR_SLOT_CHOICES.stateColours, FOUR_SLOT_CHOICES.barColour);
     const out = parse(layOutContainer(made.layout).bytes);
@@ -107,9 +103,11 @@ test('withStateBackgrounds gives every state its colour on all 13 compiles and c
     assert.equal((out.pointerArray(11) ?? []).length, (original.pointerArray(11) ?? []).length, `${name}: base slot 11 changed length`);
     entries.push(made.idleCorner);
   }
-  assert.deepEqual(totals, { device: 153, activity: 58, idle: 26, pictures: 1158, dropped: 82 });
+  // The totals are a census of all thirteen, so they are asserted when the slow tier walks all thirteen.
+  if (walked.length === H650.length) assert.deepEqual(totals, { device: 153, activity: 58, idle: 26, pictures: 1158, dropped: 82 });
   // The lowest entry no `lo 00 0x73` names, per compile in `H650`'s order: 5 on ten, 6 on two, 7 on one.
-  assert.deepEqual(entries, [6, 5, 6, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5]);
+  const lowest = [6, 5, 6, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5];
+  assert.deepEqual(entries, walked.map((name) => lowest[H650.indexOf(name)]));
 });
 
 test('the check refuses Logitech\'s own backgrounds, a state in another colour, a corner patched in another, a page left on the old corner, a page on the plain background and an idle corner program past entry 255',

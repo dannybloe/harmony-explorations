@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless, skipWithoutLab, slow } from '@harmony/lab';
+import { ARCH14_FAMILY, require_, skipUnless, skipWithoutLab, slow } from '@harmony/lab';
 import { activities, type Container, deviceModeMaps, devices, parse, payloadOf } from '../src/index.ts';
 import {
   ACTION_LIST_INDEX_OPCODE,
@@ -43,10 +43,7 @@ import { familyOf } from '../src/families/registry.ts';
 import { FOUR_SLOT_ITEMS, fourSlotCellAt } from '../src/families/harmony-600-650-700/geometry.ts';
 import '../src/support/resources.node.ts';
 
-const COMPILES = ['h600_config', 'calibration_h600', 'h650_config_region',
-  'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_config',
-  'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile', 'h700_power_hold_compile_2',
-  'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
+const COMPILES = ARCH14_FAMILY.full;
 
 /**
  * The two configurations that are not Logitech's choices: `h600_config` is Danny's own Harmony 600,
@@ -480,7 +477,7 @@ const ONE_STATED = [
 ] as const;
 
 test('on the Harmony One an activity\'s keypad from its roles is Logitech\'s on 38 of 50 activities with the One\'s keys, against 174 keys with the roles swapped',
-     skipUnless(...ONE_STATED), () => {
+     slow(skipUnless(...ONE_STATED)), () => {
   // Section 398. Scan 55, which every One activity binds to entering a mode and setting a variable and no
   // device's map holds, is not the rule's and is left out of both sides.
   const total = { match: 0, differ: 0, missing: 0, extra: 0 };

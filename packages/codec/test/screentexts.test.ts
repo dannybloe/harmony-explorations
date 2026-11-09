@@ -24,7 +24,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ARCH14_22_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { type ContainerPiece, layOutContainer, restamped, takeApart } from '../src/build.ts';
 import {
@@ -45,16 +45,15 @@ import { activityEntriesByName, buildScreenRecords, describeScreenRecords, inAct
 import { compareViews, setupView } from '../src/families/harmony-600-650-700/compare.ts';
 import '../src/support/resources.node.ts';
 
-/** The thirteen arch 14 compiles section 312 names. */
-const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
-  'h700_config', 'h700_config_2', 'h700_28_config_region',
-  'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-  'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
-/** Logitech's later compiles of the test record's Harmony 650. */
-const LATER_650 = ['h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
-  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean'] as const;
-/** Sections 356's and 357's 22: those, and another owner's Harmony 650, issue 36. */
-const ALL = [...THIRTEEN, ...LATER_650, 'h650_issue36_config'] as const;
+/**
+ * Sections 356's and 357's 22: the thirteen arch 14 compiles section 312 names, Logitech's later compiles of the test
+ * record's Harmony 650, and another owner's Harmony 650, issue 36.
+ */
+const ALL = ARCH14_22_FAMILY.full;
+/** The ones a per compile test walks: the family's pair on a step, all 22 in the slow tier. */
+const WALKED = sampled(ARCH14_22_FAMILY);
+/** Whether this run walks all 22, so a total of all 22 is asserted. */
+const WHOLE = WALKED.length === ALL.length;
 
 const containerOf = (name: string): Container => parse(require_(name));
 
@@ -102,14 +101,14 @@ function seenDifferences(a: Map<string, number>, b: Map<string, number>): string
     .map((key) => `${a.get(key) ?? 0} against ${b.get(key) ?? 0}: ${key}`).sort();
 }
 
-test('on the 22 Harmony 600, 650 and 700 compiles every text on a screen built here is spelled from its word and placed by its screen\'s rule, every text\'s form follows the first copy, and the texts left out keep their codes and places, byte for byte',
-     skipUnless(...ALL), () => {
+test('on each Harmony 600, 650 and 700 compile walked, the pair on a step and all 22 and their totals in the slow tier, every text on a screen built here is spelled from its word and placed by its screen\'s rule, every text\'s form follows the first copy, and the texts left out keep their codes and places, byte for byte',
+     skipUnless(...WALKED), () => {
   const perModel = new Map<string, number>();
   const perKind = new Map<string, number>();
   const perRole = new Map<string, number>();
   const forms = new Map<string, number>();
   let unresolved = 0;
-  for (const name of ALL) {
+  for (const name of WALKED) {
     const c = containerOf(name);
     const layout = takeApart(c);
     const model = describeWiring(layout).model;
@@ -129,6 +128,8 @@ test('on the 22 Harmony 600, 650 and 700 compiles every text on a screen built h
       for (let n = from; n < to; n += 1) add(forms, `${left ? 'left out' : 'built'} ${built.draws[n]?.home === undefined ? 'inline' : 'by reference'}`);
     });
   }
+  // Totals of all 22, so asserted when the slow tier walks all 22.
+  if (!WHOLE) return;
   assert.deepEqual(Object.fromEntries(perModel), {
     'harmony-600 compiles': 2, 'harmony-600 built': 693, 'harmony-600 left out': 2804,
     'harmony-650 compiles': 13, 'harmony-650 built': 9943, 'harmony-650 left out': 27290,
@@ -205,15 +206,15 @@ test('a French Harmony 650 is refused at its first firmware screen, whose words 
     (error: Error) => error instanceof ScreenTextError && /addActivityHere, draws 6 texts where its template has 5/.test(error.message));
 });
 
-test('with every text\'s place blinded in the container the description finds its way through, and every byte of the texts it does not read blinded in what it reads and in the layout, all 22 rebuild: given the roles read off the real places, the rules regenerate every place, form and address',
-     skipUnless(...ALL), () => {
+test('with every text\'s place blinded in the container the description finds its way through, and every byte of the texts it does not read blinded in what it reads and in the layout, all 22 rebuild: given the roles read off the real places, the rules regenerate every place, form and address; the pair on a step, all 22 and their tallies in the slow tier',
+     skipUnless(...WALKED), () => {
   let structure = 0;
   let read = 0;
   let placesRead = 0;
   let blindedCount = 0;
   let changed = 0;
   let unchangedInAddresses = 0;
-  for (const name of ALL) {
+  for (const name of WALKED) {
     const c = containerOf(name);
     const first = describeScreenTexts(c, takeApart(c));
     // Where each reference's address field is, so a byte already 0xEE can be accounted for.
@@ -259,6 +260,9 @@ test('with every text\'s place blinded in the container the description finds it
     placesRead += [...first.described].filter((at) => places.has(at)).length;
     assert.ok([...first.described].every((at) => first.structure.has(at)), `${name}: a read outside the texts`);
   }
+  assert.equal(unchangedInAddresses, blindedCount - changed);
+  // Tallies of all 22, so asserted when the slow tier walks all 22.
+  if (!WHOLE) return;
   assert.equal(structure, 569012);
   // Read: every text's codes, a left out text's place, 44300 draws and 88600 bytes, and of a built text's place
   // what finds its role, 23218 bytes; the build places it again from the role alone.

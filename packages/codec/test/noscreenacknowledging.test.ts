@@ -52,7 +52,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import {
+  FILE_BASED_FAMILY, IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+} from '@harmony/lab';
 
 import { ComposeError, type Container, parse, type Recipe } from '../src/index.ts';
 import {
@@ -85,7 +87,7 @@ const KEYS = {
 } as const;
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
 const SECOND = 'work/setups/h350-test/compile-Result.EzHex';
-const FIVE = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'] as const;
+const FIVE = FILE_BASED_FAMILY.full;
 
 /** The two literals this test holds the constants to, stated here so a change of either constant shows. */
 const EVENT_FF = 0xff;

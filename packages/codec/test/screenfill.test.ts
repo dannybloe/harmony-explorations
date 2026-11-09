@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { type Container, parse, renderPage } from '../src/index.ts';
 import { PictureError, withPictureFilled } from '../src/build.ts';
 import {
@@ -28,12 +28,7 @@ import { readOnePictures, withOnePictures } from '../src/families/harmony-one/pi
 import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
-const SIXTEEN = [
-  'harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830', 'calibration_one',
-  'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
-  'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3', 'one_friend_legacy_sync_config',
-  'phase7_before', 'phase7_after',
-] as const;
+const SIXTEEN = ONE_SKIN_54_FAMILY.full;
 const ONE = { width: 176, height: 220 };
 
 test('todo-compile-one 5.3.4: a fill draws its colour, high byte first, over its rectangle clipped to the screen, its rows counted to y + height in eight bits',
@@ -131,11 +126,12 @@ test('todo-compile-one 5.3.4: read as x, y, width and height, every picker frame
   assert.deepEqual([rings, control], [144, 0]);
 });
 
-test('todo-compile-one 5.3.4: on each of the sixteen the background of ours becomes one fill per draw and leaves the bank, the file 77445 bytes less a byte a draw shorter, and every page draws the same',
-     skipUnless(...SIXTEEN), () => {
+test('todo-compile-one 5.3.4: on each of the sixteen walked, the pair on a step and all sixteen and their draws in the slow tier, the background of ours becomes one fill per draw and leaves the bank, the file 77445 bytes less a byte a draw shorter, and every page draws the same',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  const walked = sampled(ONE_SKIN_54_FAMILY);
   const pictureChoices = { ...ONE_CHOICES, backgroundFill: false };
   let draws = 0;
-  for (const name of SIXTEEN) {
+  for (const name of walked) {
     const c = parse(require_(name));
     const picture = withOnePictures(c, pictureChoices).container;
     const fill = withOnePictures(c, ONE_CHOICES);
@@ -152,7 +148,7 @@ test('todo-compile-one 5.3.4: on each of the sixteen the background of ours beco
       assert.ok(a.raster.pixels.every((v, i) => v === b.raster.pixels[i]), `${name} page ${k}`);
     });
   }
-  assert.equal(draws, 2907);
+  if (walked.length === SIXTEEN.length) assert.equal(draws, 2907);
 });
 
 test('todo-compile-one 5.3.4: a picture a fill does not draw exactly is refused, one of more than one colour, an encoded one, and one drawn where the fill\'s rows would wrap',

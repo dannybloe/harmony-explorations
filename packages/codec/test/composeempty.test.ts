@@ -24,7 +24,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { IR_ARCHIVE, ONE_FAMILY, ONE_SKIN_54_FAMILY, require_, sampled, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { type Container, parse, readRecipe } from '../src/index.ts';
 import { type ComposedSetup, composeSetup, takeApart } from '../src/build.ts';
 import { archSlot, modeRecords, taggedList, touchPages } from '../src/internal.ts';
@@ -86,12 +86,9 @@ const written = (): Uint8Array => {
 };
 
 /** The sixteen English compiles of skin 54, section 405. */
-const SIXTEEN = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const SIXTEEN = ONE_SKIN_54_FAMILY.full;
 /** Every Harmony One compile of Logitech's in the lab: the sixteen and the three of other skins. */
-const NINETEEN = [...SIXTEEN, 'one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'] as const;
+const NINETEEN = ONE_FAMILY.full;
 
 const parsedOnce = new Map<string, Container>();
 const compile = (name: string): Container => {
@@ -101,7 +98,7 @@ const compile = (name: string): Container => {
 };
 
 /** The sixteen less the one holding no device page, harvest_one_families_1, measured rather than named. */
-const withDevicePages = (): string[] => SIXTEEN.filter((name) => describeOneDevicePages(compile(name), takeApart(compile(name))).spec.devices.length > 0);
+const withDevicePages = (among: readonly string[] = SIXTEEN): string[] => among.filter((name) => describeOneDevicePages(compile(name), takeApart(compile(name))).spec.devices.length > 0);
 
 /** A list switching `channels` off and writing `variable` 0, section 400's form of an off list. */
 const offList = (channels: readonly number[], variable: number) => [
@@ -298,7 +295,7 @@ test('8.1.1: on all nineteen Harmony One compiles the menu marker the rows write
 });
 
 test('8.1.1: on the fifteen English compiles holding a device page, every device page\'s shared numbers are the ones its key names, and they are not one set of numbers',
-     skipUnless(...SIXTEEN), () => {
+     slow(skipUnless(...SIXTEEN)), () => {
   const names = withDevicePages();
   assert.equal(names.length, 15);
   const all: string[] = [];
@@ -324,9 +321,9 @@ test('8.1.1: on the fifteen English compiles holding a device page, every device
 });
 
 
-test('8.1.1: on the fifteen, each off list a device page or a power off question leaves by is the only list of its content',
+test('8.1.1: on each compile walked of the fifteen, the pair on a step and all fifteen in the slow tier, each off list a device page or a power off question leaves by is the only list of its content',
      skipUnless(...SIXTEEN), () => {
-  for (const name of withDevicePages()) {
+  for (const name of withDevicePages(sampled(ONE_SKIN_54_FAMILY))) {
     const c = compile(name);
     const layout = takeApart(c);
     const wiring = describeOneWiring(layout);
@@ -352,7 +349,7 @@ test('8.1.1: on the fifteen, each off list a device page or a power off question
 });
 
 test('8.1.1: on the fifteen, a device page draws in the device lists\' title and left fonts, the activity menu\'s right font, the fixed screens\' item font and the One11 set in the title\'s colours',
-     skipUnless(...SIXTEEN), () => {
+     slow(skipUnless(...SIXTEEN)), () => {
   let counted = 0;
   for (const name of withDevicePages()) {
     const c = compile(name);

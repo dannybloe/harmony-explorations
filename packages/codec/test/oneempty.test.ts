@@ -21,7 +21,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { CONFIG_REGION_BASE, WRITABLE_CEILING } from '@harmony/usb/rails';
 import { type Container, parse, renderPage } from '../src/index.ts';
 import { archSlot, modeRecords } from '../src/internal.ts';
@@ -73,10 +73,7 @@ const build = (builtAt: string): EmptyOneConfiguration => {
 };
 
 /** The sixteen English compiles of skin 54, section 405. */
-const SIXTEEN = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const SIXTEEN = ONE_SKIN_54_FAMILY.full;
 /** The places compared per compile: every place of every set's screens but "Nothing to do"'s, and each device list's first. */
 const PLACES = 257;
 
@@ -259,8 +256,9 @@ function entryNames(): (bytes: Uint8Array) => string | undefined {
   };
 }
 
-test('7.1.7: every screen of the empty One draws at each place the picture Logitech\'s sixteen draw there, the clock header\'s slots too',
-  skipUnless(...SIXTEEN), () => {
+test('7.1.7: every screen of the empty One draws at each place the picture each of Logitech\'s sixteen walked draws there, the clock header\'s slots too: the pair on a step, all sixteen in the slow tier',
+  skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+    const walked = sampled(ONE_SKIN_54_FAMILY);
     const nameOf = entryNames();
     const n = emptyOneNumbering({ year: 2026 });
     let places = 0;
@@ -273,7 +271,7 @@ test('7.1.7: every screen of the empty One draws at each place the picture Logit
         });
       }
     };
-    for (const compile of SIXTEEN) {
+    for (const compile of walked) {
       const c = parse(require_(compile));
       const layout = takeApart(c);
       compare(compile, n.screens.firmware, describeOneFirmwareScreens(c, layout).spec.screens);
@@ -290,7 +288,7 @@ test('7.1.7: every screen of the empty One draws at each place the picture Logit
       }
       assert.deepEqual(describeOneClockHeader(c, layout).spec.slots.map((one) => nameOf(one.to.bytes)), EMPTY_ONE_CLOCK_SLOTS, compile);
     }
-    assert.equal(places, PLACES * SIXTEEN.length);
+    assert.equal(places, PLACES * walked.length);
   });
 
 test('7.1.9: what no compile of Logitech\'s shows: every One compile read holds a device and an infrared group, the empty One none, and fewer modes, lists and base slot 11 entries than any',

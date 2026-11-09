@@ -63,7 +63,9 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { deflateRawSync } from 'node:zlib';
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import {
+  FILE_BASED_FAMILY, IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+} from '@harmony/lab';
 
 import { type Container, ComposeError, metadataArchive, parse, type Recipe } from '../src/index.ts';
 import {
@@ -125,7 +127,7 @@ const lab = (path: string): Container => {
 };
 
 /** The seven compiles of this family the lab holds, outside the other owner's ZIP: the second samples of every constant. */
-const SEVEN = ['h350_config', 'h350_three_devices_config', 'h350_programmed_config', 'h300_config', 'h300_programmed_config'];
+const SEVEN = FILE_BASED_FAMILY.full;
 
 const needsLab = needing(skipWithoutLab(), skipUnless(...SEVEN));
 const needsComposer = needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless('h350_three_devices_config'));

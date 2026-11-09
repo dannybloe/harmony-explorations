@@ -16,7 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless, slow } from '@harmony/lab';
+import { ONE_FAMILY, ONE_SKIN_54_FAMILY, require_, sampled, skipUnless, slow } from '@harmony/lab';
 import { u16 } from '../src/support/bytes.ts';
 import { BINDING_SLOT, archSlot, parse, type Container } from '../src/container/gspm.ts';
 import { dropLists, instructionSites, listCallSites, namedLists } from '../src/assembly/assemble.ts';
@@ -38,12 +38,7 @@ import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, the population every builder of the One family rebuilds. */
-const SKIN_54 = [
-  'harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830', 'calibration_one',
-  'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
-  'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3', 'one_friend_legacy_sync_config',
-  'phase7_before', 'phase7_after',
-] as const;
+const SKIN_54 = ONE_SKIN_54_FAMILY.full;
 /** The three beyond them: the European factory file and its programmed copy, and the Dutch one. */
 const BEYOND = ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'] as const;
 
@@ -75,10 +70,11 @@ const CENSUS: Readonly<Record<string, [number, number, number]>> = {
   one_friend_asfound_config: [3281, 90, 774],
 };
 
-test('todo-compile-one 4.10: on all nineteen Harmony One compiles every list nothing reaches drops out, none below the start list, with every check passing, the wiring still read, and every list reached after',
+test('todo-compile-one 4.10: on each Harmony One compile walked, the pair on a step and all nineteen and their total in the slow tier, every list nothing reaches drops out, none below the start list, with every check passing, the wiring still read, and every list reached after',
      skipUnless(...SKIN_54, ...BEYOND), () => {
+  const walked = sampled(ONE_FAMILY, [...SKIN_54, ...BEYOND]);
   const got: Record<string, [number, number, number]> = {};
-  for (const name of [...SKIN_54, ...BEYOND]) {
+  for (const name of walked) {
     const c = containerOf(name);
     const census = listCallSites(c);
     const gone = unreached(c);
@@ -93,10 +89,10 @@ test('todo-compile-one 4.10: on all nineteen Harmony One compiles every list not
     checkOneWiring(e);
     got[name] = [census.length, d.dropped.length, d.length];
   }
-  assert.deepEqual(got, CENSUS);
+  assert.deepEqual(got, Object.fromEntries(walked.map((name) => [name, CENSUS[name]])));
   // 102324 places in all; reading raw slots 10 and 8, as the census did before 4.10, found 1553 of the 3067 on the
-  // donor, none inside an action list, and the drop refused, section 413.
-  assert.equal(Object.values(got).reduce((sum, one) => sum + one[0], 0), 102324);
+  // donor, none inside an action list, and the drop refused, section 413. A total of all nineteen.
+  if (walked.length === ONE_FAMILY.full.length) assert.equal(Object.values(got).reduce((sum, one) => sum + one[0], 0), 102324);
 });
 
 test('todo-compile-one 4.10: on the test setup\'s donor every holder of the census names lists the drop moves and the drop refuses a census short of it, but the leading list, whose one call is the start list',
@@ -222,15 +218,16 @@ test('todo-compile-one 4.10: the three compiles beyond the sixteen are refused, 
   assert.throws(() => withoutTourAndAssistant(containerOf('one_friend_asfound_config')), /holds 0 screens of the look of Tour Another Activity, not one/);
 });
 
-test('todo-compile-one 4.10: where a screen that stays draws text by reference into the sixteen, dropping them without first drawing the texts away is refused by the drop on eleven compiles and by the Options step on three, and the real sequence goes through on every one',
-     skipUnless(...SKIN_54), () => {
+test('todo-compile-one 4.10: where a screen that stays draws text by reference into the sixteen, dropping them without first drawing the texts away is refused by the step each compile walked is recorded for, the drop on eleven and the Options step on three of all sixteen in the slow tier, the pair on a step, and the real sequence goes through on every one walked',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  const walked = sampled(ONE_SKIN_54_FAMILY);
   // The control on `withTextsSharedAway`, per compile, with the step that refuses named. The ladder and Options steps
   // run first as the real sequence runs them and the drop follows: the same steps without the texts drawn away. On
   // three compiles a text that stays points into Options' own page, which the Options step refuses before the drop
   // is reached; on the donor and `harvest_one_families_1` no text of the kind exists and nothing is refused; on the
   // other eleven the Options step passes and the drop is what refuses, so those are the clean control.
   const got: Record<string, string> = {};
-  for (const name of SKIN_54) {
+  for (const name of walked) {
     const c = containerOf(name);
     let options: Container;
     try {
@@ -247,14 +244,16 @@ test('todo-compile-one 4.10: where a screen that stays draws text by reference i
       got[name] = 'drop refuses';
     }
   }
-  assert.deepEqual(Object.entries(got).filter(([, how]) => how !== 'drop refuses'), [
-    ['harvest_one_two_devices', 'nothing to refuse'], ['one_spare_after_sync', 'options step refuses'],
-    ['compiled_protocols', 'options step refuses'], ['harvest_one_families_1', 'nothing to refuse'],
-    ['harvest_one_families_2', 'options step refuses'],
-  ]);
+  // The five that are not refused by the drop, by name; every other compile is.
+  const otherwise: Record<string, string> = {
+    harvest_one_two_devices: 'nothing to refuse', one_spare_after_sync: 'options step refuses',
+    compiled_protocols: 'options step refuses', harvest_one_families_1: 'nothing to refuse',
+    harvest_one_families_2: 'options step refuses',
+  };
+  assert.deepEqual(got, Object.fromEntries(walked.map((name) => [name, otherwise[name] ?? 'drop refuses'])));
   assert.equal(got['one_spare_myharmony'], 'drop refuses');
   // With the texts drawn away the whole step goes through on each of them.
-  for (const name of SKIN_54) assert.ok(withoutTourAndAssistant(containerOf(name)).container.allChecksPass, name);
+  for (const name of walked) assert.ok(withoutTourAndAssistant(containerOf(name)).container.allChecksPass, name);
 });
 
 test('todo-compile-one 4.10: Options comes out one page, its three rows Date and Time, Sounds and Screen Sensitivity, without Tutorial or Turn Remote Assistant, its page turn keys swallowed and no page count or number drawn',
@@ -289,7 +288,7 @@ test('todo-compile-one 4.10: Options comes out one page, its three rows Date and
   assert.deepEqual(after.lists, [['50 7f', '51 72', '48 7f', '49 72']]);
 });
 
-test('todo-compile-one 4.10.2: on the sixteen English compiles of skin 54 Options of one page enters as Screen Sensitivity, a screen of one page, does, its timer and the same light list, without the page keys\' on list that two page Options and Month call',
+test('todo-compile-one 4.10.2: on each English compile of skin 54 walked, the pair on a step and all sixteen in the slow tier, Options of one page enters as Screen Sensitivity, a screen of one page, does, its timer and the same light list, without the page keys\' on list that two page Options and Month call',
      skipUnless(...SKIN_54), () => {
   // Each entering list's steps as `opcode operand`, read through the record reader the builders use.
   const entering = (c: Container, name: string): string[] => {
@@ -301,7 +300,7 @@ test('todo-compile-one 4.10.2: on the sixteen English compiles of skin 54 Option
       return `${bytes[at + 2]!.toString(16)} ${u16(bytes, at).toString(16)}`;
     });
   };
-  for (const name of SKIN_54) {
+  for (const name of sampled(ONE_SKIN_54_FAMILY)) {
     const c = containerOf(name);
     const one = withoutTourAndAssistant(c).container;
     const sensitivity = entering(one, 'Screen Sensitivity');

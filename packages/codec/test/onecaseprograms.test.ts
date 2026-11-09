@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { type ContainerPiece, ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import {
@@ -40,12 +40,7 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
 }
 
 /** The sixteen English compiles of skin 54, section 405. */
-const NAMES = [
-  'harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830', 'calibration_one',
-  'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
-  'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3', 'one_friend_legacy_sync_config',
-  'phase7_before', 'phase7_after',
-];
+const NAMES = ONE_SKIN_54_FAMILY.full;
 /** The three Harmony One compiles beyond the sixteen: the everyday One's and the European factory file, skin 59, and the Dutch one. */
 const BEYOND = ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'];
 const ALL = [...NAMES, ...BEYOND];
@@ -265,10 +260,11 @@ test('todo-compile-one 6.6: the case programs are laid out in table order, back 
   }
 });
 
-test('todo-compile-one 6.6: a blinded input rebuilds all sixteen: no byte of the case programs, their lists or the table outside the description reaches the build',
-     skipUnless(...NAMES), () => {
+test('todo-compile-one 6.6: a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the case programs, their lists or the table outside the description reaches the build',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  const walked = sampled(ONE_SKIN_54_FAMILY);
   const totals = { structure: 0, described: 0, blinded: 0 };
-  for (const name of NAMES) {
+  for (const name of walked) {
     const c = parse(require_(name));
     const first = describeOneCasePrograms(c, takeApart(c));
     totals.structure += first.structure.size;
@@ -301,7 +297,8 @@ test('todo-compile-one 6.6: a blinded input rebuilds all sixteen: no byte of the
   }
   // 8720 bytes of programs, lists and tables over the sixteen, the sum of the per compile figures above; the
   // description reads 487 of them, and every other byte, 8233, is the builder's and blinded.
-  assert.deepEqual(totals, { structure: 8720, described: 487, blinded: 8233 });
+  // Totals of all sixteen, so asserted when the slow tier walks all sixteen.
+  if (walked.length === NAMES.length) assert.deepEqual(totals, { structure: 8720, described: 487, blinded: 8233 });
 });
 
 test('todo-compile-one 6.6: a description with the page lists swapped, devices\' record, the sound variable or the all off\'s order changed, or the header\'s entries reordered, is refused by the rebuild, and one with the idle value moved, a case built for another value or a list it does not hold by the put back; the records of the roles nothing built names change nothing',

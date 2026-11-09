@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ARCH14_FAMILY, require_, skipUnless } from '@harmony/lab';
 import { activities, activityBindings, type Container, deviceListRows, parse, payloadOf } from '../src/index.ts';
 import {
   activityKeysFromRoles,
@@ -36,10 +36,7 @@ import { startTargets } from './tagfive.ts';
 import '../src/support/resources.node.ts';
 
 /** The thirteen Logitech compiles section 312 measured, the same population as the inventory test's. */
-const COMPILES = ['h600_config', 'calibration_h600', 'h650_config_region',
-  'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_config',
-  'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile', 'h700_power_hold_compile_2',
-  'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
+const COMPILES = ARCH14_FAMILY.full;
 /** The four the composer is checked on, one per setup and model, as in `compose.test.ts`. */
 const HOSTS = ['h650_config_region', 'h600_config', 'calibration_h600', 'h700_config'] as const;
 

@@ -19,7 +19,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { ScreenRecordError, layOutContainer, takeApart } from '../src/build.ts';
 import { stateRecords } from '../src/internal.ts';
@@ -38,10 +38,7 @@ import { leftBelow, namedByRecords } from './screenlists.ts';
 import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405, and of them the five where "Devices Off Again" stops. */
-const SIXTEEN = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const SIXTEEN = ONE_SKIN_54_FAMILY.full;
 const STOPS = new Set(['one_spare_20260830', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3']);
 
 /** The nineteen Harmony One compiles of section 405, `wiring-one.test.ts`' list. */

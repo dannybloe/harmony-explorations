@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_FAMILY, ONE_SKIN_54_FAMILY, require_, sampled, skipUnless } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import { encodeBitmap } from '../src/internal.ts';
 import { layOutContainer, picturesByContent, takeApart } from '../src/build.ts';
@@ -31,12 +31,7 @@ import { withoutTourAndAssistant } from '../src/families/harmony-one/withouttour
 import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405. */
-const SIXTEEN = [
-  'harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830', 'calibration_one',
-  'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
-  'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3', 'one_friend_legacy_sync_config',
-  'phase7_before', 'phase7_after',
-] as const;
+const SIXTEEN = ONE_SKIN_54_FAMILY.full;
 const DONOR = 'harvest_one_two_devices';
 /** The compiles of the sixteen that store the whole screen background three times; the other twelve store it four times. */
 const THREE_BACKGROUNDS = new Set(['harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3']);
@@ -76,9 +71,9 @@ test('todo-compile-one 5.3: every one of the 29 pictures of Logitech\'s the modu
   }
 });
 
-test('todo-compile-one 5.3.1: on each of the sixteen every picture of ours encodes to as many bytes as the Logitech picture it replaces and sits in that picture\'s place in the bank, with the mask taken from it, in the masked form',
-     skipUnless(...SIXTEEN), () => {
-  for (const name of SIXTEEN) {
+test('todo-compile-one 5.3.1: on each of the sixteen walked, the pair on a step and all sixteen in the slow tier, every picture of ours encodes to as many bytes as the Logitech picture it replaces and sits in that picture\'s place in the bank, with the mask taken from it, in the masked form',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
+  for (const name of sampled(ONE_SKIN_54_FAMILY)) {
     const c = parse(require_(name));
     const { pictures } = readOnePictures(c);
     // The background kept a picture: this is the replacement and the merge, and the fill 5.3.4 makes of the
@@ -125,7 +120,7 @@ test('todo-compile-one 5.3.1: on each of the sixteen every picture of ours encod
 });
 
 /** The sixteen and the three Harmony One compiles outside them: the everyday One's, its unprogrammed one and the Dutch one. */
-const NINETEEN = [...SIXTEEN, 'one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'] as const;
+const NINETEEN = ONE_FAMILY.full;
 
 test('todo-compile-one 5.3.1: on all nineteen Harmony One compiles every named picture of ours in the masked form encodes to as many bytes as Logitech\'s own, 716 of 716, the two ends being our encoder and the length Logitech\'s header states',
      skipUnless(...NINETEEN), () => {
@@ -298,10 +293,10 @@ test('todo-compile-one 7.1.2: every one of the 23 fixed pictures is built by its
   assert.equal(built.reduce((sum, one) => sum + one.bytes.length, 0), 296739);
 });
 
-test('todo-compile-one 7.1.2: on each of the sixteen the step puts in each of its 32 places exactly the picture the rule built with no configuration, and the masked form differs at 14 of those places, so a step that drew inside Logitech\'s mask would not pass',
-     skipUnless(...SIXTEEN), () => {
+test('todo-compile-one 7.1.2: on each of the sixteen walked, the pair on a step and all sixteen in the slow tier, the step puts in each of its 32 places exactly the picture the rule built with no configuration, and the masked form differs at 14 of those places, so a step that drew inside Logitech\'s mask would not pass',
+     skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   const fixed = new Map(oneFixedPictures(AS_PICTURE).map((one) => [one.entry, contentKey(one.bytes)]));
-  for (const name of SIXTEEN) {
+  for (const name of sampled(ONE_SKIN_54_FAMILY)) {
     const c = parse(require_(name));
     const { pictures } = readOnePictures(c);
     const placed = withOnePictures(c, AS_PICTURE);

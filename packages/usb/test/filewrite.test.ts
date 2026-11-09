@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { load, skipUnless } from '@harmony/lab';
+import { FILE_BASED_FAMILY, load, skipUnless } from '@harmony/lab';
 
 import { authoriseReport } from '../src/authorise.ts';
 import {
@@ -208,8 +208,7 @@ describe('a container this family accepts, and the ones it would not', () => {
 
   // The synthetic container above is this file's own idea of the shape, so the rail is also held against
   // every configuration read off a Harmony 300 or 350, each stored as read or with its marker put back.
-  const FAMILY_CONFIGS = ['h350_config', 'h350_programmed_config', 'h350_three_devices_config',
-    'h300_config', 'h300_programmed_config'];
+  const FAMILY_CONFIGS = FILE_BASED_FAMILY.full;
   it('accepts all five configurations read off the family, once the end marker is on', skipUnless(...FAMILY_CONFIGS), () => {
     for (const name of FAMILY_CONFIGS) {
       const stored = load(name);

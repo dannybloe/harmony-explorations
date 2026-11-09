@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, ONE_FAMILY, skipUnless } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { characterMap, screenStrings } from '../src/screens/text.ts';
 import { stateRecords } from '../src/container/sections.ts';
@@ -14,10 +14,7 @@ import {
 } from '../src/families/harmony-one/startupassistant.ts';
 import '../src/support/resources.node.ts';
 
-const ONE_COMPILES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const ONE_COMPILES = ONE_FAMILY.full;
 
 test('section 403: 18 of the 19 Harmony One compiles hold the Remote Assistant\'s ladder on one variable running 0 to 3 and all 19 the welcome screen\'s variable running 0 to 1, both starting at 0, the everyday One\'s drawing no assistant screen',
      skipUnless(...ONE_COMPILES), () => {

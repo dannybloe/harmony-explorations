@@ -18,7 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { ONE_SKIN_54_FAMILY, require_, skipUnless, slow } from '@harmony/lab';
 import { type Container, parse } from '../src/index.ts';
 import {
   SCREEN_QUEUE_INSTRUCTION,
@@ -40,10 +40,7 @@ import {
 import '../src/support/resources.node.ts';
 
 /** The sixteen English compiles of skin 54, section 405's population. */
-const SKIN_54 = ['harvest_one_two_devices', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
-  'calibration_one', 'calibration_favchannels', 'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2',
-  'compiled_protocols_3', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3',
-  'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after'] as const;
+const SKIN_54 = ONE_SKIN_54_FAMILY.full;
 /** The European skin's two compiles and the Dutch one, which section 405 measured beside them. */
 const OTHERS = ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'] as const;
 const ALL = [...SKIN_54, ...OTHERS];
@@ -189,7 +186,7 @@ test('section 408: the screen code 9 walks to is "LCD Module Failed" on the eigh
 });
 
 test('section 408: every one of the 38 other fixed screens of skin 54 is entered by the configuration, 30 from a key or a touch, the Remote Assistant\'s first two from the start and six blank screens by timers alone',
-     skipUnless(...SKIN_54), () => {
+     slow(skipUnless(...SKIN_54)), () => {
   const population = SKIN_54.map((name) => {
     const c = parse(require_(name));
     const units = screenUnits(c);
