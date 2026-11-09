@@ -11,9 +11,10 @@ import assert from 'node:assert/strict';
 
 // Our letters and pictures are drawn from the font and icon files the Node resources supply.
 import '../src/support/resources.node.ts';
-import { buildFromRecipe } from '../src/index.ts';
+import { buildFromRecipe, unstatedChoices } from '../src/index.ts';
 import { buildEmptyFourSlotConfiguration, buildEmptyNoScreenConfiguration, buildEmptyOneConfiguration, fourSlotChoices } from '../src/build.ts';
 import { OUR_FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
+import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
 
 const BUILT_AT = '2026-11-09T12:00:00';
 
@@ -61,4 +62,18 @@ test('what an application is refused, each naming what is wrong', () => {
   refused({ ...(empty('Harmony One', 54) as object), touch: {} }, at, /Harmony Touch's part/);
   // A device on a Harmony 300 or 350 needs its device key, and a key is checked as the recipe is read.
   refused({ ...(empty('Harmony 350', 104) as object), devices: [{ name: 'TV', device: 'LG/OLED65G26LA', key: { place: -1 } }] }, at, /no place/);
+});
+
+test('a recipe\'s choices reach the Harmony One, and a reference recipe can say it states them all', () => {
+  // Every choice stated at its default builds as no choice stated; one changed changes the bytes.
+  const plain = bytesOf(empty('Harmony One', 54));
+  assert.deepEqual(bytesOf({ ...(empty('Harmony One', 54) as object), choices: ONE_CHOICES }), plain);
+  assert.notDeepEqual(bytesOf({ ...(empty('Harmony One', 54) as object), choices: { screenLightSeconds: 30 } }), plain);
+  assert.throws(() => bytesOf({ ...(empty('Harmony One', 54) as object), choices: { screenLight: 30 } }), /makes no choice called screenLight/);
+  assert.throws(() => bytesOf({ ...(empty('Harmony One', 54) as object), choices: { otherDeviceIcon: 'no-such-icon' } }), /has no icon of that name/);
+  // What a recipe leaves to the defaults, by name: all of them, then none, and nothing for a family that makes none.
+  assert.deepEqual(unstatedChoices(empty('Harmony One', 54)), Object.keys(ONE_CHOICES).sort());
+  assert.deepEqual(unstatedChoices({ ...(empty('Harmony One', 54) as object), choices: ONE_CHOICES }), []);
+  assert.deepEqual(unstatedChoices({ ...(empty('Harmony 650', 72) as object), choices: OUR_FOUR_SLOT_CHOICES }), []);
+  assert.deepEqual(unstatedChoices(empty('Harmony Touch', 99)), []);
 });

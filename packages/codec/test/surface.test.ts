@@ -34,7 +34,7 @@ const VALUES = [
   'powerOnDelays', 'pulsesOfFrame', 'pulsesOfStatedCode', 'rasterPng', 'readPng', 'readPronto', 'readRecipe',
   'recipeTarget', 'renderPage', 'renderPages', 'renderVariants', 'saveEdits', 'setPageListEntry', 'setParameter',
   'setPowerOnDelay', 'setTimerDuration', 'skipIntroductionTour', 'statedCode', 'statedProtocol', 'summary',
-  'supplyResources', 'timestampEdit', 'timestampOf', 'waveformOfArchiveCommand', 'writePronto',
+  'supplyResources', 'timestampEdit', 'timestampOf', 'unstatedChoices', 'waveformOfArchiveCommand', 'writePronto',
 ];
 
 /** The main entry: the types and interfaces, which only the source shows. */

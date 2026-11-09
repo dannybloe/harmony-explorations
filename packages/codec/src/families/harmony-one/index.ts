@@ -6,7 +6,7 @@ import type { Family } from '../family.ts';
 import { ONE_ACTIVITY_KEYS } from './keypadrules.ts';
 import { oneDrawsName, oneScreenItems } from './screenitems.ts';
 import { composeOneActivityRow, composeOneActivityScreen, composeOneDeviceScreen } from './screens.ts';
-import { ONE_CHOICES, type OneChoices } from './choices.ts';
+import { ONE_CHOICES, oneChoices, type OneChoices } from './choices.ts';
 import { ONE_HARD_KEYS } from './devicekeys.ts';
 import { oneActivityMenu } from './activityscreen.ts';
 import { letterOneDonor, oneDonorFaces, withOneLook } from './look.ts';
@@ -56,4 +56,5 @@ export const ONE: Family<OneChoices> = {
   composedSkins: new Set([54]),
   // The configuration a recipe describes, from nothing, plan 014.
   fromRecipe: oneFromRecipe,
+  readChoices: oneChoices,
 };

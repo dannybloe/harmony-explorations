@@ -469,7 +469,12 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   if (target.family.composedSkins?.has(target.skin) !== true) {
     throw new AssemblyError(`composing a setup alone is measured on the Harmony One, skin 54, and the recipe is for the ${setup.model.name}, skin ${target.skin}`);
   }
-  if (setup.choices !== undefined) throw new AssemblyError('the composers alone take the family\'s own choices, and the recipe states some');
+  // The recipe's choices over the family's, checked by the family, plan 014: every step below composes with these.
+  let choices = target.family.choices;
+  if (setup.choices !== undefined) {
+    if (target.family.readChoices === undefined) throw new AssemblyError(`${target.family.name} takes no choices from a recipe, and the recipe states some`);
+    choices = target.family.readChoices(setup.choices);
+  }
   let c = parse(options.donor);
   if (familyOf(c) !== target.family) throw new AssemblyError(`the donor is arch ${c.architecture}, which is not ${target.family.name}`);
   const skin = (c.versionWord ?? -1) & 0xff;
@@ -484,9 +489,9 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   // letters already and draws our pictures, so it is not lettered and no step turning Logitech's pictures into ours
   // runs on it, `todo-compile-one.md` 8.1.2; its faces are its stated table's, which the look's blending letters.
   const look = target.family.composedLook;
-  const ours = look?.donorOfOurs?.(c, target.family.choices);
+  const ours = look?.donorOfOurs?.(c, choices);
   if (ours !== undefined) note('a donor of ours', `${ours.length} sets of our letters`);
-  const lettered = ours !== undefined ? undefined : look?.letterDonor(c, target.family.choices);
+  const lettered = ours !== undefined ? undefined : look?.letterDonor(c, choices);
   if (lettered !== undefined) {
     c = parse(lettered.bytes);
     note('lettered');
@@ -495,7 +500,7 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   // Every device the donor holds is given the catalogue's infrared records, `todo-compile-one.md` 8.1.3, so the
   // result carries none of Logitech's: the five the donor lacks are composed from the catalogue anyway.
   const parts = composeSetupParts(c, setup, target, options,
-    { family: target.family, choices: target.family.choices, donorInfraredFromCatalogue: true }, note);
+    { family: target.family, choices, donorInfraredFromCatalogue: true }, note);
   c = parts.container;
   // The parts the family's builders make, each from a description of the configuration composed so far, in place
   // of the donor's, `todo-compile-one.md` 3.2.2: before the look, whose blending gives one role of a screen several
@@ -503,13 +508,13 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   // the donor's part.
   const builders = target.family.composedBuilders;
   if (builders !== undefined) {
-    const built = builders(c, parts.devicesComposed, target.family.choices, { donorOfOurs: ours !== undefined });
+    const built = builders(c, parts.devicesComposed, choices, { donorOfOurs: ours !== undefined });
     c = built.container;
     note('built', built.built.join(', '));
   }
   let blended: readonly BlendedSet[] = [];
   if (look !== undefined && faces !== undefined) {
-    const looked = look.look(c, faces, target.family.choices, catalogueTypes(setup, options.archive));
+    const looked = look.look(c, faces, choices, catalogueTypes(setup, options.archive));
     c = looked.container;
     blended = looked.blended;
     note('look');

@@ -6,7 +6,9 @@
  * One survives the sort. The row fonts `menus.ts` keeps are the corpus's own, font 9 for a device page's
  * rows and font 7 for a menu's; the title is where this project departs from it.
  */
+import { iconNames } from '../../drawing/icons.ts';
 import type { OxaniumWeight } from '../../drawing/lettering.ts';
+import { ComposeError } from '../../shared/core.ts';
 import type { CommonChoices } from '../family.ts';
 import type { OneIconPicture } from './pictures.ts';
 
@@ -171,3 +173,26 @@ export const ONE_CHOICES: OneChoices = {
   deviceIcons: { 1: 'television', 2: 'vhs', 4: 'disc-player', 5: 'audio-video' },
   otherDeviceIcon: 'remote',
 };
+
+/**
+ * **A recipe's choices over `ONE_CHOICES`**, checked, plan 014 and `todo.md` 7.3.11.2, `Family.readChoices`: a choice
+ * the family does not make is refused by name, so a misspelt one is not silently the default, and an icon is refused
+ * where Material Design Icons has none of that name. **Each choice is taken whole**: a recipe that states
+ * `activityBox` states its fill and its rim, since a reference recipe states every choice anyway and a half stated box
+ * would be a default slipping in.
+ */
+export function oneChoices(given: Readonly<Record<string, unknown>>): OneChoices {
+  for (const name of Object.keys(given)) {
+    if (!(name in ONE_CHOICES)) throw new ComposeError(`the Harmony One makes no choice called ${name}`);
+  }
+  const choices = { ...ONE_CHOICES, ...given } as OneChoices;
+  const icons = new Map<string, string>([
+    ...Object.entries(choices.pictureIcons), ...Object.entries(choices.activityIcons),
+    ...Object.entries(choices.deviceIcons).map(([type, icon]) => [`device type ${type}`, icon] as [string, string]),
+    ['other activities', choices.otherActivityIcon], ['other devices', choices.otherDeviceIcon],
+  ]);
+  for (const [what, icon] of icons) {
+    if (!iconNames().has(icon)) throw new ComposeError(`${what} cannot draw ${icon}: Material Design Icons has no icon of that name`);
+  }
+  return choices;
+}

@@ -93,3 +93,16 @@ function modelOf(json: unknown): { readonly name: string; readonly skin?: number
   if (skin !== undefined && !Number.isInteger(skin)) throw new RecipeError('the model\'s skin is not a number');
   return { name, ...(skin === undefined ? {} : { skin: skin as number }) };
 }
+
+/**
+ * **The choices a recipe leaves to its family's defaults**, by name, plan 014 and `todo.md` 7.3.11.2: empty where the
+ * recipe states every choice its family makes, which a reference recipe does, so that a default changed later cannot
+ * change a reference without its recipe saying so. A family that makes no choice, a document family among them,
+ * answers empty.
+ */
+export function unstatedChoices(json: unknown): readonly string[] {
+  const { family } = chooseByModel(modelOf(json));
+  if (family.kind === 'document') return [];
+  const given = (json as { choices?: Readonly<Record<string, unknown>> }).choices ?? {};
+  return Object.keys(family.choices).filter((name) => !(name in given)).sort();
+}

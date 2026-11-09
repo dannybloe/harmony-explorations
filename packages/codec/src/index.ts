@@ -103,7 +103,7 @@ export type { Edit, EditReport, IntroductionTour } from './edit/edit.ts';
 export { readRecipe, recipeTarget, RecipeError } from './recipe/recipe.ts';
 // **The one build an application makes**, plan 014: a recipe in, the configuration or the documents a remote is
 // sent out, the family chosen by the recipe's model.
-export { buildFromRecipe } from './families/fromrecipe.ts';
+export { buildFromRecipe, unstatedChoices } from './families/fromrecipe.ts';
 export type { BuildSources, Built } from './families/fromrecipe.ts';
 export type {
   Recipe,

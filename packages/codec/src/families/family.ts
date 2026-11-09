@@ -410,6 +410,12 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * nothing from a recipe yet, the Harmony 880 and 885's.
    */
   readonly fromRecipe?: (recipe: Recipe, skin: number, sources: RecipeSources) => Uint8Array;
+  /**
+   * A recipe's choices over the family's defaults, checked, plan 014 and `todo.md` 7.3.11.2: what `composeSetup`
+   * composes with when a recipe states choices, so a recipe's look reaches every builder the setup runs. Refuses a
+   * choice the family does not make. Absent where the family's setups are not composed by `composeSetup`.
+   */
+  readonly readChoices?: (given: Readonly<Record<string, unknown>>) => Choices;
 }
 
 /** What a build from a recipe takes besides the recipe, `Family.fromRecipe`. */

@@ -45,7 +45,7 @@ misspelling is an error rather than a default.
 | `activities[].devices[]` | each device it uses: `device` by name, `input` by the catalogue's name for it, and `roles`, the jobs it does, `Display`, `Volume`, `ChannelChanging`, `PlayMovie`, `PlayMedia`, `PlayGame`; no role is a pass through device |
 | `activities[].screen[]` | optional, the working screen's items in order: `{ device, command }`, a command by the label the device's own screen draws it under, or `{ sequence, steps }` |
 | `...screen[].steps[]` | `{ device, scan }`, the command that device's key sends, by the key's scan code (`reference/remotes/harmony-650/keys.md`), or `{ pause }` in tenths of a second |
-| `choices` | optional, the family's choices over its defaults; the family refuses one it does not make |
+| `choices` | optional, the family's choices over its defaults, the look among them (letters, inks, colours, icons): `FourSlotChoices` for the Harmony 600, 650 and 700, `OneChoices` for the Harmony One, none for the Harmony 300, 350 and Touch; the family refuses one it does not make. A reference recipe states every choice, `unstatedChoices` answering empty, so a default changed later cannot change it; plan 014 |
 | `favourites[]` | optional, favourite channels per device: `device` by name, a device of the recipe, at most once, and `channels`, in the order of the remote's favourite keys |
 | `...favourites[].channels[]` | each a channel number **as text**, digits with at most one dot or dash between them, so a leading zero survives: `"07"` is a channel of its own. Logitech's service holds a channel as text, `reference/logitech/service.md`, "Button maps" |
 
