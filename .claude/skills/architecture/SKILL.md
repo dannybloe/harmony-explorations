@@ -186,10 +186,10 @@ the libraries built on it; there `export *` is the point:
 * **A subpath is named by what it is** (`./node`, `./build`, `./internal`, `./write`), never by who uses it, and every
   subpath a package exports is listed in its surface test.
 * **A module no entry reaches is offered to no application.** Each one is listed with why in
-  `lab/test/dependencies.test.ts`: as found in 7.3.9, the Harmony 600 family's whole build from a setup
-  (`assemble.ts`, `screentexts.ts`) and its comparison, the Harmony One's build from nothing (`empty.ts` and the three
-  modules it takes) and its comparison view, all reached by their tests and scripts through `../src/` paths; and
-  `corpus`'s four modules of the gathering track's client of Logitech's service. A new module joins an entry, or joins
+  `lab/test/dependencies.test.ts`, today `corpus`'s four modules of the gathering track's client of Logitech's
+  service. The check's first run in 7.3.9 also found the Harmony 600 family's whole build from a setup and the Harmony
+  One's build from nothing on no entry, reached only by their scripts and tests, so an application could build
+  neither; both are on the codec's `./build` since, with their comparison views. A new module joins an entry, or joins
   that list with its reason, or is an experiment and goes beside its script.
 
 ## The write paths

@@ -387,17 +387,10 @@ function unreached(name: string): string[] {
 test('every module of a library\'s src is reached from one of its entries, or listed with why not', () => {
   // A module no entry reaches is offered to no application. It is an experiment, which lives beside its script,
   // plan 013 decision 7, or a library part missing from an entry, or a part only scripts use. Each listed here is
-  // one of the last two, as found by `todo.md` 7.3.9; a module joining the list is a decision about which.
+  // one of the last two, as found by `todo.md` 7.3.9; a module joining the list is a decision about which. The
+  // first walk also found the Harmony 600 family's build from a setup and the Harmony One's build from nothing on
+  // no entry, which left an application unable to build either; both are on `./build` since, and off this list.
   const LISTED: Readonly<Record<string, string>> = {
-    // Library parts on no entry, reached by their tests and scripts through `../src/` paths.
-    'codec/src/families/harmony-600-650-700/assemble.ts': 'a setup in, a whole Harmony 600 family container out',
-    'codec/src/families/harmony-600-650-700/compare.ts': 'two configurations of one setup compared, compare-setup.ts',
-    'codec/src/families/harmony-600-650-700/screentexts.ts': 'every text the family draws, which assemble.ts takes',
-    'codec/src/families/harmony-one/empty.ts': 'the Harmony One built from nothing, empty-one.ts',
-    'codec/src/families/harmony-one/emptynumbering.ts': 'its numbering, which empty.ts takes',
-    'codec/src/families/harmony-one/numbering.ts': 'its screen sets numbered by role, which empty.ts takes',
-    'codec/src/families/harmony-one/skeleton.ts': 'its skeleton, which empty.ts takes',
-    'codec/src/families/harmony-one/view.ts': 'a Harmony One reduced to what a person meets, for comparing two',
     // The gathering track's client of Logitech's service, `todo-secure-logitech.md`, used by harvest.ts and
     // build-setup.ts.
     'corpus/src/harvest.ts': 'a harvest\'s pieces that need no network',
@@ -410,11 +403,12 @@ test('every module of a library\'s src is reached from one of its entries, or li
 });
 
 test('the control: a module only a script imports is unreached, and the walk follows an entry down', () => {
-  // Live, over the codec: the walk reaches the container reader below the entries, and the One's empty build,
-  // which only its script and tests import, is not reached.
+  // Live: the walk reaches the container reader below the codec's entries, and the Harmony One's empty build since
+  // `./build` names it; in the corpus it does not reach the gathering track's client, which only its scripts import.
   const codec = unreached('codec');
   assert.ok(!codec.includes('codec/src/container/gspm.ts'), 'the container reader, which every entry reaches');
-  assert.ok(codec.includes('codec/src/families/harmony-one/empty.ts'));
+  assert.ok(!codec.includes('codec/src/families/harmony-one/empty.ts'), 'the One built from nothing, on ./build');
+  assert.ok(unreached('corpus').includes('corpus/src/myharmony.ts'));
   assert.ok(statSync(join(PACKAGES, 'codec', 'src', 'container', 'gspm.ts')).isFile());
   // And every package with entries had them found, rather than an empty walk listing everything as unreached.
   for (const name of PACKAGE_NAMES) assert.ok(entriesOf(name).length > 0 || name === 'testkit', name);
