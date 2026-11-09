@@ -61,6 +61,7 @@ import {
 import { type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords } from './screenrecords.ts';
 import { barBytes, stateBackgroundBytes, statePatchBytes } from './backgrounds.ts';
 import { type OurPictureChoices, type OurPictureName, buildOurPictures, buildPictures } from './pictures.ts';
+import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
 
 /** A refusal, named so a caller can tell a request this does not build from a bug. */
 export class EmptyConfigurationError extends Error {}
@@ -811,3 +812,40 @@ export function buildEmptyConfiguration(options: EmptyConfigurationOptions): Emp
   checkBlendedLetters(blended.container, fonts.faces, blending.blended);
   return { bytes: blended.bytes, container: blended.container, ...built, blended: blending.blended };
 }
+
+/** What an application asks an empty Harmony 600, 650 or 700 configuration for, as `EmptyOneOptions` for the One. */
+export interface EmptyFourSlotOptions {
+  /** The model the configuration states: 71 or 73 for the Harmony 600, 72 for the 650, 66 for the 700. */
+  skin: number;
+  /** When it is built, `YYYY-MM-DDTHH:MM:SS`, which the clock is stamped from. */
+  builtAt: string;
+  /** The family's choices, `FOUR_SLOT_CHOICES` unless given; `fourSlotChoices` makes one from a few changes. */
+  choices?: FourSlotChoices;
+}
+
+/**
+ * **An empty Harmony 600, 650 or 700 configuration from the family's choices**: no device and no activity, every
+ * screen the remote starts on, and nothing taken from a Logitech file, findings section 377. The donor of ours a
+ * setup is composed onto by `assembleSetup`.
+ *
+ * `buildEmptyConfiguration` takes the look piece by piece, inks, settings, colours and pictures, which only this
+ * repository's tests assembled from the choices, so no caller outside them could build one; `todo.md` 7.3.9 found it
+ * on no entry. This reads every piece out of one `FourSlotChoices` the way those tests do, and the letters are blended
+ * as the choices say. `test/emptyfourslot.test.ts` holds it byte for byte to the tests' own assembly.
+ */
+export function buildEmptyFourSlotConfiguration(options: EmptyFourSlotOptions): EmptyConfiguration {
+  const choices = options.choices ?? FOUR_SLOT_CHOICES;
+  return buildEmptyConfiguration({
+    skin: options.skin,
+    builtAt: options.builtAt,
+    inks: choices.letterInks,
+    settings: choices.settings,
+    look: {
+      idleColour: choices.stateColours.idle,
+      barColour: choices.barColour,
+      pictures: { icons: choices.icons, colour: choices.iconColour, background: choices.iconBackground },
+    },
+    blendLetters: choices.blendLetters,
+  });
+}
+

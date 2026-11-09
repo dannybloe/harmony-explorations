@@ -189,7 +189,11 @@ the libraries built on it; there `export *` is the point:
   `lab/test/dependencies.test.ts`, today `corpus`'s four modules of the gathering track's client of Logitech's
   service. The check's first run in 7.3.9 also found the Harmony 600 family's whole build from a setup and the Harmony
   One's build from nothing on no entry, reached only by their scripts and tests, so an application could build
-  neither; both are on the codec's `./build` since, with their comparison views. A new module joins an entry, or joins
+  neither; both are on the codec's `./build` since, with their comparison views. **The check is per module, so it
+  cannot see a function no entry offers in a module that is reached**: the empty Harmony 600, 650 and 700
+  configuration, the donor of ours a setup is composed onto, sat in `empty.ts`, reached through `assemble.ts`, with
+  only the tests able to assemble its options; `buildEmptyFourSlotConfiguration` on `./build` takes the family's
+  choices instead. When a family gains a way to build, ask which entry offers it. A new module joins an entry, or joins
   that list with its reason, or is an experiment and goes beside its script.
 
 ## The write paths
