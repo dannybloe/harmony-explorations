@@ -153,7 +153,7 @@ After 3 produces something.
   - [ ] 7.3.11 One build from a recipe for every remote served, the 885 apart: [plan 014](docs/plans/014-one-build-from-a-recipe.md)
     - [x] 7.3.11.1 A recipe may carry a device's definition and codes, served before the archive
     - [x] 7.3.11.2 A recipe states its whole look, typeface, inks, colours and icons, and a reference recipe leans on no default
-    - [ ] 7.3.11.3 `buildFromRecipe` on the codec, each family's build from nothing as a member of its interface, the Harmony Touch's documents included
+    - [x] 7.3.11.3 `buildFromRecipe` on the codec, each family's build from nothing as a member of its interface, the Harmony Touch's documents included
     - [ ] 7.3.11.4 The lab's bench written builds found per remote, rebuilt from recipes and compared, every difference explained
     - [ ] 7.3.11.5 References committed beside their recipes, decision 32: the pre-commit hook, `.gitignore` and `CLAUDE.md` along
     - [ ] 7.3.11.6 One test per recipe against its reference, several recipes per remote, with no lab

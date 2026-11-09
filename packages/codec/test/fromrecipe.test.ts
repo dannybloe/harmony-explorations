@@ -11,7 +11,11 @@ import assert from 'node:assert/strict';
 
 // Our letters and pictures are drawn from the font and icon files the Node resources supply.
 import '../src/support/resources.node.ts';
-import { buildFromRecipe, unstatedChoices } from '../src/index.ts';
+import { readFileSync } from 'node:fs';
+
+import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
+import { archiveAt, buildFromRecipe, unstatedChoices } from '../src/node.ts';
+import { buildTouchDocuments, ourBackground, readTouchSetupFile } from '../src/families/harmony-touch/fromnothing.ts';
 import { buildEmptyFourSlotConfiguration, buildEmptyNoScreenConfiguration, buildEmptyOneConfiguration, fourSlotChoices } from '../src/build.ts';
 import { OUR_FOUR_SLOT_CHOICES } from '../src/families/harmony-600-650-700/choices.ts';
 import { ONE_CHOICES } from '../src/families/harmony-one/choices.ts';
@@ -76,4 +80,31 @@ test('a recipe\'s choices reach the Harmony One, and a reference recipe can say 
   assert.deepEqual(unstatedChoices({ ...(empty('Harmony One', 54) as object), choices: ONE_CHOICES }), []);
   assert.deepEqual(unstatedChoices({ ...(empty('Harmony 650', 72) as object), choices: OUR_FOUR_SLOT_CHOICES }), []);
   assert.deepEqual(unstatedChoices(empty('Harmony Touch', 99)), []);
+});
+
+/**
+ * A made up account, John Doe's: the seven fields of Context a Harmony Touch reads, in the forms its checks take, and a
+ * favourites address on a domain that resolves nowhere. Never a real account's, which stay in the lab.
+ */
+const JOHN_DOE = {
+  context: {
+    'AccountId-': '1000001', CountryCode: 'NL', Email: 'john.doe@example.com', HouseholdUserProfileUri: null,
+    InstallerId: null, Language: 'en-GB', SetupSession: { Type: 0, SetupType: null },
+  },
+  tuning: { DeviceProfileUri: 'https://example.invalid/john-doe/favourites', ContentProfileKey: 1 },
+} as const;
+
+test('the Harmony Touch through the one build: its family\'s six documents and our background, with a made up account', skipWithoutIrArchive(), () => {
+  const json = JSON.parse(readFileSync(new URL('../../corpus/setups/touch-test.json', import.meta.url), 'utf8')) as unknown;
+  const archive = archiveAt(IR_ARCHIVE!);
+  const built = buildFromRecipe(json, { builtAt: BUILT_AT, archive, account: JOHN_DOE as never });
+  assert.equal(built.kind, 'documents');
+  if (built.kind !== 'documents') return;
+  assert.deepEqual(built.documents, buildTouchDocuments(readTouchSetupFile(json), { archive, account: JOHN_DOE as never }));
+  const background = ourBackground();
+  assert.deepEqual(built.pictures.map((p) => p.uri), [background.addresses.picture, background.addresses.twin]);
+  assert.deepEqual(built.pictures[0]!.png, background.picture);
+  // The account's own identifiers reach Context, and nothing builds without an account.
+  assert.equal((built.documents.Context as unknown as Record<string, unknown>)['Email'], 'john.doe@example.com');
+  assert.throws(() => buildFromRecipe(json, { builtAt: BUILT_AT, archive }), /no account was given/);
 });
