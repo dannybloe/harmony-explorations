@@ -157,6 +157,7 @@ After 3 produces something.
     - [ ] 7.3.11.4 The lab's bench written builds found per remote, rebuilt from recipes and compared, every difference explained
     - [ ] 7.3.11.5 References committed beside their recipes, decision 32: the pre-commit hook, `.gitignore` and `CLAUDE.md` along
     - [ ] 7.3.11.6 One test per recipe against its reference, several recipes per remote, with no lab
+  - [ ] 7.3.12 The test folders in logical subfolders, every package's `test/` and the Python `tests/`, the way 7.3.8 grouped the codec's source; after the two samples per family work has landed, since it edits the same files
 
 ---
 
