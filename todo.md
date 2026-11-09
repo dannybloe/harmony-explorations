@@ -157,7 +157,7 @@ After 3 produces something.
     - [x] 7.3.11.4 The lab's bench written builds found per remote, rebuilt from recipes and compared, every difference explained
     - [x] 7.3.11.5 References as recipes with their codes and the fingerprints of their builds, decision 32, and `bin/reference.ts` to record them and show where a build moved
     - [x] 7.3.11.6 One test per recipe against its reference, several recipes per remote, with no lab
-  - [ ] 7.3.12 The test folders in logical subfolders, every package's `test/` and the Python `tests/`, the way 7.3.8 grouped the codec's source; after the two samples per family work has landed, since it edits the same files
+  - [x] 7.3.12 The test folders in logical subfolders, every package's `test/` and the Python `tests/`, the way 7.3.8 grouped the codec's source; after the two samples per family work has landed, since it edits the same files
 
 ---
 
