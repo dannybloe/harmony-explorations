@@ -18,8 +18,9 @@
  *
  * **Since `todo.md` 7.3.9 the families are read off the directory**, so the import pattern covers every family and
  * not the two it named when it was written: until then a shared module importing the Harmony 300 and 350's, the
- * Harmony 880 and 885's or the Harmony Touch's folder passed. The four entries at the top are exempt from that one
- * pattern, since publishing a family's parts is what an entry is for, the `architecture` skill. And the last test
+ * Harmony 880 and 885's or the Harmony Touch's folder passed. The four entries at the top are exempt from that
+ * pattern and from the family's names, since publishing a family's parts is what an entry is for, the `architecture`
+ * skill; the names were counted in `build.ts` once 7.3.9 put the Harmony One's whole builds there, and failed. And the last test
  * holds that no family imports another, which the skill's check over a diff was the only thing holding before.
  */
 import test from 'node:test';
@@ -141,7 +142,8 @@ function census(): Record<string, Record<string, number>> {
       const text = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\n]*/g, '$1');
       for (const [kind, pattern] of Object.entries(PATTERNS)) {
         // An entry publishes a family's parts, `./build` the Harmony 300 and 350's and the Touch's, which is its job.
-        if (kind === 'imports' && directory === SOURCE && ENTRIES.has(name)) continue;
+        // An entry publishes a family's parts, by its modules and by their names, which is what it is for.
+        if ((kind === 'imports' || kind === 'family') && directory === SOURCE && ENTRIES.has(name)) continue;
         const count = ((kind === 'scans' ? withoutArchitectureTables(text) : text).match(pattern) ?? []).length;
         if (count > 0) (out[relative(SOURCE, path)] ??= {})[kind] = count;
       }

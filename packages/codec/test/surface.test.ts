@@ -25,7 +25,7 @@ const VALUES = [
   'EzFileError', 'GspmError', 'INTENDED_VERSION_FIELDS', 'NoFamilyError', 'PROTOCOLS', 'QueueError', 'RecipeError',
   'ResourceError', 'SCREEN_SIZES', 'StateTableError', 'activities', 'activityBindings', 'activityCount',
   'activityNames', 'activityScreens', 'allChecksPass', 'applyEdits', 'assertQueueFits',
-  'assertStateTableConsistent', 'chooseByModel', 'clockStateEdits', 'codeKey', 'commandsOfCodeset',
+  'assertStateTableConsistent', 'buildFromRecipe', 'chooseByModel', 'clockStateEdits', 'codeKey', 'commandsOfCodeset',
   'configLanguage', 'decodePayload', 'describeChoices', 'deviceCount', 'deviceDelays', 'deviceDriving',
   'deviceListRows', 'deviceModeMaps', 'deviceOfRecord', 'devices', 'encodePng', 'familyKind', 'familyOfModel',
   'framesOfPulses', 'fromFirstMark', 'harmonyTouch', 'identifyCodeset', 'introductionTour', 'inventory', 'irFrame',
@@ -40,14 +40,14 @@ const VALUES = [
 /** The main entry: the types and interfaces, which only the source shows. */
 const TYPES = [
   'Activity', 'ActivityBinding', 'ActivityName', 'ActivityRoleName', 'ActivityScreens', 'AnyFamily',
-  'ArchiveManifest', 'ArchiveProtocol', 'CatalogueCommand', 'CatalogueDevice', 'CatalogueManufacturer',
+  'ArchiveManifest', 'ArchiveProtocol', 'BuildSources', 'Built', 'CatalogueCommand', 'CatalogueDevice', 'CatalogueManufacturer',
   'CatalogueModel', 'CatalogueSource', 'CodecResources', 'ConfigLanguage', 'Device', 'DeviceChannelTuning',
   'DeviceDelays', 'DeviceDriving', 'DeviceInput', 'DeviceInputs', 'DeviceListRow', 'DeviceModeMap', 'DevicePower',
   'DeviceState', 'DeviceTiming', 'DocumentFamily', 'DocumentTypes', 'Edit', 'EditReport', 'EzHex',
   'Identification', 'InfraredCode', 'IntendedVersionField', 'IntroductionTour', 'Inventory', 'IrFrame', 'IrGroup',
   'KeyCode', 'KeyLabel', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelChoice', 'ModelNamed', 'PngHeader',
   'PowerOnDelay', 'ProntoCode', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
-  'RecipeDevice', 'RecipeFavourites', 'RecipeModel', 'RecipeScreenItem', 'RecipeSequenceStep', 'RecipeTarget',
+  'RecipeDevice', 'RecipeDeviceKey', 'RecipeFavourites', 'RecipeModel', 'RecipeScreenItem', 'RecipeSequenceStep', 'RecipeTarget',
   'RenderedPage', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
 ];
 

@@ -45,6 +45,18 @@ export interface RecipeDevice {
   readonly name: string;
   readonly device: string;
   readonly poweredOnBetweenActivities?: boolean;
+  /**
+   * The device key it goes on, on a remote with a key per device and no screen, the Harmony 300 and 350: the key's
+   * place as `DevicePlace` counts it, from 0, `DEVICE_KEYS` in the family's `keys.ts`, and a short or a long press, short unless given. Plan 014: a
+   * person chooses it in MyHarmony, so it is the recipe's, and only that family reads it.
+   */
+  readonly key?: RecipeDeviceKey;
+}
+
+/** A device key, `RecipeDevice.key`. */
+export interface RecipeDeviceKey {
+  readonly place: number;
+  readonly press?: 'short' | 'long';
 }
 
 /** One device's part in an activity: the input it is switched to, by the catalogue's name, and its jobs. */
@@ -213,13 +225,21 @@ export function readRecipe(json: unknown): Recipe {
   const model: RecipeModel = { name: text(m.name, 'the model\'s name'), ...(m.skin === undefined ? {} : { skin: m.skin as number }) };
   const devices = list(top.devices, 'the devices').map((value, k): RecipeDevice => {
     const what = `device ${k + 1}`;
-    const d = fields(value, what, ['name', 'device'], ['poweredOnBetweenActivities']);
+    const d = fields(value, what, ['name', 'device'], ['poweredOnBetweenActivities', 'key']);
     if (d.poweredOnBetweenActivities !== undefined && typeof d.poweredOnBetweenActivities !== 'boolean') {
       throw new RecipeError(`${what}'s poweredOnBetweenActivities is not true or false`);
+    }
+    let key: RecipeDeviceKey | undefined;
+    if (d.key !== undefined) {
+      const k = fields(d.key, `${what}'s key`, ['place'], ['press']);
+      if (!Number.isInteger(k.place) || (k.place as number) < 0) throw new RecipeError(`${what}'s key is at no place`);
+      if (k.press !== undefined && k.press !== 'short' && k.press !== 'long') throw new RecipeError(`${what}'s key is pressed neither short nor long`);
+      key = { place: k.place as number, ...(k.press === undefined ? {} : { press: k.press as 'short' | 'long' }) };
     }
     return {
       name: text(d.name, `${what}'s name`), device: text(d.device, `${what}'s catalogue entry`),
       ...(d.poweredOnBetweenActivities === undefined ? {} : { poweredOnBetweenActivities: d.poweredOnBetweenActivities as boolean }),
+      ...(key === undefined ? {} : { key }),
     };
   });
   const activities = list(top.activities, 'the activities').map((value, k): RecipeActivity => {

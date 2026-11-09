@@ -11,7 +11,9 @@
  * `todo-compile-650.md` 10.7.3: a composer takes its family's choices in its options and falls back to
  * these.
  */
+import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import type { HardKey } from '../compose/devicemode.ts';
+import type { Recipe } from '../recipe/recipe.ts';
 import type { ActivityKeyRules, DeviceScreenItem } from '../compose/activityroles.ts';
 import type { Container, Instruction } from '../container/gspm.ts';
 import type { Edit } from '../edit/edit.ts';
@@ -400,6 +402,22 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * 3.3.3.2.
    */
   readonly composedSkins?: ReadonlySet<number>;
+  /**
+   * **The configuration a recipe describes, built from nothing**, plan 014, `todo.md` 7.3.11: no compile of Logitech's
+   * goes in, so what comes out is ours byte for byte and the same recipe, sources and stamp give the same bytes. Called
+   * by `buildFromRecipe` in `families/fromrecipe.ts`, which chooses the family by the recipe's model; the family reads
+   * its own part of the recipe and its choices, and refuses what it does not build. Absent where the family builds
+   * nothing from a recipe yet, the Harmony 880 and 885's.
+   */
+  readonly fromRecipe?: (recipe: Recipe, skin: number, sources: RecipeSources) => Uint8Array;
+}
+
+/** What a build from a recipe takes besides the recipe, `Family.fromRecipe`. */
+export interface RecipeSources {
+  /** When it is built, `YYYY-MM-DDTHH:MM:SS`: every stamp and clock record the configuration holds is taken from it. */
+  readonly builtAt: string;
+  /** Where the codes of a device the recipe names by its catalogue entry come from; absent, a recipe naming one is refused. */
+  readonly archive?: CatalogueSource;
 }
 
 /** What `composedBuilders` is told of the donor beyond the configuration itself. */

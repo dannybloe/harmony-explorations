@@ -98,14 +98,19 @@ export {
 export type { Edit, EditReport, IntroductionTour } from './edit/edit.ts';
 
 // Building: the recipe a build starts from, and the family that builds for a model, of either kind, or the
-// refusal naming it, plan 013 decisions 1 and 2. A document family builds through its own members; the
-// composers and the builders of a compiled family's container are `./build`.
+// refusal naming it, plan 013 decisions 1 and 2. The composers and the builders of a compiled family's container
+// are `./build`.
 export { readRecipe, recipeTarget, RecipeError } from './recipe/recipe.ts';
+// **The one build an application makes**, plan 014: a recipe in, the configuration or the documents a remote is
+// sent out, the family chosen by the recipe's model.
+export { buildFromRecipe } from './families/fromrecipe.ts';
+export type { BuildSources, Built } from './families/fromrecipe.ts';
 export type {
   Recipe,
   RecipeActivity,
   RecipeActivityDevice,
   RecipeDevice,
+  RecipeDeviceKey,
   RecipeFavourites,
   RecipeModel,
   RecipeScreenItem,

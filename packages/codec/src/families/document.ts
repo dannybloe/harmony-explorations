@@ -55,6 +55,11 @@ export interface DocumentFamily<T extends DocumentTypes = DocumentTypes> {
   readSetup(json: unknown): T['setup'];
   /** The documents built from a setup alone, with no document of Logitech's as input. */
   build(setup: T['setup'], sources: T['sources']): T['documents'];
+  /**
+   * The pictures of ours a set built from a setup carries beside its documents, at the addresses the documents make
+   * the remote ask for them, plan 014: a build is the documents and these together.
+   */
+  buildPictures(setup: T['setup']): readonly T['picture'][];
   /** The configuration with no device and no activity, made from the documents a remote holds. */
   empty(documents: T['documents']): T['documents'];
   /** The documents with a device of ours added. */

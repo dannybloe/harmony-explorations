@@ -36,6 +36,7 @@ misspelling is an error rather than a default.
 | `devices[].name` | what the remote calls the device, as its screens draw it |
 | `devices[].device` | its catalogue entry, `<manufacturer>/<file>` in the archive of decision 15 |
 | `devices[].poweredOnBetweenActivities` | optional, MyHarmony's keep this device on when switching activities |
+| `devices[].key` | optional, the Harmony 300 and 350's device key: `place` as the family counts it, from 0, and `press`, `short` or `long`, short unless given; plan 014 |
 | `activities[]` | in the order the activity menu lists them |
 | `activities[].name` | as the menu draws it |
 | `activities[].type` | MyHarmony's type: `WatchTV`, `WatchDvd`, `ListenToMusic`, `Custom`; which activity key a type takes is a choice, `activityKeys` |

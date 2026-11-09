@@ -34,6 +34,7 @@ import { noScreenPowerOnDelayCopies } from './delay.ts';
 import { NO_SCREEN_HARD_KEYS } from './keys.ts';
 import { NO_SCREEN_SENDS } from './sends.ts';
 import { NO_SCREEN_STATE_TABLES } from './statetables.ts';
+import { noScreenFromRecipe } from './fromrecipe.ts';
 
 /** The models this family serves, as a person names them, for a refusal. */
 const NAME = 'the Harmony 300 and 350';
@@ -90,6 +91,8 @@ export const NO_SCREEN_FAMILY: Family = {
   activityDeviceList: refuses(`${NO_SCREEN}, and an activity's device list is a screen`),
   composeActivityScreen: refuses(NO_SCREEN),
   powerOnDelayCopies: noScreenPowerOnDelayCopies,
+  // The configuration a recipe describes, from nothing, plan 014.
+  fromRecipe: noScreenFromRecipe,
 };
 
 export {

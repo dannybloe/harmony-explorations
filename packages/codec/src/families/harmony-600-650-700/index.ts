@@ -20,6 +20,7 @@ import { FOUR_SLOT_FONTS } from './fonts.ts';
 import { FOUR_SLOT_SENDS } from './sends.ts';
 import { FOUR_SLOT_START, fourSlotActivityRewiring } from './start.ts';
 import { checkWiring } from './wiring.ts';
+import { fourSlotFromRecipe } from './fromrecipe.ts';
 
 // The family's generated texts and firmware screens were passed on here for the four slot assembler in
 // `assemble.ts`; since `todo-compile-one.md` 3.3.3.2 the assembler is the family's own, `assemble.ts` here, and
@@ -51,4 +52,6 @@ export const FOUR_SLOT: Family<FourSlotChoices> = {
   composeActivityRow: composeFourSlotActivityRow,
   composeActivityScreen: composeFourSlotActivityScreen,
   activityDeviceList: (c, activity) => composeActivityDeviceList(c, activity).bytes,
+  // The configuration a recipe describes, from nothing, plan 014.
+  fromRecipe: fourSlotFromRecipe,
 };

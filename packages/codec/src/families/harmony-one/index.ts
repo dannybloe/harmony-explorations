@@ -19,6 +19,7 @@ import { withOneComposedBuilders } from './builders.ts';
 import { withOneActivityMenuRow } from './activitymenu.ts';
 import { withOneActivityDeviceList } from './devicelists.ts';
 import { oneMenuMarkerWriter } from './menus.ts';
+import { oneFromRecipe } from './fromrecipe.ts';
 
 export const ONE: Family<OneChoices> = {
   kind: 'compiled',
@@ -53,4 +54,6 @@ export const ONE: Family<OneChoices> = {
   // after the welcome tour and the Remote Assistant are left out unless chosen, 4.10.
   composedBuilders: withOneComposedBuilders,
   composedSkins: new Set([54]),
+  // The configuration a recipe describes, from nothing, plan 014.
+  fromRecipe: oneFromRecipe,
 };

@@ -19,7 +19,7 @@ import {
 import type { SyncDocuments } from './documents.ts';
 import { emptyTouchDocuments } from './empty.ts';
 import { composeTouchFavourites, type OwnFavourites, type OwnPicture } from './favourites.ts';
-import { buildTouchDocuments, readTouchSetupFile, type TouchAccount, type TouchSetupFile } from './fromnothing.ts';
+import { buildTouchDocuments, ourBackground, readTouchSetupFile, type TouchAccount, type TouchSetupFile } from './fromnothing.ts';
 import { readConfiguration, type Configuration } from './read.ts';
 import { withoutTouchEntries, type TouchRemoval } from './remove.ts';
 import { composeTouchSettings, type OwnSettings } from './settings.ts';
@@ -53,6 +53,11 @@ export const HARMONY_TOUCH_FAMILY: DocumentFamily<TouchTypes> = {
   name: 'the Harmony Touch',
   readSetup: (json) => readTouchSetupFile(json),
   build: (setup, sources) => buildTouchDocuments(setup, sources),
+  // Our background and its small twin, which every set of ours names in its Settings whatever the setup.
+  buildPictures: () => {
+    const background = ourBackground();
+    return [{ uri: background.addresses.picture, png: background.picture }, { uri: background.addresses.twin, png: background.twin }];
+  },
   empty: (documents) => emptyTouchDocuments(documents),
   withDevice: (documents, device) => ({ ...documents, ...withTouchDevice(documents, composeTouchDeviceOfRow(device)) }),
   withActivity: (documents, activity) => ({ ...documents, ...withTouchActivity(documents, composeTouchActivity(activity, documents)) }),
