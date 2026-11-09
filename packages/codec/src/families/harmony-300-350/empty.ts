@@ -80,7 +80,7 @@ import { buildNoScreenStateTables, type NoScreenStateTables } from './statetable
  * memory.md`. Eight on skin 104, the Harmony 350, in the nine of its compiles the lab holds from Logitech's current
  * service; four on skin 79, the European Harmony 300, in all three of its, the one from 2011 included. The tenth
  * Harmony 350 compile, from 2017, holds seven, so the count is the compiler's choice and this table states the current
- * service's, `test/noscreenempty.test.ts`. **Skin 78, the Harmony 300's other printing, is not here**: no
+ * service's, `test/families/harmony-300-350/noscreenempty.test.ts`. **Skin 78, the Harmony 300's other printing, is not here**: no
  * configuration stating it has been read, and a table by skin answers only for the skins measured, so a build for it
  * is refused rather than given 79's answer. A table by skin rather than a test of it, `code-for-a-family`.
  */

@@ -16,7 +16,7 @@ Two outputs, because 1352 types in one diagram is a picture nobody can read:
   declares, with a field count each. That is what 470 contracts can usefully be on a page.
 
 `--write` regenerates both; without it the files are checked and any difference is reported, which is
-what `tests/test_myharmony_model.py` runs so a hand edit dies at the next check.
+what `tests/logitech/test_myharmony_model.py` runs so a hand edit dies at the next check.
 """
 import argparse
 import collections
@@ -40,7 +40,7 @@ CORE = ('Household', 'Account', 'Remote', 'Device', 'Activity', 'Surface', 'Room
 #: The schema types `Account.Remotes` as a list, so drawn from the schema alone the diagram says an
 #: account may hold any number of remotes. It holds exactly one, on all 21 account records in the two
 #: households captured on 30 August 2026, and `AnAccountRecordIsOneRemotesWorld` in
-#: `tests/test_myharmony_model.py` is what keeps that honest. Drawing the list cardinality here was
+#: `tests/logitech/test_myharmony_model.py` is what keeps that honest. Drawing the list cardinality here was
 #: what let a wrong reading of the model's shape stand for a day, so the measurement is drawn.
 MEASURED = {('Account', 'Remotes'): ('||--||', 'Remotes, exactly one, measured')}
 

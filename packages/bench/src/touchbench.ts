@@ -9,7 +9,7 @@
  * definition: each instruction from the actions' words, each expectation from a send, named by the device
  * and the command as the documents state them, which is how the infrared monitor names a code of the
  * Touch's own documents, `irmonitor.ts` `BENCH_TOUCH_SETS`. `bin/touch-tests.ts` writes the files and
- * `test/touch-full-bench-predicted.test.ts` holds that the files in `irtests/` are what this derivation gives.
+ * `test/harmony-touch/touch-full-bench-predicted.test.ts` holds that the files in `irtests/` are what this derivation gives.
  *
  * **Which pauses are judged.** Only those the engine times: between two codes of one activity start, one
  * favourite or one sequence. Between two keys the person sets the pace, so no pause is expected there. A

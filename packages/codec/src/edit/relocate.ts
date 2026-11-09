@@ -13,7 +13,7 @@
  * mechanical; the choice of `at` is not. Inserting inside an implied chain, a picture's rows or a
  * screen program's instruction run, produces a file that parses and means something different,
  * which is section 117's cloning demonstration, so a caller inserts at a stated boundary and the
- * corpus check in `test/relocate.test.ts` is what demonstrates those boundaries hold. The floor
+ * corpus check in `test/edit/relocate.test.ts` is what demonstrates those boundaries hold. The floor
  * and ceiling here refuse the only offsets that are wrong for **every** caller: the header and
  * section table, whose layout is the format's own arithmetic, and the trailer.
  *
@@ -39,7 +39,7 @@
  *    wrong for every caller, `relocationFloor` and the trailer.
  * 5. **Restamp `end_addr` and the trailer checksum**; `relocate`.
  * 6. **Verify by reading it back**, because nothing in steps 3 or 4 is checked by the format: a wrong
- *    address reads its neighbours rather than raising an error. `test/relocate.test.ts` does this over the
+ *    address reads its neighbours rather than raising an error. `test/edit/relocate.test.ts` does this over the
  *    corpus; a writer does it again against the remote.
  *
  * Read only towards hardware, like everything in this package: the result is bytes in memory, and

@@ -88,7 +88,7 @@ const SEEDS: Seed[] = [
       // Shapes no earlier source draws, found when the Harmony One's fonts were re-lettered in ours,
       // `todo-compile-one.md` 5.2, which needs every glyph's character: a `Z` in the pad font, a `#` and a
       // `*`, and an `X` in the regular 15, the bold 15 and the bold 14. Each was read off its glyph; only the
-      // `X` spells a name base slot 0's ASCII carries too, `test/text.test.ts`, findings section 396.
+      // `X` spells a name base slot 0's ASCII carries too, `test/screens/text.test.ts`, findings section 396.
       { container: 'harvest_one_two_devices', codes: { 73: 'Z' } },
       { container: 'calibration_one', codes: { 71: '#' } },
       { container: 'harvest_one_families_2', codes: { 68: 'X' } },

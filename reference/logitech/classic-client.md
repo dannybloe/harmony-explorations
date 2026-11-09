@@ -253,11 +253,11 @@ is being built, so it costs an exception and no packet; and a region read is an 
 table's address, with nothing on the wire that says region[^t-host-client].
 
 [^d9]: Chosen by this project. [Decision 9](../../docs/decisions.md#d9)
-[^t-gspm]: Measured in configurations. [The test](../../tests/test_gspm.py)
+[^t-gspm]: Measured in configurations. [The test](../../tests/config_format/test_gspm.py)
 [^s206]: Stated by Logitech, in their client. [Section 206](../../docs/findings.md#s206)
-[^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
+[^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/logitech/test_host_client.py)
 [^s211]: Stated by Logitech, in their client. [Section 211](../../docs/findings.md#s211)
-[^t-capture]: Stated by Logitech, in their client. [The test](../../packages/usb/test/classic-capture.test.ts)
+[^t-capture]: Stated by Logitech, in their client. [The test](../../packages/usb/test/transport/classic-capture.test.ts)
 [^s214]: Stated by Logitech, in their client. [Section 214](../../docs/findings.md#s214)
 [^s210]: Measured on a unit. [Section 210](../../docs/findings.md#s210)
 [^s47]: Read in the firmware. [Section 47](../../docs/findings.md#s47)
@@ -269,6 +269,6 @@ table's address, with nothing on the wire that says region[^t-host-client].
 [^unchecked]: Not checked.
 [^s209]: Stated by Logitech, in their client. [Section 209](../../docs/findings.md#s209)
 [^s322]: Read in the firmware. [Section 322](../../docs/findings.md#s322)
-[^t-host-client-configs]: Measured in configurations. [The test](../../tests/test_host_client.py)
+[^t-host-client-configs]: Measured in configurations. [The test](../../tests/logitech/test_host_client.py)
 [^s212]: Stated by Logitech, in their client. [Section 212](../../docs/findings.md#s212)
-[^t-885-boot]: Read in the firmware. [The test](../../tests/test_harmony_885_bootloader.py)
+[^t-885-boot]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_bootloader.py)

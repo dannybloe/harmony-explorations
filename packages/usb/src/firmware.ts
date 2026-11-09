@@ -5,7 +5,7 @@
  * trigger in `remote.ts`, whose rail refuses unless the image staged in the remote's external flash
  * verifies. That check has to happen in the library rather than in a caller's assertion, because a
  * reinstall of an image that does not verify leaves the remote in safe mode with its application
- * erased, which is the one outcome worse than where it started. `test/firmware.test.ts` holds the two
+ * erased, which is the one outcome worse than where it started. `test/write/firmware.test.ts` holds the two
  * copies to the same answers on lab images, so they cannot drift.
  *
  * The layout, `docs/findings.md` section 3 and Logitech's own `magicsection` in the per skin

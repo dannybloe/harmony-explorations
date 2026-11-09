@@ -7,7 +7,7 @@
  * **Measured on one compile of one model**, Logitech's compile of the Harmony 350 test setup, the lab's
  * `work/setups/h350-test/compile-Result.EzHex`, `todo-compile-350.md` 3.2, and nowhere else, which is why the
  * table below says the Harmony 350 where the family is the Harmony 300's as well: the 300's keypad is smaller
- * and no 300 compile has been fitted. `packages/codec/test/noscreen.test.ts` holds the fit.
+ * and no 300 compile has been fitted. `packages/codec/test/families/harmony-300-350/noscreen.test.ts` holds the fit.
  */
 import type { HardKey } from '../../compose/devicemode.ts';
 
@@ -104,7 +104,7 @@ export const POWER_SCAN = 3;
 // lab's `work/myharmony/responses/20261031-h350-setup_GetDeviceModeButtonMaps-all.json`, carry an override on the
 // keys a device's map borrows, `TvInput` to the TV key's mode and the volume keys to the receiver. What the service
 // does for a setup it was never asked about is not read; the rules are what its compiles show, with their counts.
-// `packages/codec/test/noscreenrouting.test.ts` holds each.
+// `packages/codec/test/families/harmony-300-350/noscreenrouting.test.ts` holds each.
 
 /**
  * The Input key, and the commands a device's own Input key takes, first the device has: on every compile of the
@@ -267,7 +267,7 @@ export const KEY_TIMERS: readonly { readonly ticks: number; readonly pinState: n
 /**
  * The raw slots the family's composer edits that the slot map does not name, so that no reader of a base slot is
  * handed a container it has not been run on, `ARCH16_SLOT_MAP`'s docstring: the key maps, base slot 9 by the
- * firmware's reading, and the timers, base slot 12, `tests/test_harmony_350_slots.py`. A family's own table, since
+ * firmware's reading, and the timers, base slot 12, `tests/harmony_300_350/test_harmony_350_slots.py`. A family's own table, since
  * the family is one architecture's.
  */
 export const KEY_MAP_SLOT = 6;

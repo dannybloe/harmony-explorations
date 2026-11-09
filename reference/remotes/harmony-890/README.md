@@ -63,5 +63,5 @@ are not drawn.[^unchecked]
 [^s115]: Measured in configurations. [Section 115](../../../docs/findings.md#s115)
 [^s179]: Measured in configurations. [Section 179](../../../docs/findings.md#s179)
 [^s177]: Measured in configurations. [Section 177](../../../docs/findings.md#s177)
-[^t-printing-890pro]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-printing-890pro]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^unchecked]: Not checked.

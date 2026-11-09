@@ -4,7 +4,7 @@
  * Moved here from `watch-keys.test.ts` with the tables, when the key reader page became their second
  * reader. What is pinned is the tables' shape and the one property both readers rely on, not the
  * addresses' truth: the arch 8 ones are read in the images and the 885's measured on two units in
- * `tests/test_harmony_885_keys.py`.
+ * `tests/harmony_880_885/test_harmony_885_keys.py`.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

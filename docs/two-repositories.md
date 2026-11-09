@@ -191,6 +191,6 @@ the user manuals describe, which is the piece M5 has to replace locally.
 Logitech will compile a config **to our own specification** and hand it over as a file. Two of those
 exist, one per bench architecture, and they are the corpus's first **known answer** samples. Three
 devices and two activities chosen in advance come back named correctly on both, through routes with no
-shared code, section 125 on arch 12 and section 121 on arch 14. `packages/codec/test/calibration.test.ts`
+shared code, section 125 on arch 12 and section 121 on arch 14. `packages/codec/test/container/calibration.test.ts`
 is the test; the containers are lab fixtures and deliberately outside `CONTAINERS`, since that population
 is what every corpus wide total is computed from.

@@ -65,7 +65,7 @@
  * * **a favourites document, in either mode, with 304 whether or not the remote sent a tag**, unless a set
  *   holds one, when it is answered 200 with it. On a Touch synced through a computer every favourites request
  *   comes untagged, because the remote's screens look the document up in the set being gathered, where it is
- *   not yet: `tests/test_harmony_touch_favourites_untagged.py`, found when 6.7's first run stopped there. A 304
+ *   not yet: `tests/harmony_touch/test_harmony_touch_favourites_untagged.py`, found when 6.7's first run stopped there. A 304
  *   makes the remote copy its own committed document and its own stored tag into the new set, so it keeps
  *   exactly what it holds, and **writes no document**; one it does not hold stays missing, which costs no more
  *   than a 404 would. The answer still has to carry a tag, since an answer to a favourites request without
@@ -122,7 +122,7 @@
  *
  * **`unchanged` has driven three syncs on the bench unit**, `todo-touch.md` 6.7 and 6.8, and a set one, 6.8, the
  * remote's own six documents delivered with 200 under tags of ours and committed,
- * `packages/usb/test/touch-own-set-sync.test.ts`. This
+ * `packages/usb/test/touch/touch-own-set-sync.test.ts`. This
  * said nothing in the file had been run against a remote<!--superseded--> until 6.8's preflight read the runs.
  */
 import { createHash, randomUUID } from 'node:crypto';

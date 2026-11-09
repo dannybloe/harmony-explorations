@@ -127,7 +127,7 @@ what follows is what a script has to get right.
   **`FunctionList` is the one worth knowing**: it is the layer that names a device's commands, which no
   configuration holds, [what a device's commands are called](../../../reference/logitech/service.md#what-a-devices-commands-are-called).
   Test accounts' contents change, so a capture of it is evidence about a moment:
-  `tests/test_function_maps.py` reads dated copies and section 220 says why.
+  `tests/logitech/test_function_maps.py` reads dated copies and section 220 says why.
 * Some requests need a WCF contract marker, `__type: 'SomeRequest:#Namespace'`, or the formatter
   binds only the base class and reports a missing field that is plainly in the payload. Read the
   shape off a client's own call site rather than guessing, which is how `migrate.py` got its payload.
@@ -260,7 +260,7 @@ fit that reading, `docs/test-notes/harmony-650.md`.
 **What is already downloaded, so nobody fetches it twice**: eleven images in
 `../lab/firmware/packages/sus/`, with a `META.md` and a `MANIFEST.json` of sizes, digests and source
 URLs; the digests are also published in `docs/checksums.md`. The one that matters to this project is
-skin 104, the Harmony 300 and 350 firmware, which `tests/test_harmony_350_firmware.py` pins,
+skin 104, the Harmony 300 and 350 firmware, which `tests/harmony_300_350/test_harmony_350_firmware.py` pins,
 [its page](../../../reference/architectures/harmony-300-350/firmware.md). The Linux generation's images
 are [that generation's firmware](../../../reference/architectures/harmony-touch/firmware.md); only the
 hubs' package has been opened, so the remotes' processor is not known. **`xmppupdate` is

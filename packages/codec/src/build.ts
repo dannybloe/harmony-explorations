@@ -4,7 +4,7 @@
  * from the main entry's recipe and registry, and what composes a device, an activity, a screen or a whole
  * container is reached here by this repository's scripts, tests and the libraries built on the codec.
  *
- * It loads anywhere, as the main entry does, `test/mainentry.test.ts`; a builder that draws a letter, an icon or
+ * It loads anywhere, as the main entry does, `test/package/mainentry.test.ts`; a builder that draws a letter, an icon or
  * a picture asks for what the loader supplies, so a Node caller imports `@harmony/codec/node` as well.
  */
 

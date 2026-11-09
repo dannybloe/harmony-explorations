@@ -26,6 +26,6 @@ routine that sends them, [state](../../config-format/state.md#base-slot-16-the-n
 * Anything a person sets up on a unit, and learning.[^unchecked]
 
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
-[^t-885-number-sender-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_number_sender.py)
+[^t-885-number-sender-corpus]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_number_sender.py)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^unchecked]: Not checked.

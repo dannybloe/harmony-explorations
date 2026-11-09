@@ -27,4 +27,4 @@ its checksum, and in safe mode the product string says `4-1.4.0`. The detail is
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^s193]: Measured on a unit. [Section 193](../../../docs/findings.md#s193)
 [^s295]: Stated by Logitech, in their client. [Section 295](../../../docs/findings.md#s295)
-[^t-harmony-350-boot]: Read in the firmware. [The test](../../../tests/test_harmony_350_boot.py)
+[^t-harmony-350-boot]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_boot.py)

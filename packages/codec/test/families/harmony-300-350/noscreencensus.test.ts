@@ -1,0 +1,731 @@
+/**
+ * The census of what a Harmony 350 and a Harmony 300 configuration holds and which of it a generator of ours
+ * builds, `todo-compile-350.md` 5.1, written for [plan 011](../../../docs/plans/011-the-350-from-nothing.md).
+ *
+ * **What it is for.** Chapter 5 asks for a configuration built entirely by our own generators with nothing copied
+ * out of a Logitech file. Before any generator is written for it, this cuts Logitech's compiles of this family
+ * into categories, every byte in exactly one, and says per category whether a generator exists in
+ * `packages/codec` that builds it **for this family**, **for another family only**, or **nowhere**. The plan's
+ * order of work is read off these counts. It reads and writes nothing: no build code is here.
+ *
+ * **The two files.** The 350's is Logitech's compile of the test setup, the lab's
+ * `work/setups/h350-test/compile-Result.EzHex`: eight devices, one activity, five favourite channels and four long
+ * presses. The 300's is `h300_programmed_config`: four devices, one activity, four favourite channels, built by
+ * Logitech's service for the bench 300, whose keypad has no long press. Both are one generation of the service, so
+ * a constant both share is two samples of one compiler and not of the format; the second samples are the five other
+ * compiles of this family the lab holds, and the constants below are counted over all seven.
+ *
+ * **How a byte gets its category.** `claims` in `coverage.ts` names what a reader already attributes, 96.6 percent
+ * of the 350's file; the rest, which no reader claims, is named here from the pointer tables (the key maps, the
+ * timer records, the parameter groups, the clock record's tail, the archive). An action list is named by what
+ * reaches it: the Watch TV binding's lists and nothing else's are the activity's, the start up entries' are the
+ * start up's, the four key table tags without an event type bring the pin lists, and a list nothing reaches is its
+ * own category; the rest are named by their shape, which is the generator's own, since a composer emits one shape
+ * per job. A byte claimed twice goes to the first claim, so the categories add to the file.
+ *
+ * **The four verdicts.** `builds`: a generator of ours reproduces this family's bytes with no Logitech file in
+ * hand, probed below. `edits`: this family's composer produces the bytes, but only by editing a donor container, so
+ * a configuration built from nothing has no donor to edit. `other`: a generator exists for another family and
+ * refuses this one, probed. `nowhere`: none exists. The split between `builds` and `edits` is the finding that
+ * orders the plan: every composer of this family edits a donor, as every composer of the four slot family did
+ * before plan 008. **That was true until `todo-compile-350.md` 5.1.6**, which runs every composer onto the empty
+ * configuration of 5.1.5, so that no category is left at `edits`; the verdict stays defined for a generator that
+ * needs a donor, and the probe that moved them is the test of the test setup built from nothing below.
+ *
+ * **What each verdict rests on** is a probe in the tests below and not a sentence here: the frame lays out
+ * architecture 16, whose round trip over all seven files is `frame.test.ts`'s, the name tree builder, the
+ * architecture record builder and the timestamp builder reproduce those sections of all seven files byte for byte, the
+ * constant sections and lists are built by `noscreenconstants.test.ts` over 13 compiles, the five tables of a count
+ * and three byte addresses are rebuilt on all seven from the pieces they name (since 5.1.5, which builds the empty
+ * configuration through the same two generators), the family's own members
+ * refuse as the registry says, and the device composer emits lists of exactly the roles the table credits it with. A verdict that stops
+ * being true fails here, so a generator written for this family forces the census to move.
+ *
+ * **The metadata archive's text and stream.** Node's zlib reproduces none of the three archives checked at any of
+ * 3465 settings of level, strategy, memory level and window, while the same search finds the stream Node's own
+ * zlib wrote; stock zlib at its defaults reproduces all six distinct archives, which `tests/
+ * test_harmony_350_metadata_deflate.py` holds. So the archive needs a deflate of our own, calibrated against
+ * those six, and `deflate.ts` is that deflate: since 5.1.4 `noScreenMetadataSection` builds the archive with it and the
+ * census counts the archive as `builds`, given the two choices below, `metadatabuild.test.ts`. The text around the devices is the same 149 and 610 characters in 7 of 7 compiles, a device's number
+ * is the account's, and the ZIP's time is the stamp's less whole hours and 413 to 419 seconds, the three probes
+ * below; what the check of 5.2 does about the last two is plan 011's.
+ *
+ * **Sources checked first.** Logitech's client compiles nothing for this family, the service does
+ * (`reference/logitech/clients.md`); the reference `reference/architectures/harmony-300-350/memory.md`; the lab's
+ * `work/setups/h350-test/chapter4-reading.md`, a reading of the same compile, which agrees with every count here
+ * that it also states (331 lists, 9 maps, 16 timers, 30 state variables, 250 codes, the activity's ten lists).
+ * **Which architectures**: architecture 16 alone, the Harmony 350 and the Harmony 300, one generation of Logitech's
+ * service; the same cut over another family's compile is the four slot family's `attributeBytes`, which this
+ * mirrors in kind and not in code.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { deflateRawSync } from 'node:zlib';
+import {
+  FILE_BASED_FAMILY, IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+} from '@harmony/lab';
+
+import { type Container, ComposeError, metadataArchive, parse, type Recipe } from '../../../src/index.ts';
+import {
+  type ContainerLayout,
+  type ContainerPiece,
+  FRAME_ARCHITECTURES,
+  INFRARED_GROUPS_BY_SKIN,
+  LayoutError,
+  NO_SCREEN_COUNT_WIDTHS,
+  NO_SCREEN_FAMILY,
+  architectureRecord,
+  buildNameTree,
+  buildTimestampSection,
+  buildNoScreenSetup,
+  composeNoScreenDevice,
+  countedTable,
+  frameArchitecture,
+  layOutContainer,
+  type SectionPlacement,
+  takeApart,
+} from '../../../src/build.ts';
+import {
+  claims,
+  nameNodes,
+  numberSenders,
+  numberSenderTable,
+  stateRecords,
+  taggedList,
+  taggedListExtent,
+} from '../../../src/internal.ts';
+import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
+
+const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
+
+/** The Watch TV key's press tag, scan 6: bound to the activity in every compile of the family read, chapter 4's reading. */
+const ACTIVITY_TAG = 0x86;
+/** The four tags of the key table with no event type, whose lists switch a pin: the firmware's own. */
+const PIN_TAGS = new Set([0x2d, 0x2e, 0x2f, 0x30]);
+/**
+ * The tags the firmware's send path raises, whose entries the census cuts out of the key table and whose lists it
+ * names the pin lists: the four above and, since `todo-compile-350.md` 5.4, `0xFF`, which a Harmony 300 raises for a
+ * send from a group above 3 and which our builds bind to the `0x30` entry's list, decision 28. No Logitech compile binds
+ * it, so on theirs this is the four alone and their counts below did not move; on ours, without it, the `0x30` entry's
+ * lists would be reached from an entry the census counts as a key's and read as power lists, 3 of them, which is what
+ * the probe of the build from nothing showed before `0xFF` was added here.
+ */
+const SEND_EVENT_TAGS = new Set([...PIN_TAGS, 0xff]);
+const ACTION_LIST_CALL = 0x7f;
+/** The clock record's length, `CLOCK_SECTION_LENGTH`: the cookie, seven field bytes, the terminator and three zeros. */
+const CLOCK_LENGTH = 14;
+/** The trailer, `TRAILER_CHECKSUM_OFFSET`: the checksum and the end of the file. */
+const TRAILER_LENGTH = 6;
+
+const lab = (path: string): Container => {
+  const at = join(LAB!, path);
+  // The lab is there, so a missing file fails rather than skips: the claim is about this one file.
+  assert.ok(existsSync(at), `${path} is in the lab`);
+  return parse(new Uint8Array(readFileSync(at)));
+};
+
+/** The seven compiles of this family the lab holds, outside the other owner's ZIP: the second samples of every constant. */
+const SEVEN = FILE_BASED_FAMILY.full;
+
+const needsLab = needing(skipWithoutLab(), skipUnless(...SEVEN));
+const needsComposer = needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless('h350_three_devices_config'));
+
+/** Every compile the census counts constants over: the test setup's two compiles and the five registered files. */
+function seven(): [string, Container][] {
+  return [['setup', lab(COMPILE)], ['setup without favourites', lab('work/setups/h350-test/first-compile/compile-Result.EzHex')],
+    ...SEVEN.map((name): [string, Container] => [name, parse(require_(name))])];
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The cut
+
+interface Instruction { operand: number; opcode: number }
+
+function listBody(c: Container, index: number): Instruction[] {
+  const at = c.blobOffsetOf(c.pointerArray(7)![index]!)!;
+  return Array.from({ length: c.blob[at]! }, (_, k) => ({
+    operand: c.blob[at + 1 + 3 * k]! | (c.blob[at + 2 + 3 * k]! << 8), opcode: c.blob[at + 3 + 3 * k]!,
+  }));
+}
+
+/** An action list's shape: its opcodes, with the band named where a band is what tells two jobs apart. */
+function shapeOf(body: readonly Instruction[]): string {
+  return body.map((one) => one.opcode.toString(16)
+    + (one.opcode === 0x1f ? `:${(one.operand >> 8).toString(16)}` : one.opcode === 0x07 ? `:${one.operand.toString(16)}` : '')).join(' ');
+}
+
+/** The lists a list calls, itself included, closed over the calls. */
+function reach(c: Container, seeds: readonly number[]): Set<number> {
+  const seen = new Set<number>();
+  const todo = [...seeds];
+  for (let next = todo.pop(); next !== undefined; next = todo.pop()) {
+    if (seen.has(next)) continue;
+    seen.add(next);
+    for (const one of listBody(c, next)) if (one.opcode === ACTION_LIST_CALL) todo.push(one.operand);
+  }
+  return seen;
+}
+
+/** The lists the number sender's digit tables call: the device's own digits, which the sender needs from it. */
+function numberSenderLists(c: Container): number[] {
+  return (numberSenders(c)?.records ?? []).flatMap((record) => record.tables.flatMap((table) => table.instructions.map((one) => one.operand)));
+}
+
+/** A list's role, the name its category takes: how each is told is in the header. */
+function listRoles(c: Container): string[] {
+  const lists = c.pointerArray(7)!;
+  const maps = c.pointerArray(6)!;
+  const callsOf = (entries: readonly { opcode: number; operand: number }[]) =>
+    entries.filter((one) => one.opcode === ACTION_LIST_CALL).map((one) => one.operand);
+  const keyTable = taggedList(c, maps[0]!)!.entries;
+  const activityEntry = keyTable.find((one) => one.tag === ACTIVITY_TAG);
+  const pinEntries = keyTable.filter((one) => SEND_EVENT_TAGS.has(one.tag));
+  // Raw slot 5 is a count and then instructions, three bytes each, and `pointerArray` reads each as an address:
+  // the value is the opcode over the operand, so a call of list n reads as `0x7f0000 | n`.
+  const startUp = (c.pointerArray(5) ?? []).filter((value) => value >> 16 === ACTION_LIST_CALL).map((value) => value & 0xffff);
+  // Everything else that calls a list: the other key table entries, every other map, every transition.
+  const others: number[] = [];
+  keyTable.forEach((one) => { if (one !== activityEntry && !SEND_EVENT_TAGS.has(one.tag)) others.push(...callsOf([one])); });
+  maps.slice(1).forEach((address) => others.push(...callsOf(taggedList(c, address)!.entries)));
+  for (const record of stateRecords(c) ?? []) others.push(...callsOf(record.values ?? []));
+  const digits = numberSenderLists(c);
+  const closeOthers = reach(c, [...others, ...digits]);
+  const activityAll = activityEntry === undefined ? new Set<number>() : reach(c, callsOf([activityEntry]));
+  const activity = new Set([...activityAll].filter((index) => !closeOthers.has(index)));
+  const startUpAll = reach(c, startUp);
+  const pinAll = reach(c, callsOf(pinEntries));
+  const reached = new Set([...closeOthers, ...activityAll, ...startUpAll, ...pinAll]);
+  return lists.map((_, index) => {
+    if (activity.has(index)) return 'activity';
+    if (startUpAll.has(index) && !closeOthers.has(index)) return 'start up';
+    if (pinAll.has(index) && !closeOthers.has(index)) return 'pin';
+    const body = listBody(c, index);
+    const shape = shapeOf(body);
+    if (!reached.has(index)) return `uncalled ${shape === '7:fffb 7d 7c' ? 'send' : shape.startsWith('7:ffff') ? 'silent write' : 'other'}`;
+    if (shape === '7:fffb 7d 7c') return 'send';
+    if (shape.startsWith('7:fffb 1f:e9') || shape === '7:fffb 1f:ff') return 'key';
+    // A favourite channel is an integer loaded and handed to the sender, or, with a leading zero, its digits called.
+    if (shape === '7a 1f:f3' || (shape === '7f 7f' && body.every((one) => digits.includes(one.operand)))) return 'channel';
+    return 'power';
+  });
+}
+
+/** Every byte of a compile in exactly one category, counted. */
+export function census(c: Container): Map<string, number> {
+  const category = new Array<string | undefined>(c.blob.length).fill(undefined);
+  const put = (from: number, length: number, name: string): void => {
+    for (let k = from; k < from + length && k < category.length; k += 1) if (category[k] === undefined) category[k] = name;
+  };
+  const roles = listRoles(c);
+  const listIndexAt = new Map(c.pointerArray(7)!.map((address, index) => [c.blobOffsetOf(address)!, index]));
+  const recordAt = new Map<number, number>();
+  (stateRecords(c) ?? []).forEach((record, index) => recordAt.set(c.blobOffsetOf(record.address)!, index));
+  const variableName = new Map(nameNodes(c)!.filter((node) => node.level === 1).map((node) => [node.index, node.name]));
+
+  // What no reader claims, from the tables that point at it. The four entries of map 0 whose tags switch a pin are
+  // cut out of the key table first, so that they are a category of their own: the first claim wins, and the rest of
+  // the table keeps the name 'key table (map 0)'. The split is the census's own, made because 5.1.3's builders write
+  // exactly those entries (`noScreenSendEventEntries`) and none of the others, so one verdict cannot cover both.
+  {
+    const at = c.blobOffsetOf(c.pointerArray(6)![0]!)!;
+    const extent = taggedListExtent(c.blob, at)!;
+    const entrySize = extent.wide ? 5 : 4;
+    taggedList(c, c.pointerArray(6)![0]!)!.entries.forEach((entry, k) => {
+      if (SEND_EVENT_TAGS.has(entry.tag)) put(at + (extent.wide ? 2 : 1) + entrySize * k, entrySize, 'key table, pin entries');
+    });
+  }
+  c.pointerArray(6)!.forEach((address, map) => {
+    const at = c.blobOffsetOf(address)!;
+    put(at, taggedListExtent(c.blob, at)!.length, map === 0 ? 'key table (map 0)' : 'device key map');
+  });
+  for (const address of c.pointerArray(8)!) put(c.blobOffsetOf(address)!, 7, 'timer record');
+  for (const address of c.pointerArray(10)!) {
+    const at = c.blobOffsetOf(address)!;
+    put(at, 1 + 2 * c.blob[at]!, 'parameter group');
+  }
+  put(c.blobOffsetOf(c.sections[3]!.address)!, CLOCK_LENGTH, 'clock record');
+  const archive = metadataArchive(c)!;
+  put(archive.offset, c.blob.length - TRAILER_LENGTH - archive.offset, 'metadata archive');
+
+  const names: Record<string, string> = {
+    header: 'header', 'section-table': 'section table', marker: 'end marker', trailer: 'trailer',
+    'slot-0-tree': 'name tree', 'slot-1-arch': 'architecture record', 'slot-2-log': 'log area',
+    'slot-5-block': 'infrared blocks', 'slot-5-header': 'infrared record headers', 'slot-5-group': 'infrared group arrays',
+    'raw-4-table': 'infrared group table', 'raw-5-table': 'start up table', 'raw-6-table': 'key map table',
+    'raw-7-table': 'action list table', 'raw-8-table': 'timer table', 'slot-13-table': 'state variable table',
+    'raw-10-table': 'parameter table', 'slot-16-table': 'number sender table', 'raw-11-table': 'number sender table',
+    'slot-16-digits': 'number sender digit tables', 'slot-16-record': 'number sender record', 'raw-12-table': 'digit entry table',
+    'slot-3-clock': 'clock record',
+  };
+  for (const claim of claims(c)) {
+    let name = names[claim.owner];
+    if (claim.owner === 'slot-13-record') {
+      const index = recordAt.get(claim.start)!;
+      const variable = variableName.get(index) ?? '';
+      name = index < 7 ? 'state record, clock' : index < 18 ? 'state record, firmware'
+        : variable.includes('_Power_') ? 'state record, device power' : variable.includes('_Input_') ? 'state record, device input'
+          : variable.startsWith('ActivityPowerState') ? 'state record, activity flag' : 'state record, unnamed';
+    }
+    if (claim.owner === 'slot-10-list') name = `list, ${roles[listIndexAt.get(claim.start)!]}`;
+    assert.ok(name !== undefined, `a claim by ${claim.owner} has a category`);
+    put(claim.start, claim.length, name);
+  }
+  const out = new Map<string, number>();
+  category.forEach((name) => out.set(name ?? 'unnamed', (out.get(name ?? 'unnamed') ?? 0) + 1));
+  return out;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The verdicts
+
+type Verdict = 'builds' | 'edits' | 'other' | 'nowhere';
+
+/**
+ * What exists for each category, and the probe or test that holds it. The text names the generator and what it
+ * was measured against; where the verdict is partial the text says which part is not. A row nobody's census uses
+ * fails `EveryVerdictIsUsed`, so a category that stops existing is not left behind.
+ */
+export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>> = {
+  'header': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
+  'section table': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
+  'end marker': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
+  'trailer': { verdict: 'builds', by: 'layOutContainer, arch 12, 14 and 16; takeApart then layOutContainer rebuilds 7 of 7 compiles, frame.test.ts' },
+  'name tree': { verdict: 'builds', by: 'buildNameTree, byte for byte on 7 of 7 files; the names come from the state tables, which are nowhere' },
+  'architecture record': { verdict: 'builds', by: 'architectureRecord(16, skin), 7 of 7 files' },
+  'log area': { verdict: 'builds', by: 'noScreenLogArea (buildLogArea from LOG_AREAS), 13 of 13 compiles, noscreenconstants.test.ts' },
+  'clock record': { verdict: 'builds', by: 'buildTimestampSection, 7 of 7 files' },
+  'infrared group arrays': { verdict: 'builds', by: 'fillIrGroup, into the donor\'s group at its allocation; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
+  'infrared group table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS, the count INFRARED_GROUPS_BY_SKIN in 7 of 7; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5' },
+  'infrared record headers': { verdict: 'builds', by: 'composeIrGroup and irBuildRecord through composeDeviceFor, and the digit copies through deviceDigitLists; 51 of the plasma\'s 51 records, word for word; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, every device\'s records Logitech\'s by content but the KPN\'s 30 more for its fuller map, the account\'s saved map and not a rule, and since 5.1.7 the LG TV\'s Back and channel finish copy too, noscreenstored.test.ts' },
+  'infrared blocks': { verdict: 'builds', by: 'the same; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the same exceptions' },
+  'start up table': { verdict: 'builds', by: 'noScreenStartUpTable, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'list, start up': { verdict: 'builds', by: 'noScreenStartUpLists: the hold list, the four device selects and the empty list, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'key map table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendTableEntries, onto a donor\'s table, stays the composers\' route' },
+  'key table (map 0)': { verdict: 'builds', by: 'composeNoScreenDevice adds the press, release and held entries; the activity entry is the donor\'s, and the pin entries are their own category; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the activity entry composeNoScreenActivity\'s; equal to Logitech\'s binding for binding and in order' },
+  'key table, pin entries': { verdict: 'builds', by: 'noScreenSendEventEntries, the four entries of the key table whose tags switch a pin, 13 of 13 compiles, noscreenconstants.test.ts; and on our builds since 5.4 noScreenAcknowledgingEntry, event 0xFF bound to the 0x30 entry\'s list, which no compile holds, noscreenacknowledging.test.ts' },
+  'device key map': { verdict: 'builds', by: 'composeNoScreenDevice from NO_SCREEN_HARD_KEYS with Logitech\'s routing of Input, volume and the favourite key, 4.1.1; equal to Logitech\'s with the other seven devices there, noscreenremove.test.ts; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, equal to Logitech\'s but the KPN\'s, which binds the family\'s 43 keys where Logitech\'s binds 12, because the account\'s mode map for it is the one the setup builder saved, 5.1.7; on an account nothing saved, the same KPN\'s map is ours but Replay and Advance' },
+  'action list table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendActionLists, onto a donor\'s table, stays the composers\' route' },
+  'list, send': { verdict: 'builds', by: 'NO_SCREEN_SENDS through composeDeviceFor; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the KPN\'s 30 more' },
+  'list, key': { verdict: 'builds', by: 'composeNoScreenDevice: the press list, the release and the held select; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
+  'list, power': { verdict: 'builds', by: 'composeNoScreenDevice and composeDeviceFor: wrapper, toggle helper, transition; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
+  'list, channel': { verdict: 'builds', by: 'composeNoScreenFavourites; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
+  'list, pin': { verdict: 'builds', by: 'noScreenSendEventLists: the thirteen lists the four pin tags reach, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'list, activity': { verdict: 'builds', by: 'composeNoScreenActivity, 4.2: the ten lists held against Logitech\'s step for step, replacing the donor\'s activity, noscreenactivity.test.ts; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the flag and the inputs created rather than reused' },
+  'list, uncalled send': { verdict: 'builds', by: 'composeNoScreenDevice: Teletext, STORED_UNBOUND, and the digit copies, DIGIT_COPIES_BY_TYPE, 4.1.1; a television\'s Back, TELEVISION_STORED_UNBOUND, and the channel finish\'s copy, channelFinish, 5.1.7, noscreenstored.test.ts; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, 34 of Logitech\'s 34 since 5.1.7' },
+  'list, uncalled silent write': { verdict: 'builds', by: 'composeNoScreenDevice: two per power variable, POWER_RESETS, 4.1.3; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, 16 of 16' },
+  'timer table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. appendTableEntries, onto a donor\'s table, stays the composers\' route' },
+  'timer record': { verdict: 'builds', by: 'composeNoScreenDevice, two per key device; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the first after the last list where there is none' },
+  'state variable table': { verdict: 'builds', by: 'buildNoScreenStateTables, 13 of 13 compiles by content with our numbering, transition order inside a record not reproduced, noscreenstatetables.test.ts' },
+  'state record, clock': { verdict: 'builds', by: 'buildNoScreenStateTables, clockSpec with no carry, 13 of 13 byte for byte, noscreenstatetables.test.ts' },
+  'state record, firmware': { verdict: 'builds', by: 'buildNoScreenStateTables, the family\'s firmware records 7 to 17, 13 of 13 byte for byte, noscreenstatetables.test.ts' },
+  'state record, device power': { verdict: 'builds', by: 'buildNoScreenStateTables, 13 of 13 compiles by content with our numbering, transition order inside a record not reproduced, noscreenstatetables.test.ts' },
+  'state record, device input': { verdict: 'builds', by: 'buildNoScreenStateTables, 13 of 13 compiles by content with our numbering, transition order inside a record not reproduced, noscreenstatetables.test.ts' },
+  'state record, activity flag': { verdict: 'builds', by: 'buildNoScreenStateTables, the activity\'s flag, 8 of 8 compiles that hold one, noscreenstatetables.test.ts' },
+  'state record, unnamed': { verdict: 'builds', by: 'buildNoScreenStateTables, the compiler\'s first two byte variable, 13 of 13 byte for byte, noscreenstatetables.test.ts' },
+  'parameter table': { verdict: 'builds', by: 'noScreenParameterBlock, five pointers over NO_SCREEN_PARAMETERS, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'parameter group': { verdict: 'builds', by: 'noScreenParameterBlock, the same 21 bytes, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'number sender table': { verdict: 'builds', by: 'numberSenderTable; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing, 5.1.5. composeNoScreenFavourites, onto a donor, stays the composers\' route' },
+  'number sender record': { verdict: 'builds', by: 'composeNoScreenFavourites; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
+  'number sender digit tables': { verdict: 'builds', by: 'composeNoScreenFavourites; since 5.1.6 run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
+  'digit entry table': { verdict: 'builds', by: 'noScreenDigitEntryTable, 13 of 13 compiles, noscreenconstants.test.ts' },
+  'metadata archive': { verdict: 'builds', by: 'noScreenMetadataSection over our own deflate.ts, byte for byte on all seven compiles given each one\'s device numbers and ZIP time, the two choices; metadatabuild.test.ts. withMetadataDevice, which edits a donor\'s archive, is the composers\' route and no longer the census\'s' },
+};
+
+/** The census with each category's verdict, summed per verdict. */
+function byVerdict(counts: ReadonlyMap<string, number>): Record<Verdict, number> {
+  const out: Record<Verdict, number> = { builds: 0, edits: 0, other: 0, nowhere: 0 };
+  for (const [name, bytes] of counts) out[VERDICTS[name]!.verdict] += bytes;
+  return out;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The tests
+
+test('the census cuts both compiles into categories that add to the file, every one with a verdict', needsLab, () => {
+  const files: [string, Container, number][] = [['350', lab(COMPILE), 118513], ['300', parse(require_('h300_programmed_config')), 97474]];
+  for (const [label, c, length] of files) {
+    const counts = census(c);
+    assert.equal(c.blob.length, length, label);
+    assert.equal([...counts.values()].reduce((a, b) => a + b, 0), length, `${label}: the categories add to the file`);
+    assert.equal(counts.has('unnamed'), false, `${label}: every byte is named`);
+    for (const name of counts.keys()) assert.ok(VERDICTS[name] !== undefined, `${label}: ${name} has a verdict`);
+  }
+  // The control that the first-claim rule is doing work: two readers claim the number sender's table, so the claims
+  // add up to more than the bytes they cover, by the four bytes the two share.
+  const c = lab(COMPILE);
+  const covered = new Set<number>();
+  let total = 0;
+  for (const claim of claims(c)) {
+    total += claim.length;
+    for (let k = claim.start; k < claim.start + claim.length; k += 1) covered.add(k);
+  }
+  assert.equal(total - covered.size, 4);
+});
+
+test('the 331 lists of the Harmony 350 compile by role, against the lab note\'s own count of lists nothing calls and of the activity\'s', needsLab, () => {
+  const tally = (c: Container): Record<string, number> => {
+    const m: Record<string, number> = {};
+    listRoles(c).forEach((role) => { m[role] = (m[role] ?? 0) + 1; });
+    return Object.fromEntries(Object.entries(m).sort());
+  };
+  // Chapter 4's reading of this compile, made by hand from the bytes and not by this classifier, counts 331 lists,
+  // 50 that nothing references and 10 that are the activity's alone: two numbers that this classifier, which walks
+  // calls from every table that holds one, has to arrive at independently. 34 and 16 are the uncalled sends and
+  // silent writes, 50 together.
+  const ours = tally(lab(COMPILE));
+  assert.deepEqual(ours, {
+    'activity': 10, 'channel': 5, 'key': 12, 'pin': 13, 'power': 19, 'send': 216, 'start up': 6, 'uncalled send': 34,
+    'uncalled silent write': 16,
+  });
+  assert.equal(Object.values(ours).reduce((a, b) => a + b, 0), 331);
+  assert.equal(ours['uncalled send']! + ours['uncalled silent write']!, 50);
+  // The Harmony 300's: 198 lists, and the same roles in fewer numbers.
+  const theirs = tally(parse(require_('h300_programmed_config')));
+  assert.equal(Object.values(theirs).reduce((a, b) => a + b, 0), 198);
+  assert.equal(theirs['activity'], 5);
+  assert.equal(theirs['pin'], 13);
+  assert.equal(theirs['start up'], 6);
+});
+
+test('EveryVerdictIsUsed: no verdict row outlives its category', needsLab, () => {
+  const used = new Set([...census(lab(COMPILE)).keys(), ...census(parse(require_('h300_programmed_config'))).keys()]);
+  assert.deepEqual(Object.keys(VERDICTS).filter((name) => !used.has(name)), []);
+});
+
+test('the census of the Harmony 350 test setup compile, in bytes per category', needsLab, () => {
+  const counts = census(lab(COMPILE));
+  assert.deepEqual(Object.fromEntries([...counts].sort()), CENSUS_350);
+  assert.deepEqual(byVerdict(counts), VERDICT_BYTES_350);
+});
+
+test('the census of the Harmony 300 programmed compile, in bytes per category', needsLab, () => {
+  const counts = census(parse(require_('h300_programmed_config')));
+  assert.deepEqual(Object.fromEntries([...counts].sort()), CENSUS_300);
+  assert.deepEqual(byVerdict(counts), VERDICT_BYTES_300);
+});
+
+test('the frame lays out arch 12, 14 and 16, so the header, the section table, the end marker and the trailer build', () => {
+  // The round trip over the seven compiles is `frame.test.ts`'s, `todo-compile-350.md` 5.1.1; this is the census's
+  // probe that the frame takes the family at all, and refuses the architectures it has not been run on.
+  assert.deepEqual(Object.keys(FRAME_ARCHITECTURES), ['12', '14', '16']);
+  for (const architecture of [12, 14, 16]) assert.doesNotThrow(() => frameArchitecture(architecture));
+  assert.equal(frameArchitecture(16).pointerCount, 15);
+  for (const architecture of [8, 9, 10]) assert.throws(() => frameArchitecture(architecture), LayoutError);
+});
+
+/**
+ * The five tables of a count and three byte addresses, `todo-compile-350.md` 5.1.5: the infrared group table (raw
+ * slot 4), the key map table (raw 6), the action list table (raw 7), the timer table (raw 8) and the number sender
+ * table (raw 11). The empty configuration builds each through `countedTable` or `numberSenderTable`, so this asks
+ * whether those generators write Logitech's tables too, given the pieces each names: every compile taken apart, each
+ * table replaced by one built from the pieces and offsets its entries name, at `NO_SCREEN_COUNT_WIDTHS`, and the
+ * whole laid out again and compared byte for byte. **Which pieces and in which order** is the table's numbering,
+ * description by plan 011; **the count, its width and the addresses** are what the generator writes, and an
+ * address is the frame's. The infrared table's count is the model's allocation besides, `INFRARED_GROUPS_BY_SKIN`,
+ * held here against all seven.
+ *
+ * The control: a width of two on the key map table, which every compile counts in one byte, moves every later
+ * section and the rebuild differs, so the widths are a measurement and not a tolerance.
+ */
+const COUNTED_TABLES: readonly { raw: number; where: (layout: ContainerLayout) => SectionPlacement }[] = [
+  { raw: 4, where: (layout) => layout.sections[5]! },
+  { raw: 6, where: (layout) => layout.inserted![6]! },
+  { raw: 7, where: (layout) => layout.sections[10]! },
+  { raw: 8, where: (layout) => layout.inserted![8]! },
+  { raw: 11, where: (layout) => layout.sections[16]! },
+];
+
+/** A table rebuilt from the pieces its entries name, at `width`, or by `numberSenderTable` for raw slot 11. */
+function rebuiltTable(table: ContainerPiece, raw: number, width = NO_SCREEN_COUNT_WIDTHS[raw]): ContainerPiece {
+  const refs = [...table.refs].sort((a, b) => a.at - b.at);
+  const targets = refs.map((ref) => {
+    assert.ok('to' in ref, `raw slot ${raw}: an entry names a piece of the container`);
+    return ref as { to: ContainerPiece; offset: number };
+  });
+  if (raw === 11) {
+    assert.ok(targets.every((one) => one.offset === 0), 'a number sender names a record\'s start');
+    return numberSenderTable(targets.map((one) => one.to));
+  }
+  return countedTable(width!, targets.map((one) => one.to), table.owner ?? `raw-${raw}-table`, targets.map((one) => one.offset));
+}
+
+test('the five counted tables of all seven compiles are built byte for byte from the pieces they name', needsLab, () => {
+  let rebuilt = 0;
+  for (const [label, c] of seven()) {
+    const layout = takeApart(c);
+    for (const { raw, where } of COUNTED_TABLES) {
+      const placed = where(layout);
+      placed.head = [rebuiltTable(placed.head[0]!, raw), ...placed.head.slice(1)];
+    }
+    const out = layOutContainer(layout).bytes;
+    assert.equal(Buffer.compare(Buffer.from(out), Buffer.from(c.blob)), 0, `${label}: the five tables rebuilt`);
+    const skin = c.blob[c.blobOffsetOf(c.sections[1]!.address)! + 2]!;
+    assert.equal(c.pointerArray(4)!.length, INFRARED_GROUPS_BY_SKIN[skin], `${label}: the infrared allocation of skin ${skin}`);
+    rebuilt += 1;
+  }
+  assert.equal(rebuilt, 7);
+  // The control: the key map table at a two byte count is another file.
+  const c = parse(require_('h350_config'));
+  const layout = takeApart(c);
+  layout.inserted![6]!.head = [rebuiltTable(layout.inserted![6]!.head[0]!, 6, 2)];
+  assert.notEqual(Buffer.compare(Buffer.from(layOutContainer(layout).bytes), Buffer.from(c.blob)), 0);
+});
+
+test('the architecture record, the clock record and the name tree are built byte for byte on all seven compiles', needsLab, () => {
+  const all = seven();
+  assert.equal(all.length, 7);
+  for (const [label, c] of all) {
+    const at = (slot: number) => c.blobOffsetOf(c.sections[slot]!.address)!;
+    const skin = c.blob[at(1) + 2]!;
+    assert.deepEqual(architectureRecord(16, skin), c.blob.slice(at(1), at(1) + 7), `${label}: the architecture record`);
+    assert.deepEqual(buildTimestampSection(c.builtAt!), c.blob.slice(at(3), at(3) + CLOCK_LENGTH), `${label}: the clock record`);
+    const named = nameNodes(c)!.filter((node) => node.level === 1).map((node) => ({ index: node.index, name: node.name }));
+    const built = buildNameTree(named);
+    assert.deepEqual(built, c.blob.slice(at(0), at(0) + built.length), `${label}: the name tree`);
+  }
+  // The control: the builders are not echoing the file. A skin that is not the file's, a name changed by a letter.
+  const c = all[0]![1];
+  const slot1 = c.blobOffsetOf(c.sections[1]!.address)!;
+  assert.notDeepEqual(architectureRecord(16, 79), c.blob.slice(slot1, slot1 + 7));
+  const named = nameNodes(c)!.filter((node) => node.level === 1).map((node) => ({ index: node.index, name: node.name }));
+  const original = buildNameTree(named);
+  named[0]!.name += 'x';
+  assert.notDeepEqual(buildNameTree(named), original);
+  // The skin is the one byte that tells the models apart: 104 on the 350 files and 79 on the 300's, and nothing else
+  // in the architecture record does.
+  const skins = all.map(([label, file]) => [label, file.blob[file.blobOffsetOf(file.sections[1]!.address)! + 2]]);
+  assert.deepEqual(skins.map(([, skin]) => skin), [104, 104, 104, 104, 104, 79, 79]);
+});
+
+test('seven compiles of the family share the sections no generator writes, byte for byte', needsLab, () => {
+  const all = seven();
+  const bytesOf = (c: Container, slot: number, length: number): string => {
+    const section = c.sections[slot]!;
+    return section.address === 0 ? 'NULL' : Buffer.from(c.blob.slice(c.blobOffsetOf(section.address)!, c.blobOffsetOf(section.address)! + length)).toString('hex');
+  };
+  const distinct = (read: (c: Container) => string): string[] => [...new Set(all.map(([, c]) => read(c)))];
+  assert.deepEqual(distinct((c) => bytesOf(c, 2, 8)), ['0020000007000008'], 'the log area');
+  assert.deepEqual(distinct((c) => bytesOf(c, 12, 2)), ['0000'], 'the digit entry table');
+  assert.deepEqual(distinct((c) => bytesOf(c, 14, 1)), ['NULL'], 'raw slot 14');
+  assert.deepEqual(distinct((c) => c.pointerArray(10)!.map((address) => {
+    const at = c.blobOffsetOf(address)!;
+    return Buffer.from(c.blob.slice(at, at + 1 + 2 * c.blob[at]!)).toString('hex');
+  }).join(' ')), ['013c00 015000 0458025a02fe020103 010807 010000'], 'the five parameter groups');
+  assert.deepEqual(distinct((c) => String(c.pointerArray(5)!.length)), ['11'], 'the start up entries');
+  assert.deepEqual(distinct((c) => String(c.pointerArray(10)!.length)), ['5'], 'the parameter pointers');
+  // And what does vary, so the constants above are not a property of the sample: groups, lists, maps and timers.
+  assert.deepEqual(distinct((c) => String(c.pointerArray(4)!.length)).sort(), ['4', '8']);
+  assert.equal(distinct((c) => String(c.pointerArray(7)!.length)).length, 7);
+});
+
+test('the metadata archive\'s ZIP time is the stamp\'s less whole hours and 413 to 419 seconds, in 7 of 7 compiles', needsLab, () => {
+  // The archive's DOS time and date, in the local header, against the build stamp base slot 3 states. The whole hours
+  // are a zone: 6 in the July and September compiles, 5 on the day the setup was compiled and none in 2011. What is
+  // left after them is not a constant, 413 to 419 seconds across the seven, so a generator of ours picks a value in
+  // that band and the two time fields of the archive are not reproducible to the byte.
+  const left = (c: Container, shift = 0): number => {
+    const m = metadataArchive(c)!;
+    const view = new DataView(c.blob.buffer, c.blob.byteOffset + m.offset + 4, m.length);
+    const time = view.getUint16(10, true);
+    const zip = (time >> 11) * 3600 + ((time >> 5) & 63) * 60 + (time & 31) * 2;
+    const [hours, minutes, seconds] = c.builtAt!.split('T')[1]!.split(':').map(Number);
+    return ((((hours! * 3600 + minutes! * 60 + seconds! - zip + shift) % 3600) + 3600) % 3600);
+  };
+  const all = seven().map(([, c]) => left(c));
+  assert.equal(Math.min(...all), 413);
+  assert.equal(Math.max(...all), 419);
+  // The control: a stamp a minute later is outside the band, so the band is a measurement.
+  assert.ok(seven().every(([, c]) => !(Math.abs(left(c, 60) - 416) <= 3)));
+  // The date is the stamp's own in all seven, so no zone shift has crossed a midnight in any of them.
+  for (const [label, c] of seven()) {
+    const m = metadataArchive(c)!;
+    const date = new DataView(c.blob.buffer, c.blob.byteOffset + m.offset + 4, m.length).getUint16(12, true);
+    const [year, month, day] = c.builtAt!.split('T')[0]!.split('-').map(Number);
+    assert.deepEqual([1980 + (date >> 9), (date >> 5) & 15, date & 31], [year, month, day], label);
+  }
+});
+
+test('the metadata archive\'s text around its devices is the same 149 and 610 characters in 7 of 7 compiles', needsLab, () => {
+  const all = seven();
+  const around = (c: Container): { before: string; after: string; ids: number[] } => {
+    const xml = metadataArchive(c)!.xml;
+    const open = xml.indexOf('<Devices>') + '<Devices>'.length;
+    const close = xml.indexOf('</Devices>');
+    return {
+      before: xml.slice(0, open), after: xml.slice(close),
+      ids: [...xml.matchAll(/<DeviceId>(\d+)<\/DeviceId>/g)].map((one) => Number(one[1])),
+    };
+  };
+  const first = around(all[0]![1]);
+  assert.equal(first.before.length, 149);
+  assert.equal(first.after.length, 610);
+  for (const [label, c] of all) {
+    assert.equal(around(c).before, first.before, label);
+    assert.equal(around(c).after, first.after, label);
+  }
+  // A device's number is the account's, not a function of the file, and the two models differ: consecutive within
+  // each of the five 350 compiles and not within either 300 compile.
+  const consecutive = (ids: number[]) => ids.every((id, k) => k === 0 || id === ids[k - 1]! + 1);
+  const verdicts = Object.fromEntries(all.map(([label, c]) => [label, consecutive(around(c).ids)]));
+  assert.deepEqual(verdicts, {
+    'setup': true, 'setup without favourites': true, 'h350_config': true, 'h350_three_devices_config': true,
+    'h350_programmed_config': true, 'h300_config': false, 'h300_programmed_config': false,
+  });
+  assert.equal(around(all[0]![1]).ids.length, 8);
+});
+
+test('the family\'s own members refuse the wiring and an activity\'s start', () => {
+  const c = undefined as unknown as Container;
+  for (const [name, ask] of [
+    ['wiring', () => NO_SCREEN_FAMILY.wiring.check(c)],
+    ['activityStart', () => NO_SCREEN_FAMILY.activityStart.lists],
+    ['activityKeyRules', () => NO_SCREEN_FAMILY.activityKeyRules.volume],
+  ] as const) assert.throws(ask, ComposeError, name);
+});
+
+test('the device composer emits lists of the roles the census credits it with, and no others', needsComposer, () => {
+  const donor = parse(require_('h350_three_devices_config'));
+  const out = composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE!), { manufacturer: 'Panasonic', model: 'TX-P42GT30E', name: 'Plasma', place: 2 });
+  const tally = (c: Container): Map<string, number> => {
+    const m = new Map<string, number>();
+    listRoles(c).forEach((role) => m.set(role, (m.get(role) ?? 0) + 1));
+    return m;
+  };
+  const [before, after] = [tally(donor), tally(parse(out.bytes))];
+  const added = Object.fromEntries([...after].map(([role, n]) => [role, n - (before.get(role) ?? 0)]).filter(([, n]) => n !== 0));
+  // Forty sends, the press and release pair and three power lists; and the lists nothing calls that Logitech stores
+  // for the plasma too, `todo-compile-350.md` 4.1.1 and 4.1.3: eleven sends, Teletext and the ten digits' one block
+  // copies, and the power variable's two silent writes, `POWER_RESETS`. No pin, start up or activity list; the
+  // activity and start up counts of the donor itself do not move.
+  assert.deepEqual(added, { send: 40, key: 2, power: 3, 'uncalled send': 11, 'uncalled silent write': 2 });
+});
+
+test('built from nothing, the test setup holds every category of Logitech\'s compile and no other, each from a generator of ours',
+  needing(skipWithoutLab(), skipWithoutIrArchive()), () => {
+    // The probe the composers' `builds` rests on since 5.1.6: no Logitech container goes in, so every category the
+    // census finds in the result came from a generator of ours, and every category Logitech's compile holds is found.
+    const recipe = JSON.parse(readFileSync(new URL('../../../../corpus/setups/h350-test.json', import.meta.url), 'utf8')) as Recipe;
+    const keys = {
+      'LG TV': { place: 0, press: 'short' }, Knoll: { place: 0, press: 'long' }, Plasma: { place: 1, press: 'short' },
+      Kodi: { place: 1, press: 'long' }, Denon: { place: 2, press: 'short' }, Switch: { place: 2, press: 'long' },
+      KPN: { place: 3, press: 'short' }, 'Sony HT': { place: 3, press: 'long' },
+    } as const;
+    const ours = census(parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes));
+    const theirs = census(lab(COMPILE));
+    assert.deepEqual([...ours.keys()].sort(), [...theirs.keys()].sort());
+    assert.equal(ours.has('unnamed'), false);
+    // Where the bytes per category differ, and by what: the KPN's fuller map and its records and sends, and the table
+    // counts and archive numbers that follow. Until 5.1.7 the uncalled sends differed too, by the LG TV's two lists,
+    // 20 bytes; the device composer stores them since, `noscreenstored.test.ts`, so that category is equal. Since 5.4
+    // the key table's send event entries differ by one entry, ours binding event 0xFF and Logitech's not.
+    const moved = Object.fromEntries([...theirs].filter(([name, n]) => ours.get(name) !== n).map(([name]) => [name, ours.get(name)! - theirs.get(name)!]));
+    assert.deepEqual(Object.keys(moved).sort(), [
+      'action list table', 'device key map', 'infrared blocks', 'infrared group arrays', 'infrared record headers', 'key table, pin entries',
+      'list, send', 'metadata archive',
+    ]);
+    assert.equal(moved['key table, pin entries'], 4);
+    assert.equal(ours.get('list, uncalled send'), theirs.get('list, uncalled send'));
+    assert.equal(moved['device key map'], 4 * 31);
+  });
+
+test('node zlib reproduces none of the three metadata archives\' deflate streams, and the same search finds its own', needsLab, () => {
+  const streamOf = (c: Container): { text: Buffer; stream: Buffer } => {
+    const m = metadataArchive(c)!;
+    const zip = c.blob.subarray(m.offset + 4, m.offset + 4 + m.length);
+    const view = new DataView(zip.buffer, zip.byteOffset, zip.length);
+    const nameLength = view.getUint16(26, true);
+    let central = -1;
+    for (let at = 30 + nameLength; at + 46 <= zip.length && central < 0; at += 1) if (view.getUint32(at, true) === 0x02014b50) central = at;
+    const size = view.getUint32(central + 20, true);
+    return { text: Buffer.from(m.xml, 'utf8'), stream: Buffer.from(zip.subarray(30 + nameLength, 30 + nameLength + size)) };
+  };
+  /** How many settings of zlib write exactly `stream` from `text`, out of every one tried. */
+  const search = (text: Buffer, stream: Buffer): { hits: number; tried: number } => {
+    let hits = 0, tried = 0;
+    for (let level = -1; level <= 9; level += 1) for (const strategy of [0, 1, 2, 3, 4]) {
+      for (let memLevel = 1; memLevel <= 9; memLevel += 1) for (let windowBits = 9; windowBits <= 15; windowBits += 1) {
+        tried += 1;
+        try {
+          const out = deflateRawSync(text, { level, strategy, memLevel, windowBits });
+          if (out.length === stream.length && Buffer.compare(out, stream) === 0) hits += 1;
+        } catch { /* a window of 9 bits is refused for a raw stream on some builds, which is a setting not tried */ }
+      }
+    }
+    return { hits, tried };
+  };
+  const files = [lab(COMPILE), parse(require_('h350_programmed_config')), parse(require_('h300_programmed_config'))];
+  for (const c of files) {
+    const { text, stream } = streamOf(c);
+    assert.equal(search(text, stream).hits, 0);
+  }
+  // The control: the search finds a stream it could have written, so a hit is possible and the zero is a result.
+  const { text } = streamOf(files[0]!);
+  const own = deflateRawSync(text, { level: 6, strategy: 0, memLevel: 8, windowBits: 15 });
+  const control = search(text, own);
+  assert.equal(control.tried, 3465);
+  assert.ok(control.hits > 0);
+});
+
+// The counts, pinned from the run: see the header. A change moves these in the diff.
+const CENSUS_350 = {
+  'action list table': 995, 'architecture record': 7, 'clock record': 14, 'device key map': 844, 'digit entry table': 2,
+  'end marker': 4, 'header': 11, 'infrared blocks': 102982, 'infrared group arrays': 774, 'infrared group table': 25,
+  'infrared record headers': 5250, 'key map table': 28, 'key table (map 0)': 53, 'key table, pin entries': 16, 'list, activity': 94, 'list, channel': 35,
+  'list, key': 156, 'list, pin': 109, 'list, power': 157, 'list, send': 2160, 'list, start up': 42, 'list, uncalled send': 340,
+  'list, uncalled silent write': 112, 'log area': 8, 'metadata archive': 3033, 'name tree': 259, 'number sender digit tables': 90,
+  'number sender record': 23, 'number sender table': 4, 'parameter group': 21, 'parameter table': 16, 'section table': 60,
+  'start up table': 34, 'state record, activity flag': 7, 'state record, clock': 49, 'state record, device input': 166,
+  'state record, device power': 184, 'state record, firmware': 77, 'state record, unnamed': 7, 'state variable table': 98,
+  'timer record': 112, 'timer table': 49, 'trailer': 6,
+};
+const CENSUS_300 = {
+  'action list table': 596, 'architecture record': 7, 'clock record': 14, 'device key map': 536, 'digit entry table': 2,
+  'end marker': 4, 'header': 11, 'infrared blocks': 88228, 'infrared group arrays': 474, 'infrared group table': 13,
+  'infrared record headers': 3234, 'key map table': 16, 'key table (map 0)': 21, 'key table, pin entries': 16, 'list, activity': 53, 'list, channel': 28,
+  'list, pin': 109, 'list, power': 56, 'list, send': 1330, 'list, start up': 42, 'list, uncalled send': 210,
+  'list, uncalled silent write': 56, 'log area': 8, 'metadata archive': 1610, 'name tree': 153, 'number sender digit tables': 90,
+  'number sender record': 23, 'number sender table': 4, 'parameter group': 21, 'parameter table': 16, 'section table': 60,
+  'start up table': 34, 'state record, activity flag': 7, 'state record, clock': 49, 'state record, device power': 92,
+  'state record, firmware': 77, 'state record, unnamed': 7, 'state variable table': 80, 'timer record': 56, 'timer table': 25,
+  'trailer': 6,
+};
+// Plan 011 measured 958 and 565 bytes nowhere; the uncalled sends and silent writes moved to `edits` when the device
+// composer took them on, `todo-compile-350.md` 4.1.1 and 4.1.3, 452 and 266 bytes. Plan 011 measured 280 and 174
+// bytes `builds` and 330 and 300 `other`; the frame's 81 on each file, the header's 11, the section table's 60, the
+// end marker's 4 and the trailer's 6, moved from `other` to `builds` when the frame took the family on,
+// `todo-compile-350.md` 5.1.1.
+// Since 5.1.3, the family's constants: the log area, the parameter table and groups, the digit entry table, the start
+// up table and lists, the pin lists and the key table's pin entries, 232 bytes a compile, moved from `nowhere` to
+// `builds`. Since 5.1.4, the whole metadata archive, 3033 and 1610 bytes, moved from `edits` to `builds`. Since 4.2, the
+// activity's ten lists (94 and 53 bytes) and the Denon's and the LG's input variables (166 bytes, the 350's alone) moved
+// from `nowhere` to `edits`: the composer replaces a donor's activity and appends the variables onto a donor.
+// **The split of map 0**: the census cuts the four pin entries (16 bytes, the entries whose tags are `PIN_TAGS`, and on
+// our builds since 5.4 the entry binding event 0xFF, `SEND_EVENT_TAGS`) out of
+// the key table into a category of their own, 'key table, pin entries', which `builds`, and the rest of the table
+// keeps 'key table (map 0)' and `edits`. A category is a verdict's unit here, so a table that two generators share
+// is split by entry and not given the weaker of the two verdicts.
+// Plan 011 itself (kept as written in `docs/plans/011-the-350-from-nothing.md`) measured, per file, 280 and 174 bytes
+// `builds`, 330 and 300 `other`, 958 and 565 `nowhere`. Since then, in order: the uncalled sends and silent writes
+// moved to `edits` when the device composer took them on, `todo-compile-350.md` 4.1.1 and 4.1.3, 452 and 266 bytes;
+// the frame's 81 on each file, the header's 11, the section table's 60, the end marker's 4 and the trailer's 6, moved
+// from `other` to `builds` when the frame took the family on, 5.1.1; and the items above. Then the state tables, 5.1.2,
+// 588 and 312 bytes from `other`, `edits` and `nowhere` to `builds`. Then the empty configuration, 5.1.5: the five
+// tables of a count and three byte addresses, the infrared group table (25 and 13 bytes, from `other`), the key map
+// table (28 and 16), the action list table (995 and 596), the timer table (49 and 25) and the number sender table (4
+// and 4), 1101 and 654 bytes, moved to `builds`, since `countedTable` and `numberSenderTable` rebuild all five on all
+// seven compiles from the pieces they name; which pieces, in which order, is the numbering, plan 011's description.
+// Then the composers on the empty configuration, 5.1.6: every category left at `edits`, 113182 and 94395 bytes, the
+// devices' records, lists, maps and timers, the key table's own entries, the activity's lists and the number sender,
+// moved to `builds`, since `buildNoScreenSetup` composes all of them onto a configuration built from nothing, the
+// probe below. **What `builds` does not say here**: that every byte equals Logitech's. On the 350's file it does by
+// content but for the KPN's map and its 30 more records and lists, which the rows name, and which are the account's;
+// whether every byte is a generator's with none carried is 5.2's attribution, `noScreenAttributedBytes`, which finds
+// every byte of this file a generator's and names what it leaves on the Harmony 300's, `noscreenattribution.test.ts`.
+// And the Harmony 300's file is credited
+// on the 350's build: its categories are the same generators', decision 28 makes one build serve both, which 5.4's
+// binding of event `0xFF` in every build of ours now does, and the check of our build against Logitech's 300 compile is the part of `todo-compile-300.md` that
+// stays, not run here.
+const VERDICT_BYTES_350 = { builds: 118513, edits: 0, other: 0, nowhere: 0 };
+const VERDICT_BYTES_300 = { builds: 97474, edits: 0, other: 0, nowhere: 0 };

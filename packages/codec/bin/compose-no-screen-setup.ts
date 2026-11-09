@@ -18,7 +18,7 @@
  *       --setup packages/corpus/setups/h350-test.json --take-out 'Knoll,Kodi,Switch,Sony HT,Plasma' \
  *       --out ../lab/work/setups/h350-test/composed-4.5.bin
  *
- * `packages/codec/test/noscreensetup.test.ts` runs the same steps and holds the result against Logitech's second
+ * `packages/codec/test/families/harmony-300-350/noscreensetup.test.ts` runs the same steps and holds the result against Logitech's second
  * compile part by part.
  *
  * **The file is checked as the writer will check it** before it is saved: the family's cookie and header marker,
@@ -45,7 +45,7 @@
  * **Since 5.4 a build from nothing binds firmware event `0xFF`** to the list event `0x30` runs, decision 28, so the
  * file serves the Harmony 300 as well as the Harmony 350; the same command with `--out
  * ../lab/work/setups/h350-test/from-nothing-5.4.bin` wrote that file, the 5.1.6 and 5.1.7 files staying in the lab as
- * they were, without the entry. `packages/codec/test/noscreenfromnothing.test.ts` rebuilds the 5.4 file from its own
+ * they were, without the entry. `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts` rebuilds the 5.4 file from its own
  * stamp and holds it against Logitech's second compile part by part. A composition onto `--donor` does not add the
  * entry, `families/harmony-300-350/setup.ts` says why.
  */

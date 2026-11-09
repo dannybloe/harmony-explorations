@@ -430,7 +430,7 @@ def parseable_facts():
     The odd body sentence said "19 of the 33 parseable containers" while the test said 21 of 39 and
     then 22 of 41: it had drifted through two sample additions because it carried no marker, found on
     25 August 2026 while auditing what phase 7 should have touched. The population is everything in
-    the lab that parses as a container, mirroring `parseable()` in `packages/codec/test/gspm.test.ts`,
+    the lab that parses as a container, mirroring `parseable()` in `packages/codec/test/container/gspm.test.ts`,
     which is wider than `lab.CONTAINERS`: the calibration pair and the phase 7 pair are in it.
     """
     import lab

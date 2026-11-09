@@ -139,7 +139,7 @@ architecture is not checked; the repeat mechanism was read on the Harmony One.[^
 [^x-forum]: Stated by a third party. [The forum comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^s89c]: Measured in configurations. [Section 89](../../../docs/findings.md#s89)
 [^s89b]: Measured on a unit. [Section 89](../../../docs/findings.md#s89)
-[^t-fifty-keys]: Measured on a unit. [The test](../../../tests/test_silhouettes.py)
+[^t-fifty-keys]: Measured on a unit. [The test](../../../tests/firmware/test_silhouettes.py)
 [^unchecked]: Not checked.
 [^s90]: Read in the firmware. [Section 90](../../../docs/findings.md#s90)
 [^s135]: Stated by Logitech, by their service. [Section 135](../../../docs/findings.md#s135)

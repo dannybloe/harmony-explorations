@@ -7,7 +7,7 @@
  *
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.5-removal`,
  * which `packages/corpus/bin/touch-device-set.ts --removal` built, and the favourites' documents of the recorded full
- * sync, through the engine model `packages/codec/src/families/harmony-touch/engine.ts`; `experiments/touchremovaltest.ts` holds the plan and `test/touch-removal-predicted.test.ts` that
+ * sync, through the engine model `packages/codec/src/families/harmony-touch/engine.ts`; `experiments/touchremovaltest.ts` holds the plan and `test/harmony-touch/touch-removal-predicted.test.ts` that
  * the file written is what this gives. The 8.2 script, `touch-activity-tests.ts`, is the same with 8.2's plan.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';

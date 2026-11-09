@@ -1,7 +1,7 @@
 /**
  * The codec's Node entry, `@harmony/codec/node`: the main entry whole, and what reads the disk, plan 013 decision 5 and
  * `todo.md` 7.3.5. A Node caller, a script, a test, the bench or FreeHarmony's main process, imports from here; a
- * renderer imports `@harmony/codec`, which reaches no Node module, `test/mainentry.test.ts`. A Node caller that also
+ * renderer imports `@harmony/codec`, which reaches no Node module, `test/package/mainentry.test.ts`. A Node caller that also
  * needs `./build` or `./internal`, which load anywhere, imports this entry as well, since loading it is what
  * supplies the resources a builder asks for.
  *

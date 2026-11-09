@@ -4,7 +4,7 @@
  * Our own letters' alphabet, `oxaniumAlphabet` in `text.ts`: per form and per structure the characters it
  * draws, and per form the faces and weights that draw it, computed from Oxanium by `oxaniumAlphabetFromFont`
  * so a configuration is read with no font supplied. The tables' JSON deflated and in base64,
- * `packOxaniumAlphabet`, since as JSON they are 4.2 MB. `test/oxaniumalphabet.test.ts` holds this to the font.
+ * `packOxaniumAlphabet`, since as JSON they are 4.2 MB. `test/screens/oxaniumalphabet.test.ts` holds this to the font.
  */
 export const OXANIUM_ALPHABET_TABLES: string = [
   'eNrkvQm7JUWV/f1ZOOtV/91KXEoG8dpqOzAoKKstsBXbgUEalKFlUBpsP/v7QN2TGcOOiB1jRpY81Mk4t26dzBMZEbmH317x+eWtDz5876PL7eeX',

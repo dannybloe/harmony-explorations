@@ -4,7 +4,7 @@
 configuration of ours is built from: what FreeHarmony is to produce from what a user configures, and
 what the codec's `assembleSetup` reads. Its code is `packages/codec/src/recipe/recipe.ts`, whose
 `readRecipe` checks a recipe's shape and `recipeTarget` its model; the setup files in
-`packages/corpus/setups/` are recipes and are read as such by `packages/codec/test/recipe.test.ts`.
+`packages/corpus/setups/` are recipes and are read as such by `packages/codec/test/recipe/recipe.test.ts`.
 
 Preliminary because one model has been built from it, the Harmony 650, and because it still needs a
 donor: a Logitech compile every part comes from that no generator builds yet, which is an input of the

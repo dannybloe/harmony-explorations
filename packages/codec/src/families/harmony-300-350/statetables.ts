@@ -4,7 +4,7 @@
  * `noScreenStateVariables`, `todo-compile-350.md` 5.1.2, step 2 of plan 011.
  *
  * **The facts, measured over the 13 compiles of this family the lab holds**, ten for a Harmony 350 and three for a
- * Harmony 300, of two generations of Logitech's compiler, `test/noscreenstatetables.test.ts`:
+ * Harmony 300, of two generations of Logitech's compiler, `test/families/harmony-300-350/noscreenstatetables.test.ts`:
  *
  * * **The firmware's records 7 to 17 are the Harmony 600, 650 and 700's**, the same `first` and `max` in 13 of 13
  *   and none with a transition. They are stated here again rather than imported, since a family imports no other

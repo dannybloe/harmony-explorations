@@ -4,7 +4,7 @@
  *
  * The learning mode's one rule is that **a press is recorded against the key asked for**, so that a name
  * never rests on the order keys were pressed in: the Harmony 885's Pause and Play came out swapped when
- * codes were named by a list's order (`tests/test_harmony_885_keys.py`). The replay below is the 885's
+ * codes were named by a list's order (`tests/harmony_880_885/test_harmony_885_keys.py`). The replay below is the 885's
  * measured codes, which its drawing carries, pressed in the order the page asks; and the cases around it
  * are what a person gets wrong at the bench: a key pressed again for the next one, a wrong key whose code
  * is already taken, a key their remote lacks, a key to go back to or to learn again, a press after the end.

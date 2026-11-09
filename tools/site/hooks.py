@@ -3,7 +3,7 @@
 The site is built from `reference/` alone (`docs_dir: reference` in `mkdocs.yml`), but the reference
 links out of that folder all the time, and it does so on purpose: a fact's footnote names the archive
 section that holds its argument, `docs/findings.md#s424`, or a decision, `docs/decisions.md#d25`, or
-the test that pins it, `packages/usb/test/settings.test.ts`. Plan 009 section 4 writes every such link as
+the test that pins it, `packages/usb/test/transport/settings.test.ts`. Plan 009 section 4 writes every such link as
 a relative path from the page, so it works in an editor and on GitHub. On the site those paths point at
 nothing, since only `reference/` is published, so this module does two things:
 
@@ -56,7 +56,7 @@ from pathlib import Path
 
 # MkDocs itself is imported where it is used, in `on_files`, and nowhere at module level, so the pure
 # half of this module (the archive split and the link rewrite) imports without MkDocs installed:
-# `tests/test_site.py` runs in the ordinary suite, which has no site environment. Pyright, which checks
+# `tests/project/test_site.py` runs in the ordinary suite, which has no site environment. Pyright, which checks
 # `tools/` for imports that resolve, sees the import inside the function as well and cannot resolve it
 # outside that environment, so that one line carries an ignore for that one rule.
 

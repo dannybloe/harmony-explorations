@@ -5,7 +5,7 @@
  * **Why our own and not `node:zlib`.** Logitech's compiler deflates the archive as stock zlib 1.2.12 does at level 6,
  * memory level 8 and the default strategy: that setting reproduces the six distinct archives of the family's seven
  * named compiles,
- * `tests/test_harmony_350_metadata_deflate.py`. Node's zlib is a fork whose matcher differs, and it reproduces none of
+ * `tests/harmony_300_350/test_harmony_350_metadata_deflate.py`. Node's zlib is a fork whose matcher differs, and it reproduces none of
  * three of those streams at any of 3465 settings, `noscreencensus.test.ts`. A stream that only inflates to the same
  * text would make the archive the one section of a built configuration that can never be compared with Logitech's
  * byte for byte, so the stream is written here, from the format and from what zlib is documented and observed to do.

@@ -84,7 +84,7 @@ on transition[^s327]; how this architecture interprets it is **not read**.
 * Learning, and any setting beyond those Logitech's service lists.
 
 [^t-models]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
-[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_product_capabilities.py)
 [^s263]: Stated by Logitech, by their service. [Section 263](../../../docs/findings.md#s263)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s264]: Stated by Logitech, by their service. [Section 264](../../../docs/findings.md#s264)
@@ -92,8 +92,8 @@ on transition[^s327]; how this architecture interprets it is **not read**.
 [^s263b]: Measured in configurations. [Section 263](../../../docs/findings.md#s263)
 [^s262]: Measured in configurations. [Section 262](../../../docs/findings.md#s262)
 [^s327]: Measured in configurations. [Section 327](../../../docs/findings.md#s327)
-[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
-[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
-[^t-noscreen-favourites]: Measured in configurations. [The test](../../../packages/codec/test/noscreenfavourites.test.ts)
-[^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/noscreenactivity.test.ts)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_slots.py)
+[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
+[^t-noscreen-favourites]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenfavourites.test.ts)
+[^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts)
 [^unchecked]: Not checked.

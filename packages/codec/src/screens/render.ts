@@ -80,7 +80,7 @@ export const SCREEN_SIZES: Readonly<Record<number, { width: number; height: numb
   // screens' own `SCREEN_WIDTH` and `SCREEN_HEIGHT`, the kernel's framebuffer panel entry that the
   // Touch's own board code names, the drawing library, which scales the touch controller's reports to
   // 240 by 320, and the touch driver's Juniper-01 handler, which reports a finger's height on the
-  // display as 320 minus the sensor's. `tests/test_harmony_touch_keys.py` reads all four and this line. Nothing parses an arch 17
+  // display as 320 minus the sensor's. `tests/harmony_touch/test_harmony_touch_keys.py` reads all four and this line. Nothing parses an arch 17
   // container, so `blankScreen` never reaches the row; the drawing and the reference read it.
   17: { width: 240, height: 320 },
 };

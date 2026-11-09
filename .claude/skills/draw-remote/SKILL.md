@@ -236,7 +236,7 @@ frozen, a test established it, which is 38 of 44 keys on a Harmony One, 41 of 54
 the 50 on a Harmony 525, 53 of the 55 on a Harmony 350 and 49 of the 55 on the Harmony 300's European
 printing, heard by pressing them, and none on its US printing, which nobody here has pressed. A wrong scan code is invisible: the interface then shows the wrong assignment
 beside a key with complete confidence. `test/models.test.ts` pins the count per source and names every
-code that did not come from the button maps; `packages/codec/test/irframe.test.ts` checks every button
+code that did not come from the button maps; `packages/codec/test/infrared/irframe.test.ts` checks every button
 map code against the frames it sends in the calibration configurations. Where the name is settled and the
 code is only narrowed, use `scanCandidates`: the Harmony 525's four soft keys, a block of four from the
 firmware's matrix, section 89, and the Harmony 350's four unheard favourites and its Live key. The four arrow keys of a Harmony One and a Harmony 600 were candidates
@@ -247,7 +247,7 @@ until the devices' own maps decided them.
 * **Where the key is.** Section 48 derived the electrical column on the Harmony 600 as `(scan - 1) mod 4`,
   and under it the digits 1, 2 and 3 sit in columns 3, 2 and 2; no modulus and no offset makes a row of
   three digits one line, checked over every divisor up to 19 both ways, and a test in
-  `packages/codec/test/irframe.test.ts` keeps it checked. A matrix position is a wiring decision, so a
+  `packages/codec/test/infrared/irframe.test.ts` keeps it checked. A matrix position is a wiring decision, so a
   key's place comes from the traced drawing and never from its code.
 * **That a key is unknown when it has none.** Leaving `scan` off is exactly what says a code is not
   established, so a drawing carries a code on the keys an archive section names and no attribute on the
@@ -359,7 +359,7 @@ drawing coordinates, so anything expressed in screen pixels lands in the right p
 
 ## Step 7: what a new model needs before it is done
 
-* a class in `tests/test_silhouettes.py` naming the file and its button count, and an entry in
+* a class in `tests/firmware/test_silhouettes.py` naming the file and its button count, and an entry in
   `DRAWN`, since a drawing nobody wrote a class for sits there with its count unasserted
 * the checked in SVG regenerated, so the byte for byte test passes
 * every name unique within the model, every `catalogue` name carrying a scan code its `scanFrom`

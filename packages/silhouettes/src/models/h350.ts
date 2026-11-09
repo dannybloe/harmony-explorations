@@ -26,7 +26,7 @@
  * file and sees no key press, section 262, and no calibration configuration was compiled for it, section
  * 133. So a code was tied to a key by pressing it with an infrared receiver listening, `todo-compile-350.md`
  * 2.2.2, after the firmware's keypad scan was read and five configurations had narrowed every key to a code
- * or a set, `tests/test_harmony_350_keys.py`, and the keys that run could not reach on a configuration that
+ * or a set, `tests/harmony_300_350/test_harmony_350_keys.py`, and the keys that run could not reach on a configuration that
  * binds them, 3.3. This said no scan code appeared anywhere in here and that
  * nobody had read this generation's keypad scanner until those two. Every key is still `printed`: the codes
  * were named by pressing, not through Logitech's button maps.
@@ -193,7 +193,7 @@ const DRAWN: readonly Key[] = [
 /**
  * The 44 keys whose code was heard at the bench, `todo-compile-350.md` 2.2.2: each pressed on a Harmony 350
  * with an infrared receiver listening, and its code the one binding of the mode in force that sends what
- * was heard, `tests/test_harmony_350_keys.py`, `TheBench350HeardEveryKey`. Power is the one binding of
+ * was heard, `tests/harmony_300_350/test_harmony_350_keys.py`, `TheBench350HeardEveryKey`. Power is the one binding of
  * each device's map that toggles a power state, and the two device keys the bench file binds are the ones
  * whose release selected the device heard after them.
  *
@@ -216,8 +216,8 @@ const HEARD: Readonly<Record<string, number>> = {
  * first run's file bound nothing to them. Each was pressed twice, in two runs, on a unit holding a file
  * that binds them, and its code is the one of the 56 that, raised at that point of the run, gives what the
  * receiver heard; for a device key that is what the keys after it sent in the mode it selected,
- * `packages/bench/test/setup350.test.ts`, and `TheBench350HeardTheTestSetup` in
- * `tests/test_harmony_350_keys.py`. Favourites 1 to 4 sent the channels in the order they were
+ * `packages/bench/test/harmony-300-350/setup350.test.ts`, and `TheBench350HeardTheTestSetup` in
+ * `tests/harmony_300_350/test_harmony_350_keys.py`. Favourites 1 to 4 sent the channels in the order they were
  * entered.
  *
  * DVR is not here: it sent the KPN's code that OK's binding sends as well, in the same bytes, so the press
@@ -230,7 +230,7 @@ const HEARD_ON_THE_SETUP: Readonly<Record<string, number>> = {
 
 /**
  * The key narrowed to a set and not decided: Live, on one of the two codes no configuration binds, and
- * neither bench file binds either. `packages/bench/test/keys350.test.ts`. The four favourites were a set
+ * neither bench file binds either. `packages/bench/test/harmony-300-350/keys350.test.ts`. The four favourites were a set
  * here, the codes 8, 9, 11 and 34, until 3.3 heard them.
  *
  * DVR is decided in the configurations and carries neither, since no press of it decided its code.

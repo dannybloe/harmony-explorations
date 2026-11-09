@@ -147,7 +147,7 @@ export function periodOfCarrier(hz: number): number {
 /**
  * A carrier's period in nanoseconds **rounded to the nearest**, and so deliberately not `periodOfCarrier`:
  * the period as a Harmony Touch sends it. Named for its arithmetic rather than for the remote, since code
- * outside the families names no remote, `test/generic.test.ts`; which remote takes it is its reader's
+ * outside the families names no remote, `test/package/generic.test.ts`; which remote takes it is its reader's
  * choice, `families/harmony-touch/read.ts`. A compiled configuration stores the truncated period; a Touch is
  * given no compiled period at all and works one out each time it sends, through its engine's bit library,
  * whose conversion adds 2^52 + 2^51 in floating point and keeps the low word, which rounds.
@@ -1152,7 +1152,7 @@ export type WaveformRefusal =
  * takes the family's rhythm, the definition's own field widths, the keycode grammar, the command's own
  * cycles rather than the family's default, the widths and the toggle bit imposed on the values, the
  * block derivation, and the extra rhythms a repetition may send. `make prontocheck` and
- * `test/pronto.test.ts` both need all seven, and the test carried its own copy until section 232, where
+ * `test/infrared/pronto.test.ts` both need all seven, and the test carried its own copy until section 232, where
  * the copy fell two readings behind: it built a shape of two fields where there are three, so every cell
  * table family threw, and it had drifted silently once before that.
  *

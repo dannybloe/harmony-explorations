@@ -29,7 +29,7 @@
  * words, since no other model has a key for either. All `printed`, chosen by the marking.
  *
  * **No key carries a code.** One configuration of an 880 Pro is known, compiled by Logitech for one
- * contributor, and `tests/test_harmony_880_keys.py` asks for devices of two contributors before it names a
+ * contributor, and `tests/harmony_880_885/test_harmony_880_keys.py` asks for devices of two contributors before it names a
  * key's code; that file reports what the one compile says, Mute on 20 where the 880 and 885 have it on 11,
  * which is the code of the 885's Red key, the position this face prints `MUTE` in. Nothing else narrows a key
  * to a set either, so no key carries candidates. The key page's learning mode is how these get codes.

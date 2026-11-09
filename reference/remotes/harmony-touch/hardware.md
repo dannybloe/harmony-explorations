@@ -36,9 +36,9 @@ pairs with that radio is **not checked**[^unchecked].
 * Size and weight[^unchecked].
 
 [^unchecked]: Not checked.
-[^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
-[^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
-[^t-touch-ram]: Measured on a unit. [The test](../../../tests/test_harmony_touch_image.py)
+[^t-touch-keys]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_keys.py)
+[^t-touch-image]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_image.py)
+[^t-touch-ram]: Measured on a unit. [The test](../../../tests/harmony_touch/test_harmony_touch_image.py)
 [^s200]: Measured on a unit. [Section 200](../../../docs/findings.md#s200)
 [^s201]: Measured on a unit. [Section 201](../../../docs/findings.md#s201)
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)

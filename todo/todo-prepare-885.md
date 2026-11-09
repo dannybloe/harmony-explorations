@@ -57,7 +57,7 @@ Written on 4 November 2026; linked from `todo-later.md` 5.6. **Done**: every ite
 - [x] 3.7 The number sender (F8); this said no 880 or 885 configuration holds favourite channels until a bench 885's did, `25ed538d`
 - [x] 3.8 The infrared player: carrier, and whether the toggle records' second group is alternated (F11)
 - [x] 3.9 Screen opcode 21, found on this platform only, and opcode 1's clip (F10, F12)
-- [x] 3.10 What reads base slot 3's stamp, and the log area's writer (F13, F14); the writer is answered by 1.7, `tests/test_harmony_885_log_area.py`, so the stamp is what is left
+- [x] 3.10 What reads base slot 3's stamp, and the log area's writer (F13, F14); the writer is answered by 1.7, `tests/harmony_880_885/test_harmony_885_log_area.py`, so the stamp is what is left
 - [x] 3.11 Where this platform keeps an inter device delay, if anywhere (F4)
 
 ## 4. Corrections

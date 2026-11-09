@@ -6,7 +6,7 @@
  *
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.1-device`,
  * which `packages/corpus/bin/touch-device-set.ts` built, and the favourites' documents of the recorded full sync,
- * through the engine model `packages/codec/src/families/harmony-touch/engine.ts`; `experiments/touchdevicetest.ts` holds the plan and `test/touch-device-predicted.test.ts` that the
+ * through the engine model `packages/codec/src/families/harmony-touch/engine.ts`; `experiments/touchdevicetest.ts` holds the plan and `test/harmony-touch/touch-device-predicted.test.ts` that the
  * file written is what this gives.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';

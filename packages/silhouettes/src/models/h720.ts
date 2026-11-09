@@ -35,7 +35,7 @@
  * `DownArrow` and `UpArrow`, and the keys printed `* clear` and `# enter` are `Clear` and `Enter`.
  *
  * **No key carries a code.** One configuration of a Harmony 720 is known, compiled by Logitech for one
- * contributor, which under `tests/test_harmony_880_keys.py`'s rule names no key, and no 720 has been pressed.
+ * contributor, which under `tests/harmony_880_885/test_harmony_880_keys.py`'s rule names no key, and no 720 has been pressed.
  * The key page's learning mode is how these get codes.
  *
  * **Left out**: the Logitech logo at the foot, which is the artwork the skill keeps out, the brushed texture

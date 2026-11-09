@@ -7,7 +7,7 @@ down before it, so the run can refute it.
 **Where the prediction comes from.** The firmware numbers a key 1 to 56 from where it sits on the keypad
 grid and hands that number to the key maps unchanged, read in the 1.4 image; which printed key carries
 which number is inferred from what five configurations bind and send,
-`tests/test_harmony_350_keys.py` and `packages/bench/test/keys350.test.ts`, with the table on
+`tests/harmony_300_350/test_harmony_350_keys.py` and `packages/bench/test/harmony-300-350/keys350.test.ts`, with the table on
 `reference/remotes/harmony-350/keys.md`. What each key sends below is then read out of the configuration
 the unit holds, `lab/work/350-delay/before.bin`: an LG television on infrared group 0 and a Denon receiver
 on group 2, and nothing else. The names are the monitor's, from Logitech's catalogue; where the catalogue

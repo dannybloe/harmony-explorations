@@ -77,7 +77,7 @@ confirm a block[^t-usbdesc]:
 
 A third check says the block belongs to the image it was found in: the product string states the firmware
 version, `Harmony Remote 0-2.8.0` and `Harmony Remote 0-3.4.0`, which the packages the images came from
-state too. Where each image keeps its block is pinned in `tests/test_usbdesc.py`[^t-usbdesc].
+state too. Where each image keeps its block is pinned in `tests/usb_protocol/test_usbdesc.py`[^t-usbdesc].
 
 **A firmware image can hold a second descriptor block that validates as well as the real one**, a
 Microchip stock descriptor left in by the USB stack the firmware is built on. The chain walk cannot tell the
@@ -128,12 +128,12 @@ The 33 byte report descriptors of the Harmony One and the Harmony 600 and 700 ar
 bit: the Harmony 600 and 700's input report is declared `Relative`, `81 06`, and the Harmony One's
 `Absolute`, `81 02`. No HID parser interprets a vendor defined report, so it changes nothing; it is
 recorded because it is the only difference, which makes it a fingerprint, and it is counted in
-`tests/test_usbdesc.py` rather than seen by eye[^s19][^t-usbdesc]. The Harmony 525's report descriptor
+`tests/usb_protocol/test_usbdesc.py` rather than seen by eye[^s19][^t-usbdesc]. The Harmony 525's report descriptor
 differs between its application and its safe mode in one input flag, a different difference,
 [its usb page](../architectures/harmony-5xx/usb.md)[^s118].
 
 [^s19]: Read in the firmware. [Section 19](../../docs/findings.md#s19)
-[^t-usbdesc]: Read in the firmware. [The test](../../tests/test_usbdesc.py)
+[^t-usbdesc]: Read in the firmware. [The test](../../tests/usb_protocol/test_usbdesc.py)
 [^s19b]: Measured on a unit. [Section 19](../../docs/findings.md#s19)
 [^s223]: Measured on a unit. [Section 223](../../docs/findings.md#s223)
 [^unchecked]: Not checked.

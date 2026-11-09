@@ -14,7 +14,7 @@
  * **Not a second copy of the archive's renderer, because it reads for another consumer.** `waveformOfArchiveCommand`
  * is the codec's reading of a definition as the archive renders it, held against the archive's own renderings by
  * `make prontocheck`; this is the Touch's. The two part exactly where the engine does something the archive's
- * renderer does not, which `test/touch-definition.test.ts` lists from the reading and `test/touch-rhythm-table.test.ts`
+ * renderer does not, which `test/families/harmony-touch/touch-definition.test.ts` lists from the reading and `test/families/harmony-touch/touch-rhythm-table.test.ts`
  * measures: a duration under 30 microseconds, a zero included, goes out as 30; a pad's rest after 32767 is raised the
  * same way; a frame longer than its padded length goes out whole with no pad, where the renderer declines the value;
  * and a release is a sequence of its own.

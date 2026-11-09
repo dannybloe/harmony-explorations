@@ -35,7 +35,7 @@ their load addresses are each architecture's `firmware.md` and `docs/checksums.m
 
 **That is a rule about reading code, not about where data is.** Two things exist outside arch 14 and
 arch 14 never reads them: the touch hit map, on arch 12 alone, and the log area's writer, on arch 12
-and on arch 8 (`tests/test_harmony_885_log_area.py`), each with a base slot of its own. So when a slot
+and on arch 8 (`tests/harmony_880_885/test_harmony_885_log_area.py`), each with a base slot of its own. So when a slot
 looks empty or unread on arch 14, read the others before concluding anything about the slot.
 
 ## Step 1: get the actual pointer values
@@ -232,7 +232,7 @@ of addresses names an image, and a claim that spans an architecture has to be as
   adding mnemonics.
 * **Bit test polarity.** `BTFSS` is `0xA0-0xAF` and `BTFSC` is `0xB0-0xBF`. These were once
   swapped here, which inverted the stated sense of the infrared enable mask, the keypad columns
-  and the reset key combination. All three are active low. Pinned in `tests/test_isa.py`,
+  and the reset key combination. All three are active low. Pinned in `tests/firmware/test_isa.py`,
   including a semantic check that does not depend on the datasheet.
 * **The SFR map is per part, and choosing wrong is silent.** `isa.PARTS` holds two: the
   PIC18F67J50 / 87J50 map for arch 12 and arch 14, and the **PIC18F4550** map for arch 9, which

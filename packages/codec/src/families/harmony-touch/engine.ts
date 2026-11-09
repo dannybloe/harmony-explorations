@@ -32,7 +32,7 @@
  * count, and the engine's own overhead around each send and each sleep, which no document states. The model
  * runs every scenario twice, with the overhead at the bottom and the top of `TIMING`, and a prediction is the
  * band between the two. The band's width is calibrated on the bench runs of `todo-touch.md` 3.2 and 6.9,
- * `packages/bench/test/touch-full-bench-predicted.test.ts`.
+ * `packages/bench/test/harmony-touch/touch-full-bench-predicted.test.ts`.
  *
  * **Why it lives in the codec.** It is knowledge about the remote, what its engine sends and when, so it sits
  * beside the documents it reads, plan 013 decision 7, where a preview of what an activity will send can use it as

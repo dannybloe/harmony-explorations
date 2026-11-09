@@ -1,0 +1,174 @@
+/**
+ * Filing a read, into a temporary directory rather than the real corpus.
+ *
+ * The naming is worth pinning because it is what somebody reads a year later when they are trying
+ * to work out which remote a file came off, and by then nobody remembers.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { decodePayload } from '@harmony/codec/node';
+import { load, require_, skipUnless } from '@harmony/lab';
+
+import { profileFor, readConfig, type ConfigReader } from '../../src/index.ts';
+import { describe, fileNames, fileRead, fileRegion, regionFileNames, FileError, slug, stamp } from '../../src/file.ts';
+
+const H600 = 0xc122;
+const WHEN = new Date('2026-08-06T11:45:09.000Z');
+
+test('the stamp is UTC and sorts', () => {
+  assert.equal(stamp(WHEN), '20260806T1145Z');
+  assert.ok(stamp(new Date('2026-08-06T09:00:00Z')) < stamp(WHEN), 'earlier reads sort earlier');
+});
+
+test('a label cannot escape the directory it is written into', () => {
+  assert.equal(slug('Harmony One'), 'harmony-one');
+  assert.equal(slug('SpareUnit'), 'spareunit');
+  assert.equal(slug('../../etc/passwd'), 'etc-passwd');
+  assert.throws(() => slug('///'), FileError);
+});
+
+test('both files share a base name so they stay together', () => {
+  const names = fileNames('Harmony 600', WHEN);
+  assert.equal(names.config, '20260806T1145Z-harmony-600-config.bin');
+  assert.equal(names.sidecar, '20260806T1145Z-harmony-600-config.json');
+});
+
+/** A remote holding one real config, enough to produce a read worth filing. */
+async function readFromFile(name: string, productId: number) {
+  const config = decodePayload(load(name) as Uint8Array).payload;
+  const profile = profileFor(productId);
+  const reader: ConfigReader = {
+    async getVersion() {
+      return Uint8Array.from([0x02, 0x1c, 0x15, 0x02, 71, 0, 0, 0, 0, 0, 0, 0]);
+    },
+    async readFlash(address, count) {
+      const at = address - profile.configBase;
+      const out = new Uint8Array(count).fill(0xff);
+      out.set(config.subarray(at, Math.min(at + count, config.length)));
+      return out;
+    },
+  };
+  let clock = 0;
+  return readConfig(reader, profile, { now: () => (clock += 1000) });
+}
+
+test('the sidecar records what the blob cannot say about itself', skipUnless('h600_config'), async () => {
+  const read = await readFromFile('h600_config', H600);
+  const meta = describe(read, 'H600', WHEN) as Record<string, Record<string, unknown>>;
+
+  assert.equal(meta['label'], 'H600');
+  assert.equal(meta['read_at'], '2026-08-06T11:45:09.000Z');
+  assert.equal(meta['remote']?.['product_id'], '0xc122');
+  assert.equal(meta['remote']?.['architecture'], 14);
+  assert.equal(meta['flash']?.['base'], '0x030000');
+  assert.equal(meta['flash']?.['end_addr'], '0x0e4361');
+  assert.equal(meta['flash']?.['length'], 738149);
+  // The container summary is the same shape the golden vectors use, so a sidecar can be compared
+  // against one without a converter.
+  assert.equal(meta['container']?.['architecture'], 14);
+});
+
+test('a read lands as two files and refuses to overwrite an earlier one', skipUnless('h600_config'), async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'harmony-corpus-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const read = await readFromFile('h600_config', H600);
+  const filed = fileRead(root, read, 'H600', WHEN);
+
+  const written = readdirSync(filed.directory).sort();
+  assert.deepEqual(written, [filed.config, filed.sidecar].sort());
+  assert.deepEqual(
+    [...readFileSync(join(filed.directory, filed.config))],
+    [...read.bytes],
+    'the filed config is the bytes that came off the remote, untouched',
+  );
+  const meta = JSON.parse(readFileSync(join(filed.directory, filed.sidecar), 'utf8'));
+  assert.equal(meta.flash.length, read.bytes.length);
+
+  // Two reads in the same minute would otherwise replace each other silently, and the survivor is
+  // the one you were not comparing against.
+  assert.throws(() => fileRead(root, read, 'H600', WHEN), FileError);
+});
+
+test('a region read is filed under its own suffix so nothing mistakes it for a config', () => {
+  // The two artefacts are different and a corpus that cannot tell them apart has wrong totals: a
+  // configuration read stops where the container says, a region read stops where the caller says.
+  // On the Harmony 525 that is the difference between 51195 bytes and a 64 KiB erase block.
+  const config = fileNames('h525', WHEN);
+  const region = regionFileNames('h525', WHEN);
+  assert.ok(config.config.endsWith('-config.bin'));
+  assert.ok(region.config.endsWith('-region.bin'));
+  assert.ok(region.sidecar.endsWith('-region.json'));
+  assert.notEqual(config.config, region.config);
+  // Same base, so the two sort together for one unit read on one day.
+  assert.equal(config.config.slice(0, config.config.indexOf('-config')),
+               region.config.slice(0, region.config.indexOf('-region')));
+});
+
+test('a region sidecar records the range, which the blob cannot state itself', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'harmony-region-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const bytes = new Uint8Array(0x10000).fill(0xab);
+  const filed = fileRegion(root, {
+    bytes,
+    address: 0x820000,
+    versionBlock: Uint8Array.from([1, 2, 3]),
+    productId: 0xc11f,
+    architecture: 9,
+    model: 'Harmony 525',
+    durationMs: 1234,
+  }, 'h525-region', WHEN);
+
+  assert.deepEqual(readdirSync(filed.directory).sort(), [filed.config, filed.sidecar].sort());
+  assert.deepEqual([...readFileSync(join(filed.directory, filed.config))], [...bytes]);
+  const meta = JSON.parse(readFileSync(join(filed.directory, filed.sidecar), 'utf8'));
+  // A container states its own length and a region does not, so these three fields are the whole
+  // reason the sidecar exists rather than a convenience.
+  assert.equal(meta.kind, 'region');
+  assert.equal(meta.address, '0x820000');
+  assert.equal(meta.length, 0x10000);
+  assert.equal(meta.end, '0x830000');
+  assert.equal(meta.remote.architecture, 9);
+
+  // Same refusal as a config read: two in one minute would replace each other silently.
+  assert.throws(() => fileRegion(root, {
+    bytes,
+    address: 0x820000,
+    versionBlock: Uint8Array.from([1, 2, 3]),
+    productId: 0xc11f,
+    architecture: 9,
+    model: 'Harmony 525',
+    durationMs: 1234,
+  }, 'h525-region', WHEN), FileError);
+});
+
+test('the 525 region read agrees with the config read taken a month earlier',
+  skipUnless('h525_region_820000', 'h525_config_2'), () => {
+    // **Two reads of one remote, a month apart, by different code paths**, and the agreement is what
+    // makes the region read worth putting in front of a write. `read-config.ts` parses the
+    // container header and stops at the length the container states; `read-region.ts` reads a stated
+    // range and knows nothing about containers. If either had a bug in how it walks windows, this is
+    // where it would show, because the only thing the two share is the transport.
+    const region = require_('h525_region_820000');
+    const config = require_('h525_config_2');
+    assert.equal(region.length, 0x10000, 'one erase block');
+    assert.equal(config.length, 51195);
+    assert.equal(String.fromCharCode(...region.subarray(0, 4)), 'AHCM', "arch 9's container cookie");
+    assert.deepEqual([...region.subarray(0, config.length)], [...config],
+                     'the block starts with exactly the configuration that was read in August');
+
+    // **And the rest of the block is erased flash**, which is worth an assertion rather than a
+    // shrug: on the spare Harmony One the equivalent tail holds 408034 bytes of a previous
+    // configuration, section 215, because flash is only erased where a write needs the room. This
+    // unit's does not, so this particular region carries nothing its owner did not mean to hand
+    // over. It stays in the lab regardless, since that is a property of this read and not of
+    // regions.
+    const tail = region.subarray(config.length);
+    assert.equal(tail.length, 14341);
+    assert.ok(tail.every((b) => b === 0xff), 'every byte past the configuration is erased flash');
+  });

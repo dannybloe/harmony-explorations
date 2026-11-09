@@ -201,7 +201,7 @@ durations in the result are the ones their generator emits.
       written up as three problems
 - [x] `make protocols` measures each new family and each entry reproduces every one of its own records
       byte for byte, with `source: 'compiled'`. 38 entries, every one exact on its own records except
-      the one named loose entry, and `test/stated.test.ts` asserts both counts
+      the one named loose entry, and `test/infrared/stated.test.ts` asserts both counts
 - [x] `Galaxis 16 Bit Quad Toggle` reads its values as **quaternary** digits, two bits a digit, which is
       what makes its eight digit value the 16 bits its name states, section 159. Its refusal is replaced
       by a reading, not widened: `Quad` is read out of the family name exactly as the widths are, and the
@@ -211,13 +211,13 @@ durations in the result are the ones their generator emits.
       it has no measured rhythm and cannot yet be emitted
 - [x] the three families whose analyser answer disagreed with their compiler stay out of the table on
       their analyser's word alone, section 160. The `documented` provenance is asserted empty in
-      `test/stated.test.ts`, so an entry resting on their analyser alone cannot come back quietly
+      `test/infrared/stated.test.ts`, so an entry resting on their analyser alone cannot come back quietly
 - [x] **check**: `make protocols` covers 32 of 33 catalogue families and at least 5150 of 5219 commands,
       every entry exact on its own records, and the covered share is asserted in a test against the
       recorded census rather than printed. **Passed on 25 August 2026 at 32 and 5218**, section 170:
       three of the four missing families were one mechanism, the mark riding with the bit, and the
       one left is `Saitek 11 Bit` (1 command). The census assertion is delivered: the test in
-      `packages/codec/test/stated.test.ts` counts the recorded census itself, 2921 distinct codes all
+      `packages/codec/test/infrared/stated.test.ts` counts the recorded census itself, 2921 distinct codes all
       read, 32 of 33 families and 5218 of 5219 commands covered, and names the missing family, so any
       of those numbers moving fails a test rather than a memory
 
@@ -289,7 +289,7 @@ one tail shape across every record. What varies is the closing silence.
 - [x] the reading claim needs a **check that cannot be satisfied by a bigger table**: the catalogue share
       is asserted in a test against the recorded census, per phase 2's own last item, rather than measured
       by a script beside the notes as it is today. Delivered on 25 August 2026, the census test in
-      `packages/codec/test/stated.test.ts`: it counts the census itself and names the missing family
+      `packages/codec/test/infrared/stated.test.ts`: it counts the census itself and names the missing family
 - [x] extend a rhythm table entry with the repeat count, the gap between copies and the closing silence,
       measured per family the same way the durations are, and refuse an entry whose records disagree
       rather than averaging them. Delivered as `tail` on 25 August 2026, section 171, and the model the
@@ -299,7 +299,7 @@ one tail shape across every record. What varies is the closing silence.
       the tail, which is stage two
 - [x] test whether a family's closing silence is padding to a **constant total block duration**. Section
       152 tried that across the corpus and got 31 of 41 classes; per family it is exact: eleven entries
-      state a constant total, named with their totals in `test/stated.test.ts`, Toshiba's 215736 constant
+      state a constant total, named with their totals in `test/infrared/stated.test.ts`, Toshiba's 215736 constant
       across 622 records, and the families with pure literal tails need none
 - [x] `blockOfStatedCode`, beside `pulsesOfStatedCode`: a catalogue string in rather than a bare number,
       because the whole record shapes need every stated value, a whole block out, refusing a family whose
@@ -307,7 +307,7 @@ one tail shape across every record. What varies is the closing silence.
 - [x] **check**: for every record in the corpus and the compiled sample whose family the table names,
       building the whole block from the family entry plus that record's own number reproduces the record
       byte for byte, and the families where it does not are named with their counts. `tailExact` per
-      entry, measured by the generator and pinned per family in `test/stated.test.ts`: 2045 of 2242
+      entry, measured by the generator and pinned per family in `test/infrared/stated.test.ts`: 2045 of 2242
       records of tailed entries rebuild whole, and each shortfall is named with its reason
 - [x] **the negative**: a family with no measured tail is refused, and the test says so: `Sharp 15 Bit
       2` (second frame in the tail), `Panasonic 16 Bit` (one record) and `Saitek 11 Bit` (not in the
@@ -457,7 +457,7 @@ lifts that refusal.
       run of filler at each of a set of offsets, relocate, and assert that every reader reports exactly
       what it reported before. Same devices with the same names, same activities, same drawn text, same
       key bindings, same infrared frames, same rendered screens, and the checksum and end marker verify.
-      `test/relocate.test.ts`, 25 August 2026: 19 corpus containers plus the two made configs, two
+      `test/edit/relocate.test.ts`, 25 August 2026: 19 corpus containers plus the two made configs, two
       offsets each, the claim multiset and the whole inventory compared, plus a mechanical half that
       demands the byte diff against a naive shift be exactly the rewritten fields and the two restamps.
       What it found on the way is the floor: filler between the marker and the key table is read as key
@@ -519,7 +519,7 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
       more device with the right name, its commands decode back to the exact numbers the catalogue states,
       every screen still renders with nothing unresolved, the byte accounting is still 100% with no
       overlaps, and the whole file round trips through the emitter.
-      `packages/codec/test/compose.test.ts`, 25 August 2026, and finishing it found a placement defect in
+      `packages/codec/test/compose/compose.test.ts`, 25 August 2026, and finishing it found a placement defect in
       the naming half: the state record had dropped the timer table out of the relocation census
       silently, section 173, and a regression now pins the table's survival
 - [x] **check, the reachability half**: the device list page's own bindings reach the new page, and the

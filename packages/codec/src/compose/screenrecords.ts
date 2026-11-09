@@ -44,7 +44,7 @@
  * from a counter and assign labels to places, and the built address bytes when it classifies a
  * reference, through the container itself. None of those decides a byte of the output. So a caller can hand it a reader over bytes
  * overwritten everywhere but the recorded offsets and get the same description back, which is the blind
- * control `test/screenrecords.test.ts` makes. Where it would read a value it can also build, it checks
+ * control `test/families/harmony-600-650-700/screenrecords.test.ts` makes. Where it would read a value it can also build, it checks
  * the two agree instead, the corner program against `fourSlotMenuChrome`'s by content route.
  *
  * **The machinery is shared since section 357**: `recordReading` reads a mode record's frame and accounts

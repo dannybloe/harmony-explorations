@@ -6,7 +6,7 @@
  * `@harmony/codec` to make sense of what came back. Read only: the reader interface this module works against
  * has no write method on it at all.
  *
- * **Explicit names**, `todo.md` 7.3.6 and plan 013 decision 6, held by `test/surface.test.ts`. The rest is under
+ * **Explicit names**, `todo.md` 7.3.6 and plan 013 decision 6, held by `test/package/surface.test.ts`. The rest is under
  * named subpaths: `./read`, the reader module whole, which loads without the transport and which a window loads
  * on its own; and `./file`, filing a read in the lab corpus, which is this repository's bench and not an
  * application's.

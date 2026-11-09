@@ -67,7 +67,7 @@ HOME_PATH = re.compile(rb'(?:/Users/|/home/)[A-Za-z0-9._-]+/')
 
 # Files allowed to contain what the rules above forbid, with the reason each is exempt.
 EXEMPT = {
-    'tests/test_ezfile.py': 'holds fabricated account fields in the real fields shape',
+    'tests/config_format/test_ezfile.py': 'holds fabricated account fields in the real fields shape',
 }
 
 

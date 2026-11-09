@@ -87,7 +87,7 @@ function pulses(words: readonly number[]): Pulse[] {
  *
  * `GAP_US` keeps its 53.8% margin against the same 1850, and the corpus does hold durations of exactly
  * 4000, which the strict `>` admits as a bit. None of them is in a framed record today. The numbers
- * are asserted in `test/irframe.test.ts` so widening either constant has to be a decision rather than
+ * are asserted in `test/infrared/irframe.test.ts` so widening either constant has to be a decision rather than
  * a habit.
  *
  * **It was 4000 and a real protocol broke it**, section 161, and 8000 is measured rather than picked.

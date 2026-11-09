@@ -13,7 +13,7 @@ plan 009 allows exactly two kinds of change to them, both mechanical:
 `normalise` is the definition of "nothing else changed": it removes the anchors and blanks every
 Markdown link target, so the text that is left is the archive's wording with those two allowed kinds
 of change taken out. The digest of that text was taken before the first change and is pinned in
-`tests/test_archive.py`. A link's label is wording and stays in the digest; only the target goes.
+`tests/project/test_archive.py`. A link's label is wording and stays in the digest; only the target goes.
 
 The archive's plain text mentions of old paths (`docs/config-format.md` in backticks, 267 of them in
 the findings) are not links and stay as written: the archive keeps the names things had.

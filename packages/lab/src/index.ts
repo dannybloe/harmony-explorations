@@ -100,7 +100,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // not come from a third party repair site**: the service serves it under skin 104 and its own
   // manifest names skins 78, 79 and 104.
   // **It is the Harmony 350's application and not the Harmony 300's**, which is a near copy of it,
-  // `tests/test_harmony_300_350_images.py`. A plain PIC18 image
+  // `tests/harmony_300_350/test_harmony_300_350_images.py`. A plain PIC18 image
   // executing at 0x9000 like every arch 14 one, which is why its file name follows theirs.
   h350_code: '350-1.4-Region_2-code-base0x9000.bin',
   // The same firmware as the vendor serves it, ZIP and all, so a test can start from the artefact
@@ -108,36 +108,36 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h350_package: 'skin104-harmony350-production-1.4.0.0',
   // The bench Harmony 350's own bootloader and safe mode image, read off it as files on 27 October
   // 2026, read only, into the lab's `reads/20261027T1929Z-h350-fw/`. Python reads them,
-  // `tests/test_harmony_350_boot.py`; they are named here to keep the two fixture tables identical.
+  // `tests/harmony_300_350/test_harmony_350_boot.py`; they are named here to keep the two fixture tables identical.
   // The safe mode file is the image less its last eight bytes, which is how the remote serves it.
   //
   // **Paths under the lab, not bare names**, since three folders now hold a `fw_bootloader.bin` or a
   // `fw_safemode.bin` and a bare name finds whichever the walk ranks first; `findAll` resolves a name
   // with a slash from the lab's root. The rest are the Harmony 300's three images and the Harmony
   // 350's application as each unit serves it, read on 31 October 2026, which
-  // `tests/test_harmony_300_350_images.py` compares.
+  // `tests/harmony_300_350/test_harmony_300_350_images.py` compares.
   // The Harmony Touch's update package on both of the service's channels, the hubs' production
   // package beside them, and the bench Touch's identity file read with a setup on it. Python reads
-  // them, `tests/test_harmony_touch_image.py`; named here to keep the two fixture tables identical.
+  // them, `tests/harmony_touch/test_harmony_touch_image.py`; named here to keep the two fixture tables identical.
   // The identity file carries the unit's serial, so a reader takes named fields out of it only.
   touch_package_production: 'firmware/packages/sus/skin99-touch-production-4.15.330.hfw2',
   touch_package_preview: 'firmware/packages/sus/skin99-touch-preview-4.15.250.hfw2',
   touch_sysinfo: 'reads/20261102T0854Z-touch-usercfg/sysinfo.txt',
   // One sync of the bench Touch recorded through the lab's inspectable copy of Harmony Desktop, every
   // web request and every USB call through the page's prompt bridge, `todo-touch.md` 2.3's trial and
-  // `packages/usb/test/touch-sync.test.ts`. It holds the test account's data and the unit's serial.
+  // `packages/usb/test/touch/touch-sync.test.ts`. It holds the test account's data and the unit's serial.
   touch_sync_recording: 'reads/20261102T1350Z-touch-sync-harmony-desktop/bridge.log',
   // The sync after the bench Touch's setup was filled, `todo-touch.md` 2.2.1 and 2.3, and the copy's log
   // after it, holding one reverse sync: the remote's changed settings uploaded to the account. Both read by
-  // `packages/usb/test/touch-sync-both-ways.test.ts`, and both hold the test account's data and the serial.
+  // `packages/usb/test/touch/touch-sync-both-ways.test.ts`, and both hold the test account's data and the serial.
   touch_full_sync_recording: 'reads/20261102T1520Z-touch-sync-full-setup/bridge.log',
   touch_reverse_sync_recording: 'reads/20261102T1524Z-touch-reverse-sync/bridge.log',
   // The first request this project sent the bench Touch, through the request rail, `todo-touch.md` 6.4:
   // `harmony.engine?getconfighash`'s answer, the stored documents' entity tags joined, read by
-  // `packages/usb/test/touch-confighash.test.ts`. The tags identify the test account's documents.
+  // `packages/usb/test/touch/touch-confighash.test.ts`. The tags identify the test account's documents.
   touch_confighash_read: 'reads/20261105T0930Z-touch-confighash/answer.txt',
   // The first sync answered by this project, `todo-touch.md` 6.7, `--unchanged`, and the recovery after its
-  // refusal, read by `packages/usb/test/touch-first-sync.test.ts`. The run's folder keeps every request and
+  // refusal, read by `packages/usb/test/touch/touch-first-sync.test.ts`. The run's folder keeps every request and
   // answer; these are the ones the test reads: the config hash before, the hand over's list and our answer to
   // it, the sync's first list, our answers and the reply, and the favourites list that stopped it; then the
   // hash while the sync was marked running, the abort, the hash after it and the restart. The tags identify
@@ -154,7 +154,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   touch_recovery_confighash_after: 'reads/20261105T1054Z-touch-confighash/answer.txt',
   touch_recovery_reboot: 'reads/20261105T1054Z-touch-recover-reboot/answer.txt',
   // The second sync answered by this project, `todo-touch.md` 6.7, `--unchanged`, which the remote committed,
-  // and the config hash read before and after it, read by `packages/usb/test/touch-second-sync.test.ts`. Every
+  // and the config hash read before and after it, read by `packages/usb/test/touch/touch-second-sync.test.ts`. Every
   // request list the remote handed out, every write of our answers and the remote's reply to each. The tags
   // identify the test account's documents, and the favourites and pictures carry its household's addresses.
   touch_second_sync_confighash_before: 'reads/20261105T1217Z-touch-confighash/answer.txt',
@@ -184,7 +184,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   touch_second_sync_reply_8: 'reads/20261105T1218Z-touch-sync-unchanged/019-answers-answer.txt',
   // The sync of 6.8, `todo-touch.md`: the remote's own six documents answered with 200 under tags of ours, the set
   // itself, the config hash read after it and the third `--unchanged` run after that, read by
-  // `packages/usb/test/touch-own-set-sync.test.ts`. The read before the sync was overwritten by the read after it,
+  // `packages/usb/test/touch/touch-own-set-sync.test.ts`. The read before the sync was overwritten by the read after it,
   // which is why only the after read is here. The tags identify the test account's documents, the set holds them
   // whole, and the favourites and pictures carry its household's addresses.
   touch_own_set: 'work/touch-firmware/sets/6.8-own-documents/set.json',
@@ -232,7 +232,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The four syncs of 6.9, `todo-touch.md`: each set the one before with one value of one document changed and only
   // that document retagged, a sequence's delay 1 s to 3 s and back and an activity's name changed and back, the
   // config hash read before and after each, the closing `--unchanged` run, and the three bench runs that timed the
-  // delay on the infrared monitor, read by `packages/usb/test/touch-changed-set-sync.test.ts`. The tags identify
+  // delay on the infrared monitor, read by `packages/usb/test/touch/touch-changed-set-sync.test.ts`. The tags identify
   // the test account's documents, the sets hold them whole, and the favourites and pictures carry its household's
   // addresses. Two earlier bench attempts of the same test recorded no press of the button and are not here.
   touch_changed_set_delay: 'work/touch-firmware/sets/6.9-delay/set.json',
@@ -630,7 +630,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // committed removal and after the put back; the first try, which stopped on a USB read timeout while the answers to
   // its first request list were being written, with what it kept; the two committed syncs with the reply to their kept
   // write; the closing `--unchanged` run; the bench run and the monitor log. Read by
-  // `packages/bench/test/touch85-runs.test.ts`, the sets also by `packages/corpus/test/touch-removal-set.test.ts` and
+  // `packages/bench/test/touch85-runs.test.ts`, the sets also by `packages/corpus/test/touch/touch-removal-set.test.ts` and
   // `packages/bench/test/touch85.test.ts`. Every committed run of 8.5 handed out eight request lists, numbered as 8.4's.
   touch_removal_set: 'work/touch-firmware/sets/8.5-removal/set.json',
   touch_removal_set_back: 'work/touch-firmware/sets/8.5-removal-back/set.json',
@@ -706,7 +706,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // after it and after the put back; the two committed syncs with the reply to their kept write; the closing
   // `--unchanged` run; the ten 7.1 bench tests run on the setup, the last attempt of each, and the three attempts that
   // were started again and are superseded by the next attempt of the same test; and the monitor log. Read by
-  // `packages/bench/test/touch86-runs.test.ts`, the sets also by `packages/corpus/test/touch-setup-set.test.ts` and
+  // `packages/bench/test/touch86-runs.test.ts`, the sets also by `packages/corpus/test/touch/touch-setup-set.test.ts` and
   // `packages/bench/test/touch86.test.ts`. Every committed run of 8.6 handed out eight request lists, numbered as 8.5's.
   touch_setup_set: 'work/touch-firmware/sets/8.6-setup/set.json',
   touch_setup_set_back: 'work/touch-firmware/sets/8.6-setup-back/set.json',
@@ -784,7 +784,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // the archive of the catalogue and our rhythm table, with no Logitech document as input; the set that puts back what
   // the bench Touch holds, 8.6's put back; and the description of the account the set takes Context's seven fields, the
   // favourites address and the six addresses from, which holds the household's values and is never printed. Read by
-  // `packages/corpus/test/touch-nothing-set.test.ts` and `packages/bench/test/touch91.test.ts`.
+  // `packages/corpus/test/touch/touch-nothing-set.test.ts` and `packages/bench/test/touch91.test.ts`.
   touch_nothing_set: 'work/touch-firmware/sets/9.1-nothing/set.json',
   touch_nothing_set_back: 'work/touch-firmware/sets/9.1-nothing-back/set.json',
   touch_nothing_account: 'work/touch-firmware/descriptions/9.1-account.json',
@@ -795,7 +795,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // kept write and to the put back's two chunk write of the line up; the closing `--unchanged` run; the person's
   // photograph of the favourites page on the empty set, a photo of the remote that a test may name and no document
   // embeds; and the monitor log. Read by `packages/bench/test/touch92-runs.test.ts`, the sets also by
-  // `packages/corpus/test/touch-empty-set.test.ts`.
+  // `packages/corpus/test/touch/touch-empty-set.test.ts`.
   touch_empty_set: 'work/touch-firmware/sets/9.2-empty/set.json',
   touch_empty_set_back: 'work/touch-firmware/sets/9.2-empty-back/set.json',
   touch_empty_confighash_before: 'reads/20261107T1124Z-touch-confighash/answer.txt',
@@ -1153,7 +1153,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // todo-compile-350 3.3: Logitech's compile of the test setup on the bench 350, run twice. **The first run's
   // stored verdicts are not the result**: the bench server was started before `BENCH_CONFIGS` named that
   // compile, so no frame was matched against it and seven steps failed. The second ran after a restart and
-  // its stored verdicts pass; `packages/bench/test/setup350.test.ts` matches both runs' pulses again and
+  // its stored verdicts pass; `packages/bench/test/harmony-300-350/setup350.test.ts` matches both runs' pulses again and
   // judges each step afresh. A run of the same name between the two reached only step 1 and is not named.
   h350_logitech_setup_ir: '20261031T111033Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
   h350_logitech_setup_ir_2: '20261031T112340Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
@@ -1162,7 +1162,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // pressed in the TV's and the KPN box's modes on its own configuration, `h300_programmed_config`. **Four
   // stored verdicts of the second fail on the test's wording, not on the remote**: the steps named the US
   // printing and the unit is the European one, so the colour keys and the favourites were pressed in
-  // another order. `packages/bench/test/keys300.test.ts` matches both runs' pulses again against the file each
+  // another order. `packages/bench/test/harmony-300-350/keys300.test.ts` matches both runs' pulses again against the file each
   // unit held and holds every step to the presses the European printing implies.
   h300_every_key_ir: '20261031T125339Z-ir-test-harmony-300-every-key-sends-something.json',
   h300_keys_ir: '20261031T131916Z-ir-test-harmony-300-every-key-in-the-tv-s-and-the-kpn-s-modes.json',
@@ -1173,21 +1173,21 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // taking and group 4 sending. `h300_event_ff_monitor` is the bench monitor's log; the last Denon Volume Up and the
   // Switch's Input 1, group 6, at 08:57:25 to 08:57:35 UTC on 1 November 2026, are step 6 done live. **The monitor
   // log also holds three pulse fragments that match every code**: a test reads only frames of more than 20 pulses.
-  // `packages/bench/test/eventff300.test.ts` matches the pulses again against the patched file.
+  // `packages/bench/test/harmony-300-350/eventff300.test.ts` matches the pulses again against the patched file.
   h300_event_ff_ir: '20261101T083956Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
   h300_event_ff_ir_redo: '20261101T085419Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
   h300_event_ff_monitor: '20261031T1211Z-ir-monitor.jsonl',
   // The same file on the bench Harmony 350, a two step check (`packages/bench/irtests/done/350-event-ff-check.json`): the
-  // entry is harmless on a build that never raises 0xFF. Read by `packages/bench/test/eventff300.test.ts`.
+  // entry is harmless on a build that never raises 0xFF. Read by `packages/bench/test/harmony-300-350/eventff300.test.ts`.
   h350_event_ff_ir: '20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json',
   // todo-compile-350 5.1.5: the empty configuration built from nothing (`work/setups/h350-empty/empty-350.bin`) on the
   // bench Harmony 350, its seven steps pressed (`packages/bench/irtests/done/350-5-1-5-empty.json`), and the monitor's
-  // log covering the same window. Read by `packages/codec/test/noscreenemptyunit.test.ts`.
+  // log covering the same window. Read by `packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts`.
   h350_empty_ir: '20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json',
   h350_empty_monitor: '20261031T1211Z-ir-monitor.jsonl',
   // todo-compile-350 5.3: the final build from nothing (`work/setups/h350-test/from-nothing-5.4.bin`, event 0xFF bound)
   // on the bench Harmony 350 and then on the bench Harmony 300, the same fifteen steps worded for each printing. Read by
-  // `packages/codec/test/noscreenfinalunits.test.ts`.
+  // `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
   h350_final_ir: '20261102T063358Z-ir-test-harmony-350-the-final-test-setup-with-event-0xff-bound.json',
   h300_final_ir: '20261102T064721Z-ir-test-harmony-300-the-final-test-setup-with-event-0xff-bound.json',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
@@ -1533,7 +1533,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The phase 7 pair, 25 August 2026: the calibration account's Harmony One compiled without and
   // with the LG 42LM3400, ten minutes apart, nothing else changed between the two. The known
   // answer for `docs/adding-a-device.md` phase 7: what Logitech's generator adds for the same
-  // television `composeDevice` adds, compared in `packages/codec/test/compose.test.ts`. Not in the
+  // television `composeDevice` adds, compared in `packages/codec/test/compose/compose.test.ts`. Not in the
   // corpus wide lists, like every compiled-to-order sample. Section 174.
   // The Harmony 350, arch 16, read with concordance since this library's transport does not reach
   // the file based family, section 193. Named here so the golden comparison can load it; it is
@@ -1584,13 +1584,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   account_commands: 'GetCommands_mine.json',
   // Not an image and not a config: Harmony Desktop's whole hosted client, mirrored on 9 August 2026.
   // The service API surface in `reference/logitech/service.md` is extracted from it by
-  // `tests/test_host_client.py`. Nothing in TypeScript reads it, and it is here because the two
+  // `tests/logitech/test_host_client.py`. Nothing in TypeScript reads it, and it is here because the two
   // tables are asserted equal: a fixture on one side only is the drift this parity test exists for,
   // and it caught exactly that on the day this entry was added.
   desktop_webapp_main: 'en.desktop-app-main.js',
   // MyHarmony decompiled to C#, three files of the sync flow. The reference client, decision 2: their
   // code and the firmware are both read before anything is derived. Sections 202 and 203 are claims
-  // about what this code does, and `tests/test_host_client.py` recomputes them, so they are named here
+  // about what this code does, and `tests/logitech/test_host_client.py` recomputes them, so they are named here
   // only to keep the two fixture tables identical, which is what the parity test is for.
   myharmony_sync_model: 'RemoteSyncUserControlModel.cs',
   myharmony_update_manager: 'RemoteUpdateManager.cs',
@@ -1625,11 +1625,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   classic_diagnostic_service: 'DiagnosticHidService.java',
   // The update service, section 214. Section 210 mined its write transfer without registering
   // it; what this fixture is for is the other half, the region address and size table, which
-  // is the source end of the closure in `packages/usb/test/classic-capture.test.ts`.
+  // is the source end of the closure in `packages/usb/test/transport/classic-capture.test.ts`.
   classic_update_service: 'UpdateHidService.java',
   // The same client's constants for arch 8, `Protocol8`, for one closure: the bootloader unlock it
   // writes before rewriting the bottom 64 KiB, and the staging address, against the values the Harmony
-  // 880 and 885 bootloaders test, `tests/test_harmony_885_bootloader.py`. Two numbers travel, nothing else.
+  // 880 and 885 bootloaders test, `tests/harmony_880_885/test_harmony_885_bootloader.py`. Two numbers travel, nothing else.
   classic_protocol8: 'Protocol8.java',
   // Two flash regions off the spare Harmony One, read by **Logitech's own client** rather than by
   // anything here, section 215. The user config region is the first independent check this project
@@ -1640,7 +1640,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The two bench Harmony 885s, todo-prepare-885.md 2.1 and 2.3: each unit's configuration read twice from
   // 0x020000 by its own stated length, and its flash from 0x020000 to 0x1D0000 read twice, the configuration's
   // first bytes and the remains of earlier configurations after it. Then unit A's clock, data memory 0x108 to
-  // 0x10F over READ_MISC selector 7, two reads seconds apart, as text. `tests/test_harmony_885_bench_reads.py`.
+  // 0x10F over READ_MISC selector 7, two reads seconds apart, as text. `tests/harmony_880_885/test_harmony_885_bench_reads.py`.
   // Out of the parseable population, `PARSEABLE_EXCLUDED`.
   h885_a_config: '20261105T0847Z-h885-a-config-config.bin',
   h885_a_config_2: '20261105T0847Z-h885-a-config-2-config.bin',
@@ -1654,7 +1654,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // Unit A's whole flash, 0x000000 to 0x1FE000, read twice before its first write, todo-compile-885.md 1.3, and
   // its configuration read once after that write, one block of remains at 0x0C0000 written back unchanged.
   // The second flash read met two sequence breaks and filed nothing until the unit was restarted by hand.
-  // `tests/test_harmony_885_flash_backup.py`. Out of the parseable population, `PARSEABLE_EXCLUDED`.
+  // `tests/harmony_880_885/test_harmony_885_flash_backup.py`. Out of the parseable population, `PARSEABLE_EXCLUDED`.
   h885_a_flash: '20261107T0939Z-h885-a-flash-region.bin',
   h885_a_flash_2: '20261107T1023Z-h885-a-flash-2-region.bin',
   h885_a_after_block_config: '20261107T1024Z-h885-a-after-block-config.bin',
@@ -1684,7 +1684,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h885_b_clock_after_2_3: '20261107T1552Z-h885-b-clock-after-2-3.txt',
   // todo-compile-885.md 2.1: the first catalogue device composed onto unit A's configuration, the Sony DAV-C540 as
   // `Sony HT`, by `compose-device.ts` and stamped by it, in the lab's work folder. The file written is a copy of
-  // it, since the writer stamps over its input. `packages/codec/test/sidekeysdevice.test.ts` composes it again.
+  // it, since the writer stamps over its input. `packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts` composes it again.
   h885_composed_2_1: 'h885-a-plus-sony-ht.bin',
   // todo-compile-885.md 2.2 and 2.3: the same device composed again, its power step now opening with its delay
   // between devices and sent at a quantity of 1, by `compose-device.ts` and stamped by it, in the lab's work folder
@@ -1693,7 +1693,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: `watch-keys.ts` polling data memory
   // `0x295` (the key held) and `0x3A1` (the last key pressed) while keys were pressed by hand, as text. Unit A
   // before its key contacts were cleaned, A opened and pressed freely, A's run through every key in a set order,
-  // and B's check of sixteen keys. `tests/test_harmony_885_keys.py`.
+  // and B's check of sixteen keys. `tests/harmony_880_885/test_harmony_885_keys.py`.
   h885_a_keys_before_cleaning: '20261105T1000Z-h885-a-keys-before-cleaning.txt',
   h885_a_keys_free_press: '20261105T1100Z-h885-a-keys-opened-free-press.txt',
   h885_a_keys_map: '20261105T1130Z-h885-a-keys-map.txt',

@@ -4,12 +4,12 @@ The five guards of `reference/`, plan 009 section 5, and the script that pins th
 
     python3 tools/reference_guards.py           every violation, then the counts per guard per folder
     python3 tools/reference_guards.py --counts  the counts only
-    python3 tools/reference_guards.py --pin     rewrite the pinned lists in tests/test_reference.py
+    python3 tools/reference_guards.py --pin     rewrite the pinned lists in tests/project/test_reference.py
 
 **Why there is a pinned list at all.** The guards were written in `todo-reference.md` 2.3, before the
 reference is clean: chapters 3 and 4 clean it, file by file. A guard that failed until then would be
 switched off or ignored, and a guard that passed because it checked less would be worse. So each guard
-runs in full, and `tests/test_reference.py` holds the exact list of what it finds today, as counts per
+runs in full, and `tests/project/test_reference.py` holds the exact list of what it finds today, as counts per
 file and per kind. The test fails on anything not on the list and on any count that rose, so nothing
 new gets in, and it also fails when a count fell without the list following, so the list can only ever
 shrink and always says what is left. `--pin` writes that list; run it after a step removed violations,
@@ -29,7 +29,7 @@ and read its diff, because a pin that grows is a violation being waved through.
 * `footnotes`: every footnote is well formed, per plan 009 section 4.
 * `links`: every relative link in `reference/`, `docs/`, the root documents and the skills resolves,
   file and anchor. `docs/findings.md` and `docs/decisions.md` are the archive and
-  `tests/test_archive.py` checks their links, so they are left out here rather than checked twice.
+  `tests/project/test_archive.py` checks their links, so they are left out here rather than checked twice.
 
 **A key never carries a person's name.** A link target or a word could, some day, so `redact` replaces
 any kind or path containing one with a digest before it is printed or pinned. That is what lets the
@@ -46,7 +46,7 @@ import unicodedata
 import urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEST_FILE = os.path.join(ROOT, 'tests', 'test_reference.py')
+TEST_FILE = os.path.join(ROOT, 'tests', 'project', 'test_reference.py')
 
 GUARDS = ('bench', 'names', 'copy', 'footnotes', 'links')
 

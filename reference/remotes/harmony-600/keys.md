@@ -151,7 +151,7 @@ swallows all but the centre key, which returns[^s311].
 [^s133]: Measured in configurations. [Section 133](../../../docs/findings.md#s133)
 [^s145]: Stated by Logitech, by their service. [Section 145](../../../docs/findings.md#s145)
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
-[^t-keypad]: Measured on a unit. [The test](../../../tests/test_keypad.py)
+[^t-keypad]: Measured on a unit. [The test](../../../tests/harmony_600_650_700/test_keypad.py)
 [^s13]: Read in the firmware. [Section 13](../../../docs/findings.md#s13)
 [^s17b]: Read in the firmware. [Section 17](../../../docs/findings.md#s17)
 [^unchecked]: Not checked.

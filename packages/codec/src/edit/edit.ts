@@ -101,7 +101,7 @@ export interface FieldRule {
  * Every **field** whose treatment on a write is not "carry it through unchanged".
  *
  * Exported because it is the answer to a question that otherwise lives in somebody's memory: does
- * this field go across, or does it get recomputed? `test/edit.test.ts` fails if a rule is added
+ * this field go across, or does it get recomputed? `test/edit/edit.test.ts` fails if a rule is added
  * without a test covering it, so the table cannot drift away from the code the way a comment would.
  *
  * **What it deliberately does not cover is sharing, and a caller has to know that.** This used to
@@ -385,7 +385,7 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
  * the month and the month to the year, the other three carry nothing, and the only part that varies is
  * which action list the hour's `0x7F` names (the Harmony One's minute carries a second transition). On
  * arch 16 (Harmony 300 and 350) the five configurations read carry none at all, so the remote's clock
- * stops at the minute, `tests/test_harmony_350_clock.py`; a save leaves that alone too.
+ * stops at the minute, `tests/harmony_300_350/test_harmony_350_clock.py`; a save leaves that alone too.
  */
 export function clockStateEdits(c: Container, builtAt: string): Edit[] {
   const fields = clockRecordFields(builtAt);
@@ -516,7 +516,7 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
  * **Where a family keeps another copy that a key reaches, this changes it too**, asking `Family.powerOnDelayCopies`.
  * On arch 16 (Harmony 300 and 350) Watch TV switches a device with one power code on by calling that code's list
  * and a `0x7C` of its own, so the delay is written twice; a device with separate codes is switched through its
- * `Power` variable and has the one copy. `packages/codec/test/filefamilydelays.test.ts`. Until `todo-compile-350.md`
+ * `Power` variable and has the one copy. `packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`. Until `todo-compile-350.md`
  * 4.6 this changed the device's transition only, and on the bench Harmony 300 that was the copy no key reached.
  * This said "an unread list" of the 170 until that list was read.
  *

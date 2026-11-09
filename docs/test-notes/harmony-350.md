@@ -25,7 +25,7 @@ Its configurations were changed only through Logitech's own service, by syncing,
 | the configuration after programming, 83840 bytes | the same, after the unit was given four devices, one activity and five favourite channels through Logitech's service, copying the bench Harmony 600's setup | 262 |
 | the configuration with one device removed, 68985 bytes | the same, after the Playstation 3 was taken off and nothing else changed | 263 |
 | every file on the inert path list, the backup before the first write, decision 26: the configuration now 35587 bytes as stated, read twice and identical | the same, all twelve paths, filed whole in the lab's `reads/20261027T1700Z-h350-backup/` | `todo-compile-350.md` 1.5 |
-| `/fw/bootloader`, 4096 bytes, and `/fw/safemode`, 26040 bytes, the safe mode image less its last eight bytes because the remote serves an internal image's header length as its size | the same, read only, those two paths opened through `HARMONY_FILE_PATH_EXPERIMENT=1` by decision at the bench; the lab's `reads/20261027T1929Z-h350-fw/`, fixtures `h350_bootloader` and `h350_safemode` | `todo-compile-350.md` 1.4, `tests/test_harmony_350_boot.py` |
+| `/fw/bootloader`, 4096 bytes, and `/fw/safemode`, 26040 bytes, the safe mode image less its last eight bytes because the remote serves an internal image's header length as its size | the same, read only, those two paths opened through `HARMONY_FILE_PATH_EXPERIMENT=1` by decision at the bench; the lab's `reads/20261027T1929Z-h350-fw/`, fixtures `h350_bootloader` and `h350_safemode` | `todo-compile-350.md` 1.4, `tests/harmony_300_350/test_harmony_350_boot.py` |
 
 **The five favourites** the unit was given through Logitech's service are five action lists of two
 instructions, `0x7A n` and then `0x1F`, which is what named the slot their channels go through, section
@@ -76,7 +76,7 @@ test `packages/bench/irtests/done/350-1-8-delay-*.json`, on 30 October 2026:
    `h350_delay_ir_10s`.
 
 So a unit is a tenth of a second, and Volume Up pressed long after went out at once in both runs. The
-argument is the header of `tests/test_harmony_350_delay.py`. The remote holds `before.bin` again, its
+argument is the header of `tests/harmony_300_350/test_harmony_350_delay.py`. The remote holds `before.bin` again, its
 own configuration.
 
 ## Which device each device key selects, todo-compile-350 2.3
@@ -93,7 +93,7 @@ and DVD/Music, not what the earlier setup guide's drawing showed; the drawing wa
 the LG television on the top left key and the Denon receiver on the bottom left, written back after the
 keypad check below. The run file is the lab's
 `reads/20261030T142422Z-ir-test-harmony-350-every-key-in-the-tv-s-and-the-receiver-s-modes.json`, fixture
-`h350_keys_ir`, and `TheBench350HeardEveryKey` in `tests/test_harmony_350_keys.py` holds it. Every key was
+`h350_keys_ir`, and `TheBench350HeardEveryKey` in `tests/harmony_300_350/test_harmony_350_keys.py` holds it. Every key was
 pressed in the television's mode and again in the receiver's, each step naming what the monitor should hear.
 
 **Scored against [the predictions](../predictions/harmony-350-keys.md)**:
@@ -162,7 +162,7 @@ Knoll's, the Switch's, the Sony's, the Denon's power codes and the KPN's DVR, an
 seven of twenty steps failed, 2, 6, 7, 8, 10, 11 and 14. Matched again from the pulses against the compile
 alone and judged again, it passes 20 of 20. The server was restarted for the second run, whose stored
 verdicts pass all nineteen steps with an expectation, step 13 being the silent one, and judging it again
-from its pulses gives the same verdicts word for word. `packages/bench/test/setup350.test.ts` does both and
+from its pulses gives the same verdicts word for word. `packages/bench/test/harmony-300-350/setup350.test.ts` does both and
 reads no stored verdict as the result.
 
 **The tester's notes in the second run**: a 9 pressed by accident in step 4, heard as Kodi's 9 between
@@ -188,8 +188,8 @@ DVR was heard twice in step 7, 3.8 seconds apart, where once was asked.
   Past the monitor's 200 ms window, so the monitor showed three presses.
 * Channel Up and the digit 1 in the KPN's mode sent nothing, as the file binds neither there.
 
-The argument is the header of `packages/bench/test/setup350.test.ts`; `TheBench350HeardTheTestSetup` in
-`tests/test_harmony_350_keys.py` holds the second run for the reference. The remote holds the compile.
+The argument is the header of `packages/bench/test/harmony-300-350/setup350.test.ts`; `TheBench350HeardTheTestSetup` in
+`tests/harmony_300_350/test_harmony_350_keys.py` holds the second run for the reference. The remote holds the compile.
 
 ## What was predicted
 
@@ -212,7 +212,7 @@ compiled configuration holds.
 `UserAccountDirector/GetProductCapabilities2` was asked for the account entry of this unit, skin 104, on 7
 October 2026, with the five other bench models, [accounts.md](accounts.md). It is what
 `reference/remotes/harmony-350/features.md` restates in "What Logitech's service states", and
-`tests/test_product_capabilities.py` holds it since plan 009's step 3.4, so those rows carry that test as
+`tests/logitech/test_product_capabilities.py` holds it since plan 009's step 3.4, so those rows carry that test as
 their footnote rather than being marked not checked.
 
 ## The case
@@ -226,9 +226,9 @@ text as the guide Logitech publishes.
 
 Nobody recorded which device key each device was put on when the unit was programmed through Logitech's
 service. The configurations state it: the scan code whose release selects each device's map,
-`tests/test_harmony_350_device_groups.py`, read as a printed key through the Harmony 300's device to key
+`tests/harmony_300_350/test_harmony_350_device_groups.py`, read as a printed key through the Harmony 300's device to key
 statement, with each group's device named by the codec's `devices` from its `Power` variable
-(`packages/codec/test/filefamilydelays.test.ts` for the lab fixtures; the names are not asserted by the
+(`packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts` for the lab fixtures; the names are not asserted by the
 first test). On the four device file the television is on `TV/Media`, the KPN box on `Cable/PC`, the
 Playstation 3 on `AVR/Game` and the Chromecast on `DVD/Music`. On the file the unit held through 2.3 and
 2.2.2, the same file as the backup read the test opens, the LG television is on `TV/Media` and the Denon
@@ -251,7 +251,7 @@ keys were heard selecting them, short and long, 3.3 above.
 On 31 October 2026 the unit's `/fw/normalmode` was read twice, read only, identical both times
 (the lab's `reads/20261031T-h350-fw-first/` and `-second/`): 73464 bytes, byte for byte the first 73464 bytes
 of Logitech's package image, the package's last eight being `0xFF` and not served. So the package is what this
-unit runs. Compared with the bench Harmony 300's application in `tests/test_harmony_300_350_images.py`, it is
+unit runs. Compared with the bench Harmony 300's application in `tests/harmony_300_350/test_harmony_300_350_images.py`, it is
 the same program with one routine's mask on the send kind. Nothing was written to the unit.
 
 The 350 and the bench Harmony 300 were opened side by side on 1 November 2026: same silkscreen and part
@@ -275,7 +275,7 @@ The composition of 4.5, Logitech's first compile with the Knoll, Kodi, the Switc
 
 ## todo-compile-350 5.1.5: the empty configuration built from nothing
 
-The lab's `work/setups/h350-empty/empty-350.bin`, 1101 bytes from `buildEmptyNoScreenConfiguration` with no Logitech file as input, no device and no activity, was written to the unit over its 4.5 file (`composed-4.5-node-deflate.bin`, the backup the writer checked), read back identical, 1097 bytes less the end marker, and the remote restarted. Then `packages/bench/irtests/done/350-5-1-5-empty.json`, seven steps, the lab's `reads/20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json`: no press recorded in any step and no frame in the monitor's log in the run's window, as predicted. The person at the bench reported that nothing happened; no key was reported lit and the remote did not need a battery pull. `packages/codec/test/noscreenemptyunit.test.ts`. The unit keeps that file.
+The lab's `work/setups/h350-empty/empty-350.bin`, 1101 bytes from `buildEmptyNoScreenConfiguration` with no Logitech file as input, no device and no activity, was written to the unit over its 4.5 file (`composed-4.5-node-deflate.bin`, the backup the writer checked), read back identical, 1097 bytes less the end marker, and the remote restarted. Then `packages/bench/irtests/done/350-5-1-5-empty.json`, seven steps, the lab's `reads/20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json`: no press recorded in any step and no frame in the monitor's log in the run's window, as predicted. The person at the bench reported that nothing happened; no key was reported lit and the remote did not need a battery pull. `packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts`. The unit keeps that file.
 
 ## todo-compile-350 5.1.6: the test setup built from nothing
 

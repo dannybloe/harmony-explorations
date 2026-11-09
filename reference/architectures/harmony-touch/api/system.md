@@ -236,5 +236,5 @@ each named logger is set to the mode, a name the logger does not know being skip
 * What older client sends the manual sync requests[^unchecked].
 * The hubs' branches of these handlers, read and not checked against a unit[^unchecked].
 
-[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_setup.py)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
 [^unchecked]: Not checked.

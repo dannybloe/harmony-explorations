@@ -195,7 +195,7 @@ holding one at power on keeps the bootloader is not checked.[^t-885-keys-u][^t-8
 [^unchecked]: Not checked.
 [^s87]: Read in the firmware. [Section 87](../../docs/findings.md#s87)
 [^s191]: Read in the firmware. [Section 191](../../docs/findings.md#s191)
-[^t-885-boot]: Read in the firmware. [The test](../../tests/test_harmony_885_bootloader.py)
-[^t-885-keys-u]: Measured on a unit. [The test](../../tests/test_harmony_885_keys.py)
-[^t-885-boot-client]: Stated by Logitech, in their client. [The test](../../tests/test_harmony_885_bootloader.py)
-[^t-885-flash]: Read in the firmware. [The test](../../tests/test_harmony_885_erase_and_write.py)
+[^t-885-boot]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_bootloader.py)
+[^t-885-keys-u]: Measured on a unit. [The test](../../tests/harmony_880_885/test_harmony_885_keys.py)
+[^t-885-boot-client]: Stated by Logitech, in their client. [The test](../../tests/harmony_880_885/test_harmony_885_bootloader.py)
+[^t-885-flash]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_erase_and_write.py)

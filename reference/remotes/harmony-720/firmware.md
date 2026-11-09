@@ -10,7 +10,7 @@ listed once in [the platform's firmware page](../../architectures/harmony-880-88
 
 * Any other version, and the application beyond the routines that page lists.[^unchecked]
 
-[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
-[^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
-[^t-885-start-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_bootloader.py)
+[^t-885-start]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_start_check.py)
+[^t-885-start-corpus]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_start_check.py)
 [^unchecked]: Not checked.

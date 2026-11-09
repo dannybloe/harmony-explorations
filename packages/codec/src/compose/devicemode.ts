@@ -10,7 +10,7 @@
  * configurations of section 312: seventeen test devices of the six power hold compiles and the three
  * devices of `calibration_h600`, nineteen catalogue entries since one is on two records. Each
  * device's commands are named from the archive's own codeset, and its device mode is then read as a key
- * map and a run of screen pages. `test/devicemode.test.ts` scores every rule against all twenty and names
+ * map and a run of screen pages. `test/families/harmony-600-650-700/devicemode.test.ts` scores every rule against all twenty and names
  * every difference; the counts live there and in section 325, not here.
  *
  * Two things a reader should know before trusting it, each said again where it bites:

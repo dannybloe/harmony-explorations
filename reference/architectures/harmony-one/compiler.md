@@ -791,7 +791,7 @@ described there.
 
 [^s405]: Measured in configurations. [Section 405](../../../docs/findings.md#s405)
 [^s317]: Measured in configurations. [Section 317](../../../docs/findings.md#s317)
-[^t-screenrecords-one]: Measured in configurations. [The test](../../../packages/codec/test/screenrecords-one.test.ts)
+[^t-screenrecords-one]: Measured in configurations. [The test](../../../packages/codec/test/compose/screenrecords-one.test.ts)
 [^s410]: Measured in configurations. [Section 410](../../../docs/findings.md#s410)
 [^s407]: Measured in configurations. [Section 407](../../../docs/findings.md#s407)
 [^s418]: Measured in configurations. [Section 418](../../../docs/findings.md#s418)

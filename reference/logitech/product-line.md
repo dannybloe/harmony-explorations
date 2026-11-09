@@ -83,5 +83,5 @@ Harmony One EMEA and the Harmony 600 EMEA[^s131].
 
 [^x-notice]: Stated by Logitech. [The discontinuation notice](https://members.harmonyremote.com/EasyZapper/Help/FAQShowById.asp?FaqId=1220)
 [^s131]: Stated by Logitech, by their service. [Section 131](../../docs/findings.md#s131)
-[^t-product-table]: Stated by Logitech, by their service. [The test](../../tests/test_host_client.py)
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../tests/logitech/test_host_client.py)
 [^unchecked]: Not checked.

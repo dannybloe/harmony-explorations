@@ -116,7 +116,7 @@ architecture folder's `misc.md` until plan 009's cleaning of the architecture fo
 A sixth, `h350_issue37_config`, is another owner's Harmony 350, posted as harmony-decompiler issue 37: a
 ZIP holding the bare container as `Result.EzHex`, which neither parser takes, so it sits outside every
 population without being listed. It is the only configuration here with a second device on a device key,
-which is what `todo-compile-350.md` 2.4 read the long press off, `tests/test_harmony_350_long_press.py`.
+which is what `todo-compile-350.md` 2.4 read the long press off, `tests/harmony_300_350/test_harmony_350_long_press.py`.
 It was in the lab before anything here read it, and the second reviewer of that finding found it.
 
 ## What the corpus holds per architecture

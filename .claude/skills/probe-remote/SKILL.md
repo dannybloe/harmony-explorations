@@ -181,7 +181,7 @@ anything was unplugged. `packages/usb/bin/session-end-control.ts` is the instrum
 Follow the `finding` skill for the write-up, plus three things specific to hardware:
 
 * **Pin the measured bytes in a test**, so the image and the device cannot drift apart
-  silently. `tests/test_usbdesc.py` holds the Harmony 600's live report descriptor this way.
+  silently. `tests/usb_protocol/test_usbdesc.py` holds the Harmony 600's live report descriptor this way.
   A hardware measurement that is not executable is just a note.
 * **Say it was hardware.** Every hardware-derived number in `reference/` carries a footnote whose
   evidence words are "Measured on a unit.", per the footnote convention in `reference/README.md`,

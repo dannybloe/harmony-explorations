@@ -13,7 +13,7 @@ says "this test passed partially": it reports each skipped `_SubTest` through `a
 calls `addSuccess` on the parent, which is why the parent still counts as run and successful. Both
 halves have to be observed and intersected, which is what `PartialPassDetector` does.
 
-`ASampleLoopStatesItsPopulation` in `tests/test_toolchain.py` is the static half and is cheaper: it
+`ASampleLoopStatesItsPopulation` in `tests/project/test_toolchain.py` is the static half and is cheaper: it
 runs in a fresh clone with no lab and names the offender before anything executes. It cannot see a
 loop that loads through a helper, which is how `test_every_container_declares_one` passed it while
 checking one container of fifteen. Keep both.

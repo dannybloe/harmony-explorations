@@ -35,7 +35,7 @@
  *
  * **Not checked on a remote**, `todo-compile-one.md` 7.2: that a remote runs these screens with these numbers. What is
  * checked: each set's numbers, made from names read off a compile, are that compile's own numbers, on all sixteen
- * English compiles of skin 54, `test/onenumbering.test.ts`.
+ * English compiles of skin 54, `test/families/harmony-one/onenumbering.test.ts`.
  *
  * The Harmony One alone, the One family's. Read only towards hardware: the result is numbers and descriptions.
  */

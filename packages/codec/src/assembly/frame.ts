@@ -15,7 +15,7 @@
  * own at raw slot 18, `INSERTED_SLOTS`; a format word stating 22 instead of 20; another flash base;
  * and a base slot 17 that is the touch hit map rather than the picture bank's two byte bias. Each of
  * those is a measurement on the One's own files, said where it is used, and none of them is a reason
- * for a second copy of the code below: the round trip in `test/frame.test.ts` is what says the one
+ * for a second copy of the code below: the round trip in `test/assembly/frame.test.ts` is what says the one
  * implementation lays out both. **The Harmony 300 and 350's container is further from the base
  * layout** and is still data: fifteen raw slots stated rather than inserted, five sections of the
  * family's own that no base slot names, a key table named by the key map table's first entry rather
@@ -52,7 +52,7 @@
  *    entry sits; it is two zero bytes on all 36 distinct One containers in the lab, Logitech's, ours
  *    and the safe mode one alike, and nothing is parked in front of it on any of them. **What Logitech
  *    parks in front of a table is the same on all thirteen arch 14 compiles and on all nineteen
- *    distinct Harmony One compiles**, which `test/frame.test.ts` measures: base slot 5's groups in
+ *    distinct Harmony One compiles**, which `test/assembly/frame.test.ts` measures: base slot 5's groups in
  *    front of base slot 5's table, base slot 7's glyphs and sets in front of base slot 7's, the mode
  *    pages' tagged lists in front of base slot 9's, some action lists in front of base slot 10's and
  *    the parameter groups in front of base slot 15's. **That is Logitech's habit and not the remote's demand**: the
@@ -183,7 +183,7 @@ export interface FrameArchitecture {
  *   archive. Raw 6 and 8 are base slots 9 and 12 by the firmware's reading and stay out of the slot
  *   map for the reason its docstring gives; the frame only needs to know they hold a section. Raw 14
  *   is NULL in all seven, and no reference in the firmware reads it. No screen, so no picture bank:
- *   the metadata archive runs up to the trailer in all seven. `test/frame.test.ts` holds each of
+ *   the metadata archive runs up to the trailer in all seven. `test/assembly/frame.test.ts` holds each of
  *   these on the seven, and the round trip of them all.
  *
  * Arch 8 (Harmony 880 and 885), 9 (Harmony 525) and 10 (Harmony 890) are other containers of the same
@@ -588,7 +588,7 @@ function checkLaidOut(c: Container, base: number, fields: Uint8Array, readable: 
  * Every address field the census in `growth.ts` knows becomes a reference and its bytes are zeroed,
  * the two generated sections are dropped, and the header, the section table and the trailer are
  * not carried at all. So laying the result out again reproduces the container only if the frame
- * computes every one of those bytes itself, which is the measurement `test/frame.test.ts` makes.
+ * computes every one of those bytes itself, which is the measurement `test/assembly/frame.test.ts` makes.
  *
  * A piece is cut where an address lands on the start of a structure `coverage.ts` claims, and at the
  * region boundaries; an address landing inside a structure, an infrared record's pointer seven bytes

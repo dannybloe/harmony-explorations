@@ -79,7 +79,7 @@ export interface Device {
 /**
  * Whether a device list row opens with the beeper, per architecture, in a table so that the reader names an
  * architecture in one place rather than testing it inline. Arch 14 (Harmony 600, 650 and 700) is without, section
- * 285, and so is arch 8 (Harmony 880 and 885), `packages/codec/test/arch8devicelist.test.ts`: every row of every
+ * 285, and so is arch 8 (Harmony 880 and 885), `packages/codec/test/inventory/arch8devicelist.test.ts`: every row of every
  * device list in its eight configurations is enter a mode, then write 1 to the configuration's device mode marker,
  * as on arch 14. Every other architecture is read with the Harmony One's shape, which has it.
  *
@@ -101,7 +101,7 @@ const DEVICE_LIST_ROW_BEEPS: PerArchitecture<boolean> = { 8: false, 14: false };
  * write each configuration uses, `0x9F` operand 1 on the Harmony 650, `0x9B` on the 600 and `0xA5`
  * on both 700s, half of them bound on a device list page and the other half the lists that page's
  * second copy names, section 69. Arch 8 (Harmony 880 and 885) has the arch 14 shape, its marker a write
- * of 1 to `0x98`, `0x99`, `0x9A` or `0x9B` by configuration, `packages/codec/test/arch8devicelist.test.ts`.
+ * of 1 to `0x98`, `0x99`, `0x9A` or `0x9B` by configuration, `packages/codec/test/inventory/arch8devicelist.test.ts`.
  * Every other architecture is tested against the Harmony One's shape, which finds no marker on arch 9 or
  * 10 and so no row, rather than being read on its own terms.
  *
@@ -413,7 +413,7 @@ export function devices(c: Container): Device[] {
  * An architecture absent from the table takes it, which is how every architecture was read before arch 8 joined.
  *
  * **Arch 8 (Harmony 880 and 885) does not**, on two measurements over the eight arch 8 configurations the lab holds,
- * two of which carry one remote's identical device list, `packages/codec/test/arch8devicelist.test.ts`. A device
+ * two of which carry one remote's identical device list, `packages/codec/test/inventory/arch8devicelist.test.ts`. A device
  * mode there draws a title only when it has one page, 10 of 10 such modes against none of the 41 longer ones, 9 and
  * 35 with the repeated list counted once, so on most devices the top row is a command: that is how a bench Harmony
  * 885's CD player, a device with no state variable and so no name in base slot 0, came back named `Pwr`, the first
@@ -421,7 +421,7 @@ export function devices(c: Container): Device[] {
  * its pages draws. And the route is not needed there: the device list labels every device of the eight, 51 rows of
  * 51, 44 counted once, which route four reads once route three leaves the device alone. Section 126 had counted
  * the top row as the label 1 time in 31, over the devices route one names in the six contributed configurations,
- * `on arch 9 and arch 14 the device names its own mode` in `packages/codec/test/inventory.test.ts`; of those 31,
+ * `on arch 9 and arch 14 the device names its own mode` in `packages/codec/test/inventory/inventory.test.ts`; of those 31,
  * one has a device mode of one page, and that mode is titled.
  *
  * Arch 12 (Harmony One) draws no title, 0 of 7 by section 126's count, and is deliberately not entered: no device

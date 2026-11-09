@@ -123,17 +123,17 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 302 with the bench 350's two runs on Logitech's compile of the test setup, todo-compile-350 3.3.
   // 304 with the bench 300's two key runs, todo-compile-300 2.1 and 2.2.
   // 308 with the Harmony 300's three firmware images and the Harmony 350's application, each read off its
-  // unit, which `tests/test_harmony_300_350_images.py` compares.
+  // unit, which `tests/harmony_300_350/test_harmony_300_350_images.py` compares.
   // 311 with the three files of the bench 300's run on the compile with event 0xFF bound, todo-compile-300 4.3,
   // and 312 with the bench 350's check of the same file, 4.4, and 314 with the empty configuration's run and its monitor log,
   // todo-compile-350 5.1.5, and 316 with the final build's runs on the bench 350 and 300, 5.3.
   // 320 with the Harmony Touch's two update packages, the hubs' production package and the bench Touch's
-  // identity file, which `tests/test_harmony_touch_image.py` reads, todo-touch 1.2.
-  // 321 with the recording of a Touch sync through Harmony Desktop, `packages/usb/test/touch-sync.test.ts`,
+  // identity file, which `tests/harmony_touch/test_harmony_touch_image.py` reads, todo-touch 1.2.
+  // 321 with the recording of a Touch sync through Harmony Desktop, `packages/usb/test/touch/touch-sync.test.ts`,
   // todo-touch 2.3's trial, and 323 with the full setup's sync and the reverse sync after it, 2.3.
   // 324 with the Harmony 515 from onyiaic as it came, and 328 with its two firmware images and the two
   // kkong42 posted for the model, and 329 with the classic client's arch 8 constants, which
-  // `tests/test_harmony_885_bootloader.py` closes the bootloader unlock against.
+  // `tests/harmony_880_885/test_harmony_885_bootloader.py` closes the bootloader unlock against.
   // 338 with the two bench Harmony 885s' configurations and regions, each read twice, and unit A's clock.
   // 342 with the four keypad watches of the two bench Harmony 885s, todo-prepare-885.md 2.4, and 343 with
   // unit B's colour and transport keys asked by position.

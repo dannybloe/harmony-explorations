@@ -175,7 +175,7 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [8, 9, 12, 1
 //
 // **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.4**, decision 30, for the last step of
 // a configuration write on the two bench 885s and nothing else. The source is the 885's application 4.4,
-// read before anything was sent, `tests/test_harmony_885_write_end.py`: the parser takes the escape before
+// read before anything was sent, `tests/harmony_880_885/test_harmony_885_write_end.py`: the parser takes the escape before
 // the command switch, `0x02` sets the flag the main loop turns into mode 3, and mode 3 waits 500 ticks and
 // executes `RESET`, with no reply and nothing on the way that writes flash. The processor comes back
 // through the bootloader, which keeps the update status byte across a `RESET` instruction, so **a restart
@@ -206,7 +206,7 @@ export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [8, 12, 14];
 //
 // **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.4**, decision 30, as the first step of a
 // configuration write on the two bench 885s. Read in the 885's application 4.4 before it was sent,
-// `tests/test_harmony_885_write_end.py`: selector `0x02` walks two cached region records at `0x163BE` and
+// `tests/harmony_880_885/test_harmony_885_write_end.py`: selector `0x02` walks two cached region records at `0x163BE` and
 // clears bits 2 and 3 of data `0x086`, which moves every lookup to the built in configuration until the
 // next start, so the remote stops reading the region being rewritten; it answers `F0 A0`. Logitech's
 // classic client sends it for a configuration on this architecture as well, stated by Logitech, in their
@@ -297,7 +297,7 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * **The row for the bench part is identified since 30 August 2026**, section 221, which is the
  * confirmation the paragraph below asks for rather than only proposes: the remotes report `1F:C8`,
  * that is Atmel `AT49BV322A` in the client's own constants, and walking its table from zero puts
- * `0x040000` on a boundary in a 64 KiB block. `tests/test_host_client.py` asserts this constant
+ * `0x040000` on a boundary in a 64 KiB block. `tests/logitech/test_host_client.py` asserts this constant
  * against that walk.
  *
  * **Provenance is not the same as `WRITABLE_CEILING`'s, and this said it was.** That one was adopted
@@ -330,10 +330,10 @@ export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
   // carries is not known, since the application reports both as `01:49`. Above `0x010000` both sources
   // agree for both parts: Logitech's classic client gives thirty one 64 KiB sectors to `0x200000` and
   // concordance gives 64 KiB above its finer boot sectors, `memory.md` "The flash part"; the client's
-  // walk over every block of the region, for both parts, is `tests/test_host_client.py`. A third, weaker
+  // walk over every block of the region, for both parts, is `tests/logitech/test_host_client.py`. A third, weaker
   // closure: the bootloader's own install erases once at `0x010000` and then writes 64 KiB, which works
   // only if that sector is at least that large. **The first rehearsal measured it from one side**,
-  // `todo-compile-885.md` 1.3 on unit A, `tests/test_harmony_885_flash_backup.py`: an erase at `0x0C0000`
+  // `todo-compile-885.md` 1.3 on unit A, `tests/harmony_880_885/test_harmony_885_flash_backup.py`: an erase at `0x0C0000`
   // cleared the block's bytes from that address on and left `0x0BFFFF` and `0x0D0000` intact, so the
   // sector there is aligned and no larger than 64 KiB. Not smaller than 64 KiB is still the two sources'
   // word: the block held nothing in its upper half, so 32 KiB is not excluded. A smaller sector could not
@@ -777,7 +777,7 @@ export const SFR_PAGE_START = 0xf40;
  * same row would have opened the session end on an 885 as a side effect, which is exactly the widening
  * section 269 caught twice. So the list keeps what was reachable before, and arch 8 joining it is a
  * decision of its own. Nothing about the command itself argues against it: on arch 8 it clears the
- * command state and replies nothing, `tests/test_harmony_885_write_end.py`.
+ * command state and replies nothing, `tests/harmony_880_885/test_harmony_885_write_end.py`.
  */
 export const ARCHITECTURES_WITH_A_SESSION_END_TARGET: readonly number[] = [12, 14];
 
@@ -1329,7 +1329,7 @@ export function assertSettingsWriteAllowed(
  * **Its own door, and not the flash write's**, because nothing about the command protocol's rails
  * reaches this family: there is no address to bound, no erase to align and no block to compare. What
  * the firmware does instead is erase the whole configuration the moment a host opens it for writing,
- * before it answers the open, `tests/test_harmony_350_file_write.py`. So a run with both flags set
+ * before it answers the open, `tests/harmony_300_350/test_harmony_350_file_write.py`. So a run with both flags set
  * has destroyed the remote's configuration by its second command, and the operator has to have said
  * out loud that this is understood.
  *
@@ -1341,7 +1341,7 @@ export const FILE_WRITE_DOOR: boolean = process.env['HARMONY_FILE_WRITE'] === '1
 /**
  * The architectures whose file write path is read: arch 16, the Harmony 300 and the Harmony 350, as
  * their identity file states it (`arch 0x10`). One firmware build, 1.4, read in
- * `tests/test_harmony_350_file_write.py`; the Harmony Touch generation speaks the same protocol and its
+ * `tests/harmony_300_350/test_harmony_350_file_write.py`; the Harmony Touch generation speaks the same protocol and its
  * firmware is not read, so it is not here and its own `arch` refuses.
  */
 export const ARCHITECTURES_WITH_A_FILE_WRITE_TARGET: readonly number[] = [16];
@@ -1407,7 +1407,7 @@ export interface FileFamilyContainer {
  * Throws unless `container` is a whole configuration for the Harmony 300 and 350 family, in the form a
  * remote of that family validates at start.
  *
- * Every check is one the firmware makes, `tests/test_harmony_350_file_write.py`, and so a container
+ * Every check is one the firmware makes, `tests/harmony_300_350/test_harmony_350_file_write.py`, and so a container
  * failing any of them is one the remote would leave unused with no configuration to fall back on:
  *
  * * `GSPM` at its start and `LWJL` at `0x47`, which the check command and the boot validator both
@@ -1580,7 +1580,7 @@ export const TOUCH_REQUEST_DOOR: boolean = process.env['HARMONY_TOUCH_REQUESTS']
 
 /**
  * The one path the request channel opens, for writing a line and then for reading its answer. Every step
- * of a recorded sync is a session on it, `packages/usb/test/touch-sync.test.ts`, and nothing else is
+ * of a recorded sync is a session on it, `packages/usb/test/touch/touch-sync.test.ts`, and nothing else is
  * opened for writing by this rail or let through for it by the transport, whatever the flags.
  */
 export const TOUCH_REQUEST_PATH = '/sys/hlapi';

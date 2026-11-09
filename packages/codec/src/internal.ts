@@ -6,7 +6,7 @@
  * entry, `index.ts`, is the designed surface and this is not; a name added to one of these modules is here
  * without a second list. The composers are `./build`.
  *
- * It loads anywhere, as the main entry does, `test/mainentry.test.ts`.
+ * It loads anywhere, as the main entry does, `test/package/mainentry.test.ts`.
  */
 
 // Byte helpers, one namespace.

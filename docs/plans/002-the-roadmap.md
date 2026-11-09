@@ -716,7 +716,7 @@ which is what `setPageListEntry` exists for.
 list and into its copy leaves the trailer checksum **unchanged**, because the two edits write the
 same bytes at the same word parity and their contributions to a `u16` XOR cancel exactly. So a
 config can move two structures and still pass the only check the remote makes. Section 41 said the
-checksum was weak; this is what weak means, and it is pinned in `packages/codec/test/edit.test.ts`.
+checksum was weak; this is what weak means, and it is pinned in `packages/codec/test/edit/edit.test.ts`.
 
 **A round trip and a save are two operations now, and `FIELD_RULES` is the reason.** Carrying every
 byte nobody edited is exactly right for a round trip and wrong for a save, because two fields are not
@@ -811,7 +811,7 @@ are stale and need correcting, because later policy decisions read them.
   file header to consult; and slot 0 is the container's **only** `0xFEED` frame, which corrected
   an earlier claim here that every section was one.
 * Findings that came out of it, written up in `docs/findings.md` section 14 with tests in
-  `tests/test_gspm.py`: `WLWL` on arch 8 is the same key table as `LWJL`; arch 8 and arch 12
+  `tests/config_format/test_gspm.py`: `WLWL` on arch 8 is the same key table as `LWJL`; arch 8 and arch 12
   share 47 codes in identical order apart from one transposition, which suggests the key order
   is canonical across the family; `format` is not an architecture identifier, since arch 9 and
   arch 14 both carry `0x1400`.
@@ -941,7 +941,7 @@ Still to do, in the order the application needs them:
   install script runs arbitrary code with no review.
 * `listHarmony` and `packages/usb/bin/list-remotes.ts` enumerate without opening anything, which is
   the distinction that matters: listing reads what the operating system already knows, opening
-  claims an irreplaceable device. `packages/usb/test/hardware.test.ts` is the only test that touches
+  claims an irreplaceable device. `packages/usb/test/transport/hardware.test.ts` is the only test that touches
   real USB, and it skips when no remote is attached rather than passing. Its enumeration tests only
   look; the rest open the device and are gated on `HARMONY_HARDWARE_TESTS=1`. Each asks for its own
   model by product id, so both bench remotes can be attached at once and one session covers both
@@ -1286,7 +1286,7 @@ still produces the shape when the cookie is rewritten to a magic no family claim
 
 
 **Step 9, excavating the lab, moved to `docs/lab-excavation.md` on 6 September 2026**, which
-already held its method. Its grid is what `tests/test_toolchain.py` holds against the lab, so
+already held its method. Its grid is what `tests/project/test_toolchain.py` holds against the lab, so
 keeping a second copy here would be two lists nobody compares.
 
 ## Facts established during planning

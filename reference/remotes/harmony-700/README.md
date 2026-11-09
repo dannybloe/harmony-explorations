@@ -79,7 +79,7 @@ The architecture folder: [harmony-600-650-700](../../architectures/harmony-600-6
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 700 user manual, the 2009 edition](https://www.manualslib.com/manual/96454/Logitech-Harmony-700.html)
 [^s129]: Measured in configurations. [Section 129](../../../docs/findings.md#s129)
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
-[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_host_client.py)
 [^x-manual-2010]: Stated by Logitech, in the manual. [The 2010 edition, in English](https://cdn-cx-images.dynamite.myharmony.com/usermanuals/harmony700-usermanual-en.pdf)
 [^s386]: Measured on a unit. [Section 386](../../../docs/findings.md#s386)
 [^s384]: Read in the firmware. [Section 384](../../../docs/findings.md#s384)

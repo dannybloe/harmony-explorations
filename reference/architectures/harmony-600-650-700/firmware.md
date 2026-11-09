@@ -271,5 +271,5 @@ and `0x0C4C0` on the 600[^s19][^t-usb-firmware].
 [^d18]: Chosen by this project. [Decision 18](../../../docs/decisions.md#d18)
 [^unchecked]: Not checked.
 [^s19]: Read in the firmware. [Section 19](../../../docs/findings.md#s19)
-[^t-usb-firmware]: Read in the firmware. [The test](../../../tests/test_usb_firmware.py)
+[^t-usb-firmware]: Read in the firmware. [The test](../../../tests/usb_protocol/test_usb_firmware.py)
 [^s175]: Read in the firmware. [Section 175](../../../docs/findings.md#s175)

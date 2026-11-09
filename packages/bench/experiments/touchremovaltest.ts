@@ -49,7 +49,7 @@ export const TOUCH_8_5_ENTRY = 'Test Sequence';
 
 /**
  * The plan of 8.5, from the configuration; refused on one that lacks an activity it starts. It does not refuse a
- * configuration that still holds what 8.5 takes out, since `test/touch-removal-predicted.test.ts`'s control runs it on the set before.
+ * configuration that still holds what 8.5 takes out, since `test/harmony-touch/touch-removal-predicted.test.ts`'s control runs it on the set before.
  */
 export function touch85Plans(c: Configuration): TouchTestPlan[] {
   for (const name of TOUCH_8_5_ACTIVITIES) if (!c.activities.some((a) => a.name === name)) throw new Error(`the configuration holds no ${name}`);

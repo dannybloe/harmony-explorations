@@ -39,8 +39,8 @@ Logitech's compile and not of the remote.
 * What Watch TV sends in a configuration Logitech compiled for a 300. Given a 350's compile it started and stopped its devices as a 350 does, [the family's page](../../architectures/harmony-300-350/README.md#making-a-harmony-300-behave-as-a-harmony-350).
 
 [^unchecked]: Not checked.
-[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
+[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_300_keys.py)
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
-[^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
-[^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)
-[^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_group_4_send.py)
+[^t-long-press]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
+[^t-long-press-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
+[^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_300_group_4_send.py)

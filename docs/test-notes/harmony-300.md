@@ -72,7 +72,7 @@ the facts resting on them are marked not checked in the reference until one exis
 Logitech's service's capability answer for a skin 79 entry, `UserAccountDirector/GetProductCapabilities2`,
 asked on 7 October 2026 ([accounts.md](accounts.md)), was on this list until plan 009's step 3.4: sections
 264 and 265 held only its device and favourite maxima and its activity capability, and now
-`tests/test_product_capabilities.py` holds the whole answer and `tests/test_host_client.py` skin 78's
+`tests/logitech/test_product_capabilities.py` holds the whole answer and `tests/logitech/test_host_client.py` skin 78's
 favourite maximum of 5.
 
 ## Not done
@@ -115,7 +115,7 @@ toggles the television's power and waits 50 tenths, and only then selects the KP
 sends the television's toggle code alone, and the copy in the television's power state list is reached by
 no key. `packages/codec/bin/set-delay.ts` changed only that unreached copy, so `after.bin` was made with
 both copies at 100 tenths instead. Since `todo-compile-350.md` 4.6 it changes both, and given `before.bin`,
-group 0 and 100 tenths it writes `after.bin` byte for byte, `packages/codec/test/filefamilydelays.test.ts`.
+group 0 and 100 tenths it writes `after.bin` byte for byte, `packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`.
 
 1. `after.bin` written on the second attempt, verified and restarted. The first run lost the TV key and
    Volume Up pressed during Watch TV, `reads/20261031T122346Z-...-10-s.json`. The second, with Volume Up
@@ -156,14 +156,14 @@ reply, as usual on this family, and was repeated. The unit reports firmware 1.4.
 Sizes served: the application 73464 bytes, the bootloader 4096, safe mode 25400. The same day the
 Harmony 350's application was read the same way, `reads/20261031T-h350-fw-first/` and `-second/`, 73464
 bytes and byte for byte the first 73464 bytes of Logitech's package image. So the comparison in
-`tests/test_harmony_300_350_images.py` is unit against unit. Its result, against the belief that both
+`tests/harmony_300_350/test_harmony_300_350_images.py` is unit against unit. Its result, against the belief that both
 models run one image: the applications are one program but for a mask on the send kind, the bootloaders are
 different builds, and this unit's safe mode image is version 1.2 where the 350's is 1.4. Nothing was written
 to the unit. Which image Logitech's service would serve this unit, asked by its own skin, was not asked.
 The favourites step heard seven presses where five keys were named: six Info, which every key of the block
 but Teletext sends on that file, and one the television's Teletext; the steps were worded for the US printing, and on this
 unit the key the step called favourite 3 is Teletext and there is no favourite 5. 2.2 holds the run again
-from its pulses, `packages/bench/test/keys300.test.ts`, which ties Teletext to code 11 from that press, by
+from its pulses, `packages/bench/test/harmony-300-350/keys300.test.ts`, which ties Teletext to code 11 from that press, by
 elimination, and ties the colour keys from step 7, pressed left to right: red, green, yellow and blue sent
 the television's Red, Green, Yellow and Blue, codes 13, 27, 28 and 29.
 
@@ -175,7 +175,7 @@ and the bench test, `packages/bench/irtests/done/300-2-2-keys.json`, were commit
 generated from the file by the lab's `work/300-every-key/k2300.ts`, each step expecting what the file binds
 to the code of the 350 key in the same place. The run is the lab's
 `reads/20261031T131916Z-ir-test-harmony-300-every-key-in-the-tv-s-and-the-kpn-s-modes.json`, fixture
-`h300_keys_ir`; 2.1's is `h300_every_key_ir`. `packages/bench/test/keys300.test.ts` matches both runs again
+`h300_keys_ir`; 2.1's is `h300_every_key_ir`. `packages/bench/test/harmony-300-350/keys300.test.ts` matches both runs again
 from their pulses and holds every step to what the file sends for the presses this unit's printing implies.
 
 **Four steps failed their stored verdicts, 6, 9, 15 and 18, and all four are the test's wording**, step 6
@@ -269,7 +269,7 @@ same way. From the group 4 press on, the remote **stopped responding to most key
 afterwards stayed lit permanently**. **Removing the batteries recovered it**, each time. Prediction P7 (a
 send from groups 4 to 7 changes a pin's list and no code) was wrong, see the next paragraph.
 
-**What it is, in the image.** `tests/test_harmony_300_group_4_send.py`: a group above 3 is send kind `0xFF` on
+**What it is, in the image.** `tests/harmony_300_350/test_harmony_300_group_4_send.py`: a group above 3 is send kind `0xFF` on
 the 300's build, which raises event `0xFF`; nothing is bound to it, the list ending in `07 FFFA` that would
 clear the sender's wait flag never runs, and the sender stays in its first state. The earlier reading, that
 the 300 would raise group 0's event, was a misread default. That the later keys fail for this reason and that
@@ -292,7 +292,7 @@ Nothing was connected to them.
 On 1 November 2026. The lab's `work/300-event-ff/h350-compile-event-ff.bin` is the compile above with one entry
 added to key map 0: tag `0xFF`, the opcode and operand of the entry tagged `0x30`, so a send from a group above 3
 runs the list a 350 runs there, which ends in `07 FFFA`. `bind-ff.ts` beside it made the file from the compile with
-the codec's `withMapEntries` and `restamped`, 118513 bytes to 118517; `packages/codec/test/noscreeneventff.test.ts`
+the codec's `withMapEntries` and `restamped`, 118513 bytes to 118517; `packages/codec/test/families/harmony-300-350/noscreeneventff.test.ts`
 makes it again byte for byte. It was written through `write-file-config.ts` (the journals sit beside it,
 `h350-compile-event-ff.bin.write-*.log`) and read back identical.
 
@@ -310,8 +310,8 @@ makes it again byte for byte. It was written through `write-file-config.ts` (the
 So each of groups 4 to 7 sent from this one configuration on this unit, from one press at least. The same file
 was written to the bench Harmony 350 and a two step check heard the Denon, the Knoll's Timer and the LG TV, the
 remote working throughout (`harmony-350.md`); the entry is harmless there. The predictions, scored,
-are in `docs/predictions/harmony-300-as-350.md`; the arguments are in `tests/test_harmony_300_group_4_send.py` and
-`packages/bench/test/eventff300.test.ts`. **Decision 27, installing the 350's application on this unit, was not
+are in `docs/predictions/harmony-300-as-350.md`; the arguments are in `tests/harmony_300_350/test_harmony_300_group_4_send.py` and
+`packages/bench/test/harmony-300-350/eventff300.test.ts`. **Decision 27, installing the 350's application on this unit, was not
 exercised and is not needed**: nothing was written to the unit's firmware.
 
 After the 4.3 runs the unit was given its own configuration back, `harmony-300-programmed-config.bin`, read back identical; the bench 350 likewise holds Logitech's compile of the test setup again.

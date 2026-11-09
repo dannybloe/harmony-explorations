@@ -315,7 +315,7 @@ export function parameterGroups(c: Container): ParameterGroup[] | undefined {
  * than what the corpus happens to carry. A group absent from a row has no call site on the image that
  * was read, which is not a length of zero. Arch 9 (Harmony 525) has no row because its guard has not
  * been read, and arch 10 (Harmony 890 and 895) because no image of it exists. Arch 8's row was added
- * by `tests/test_harmony_885_parameters.py`, which decodes it out of the 885's image and the 720's.
+ * by `tests/harmony_880_885/test_harmony_885_parameters.py`, which decodes it out of the 885's image and the 720's.
  *
  * **Ported from `src/harmony/gspm.py` on 29 August 2026, and the gap it closes is the point.** The
  * table and its check lived only in Python, while TypeScript owns the codec and the whole write

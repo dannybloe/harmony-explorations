@@ -27,5 +27,5 @@ sample of the same population. Both are stated once in
 
 [^s264]: Measured in configurations. [Section 264](../../../docs/findings.md#s264)
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
-[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
-[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_slots.py)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)

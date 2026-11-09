@@ -1,0 +1,1316 @@
+/**
+ * The rails, tested as refusals.
+ *
+ * A safety rail is only worth having if it says no, so every test here is a no. The one thing that
+ * has to be true above all: a default build refuses everything, and it refuses it in the library
+ * rather than in a dialog box, because a rail enforced by a user interface is enforced until
+ * somebody writes a script.
+ *
+ * These tests run with writes disabled, which is the shipped state. The subprocess test at the
+ * bottom is what checks the other side of the flag without turning it on for everything else.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { readFile } from 'node:fs/promises';
+
+import { RailError, TransportError } from '../../src/index.ts';
+import {
+  ARCHITECTURES_WITH_AN_INVALIDATE_TARGET,
+  ARCHITECTURES_WITH_A_RAM_WRITE_TARGET,
+  ARCHITECTURES_WITH_A_RESET_TARGET,
+  ARCHITECTURES_WITH_A_WRITE_TARGET,
+  CONFIG_REGION_BASE,
+  ERASE_BLOCK_SIZE,
+  SFR_PAGE_START,
+  WRITABLE_CEILING,
+  WRITES_ENABLED,
+  assertEraseAllowed,
+  assertFirmwareWriteRefused,
+  assertFlashWriteAllowed,
+  assertDeliberateHangAllowed,
+  assertFirstWriteAllowed,
+  assertInvalidateAllowed,
+  assertRamWriteAllowed,
+  assertResetAllowed,
+  assertSessionEndAllowed,
+  eraseBoundsFor,
+  writableRange,
+  writableRangeFrom,
+} from '../../src/rails.ts';
+import {
+  ERASE_FLASH,
+  ESCAPE_RESET,
+  ESCAPE_SUB_COMMANDS,
+  READ_FLASH,
+  address24,
+  encodeRequest,
+  encodeVersionBlock,
+  IDENTITY_BYTES,
+  IDENTITY_FIELDS,
+  guardMutations,
+  readFlashRequest,
+} from '../../src/internal.ts';
+import type { Transport } from '../../src/index.ts';
+// Deep import on purpose: this is the hatch the barrel deliberately does not offer, section 224.
+import { authoriseReport } from '../../src/authorise.ts';
+import { packageEntries } from '../package/entries.ts';
+
+/**
+ * A synthetic identity block in the shape a remote's really is: `0xEE` where the serial field is,
+ * two distinct GUIDs, sixteen zeroes.
+ *
+ * The `0xEE` fill is deliberate rather than decoration. That is what every remote read here actually
+ * carries in the field named the serial, so a test permission built without it would not exercise
+ * the refusal that field is the whole reason for.
+ */
+function identityFor(seed: number): Uint8Array {
+  const block = new Uint8Array(IDENTITY_BYTES).fill(0);
+  block.fill(0xee, IDENTITY_FIELDS.serial, IDENTITY_FIELDS.guidA);
+  for (let i = 0; i < 0x20; i += 1) {
+    block[IDENTITY_FIELDS.guidA + i] = (seed * 31 + i * 7 + 1) & 0xff;
+  }
+  return block;
+}
+
+/** The unit these tests may write to, and one that is not it. */
+const THIS_UNIT = identityFor(1);
+const ANOTHER_UNIT = identityFor(2);
+
+/** What an identity looks like when nothing per unit was ever written into it. */
+const NO_IDENTITY = new Uint8Array(IDENTITY_BYTES).fill(0xee);
+
+/**
+ * A version block the spare Harmony One would send, from the values `concordance -i` reads off both
+ * bench Harmony Ones and `one_config`'s wrapper states: firmware 3.4, board 0.5, flash `1F:C8`,
+ * architecture 12, software type 0 for the application, skin 54.
+ */
+const ONE_BLOCK = encodeVersionBlock({
+  firmware: 0x34,
+  hardware: 0x05,
+  flash: [0x1f, 0xc8],
+  architecture: 12,
+  softwareType: 0,
+  skin: 54,
+  platform: 0x0c,
+});
+
+/** What a Harmony One's own config states, verbatim, so `IDEAL` compares rather than claims. */
+const ONE_STATED = {
+  PROTOCOL: '12',
+  SKIN: '54',
+  FLASH: '0x1F:0xC8',
+  BOARD: '0.5.0',
+  SOFTWARETYPE: '0',
+} as const;
+
+/**
+ * Everything a caller could possibly have in order, on the architecture that has a target.
+ *
+ * **The version fields are inputs and not a boolean since section 225.** This carried
+ * `intendedVersionMatches: true`, which is what every caller of the rails passed and what made the
+ * compatibility gate a comment: the config and the remote here now genuinely agree on five fields
+ * and the rail is the thing that finds that out.
+ */
+const IDEAL = {
+  architecture: 12,
+  configLength: 0x1000,
+  originalDumpVerified: true,
+  intendedVersion: ONE_STATED,
+  versionBlock: ONE_BLOCK,
+  // **A comparison and not a boolean since section 226.** This carried `targetIsTheSpareRemote:
+  // true`, which is what every caller passed and what made the question unanswerable: two Harmony
+  // Ones enumerate identically, so nothing the library could see told them apart. It compares the
+  // unit's own identity block against the one the caller recorded, and the same block on both sides
+  // is a permission for the remote actually on the cable.
+  identityBlock: THIS_UNIT,
+  permittedUnit: THIS_UNIT,
+} as const;
+
+/**
+ * `IDEAL` as source for the subprocess tests, since a `Uint8Array` does not survive
+ * `JSON.stringify`: it becomes an object with numeric keys, which every rail would then read as an
+ * unreadable version block, and the tests would pass for the wrong reason.
+ */
+const IDEAL_SOURCE = `const IDEAL = {
+  ...${JSON.stringify({
+    architecture: IDEAL.architecture,
+    configLength: IDEAL.configLength,
+    originalDumpVerified: IDEAL.originalDumpVerified,
+    intendedVersion: IDEAL.intendedVersion,
+  })},
+  identityBlock: Uint8Array.from(${JSON.stringify([...THIS_UNIT])}),
+  permittedUnit: Uint8Array.from(${JSON.stringify([...THIS_UNIT])}),
+  another: Uint8Array.from(${JSON.stringify([...ANOTHER_UNIT])}),
+  noIdentity: Uint8Array.from(${JSON.stringify([...NO_IDENTITY])}),
+  versionBlock: rails.encodeVersionBlock(${JSON.stringify({
+    firmware: 0x34,
+    hardware: 0x05,
+    flash: [0x1f, 0xc8],
+    architecture: 12,
+    softwareType: 0,
+    skin: 54,
+    platform: 0x0c,
+  })}),
+};`;
+
+/** A block for an architecture whose tables are being exercised, with nothing else stated. */
+function blockFor(architecture: number): Uint8Array {
+  return encodeVersionBlock({ architecture });
+}
+
+test('the package offers no way to build a request that changes a remote', async () => {
+  // **The bypass this closes, measured on 13 August 2026.** `rails.ts` opens by saying a rail here is
+  // enforced for every caller. It was enforced for every caller of `HarmonyRemote`: the barrel
+  // star-exported `protocol.ts`, so `eraseFlashRequest` came with it, and `openHarmony` returns a
+  // `Transport` whose `write` is public. Two lines reached `ERASE_FLASH` on a live remote with no
+  // permission object, no `WRITES_ENABLED` and no architecture check, and an erase takes an address
+  // and no count: 64 KiB of a Harmony One (arch 12) at whichever address it lands on.
+  //
+  // The four encoders are in `writes.ts` now, which no entry re-exports. This asserts the entries
+  // rather than the file, because a list of names in a docstring is what drifted in the first place,
+  // and because the next write encoder somebody adds will be caught by it. **Every entry and not the
+  // barrel alone** since `todo.md` 7.3.6, which put most of the package under named subpaths: a rule
+  // checked against the main entry would pass with the same name one subpath away, `entries.ts`.
+  const entries = await packageEntries();
+  const barrel = Object.assign({}, ...entries.values()) as Record<string, unknown>;
+  // Functions only. The command numbers and selector lists stay exported and have to: `rails.ts`
+  // refuses `ESCAPE_RESET` **by number**, and `decodeReply` names what came back. A constant cannot be
+  // sent; a request builder can.
+  // A request builder is named `<command>Request` throughout this package, so the rule is that shape
+  // and not "a name containing write": the command numbers stay exported and have to, since `rails.ts`
+  // refuses `ESCAPE_RESET` by number, and so do the rails themselves, whose names begin with `assert`.
+  // A constant cannot be sent and a refusal is what does the refusing; a builder is the sendable thing.
+  const offered = Object.keys(barrel).filter(
+    (name) => name.endsWith('Request') && /write|erase|escape/i.test(name),
+  );
+  assert.deepEqual(offered, [], 'an entry of the package offers a request builder for a command that writes');
+
+  // **What this test cannot see, found by an independent review on 27 August 2026.** Its rule is a
+  // name shape, so it catches a builder called `eraseFlashRequest` and not the **generic** encoder
+  // called `encodeRequest`, which ends in `Request` and mentions none of write, erase or escape. That
+  // encoder plus `ERASE_FLASH` and `address24` are all still exported, and together they rebuild the
+  // same report the four hidden builders would have. So this is the same hole twice, and the first fix
+  // addressed the instance rather than the class. The class level fix is the guarded transport, tested
+  // below; this assertion stays because hiding the specific builders is still worth keeping.
+  assert.equal(typeof barrel['encodeRequest'], 'function',
+    'the generic encoder is still exported, which is why the guard below has to exist');
+  assert.equal(typeof entries.get('./protocol')?.['encodeRequest'], 'function', 'and it is the protocol subpath that has it');
+  assert.equal(entries.get('.')?.['encodeRequest'], undefined, 'and not the main entry, since todo.md 7.3.6');
+
+  // The control: the encoders do exist, and importing them by path still works, so this is a boundary
+  // rather than a deletion. `remote.ts` reaches them that way and the rails still gate every send.
+  const writes = (await import('../../src/writes.ts')) as Record<string, unknown>;
+  for (const name of ['writeFlashRequest', 'eraseFlashRequest', 'writeMiscRequest', 'escapeRequest']) {
+    assert.equal(typeof writes[name], 'function', name);
+    assert.equal(barrel[name], undefined, `${name} is on no entry`);
+  }
+
+  // **And the same hole a third time, found on 30 August 2026, section 224.** The guard below refuses
+  // an unauthorised mutating report, and the way to authorise one was a **public method on the very
+  // transport `openHarmony` hands back**, so `t.authoriseReport(r); await t.write(r)` reached the
+  // device with writing disabled and an address outside the region. Hiding a builder and then leaving
+  // the permission itself in the caller's hand is the same mistake at one remove, so the rule now
+  // covers both: the barrel offers no way to send a mutating report **and** no way to permit one.
+  // **A rail is excluded, and the exclusion is stated rather than assumed.** Everything in
+  // `rails.ts` is named `assert...` and its contract is to throw, so `assertUnitIsPermitted` reads
+  // like a permission and grants nothing: it is the refusal that a remote is not the recorded unit.
+  // Narrowing the pattern this way rather than dropping `permit` from it keeps the rule aimed at
+  // what hands an authorisation out. The control below is that the exclusion is visible: the rail is
+  // exported, deliberately, and a test says so.
+  const permits = Object.keys(barrel)
+    .filter((name) => /authoris|permit|allowReport/i.test(name))
+    .filter((name) => !name.startsWith('assert'));
+  assert.deepEqual(permits, [], 'an entry of the package offers a way to authorise a report');
+  assert.equal(typeof barrel['assertUnitIsPermitted'], 'function',
+    'the unit rail is exported, which is why the filter above has to exclude it by name shape');
+  assert.equal(typeof entries.get('./rails')?.['assertUnitIsPermitted'], 'function', 'by the rails subpath');
+
+  // The control, same shape as the one above: the hatch exists and a deep import reaches it, so this
+  // is a boundary and not a deletion. `remote.ts` uses it on every send.
+  const authorise = (await import('../../src/authorise.ts')) as Record<string, unknown>;
+  assert.equal(typeof authorise['authoriseReport'], 'function');
+  assert.equal(barrel['authoriseReport'], undefined);
+});
+
+test('the shipped build has writing disabled', () => {
+  // Version 1 of the application is read only. If this ever fails in CI, the default changed.
+  assert.equal(WRITES_ENABLED, false);
+});
+
+test('with writing disabled, every write path refuses even with everything else in order', () => {
+  const base = CONFIG_REGION_BASE[12] as number;
+  assert.throws(() => assertFlashWriteAllowed(IDEAL, base, 16), RailError);
+  assert.throws(() => assertEraseAllowed(IDEAL, base), RailError);
+  assert.throws(() => assertRamWriteAllowed(IDEAL, 0x100), RailError);
+  // The two steps a working config write has and ours did not, sections 245 and 246. They are here
+  // rather than trusted to the shared gate they call, because this test is the list of everything
+  // the flag stops and a path missing from it is a path nobody notices is ungated.
+  assert.throws(() => assertInvalidateAllowed(IDEAL), RailError);
+  assert.throws(() => assertResetAllowed(IDEAL), RailError);
+});
+
+test('a write target is refused the reboot unless its escape is traced and it is on the reset list', () => {
+  // `assertResetAllowed` used to check this at runtime and could never fire, since the shared gate
+  // refused every architecture outside the list below. The claim is real all the same and this was
+  // the shape that can fail: two tables that nobody compares drift apart, and widening the write
+  // target list to an architecture whose escape is unread would make the writer send a reboot nobody
+  // has traced. Section 246.
+  //
+  // **It fired on 6 September 2026, which is what it was for.** Arch 9 (Harmony 525) joined the write
+  // target list for the block rehearsal and has no escape row at all, so the old title, "the only
+  // architecture with a write target is one whose reset escape has been read"<!--superseded-->, became
+  // false in the same commit. The response was to put the runtime check back into
+  // `assertResetAllowed` rather than to widen the claim, so this now states the pair: an architecture
+  // may be written to and refused a reboot, and which arm it is in is asserted for each one rather
+  // than assumed.
+  //
+  // **Arch 14 (Harmony 600, 650 and 700) joined on 27 September 2026 and lands in a third arm**,
+  // section 281: it dispatches the escape, so the dispatch check alone would have let a writer reboot
+  // the Harmony 650 with nothing ever sent to that architecture. The reboot has its own list since
+  // then, and this asserts it is exactly the architectures where the escape is traced and was sent.
+  // The title was "a write target either dispatches the reset escape or is refused one" until then,
+  // an either or that arch 14 made false by doing both.
+  //
+  // **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.2 and landed in the refused arm**,
+  // beside arch 9, with no `ESCAPE_SUB_COMMANDS` row and no place on the reset list. **It moved to the
+  // traced arm for 1.4**, its write end: the row states what the 885's application dispatches,
+  // `tests/harmony_880_885/test_harmony_885_write_end.py`, and the reset list took it for the restart a write ends with.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
+  // **Arch 14 joined on 27 September 2026, section 282**, once its path was read on the Harmony 650's
+  // own build, and arch 8 for 1.4, so traced and permitted are the same three architectures now.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_RESET_TARGET], [8, 12, 14]);
+  for (const architecture of ARCHITECTURES_WITH_A_RESET_TARGET) {
+    assert.ok(ESCAPE_SUB_COMMANDS[architecture]?.includes(ESCAPE_RESET), `architecture ${architecture}`);
+  }
+  const traced: number[] = [];
+  const refused: number[] = [];
+  for (const architecture of ARCHITECTURES_WITH_A_WRITE_TARGET) {
+    const dispatched = ESCAPE_SUB_COMMANDS[architecture];
+    if (dispatched !== undefined && dispatched.includes(ESCAPE_RESET)) traced.push(architecture);
+    else refused.push(architecture);
+  }
+  // The populations, stated rather than bounded: 12 has section 97's reading behind it and 9 has
+  // nothing behind it, so a third architecture arriving on the write target list lands in neither
+  // and fails here.
+  assert.deepEqual(traced, [8, 12, 14]);
+  assert.deepEqual(refused, [9]);
+});
+
+test('the reset escape is refused on a write target whose escape is unread, and allowed on the three that are traced', () => {
+  // The runtime half of the pair above, and it needs the flag on: with writes disabled
+  // `assertResetAllowed` throws at its first line for every architecture, so asserting a throw here
+  // would say nothing about which condition fired. The message is what distinguishes them.
+  //
+  // Arch 9 (Harmony 525) may have a flash block written to it since 6 September 2026 and its escape
+  // dispatcher is unread, so it is refused by the dispatch check. Arch 12 (Harmony One) is the control:
+  // same call, same shape of permission, and it returns. Arch 14 (Harmony 650) was refused by the
+  // reset list from section 281 and is allowed since section 282, when its path was read on its own
+  // build; the list's refusal is dormant now, since no write target is traced and off it.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const say = (name, permission) => {
+      try {
+        rails.assertResetAllowed(permission);
+        return name + ': allowed';
+      } catch (error) {
+        // Two refusals, told apart by their own wording: the first is the dispatch check, the second
+        // the reset list. The pattern used to be /reset escape/, which both messages contain once
+        // the list existed, so it could not say which one fired.
+        const which = /no reset escape read/.test(error.message) ? ' for the unread escape'
+          : /not restarted over USB/.test(error.message) ? ' for no reboot ever sent'
+          : ' for something else';
+        return name + ': ' + error.constructor.name + which;
+      }
+    };
+    console.log(JSON.stringify([
+      say('arch 12', IDEAL),
+      // An empty intendedVersion because a config read off a remote states none of the six fields,
+      // which is the rehearsal's own case: section 225's gate reports nothing to compare rather than
+      // a match, so this reaches the escape check instead of stopping at a skin that disagrees.
+      say('arch 9', {
+        ...IDEAL,
+        architecture: 9,
+        intendedVersion: {},
+        versionBlock: rails.encodeVersionBlock({architecture: 9}),
+      }),
+      // Arch 14 (Harmony 650): a write target whose escape **is** traced. The reset list refused it
+      // from section 281 and admits it since section 282, which is what this now asserts.
+      say('arch 14', {
+        ...IDEAL,
+        architecture: 14,
+        intendedVersion: {},
+        versionBlock: rails.encodeVersionBlock({architecture: 14}),
+      }),
+      // Arch 8 (Harmony 885), traced in its application 4.4 and on the list since todo-compile-885.md 1.4.
+      say('arch 8', {
+        ...IDEAL,
+        architecture: 8,
+        intendedVersion: {},
+        versionBlock: rails.encodeVersionBlock({architecture: 8}),
+      }),
+    ]));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    'arch 12: allowed',
+    'arch 9: RailError for the unread escape',
+    'arch 14: allowed',
+    'arch 8: allowed',
+  ]);
+});
+
+test('the invalidate is allowed on every write target, arch 14 and arch 8 since their executors were read', () => {
+  // Section 281. The invalidate took the write permission and nothing more, so putting the Harmony 650
+  // on the write list handed it a command whose arch 14 executor nobody had read, and this asserted
+  // arch 14 was refused. Section 282 read the executor on the Harmony 650's own build and Danny
+  // added arch 14, so all three answer now and the list's refusal is dormant.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const say = (name, architecture) => {
+      try {
+        rails.assertInvalidateAllowed({
+          ...IDEAL,
+          architecture,
+          intendedVersion: architecture === 12 ? IDEAL.intendedVersion : {},
+          versionBlock: architecture === 12 ? IDEAL.versionBlock : rails.encodeVersionBlock({architecture}),
+        });
+        return name + ': allowed';
+      } catch (error) {
+        return name + ': ' + error.constructor.name
+          + (/not sent the invalidate/.test(error.message) ? ' for the unread executor' : ' for something else');
+      }
+    };
+    console.log(JSON.stringify([say('arch 12', 12), say('arch 9', 9), say('arch 14', 14), say('arch 8', 8)]));
+  `);
+  // Arch 8 (Harmony 885) since todo-compile-885.md 1.4, its selector 2 executor read in the 885's
+  // application 4.4, `tests/harmony_880_885/test_harmony_885_write_end.py`.
+  assert.deepEqual(JSON.parse(output), [
+    'arch 12: allowed',
+    'arch 9: allowed',
+    'arch 14: allowed',
+    'arch 8: allowed',
+  ]);
+});
+
+test('the SFR page is where the RAM write bound comes from, and it is the documented one', () => {
+  // The number, on its own, in the shipped state. Everything about *whether* the bound fires needs the
+  // flag on and is the subprocess test at the bottom: with writes disabled every call here refuses at
+  // the first line, so asserting a throw would say nothing about the bound.
+  //
+  // `0xF40` is `SFR_PAGE_START` in `src/harmony/pic18/isa.py` and Microchip's own `p18f87j50.inc` is
+  // the provenance for both. It is 0xF60 on the PIC18F4550 that arch 9 is, and the lower of the two is
+  // what to bound against.
+  assert.equal(SFR_PAGE_START, 0xf40);
+  // **And the RAM write is on its own list since 6 September 2026**, which is why the paragraph above
+  // can go on treating this as an arch 12 and arch 14 number: arch 9 joined the flash write target
+  // list that day and did not join this one, so no call can reach the bound with a PIC18F4550's
+  // memory map in mind. The gap that would otherwise be open is `0x800` to `0xF40`, which on that
+  // part is neither data memory nor a register.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_RAM_WRITE_TARGET], [12]);
+  assert.ok(ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9));
+  assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(9));
+  // The registers the bound exists for, so the reason survives a refactor of the message.
+  for (const register of [0xfa6, 0xfa7, 0xff5, 0xff6, 0xff8]) {
+    assert.ok(register >= SFR_PAGE_START, `0x${register.toString(16)} is inside the SFR page`);
+  }
+});
+
+test('firmware is never written, and there is no argument that changes that', () => {
+  // It takes no permission object on purpose: there is nothing to pass that would make it return.
+  assert.throws(() => assertFirmwareWriteRefused(), RailError);
+});
+
+test("arch 14's write target is the Harmony 650, for the block path, the invalidate and the reboot, and not RAM", () => {
+  // **This was "arch 14 has no write target on the bench"<!--superseded--> until 27 September 2026**, section 281,
+  // when a Harmony 650 arrived and Danny made it the write target. The paragraph below is what was
+  // true before and stays as the record of why the list held 14 out.
+  //
+  // The two permitted units are a Harmony One and a Harmony 525, so there is nothing on arch 14 that
+  // a mistake could be made on: the Harmony 600 here is the only arch 14 remote in existence<!--superseded--> on this
+  // bench and Danny excluded it by name on 5 September 2026. Reading arch 14 is unaffected, which is
+  // why this lives in the rails and not in the transport.
+  //
+  // The list moved from `[12]` to `[9, 12]` on 6 September 2026 and this test's own claim did not,
+  // which is the point of stating the population rather than the one member: 14 is absent either way
+  // and a commit that added it would fail here rather than passing a `!includes` that had drifted.
+  // **It did fail, on 27 September 2026, which is the decision showing up in the diff.** What holds
+  // the Harmony 600 out now is the unit check, since both are arch 14; what this asserts is that the
+  // arrival bought one path, the flash block, and not the three that have lists of their own.
+  //
+  // **It moved again for `todo-compile-885.md` 1.2**: arch 8 (Harmony 880 and 885), the flash block path
+  // only, so it was on none of the three lists below. **1.4 put it on two of them**, the reboot and the
+  // invalidate, each for the one command an 885's write ends with; the RAM write stays shut, since selector
+  // 7 reaches the unlock and the install status on that platform with no bound.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
+  assert.ok(ARCHITECTURES_WITH_A_RESET_TARGET.includes(8), 'the reboot, arch 8, todo-compile-885.md 1.4');
+  assert.ok(ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(8), 'the invalidate, arch 8, 1.4');
+  assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(8), 'the RAM write, arch 8');
+  // The reboot and the invalidate followed in section 282, each on its own evidence: the escape path
+  // and the selector 2 executor read on the Harmony 650's own build. The RAM write did not.
+  assert.ok(ARCHITECTURES_WITH_A_RESET_TARGET.includes(14), 'the reboot, section 282');
+  assert.ok(ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(14), 'the invalidate, section 282');
+  assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(14), 'the RAM write');
+  assert.deepEqual([...ARCHITECTURES_WITH_AN_INVALIDATE_TARGET], [8, 9, 12, 14]);
+});
+
+test('the writable range needs both a region and a ceiling, and a hole in either refuses', () => {
+  // **Arch 12 (Harmony One) was the only architecture with both until section 267**, and that
+  // sentence used to end "which is not a coincidence: the tables are what a write target means".
+  // It is arch 12 and arch 9 (Harmony 525) now, and the write target list is still `[12]`, so the
+  // tables are emphatically **not** what a write target means: they say where a write would be
+  // bounded and the list says whether anything may write. Keeping the two separate is what lets a
+  // region be recorded before a remote has ever been written to.
+  assert.deepEqual(writableRange({ ...IDEAL, architecture: 12, versionBlock: blockFor(12) }), {
+    start: 0x040000,
+    end: 0x041000,
+  });
+  // **This asserted a range for arch 14 (Harmony 600 and 700) until section 139**, because
+  // `writableRange` read a missing `WRITABLE_CEILING` entry as "no ceiling" while
+  // `assertEraseAllowed` read the identical hole as a refusal. Section 88's rule is that a table
+  // with a hole refuses, and arch 14 (Harmony 600 and 700) has a config region and no ceiling, so
+  // the old answer was an unbounded write range for an architecture nothing has measured a ceiling
+  // for. It has no write target either, so nothing could reach it; adding one would have.
+  // **Arch 14 has both since section 281**, the part's top at `0x200000` and the region from
+  // `0x030000`, so it answers now, and no architecture is left with a region and no ceiling. So the
+  // hole is tested through `writableRangeFrom`, the rule without the lookups; an architecture with
+  // neither, arch 10 (Harmony 890 and 895), is the region half. This was arch 8 (Harmony 880 and 885)
+  // until `todo-compile-885.md` 1.2 gave it both rows.
+  assert.deepEqual(writableRange({ ...IDEAL, architecture: 14, versionBlock: blockFor(14) }), {
+    start: 0x030000,
+    end: 0x031000,
+  });
+  assert.throws(() => writableRangeFrom(14, 0x030000, undefined, 0x1000), /no writable ceiling/);
+  assert.throws(() => writableRangeFrom(14, undefined, 0x200000, 0x1000), /no config region/);
+  assert.throws(() => writableRange({ ...IDEAL, architecture: 10, versionBlock: blockFor(10) }), /no config region/);
+  // Arch 8 (Harmony 880 and 885) answers since then: the user configuration from `0x020000`, with the
+  // running application in the 64 KiB below it and nothing in the firmware between the two.
+  assert.deepEqual(writableRange({ ...IDEAL, architecture: 8, versionBlock: blockFor(8) }), {
+    start: 0x020000,
+    end: 0x021000,
+  });
+  // And arch 9 (Harmony 525) has both since section 267, so it answers. The configuration sits at
+  // `0x820000` with the safe mode image and the application firmware in the two blocks below it,
+  // which is why the floor matters here more than it does on arch 12: the firmware bounds an erase
+  // to the flash part and nowhere finer, so both images are inside what the remote accepts.
+  assert.deepEqual(writableRange({ ...IDEAL, architecture: 9, versionBlock: blockFor(9) }), {
+    start: 0x820000,
+    end: 0x821000,
+  });
+});
+
+test('the two rails read the same table hole the same way', () => {
+  // The defect was not either reading on its own, it was that they disagreed. So the claim to pin
+  // is the agreement, over every architecture either table mentions plus the ones neither does.
+  for (const architecture of [8, 9, 10, 12, 14]) {
+    const write = (() => {
+      try {
+        writableRange({ ...IDEAL, architecture, versionBlock: blockFor(architecture) });
+        return 'allowed';
+      } catch {
+        return 'refused';
+      }
+    })();
+    const erase = (() => {
+      try {
+        eraseBoundsFor(architecture);
+        return 'allowed';
+      } catch {
+        return 'refused';
+      }
+    })();
+    assert.equal(write, erase, `architecture ${architecture}`);
+  }
+});
+
+test('an erase refuses an architecture with no recorded block size', () => {
+  // Unreachable through `assertEraseAllowed`, because `assertPermissionIsUsable` refuses everything
+  // outside `ARCHITECTURES_WITH_A_WRITE_TARGET` first and that list was `[12]`, which has both
+  // entries, and is `[8, 9, 12, 14]` now, all four with both. The rail nobody can trigger is the rail nobody has tested, and `rails.test.ts` was
+  // checking the table's shape in its place. The lookup is exported now so the refusal has a caller.
+  assert.deepEqual(eraseBoundsFor(12), { block: 0x10000, ceiling: 0x3d0000 });
+  // **Arch 9 (Harmony 525) moved out of the refusing list in section 267** and into the answering
+  // one, because its block size is read now. It answered and was still not a write target for a
+  // day, which is the point: the gate for that is `ARCHITECTURES_WITH_A_WRITE_TARGET`, which this bounds lookup deliberately does
+  // not consult, so a bound here is arithmetic about a region and never a permission.
+  assert.deepEqual(eraseBoundsFor(9), { block: 0x10000, ceiling: 0x870000 });
+  // Arch 14 answers since section 281, off three firmware images' eraser.
+  assert.deepEqual(eraseBoundsFor(14), { block: 0x10000, ceiling: 0x200000 });
+  // Arch 8 answers since `todo-compile-885.md` 1.2, the ceiling the staging region below the log area.
+  assert.deepEqual(eraseBoundsFor(8), { block: 0x10000, ceiling: 0x1d0000 });
+  for (const architecture of [10, 16]) {
+    assert.throws(() => eraseBoundsFor(architecture), RailError, `architecture ${architecture}`);
+  }
+});
+
+test('a config length that is missing or absurd does not produce a range', () => {
+  // Otherwise a zero length would make the range empty and every write "outside" it, which reads
+  // as a refusal for the wrong reason, or a negative one would make it inverted.
+  for (const configLength of [0, -1, 1.5]) {
+    assert.throws(() => writableRange({ ...IDEAL, configLength }), RailError);
+  }
+});
+
+/**
+ * The other half of the flag, in a subprocess.
+ *
+ * Turning writes on in this process would leave them on for every test in the file, and the point
+ * of the tests above is that they run in the shipped state. A subprocess is the only honest way to
+ * check both sides of a module level constant.
+ */
+function withWritesEnabled(script: string, doors: Record<string, string> = {}): string {
+  const here = fileURLToPath(new URL('.', import.meta.url));
+  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
+  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  const railsPath = join(here, '..', '..', 'src', 'rails.ts').replaceAll('\\', '/');
+  const internalPath = join(here, '..', '..', 'src', 'internal.ts').replaceAll('\\', '/');
+  return execFileSync(
+    process.execPath,
+    ['--input-type=module', '--eval', `import * as railsOnly from '${railsPath}';\nimport * as internal from '${internalPath}';\nconst rails = { ...internal, ...railsOnly };\n${script}`],
+    // `doors` opens further named doors on top of the write flag, for a test whose point is that a
+    // refusal holds with every door open: the reinstall, the staging and the settings doors are each
+    // checked before the architecture, so with them shut a refusal would say nothing about arch 8.
+    { env: { ...process.env, HARMONY_ENABLE_WRITES: '1', ...doors }, encoding: 'utf8' },
+  ).trim();
+}
+
+test('with writing enabled, the remaining conditions still each refuse on their own', () => {
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const base = 0x040000;
+    const refusals = [];
+    const check = (name, permission, address, count) => {
+      try {
+        rails.assertFlashWriteAllowed(permission, address, count);
+        refusals.push(name + ': ALLOWED');
+      } catch (error) {
+        // The error's own name, not a bare 'refused'. A bare catch cannot tell a RailError from a
+        // TypeError out of a rail somebody broke, so every one of these rows read 'refused' either
+        // way and the test passed while the rail did not work.
+        refusals.push(name + ': refused by ' + error.constructor.name);
+      }
+    };
+    check('flag on and everything in order', IDEAL, base, 16);
+    check('another unit on the cable', {...IDEAL, identityBlock: IDEAL.another}, base, 16);
+    // An identity carrying nothing per unit, which is what the field named the serial looks like on
+    // every remote here: refused rather than matched, section 226.
+    check('an unidentifiable unit', {...IDEAL, identityBlock: IDEAL.noIdentity}, base, 16);
+    check('no verified dump', {...IDEAL, originalDumpVerified: false}, base, 16);
+    // **Now a real comparison rather than a boolean**, section 225: the config claims skin 99 and
+    // the remote reports 54, so the rail is the thing that notices. The row below it is the second
+    // half of the same gate, two readings of one remote disagreeing about its architecture.
+    check('intended version mismatch', {...IDEAL, intendedVersion: {...IDEAL.intendedVersion, SKIN: '99'}}, base, 16);
+    check('a version field nobody can compare', {...IDEAL, intendedVersion: {...IDEAL.intendedVersion, CLIENTSOFTWARE: '2.7'}}, base, 16);
+    check('a version block for another architecture', {...IDEAL, versionBlock: rails.encodeVersionBlock({architecture: 14})}, base, 16);
+    check('a version block too short to be an identity', {...IDEAL, versionBlock: new Uint8Array(4)}, base, 16);
+    check('architecture 14', {...IDEAL, architecture: 14}, 0x030000, 16);
+    check('one byte below the region', IDEAL, base - 1, 16);
+    check('running one byte past the end', IDEAL, base + IDEAL.configLength - 15, 16);
+    check('the whole region exactly', IDEAL, base, IDEAL.configLength);
+    console.log(JSON.stringify(refusals));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    // The flag being on is necessary and not sufficient, which is the shape that matters: every
+    // other condition still refuses by itself.
+    'flag on and everything in order: ALLOWED',
+    'another unit on the cable: refused by RailError',
+    'an unidentifiable unit: refused by RailError',
+    'no verified dump: refused by RailError',
+    'intended version mismatch: refused by RailError',
+    'a version field nobody can compare: refused by RailError',
+    'a version block for another architecture: refused by RailError',
+    'a version block too short to be an identity: refused by RailError',
+    'architecture 14: refused by RailError',
+    'one byte below the region: refused by RailError',
+    'running one byte past the end: refused by RailError',
+    'the whole region exactly: ALLOWED',
+  ]);
+});
+
+test('with writing enabled, the invalidate and the reset each still refuse on their own', () => {
+  // The two steps sections 245 and 246 added. They take the **full** permission rather than the
+  // lighter one the session end takes, deliberately, so every condition that guards an erase guards
+  // these too and a write sequence cannot be half authorised. This is the check that the sharing is
+  // real rather than intended.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const refusals = [];
+    const check = (name, call) => {
+      try {
+        call();
+        refusals.push(name + ': ALLOWED');
+      } catch (error) {
+        refusals.push(name + ': refused by ' + error.constructor.name);
+      }
+    };
+    for (const [what, rail] of [['invalidate', rails.assertInvalidateAllowed],
+                                ['reset', rails.assertResetAllowed]]) {
+      check(what + ', everything in order', () => rail(IDEAL));
+      check(what + ', another unit', () => rail({...IDEAL, identityBlock: IDEAL.another}));
+      check(what + ', no verified dump', () => rail({...IDEAL, originalDumpVerified: false}));
+      check(what + ', architecture 14', () => rail({...IDEAL, architecture: 14}));
+      check(what + ', config for another skin',
+        () => rail({...IDEAL, intendedVersion: {...IDEAL.intendedVersion, SKIN: '99'}}));
+    }
+    console.log(JSON.stringify(refusals));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    'invalidate, everything in order: ALLOWED',
+    'invalidate, another unit: refused by RailError',
+    'invalidate, no verified dump: refused by RailError',
+    'invalidate, architecture 14: refused by RailError',
+    'invalidate, config for another skin: refused by RailError',
+    'reset, everything in order: ALLOWED',
+    'reset, another unit: refused by RailError',
+    'reset, no verified dump: refused by RailError',
+    'reset, architecture 14: refused by RailError',
+    'reset, config for another skin: refused by RailError',
+  ]);
+});
+
+test('with writing enabled, a RAM write still refuses an SFR address and a wrong architecture', () => {
+  // **`writeRam` called itself volatile and that was an assumption about the address**, section 139.
+  // The request carries a sixteen bit data address, and on the PIC18F87J50 bank 15 from `0xF40` up is
+  // the special function registers: `EECON1` at `0xFA6`, `EECON2` at `0xFA7`, `TABLAT` at `0xFF5` and
+  // `TBLPTR` at `0xFF6` to `0xFF8`, which together are a PIC18's self programming path. Whether the
+  // firmware bounds the address is **unread**, which is why the rail does not depend on the answer.
+  //
+  // The rail also had no architecture check at all, so `targetIsTheSpareRemote` alone reached
+  // `WRITE_MISC` on a Harmony 600 or a Harmony 525, whose selector 7 executors nobody has read.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const out = [];
+    const check = (name, permission, address) => {
+      try {
+        rails.assertRamWriteAllowed(permission, address);
+        out.push(name + ': ALLOWED');
+      } catch (error) {
+        out.push(name + ': refused by ' + error.constructor.name);
+      }
+    };
+    check('an ordinary variable', IDEAL, 0x100);
+    check('the last byte below the SFR page', IDEAL, 0xf3f);
+    check('the first byte of the SFR page', IDEAL, 0xf40);
+    check('EECON1', IDEAL, 0xfa6);
+    check('EECON2', IDEAL, 0xfa7);
+    check('TBLPTRU', IDEAL, 0xff8);
+    check('a negative address', IDEAL, -1);
+    check('not an integer', IDEAL, 1.5);
+    check('a Harmony 600', {...IDEAL, architecture: 14}, 0x100);
+    check('a Harmony 525', {...IDEAL, architecture: 9}, 0x100);
+    check('no architecture at all', {...IDEAL, architecture: undefined}, 0x100);
+    check('another unit on the cable', {...IDEAL, identityBlock: IDEAL.another}, 0x100);
+    check('an unidentifiable unit', {...IDEAL, identityBlock: IDEAL.noIdentity}, 0x100);
+    console.log(JSON.stringify(out));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    // Exactly two rows are allowed, and they are the two that should be: the flag being on is
+    // necessary and every other condition still refuses on its own.
+    'an ordinary variable: ALLOWED',
+    'the last byte below the SFR page: ALLOWED',
+    'the first byte of the SFR page: refused by RailError',
+    'EECON1: refused by RailError',
+    'EECON2: refused by RailError',
+    'TBLPTRU: refused by RailError',
+    'a negative address: refused by RailError',
+    'not an integer: refused by RailError',
+    'a Harmony 600: refused by RailError',
+    'a Harmony 525: refused by RailError',
+    'no architecture at all: refused by RailError',
+    'another unit on the cable: refused by RailError',
+    'an unidentifiable unit: refused by RailError',
+  ]);
+});
+
+test('with writing enabled, an erase must name a whole block inside the writable region', () => {
+  // The rail got stricter, and this test is where that shows. It used to allow any address in the
+  // config region, including 0x040fff, on the grounds that the block an erase destroys was
+  // unknown. It is known now, `ERASE_BLOCK_SIZE`, so an unaligned address is refused: Logitech's
+  // own client starts erasing at the first block boundary at or after the address, which means an
+  // unaligned caller gets neither the erase it asked for nor an error.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const results = [];
+    const cases = [
+      ['the first block of the region', 0x040000],
+      ['unaligned inside the region', 0x040fff],
+      ['aligned, one block below the region', 0x030000],
+      ['the last block below the ceiling', 0x3c0000],
+      ['the block the stored firmware starts in', 0x3d0000],
+      ['the nominal region top', 0x3f0000],
+      ['the reset vector', 0x000000],
+    ];
+    for (const [name, address] of cases) {
+      try { rails.assertEraseAllowed(IDEAL, address); results.push(name + ': ALLOWED'); }
+      catch (error) { results.push(name + ': refused by ' + error.constructor.name); }
+    }
+    console.log(JSON.stringify(results));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    'the first block of the region: ALLOWED',
+    'unaligned inside the region: refused by RailError',
+    'aligned, one block below the region: refused by RailError',
+    'the last block below the ceiling: ALLOWED',
+    // The two that the old rail would have allowed and that cost a remote: the stored application
+    // firmware sits at 0x3D0000, inside the nominally writable region.
+    'the block the stored firmware starts in: refused by RailError',
+    'the nominal region top: refused by RailError',
+    'the reset vector: refused by RailError',
+  ]);
+});
+
+test('an architecture with no recorded block size is refused rather than loosely allowed', () => {
+  // The failure mode worth naming: adding a read profile for a new architecture must not quietly
+  // hand it the old address-only erase check. There is no fallback.
+  //
+  // Arch 14 (Harmony 600 and 700) is the subject and stays the subject. **The key list was `['12']`
+  // until section 267** and is `['9', '12']` now, because the Harmony 525's block size was read out
+  // of its firmware; that is a row landing, not this claim weakening, and arch 14 still has neither
+  // entry. Pinning the whole key list is deliberate even so: it is what makes adding a row a
+  // decision somebody takes on purpose rather than a side effect, and the arch 9 row proved it
+  // works by failing here first.
+  //
+  // **The subject moved to arch 8 (Harmony 880 and 885) on 27 September 2026**, when arch 14 gained
+  // its rows off its own firmware, section 281, which is the second row landing through this test.
+  //
+  // **And to arch 10 (Harmony 890 and 895) for `todo-compile-885.md` 1.2**, when arch 8 gained its rows
+  // off two outside sources under decision 30, the third row landing here. Arch 10 has no firmware image
+  // anywhere, so nothing can give it one.
+  assert.equal(ERASE_BLOCK_SIZE[10], undefined);
+  assert.equal(WRITABLE_CEILING[10], undefined);
+  assert.deepEqual(Object.keys(ERASE_BLOCK_SIZE), ['8', '9', '12', '14']);
+});
+
+test('the session end escape is refused in the shipped state, and only for the right reason', () => {
+  // Sections 97 and 99. This command writes no storage at all, which is exactly why it needs its
+  // own rail rather than a share of the flash one: none of the flash conditions mean anything for
+  // it, so reusing them would be a rail that reads strict and checks nothing relevant.
+  assert.throws(
+    () => assertSessionEndAllowed(
+      { architecture: 12, identityBlock: THIS_UNIT, permittedUnit: THIS_UNIT }, 0x01),
+    /read only/,
+  );
+});
+
+test('with writing enabled, the session end escape refuses everything but itself', () => {
+  const output = withWritesEnabled(`
+    const spare12 = {
+      architecture: 12,
+      identityBlock: Uint8Array.from(${JSON.stringify([...THIS_UNIT])}),
+      permittedUnit: Uint8Array.from(${JSON.stringify([...THIS_UNIT])}),
+    };
+    const another = Uint8Array.from(${JSON.stringify([...ANOTHER_UNIT])});
+    const refusals = [];
+    const check = (name, permission, sub) => {
+      try {
+        rails.assertSessionEndAllowed(permission, sub);
+        refusals.push(name + ': ALLOWED');
+      } catch (error) {
+        // The error's own name, not a bare 'refused'. A bare catch cannot tell a RailError from a
+        // TypeError out of a rail somebody broke, so every one of these rows read 'refused' either
+        // way and the test passed while the rail did not work.
+        refusals.push(name + ': refused by ' + error.constructor.name);
+      }
+    };
+    check('arch 12 spare, sub-command 0x01', spare12, 0x01);
+    check('arch 14 spare, sub-command 0x01', {...spare12, architecture: 14}, 0x01);
+    check('the reset, 0x02', spare12, 0x02);
+    check('the other reset, 0x03', spare12, 0x03);
+    check('arch 14 only sub-command 0x05', {...spare12, architecture: 14}, 0x05);
+    check('arch 9, whose escape nobody has read', {...spare12, architecture: 9}, 0x01);
+    // Arch 8 (Harmony 885): its escape is read and dispatches 0x01, todo-compile-885.md 1.4, and the row
+    // that says so is there for the restart; the session end has a list of its own that leaves it out.
+    check('arch 8, read for the restart only', {...spare12, architecture: 8}, 0x01);
+    check('another unit on the cable', {...spare12, identityBlock: another}, 0x01);
+    console.log(JSON.stringify(refusals));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    // Both architectures whose escape has been read are allowed, because unlike a flash write this
+    // has no write target to speak of: it changes one variable in a running remote.
+    'arch 12 spare, sub-command 0x01: ALLOWED',
+    'arch 14 spare, sub-command 0x01: ALLOWED',
+    // The reboots are refused by number, not merely unimplemented. An unimplemented thing gets
+    // implemented by whoever needs it next; a refused one has to be argued for.
+    'the reset, 0x02: refused by RailError',
+    'the other reset, 0x03: refused by RailError',
+    'arch 14 only sub-command 0x05: refused by RailError',
+    // A read profile is not a write profile, which is the same rule the flash rails state.
+    'arch 9, whose escape nobody has read: refused by RailError',
+    // One list per path: an escape row read for one command buys no other.
+    'arch 8, read for the restart only: refused by RailError',
+    // And the conservative condition that keeps this an experiment rather than a product decision.
+    'another unit on the cable: refused by RailError',
+  ]);
+});
+
+test('the deliberate hang door is shut in the shipped state', () => {
+  // Sections 94 and 96. The ordinary refusal is not what this checks: this is the named door, which
+  // exists because the refusal was bypassed twice by editing the source and editing it back.
+  assert.throws(() => assertDeliberateHangAllowed(63), /HARMONY_ODD_READ_EXPERIMENT/);
+});
+
+test('with the hang door open, it still refuses an even count', () => {
+  const output = execFileSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      `import * as rails from '${join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', 'src', 'rails.ts').replaceAll('\\\\', '/')}';
+       const out = [];
+       for (const count of [63, 65, 1, 62, 64, 0]) {
+         try { rails.assertDeliberateHangAllowed(count); out.push(count + ': allowed'); }
+         catch (error) { out.push(count + ': refused by ' + error.constructor.name); }
+       }
+       console.log(JSON.stringify(out));`,
+    ],
+    { env: { ...process.env, HARMONY_ODD_READ_EXPERIMENT: '1' }, encoding: 'utf8' },
+  ).trim();
+  // An even count terminates, so it is not this entry point's business. Without that check the door
+  // would quietly become a second ordinary read path, which is how a rail stops meaning anything.
+  assert.deepEqual(JSON.parse(output), [
+    '63: allowed',
+    '65: allowed',
+    '1: allowed',
+    '62: refused by RailError',
+    '64: refused by RailError',
+    '0: refused by RailError',
+  ]);
+});
+
+/**
+ * The first write door, both sides of it.
+ *
+ * Two flags rather than one, and the test that matters is the middle case: writes enabled and the
+ * door shut still refuses. Otherwise the second flag would be decoration, which is what a door
+ * nobody has checked amounts to.
+ */
+function withEnv(extra: Record<string, string>, script: string): string {
+  const here = fileURLToPath(new URL('.', import.meta.url));
+  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
+  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  const railsPath = join(here, '..', '..', 'src', 'rails.ts').replaceAll('\\', '/');
+  const internalPath = join(here, '..', '..', 'src', 'internal.ts').replaceAll('\\', '/');
+  return execFileSync(
+    process.execPath,
+    ['--input-type=module', '--eval', `import * as railsOnly from '${railsPath}';\nimport * as internal from '${internalPath}';\nconst rails = { ...internal, ...railsOnly };\n${script}`],
+    { env: { ...process.env, ...extra }, encoding: 'utf8' },
+  ).trim();
+}
+
+const REFUSAL_REPORT = `
+  try {
+    rails.assertFirstWriteAllowed();
+    process.stdout.write('allowed');
+  } catch (error) {
+    process.stdout.write('refused: ' + error.message);
+  }
+`;
+
+test('the first write door refuses in the shipped state, naming the build flag first', () => {
+  assert.equal(WRITES_ENABLED, false, 'this file must run in the shipped state');
+  assert.throws(() => assertFirstWriteAllowed(), (error: unknown) => {
+    assert.ok(error instanceof RailError);
+    assert.match(error.message, /HARMONY_ENABLE_WRITES=1/);
+    return true;
+  });
+});
+
+test('with writes enabled the door is still shut, which is the point of having it', () => {
+  const output = withEnv({ HARMONY_ENABLE_WRITES: '1' }, REFUSAL_REPORT);
+  assert.match(output, /^refused: /);
+  assert.match(output, /HARMONY_FIRST_WRITE=1/);
+  // And it says why, because a refusal whose reason is elsewhere gets bypassed rather than read.
+  assert.match(output, /restore route it relies on has never been exercised/);
+});
+
+test('with both flags set it allows, so the door is a door and not a wall', () => {
+  const output = withEnv(
+    { HARMONY_ENABLE_WRITES: '1', HARMONY_FIRST_WRITE: '1' },
+    REFUSAL_REPORT,
+  );
+  assert.equal(output, 'allowed');
+});
+
+test('the door does not stand in for the rails, which still refuse everything else', () => {
+  // The rule this checks is that the door is not a second copy of a rail: opening it must not make
+  // an arch 14 write, an unaligned erase or a firmware address allowable. Section 175 and the
+  // docstring on FIRST_WRITE both say so, and a test is what keeps it true.
+  const output = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRST_WRITE: '1' }, `
+    const refusals = [];
+    const permission = { architecture: 14, configLength: 1024, originalDumpVerified: true,
+                         intendedVersionMatches: true, targetIsTheSpareRemote: true };
+    try { rails.assertFlashWriteAllowed(permission, 0x030000, 16); }
+    catch (error) { refusals.push('arch14'); }
+    const twelve = { ...permission, architecture: 12 };
+    try { rails.assertEraseAllowed(twelve, 0x040001); }
+    catch (error) { refusals.push('unaligned'); }
+    try { rails.assertEraseAllowed(twelve, 0x3d0000); }
+    catch (error) { refusals.push('firmware'); }
+    try { rails.assertFlashWriteAllowed({ ...twelve, targetIsTheSpareRemote: false }, 0x040000, 16); }
+    catch (error) { refusals.push('not-the-spare'); }
+    process.stdout.write(refusals.join(','));
+  `);
+  assert.equal(output, 'arch14,unaligned,firmware,not-the-spare');
+});
+
+test('a mutating report cannot reach a remote without a rail behind it', async () => {
+  /*
+   * The class level fix for the bypass named in the test above.
+   *
+   * The rails guard `HarmonyRemote`'s methods. They cannot guard a caller who builds a report itself
+   * and hands it to a transport, and the barrel exports everything needed to do that. Hiding the
+   * encoder is the wrong answer, because a test that builds a raw erase and sends it to a **fake**
+   * transport is useful and should keep working. What must not happen is such a report reaching real
+   * hardware, so the check lives on the transport `openHarmony` returns.
+   */
+  const sent: Uint8Array[] = [];
+  const inner: Transport = {
+    async write(report) { sent.push(Uint8Array.from(report)); },
+    async read() { return undefined; },
+    async close() {},
+  };
+  const guarded = guardMutations(inner);
+
+  // **The surface of the returned object is the rail, and this is the assertion the barrel check
+  // cannot make.** The bypass of 30 August 2026 was a public `authoriseReport` **method** on this very
+  // object, so it was reachable by every caller of `openHarmony` while every exported name looked
+  // innocent. A name check on the barrel would not have seen it; enumerating what the object offers
+  // does. Three methods, and a fourth is a hole until somebody proves otherwise.
+  const surface = new Set<string>();
+  for (let o: object | null = guarded; o && o !== Object.prototype; o = Object.getPrototypeOf(o)) {
+    for (const name of Object.getOwnPropertyNames(o)) surface.add(name);
+  }
+  assert.deepEqual([...surface].sort(), ['close', 'read', 'write'],
+    'the guarded transport offers something other than the three transport methods');
+
+  // **The exact bypass, refused.** An erase outside the config region, with writing disabled.
+  await assert.rejects(() => guarded.write(encodeRequest(ERASE_FLASH, address24(0x000000))),
+    TransportError, 'a raw erase reached the transport');
+
+  // Not too strict: a read needs no authorisation, or every read path would break.
+  await guarded.write(readFlashRequest(0x040000, 32));
+
+  // An authorised report goes through, and the authorisation is single use, so a stray second
+  // report cannot ride on the first one's permission.
+  const erase = encodeRequest(ERASE_FLASH, address24(0x040000));
+  authoriseReport(guarded, erase);
+  await guarded.write(erase);
+  await assert.rejects(() => guarded.write(erase), TransportError, 'authorisation was reusable');
+
+  // And it is for those exact bytes, so an address swapped in after the rail ran is refused.
+  authoriseReport(guarded, encodeRequest(ERASE_FLASH, address24(0x040000)));
+  await assert.rejects(() => guarded.write(encodeRequest(ERASE_FLASH, address24(0x3f0000))),
+    TransportError, 'the authorised bytes were not checked');
+
+  // **The allow list direction.** An unclassified command is refused rather than sent, which is the
+  // lesson from `WRITABLE_CEILING`'s missing entry reading as "no ceiling".
+  await assert.rejects(() => guarded.write(encodeRequest(0x20)), TransportError,
+    'an unclassified command was sent');
+
+  // **A version request with a payload is not a read**, section 304: on arch 14 its first byte is a
+  // sub-command, `0xB3` appends a settings record and `0xB1` writes data memory. Both keyed on the
+  // high nibble and went through as reads until then. The bare request still passes, below.
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x14, 0xb3, 0x00, 0x08, 0x0a)), TransportError,
+    'a settings write went through as a version request');
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x14, 0xb1, 0x0e, 0x5f, 0x2d)), TransportError,
+    'a data memory write went through as a version request');
+  // An unclassified sub-command is refused even when it only reads, `0xB0` being a data memory read:
+  // the family is an allow list of one, since most of its 76 states are unread.
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x13, 0xb0, 0x0e, 0x5f)), TransportError,
+    'an unclassified version request sub-command was classified as a read');
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x11, 0xbd)), TransportError,
+    'a program memory write went through as a version request');
+  await guarded.write(encodeRequest(0x10));
+  // The settings read is classified by its second byte and passes, with exactly its three bytes; the
+  // same sub-command with a longer payload, and the write beside it at the same length, do not.
+  await guarded.write(Uint8Array.of(0x13, 0xb2, 0x00, 0x08));
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x14, 0xb2, 0x00, 0x08, 0x0a)), TransportError,
+    'a settings read with a fourth payload byte was classified as a read');
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x13, 0xb3, 0x00, 0x08)), TransportError,
+    'a three byte settings write was classified as a read');
+
+  // Exactly four reports got through: the read, the authorised erase, the bare version request and
+  // the settings read.
+  assert.equal(sent.length, 4);
+  assert.deepEqual(sent.map((r) => (r[0] as number) & 0xf0), [READ_FLASH, ERASE_FLASH, 0x10, 0x10]);
+  assert.deepEqual([...sent[3]!.subarray(0, 2)], [0x13, 0xb2]);
+  assert.equal(sent[2]![0], 0x10, "the version request that passed carried a payload");
+});
+
+test('the only function returning a path to real hardware returns a guarded transport', async () => {
+  /*
+   * Asserted against the source, because the alternative needs a remote plugged in. `openHarmony` is
+   * the one function in this package that hands back a transport connected to a device, so it is the
+   * one that has to wrap. A deep import of `transportOver` is not covered and does not need to be:
+   * it takes a HID handle the caller had to open itself.
+   */
+  const source = await readFile(new URL('../../src/transport.ts', import.meta.url), 'utf8');
+  const body = source.slice(source.indexOf('export async function openHarmony'));
+  assert.match(body, /return guardMutations\(transportOver\(/,
+    'openHarmony must return a guarded transport');
+});
+
+test('arch 9 has every constant a write needs, and the constants were never what let it write', () => {
+  // Section 267 read the Harmony 525's flash erase and write out of its own application image, so
+  // the three tables gained a row each. `CONFIG_REGION_BASE`'s comment had asked for exactly that,
+  // having refused a floor without a block size on the ground that a half filled table invites a
+  // caller to think an architecture is writable.
+  //
+  // **This test's title was "and is still not a write target"<!--superseded--> until 6 September
+  // 2026**, when Danny authorised the block rehearsal on the Harmony 525 and arch 9 joined the list.
+  // What it tested is unchanged and is the distinction the whole module rests on: a number says where
+  // a write would be allowed to go, and the list says whether anything may write at all. The three
+  // rows sat here complete and refused for a day, which is the evidence that the two are separate,
+  // and this now asserts the second half from the other side: the constants did not move when the
+  // permission did.
+  assert.equal(CONFIG_REGION_BASE[9], 0x820000);
+  assert.equal(WRITABLE_CEILING[9], 0x870000);
+  assert.equal(ERASE_BLOCK_SIZE[9], 0x10000);
+  assert.ok(ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9));
+  // And what the permission covers is one path, not the architecture: the demonstration was a flash
+  // block, so the RAM write and the reset escape stayed behind. A commit that widens either of those
+  // on the strength of this one fails here.
+  assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(9),
+    'the flash demonstration is not a RAM write demonstration');
+  assert.equal(ESCAPE_SUB_COMMANDS[9], undefined,
+    'arch 9 has no escape read from its firmware, so assertResetAllowed refuses it');
+});
+
+test('the arch 9 ceiling stops below the log area, and the region is five of the part\'s eight blocks', () => {
+  // The ceiling is `0x870000` because `reference/architectures/harmony-5xx/memory.md` puts the log area there, not because
+  // the part ends: it ends at `0x880000`. Both numbers are real and taking the larger one would put
+  // the log inside a writable range for no gain.
+  const start = CONFIG_REGION_BASE[9] as number;
+  const ceiling = WRITABLE_CEILING[9] as number;
+  const block = ERASE_BLOCK_SIZE[9] as number;
+  assert.equal((ceiling - start) % block, 0, 'the region is a whole number of erase blocks');
+  assert.equal((ceiling - start) / block, 5);
+  // And the neighbours the rail is protecting, which is why arch 9's is tighter than arch 12's:
+  // the firmware bounds an erase to the part and nowhere finer, section 267, so the safe mode image
+  // and the application firmware are inside what the remote will accept and outside what this
+  // module permits.
+  for (const firmware of [0x800000, 0x810000]) {
+    assert.ok(firmware < start, `0x${firmware.toString(16)} is below the writable floor`);
+  }
+});
+
+test('with writing enabled a Harmony 525 is still refused, and it is the architecture that refuses', () => {
+  // **The control for 6 September 2026's dry run, and it is here rather than on the remote.** The
+  // rehearsal read a 525's block and compared it, which is what `originalDumpVerified` needed. The
+  // obvious next check is whether `--commit` on one is refused, and running that on the remote
+  // would mean turning the write flags on against an architecture no write has ever been
+  // demonstrated on: if the gate held, nothing happens, and if it did not, an undemonstrated write
+  // path erases a block of an irreplaceable remote. A subprocess answers the same question for free.
+  //
+  // Arch 9 (Harmony 525) is a **permitted** unit, Danny's decision of 5 September, and it has every
+  // constant a write needs since section 267. Neither is capability, and this is where that is
+  // asserted with the flag actually on.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const permission = {
+      ...IDEAL,
+      architecture: 9,
+      versionBlock: rails.encodeVersionBlock({
+        firmware: 0x30,
+        hardware: 0x25,
+        flash: [0xff, 0x12],
+        architecture: 9,
+        softwareType: 0,
+        skin: 22,
+        platform: 0x09,
+      }),
+    };
+    const rows = [];
+    const check = (name, fn) => {
+      try { fn(); rows.push(name + ': ALLOWED'); }
+      catch (error) { rows.push(name + ': refused by ' + error.constructor.name); }
+    };
+    // The three constants arch 9 does have, so none of these is what refuses.
+    rows.push('config base: 0x' + rails.CONFIG_REGION_BASE[9].toString(16));
+    rows.push('erase block: 0x' + rails.ERASE_BLOCK_SIZE[9].toString(16));
+    rows.push('ceiling: 0x' + rails.WRITABLE_CEILING[9].toString(16));
+    check('a write inside the region', () =>
+      rails.assertFlashWriteAllowed(permission, 0x820000, 0x1000));
+    check('an erase of the first block', () =>
+      rails.assertEraseAllowed(permission, 0x820000));
+    console.log(JSON.stringify(rows));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    // Every number a write needs is present, which is the point: the refusal below is not a hole.
+    'config base: 0x820000',
+    'erase block: 0x10000',
+    'ceiling: 0x870000',
+    'a write inside the region: refused by RailError',
+    'an erase of the first block: refused by RailError',
+  ]);
+});
+
+/**
+ * Every door this package has, open at once: what the Harmony 885's write end must still never reach.
+ *
+ * `todo-compile-885.md` 1.4 put arch 8 (Harmony 880 and 885) on the reset and invalidate lists, so that
+ * `write-config.ts` can end a write the 885's way, `reference/architectures/harmony-880-885/usb.md` "How a
+ * write ends". Two steps of the other Harmonys' sequence must not reach an 885 and two commands reach the
+ * guards of its flash, `tests/harmony_880_885/test_harmony_885_write_end.py` and `_erase_and_write.py`:
+ *
+ * * `WRITE_MISC` selector `0x0A` gets no reply on an 885, so a writer waiting for one hangs;
+ * * the update status set to 2 or 6 turns the next restart into an install that erases the application
+ *   and copies the staging region over it;
+ * * `WRITE_MISC` selector 7 reaches the unlock, the install status and the flash routines' RAM, unbounded;
+ * * a one byte write to `0x000106` sets the unlock, after which the bootloader is erasable.
+ *
+ * **Every door open is the point**: the reinstall, staging and settings rails each check their own door
+ * before the architecture, so with a door shut the refusal would be the door's and say nothing about arch 8.
+ * The unit matches throughout, so no row is refused for being the wrong remote either; each refusal is
+ * matched on its own wording.
+ */
+const ALL_DOORS = {
+  HARMONY_FIRST_WRITE: '1',
+  HARMONY_FIRMWARE_REINSTALL: '1',
+  HARMONY_FIRMWARE_STAGE: '1',
+  HARMONY_SETTINGS_WRITE: '1',
+};
+
+/** `IDEAL` moved to arch 8: a configuration read off the remote, so it states nothing to compare. */
+const ARCH8_SOURCE = `${IDEAL_SOURCE}
+  const p8 = {
+    ...IDEAL,
+    architecture: 8,
+    // The configuration region from 0x020000 to the staging region at 0x1D0000, which is what a region
+    // read of an 885 covers and what write-config.ts passes as the length.
+    configLength: 0x1b0000,
+    intendedVersion: {},
+    versionBlock: rails.encodeVersionBlock({ firmware: 0x44, architecture: 8, softwareType: 0 }),
+  };`;
+
+test('on arch 8 every door open still refuses the commands that hang or overwrite an 885, and admits its two', () => {
+  const output = withWritesEnabled(`
+    ${ARCH8_SOURCE}
+    const rows = [];
+    const check = (name, fn) => {
+      try { fn(); rows.push(name + ': allowed'); }
+      catch (error) { rows.push(name + ': ' + error.constructor.name + ': ' + error.message); }
+    };
+    // The two the 885's write end consists of.
+    check('the cache drop', () => rails.assertInvalidateAllowed(p8));
+    check('the restart', () => rails.assertResetAllowed(p8));
+    // The control: both still need the unit on the cable to be the recorded one.
+    check('the cache drop to another unit', () => rails.assertInvalidateAllowed({ ...p8, identityBlock: IDEAL.another }));
+    check('the restart of another unit', () => rails.assertResetAllowed({ ...p8, identityBlock: IDEAL.another }));
+    // Status 2 and status 0 then the staged image: the only two senders of selector 6.
+    check('status 2, the reinstall', () => rails.assertReinstallAllowed(p8,
+      { softwareType: 0, firmware: '4.4', staged: new Uint8Array(rails.REINSTALL_MAX_IMAGE) }));
+    check('the staging write', () => rails.assertStagingAllowed(p8,
+      { softwareType: 0, firmware: '4.4' }, new Uint8Array(16)));
+    // Selector 7, at the two data addresses that matter most on an 885 and at an ordinary one.
+    check('selector 7 to the unlock at 0x23A', () => rails.assertRamWriteAllowed(p8, 0x23a));
+    check('selector 7 to the install status at 0x100', () => rails.assertRamWriteAllowed(p8, 0x100));
+    check('selector 7 to a state variable at 0x108', () => rails.assertRamWriteAllowed(p8, 0x108));
+    // The unlock over the flash path, and the three regions an erase must never reach.
+    check('the unlock, one byte at 0x000106', () => rails.assertFlashWriteAllowed(p8, 0x000106, 1));
+    check('an erase of the application at 0x010000', () => rails.assertEraseAllowed(p8, 0x010000));
+    check('an erase of the staging region at 0x1D0000', () => rails.assertEraseAllowed(p8, 0x1d0000));
+    check('an erase of the log area at 0x1E0000', () => rails.assertEraseAllowed(p8, 0x1e0000));
+    // The other escapes: the session end, which the row read for the restart does not buy, and 0x03.
+    check('the session end, E1 01', () => rails.assertSessionEndAllowed(p8, 0x01));
+    check('the other restart, E1 03', () => rails.assertSessionEndAllowed(p8, 0x03));
+    // And the settings store, which is the Harmony 600 series' and has no arch 8 counterpart at all.
+    check('the settings store', () => rails.assertSettingsWriteAllowed(p8,
+      { firmware: '4.4', store: new Uint8Array(0x800) }, [{ setting: 0x80, value: 0 }]));
+    console.log(rows.join('\\n'));
+  `, ALL_DOORS).split('\n');
+  const expected: [string, RegExp][] = [
+    ['the cache drop', /: allowed$/],
+    ['the restart', /: allowed$/],
+    ['the cache drop to another unit', /: RailError: the remote on the cable is not the unit/],
+    ['the restart of another unit', /: RailError: the remote on the cable is not the unit/],
+    ['status 2, the reinstall', /: RailError: architecture 8 has no reinstall target/],
+    ['the staging write', /: RailError: architecture 8 has no staging region/],
+    ['selector 7 to the unlock at 0x23A', /: RailError: architecture 8 has no RAM write target/],
+    ['selector 7 to the install status at 0x100', /: RailError: architecture 8 has no RAM write target/],
+    ['selector 7 to a state variable at 0x108', /: RailError: architecture 8 has no RAM write target/],
+    ['the unlock, one byte at 0x000106', /: RailError: write of 1 bytes at 0x106 leaves the config region 0x20000\.\./],
+    ['an erase of the application at 0x010000', /: RailError: erasing 0x10000 bytes at 0x10000 leaves the writable region 0x20000\.\.0x1d0000/],
+    ['an erase of the staging region at 0x1D0000', /: RailError: erasing 0x10000 bytes at 0x1d0000 leaves the writable region/],
+    ['an erase of the log area at 0x1E0000', /: RailError: erasing 0x10000 bytes at 0x1e0000 leaves the writable region/],
+    ['the session end, E1 01', /: RailError: architecture 8 dispatches the session end but is not on its list/],
+    ['the other restart, E1 03', /: RailError: escape sub-command 0x3 is not the session end/],
+    ['the settings store', /: RailError: architecture 8 has no settings store this may write/],
+  ];
+  assert.equal(output.length, expected.length, output.join('\n'));
+  expected.forEach(([name, pattern], i) => {
+    assert.ok(output[i]!.startsWith(name + ': ') && pattern.test(output[i]!), output[i]);
+  });
+});
+
+test('on arch 8 the remote is sent A1 02 and E1 02 and nothing else, whatever else is asked of it', () => {
+  // The rails above, through the methods that send. A transport that records every report and answers
+  // the drop with the `F0 A0` an 885 sends; the restart gets no reply, as on the remote. Each forbidden
+  // call is made after the two that are allowed, so a method that wrote before its rail refused would
+  // show here as a third report.
+  const output = withWritesEnabled(`
+    ${ARCH8_SOURCE}
+    const written = [];
+    const replies = [];
+    const transport = {
+      async write(report) { written.push([...report]); replies.push(Uint8Array.from([0xf0, 0xa0, ...new Array(62).fill(0)])); },
+      async read() { return replies.shift(); },
+      async close() {},
+    };
+    const remote = new rails.HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 1, architecture: 8 });
+    await remote.invalidateCachedRegions(p8);
+    await remote.resetDevice(p8);
+    replies.length = 0;
+    const refused = [];
+    const attempt = async (name, fn) => {
+      try { await fn(); refused.push(name + ': sent'); }
+      catch (error) { refused.push(name + ': ' + error.constructor.name); }
+    };
+    await attempt('selector 7 to the unlock', () => remote.writeRam(p8, 0x23a, 0xa7));
+    await attempt('the unlock over the flash path', () => remote.writeFlash(p8, 0x000106, Uint8Array.of(0xa7)));
+    await attempt('an erase of the application', () => remote.eraseFlash(p8, 0x010000));
+    await attempt('the session end', () => remote.endSession(p8));
+    console.log(JSON.stringify({
+      // The first eight bytes of each report: the command, its payload and the start of the padding.
+      sent: written.map((r) => r.slice(0, 8)),
+      // The padding past them, which the 885's write misc parser reads as the selector's four operands.
+      padding: written.map((r) => r.slice(8).every((b) => b === 0)),
+      refused,
+    }));
+  `, ALL_DOORS);
+  const run = JSON.parse(output) as { sent: number[][]; padding: boolean[]; refused: string[] };
+  assert.deepEqual(run.sent, [
+    [0xa1, 0x02, 0, 0, 0, 0, 0, 0],
+    [0xe1, 0x02, 0, 0, 0, 0, 0, 0],
+  ]);
+  assert.deepEqual(run.padding, [true, true]);
+  assert.deepEqual(run.refused, [
+    'selector 7 to the unlock: RailError',
+    'the unlock over the flash path: RailError',
+    'an erase of the application: RailError',
+    'the session end: RailError',
+  ]);
+});
+
+test('writes.ts, remote.ts and protocol.ts build no write misc selector 0x0A, the step that hangs an 885', async () => {
+  // **A refusal by absence, which is the only kind a command with no sender can have.** Selector `0x0A` is
+  // step 2 of the Harmony One's and the Harmony 600 series' eight step sequence and does not exist on the
+  // Harmony 880 and 885, where it gets no reply at all, `tests/harmony_880_885/test_harmony_885_write_end.py`. No method
+  // here sends it and no rail could refuse it, so the claim is about the sources: every `WRITE_MISC`
+  // request this package can build names one of three selectors, the drop, the update status and the RAM
+  // write, each behind a rail the test above holds for arch 8. A fourth builder fails here and has to
+  // say which architectures may get it.
+  const sources = await Promise.all(['writes.ts', 'remote.ts', 'protocol.ts'].map(
+    (name) => readFile(new URL(`../../src/${name}`, import.meta.url), 'utf8')));
+  const text = sources.join('\n');
+  const literal = [...text.matchAll(/encodeRequest\(WRITE_MISC, \[(\w+)/g)].map((m) => m[1]);
+  const generic = [...text.matchAll(/(?<!function )writeMiscRequest\((\w+)/g)].map((m) => m[1]);
+  // `selector` is the generic builder's own body, `writeMiscRequest`, whose callers the next line pins.
+  assert.deepEqual(literal, ['MISC_INVALIDATE', 'MISC_UPDATE_STATUS', 'selector']);
+  assert.deepEqual(generic, ['MISC_RAM']);
+  // The control: the selector list the decoder names does hold `0x0a`, so its absence above is the
+  // builders' and not a pattern that cannot match.
+  assert.match(text, /export const WRITE_MISC_SELECTORS[^;]*0x0a/);
+});

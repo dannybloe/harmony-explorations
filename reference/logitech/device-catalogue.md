@@ -87,7 +87,7 @@ equipment, `keypad` is not equipment at all, and it has no category for an ampli
 receiver, a tuner, a tape machine or a projector, all of which the catalogue carries commands for[^s216].
 
 [^s229]: Stated by Logitech, in their catalogue. [Section 229](../../docs/findings.md#s229)
-[^t-model]: Stated by Logitech, in their client. [The test](../../tests/test_myharmony_model.py)
+[^t-model]: Stated by Logitech, in their client. [The test](../../tests/logitech/test_myharmony_model.py)
 [^s132]: Stated by Logitech, by their service. [Section 132](../../docs/findings.md#s132)
 [^s227]: Stated by Logitech, in their catalogue. [Section 227](../../docs/findings.md#s227)
 [^s305]: Stated by Logitech, in their catalogue. [Section 305](../../docs/findings.md#s305)

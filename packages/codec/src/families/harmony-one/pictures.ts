@@ -114,7 +114,7 @@ const gauge = (name: string, keys: readonly string[], level: number): OnePicture
  * its corner, and sized to the longer side of that box but no larger than the picture, section 373's rule; the
  * charging screen's at 0.8 of that, since Logitech's ink includes a reflection under the battery. The charging
  * problem's cross, whose corner is undrawn, takes every drawn pixel as its ink and the shorter side, so the circle
- * stays inside what Logitech's draws. `test/onepictures.test.ts` applies the rule again off Logitech's pictures, and
+ * stays inside what Logitech's draws. `test/families/harmony-one/onepictures.test.ts` applies the rule again off Logitech's pictures, and
  * it is a fitted rule: scored on the seven it was fitted to, with two special cases (the scale and the cross), and no
  * outside sample.
  */

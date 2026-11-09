@@ -208,7 +208,7 @@ part and is not a confirmation, since every sibling with that flash size would a
 [^s208]: Stated by Logitech, in their client. [Section 208](../../docs/findings.md#s208)
 [^s7]: Measured in configurations. [Section 7](../../docs/findings.md#s7)
 [^s76]: Measured on a unit. [Section 76](../../docs/findings.md#s76)
-[^t-harmony-515]: Measured on a unit. [The test](../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../tests/harmony_5xx/test_harmony_515.py)
 [^s207]: Stated by Logitech, in their client. [Section 207](../../docs/findings.md#s207)
 [^s182]: Measured in configurations. [Section 182](../../docs/findings.md#s182)
 [^s57]: Read in the firmware. [Section 57](../../docs/findings.md#s57)

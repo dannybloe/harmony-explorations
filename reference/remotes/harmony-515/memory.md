@@ -11,6 +11,6 @@ configuration at `0x820000`.[^t-harmony-515]
 
 * The memory map beyond those three reads, the EEPROM and the unit identity's place.[^unchecked]
 
-[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
-[^t-harmony-515-c]: Measured in configurations. [The test](../../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
+[^t-harmony-515-c]: Measured in configurations. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
 [^unchecked]: Not checked.

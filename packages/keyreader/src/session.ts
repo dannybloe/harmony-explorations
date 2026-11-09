@@ -6,7 +6,7 @@
  * of the face, and **a press is recorded against the key that was asked for**. That is the whole design.
  * The key map of the Harmony 885 was first measured by pressing keys in a list's order and naming each
  * code after the list, and two names came out swapped, Pause and Play, because the list's order was not
- * the order the keys were pressed in (`tests/test_harmony_885_keys.py`). Asking for a key and taking the
+ * the order the keys were pressed in (`tests/harmony_880_885/test_harmony_885_keys.py`). Asking for a key and taking the
  * next press as that key's code makes the order of pressing irrelevant: a name is never inferred from a
  * position in a sequence.
  *

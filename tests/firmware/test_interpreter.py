@@ -1,0 +1,3047 @@
+"""
+The action list interpreter as the firmware implements it. `docs/findings.md` section 34.
+
+Two arch 14 images. Addresses are recorded per image because finding them again is a search and
+keeping them is what makes this a regression test, the same reason `test_usb_firmware.py` gives.
+
+Everything here is asserted against decoded instructions rather than against a hand written
+listing, so a wrong opcode table in `isa.py` fails these too.
+"""
+import collections
+import unittest
+
+import lab
+from harmony.pic18 import chains, isa, trace
+
+BASE = 0x9000
+
+# image -> the addresses of the routines section 34 names.
+IMAGES = {
+    'h700_code': {
+        'executor': 0x0EB20,        # pops three bytes and dispatches
+        'dispatcher': 0x0EC8E,      # the binary search on the opcode
+        'queue_full': 0x0E7EC,      # returns 1 when the queue holds 0x78 bytes
+        'queue_init': 0x0E7D6,      # sets both pointers to the buffer start
+        'compare_chain': 0x0EEAE,   # the comparison selector switch
+        'buffer_start': 0x0127,
+        'buffer_wrap': 0x019F,
+    },
+    'h600_code_complete': {
+        'executor': 0x0E73A,
+        'dispatcher': 0x0E89E,
+        'queue_full': 0x0E40A,
+        'queue_init': 0x0E3F4,
+        'compare_chain': None,      # not located on this image; the rest is enough
+        'buffer_start': 0x021E,
+        'buffer_wrap': 0x0296,
+    },
+}
+
+QUEUE_BYTES = 0x78
+INSTRUCTION_BYTES = 3
+
+
+def instructions(name, start, count):
+    return instructions_at(name, BASE, start, count)
+
+
+def instructions_at(name, base, start, count):
+    """`instructions` for an image that does not load at `BASE`.
+
+    Section 140 needs the same window on four architectures, whose bases are `0x0000`, `0x9000`,
+    `0x10000` and `0x20000`. A wrong base here does not fail, it produces a plausible listing, which
+    is why the base is a parameter rather than a default with an override.
+    """
+    code = lab.load(name)
+    out = []
+    offset = start - base
+    for _ in range(count):
+        instr = isa.decode(code, offset, base)
+        out.append((base + offset, instr))
+        offset += 2 * instr.words
+    return out
+
+
+def literals(name, start, count, mnemonic):
+    """The `k` field of every instruction with this mnemonic in a window."""
+    return [i.fields['k'] for _, i in instructions(name, start, count)
+            if i.mnemonic == mnemonic]
+
+
+class TestTheQueue(unittest.TestCase):
+    """A circular buffer of 120 bytes, which is exactly 40 three byte instructions."""
+
+    def test_the_recorded_addresses_span_forty_instructions_on_both_images(self):
+        """The arithmetic over the addresses this file records, which is all it can be.
+
+        **Renamed on 13 August 2026.** It was called `the buffer is forty instructions on both
+        images`, and it opens no image: `buffer_wrap` and `buffer_start` are entries in `IMAGES` at the
+        top of this file, so the test relates two recorded numbers and would pass with both wrong in
+        the same direction. That is worth having, because a transcription slip in the table breaks the
+        arithmetic, but the title claimed the images said it.
+
+        The firmware side is the test directly below, which decodes the comparison and finds the length
+        stated there. Keep them adjacent.
+        """
+        for name, at in IMAGES.items():
+            with self.subTest(image=name):
+                span = at['buffer_wrap'] - at['buffer_start']
+                self.assertEqual(span, QUEUE_BYTES)
+                self.assertEqual(span // INSTRUCTION_BYTES, 40)
+                self.assertEqual(span % INSTRUCTION_BYTES, 0, 'no partial instruction fits')
+
+    def test_the_full_test_compares_against_the_buffer_length(self):
+        """The size is not inferred from the pointers alone: the firmware states it."""
+        for name, at in IMAGES.items():
+            with self.subTest(image=name):
+                self.assertIn(QUEUE_BYTES, literals(name, at['queue_full'], 4, 'MOVLW'))
+
+    def test_the_init_routine_sets_both_pointers_to_the_buffer_start(self):
+        """Read and write pointer, low byte then high byte, twice over."""
+        for name, at in IMAGES.items():
+            with self.subTest(image=name):
+                loaded = literals(name, at['queue_init'], 10, 'MOVLW')
+                low = at['buffer_start'] & 0xFF
+                high = at['buffer_start'] >> 8
+                self.assertEqual(loaded[:4], [low, high, low, high])
+
+
+class TestTheExecutor(unittest.TestCase):
+    """Pop three bytes, then dispatch, with one special case that nothing in the corpus takes."""
+
+    def test_it_pops_exactly_three_bytes(self):
+        for name, at in IMAGES.items():
+            with self.subTest(image=name):
+                window = instructions(name, at['executor'], 14)
+                calls = [i for _, i in window if i.mnemonic in ('RCALL', 'CALL')]
+                self.assertEqual(len(calls), 4, 'empty test plus three pops')
+
+    def test_the_special_case_is_opcode_0x1f_with_operand_high_0xfc(self):
+        for name, at in IMAGES.items():
+            with self.subTest(image=name):
+                loaded = literals(name, at['executor'], 20, 'MOVLW')
+                self.assertIn(0x1F, loaded)
+                self.assertIn(0xFC, loaded)
+                self.assertLess(loaded.index(0x1F), loaded.index(0xFC), 'opcode tested first')
+
+    def test_no_config_in_the_corpus_reaches_that_case(self):
+        """So the firmware has a path the corpus does not exercise. Worth knowing before a
+        writer emits an operand it has never seen the remote handle."""
+        from harmony import gspm
+        lab.require(*lab.USER_CONFIGS)
+        seen = set()
+        # "No config in the corpus" is the title, so the population is the corpus and not the ten
+        # names that stood here. Section 141.
+        for config in lab.USER_CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                for i in lst:
+                    if i.opcode == 0x1F:
+                        seen.add(i.operand >> 8)
+        self.assertNotIn(0xFC, seen)
+        self.assertEqual(min(seen), 0xE7, 'and the band it does use, pinned')
+        self.assertEqual(max(seen), 0xFF)
+
+
+class TestTheDispatcher(unittest.TestCase):
+    """A binary search on the opcode. Section 26 searched for an XORLW chain and there is none."""
+
+    BOUNDARIES = (0x65, 0x80, 0x7A)
+
+    def test_it_compares_the_opcode_against_boundaries_in_this_order(self):
+        for name, at in IMAGES.items():
+            with self.subTest(image=name):
+                loaded = literals(name, at['dispatcher'], 24, 'MOVLW')
+                self.assertEqual(loaded[:3], list(self.BOUNDARIES))
+
+    def test_the_high_family_has_bit_seven_cleared(self):
+        """Everything at 0x80 and above is one routine with the bit stripped, so the opcode byte
+        carries a flag rather than 55 separate instructions."""
+        for name, at in IMAGES.items():
+            with self.subTest(image=name):
+                window = instructions(name, at['dispatcher'], 24)
+                bcf = [i for _, i in window if i.mnemonic == 'BCF' and i.fields.get('b') == 7]
+                self.assertTrue(bcf, 'no BCF of bit 7 near the 0x80 boundary')
+
+    def test_the_dispatcher_itself_contains_no_computed_jump(self):
+        """The other thing the dispatch could have been, ruled out rather than assumed.
+
+        Scoped to the dispatcher rather than to the image: the 700 does hold three writes to PCL
+        elsewhere, so "the image has no jump table" would be false. What is true is that this
+        routine reaches its handlers by comparing and branching.
+        """
+        for name, at in IMAGES.items():
+            with self.subTest(image=name):
+                window = instructions(name, at['dispatcher'], 60)
+                pcl = [a for a, i in window
+                       if i.fields.get('f') == 0xF9 and i.mnemonic not in ('MOVFF',)]
+                self.assertEqual(pcl, [], 'the dispatcher writes PCL')
+
+
+class TestTheComparisonSelector(unittest.TestCase):
+    """0x70 and 0x71: the low nibble of the operand's high byte picks the operator.
+
+    Section 140 adds bit 15, which section 34 could see and not read. The class keeps its name
+    because the selector is still the subject; the flag is a second field of the same byte and the
+    tests for it are below.
+    """
+
+    CONFIGS = lab.USER_CONFIGS
+    CONDITIONALS = (0x70, 0x71)
+
+    def test_the_chain_has_seven_cases_numbered_one_to_seven(self):
+        name = 'h700_code'
+        at = IMAGES[name]
+        with self.subTest(image=name):
+            cases = chains.xor_chain(lab.load(name), BASE, at['compare_chain'], limit=40)
+            self.assertEqual(sorted(c.value for c in cases), [1, 2, 3, 4, 5, 6, 7])
+            self.assertEqual(len({c.target for c in cases}), 7, 'seven distinct bodies')
+
+    def test_0x71_uses_the_six_comparisons_and_nothing_else(self):
+        """The closure: the operand statistics said the high byte took six values, and the
+        firmware says exactly six of the eight selectors are comparisons.
+
+        0x70 is the counterexample that keeps this honest. It also reaches selector 7, which is
+        not a comparison, nine times. So the rule belongs to 0x71 and not to the pair.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        selectors = {0x70: set(), 0x71: set()}
+        for config in self.CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                for i in lst:
+                    if i.opcode in selectors:
+                        selectors[i.opcode].add((i.operand >> 8) & 0x0F)
+        self.assertEqual(selectors[0x71], {0, 1, 2, 3, 4, 5})
+        self.assertEqual(selectors[0x70], {0, 1, 2, 3, 7})
+        self.assertNotIn(6, selectors[0x70] | selectors[0x71], 'selector 6 is never used')
+
+    def test_the_selector_is_a_nibble_and_a_flag_with_three_dead_bits_between(self):
+        """Section 140: what the rest of that byte is, measured rather than masked away.
+
+        The test above masks with `0x0F`, which is what the firmware's own nibble decode does, so it
+        could not see the top bit at all. Stating the whole byte is what makes the mask a reading
+        instead of a habit: bit 15 is set on 600 instructions, all of them `0x71`, and bits 12 to 14
+        are set on none.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        flagged = {0x70: 0, 0x71: 0}
+        middle = 0
+        for config in self.CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                for i in lst:
+                    if i.opcode not in self.CONDITIONALS:
+                        continue
+                    flagged[i.opcode] += (i.operand >> 15) & 1
+                    middle += 1 if (i.operand >> 8) & 0x70 else 0
+        self.assertEqual(middle, 0, 'bits 12 to 14 are read by nothing and set by nothing')
+        # Not a format rule: the one handler tests the bit for both opcodes, so `0x70` could carry
+        # it. What the corpus says is that no generator has ever emitted a two armed `0x70`.
+        self.assertEqual(flagged, {0x70: 0, 0x71: 600})
+
+    def test_the_flag_says_whether_the_conditional_has_one_arm_or_two(self):
+        """Section 140's corpus closure, and it is exact in both directions.
+
+        The firmware reading is that a false comparison skips the next instruction by fetching it,
+        and that with bit 15 set a true one also zeroes the three bytes two slots ahead, which
+        opcode `0x00` makes a no-op. So the instructions after the comparison are its arms: one
+        without the flag and two with it.
+
+        What makes this a closure rather than a bound is that both counts are exact and the list
+        ends there. A flagged conditional has exactly two instructions after it, never three, and an
+        unflagged one exactly one, never two, over all 2684 conditionals in the corpus. Nothing in
+        the container states either number, so a wrong reading of the flag would show up here as a
+        conditional whose arms run off the end of its own list or as a list with unreachable bytes
+        at the end.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        following = {0: collections.Counter(), 1: collections.Counter()}
+        for config in self.CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                for at, i in enumerate(lst):
+                    if i.opcode not in self.CONDITIONALS:
+                        continue
+                    flag = (i.operand >> 15) & 1
+                    following[flag][len(lst) - at - 1] += 1
+        self.assertEqual(dict(following[0]), {1: 2084}, 'one arm, and the list ends after it')
+        self.assertEqual(dict(following[1]), {2: 600}, 'two arms, and the list ends after them')
+
+    def test_a_list_holds_at_most_one_conditional_and_never_as_an_arm(self):
+        """The other half of section 140's shape, and it is what rules out nesting.
+
+        A flagged conditional with a second conditional as its first arm would satisfy the counts
+        above, since the inner one would then have one instruction after it. None exists. So an
+        action list is a straight run of instructions with at most one branch at the end of it, and
+        an editor never has to reason about a nested condition.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        per_list = collections.Counter()
+        arms = collections.Counter()
+        for config in self.CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                at = [k for k, i in enumerate(lst) if i.opcode in self.CONDITIONALS]
+                per_list[len(at)] += 1
+                for k in at:
+                    for arm in lst[k + 1:k + 2 + ((lst[k].operand >> 15) & 1)]:
+                        arms[arm.opcode] += 1
+        self.assertEqual(sorted(per_list), [0, 1], 'no list carries two conditionals')
+        self.assertEqual(per_list[1], 2684)
+        self.assertEqual(arms[0x70] + arms[0x71], 0, 'and no arm is itself a conditional')
+        # Most arms are a call, which is how a config puts more than one instruction in a branch:
+        # 2357 of the 3284. The 17 arms that are opcode `0x00` are the empty branch, which is the
+        # corpus agreeing with the mechanism, since zeroing a slot is how the flag cancels an arm.
+        self.assertEqual(sum(arms.values()), 3284)
+        self.assertEqual((arms[0x7F], arms[0x00]), (2357, 17))
+
+    def test_the_index_byte_under_64_belongs_to_0x71_alone(self):
+        """Section 33's "low byte always under 64" is `0x71`'s, and it is not a bound on the field.
+
+        **The docstring here used to say "every 0x70, 0x71 and 0x72 operand's low byte is under<!--superseded-->
+        64, in every config", and that is measurably false**: over these seven configs `0x70` reaches 81
+        and `0x72` reaches 83. The body only ever filtered `0x71`, so nothing failed. Found by a
+        review sweep on 13 August 2026 asking which tests state more than they check.
+
+        64 is not a firmware constant either. It is one config's own boundary showing through: the
+        real rule is base slot 13's `narrow` count, per config, which `reference/config-format/state.md` states
+        and `test_0x71_reads_the_narrow_half_and_0x70_the_wide_half` asserts. This test is therefore
+        about the number rather than the rule, and its job is to keep the contrast that explains why
+        the old wording looked right for so long: the opcode that compares a **byte** cannot leave the
+        narrow half, and the two that reach the wide half go straight past 64.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        worst = {0x70: 0, 0x71: 0, 0x72: 0}
+        for config in self.CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                for i in lst:
+                    if i.opcode in worst:
+                        worst[i.opcode] = max(worst[i.opcode], i.operand & 0xFF)
+        # The claim the old docstring made, held only by the opcode that reads a byte variable.
+        self.assertLess(worst[0x71], 64)
+        self.assertEqual(worst[0x71], 63, 'and it reaches 63, so the number is not arbitrary')
+        # And the falsifier, which is what makes 64 an observation rather than a bound.
+        self.assertEqual((worst[0x70], worst[0x72]), (81, 83))
+
+
+class TestTheElseArmIsOneTableAcrossArchitectures(unittest.TestCase):
+    """findings.md section 140: every firmware here tests bit 15 and zeroes three queue bytes.
+
+    Worth its own class because of what it rules out. Two structures in this language are **not** one
+    table across architectures, `0x3F`'s bands and the block `0x65` to `0x6E`, and a third was found
+    on 13 August 2026 when `0x0F`'s bands turned out to have been read on two architectures and
+    applied to a third that does not implement them. So an "all architectures" claim about the
+    interpreter is exactly the kind that has been wrong here before, and this one is asserted per
+    image rather than inferred from arch 14.
+
+    Seven images, four architectures. The addresses are recorded because finding them again is a
+    search: the route is the `MOVLW 0x0F; ANDWF f,W` that starts the selector chain, then a trace of
+    `f` for the one instruction that reads bit 7 of it.
+    """
+
+    # image -> (load base, the chain's nibble mask, the BTFSS, the data address both read,
+    #           how many `CLRF INDF0` are inline on the taken path)
+    #
+    # The data address is the full one, bank included, because that is what the tracer takes; the
+    # instructions themselves encode only its low byte and a bank select two instructions earlier.
+    SITES = {
+        'h700_code': (0x9000, 0x0EEAC, 0x0EF62, 0x1BC, 3),
+        'h600_code_complete': (0x9000, 0x0EABC, 0x0EB72, 0x2B3, 3),
+        'h650_code': (0x9000, 0x0EE9A, 0x0EF50, 0x1BC, 3),
+        'one34_code': (0x20000, 0x2519C, 0x25252, 0xEBE, 3),
+        # Arch 9 compiles the same thing with less inlining: one clear inline and a helper called
+        # twice that clears, increments and bounds. Stated exactly rather than as "at least one",
+        # because a bound under the figure is what a missing clear would slip through.
+        'h525_code': (0x0, 0x01E48, 0x01EFE, 0x3D8, 1),
+        'arch8_code_880': (0x10000, 0x133EA, 0x134A0, 0x3B3, 3),
+        'arch8_code_885': (0x10000, 0x133EA, 0x134A0, 0x3B3, 3),
+    }
+
+    def test_the_nibble_mask_and_the_bit_test_read_the_same_byte(self):
+        """The pairing, which is what says the flag lives in the operand and not somewhere else.
+
+        A `BTFSS` on bit 7 of some byte proves nothing on its own. It is evidence about the operand
+        only because the byte is the one the selector chain has just masked with `0x0F`, so this
+        asserts both instructions and their shared register in one place.
+        """
+        lab.require(*self.SITES)
+        for name, (base, mask, test, f, _) in self.SITES.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                masking = isa.decode(code, mask - base, base)
+                self.assertEqual(masking.mnemonic, 'ANDWF')
+                self.assertEqual(masking.fields['f'], f & 0xFF)
+                self.assertEqual(masking.fields['d'], 0, 'the result goes to W, not back to the byte')
+                # The bank select sits between the literal and the mask, and it is what makes the
+                # low byte in the encoding the address in the table.
+                bank = isa.decode(code, mask - base - 2, base)
+                self.assertEqual((bank.mnemonic, bank.fields['k']), ('MOVLB', f >> 8))
+                literal = isa.decode(code, mask - base - 4, base)
+                self.assertEqual((literal.mnemonic, literal.fields['k']), ('MOVLW', 0x0F))
+
+                testing = isa.decode(code, test - base, base)
+                self.assertEqual(testing.mnemonic, 'BTFSS')
+                self.assertEqual((testing.fields['f'], testing.fields['b']), (f & 0xFF, 7))
+
+    def test_the_bit_is_read_exactly_once_per_image(self):
+        """The falsifier for reading one site as the whole mechanism.
+
+        If the same byte's bit 7 were tested in two places the reading would be incomplete, and the
+        `& 0x0F` that section 34 recorded would still be the only thing anybody could say about it.
+
+        Traced through `harmony.pic18.trace` rather than by sweeping the image, and the difference
+        is not cosmetic: a linear decode from offset 0 reports a second site on both arch 8 images,
+        because it has no idea which bank is selected and reads whatever byte happens to sit at
+        offset `0xB3` of some other one. The tracer follows `MOVLB`, which is the whole reason it
+        exists. The first version of this test did the sweep and its extra hit looked like a
+        finding.
+        """
+        lab.require(*self.SITES)
+        for name, (base, _, test, f, _) in self.SITES.items():
+            with self.subTest(image=name):
+                accesses = trace.trace(lab.load(name), base, [f])[f]
+                at = [a.addr for a in accesses if a.kind.startswith(('BTFSS', 'BTFSC'))]
+                self.assertEqual(at, [test])
+                self.assertEqual([a.kind for a in accesses if a.addr == test], ['BTFSS bit7'])
+
+    def test_the_taken_path_steps_three_bytes_on_and_clears_three(self):
+        """What the bit does, as far as a decoded window can state it.
+
+        Three is the instruction width, so `+3` from the interpreter's own pointer, which already
+        sits on the next instruction, lands on the one after it. The clears then walk forward one
+        byte at a time with a wrap, which is why the queue's size appears as a literal in the same
+        window: 120 bytes, `QUEUE_BYTES`.
+        """
+        lab.require(*self.SITES)
+        for name, (base, _, test, _, clears) in self.SITES.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                window = instructions_at(name, base, test, 60)
+                steps = [b for (_, a), (_, b) in zip(window, window[1:])
+                         if a.mnemonic == 'MOVLW' and a.fields.get('k') == INSTRUCTION_BYTES
+                         and b.mnemonic == 'ADDWF']
+                self.assertEqual(len(steps), 1, 'one step of one instruction width')
+                inline = [1 for _, i in window if i.mnemonic == 'CLRF' and i.fields.get('f') == 0xEF]
+                self.assertEqual(len(inline), clears)
+                wrap = [i.fields['k'] for _, i in window
+                        if i.mnemonic == 'MOVLW' and i.fields.get('k') == QUEUE_BYTES]
+                self.assertEqual(len(wrap), 1, 'and one wrap by the queue length')
+
+
+class TestTheStateVariableRecord(unittest.TestCase):
+    """findings.md section 60: what base slot 13's pointers land on, and how long it is.
+
+    Nothing in the container declares the record's length, so `7 + 8 * count` is the whole reader
+    and everything here is a check on that one rule. Two independent ones: the records abut without
+    ever overrunning the next, and the deliberately built config pair reads the count we
+    chose.
+    """
+
+    CONFIGS = lab.USER_CONFIGS
+
+    def test_no_record_overruns_the_next_and_most_abut_it_exactly(self):
+        """
+        The corpus wide closure. A wrong length rule would show up as a record claiming bytes the
+        next one starts in, and none does anywhere. The records that do not abut are the ones at
+        the end of a run, since a config's state records sit in two or three separate blocks.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        total = exact = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            spans = sorted({(r.address, r.length) for r in c.state_records()})
+            for index, (address, length) in enumerate(spans[:-1]):
+                following = spans[index + 1][0]
+                with self.subTest(image=name, address=address):
+                    self.assertLessEqual(address + length, following, 'the record overruns')
+                total += 1
+                exact += address + length == following
+        self.assertEqual(total, 686, 'consecutive pairs checked')
+        self.assertEqual(exact, 664, 'pairs where the record ends exactly where the next begins')
+
+    def test_the_count_is_the_one_the_owner_asked_for(self):
+        """
+        The labelled pair of section 58. The owner replaced a twelve input television with a
+        twenty three input receiver, and the largest record in each config reads exactly that.
+        Slot 0's name tree carries the same two numbers as suffixes, which is a second artefact
+        agreeing rather than a restatement: the names and the records are different sections.
+        """
+        from harmony import gspm
+        lab.require('one_spare_before_sync', 'one_spare_after_sync')
+        for name, expected in (('one_spare_before_sync', 12), ('one_spare_after_sync', 23)):
+            with self.subTest(image=name):
+                records = gspm.parse(lab.load(name)).state_records()
+                self.assertEqual(max(r.count for r in records), expected)
+
+    def test_the_name_suffixes_are_counts_the_records_carry(self):
+        """
+        Stated as the partial result it is. Every large suffix in slot 0 has a record with that
+        count, but the mapping is not onto: the earlier config names a `_3` no record counts and
+        holds a record of six no name mentions. So this pins the agreement without claiming the
+        names index the table.
+        """
+        import re
+
+        from harmony import gspm
+        lab.require('one_spare_before_sync', 'one_spare_after_sync')
+        for name, expected in (('one_spare_before_sync', {10, 12}), ('one_spare_after_sync', {23})):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                at = c.blob_offset_of(c.sections[0].address)
+                names = [m.group().decode('ascii')
+                         for m in re.finditer(rb'[ -~]{3,}', c.blob[at:at + c.frame_length])]
+                suffixes = {int(n.rsplit('_', 1)[1]) for n in names if re.search(r'_\d+$', n)}
+                counts = {r.count for r in c.state_records()}
+                self.assertTrue(expected <= suffixes & counts, 'suffixes %s counts %s'
+                                % (sorted(suffixes), sorted(counts)))
+
+    def test_the_first_byte_of_every_value_is_zero(self):
+        """The only invariant the eight byte values have, recorded so that the absence of a
+        decode is itself pinned. The last byte is 0x7F in most and five other things elsewhere,
+        so it is not a terminator."""
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        seen = 0
+        for name in self.CONFIGS:
+            for record in gspm.parse(lab.load(name)).state_records():
+                for value in record.values:
+                    self.assertEqual(value[0], 0)
+                    seen += 1
+        # Exact, not a floor of 500 (section 143): every eight byte value in the fifteen user
+        # configs, so it moves when a reader changes or a sample is added and not otherwise.
+        self.assertEqual(seen, 657, 'state record values across the user configs')
+
+
+class TestTheStateVariableTable(unittest.TestCase):
+    """findings.md section 35: base slot 13, and the split the firmware's lookup uses."""
+
+    CONFIGS = lab.USER_CONFIGS
+
+    @staticmethod
+    def _table(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name)).state_table()
+
+    def test_the_header_is_self_consistent_and_accounts_for_the_section(self):
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        counts = set()
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                table = c.state_table()
+                self.assertTrue(table.is_consistent, table)
+
+                slot = gspm.arch_slot(c.architecture, gspm.STATE_TABLE_SLOT)
+                start = c.sections[slot].address
+                after = min([s.address for s in c.sections if s.address > start]
+                            + [c.end_addr])
+                self.assertEqual(8 + 3 * table.count, after - start,
+                                 'the header accounts for the whole section')
+                counts.add(table.count)
+        self.assertEqual(len(counts), 11, 'the count varies, so matching it means something')
+        self.assertEqual((min(counts), max(counts)), (21, 94))
+
+    def test_every_index_is_inside_its_own_config_s_table(self):
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                table = c.state_table()
+                used = [c.state_index(i) for lst in (c.action_lists() or []) for i in lst
+                        if c.state_index(i) is not None]
+                self.assertTrue(used)
+                self.assertLess(max(used), table.count)
+
+    def test_0x71_reads_the_narrow_half_and_0x70_the_wide_half(self):
+        """The closure of section 35.
+
+        The firmware says 0x71 compares a byte and 0x70 compares the sixteen bit accumulator. The
+        config data cannot know that, and it never once crosses the boundary its own header
+        declares, which is a different number in every config.
+        """
+        from harmony import gspm
+        narrow_uses = wide_uses = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            table = c.state_table()
+            for lst in (c.action_lists() or []):
+                for i in lst:
+                    if i.opcode == 0x71:
+                        narrow_uses += 1
+                        with self.subTest(image=name, opcode='0x71'):
+                            self.assertTrue(table.is_narrow(i.operand & 0xFF))
+                    elif i.opcode == 0x70:
+                        wide_uses += 1
+                        with self.subTest(image=name, opcode='0x70'):
+                            self.assertFalse(table.is_narrow(i.operand & 0xFF))
+        self.assertEqual((narrow_uses, wide_uses), (2477, 207), 'pin what the claim rests on')
+
+    def test_the_boundary_is_not_the_same_number_in_every_config(self):
+        """Otherwise the previous test would pass on a constant rather than on a match."""
+        boundaries = {self._table(name).narrow for name in self.CONFIGS}
+        self.assertEqual(len(boundaries), 11, 'distinct boundaries across fifteen configs')
+
+
+class TestTheEventMap(unittest.TestCase):
+    """findings.md section 36: base slot 4, and the block it reserves in 0x7E's numbering."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+
+    def test_the_shape_is_the_same_in_every_config(self):
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        bases = set()
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                table = gspm.parse(lab.load(name)).event_map()
+                self.assertEqual(len(table.entries), 30)
+                self.assertTrue(table.keys_are_contiguous, 'keys 0 to 29')
+                low, high = table.reserved_block
+                self.assertEqual(high - low, 29, 'the values are contiguous too')
+                self.assertEqual(table.fallback, low, 'the fallback is the value for key 0')
+                self.assertEqual(table.length, gspm.EVENT_MAP_BYTES)
+                bases.add(low)
+        self.assertEqual(len(bases), 5, 'the base varies, so matching it means something')
+
+    def test_the_section_is_much_smaller_than_the_gap_to_the_next_pointer(self):
+        """The correction section 36 carries: a gap is an upper bound, not a size.
+
+        The bytes in between are slot 5's infrared group arrays, which is asserted rather than
+        assumed: every group array falls inside the gap.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                start = c.sections[gspm.arch_slot(c.architecture, gspm.EVENT_MAP_SLOT)].address
+                gap = min([s.address for s in c.sections if s.address > start]
+                          + [c.end_addr]) - start
+                self.assertGreater(gap, 3 * gspm.EVENT_MAP_BYTES, 'the gap really is much larger')
+                for group in c.pointer_array(
+                        gspm.arch_slot(c.architecture, gspm.IR_TABLE_SLOT)):
+                    self.assertTrue(start + gspm.EVENT_MAP_BYTES <= group < start + gap,
+                                    'a group array outside the gap')
+
+    def test_0x7e_avoids_the_reserved_block(self):
+        """Two writers of one register share a numbering space, and they do not collide.
+
+        The exception is asserted by name so it cannot grow quietly, and widening the population
+        from ten configs to fifteen made it **both** arch 9 (Harmony 525) configs rather than one.
+        That is a stronger statement than the old "one exception, on the 525": operand 25 inside the
+        reserved block 11 to 40 is a property of that architecture's own numbering and not a one off
+        in a single file. Section 139.
+        """
+        from harmony import gspm
+        collisions = {}
+        operands = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            low, high = c.event_map().reserved_block
+            values = {i.operand for lst in (c.action_lists() or []) for i in lst
+                      if i.opcode == 0x7E}
+            operands += len(values)
+            inside = sorted(v for v in values if low <= v <= high)
+            if inside:
+                collisions[name] = inside
+        self.assertEqual(collisions, {'h525_config': [25], 'h525_config_2': [25]})
+        self.assertEqual(operands, 1593, 'pin the count the claim rests on')
+
+    def test_the_block_abuts_the_configs_own_numbering_on_the_one(self):
+        """0 to 9, then the reserved 10 to 39, then 40 upward. One allocator, one pool."""
+        from harmony import gspm
+        c = gspm.parse(lab.load('one_config'))
+        low, high = c.event_map().reserved_block
+        values = {i.operand for lst in (c.action_lists() or []) for i in lst if i.opcode == 0x7E}
+        self.assertEqual((low, high), (10, 39))
+        self.assertEqual(max(v for v in values if v < low), low - 1)
+        self.assertEqual(min(v for v in values if v > high), high + 1)
+
+
+class TestTheModeTable(unittest.TestCase):
+    """findings.md section 37: base slot 6, and what 0x7E's operand indexes."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+
+    def test_the_count_is_one_more_than_the_largest_0x7e_operand(self):
+        """Fifteen counts from 75 to 374, each landing on the maximum plus one.
+
+        Asserted as equality rather than as "in range": a table merely large enough would pass a
+        bounds check, and that would be true of half the config.
+
+        The floor moved from 103 to 75 when the population went from ten configs to fifteen, which
+        is a range widening rather than a rule breaking: the equality holds on every one. Section 139.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        counts = set()
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                modes = c.mode_table()
+                operands = {i.operand for lst in (c.action_lists() or []) for i in lst
+                            if i.opcode == gspm.OPCODE_ENTER_MODE}
+                self.assertEqual(len(modes), max(operands) + 1)
+                counts.add(len(modes))
+        self.assertEqual(len(counts), 12, 'distinct mode table sizes')
+        self.assertEqual((min(counts), max(counts)), (75, 374))
+
+    def test_the_event_map_indexes_the_same_table(self):
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                limit = len(c.mode_table())
+                table = c.event_map()
+                for value in list(table.entries.values()) + [table.fallback]:
+                    self.assertLess(value, limit)
+
+    def test_every_mode_address_is_inside_the_container(self):
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                for address in c.mode_table():
+                    self.assertIsNotNone(c.blob_offset_of(address))
+                    self.assertLess(c.blob_offset_of(address), len(c.blob))
+
+    def test_the_firmware_selects_exactly_two_handler_tags(self):
+        """Tag 7 on the way out and tag 6 on the way in, and nothing else in either image.
+
+        Scanned rather than read off a listing: every literal loaded into the tag register.
+        """
+        from harmony import gspm
+        registers = {'h700_code': 0x3C5, 'h600_code_complete': 0x763}
+        lab.require(*registers)
+        for name, register in registers.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                previous = None
+                tags = collections.defaultdict(int)
+                for _, instr in isa.iter_instructions(code, BASE, 0, len(code)):
+                    if (instr.mnemonic == 'MOVWF'
+                            and (instr.fields.get('f') & 0xFF) == (register & 0xFF)
+                            and previous is not None and previous.mnemonic == 'MOVLW'):
+                        tags[previous.fields['k']] += 1
+                    previous = instr
+                self.assertEqual(dict(tags),
+                                 {gspm.MODE_TAG_ENTER: 1, gspm.MODE_TAG_LEAVE: 1})
+
+    def test_the_slot_map_has_the_same_shape_on_both_images(self):
+        """Section 35 built it on the 700. The 600 agrees site for site."""
+        seekers = {'h700_code': (0x10B92, 0x6DD), 'h600_code_complete': (0x18020, 0x6DA)}
+        shapes = {}
+        for name, (seeker, register) in seekers.items():
+            code = lab.load(name)
+            window = collections.deque(maxlen=6)
+            per_slot = collections.Counter()
+            for addr, instr in isa.iter_instructions(code, BASE, 0, len(code)):
+                window.append(instr)
+                if instr.mnemonic not in ('CALL', 'RCALL', 'GOTO'):
+                    continue
+                if instr.fields.get('target') != seeker:
+                    continue
+                earlier = list(window)[:-1]
+                for i in range(len(earlier) - 1, 0, -1):
+                    if (earlier[i].mnemonic == 'MOVWF'
+                            and (earlier[i].fields.get('f') & 0xFF) == (register & 0xFF)):
+                        for j in range(i - 1, -1, -1):
+                            if earlier[j].mnemonic == 'MOVLW':
+                                per_slot[earlier[j].fields['k']] += 1
+                                break
+                        break
+            shapes[name] = dict(per_slot)
+        self.assertEqual(shapes['h700_code'], shapes['h600_code_complete'])
+        self.assertEqual(sorted(shapes['h700_code']), list(range(3, 18)))
+        self.assertEqual(sum(shapes['h700_code'].values()), 19)
+
+
+class TestTheSlotMapOnArch12(unittest.TestCase):
+    """findings.md section 38: the same seeker on the Harmony One, and the insertion rule."""
+
+    SEEKER = 0x2BA76
+    REGISTER = 0xF1     # banked, so the seeker's own f field rather than the resolved address
+    ONE_BASE = 0x20000
+
+    def _sites(self):
+        code = lab.load('one34_code')
+        window = collections.deque(maxlen=6)
+        per_slot = collections.Counter()
+        for _, instr in isa.iter_instructions(code, self.ONE_BASE, 0, len(code)):
+            window.append(instr)
+            if instr.mnemonic not in ('CALL', 'RCALL', 'GOTO'):
+                continue
+            if instr.fields.get('target') != self.SEEKER:
+                continue
+            earlier = list(window)[:-1]
+            for i in range(len(earlier) - 1, 0, -1):
+                if (earlier[i].mnemonic == 'MOVWF'
+                        and (earlier[i].fields.get('f') & 0xFF) == (self.REGISTER & 0xFF)):
+                    for j in range(i - 1, -1, -1):
+                        if earlier[j].mnemonic == 'MOVLW':
+                            per_slot[earlier[j].fields['k']] += 1
+                            break
+                    break
+        return per_slot
+
+    def test_it_reaches_every_raw_slot_but_the_inserted_null(self):
+        from harmony import gspm
+        sites = self._sites()
+        self.assertEqual(sorted(sites), [2, 3, 4, 5, 6, 7] + list(range(9, 20)))
+        self.assertNotIn(8, sites, 'raw slot 8 is the NULL arch 12 inserts')
+        self.assertIsNone(gspm.base_slot(12, 8), 'and the alignment rule agrees')
+        self.assertIn(18, sites, 'raw slot 18 is the section arch 12 has and the base layout lacks')
+        self.assertIsNone(gspm.base_slot(12, 18))
+        self.assertEqual(sum(sites.values()), 24)
+
+
+class TestSlotThreesBootConsumer(unittest.TestCase):
+    """findings.md sections 38 and 310: base slot 3's boot consumer reads three bytes and starts Timer 1.
+
+    It was called `TestSlotThreeIsTheClock` until section 310, which is the claim section 38 made and
+    section 138 had already killed for the Harmony One: the clock is base slot 13's records, and the
+    three bytes this routine reads go into the counter of time since the build, not into the clock.
+    """
+
+    CONSUMERS = {'h700_code': (0x9000, 0x14956), 'h600_code_complete': (0x9000, 0x1043C),
+                 'one34_code': (0x20000, 0x278E8)}
+
+    # Where each image's time since build routine stores into the same counter: a MOVFF from the
+    # scratch byte 0x01F. On the Harmony One that is inside section 138's epoch subtraction at
+    # 0x27F20, on the Harmony 600 inside 0x10A6A, on the Harmony 700 at the 2.8 build's copy.
+    SINCE_BUILD_STORES = {'h700_code': 0x14FAA, 'h600_code_complete': 0x10A90,
+                          'one34_code': 0x27F44}
+
+    def test_the_three_bytes_go_to_the_time_since_build_counter(self):
+        """Section 310: the destination the boot consumer hands its reader has exactly one MOVFF store
+        from 0x01F, at the address stated as the time since build routine's, on three images and two
+        architectures.
+
+        The destination's low byte is read out of the consumer itself, the two MOVLW literals that
+        follow the index of 10, and the store is found by tracing the whole image for that address, so
+        the two ends come from different code. That the store's routine seeks base slot 3 is read in
+        the section and not asserted here."""
+        lab.require(*self.CONSUMERS)
+        for name, (base, addr) in self.CONSUMERS.items():
+            with self.subTest(image=name):
+                literals = literals_at(name, base, addr, 24)
+                at = literals.index(10)
+                destination = literals[at + 1] | (literals[at + 2] << 8)
+                hits = trace.trace(lab.load(name), base, [destination])[destination]
+                stores = [h.addr for h in hits if h.kind == 'MOVFF WRITE' and h.detail == '<- 0x01F']
+                self.assertEqual(stores, [self.SINCE_BUILD_STORES[name]])
+
+    def test_the_consumer_starts_timer_one(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*self.CONSUMERS)
+        for name, (base, addr) in self.CONSUMERS.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                offset = addr - base
+                names = []
+                for _ in range(24):
+                    instr = isa.decode(code, offset, base)
+                    offset += 2 * instr.words
+                    field = instr.fields.get('f')
+                    if field is not None and instr.fields.get('a') == 0:
+                        names.append((instr.mnemonic, isa.sfr_name(field | 0xF00)))
+                    if instr.mnemonic == 'RETURN':
+                        break
+                self.assertIn(('CLRF', 'TMR1H'), names)
+                self.assertIn(('CLRF', 'TMR1L'), names)
+                self.assertIn(('BSF', 'T1CON'), names)
+
+    def test_it_indexes_the_section_at_ten(self):
+        for name, (base, addr) in self.CONSUMERS.items():
+            with self.subTest(image=name):
+                self.assertIn(10, literals_at(name, base, addr, 8))
+
+
+class TestSlotFifteenHasADemandedSize(unittest.TestCase):
+    """findings.md section 38: the firmware compares the entry count against a literal.
+
+    Two architectures, two literals, and every config matches its own. This is a rail for a
+    writer: a different count is not an error, it is a subsystem that quietly does nothing.
+    """
+
+    CONSUMERS = {'h700_code': (0x9000, 0x0F904, 14), 'h600_code_complete': (0x9000, 0x10EA2, 14),
+                 'one34_code': (0x20000, 0x23276, 12)}
+    EXPECTED = {14: 9, 12: 11}
+
+    def test_the_firmware_demands_a_count_per_architecture(self):
+        for name, (base, addr, arch) in self.CONSUMERS.items():
+            with self.subTest(image=name):
+                self.assertIn(self.EXPECTED[arch], literals_at(name, base, addr, 10))
+
+    def test_every_config_carries_the_count_its_firmware_demands(self):
+        from harmony import gspm
+        for name in TestTheStateVariableTable.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            want = self.EXPECTED.get(c.architecture)
+            if want is None:
+                continue
+            with self.subTest(image=name):
+                entries = c.pointer_array(gspm.arch_slot(c.architecture, 15))
+                self.assertEqual(len(entries), want)
+
+
+class TestTheBindingTable(unittest.TestCase):
+    """findings.md section 39: base slot 9, its index, and its two firmware tags."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+
+    @staticmethod
+    def _sets(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name))
+
+    def test_the_index_maxes_out_at_the_count_minus_one_everywhere(self):
+        """The closure. Opcode 0x1F with operand high 0xFF carries the index."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = self._sets(name)
+            indices = [c.handler_index(i) for lst in c.action_lists() for i in lst]
+            indices = [i for i in indices if i is not None]
+            with self.subTest(config=name):
+                self.assertTrue(indices, 'no config should be without a selection')
+                self.assertEqual(max(indices) + 1, len(c.handler_sets()))
+
+    def test_the_selector_ignores_the_same_opcode_with_another_operand(self):
+        """0x1F reaches many branches; only the 0xFFxx one selects a handler set."""
+        from harmony import gspm
+        c = self._sets('h700_config')
+        self.assertIsNone(c.handler_index(gspm.Instruction(operand=0xFE00, opcode=0x1F)))
+        self.assertIsNone(c.handler_index(gspm.Instruction(operand=0xFF01, opcode=0x7F)))
+        self.assertEqual(c.handler_index(gspm.Instruction(operand=0xFF01, opcode=0x1F)), 1)
+
+    def test_every_config_carries_the_enter_and_leave_tags(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = self._sets(name)
+            tags = {e.tag for a in c.handler_sets() for e in c.tagged_list(a)}
+            with self.subTest(config=name):
+                self.assertIn(gspm.HANDLER_TAG_ENTER, tags)
+                self.assertIn(gspm.HANDLER_TAG_LEAVE, tags)
+
+    # Distinct scan codes bound by a base slot 9 set, per architecture, and the highest of them.
+    # Measured, not predicted: only arch 14 binds a whole key table, 1 to 54 with no gap, which is
+    # the closure the comment below used to claim and nothing asserted. The others are sparse, and
+    # arch 9's highest is 57 because its codes are `group * 8 + column` with no multiple of eight
+    # bound, so a bound of 50 there would be wrong rather than conservative.
+    # **The highest scan a set binds, per architecture**, which is the half that is a property of
+    # the keypad. It is a ceiling and not a count: the corpus never binds a code above it on that
+    # architecture, and section 48 is why a ceiling is the strongest claim available, since a config
+    # binds the keys its owner's activities use rather than the keys the remote has.
+    HIGHEST_SCAN_PER_ARCHITECTURE = {8: 63, 9: 57, 12: 55, 14: 54}
+
+    # **How many distinct scans each config binds, which is per config and was written as per
+    # architecture.** It held while every arch 8 sample was one skin: `arch8_config_885` states
+    # version word 3345, skin 17, where the five 880 samples state 3343, skin 15, and it binds scans
+    # 19 and 60 which none of them ever does. So the 53 was a property of one model. Consistent with
+    # `reference/remotes/harmony-885/README.md`'s reading that the 880 and 885 differ by teletext colour
+    # keys, and
+    # **not evidence for it**: two extra bound codes against four extra keys, from one config, where
+    # an unbound key proves nothing at all. Section 139.
+    SCANS_PER_CONFIG = {
+        'arch8_config_a': 53, 'arch8_config_b': 53, 'arch8_config_c': 53, 'arch8_config_d': 53,
+        'arch8_config_880': 53, 'arch8_config_885': 55,
+        'h525_config': 50, 'h525_config_2': 50,
+        'one_config': 52, 'one_config_unprogrammed': 52,
+        'one_spare_before_sync': 52, 'one_spare_after_sync': 52,
+        'h700_config': 54, 'h700_config_2': 54, 'h600_config': 54,
+    }
+
+    def test_the_other_tags_are_key_events_by_the_slot_8_split(self):
+        """Tags at 0x80 and above decode as press, release or repeat with a scan code."""
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        for name in self.CONFIGS:
+            c = self._sets(name)
+            high = {e.tag for a in c.handler_sets() for e in c.tagged_list(a) if e.tag >= 0x80}
+            with self.subTest(config=name):
+                if not high:
+                    # The safe mode containers bind no key through a set at all.
+                    self.assertIn(name, ('h700_gspm', 'one_safemode'))
+                    continue
+                # Every one is a real event type, never the 0x40 release-only bit on its own.
+                self.assertTrue(all(t & gspm.EVENT_MASK in (0x80, 0xC0) for t in high))
+                scans = {t & gspm.SCAN_MASK for t in high}
+                self.assertEqual(max(scans), self.HIGHEST_SCAN_PER_ARCHITECTURE[c.architecture],
+                                 'the ceiling is the keypad and belongs to the architecture')
+                self.assertEqual(len(scans), self.SCANS_PER_CONFIG[name],
+                                 'the count is what this config binds and belongs to the config')
+                self.assertEqual(min(scans), 1, 'a scan code is one based on every architecture')
+                if c.architecture == 14:
+                    # The whole key table, which is what makes this a closure rather than a count:
+                    # section 17 derives 54 scan codes from the event mask and the corpus binds
+                    # every one of them, on the Harmony 600 and on both Harmony 700 configs.
+                    self.assertEqual(scans, set(range(1, 55)))
+
+    def test_the_seven_hundred_pair_differs_by_one_binding_in_one_entry(self):
+        """The controlled pair. One described button, one added binding, nothing else moves."""
+        a, b = self._sets('h700_config'), self._sets('h700_config_2')
+        differing = []
+        for pa, pb in zip(a.handler_sets(), b.handler_sets()):
+            ta = {e.tag: (e.operand, e.opcode) for e in a.tagged_list(pa)}
+            tb = {e.tag: (e.operand, e.opcode) for e in b.tagged_list(pb)}
+            if ta != tb:
+                differing.append((sorted(set(tb) - set(ta)), sorted(set(ta) - set(tb))))
+        self.assertEqual(len(differing), 1)
+        added, removed = differing[0]
+        self.assertEqual(len(added), 1)
+        self.assertEqual(removed, [])
+        self.assertEqual(added[0] & 0xC0, 0x80, 'the added tag is a key press')
+
+
+class TestTheStateValueMap(unittest.TestCase):
+    """findings.md section 39: base slot 14, and opcode 0x72 indexing it and slot 13 at once."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+
+    def test_both_halves_of_the_operand_stay_inside_their_tables(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            maps, variables = c.value_maps(), c.state_table().count
+            refs = [c.value_map_reference(i) for lst in c.action_lists() for i in lst]
+            refs = [r for r in refs if r is not None]
+            with self.subTest(config=name):
+                self.assertTrue(refs)
+                self.assertLess(max(v for v, _ in refs), variables)
+                self.assertLess(max(m for _, m in refs), len(maps))
+
+    def test_only_one_combination_of_widths_fits_the_layout(self):
+        """A record's computed length lands on another record's start under one shape only.
+
+        The discriminator, not a restatement of the constants. The first reading of this had the
+        key varying and the count fixed at two bytes, which scored six of twelve on the older
+        architectures and passed for a majority until the other combinations were tried.
+        """
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            maps = c.value_maps()
+            starts = {m.address for m in maps}
+            counter = gspm.VALUE_MAP_COUNT_WIDTH[c.architecture]
+            scores = {}
+            for cw in (1, 2):
+                for kw in (1, 2):
+                    hit = 0
+                    for m in maps:
+                        off = c.blob_offset_of(m.address)
+                        count = int.from_bytes(c.blob[off + 1:off + 1 + cw], 'little')
+                        hit += (m.address + 2 + cw + (kw + 3) * count) in starts
+                    scores[cw, kw] = hit
+            best = max(scores, key=scores.get)
+            with self.subTest(config=name):
+                self.assertEqual(best, (counter, gspm.VALUE_MAP_KEY_WIDTH))
+                for shape, hit in scores.items():
+                    if shape != best:
+                        self.assertLess(hit, scores[best])
+                # And the winner is not merely ahead, it accounts for nearly every record. The
+                # rest are addresses pointing into the middle of a longer record.
+                self.assertGreaterEqual(scores[best], 0.8 * len(maps))
+
+    def test_a_record_lead_byte_is_what_the_document_says(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            leads = {c.blob[c.blob_offset_of(m.address)] for m in c.value_maps()}
+            with self.subTest(config=name):
+                self.assertEqual(leads, {2})
+
+    def test_every_payload_is_an_address_inside_the_container(self):
+        """The independent check that the three bytes are a pointer and not an instruction."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            targets = [t for m in c.value_maps() for _, t in m.entries]
+            targets += [t for m in c.value_maps() for _, _, t in m.ranges]
+            with self.subTest(config=name):
+                self.assertTrue(targets)
+                self.assertTrue(all(c.flash_base <= t < c.end_addr for t in targets))
+
+
+class TestTheNumberSender(unittest.TestCase):
+    """findings.md section 39: base slot 16, read from three images and used by no config."""
+
+    # The seek site of base slot 16 on each image, and the register the index offset goes into.
+    # Arch 12's is a banked `f` field rather than a resolved address, like its seeker's, so the
+    # three are compared by the literals they receive and not by their numbering.
+    CONSUMERS = {'h700_code': (0x9000, 0x19A90, 0x0E0),
+                 'h600_code_complete': (0x9000, 0x1845E, 0x0DD),
+                 'one34_code': (0x20000, 0x2C5D0, 0x0F4)}
+    # 10000, 1000, 100 and 10 as the little endian pairs the consumer subtracts.
+    LADDER = (0x27, 0x10), (0x03, 0xE8), (0x00, 0x64), (0x00, 0x0A)
+
+    def _window(self, name, base, start):
+        code = lab.load(name)
+        offset = start - base
+        out = []
+        for _ in range(0x180):
+            instr = isa.decode(code, offset, base)
+            out.append(instr)
+            offset += 2 * instr.words
+        return out
+
+    def test_the_three_digit_table_offsets_follow_the_bytes_read_in_sequence(self):
+        """The closure: 1 + 3 + 1 + 3 + 3 + 3 is fourteen, and fourteen is the first offset."""
+        from harmony import gspm
+        self.assertEqual(gspm.NUMBER_SENDER_DIGIT_TABLES[0], gspm.NUMBER_SENDER_HEADER)
+        self.assertEqual(gspm.NUMBER_SENDER_DIGIT_TABLES, (14, 17, 20))
+        self.assertEqual(1 + 3 + 1 + 3 + 3 + 3, gspm.NUMBER_SENDER_HEADER)
+
+    def test_every_image_indexes_at_the_same_four_offsets(self):
+        from harmony import gspm
+        for name, (base, start, register) in self.CONSUMERS.items():
+            offsets, previous = set(), None
+            for instr in self._window(name, base, start):
+                if instr.mnemonic == 'MOVLW':
+                    previous = instr.fields['k']
+                if instr.mnemonic == 'MOVWF' and instr.fields['f'] == register:
+                    offsets.add(previous)
+            with self.subTest(image=name):
+                self.assertEqual(offsets & {1, 14, 17, 20},
+                                 {1} | set(gspm.NUMBER_SENDER_DIGIT_TABLES))
+
+    def test_every_image_subtracts_the_same_decimal_ladder(self):
+        for name, (base, start, _) in self.CONSUMERS.items():
+            literal = None
+            seen = []
+            for instr in self._window(name, base, start):
+                if instr.mnemonic == 'MOVLW':
+                    literal = instr.fields['k']
+                elif instr.mnemonic in ('SUBWF', 'SUBWFB') and literal is not None:
+                    seen.append(literal)
+            with self.subTest(image=name):
+                for high, low in self.LADDER:
+                    self.assertIn(low, seen)
+                    self.assertIn(high, seen)
+
+    def test_no_config_in_the_corpus_has_a_record(self):
+        """Stated as a test so it fails the day a sample arrives that does."""
+        from harmony import gspm
+        for name in TestTheStateVariableTable.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            with self.subTest(config=name):
+                self.assertEqual(c.number_senders(), [])
+
+
+#: Screen programs per config, measured. Stated here rather than inside the loop so that the fifteen
+#: numbers sit together, where a sixteenth sample has to be added deliberately, and so that the
+#: spread is visible: a floor of 20 stood here against values from 111 to 6620.
+SCREEN_PROGRAM_COUNTS = {
+    'arch8_config_880': 427, 'arch8_config_885': 604, 'arch8_config_a': 394,
+    'arch8_config_b': 427, 'arch8_config_c': 463, 'arch8_config_d': 463,
+    'h525_config': 157, 'h525_config_2': 111, 'h600_config': 4544,
+    'h700_config': 6620, 'h700_config_2': 6620, 'one_config': 1013,
+    'one_config_unprogrammed': 586, 'one_spare_after_sync': 588,
+    'one_spare_before_sync': 586,
+}
+
+
+class TestTheScreenInterpreter(unittest.TestCase):
+    """findings.md section 40: the second interpreter, its opcodes and its encoding."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+    # The dispatcher, and the address of the XORLW chain inside it, per image.
+    DISPATCHERS = {'h700_code': (0x9000, 0x1879C, 0x187A8),
+                   'h600_code_complete': (0x9000, 0x16E38, 0x16E44),
+                   'one34_code': (0x20000, 0x295AC, 0x295E6)}
+    BASE_OPCODES = {1, 2, 3, 4, 5, 16, 17, 18, 19, 20}
+
+    def test_the_same_ten_opcodes_on_every_image(self):
+        for name, (base, _, at) in self.DISPATCHERS.items():
+            code = lab.load(name)
+            cases = {c.value for c in chains.xor_chain(code, base, at)}
+            with self.subTest(image=name):
+                self.assertTrue(self.BASE_OPCODES <= cases)
+
+    def test_arch_12_adds_two_the_other_two_images_do_not_have(self):
+        """Both are arch 12 only; one is now read and the other still has to be refused.
+
+        Opcode 23 takes no operand, from its handler, and that single entry is what let arch 12's
+        mode programs decode. Opcode 22 appears in no config, so its length stays unestablished and
+        a parser must stop rather than guess. `docs/findings.md` section 54.
+        """
+        from harmony import gspm
+        code = lab.load('one34_code')
+        cases = {c.value for c in chains.xor_chain(code, 0x20000, 0x295E6)}
+        extra = cases - self.BASE_OPCODES
+        self.assertEqual(extra, {22, 23})
+        # Opcode 22's width is per architecture and 23's is not, so only one of them is in the
+        # shared table. Three on arch 12 and one on arch 9. Sections 54, 64 and 85.
+        self.assertNotIn(gspm.SCREEN_CALL, gspm.SCREEN_FIXED_OPERANDS)
+        self.assertEqual(gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[12][gspm.SCREEN_CALL], 3)
+        self.assertEqual(gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL], 1)
+        self.assertEqual(gspm.SCREEN_FIXED_OPERANDS[23], 0)
+        for name in ('h700_code', 'h600_code_complete'):
+            base, _, at = self.DISPATCHERS[name]
+            cases = {c.value for c in chains.xor_chain(lab.load(name), base, at)}
+            with self.subTest(image=name):
+                self.assertEqual(cases & extra, set())
+
+    def _walk(self, c):
+        """Every program reachable from the roots, and whether any failed to decode."""
+        seen, queue, failed = set(), list(c.screen_program_roots()), 0
+        programs = []
+        while queue:
+            address = queue.pop()
+            if address in seen:
+                continue
+            seen.add(address)
+            program = c.screen_program(address)
+            if program is None:
+                failed += 1
+                continue
+            programs.append(program)
+            for instruction in program:
+                queue += [t for t in instruction.targets if t not in seen]
+        return programs, failed
+
+    def test_every_program_in_the_corpus_decodes(self):
+        """The closure. Instructions are variable length with no length field anywhere, so one
+        wrong operand count desynchronises the walk and the next byte read as an opcode is
+        almost certainly not one of the eleven."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            programs, failed = self._walk(c)
+            with self.subTest(config=name):
+                self.assertEqual(failed, 0)
+                # Exact per sample, not a floor of 20 (section 143). The spread is the point: 111 on
+                # a Harmony 525 against 6620 on a Harmony 700, so one number for all fifteen would
+                # have to sit under the smallest and would then say nothing about the largest.
+                self.assertEqual(len(programs), SCREEN_PROGRAM_COUNTS[name], name)
+
+    def test_every_program_ends_the_way_the_firmware_ends_one(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            programs, _ = self._walk(c)
+            for program in programs:
+                last = program[-1]
+                with self.subTest(config=name):
+                    self.assertTrue(last.opcode == gspm.SCREEN_END or last.transfers)
+                    for instruction in program[:-1]:
+                        self.assertFalse(instruction.transfers)
+
+    def test_the_inline_strings_are_glyph_indices_and_not_characters(self):
+        """Stated as a test because calling them text would be the easy mistake."""
+        from harmony import gspm
+        printable = total = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            programs, _ = self._walk(c)
+            for program in programs:
+                for instruction in program:
+                    if not instruction.glyphs:
+                        continue
+                    total += 1
+                    printable += all(32 <= b < 127 for b in instruction.glyphs)
+        self.assertEqual(total, 7362)
+        # The claim that matters is that no *word* appears. Short strings land in the printable
+        # range by chance, and the rate has moved twice as the corpus grew: under 1 in 50, then
+        # 1 in 28 after section 66 tripled the population, and 1 in 30.4 now, 242 of 7362.
+        self.assertLess(printable, total / 25)
+        # **The sharper statement used to be that no printable run of four or more contains a
+        # letter at all, and that was a property of the population rather than of the format.** It
+        # held on ten configs and fails on fifteen: `arch8_config_885` has one five code run that is
+        # entirely printable and holds a single letter. Chance, which is what the ratio above says
+        # to expect, and the honest form of "no word appears" is that **no two letters are ever
+        # adjacent**, which holds over the whole corpus with the longest such run at one. Section
+        # 139. Stated as a maximum rather than an absence, so it says how much slack there is.
+        longest = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            for program in self._walk(c)[0]:
+                for instruction in program:
+                    codes = instruction.glyphs
+                    if not codes or len(codes) < 4:
+                        continue
+                    if not all(32 <= b < 127 for b in codes):
+                        continue
+                    run = 0
+                    for b in codes:
+                        run = run + 1 if chr(b).isalpha() else 0
+                        longest = max(longest, run)
+        self.assertEqual(longest, 1, 'two adjacent letters would be a word rather than chance')
+
+    def test_a_truncated_program_is_refused_rather_than_guessed(self):
+        from harmony import gspm
+        c = gspm.parse(lab.load('h700_config'))
+        self.assertIsNone(c.screen_program(c.end_addr + 1))
+
+
+class TestTheParameterBlock(unittest.TestCase):
+    """findings.md section 44: base slot 15, and the length the firmware demands of every group."""
+
+    # Every container, including the three safe mode ones, which carry a full parameter block
+    # where they carry no timers at all. Taken from `lab` rather than built here, so that this
+    # suite, the TypeScript coverage test and `tools/facts.py` cannot disagree about what the
+    # corpus is; a corpus total is not comparable between two lists.
+    CONTAINERS = lab.CONTAINERS
+    # The guard routine and its call sites, per image. Recorded because finding them again is a
+    # search, the same reason the rest of this file records addresses.
+    GUARDS = {'h700_code': (0x9000, 0x0F8F0), 'one34_code': (0x20000, 0x23262)}
+
+    @staticmethod
+    def _groups(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name)).parameter_groups()
+
+    def test_the_groups_account_for_the_run_they_sit_in(self):
+        """No slack between groups, which is what says the record shape is right."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            groups = c.parameter_groups()
+            addresses = c.pointer_array(gspm.arch_slot(c.architecture, gspm.PARAMETER_SLOT))
+            span = max(a + 1 + 2 * len(g) for a, g in zip(addresses, groups)) - min(addresses)
+            with self.subTest(container=name):
+                slack = span - sum(1 + 2 * len(g) for g in groups)
+                # Arch 12 is the only one with spare bytes in the run, and it has twelve.
+                self.assertEqual(slack, 12 if c.architecture == 12 else 0)
+
+    def test_every_group_is_the_length_its_firmware_demands(self):
+        """The closure: the literals off three images, against every container that has a firmware
+        reading of the guard, which is arch 8 (Harmony 880 and 885), arch 12 (Harmony One) and arch 14
+        (Harmony 600 and 700)."""
+        from harmony import gspm
+        lab.require(*self.CONTAINERS)
+        checked = {}
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            match = c.parameter_group_lengths_match()
+            if match is None:                      # arch 9, no firmware read
+                continue
+            checked[c.architecture] = checked.get(c.architecture, 0) + 1
+            with self.subTest(container=name):
+                self.assertTrue(match, [len(g) for g in c.parameter_groups()])
+        # A floor of eight stood here, which is what the two architectures happen to sum to, so it
+        # was tight by coincidence and would have absorbed a container quietly dropping out on either
+        # side. Stated per architecture instead, because the point of the closure is that two
+        # different demanded lengths each fit their own containers.
+        # Arch 12 went from 2 to 6 in section 142, when the corpus took in the Harmony One sync pair
+        # and the two containers inside its firmware image. That is the closure holding on four more
+        # containers of the architecture whose demanded lengths differ from arch 14's, so it is the
+        # half of the claim that was thinnest.
+        # Arch 8 joined with its four containers here when the Harmony 885's guard was read,
+        # `tests/harmony_880_885/test_harmony_885_parameters.py`, which holds the sixteen arch 8 containers outside this
+        # corpus too.
+        self.assertEqual(checked, {8: 4, 12: 6, 14: 6})
+        self.assertEqual(len(lab.CONTAINERS) - sum(checked.values()), 3,
+                         'arch 9 has no firmware read of this guard')
+
+    def test_the_two_architectures_demand_different_lengths(self):
+        """Otherwise the fit above would be one constant matching everywhere."""
+        from harmony import gspm
+        arch14 = gspm.PARAMETER_GROUP_COUNTS[14]
+        arch12 = gspm.PARAMETER_GROUP_COUNTS[12]
+        shared = set(arch14) & set(arch12)
+        self.assertTrue(shared)
+        self.assertNotEqual([arch14[i] for i in sorted(shared)],
+                            [arch12[i] for i in sorted(shared)])
+
+    def test_group_3_is_asked_for_at_offset_9_length_4_with_a_fallback_on_arch_14(self):
+        """findings.md section 392: the call that asks for group 3, offset 9 and length 4, and the
+        constants written when the length does not match, on the Harmony 700's 2.8 and the Harmony
+        600's 0.2. What the routine around it does with the values is read in the section, not here."""
+        base, guard = self.GUARDS['h700_code']
+        lab.require('h700_code')
+        code = lab.load('h700_code')
+        def at(addr):
+            return isa.decode(code, addr - base, base)
+        # The call: length 4 into 0xB8, offset 9 into 0xB7, then the guard.
+        self.assertEqual([at(a).fields.get('k') for a in (0x10154, 0x1015A)], [4, 9])
+        self.assertEqual((at(0x1015E).mnemonic, at(0x1015E).fields['target']), ('CALL', guard))
+        # Its defaults, and group 1's beside them for the same table.
+        self.assertEqual(literals_at('h700_code', base, 0x101B6, 16)[:5], [1, 3, 5, 10, 32])
+        self.assertEqual(literals_at('h700_code', base, 0x0FEE4, 12)[:4], [3, 5, 10, 32])
+        # The Harmony 600's 0.2 build asks the same of its own guard, `0x10E8E`, with the same fallback.
+        lab.require('h600_code_complete')
+        six = lab.load('h600_code_complete')
+        call = isa.decode(six, 0x11666 - base, base)
+        self.assertEqual([isa.decode(six, a - base, base).fields.get('k') for a in (0x1165C, 0x11662)], [4, 9])
+        self.assertEqual((call.mnemonic, call.fields['target']), ('RCALL', 0x10E8E))
+        self.assertEqual(literals_at('h600_code_complete', base, 0x116BC, 16)[:5], [1, 3, 5, 10, 32])
+
+    def test_the_two_0_2_builds_differ_in_1395_bytes_and_report_71_and_72(self):
+        """findings.md sections 281 and 392: the two 0.2 images are the same length and differ in 1395
+        bytes, and each build's version reply states its own model number, 71 on the 600 and 72 on the
+        650. That the other differences are moved addresses is the section's reading, not asserted here."""
+        lab.require('h600_code_complete', 'h650_bench_code')
+        a, b = lab.load('h600_code_complete'), lab.load('h650_bench_code')
+        self.assertEqual(len(a), len(b))
+        self.assertEqual(sum(x != y for x, y in zip(a, b)), 1395)
+        reply = 0x11964 - 0x9000
+        self.assertEqual((a[reply:reply + 10:2], b[reply:reply + 10:2]), (bytes([2, 0, 71, 12, 14]), bytes([2, 0, 72, 12, 14])))
+
+    def test_the_guard_demands_the_section_count_too(self):
+        """Section 38's literal, re-asserted here because it is the same routine."""
+        expected = {'h700_code': 9, 'one34_code': 11}
+        for name, (base, addr) in self.GUARDS.items():
+            with self.subTest(image=name):
+                self.assertIn(expected[name], literals_at(name, base, addr, 24))
+
+    def test_the_threshold_group_is_the_same_in_every_container_that_has_it(self):
+        """Group 4 is identical on arch 8, 12 and 14, which arch 9 does not share."""
+        from harmony import gspm
+        seen = set()
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture == 9:
+                continue
+            seen.add(tuple(c.parameter_groups()[4]))
+        self.assertEqual(seen, {(96, 98, 308, 310, 768, 770)})
+
+    def test_the_level_curves_do_not_decrease(self):
+        """Groups 5 and 6 are walked by counting how many entries a measurement exceeds."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture == 9:
+                continue
+            for index in (5, 6):
+                curve = c.parameter_groups()[index]
+                with self.subTest(container=name, group=index):
+                    # Exact per architecture, not a floor of 14: a Harmony One's curve has two more
+                    # entries than a Harmony 880's or a Harmony 600's, which a single floor hid.
+                    self.assertEqual(len(curve), {8: 14, 12: 16, 14: 14}[c.architecture],
+                                     '%s group %d' % (name, index))
+                    self.assertTrue(all(a <= b for a, b in zip(curve, curve[1:])), curve)
+
+
+#: Glyphs per font set, per container, measured. Every container of the corpus bar the one that
+#: declares four counts, which the test names as its counterexample. The 46 that stood here as a floor
+#: is what the three safe mode containers carry, so the floor was the smallest member of the population.
+FONT_GLYPH_COUNTS = {
+    'arch8_config_a': 75, 'arch8_config_b': 74, 'arch8_config_c': 76, 'arch8_config_d': 76,
+    'h525_config': 66, 'h525_config_2': 70, 'h600_config': 71, 'h600_safemode_gspm': 46,
+    'h650_safemode_gspm': 46, 'h700_config': 75, 'h700_config_2': 75, 'h700_gspm': 46,
+    'one34_region2': 46, 'one_config': 73, 'one_config_unprogrammed': 72, 'one_safemode': 46,
+    'one_spare_after_sync': 73, 'one_spare_before_sync': 72,
+}
+
+
+class TestTheFontTable(unittest.TestCase):
+    """findings.md section 46: base slot 7 is the font table, and what corrected it.
+
+    The first reading of this section took the set header's first byte for a slot count when it
+    is the glyph height. Two of the tests below exist because of that: the height one, which is
+    what the byte actually is, and the string one, which is what the wrong count made look broken.
+    """
+
+    CONTAINERS = TestTheParameterBlock.CONTAINERS
+
+    @staticmethod
+    def _programs(container):
+        """Every reachable screen program, the same walk `tools/screen_dump.py` does."""
+        seen, queue, out = set(), list(container.screen_program_roots()), {}
+        while queue:
+            address = queue.pop()
+            if address in seen:
+                continue
+            seen.add(address)
+            program = container.screen_program(address)
+            if program is None:
+                continue
+            out[address] = program
+            for instruction in program:
+                queue.extend(instruction.targets)
+        return out
+
+    @staticmethod
+    def _decode(container, address, limit, pixel_bytes):
+        """The reader's algorithm with the pixel size as a parameter, for the calibration."""
+        from harmony import gspm
+        off = container.blob_offset_of(address)
+        width = container.blob[off]
+        at, rows, used = off + 1, 0, 0
+        while at < limit:
+            op = container.blob[at]
+            at += 1
+            if op == gspm.IMAGE_END:
+                return rows if used == 0 else 0
+            if op & gspm.IMAGE_SKIP:
+                used += op & 0x7F
+            else:
+                at += pixel_bytes * op
+                used += op
+            if used == width:
+                rows += 1
+                used = 0
+            elif used > width:
+                return 0
+        return 0
+
+    @staticmethod
+    def _bounded(container):
+        """Each glyph with the offset it must end before: the next glyph, or the set's header."""
+        for font in container.font_sets():
+            live = sorted(a for a in font.glyphs if a is not None)
+            for i, address in enumerate(live):
+                yield address, container.blob_offset_of(
+                    live[i + 1] if i + 1 < len(live) else font.address)
+
+    def test_a_set_declares_one_count_per_container(self):
+        """Not per typeface: it is the config's character set size."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            counts = {f.count for f in c.font_sets()}
+            with self.subTest(container=name):
+                if name == lab.ASCII_FONTS:
+                    # The counterexample, asserted rather than excluded: this container declares
+                    # four counts, so "one per container" is a habit of the generator and not a
+                    # property of the format. Section 78.
+                    self.assertEqual(counts, {91, 90, 50})
+                    continue
+                self.assertEqual(len(counts), 1, counts)
+                # Exact per container, not a floor of 46: the 46 is what a safe mode container carries
+                # and it was standing in for values up to 76, so the floor was the smallest member of
+                # the population wearing a tolerance. Section 143.
+                self.assertEqual(counts.pop(), FONT_GLYPH_COUNTS[name], name)
+
+    def test_the_header_byte_below_the_height_is_the_first_glyph_code(self):
+        """Section 78, and the claim it replaced was that this byte is a spare.
+
+        Every container in the corpus starts its sets at code 1, which is why the byte looked
+        like a constant. The one sample that does not is the arch 9 safe mode container, and its
+        strings only resolve when the index is the code minus that byte.
+        """
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            for font in c.font_sets():
+                with self.subTest(container=name, set=hex(font.address)):
+                    if name == lab.ASCII_FONTS:
+                        self.assertIn(font.first, (32, 72))
+                        continue
+                    self.assertEqual(font.first, gspm.GLYPH_FIRST_CODE_DEFAULT)
+
+    def test_the_count_offset_is_not_an_architecture_property(self):
+        """The corrected claim, stated as the two arch 12 containers that disagree.
+
+        `one_config` carries the count at +1 with a zero below it; `one_safemode`, the same
+        architecture, carries it at +2 the way every arch 8, 9 and 14 container does. A reader
+        keyed on the architecture cuts that set from 46 glyphs to one, which is how 5437 bytes of
+        an 8902 byte container went unattributed.
+        """
+        from harmony import gspm
+        lab.require('one_config', 'one_safemode')
+        shapes = {}
+        for name in ('one_config', 'one_safemode'):
+            c = gspm.parse(lab.load(name))
+            font = c.font_sets()[0]
+            shapes[name] = (c.architecture, font.count_at, font.count)
+        self.assertEqual(shapes['one_config'][:2], (12, 1))
+        self.assertEqual(shapes['one_safemode'], (12, 2, 46))
+
+    def test_the_arch_9_safe_mode_container_starts_its_sets_at_code_32(self):
+        """The sample that settled the field, and the closure that settled it.
+
+        Its strings are ASCII: the glyphs a set ships are exactly the characters that set's own
+        strings use, which is a statement about two independent structures agreeing, the font
+        table and the screen programs. Under the old reading the codes ran off the end of the set.
+        """
+        from harmony import gspm
+        lab.require('h525_safemode_ahcm')
+        c = gspm.parse(lab.load('h525_safemode_ahcm'))
+        fonts = c.font_sets()
+        self.assertEqual([(f.first, f.count) for f in fonts],
+                         [(32, 91), (32, 90), (72, 50), (32, 90)])
+        used = {}
+        for program in self._programs(c).values():
+            selected = None
+            for instruction in program:
+                if instruction.opcode == gspm.SCREEN_SELECT_FONT and instruction.operands:
+                    selected = instruction.operands[0]
+                if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
+                    continue
+                used.setdefault(selected, set()).update(instruction.glyphs)
+        # All four sets are used, which they were not until section 85: the program the eleven
+        # byte reading of opcode 22 walked off is the one that selects fonts 1 and 2.
+        self.assertEqual(sorted(used), [0, 1, 2, 3])
+        # Glyphs present against glyphs drawn, per set. Font 0 ships exactly what it draws; the
+        # other three ship a handful more, and `H` is spare in all three of them.
+        spare = {0: [], 1: [72, 121], 2: [72, 97, 121], 3: [72]}
+        for selected, codes in used.items():
+            font = fonts[selected]
+            present = {font.first + i for i, a in enumerate(font.glyphs) if a is not None}
+            with self.subTest(font=selected):
+                # Every code drawn has a glyph, and the set carries little else.
+                self.assertEqual(codes - present, set())
+                self.assertEqual(sorted(present - codes), spare[selected])
+                # And they are ASCII, which is what says 32 is a first code and not a flag.
+                self.assertTrue(all(32 <= code < 127 for code in codes))
+            # Under the reading section 46 published, the codes run past the end of the set.
+            self.assertGreater(max(codes) - gspm.GLYPH_FIRST_CODE_DEFAULT, len(font.glyphs))
+
+    def test_every_glyph_decodes_to_the_height_its_set_declares(self):
+        """The byte the first reading of this section mistook for a count."""
+        from harmony import gspm
+        total = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            sets = c.images()
+            with self.subTest(container=name):
+                if c.architecture not in gspm.IMAGE_ARCHITECTURES:
+                    self.assertIsNone(sets)
+                    continue
+                for font, glyphs in zip(c.font_sets(), sets):
+                    for glyph in glyphs:
+                        self.assertEqual(glyph.height, font.height)
+                        for row in glyph.rows:
+                            self.assertEqual(len(row), glyph.width)
+                total += sum(len(g) for g in sets)
+        # 3933 until section 63 read arch 9's packing and added its 160 glyphs, 4093 until
+        # section 76 put a second arch 9 config in the corpus, read off the bench 525, and 4315 until
+        # section 142 took the corpus from fifteen containers to nineteen.
+        self.assertEqual(total, 5220)
+
+    def test_every_inline_string_resolves_through_its_own_font(self):
+        """The closure the wrong count destroyed, and the reason this section was corrected."""
+        from harmony import gspm
+        codes = resolved = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture not in gspm.IMAGE_ARCHITECTURES:
+                continue
+            fonts = c.font_sets()
+            for program in self._programs(c).values():
+                selected = None
+                for instruction in program:
+                    if instruction.opcode == gspm.SCREEN_SELECT_FONT and instruction.operands:
+                        selected = instruction.operands[0]
+                    if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
+                        continue
+                    if selected is None or selected >= len(fonts):
+                        continue
+                    for code in instruction.glyphs:
+                        codes += 1
+                        resolved += c.glyph(fonts[selected], code) is not None
+        # 16054 before section 53 added the mode records' own programs as roots, 39170 before
+        # section 54 added arch 12's, 40588 before section 64 added arch 9's, 41793 before
+        # section 66 added the programs a mode's pages state, and 55542 before section 76 added a
+        # second arch 9 config. Arch 9's codes are the closure section 46 could not run there, and
+        # they resolve through the fonts section 63 decoded, so the two findings check each other.
+        # **Every one of the bench 525's own codes resolves too**, which is the first time that
+        # closure has run on an arch 9 config this project read itself.
+        # 58068 until section 85 made one more arch 9 program reachable, whose two strings are
+        # thirteen codes and two, and 58083 until section 142 took the corpus to nineteen containers.
+        self.assertEqual(codes, 67303)
+        self.assertEqual(resolved, codes)
+
+    def test_a_one_byte_pixel_scores_near_zero(self):
+        """The calibration: the wrong pixel size has to fail, or the fit above means nothing."""
+        from harmony import gspm
+        for name in ('h700_config', 'one_config', 'arch8_config_a'):
+            c = gspm.parse(lab.load(name))
+            right = wrong = total = 0
+            for address, limit in self._bounded(c):
+                total += 1
+                right += 1 if self._decode(c, address, limit, 2) else 0
+                wrong += 1 if self._decode(c, address, limit, 1) else 0
+            with self.subTest(container=name):
+                self.assertEqual(right, total)
+                self.assertLess(wrong, total // 5)
+
+    def test_a_glyph_code_is_one_based(self):
+        """Zero terminates a string, so nothing can name glyph slot zero by the code zero."""
+        from harmony import gspm
+        c = gspm.parse(lab.load('h700_config'))
+        font = c.font_sets()[4]
+        self.assertIsNone(c.glyph(font, 0))
+        self.assertIsNone(c.glyph(font, font.count + 1))
+        first = next(i for i, a in enumerate(font.glyphs) if a is not None)
+        self.assertIsNotNone(c.glyph(font, first + font.first))
+
+
+class TestScreenOpcode22(unittest.TestCase):
+    """findings.md sections 64 and 85: a call on arch 12, a row select on arch 9.
+
+    The two readings come from different authorities and both are pinned here. Arch 12's is the
+    firmware, which is the project's usual order; arch 9's has no firmware to appeal to and rests
+    on a closure over the corpus instead, with the calibration that every other width fails it.
+
+    **Section 64 read the arch 9 width as eleven and section 85 corrected it to one.** The picture
+    address it saw is real and belongs to the opcode 3 that follows, so both readings consume the
+    same twelve bytes wherever opcode 22 is followed by opcode 3, which is everywhere in the two
+    user configs. The safe mode container is what separates them.
+    """
+
+    SAMPLE = 'h525_config'
+    HANDLER_22 = 0x2966E        # writes the link register
+    HANDLER_23 = 0x29640        # reads it back
+    LINK_REGISTER = (0xD34, 0xD35, 0xD36)
+    DISPATCHER = (0x29000, 0x2A000)
+
+    def test_the_arch12_dispatcher_sends_22_to_its_handler(self):
+        """The case value, decoded rather than read off the literals, which are not the cases."""
+        from harmony.pic18 import chains
+        from harmony import gspm
+        lab.require('one34_code')
+        cases = {c.value: c.target for c in chains.xor_chain(lab.load('one34_code'),
+                                                            0x20000, 0x295E6)}
+        self.assertEqual(cases[gspm.SCREEN_CALL], self.HANDLER_22)
+        self.assertEqual(cases[23], self.HANDLER_23)
+
+    def test_22_writes_the_link_register_and_23_reads_it(self):
+        """What makes them a call and a return rather than two unrelated handlers.
+
+        Restricted to the screen dispatcher, because the same three RAM bytes are reused by
+        unrelated code elsewhere in the image and a trace over the whole thing says so.
+        """
+        from harmony.pic18 import trace
+        lab.require('one34_code')
+        found = trace.trace(lab.load('one34_code'), 0x20000, self.LINK_REGISTER)
+        low, high = self.DISPATCHER
+        for address in self.LINK_REGISTER:
+            uses = [u for u in found[address] if low <= u.addr < high]
+            writes = {u.addr for u in uses if 'WRITE' in u.kind}
+            reads = {u.addr for u in uses if 'read' in u.kind}
+            with self.subTest(register=hex(address)):
+                # The handler saves the position and then adds three to it, so two writes.
+                self.assertTrue(all(self.HANDLER_22 <= a < self.HANDLER_22 + 0x30
+                                    for a in writes), writes)
+                self.assertTrue(all(self.HANDLER_23 <= a < self.HANDLER_23 + 0x10
+                                    for a in reads), reads)
+                self.assertTrue(writes and reads)
+
+    def test_every_arch9_row_draw_names_a_picture(self):
+        """The arch 9 closure, and the reason one is believed without a firmware.
+
+        Every mode page's program issues opcode 22 eight times, once per row index 0 to 7, and each
+        one is followed by an opcode 3 that draws 96 by 8 pixels at `y = 8 * index` from a picture
+        in the bank. The four picture addresses are not derived from these instructions: they come
+        from walking the bank base slot 17 names, which section 62 established independently.
+        """
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        c = gspm.parse(lab.load(self.SAMPLE))
+        pictures = self._pictures(c)
+        self.assertEqual(len(pictures), 4)
+        rows = 0
+        per_value = {}
+        pages = [page for record in c.mode_records() for page in record.pages]
+        for page in pages:
+            program = c.screen_program(page.program)
+            self.assertIsNotNone(program, hex(page.address))
+            on_this_page = 0
+            for i, instruction in enumerate(program):
+                if instruction.opcode != gspm.SCREEN_CALL:
+                    continue
+                rows += 1
+                on_this_page += 1
+                self.assertEqual(len(instruction.operands), 1)
+                row = instruction.operands[0]
+                self.assertLess(row, 8)
+                per_value[row] = per_value.get(row, 0) + 1
+                draw = program[i + 1]
+                self.assertEqual(draw.opcode, 3, 'opcode 22 is followed by a draw')
+                # Two `(0, 8 * row)` pairs, then 96 by 8: the row's position, twice.
+                self.assertEqual(list(draw.operands[:6]), [0, 8 * row, 0, 8 * row, 0x60, 8])
+                self.assertIn(int.from_bytes(draw.operands[-3:], 'little'), pictures)
+            self.assertEqual(on_this_page, 8, 'eight rows on every page')
+        self.assertEqual(rows, 8 * len(pages))
+        self.assertEqual(rows, 1080)
+        self.assertEqual(sorted(per_value.items()), [(k, len(pages)) for k in range(8)])
+
+    def test_no_other_operand_width_produces_that_structure(self):
+        """The calibration. Several widths also decode all 135 page programs, so decoding proves
+        nothing on its own; the row structure is what separates them.
+
+        Eleven, which section 64 chose, scores zero here for a reason worth keeping: at eleven
+        there is no following instruction to look at, because opcode 22 has swallowed it.
+        """
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        c = gspm.parse(lab.load(self.SAMPLE))
+        pictures = self._pictures(c)
+        real = gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL]
+        pages = [page for record in c.mode_records() for page in record.pages]
+        for width in range(1, 16):
+            if width == real:
+                continue
+            gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = width
+            try:
+                hits = 0
+                for page in pages:
+                    program = c.screen_program(page.program)
+                    if program is None:
+                        continue
+                    for i, instruction in enumerate(program):
+                        if instruction.opcode != gspm.SCREEN_CALL:
+                            continue
+                        row = instruction.operands[0] if instruction.operands else 255
+                        draw = program[i + 1] if i + 1 < len(program) else None
+                        hits += (row < 8 and draw is not None and draw.opcode == 3
+                                 and list(draw.operands[:6])
+                                 == [0, 8 * row, 0, 8 * row, 0x60, 8]
+                                 and int.from_bytes(draw.operands[-3:], 'little') in pictures)
+            finally:
+                gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = real
+            with self.subTest(width=width):
+                self.assertEqual(hits, 0, 'width %d also produces rows' % width)
+
+    def test_the_safe_mode_container_is_what_separates_one_from_eleven(self):
+        """Why the corpus could not tell them apart until 8 August 2026.
+
+        In both user configs every opcode 22 is followed by an opcode 3, so the two readings
+        consume the same bytes and disagree about nothing observable. The arch 9 safe mode
+        container has four that are not, and there the eleven byte reading walks a program off the
+        end and loses it: 48 reachable programs against 49.
+        """
+        from harmony import gspm
+        sample = 'h525_safemode_ahcm'
+        lab.require(sample)
+        c = gspm.parse(lab.load(sample))
+        real = gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL]
+        self.assertEqual(real, 1)
+        programs, failed = c.reachable_screen_programs()
+        self.assertEqual(failed, [])
+        self.assertEqual(len(programs), 49)
+        gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = 11
+        try:
+            c = gspm.parse(lab.load(sample))
+            old, _ = c.reachable_screen_programs()
+        finally:
+            gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = real
+        self.assertEqual(len(old), 48, 'the eleven byte reading loses one program')
+
+    def test_the_arch9_strings_resolve_through_their_own_fonts(self):
+        """Section 46's third closure, unavailable on arch 9 until these programs were reachable.
+
+        It checks two findings against each other: the operand width here and section 63's glyph
+        packing. Neither was derived from the other.
+        """
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        c = gspm.parse(lab.load(self.SAMPLE))
+        fonts = c.font_sets()
+        programs, failed = c.reachable_screen_programs()
+        self.assertEqual(failed, [])
+        codes = resolved = 0
+        for program in programs.values():
+            selected = None
+            for instruction in program:
+                if instruction.opcode == gspm.SCREEN_SELECT_FONT and instruction.operands:
+                    selected = instruction.operands[0]
+                if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
+                    continue
+                if selected is None or selected >= len(fonts):
+                    continue
+                for code in instruction.glyphs:
+                    codes += 1
+                    resolved += c.glyph(fonts[selected], code) is not None
+        # 1205 before section 66 made the programs a mode's pages state reachable.
+        self.assertEqual(codes, 1435)
+        self.assertEqual(resolved, codes)
+
+    @staticmethod
+    def _pictures(container):
+        """Every picture in the bank, by address, walked from where base slot 17 says it starts.
+
+        `picture_bank_start` returns a blob offset and these have to be compared against operand
+        addresses, so the start is taken from the same section pointer it uses.
+        """
+        from harmony import gspm
+        slot = gspm.arch_slot(container.architecture, gspm.TOUCH_MAP_SLOT)
+        address = container.sections[slot].address + gspm.PICTURE_BANK_BIAS
+        out = []
+        while True:
+            picture = container.bitmap_at(address)
+            if picture is None:
+                return out
+            out.append(address)
+            address += picture.length
+
+
+class TestTheArch9GlyphPacking(unittest.TestCase):
+    """findings.md section 63: the second base slot 7 glyph encoding, two bits to a pixel.
+
+    One sample, because one arch 9 config is all the corpus has. The closures are inside it
+    instead: 160 glyphs, three independent checks each, and the run values derived from the
+    encoder's own maximality rather than chosen to make the render look right.
+    """
+
+    SAMPLE = 'h525_config'
+    GLYPHS = 160
+
+    def _container(self):
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        return gspm.parse(lab.load(self.SAMPLE))
+
+    @staticmethod
+    def _commands(container, address, limit):
+        """Every row of a glyph as its list of `(kind, count)` commands, undecoded."""
+        from harmony import gspm
+        off = container.blob_offset_of(address)
+        at = off + 1
+        while at < limit:
+            leader = container.blob[at]
+            at += 1
+            if leader == gspm.IMAGE_END:
+                return
+            stop = at + (leader & 0x0F)
+            row = []
+            while at < stop:
+                op = container.blob[at]
+                at += 1
+                kind, count = op >> 4, (op & 0x0F) + 1
+                if kind == gspm.IMAGE_PACKED_LITERAL:
+                    at += -(-gspm.IMAGE_PACKED_PIXEL_BITS * count // 8)
+                row.append((kind, count))
+            yield row
+
+    @staticmethod
+    def _bounded(container):
+        for font in container.font_sets():
+            live = sorted(a for a in font.glyphs if a is not None)
+            for i, address in enumerate(live):
+                yield font, address, container.blob_offset_of(
+                    live[i + 1] if i + 1 < len(live) else font.address)
+
+    def test_every_glyph_decodes_to_its_declared_shape(self):
+        """Two checks per glyph, and the height is the set's rather than the glyph's."""
+        c = self._container()
+        total = 0
+        for font, address, limit in self._bounded(c):
+            glyph = c.image(address, limit)
+            with self.subTest(glyph=hex(address)):
+                self.assertIsNotNone(glyph)
+                self.assertEqual(len(glyph.rows), font.height)
+                for row in glyph.rows:
+                    self.assertEqual(len(row), glyph.width)
+            total += 1
+        self.assertEqual(total, self.GLYPHS)
+
+    def test_a_glyph_ends_exactly_where_the_next_one_starts(self):
+        """Nothing left over, the same closure the picture bank turns on.
+
+        Truncating by a single byte has to fail, because the terminator is the last byte. If a
+        glyph carried even one byte of slack the short read would still find the terminator, so
+        this is what says the extent is exact rather than merely sufficient.
+        """
+        c = self._container()
+        for _, address, limit in self._bounded(c):
+            with self.subTest(glyph=hex(address)):
+                self.assertIsNotNone(c.image(address, limit))
+                self.assertIsNone(c.image(address, limit - 1))
+
+    def test_a_cell_opens_with_a_full_width_background_run(self):
+        """Which of the two run kinds is the background, decided without looking at a render.
+
+        A glyph cell whose top row were ink would underline every line of text on the screen, and
+        160 of 160 glyphs have the same kind there while the other kind never appears in that
+        position at all.
+        """
+        from harmony import gspm
+        c = self._container()
+        tops = 0
+        for font, address, limit in self._bounded(c):
+            rows = list(self._commands(c, address, limit))
+            width = c.blob[c.blob_offset_of(address)]
+            with self.subTest(glyph=hex(address)):
+                self.assertEqual(rows[0], [(gspm.IMAGE_PACKED_BACKGROUND, width)])
+                self.assertNotIn((gspm.IMAGE_PACKED_FOREGROUND, width), (rows[0], rows[-1]))
+            tops += 1
+        self.assertEqual(tops, self.GLYPHS)
+
+    def test_a_run_is_maximal_which_is_what_fixes_its_value(self):
+        """The encoder would have extended a run rather than restarting it, so neighbours differ.
+
+        Two consequences, and between them they pin both run values without appealing to how the
+        glyphs look. Adjacent runs always alternate the two kinds, so they hold different values.
+        And the literal pixel beside a background run is never the value that dominates literal
+        rows, so the background run is not carrying that value either.
+        """
+        from harmony import gspm
+        c = self._container()
+        pairs = alternating = 0
+        beside = {}
+        for _, address, limit in self._bounded(c):
+            for row in self._commands(c, address, limit):
+                for i in range(1, len(row)):
+                    before, after = row[i - 1][0], row[i][0]
+                    if gspm.IMAGE_PACKED_LITERAL in (before, after):
+                        continue
+                    pairs += 1
+                    alternating += before != after
+            glyph = c.image(address, limit)
+            for row, kinds in zip(glyph.rows, self._commands(c, address, limit)):
+                at = 0
+                for i, (kind, count) in enumerate(kinds):
+                    for j in (i - 1, i + 1):
+                        if kind != gspm.IMAGE_PACKED_LITERAL or not 0 <= j < len(kinds):
+                            continue
+                        if kinds[j][0] != gspm.IMAGE_PACKED_BACKGROUND:
+                            continue
+                        edge = row[at] if j < i else row[at + count - 1]
+                        beside[edge] = beside.get(edge, 0) + 1
+                    at += count
+        self.assertEqual(pairs, 80)
+        self.assertEqual(alternating, pairs)
+        self.assertEqual(beside, {gspm.IMAGE_PACKED_INK: 50})
+
+    def test_only_two_of_the_four_pixel_values_occur(self):
+        """A two bit pixel on a two level panel, which is why paper and ink are named constants."""
+        from harmony import gspm
+        c = self._container()
+        seen = {v for _, a, l in self._bounded(c) for r in c.image(a, l).rows for v in r}
+        self.assertEqual(seen, {gspm.IMAGE_PACKED_PAPER, gspm.IMAGE_PACKED_INK})
+
+    def test_the_other_architectures_keep_the_two_byte_pixel(self):
+        """The calibration: the packed reader has to be refused where it does not belong."""
+        from harmony import gspm
+        for name in ('h700_config', 'one_config', 'arch8_config_a'):
+            lab.require(name)
+            c = gspm.parse(lab.load(name))
+            with self.subTest(container=name):
+                self.assertNotIn(c.architecture, gspm.IMAGE_PACKED_ARCHITECTURES)
+                address = next(a for f in c.font_sets() for a in f.glyphs if a is not None)
+                off = c.blob_offset_of(address)
+                # A packed row leader is 0x20 | length, and the two byte encoding's first
+                # operation after the width byte is a skip or a literal count. They do not
+                # collide: nothing here reads as a leader.
+                self.assertNotEqual(c.blob[off + 1] & gspm.IMAGE_PACKED_ROW_TAG_MASK,
+                                    gspm.IMAGE_PACKED_ROW_TAG)
+
+
+class TestTheTouchScreenHitMap(unittest.TestCase):
+    """findings.md section 45: base slot 17, populated by the one remote with a touch panel."""
+
+    CONTAINERS = TestTheParameterBlock.CONTAINERS
+    TOUCH = ('one_config', 'one_config_unprogrammed')
+    # The order a page's codes appear in, as offsets from 0x30, followed by the two that are
+    # always last. Nine shapes exist across both configs and there is no tenth.
+    PREFIX = (0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x2B, 0x2C)
+    ALWAYS = (0x2E, 0x2F)
+
+    @staticmethod
+    def _pages(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name)).touch_pages()
+
+    def test_only_architecture_twelve_has_it_at_all(self):
+        """The reason it stayed unnamed: thirteen of nineteen containers say nothing.
+
+        **The answer elsewhere is None and it used to be an empty list**, which is the correction
+        rather than a change of shape: base slot 17 names the **picture bank** on every other
+        architecture, so "no touch pages" was a fabrication about a section that is not a touch
+        map. Two callers in `packages/codec` then read that empty list back as the picture bank
+        discriminator, which is a rule derived from a reader that should have refused. Section 139.
+
+        **The split is by architecture and it used to be by name**, section 142: `TOUCH` held two
+        names, and when the corpus grew to nineteen the other four arch 12 (Harmony One) containers
+        were on the wrong side of a test whose title says architecture. All six have a hit map and no
+        other container does, so the title is provable now instead of being a coincidence of which
+        samples were listed. The two containers from inside the firmware image carry exactly one page,
+        which is what a safe mode screen is.
+        """
+        from harmony import gspm
+        lab.require(*self.CONTAINERS)
+        with_map = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            pages = self._pages(name)
+            with self.subTest(container=name):
+                if c.architecture == 12:
+                    self.assertIsNotNone(pages)
+                    self.assertGreater(len(pages), 0)
+                    with_map += 1
+                else:
+                    self.assertIsNone(pages)
+        self.assertEqual(with_map, 6, 'every arch 12 container and nothing else')
+
+    def test_the_areas_tile_and_carry_their_own_address(self):
+        """Two independent closures on a twelve byte record."""
+        from harmony import gspm
+        for name in self.TOUCH:
+            c = gspm.parse(lab.load(name))
+            headers = c._counted_pointers(gspm.arch_slot(c.architecture, gspm.TOUCH_MAP_SLOT), 1)
+            for header, page in zip(headers, c.touch_pages()):
+                with self.subTest(container=name, page=hex(header)):
+                    for a, b in zip(page, page[1:]):
+                        self.assertEqual(b.address - a.address, gspm.TOUCH_AREA_LENGTH)
+                    self.assertEqual(page[-1].address + gspm.TOUCH_AREA_LENGTH, header)
+                    for area in page:
+                        self.assertEqual(area.self_address, area.address)
+
+    def test_a_page_is_a_prefix_of_the_code_ladder_plus_two(self):
+        for name in self.TOUCH:
+            for page in self._pages(name):
+                codes = tuple(a.code for a in page)
+                with self.subTest(container=name, codes=codes):
+                    self.assertEqual(codes, self.PREFIX[:len(codes) - 2] + self.ALWAYS)
+
+    def test_the_two_constant_areas_are_a_strip_at_each_edge(self):
+        """Present on every page, including the one that has nothing else."""
+        for name in self.TOUCH:
+            for page in self._pages(name):
+                edges = [(a.x, a.width, a.y, a.height) for a in page[-2:]]
+                with self.subTest(container=name):
+                    self.assertEqual(edges, [(765, 492, 1400, 2000), (3556, 492, 1400, 2000)])
+
+    def test_the_geometry_is_the_same_on_two_unrelated_remotes(self):
+        """What says this is a layout resource and not somebody's configuration."""
+        sizes = [{(a.width, a.height) for page in self._pages(n) for a in page} for n in self.TOUCH]
+        self.assertEqual(sizes[0], sizes[1])
+        self.assertEqual(len(sizes[0]), 35)
+
+    def test_a_hit_returns_the_first_containing_rectangle(self):
+        """Order matters because rectangles overlap, so the lookup must not be a set."""
+        from harmony import gspm
+        page = self._pages('one_config')[0]
+        for area in page:
+            middle = (area.x + area.width // 2, area.y + area.height // 2)
+            expected = next(a.code for a in page if a.contains(*middle))
+            self.assertEqual(gspm.Container.touch_hit(page, *middle), expected)
+        self.assertIsNone(gspm.Container.touch_hit(page, 0, 0))
+
+    def test_overlapping_rectangles_exist_at_all(self):
+        """Otherwise the previous test would be asserting nothing."""
+        overlaps = 0
+        for name in self.TOUCH:
+            for page in self._pages(name):
+                for i, a in enumerate(page):
+                    for b in page[i + 1:]:
+                        if (a.x < b.x + b.width and b.x < a.x + a.width
+                                and a.y < b.y + b.height and b.y < a.y + a.height):
+                            overlaps += 1
+        self.assertEqual(overlaps, 186)
+
+
+#: Timer records per config, measured. Five on a Harmony 525 and a Harmony 600, thirty on a
+#: programmed Harmony One, and the floor of 4 that stood in the loop sat under all of them.
+TIMER_COUNTS = {
+    'arch8_config_880': 17, 'arch8_config_885': 17, 'arch8_config_a': 19, 'arch8_config_b': 18,
+    'arch8_config_c': 18, 'arch8_config_d': 18, 'h525_config': 5, 'h525_config_2': 5,
+    'h600_config': 5, 'h700_config': 9, 'h700_config_2': 9, 'one_config': 30,
+    'one_config_unprogrammed': 28, 'one_spare_after_sync': 28, 'one_spare_before_sync': 28,
+}
+
+
+class TestTheTimerTable(unittest.TestCase):
+    """findings.md section 43: base slot 12, and the two instructions that drive it."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+    SAFEMODE = ('h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm')
+    # The subsystem is found on each image by the multiply that indexes its five byte RAM entries.
+    # Four images, four architectures' worth of build, and the same count each time.
+    IMAGES = ('h700_code', 'h600_code_complete', 'h650_code', 'one34_code')
+
+    @staticmethod
+    def _started_and_cancelled(c):
+        started, cancelled = set(), set()
+        for lst in c.action_lists():
+            for instruction in lst:
+                reference = c.timer_reference(instruction)
+                if reference is None:
+                    continue
+                (started if reference[0] else cancelled).add(reference[1])
+        return started, cancelled
+
+    def test_every_record_is_started_and_no_instruction_overruns_the_table(self):
+        """The closure. The count and the operands are unrelated parts of the file."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            timers = c.timers()
+            started, cancelled = self._started_and_cancelled(c)
+            with self.subTest(config=name):
+                # Exact per config, not a floor of 4, which was the value a Harmony 525 carries.
+                self.assertEqual(len(timers), TIMER_COUNTS[name], name)
+                self.assertEqual(started, set(range(len(timers))))
+                self.assertTrue(cancelled <= started, 'a cancel names a timer that is started')
+
+    def test_a_safe_mode_config_has_no_timers_and_asks_for_none(self):
+        """The negative case: a recovery image has nothing to schedule."""
+        from harmony import gspm
+        for name in self.SAFEMODE:
+            c = gspm.parse(lab.load(name))
+            started, cancelled = self._started_and_cancelled(c)
+            with self.subTest(config=name):
+                self.assertEqual(c.timers(), [])
+                self.assertEqual(started | cancelled, set())
+
+    def test_the_records_are_seven_bytes_and_tile(self):
+        """Seven is four skipped bytes plus a three byte instruction, read off the firmware."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            offsets = sorted(t.address for t in c.timers())
+            gaps = [b - a for a, b in zip(offsets, offsets[1:])]
+            odd = [g for g in gaps if g != gspm.TIMER_RECORD_LENGTH]
+            with self.subTest(config=name):
+                # One odd gap is allowed, and only on the architectures that pack the records
+                # into two runs. Two would mean the record length is wrong.
+                self.assertLessEqual(len(odd), 1, odd)
+                self.assertGreaterEqual(len(gaps) - len(odd), len(offsets) - 2)
+                self.assertTrue(all(g >= gspm.TIMER_RECORD_LENGTH for g in gaps),
+                                'records must not overlap')
+
+    def test_every_record_carries_a_real_opcode_and_the_scheduled_kind(self):
+        from harmony import gspm
+        opcodes = collections.Counter()
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            for timer in c.timers():
+                with self.subTest(config=name):
+                    self.assertEqual(timer.kind, gspm.TIMER_KIND_SCHEDULED)
+                    self.assertGreater(timer.duration, 0)
+                opcodes[timer.instruction.opcode] += 1
+        # Placed opcodes only: 0x7E enters a mode, 0x7F is section 34's, and the two singletons
+        # are in the high band family. A new opcode here would mean the record shape drifted.
+        self.assertEqual(set(opcodes), {0x07, 0x1F, 0x7E, 0x7F})
+
+    def test_the_subsystem_is_one_module_on_every_image(self):
+        """Thirty sites that multiply an entry number by five, in one block, four images."""
+        code_and_base = {'h700_code': 0x9000, 'h600_code_complete': 0x9000,
+                         'h650_code': 0x9000, 'one34_code': 0x20000}
+        for name, base in code_and_base.items():
+            code = lab.load(name)
+            sites = [base + at for at in range(0, len(code) - 1, 2)
+                     if code[at:at + 2] == b'\x05\x0d']       # MULLW 0x05
+            with self.subTest(image=name):
+                self.assertEqual(len(sites), 30)
+                self.assertLess(sites[-1] - sites[0], 0x600, 'one contiguous module')
+
+    def test_only_the_two_operand_highs_reach_the_timers(self):
+        """0x1F is one instruction with many branches; the rest must not be read as timers."""
+        from harmony import gspm
+        c = gspm.parse(lab.load('h700_config'))
+        start = gspm.Instruction(operand=gspm.TIMER_START_OPERAND_HIGH << 8 | 3, opcode=0x1F)
+        cancel = gspm.Instruction(operand=gspm.TIMER_CANCEL_OPERAND_HIGH << 8 | 3, opcode=0x1F)
+        self.assertEqual(c.timer_reference(start), (True, 3))
+        self.assertEqual(c.timer_reference(cancel), (False, 3))
+        for high in (gspm.SELECT_HANDLER_OPERAND_HIGH, 0xE7, 0xF3, 0x00):
+            other = gspm.Instruction(operand=high << 8 | 3, opcode=0x1F)
+            self.assertIsNone(c.timer_reference(other), hex(high))
+        self.assertIsNone(c.timer_reference(gspm.Instruction(operand=start.operand, opcode=0x7F)))
+
+
+class TestTheLogArea(unittest.TestCase):
+    """findings.md section 47: base slot 2, the last slot that was neither named nor NULL."""
+
+    CONTAINERS = TestTheParameterBlock.CONTAINERS
+    # The arch 12 pair, read off the Harmony One's image. The boot scan, the append routine, and the
+    # seek inside the scan that proves which slot it is reading. This said the one image that reads
+    # this section at all until the Harmony 880 and 885's application was found reading it too, with
+    # no window of its own: tests/harmony_880_885/test_harmony_885_log_area.py.
+    SCAN = 0x2DB4C
+    APPEND = 0x2DC0A
+    SEEK = 0x2BA76
+    # The window the append routine refuses to write outside. Compiled in rather than taken from
+    # the section, which is the rail that makes a bad `start` harmless.
+    WINDOW = (0x040000, 0x400000)
+
+    @staticmethod
+    def _area(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name)).log_area()
+
+    def test_every_container_declares_one(self):
+        """Fifteen containers, four architectures, three format versions. None is NULL."""
+        # `_area` is what loads, so no static rule can see this one; the runtime check behind
+        # `make test-partial` is what found it. Fifteen is the claim, so fifteen have to be here.
+        lab.require(*self.CONTAINERS)
+        for name in self.CONTAINERS:
+            with self.subTest(container=name):
+                self.assertIsNotNone(self._area(name))
+
+    def test_the_capacity_and_the_bounds_agree(self):
+        """The closure that fixes the field boundaries: span is capacity times a per architecture
+        stride, and the stride is the same for every container of an architecture."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            architecture = gspm.parse(lab.load(name)).architecture
+            with self.subTest(container=name):
+                self.assertEqual(self._area(name).stride, gspm.LOG_STRIDE[architecture])
+
+    # Section 108's allocator, on arch 14: the largest run of 64 KiB blocks in this range that fits
+    # below the chip size and still starts above the config's own end plus three.
+    ARCH14_CHIP_SIZE = 0x200000
+    # The user configs only. The three arch 14 safe mode containers declare a limit of 0x100000, so
+    # the declared limit is the **generator's** idea of the chip size and not the remote's: those
+    # images were built for a 1 MiB part. Comparing a computed region against one of those would be
+    # comparing two different chips.
+    ARCH14_USER_CONFIGS = ('h600_config', 'h700_config', 'h700_config_2')
+    BLOCK = 0x10000
+    BLOCKS = range(8, 1, -1)
+    FLOOR_ADJUSTMENT = 3
+
+    @classmethod
+    def _computed(cls, container):
+        """Where the arch 14 firmware would put the journal, from the config's own end address."""
+        floor = container.end_addr + cls.FLOOR_ADJUSTMENT
+        for blocks in cls.BLOCKS:
+            span = blocks * cls.BLOCK
+            if span >= cls.ARCH14_CHIP_SIZE:
+                continue
+            start = cls.ARCH14_CHIP_SIZE - span
+            if start <= floor:
+                continue
+            return start, cls.ARCH14_CHIP_SIZE
+        return None
+
+    def test_the_arch_fourteen_firmware_computes_a_different_region_than_the_config_declares(self):
+        """Section 108, and it is why the arch 14 census found no seek of this slot.
+
+        The remote does not read the reservation, it makes its own: the top of the detected chip, in
+        whole 64 KiB erase blocks, as many as fit above the config. On every arch 14 user config in
+        the corpus that comes out as eight blocks where the section declares two, so the two share a
+        limit and disagree about the start. A writer must not assume they describe the same bytes.
+        """
+        from harmony import gspm
+        checked = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture != 14 or name not in self.ARCH14_USER_CONFIGS:
+                continue
+            area = c.log_area()
+            computed = self._computed(c)
+            with self.subTest(container=name):
+                self.assertIsNotNone(computed, 'the allocator finds a region')
+                start, limit = computed
+                self.assertEqual(limit, area.limit, 'they agree about the top of the chip')
+                self.assertLess(start, area.start, 'and the firmware claims more of it')
+                self.assertEqual(limit - start, 8 * self.BLOCK, 'eight blocks, the maximum')
+                checked += 1
+        self.assertEqual(checked, len(self.ARCH14_USER_CONFIGS), 'all three, or none')
+
+    def test_neither_region_has_ever_been_written_on_the_bench_600(self):
+        """Section 109, measured on the attached remote and pinned here.
+
+        Thirteen windows on 10 August 2026, all of them erased from three bytes above the config's
+        end marker to the last sixteen bytes of the chip, with the config's own cookie as the control
+        that says an `0xFF` window is information. What this test can check without hardware is the
+        half the measurement rested on: that the marker really is where the arithmetic put it, since
+        the whole allocator argument is arithmetic on `end_addr`.
+
+        The live half is `packages/usb/test/transport/hardware.test.ts`, gated on the remote being attached.
+        """
+        from harmony import gspm
+        c = gspm.parse(lab.load('h600_config'))
+        offset = c.end_addr - c.flash_base
+        self.assertEqual(c.blob[offset:offset + 4], b'PTYY', 'the end marker sits at end_addr')
+        # And the config stops there: three bytes of trailer after the marker's first byte, which is
+        # why the measured window's last three bytes were the first erased ones.
+        self.assertEqual(len(c.blob) - offset, 4)
+        self.assertEqual(self._computed(c), (0x180000, 0x200000))
+        self.assertEqual((c.log_area().start, c.log_area().limit), (0x1E0000, 0x200000))
+
+    def test_the_region_sits_above_the_config_and_ends_at_the_top_of_flash(self):
+        """What makes 'a region reserved for the firmware' the reading rather than a coincidence."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            area = c.log_area()
+            with self.subTest(container=name):
+                self.assertGreaterEqual(area.start, c.end_addr)
+                # 0x100000, 0x200000 and 0x400000 exactly; arch 8 stops 8 KiB short of 2 MiB.
+                self.assertIn(area.limit, (0x080000, 0x100000, 0x1FE000, 0x200000, 0x400000))
+
+    def test_a_safe_mode_container_names_a_smaller_chip_than_its_user_config(self):
+        """Section 79, and it is why the arch 9 safe mode container looked like a contradiction.
+
+        The region is the top of the flash, so its limit states the chip size the config was built
+        for, and a safe mode config ships with the firmware rather than being generated for a
+        unit. Both safe mode containers that carry a `u16` capacity name **1 MiB**, on two
+        architectures, and neither matches its own remote: the 700's user config names 2 MiB and
+        the 525's names 512 KiB. So the 525's safe mode container naming a region above 512 KiB
+        breaks no rule, and the 512 KiB it was measured against came from the same field in the
+        other container.
+        """
+        lab.require('h525_config', 'h525_safemode_ahcm', 'h700_config', 'h700_gspm')
+        self.assertEqual(self._area('h525_safemode_ahcm').limit, 0x100000)
+        self.assertEqual(self._area('h700_gspm').limit, 0x100000)
+        self.assertEqual(self._area('h525_config').limit, 0x080000)
+        self.assertEqual(self._area('h700_config').limit, 0x200000)
+        # And the capacity closure holds on **every** container, which is what says the field split is
+        # right whatever chip any of them was built for. Four names stood here, the four this test
+        # names limits for, and the closure is not about those four. Section 141.
+        checked = 0
+        for name in lab.ALL_CONTAINERS:
+            area = self._area(name)
+            with self.subTest(container=name):
+                self.assertEqual(area.limit - area.start, area.capacity * area.stride)
+            checked += 1
+        self.assertEqual(checked, 21)
+
+    def test_the_wrong_field_split_does_not_close(self):
+        """Calibration. Reading the leading field as a u24 on the eight byte architectures leaves
+        two bytes for the limit, and the region it describes is then smaller than one unit of the
+        capacity it declares, in every container. The correct split divides exactly."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            slot = gspm.arch_slot(c.architecture, gspm.LOG_SLOT)
+            if c.section_length(slot) != 8:
+                continue
+            off = c.blob_offset_of(c.sections[slot].address)
+            capacity = int.from_bytes(c.blob[off:off + 3], 'little')
+            start = int.from_bytes(c.blob[off + 3:off + 6], 'little')
+            limit = int.from_bytes(c.blob[off + 6:off + 8], 'little')
+            with self.subTest(container=name):
+                self.assertLess(limit - start, capacity)
+
+    def test_the_arch_twelve_firmware_scans_the_section_it_declares(self):
+        """The scan seeks raw slot 2 and reads two 24 bit fields out of it, in that order."""
+        code = lab.load('one34_code')
+        seen = []
+        offset = self.SCAN - 0x20000
+        for _ in range(32):
+            instr = isa.decode(code, offset, 0x20000)
+            offset += 2 * instr.words
+            if instr.mnemonic == 'MOVLW':
+                seen.append(('lit', instr.fields['k']))
+            if instr.mnemonic == 'CALL':
+                seen.append(('call', instr.fields['target']))
+        # MOVLW 2 then the seeker, then two reads into the count and the address variables.
+        self.assertIn(('lit', 2), seen)
+        self.assertEqual(seen[seen.index(('lit', 2)) + 1], ('call', self.SEEK))
+        self.assertEqual([t for t in seen if t[0] == 'call'].count(('call', 0x2B93C)), 2)
+
+    def test_the_append_is_bounded_by_a_compiled_in_window(self):
+        """`WINDOW` appears as two literal comparisons at the head of the append routine, and the
+        section's own region is inside it in both arch 12 configs."""
+        low, high = self.WINDOW
+        self.assertEqual(literals_at('one34_code', 0x20000, self.APPEND, 14),
+                         [0x00, 0x00, low >> 16, 0x00, 0x00, high >> 16])
+        for name in ('one_config', 'one_config_unprogrammed'):
+            area = self._area(name)
+            with self.subTest(container=name):
+                self.assertGreaterEqual(area.start, low)
+                self.assertLessEqual(area.limit, high)
+
+    # Section 111: what the boot scan recovers from a region that is not erased, and what the
+    # append's own bound then does with it. The pattern is the top sixteen bytes of the block the
+    # Harmony One carries at `0x3F0000`, read off the spare on 10 August 2026.
+    ARCH12_MEASURED_REGION = bytes.fromhex('00ff00ff00ff00ff00ff00ff00ff0000')
+    LOG_ERASED = 0xFF
+
+    @classmethod
+    def _recovered(cls, area, contents):
+        """What `0x2DB4C` leaves in its two variables, given what the region holds.
+
+        It walks `capacity` bytes and, for each byte that is not `0xFF`, records the cursor and the
+        remaining count. The read helper advances the cursor **before** the address is reconstructed,
+        so a non erased byte at offset k records `start + k + 1` and the count `capacity - k`. Both
+        halves matter: the count is what stops an overrun and the address is what the append checks.
+        """
+        address, remaining = 0, 0
+        for k in range(area.capacity):
+            if contents[k] != cls.LOG_ERASED:
+                address, remaining = area.start + k + 1, area.capacity - k
+        return address, remaining
+
+    def test_a_region_whose_last_byte_is_written_disables_the_appender(self):
+        """Section 111, and it is the rail section 47 read the other way round.
+
+        The One's declared region is the top sixteen bytes of flash, and on both bench units those
+        bytes are not erased: the boot scan therefore hands the append an address of `0x400000`,
+        which is the append's own exclusive upper bound, and the failure branch zeroes the remaining
+        count. So the bound this project read as protection against a badly declared region is what
+        fires on a well declared one.
+        """
+        low, high = self.WINDOW
+        for name in ('one_config', 'one_config_unprogrammed'):
+            area = self._area(name)
+            with self.subTest(container=name):
+                self.assertEqual((area.start, area.limit, area.capacity), (0x3FFFF0, high, 16))
+                self.assertEqual(len(self.ARCH12_MEASURED_REGION), area.capacity)
+                address, remaining = self._recovered(area, self.ARCH12_MEASURED_REGION)
+                self.assertEqual(address, high, 'the position after the last written byte')
+                self.assertEqual(remaining, 1, 'and one unit still declared unused')
+                # Which the append refuses, because its bound is exclusive.
+                self.assertFalse(low <= address < high)
+
+    def test_an_erased_region_would_leave_the_appender_armed(self):
+        """The negative, so the test above is about the contents and not about the arithmetic."""
+        area = self._area('one_config')
+        address, remaining = self._recovered(area, bytes([self.LOG_ERASED]) * area.capacity)
+        self.assertEqual((address, remaining), (0, 0), 'nothing recorded, so the scan found nothing')
+        # And a region with one byte written near the start leaves room and a legal address.
+        contents = bytearray([self.LOG_ERASED] * area.capacity)
+        contents[0] = 0x00
+        address, remaining = self._recovered(area, bytes(contents))
+        low, high = self.WINDOW
+        self.assertTrue(low <= address < high)
+        self.assertEqual(remaining, area.capacity)
+
+    def test_the_arch_fourteen_firmware_never_seeks_it(self):
+        """Why the section stayed unnamed while the rest of the table fell: the architecture this
+        project decodes first declares it and does not read it."""
+        self.assertEqual(seeker_census('h700_code', 0x9000, 0x10B92, 0x6DD).get(2, 0), 0)
+        self.assertEqual(seeker_census('one34_code', 0x20000, self.SEEK, 0x1F1).get(2, 0), 1)
+
+    def test_no_config_in_the_corpus_uses_the_harmony_one_append(self):
+        """The Harmony One's append, the `0x1F` handler's operands `0xE1` to `0xE5`, is firmware nothing
+        exercises, like the number sender. A writer may emit these operands; no config here ever did.
+
+        Renamed from `test_no_config_in_the_corpus_appends_to_it`, which the corpus no longer bears out:
+        one Harmony 880 configuration in `lab.USER_CONFIGS`, `arch8_config_a`, appends to the log through
+        its firmware's `0x0F` band, which `log_reference` does not look for, and `h525_config_2` holds the
+        same list, where what it does is not read. `tests/harmony_880_885/test_harmony_885_log_area.py`."""
+        from harmony import gspm
+        for name in TestTheStateVariableTable.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            used = {c.log_reference(i) for lst in (c.action_lists() or []) for i in lst}
+            with self.subTest(container=name):
+                self.assertEqual(used - {None}, set())
+
+
+def seeker_census(name, base, seeker, slot_register):
+    """How many times each slot number is passed to the section seeker, per image.
+
+    The slot arrives in a fixed RAM byte rather than in W, so the literal is the `MOVLW` feeding
+    the `MOVWF` of that byte, a few instructions before the call.
+    """
+    import collections
+    code = lab.load(name)
+    sites = collections.Counter()
+    offset = 0
+    while offset < len(code) - 4:
+        instr = isa.decode(code, offset, base)
+        if instr and instr.mnemonic == 'CALL' and instr.fields.get('target') == seeker:
+            for back in range(2, 16, 2):
+                if offset - back < 0:
+                    break
+                first = isa.decode(code, offset - back, base)
+                second = isa.decode(code, offset - back + 2, base)
+                if (first and first.mnemonic == 'MOVLW' and second
+                        and second.mnemonic == 'MOVWF'
+                        and second.fields.get('f') == (slot_register & 0xFF)):
+                    sites[first.fields['k']] += 1
+                    break
+        offset += 2
+    return sites
+
+
+class TestTheBitmap(unittest.TestCase):
+    """`docs/findings.md` section 50: what screen opcode 2 addresses.
+
+    The header is read off the firmware rather than guessed from the data, which matters because
+    two `u16` of which the firmware uses only the low byte look exactly like two `u8` with a pad
+    byte each, on every value the corpus contains.
+    """
+
+    # `[sample, bitmaps, kinds, strides, row counts]`. Small numbers on purpose: this is the
+    # measurement that says opcode 2 does not explain the unreached region.
+    SHAPES = [
+        # The counts grew with section 53: a mode record's own screen program is a root, and it
+        # is where the large pictures are named. Strides 128 and 64 appear only through it.
+        # Section 66 moved every count again, by making the program a mode's pages state a root.
+        # Arch 12 gains the most, 28 to 98, because that is where its screen drawing lives.
+        ('h700_config', 22, {0, 1}, {12, 128}, {10, 128}),
+        ('h700_config_2', 22, {0, 1}, {12, 128}, {10, 128}),
+        ('h600_config', 16, {0, 1}, {12, 128}, {10, 128}),
+        # Arch 12 only opened up with section 54. Stride 176 over 220 rows is a full screen, and
+        # it is the geometry section 51 recovered by measurement, here stated by the format.
+        ('one_config', 98, {0, 1},
+         {20, 22, 42, 47, 51, 61, 62, 69, 81, 87, 88, 98, 133, 147, 162, 163, 164, 176},
+         {10, 11, 18, 33, 42, 48, 50, 52, 58, 62, 69, 80, 83, 85, 89, 91, 96, 114, 220}),
+        ('one_config_unprogrammed', 70, {0, 1},
+         {20, 22, 42, 47, 51, 61, 62, 69, 81, 87, 88, 98, 133, 147, 162, 163, 164, 176},
+         {10, 11, 18, 33, 42, 48, 50, 52, 58, 62, 69, 80, 83, 85, 89, 91, 96, 114, 220}),
+        ('arch8_config_a', 30, {0, 1}, {15, 16, 17, 18, 19, 64, 128}, {8, 10, 32, 160}),
+        ('arch8_config_b', 29, {0, 1}, {15, 16, 17, 18, 19, 64, 128}, {8, 10, 32, 160}),
+        ('arch8_config_c', 31, {0, 1}, {15, 16, 17, 18, 19, 64, 128}, {8, 10, 32, 160}),
+        ('arch8_config_d', 31, {0, 1}, {15, 16, 17, 18, 19, 64, 128}, {8, 10, 32, 160}),
+        # The negative cases. Arch 9 emits no opcode 2 at all and neither does a safe mode
+        # container, which is what says the section is optional rather than structural.
+        ('h525_config', 0, set(), set(), set()),
+        ('h600_safemode_gspm', 0, set(), set(), set()),
+        ('h700_gspm', 0, set(), set(), set()),
+        ('h650_safemode_gspm', 0, set(), set(), set()),
+    ]
+
+    def test_every_addressed_bitmap_decodes(self):
+        from harmony import gspm
+        for name, count, kinds, strides, rows in self.SHAPES:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                found = c.bitmaps()
+                self.assertEqual(len(found), count)
+                self.assertEqual({b.kind for b in found}, kinds)
+                self.assertEqual({b.stride for b in found}, strides)
+                self.assertEqual({b.rows for b in found}, rows)
+
+    def test_a_raw_bitmap_states_its_own_length(self):
+        from harmony import gspm
+        # The check the extent rests on: a raw picture is exactly its header plus one row per
+        # declared row, and every one of them fits inside the container it lives in.
+        for name, count, _, _, _ in self.SHAPES:
+            data = lab.load(name)
+            if data is None or count == 0:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                raw = [b for b in c.bitmaps() if b.kind == gspm.BITMAP_RAW]
+                self.assertTrue(raw, 'expected at least one raw picture')
+                for bitmap in raw:
+                    self.assertEqual(
+                        bitmap.length,
+                        gspm.BITMAP_HEADER + gspm.PIXEL_BYTES * bitmap.stride * bitmap.rows)
+                    off = c.blob_offset_of(bitmap.address)
+                    self.assertLessEqual(off + bitmap.length, c.length)
+
+    def test_an_encoded_bitmap_agrees_with_a_header_it_discarded(self):
+        """The closure the encoded extent rests on, and it is a real one.
+
+        The encoded body reads the two `u16` of the header and throws them away, then draws until
+        its own terminator. So the number of row breaks it contains and the row count the header
+        states are two independent statements, and a walk that is off by one control byte would
+        desynchronise and produce neither. Every encoded picture in the corpus
+        breaks exactly `rows - 1` times, across the three architectures that carry any.
+
+        **The population is every container and not `SHAPES`**, section 141: this closure needs only
+        a name, where `SHAPES` is a fixture of expected stride and row sets per sample, so running it
+        over the wider list costs nothing and asserts more. And the total was guarded by
+        `if all(lab.path(...))`, which is unreachable protection, since `lab.load` in the loop raises
+        `SkipTest` for a missing sample so the guard can only ever be true.
+        """
+        from harmony import gspm
+        lab.require(*lab.ALL_CONTAINERS)
+        total = 0
+        for name in lab.ALL_CONTAINERS:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for bitmap in c.bitmaps():
+                    if bitmap.kind != gspm.BITMAP_ENCODED:
+                        self.assertIsNone(bitmap.row_breaks)
+                        continue
+                    self.assertEqual(bitmap.row_breaks, bitmap.rows - 1)
+                    total += 1
+        # 95 before section 66 reached the programs a mode's pages state, and 129 over the eight
+        # names `SHAPES` holds.
+        self.assertEqual(total, 185)
+
+    def test_the_pictures_tile_the_region(self):
+        """The closure on the extent, and the correction of an earlier negative.
+
+        `stride` is in pixels and a pixel is two bytes, so a raw picture is `5 + 2 * stride * rows`
+        bytes. Section 50 read `stride` as a byte count, which halved every raw extent and made the
+        pictures look as though they did not tile; they do. Fourteen of the Harmony 600's fifteen
+        gaps are exactly the extent of the picture before them, and the odd one out is where a
+        second picture is addressed out of order.
+        """
+        from harmony import gspm
+        lab.require('h600_config')
+        c = gspm.parse(lab.load('h600_config'))
+        pictures = sorted(c.bitmaps(), key=lambda b: b.address)
+        exact = sum(1 for k in range(len(pictures) - 1)
+                    if pictures[k].address + pictures[k].length == pictures[k + 1].address)
+        self.assertEqual(exact, 14)
+        self.assertEqual(len(pictures), 16)
+
+    def test_the_renderer_dispatches_on_the_kind_byte(self):
+        """The three arms of the chain at `0x0E3F6`, decoded rather than read literally.
+
+        An XORLW chain's literals are not its case values, so this goes through `chains.py`. Kind
+        2 is the one that matters for a reader: it is a valid byte the firmware accepts and draws
+        nothing for, so refusing it would refuse a file the remote takes.
+        """
+        from harmony import gspm
+        lab.require('h700_code')
+        code = lab.load('h700_code')
+        cases = {case.value for case in chains.xor_chain(code, 0x9000, 0x0E3F6)}
+        self.assertEqual(cases, {gspm.BITMAP_RAW, gspm.BITMAP_ENCODED, gspm.BITMAP_NOTHING})
+
+
+class TestTheModeRecord(unittest.TestCase):
+    """`docs/findings.md` section 52: base slot 6's pointer does not land on its entry.
+
+    It lands inside the record, on a discriminator byte with a `u24` back pointer to the start
+    beside it, which is the shape base slot 5's infrared records have. Reading the entry at the
+    pointer decodes the record's tail as if it were its head, and because the byte there is
+    usually zero it looks like the wide tagged list form with a count running to 255.
+    """
+
+    # Every container, section 141. Eight names stood here and the claims are per record, so the
+    # population is every container that has records rather than one sample per architecture plus a
+    # safe mode one.
+    SAMPLES = list(lab.ALL_CONTAINERS)
+    #: Configs whose modes each carry exactly one enter and one leave handler.
+    PAIRED = {'one_config', 'one_config_unprogrammed'}
+
+    def test_every_pointer_lands_inside_its_own_record(self):
+        from harmony import gspm
+        lab.require(*self.SAMPLES)
+        total = 0
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                records = c.mode_records()
+                self.assertTrue(records)
+                for record in records:
+                    at = c.blob_offset_of(record.address)
+                    start = c.blob_offset_of(record.start)
+                    self.assertIsNotNone(start)
+                    self.assertLess(start, at, 'the back pointer must point backwards')
+                    total += 1
+        # An unconditional total. `if all(lab.path(...))` stood here and was unreachable protection:
+        # `lab.load` inside the loop raises `SkipTest` for a missing sample, so the guard could only
+        # ever be true, and a guard that reads as protection and is not is worse than none. It needs
+        # `lab.require` up front instead, which the loop below now has. Section 141.
+        self.assertEqual(total, 2926)
+
+    def test_the_list_fits_inside_the_record_it_belongs_to(self):
+        """The closure the record start rests on.
+
+        The count is read at the start and the record ends just past the table pointer, so a wrong
+        start gives a count that overruns. It never does, in any container.
+        """
+        from harmony import gspm
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for record in c.mode_records():
+                    start = c.blob_offset_of(record.start)
+                    at = c.blob_offset_of(record.address)
+                    self.assertLessEqual(start + record.length, at + 10)
+
+    def test_arch_12_pairs_an_enter_handler_with_a_leave_handler(self):
+        """Section 37 predicted the pair and this is where it holds exactly.
+
+        Both Harmony Ones give one of each in every mode. Arch 14 and arch 8 do not, so the
+        pairing is recorded as an arch 12 property rather than generalised.
+        """
+        from harmony import gspm
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None or name not in self.PAIRED:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for record in c.mode_records():
+                    tags = [e.tag for e in record.entries]
+                    self.assertEqual(tags.count(gspm.MODE_TAG_ENTER), 1)
+                    self.assertEqual(tags.count(gspm.MODE_TAG_LEAVE), 1)
+
+    def test_reading_at_the_pointer_instead_saturates(self):
+        """The defect this section corrects, pinned so it cannot come back unnoticed.
+
+        At the table pointer the first byte is usually zero, the wide form's marker, and the next
+        byte is taken for a count. On the Harmony 600 that yields a list of 255 entries, which is
+        exactly where a `u8` saturates and is the sign that the start is wrong.
+        """
+        from harmony import gspm
+        lab.require('h600_config')
+        c = gspm.parse(lab.load('h600_config'))
+        widest = max(len(c.tagged_list(a) or []) for a in c.mode_table())
+        self.assertEqual(widest, 255)
+        self.assertLess(max(len(r.entries) for r in c.mode_records()), 255)
+
+
+class TestTheModePages(unittest.TestCase):
+    """`docs/findings.md` section 66: an entry states how many pages a mode has, and each page
+    names a tagged list and a screen program.
+
+    The entry is `u8 kind; u24 start; u16 pages; u24 page[pages]`, read that way because the
+    consumer at `0x16816` reads it that way: literal 6 into the stride helper's offset register,
+    then indexing with stride 3. The four byte reading it replaces was not wrong, only short.
+    """
+
+    # Every container, section 141: twelve names stood here, which was every container the corpus
+    # held when the class was written and three short of it afterwards.
+    SAMPLES = list(lab.ALL_CONTAINERS)
+
+    def test_every_page_pointer_lands_in_the_container(self):
+        """The first thing a wrong stride or a wrong offset would break."""
+        from harmony import gspm
+        pages = 0
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for record in c.mode_records():
+                    self.assertEqual(record.page_count, len(record.pages))
+                    self.assertEqual(record.entry_length, 6 + 3 * record.page_count)
+                    for page in record.pages:
+                        self.assertIsNotNone(c.blob_offset_of(page.address))
+                        pages += 1
+        self.assertEqual(pages, 3530)
+
+    def test_a_page_precedes_the_entry_by_its_own_length(self):
+        """The closure on the page's size, which nothing states.
+
+        One page of every entry sits immediately in front of it, so the distance from the entry
+        back to that page is the page's length: six bytes everywhere and seven on arch 12, where
+        the consumer reads a byte at offset 0 before following the pointer at offset 1. Every
+        entry in every container has exactly one such neighbour.
+        """
+        from harmony import gspm
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                expected = 7 if c.architecture in gspm.MODE_PAGE_LEAD_ARCHITECTURES else 6
+                for record in c.mode_records():
+                    at = c.blob_offset_of(record.address)
+                    adjacent = [p for p in record.pages
+                                if c.blob_offset_of(p.address) == at - expected]
+                    self.assertEqual(len(adjacent), 1)
+                    self.assertEqual(adjacent[0].length, expected)
+
+    def test_a_page_names_a_tagged_list_and_a_screen_program(self):
+        """Both fields, checked by what they point at rather than by what they look like.
+
+        The list field lands in the one unclaimed run directly above base slot 7's table in every
+        container that has one, and the program field decodes as a screen program with nothing
+        left over. Neither holds for a field split one byte out.
+        """
+        from harmony import gspm
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for page in c.mode_pages():
+                    self.assertIsNotNone(c.tagged_list(page.list_address))
+                    self.assertIsNotNone(c.screen_program(page.program))
+
+    def test_the_stated_program_is_the_computed_one_off_arch_12(self):
+        """Where section 53's computation and this reading agree, and where they do not.
+
+        On arch 8, 9 and 14 the first page's program is the address section 53 computes, in all
+        but a handful of arch 8 records. On **arch 12 they never coincide**: the stated program
+        starts later and its first instruction is a call to the fragment sitting where section 53
+        computed. So the computed root is a callee there rather than a mistake.
+        """
+        from harmony import gspm
+        agreed = disagreed = 0
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                arch12 = c.architecture == 12
+                for record in c.mode_records():
+                    if not record.pages:
+                        continue
+                    stated = record.pages[0].program
+                    computed = record.start + record.length
+                    if arch12:
+                        self.assertNotEqual(stated, computed)
+                        self.assertGreater(stated, computed)
+                    if stated == computed:
+                        agreed += 1
+                    else:
+                        disagreed += 1
+        self.assertEqual((agreed, disagreed), (2185, 741))
+
+
+class TestThePictureBank(unittest.TestCase):
+    """`docs/findings.md` section 55: the region is one contiguous array of pictures.
+
+    Sections 53 and 54 reached the pictures screen opcode 2 names. This says what the rest is, and
+    the answer is that there is no rest: the whole region above the named content walks as a run of
+    pictures and lands exactly on the trailer.
+    """
+
+    # `[sample, pictures in the bank, bytes, how many opcode 2 names]`.
+    #
+    # The last column is what section 66 moved, and it moved a long way: section 55 could name
+    # about a third of a bank and now **every picture in an arch 12 bank is named**, 98 of 98 and
+    # 70 of 70, with exactly two left over per container on arch 8 and arch 14. The bank is not
+    # a region that happens to contain pictures, it is the set of pictures the programs draw.
+    BANKS = [
+        ('one_config', 98, 1361283, 98),
+        ('one_config_unprogrammed', 70, 1102735, 70),
+        ('h600_config', 18, 434210, 16),
+        ('h700_config', 24, 598320, 22),
+        ('h700_config_2', 24, 598320, 22),
+        ('arch8_config_a', 32, 284539, 30),
+        ('arch8_config_b', 31, 239618, 29),
+        ('arch8_config_c', 33, 242658, 31),
+        ('arch8_config_d', 33, 242658, 31),
+    ]
+    # Containers with no region at all, and therefore no bank. The negative case.
+    # The three safe mode containers. `h525_config` was on this list until section 62 and should
+    # not have been: section 55 read "emits no screen opcode 2" as "has no picture region", and
+    # the arch 9 sample emits none and has four pictures anyway.
+    WITHOUT = ['h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm']
+
+    def test_the_bank_walks_to_the_trailer_exactly(self):
+        from harmony import gspm
+        for name, count, size, named in self.BANKS:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                bank = c.picture_bank()
+                self.assertIsNotNone(bank)
+                self.assertEqual(len(bank), count)
+                self.assertEqual(sum(p.length for p in bank), size)
+                # Contiguous by construction, so check it: each picture begins where the last ended.
+                for k in range(len(bank) - 1):
+                    self.assertEqual(bank[k].address + bank[k].length, bank[k + 1].address)
+                addressed = {b.address for b in c.bitmaps()}
+                self.assertEqual(len(addressed & {p.address for p in bank}), named)
+
+    def test_the_start_is_the_only_one_that_fits(self):
+        """Two constraints, and together they leave exactly one candidate.
+
+        Landing on the trailer alone leaves several starts on two arch 8 configs, because a wrong
+        head can still parse. Requiring that every picture opcode 2 names appears in the run at its
+        own address removes them.
+        """
+        from harmony import gspm
+        for name, count, _, _ in self.BANKS:
+            data = lab.load(name)
+            with self.subTest(name):
+                c = gspm.parse(data)
+                top = c.named_content_end()
+                wanted = {b.address for b in c.bitmaps()}
+                fits = []
+                for start in range(top, min(top + 1024, c.length)):
+                    run = c.picture_run(start)
+                    if run is not None and wanted <= {p.address for p in run}:
+                        fits.append(start)
+                self.assertEqual(len(fits), 1, f'{name}: {len(fits)} starts fit')
+
+    def test_a_container_with_no_region_has_no_bank(self):
+        from harmony import gspm
+        for name in self.WITHOUT:
+            data = lab.load(name)
+            with self.subTest(name):
+                self.assertIsNone(gspm.parse(data).picture_bank())
+
+    def test_arch_9_has_a_bank_of_four_monochrome_pictures(self):
+        """
+        findings.md section 62, and a correction of section 55.
+
+        Section 55 concluded that the containers emitting no screen opcode 2 have no picture
+        region, and offered the arch 9 sample as one of the four cases carrying that closure. It
+        does emit none, and it has four pictures regardless: nothing in its programs draws one, and
+        base slot 17 names them anyway. The inference from "nothing draws it" to "it is not there"
+        is the part that was wrong.
+
+        Kind 2 is the giveaway. On the other three architectures its handler draws nothing, so the
+        reader gave it no length; on arch 9 it is one bit a pixel, which makes a 96 by 64 screen
+        768 bytes and the record 773.
+        """
+        from harmony import gspm
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        bank = c.picture_bank()
+        self.assertIsNotNone(bank)
+        self.assertEqual([(p.kind, p.stride, p.rows, p.length) for p in bank],
+                         [(2, 96, 64, 773)] * 4)
+
+    def test_base_slot_17_states_where_the_bank_begins(self):
+        """
+        Two bytes ahead of it, on every sample of the three architectures that do not have a touch
+        screen. Arch 12 (Harmony One) puts the touch hit map in that slot and names the bank nowhere,
+        so the search stays for it alone.
+
+        **The population is a predicate, section 141**: every user config whose architecture is not
+        12. Eight names stood here, which was every non arch 12 config the corpus held when the test
+        was written and three short of it afterwards, and the exclusion is by architecture rather than
+        by omission so a new sample joins the claim by being parsed.
+        """
+        from harmony import gspm
+        lab.require(*lab.USER_CONFIGS, 'one_config')
+        stated = [n for n in lab.USER_CONFIGS
+                  if gspm.parse(lab.load(n)).architecture != 12]
+        self.assertEqual(len(stated), 11, 'and the four arch 12 configs are the ones left out')
+        for name in stated:
+            with self.subTest(name):
+                c = gspm.parse(lab.load(name))
+                start = c.picture_bank_start()
+                self.assertIsNotNone(start)
+                run = c.picture_run(start)
+                self.assertIsNotNone(run, 'the walk from the stated start reaches the trailer')
+                self.assertEqual(run, c.picture_bank())
+        self.assertIsNone(gspm.parse(lab.load('one_config')).picture_bank_start(),
+                          'arch 12 names the bank nowhere')
+
+    def test_a_start_one_byte_out_does_not_walk(self):
+        """What makes the walk a proof rather than a parse."""
+        from harmony import gspm
+        lab.require('h600_config')
+        c = gspm.parse(lab.load('h600_config'))
+        bank = c.picture_bank()
+        start = c.blob_offset_of(bank[0].address)
+        self.assertIsNotNone(c.picture_run(start))
+        for delta in (-1, 1, 2, 3):
+            self.assertIsNone(c.picture_run(start + delta), f'offset {delta:+d} should not walk')
+
+
+class TestReselectingTheRunningActivityFiresTagFive(unittest.TestCase):
+    """findings.md section 313: what fires an activity's tag 5 list.
+
+    The activity switch compares the running activity with the one asked for. When they differ it
+    runs the running one's list with tag 2, makes the new one current and runs it with tag 1; when
+    they are the same it runs it with tag 5 and nothing else. So tag 5 is picking the activity that is
+    already running, which section 273 and `ACTIVITY_START_TAG`'s docstring had left open.
+    """
+
+    # The routine's entry per image, and the two variables it compares: the running activity and the
+    # one asked for, both read off the listings in section 313.
+    SWITCHES = {'h600_code_complete': (0x9000, 0x0E798, 0x217, 0x2A8),
+                'h700_code': (0x9000, 0x0EB7E, 0x120, 0x1B1),
+                'one34_code': (0x20000, 0x24E28, 0xE22, 0xEB3)}
+
+    def test_the_same_activity_gets_tag_five_and_a_different_one_two_then_one(self):
+        lab.require(*self.SWITCHES)
+        for name, (base, addr, running, asked) in self.SWITCHES.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                offset = addr - base
+                listing, at = [], {}
+                for _ in range(16):
+                    instr = isa.decode(code, offset, base)
+                    at[id(instr)] = base + offset
+                    listing.append(instr)
+                    offset += 2 * instr.words
+                # The tags it stores, in order: 2 for the activity being left, 1 for the new one,
+                # and 5 on the arm taken when the two are equal.
+                self.assertEqual([i.fields['k'] for i in listing if i.mnemonic == 'MOVLW'], [2, 1, 5])
+                # The comparison is the running activity against the one asked for, and equality
+                # branches straight to the arm loading 5, whose bank select sits just in front of it.
+                self.assertEqual([i.mnemonic for i in listing[1:4]], ['MOVF', 'SUBWF', 'BZ'])
+                self.assertEqual({listing[1].fields['f'], listing[2].fields['f']},
+                                 {running & 0xFF, asked & 0xFF})
+                five = next(i for i in listing if i.mnemonic == 'MOVLW' and i.fields['k'] == 5)
+                self.assertEqual(listing[3].fields.get('target'), at[id(five)] - 2)
+                # And the new activity becomes current only on the other arm.
+                copies = [i for i in listing if i.mnemonic == 'MOVFF']
+                self.assertIn((asked, running), [(i.fields['src'], i.fields['dst']) for i in copies])
+
+
+def literals_at(name, base, addr, count):
+    """The MOVLW literals in a window, stopping at the first RETURN."""
+    code = lab.load(name)
+    offset = addr - base
+    out = []
+    for _ in range(count):
+        instr = isa.decode(code, offset, base)
+        offset += 2 * instr.words
+        if instr.mnemonic == 'MOVLW':
+            out.append(instr.fields['k'])
+        if instr.mnemonic == 'RETURN':
+            break
+    return out
+
+
+if __name__ == '__main__':
+    unittest.main()

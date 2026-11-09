@@ -19,7 +19,7 @@ the discriminator: real call targets are function entry points, so they sit just
 whatever ended the previous function. On the images examined the correct base scores
 around 98% boundary while bases that are wrong by a single 4 KiB page score 11 to 30%.
 
-Calibrated in `tests/test_loadaddr.py` against images whose base is known independently,
+Calibrated in `tests/firmware/test_loadaddr.py` against images whose base is known independently,
 from the destination recorded in the firmware update package.
 """
 

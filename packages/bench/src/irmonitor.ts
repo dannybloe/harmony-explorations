@@ -34,7 +34,7 @@
  * it is rendered by the codec's renderer of a catalogue definition, `waveformOfArchiveCommand`, at the device's own
  * definition, with its toggle bit both ways, and a capture matching one is that device's command by the documents'
  * own names, which the catalogue route then leaves alone. Held against every press of the Touch's earlier bench
- * runs, `test/touch-full-bench-predicted.test.ts`.
+ * runs, `test/harmony-touch/touch-full-bench-predicted.test.ts`.
  *
  * **Captured data stays in the lab.** Each frame is appended to a JSON lines file there as it arrives,
  * so a session can be read back while it runs. Codes compiled out of Logitech's database are the same
@@ -362,7 +362,7 @@ export class CodeBook implements FrameBook {
    * code's opening frame, or undefined when the book holds no such code.
    *
    * For a prediction written before a press, which has to name a command the way a capture of it will be
-   * named: the Harmony 350's key test, `packages/bench/test/keys350.test.ts`, asks this of every code a
+   * named: the Harmony 350's key test, `packages/bench/test/harmony-300-350/keys350.test.ts`, asks this of every code a
    * key map sends. The command is undefined when the catalogue could not name the device's codeset.
    */
   storedName(config: string, group: number, code: number): { device: string; command: string | undefined } | undefined {

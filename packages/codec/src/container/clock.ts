@@ -57,7 +57,7 @@ export const CLOCK_LAST_YEAR = CLOCK_FIRST_YEAR + 0xff;
  * `0x4180`, the Harmony 880 and 885 at `0x156EA` and the Harmony 350 1.4 at `0x14382`. An `XORLW` chain picks April, June, September and
  * November (3, 5, 8 and 10) and February (1), and each arm compares the stored day against one
  * literal. So the stored day is counted from 0, and this is what a reader refuses past and an encoder
- * never writes past. `tests/test_clock_counting.py` reads the limits out of each image.
+ * never writes past. `tests/firmware/test_clock_counting.py` reads the limits out of each image.
  *
  * **The leap test is the firmware's and not the calendar's**: `year & 3`, which disagrees with the
  * Gregorian rule in 2100 and 2200, both inside the record's range. A date the calendar does not have

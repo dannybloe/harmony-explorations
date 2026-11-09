@@ -116,7 +116,7 @@ IMAGES = {
     # first that did not come from a third party repair site**: the service serves it under
     # skin 104 and its own manifest names skins 78, 79 and 104.
     # **It is the Harmony 350's application and not the Harmony 300's**, which is a near copy of it,
-    # `tests/test_harmony_300_350_images.py`.
+    # `tests/harmony_300_350/test_harmony_300_350_images.py`.
     # A plain PIC18 image executing at 0x9000, like every arch 14 one, which is why the file name
     # follows their convention.
     'h350_code': '350-1.4-Region_2-code-base0x9000.bin',
@@ -128,7 +128,7 @@ IMAGES = {
     # `/fw/bootloader` and `/fw/safemode` on 27 October 2026, read only, into the lab's
     # `reads/20261027T1929Z-h350-fw/`. Neither is in Logitech's package, which carries the application
     # alone, so these are what answered `todo-compile-350.md` 1.4's open half,
-    # `tests/test_harmony_350_boot.py`. They load at 0x000000 and 0x001000. The safe mode file is the
+    # `tests/harmony_300_350/test_harmony_350_boot.py`. They load at 0x000000 and 0x001000. The safe mode file is the
     # image less its last eight bytes, because the remote states an internal image's size as its
     # header's length field.
     #
@@ -138,24 +138,24 @@ IMAGES = {
     # the lab's root. The Harmony 300's three images and the Harmony 350's application, each as the
     # unit serves it, were read on 31 October 2026 into `reads/20261031T-h300-fw/` and
     # `reads/20261031T-h350-fw-first/` (a second identical read of each sits beside them), and are what
-    # `tests/test_harmony_300_350_images.py` compares. `h350_unit_code` is the package image less
+    # `tests/harmony_300_350/test_harmony_300_350_images.py` compares. `h350_unit_code` is the package image less
     # its last eight bytes, byte for byte, which is what shows the package is what a 350 runs.
     # The firmware package Logitech's update service serves the Harmony Touch, both channels, fetched
     # on 28 August 2026 (section 196), and the Touch's identity file read on 2 November 2026 with a
-    # setup on it (todo-touch.md 1.1), which `tests/test_harmony_touch_image.py` holds against the
+    # setup on it (todo-touch.md 1.1), which `tests/harmony_touch/test_harmony_touch_image.py` holds against the
     # image. The identity file carries the unit's serial, so only named fields are read out of it.
     'touch_package_production': 'firmware/packages/sus/skin99-touch-production-4.15.330.hfw2',
     'touch_package_preview': 'firmware/packages/sus/skin99-touch-preview-4.15.250.hfw2',
     'touch_sysinfo': 'reads/20261102T0854Z-touch-usercfg/sysinfo.txt',
     # One sync of the bench Touch recorded through the lab's inspectable copy of Harmony Desktop,
-    # `packages/usb/test/touch-sync.test.ts` reads it; named here to keep the two tables identical.
+    # `packages/usb/test/touch/touch-sync.test.ts` reads it; named here to keep the two tables identical.
     'touch_sync_recording': 'reads/20261102T1350Z-touch-sync-harmony-desktop/bridge.log',
-    # The full setup's sync and the reverse sync after it, read by `packages/usb/test/touch-sync-both-ways.test.ts`.
+    # The full setup's sync and the reverse sync after it, read by `packages/usb/test/touch/touch-sync-both-ways.test.ts`.
     'touch_full_sync_recording': 'reads/20261102T1520Z-touch-sync-full-setup/bridge.log',
     'touch_reverse_sync_recording': 'reads/20261102T1524Z-touch-reverse-sync/bridge.log',
-    # The first request sent the bench Touch, `getconfighash`, read by `packages/usb/test/touch-confighash.test.ts`;
+    # The first request sent the bench Touch, `getconfighash`, read by `packages/usb/test/touch/touch-confighash.test.ts`;
     # then the first sync answered by this project and the recovery after it, `todo-touch.md` 6.7, read by
-    # `packages/usb/test/touch-first-sync.test.ts`. Named here to keep the two tables identical.
+    # `packages/usb/test/touch/touch-first-sync.test.ts`. Named here to keep the two tables identical.
     'touch_confighash_read': 'reads/20261105T0930Z-touch-confighash/answer.txt',
     'touch_first_sync_confighash_before': 'reads/20261105T1051Z-touch-confighash/answer.txt',
     'touch_first_sync_handover_list': 'reads/20261105T1051Z-touch-sync-unchanged/003-request-list-answer.txt',
@@ -169,7 +169,7 @@ IMAGES = {
     'touch_recovery_confighash_after': 'reads/20261105T1054Z-touch-confighash/answer.txt',
     'touch_recovery_reboot': 'reads/20261105T1054Z-touch-recover-reboot/answer.txt',
     # The second sync answered by this project, `todo-touch.md` 6.7, which the remote committed, and the config
-    # hash before and after it, read by `packages/usb/test/touch-second-sync.test.ts`. Named here to keep the two
+    # hash before and after it, read by `packages/usb/test/touch/touch-second-sync.test.ts`. Named here to keep the two
     # tables identical.
     'touch_second_sync_confighash_before': 'reads/20261105T1217Z-touch-confighash/answer.txt',
     'touch_second_sync_confighash_after': 'reads/20261105T1218Z-touch-confighash/answer.txt',
@@ -197,7 +197,7 @@ IMAGES = {
     'touch_second_sync_answers_8': 'reads/20261105T1218Z-touch-sync-unchanged/019-answers-request.txt',
     'touch_second_sync_reply_8': 'reads/20261105T1218Z-touch-sync-unchanged/019-answers-answer.txt',
     # The sync of todo-touch.md 6.8, the remote's own six documents answered with 200 under tags of ours, the set,
-    # the config hash after it and the third `--unchanged` run, read by `packages/usb/test/touch-own-set-sync.test.ts`.
+    # the config hash after it and the third `--unchanged` run, read by `packages/usb/test/touch/touch-own-set-sync.test.ts`.
     # Named here to keep the two tables identical.
     'touch_own_set': 'work/touch-firmware/sets/6.8-own-documents/set.json',
     'touch_own_set_confighash_after': 'reads/20261105T1418Z-touch-confighash/answer.txt',
@@ -243,7 +243,7 @@ IMAGES = {
     'touch_own_set_unchanged_answers_8': 'reads/20261105T1419Z-touch-sync-unchanged/019-answers-request.txt',
     # The four syncs of todo-touch.md 6.9, each changing one value of one document and putting it back, the config
     # hash around each, the closing `--unchanged` run and the three bench runs that timed the delay, read by
-    # `packages/usb/test/touch-changed-set-sync.test.ts`. Named here to keep the two tables identical.
+    # `packages/usb/test/touch/touch-changed-set-sync.test.ts`. Named here to keep the two tables identical.
     'touch_changed_set_delay': 'work/touch-firmware/sets/6.9-delay/set.json',
     'touch_changed_set_delay_back': 'work/touch-firmware/sets/6.9-delay-back/set.json',
     'touch_changed_set_label': 'work/touch-firmware/sets/6.9-label/set.json',
@@ -1290,7 +1290,7 @@ IMAGES = {
     'h515_onyiaic_asfound_config': 'h515-onyiaic-asfound-config.bin',
     # The same unit's two stored firmware images, 64 KiB each from 0x810000 and 0x800000, and the two
     # images kkong42 posted for a Harmony 515 as harmony-decompiler issue 35. The two pairs are byte
-    # identical, which `tests/test_harmony_515.py` asserts.
+    # identical, which `tests/harmony_5xx/test_harmony_515.py` asserts.
     'h515_application_firmware': '20261103T1517Z-h515-fw-application-region.bin',
     'h515_safemode_firmware': '20261103T1517Z-h515-fw-safemode-region.bin',
     'h515_contributed_application': 'H515-Firmware.bin',
@@ -1344,10 +1344,10 @@ IMAGES = {
     # candidate byte for byte and the rest is the previous read unchanged.
     'one_spare_plus_lg2_region': '20260903T172120Z-one-spare-plus-lg2-region-0x40000-0x1e0000.bin',
     # And after the first write to use the whole eight step sequence, section 247: the region
-    # above with exactly two bytes different, which tests/test_write_sequence.py asserts.
+    # above with exactly two bytes different, which tests/usb_protocol/test_write_sequence.py asserts.
     'one_spare_denon65_region': '20260903T174116Z-one-spare-denon65-region-0x40000-0x1e0000.bin',
     # And after the revert, section 248: identical to one_spare_plus_lg2_region over the whole
-    # region, which tests/test_write_sequence.py asserts rather than states.
+    # region, which tests/usb_protocol/test_write_sequence.py asserts rather than states.
     'one_spare_reverted_region': '20260903T175608Z-one-spare-reverted-region-0x40000-0x1e0000.bin',
     # The region after the first activity write, 7 September 2026: the known good content for the
     # next erase, since the remote no longer matches the reverted region. Section 276.
@@ -1499,11 +1499,11 @@ IMAGES = {
     'classic_diagnostic_service': 'DiagnosticHidService.java',
     # The update service, section 214. Section 210 mined its write transfer without registering
     # it; this fixture is for the other half, the region address and size table, which is the
-    # source end of the closure in packages/usb/test/classic-capture.test.ts.
+    # source end of the closure in packages/usb/test/transport/classic-capture.test.ts.
     'classic_update_service': 'UpdateHidService.java',
     # The same client's constants for arch 8, `Protocol8`, for one closure only: the bootloader unlock
     # it writes before rewriting the bottom 64 KiB, and the staging address, against the values the
-    # Harmony 880 and 885 bootloaders test. tests/test_harmony_885_bootloader.py. Its code stays in the
+    # Harmony 880 and 885 bootloaders test. tests/harmony_880_885/test_harmony_885_bootloader.py. Its code stays in the
     # lab; what travels is two numbers, which are functional fact.
     'classic_protocol8': 'Protocol8.java',
     # Two flash regions off the spare Harmony One, read by Logitech's own client rather than by
@@ -1515,7 +1515,7 @@ IMAGES = {
     # from 0x020000 by its own stated length, and its flash from 0x020000 to 0x1D0000 read twice, the
     # configuration's first bytes and the remains of earlier configurations after it. Then unit A's clock,
     # data memory 0x108 to 0x10F over READ_MISC selector 7, two reads seconds apart, as text.
-    # tests/test_harmony_885_bench_reads.py. Out of the parseable population, below.
+    # tests/harmony_880_885/test_harmony_885_bench_reads.py. Out of the parseable population, below.
     'h885_a_config': '20261105T0847Z-h885-a-config-config.bin',
     'h885_a_config_2': '20261105T0847Z-h885-a-config-2-config.bin',
     'h885_a_region': '20261105T0848Z-h885-a-region-region.bin',
@@ -1526,7 +1526,7 @@ IMAGES = {
     'h885_b_region': '20261105T0914Z-h885-b-region-region.bin',
     'h885_b_region_2': '20261105T0915Z-h885-b-region-2-region.bin',
     # Unit A's whole flash, 0x000000 to 0x1FE000, read twice before its first write, todo-compile-885.md
-    # 1.3, and its configuration read once after that write. tests/test_harmony_885_flash_backup.py.
+    # 1.3, and its configuration read once after that write. tests/harmony_880_885/test_harmony_885_flash_backup.py.
     # Out of the parseable population, below.
     'h885_a_flash': '20261107T0939Z-h885-a-flash-region.bin',
     'h885_a_flash_2': '20261107T1023Z-h885-a-flash-2-region.bin',
@@ -1543,7 +1543,7 @@ IMAGES = {
     'h885_b_clock_after_1_4': '20261107T1110Z-h885-b-clock-after-1-4.txt',
     # todo-compile-885.md 2.1: the first catalogue device composed onto unit A's configuration, the Sony
     # DAV-C540 as "Sony HT", by compose-device.ts and stamped by it, in the lab's work folder.
-    # packages/codec/test/sidekeysdevice.test.ts composes it again; test_harmony_885_start_check.py checks it.
+    # packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts composes it again; test_harmony_885_start_check.py checks it.
     'h885_composed_2_1': 'h885-a-plus-sony-ht.bin',
     # todo-compile-885.md 2.2 and 2.3: the same device composed again, its power step opening with its delay
     # between devices and sent at a quantity of 1, by compose-device.ts and stamped, in writes/2.3/.
@@ -1560,7 +1560,7 @@ IMAGES = {
     # The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: watch-keys.ts polling data
     # memory 0x295 (the key held) and 0x3A1 (the last key pressed) while keys were pressed by hand, as
     # text. Unit A before its key contacts were cleaned, A opened and pressed freely, A's run through
-    # every key in a set order, and B's check of sixteen keys. tests/test_harmony_885_keys.py.
+    # every key in a set order, and B's check of sixteen keys. tests/harmony_880_885/test_harmony_885_keys.py.
     'h885_a_keys_before_cleaning': '20261105T1000Z-h885-a-keys-before-cleaning.txt',
     'h885_a_keys_free_press': '20261105T1100Z-h885-a-keys-opened-free-press.txt',
     'h885_a_keys_map': '20261105T1130Z-h885-a-keys-map.txt',
@@ -1597,7 +1597,7 @@ def _find(filename):
 
 # Every config container in the corpus, in the order the coverage report prints them. One list,
 # because the same nineteen are walked by the Python tests, by
-# `packages/codec/test/coverage.test.ts` and by `tools/facts.py`, and a corpus total is only
+# `packages/codec/test/container/coverage.test.ts` and by `tools/facts.py`, and a corpus total is only
 # comparable between them if they agree on what the corpus is.
 #
 # **It was fifteen until 14 August 2026**, and the four it left out are the Harmony One sync pair and
@@ -1844,7 +1844,7 @@ SERVICE_RESPONSE_DIRS = {1: SERVICE_RESPONSES, 2: SERVICE_RESPONSES_ACCOUNT2}
 #: The service's per model answers, one product capability call per bench model asked through one
 #: account entry of each, filed as `harmony-<model>-<Operation>.json`. A directory of its own for the
 #: reason the two above have one: the model is in the filename and nowhere else, so the file is reached
-#: by naming the model and the operation, never by a walk. `tests/test_product_capabilities.py` reads it.
+#: by naming the model and the operation, never by a walk. `tests/logitech/test_product_capabilities.py` reads it.
 SERVICE_RESPONSES_PER_MODEL = ('work', 'myharmony', 'responses-per-model')
 
 #: Logitech's own per skin protocol templates, inside the mirrored desktop client. Section 197.

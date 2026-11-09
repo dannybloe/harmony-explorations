@@ -222,7 +222,7 @@ function blockBytes(c: Container, address: number): Uint8Array | undefined {
  * **The Harmony 350's digit copies are the same rule**, `todo-compile-350.md` 4.3: the ten copies of the KPN's
  * digits Logitech's compile of the Harmony 350 test setup holds, which its favourite channels send, are each
  * the catalogue digit's composed first block less its opening silence, no held block and no tail,
- * `packages/codec/test/noscreen.test.ts`. So the favourite channel composer of the no screen family asks this
+ * `packages/codec/test/families/harmony-300-350/noscreen.test.ts`. So the favourite channel composer of the no screen family asks this
  * too, with a record list that holds the device's group and the catalogue's records after it.
  */
 export function oneBlockCopy(

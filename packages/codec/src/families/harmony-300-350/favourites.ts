@@ -22,7 +22,7 @@
  * The digit lists are the device's own send lists, which a device's commands bring whether or not a favourite
  * uses them, so a favourite adds none.
  *
- * **What it is measured against**, `packages/codec/test/noscreen.test.ts`: Logitech's two compiles of the Harmony
+ * **What it is measured against**, `packages/codec/test/families/harmony-300-350/noscreen.test.ts`: Logitech's two compiles of the Harmony
  * 350 test setup differ by the five favourite channels on the KPN and by nothing else but numbering, the lab's
  * `work/setups/h350-test/first-compile/compile-Result.EzHex` and `compile-Result.EzHex`. So the five composed onto
  * the first are held against the second part by part, and the byte count closes: the five lists, their table

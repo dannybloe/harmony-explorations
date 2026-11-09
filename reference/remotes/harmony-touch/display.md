@@ -12,7 +12,7 @@ the manual's and the drawing's<!--superseded--> until the firmware was read.
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | 240 by 320 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, read in the firmware, since no configuration of this model has been read: the screens' own constants, the kernel's panel entry, the drawing library and the touch driver, `tests/test_harmony_touch_keys.py` |
+| raster | 240 by 320 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, read in the firmware, since no configuration of this model has been read: the screens' own constants, the kernel's panel entry, the drawing library and the touch driver, `tests/harmony_touch/test_harmony_touch_keys.py` |
 | raster on the drawing | 240 by 320 | `touch.ts`, which must agree with the row above |
 | panel | no record | `packages/base/src/models.ts` |
 | touch | no record | `packages/base/src/models.ts`, and `touch` on the drawing's screen is yes |
@@ -137,17 +137,17 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^s292]: Stated by Logitech, by their service. [Section 292](../../../docs/findings.md#s292)
-[^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch-favourites.test.ts)
-[^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
+[^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-favourites.test.ts)
+[^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_favourites.py)
 [^unchecked]: Not checked.
-[^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
-[^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
-[^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py)
-[^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch-changed-set-sync.test.ts)
-[^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-device-runs.test.ts)
-[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-activity-runs.test.ts)
-[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/touch-favourites-runs.test.ts)
-[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch-settings-runs.test.ts)
-[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/touch-from-nothing-runs.test.ts)
-[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/touch-empty-runs.test.ts)
-[^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/test_harmony_touch_empty_screens.py)
+[^t-touch-keys]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_keys.py)
+[^t-touch-beyond-firmware]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_beyond_the_clients.py)
+[^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/harmony_touch/test_harmony_touch_beyond_the_clients.py)
+[^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-changed-set-sync.test.ts)
+[^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-device-runs.test.ts)
+[^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-activity-runs.test.ts)
+[^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-favourites-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-settings-runs.test.ts)
+[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)
+[^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-empty-runs.test.ts)
+[^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_empty_screens.py)

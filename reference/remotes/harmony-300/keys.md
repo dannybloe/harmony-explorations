@@ -246,11 +246,11 @@ candidate codes for Live.
   350's[^t-moulding].
 
 [^t-moulding]: Measured on a unit. [The test](../../../packages/silhouettes/test/models.test.ts)
-[^t-printing]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
-[^t-printing-eu]: Measured on a unit. [The test](../../../tests/test_silhouettes.py)
+[^t-printing]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
+[^t-printing-eu]: Measured on a unit. [The test](../../../tests/firmware/test_silhouettes.py)
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
 [^unchecked]: Not checked.
-[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
-[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
-[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
-[^t-harmony-350-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)
+[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
+[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_300_keys.py)
+[^t-harmony-350-keys-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)

@@ -105,4 +105,4 @@ fourth event type beside press, release and repeat, which is not read.[^s177]
 
 [^s177]: Measured in configurations. [Section 177](../../../docs/findings.md#s177)
 [^unchecked]: Not checked.
-[^t-printing-890pro]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-printing-890pro]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)

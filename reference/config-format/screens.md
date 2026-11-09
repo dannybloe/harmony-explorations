@@ -554,8 +554,8 @@ in its pool copy, and binds no list that opens with a beep[^t-side-keys]. The de
 [^s124]: Measured in configurations. [Section 124](../../docs/findings.md#s124)
 [^s149]: Measured in configurations. [Section 149](../../docs/findings.md#s149)
 [^unchecked]: Not checked.
-[^t-885-screens]: Read in the firmware. [The test](../../tests/test_harmony_885_screens.py)
-[^t-885-screens-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_screens.py)
-[^t-side-keys]: Measured in configurations. [The test](../../packages/codec/test/sidekeysdevice.test.ts)
-[^t-glyph-borrow]: Measured in configurations. [The test](../../packages/codec/test/glyphborrow.test.ts)
+[^t-885-screens]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_screens.py)
+[^t-885-screens-corpus]: Measured in configurations. [The test](../../tests/harmony_880_885/test_harmony_885_screens.py)
+[^t-side-keys]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)
+[^t-glyph-borrow]: Measured in configurations. [The test](../../packages/codec/test/drawing/glyphborrow.test.ts)
 [^s173]: Measured in configurations. [Section 173](../../docs/findings.md#s173)

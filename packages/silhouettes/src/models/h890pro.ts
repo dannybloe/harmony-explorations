@@ -4,7 +4,7 @@
  * **The Harmony 880 Pro's face, `h880pro.ts`, with the nameplate changed, and nothing else.** A statement made
  * holding both remotes: the 880 Pro and the 890 Pro are exactly the same face apart from the model name above
  * the screen. So this model is derived from `H880PRO` and states only its identity and its nameplate, and
- * `tests/test_silhouettes.py` holds the two drawings equal but for those. Read off the 890 Pro's
+ * `tests/firmware/test_silhouettes.py` holds the two drawings equal but for those. Read off the 890 Pro's
  * own product photograph in the lab, `reference/forum-images/890pro-full.jpg`, 264 by 893 pixels, moved into the
  * 885 photograph's frame by its case as the 880 Pro's is, its first and last rows 4 and 888 and its case centre
  * line 126.85 + 0.00633 y. The 885's drawing laid over it falls on the photograph the way it falls on the 880

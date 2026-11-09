@@ -69,12 +69,12 @@ sender as integers[^s265d]; how the number sender works is
 * Learning, and any setting.
 
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
-[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_product_capabilities.py)
 [^s264]: Stated by Logitech, by their service. [Section 264](../../../docs/findings.md#s264)
 [^s265]: Stated by Logitech, by their service. [Section 265](../../../docs/findings.md#s265)
-[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_host_client.py)
 [^s264b]: Measured in configurations. [Section 264](../../../docs/findings.md#s264)
 [^unchecked]: Not checked.
 [^s265c]: Measured on a unit. [Section 265](../../../docs/findings.md#s265)
 [^s265d]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)
-[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_slots.py)

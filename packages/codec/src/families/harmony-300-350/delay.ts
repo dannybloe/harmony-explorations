@@ -21,7 +21,7 @@
  * would be found the same way; none read here does. An unreferenced list, such as an activity the composer
  * replaced, is reached by no key and not changed.
  *
- * **What holds it**, `packages/codec/test/filefamilydelays.test.ts`: on the bench Harmony 300's configuration,
+ * **What holds it**, `packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`: on the bench Harmony 300's configuration,
  * the television's delay set to 100 tenths reproduces the file heard on the bench at 11.5 s, byte for byte; on
  * Logitech's compile of the Harmony 350 test setup, the copies are exactly the one toggle device's in the activity.
  */

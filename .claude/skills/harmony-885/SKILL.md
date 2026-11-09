@@ -50,7 +50,7 @@ require of a session.
   block path for unit A and, since 1.8, unit B, through `rehearse-block.ts`; since 1.4 the cache drop and
   the restart as well, so that `write-config.ts` can write a whole configuration to either unit. It refuses
   every other write to this platform: the RAM write, the session end, the update status and the settings
-  store, `packages/usb/test/rails.test.ts` with every door open. Those refusals are not something to work
+  store, `packages/usb/test/write/rails.test.ts` with every door open. Those refusals are not something to work
   around; each path opens with its own item.
 * **Only the user configuration is written**: from `0x020000`, whole 64 KiB sectors, below the staging
   region at `0x1D0000`. Never the bootloader below `0x010000`, the application at `0x010000`, the staging
@@ -64,7 +64,7 @@ require of a session.
   address: it reaches the unlock, the install status and the flash routines' RAM with no bound.
 * **Keep base slot 2 as every configuration states it**, `15360, 0x1E0000, 0x1FE000`: a configuration that
   emits the log append (`0x0F` with low byte `0xE0` to `0xE2`) writes the flash at whatever address that slot
-  names, `tests/test_harmony_885_log_area.py`. Emit it only on purpose.
+  names, `tests/harmony_880_885/test_harmony_885_log_area.py`. Emit it only on purpose.
 * **A read is not always harmless here.** A read whose last byte is `0x000104` or `0x000105` alone in its
   chunk runs code instead of reading, and from `0x1FE000` up is not flash. Read in `0x8000` chunks from a
   `0x8000` boundary and keep the end below `0x1FE000` by hand: the library bounds a read by its start.
@@ -74,7 +74,7 @@ require of a session.
 **Before the first write to a unit, the whole flash from `0x000000` to `0x1FDFFF`** in the lab, read twice
 and identical, as the `recovering-a-remote` section says. **Both units' are in the lab**: unit A's as
 `h885_a_flash` and `h885_a_flash_2`, unit B's as `h885_b_flash` and `h885_b_flash_2`, and
-`tests/test_harmony_885_flash_backup.py` checks their parts against the published images. They were taken with
+`tests/harmony_880_885/test_harmony_885_flash_backup.py` checks their parts against the published images. They were taken with
 
     node packages/corpus/bin/read-region.ts --label h885-b-flash --address 0x000000 --count 0x1FE000 --anywhere --product 0xc110
 
@@ -93,7 +93,7 @@ word at `0x000160` are what a recovery puts back and nothing else holds them.
 one block of unit A back unchanged, `0x0C0000`, and 1.8 one of unit B, `0x0D0000`; 1.4 gave `write-config.ts`
 both units and the 885's write end, and ran it once on unit B: its own configuration restamped, three sectors
 rewritten, the restart, B back within five seconds holding the file and its clock reseeded,
-`tests/test_harmony_885_first_config_write.py`. **Region reads met sequence breaks** after the restart too; since
+`tests/harmony_880_885/test_harmony_885_first_config_write.py`. **Region reads met sequence breaks** after the restart too; since
 1.10 they ask for the window again. Each lands its procedure here
 as the `harmony-525` and `harmony-650` skills hold theirs.
 

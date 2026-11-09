@@ -39,7 +39,7 @@ export type Provenance = 'catalogue' | 'printed';
  * **These were one document until plan 009's step 3.3**, `reference/button-maps.md`, whose two tables a
  * test parsed back out of Markdown into five readers in two languages. The scan codes are this
  * package's data now and the tables' other columns went where they belong: the frames each button sends
- * in the calibration configurations to the test that checks them, `packages/codec/test/irframe.test.ts`,
+ * in the calibration configurations to the test that checks them, `packages/codec/test/infrared/irframe.test.ts`,
  * and the derivation to section 133 itself. So a scan code states its source here, once, and the keys
  * page of every model the drawing serves prints it as a footnote.
  *
@@ -67,34 +67,34 @@ export const SCAN_SOURCES = {
   333: "bound by every activity Logitech compiles to that activity's own help",
   // The Harmony 350's keys pressed one by one with an infrared receiver listening, on a unit holding a
   // known configuration: the code is the one binding of the mode in force that sends what was heard,
-  // `todo-compile-350.md` 2.2.2, `tests/test_harmony_350_keys.py`.
+  // `todo-compile-350.md` 2.2.2, `tests/harmony_300_350/test_harmony_350_keys.py`.
   't-harmony-350-keys-u': 'heard by pressing each key with a receiver listening, its code the one binding of '
     + 'the configuration on the remote that sends what was heard',
   // The Harmony 350's keys the first run left, pressed on a unit holding Logitech's compile of a test setup
   // that binds them: the code is the one of the 56 that, raised at that point of the run, gives what was
-  // heard, `todo-compile-350.md` 3.3, `packages/bench/test/setup350.test.ts`, and the footnote's test is
-  // `TheBench350HeardTheTestSetup` in `tests/test_harmony_350_keys.py`.
+  // heard, `todo-compile-350.md` 3.3, `packages/bench/test/harmony-300-350/setup350.test.ts`, and the footnote's test is
+  // `TheBench350HeardTheTestSetup` in `tests/harmony_300_350/test_harmony_350_keys.py`.
   't-harmony-350-setup-u': 'heard by pressing each key with a receiver listening, on a configuration that binds '
     + 'it, its code the one of the 56 that, raised at that point of the presses, gives what was heard',
   // The European Harmony 300's keys pressed in two device modes on its own configuration, and in one on a copy
   // binding every key, with a receiver listening: the code is the one of the 56 that, raised in the key's
   // place with every other key on its 350 code, gives what was heard from there to the end of the run, the
   // keys taken as pressed in the order asked, `todo-compile-300.md` 2.1 and 2.2,
-  // `packages/bench/test/keys300.test.ts`, and the footnote's test is `TheBench300HeardEveryKey` in
-  // `tests/test_harmony_300_keys.py`.
+  // `packages/bench/test/harmony-300-350/keys300.test.ts`, and the footnote's test is `TheBench300HeardEveryKey` in
+  // `tests/harmony_300_350/test_harmony_300_keys.py`.
   't-harmony-300-keys-u': 'heard by pressing each key with a receiver listening, in two device modes, its code '
     + 'the one of the 56 that, raised at that point of the presses, gives what was heard',
   // The Harmony 885's keys pressed one by one on a unit with its data memory watched over USB, the code the
   // one the remote kept as the key held; all 55 on one unit and 16 again on a second, the colour keys and
   // Play and Pause settled by their position, `todo-prepare-885.md` 2.4, `MEASURED` in
-  // `tests/test_harmony_885_keys.py`.
+  // `tests/harmony_880_885/test_harmony_885_keys.py`.
   't-885-keys-u': "read off the remote's own memory while each key was pressed, on one unit for every key and "
     + 'on a second for sixteen of them',
   // The Harmony 880's keys that Logitech's compiles for skin 15 name: the code on which devices of both
   // contributors bind the command named for the key, named through the infrared archive, and on which more
   // devices name it than any other key, a device naming one key on several codes not counting; the same
   // procedure on the 885's compiles gives 32 codes, all right,
-  // `todo-prepare-885.md` 2.5.2, `ESTABLISHED_880` in `tests/test_harmony_880_keys.py`.
+  // `todo-prepare-885.md` 2.5.2, `ESTABLISHED_880` in `tests/harmony_880_885/test_harmony_880_keys.py`.
   't-880-keys-c': "from the command Logitech's compiles for this model bind on that code, named for the key in "
     + 'configurations from two contributors',
 } as const;

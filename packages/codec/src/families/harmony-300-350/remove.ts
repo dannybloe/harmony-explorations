@@ -37,7 +37,7 @@
  * is not a narrow one above the firmware's own; and anything kept that still names a part being taken out.
  *
  * **Measured** by taking each of the four long press devices out of Logitech's two compiles of the test setup and
- * composing it back, `packages/codec/test/noscreenremove.test.ts`. The Harmony 350 alone; the Harmony 300 has no long
+ * composing it back, `packages/codec/test/families/harmony-300-350/noscreenremove.test.ts`. The Harmony 350 alone; the Harmony 300 has no long
  * press and has not been run.
  */
 import { instructionSites } from '../../assembly/assemble.ts';

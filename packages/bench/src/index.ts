@@ -9,7 +9,7 @@
  * Read only, in the same two ways the rest of the workspace is: the operations take a reader with
  * no write method on it, and the server exposes named routes rather than a command channel.
  *
- * **The main entry is what starts the instrument**, explicit names held by `test/surface.test.ts`, `todo.md`
+ * **The main entry is what starts the instrument**, explicit names held by `test/package/surface.test.ts`, `todo.md`
  * 7.3.6: the server, the bench behind it with the dependencies it is given, the infrared monitor and the test
  * sessions it serves. Every module whole is `./internal`.
  */

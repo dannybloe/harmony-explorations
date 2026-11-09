@@ -1,0 +1,581 @@
+/**
+ * The frame laid out from nothing, `todo-compile-650.md` 10.1, measured against Logitech's own
+ * compiles.
+ *
+ * **The measurement is a round trip through zeroed fields.** `takeApart` drops the header, the
+ * section table, base slots 1 and 3 and the trailer, and zeroes every address field the census in
+ * `growth.ts` knows; `layOutContainer` has to put every one of those bytes back from the content
+ * alone. So byte equality with the compile says the frame computes them, and a frame that copied
+ * anything would have nothing to copy from.
+ *
+ * **The growth control is what says the addresses are computed rather than reproduced.** A piece of
+ * filler is added to one section and the result has to equal, byte for byte, what `relocate.ts`
+ * makes of the original with the same filler at the same place. The two get there by different
+ * routes: relocate shifts a finished container and rewrites the fields it finds, the frame lays out
+ * pieces and writes every field from where its target landed. **They share one input**, the census
+ * of address fields in `growth.ts`, so the comparison checks the arithmetic and not the census.
+ * Then the result is read the way
+ * `test/edit/relocate.test.ts` reads one, every claim shifted and the inventory unchanged, and it has to
+ * round trip through the emitter.
+ *
+ * **What this cannot see** is an address field the census does not know: it would be carried as
+ * content and would round trip, and only the semantic half of the growth control would notice, for
+ * whatever the readers cover. That is the limit relocate.ts has too, and for the same reason.
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { ARCH14_FAMILY, FILE_BASED_FAMILY, LAB, load, skipUnless } from '@harmony/lab';
+import type { Container } from '../../src/index.ts';
+import type { Claim } from '../../src/internal.ts';
+import type { ContainerLayout, ContainerPiece } from '../../src/build.ts';
+import { applyEdits, clockStateEdits, inventory, parse, saveEdits } from '../../src/index.ts';
+import { FRAME_ARCHITECTURES, LayoutError, layOutContainer, slotOf, takeApart } from '../../src/build.ts';
+import { claims, pointers, relocate, roundTrip, trailerAgrees } from '../../src/internal.ts';
+import '../../src/support/resources.node.ts';
+
+/**
+ * Every Harmony 600, 650 and 700 configuration Logitech compiled that the lab holds once each, the
+ * thirteen section 312 names. Region reads of the same content are left out rather than counted
+ * twice, which is the same choice `compose.test.ts` makes for `ARCH14_LISTS`.
+ */
+const ARCH14_COMPILES = ARCH14_FAMILY.full;
+
+/** The skin each compile's architecture record states. Two Harmony 600 compiles disagree. */
+const SKINS: Readonly<Record<(typeof ARCH14_COMPILES)[number], number>> = {
+  h650_config_region: 72, h650_panasonic_config: 72, h600_config: 73, calibration_h600: 71,
+  h700_config: 66, h700_config_2: 66, h700_28_config_region: 66,
+  h650_power_hold_compile: 72, h650_power_hold_compile_2: 72, h700_power_hold_compile: 66,
+  h700_power_hold_compile_2: 66, h700_power_hold_compile_3: 66, h700_power_hold_compile_4: 66,
+};
+
+/**
+ * What Logitech parks in front of each base slot's table, by owner, on every one of the thirteen.
+ * Section 36 found the first row; the others are the same shape, a slot's bodies in front of the
+ * slot's own index, except the mode pages' tagged lists, which sit in front of base slot 9's table
+ * rather than base slot 6's. Every slot not named here has nothing in front of its table.
+ *
+ * **Read off the same thirteen it is asserted on**, so it describes Logitech's compiler and predicts
+ * nothing about the remote: `OURS_RAN` below parks differently and ran.
+ */
+const PARKED: Readonly<Record<number, readonly string[]>> = {
+  5: ['slot-5-group'],
+  7: ['slot-7-glyph', 'slot-7-set'],
+  9: ['slot-6-page-list'],
+  10: ['slot-10-list'],
+  15: ['slot-15-group'],
+};
+
+/**
+ * Two configurations this project composed and wrote to the Harmony 650, read back off it: the LG
+ * television, section 285, and the LG kijken activity, section 291, both of which then worked on the
+ * remote. Where they put a composed device's infrared blocks and its activity's lists is not where
+ * Logitech parks anything, which is the measurement that the parking is a habit and not a demand.
+ */
+const OURS_RAN = ['h650_lg_region', 'h650_post144_region'] as const;
+const OURS_PARKED: Readonly<Record<(typeof OURS_RAN)[number], Readonly<Record<number, readonly string[]>>>> = {
+  h650_lg_region: { ...PARKED, 5: ['slot-5-block', 'slot-5-group', 'slot-5-header'] },
+  h650_post144_region: {
+    ...PARKED, 5: ['slot-5-block', 'slot-5-group', 'slot-5-header'], 9: ['slot-6-page-list', 'slot-9-list'],
+  },
+};
+
+const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
+
+function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
+  if (a.length !== b.length) return Math.min(a.length, b.length);
+  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return i;
+  return undefined;
+}
+
+test('every arch 14 compile is laid out again byte for byte from its pieces',
+     skipUnless(...ARCH14_COMPILES), () => {
+  let raw = 0;
+  for (const name of ARCH14_COMPILES) {
+    const c = containerOf(name);
+    const layout = takeApart(c);
+    // The frame's own bytes are not in the layout at all, and the fields inside the pieces are zero,
+    // so nothing below can pass by carrying them.
+    const pieces = everyPiece(layout);
+    for (const piece of pieces) {
+      for (const ref of piece.refs) {
+        assert.deepEqual([...piece.bytes.subarray(ref.at, ref.at + 3)], [0, 0, 0], `${name}: a field kept its bytes`);
+      }
+    }
+    assert.equal(layout.skin, SKINS[name], `${name}: skin`);
+    if (typeof layout.builtAt !== 'string') raw += 1;
+    const out = layOutContainer(layout);
+    assert.equal(firstDifference(out.bytes, c.blob), undefined, `${name} differs`);
+  }
+  // None of the thirteen needs its stamp carried as raw field bytes. One did, `h650_panasonic_config`,
+  // whose stored day of 0 the reader refused until section 322 found the day counted from 0: it is
+  // Thursday 1 October 2026, and laying it out from that time gives Logitech's own bytes back above.
+  assert.equal(raw, 0);
+  assert.equal(takeApart(containerOf('h650_panasonic_config')).builtAt, '2026-10-01T14:32:27');
+});
+
+test('taking apart a configuration read as a Node Buffer leaves its bytes as they were',
+     skipUnless('h650_test_config_clean'), () => {
+  const file = Buffer.from(load('h650_test_config_clean') as Uint8Array);
+  const before = Buffer.from(file);
+  const c = parse(file);
+  takeApart(c);
+  // A Buffer's slice is a view, so a piece cut with it and zeroed wrote into the file: 93796 bytes.
+  assert.equal(Buffer.compare(file, before), 0);
+  assert.equal(firstDifference(layOutContainer(takeApart(c)).bytes, c.blob), undefined);
+});
+
+/**
+ * Assert what sits in front of each table of `layout`, by owner kind, against `parked`.
+ *
+ * A table is one piece in every container measured: `takeApart` would fold a following piece of the
+ * same slot into the table, so the one piece assertion is also what says nothing of a slot's own sits
+ * directly behind its table on a Logitech compile.
+ */
+function assertParked(name: string, layout: ContainerLayout,
+                      parked: Readonly<Record<number, readonly string[]>>): void {
+  layout.sections.forEach((placed, slot) => {
+    if (placed === undefined) {
+      assert.ok([18, 19].includes(slot), `${name}: base slot ${slot} absent`);
+      return;
+    }
+    const owners = [...new Set(placed.before.map((piece) => piece.owner))].sort();
+    assert.deepEqual(owners, [...(parked[slot] ?? [])].sort(), `${name}: in front of base slot ${slot}`);
+    if (slot !== 1 && slot !== 3) {
+      assert.equal(placed.head.length, 1, `${name}: base slot ${slot}'s table`);
+      assert.equal(slotOf(placed.head[0]!.owner), slot, `${name}: base slot ${slot}'s table owner`);
+    }
+  });
+}
+
+test('what Logitech parks in front of a table is the same on all thirteen compiles',
+     skipUnless(...ARCH14_COMPILES), () => {
+  for (const name of ARCH14_COMPILES) assertParked(name, takeApart(containerOf(name)), PARKED);
+});
+
+test('our own configurations park differently, ran on the Harmony 650, and lay out byte for byte',
+     skipUnless(...OURS_RAN), () => {
+  for (const name of OURS_RAN) {
+    const c = containerOf(name);
+    const layout = takeApart(c);
+    assertParked(name, layout, OURS_PARKED[name]);
+    assert.equal(firstDifference(layOutContainer(layout).bytes, c.blob), undefined, `${name} differs`);
+  }
+});
+
+/**
+ * Lay out `layout` with `delta` bytes of filler appended to one place and demand three things: the
+ * bytes `relocate` makes of the original, every reader agreeing with the original shifted, and the
+ * emitter round trip.
+ */
+function grownAgrees(c: Container, before: readonly Claim[], layout: ContainerLayout,
+                     grow: (filler: ContainerPiece) => void, at: number, delta: number): Container {
+  const filler: ContainerPiece = { bytes: new Uint8Array(delta).fill(0xa5), refs: [], owner: 'filler' };
+  grow(filler);
+  const out = layOutContainer(layout);
+  assert.equal(out.offsetOf(filler), at, 'the filler is where relocate puts it');
+  const relocated = relocate(c, at, delta, { fill: 0xa5 }).bytes;
+  assert.equal(firstDifference(out.bytes, relocated), undefined, 'the frame and relocate disagree');
+
+  const grown = out.container;
+  assert.ok(trailerAgrees(grown));
+  assert.equal(grown.endAddr, c.endAddr + delta);
+  const shifted = (start: number): number => (start >= at ? start + delta : start);
+  const was = before.map((one) => `${one.owner}@${shifted(one.start)}+${one.length}`).sort();
+  const is = claims(grown).map((one) => `${one.owner}@${one.start}+${one.length}`).sort();
+  assert.deepEqual(is, was, 'a reader reads something else');
+  assert.equal(JSON.stringify(inventory(grown)), JSON.stringify(inventory(c)), 'the inventory changed');
+  assert.ok(roundTrip(grown).equal, 'the result does not round trip through the emitter');
+  return grown;
+}
+
+test('a section that grows moves every address above it, end_addr and the checksum',
+     skipUnless('h650_config_region'), () => {
+  const c = containerOf('h650_config_region');
+  const before = claims(c);
+  const DELTA = 54;
+
+  // Base slot 4 grows: the event map's table gets 54 bytes longer, so base slot 5's groups and every
+  // table above move, and base slots 0 to 4 do not.
+  const layout = takeApart(c);
+  const slot4 = layout.sections[4]!;
+  const at = c.blobOffsetOf(c.sections[4]!.address)! + slot4.head[0]!.bytes.length;
+  const grown = grownAgrees(c, before, layout, (filler) => slot4.head.push(filler), at, DELTA);
+  grown.sections.forEach((section, slot) => {
+    const was = c.sections[slot]!.address;
+    assert.equal(section.address, slot < 5 || slot >= 18 ? was : was + DELTA, `base slot ${slot}`);
+  });
+
+  // And the body grows at its first byte, which moves everything but the key table.
+  const again = takeApart(c);
+  const floor = c.blobOffsetOf(c.sections[0]!.address)! - again.body.reduce((n, p) => n + p.bytes.length, 0);
+  grownAgrees(c, before, again, (filler) => again.body.unshift(filler), floor, DELTA);
+});
+
+test('the frame stamps base slot 3 the way a save does, and refuses a clock that disagrees',
+     skipUnless('h650_config_region'), () => {
+  const c = containerOf('h650_config_region');
+  const when = '2026-10-03T12:34:56';
+
+  // Base slot 13's clock is content, stamped here the way edit.ts stamps it; base slot 3 is the
+  // frame's. Together they have to give exactly what a save gives.
+  const clockOnly = parse(applyEdits(c, clockStateEdits(c, when)).bytes);
+  const layout = takeApart(clockOnly);
+  layout.builtAt = when;
+  const out = layOutContainer(layout);
+  assert.equal(firstDifference(out.bytes, saveEdits(c, [], when).bytes), undefined);
+  assert.equal(out.container.builtAt, when);
+
+  // The control: the same stamp over the old clock records is refused, naming the first that differs.
+  const stale = takeApart(c);
+  stale.builtAt = when;
+  assert.throws(() => layOutContainer(stale), (error: unknown) =>
+    error instanceof LayoutError && /clock record 0 states 42 where the build timestamp states 56/.test(error.message));
+});
+
+test('the frame refuses a layout it would get wrong, and an architecture it was not built for',
+     skipUnless('h600_config'), () => {
+  const c = containerOf('h600_config');
+  const fresh = (): ContainerLayout => takeApart(c);
+
+  // Unsupported rather than wrong: arch 9 (Harmony 525) is the same format and nothing here has
+  // measured what laying one out takes. This asked the same of arch 12 (Harmony One) until
+  // `todo-compile-one.md` 6.1 made the frame lay that out too.
+  const wrongArch = fresh();
+  wrongArch.architecture = 9;
+  assert.throws(() => layOutContainer(wrongArch), /only arch 12, arch 14 and arch 16 are laid out, not arch 9/);
+
+  // An arch 14 layout called a Harmony One lacks the One's own raw slot 18, which every One container
+  // states; and an arch 14 layout given one has a section its architecture does not.
+  const asOne = fresh();
+  asOne.architecture = 12;
+  assert.throws(() => layOutContainer(asOne), /raw slot 18 of arch 12 has no table/);
+  const withInserted = fresh();
+  withInserted.inserted = { 18: { before: [], head: [{ bytes: new Uint8Array(2), refs: [] }] } };
+  assert.throws(() => layOutContainer(withInserted), /arch 14 has no section of its own at raw slot 18/);
+
+  const unaligned = fresh();
+  unaligned.flashBase = 0x030800;
+  assert.throws(() => layOutContainer(unaligned), /4 KiB boundary/);
+
+  // A field running off the end of its piece would write into the next one.
+  const overrun = fresh();
+  const piece = overrun.body[0]!;
+  piece.refs.push({ at: piece.bytes.length - 2, address: 0 });
+  assert.throws(() => layOutContainer(overrun), /outside its piece/);
+
+  // Base slot 17 is the bank's two byte bias, and the codec's readers find the bank by its address.
+  const longTouch = fresh();
+  longTouch.sections[17]!.head.push({ bytes: new Uint8Array(1), refs: [] });
+  assert.throws(() => layOutContainer(longTouch), /base slot 17 is the 2 bytes/);
+
+  const twice = fresh();
+  twice.body.push(twice.body[0]!);
+  assert.throws(() => layOutContainer(twice), /listed twice/);
+
+  // An address naming a piece the layout does not hold, which is a composer forgetting to place it.
+  const orphan = fresh();
+  const stray: ContainerPiece = { bytes: new Uint8Array(4), refs: [] };
+  const holder = orphan.body.find((piece) => piece.refs.some((ref) => 'to' in ref))!;
+  const index = holder.refs.findIndex((ref) => 'to' in ref);
+  holder.refs[index] = { at: holder.refs[index]!.at, to: stray, offset: 0 };
+  assert.throws(() => layOutContainer(orphan), /not in the layout/);
+
+  const nullSlot = fresh();
+  nullSlot.sections[18] = { before: [], head: [{ bytes: new Uint8Array(1), refs: [] }] };
+  assert.throws(() => layOutContainer(nullSlot), /NULL/);
+
+  const missing = fresh();
+  missing.sections[12] = undefined;
+  assert.throws(() => layOutContainer(missing), /base slot 12 has no table/);
+});
+
+/**
+ * Every Harmony One configuration Logitech compiled that the lab holds, `todo-compile-one.md` 6.1:
+ * seventeen names and the three harvest compiles below, nineteen distinct containers, read off the
+ * Harmony Ones here and a friend's or handed back by Logitech's service. `phase7_before` and
+ * `phase7_after`, section 174, were missing until the review of section 395. `one_config_unprogrammed` and
+ * `one_spare_before_sync` are one container read twice and both are named, since both are registered;
+ * the configurations this project wrote to the spare are measured below as ours.
+ */
+const ONE_COMPILES = [
+  'one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync',
+  'one_spare_myharmony', 'one_spare_20260830', 'calibration_one', 'calibration_favchannels',
+  'calibration_favzero', 'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
+  'harvest_one_two_devices', 'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'phase7_before', 'phase7_after',
+] as const;
+
+/**
+ * Three more of Logitech's Harmony One compiles, the harvest of `todo-secure-logitech.md`, read by
+ * their path since every harvest compile carries the same file name. A missing one is a failure and
+ * not a skip: the test is guarded by the named compiles beside them, as `pressrepeats.test.ts` does.
+ */
+const ONE_HARVEST = [1, 2, 3].map((n) => `work/harvest/families-one/compile-00${n}-Result.EzHex`);
+
+/** The skin each states: the two programmed Ones' own compiles name the EMEA model, the rest 54. */
+const ONE_SKIN_59 = new Set(['one_config', 'one_config_unprogrammed', 'one_spare_before_sync']);
+
+/**
+ * The configurations this project wrote to the spare Harmony One, read back off it, fifteen distinct
+ * containers: three same length edits, then a composed device, sections 241 and 242, then composed
+ * activities and screens, sections 276 to 280 and 293. Where they park differs from Logitech's in the
+ * two ways the Harmony 650's do in `OURS_PARKED`, by the stage that added it.
+ */
+const ONE_OURS: Readonly<Record<string, Readonly<Record<number, readonly string[]>>>> = (() => {
+  const device = { ...PARKED, 5: ['slot-5-block', 'slot-5-group', 'slot-5-header'] };
+  const activity = { ...device, 9: ['slot-6-page-list', 'slot-9-list'] };
+  return {
+    one_spare_20260901_delay: PARKED, one_spare_20260901_denon: PARKED, one_spare_written_by_us: PARKED,
+    one_spare_plus_lg_region: device, one_spare_plus_lg2_region: device, one_spare_denon65_region: device,
+    one_spare_lg_activity_region: activity, one_spare_narrow_base: activity, one_spare_probe_base: activity,
+    one_spare_retarget_base: activity, one_spare_paired_base: activity, one_spare_screen_base: activity,
+    one_spare_poweroff_base: activity, one_spare_page4_base: activity, one_spare_track_start: activity,
+  };
+})();
+
+function containerAt(fixture: string): Container {
+  const path = join(LAB!, fixture);
+  assert.ok(existsSync(path), `${fixture} is in the lab`);
+  return parse(new Uint8Array(readFileSync(path)));
+}
+
+/**
+ * What the Harmony One's frame holds that arch 14's does not, asserted on one layout: 22 slots,
+ * format `0x1600`, raw slot 8 NULL as well as raw slots 20 and 21, raw slot 18 its own two zero bytes with nothing parked in front,
+ * base slot 17 the touch hit map's table as one piece, and the picture bank directly behind it.
+ */
+function assertOneFrame(name: string, c: Container, layout: ContainerLayout): void {
+  assert.equal(c.pointerCount, 22, `${name}: pointer slots`);
+  assert.equal(c.formatRaw, 0x1600, `${name}: format word`);
+  assert.ok(c.sections[8]!.isNull && c.sections[20]!.isNull && c.sections[21]!.isNull, `${name}: NULL slots`);
+  const own = layout.inserted?.[18];
+  assert.ok(own !== undefined, `${name}: raw slot 18`);
+  assert.equal(own.before.length, 0, `${name}: parked in front of raw slot 18`);
+  assert.deepEqual(own.head.map((piece) => [...piece.bytes]), [[0, 0]], `${name}: raw slot 18's bytes`);
+  const touch = layout.sections[17]!.head;
+  assert.deepEqual(touch.map((piece) => piece.owner), ['slot-17-table'], `${name}: base slot 17`);
+  assert.equal(layout.sections[17]!.before.length, 0, `${name}: parked in front of base slot 17`);
+}
+
+test('every Harmony One configuration Logitech compiled is laid out again byte for byte',
+     skipUnless(...ONE_COMPILES), () => {
+  const fixtures = [...ONE_COMPILES, ...ONE_HARVEST];
+  let rebuilt = 0;
+  for (const name of fixtures) {
+    const c = name.startsWith('work/') ? containerAt(name) : containerOf(name);
+    const layout = takeApart(c);
+    for (const piece of everyPiece(layout)) {
+      for (const ref of piece.refs) {
+        assert.deepEqual([...piece.bytes.subarray(ref.at, ref.at + 3)], [0, 0, 0], `${name}: a field kept its bytes`);
+      }
+    }
+    assertOneFrame(name, c, layout);
+    // Every user configuration here sits where the One's configuration region starts.
+    assert.equal(c.flashBase, 0x040000, `${name}: flash base`);
+    assert.equal(layout.skin, ONE_SKIN_59.has(name) ? 59 : 54, `${name}: skin`);
+    // Every stamp reads, the oldest a friend's One compiled in 2013, so none is carried as field bytes.
+    assert.equal(typeof layout.builtAt, 'string', `${name}: stamp`);
+    assert.ok(layout.pictures.length > 0, `${name}: a picture bank`);
+    // Logitech parks on the One exactly what it parks on arch 14, the same five rows.
+    assertParked(name, layout, PARKED);
+    assert.equal(firstDifference(layOutContainer(layout).bytes, c.blob), undefined, `${name} differs`);
+    rebuilt += 1;
+  }
+  // Twenty fixtures, nineteen distinct containers.
+  assert.equal(rebuilt, 20);
+});
+
+test('the configurations this project wrote to the spare Harmony One park differently and lay out byte for byte',
+     skipUnless(...Object.keys(ONE_OURS)), () => {
+  for (const [name, parked] of Object.entries(ONE_OURS)) {
+    const c = containerOf(name);
+    const layout = takeApart(c);
+    assertOneFrame(name, c, layout);
+    assertParked(name, layout, parked);
+    assert.equal(firstDifference(layOutContainer(layout).bytes, c.blob), undefined, `${name} differs`);
+  }
+});
+
+test('the two Harmony One containers that are not laid out, and why',
+     skipUnless('one_safemode', 'one_spare_mixed_region'), () => {
+  // The safe mode configuration, stamped 2007 and carried in the firmware, states `0x0C` where every
+  // configuration built from 2009 onward states `0x0D`, section 182. The frame writes the constant, so
+  // the rebuild differs in that byte and in the trailer checksum's byte of the same parity, and in
+  // nothing else. It has no pictures and sits at external `0x2000`, which the layout carries.
+  const safe = containerOf('one_safemode');
+  const layout = takeApart(safe);
+  assertOneFrame('one_safemode', safe, layout);
+  assert.equal(safe.flashBase, 0x2000);
+  assert.equal(layout.pictures.length, 0);
+  const out = layOutContainer(layout).bytes;
+  const record = safe.blobOffsetOf(safe.sections[1]!.address)!;
+  const differ = [...out.keys()].filter((i) => out[i] !== safe.blob[i]);
+  assert.deepEqual(differ, [record + 3, safe.blob.length - 5]);
+  assert.deepEqual([safe.blob[record + 3], out[record + 3]], [0x0c, 0x0d]);
+
+  // A region read while a write was half done, section 242: one 64 KiB block erased, so the
+  // container fails its own trailer checksum and is not a configuration. The frame checks no checksum:
+  // what refuses it is that the erased block leaves the key table in more than one piece.
+  const mixed = containerOf('one_spare_mixed_region');
+  assert.equal(mixed.checks['trailer_checksum_recomputes'], false);
+  assert.throws(() => takeApart(mixed), /the key table is not one piece/);
+});
+
+test('a Harmony One section that grows moves every address above it, end_addr and the checksum',
+     skipUnless('calibration_one'), () => {
+  const c = containerOf('calibration_one');
+  const before = claims(c);
+  const DELTA = 54;
+  // Base slot 4 grows, which is raw slot 4 on the One too, so raw slots 0 to 4 stay and every table
+  // above moves, the One's raw slot 18 and the touch hit map among them; the NULLs stay NULL.
+  const layout = takeApart(c);
+  const slot4 = layout.sections[4]!;
+  const at = c.blobOffsetOf(c.sections[4]!.address)! + slot4.head[0]!.bytes.length;
+  const grown = grownAgrees(c, before, layout, (filler) => slot4.head.push(filler), at, DELTA);
+  grown.sections.forEach((section, raw) => {
+    const was = c.sections[raw]!.address;
+    assert.equal(section.address, was === 0 || raw < 5 ? was : was + DELTA, `raw slot ${raw}`);
+  });
+});
+
+/**
+ * The Harmony 300 and 350's frame, `todo-compile-350.md` 5.1.1, step 1 of plan 011: every Logitech compile of the
+ * family the lab holds, taken apart and laid out again byte for byte.
+ *
+ * **The seven.** The five registered compiles, three of a Harmony 350 and two of a Harmony 300, and the two
+ * compiles of the test setup, `work/setups/h350-test/`, the one with its favourite channels and the first one
+ * without. Two of them are one generation older than the rest: `h300_config` was compiled in 2011 and has no
+ * timers. They are the same seven the census of plan 011 counts its constants over, `noscreencensus.test.ts`.
+ *
+ * **What the frame had to learn, each a row of `FRAME_ARCHITECTURES[16]` rather than a test in its code**:
+ *
+ * * Fifteen raw slots, `0x0F` at `0x09` in all seven, stated rather than derived: the base slots come from
+ *   `ARCH16_SLOT_MAP`, and nothing about the base layout with insertions gives fifteen.
+ * * Five sections of the family's own, raw slots 5, 6, 8, 12 and 13, which the slot map places no base slot on,
+ *   and raw slot 14 NULL; the other nine raw slots are base slots 0, 1, 2, 3, 5, 10, 13, 15 and 16. Every one of
+ *   the fourteen sections ascends in raw order in all seven.
+ * * The key table after the end marker, at `0x4B`, is the tagged list the key map table's entry 0 names: there is
+ *   no base slot 6 here to find it through, so `relocationFloor` has nothing to read, and without the table's
+ *   entry the key table would have been an empty piece and the frame would have refused all seven.
+ * * No picture bank: the metadata archive at raw slot 13 is the last section and runs up to the trailer.
+ * * Flash base `0x020000` in all seven, the file's place on the external medium, `memory.md`.
+ *
+ * **One fact about Logitech's layout the frame did not know**: the infrared groups sit directly after the clock
+ * record, in front of the infrared table, because base slot 4 is not on this architecture to sit between base slot
+ * 3 and base slot 5's table. The frame used to take everything from a generated section to the next table as that
+ * section's own, which on arch 12 and 14 is the same range since nothing follows base slots 1 and 3 there; on this
+ * family that swallowed the groups, and the first run refused all seven with an address naming the frame's own
+ * bytes. A generated section is its own length now, and what follows it is parked in front of the next table, which
+ * is where the groups are parked on arch 12 and 14 too. So the one parking row that holds on this family's compiles
+ * is base slot 5's, the same as the other two families', and nothing the codec claims is parked anywhere else.
+ * **Narrower than the arch 14 claim**, since several structures here are claimed by no reader (the key maps, the
+ * timer records, the parameter groups): those travel inside the piece before them and are not seen as parked or
+ * not. Which of them the placer has to park is step 6's.
+ *
+ * **What this cannot see.** The census of address fields reads raw slot 5's start up table as a counted pointer
+ * table, since `pointerArrayAt` accepts a count and three byte entries, so its eleven instructions are zeroed and
+ * written back as absolute values. None of the 77 lands inside a container, asserted below, so each is carried as
+ * the value it is and the round trip holds; a growth would not rewrite them either, for the same reason. An instruction whose
+ * opcode byte were `0x02` or `0x03` would land and would be rewritten by a growth, which none of the seven has.
+ * An address field the census does not know at all would be carried as content and round trip, as the file's
+ * header says for every architecture.
+ *
+ * **Which architectures**: arch 16 alone, both of its models. Sources checked first: `reference/config-format/
+ * container.md` and `layout.md`, `reference/architectures/harmony-300-350/memory.md`, plan 011's census; Logitech's
+ * client compiles nothing for this family, so it has no layout of its own to read.
+ */
+const FAMILY_16 = FILE_BASED_FAMILY.full;
+const FAMILY_16_SETUP = ['work/setups/h350-test/compile-Result.EzHex', 'work/setups/h350-test/first-compile/compile-Result.EzHex'];
+/** The skin each states: 104 on the five Harmony 350 compiles, 79 on the two of the European Harmony 300. */
+const SKIN_16: Readonly<Record<string, number>> = { h300_config: 79, h300_programmed_config: 79 };
+
+test('every Harmony 300 and 350 configuration Logitech compiled is laid out again byte for byte',
+     skipUnless(...FAMILY_16), () => {
+  const fixtures = [...FAMILY_16, ...FAMILY_16_SETUP];
+  let rebuilt = 0;
+  for (const name of fixtures) {
+    const c = name.startsWith('work/') ? containerAt(name) : containerOf(name);
+    assert.equal(c.architecture, 16, `${name}: architecture`);
+    assert.equal(c.pointerCount, 15, `${name}: pointer slots`);
+    assert.equal(c.formatRaw, 0x0f00, `${name}: format word`);
+    assert.equal(c.flashBase, FRAME_ARCHITECTURES[16]!.flashBase, `${name}: flash base`);
+    assert.deepEqual(c.sections.flatMap((section, raw) => (section.isNull ? [raw] : [])), [14], `${name}: NULL slots`);
+    const layout = takeApart(c);
+    for (const piece of everyPiece(layout)) {
+      for (const ref of piece.refs) {
+        assert.deepEqual([...piece.bytes.subarray(ref.at, ref.at + 3)], [0, 0, 0], `${name}: a field kept its bytes`);
+      }
+    }
+    assert.equal(layout.skin, SKIN_16[name] ?? 104, `${name}: skin`);
+    assert.equal(typeof layout.builtAt, 'string', `${name}: stamp`);
+    // The key table is the list the key map table's first entry names, right after the end marker.
+    assert.equal(c.blobOffsetOf(c.pointerArray(6)![0]!), 0x4b, `${name}: key table`);
+    assert.equal(layout.keyTable.bytes.length, 1 + 4 * c.blob[0x4b]!, `${name}: key table extent`);
+    assert.equal(layout.pictures.length, 0, `${name}: no picture bank`);
+    // The nine base slots this family has, and its own five; the other base slots are absent.
+    assert.deepEqual(layout.sections.flatMap((placed, slot) => (placed === undefined ? [] : [slot])),
+                     [0, 1, 2, 3, 5, 10, 13, 15, 16], `${name}: base slots`);
+    assert.deepEqual(Object.keys(layout.inserted ?? {}).map(Number), [5, 6, 8, 12, 13], `${name}: the family's own`);
+    // Parked: base slot 5's groups and nothing else the codec claims, each table one piece.
+    type Placed = NonNullable<ContainerLayout['sections'][number]>;
+    const placements: [string, Placed][] = [
+      ...[...layout.sections.entries()].flatMap(([slot, placed]): [string, Placed][] => (placed === undefined ? [] : [[`base ${slot}`, placed]])),
+      ...Object.entries(layout.inserted ?? {}).map(([raw, placed]): [string, Placed] => [`raw ${raw}`, placed]),
+    ];
+    for (const [where, placed] of placements) {
+      const owners = [...new Set(placed.before.map((piece) => piece.owner))];
+      assert.deepEqual(owners, where === 'base 5' ? ['slot-5-group'] : [], `${name}: in front of ${where}`);
+      assert.equal(placed.head.length, where === 'base 1' || where === 'base 3' ? 0 : 1, `${name}: ${where}'s table`);
+    }
+    assert.equal(layout.sections[5]!.before.length, c.pointerArray(4)!.length, `${name}: one piece per group`);
+    // The start up table's eleven instructions, which the census reads as addresses: none lands in the container.
+    const startUp = pointers(c).filter((p) => p.holder === 'raw-5-table');
+    assert.equal(startUp.length, 11, `${name}: start up entries`);
+    assert.equal(startUp.filter((p) => p.lands !== undefined).length, 0, `${name}: a start up instruction lands`);
+    // The flash base is the frame's own default, so a layout that does not state one is linked where Logitech's was.
+    delete layout.flashBase;
+    assert.equal(firstDifference(layOutContainer(layout).bytes, c.blob), undefined, `${name} differs`);
+    rebuilt += 1;
+  }
+  assert.equal(rebuilt, 7);
+});
+
+test('the frame refuses what the Harmony 300 and 350 do not have', skipUnless('h350_config'), () => {
+  const c = containerOf('h350_config');
+  const fresh = (): ContainerLayout => takeApart(c);
+
+  // A base slot the family has no raw slot for, which the walk by raw slot would otherwise drop without a word.
+  const extraBase = fresh();
+  extraBase.sections[4] = { before: [], head: [{ bytes: new Uint8Array(1), refs: [] }] };
+  assert.throws(() => layOutContainer(extraBase), /arch 16 has no base slot 4/);
+  // A picture, which no screen draws.
+  const picture = fresh();
+  picture.pictures.push({ bytes: new Uint8Array(4), refs: [] });
+  assert.throws(() => layOutContainer(picture), /arch 16 has no picture bank/);
+  // The NULL raw slot 14 has no section of the family's own, and each of the five has to be given.
+  const raw14 = fresh();
+  raw14.inserted = { ...raw14.inserted, 14: { before: [], head: [{ bytes: new Uint8Array(1), refs: [] }] } };
+  assert.throws(() => layOutContainer(raw14), /arch 16 has no section of its own at raw slot 14/);
+  const noArchive = fresh();
+  delete (noArchive.inserted as Record<number, unknown>)[13];
+  assert.throws(() => layOutContainer(noArchive), /raw slot 13 of arch 16 has no table/);
+  const unaligned = fresh();
+  unaligned.flashBase = 0x020800;
+  assert.throws(() => layOutContainer(unaligned), /4 KiB boundary/);
+
+  // A container that says it is another architecture with this one's fifteen slots: the pointer count is checked.
+  const blob = new Uint8Array(c.blob);
+  const record = c.blobOffsetOf(c.sections[1]!.address)!;
+  blob.set([14, 14], record);
+  assert.throws(() => takeApart(parse(blob)), /arch 14 has 20 pointer slots and this container 15/);
+});
+
+function everyPiece(layout: ContainerLayout): ContainerPiece[] {
+  return [layout.keyTable, ...layout.body,
+    ...layout.sections.flatMap((placed) => (placed === undefined ? [] : [...placed.before, ...placed.head])),
+    ...Object.values(layout.inserted ?? {}).flatMap((placed) => [...placed.before, ...placed.head]),
+    ...layout.pictures];
+}

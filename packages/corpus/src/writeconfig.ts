@@ -114,7 +114,7 @@ export interface ConfigWriteModel {
    * needs. **On the Harmony 880 and 885 the drop is what keeps the remote off the region**: it moves every
    * lookup to the built in configuration until the next start, and the firmware runs from the same flash part,
    * so without it the remote can look up a block between its erase and its write and read it blank,
-   * `tests/test_harmony_885_write_end.py`. A control that measures that is not one to run on an irreplaceable
+   * `tests/harmony_880_885/test_harmony_885_write_end.py`. A control that measures that is not one to run on an irreplaceable
    * remote, so it is refused rather than offered.
    */
   readonly dropRequired?: string;
@@ -131,7 +131,7 @@ export interface ConfigWriteModel {
    * wrong is the application**: before the first erase, so a nonzero value stops the run with nothing written,
    * and again immediately before the restart, which is withheld unless the byte is still 0. Read with
    * `READ_MISC` selector 7, `readRam`, the path `read-ram.ts` read unit A's clock at `0x108` with,
-   * `tests/test_harmony_885_bench_reads.py`; on the Harmony One and the 600 series the install is a different
+   * `tests/harmony_880_885/test_harmony_885_bench_reads.py`; on the Harmony One and the 600 series the install is a different
    * mechanism and this stays undefined.
    */
   readonly installStatusAt?: number;
@@ -151,7 +151,7 @@ const ARCH8_INSTALL_STATUS = 0x100;
  * in `@harmony/usb`, which keeps its own lists per path.
  */
 export const CONFIG_WRITE_MODELS = {
-  // **4.4 is the build their write end was read in**, the 885's application, `tests/test_harmony_885_write_end.py`;
+  // **4.4 is the build their write end was read in**, the 885's application, `tests/harmony_880_885/test_harmony_885_write_end.py`;
   // both bench units report it, version block `44 21 49 01 80 11 08`. The 880 runs the same application, but no
   // 880 is a unit here. `todo-compile-885.md` 1.4.
   'Harmony 885': {
@@ -740,7 +740,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
       await remote.invalidateCachedRegions(permission);
       // Section 250's clock experiment is a Harmony One's; on arch 14 the next erase consumes the drop's
       // flag instead, section 282, and on arch 8 the remote runs on its built in configuration until it
-      // next starts, `tests/test_harmony_885_write_end.py`, so the advice differs per architecture.
+      // next starts, `tests/harmony_880_885/test_harmony_885_write_end.py`, so the advice differs per architecture.
       say(architecture === 12
         ? 'the drop is sent. The remote keeps running; its verdict byte is now clear. Read its '
           + 'clock, pull the cable, plug it back in, and read the clock again: a running time that '

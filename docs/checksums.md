@@ -419,7 +419,7 @@ demonstration that this one is.
 Not a binary and not a config: the packet log of the classic client, rebuilt from its own decompiled
 source, reading a Harmony One over USB against a local stand-in for its discontinued server. It stays
 in the lab because it carries that unit's identity block in the clear, so this is the checksum.
-Section 210, and `packages/usb/test/classic-capture.test.ts` reads it as the fixture
+Section 210, and `packages/usb/test/transport/classic-capture.test.ts` reads it as the fixture
 `classic_read_capture`.
 
 | File | SHA-256 | What |
@@ -435,7 +435,7 @@ The same run's **output**, which sat in the client's own application support fol
 before anybody looked. Two flash regions off the spare Harmony One, read entirely through Logitech's
 code: their flash service, their packet encoder, their chunking. Configs, so they stay in the lab, and
 the identity file the client wrote beside them was deliberately not copied. Section 215, and
-`packages/corpus/test/vendor-readout.test.ts` reads both as fixtures.
+`packages/corpus/test/read/vendor-readout.test.ts` reads both as fixtures.
 
 | File | SHA-256 | What |
 |---|---|---|

@@ -2,7 +2,7 @@
  * The Harmony One's parameter block, base slot 15: the model's values, which `firmwaresections.ts` builds
  * into the eleven groups and the twelve bytes past group 9 that its firmware reads, `todo-compile-one.md`
  * 6.4. One set on all 19 distinct Harmony One compiles the lab holds, `ONE_COMPILES` in
- * `test/startupassistant.test.ts`, as the Harmony 600, 650 and 700 each carry one set of their own,
+ * `test/families/harmony-one/startupassistant.test.ts`, as the Harmony 600, 650 and 700 each carry one set of their own,
  * `families/harmony-600-650-700/wiring.ts`' `PARAMETER_VALUES`.
  *
  * What the groups hold is `reference/architectures/harmony-one/firmware.md`, "Base slot 15's groups", read

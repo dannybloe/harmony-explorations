@@ -34,7 +34,7 @@ activities onto it. What it holds at any moment is in the lab's `reads/` and not
 ## The test account
 
 The unit's account, what MyHarmony showed for it, and Logitech's capability answer for its entry are in
-[accounts.md](accounts.md); the answer is held by `tests/test_product_capabilities.py`.
+[accounts.md](accounts.md); the answer is held by `tests/logitech/test_product_capabilities.py`.
 
 ## Memory, as read
 

@@ -392,7 +392,7 @@ export function glyphAt(
  * into maximal runs of skipped and literal pixels, 127 at a time, a trailing skip included, a `0x80`
  * between rows, which `glyphAt` reads as a skip of nothing and which every stored glyph carries, and the
  * end byte after the last row. A pixel is stored high byte first, as `glyphAt` reads it, section 367. Every glyph of the
- * 37 containers on arch 8, 10, 12 and 14 `test/pictures.test.ts` reads comes back byte for byte from its own
+ * 37 containers on arch 8, 10, 12 and 14 `test/families/harmony-600-650-700/pictures.test.ts` reads comes back byte for byte from its own
  * rows by this rule, so the rail
  * that a glyph cannot be re-encoded from its pixels does not hold for Logitech's glyphs; which letters a
  * font should hold, and where their shapes come from, is `todo-compile-650.md` 8.2 and not this. Arch 9

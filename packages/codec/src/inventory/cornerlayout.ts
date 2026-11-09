@@ -147,7 +147,7 @@ export function gridCellAt(of: LabelGrid, x: number, y: number): number | undefi
  * line label at y 42, 74, 106 and 138 and a two line label starting 13 higher: each band runs from 16, below the
  * title at 10, in steps of the 32 pixel row pitch, so the last ends at 144, above the page counter at 152. The
  * split is the middle of the 128 pixel panel, the left labels starting at 3 and the right ones at 66 or beyond on
- * every arch 8 device list page in the corpus, `packages/codec/test/arch8devicelist.test.ts`, which also holds that
+ * every arch 8 device list page in the corpus, `packages/codec/test/inventory/arch8devicelist.test.ts`, which also holds that
  * every line those pages draw falls in a band or is the title or the counter.
  *
  * Measured on the Harmony 885's keys and on the configurations of both the 880 and the 885, which run one

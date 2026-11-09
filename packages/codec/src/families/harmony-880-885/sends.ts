@@ -22,11 +22,11 @@
  *
  * * the state variables have 64 bytes on the Harmony 880 and 885, `narrow + 2 * wide`, and the firmware checks
  *   nothing, so a device that would take them past 64 is refused, `reference/config-format/state.md`,
- *   `tests/test_harmony_885_state.py`. The device composer adds one one byte variable, the power, so the check is
+ *   `tests/harmony_880_885/test_harmony_885_state.py`. The device composer adds one one byte variable, the power, so the check is
  *   that one more fits. This is the codec's half of `todo-compile-885.md` 4.3, for a composed device only;
  * * groups 8 and up toggle with groups 0 and up, eight bits for sixteen groups, and the firmware flips a group's
  *   bit at every send to it, toggling or not, `reference/config-format/infrared-records.md`,
- *   `tests/test_harmony_885_infrared.py`. So in group 8 or higher a code that alternates two forms is refused,
+ *   `tests/harmony_880_885/test_harmony_885_infrared.py`. So in group 8 or higher a code that alternates two forms is refused,
  *   since the partner group's sends would flip its bit, and so is any device at all whose partner group, eight
  *   below, holds a code of two forms, since this device's sends would flip that one's: either way a press would
  *   send the form the device takes for a held key. A code of two forms is a record of two pointer groups, the form
@@ -52,7 +52,7 @@ export const SIDE_KEYS_NAME = 'the Harmony 880 and 885';
 
 /**
  * The bytes the firmware gives the state variables, `narrow + 2 * wide`: 64 on the Harmony 880 and 885, read in
- * the firmware, `tests/test_harmony_885_state.py`.
+ * the firmware, `tests/harmony_880_885/test_harmony_885_state.py`.
  */
 export const SIDE_KEYS_STATE_BYTES = 64;
 

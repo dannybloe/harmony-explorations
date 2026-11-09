@@ -14,4 +14,4 @@ addresses moved, [the platform's firmware](../../architectures/harmony-880-885/f
   and the timers.[^unchecked]
 
 [^unchecked]: Not checked.
-[^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
+[^t-885-start]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_start_check.py)

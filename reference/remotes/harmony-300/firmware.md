@@ -22,4 +22,4 @@ comparison](../../architectures/harmony-300-350/firmware.md#the-two-models-image
 
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^unchecked]: Not checked.
-[^t-harmony-300-350-images-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_350_images.py)
+[^t-harmony-300-350-images-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_300_350_images.py)

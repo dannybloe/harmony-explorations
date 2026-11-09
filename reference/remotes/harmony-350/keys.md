@@ -215,16 +215,16 @@ screen[^s311], until the family's slots were read, [the family's memory page](..
   read: the long press device is bound to the held event,
   [the family's firmware](../../architectures/harmony-300-350/firmware.md#a-held-key)[^t-long-press].
 
-[^t-silhouette]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-silhouette]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)
 [^s311]: Measured in configurations. [Section 311](../../../docs/findings.md#s311)
-[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_slots.py)
-[^t-device-groups-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_device_groups.py)
+[^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_slots.py)
+[^t-device-groups-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)
 [^unchecked]: Not checked.
-[^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
-[^t-harmony-350-keys]: Read in the firmware. [The test](../../../tests/test_harmony_350_keys.py)
-[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
-[^t-harmony-350-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
-[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-long-press]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
+[^t-harmony-350-keys]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
+[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
+[^t-harmony-350-keys-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
+[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
 [^s265]: Measured in configurations. [Section 265](../../../docs/findings.md#s265)

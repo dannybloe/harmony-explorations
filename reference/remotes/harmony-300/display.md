@@ -25,4 +25,4 @@ Nothing on a 300 could show it.
 
 * Whether any key lights while the remote sends.
 
-[^t-no-screen]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-no-screen]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)

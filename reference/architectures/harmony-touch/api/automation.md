@@ -313,7 +313,7 @@ devices, groups and scenes of the stored configuration are what
 * Whether the activity engine's prompt from `verifierGetAutomationConfig` does anything outside mode 3[^unchecked].
 * Other host names, other modes, other builds and other products of the generation[^unchecked].
 
-[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
-[^t-touch-host]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_host.py)
-[^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)
+[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_engine.py)
+[^t-touch-host]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_host.py)
+[^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-host.test.ts)
 [^unchecked]: Not checked.

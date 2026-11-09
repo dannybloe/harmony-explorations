@@ -48,6 +48,6 @@ outside every activity, each listing every device, and a page's cells, labels, s
 [^s180]: Measured in configurations. [Section 180](../../../docs/findings.md#s180)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^unchecked]: Not checked.
-[^t-885-screens]: Read in the firmware. [The test](../../../tests/test_harmony_885_screens.py)
-[^t-arch8-devices]: Measured in configurations. [The test](../../../packages/codec/test/arch8devicelist.test.ts)
-[^t-side-keys]: Measured in configurations. [The test](../../../packages/codec/test/sidekeysdevice.test.ts)
+[^t-885-screens]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_screens.py)
+[^t-arch8-devices]: Measured in configurations. [The test](../../../packages/codec/test/inventory/arch8devicelist.test.ts)
+[^t-side-keys]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)

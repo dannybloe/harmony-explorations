@@ -24,7 +24,7 @@
  * letter's bytes). So the proof is the glyphs the two
  * sets already share: every character both draw, other than a blank, must be the same bytes in both, and there
  * must be at least `BORROW_PROOF_MINIMUM` of them. **The measurement behind it is bimodal**, and is asserted in
- * `test/glyphborrow.test.ts`: over the eight Harmony 880 and 885 configurations the lab holds, every pair of sets of
+ * `test/drawing/glyphborrow.test.ts`: over the eight Harmony 880 and 885 configurations the lab holds, every pair of sets of
  * one height either agrees on every non blank glyph they share, 280 pairs sharing 5 or more, or on none of them,
  * 294 pairs. No pair agrees on some and not others, so one disagreeing glyph is a different face and is refused,
  * and the minimum only keeps a coincidence of one or two shapes from passing as a proof. Where several matching
@@ -44,7 +44,7 @@
  * routine to address zero, and what it draws from there is not read. The guard is the one speller every composer
  * spells through, `codesFor` in `shared/spelling.ts` (and `spelledText` over it): it takes a code for a character
  * only where `glyphOf` finds a glyph for it in that very set, which a NULL pointer and a code past the count both
- * fail, so it refuses rather than spelling. `test/glyphborrow.test.ts` holds that for the borrowed codes; this module adds no second speller.
+ * fail, so it refuses rather than spelling. `test/drawing/glyphborrow.test.ts` holds that for the borrowed codes; this module adds no second speller.
  *
  * **What the firmware does with it, and where that was read.** The text routine finds a glyph from the set's
  * address and the pointer at `3 + 3 * (code - first)` and decodes it to its own end byte, using neither the height

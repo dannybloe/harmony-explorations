@@ -82,7 +82,7 @@
  * `sync:`.
  *
  * **`--unchanged --commit` has run three times on the bench unit**, `todo-touch.md` 6.7 and 6.8, and `--set --commit`
- * once, 6.8, which the remote committed, `packages/usb/test/touch-own-set-sync.test.ts`.
+ * once, 6.8, which the remote committed, `packages/usb/test/touch/touch-own-set-sync.test.ts`.
  * This said nothing in the script had been run against a remote<!--superseded--> until 6.8's preflight.
  */
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';

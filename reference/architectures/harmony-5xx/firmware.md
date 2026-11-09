@@ -157,7 +157,7 @@ part is not established[^unchecked].
 
 [^unchecked]: Not checked.
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
-[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
 [^s118]: Measured on a unit. [Section 118](../../../docs/findings.md#s118)
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^s113]: Read in the firmware. [Section 113](../../../docs/findings.md#s113)

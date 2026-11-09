@@ -585,7 +585,7 @@ export function isCanonicalPath(path: string): boolean {
 
 /**
  * The parameter of `FILE_CONTROL` that resets the file system, which on the Harmony 300 and 350's 1.4
- * firmware closes whatever file is open and does nothing else, `tests/test_harmony_350_file_write.py`.
+ * firmware closes whatever file is open and does nothing else, `tests/harmony_300_350/test_harmony_350_file_write.py`.
  * Logitech's client sends it first so that a handle an interrupted attempt left open cannot make the
  * open refuse.
  */
@@ -603,7 +603,7 @@ export const FILE_CHECK = 0x01;
 
 /**
  * A data packet's sequence numbers run 0 to 63 and wrap, one counter for a whole operation, commands
- * and data packets alike: Logitech's client, `tests/test_file_family_write_route.py`. So a data packet's
+ * and data packets alike: Logitech's client, `tests/logitech/test_file_family_write_route.py`. So a data packet's
  * first byte is never `FILE_SERVICE`, which is what lets the guard tell one from a command.
  */
 export const SEQUENCE_MODULUS = 64;
@@ -717,7 +717,7 @@ function printableText(bytes: Uint8Array): boolean {
  *
  * **The second allow list the transport carries, and the one with the rail that matters most**: the
  * request name. Each shape is the one `touchsession.ts` builds from Logitech's client's templates, which
- * `packages/usb/test/touchsession.test.ts` holds byte for byte against the recorded syncs:
+ * `packages/usb/test/touch/touchsession.test.ts` holds byte for byte against the recorded syncs:
  *
  * | report | shape |
  * |---|---|

@@ -31,7 +31,7 @@ export const SCREEN_RECORD_KINDS: readonly ScreenRecordKind[] = ['idle device li
 
 /**
  * All Off's working screen's title, drawn where a start up screen draws "Starting" and the activity, on
- * every arch 14 compile `test/screenrecords.test.ts` reads, 22 of 22. **Fitted**: every compile here is in English.
+ * every arch 14 compile `test/families/harmony-600-650-700/screenrecords.test.ts` reads, 22 of 22. **Fitted**: every compile here is in English.
  */
 export const OFF_TITLE = 'Turning system off';
 

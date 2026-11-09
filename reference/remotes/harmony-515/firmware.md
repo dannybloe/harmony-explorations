@@ -17,7 +17,7 @@ The program a Harmony 515 runs. How the images are laid out and installed is the
 * Whether safe mode on this model destroys the application as it does on the Harmony 525; it is not to
   be entered to find out.[^unchecked]
 
-[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
-[^t-harmony-515-c]: Measured in configurations. [The test](../../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
+[^t-harmony-515-c]: Measured in configurations. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^unchecked]: Not checked.

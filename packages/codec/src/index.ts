@@ -8,14 +8,14 @@
  * `src/harmony/` for the reverse engineering tools, and the two are held equal by golden vectors.
  *
  * **Explicit names, grouped by what an application does with them**, `todo.md` 7.3.6 and plan 013 decision 6;
- * `test/surface.test.ts` holds the list, so a new public name is a line in that list's diff. Everything else
+ * `test/package/surface.test.ts` holds the list, so a new public name is a line in that list's diff. Everything else
  * this package offers is under a named subpath, each module whole: `./build` holds the composers and builders,
  * which stay off this entry by plan 007, and `./internal` the format's parts below the application's view, for
  * this repository's scripts, tests and libraries. A name here may also be reached through the subpath that
  * carries its module; a caller that needs only this entry imports it from here.
  *
  * **This entry loads anywhere**, an Electron renderer or a browser as well as Node, plan 013 decision 5:
- * nothing it reaches imports a Node module or names a Node global, `test/mainentry.test.ts`, and the same holds
+ * nothing it reaches imports a Node module or names a Node global, `test/package/mainentry.test.ts`, and the same holds
  * for `./build` and `./internal`. What reads the disk is the Node entry's, `@harmony/codec/node`, `node.ts`,
  * which carries this one whole as well; a builder that needs the catalogue is handed a `CatalogueSource`, and
  * one that draws a letter, an icon or a picture asks for what the loader supplies, `resources.ts`.

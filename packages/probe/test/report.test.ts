@@ -75,7 +75,7 @@ test('the report is about the container and not about the file it sits in',
   // config is the worst direction for the error, because nobody chases a file the tool has ruled out.
   for (const name of ['one_config', 'h890_config', 'h890_config_rescan']) {
     // `require_` and not `load` plus a skip: the test names its samples up front, so a missing one is
-    // a failure rather than a claim quietly shrinking. `tests/test_toolchain.py` enforces this and it
+    // a failure rather than a claim quietly shrinking. `tests/project/test_toolchain.py` enforces this and it
     // caught the first version of this very test.
     const data = require_(name);
     const whole = containerReport(data);

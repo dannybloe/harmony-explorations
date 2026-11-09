@@ -72,7 +72,7 @@ export const IR_POINTERS_PER_GROUP = 3;
  * **And it is 2 in more than half of arch 9 (Harmony 525)**, 168 records against 139, which four
  * comments in this file said was impossible while `reference/config-format/infrared-records.md` had said the opposite for
  * weeks. The code was right throughout; what a reader sizing a header would have trusted was not.
- * The distribution is asserted per architecture in `test/irframe.test.ts`.
+ * The distribution is asserted per architecture in `test/infrared/irframe.test.ts`.
  */
 export const IR_GROUP_COUNT_AT = 11;
 /**

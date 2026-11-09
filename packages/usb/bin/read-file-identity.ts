@@ -39,7 +39,7 @@
  *
  * A Touch refuses `/sys/guid` at open, `reference/remotes/harmony-touch/usb.md`, so it has no identity
  * block to record. What tells one Touch from another is the identity file's `serial_number`, which the
- * remote's native program fills from the unit's manufacturing record, `tests/test_harmony_touch_serial.py`.
+ * remote's native program fills from the unit's manufacturing record, `tests/harmony_touch/test_harmony_touch_serial.py`.
  * So when the remote refuses `/sys/guid`, its identity file states a Touch's architecture and skin, 17 and
  * 99 as the remote numbers them, and it states a serial, the record is
  * `unitIdentityFromSerial` of that serial: 32 bytes in the same hex form, which `sameUnit` compares as it

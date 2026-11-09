@@ -250,7 +250,7 @@ export function sameUnit(a: Uint8Array, b: Uint8Array): boolean {
 /**
  * The longest serial the Harmony Touch's identity file can state. Its native USB program copies the
  * manufacturing record's `unitid` into a 64 byte field with `strncpy` bounded to 63 and a terminator
- * after it, `tests/test_harmony_touch_serial.py`, so a longer value never comes off a remote and is
+ * after it, `tests/harmony_touch/test_harmony_touch_serial.py`, so a longer value never comes off a remote and is
  * refused here as something that did not.
  */
 export const SERIAL_MAX_CHARACTERS = 63;
@@ -280,7 +280,7 @@ const SERIAL_DOMAIN = 'harmony unit serial, /sys/sysinfo serial_number\0';
  *
  * **The refusals are what keep a default from matching every unit**, the trap the identity block's
  * `0xEE` field is: when the record is missing, or holds no `unitid`, the program publishes the empty
- * string, a constant shared by every such unit, `tests/test_harmony_touch_serial.py`. So the empty
+ * string, a constant shared by every such unit, `tests/harmony_touch/test_harmony_touch_serial.py`. So the empty
  * serial is refused, and so is one character repeated, which is what an unwritten field looks like
  * wherever this project has met one. A digest of either would be 32 confident looking bytes.
  */

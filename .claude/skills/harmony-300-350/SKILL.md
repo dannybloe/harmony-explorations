@@ -112,7 +112,7 @@ Harmony 350's first, `packages/bench/irtests/done/350-1-8-delay-*.json`, is the 
 | each unit's notes | `docs/test-notes/harmony-300.md` and `docs/test-notes/harmony-350.md` |
 | the configurations read so far | the lab's `reads/` and `dumps/`, named in `packages/lab` and `tests/lab.py` as `h350_config`, `h350_programmed_config`, `h350_three_devices_config`, `h300_config` and `h300_programmed_config` |
 | the firmware image | the lab's `firmware/`, named `h350_code` and `h350_package` in `packages/lab` |
-| the bench 350's bootloader and safe mode image | the lab's `reads/20261027T1929Z-h350-fw/`, named `h350_bootloader` and `h350_safemode`; what they do is `tests/test_harmony_350_boot.py`, and safe mode is safe to enter on this family, `recovering-a-remote` |
+| the bench 350's bootloader and safe mode image | the lab's `reads/20261027T1929Z-h350-fw/`, named `h350_bootloader` and `h350_safemode`; what they do is `tests/harmony_300_350/test_harmony_350_boot.py`, and safe mode is safe to enter on this family, `recovering-a-remote` |
 
 ## Related
 

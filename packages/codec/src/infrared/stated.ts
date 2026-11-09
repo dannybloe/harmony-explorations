@@ -59,7 +59,7 @@ import { SEGMENT_LENGTHS } from './segmentlengths.ts';
  * `0`, `00`, `01` and `012`. So it is 0 on a code stating one value, and on a code stating several it
  * ascends from 0 except in the `00` case, which is the families whose values are all the same width. A
  * Harmony Touch's firmware reads it as the id of the segment the value is sent in,
- * `tests/test_harmony_touch_devices.py`; it is still kept as written rather than normalised.
+ * `tests/harmony_touch/test_harmony_touch_devices.py`; it is still kept as written rather than normalised.
  */
 export type StatedWord = 'Start' | 'Repeat' | 'RepeatStart' | 'Finish' | 'Trailer' | 'Divider'
   | 'Space' | 'LongSpace' | 'Spacer' | 'Spacer2' | 'StopSpacer' | 'SS' | 'LS' | 'LRS';

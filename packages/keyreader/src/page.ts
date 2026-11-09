@@ -49,7 +49,7 @@ import type { WebHid } from './webhid.ts';
 
 /**
  * Time between two polls. A poll this often caught every press when an 885's keys were measured,
- * `tests/test_harmony_885_keys.py`, and a press that is missed still shows in the copy of the last key.
+ * `tests/harmony_880_885/test_harmony_885_keys.py`, and a press that is missed still shows in the copy of the last key.
  */
 const POLL_MS = 25;
 

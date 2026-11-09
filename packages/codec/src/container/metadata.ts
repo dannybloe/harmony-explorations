@@ -347,7 +347,7 @@ const FIRST_DEVICE_ID = 1;
  * and its length word restated; nothing else moves but what follows it, which on the Harmony 300 and 350 is the
  * trailer alone.
  *
- * **What it rests on**, `packages/codec/test/noscreen.test.ts`: Logitech's compile of the Harmony 350 test setup
+ * **What it rests on**, `packages/codec/test/families/harmony-300-350/noscreen.test.ts`: Logitech's compile of the Harmony 350 test setup
  * names its eight devices in the order the setup lists them, each with every command of its catalogue codeset in
  * that order, numbered from 0, and the archive is the configuration's last section. In all seven Logitech files of
  * the family read, five Harmony 350 and two Harmony 300, 32 devices: `Index` is the device's position in the

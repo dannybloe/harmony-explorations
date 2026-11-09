@@ -248,6 +248,6 @@ library takes. Whether the write verifies or bounds the package is not read, onl
   test mode on there[^unchecked].
 * Whether the hubs' sibling image registers the same names; only the remotes' image is read[^unchecked].
 
-[^t-touch-api-names]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_names.py)
+[^t-touch-api-names]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_names.py)
 [^unchecked]: Not checked.
-[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_recovery.py)
+[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_recovery.py)

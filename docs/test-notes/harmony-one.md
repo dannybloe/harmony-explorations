@@ -244,7 +244,7 @@ idleness is what the cases share. The reference states that; the open question l
 
 The workaround is one retry of the **first** command only, and only on silence, in `packages/corpus`
 (`firstCommand` in `packages/corpus/src/read.ts`). Everything after the first command stays strict. The same
-rule, with the same two message shapes, is in `packages/usb/test/hardware.test.ts`. Both comments name idleness
+rule, with the same two message shapes, is in `packages/usb/test/transport/hardware.test.ts`. Both comments name idleness
 as what the cases share, after section 155, and point here.
 
 ### Stranding

@@ -831,7 +831,7 @@ export interface EmptyFourSlotOptions {
  * `buildEmptyConfiguration` takes the look piece by piece, inks, settings, colours and pictures, which only this
  * repository's tests assembled from the choices, so no caller outside them could build one; `todo.md` 7.3.9 found it
  * on no entry. This reads every piece out of one `FourSlotChoices` the way those tests do, and the letters are blended
- * as the choices say. `test/emptyfourslot.test.ts` holds it byte for byte to the tests' own assembly.
+ * as the choices say. `test/families/harmony-600-650-700/emptyfourslot.test.ts` holds it byte for byte to the tests' own assembly.
  */
 export function buildEmptyFourSlotConfiguration(options: EmptyFourSlotOptions): EmptyConfiguration {
   const choices = options.choices ?? FOUR_SLOT_CHOICES;

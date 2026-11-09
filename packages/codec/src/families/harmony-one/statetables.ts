@@ -1,7 +1,7 @@
 /**
  * The One family's state tables, the Harmony One: the facts `buildStateTables` builds base slots 0, 13 and
  * 14 from, `ONE_STATE_TABLES`, measured on the 19 distinct Harmony One compiles of `todo-compile-one.md` 2.2,
- * `ONE_COMPILES` in `test/statetables.test.ts`, with 6.4.
+ * `ONE_COMPILES` in `test/assembly/statetables.test.ts`, with 6.4.
  *
  * 6.4 first held these in a per architecture table inside the shared `statetables.ts`, beside the Harmony
  * 600, 650 and 700's; they moved here when 3.3.3.3 made the builder take a family's facts, plan 007, since a

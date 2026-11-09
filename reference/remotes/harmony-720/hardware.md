@@ -11,5 +11,5 @@ described once in [the architecture folder](../../architectures/harmony-880-885/
 
 * The processor, the flash, the battery, the transmitters and the learning sensor.[^unchecked]
 
-[^t-720-keys]: Measured in configurations. [The test](../../../tests/test_silhouettes.py)
+[^t-720-keys]: Measured in configurations. [The test](../../../tests/firmware/test_silhouettes.py)
 [^unchecked]: Not checked.

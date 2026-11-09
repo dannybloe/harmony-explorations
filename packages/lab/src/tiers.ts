@@ -9,7 +9,7 @@
  * and so on. Each was written out again in every file that walked it, 127 lists of five or more names in 86
  * files when the test review counted them, one of them commented "as `fonttable.test.ts`'s", and two lists
  * nobody compares drift apart (the `finding` skill). So each lives here once, whole, with a pair chosen from
- * it, and `TheCorpusWidePopulationsAgree` in `tests/test_toolchain.py` reads them statically: each held to
+ * it, and `TheCorpusWidePopulationsAgree` in `tests/project/test_toolchain.py` reads them statically: each held to
  * its count, the pair inside its list, the lists nesting as they should, and no test file writing one out
  * again.
  *

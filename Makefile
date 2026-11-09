@@ -122,7 +122,7 @@ test-partial:
 
 # `bin` is here because it was not, until 13 August 2026: `check-publishable.py` runs in the
 # pre-commit hook and was byte compiled by nothing, which is the same shape as the tsconfig bug
-# `tests/test_toolchain.py` exists for, one language across. `pyrightconfig.json` already included it.
+# `tests/project/test_toolchain.py` exists for, one language across. `pyrightconfig.json` already included it.
 lint:
 	@$(PYTHON) -m compileall -q $(SRC) $(TESTS) tools bin && echo "compiles clean"
 
@@ -317,7 +317,7 @@ composecensus:
 # device's own codeset. Also compares the archive's command names against the keys the drawings in
 # `packages/silhouettes` name for the calibration configurations, which name keys rather than commands, so the output there is a taxonomy of differences. Needs the
 # archive checkout and the lab, no network. Not in `make all`: it is a thirty second full pass over
-# 54118 files, and the claims it produced are pinned by `packages/codec/test/catalogue.test.ts`.
+# 54118 files, and the claims it produced are pinned by `packages/codec/test/catalogue/catalogue.test.ts`.
 catalogue:
 	@node packages/codec/bin/catalogue.ts $(CATALOGUE_ARGS)
 
@@ -341,7 +341,7 @@ emitcheck:
 # the hardware tests are gated: it launches Chrome, and a suite that is slow stops being run. It skips
 # cleanly where there is no Chrome, since no browser is downloaded on purpose.
 page:
-	@HARMONY_PAGE_TESTS=1 node --test --experimental-strip-types packages/bench/test/page.test.ts
+	@HARMONY_PAGE_TESTS=1 node --test --experimental-strip-types packages/bench/test/instrument/page.test.ts
 
 # Draw a config's screens as PNG files, into the private lab rather than into the repository, because a
 # rendered screen is a picture of somebody's own equipment. Not part of `all`: it writes files.
@@ -381,7 +381,7 @@ remote-reference-write:
 # have made that pass, `make site SITE_STRICT=false` builds the site and prints the same warnings.
 #
 # **The environment lives outside the repository**, under `~/.cache`, and that is not a matter of taste:
-# `tools/facts.py` and `tests/test_toolchain.py` walk every `.py`, `.md` and `.txt` file in the checkout
+# `tools/facts.py` and `tests/project/test_toolchain.py` walk every `.py`, `.md` and `.txt` file in the checkout
 # that git does not report as untracked, and an ignored virtual environment is not reported, so one in
 # here would put a few thousand files of other people's code into both sweeps. It is made once, from
 # `tools/site/requirements.txt` with every hash checked and wheels only, and remade whenever that file
@@ -424,7 +424,7 @@ alphabets:
 
 # Our own letters' alphabet as generated data, src/screens/oxaniumalphabet.ts, so a configuration is read with no
 # font supplied. Rerun with --write after a change to the faces, the weights or how a form is read; the
-# check it runs is a test already, test/oxaniumalphabet.test.ts, so it is not part of `all`. No lab.
+# check it runs is a test already, test/screens/oxaniumalphabet.test.ts, so it is not part of `all`. No lab.
 oxanium-alphabet:
 	@node packages/codec/bin/oxaniumalphabet.ts $(OXANIUM_ALPHABET_ARGS)
 

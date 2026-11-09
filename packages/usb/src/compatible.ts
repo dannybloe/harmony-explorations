@@ -113,7 +113,7 @@ function flashHalf(text: string): number {
  * **The keys of this table are the six fields**, and they are deliberately not a second copy of
  * `INTENDED_VERSION_FIELDS` in `packages/codec`: that list is the config format's vocabulary and
  * belongs there, this table is the mapping to a protocol reading and belongs here.
- * `packages/usb/test/compatible.test.ts` compares the two entry for entry, which is what this
+ * `packages/usb/test/transport/compatible.test.ts` compares the two entry for entry, which is what this
  * repository does with two tables that must agree rather than trusting them to.
  */
 const COMPARATORS: Readonly<Record<string, (r: VersionReading) => {

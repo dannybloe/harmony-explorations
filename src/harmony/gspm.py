@@ -196,7 +196,7 @@ def clock_last_day_index(month: int, year_offset: int) -> int:
 
     30 for a 31 day month, 29 for a 30 day one, and for February 28 when `year_offset & 3` is zero
     and 27 otherwise. Read out of the month end routine, the same code on all nine firmware images
-    in the lab over five architectures, `tests/test_clock_counting.py`. Section 322, and
+    in the lab over five architectures, `tests/firmware/test_clock_counting.py`. Section 322, and
     `clockLastDayIndex` in `packages/codec` is the TypeScript twin, which the golden vectors hold to
     this one through every container's `built_at`.
 
@@ -313,8 +313,8 @@ ARCH16_SLOT_MAP: Tuple[Optional[int], ...] = (
     None,  # 11, unread
     None,  # 12, unread
     # 13, the state variable table, raw slot 9, read in the 1.4 firmware: its seeder reads base slot
-    # 13's four header words and seeds records of base slot 13's layout, tests/test_harmony_350_slots.py.
-    # Placed for the power on delay, tests/test_harmony_350_delay.py; raw 6 and 8, base slots 9 and 12
+    # 13's four header words and seeds records of base slot 13's layout, tests/harmony_300_350/test_harmony_350_slots.py.
+    # Placed for the power on delay, tests/harmony_300_350/test_harmony_350_delay.py; raw 6 and 8, base slots 9 and 12
     # by the same reading, stay out until a reader needs them.
     9,
     None,  # 14, unread
@@ -578,7 +578,7 @@ NUMBER_SENDER_DIGITS = 10
 # 11, from a base slot 14 lookup and from a mode entry. `docs/findings.md` section 40.
 SCREEN_TABLE_SLOT = 11
 # Operand bytes per opcode, for the fixed length ones. 21 is arch 8 only: it inverts a rectangle,
-# `x`, `y`, width and height, read in the Harmony 885's firmware, `tests/test_harmony_885_screens.py`,
+# `x`, `y`, width and height, read in the Harmony 885's firmware, `tests/harmony_880_885/test_harmony_885_screens.py`,
 # after its length had been inferred from the corpus.
 # 23 is arch 12 only and takes **no** operand: its handler at `0x29640` on the Harmony One 3.4
 # image makes no read call at all, where every other handler calls its own reader. That one entry
@@ -752,7 +752,7 @@ PARAMETER_SLOT = 15
 # call sites of the guard routine, `0x0F8F0` on the Harmony 700 and `0x23262` on the One, so these
 # are what the code compares against rather than what the corpus happens to carry. Groups absent
 # from a row have no call site on the image that was read, not a length of zero. Arch 8's row is the
-# Harmony 885's guard, `0x10E1A`, decoded by `tests/test_harmony_885_parameters.py`; arch 9 (Harmony
+# Harmony 885's guard, `0x10E1A`, decoded by `tests/harmony_880_885/test_harmony_885_parameters.py`; arch 9 (Harmony
 # 525) has no row because its guard has not been read, and arch 10 (Harmony 890) because no image exists.
 PARAMETER_GROUP_COUNTS: Dict[int, Dict[int, int]] = {
     14: {0: 1, 1: 4, 2: 1, 3: 4, 5: 14, 6: 14, 7: 1},
@@ -797,7 +797,7 @@ TIMER_START_OPERAND_HIGH = 0xEB
 TIMER_CANCEL_OPERAND_HIGH = 0xEA
 # The firmware has room for exactly this many timers running at once, on the four images section 43 read,
 # the Harmony 700, 600, 650 and One. The Harmony 880 and 885 have room for two,
-# `tests/test_harmony_885_timers.py`, and nothing here holds that per architecture yet.
+# `tests/harmony_880_885/test_harmony_885_timers.py`, and nothing here holds that per architecture yet.
 TIMER_SLOTS_IN_RAM = 4
 # The record's first byte. Every record in the corpus carries 1, which is the kind the firmware
 # counts down in its one second scheduler; 0 is counted down in software instead, at a rate this
@@ -2032,7 +2032,7 @@ class Container:
         17       3, an action list instruction, queued
         18, 19   a switch on a state variable, below
         20       3, a flash address, and the program continues there
-        21       4, arch 8 only: invert a rectangle, `tests/test_harmony_885_screens.py`
+        21       4, arch 8 only: invert a rectangle, `tests/harmony_880_885/test_harmony_885_screens.py`
         ```
 
         A switch reads a state variable index, then a table of exact values and a table of
@@ -2078,7 +2078,7 @@ class Container:
                 # A code with bit 7 set is the first half of a wide one and takes a second byte
                 # with it, so the terminator cannot be found by scanning for a zero. Not on arch 8,
                 # whose firmware draws every nonzero byte as one code,
-                # `tests/test_harmony_885_screens.py`; this walk still applies the wide rule there. No string in
+                # `tests/harmony_880_885/test_harmony_885_screens.py`; this walk still applies the wide rule there. No string in
                 # the corpus is wide, but a parser that assumed narrow would desynchronise on the
                 # first one that is.
                 end = off + 2
@@ -2389,7 +2389,7 @@ class Container:
         Each digit table is ten three byte instructions, indexed by the digit. `docs/findings.md`
         section 39. Most configurations carry a count of zero; the Harmony 720's in the corpus holds
         one record, compiled by Logitech, which this reader reads,
-        `tests/test_harmony_885_number_sender.py`, as do Logitech's compiles made to carry favourite
+        `tests/harmony_880_885/test_harmony_885_number_sender.py`, as do Logitech's compiles made to carry favourite
         channels, sections 154 and 262.
         """
         try:
@@ -2444,7 +2444,7 @@ class Container:
         The firmware runs at most `TIMER_SLOTS_IN_RAM` of these at once on the images section 43 read,
         and two on the Harmony 880 and 885, so a config with thirty records is describing thirty possible
         timers rather than thirty concurrent ones. `docs/findings.md` section 43 and
-        `tests/test_harmony_885_timers.py`, which also found the duration's third byte dropped rather
+        `tests/harmony_880_885/test_harmony_885_timers.py`, which also found the duration's third byte dropped rather
         than clamped.
         """
         try:
@@ -2503,7 +2503,7 @@ class Container:
         The case decides how many bytes of what the record holds; the arch 12 dispatcher is the
         only implementation of these operands that has been read. Nothing in the corpus returns
         anything but None. The Harmony 880 and 885 append through `0x0F` with an operand low byte of
-        `0xE0` to `0xE2` instead, which this does not look for, `tests/test_harmony_885_log_area.py`.
+        `0xE0` to `0xE2` instead, which this does not look for, `tests/harmony_880_885/test_harmony_885_log_area.py`.
         """
         if instruction.opcode != OPCODE_SELECT_HANDLER:
             return None

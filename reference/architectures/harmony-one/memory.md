@@ -202,5 +202,5 @@ write while the time is being set[^t-one-state-tables][^s432].
 [^s399]: Read in the firmware. [Section 399](../../../docs/findings.md#s399)
 [^s246]: Read in the firmware. [Section 246](../../../docs/findings.md#s246)
 [^s276]: Read in the firmware. [Section 276](../../../docs/findings.md#s276)
-[^t-one-state-tables]: Measured in configurations. [The test](../../../packages/codec/test/statetables.test.ts)
+[^t-one-state-tables]: Measured in configurations. [The test](../../../packages/codec/test/assembly/statetables.test.ts)
 [^s432]: Measured in configurations. [Section 432](../../../docs/findings.md#s432)

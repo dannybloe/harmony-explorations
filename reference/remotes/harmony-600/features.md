@@ -124,10 +124,10 @@ and Product Specification[^x-manual]. Learning on a 600 is not checked[^unchecke
 * Which action saves a delay on the remote[^unchecked].
 
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
-[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_host_client.py)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
 [^x-forum]: Stated by a third party. [The comparison table of harmony-remote-forum.de](https://www.harmony-remote-forum.de/harmony_compare.php)
-[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_product_capabilities.py)
 [^s292]: Stated by Logitech, by their service. [Section 292](../../../docs/findings.md#s292)
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 600 user manual](https://www.manualslib.com/manual/634914/Logitech-Harmony-600.html)
 [^s390]: Measured on a unit. [Section 390](../../../docs/findings.md#s390)

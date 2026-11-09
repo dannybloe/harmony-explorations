@@ -93,4 +93,4 @@ those sizes.[^s177][^s179]
 [^s180]: Measured in configurations. [Section 180](../../../docs/findings.md#s180)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^unchecked]: Not checked.
-[^t-printing-890pro]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-printing-890pro]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)

@@ -1729,7 +1729,7 @@ export interface StatedProtocol {
    *
    * **Absent, with \`flat\`, \`zero\`, \`one\` and \`carries\`, on a biphase family**, which has none of
    * them: see \`biphase\` below. A row has one shape or the other and never both, and
-   * \`test/stated.test.ts\` asserts that.
+   * \`test/infrared/stated.test.ts\` asserts that.
    */
   readonly header?: readonly [number, number];
   readonly flat?: number;
@@ -1934,7 +1934,7 @@ export interface StatedProtocol {
    * that one, \`Galaxis 16 Bit Quad Toggle\`, is the \`quad\` shape above: the same idea read off a
    * stored train instead of off a definition, which is why both exist.
    *
-   * A row has this or one of the shapes above and never two, and \`test/stated.test.ts\` asserts it.
+   * A row has this or one of the shapes above and never two, and \`test/infrared/stated.test.ts\` asserts it.
    * The width comes from the code, so \`bits\` here is one **cell's** width and not the frame's.
    */
   readonly cells?: {
@@ -2133,7 +2133,7 @@ if (write) {
    *
    * **`source: 'stated'`, `codes: 0` and `exact: 0` are the honest numbers, not placeholders.** Nothing
    * here was measured off a remote or off a configuration: it is Logitech's own definition, converted,
-   * and the reason to believe it is the calibration in `test/archive.test.ts`, where 34 of the 35
+   * and the reason to believe it is the calibration in `test/catalogue/archive.test.ts`, where 34 of the 35
    * families we did measure are reproduced from their definitions field for field with none disagreeing.
    * A caller that needs to know the difference reads `source`.
    *

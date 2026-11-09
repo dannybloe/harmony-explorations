@@ -35,6 +35,6 @@ How a configuration draws a page is [screens](../../config-format/screens.md).
 * The panel's size and backlight.[^unchecked]
 
 [^s129]: Measured in configurations. [Section 129](../../../docs/findings.md#s129)
-[^t-885-screens-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_screens.py)
-[^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-885-screens-corpus]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_screens.py)
+[^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^unchecked]: Not checked.

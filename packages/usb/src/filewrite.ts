@@ -13,12 +13,12 @@
  *
  * Two sources, and they agree on every byte the client checks.
  *
- * * **Logitech's client**, `tests/test_file_family_write_route.py`: seven commands, the same for both
+ * * **Logitech's client**, `tests/logitech/test_file_family_write_route.py`: seven commands, the same for both
  *   models. Reset the file system, open for writing, write in chunks of at most 50 data packets, the
  *   check, the flush only when the check answered `m`, close, and the reboot only when a package asks.
  *   One sequence counter for the whole operation, 0 to 63 and wrapping, shared by commands and data
  *   packets. Stated by Logitech, in their client.
- * * **The 1.4 firmware**, `tests/test_harmony_350_file_write.py`, which is the authority, decision 2.
+ * * **The 1.4 firmware**, `tests/harmony_300_350/test_harmony_350_file_write.py`, which is the authority, decision 2.
  *   What it adds is what each step does, and three things this file is shaped by: opening
  *   `/cfg/usercfg` for writing erases it before the open is answered; nothing in the firmware bounds the
  *   write to the file's size, so the bound is `assertFileFamilyContainer`'s; and the check compares

@@ -333,7 +333,7 @@ export async function openLink(device: WebHidDevice, timeoutMs = REPLY_TIMEOUT_M
         if (broken !== undefined) throw broken;
         try {
           // The copy first and the held byte second, the reverse of the order the firmware writes them
-          // in (`tests/test_harmony_885_keys.py`: the held byte at 0x18CA2, the copy at 0x18CA6). So a
+          // in (`tests/harmony_880_885/test_harmony_885_keys.py`: the held byte at 0x18CA2, the copy at 0x18CA6). So a
           // press landing between the two reads is seen held with the copy still old, never the copy
           // new and the held byte not yet, which would look like a key pressed and let go; `presses.ts`
           // pairs the late copy with the press it belongs to.

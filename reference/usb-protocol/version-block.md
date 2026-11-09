@@ -202,7 +202,7 @@ binary[^s113][^s392]. Neither has been read off a remote's bus[^unchecked].
 * What a Harmony 880 or 885 in its bootloader answers in field 6 on a unit[^unchecked].
 
 [^s19]: Read in the firmware. [Section 19](../../docs/findings.md#s19)
-[^t-usb-firmware]: Read in the firmware. [The test](../../tests/test_usb_firmware.py)
+[^t-usb-firmware]: Read in the firmware. [The test](../../tests/usb_protocol/test_usb_firmware.py)
 [^s57]: Read in the firmware. [Section 57](../../docs/findings.md#s57)
 [^s76]: Measured on a unit. [Section 76](../../docs/findings.md#s76)
 [^x-concordance]: Stated by a third party. [concordance](https://github.com/jaymzh/concordance)
@@ -219,6 +219,6 @@ binary[^s113][^s392]. Neither has been read off a remote's bus[^unchecked].
 [^s212]: Stated by Logitech, in their client. [Section 212](../../docs/findings.md#s212)
 [^s392]: Read in the firmware. [Section 392](../../docs/findings.md#s392)
 [^s57b]: Measured on a unit. [Section 57](../../docs/findings.md#s57)
-[^t-885-flash]: Read in the firmware. [The test](../../tests/test_harmony_885_erase_and_write.py)
-[^t-885-start]: Read in the firmware. [The test](../../tests/test_harmony_885_start_check.py)
-[^t-885-start-client]: Stated by Logitech, in their client. [The test](../../tests/test_harmony_885_start_check.py)
+[^t-885-flash]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_erase_and_write.py)
+[^t-885-start]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_start_check.py)
+[^t-885-start-client]: Stated by Logitech, in their client. [The test](../../tests/harmony_880_885/test_harmony_885_start_check.py)

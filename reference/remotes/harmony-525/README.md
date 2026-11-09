@@ -75,7 +75,7 @@ The architecture folder: [harmony-5xx](../../architectures/harmony-5xx/README.md
 
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 525 user manual](https://www.manualslib.com/manual/454951/Logitech-Harmony-525.html)
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
-[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
 [^s267]: Read in the firmware. [Section 267](../../../docs/findings.md#s267)
 [^s137]: Measured on a unit. [Section 137](../../../docs/findings.md#s137)
 [^s268]: Measured on a unit. [Section 268](../../../docs/findings.md#s268)

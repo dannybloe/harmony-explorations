@@ -144,7 +144,7 @@ export interface DeviceRecords {
  * `SendShape.powerStep`: 0, the default, is the Harmony 650 and 700 compiles' power step, section 309; the
  * Harmony 880 and 885 open it with the device's delay between devices, `todo-compile-885.md` 2.3. The two callers
  * in `composecatalogue.ts` that compare records with a Harmony One's donor leave it at 0, as they always did. That
- * the default gives the bytes it gave before is held by `test/devicepower.test.ts`, whose calibration against the
+ * the default gives the bytes it gave before is held by `test/compose/devicepower.test.ts`, whose calibration against the
  * Harmony 650 and 700 compiles reproduces the power records, held ones included, on 17 of its 18 test device
  * instances and passes unchanged since the lead in became the family's.
  */

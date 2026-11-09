@@ -241,5 +241,5 @@ failed[^t-touch-api-setup].
 * What `connect.rf?pair` pairs a Touch with[^unchecked].
 * The hubs' branches of these handlers, read and not checked against a unit[^unchecked].
 
-[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_setup.py)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
 [^unchecked]: Not checked.

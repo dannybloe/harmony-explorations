@@ -17,8 +17,8 @@
  * request for one is answered 200 rather than 404; asked with the tag the remote held they are answered 304. The two user
  * backgrounds are not in it: no set here holds a background, and the one shown when they are missing is built in.
  *
- * What 9.2's run on the bench Touch did with the two is `packages/bench/test/touch-empty-runs.test.ts`; the sets are held
- * here by `packages/corpus/test/touch-empty-set.test.ts`. It never prints a value out of a document. Nothing here opens
+ * What 9.2's run on the bench Touch did with the two is `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`; the sets are held
+ * here by `packages/corpus/test/touch/touch-empty-set.test.ts`. It never prints a value out of a document. Nothing here opens
  * a remote.
  */
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.

@@ -1,0 +1,2423 @@
+#!/usr/bin/env python3
+"""Rules about the toolchain itself, which is the one part of this repository nothing else checks.
+
+Every other test here asserts something about a remote. These assert something about the checking:
+that no source directory has fallen outside the project that is supposed to typecheck it, that
+pyright is pointed at the Python and away from the TypeScript, and that the library's modules all
+import.
+
+They exist because of a bug found on 12 August 2026 while wiring up the two language servers.
+`packages/codec/tsconfig.json` listed `src` and `test` and not `bin`, alone among the packages that
+have a `bin`, so the nine scripts behind `make coverage`, `make reading` and the rest were
+typechecked by nothing at all and an editor gave them default compiler options. Nothing failed. A
+file no project claims does not announce itself, which is exactly the shape a test is for.
+"""
+import ast
+import glob
+import importlib.util
+import io
+import json
+import os
+import re
+import subprocess
+import sys
+import unittest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# The library, so the import test below can reach it when this file is run on its own. Every other
+# test here gets it from `import lab`, and this one has no reason to touch the lab.
+sys.path.insert(0, os.path.join(ROOT, 'src'))
+
+#: Directories of TypeScript in a package, all of which a `tsconfig.json` must include when present.
+#: `bin` is here because of the bug in the module docstring, and `web` is not: it is a browser page,
+#: served as it is, and `packages/bench` deliberately has no DOM types so that a server file cannot
+#: reference `window` and typecheck. `experiments` since `todo.md` 7.3.9: plan 013 decision 7 put a
+#: package's experiments there, beside its scripts, and both packages that have one include it, which
+#: nothing held until then.
+SOURCE_DIRECTORIES = ('src', 'test', 'bin', 'experiments')
+
+
+def read_repo_file(relative):
+    """A repository file as text. One copy, because three static rules here read source the same way."""
+    with open(os.path.join(ROOT, relative), encoding='utf-8') as handle:
+        return handle.read()
+
+
+def read_jsonc(path):
+    """A tsconfig with its comments stripped. Only whole line comments, which is all these use."""
+    with open(path, encoding='utf-8') as fh:
+        body = ''.join('' if line.lstrip().startswith('//') else line for line in fh)
+    return json.loads(body)
+
+
+class TypeScriptProjects(unittest.TestCase):
+    def packages(self):
+        base = os.path.join(ROOT, 'packages')
+        for name in sorted(os.listdir(base)):
+            config = os.path.join(base, name, 'tsconfig.json')
+            if os.path.isfile(config):
+                yield name, os.path.join(base, name), read_jsonc(config)
+
+    def test_every_directory_of_typescript_is_inside_its_own_project(self):
+        """The bug this file exists for: a directory of scripts that no tsconfig includes."""
+        found = 0
+        for name, path, config in self.packages():
+            globs = config.get('include', [])
+            for directory in SOURCE_DIRECTORIES:
+                if not os.path.isdir(os.path.join(path, directory)):
+                    continue
+                found += 1
+                with self.subTest(package=name, directory=directory):
+                    # Or a project of its own inside the directory, which is how a package's tests are kept
+                    # when they use the test kit that is built on the package, `todo.md` 7.3.6: one project
+                    # holding both would form a reference cycle.
+                    own = os.path.join(path, directory, 'tsconfig.json')
+                    if os.path.isfile(own):
+                        self.assertIn('**/*.ts', read_jsonc(own).get('include', []))
+                        continue
+                    self.assertIn(f'{directory}/**/*.ts', globs,
+                                  f'packages/{name}/{directory} is outside its own tsconfig, so it '
+                                  f'is typechecked by nothing and an editor gives it defaults')
+        # A guard on the guard: if the packages ever move, this test must fail rather than pass by
+        # having found nothing to check. Exact, not a floor of 12, per section 143: the number is
+        # decided by the workspace layout and moves only when a package or a directory is added,
+        # and then it moves in the diff rather than being absorbed. 25 since `todo.md` 7.3.4 added
+        # `packages/base`, with its `src` and `test`; 26 since 7.3.6 added `packages/testkit`, its `src`;
+        # 28 since 7.3.9 counts the `experiments` of `packages/bench` and `packages/corpus`.
+        self.assertEqual(found, 28, 'source directories claimed by a tsconfig')
+
+    def test_the_root_project_references_every_package(self):
+        """`make ts` builds the root, so a package missing from it is a package nobody compiles.
+
+        And a directory with a project of its own, a package's tests since `todo.md` 7.3.6, is referenced
+        too, or nothing builds it.
+        """
+        root = read_jsonc(os.path.join(ROOT, 'tsconfig.json'))
+        referenced = {os.path.normpath(r['path']) for r in root.get('references', [])}
+        expected = set()
+        for name, path, _ in self.packages():
+            expected.add(os.path.join('packages', name))
+            for directory in SOURCE_DIRECTORIES:
+                if os.path.isfile(os.path.join(path, directory, 'tsconfig.json')):
+                    expected.add(os.path.join('packages', name, directory))
+        self.assertEqual(referenced, expected)
+
+
+#: TypeScript files whose name carries a todo step, each with why it stays. A name by step tells a reader
+#: nothing without the todo file, plan 013 decision 3, and `todo.md` 7.3.1 renamed the Harmony Touch's
+#: tests by subject; this one is older than the rule and was found by the check below in 7.3.9.
+NAMED_BY_STEP = {
+    'packages/bench/test/harmony-300-350/final53.test.ts': '`todo-compile-350.md` 5.3, the two final bench tests of the Harmony 300 and 350',
+}
+
+
+def step_numbers(name):
+    """The numbers in a file name that are no model and no architecture, which is what a todo step looks like.
+
+    A Harmony's model is three digits, `keys300`, `h885base`, and an architecture follows `arch`, `arch10`;
+    a step is one or two digits, `touch82`, `final53`, or a dotted pair, `8.6-setup`, each part of which is
+    one or two digits. The recorded run inputs that keep a step in their name, the JSON under
+    `packages/corpus/touch-*` and `packages/bench/irtests`, are not TypeScript and are not read here.
+    """
+    stem = re.sub(r'(\.(test|node|d))?\.ts$', '', name)
+    found = []
+    for match in re.finditer(r'\d+', stem):
+        if len(match.group()) == 3 or stem[:match.start()].endswith('arch'):
+            continue
+        found.append(match.group())
+    return found
+
+
+class FilesAreNamedBySubject(unittest.TestCase):
+    """Names by subject, never by todo step: plan 013 decision 3 and the `architecture` skill."""
+
+    def test_no_typescript_file_is_named_by_a_todo_step_but_those_listed(self):
+        found = {}
+        base = os.path.join(ROOT, 'packages')
+        for package in sorted(os.listdir(base)):
+            for directory in SOURCE_DIRECTORIES:
+                top = os.path.join(base, package, directory)
+                for folder, subfolders, files in os.walk(top):
+                    subfolders[:] = [s for s in subfolders if s != 'node_modules']
+                    for name in files:
+                        if name.endswith('.ts') and step_numbers(name):
+                            found[os.path.relpath(os.path.join(folder, name), ROOT)] = step_numbers(name)
+        self.assertEqual(sorted(found), sorted(NAMED_BY_STEP))
+
+    def test_the_control_a_step_is_found_and_a_model_or_an_architecture_is_not(self):
+        for name in ('touch82.test.ts', 'final53.test.ts', '8.6-setup.ts', 'step4.ts'):
+            with self.subTest(name=name):
+                self.assertTrue(step_numbers(name), name)
+        for name in ('keys300.test.ts', 'h885base.test.ts', 'eventff300.test.ts', 'arch10.test.ts',
+                     'arch8devicelist.test.ts', 'h880pro.ts', 'touch-device-runs.test.ts', 'index.ts'):
+            with self.subTest(name=name):
+                self.assertEqual(step_numbers(name), [], name)
+
+
+class PyrightConfiguration(unittest.TestCase):
+    """The configuration, not pyright: `make pyright` runs the tool and skips without it."""
+
+    def setUp(self):
+        self.config = read_jsonc(os.path.join(ROOT, 'pyrightconfig.json'))
+
+    def test_it_checks_the_python_and_ignores_the_typescript_workspace(self):
+        self.assertEqual(sorted(self.config['include']), ['bin', 'src', 'tests', 'tools'])
+        self.assertIn('packages', self.config['exclude'])
+
+    def test_the_sys_path_directories_are_on_its_search_path(self):
+        """The tools and the tests import each other after adding their own directory to sys.path.
+
+        Pyright cannot see that, so without `extraPaths` it reports six unresolved imports that all
+        resolve at runtime. Those are the ones a real missing import would hide behind.
+        """
+        for directory in ('src', 'tools', 'tests'):
+            self.assertIn(directory, self.config['extraPaths'])
+
+    def test_every_rule_it_silences_says_what_it_costs(self):
+        """A rule turned off with no reason is a rule somebody turns back on and then ignores.
+
+        The convention is a comment above each `"none"` naming the count it produced, so the next
+        person deciding does not have to measure again. This checks the comment exists, which is the
+        mechanical half; whether the number is still right is a matter for whoever raises the level.
+        """
+        with open(os.path.join(ROOT, 'pyrightconfig.json'), encoding='utf-8') as fh:
+            lines = [line.strip() for line in fh]
+        silenced = [n for n, line in enumerate(lines) if re.match(r'"report\w+": "none",?$', line)]
+        # Exact: four rules are silenced, and a fifth appearing is a decision somebody has to make
+        # rather than a number this test should absorb.
+        self.assertEqual(len(silenced), 4, 'the silenced rules moved, so check this still fits')
+        for at in silenced:
+            with self.subTest(rule=lines[at]):
+                above = ' '.join(lines[max(0, at - 6):at])
+                self.assertRegex(above, r'//.*\d', 'no comment above it naming what it costs')
+
+
+#: Which package provides each language server binary a `.lsp.json` may name. Written out rather than
+#: read off `node_modules`, so this test says something in a fresh clone that has never installed.
+SERVER_PACKAGES = {
+    'typescript-language-server': 'typescript-language-server',
+    'pyright-langserver': 'pyright',
+}
+
+
+class LanguageServers(unittest.TestCase):
+    """Both servers must be the workspace's own pinned copies rather than the machine's.
+
+    A server on `PATH` is whatever version that machine happens to hold, and for pyright that
+    decides which diagnostics exist at all: an upgrade can turn `make pyright` from zero errors into
+    a dozen with no line of code changed. So each `.lsp.json` names a path inside `node_modules` and
+    the package behind it is pinned exactly, and this is what stops the two halves of that drifting
+    apart, a plugin left pointing at a dependency somebody removed.
+    """
+
+    def configurations(self):
+        base = os.path.join(ROOT, '.claude', 'skills')
+        for name in sorted(os.listdir(base)):
+            path = os.path.join(base, name, '.lsp.json')
+            if os.path.isfile(path):
+                with open(path, encoding='utf-8') as fh:
+                    yield name, json.load(fh)
+
+    def test_each_server_runs_the_workspace_copy_and_not_the_machine_one(self):
+        found = 0
+        for plugin, servers in self.configurations():
+            for server, spec in servers.items():
+                found += 1
+                with self.subTest(plugin=plugin, server=server):
+                    command = spec['command']
+                    prefix = '${CLAUDE_PROJECT_DIR}/node_modules/.bin/'
+                    self.assertTrue(command.startswith(prefix), f'{command} is not the pinned copy')
+                    self.assertIn(command[len(prefix):], SERVER_PACKAGES)
+                    self.assertEqual(spec['workspaceFolder'], '${CLAUDE_PROJECT_DIR}')
+        self.assertEqual(found, 2, 'expected the TypeScript and the pyright server, and no others')
+
+    def test_the_package_behind_each_server_is_pinned_exactly(self):
+        with open(os.path.join(ROOT, 'package.json'), encoding='utf-8') as fh:
+            pinned = json.load(fh)['devDependencies']
+        for _, servers in self.configurations():
+            for spec in servers.values():
+                package = SERVER_PACKAGES[spec['command'].rsplit('/', 1)[1]]
+                with self.subTest(package=package):
+                    self.assertIn(package, pinned, 'a server points at a dependency nobody installs')
+                    self.assertRegex(pinned[package], r'^\d+\.\d+\.\d+$', 'not an exact version')
+
+
+class TheLibraryImports(unittest.TestCase):
+    def test_every_module_under_harmony_imports(self):
+        """What the removed `__all__` was pretending to state, made true and checked.
+
+        `src/harmony/__init__.py` used to carry `__all__` naming four of its submodules, which only
+        ever affected `from harmony import *`, which nothing does, and which was three modules out of
+        date. Importing each one is the check it looked like it was making.
+        """
+        import importlib
+        base = os.path.join(ROOT, 'src', 'harmony')
+        names = sorted(f[:-3] for f in os.listdir(base)
+                       if f.endswith('.py') and not f.startswith('__'))
+        names += ['pic18.' + f[:-3] for f in sorted(os.listdir(os.path.join(base, 'pic18')))
+                  if f.endswith('.py') and not f.startswith('__')]
+        self.assertEqual(len(names), 11, 'the modules under src/harmony, pic18 included')
+        for name in names:
+            with self.subTest(module=name):
+                self.assertIsNotNone(importlib.import_module('harmony.' + name))
+
+
+class TheRunnerSeesEveryTest(unittest.TestCase):
+    """A `unittest.main()` that is not the last thing in its file hides everything below it.
+
+    `unittest.main()` collects from the module's globals at the moment it runs, so a class defined
+    after the call does not exist yet and is never collected. `make test` uses discovery and is
+    unaffected, which is why this went unnoticed: the trap is for a person verifying a change the
+    way each file's own `__main__` block invites.
+
+    Found on 13 August 2026 in four files. `test_usb_firmware.py` ran 80 of its 125 tests and
+    printed OK, with nine classes below the block including every one section 94 onward added;
+    `test_concordance_notes.py` ran 12 of 27, hiding the class its own docstring says must run in a
+    fresh clone; `test_documents.py` ran 4 of 9, hiding the phrase check over the real tree; and
+    `test_findings.py` ran 70 of 80. **Three of those four came out of a review sweep and the
+    fourth came out of writing this test**, which is the argument for having it rather than for
+    having fixed the three.
+    """
+
+    def _test_files(self):
+        return sorted(glob.glob(os.path.join(ROOT, 'tests', '**', 'test_*.py'), recursive=True))
+
+    def test_a_main_block_is_the_last_thing_in_its_file(self):
+        files = self._test_files()
+        # The population, so a glob that stops matching fails here rather than passing quietly.
+        # Exact, since a test file is added deliberately and rarely, unlike a test function.
+        # 34 since `tests/usb_protocol/test_write_sequence.py`, section 247.
+        # 35 since `tests/firmware/test_status_screens.py`, section 249.
+        # 37 since `tests/harmony_5xx/test_harmony_525_region.py`, section 270.
+        # 42 since `tests/harmony_600_650_700/test_harmony_700_settings_store.py`, section 296.
+        # 43 since `tests/harmony_600_650_700/test_harmony_700_status_byte.py`, section 298.
+        # 44 since `tests/harmony_600_650_700/test_harmony_700_cache_drop.py`, section 299.
+        # 45 since `tests/firmware/test_clock_counting.py`, section 322.
+        # 47 since `tests/firmware/test_touch_send.py`, section 337.
+        # 48 since `tests/firmware/test_toggle_groups.py`, section 365. 49 with `tests/firmware/test_screen_fill.py`, section 425.
+        # 50 with `tests/project/test_archive.py`, todo-reference 2.2, and 51 with `tests/project/test_reference.py`, 2.3.
+        # 52 with `tests/project/test_site.py`, todo-reference 7.1.
+        # 53 with `tests/logitech/test_product_capabilities.py`, todo-reference 3.4.
+        # 54 with `tests/harmony_880_885/test_arch8_usb.py`, 55 with `tests/logitech/test_file_family_write_route.py`, 56 with `tests/harmony_300_350/test_harmony_350_file_write.py`, todo-compile-350 1.3.
+        # 57 with `tests/harmony_300_350/test_harmony_350_recovery.py`, todo-compile-350 1.4.
+        # 58 with `tests/harmony_300_350/test_harmony_350_slots.py`, todo-compile-350 2.1.
+        # 59 with `tests/harmony_300_350/test_harmony_350_boot.py`, the bootloader and safe mode of todo-compile-350 1.4.
+        # 60 with `tests/harmony_300_350/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/harmony_300_350/test_harmony_350_boot.py`.
+        # 61 with `tests/harmony_300_350/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
+        # 62 with `tests/harmony_300_350/test_harmony_350_clock.py`, todo-compile-350 2.5.
+        # 63 with `tests/harmony_300_350/test_harmony_350_long_press.py`, todo-compile-350 2.4.
+        # 64 with `tests/harmony_300_350/test_harmony_350_keys.py`, todo-compile-350 2.2, and 65 with
+        # `tests/harmony_300_350/test_harmony_350_metadata_deflate.py`, plan 011.
+        # 66 with `tests/harmony_300_350/test_harmony_300_keys.py`, todo-compile-300 2.2.
+        # 67 with `tests/harmony_300_350/test_harmony_350_skin.py`, the skin read in the firmware.
+        # 68 with `tests/harmony_300_350/test_harmony_300_350_images.py`, the Harmony 300's three images against the 350's, and
+        # 69 with `tests/harmony_300_350/test_harmony_300_350_send_events.py`, what the four send kinds do, and
+        # 70 with `tests/harmony_300_350/test_harmony_300_group_4_send.py`, why a send from a group above 3 sends nothing.
+        # 71 with `tests/harmony_touch/test_harmony_touch_image.py`, the Harmony Touch's package, todo-touch 1.2.
+        # 75 with `tests/harmony_touch/test_harmony_touch_architecture.py`, todo-touch 1.7, and the three of 3.1,
+        # `tests/harmony_touch/test_harmony_touch_activities.py`, `_devices.py` and `_favourites.py`.
+        # 76 with `tests/harmony_touch/test_harmony_touch_keys.py`, todo-touch 3.2, and 77 with
+        # `tests/harmony_touch/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
+        # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
+        # `tests/harmony_touch/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
+        # 82 with `tests/harmony_5xx/test_harmony_515.py`, the first Harmony 515 on the bench, and 83 with
+        # `tests/harmony_880_885/test_harmony_885_bootloader.py`, todo-prepare-885 1.1.
+        # 84 to 87 with todo-prepare-885 1.2 to 1.6 and 1.8: `tests/harmony_880_885/test_harmony_885_start_check.py`,
+        # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with 1.7,
+        # `tests/harmony_880_885/test_harmony_885_log_area.py`. 89 with `tests/harmony_touch/test_harmony_touch_beyond_the_clients.py`,
+        # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
+        # `tests/harmony_880_885/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
+        # 3.10, `tests/harmony_880_885/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
+        # 3.7, 3.8, 3.9 and 3.11, `tests/harmony_880_885/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
+        # `_delay.py`. 101 with 2.1 and 2.3, `tests/harmony_880_885/test_harmony_885_bench_reads.py`. 102 with 2.4,
+        # `tests/harmony_880_885/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/harmony_touch/test_harmony_touch_recovery.py`,
+        # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/harmony_880_885/test_harmony_880_keys.py`.
+        # 107 with todo-compile-885 1.3, `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with 1.4,
+        # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
+        # todo-touch 9.2, `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main.
+        self.assertEqual(len(files), 110, 'the Python test files')
+        with_block = 0
+        for path in files:
+            with open(path, encoding='utf-8') as handle:
+                lines = handle.read().splitlines()
+            at = [i for i, line in enumerate(lines) if line.startswith('if __name__')]
+            if not at:
+                continue          # two files have none, which is also fine
+            with_block += 1
+            hidden = [line.split('(')[0] for line in lines[at[0] + 1:]
+                      if line.startswith('class ') or line.startswith('def ')]
+            self.assertEqual(hidden, [],
+                             '%s calls unittest.main() at line %d and defines %d thing(s) below '
+                             'it, which running the file directly will not see: %s'
+                             % (os.path.basename(path), at[0] + 1, len(hidden), ', '.join(hidden)))
+        # And the check has teeth only if most files actually carry a block. Exact: all but two do,
+        # and the two that do not are named in the comment above rather than left to a tolerance.
+        # 35 since `tests/harmony_5xx/test_harmony_525_region.py`, section 270, which carries one.
+        # 39 since `tests/firmware/test_firmware_state_block.py`, section 284.
+        # 40 since `tests/harmony_600_650_700/test_harmony_700_settings_store.py`, section 296, which carries one.
+        # 41 since `tests/harmony_600_650_700/test_harmony_700_status_byte.py`, section 298, which carries one.
+        # 42 since `tests/harmony_600_650_700/test_harmony_700_cache_drop.py`, section 299, which carries one.
+        # 43 since `tests/firmware/test_clock_counting.py`, section 322, which carries one.
+        # 45 since `tests/firmware/test_touch_send.py`, section 337, which carries one.
+        # 46 since `tests/firmware/test_toggle_groups.py`, section 365, which carries one.
+        # 47 since `tests/firmware/test_screen_fill.py`, section 425, which carries one.
+        # 49 with `tests/project/test_archive.py` and `tests/project/test_reference.py`, todo-reference 2.2 and 2.3,
+        # which carry one each. 50 with `tests/project/test_site.py`, todo-reference 7.1, which carries one.
+        # 51 with `tests/logitech/test_product_capabilities.py`, todo-reference 3.4, which carries one.
+        # 52, 53 and 54 with `tests/harmony_880_885/test_arch8_usb.py`, `tests/logitech/test_file_family_write_route.py` and `tests/harmony_300_350/test_harmony_350_file_write.py`, one each.
+        # 55 with `tests/harmony_300_350/test_harmony_350_recovery.py`, todo-compile-350 1.4, which carries one.
+        # 56 with `tests/harmony_300_350/test_harmony_350_slots.py`, todo-compile-350 2.1, which carries one.
+        # 57 with `tests/harmony_300_350/test_harmony_350_boot.py`, todo-compile-350 1.4's two images, which carries one.
+        # 57 with `tests/harmony_300_350/test_harmony_350_delay.py`, todo-compile-350 1.8, which carries one.
+        # 59 with `tests/harmony_300_350/test_harmony_350_device_groups.py`, todo-compile-350 2.3, which carries one.
+        # 60 with `tests/harmony_300_350/test_harmony_350_clock.py`, todo-compile-350 2.5, which carries one.
+        # 61 with `tests/harmony_300_350/test_harmony_350_long_press.py`, todo-compile-350 2.4, which carries one.
+        # 62 with `tests/harmony_300_350/test_harmony_350_keys.py`, todo-compile-350 2.2, which carries one.
+        # 63 with `tests/harmony_300_350/test_harmony_350_metadata_deflate.py`, plan 011, which carries one.
+        # 64 with `tests/harmony_300_350/test_harmony_300_keys.py`, todo-compile-300 2.2, which carries one.
+        # 65 with `tests/harmony_300_350/test_harmony_350_skin.py`, the skin read in the firmware, which carries one.
+        # 66 with `tests/harmony_300_350/test_harmony_300_350_images.py`, which carries one.
+        # 67 with `tests/harmony_300_350/test_harmony_300_350_send_events.py`, which carries one.
+        # 68 with `tests/harmony_300_350/test_harmony_300_group_4_send.py`, which carries one.
+        # 69 with `tests/harmony_touch/test_harmony_touch_image.py`, todo-touch 1.2, which carries one.
+        # 73 with the four Harmony Touch files of todo-touch 1.7 and 3.1, each of which carries one.
+        # 74 with `tests/harmony_touch/test_harmony_touch_keys.py`, todo-touch 3.2, and 75 with
+        # `tests/harmony_touch/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2, which carry one each.
+        # 76 to 79 with the four of todo-touch 5.2, `tests/harmony_touch/test_harmony_touch_api_names.py`, `_setup.py`,
+        # `_engine.py` and `_closure.py`, which carry one each. 80 with `tests/harmony_5xx/test_harmony_515.py`.
+        # 81 with `tests/harmony_880_885/test_harmony_885_bootloader.py`, which carries one, and 82 to 85 with the four
+        # files of todo-prepare-885 1.2 to 1.6 and 1.8, which carry one each. 86 with
+        # `tests/harmony_880_885/test_harmony_885_log_area.py`, 1.7, which carries one. 87 with
+        # `tests/harmony_touch/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1, which carries one. 88 to 90 with
+        # the three files of todo-prepare-885 3.1 to 3.3, which carry one each. 91 to 94 with the four of
+        # 3.4, 3.5, 3.6 and 3.10, which carry one each. 95 to 98 with the four of 3.7, 3.8, 3.9 and 3.11, which
+        # carry one each. 99 with `tests/harmony_880_885/test_harmony_885_bench_reads.py`, 2.1 and 2.3, which carries one. 100
+        # with `tests/harmony_880_885/test_harmony_885_keys.py`, 2.4, which carries one. 101 to 103 with todo-touch 6.1 to 6.7's
+        # three files, `tests/harmony_touch/test_harmony_touch_recovery.py`, `_serial.py` and `_favourites_untagged.py`, which
+        # carry one each. 104 with `tests/harmony_880_885/test_harmony_880_keys.py`, todo-prepare-885 2.5.2, which carries one.
+        # 105 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`, todo-compile-885 1.3, which carries one. 106
+        # with `tests/harmony_880_885/test_harmony_885_first_config_write.py`, 1.4, which carries one. 107 with
+        # `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`, which carries one. 108 with
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, todo-touch 9.2, merged from main, which carries one.
+        self.assertEqual(with_block, 108,
+                         'files carrying a __main__ block, of %d' % len(files))
+
+
+#: Test functions whose whole body is a loop that loads its samples inside a `subTest`, with no
+#: `lab.require` up front, counted per file. **Empty, and it should stay that way.** It was frozen at
+#: 55 across eight files for the length of one commit, on the reasoning that converting them all was
+#: a decision about the whole suite; measuring the conversion is what changed that, since every one
+#: of the 55 turned out to be the same edit, `lab.require` with the names the loop already iterates
+#: over. The dict survives as the place to record a deliberate exception with its reason, rather than
+#: as a backlog. Either direction fails, so an exception has to be written down here to pass.
+SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION = {}
+
+
+def _lab_calls(node, attributes):
+    """Every `lab.<attribute>(...)` call anywhere inside `node`."""
+    return [n for n in ast.walk(node)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+            and n.func.attr in attributes
+            and isinstance(n.func.value, ast.Name) and n.func.value.id == 'lab']
+
+
+def _is_subtest(node):
+    return isinstance(node, ast.With) and any(
+        isinstance(item.context_expr, ast.Call)
+        and isinstance(item.context_expr.func, ast.Attribute)
+        and item.context_expr.func.attr == 'subTest' for item in node.items)
+
+
+class ASampleLoopStatesItsPopulation(unittest.TestCase):
+    """A test whose samples are loaded inside a `subTest` shrinks silently on a partial lab.
+
+    `subTest` catches a `SkipTest` and lets the loop finish, so a missing sample skips that one
+    iteration and the test as a whole reports as a pass. The claim in its title then covers whatever
+    happened to be present. `make test-nolab` cannot see this by construction: it looks for
+    failures, and a test that skips every iteration and asserts nothing passes.
+
+    Found on 13 August 2026 in `test_flash_journal.py`, and measured rather than argued: with a lab
+    holding only the Harmony 700 image, `test_three_images_carry_an_identification_table` reported
+    OK having read one image of three, and `test_the_architectures_without_serial_flash_have_no_table`
+    reported OK having asserted nothing at all about the Harmony One (arch 12) or the Harmony 525
+    (arch 9), which is the negative the whole arch 14 scoping rests on.
+
+    The cure is `lab.require(*NAMES)` at the top of the function, which skips the whole test. All 55
+    that had the shape carry it now, in eight files, and the conversion is why the frozen dict above
+    is empty: each one wanted the names its own loop already iterates over, so what looked like a
+    suite wide judgement call was 55 copies of one edit.
+
+    Removing 34 dead `if <sample> is None` arms came with it. `lab.load` raises `SkipTest` and never
+    returns `None`, so those were unreachable, and an unreachable guard is worse than none: it reads
+    as protection. Four of them were not dead, because the `lab.load` call inside the condition was
+    itself what raised, and those became `lab.require` rather than being deleted.
+
+    **This is the cheap half and not the whole check.** A static rule cannot see a loop whose loading
+    happens inside a helper, which is how `TestTheLogArea.test_every_container_declares_one` passed
+    both this and its own review. `make test-partial` is the other half: it runs the suite against a
+    lab holding one sample and fails on any test that reports successful with a subtest skipped, no
+    matter what shape it has. Keep both, because the runtime one needs a real lab and this one does
+    not.
+    """
+
+    def _offenders(self):
+        counted = {}
+        scanned = 0
+        for path in sorted(glob.glob(os.path.join(ROOT, 'tests', '**', 'test_*.py'), recursive=True)):
+            with open(path, encoding='utf-8') as handle:
+                tree = ast.parse(handle.read())
+            for function in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]:
+                if not function.name.startswith('test'):
+                    continue
+                scanned += 1
+                if _lab_calls(function, ('require',)):
+                    continue                      # the population is stated, which is the cure
+                body = [s for s in function.body
+                        if not (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant))]
+                # The loop has to be the last statement, with nothing above it that asserts or
+                # loads, so a local import or a literal of expected values may sit there. Demanding
+                # the loop be the *only* statement missed seven tests of exactly this shape, which
+                # `make test-partial` then found at runtime.
+                if not body or not isinstance(body[-1], ast.For):
+                    continue
+                if not all(isinstance(s, (ast.Import, ast.ImportFrom, ast.Assign, ast.AnnAssign))
+                           for s in body[:-1]):
+                    continue
+                subtests = [n for n in ast.walk(body[-1]) if _is_subtest(n)]
+                if subtests and any(_lab_calls(n, ('load', 'path')) for n in subtests):
+                    counted.setdefault(os.path.basename(path), []).append(function.name)
+        return counted, scanned
+
+    def test_every_sample_loop_states_its_population_up_front(self):
+        counted, scanned = self._offenders()
+        # A guard on the guard: if the glob or the AST walk stops matching, fail here rather than
+        # reporting a clean tree, which is the failure mode this whole class is about.
+        #
+        # **Deliberately a bound and not the count**, which is the one exception section 143 argues
+        # for: the population is every test function in the repository, 832 of them, and it grows
+        # with any unrelated commit that adds a test. An exact number here would be updated
+        # mechanically every few days, and a number nobody reads while changing it has stopped
+        # being a measurement. The two neighbouring populations, test files and TypeScript test
+        # files, are exact because adding one of those is a deliberate act.
+        self.assertGreater(scanned, 600, 'only %d test functions scanned' % scanned)
+        self.assertEqual(
+            {name: len(found) for name, found in counted.items()},
+            SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION,
+            'these tests load a sample inside a subTest with no lab.require up front, so on a '
+            'partial lab each shrinks its own claim to whatever is present and still reports a '
+            'pass: %s. Guard each one with lab.require(*NAMES), naming what its loop iterates '
+            'over, or record a deliberate exception in the dict above with its reason.'
+            % '; '.join('%s: %s' % (name, ', '.join(sorted(found)))
+                        for name, found in sorted(counted.items())))
+
+
+#: TypeScript tests allowed to skip a missing sample inside a loop, with the reason. Both ask which
+#: **unit** is attached by matching a live read against whatever dumps are present, so a dump that is
+#: absent genuinely means "not identifiable by this one" rather than a claim quietly shrinking, and
+#: both callers handle the undefined they end up with.
+TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE = {
+    'packages/corpus/test/read/derived-state.test.ts': 1,
+    'packages/usb/test/transport/hardware.test.ts': 1,
+    # `parseable()` enumerates every name in `IMAGES` and keeps the ones that parse, which is the
+    # one loop here whose population is deliberately "whatever the lab holds": it exists to state
+    # properties over a wider set than the thirteen pinned samples. What the rule protects against
+    # is a claim shrinking in silence, and every caller asserts the count up front instead, so a
+    # lab missing a sample fails on that number rather than checking less.
+    'packages/codec/test/container/gspm.test.ts': 1,
+    # The same shape and the same reason: the loop asks how many containers declare a method for
+    # sending a number, over whatever the lab holds, and the three answers it splits them into are
+    # each asserted exactly and their sum is asserted too. So a missing sample moves one of four
+    # numbers and fails, rather than shrinking the claim. Section 154.
+    'packages/codec/test/container/numbersender.test.ts': 1,
+}
+
+
+#: The TypeScript files a test scanner is meant to cover, as git lists them: every `.ts` under
+#: `packages/<name>/test/` at any depth, since `todo.md` 7.3.12 put each package's tests in folders by
+#: subject (one directory level until then), so helpers such as `tagfive.ts` count as well
+#: as the `*.test.ts` files, because the scanners read what the glob reads. This is written as a
+#: regular expression over git's own listing and not as a second glob, so the two enumerations
+#: share no code and a glob that silently matched too little disagrees with it.
+TYPESCRIPT_TEST_PATH = re.compile(r'^packages/[^/]+/test/(?:[^/]+/)*[^/]+\.ts$')
+
+
+def git_listed_typescript_tests(testcase):
+    """The set of TypeScript test paths git knows of, relative to the repository root, or a skip.
+
+    This replaces a literal count of the files the scanners read. The literal was there to catch a
+    pattern that silently matched nothing, or too little, and so passed vacuously, but it made every
+    new test file cost a manual bump and a paragraph of history. A comparison against git's listing
+    catches the same defect and moves by itself: a file the scanner misses is named in the failure.
+
+    The listing is tracked files plus untracked files that are not ignored, which is what a developer
+    has on disk before the first commit of a new test, so adding a file does not fail this until it
+    is committed. A tracked file deleted from the working tree is subtracted, since the scanner can
+    no longer see it either. Where git or its metadata is absent, as in an exported tree, there is
+    nothing independent to compare against, so the test skips with that reason and never passes.
+    """
+    if not os.path.exists(os.path.join(ROOT, '.git')):
+        testcase.skipTest('no .git here (an exported tree?), so there is no independent listing of the test files')
+
+    def listing(*arguments):
+        try:
+            done = subprocess.run(['git', 'ls-files', '-z', *arguments], cwd=ROOT, capture_output=True, check=True)
+        except (OSError, subprocess.CalledProcessError) as error:
+            # Raised rather than `testcase.skipTest`, which the type checker does not know never returns.
+            raise unittest.SkipTest('git ls-files is unavailable (%s), so there is no independent listing' % error) from error
+        return {name for name in done.stdout.decode('utf-8').split('\0') if name}
+
+    present = listing('--cached', '--others', '--exclude-standard') - listing('--deleted')
+    return {name for name in present if TYPESCRIPT_TEST_PATH.match(name)}
+
+
+class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
+    """The TypeScript half of `ASampleLoopStatesItsPopulation`, and it had the sharper version of it.
+
+    `const data = load(name); if (data === undefined) continue;` inside a loop is the same defect:
+    a lab missing one sample checks the rest and reports a pass. What made it worse here is that 52
+    of the 57 sites sat in tests already guarded with `skipWithoutLab()`, which exists precisely so
+    that a **present but incomplete** lab fails loudly rather than skipping, per its own docstring in
+    `packages/lab`. So the guard said "fail if a sample is missing" and the body said "carry on", and
+    the body won every time.
+
+    `require_` is the fix and it already existed, unused, documented for exactly this. Measured on
+    13 August 2026 with one config removed from the lab: `packages/codec`'s tests went from 17
+    failures to 53, so 36 tests had been passing on evidence they did not have.
+
+    A test with no guard at all is an ordinary claim about named samples and gets `skipUnless`
+    instead, which skips. Both are correct; which one applies is decided by whether the claim is
+    about the corpus.
+
+    This is a text rule rather than an AST one because the two lines are adjacent by construction,
+    and because a Python test can read TypeScript without adding a parser dependency to this side.
+    It cannot see a loop that loads through a helper, which is how `gspm.test.ts`'s `available()` hid
+    seven callers behind one function; that one was found by removing a sample and looking.
+    """
+
+    PATTERN = re.compile(r'^\s*const (\w+) = load\(')
+
+    def _offenders(self):
+        counted, scanned = {}, []
+        for path in sorted(glob.glob(os.path.join(ROOT, 'packages', '*', 'test', '**', '*.ts'), recursive=True)):
+            relative = os.path.relpath(path, ROOT)
+            with open(path, encoding='utf-8') as handle:
+                lines = handle.read().splitlines()
+            scanned.append(relative)
+            for at, line in enumerate(lines[:-1]):
+                match = self.PATTERN.match(line)
+                if not match:
+                    continue
+                guard = r'if \(%s === undefined\) (continue|return);' % match.group(1)
+                if re.match(guard, lines[at + 1].strip()):
+                    counted.setdefault(relative, []).append(at + 1)
+        return counted, scanned
+
+    def test_no_test_skips_a_missing_sample_inside_a_loop(self):
+        counted, scanned = self._offenders()
+        # What this asserts is that the scan read exactly the TypeScript test files git lists, as sets
+        # so that a difference names the files. It used to assert a literal count, bumped by hand for
+        # every new file (48 at section 210, 153 at todo-compile-350 3.1), and the history of those
+        # bumps is in git. The literal guarded against a glob that matches nothing or too little and
+        # so reports every file clean; the comparison guards the same thing without a floor, and
+        # without a number that moves with unrelated work.
+        expected = git_listed_typescript_tests(self)
+        self.assertEqual(
+            sorted(scanned), sorted(expected),
+            'the scan and git disagree about which TypeScript test files exist. Only in the scan: %s. '
+            'Only in git: %s.' % (sorted(set(scanned) - expected), sorted(expected - set(scanned))))
+        self.assertEqual(
+            {name: len(lines) for name, lines in counted.items()},
+            TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
+            'these load a sample and skip the iteration when it is absent, so an incomplete lab '
+            'shrinks the claim and still reports a pass: %s. Use require_(name) and let the test '
+            'fail, or skipUnless(...) on the test if the claim is about named samples rather than '
+            'the corpus; a deliberate exception goes in the dict above with its reason.'
+            % '; '.join('%s:%s' % (name, ','.join(str(n) for n in lines))
+                        for name, lines in sorted(counted.items())))
+
+
+#: Every numeric lower bound left in the TypeScript tests, with the reason it is a bound rather than
+#: a measurement. A bound is right for three things and wrong for everything else.
+#:
+#: The three: a claim about **one item** in a loop, where the count genuinely differs per item and
+#: "at least one" is the whole claim; a **physical band**, where the point is that the value is in
+#: range rather than what it is; and a **consequence** stated beside an exact assertion of the same
+#: expression, which is a sentence about what the number means. Anything aggregated over the corpus
+#: belongs in the fourth group and gets `assert.equal`.
+#:
+#: Adding an entry here is a deliberate act with a reason attached, in the same spirit as
+#: `HARMONY_ODD_READ_EXPERIMENT` being a named door rather than a source edit.
+TYPESCRIPT_BOUNDS_WITH_A_REASON = {
+    # Not a corpus total: a wall clock interval, which a timer only guarantees from below, and the least
+    # gap between requests to Logitech's service, which was decided as a floor ("at least").
+    ('packages/corpus/test/service/harvest.test.ts', '(sent[at] as number) - (sent[at - 1] as number)', '>=', 195):
+        'a physical interval, bounded below by the timer',
+    ('packages/corpus/test/service/harvest.test.ts', 'MINIMUM_GAP_MS', '>=', 10000): 'a decided floor, at least ten seconds',
+    # Not a corpus total: a guard that a walk of the source tree found the sources at all, before the test asserts
+    # that none of them names the lab; the count is the repository's size and moves with every new module.
+    ('packages/codec/test/families/harmony-300-350/noscreenattribution.test.ts', 'files.length', '>', 100):
+        'a guard that the source walk found files, not a measured population',
+    # Per item: the claim is that the thing is not empty, and its size is a property of the config.
+    ('packages/bench/test/instrument/bench.test.ts', 'activity.devices.length', '>=', 1): 'per activity',
+    ('packages/bench/test/instrument/bench.test.ts', 'key.sends', '>=', 1): 'per key',
+    ('packages/bench/test/instrument/bench.test.ts', 'branching.variants.length', '>', 1): 'per page',
+    ('packages/bench/test/instrument/bench.test.ts', 'variant.conditions.length', '>=', 1): 'per variant',
+    ('packages/bench/test/instrument/page.test.ts', 'keys', '>', 1): 'per page the picker landed on',
+    ('packages/codec/test/inventory/inventory.test.ts', '(one.name as string).trim().length', '>=', 2):
+        'per device: a name, not its length',
+    ('packages/codec/test/inventory/inventory.test.ts', 'one.devices.length', '>=', 1): 'per config',
+    ('packages/codec/test/inventory/inventory.test.ts', 'key.codes.length', '>=', 1): 'per binding',
+    # Per record, and a physical band rather than a total: an infrared carrier is tens of kilohertz,
+    # so the pair of bounds is the claim. Section 181, where the count of records is asserted exactly
+    # beside it and the one out of band case in the corpus is asserted as a negative.
+    ('packages/codec/test/container/arch10.test.ts', 'hertz !== undefined && hertz', '>', 25000):
+        'per record: an infrared carrier band, with the record count exact beside it',
+    ('packages/codec/test/screens/render.test.ts', 'variants.length', '>=', 1): 'per page',
+    ('packages/codec/test/screens/render.test.ts', 'variants.length', '>', 1): 'per branching page',
+    ('packages/codec/test/screens/render.test.ts', 'choice.arms', '>', 1): 'per switch',
+    ('packages/codec/test/edit/growth.test.ts', 'one.holders.length', '>', 1):
+        'per shared address: what makes it shared, beside an exact count of them',
+    ('packages/corpus/test/read/capabilities.test.ts', '(activityCount(c) ?? 0)', '>=', 1): 'per config',
+    ('packages/usb/test/transport/hardware.test.ts', 'new Set(timer).size', '>', 1): 'per remote, live',
+    ('packages/usb/test/transport/hardware.test.ts', 'varied.size', '>', 1): 'per remote, live',
+    ('packages/base/test/models.test.ts', 'm.architecture', '>=', 2): 'per model',
+    ('packages/silhouettes/test/models.test.ts', 'rocker.keys.length', '>=', 2): 'per rocker',
+    # A physical band, where being in range is the claim and the value is hardware's business.
+    ('packages/bench/test/instrument/bench.test.ts', 'period', '>', 20): 'a repeat interval a finger can feel',
+    ('packages/codec/test/container/actions.test.ts', 'frequency', '>', 200): 'audible, which is the finding',
+    ('packages/codec/test/infrared/ir.test.ts', '(hertz as number)', '>=', 30_000): 'an infrared carrier',
+    ('packages/codec/test/infrared/irframe.test.ts', 'largestBit < 2000 && smallestGap', '>', 2000):
+        'a bit cell against a frame gap',
+    ('packages/codec/test/screens/screen.test.ts', 'code', '>=', 32): 'a printable character',
+    ('packages/codec/test/inventory/touch.test.ts', '(common[3]?.[1] as number)', '>', 220):
+        'a panel row below a 220 pixel display, which is section 125',
+    # A consequence, next to an exact assertion of the same expression.
+    ('packages/codec/test/container/actions.test.ts', 'top', '>', 31): 'beside assert.equal(top, 69)',
+    ('packages/codec/test/inventory/touch.test.ts', 'failures(shift)', '>', 20): 'beside SHIFT_FAILURES',
+    # And one rule about prose, where the length is a floor on effort rather than a measurement.
+    ('packages/codec/test/edit/edit.test.ts', 'rule.why.length', '>', 40): 'a sentence, not a word',
+    ('packages/silhouettes/test/models.test.ts', 'want.why.length', '>', 40):
+        'a sentence, not a word',
+}
+
+
+class ABoundOnACorpusTotalIsExact(unittest.TestCase):
+    """A floor under a corpus wide total is a fossil of the measurement that was true when it was written.
+
+    Found on 14 August 2026 by measuring all of them. 38 numeric floors stood in 13 TypeScript test
+    files, from 20 commits between 5 and 13 August, and the median one sat 53% below the value it was
+    guarding. Two are worth naming. `glyphs > 65000` was written when `make text` read 65456, so it
+    was tight on the day and is 62% low now that the figure is 170922, which is the fossil.
+    `seen > 100_000` was written on 13 August against a population of 170922 that the same commit
+    knew, which is the other failure mode: loose from birth. And three of the 38 were introduced by
+    the two commits that were sweeping the neighbouring defect, so this is a habit rather than a
+    lapse.
+
+    What a floor cannot do is notice a total moving **up**, which is how a double counted sample or a
+    reader that stopped deduplicating gets in, and it cannot tell 54 from 227 in a control whose
+    magnitude is the evidence.
+
+    The rule is a text scan, like its two neighbours above, so it needs no TypeScript parser on this
+    side. A ratio such as `stored > 20 * swappedWins` is not a numeric bound and the pattern
+    deliberately does not match it: the right hand side is a measurement, not a literal.
+    """
+
+    #: `assert.ok(<expression> >= <number>)`, where the number ends the comparison. `,` closes the
+    #: argument, `)` closes the call, `&` continues a compound condition.
+    PATTERN = re.compile(r'assert\.ok\((.+?)\s*(>=|>)\s*([0-9][0-9_]*)\s*[,)&]')
+
+    #: One site the scan has to find, so that a pattern which stopped matching fails here rather than
+    #: reporting that every file is clean. `top > 31` is deliberate and documented above.
+    CONTROL = ('packages/codec/test/container/actions.test.ts', 'top', '>', 31)
+
+    def _bounds(self):
+        found, scanned = {}, []
+        for path in sorted(glob.glob(os.path.join(ROOT, 'packages', '*', 'test', '**', '*.ts'), recursive=True)):
+            relative = os.path.relpath(path, ROOT)
+            scanned.append(relative)
+            with open(path, encoding='utf-8') as handle:
+                for number, line in enumerate(handle.read().splitlines(), 1):
+                    match = self.PATTERN.search(line)
+                    if not match:
+                        continue
+                    value = int(match.group(3).replace('_', ''))
+                    if value == 0:
+                        continue  # `> 0` is "not empty", which is a claim and not a tolerance
+                    site = (relative, ' '.join(match.group(1).split()), match.group(2), value)
+                    found.setdefault(site, []).append(number)
+        return found, scanned
+
+    def test_the_pattern_still_matches_a_known_bound(self):
+        found, scanned = self._bounds()
+        # The scan has to have read exactly the TypeScript test files git lists, compared as sets so
+        # that a difference names the files. This was a literal count (48 at section 210, 153 at
+        # todo-compile-350 3.1) bumped by hand for every new file, which guarded against a glob that
+        # matches too little and so finds no bounds at all; the comparison does the same without a
+        # floor and without the bump. Its sibling above makes the same comparison.
+        expected = git_listed_typescript_tests(self)
+        self.assertEqual(
+            sorted(scanned), sorted(expected),
+            'the scan and git disagree about which TypeScript test files exist. Only in the scan: %s. '
+            'Only in git: %s.' % (sorted(set(scanned) - expected), sorted(expected - set(scanned))))
+        self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
+
+    def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
+        found, _ = self._bounds()
+        unexplained = sorted(site for site in found if site not in TYPESCRIPT_BOUNDS_WITH_A_REASON)
+        self.assertEqual(
+            unexplained, [],
+            'these assert a lower bound where the value can be measured, so a total that falls short '
+            'of the truth and a total that grows past it both pass: %s. Measure it and use '
+            'assert.equal, or add the site to TYPESCRIPT_BOUNDS_WITH_A_REASON above with the reason '
+            'it is genuinely a bound.'
+            % '; '.join('%s: %s %s %d at line %s'
+                        % (site[0], site[1], site[2], site[3], ','.join(str(n) for n in found[site]))
+                        for site in unexplained))
+
+    def test_no_reason_is_recorded_for_a_bound_that_has_gone(self):
+        """The other direction: an entry left behind after its assertion became exact reads as though
+        the exception were still needed, and the next person adds one beside it."""
+        found, _ = self._bounds()
+        stale = sorted(site for site in TYPESCRIPT_BOUNDS_WITH_A_REASON if site not in found)
+        self.assertEqual(stale, [], 'these no longer exist and their reasons should go with them')
+
+    def test_every_reason_is_a_reason(self):
+        """Two words at least, which is a shape and not a length: a bound whose reason is `''` or `'x'`
+        is an exception nobody has to justify, and that is how an allow-list turns into a bypass."""
+        for site, why in TYPESCRIPT_BOUNDS_WITH_A_REASON.items():
+            self.assertGreaterEqual(len(why.split()), 2, 'no reason recorded for %s' % (site,))
+
+
+#: The Python half of `TYPESCRIPT_BOUNDS_WITH_A_REASON`, on the same three grounds, plus one this
+#: side has and the other does not: a **churning population**, where the exact number would be
+#: rewritten by unrelated work often enough that nobody would read it while changing it.
+PYTHON_BOUNDS_WITH_A_REASON = {
+    # A physical band.
+    ('tests/firmware/test_backlight.py', 'CURVE_HIGH_ON_CHARGE / 4', '>', 1023):
+        'a ten bit converter, so the scale is what is being ruled out',
+    ('tests/firmware/test_clock.py', 'per_day / 60', '>', 5):
+        'a pair of bounds on a rate, deliberately not a measurement, see the open question',
+    ('tests/config_format/test_gspm.py', 'gap', '>', 20000):
+        'a forward jump of many kilobytes against an off by one',
+    # Per item in a loop, where "not one" or "not empty" is the whole claim.
+    ('tests/config_format/test_ezfile.py', 'len(checkable)', '>=', 1): 'something long enough to search for',
+    ('tests/config_format/test_ezfile.py', 'len(widths)', '>', 1): 'per body: one chunk would say nothing',
+    ('tests/config_format/test_gspm.py', 'len(deltas)', '>', 1): 'more than one delta is the exception itself',
+    ('tests/project/test_toolchain.py', 'len(why.split())', '>=', 2):
+        'two words, a shape rather than a length, so an empty reason cannot pass',
+    # Somebody else's source, whose exact shape is not ours to pin.
+    ('tests/usb_protocol/test_concordance_notes.py', "body.count('cb(')", '>', 1):
+        'upstream libconcord, which may reformat',
+    # A churning population, argued at the site.
+    ('tests/project/test_toolchain.py', 'scanned', '>', 600):
+        'every test function in the repository, which grows with unrelated work',
+}
+
+
+class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
+    """`ABoundOnACorpusTotalIsExact` for the other language, and the halves were measured together.
+
+    52 floors on the TypeScript side and 41 on this one, section 143, and they were loose in different
+    ways. Here: a floor of 100 under key binding counts running from 103 to 883, a floor of 20 under
+    screen program counts running from 111 to 6620, a floor of 1000 under a bootloader difference of
+    15694. And **fifteen** sat exactly on the value they guarded, four of those on the smallest member of
+    a per sample loop, which is the shape that reads as tolerance and has none: tight on one sample and
+    up to 39% loose on its neighbour.
+
+    The one ground this side needs and the other does not is a **churning population**. Two of the
+    floors here count files or functions that exist rather than samples in a list, and an exact number
+    over "every test function in the repository" would be rewritten by any commit that adds a test.
+    A number nobody reads while changing it has stopped being a measurement, so the bound stays and
+    the argument is written at the site. Its neighbours, the test files and the TypeScript test files,
+    are exact because adding one of those is deliberate.
+
+    A comment is skipped, which is insurance rather than a measurement: see the falsifier below, which
+    says what actually makes a quoted floor invisible and what it cost to find out.
+    """
+
+    PATTERN = re.compile(r'self\.assert(Greater)(Equal)?\(\s*(.+?),\s*([0-9][0-9_]*)\s*[,)]')
+
+    #: One site the scan has to find, so a pattern that stops matching fails here rather than
+    #: reporting a clean tree.
+    CONTROL = ('tests/firmware/test_clock.py', 'per_day / 60', '>', 5)
+
+    def _bounds(self):
+        found, scanned = {}, []
+        for path in sorted(glob.glob(os.path.join(ROOT, 'tests', '**', 'test_*.py'), recursive=True)):
+            relative = os.path.relpath(path, ROOT)
+            scanned.append(relative)
+            with open(path, encoding='utf-8') as handle:
+                for number, line in enumerate(handle.read().splitlines(), 1):
+                    if line.strip().startswith('#'):
+                        continue
+                    match = self.PATTERN.search(line)
+                    if not match:
+                        continue
+                    value = int(match.group(4).replace('_', ''))
+                    if value == 0:
+                        continue  # `> 0` is "not empty", a claim rather than a tolerance
+                    site = (relative, ' '.join(match.group(3).split()),
+                            '>=' if match.group(2) else '>', value)
+                    found.setdefault(site, []).append(number)
+        return found, scanned
+
+    def test_the_pattern_still_matches_a_known_bound(self):
+        found, scanned = self._bounds()
+        # 37 since `tests/harmony_5xx/test_harmony_525_region.py`, section 270.
+        # 42 since `tests/harmony_600_650_700/test_harmony_700_settings_store.py`, section 296.
+        # 44 since `tests/harmony_600_650_700/test_harmony_700_cache_drop.py`, section 299.
+        # 45 since `tests/firmware/test_clock_counting.py`, section 322.
+        # 47 since `tests/firmware/test_touch_send.py`, section 337.
+        # 48 since `tests/firmware/test_toggle_groups.py`, section 365. 49 with `tests/firmware/test_screen_fill.py`, section 425.
+        # 50 with `tests/project/test_archive.py`, todo-reference 2.2, and 51 with `tests/project/test_reference.py`, 2.3.
+        # 52 with `tests/project/test_site.py`, todo-reference 7.1.
+        # 53 with `tests/logitech/test_product_capabilities.py`, todo-reference 3.4.
+        # 54 with `tests/harmony_880_885/test_arch8_usb.py`, 55 with `tests/logitech/test_file_family_write_route.py`, 56 with `tests/harmony_300_350/test_harmony_350_file_write.py`, todo-compile-350 1.3.
+        # 57 with `tests/harmony_300_350/test_harmony_350_recovery.py`, todo-compile-350 1.4.
+        # 58 with `tests/harmony_300_350/test_harmony_350_slots.py`, todo-compile-350 2.1.
+        # 59 with `tests/harmony_300_350/test_harmony_350_boot.py`, todo-compile-350 1.4's two images.
+        # 60 with `tests/harmony_300_350/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/harmony_300_350/test_harmony_350_boot.py`.
+        # 61 with `tests/harmony_300_350/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
+        # 62 with `tests/harmony_300_350/test_harmony_350_clock.py`, todo-compile-350 2.5.
+        # 63 with `tests/harmony_300_350/test_harmony_350_long_press.py`, todo-compile-350 2.4.
+        # 64 with `tests/harmony_300_350/test_harmony_350_keys.py`, todo-compile-350 2.2, and 65 with
+        # `tests/harmony_300_350/test_harmony_350_metadata_deflate.py`, plan 011.
+        # 66 with `tests/harmony_300_350/test_harmony_300_keys.py`, todo-compile-300 2.2.
+        # 67 with `tests/harmony_300_350/test_harmony_350_skin.py`, the skin read in the firmware.
+        # 68 with `tests/harmony_300_350/test_harmony_300_350_images.py`, 69 with `tests/harmony_300_350/test_harmony_300_350_send_events.py`,
+        # 70 with `tests/harmony_300_350/test_harmony_300_group_4_send.py`, 71 with `tests/harmony_touch/test_harmony_touch_image.py`,
+        # 75 with the four Harmony Touch files of todo-touch 1.7 and 3.1,
+        # 76 with `tests/harmony_touch/test_harmony_touch_keys.py`, todo-touch 3.2, and 77 with
+        # `tests/harmony_touch/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
+        # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
+        # `tests/harmony_touch/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
+        # 82 with `tests/harmony_5xx/test_harmony_515.py`, the first Harmony 515 on the bench, and 83 with
+        # `tests/harmony_880_885/test_harmony_885_bootloader.py`, todo-prepare-885 1.1.
+        # 84 to 87 with todo-prepare-885 1.2 to 1.6 and 1.8: `tests/harmony_880_885/test_harmony_885_start_check.py`,
+        # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with 1.7,
+        # `tests/harmony_880_885/test_harmony_885_log_area.py`. 89 with `tests/harmony_touch/test_harmony_touch_beyond_the_clients.py`,
+        # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
+        # `tests/harmony_880_885/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
+        # 3.10, `tests/harmony_880_885/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
+        # 3.7, 3.8, 3.9 and 3.11, `tests/harmony_880_885/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
+        # `_delay.py`. 101 with 2.1 and 2.3, `tests/harmony_880_885/test_harmony_885_bench_reads.py`. 102 with 2.4,
+        # `tests/harmony_880_885/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/harmony_touch/test_harmony_touch_recovery.py`,
+        # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/harmony_880_885/test_harmony_880_keys.py`.
+        # 107 with todo-compile-885 1.3, `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with 1.4,
+        # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
+        # todo-touch 9.2, `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main.
+        self.assertEqual(len(scanned), 110, 'Python test files, which moves when one is added')
+        self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
+
+    def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
+        found, _ = self._bounds()
+        unexplained = sorted(site for site in found if site not in PYTHON_BOUNDS_WITH_A_REASON)
+        self.assertEqual(
+            unexplained, [],
+            'these assert a lower bound where the value can be measured, so a total short of the '
+            'truth and a total past it both pass: %s. Measure it and use assertEqual, or add the '
+            'site to PYTHON_BOUNDS_WITH_A_REASON above with the reason it is genuinely a bound.'
+            % '; '.join('%s: %s %s %d at line %s'
+                        % (site[0], site[1], site[2], site[3], ','.join(str(n) for n in found[site]))
+                        for site in unexplained))
+
+    def test_no_reason_is_recorded_for_a_bound_that_has_gone(self):
+        found, _ = self._bounds()
+        stale = sorted(site for site in PYTHON_BOUNDS_WITH_A_REASON if site not in found)
+        self.assertEqual(stale, [], 'these no longer exist and their reasons should go with them')
+
+    def test_every_reason_is_a_reason(self):
+        for site, why in PYTHON_BOUNDS_WITH_A_REASON.items():
+            self.assertGreaterEqual(len(why.split()), 2, 'no reason recorded for %s' % (site,))
+
+    def test_a_comment_quoting_a_floor_is_not_read_as_one(self):
+        """The scan's own falsifier, and it is narrower than the first version of it claimed.
+
+        `test_gspm.py` explains a floor it removed by quoting it, `assertGreater(total, 10000)`, and a
+        looser scan does report that as a live offender: this whole sweep began by finding it that way.
+        What makes it invisible here is **two** things, and the first version of this test credited only
+        the comment skip. The pattern is anchored on `self.assert`, so a quote written without the
+        receiver never matches whatever the scan does with comments. The skip is what covers a comment
+        that quotes the whole call, which nothing does today, so it is insurance rather than a
+        measurement and this test says so instead of pretending otherwise.
+        """
+        with open(os.path.join(ROOT, 'tests', 'config_format', 'test_gspm.py'), encoding='utf-8') as handle:
+            lines = handle.read().splitlines()
+        quotes = [n for n, line in enumerate(lines, 1)
+                  if line.strip().startswith('#') and 'assertGreater(total, 10000)' in line]
+        self.assertEqual(len(quotes), 1, 'the comment that quotes a removed floor has moved')
+        found, _ = self._bounds()
+        self.assertEqual([site for site in found if site[0] == 'tests/config_format/test_gspm.py'
+                          and site[3] == 10000], [], 'the quoted floor was read as a live one')
+        # And the receiverless form is why, demonstrated rather than asserted about the comment. The
+        # two calls are assembled rather than written out, for the same reason the em-dash check must
+        # not contain an em-dash: a test that spells the pattern it scans for becomes an offender in
+        # its own report, which this one did on the first attempt.
+        call = 'assert' + 'Greater(total, 10000)'
+        self.assertIsNone(self.PATTERN.search(call))
+        self.assertIsNotNone(self.PATTERN.search('self.' + call))
+
+
+class TheTwoExpectationTablesNameTheSameContainers(unittest.TestCase):
+    """`EXPECTED` in `tests/config_format/test_gspm.py` and in `packages/codec/test/container/gspm.test.ts`, which nothing compared.
+
+    Both tables list containers with their cookie, base address, format version, pointer count and
+    marker, and both are the population every container framing claim in their file is asserted over.
+    On 14 August 2026 the Python one held 17 names and the TypeScript one 13.
+
+    It surfaced only because section 143's sweep made the corpus span exact on both sides, which put two
+    numbers that a pair of floors had been hiding beside each other: 5 distinct base addresses here
+    against 4 there, from the same reader on the same corpus. So the lesson is not only that unwatched
+    lists drift. **When two lists disagree, the assertion that was letting them is the thing to look
+    for.**
+
+    The owner decided the same day that the four belong in both, so this test now asserts equality. What
+    widening cost is the interesting part and it was not the data entry: three tests in that file broke
+    at once, `the same six base slots are pointer arrays in every config`, the packing agreement and the
+    action list parse, because the three added safe mode containers arrived on the user config side of a
+    hand written line. All three were right and none had ever been asked about a safe mode container. A
+    fourth had to be renamed, since "bar four" became false for a config that packs into four runs rather
+    than five. That is four claims whose population was doing the work, found by adding four names.
+
+    Static, like its neighbours, so it runs in a fresh clone with nothing installed.
+    """
+
+    def _table(self, relative, declaration, end):
+        source = read_repo_file(relative)
+        self.assertIn(declaration, source, '%s no longer declares %s' % (relative, declaration))
+        body = source[source.index(declaration) + len(declaration):]
+        self.assertIn(end, body, '%s: no end to the %s table' % (relative, declaration))
+        body = body[:body.index(end)]
+        # A key is a name at the start of a line, quoted on the Python side and bare on the other.
+        return set(re.findall(r"^\s+'?([a-z0-9_]+)'?:", body, re.M))
+
+    def test_both_tables_name_the_same_seventeen(self):
+        python = self._table('tests/config_format/test_gspm.py', 'EXPECTED = {', '\n}')
+        typescript = self._table('packages/codec/test/container/gspm.test.ts', 'const EXPECTED', '\n};')
+        self.assertEqual(len(python), 17, 'the Python framing table')
+        self.assertEqual(len(typescript), 17, 'and the TypeScript one, widened on 14 August 2026')
+        self.assertEqual(sorted(python), sorted(typescript),
+                         'the two framing populations have drifted apart again')
+
+    def test_the_typescript_side_still_draws_the_user_config_line(self):
+        """The widening's real cost, pinned: six of the seventeen are not somebody's configuration, and
+        a claim about "every config" means the other eleven. Left implicit, the safe mode containers
+        silently join the population that three tests in that file are about."""
+        source = read_repo_file('packages/codec/test/container/gspm.test.ts')
+        self.assertIn('const NOT_A_USER_CONFIG', source, 'the line is no longer drawn by name')
+        body = source[source.index('const NOT_A_USER_CONFIG'):]
+        body = body[:body.index('];')]
+        excluded = sorted(set(re.findall(r"'([a-z0-9_]+)'", body)))
+        self.assertEqual(excluded, ['h525_safemode_ahcm', 'h600_safemode_gspm', 'h650_safemode_gspm',
+                                    'h700_gspm', 'one34_region2', 'one_safemode'],
+                         'the non user containers')
+
+
+class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
+    """`recover_flash_base` and `recoverFlashBase` are one derivation in two languages.
+
+    They agreed on every container and disagreed about their own inputs: the Python side took an
+    `end_addr` it never read, for as long as the anchor has existed. That is a vestige of the
+    reading the anchor replaced, `base = end_addr - offset_of_end_marker`, and it is worse than
+    dead code because the signature said the declared end is an input to the base, which is
+    exactly the circularity the docstring spends four paragraphs refuting.
+
+    Static, so it runs in a fresh clone. It cannot see the two answering differently, which is what
+    `packages/codec/test/container/gspm.test.ts` and `test_gspm.py` do against the corpus; what it can see is
+    the interface drifting, which is the state that precedes them answering differently.
+    """
+
+    def _source(self, relative):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', relative)
+        with open(path, encoding='utf-8') as fh:
+            return fh.read()
+
+    def test_neither_side_takes_the_declared_end(self):
+        python = self._source('src/harmony/gspm.py')
+        found = re.search(r'def recover_flash_base\(([^)]*)\)', python)
+        self.assertIsNotNone(found, 'the Python anchor is no longer called recover_flash_base')
+        arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
+        self.assertEqual(arguments, ['blob', 'addresses'])
+
+        typescript = self._source('packages/codec/src/container/clock.ts')
+        found = re.search(r'export function recoverFlashBase\(([^)]*)\)', typescript)
+        self.assertIsNotNone(found, 'the TypeScript anchor is no longer called recoverFlashBase')
+        arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
+        self.assertEqual(arguments, ['blob', 'addresses'])
+
+
+class TheTwoParameterGroupTablesAgree(unittest.TestCase):
+    """Base slot 15's demanded group lengths now exist in both languages, so they are compared.
+
+    This table lived only in `src/harmony/gspm.py` until 29 August 2026, while TypeScript owns the
+    codec and the whole write path. That put the one rail whose failure is **silent**, a group whose
+    length differs being replaced by compiled in defaults with no error anywhere, under a check that
+    ran only in the language that never writes. An audit found it while `CLAUDE.md` was claiming the
+    port was complete.
+
+    Porting it creates the state this repository's oldest rule is about: one derivation, two copies.
+    The rule does not forbid that outright, it forbids the copies drifting, and the opcode tables are
+    the reason anybody knows the difference. So the copies are compared entry for entry, statically,
+    which runs in a fresh clone with nothing installed.
+    """
+
+    def _source(self, relative):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', relative)
+        with open(path, encoding='utf-8') as fh:
+            return fh.read()
+
+    def _typescript_table(self):
+        body = self._source('packages/codec/src/container/tables.ts')
+        start = body.index('export const PARAMETER_GROUP_COUNTS')
+        stop = body.index(']);', start)
+        table = {}
+        for arch, entries in re.findall(r'\[(\d+),\s*new Map\(\[(.*?)\]\)\]', body[start:stop], re.S):
+            table[int(arch)] = {int(k): int(v)
+                                for k, v in re.findall(r'\[(\d+),\s*(\d+)\]', entries)}
+        return table
+
+    def test_the_two_tables_are_the_same_table(self):
+        from harmony import gspm
+        self.assertEqual(self._typescript_table(), gspm.PARAMETER_GROUP_COUNTS)
+
+    def test_the_comparison_can_fail(self):
+        """The control: a parse that returns nothing would make the test above vacuous."""
+        table = self._typescript_table()
+        self.assertEqual(sorted(table), [8, 12, 14], 'all three architectures parsed out of the TypeScript')
+        # Twenty three since arch 8's row, `tests/harmony_880_885/test_harmony_885_parameters.py`.
+        self.assertEqual(sum(len(v) for v in table.values()), 23,
+                         'twenty three demanded lengths, seven for arch 14 and eight each for arch 12 and 8')
+
+    def test_the_check_exists_on_the_side_that_writes(self):
+        """The reason for the port. A table with no checker beside it closes nothing."""
+        body = self._source('packages/codec/src/container/tables.ts')
+        self.assertIn('export function parameterGroupLengthsMatch', body)
+
+
+class TheCorpusWidePopulationsAgree(unittest.TestCase):
+    """Four lists in `packages/codec/test` name the containers a corpus wide claim is made over.
+
+    Nothing compared them, and on 13 August 2026 they disagreed: `edit.test.ts` held eighteen names
+    where the other two held nineteen, missing `h525_config_2` alone, so "every container in the
+    corpus" meant two different things in two files for as long as that sample had existed. Each
+    file's own totals stayed self consistent, which is why no test could see it.
+
+    Static on purpose. It runs in a fresh clone with nothing installed, and the same shape of check
+    is why `ASampleLoopStatesItsPopulation` exists in this file rather than in the suite it guards.
+    """
+
+    # file -> the declaration whose quoted names are that file's population.
+    POPULATIONS = {
+        'packages/codec/test/container/coverage.test.ts': 'const ACCOUNTED',
+        'packages/codec/test/container/emit.test.ts': 'const REBUILT',
+        'packages/codec/test/edit/edit.test.ts': 'const ALL_CONTAINERS',
+        'packages/codec/test/container/sections.test.ts': 'const MODE_PROGRAM_CONTAINERS',
+        'packages/codec/test/edit/growth.test.ts': 'const SURVEYED',
+    }
+
+    def _names(self, relative, declaration):
+        source = read_repo_file(relative)
+        self.assertIn(declaration, source, '%s no longer declares %s' % (relative, declaration))
+        body = source[source.index(declaration):]
+        body = body[:body.index('];')]
+        return sorted(set(re.findall(r"'([a-z0-9_]+)'", body)))
+
+    #: The known answer samples, which must appear in none of those lists. Three were compiled by
+    #: Logitech to a specification we wrote and one is a real setup imported through an account we
+    #: hold credentials for, so all four were **authored** rather than found, and a corpus wide total
+    #: measures what a reader can read across configs that were found, section 142. Their own byte
+    #: accounting and round trip are asserted in `calibration.test.ts` instead, which is where the
+    #: gap this list creates gets closed.
+    KNOWN_ANSWER = ('calibration_one', 'calibration_h600', 'calibration_favchannels',
+                    'one_spare_myharmony', 'calibration_favzero')
+
+    def test_no_corpus_wide_list_holds_a_known_answer_sample(self):
+        """Widening one of those lists to include an authored sample has to be deliberate.
+
+        The lists are checked against each other above, so adding a name to all five keeps them
+        agreeing and silently changes what every corpus wide total means. This is the check that
+        makes that a conversation rather than a passing test suite.
+        """
+        for relative, declaration in self.POPULATIONS.items():
+            names = self._names(relative, declaration)
+            for sample in self.KNOWN_ANSWER:
+                self.assertNotIn(
+                    sample, names,
+                    '%s names the authored sample %s, so its corpus wide totals no longer measure '
+                    'found configs. If that is intended, say so here and sweep every marked number.'
+                    % (relative, sample))
+
+    def test_every_list_names_the_same_containers(self):
+        found = {relative: self._names(relative, declaration)
+                 for relative, declaration in self.POPULATIONS.items()}
+        for names in found.values():
+            self.assertEqual(len(names), 19, 'the corpus is nineteen containers')
+        first = next(iter(found.values()))
+        for relative, names in found.items():
+            self.assertEqual(names, first,
+                             '%s names a different population: missing %s, extra %s'
+                             % (relative, sorted(set(first) - set(names)),
+                                sorted(set(names) - set(first))))
+
+    def test_the_python_populations_nest_and_each_exclusion_is_named(self):
+        """Section 141: three lists, and which is a subset of which.
+
+        `ALL_CONTAINERS` is every container a per container claim is made over. `CONTAINERS` is the
+        narrower population a corpus wide **total** is computed from, and `USER_CONFIGS` is every user
+        config. Both are subsets, and this asserts exactly what each leaves out, so that widening one
+        without deciding about the other has to fail here rather than pass quietly.
+
+        **The TypeScript lists are checked for equality now**, section 142: they held nineteen where
+        `CONTAINERS` held fifteen, and nineteen was decided. That was the one thing section
+        141 deliberately left open, because whether two dumps of one remote count twice in a total is
+        a decision about the corpus rather than a defect, and a containment check was what permitted
+        the two answers to coexist. Equality is what makes them one definition.
+        """
+        import lab
+        allc = set(lab.ALL_CONTAINERS)
+        self.assertEqual(len(allc), len(lab.ALL_CONTAINERS), 'no duplicates')
+        self.assertEqual(len(allc), 21)
+        self.assertLess(set(lab.CONTAINERS), allc)
+        # Two names, and both are configs whose coverage figures have never been computed. Widening
+        # the totals to them is its own step, with its own reading to check.
+        self.assertEqual(sorted(allc - set(lab.CONTAINERS)),
+                         ['arch8_config_880', 'arch8_config_885'])
+        # The user configs are containers too, bar none: a config read off a remote is a container.
+        self.assertLess(set(lab.USER_CONFIGS), allc)
+        for relative, declaration in self.POPULATIONS.items():
+            names = self._names(relative, declaration)
+            self.assertEqual(names, sorted(lab.CONTAINERS),
+                             '%s names a different corpus: missing %s, extra %s'
+                             % (relative, sorted(set(lab.CONTAINERS) - set(names)),
+                                sorted(set(names) - set(lab.CONTAINERS))))
+
+    def test_the_button_map_population_is_every_user_config(self):
+        """Section 151: `inventory.test.ts`'s `INVENTORY` table is the user configs, and no other list.
+
+        A fourth population list appeared on 22 August 2026 when section 151's two tests needed every
+        user config. Rather than write a fourth literal, they derive it from the `INVENTORY` table that
+        file already carries, which is the right move and is exactly the move that needs checking: the
+        table is a per sample claim about variables, activities and devices, and nothing said it also
+        happened to be the whole user config population. If somebody adds a sample to one and not the
+        other, section 151's totals are computed over a different corpus than they claim.
+        """
+        import lab
+        names = self._names('packages/codec/test/inventory/inventory.test.ts',
+                            'const INVENTORY: readonly [string, number, number, number, number][]')
+        self.assertEqual(names, sorted(lab.USER_CONFIGS),
+                         'missing %s, extra %s'
+                         % (sorted(set(lab.USER_CONFIGS) - set(names)),
+                            sorted(set(names) - set(lab.USER_CONFIGS))))
+        # And the derivation is still a derivation rather than a literal that drifted back in.
+        source = read_repo_file('packages/codec/test/inventory/inventory.test.ts')
+        self.assertIn('const USER_CONFIGS = INVENTORY.map(([name]) => name);', source,
+                      'section 151 stopped deriving its population from the table')
+
+    #: The families of compiles in `packages/lab/src/tiers.ts`, each with its count. A test walks a family's
+    #: pair on a step and its whole list in the slow tier, so these are the populations every per family
+    #: claim is made over. They replace the hand written copies in the test files, which nothing compared:
+    #: 127 lists of five or more names in 86 files when the test review counted them, one commented "as
+    #: `fonttable.test.ts`'s". The counts are the lists the copies held on 9 November 2026.
+    FAMILIES = {
+        'ONE_FAMILY': 19,
+        'ONE_SKIN_54_FAMILY': 16,
+        'ARCH14_FAMILY': 13,
+        'LATER_650_FAMILY': 8,
+        'ARCH14_22_FAMILY': 22,
+        'H650_FAMILY': 13,
+        'FILE_BASED_FAMILY': 5,
+        'ARCH8_FAMILY': 8,
+    }
+
+    def _family(self, constant):
+        """A family's `full` and `pair` names, read out of `packages/lab/src/tiers.ts` statically."""
+        source = read_repo_file('packages/lab/src/tiers.ts')
+        declaration = 'export const %s: Family = {' % constant
+        self.assertIn(declaration, source, 'packages/lab no longer declares %s' % constant)
+        body = source[source.index(declaration):]
+        body = body[:body.index('\n};')]
+
+        def names(field):
+            part = body[body.index('%s: [' % field):]
+            return re.findall(r"'([a-z0-9_]+)'", part[:part.index(']')])
+        return names('full'), names('pair')
+
+    def test_the_family_lists_are_every_family_the_module_declares(self):
+        """No family is declared in the module and left out of the counts above, so none goes unchecked."""
+        source = read_repo_file('packages/lab/src/tiers.ts')
+        declared = re.findall(r'^export const ([A-Z0-9_]+): Family = \{', source, re.M)
+        self.assertEqual(sorted(declared), sorted(self.FAMILIES))
+
+    def test_each_family_list_holds_its_count_and_its_pair_inside_it(self):
+        import lab
+        for constant, count in self.FAMILIES.items():
+            full, pair = self._family(constant)
+            self.assertEqual(len(full), count, '%s holds %d names, not %d' % (constant, len(full), count))
+            self.assertEqual(len(set(full)), len(full), '%s names a compile twice' % constant)
+            self.assertEqual(len(set(pair)), 2, '%s: a pair is two different compiles' % constant)
+            self.assertLessEqual(set(pair), set(full), '%s: its pair is outside its list' % constant)
+            self.assertLessEqual(set(full), set(lab.IMAGES),
+                                 '%s names a fixture the lab does not register' % constant)
+
+    def test_the_family_lists_nest_and_hold_the_user_configs_of_their_models(self):
+        """Which family is inside which, and the user configs of each model inside its family.
+
+        The second half is this class's comparison one boundary further in: the corpus lists above and the
+        family lists are populations of the same files, so a user config of a family's model that its list
+        leaves out would make a claim about every compile of the family skip one the corpus counts.
+        """
+        import lab
+        full = {constant: set(self._family(constant)[0]) for constant in self.FAMILIES}
+        self.assertLess(full['ONE_SKIN_54_FAMILY'], full['ONE_FAMILY'])
+        self.assertEqual(sorted(full['ONE_FAMILY'] - full['ONE_SKIN_54_FAMILY']),
+                         ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'],
+                         'the three outside skin 54: the European pair and the Dutch one')
+        self.assertLess(full['ARCH14_FAMILY'], full['ARCH14_22_FAMILY'])
+        self.assertEqual(full['ARCH14_22_FAMILY'] - full['ARCH14_FAMILY'],
+                         full['LATER_650_FAMILY'] | {'h650_issue36_config'})
+        self.assertLess(full['H650_FAMILY'], full['ARCH14_22_FAMILY'])
+        self.assertEqual(sorted(full['H650_FAMILY']),
+                         sorted(n for n in full['ARCH14_22_FAMILY'] if n.startswith('h650_')))
+        users = set(lab.USER_CONFIGS)
+        # `one_spare_before_sync` is the container `one_config_unprogrammed` holds, read twice, so the One's
+        # list names the one and not the other.
+        self.assertEqual(sorted(users & full['ONE_FAMILY']),
+                         ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync'])
+        self.assertEqual(sorted(u for u in users if u.startswith('one_')),
+                         ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_before_sync'])
+        self.assertEqual(sorted(u for u in users if u[:5] in ('h600_', 'h650_', 'h700_')),
+                         sorted(users & full['ARCH14_FAMILY']))
+        self.assertEqual(sorted(u for u in users if u.startswith('arch8_')), sorted(users & full['ARCH8_FAMILY']))
+
+    def test_no_test_file_writes_a_family_list_out_again(self):
+        """The drift the module was made against: a family's whole list written out again in a test file.
+
+        A list holding exactly a family's names is a copy, and a copy nobody compares is how one list held
+        eighteen names for as long as a sample had existed. A narrower list, a family less the compiles one
+        claim leaves out, is a different population and is allowed; it says why beside it.
+        """
+        families = {constant: frozenset(self._family(constant)[0]) for constant in self.FAMILIES}
+        copies = []
+        scanned = set()
+        for path in sorted(glob.glob(os.path.join(ROOT, 'packages', '*', 'test', '**', '*.ts'), recursive=True)):
+            relative = os.path.relpath(path, ROOT)
+            scanned.add(relative)
+            source = read_repo_file(relative)
+            for literal in re.findall(r'\[([^\[\]]*)\]', source):
+                # Every quoted string of the literal, so a list that holds a family and a path besides is a
+                # different list and is not counted as a copy.
+                names = frozenset(re.findall(r"'([^'\n]*)'", literal))
+                copies.extend('%s: %s' % (relative, constant)
+                              for constant, family in families.items() if names == family)
+        self.assertEqual(scanned, git_listed_typescript_tests(self), 'the scan read every TypeScript test file')
+        self.assertEqual(copies, [], 'these test files write a family\'s list out again; import it from '
+                                     '@harmony/lab instead: %s' % '; '.join(copies))
+
+    def test_the_control_a_family_list_written_out_again_is_found(self):
+        """The scan above, fed one test file's text with a family's list written into it, finds the copy."""
+        full, _ = self._family('H650_FAMILY')
+        literal = 'const H650 = [%s] as const;' % ', '.join("'%s'" % n for n in reversed(full))
+        names = [frozenset(re.findall(r"'([^'\n]*)'", one)) for one in re.findall(r'\[([^\[\]]*)\]', literal)]
+        self.assertIn(frozenset(full), names)
+
+    def test_the_user_config_population_is_the_same_in_both_languages(self):
+        """Section 140: `lab.USER_CONFIGS` and the fifteen `irframe.test.ts` asserts over.
+
+        The four lists above are containers, which includes the safe mode ones. The user configs are
+        a second population, and there are two copies of it for the same reason there were four of
+        the first: the frame closure lives in TypeScript because the frame decoder does, and every
+        other claim about a user config is asserted from Python. So they have to be compared, and
+        this is the check that says so rather than a paragraph claiming they mirror each other.
+
+        The TypeScript side is `CONTAINERS` minus the two calibration configs, which are synthetic
+        and deliberately outside every corpus wide total. Comparing the derived list rather than the
+        expression is the point: if somebody adds a name to one side only, the sets differ here.
+        """
+        import lab
+        ts = set(self._names('packages/codec/test/infrared/irframe.test.ts', 'const CONTAINERS'))
+        ts -= {'calibration_one', 'calibration_h600'}
+        self.assertEqual(sorted(ts), sorted(lab.USER_CONFIGS),
+                         'missing %s, extra %s'
+                         % (sorted(set(lab.USER_CONFIGS) - ts), sorted(ts - set(lab.USER_CONFIGS))))
+        self.assertEqual(len(lab.USER_CONFIGS), 15, 'fifteen user configs')
+
+
+class TheDocumentChecksReadOnlyTrackedFiles(unittest.TestCase):
+    """`make facts` is a commit gate, so an untracked file must not be able to hold a commit up.
+
+    Section 185's aside, and it was found by checking a number before quoting it: this tool's own
+    count moved by 26 on an unchanged commit, and 26 is exactly how many `fact:` markers `CLAUDE.md`
+    carries. An untracked `AGENTS.md` had appeared in the root, a copy of `CLAUDE.md` written for a
+    different agent, and every marker in it was being counted twice.
+
+    The count being unreproducible is the cosmetic half. The half with teeth is that the phrase check
+    refuses a commit that restates a superseded claim, so the first time somebody sweeps `CLAUDE.md`
+    and not the untracked copy beside it, `make facts` blocks the commit over a file that is not in
+    the repository. Both directions are asserted below, because a check that stops reading untracked
+    files could just as easily stop reading everything.
+    """
+
+    def setUp(self):
+        self.root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        sys.path.insert(0, os.path.join(self.root, 'tools'))
+
+    def _facts(self):
+        import importlib
+        import facts
+        importlib.reload(facts)
+        return facts
+
+    def test_an_untracked_document_is_not_read_and_a_tracked_one_is(self):
+        import subprocess
+        facts = self._facts()
+        probe = os.path.join(self.root, 'zz-toolchain-probe.md')
+        self.assertFalse(os.path.exists(probe), 'the probe path must be free')
+        tracked = None
+        try:
+            with open(probe, 'w', encoding='utf-8') as fh:
+                fh.write('a probe\n')
+            self.assertNotIn(probe, set(facts.documents()),
+                             'an untracked markdown file is not a published document')
+            # And tracked, the same file is read. `git add` is what makes it part of the repository,
+            # which is the distinction the check is drawing.
+            subprocess.run(['git', 'add', '-f', probe], cwd=self.root, check=True,
+                           capture_output=True)
+            tracked = probe
+            self.assertIn(probe, set(facts.documents()),
+                          'a tracked markdown file is a published document')
+        finally:
+            if tracked is not None:
+                subprocess.run(['git', 'rm', '-q', '--cached', tracked], cwd=self.root,
+                               check=False, capture_output=True)
+            if os.path.exists(probe):
+                os.remove(probe)
+
+    def test_the_source_walk_draws_the_same_line(self):
+        """The phrase check reads `.ts` and `.py` too, and it is the half that gates a commit."""
+        import subprocess
+        facts = self._facts()
+        probe = os.path.join(self.root, 'zz_toolchain_probe.py')
+        self.assertFalse(os.path.exists(probe), 'the probe path must be free')
+        tracked = None
+        try:
+            with open(probe, 'w', encoding='utf-8') as fh:
+                fh.write('# a probe\n')
+            self.assertNotIn(probe, set(facts.sources()))
+            subprocess.run(['git', 'add', '-f', probe], cwd=self.root, check=True,
+                           capture_output=True)
+            tracked = probe
+            self.assertIn(probe, set(facts.sources()))
+        finally:
+            if tracked is not None:
+                subprocess.run(['git', 'rm', '-q', '--cached', tracked], cwd=self.root,
+                               check=False, capture_output=True)
+            if os.path.exists(probe):
+                os.remove(probe)
+
+    def test_the_real_documents_are_still_read(self):
+        """The control on the control: narrowing the walk must not empty it."""
+        facts = self._facts()
+        found = set(facts.documents())
+        for name in ('CLAUDE.md', 'README.md', os.path.join('docs', 'findings.md')):
+            self.assertIn(os.path.join(self.root, name), found, name)
+        sources = set(facts.sources())
+        self.assertIn(os.path.join(self.root, 'tools', 'facts.py'), sources)
+
+
+class CodexAndClaudeCodeShareOneWorkingBrief(unittest.TestCase):
+    """Codex falls back to CLAUDE.md instead of carrying a second full brief.
+
+    Codex checks AGENTS.md before its configured fallback names. Its absence is therefore part of
+    the setup rather than tidiness: recreating it would shadow CLAUDE.md and let the two agents
+    receive different instructions again. The size setting matters too, because the working brief
+    is larger than Codex's default project document limit.
+    """
+
+    def test_codex_uses_claude_md_and_no_agents_md_can_shadow_it(self):
+        self.assertFalse(os.path.lexists(os.path.join(ROOT, 'AGENTS.md')),
+                         'AGENTS.md shadows the shared CLAUDE.md brief')
+        config = read_repo_file('.codex/config.toml')
+        settings = [line.strip() for line in config.splitlines()
+                    if line.strip() and not line.lstrip().startswith('#')]
+        self.assertEqual(settings, [
+            'project_doc_fallback_filenames = ["CLAUDE.md"]',
+            'project_doc_max_bytes = 262144',
+        ])
+
+    def test_codex_can_read_the_whole_shared_brief(self):
+        config = read_repo_file('.codex/config.toml')
+        match = re.search(r'^project_doc_max_bytes\s*=\s*(\d+)\s*$', config, re.MULTILINE)
+        self.assertIsNotNone(match, 'Codex project document size is not configured')
+        limit = int(match.group(1))
+        size = os.path.getsize(os.path.join(ROOT, 'CLAUDE.md'))
+        self.assertLessEqual(size, limit,
+                             'CLAUDE.md is larger than Codex is configured to read')
+
+
+class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
+    """Step 9 of the roadmap states the lab as a grid of squares, and a grid that misses a square
+    is worse than no grid: it reads as coverage.
+
+    Decision 12 exists because a fact recorded only in the lab is invisible to every check in this
+    repository, `make facts` included, since the lab is deliberately outside it. That cannot be
+    fixed from in here in general. What **can** be checked from in here is narrower and still worth
+    having: that the roadmap's own map of the site names every top level area the lab actually has,
+    so a directory nobody has a reason to open cannot appear without the plan of record gaining a
+    row for it.
+
+    Skips without a lab, like every other lab backed test.
+
+    **Superseded in scope on 28 August 2026 and kept deliberately.** `docs/lab-register.md`
+    exists now and `TheLabRegisterCoversTheSiteAtArtefactLevel` is the check that actually covers the
+    site, at artefact granularity. This one is narrower and still has its own claim: the roadmap's
+    grid is a **summary**, and a summary is exactly what step 4 of the four places rule says drifts,
+    so the plan of record's own map of the site is held against the site here. It is also the cheaper
+    of the two and fails with a clearer message when a whole square appears.
+    """
+
+    # **The grid moved out of the retired roadmap on 6 September 2026** and this said
+    # `### Step 9: excavate the lab`, which was the plan's numbering for it. It lives beside its own
+    # method now, and "step 9" is a dead name: `todo.md` carries the work as L2.
+    GRID_HEADING = '## The grid, and where the excavation stands'
+
+    def _grid_paths(self):
+        with io.open(os.path.join(ROOT, 'docs', 'lab-excavation.md'), encoding='utf-8') as fh:
+            text = fh.read()
+        start = text.find(self.GRID_HEADING)
+        self.assertNotEqual(start, -1, 'the grid is no longer in docs/lab-excavation.md')
+        end = text.find('\n## ', start)
+        section = text[start:end if end > 0 else len(text)]
+        # Every backticked path in the section, which is how the table names a square.
+        return {p.rstrip('/') for p in re.findall(r'`([A-Za-z0-9_.\-]+/[^`]*|[A-Za-z0-9_.\-]+/)`', section)}
+
+    def test_every_top_level_area_of_the_lab_is_named(self):
+        lab = os.environ.get('HARMONY_LAB') or os.path.join(os.path.dirname(ROOT), 'lab')
+        if not os.path.isdir(lab):
+            self.skipTest('no lab directory to compare the grid against')
+        named = self._grid_paths()
+        present = sorted(d for d in os.listdir(lab)
+                         if os.path.isdir(os.path.join(lab, d)) and not d.startswith('.'))
+        self.assertTrue(present, 'the lab has no directories, which makes this test vacuous')
+        for area in present:
+            with self.subTest(area=area):
+                covered = any(p == area or p.startswith(area + '/') for p in named)
+                self.assertTrue(covered,
+                                '%s/ is in the lab and named nowhere in step 9. Add a row saying '
+                                'what it is, per decision 12.' % area)
+
+
+class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
+    """`docs/lab-register.md` is step 9's deliverable, and this is the check the plan promises.
+
+    Two claims, and the second is the one the directory level guard above cannot make.
+
+    Every lab path the register **names** must exist, so a row cannot survive the artefact moving or
+    being renamed. And every **second level** directory of the lab must be covered by some row,
+    which is the artefact granularity `docs/lab-excavation.md` argues for: the grid check above is
+    per square and passed while section 197's own square was already named in it, so passing it
+    proved nothing about coverage.
+
+    A catalogue carries no tests, per Danny's rule of 28 August 2026 and the excavation plan's
+    opening section. This is not a test of the catalogue's **contents**; it is a test that the
+    catalogue's own frame still matches the site. Nothing here asserts a description is right.
+    """
+
+    REGISTER = ('docs', 'lab-register.md')
+    #: Directories whose children are not artefacts in their own right: build products, a virtual
+    #: environment, a cache. Each is named by a row already, and expanding it would add hundreds of
+    #: rows that say nothing. Stated so the exclusion is visible rather than silent.
+    NOT_EXPANDED = (
+        'software/classic', 'work/venv', 'work/myharmony', 'reference/logitech-icons',
+        'ghidra', 'golden', 'firmware', 'dumps', 'reads', 'Docs', 'bin', 'reviews',
+        'software/MyHarmony', 'software/LogitechHarmonyRemoteSoftware.app',
+        'software/harmony-remote-software-8.0', 'software/Harmony Desktop.app',
+        'software/desktop-webapp', 'reference/forum-images', 'reference/images',
+    )
+
+    def _register(self):
+        with io.open(os.path.join(ROOT, *self.REGISTER), encoding='utf-8') as fh:
+            return fh.read()
+
+    def _named_paths(self, text):
+        """Every backticked path that looks like a lab path, which is how a row names its artefact."""
+        found = set()
+        # Deliberately no character class escapes: a lab path is anything backticked that contains a
+        # slash and starts with a letter, and spelling that with `\w` has already been mangled once
+        # by the script that generated this file.
+        for match in re.finditer('`([^`]+/[^`]*)`', text):
+            path = match.group(1)
+            if not path[:1].isalpha() or path.startswith(('docs/', 'packages/')):
+                continue  # a repository path, cited for context
+            # `reference/` is both: the lab keeps `reference/logitech-icons`, and since plan 009 the
+            # repository's own `reference/` holds documents a row cites for context, such as
+            # Logitech's data model. A path that exists in the repository is the second kind.
+            if path.startswith('reference/') and os.path.exists(os.path.join(ROOT, path)):
+                continue
+            found.add(path)
+        return found
+
+    def _lab(self):
+        lab = os.environ.get('HARMONY_LAB') or os.path.join(os.path.dirname(ROOT), 'lab')
+        return lab if os.path.isdir(lab) else None
+
+    def test_every_path_the_register_names_exists(self):
+        lab = self._lab()
+        if lab is None:
+            self.skipTest('no lab directory to check the register against')
+        named = self._named_paths(self._register())
+        # Exact, per this file's own rule. It moves in the diff every time a row is added, which is
+        # the point: the register growing is the excavation making progress, and a floor here would
+        # hide a row being deleted just as readily as it hides a total going the wrong way.
+        # Still 64 after sections 211 and 212 gave the client's HID services one status per
+        # subdirectory instead of a blanket "not mined". Those subdirectories are deliberately
+        # named **without** a trailing slash, because this check reads any backticked name
+        # containing one as a path relative to the lab root: `system/` is not such a path, and
+        # spelling ten of them that way cost ten failures before the spelling was the fix.
+        # 66 since `units/`, section 226: the identity of each bench remote, which is what the
+        # write rails compare the connected unit against and which must not be in this repository.
+        # 68 since 4 September 2026 and the two Harmony 350 rows, per the comment on the row count
+        # test below. 69 since the programmed Harmony 350 was read, section 262. 72 since the
+        # programmed Harmony 300 was read, section 265. 75 since the rebuild from the composers
+        # alone, section 279, which is a folder inside `work/plan-1.3/` named on that row. 78 since
+        # `work/plan-1.2.2/` and the region read it was built off, section 293. 79 since
+        # `work/plan-1.2.10/`, section 294. 80 since `work/plan-L7/`, section 301. 81 since `work/plan-L6/`, the
+        # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305, and 83 since
+        # `work/plan-4.3.4/`, the Harmony 650's long press version write, section 309. 86 since
+        # `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives, todo-later 1.3. 91 since
+        # `work/test-setup/`, the scan behind plan 006, and 92 since `work/harvest/`, todo-secure-logitech.
+        # 93 since `work/setups/`, the setup builder of todo-compile-650 1.6, and 94 since
+        # `work/bench-2-3/`, todo-compile-650 2.3. 96 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14. 97 since `work/bench-3-14/`. 98 since `work/bench-3-11/`, section 341. 99 since `work/bench-4-2/`, section 342. 100 since `work/bench-5-1/`, todo-compile-650 5.1.
+        # 101 with `work/agent-5-2-4/`, todo-compile-650 5.2.4, 102 with `work/agent-2-2-5/`, 103 with `work/bench-5-2-5/`, 104 with `work/agent-6-2-11/`, 6.2.11, 105 with `work/bench-6-2-13/`, 106 with `work/probe-7-1/`, 107 with `work/agent-7-3/`, 7.3, 108 with `work/agent-7-4/`, 7.4, 109 with `work/bench-7-5/`, 7.5, which did not move this count when it landed, 110 with `work/agent-8-1/`, 8.1, 111 with `work/review-358/` and 112 with `work/review-358-blind/`, section 358's two reviewers, and 113 with `work/agent-2-1/`, todo-process-logitech 2.1, section 359, 114 with `work/agent-10-2-2/`, 10.2.2, section 360, and 115 and 116 with `work/review-360/` and `work/review-360-blind/`, its two reviewers. 117 with `work/agent-2-3/`, todo-process-logitech 2.3, section 361, and 118 and 119 with `work/review-2-3/` and `work/review-2-3-blind/`, its two reviewers. 120 with `work/agent-10-6/`, todo-compile-650 10.6, section 362, and 121 and 122 with `work/review-10-6/` and `work/review-10-6-blind/`, its two reviewers. 123 with `work/agent-9-1/`, todo-compile-650 9.1, section 363, and 124 and 125 with `work/review-9-1/` and `work/review-9-1-blind/`, its two reviewers. 126 with `work/agent-10-6b/`, 10.6's follow-up, section 364, and 127 and 128 with `work/review-10-6b/` and `work/review-10-6b-blind/`, its two reviewers. 129 with `work/bench-10-5/`, todo-compile-650 10.5's bench file. 130 with `work/agent-2-5/`, todo-process-logitech 2.5, section 365, and 131 and 132 with `work/review-2-5/` and `work/review-2-5-blind/`, its two reviewers. 133 with `fonts/`, the Oxanium typeface of decision 19. 134 with `work/sample-8-2/`, todo-compile-650 8.2's sample, and 135 with `work/colours-9-1-2/`, 9.1.2, section 366, and 136 and 137 with `work/review-366/` and `work/review-366-blind/`, its two reviewers. 138 with `work/glyph-order/`, the glyph byte order measured, and 139 with `work/agent-glyph-order/`, section 367. 140 with `work/fonts-8-2/`, 8.2, 141 with `work/agent-glyph-sharing/`, and 142 and 143 with `work/review-368-blind/` and `work/review-368/`, section 368's two reviewers.
+        # 144 to 149 with `work/fonts-aa/`, `work/fonts-8-2-6/`, `work/freeze-9-1-2/`,
+        # `work/agent-freeze-9-1-2/`, `work/fonts-10-8/` and `work/pictures-9-1-2-2/`, sections 366 to 373.
+        # 150 and 151 with `work/agent-11-1-1/` and `work/empty-11-1-1/`, todo-compile-650 11.1.1.
+        # 163 with the twelve work folders of the Harmony 600, 700 and One tracks, registered at once.
+        # 165 with `work/350-delay/`, todo-compile-350 1.8, and 166 with `work/350-every-key/`, 2.2.2.
+        # 167 with `work/300-delay/`, todo-compile-300 1.5, and 168 with `work/300-every-key/`, 2.1 and 2.2.
+        # 172 with the four firmware reads of 31 October 2026, `reads/20261031T-h300-fw/` and
+        # `reads/20261031T-h350-fw-first/` each with its second read beside it.
+        # 173 with `reference/images/`, the bench photographs, 1 November 2026, and 174 with `work/300-event-ff/`.
+        # 175 with `work/touch-firmware/`, the Harmony Touch's package unpacked, todo-touch 1.2, and 177 with
+        # `software/unluac/` and `software/lua-5.1.5-dl/`, the decompiler and the compiler source, 1.3.1.
+        # 178 with `dumps/danny/harmony-885/`, a bench 885's owner's device list ahead of its dump.
+        # 180 with `work/harmony-desktop-inspectable/` and `reads/20261102T1350Z-touch-sync-harmony-desktop/`,
+        # the inspectable copy of Harmony Desktop and the Touch sync recorded through it, todo-touch 2.1 and 2.3.
+        # 181 with `reads/20261102T1520Z-touch-sync-full-setup/`, the sync after the setup was filled, 2.3,
+        # and 182 with `reads/20261102T1524Z-touch-reverse-sync/`, the reverse sync recorded after it.
+        # 183 with `work/legacy-remotes/`, the legacy remotes track, plan 012, and 184 with `work/webhid/`, the
+        # browser key read, todo-prepare-885 2.6. 185 with `work/architecture-review/`, the review of the packages.
+        self.assertEqual(len(named), 186, "lab paths the register names")
+        for path in sorted(named):
+            with self.subTest(path=path):
+                if '*' in path:
+                    self.assertTrue(glob.glob(os.path.join(lab, path)),
+                                    '%s matches nothing in the lab' % path)
+                else:
+                    self.assertTrue(os.path.exists(os.path.join(lab, path)),
+                                    '%s is in the register and not in the lab' % path)
+
+    def test_every_artefact_in_the_lab_has_a_row(self):
+        lab = self._lab()
+        if lab is None:
+            self.skipTest('no lab directory to check the register against')
+        named = self._named_paths(self._register())
+        covered = {p.rstrip('/') for p in named}
+
+        def is_covered(rel):
+            if rel in covered:
+                return True
+            # A row naming a directory covers what is inside it, and a row naming something inside
+            # a square covers the square. Both directions are needed: the register names
+            # `dumps/danny/` and never `dumps/` on its own.
+            return any(rel.startswith(c + '/') or c.startswith(rel + '/') for c in covered)
+
+        unregistered = []
+        for square in sorted(os.listdir(lab)):
+            if square.startswith('.') or not os.path.isdir(os.path.join(lab, square)):
+                continue
+            if not is_covered(square):
+                unregistered.append(square)
+                continue
+            if square in self.NOT_EXPANDED:
+                continue
+            for child in sorted(os.listdir(os.path.join(lab, square))):
+                rel = square + '/' + child
+                if child.startswith('.') or not os.path.isdir(os.path.join(lab, rel)):
+                    continue
+                if rel in self.NOT_EXPANDED or is_covered(rel):
+                    continue
+                unregistered.append(rel)
+        self.assertEqual(unregistered, [],
+                         'in the lab and in no register row. Add a row saying what it is and how '
+                         'deep anybody has been, per decision 12 and docs/lab-excavation.md.')
+
+
+class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
+    """`tools/lab_register.py` is section 209's instrument, and this is what makes it one.
+
+    The rule it serves has been broken six times, and five of the six fixes were a paragraph telling
+    the next session to remember. What changed is that the check is a command, so what has to be
+    tested is the property that makes the command worth running: given the path somebody is about to
+    open, it prints the rows that bear on it, in **both** directions. An ancestor row is what says
+    the square has been surveyed; a **descendant** row is what says one file inside the directory is
+    already mined, and the descendant direction is the one that would have stopped section 209.
+
+    This is not a test of the register's contents, which is a catalogue and carries none. It is a
+    test of the query, on the register that ships.
+    """
+
+    def module(self):
+        path = os.path.join(ROOT, 'tools', 'lab_register.py')
+        namespace = {'__file__': path, '__name__': 'lab_register_under_test'}
+        with io.open(path, encoding='utf-8') as handle:
+            exec(compile(handle.read(), path, 'exec'), namespace)  # noqa: S102
+        return namespace
+
+    def rows(self):
+        module = self.module()
+        with io.open(os.path.join(ROOT, 'docs', 'lab-register.md'), encoding='utf-8') as fh:
+            return module, module['rows'](fh.read())
+
+    def test_the_register_parses_into_the_rows_the_document_states(self):
+        """Every artefact row parses, counted exactly rather than as a floor, so a row lost to a
+        formatting change fails. The number is deliberately not restated in this docstring:
+        it said 51 while the assertion said 52, which is the same drift the register's own
+        history is about.
+
+        The number is here rather than a `fact:` marker because every producer in `tools/facts.py`
+        needs a lab and this one needs only the repository. It is also a correction: `CLAUDE.md` said
+        58 for a day, which was a count nothing recomputed, and this is what recomputes it.
+        """
+        module, rows = self.rows()
+        # 46 since `units/`, section 226: the identity of each bench remote, which the write rails
+        # compare the connected unit against and which may not be in a public repository.
+        # 48 since 4 September 2026, when the Harmony 350's configuration and its firmware image each
+        # got a row of their own: both were covered only by their directory's row, which said nothing
+        # about them, and sections 259 to 261 mined both. A row at the granularity of the thing that
+        # was dug is what `make lab-check` can answer with.
+        # 49 since the programmed Harmony 350 got its own row, section 262, 50 since the one
+        # device differential beside it, section 263, and 51 since the Harmony 300, section 264.
+        # 55 since `work/plan-1.2.2/`, the four page activity menu, section 293, and 56 since
+        # `work/plan-1.2.10/`, the 650's activity device list, section 294, and 57 since
+        # `work/plan-L7/`, the Harmony 700's delay write, section 301, and 58 since `work/plan-L6/`,
+        # the Harmony 600's, and 59 since `work/ir-archive-raw/`, the infrared archive's raw capture,
+        # section 305.
+        # 60 since `work/plan-4.3.4/`, section 309.
+        # 63 since `work/ir-archive-raw/derived/`, todo-later 1.3.
+        # 69 since `work/test-setup/` and `work/harvest/`, todo-secure-logitech; both rows landed on 7
+        # October 2026 without this count, which stayed at 67 until the next run of this test.
+        # 70 since `work/setups/`, todo-compile-650 1.6, and 71 since `work/bench-2-3/`, 2.3.
+        # 73 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14, and 74 since `work/bench-3-14/`.
+        # 75 since `work/bench-3-11/`, section 341, and 76 since `work/bench-4-2/`, section 342.
+        # 77 since `work/bench-5-1/`, todo-compile-650 5.1, and 78 with `work/agent-5-2-4/`, 5.2.4, 79 with `work/agent-2-2-5/`, 80 with `work/bench-5-2-5/`, 81 with `work/agent-6-2-11/`, 6.2.11, 82 with `work/bench-6-2-13/`, 83 with `work/probe-7-1/`, 84 with `work/agent-7-3/`, 85 with `work/agent-7-4/`, 86 with `work/bench-7-5/`, 87 with `work/agent-8-1/`, 88 with `work/review-358/`, 89 with `work/review-358-blind/`, 90 with `work/agent-2-1/`, section 359, 91 with `work/agent-10-2-2/`, section 360, 92 with `work/review-360/` and 93 with `work/review-360-blind/`. 94 with `work/agent-2-3/`, section 361, 95 with `work/review-2-3/` and 96 with `work/review-2-3-blind/`. 97 with `work/agent-10-6/`, section 362, 98 with `work/review-10-6/` and 99 with `work/review-10-6-blind/`. 100 with `work/agent-9-1/`, section 363, 101 with `work/review-9-1/` and 102 with `work/review-9-1-blind/`. 103 with `work/agent-10-6b/`, section 364, 104 with `work/review-10-6b/` and 105 with `work/review-10-6b-blind/`. 106 with `work/bench-10-5/`. 107 with `work/agent-2-5/`, section 365, 108 with `work/review-2-5/` and 109 with `work/review-2-5-blind/`. 110 with `fonts/`. 117 to 120 with `work/fonts-8-2/`, `work/agent-glyph-sharing/`, `work/review-368-blind/` and `work/review-368/`, section 368. 121 to 126 with `work/fonts-aa/`, `work/fonts-8-2-6/`,
+        # `work/freeze-9-1-2/`, `work/agent-freeze-9-1-2/`, `work/fonts-10-8/` and `work/pictures-9-1-2-2/`.
+        # 127 and 128 with `work/agent-11-1-1/` and `work/empty-11-1-1/`.
+        # 140 with the twelve work folders of the Harmony 600, 700 and One tracks.
+        # 142 with `work/350-delay/`, todo-compile-350 1.8, and 143 with `work/350-every-key/`, 2.2.2.
+        # 144 with `work/300-delay/`, todo-compile-300 1.5, and 145 with `work/300-every-key/`, 2.1 and 2.2.
+        # 146 and 147 with the two firmware read rows of 31 October 2026, the Harmony 300's and the 350's.
+        # 148 with `reference/images/`, the bench photographs, and 149 with `work/300-event-ff/`.
+        # 150 with `work/touch-firmware/`, todo-touch 1.2, and 152 with `software/unluac/` and
+        # `software/lua-5.1.5-dl/`, 1.3.1, and 153 with `dumps/danny/harmony-885/`.
+        # 155 with `work/harmony-desktop-inspectable/` and the recorded Touch sync's read, todo-touch 2.1 and 2.3,
+        # and 156 with the full setup's sync, 2.3, and 157 with the reverse sync after it.
+        # 158 with `work/legacy-remotes/`, plan 012, and 159 with `work/webhid/`, todo-prepare-885 2.6.
+        # 160 with `work/architecture-review/`, the review of the packages.
+        self.assertEqual(len(rows), 161)
+        self.assertEqual(len(dict(rows)), 161, 'a duplicated path would make a query ambiguous')
+        self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
+
+    def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
+        module, rows = self.rows()
+        query = module['normalise'](
+            'software/classic/src/hidcommands/com/logitech/harmony/hid/commands')
+        hits = [path for path, _ in module['covering'](query, rows)]
+        self.assertIn('software/classic', hits, 'the square, which is the ancestor direction')
+        self.assertIn('software/classic/src', hits, 'and the row that says this layer is mined')
+
+        square = module['normalise']('software/classic')
+        under = [path for path, _ in module['covering'](square, rows)]
+        self.assertIn('software/classic/PROTOCOL-CONSTANTS.md', under,
+                      'the descendant direction, which is what section 209 needed')
+        self.assertGreater(len(under), len(hits))
+
+    def test_it_would_have_stopped_section_209(self):
+        """The regression, stated as the thing that went wrong rather than as an example.
+
+        The dig opened the commands directory and no check fired. The row that covers it says the
+        HID layer is mined and names the extraction to read; asserting that the query surfaces that
+        wording is what turns "run the tool" into a claim that can fail.
+        """
+        module, rows = self.rows()
+        query = module['normalise'](
+            '../lab/software/classic/src/hidcommands/com/logitech/harmony/hid/commands')
+        text = ' '.join(' '.join(cells) for _, cells in module['covering'](query, rows))
+        self.assertIn('PROTOCOL-CONSTANTS.md', text)
+        self.assertIn('mined', text)
+
+    def test_a_path_the_register_does_not_cover_is_reported_and_not_answered(self):
+        """A silent empty answer would read as "nothing known", which is the opposite of the truth
+        when the register is simply missing a row."""
+        module, rows = self.rows()
+        query = module['normalise']('no/such/square')
+        self.assertEqual(module['covering'](query, rows), [])
+
+    def test_the_progress_view_counts_every_want_list_tag_including_the_empty_ones(self):
+        """`make lab-progress` is what `docs/lab-excavation.md` points at instead of carrying counts.
+
+        The claim worth pinning is not a number, which moves every time a row does. It is that the
+        report covers the **whole** want list: a tag no artefact carries has to appear with a zero
+        rather than be absent, because an absent tag reads as a tag nobody wants and that is exactly
+        the state `provenance` was in when this was written.
+        """
+        module, rows = self.rows()
+        counted = module['progress'](rows)
+        self.assertEqual([tag for tag, _, _ in counted], list(module['WANT_LIST']))
+
+        excavation = read_repo_file('docs/lab-excavation.md')
+        for tag, _, _ in counted:
+            with self.subTest(tag=tag):
+                self.assertIn('`%s`' % tag, excavation,
+                              'the tool knows a tag the plan does not describe')
+
+        for tag, landed, total in counted:
+            with self.subTest(tag=tag):
+                self.assertLessEqual(landed, total)
+
+    def test_a_row_claiming_two_depths_is_counted_at_the_shallower_one(self):
+        """The register writes "`read` in four notes, `unseen` otherwise", and a progress report that
+        took the first word would flatter itself by exactly the rows that are half open."""
+        module, _ = self.rows()
+        self.assertEqual(module['depth'](['x', '1', '`read` in four notes, `unseen` otherwise']),
+                         'unseen')
+        self.assertEqual(module['depth'](['x', '1', '`catalogued`']), 'catalogued')
+        self.assertEqual(module['depth'](['x', '1', 'nothing recognisable']), 'unseen',
+                         'an unparseable status must not count as progress')
+
+    def test_the_plan_points_at_the_command_rather_than_carrying_the_counts(self):
+        """The rule the 58 against 44 broke: a number in prose has nothing recomputing it."""
+        excavation = read_repo_file('docs/lab-excavation.md')
+        self.assertIn('make lab-progress', excavation)
+        makefile = read_repo_file('Makefile')
+        self.assertIn('lab-progress:', makefile)
+        self.assertIn('lab-check:', makefile)
+
+    def test_the_query_accepts_the_three_spellings_a_session_actually_has(self):
+        """Absolute, through `../lab`, and already lab relative all normalise to one path, because a
+        check nobody can paste into is a check nobody runs.
+
+        **The absolute spelling is built from this machine's own lab root rather than written out.**
+        It used to be a fabricated absolute literal under a home directory, which
+        `bin/check-publishable.py` refuses on sight and rightly: that rule cannot tell a placeholder
+        from a real person's
+        directory layout, and a rule that has to make that judgement is a rule with an exemption
+        list. Deriving the path also makes the test stronger, since it now exercises the spelling a
+        session would actually paste on the machine it is running on.
+        """
+        module = self.module()
+        expected = 'software/classic/res'
+        spellings = ['software/classic/res', '../lab/software/classic/res']
+        import lab
+        if lab.LAB and os.path.isdir(lab.LAB):
+            spellings.append(os.path.join(os.path.abspath(lab.LAB), expected) + os.sep)
+        for spelling in spellings:
+            with self.subTest(spelling=spelling):
+                self.assertEqual(module['normalise'](spelling), expected)
+
+
+class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
+    """`docs/review-before-first-write.md` makes three claims about which files may be handed to an
+    independent reviewer, and all three are the kind this project refuses to leave as prose.
+
+    The review exists because nothing had ever been written to a remote and the derivation a first
+    write rests on has been read by one party. Its worth depends entirely on the reviewer not having
+    seen our answer, so the two lists in that document are load bearing: a file that states the
+    answer and is missing from the withhold list turns an independent derivation into a quotation,
+    silently and after the fact.
+
+    The lists are parsed out of the document rather than copied here. A second copy of a list is the
+    state this project's oldest rule forbids, and it would drift the first time somebody edited one.
+
+    The asymmetry between the two halves is deliberate. The may read set is small and must be clean
+    of even an ambiguous marker. The withhold set is swept with unambiguous markers only, because a
+    bare byte like the data packet's opcode occurs all over a codec corpus for unrelated reasons and
+    a sweep on it would demand withholding half the tree.
+    """
+
+    DOC = os.path.join(ROOT, 'docs', 'review-before-first-write.md')
+
+    # Unambiguous only: each of these names the write path and nothing else.
+    #
+    # **The interlock markers were added on 29 August 2026 and the reason is worth keeping.** The
+    # list above them is question 1's vocabulary, the transfer. Question 4 is the write protect
+    # interlock and it is the question this review calls its highest value target, because two
+    # earlier readings of it here were wrong. A sweep that carries only question 1's words reports a
+    # clean list while a file states question 4's answer in full, which is exactly what happened:
+    # `recovering-a-remote` was created on 28 August and stated the interlock outright.
+    MARKERS = (
+        'WRITE_FLASH_DATA',
+        '0xF1 0x30',
+        '0xF0 0x30',
+        'writeFlash',
+        'assertFlashWriteAllowed',
+        'assertFirstWriteAllowed',
+        'rehearse-block',
+        'interlock',
+        '0x1A4',
+    )
+
+    # The may read set is held to a stricter bar, since it is what actually gets handed over.
+    STRICT_MARKERS = MARKERS + ('0x4A', 'ERASE_FLASH', 'WRITE_FLASH')
+
+    SWEPT_SUFFIXES = ('.md', '.ts', '.py', '.txt')
+    # `worktrees` is `.claude/worktrees/`, an agent's second checkout, which states the write path
+    # exactly as this one does and is not a document anybody hands over.
+    SKIP_DIRS = {'node_modules', '.git', '.pnpm', 'dist', '__pycache__', 'var', 'worktrees'}
+
+    def _document(self):
+        with io.open(self.DOC, encoding='utf-8') as handle:
+            return handle.read()
+
+    def _paths_between(self, text, start, end):
+        """Every backticked token in a region of the document that resolves to a real path."""
+        begin = text.index(start) + len(start)
+        stop = text.index(end, begin)
+        found = set()
+        for token in re.findall(r'`([^`]+)`', text[begin:stop]):
+            token = token.strip().rstrip(',')
+            if token.startswith('..') or '/' not in token and not token.endswith('.md'):
+                # The concordance checkout sits outside the repository, and a bare filename like a
+                # vendor header is not a path here. Both are named in the document deliberately.
+                if not os.path.exists(os.path.join(ROOT, token)):
+                    continue
+            for match in glob.glob(os.path.join(ROOT, token)):
+                found.add(os.path.relpath(match, ROOT))
+        return found
+
+    def _swept_files(self):
+        """Every file a reviewer could open, **dot directories included**.
+
+        This skipped anything beginning with a dot until 29 August 2026, which put `.claude/skills/`
+        and `.agents/skills/` outside the sweep by construction. Those are the two directories
+        residual leak 3 in the document names as the live risk, so the check walked past the hazard
+        its own document had identified, and a skill created on 28 August stated the answer to
+        question 4 for a day with every test passing. `.git` and the package manager's store stay
+        out through `SKIP_DIRS`, which names them rather than matching on a leading dot.
+        """
+        for base, dirs, names in os.walk(ROOT):
+            dirs[:] = [d for d in dirs if d not in self.SKIP_DIRS]
+            for name in names:
+                if name.endswith(self.SWEPT_SUFFIXES):
+                    yield os.path.relpath(os.path.join(base, name), ROOT)
+
+    @staticmethod
+    def _markers_in(path, markers):
+        try:
+            with io.open(os.path.join(ROOT, path), encoding='utf-8', errors='replace') as handle:
+                body = handle.read()
+        except OSError:
+            return []
+        return [m for m in markers if m in body]
+
+    def test_the_document_states_both_lists(self):
+        """The parse is asserted before anything is derived from it, or an empty list passes."""
+        text = self._document()
+        may = self._paths_between(text, '**May be read and used.**', '**Must not be read.**')
+        must = self._paths_between(text, '**Must not be read.**', '\n## ')
+        # 12 since 5 September 2026, section 267: the Harmony 525's memory map moved to the withhold
+        # list, and the four remaining memory maps are spelled out one by one where a glob used to
+        # stand for all five. The glob is what let the 525's document acquire the erase mechanism
+        # and stay on the readable side, so naming them is part of the fix rather than tidying.
+        # 13 since plan 009 step 3.2 removed `docs/memory-map-600.md` and `docs/memory-map-700.md`:
+        # their rows went to three reference pages, the architecture's memory page and the 600's and
+        # 700's, which take their place on the list, and the strict sweep below holds all three.
+        self.assertEqual(len(may), 13, 'the may read list should resolve to 13 paths, got %s'
+                         % sorted(may))
+        # The AGENTS.md row remains reserved, but the file is deliberately absent. Its place in the
+        # resolved population is taken by the Codex config named in that row.
+        #
+        # 19 since 29 August 2026: the `recovering-a-remote` skill went on the list, as both its
+        # real path and the `.agents/` symlink a second agent discovers it through. It states the
+        # interlock, which is question 4.
+        # 21 since 5 September 2026: the Harmony 525's memory map, which now states the Harmony 525's
+        # erase handler, its window classifier, the block size and an interlock. That is question 4
+        # on another architecture, and this sweep found it rather than a person.
+        # 22 since 6 September 2026: `packages/corpus/bin/read-region.ts`, a read only script that
+        # names `rehearse-block.ts`. The mildest entry on the list and the cheapest to withhold.
+        # 24 later the same day, and it is one withheld document becoming three rather than two new
+        # leaks: `docs/roadmap.md` was retired, its decisions became `docs/decisions.md`, its
+        # reasoning `docs/plans/002-the-roadmap.md`, and the sequence it carried is `todo.md`.
+        # 25 with `docs/README.md`, the document map moved out of `CLAUDE.md` on 7 October 2026.
+        # 28 since 10 October 2026: the Harmony 525's skill, whose write procedure names
+        # `rehearse-block.ts`, and its two reference folders, which state what an erase address
+        # selects on that model and are withheld on the 525 memory map's ground.
+        # 29 since 24 October 2026: `docs/plans/009-the-reference.md`, the plan of the reference,
+        # which names `rehearse-block.ts` and the interlock among the readers it moves.
+        # 30 since plan 009's step 2.1 cut the USB protocol and the host client document: the USB
+        # row names its folder whole, and the client row names both files the transfer now sits in.
+        # 29 since plan 009's step 3.2 removed the Harmony 525's memory map: its erase and write
+        # mechanism moved into `reference/architectures/harmony-5xx/`, which a row already withholds,
+        # and that row now carries the map's history. Nothing widened; the list was re-read.
+        # 32 with the Harmony 885's compile track: its skill, its test notes and `todo-compile-885.md`,
+        # each naming `rehearse-block.ts` and the first block written on arch 8.
+        # 36 with `todo.md` 7.3.10: the configuration write's library function, which took the script's
+        # sequence, and its fake remote, runner and test, which drive it and name the flash write rail.
+        self.assertEqual(len(must), 36, 'the withhold list should resolve to 36 paths, got %s'
+                         % sorted(must))
+
+    def test_every_may_read_path_is_clean_of_the_write_path(self):
+        """The half that is handed over. One marker here voids the independence of the whole job."""
+        may = self._paths_between(self._document(), '**May be read and used.**',
+                                  '**Must not be read.**')
+        offenders = {}
+        for path in sorted(may):
+            targets = [path]
+            if os.path.isdir(os.path.join(ROOT, path)):
+                targets = [p for p in self._swept_files() if p.startswith(path + os.sep)]
+            for target in targets:
+                hits = self._markers_in(target, self.STRICT_MARKERS)
+                if hits:
+                    offenders[target] = hits
+        self.assertEqual(offenders, {},
+                         'a file offered to the reviewer states the write path: %s' % offenders)
+
+    def test_every_file_stating_the_write_path_is_withheld(self):
+        """The half that is held back, and the direction that actually fails.
+
+        A new document quoting the transfer is the expected way for this to break, and then the fix
+        is to add it to the withhold list, not to loosen this test.
+        """
+        must = self._paths_between(self._document(), '**Must not be read.**', '\n## ')
+        uncovered = {}
+        for path in self._swept_files():
+            hits = self._markers_in(path, self.MARKERS)
+            if not hits:
+                continue
+            covered = any(path == entry or path.startswith(entry.rstrip('/') + os.sep)
+                          for entry in must)
+            if not covered:
+                uncovered[path] = hits
+        self.assertEqual(uncovered, {},
+                         'these state the write path and no withhold entry covers them: %s'
+                         % uncovered)
+
+    def test_the_sweep_can_fail(self):
+        """The control. A sweep matching nothing would pass the test above vacuously.
+
+        Exact rather than a floor, on this project's own measured ground that a floor is a fossil.
+        It moves whenever a file starts or stops stating the write path, and that is the moment the
+        withhold list is worth another look, so the churn is the point rather than the cost.
+        """
+        stating = sorted(p for p in self._swept_files() if self._markers_in(p, self.MARKERS))
+        # 24 since 29 August 2026, and the jump is two changes at once rather than four new leaks:
+        # the sweep now enters dot directories, which admitted the recovery skill, and `MARKERS`
+        # gained the interlock's vocabulary, which admitted three files that state question 4
+        # without stating the transfer. Every one of the 24 is covered by the withhold list.
+        #
+        # 25 since section 213, which added `tests/logitech/test_host_client.py`: it recomputes Logitech's own
+        # write transfer from their client, so it states the shape a blind reviewer is meant to derive
+        # unaided. `tests/` is already withheld whole, so this is the sweep working rather than a leak,
+        # and the list was re-read against all 25 before this number moved.
+        #
+        # 30 since section 237, 1 September 2026, and only one of the three widens anything. Two are
+        # `packages/usb/src/blockwrite.ts` and `packages/usb/src/write.ts`, inside a directory the
+        # withhold list covers whole, which is the sweep noticing new files rather than a leak. The
+        # third, `packages/corpus/bin/write-config.ts`, is the write path's first caller **outside**
+        # `packages/usb/`, so no directory entry covered it and it has its own row now. The list was
+        # re-read against all 30 before this number moved.
+        #
+        # 27 since the job 3 review of 30 August 2026, which added `packages/usb/src/rehearsal.ts`
+        # and `packages/usb/test/write/rehearsal.test.ts`. Both state the transfer only by naming what an
+        # erase does not carry, and both are inside `packages/usb/`, which the withhold list already
+        # covers whole, so nothing widens: this is the sweep noticing two new files in a withheld
+        # directory. The list was re-read against all 27 before this number moved.
+        # 31 since section 245, which added `packages/usb/test/write/blockwrite.test.ts`: it states the
+        # transfer's chunk size, which is one of the numbers a blind reviewer is meant to derive
+        # off Logitech's client unaided. It is inside `packages/usb/`, which the withhold list
+        # covers whole, so nothing widens. The list was re-read against all 31 before this moved.
+        # 32 since section 249, which added `tests/firmware/test_status_screens.py`: it names the erase and
+        # write handlers, in a negative asserting they do not touch the validator's flag. `tests/`
+        # is withheld whole, so nothing widens. The list was re-read against all 32 before this
+        # number moved.
+        #
+        # **33 since 5 September 2026, section 267**, and the new one is the Harmony 525's memory map,
+        # which acquired the Harmony 525's erase and write mechanism. It was on the **may read**
+        # list at the time, as one of five memory maps named by a glob, so this is the sweep catching
+        # a widening rather than counting a new file: the companion test failed first and this number
+        # moved only after that file was withheld and the glob replaced by four explicit names.
+        #
+        # **34 since 6 September 2026**: `packages/corpus/bin/read-region.ts`, added so a Harmony 525
+        # rehearsal has a whole erase block to compare against. It states none of the sequence and
+        # matched on naming `rehearse-block.ts`, which is the sweep being deliberately broad.
+        #
+        # **35 since 6 September 2026**: `tests/lab.py`, whose comment on the excluded 525 region now
+        # explains that a rehearsal compares a whole erase block. `tests/` is withheld whole, so
+        # nothing widens and this is the sweep counting a marker rather than finding a leak.
+        #
+        # **36 later the same day**, when `docs/roadmap.md` was retired: its numbered decisions became
+        # `docs/decisions.md` and the rest of it `docs/plans/002-the-roadmap.md`, so one withheld file
+        # became two. No new writing, and both are on the list.
+        #
+        # **37 on 29 September 2026**: `todo.md`, whose items for the Harmony 600's and the Harmony
+        # 700's first writes name `rehearse-block.ts`. It is withheld already, as one of the files
+        # that restate the sequence, so nothing widens and the list was re-read before this moved.
+        #
+        # **38 with section 297's review**: `packages/usb/test/write/firmware.test.ts`, whose simulated
+        # remote answers an erase, an announced write, its data packets and its close. It is inside
+        # `packages/usb/`, withheld whole, so nothing widens; the list was re-read before this moved.
+        # 39 since docs/README.md, the document map moved out of CLAUDE.md, which names the write path.
+        # 40 with `.claude/skills/harmony-525/SKILL.md`, whose write procedure names the rehearsal
+        # script. It went on the withhold list in the same commit; the list was re-read first.
+        # 41 with `docs/plans/009-the-reference.md`, which names the rehearsal script and the
+        # interlock among the readers it moves. It went on the withhold list; the list was re-read.
+        # Still 41 after plan 009's step 2.1 cut the USB protocol and the host client document: the
+        # two files that stated the path stopped and `reference/usb-protocol/commands.md` and
+        # `reference/logitech/classic-client.md` started. Both are withheld; the list was re-read.
+        # Still 41 after plan 009's step 3.2 removed the Harmony 525's memory map, which stated the
+        # interlock: `reference/architectures/harmony-5xx/firmware.md` took that text and started
+        # stating it, inside a folder already withheld. The list was re-read.
+        # 40 with plan 009's step 4.5: `reference/logitech/classic-client.md` no longer names the
+        # interlock, since its paragraph on the identity block erase states the unlock the client sends
+        # and leaves the reasoning about an interlock to the documents that own it. It stays withheld,
+        # since it still states the client's write transfer; nothing started stating the path, and the
+        # list was re-read.
+        # 44 with the Harmony 885's compile track: its skill, its test notes, `todo-compile-885.md` and
+        # `tests/harmony_880_885/test_harmony_885_flash_backup.py` name `rehearse-block.ts`. The first three went on the
+        # withhold list; the test sits under `tests/`, already withheld. The list was re-read.
+        # 45 with `todo.md` 7.3.6: `packages/usb/test/package/surface.test.ts` holds the write subpath's names to a
+        # list, `assertFirstWriteAllowed` among them. It is inside `packages/usb/`, withheld whole, so
+        # nothing widens; the list was re-read.
+        # 49 with `todo.md` 7.3.10: `packages/corpus/src/writeconfig.ts`, the configuration write as a library
+        # function, which states the sequence `write-config.ts` stated, and the three test files that drive it
+        # against a fake remote asserting the flash write rail. All four went on the withhold list in the same
+        # commit; the list was re-read.
+        self.assertEqual(len(stating), 49,
+                         'the number of files stating the write path moved, so re-read the withhold '
+                         'list before restamping this: %s' % stating)
+
+
+class TheLabRegisterHookRunsWithoutBeingRemembered(unittest.TestCase):
+    """Section 213: the rule has been written three times and failed eight, so it is a hook now.
+
+    What is asserted is the behaviour that makes it worth having rather than annoying: it interrupts
+    the **first** touch of a lab directory and then stays quiet, it fails open on anything it cannot
+    understand, and both agents are wired to it. Its report is `tools/lab_register.py`, which has its
+    own tests.
+    """
+
+    HOOK = os.path.join(ROOT, 'bin', 'lab-register-hook.py')
+
+    def _run(self, payload, session):
+        body = dict(payload)
+        body['session_id'] = session
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input=json.dumps(body), capture_output=True, text=True, cwd=ROOT)
+        return done.returncode, done.stderr
+
+    def _lab(self):
+        lab = os.environ.get('HARMONY_LAB') or os.path.join(os.path.dirname(ROOT), 'lab')
+        return lab if os.path.isdir(lab) else None
+
+    def setUp(self):
+        # A session id nothing else uses, so the hook's own memory cannot make this test order
+        # dependent. The name carries the test's identity for the same reason.
+        self.session = 'toolchain-test-%d' % os.getpid()
+
+    def test_it_interrupts_the_first_touch_of_a_directory_and_then_stays_quiet(self):
+        if self._lab() is None:
+            self.skipTest('no lab directory, so there is no path to report on')
+        first = os.path.join(self._lab(), 'software', 'classic', 'README.md')
+        if not os.path.exists(first):
+            self.skipTest('the square this test names is not in this lab')
+        code, err = self._run({'tool_input': {'file_path': first}}, self.session)
+        self.assertEqual(code, 2, 'the first touch has to be impossible to scroll past')
+        self.assertIn('lab register', err)
+        # And the retry immediately afterwards goes through, which is what bounds the cost at one
+        # round trip per directory rather than making the square unreadable.
+        again, _ = self._run({'tool_input': {'file_path': first}}, self.session)
+        self.assertEqual(again, 0, 'the retry must succeed or the hook is a wall')
+
+    def test_it_fails_open_on_everything_it_cannot_understand(self):
+        """A reminder that breaks a session is worse than a reminder that is missed."""
+        for name, payload in (
+            ('no tool input', {}),
+            ('a path outside the lab', {'tool_input': {'file_path': 'docs/findings.md'}}),
+            ('an unexpanded variable', {'tool_input': {'command': 'cat $HARMONY_LAB/x'}}),
+            ('a field of the wrong type', {'tool_input': {'file_path': 17}}),
+        ):
+            with self.subTest(case=name):
+                code, _ = self._run(payload, self.session + name)
+                self.assertEqual(code, 0)
+        # Unparseable input, which is the one case that cannot go through the helper above.
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input='not json at all', capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(done.returncode, 0)
+
+    def test_both_agents_are_wired_to_it(self):
+        """A guard installed for one agent is a guard the other walks past.
+
+        `.agents/skills` exists so a second agent runs the same rituals rather than a copy of them,
+        and a hook is the same argument: the check has to be in both files or the next session using
+        the other agent re-derives the ninth occurrence.
+        """
+        for settings in ('.claude/settings.json', '.codex/hooks.json'):
+            with self.subTest(file=settings):
+                with open(os.path.join(ROOT, settings), encoding='utf-8') as handle:
+                    data = json.load(handle)
+                commands = [h['command']
+                            for entry in data['hooks']['PreToolUse'] for h in entry['hooks']]
+                self.assertTrue(any('lab-register-hook.py' in c for c in commands),
+                                '%s does not run the register hook' % settings)
+                # And it must be reached by the tools that actually open a file, not by Bash alone:
+                # both re-derivations in section 213 read their files through Read and Grep.
+                matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
+                            if any('lab-register-hook.py' in h['command'] for h in entry['hooks'])]
+                self.assertTrue(any('Read' in m and 'Grep' in m for m in matchers), matchers)
+
+
+class TheFindingGateHookFires(unittest.TestCase):
+    """The finding skill is invoked by judgement, and judgement has a blind spot.
+
+    Added 6 September 2026. The four places do land, measured over the last 33 commits that added a
+    findings section: every one of them touched a test. What the convention cannot reach is a
+    **passenger**, a sentence written beside a finding and never itself put to any check. Section 271
+    passed its own gate honestly and carried one anyway, a corpus total quoted as a fact about one
+    remote, and it took a person asking what the number counted.
+
+    Same shape as the lab register hook and for the same recorded reason: a check that has to be
+    remembered is a check that gets skipped under momentum.
+    """
+
+    HOOK = os.path.join(ROOT, 'bin', 'finding-gate-hook.py')
+
+    def _run(self, payload, session):
+        body = dict(payload)
+        body['session_id'] = session
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input=json.dumps(body), capture_output=True, text=True, cwd=ROOT)
+        return done.returncode, done.stderr
+
+    def setUp(self):
+        self.session = 'finding-gate-test-%d' % os.getpid()
+
+    #: A fact as the finding skill lands it since the archive froze: a sentence on its reference page
+    #: and a footnote naming the test that holds it.
+    FACT = '\nA thing established[^t-something].\n\n[^t-something]: Measured in configurations. [The test](../../tests/test_x.py)\n'
+
+    def test_a_new_tested_fact_interrupts_once_and_the_retry_goes_through(self):
+        payload = {'tool_input': {'file_path': 'reference/config-format/state.md', 'new_string': self.FACT}}
+        code, err = self._run(payload, self.session)
+        self.assertEqual(code, 2, 'a new tested fact has to be impossible to scroll past')
+        # The two things the gate above does not cover on its own, which is why the hook says more
+        # than "run the skill".
+        self.assertIn('reviewers', err)
+        self.assertIn('WHOLE DIFF', err)
+        again, _ = self._run(payload, self.session)
+        self.assertEqual(again, 0, 'the retry must succeed or the hook is a wall')
+
+    def test_it_stays_out_of_the_way_of_everything_else(self):
+        """It fires on one edit and no other, or it becomes noise and gets disabled.
+
+        The archive's own section heading is among the quiet cases now: `docs/findings.md` is frozen,
+        so a section written there is a different mistake and not a finding being recorded.
+        """
+        for name, payload in (
+            ('an ordinary edit to a reference page',
+             {'tool_input': {'file_path': 'reference/config-format/state.md',
+                             'new_string': 'a corrected sentence[^s331]'}}),
+            ('a footnote citing a section, not a test',
+             {'tool_input': {'file_path': 'reference/config-format/state.md',
+                             'new_string': '\n[^s331]: Read in the firmware. [Section 331](x)\n'}}),
+            ('a tested fact outside the reference',
+             {'tool_input': {'file_path': 'docs/status.md', 'new_string': self.FACT}}),
+            ('a section heading in the archive',
+             {'tool_input': {'file_path': 'docs/findings.md', 'new_string': '\n## 999. A thing\n'}}),
+            ('no tool input', {}),
+            ('a field of the wrong type', {'tool_input': {'file_path': 17}}),
+        ):
+            with self.subTest(case=name):
+                code, _ = self._run(payload, self.session + name)
+                self.assertEqual(code, 0)
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input='not json at all', capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(done.returncode, 0, 'a reminder that breaks a session is worse than none')
+
+    def test_it_sees_a_document_written_through_the_shell(self):
+        """The hole this hook shipped with, found by the first finding written after it.
+
+        It matched the file writing tools alone, and a session under the shell-first instruction
+        appends to a document with a heredoc. So the section landed and the reminder did not. The lab
+        register hook has carried `command` since it was written, for the same reason and with the
+        same loose text match: there is no path to resolve inside a pipeline.
+        """
+        heredoc = 'cat >> reference/config-format/state.md <<EOF%sEOF' % self.FACT
+        code, err = self._run({'tool_input': {'command': heredoc}}, self.session + 'shell')
+        self.assertEqual(code, 2, 'a heredoc that appends a tested fact has to fire it')
+        self.assertIn('reviewers', err)
+        # Two kinds of control, and they are different claims. The first two name the reference and
+        # write no footnote definition, so they reach the footnote check and it says no: reading and
+        # grepping are not writing. The third names no file at all, so it is refused one step earlier,
+        # by the name match. Both matter, because the name match is deliberately loose text and
+        # cannot resolve a path inside a pipeline.
+        for name, command in (
+            ('reading it', 'sed -n 1,40p reference/config-format/state.md'),
+            ('grepping it', 'grep -rn "t-something" reference/'),
+            ('naming no file', 'make prose facts'),
+        ):
+            with self.subTest(case=name):
+                quiet, _ = self._run({'tool_input': {'command': command}}, self.session + name)
+                self.assertEqual(quiet, 0)
+
+    def test_both_agents_reach_it_through_the_shell_as_well(self):
+        """The matcher half of the hole above: widening the script and not the matcher fixes nothing."""
+        for settings in ('.claude/settings.json', '.codex/hooks.json'):
+            with self.subTest(file=settings):
+                with open(os.path.join(ROOT, settings), encoding='utf-8') as handle:
+                    data = json.load(handle)
+                matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
+                            if any('finding-gate-hook.py' in h['command'] for h in entry['hooks'])]
+                self.assertTrue(any('Bash' in m for m in matchers), matchers)
+
+    def test_it_finds_a_fact_however_the_edit_spells_its_content(self):
+        """Edit, Write and the multi-edit form name the new text differently.
+
+        A missed spelling is a missed reminder and nothing would ever say so, which is the failure
+        mode this whole class exists to avoid.
+        """
+        page = 'reference/config-format/state.md'
+        for name, tool_input in (
+            ('Write', {'file_path': page, 'content': self.FACT}),
+            ('Edit', {'file_path': page, 'new_string': self.FACT}),
+            ('MultiEdit', {'file_path': page, 'edits': [{'old_string': 'x', 'new_string': self.FACT}]}),
+        ):
+            with self.subTest(tool=name):
+                code, _ = self._run({'tool_input': tool_input}, self.session + name)
+                self.assertEqual(code, 2, '%s spells its content differently and must still fire' % name)
+
+    def test_it_agrees_with_the_reference_guard_about_what_a_test_footnote_is(self):
+        """Two readers of one label shape is the state this repository's oldest rule forbids.
+
+        `tools/reference_guards.py` decides which footnote labels are legal and this hook fires on the
+        `t-` ones, so a disagreement would show as the hook going quiet on a label the guard accepts.
+        Checked over every definition the reference holds, so neither reader can agree with the other
+        by both matching nothing.
+        """
+        spec = importlib.util.spec_from_file_location('finding_gate_hook', self.HOOK)
+        hook = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(hook)
+        guards_spec = importlib.util.spec_from_file_location(
+            'reference_guards', os.path.join(ROOT, 'tools', 'reference_guards.py'))
+        guards = importlib.util.module_from_spec(guards_spec)
+        guards_spec.loader.exec_module(guards)
+        seen = 0
+        for folder, _, files in os.walk(os.path.join(ROOT, 'reference')):
+            for name in files:
+                if not name.endswith('.md'):
+                    continue
+                with open(os.path.join(folder, name), encoding='utf-8') as handle:
+                    for line in handle:
+                        found = guards.FOOTNOTE_DEFINITION.match(line.rstrip('\n'))
+                        if not found or not guards.LABEL.match(found.group(1)):
+                            continue
+                        is_test = found.group(1).startswith('t-')
+                        self.assertEqual(bool(hook.FINDING.match(line)), is_test, line)
+                        seen += is_test
+        self.assertTrue(seen, 'the reference cites no test at all')
+
+    def test_both_agents_are_wired_to_it(self):
+        """A guard installed for one agent is a guard the other walks past."""
+        for settings in ('.claude/settings.json', '.codex/hooks.json'):
+            with self.subTest(file=settings):
+                with open(os.path.join(ROOT, settings), encoding='utf-8') as handle:
+                    data = json.load(handle)
+                commands = [h['command']
+                            for entry in data['hooks']['PreToolUse'] for h in entry['hooks']]
+                self.assertTrue(any('finding-gate-hook.py' in c for c in commands),
+                                '%s does not run the finding gate hook' % settings)
+                # It has to be on the tools that write a document. Bash alone would miss every
+                # ordinary edit, which is how a findings section is actually added here.
+                matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
+                            if any('finding-gate-hook.py' in h['command'] for h in entry['hooks'])]
+                self.assertTrue(any('Edit' in m and 'Write' in m for m in matchers), matchers)
+
+    def test_the_skill_carries_the_two_reviewers(self):
+        """The hook points at the skill, so the skill has to hold what the hook promises."""
+        with open(os.path.join(ROOT, '.claude', 'skills', 'finding', 'SKILL.md'),
+                  encoding='utf-8') as handle:
+            skill = handle.read()
+        for wanted in ('Reviewer 1', 'Reviewer 2', 'blind', 'granularity', 'whole diff'):
+            self.assertIn(wanted, skill, 'the finding skill no longer describes %r' % wanted)
+
+
+class TheTestOutputHookKeepsTheBandFed(unittest.TestCase):
+    """A test run's output reaches the file the band above the prompt reads, or the command is refused.
+
+    Added 8 November 2026. The harmony-remote mod follows a test run by reading the output file of the
+    shell that started it. A rule in memory against piping test output existed since 30 October, and three
+    full runs in a row were redirected to a file of the session's own instead, which the rule did not
+    name and which blinded the bar the same way. So `bin/test-output-hook.py` refuses the command, every
+    time, and these tests hold what it refuses and what it lets through. The refused cases include the
+    three exact shapes that were sent; the allowed ones include the shapes this session uses daily that
+    only look alike, a grep over a saved file and a pgrep naming the runners in a quoted pattern.
+    """
+
+    HOOK = os.path.join(ROOT, 'bin', 'test-output-hook.py')
+
+    def _run(self, command):
+        payload = {'tool_name': 'Bash', 'tool_input': {'command': command}}
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input=json.dumps(payload), capture_output=True, text=True, cwd=ROOT)
+        return done.returncode, done.stderr
+
+    def test_a_test_run_piped_or_redirected_is_refused_naming_the_band(self):
+        for command in (
+            'node --test packages/codec/test/a.test.ts 2>&1 | tail -8',
+            'node --test x.test.ts | grep -E "pass"',
+            '(NO_COLOR=1 make test > $CLAUDE_JOB_DIR/tmp/py3.txt 2>&1; echo "exit $?" >> x)',
+            '(NO_COLOR=1 make ts-test > $CLAUDE_JOB_DIR/tmp/ts3.txt 2>&1; echo done)',
+            'make ts-test &> out.txt',
+            'python3 -m unittest tests.test_x > /dev/null',
+            'pnpm test >> log.txt',
+            '(make test; make ts-test) > file',
+            'NO_COLOR=1 python3 -m unittest tests.project.test_reference |& tail -2',
+        ):
+            with self.subTest(command=command):
+                code, err = self._run(command)
+                self.assertEqual(code, 2, 'a hidden test run has to be refused, not reminded about')
+                self.assertIn('band above the prompt', err)
+                self.assertIn('run_in_background', err)
+
+    def test_a_bare_run_and_commands_that_only_look_alike_go_through(self):
+        for command in (
+            'NO_COLOR=1 make test',
+            'NO_COLOR=1 make test; NO_COLOR=1 make ts-test',
+            'python3 -m unittest tests.test_x 2>&1',
+            'node --test a.test.ts 2> err.txt',
+            'make test || echo failed',
+            'echo {} | python3 -m unittest tests.test_a',
+            'make prose 2>&1 | tail -1',
+            'make tests > x',
+            'git commit -m "run make test | tail to see"',
+            'grep -E "pass|fail" $CLAUDE_JOB_DIR/tmp/ts3.txt',
+            'pgrep -fl "unittest discover|pnpm test|node --test" | head -3',
+            "git commit -q -F - <<'EOF'\nnode --test x | tail\nEOF\ngit log -1",
+        ):
+            with self.subTest(command=command):
+                code, _ = self._run(command)
+                self.assertEqual(code, 0)
+
+    def test_it_fails_open_on_a_payload_it_cannot_read(self):
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'], input='not json',
+                              capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(done.returncode, 0, 'a broken hook must not stop a session')
+
+    def test_the_settings_put_it_in_front_of_the_shell(self):
+        with open(os.path.join(ROOT, '.claude', 'settings.json'), encoding='utf-8') as handle:
+            data = json.load(handle)
+        matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
+                    if any('test-output-hook.py' in h['command'] for h in entry['hooks'])]
+        self.assertEqual(matchers, ['Bash'])
+
+
+if __name__ == '__main__':
+    unittest.main()

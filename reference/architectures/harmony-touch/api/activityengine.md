@@ -138,6 +138,6 @@ does not make. The one thing this group reports from the configuration is the ru
 * Everything in mode 3: the programs, the rules, the sun and the location[^unchecked].
 * Other host names, other modes, other builds and other products of the generation[^unchecked].
 
-[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
-[^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)
+[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_engine.py)
+[^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-host.test.ts)
 [^unchecked]: Not checked.

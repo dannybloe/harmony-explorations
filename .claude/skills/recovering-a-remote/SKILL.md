@@ -45,7 +45,7 @@ Its section below has the route.
 firmware's status screens are a library of 30 on the Harmony One and 35 on the Harmony 600, 650 and 700,
 three of them about the configuration and three **different** screens: an invalid configuration, a
 corrupted one, and a request to go to the website and update settings, `reference/config-format/screens.md`
-"Status screens", with the list in `packages/codec/test/status.test.ts`. **What selects a screen is read**,
+"Status screens", with the list in `packages/codec/test/screens/status.test.ts`. **What selects a screen is read**,
 section 249: a status code, the same number on every architecture, plus a base per container. Cookies that
 do not match give code 0, "Go to Website to update settings"; cookies that match with a trailer checksum
 that does not give code 26, "Configuration Corrupted". This said "what selects a screen is unread" until
@@ -165,9 +165,9 @@ wrong or is about to.
 
 **Read before any write to this family, and before anything near its safe mode.** What the firmware does
 is `reference/architectures/harmony-300-350/firmware.md` "Safe mode and recovery" and `usb.md` "What the
-firmware does with a write", and the argument is the headers of `tests/test_harmony_350_boot.py` (the
-bootloader and safe mode, read off the bench Harmony 350), `tests/test_harmony_350_recovery.py` (the
-application's side) and `tests/test_harmony_350_file_write.py`. One build, 1.4, and the bench 350's own two
+firmware does with a write", and the argument is the headers of `tests/harmony_300_350/test_harmony_350_boot.py` (the
+bootloader and safe mode, read off the bench Harmony 350), `tests/harmony_300_350/test_harmony_350_recovery.py` (the
+application's side) and `tests/harmony_300_350/test_harmony_350_file_write.py`. One build, 1.4, and the bench 350's own two
 images; the Harmony 300's bootloader and safe mode have not been read. None of the routes below has been
 run on a unit.
 
@@ -275,7 +275,7 @@ put the remote's own six back, a 19 chunk write, both committed and acted on, an
 again; the remote now holds tags of ours for all six documents, which matters to step 7 below; the delete has never been sent, and the only other
 recovery a Touch has been through was Logitech's hidden recovery tool, `docs/test-notes/harmony-touch.md`. The facts are
 `reference/architectures/harmony-touch/firmware.md` "Recovery", the argument is the header of
-`tests/test_harmony_touch_recovery.py`, and the working note with every file and line is the lab's
+`tests/harmony_touch/test_harmony_touch_recovery.py`, and the working note with every file and line is the lab's
 `work/touch-firmware/notes/6.1-recovery.md`. How a sync is answered at all is `answering-a-sync.md` in the
 same folder.
 
@@ -315,21 +315,21 @@ entry's type name the reader searches, or holds any other field the reader leans
 Measured twice: after 6.7's stop, cleared by the steps below, and after 8.5's first try, stopped on a USB read
 timeout inside its first write, the remote leaving the bus and seen restarting, where the read answered 200 with the
 set before's tags and the same set sent again was committed, nothing else sent; what made that one stop is not known,
-`packages/bench/test/touch-removal-runs.test.ts`. **Press Off before a sync that takes out an activity or a device, or
+`packages/bench/test/harmony-touch/touch-removal-runs.test.ts`. **Press Off before a sync that takes out an activity or a device, or
 replaces them all**, so none runs while its documents change, and if a committed removal or whole setup misbehaves,
 the put back of the set before is the repair: an ordinary sync, not a restart, depending on nothing the set changed.
 8.6's whole setup, every device and activity under a new id, needed no repair and was put back by such a sync as planned,
-`packages/bench/test/touch-setup-runs.test.ts`. **A put back after a set with no favourites activity carries the
+`packages/bench/test/harmony-touch/touch-setup-runs.test.ts`. **A put back after a set with no favourites activity carries the
 favourites documents as well**: 9.2's empty set made the remote ask for none, and by the reading its commit dropped
 them, so its put back delivered all three with 200 beside the four, `emptyBackOf` in
 `packages/corpus/experiments/touchemptyset.ts`; a restart on the empty set was safe, the remote starting on it with its
-configuration task answering, `packages/bench/test/touch-empty-runs.test.ts`. **Change nothing on the remote's screens
+configuration task answering, `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`. **Change nothing on the remote's screens
 between a set and its put back**: a change there, a background chosen in the picker among them, is handed up at the put
 back's hand over, and the answerer then stops before the sync request, since the set holds that document. By the
 answerer's reading the hand over has committed by then, under a tag of ours, and no sync is marked running, so the
 read answers 200 and running the same put back again reverts the change; never run that way on a unit,
 `packages/corpus/src/touchsync.ts`. 9.4's set from nothing, every device record and definition ours, needed no repair,
-`packages/bench/test/touch-from-nothing-runs.test.ts`. **Keep any other remote off the bus during a long write**: 8.5's stopped
+`packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`. **Keep any other remote off the bus during a long write**: 8.5's stopped
 try had a second remote enumerated beside it; that is not a cause, only a variable worth removing.
 **202 needs `touch-recover.ts --step abort`, that read again, then `--step reboot`**, each a run of its own,
 each answer read before the next. The reboot is not optional after a host's abort: by the preflight's reading
@@ -462,7 +462,7 @@ written to either yet, so this section is still what a recovery would consist of
 the 880's and the 885's; none of it has been run on a unit, and no command has been sent to a bootloader on
 any remote. The facts are `reference/architectures/harmony-880-885/firmware.md`, `memory.md` and `usb.md`,
 and `reference/usb-protocol/bootloader.md` "The Harmony 880 and 885"; the arguments are the headers of
-`tests/test_harmony_885_bootloader.py`, `test_harmony_885_start_check.py`,
+`tests/harmony_880_885/test_harmony_885_bootloader.py`, `test_harmony_885_start_check.py`,
 `test_harmony_885_erase_and_write.py`, `test_harmony_885_write_end.py` and `test_harmony_885_reads.py`.
 
 **There is no safe mode image here, and two things do its work.** The bootloader, the bottom 64 KiB, is a
@@ -588,7 +588,7 @@ The route, in order:
   client and concordance disagree and no datasheet was compared.
 * Whether holding 2 or 33 at power on works as read, and whether holding all three through a restart
   leaves the remote in its bootloader. On an 885 the three are Power (2), OK (33) and 0 (32), pressed on a
-  unit, `tests/test_harmony_885_keys.py`; an 880's keys were not pressed.
+  unit, `tests/harmony_880_885/test_harmony_885_keys.py`; an 880's keys were not pressed.
 * What sits at `0x1D0000` on a unit, and what could interrupt a staged copy and leave status 4 or 7.
 * Whether the board has in circuit programming pads, and whether the bottom 64 KiB is in the processor or
   in the external part.

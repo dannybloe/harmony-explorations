@@ -3,7 +3,7 @@
  *
  * **Why this exists.** Until plan 009's step 3.3 the scan code of each key the calibration configurations
  * reach was a Markdown table, `reference/button-maps.md`, and five readers in two languages parsed it back
- * out: `bin/catalogue.ts`, `test/catalogue.test.ts` and `test/irframe.test.ts` here, the silhouettes'
+ * out: `bin/catalogue.ts`, `test/catalogue/catalogue.test.ts` and `test/infrared/irframe.test.ts` here, the silhouettes'
  * own model test and a Python test. The drawings already held the same codes, so the table was a second
  * copy kept in step by a test. The codes are the drawings' data now and these readers take them from
  * there, which leaves one copy.

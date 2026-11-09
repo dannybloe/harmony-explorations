@@ -14,7 +14,7 @@ packages:
 # pkg-prebuilds), maintained under the node-hid organisation, no advisories.
 # playwright is **not** approved here, on purpose. Its install step downloads a browser, and the page
 # test does not need it to: `channel: 'chrome'` drives the Chrome that is already on the machine, and
-# `packages/bench/test/page.test.ts` skips cleanly when no browser is found. So the dependency is two
+# `packages/bench/test/instrument/page.test.ts` skips cleanly when no browser is found. So the dependency is two
 # npm packages, playwright and playwright-core, and nothing runs at install time. Approving the
 # download would be a separate decision.
 allowBuilds:

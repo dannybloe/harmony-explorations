@@ -205,8 +205,8 @@ the path is what would be handed over. **None of this has been sent to a remote*
 * What sends `proxy.error`, and what the screens do on it[^unchecked].
 * The hubs' and mode 4's branches, read only[^unchecked].
 
-[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_setup.py)
-[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
-[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-first-sync.test.ts)
-[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-second-sync.test.ts)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
+[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_engine.py)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-first-sync.test.ts)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-second-sync.test.ts)
 [^unchecked]: Not checked.

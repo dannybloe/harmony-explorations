@@ -108,7 +108,7 @@ const ROCKERS: readonly Rocker[] = [
  * `scan` is present on 38 keys and `scanFrom` names the section behind each: those 36, and the two page
  * strips beside the screen, from the touch hit map, section 125. Until plan 009's step 3.3 the 32 were
  * a table in `reference/button-maps.md` that this file had to agree with; they are this file's data now,
- * and `packages/codec/test/irframe.test.ts` checks each one against the frame it sends in the
+ * and `packages/codec/test/infrared/irframe.test.ts` checks each one against the frame it sends in the
  * calibration configuration.
  */
 const KEYS: readonly Key[] = [

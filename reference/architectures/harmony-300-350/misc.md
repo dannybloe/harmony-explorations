@@ -38,4 +38,4 @@ device's `DeviceId` and the ZIP's time, [the metadata archive](../../config-form
 [^s353]: Measured in configurations. [Section 353](../../../docs/findings.md#s353)
 [^s260]: Measured in configurations. [Section 260](../../../docs/findings.md#s260)
 [^s197]: Stated by Logitech, in their client. [Section 197](../../../docs/findings.md#s197)
-[^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/test_harmony_300_350_images.py)
+[^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_300_350_images.py)

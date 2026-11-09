@@ -12,7 +12,7 @@
  * it needs Oxanium's files, which since 7.3.5 only the Node entry supplies. The alphabet is a function of the
  * font and of `lettering.ts`'s faces alone, so it is computed here once, `oxaniumAlphabetFromFont`, and
  * written as `packOxaniumAlphabet` encodes it. Run this with `--write` after any change to the faces, the
- * weights, the characters or the way a form or a structure is read; `test/oxaniumalphabet.test.ts` fails until
+ * weights, the characters or the way a form or a structure is read; `test/screens/oxaniumalphabet.test.ts` fails until
  * then.
  *
  * The check compares the decoded tables and not the text, because the text is Node's deflate of them and a
@@ -46,7 +46,7 @@ const text = `/**
  * Our own letters' alphabet, \`oxaniumAlphabet\` in \`text.ts\`: per form and per structure the characters it
  * draws, and per form the faces and weights that draw it, computed from Oxanium by \`oxaniumAlphabetFromFont\`
  * so a configuration is read with no font supplied. The tables' JSON deflated and in base64,
- * \`packOxaniumAlphabet\`, since as JSON they are 4.2 MB. \`test/oxaniumalphabet.test.ts\` holds this to the font.
+ * \`packOxaniumAlphabet\`, since as JSON they are 4.2 MB. \`test/screens/oxaniumalphabet.test.ts\` holds this to the font.
  */
 export const OXANIUM_ALPHABET_TABLES: string = [
 ${lines.join('\n')}

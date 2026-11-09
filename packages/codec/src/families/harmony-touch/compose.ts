@@ -77,7 +77,7 @@ import type { StatedProtocol } from '../../infrared/protocols.ts';
 /**
  * The names a Touch's documents give its 26 keys: the drawing's 27 keypad keys less Off, which the screens
  * handle themselves, with the DVR key spelt as the documents spell it. Held against the measured documents
- * in `test/touch-compose.test.ts` and in `packages/usb/test/touch-activities.test.ts`; the drawing's keypad less
+ * in `test/families/harmony-touch/touch-compose.test.ts` and in `packages/usb/test/touch/touch-activities.test.ts`; the drawing's keypad less
  * Off is where the list was read from, and no test compares it with the drawing.
  */
 export const BUTTON_KEYS = [

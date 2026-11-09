@@ -63,7 +63,7 @@
  * spellings of the name at six capacities and none fits better than chance.
  *
  * `describeStateTables` reads a description back off a laid out container, so that what is generated
- * can be checked against Logitech's own: `test/statetables.test.ts` rebuilds all thirteen byte for
+ * can be checked against Logitech's own: `test/assembly/statetables.test.ts` rebuilds all thirteen byte for
  * byte, every byte the generator owns overwritten first.
  *
  * Read only towards hardware, like everything in this package. The result is pieces in memory.

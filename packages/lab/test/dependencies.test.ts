@@ -283,7 +283,7 @@ test('the test kit is a development dependency only, and nothing but a test impo
   }
   assert.deepEqual(offending, []);
   // The control: the specifier is seen where it is used, a surface test, so an empty list above is real.
-  assert.ok(found.includes('codec/test/surface.test.ts'), 'the codec\'s surface test reads names through the kit');
+  assert.ok(found.includes('codec/test/package/surface.test.ts'), 'the codec\'s surface test reads names through the kit');
 });
 
 test('a library\'s src loads @harmony/lab in exactly the modules listed, each with why', () => {

@@ -123,7 +123,7 @@ export const HARMONY_650_PICTURES: readonly PictureEntry[] = [
  * 84, two rows into the first one's cell at y 82 (`activityscreen.ts`). So the icon is drawn 42 high and
  * centred in that band: its whole grid square, rows 38 to 79, lies inside it, so any icon chosen clears a
  * title of two lines and the fixed lines whatever the title, rather than being sized per screen. Ours
- * covers rows 38 to 78, five rows clear of both; `test/icons.test.ts` holds the clearance.
+ * covers rows 38 to 78, five rows clear of both; `test/drawing/icons.test.ts` holds the clearance.
  */
 export const OUR_PICTURE_PLACES = {
   'start up picture': { width: 128, height: 128, centre: [64, 59], size: 42, opaque: true },

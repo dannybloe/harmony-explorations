@@ -7,14 +7,14 @@ the test `packages/bench/irtests/done/300-4-3-350-compile.json` is to be pressed
 This is what that run should hear, written down and committed before it, so the run can refute it.
 
 **Where the prediction comes from.** The two remotes are one moulding and run one program, linked twice with
-one change, `tests/test_harmony_300_350_images.py`. The 300's keys raise the codes of the 350's keys in the
+one change, `tests/harmony_300_350/test_harmony_300_350_images.py`. The 300's keys raise the codes of the 350's keys in the
 same place, 49 of them heard, `reference/remotes/harmony-300/keys.md`. A configuration is a program for that
 firmware and nothing in either build reads which model a configuration states,
-`tests/test_harmony_350_skin.py`. So the prediction is that **the file does on the 300 what it does on the
+`tests/harmony_300_350/test_harmony_350_skin.py`. So the prediction is that **the file does on the 300 what it does on the
 350, key for key**, with the keys read by place: the 350's TV/Media, Cable/PC, AVR/Game and DVD/Music are the
 300's TV, Cable/Sat, DVD and VCR/Aux (top left, top right, bottom left, bottom right), the 350's favourite
 block is the European 300's (below), and the colour keys are not pressed. What each press sends is read out
-of the file by the 350's own test, `packages/bench/test/setup350.test.ts`, and is not derived again.
+of the file by the 350's own test, `packages/bench/test/harmony-300-350/setup350.test.ts`, and is not derived again.
 
 ## The predictions
 
@@ -86,7 +86,7 @@ swapped, that is the finding and the channel heard names the code. *Falsified by
 **P7. A send from groups 4 to 7 changes a pin's list and no code.** The four long press devices send from
 groups 4 to 7. On the 300 that send raises firmware event `0x2D`, group 0's, where the 350 raises `0x30`,
 group 3's; each event's list in this file is one list on one output pin and nothing else,
-`tests/test_harmony_300_350_send_events.py`, so **every code of steps 2, 4, 6 and 8 is the 350's, and the
+`tests/harmony_300_350/test_harmony_300_350_send_events.py`, so **every code of steps 2, 4, 6 and 8 is the 350's, and the
 only difference is the pin**. A receiver cannot hear that, and what the pins drive is not known, though the
 manual says the Device buttons light while the remote sends. If they are the device key lights, then while a
 group 4 to 7 device sends (the up key of step 2, Exit of step 4, the 1 of step 6, Stop of step 8) the same
@@ -96,7 +96,7 @@ lights as an observation with no verdict, since the mapping of pins to lights is
 the lights are those pins,* by a long press device sending with the KPN's light and not the LG TV's. If no key
 lights in any step, the half about lights is not tested.
 
-> **Result, added after the run: P7 was wrong<!--superseded-->.** The group 4 send raises event `0xFF`, not `0x2D`, and nothing is bound to it, so the send never starts; `tests/test_harmony_300_group_4_send.py`, `docs/test-notes/harmony-300.md` 4.3. The prediction stays as written.
+> **Result, added after the run: P7 was wrong<!--superseded-->.** The group 4 send raises event `0xFF`, not `0x2D`, and nothing is bound to it, so the send never starts; `tests/harmony_300_350/test_harmony_300_group_4_send.py`, `docs/test-notes/harmony-300.md` 4.3. The prediction stays as written.
 
 **P8. Teletext is code 11.** In the KPN's mode the key sends channel 3 (P6). Its press in the TV's mode, not
 tested here, was heard as the TV's Teletext.
@@ -115,10 +115,10 @@ two images disagree. The colour keys and the rest of the 350's key table were he
 ## Results, added after the runs
 
 The predictions above stay as written. Three runs of the file as Logitech compiled it, each ending at the first
-send from group 4 (`docs/test-notes/harmony-300.md` 4.3); then, after `tests/test_harmony_300_group_4_send.py` read why,
+send from group 4 (`docs/test-notes/harmony-300.md` 4.3); then, after `tests/harmony_300_350/test_harmony_300_group_4_send.py` read why,
 the same file with one entry added, firmware event `0xFF` bound in key map 0 to the list event `0x30` runs, the
 trace's prediction (c). That file was run through the whole test once, with steps 1 and 2 done again and step 6
-done again live (`packages/bench/test/eventff300.test.ts`). **Scored on the file with the entry, unless it says
+done again live (`packages/bench/test/harmony-300-350/eventff300.test.ts`). **Scored on the file with the entry, unless it says
 otherwise:**
 
 * **P1, the write is accepted: holds**, for both files. The 300's configuration file took 118513 bytes and 118517,

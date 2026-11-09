@@ -171,7 +171,7 @@ rest is on [the Harmony 700's memory page](../../remotes/harmony-700/memory.md)[
 [^s281]: Read in the firmware. [Section 281](../../../docs/findings.md#s281)
 [^s88b]: Measured on a unit. [Section 88](../../../docs/findings.md#s88)
 [^s281b]: Measured on a unit. [Section 281](../../../docs/findings.md#s281)
-[^t-memory-map]: Measured in configurations. [The test](../../../tests/test_memory_map.py)
+[^t-memory-map]: Measured in configurations. [The test](../../../tests/firmware/test_memory_map.py)
 [^s295]: Measured on a unit. [Section 295](../../../docs/findings.md#s295)
 [^s297]: Measured on a unit. [Section 297](../../../docs/findings.md#s297)
 [^s282]: Read in the firmware. [Section 282](../../../docs/findings.md#s282)
@@ -190,7 +190,7 @@ rest is on [the Harmony 700's memory page](../../remotes/harmony-700/memory.md)[
 [^s226]: Measured on a unit. [Section 226](../../../docs/findings.md#s226)
 [^s22]: Measured on a unit. [Section 22](../../../docs/findings.md#s22)
 [^s150]: Stated by Logitech, in their client. [Section 150](../../../docs/findings.md#s150)
-[^t-memory-map-client]: Stated by Logitech, in their client. [The test](../../../tests/test_memory_map.py)
+[^t-memory-map-client]: Stated by Logitech, in their client. [The test](../../../tests/firmware/test_memory_map.py)
 [^s304]: Read in the firmware. [Section 304](../../../docs/findings.md#s304)
 [^s283]: Read in the firmware. [Section 283](../../../docs/findings.md#s283)
 [^s386]: Measured on a unit. [Section 386](../../../docs/findings.md#s386)
@@ -206,4 +206,4 @@ rest is on [the Harmony 700's memory page](../../remotes/harmony-700/memory.md)[
 [^unchecked]: Not checked.
 [^s108]: Read in the firmware. [Section 108](../../../docs/findings.md#s108)
 [^s109]: Measured on a unit. [Section 109](../../../docs/findings.md#s109)
-[^t-885-log]: Read in the firmware. [The test](../../../tests/test_harmony_885_log_area.py)
+[^t-885-log]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_log_area.py)

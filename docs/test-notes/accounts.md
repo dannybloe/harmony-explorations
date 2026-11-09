@@ -117,11 +117,11 @@ directions, section 145: Logitech names 36 buttons for the One and 40 for the 60
 * the scan code of each key is the drawing's data, `packages/silhouettes/src/models/one.ts` and `h600.ts`,
   each with the archive section behind it, generated into the keys pages of `reference/remotes/`;
 * the frames each button sends in the two configurations are `FRAMES` in
-  `packages/codec/test/irframe.test.ts`, which checks every drawn code against them;
+  `packages/codec/test/infrared/irframe.test.ts`, which checks every drawn code against them;
 * the derivation, its three rules and the four arrow keys left open are section 133, the completeness check
   section 145, the arrow decisions sections 323 and 398;
 * the account data itself stays in the lab, in `work/myharmony/responses/` with the replies
-  `GET_MapList_skin54.json` and `GET_MapList_skin71.json` that `tests/test_host_client.py` reads, and so
+  `GET_MapList_skin54.json` and `GET_MapList_skin71.json` that `tests/logitech/test_host_client.py` reads, and so
   does the instrument,
   `work/myharmony/buttonmap.ts`, which imports the repository's own decoder rather than carrying a second
   copy of it.
@@ -169,7 +169,7 @@ changed, recorded in the lab's `reads/20261102T1524Z-touch-reverse-sync/`.
 on 7 October 2026 through one account entry of each of six models, the Harmony One (skin 54), 600 (71),
 650 (72), 700 (66), 300 (79) and 350 (104), with `GetProductButtonList` for each as well. The answers are
 filed in the lab's `work/myharmony/responses-per-model/`, one file per model and operation, and
-`tests/test_product_capabilities.py` reads the capability answers and asserts every field each model's
+`tests/logitech/test_product_capabilities.py` reads the capability answers and asserts every field each model's
 features page states, so those rows carry that test as their footnote. Until plan 009's step 3.4 the
 answers were transcribed in `reference/capabilities.md` and held by no test, and the six features pages
 marked the rows resting on them not checked.

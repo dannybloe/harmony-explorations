@@ -141,11 +141,11 @@ testing only"[^s198], and a Touch has no file at the Harmony 300 and 350's confi
 [^s202]: Stated by Logitech, in their client. [Section 202](../../../docs/findings.md#s202)
 [^s135]: Stated by Logitech, in their client. [Section 135](../../../docs/findings.md#s135)
 [^s200]: Measured on a unit. [Section 200](../../../docs/findings.md#s200)
-[^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync.test.ts)
-[^t-templates-hlapi]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py)
-[^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch-sync-both-ways.test.ts)
-[^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
-[^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_favourites.py)
-[^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_setup.py)
-[^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-sync.test.ts)
+[^t-templates-hlapi]: Stated by Logitech, in their client. [The test](../../../tests/logitech/test_client_templates.py)
+[^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-sync-both-ways.test.ts)
+[^t-client-reverse-sync]: Stated by Logitech, in their client. [The test](../../../tests/logitech/test_client_templates.py), class `TheClientAsksForTheRemotesChangesOnlyWithNothingPending`
+[^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_favourites.py)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-first-sync.test.ts)
 [^unchecked]: Not checked.

@@ -247,7 +247,7 @@ and leaves the footnote. Line numbers are as the inventory read them; the split 
 | `docs/emulator-design.md`, `docs/lab-excavation.md`, `docs/review-before-first-write.md`, `docs/recipe.md`, `docs/decisions.md`, `docs/README.md` | stay; `docs/README.md` rows naming moved files rewritten in 2.1; decision 16's body keeps its arch 8 and 10 facts as its record, restated with footnotes in A8/ and A10/ (3.5) | 2.1 |
 | `docs/findings.md` | stays, frozen; anchors and link corrections only | 2.2 |
 | `docs/plans/*` | stay; link targets corrected only | 2.1 |
-| `README.md` | stays; "Where we stand" becomes a pointer to `docs/status.md`; the details table names `reference/`; the backup block's `concordance -f` wording corrected (the block is read by `tests/test_concordance_notes.py`) | 6.1 |
+| `README.md` | stays; "Where we stand" becomes a pointer to `docs/status.md`; the details table names `reference/`; the backup block's `concordance -f` wording corrected (the block is read by `tests/usb_protocol/test_concordance_notes.py`) | 6.1 |
 | `CLAUDE.md` | sections in its own table below | 6.1 |
 | `.claude/skills/*` | in their own table below | 6.2 |
 
@@ -258,7 +258,7 @@ Moved to CF/README.md with `git mv` first, so its history follows the largest pi
 | lines | section | primary (2.1) | leaves later (4.1 unless named) |
 |---|---|---|---|
 | 1 to 23 | preamble | CF/README.md | stale scope sentence rewritten |
-| 24 to 82 | Outer container | CF/container.md, the paragraph `tests/test_gspm.py` quotes moved verbatim | the two correction paragraphs drop to sections 143 and 194 |
+| 24 to 82 | Outer container | CF/container.md, the paragraph `tests/config_format/test_gspm.py` quotes moved verbatim | the two correction paragraphs drop to sections 143 and 194 |
 | 83 to 143 | per architecture cookies | CF/container.md | the arch 10 consequences to A10/memory.md (3.5) |
 | 145 to 189 | Recovering the base address | CF/container.md | blockquotes drop to 76, 117, 122; the `0x820000` address spaces stay in A9/memory.md |
 | 191 to 229 | the section table at `0x0B` | CF/container.md | correction drops to 20 |
@@ -370,7 +370,7 @@ Moved to L/clients.md with `git mv` first, then cut.
 
 ### `docs/status.md`
 
-Stays as bookkeeping: the intro, the byte accounting table (read by `tests/test_documents.py`), the coverage
+Stays as bookkeeping: the intro, the byte accounting table (read by `tests/project/test_documents.py`), the coverage
 table, what the corpus holds, where the work stands and the two open lists, about 400 lines. In 2.1 only
 what exists nowhere else moves out: the bench paragraph to TN/README.md; the 5.6 minutes a day drift bound
 and the calibration words to A12/memory.md; the learn session buffer addresses to U/commands.md; the arch 10
@@ -514,7 +514,7 @@ breaks on a planted broken link.
 **Chapter 3, models and architectures.**
 * 3.2 first, three agents in parallel, one per architecture with its models' memory files: arch 9 with the
   525, arch 12 creating A12/ out of the One's folder, arch 14 with the 600, 650 and 700. The memory maps go,
-  `tests/test_memory_map.py` and `tests/test_harmony_525_flash.py` are rewritten to read their figures in the
+  `tests/firmware/test_memory_map.py` and `tests/harmony_5xx/test_harmony_525_flash.py` are rewritten to read their figures in the
   new homes.
 * Then 3.1, one agent per bench model folder and its test notes file (300, 350, 525, 600, 650, 700, One,
   Touch), in parallel: bench content out, evidence as footnotes, duplicates replaced by links. No agent edits
@@ -558,14 +558,14 @@ their archive pages.
 |---|---|---|
 | `tools/facts.py` reading `reference/superseded.md` (`SUPERSEDED`), run by `make facts`, `make all` and the pre-commit hook | a wrong path fails every commit, or worse checks nothing | the constant changes in the same commit as the move; `make facts` must report the marker count recorded before 2.1, and a table read as zero rows fails rather than passes |
 | the 47 fact markers in `docs/status.md` and 47 in config-format | a deleted paragraph loses its check | markers travel with their sentences; status's are deleted in 5.1 only where `make facts` shows the same marker attached elsewhere, otherwise the sentence moves first |
-| `tools/lab_register.py` (`REGISTER`), `bin/lab-register-hook.py`, `make lab-check`, `tests/test_toolchain.py` | the hook fails open, so a broken path is silent | the constant moves with the file; after the move `make lab-check` answers a known path and the hook, run by hand on a lab path, prints its row |
+| `tools/lab_register.py` (`REGISTER`), `bin/lab-register-hook.py`, `make lab-check`, `tests/project/test_toolchain.py` | the hook fails open, so a broken path is silent | the constant moves with the file; after the move `make lab-check` answers a known path and the hook, run by hand on a lab path, prints its row |
 | `packages/silhouettes/bin/remotes.ts` (`REMOTES`, `ARCHITECTURES`) and the ten files test in `remotes.test.ts` | new folders and `compiler.md` fail the shape test; a row without a drawing fails the drawing test | each row declares its folder's files and an optional drawing, and the test checks every folder against its row; a model without a drawing gets keys and display blocks saying none exists |
-| `reference/button-maps.md`'s five readers (`packages/codec/bin/catalogue.ts`, `catalogue.test.ts`, `irframe.test.ts`, `packages/silhouettes/test/models.test.ts`, `tests/test_host_client.py`) and `make prontocheck` | five parsers in two languages | rewritten in 3.3 to read the drawing data; the Python test reads the generated keys block, which `make remote-reference` keeps equal to that data |
-| `tests/test_gspm.py` quoting config-format's prose | a move or reword breaks it | the paragraph moves verbatim to CF/container.md and the test reads that path; whether the quote becomes a generated statement is decided in 4.1 |
-| `tests/test_memory_map.py`, `tests/test_harmony_525_flash.py`, and the citing `test_findings.py`, `test_host_client.py`, `classic-capture.test.ts` | the maps leave | the tests are rewritten to read the figures where they land, never deleted, since the figures stay |
-| `tests/test_toolchain.py`'s withhold list in `docs/review-before-first-write.md` | every reference file that states the write transfer must be withheld | the test runs after each move; new paths join the list in the same commit |
-| `tools/myharmony_model.py`, `tools/model_pdf.py`, `.gitignore`, `tests/test_myharmony_model.py`, `tests/test_function_maps.py`, `catalogue.test.ts` | generators write to fixed paths | one commit moves the folder and all six; `make myharmony-model` is the check |
-| `tests/test_documents.py` | reads status's coverage table and requires "decision 16" in `CLAUDE.md` | the table stays; 6.1 keeps the phrase |
+| `reference/button-maps.md`'s five readers (`packages/codec/bin/catalogue.ts`, `catalogue.test.ts`, `irframe.test.ts`, `packages/silhouettes/test/models.test.ts`, `tests/logitech/test_host_client.py`) and `make prontocheck` | five parsers in two languages | rewritten in 3.3 to read the drawing data; the Python test reads the generated keys block, which `make remote-reference` keeps equal to that data |
+| `tests/config_format/test_gspm.py` quoting config-format's prose | a move or reword breaks it | the paragraph moves verbatim to CF/container.md and the test reads that path; whether the quote becomes a generated statement is decided in 4.1 |
+| `tests/firmware/test_memory_map.py`, `tests/harmony_5xx/test_harmony_525_flash.py`, and the citing `test_findings.py`, `test_host_client.py`, `classic-capture.test.ts` | the maps leave | the tests are rewritten to read the figures where they land, never deleted, since the figures stay |
+| `tests/project/test_toolchain.py`'s withhold list in `docs/review-before-first-write.md` | every reference file that states the write transfer must be withheld | the test runs after each move; new paths join the list in the same commit |
+| `tools/myharmony_model.py`, `tools/model_pdf.py`, `.gitignore`, `tests/logitech/test_myharmony_model.py`, `tests/logitech/test_function_maps.py`, `catalogue.test.ts` | generators write to fixed paths | one commit moves the folder and all six; `make myharmony-model` is the check |
+| `tests/project/test_documents.py` | reads status's coverage table and requires "decision 16" in `CLAUDE.md` | the table stays; 6.1 keeps the phrase |
 | code comments citing documents by section (about 40 files) | a split breaks the anchor | rewritten in 2.1 step 4 to file and heading; the link test reads Markdown only, so these are found by grep for the old paths |
 | FreeHarmony naming our paths | its readers point nowhere | a commit there after 2.1, 3.3 and 3.4 |
 | `docs/findings.md` citing moved paths about 190 times | dead links in the archive | corrected in 2.2, link targets only, under the digest check |
@@ -609,7 +609,7 @@ hook redirects it:
 ```
 [^s424]: Read in the firmware. [Section 424](../../../docs/findings.md#s424)
 [^d20]: Chosen by this project. [Decision 20](../../docs/decisions.md#d20)
-[^t-saved-delay]: Measured on a unit. [The test](../../packages/usb/test/settings.test.ts)
+[^t-saved-delay]: Measured on a unit. [The test](../../packages/usb/test/transport/settings.test.ts)
 [^unchecked]: Not checked.
 ```
 
@@ -618,7 +618,7 @@ the start of decision 25, so a heading's wording never matters to a link.
 
 ## 5. The tests that guard the result
 
-* **`tests/test_reference.py`**, new, in `make all`:
+* **`tests/project/test_reference.py`**, new, in `make all`:
   * the reference describes no bench: no "bench", "lab", "dump", "test account", "our unit", "the spare",
     "everyday", "friend", "todo", no fixture name, no link into `docs/test-notes/`, `docs/lab-register.md`
     or `../lab`; Logitech's generated data files (`model.json`, `operations.json`, `entities.md`,
@@ -633,15 +633,15 @@ the start of decision 25, so a heading's wording never matters to a link.
     label has one of the allowed forms, the evidence words are allowed and match the label, the section, decision
     or test it names exists;
   * every relative link in `reference/`, `docs/`, the root documents and the skills resolves, file and anchor.
-* **`tests/test_archive.py`**, new: the archive is frozen (normalised digest as in 2.2); every `## N.` heading
+* **`tests/project/test_archive.py`**, new: the archive is frozen (normalised digest as in 2.2); every `## N.` heading
   1 to 436 has exactly one anchor directly above it; every link in the archive resolves.
 * **`packages/silhouettes/test/remotes.test.ts`**, changed: every model and architecture folder matches the
   files its row declares; the generated blocks are current, as now.
 * **The site's strict build**, in the Action on every push and `make site` locally: broken links, broken
   anchors and pages left out of the navigation fail it.
 * **Existing guards, kept pointing at the new paths**: `make prose` (dashes, already over every Markdown
-  file), `make facts` (markers and dead phrases, failing on an empty table), `tests/test_toolchain.py` (lab
-  register, withhold list), `tests/test_documents.py`, and the rewritten readers of the risk table.
+  file), `make facts` (markers and dead phrases, failing on an empty table), `tests/project/test_toolchain.py` (lab
+  register, withhold list), `tests/project/test_documents.py`, and the rewritten readers of the risk table.
 
 One home per fact is not tested mechanically beyond the generated blocks; each step's review checks it.
 

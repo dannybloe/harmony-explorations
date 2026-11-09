@@ -299,7 +299,7 @@ const H700_DUMPS = new Set<string>([
  * **The first entries are the reads `rehearse-block.ts` compares against**, each taken twice and
  * identical, from the configuration's base at `0x020000` to the staging region at `0x1D0000`, so every
  * block a configuration can occupy is covered and none past the ceiling is. Unit A's are still its content
- * after 1.3, which wrote block `0x0C0000` back unchanged, `tests/test_harmony_885_flash_backup.py`; unit
+ * after 1.3, which wrote block `0x0C0000` back unchanged, `tests/harmony_880_885/test_harmony_885_flash_backup.py`; unit
  * B's are from before anything was written to it. A write that lands makes them stale, which the block
  * compare refuses rather than trusts, and the read after it is what goes in next.
  */
@@ -313,7 +313,7 @@ const H885_B_DUMPS = new Set<string>([
   // B's region after todo-compile-885.md 1.4 wrote its own configuration back restamped: the current content
   // since then, differing from the two above in that write's 17 stamp bytes. Read once; a second read met a
   // sequence break, and the one read is checked against the written file and the region before it instead,
-  // `tests/test_harmony_885_first_config_write.py`. Every write to B from 1.4 on compares against this.
+  // `tests/harmony_880_885/test_harmony_885_first_config_write.py`. Every write to B from 1.4 on compares against this.
   'h885_b_after_1_4_region',
   // B's region after todo-compile-885.md 2.1 wrote unit A's configuration with the Sony HT onto it: the file
   // written in its first 572238 bytes, and the region after 1.4 everywhere outside the nine sectors that write

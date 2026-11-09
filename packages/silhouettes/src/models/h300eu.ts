@@ -20,7 +20,7 @@
  * **The names follow the printing**, so `Favorite3` is the key printed `3`, which sits where the 350 has its
  * favourite 5, and the key in the 350's favourite 3 place is `Teletext`.
  *
- * **49 keys carry the code they were heard raising**, `packages/bench/test/keys300.test.ts`: every key of the
+ * **49 keys carry the code they were heard raising**, `packages/bench/test/harmony-300-350/keys300.test.ts`: every key of the
  * bench unit pressed in the television's mode and the KPN box's, on two configurations, and each of these
  * tied to the one code of the 56 that, raised in its place, gives what the receiver heard, taking the keys
  * to have been pressed in the order asked. Every one is the code of the Harmony 350 key in the same place.
@@ -43,7 +43,7 @@ const REPRINT: Readonly<Record<string, Reprint>> = {
 
 /**
  * The code each key was heard raising, by this drawing's names, `DECIDED` in
- * `packages/bench/test/keys300.test.ts`, which also asserts that the generated SVG carries exactly these.
+ * `packages/bench/test/harmony-300-350/keys300.test.ts`, which also asserts that the generated SVG carries exactly these.
  */
 const HEARD: Readonly<Record<string, number>> = {
   CableSat: 1, Favorite3: 2, Power: 3, VcrAux: 4, Tv: 5, WatchTV: 6, Dvd: 7, Favorite1: 8, Favorite2: 9,

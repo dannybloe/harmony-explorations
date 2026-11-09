@@ -35,7 +35,7 @@ export const BASE_SLOT_COUNT = 20;
  * why this table exists at all rather than an arch 10 row being added there.
  *
  * Every present slot is placed by its own contents. What places each one is in the row comments and
- * asserted row by row in `packages/codec/test/arch10.test.ts`, the decisive one being base slot 10:
+ * asserted row by row in `packages/codec/test/container/arch10.test.ts`, the decisive one being base slot 10:
  * consecutive entries of its table sit `1 + 3 * count` apart, and exactly one arch 10 slot reproduces
  * arch 8's signature of four breaks where every other array scores near zero.
  *
@@ -101,7 +101,7 @@ export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
  * is, and a map entry is a claim about the second, so neither is placed here. The cross architecture
  * route was tried and fails: no count prefixed base slot in the corpus has either length on more than
  * three of the thirteen containers that state both counts. The firmware has since named both, raw 6
- * base slot 9 and raw 8 base slot 12 (`tests/test_harmony_350_slots.py`), and they stay out of the map
+ * base slot 9 and raw 8 base slot 12 (`tests/harmony_300_350/test_harmony_350_slots.py`), and they stay out of the map
  * until a reader here needs them, as the entry for base slot 13 below says.
  */
 export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
@@ -130,9 +130,9 @@ export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
   undefined, // 12, unread
   // 13, the state variable table, raw slot 9, read in the 1.4 firmware: its seeder at `0x16E6C` reads
   //     base slot 13's four header words and seeds records of base slot 13's layout, and the record
-  //     locator at `0x17360` indexes past the same eight byte header (`tests/test_harmony_350_slots.py`).
-  //     Placed here for the delay reader, `tests/test_harmony_350_delay.py` and
-  //     `packages/codec/test/filefamilydelays.test.ts`: once it is, `devices`, `deviceDelays` and
+  //     locator at `0x17360` indexes past the same eight byte header (`tests/harmony_300_350/test_harmony_350_slots.py`).
+  //     Placed here for the delay reader, `tests/harmony_300_350/test_harmony_350_delay.py` and
+  //     `packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`: once it is, `devices`, `deviceDelays` and
   //     `setPowerOnDelay` read and edit this family's power on delays with no change of their own,
   //     because a device's power on delay here is the arch 8, 9 and 12 shape, one `0x7C` at the top
   //     level of the list its `Power` variable runs going from off to on. Raw 6 and 8, base slots 9 and
@@ -158,7 +158,7 @@ export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
 /**
  * A reader's table of one fact per architecture, keyed by the architecture's number: plan 007's sanctioned form
  * for a fact that differs between remotes outside `families/`, read with the configuration's own architecture and
- * never with a literal one. Named so that `test/generic.test.ts` can tell such a table from code testing which
+ * never with a literal one. Named so that `test/package/generic.test.ts` can tell such a table from code testing which
  * remote it is: what sits inside one is the table's to hold, a key scan included.
  */
 export type PerArchitecture<T> = Readonly<Record<number, T>>;

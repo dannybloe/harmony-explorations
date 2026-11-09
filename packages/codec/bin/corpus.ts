@@ -45,7 +45,7 @@ export const CONTAINERS = [
 /**
  * Every container that inlines a power on delay, section 236. Arch 14 (Harmony 600 and 700) keeps
  * the delay in a state variable and so has no member here by construction. The test table in
- * `test/inventory.test.ts` pairs each name with its counts and asserts that its names are exactly
+ * `test/inventory/inventory.test.ts` pairs each name with its counts and asserts that its names are exactly
  * these, so the two lists cannot drift apart; `bin/devices.ts` computes the corpus wide totals the
  * documents quote over this list, which is what makes those numbers facts rather than sentences.
  */

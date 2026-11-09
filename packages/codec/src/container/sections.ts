@@ -33,7 +33,7 @@ export const MODE_TAG_ENTER = 6;
  * changed: that section moved arch 9 from 0 of 114 to 114 of 114 and wrote "`MODE_PROGRAM_ARCHITECTURES`
  * is now all four" in the same breath. A docstring stating a reading is unestablished, over code that
  * relies on it in every container of that architecture, is the shape a reader has no way to doubt. The
- * counts here are asserted in `test/sections.test.ts` so the next corpus change moves them in a diff.
+ * counts here are asserted in `test/container/sections.test.ts` so the next corpus change moves them in a diff.
  */
 export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 10, 12, 14]);
 export const HANDLER_TAG_ENTER = 1;

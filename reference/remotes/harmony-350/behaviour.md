@@ -69,10 +69,10 @@ is read in the firmware and the configurations rather than watched on a unit[^un
 
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
 [^s259]: Measured in configurations. [Section 259](../../../docs/findings.md#s259)
-[^t-delay-heard]: Measured on a unit. [The test](../../../tests/test_harmony_350_delay.py)
-[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
-[^t-long-press]: Read in the firmware. [The test](../../../tests/test_harmony_350_long_press.py)
-[^t-long-press-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_long_press.py)
-[^t-long-press-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_long_press.py)
-[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-delay-heard]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_delay.py)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)
+[^t-long-press]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
+[^t-long-press-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
+[^t-long-press-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
+[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
 [^unchecked]: Not checked.

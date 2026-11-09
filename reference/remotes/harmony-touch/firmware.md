@@ -74,8 +74,8 @@ This said the image's contents had not been examined until it was read.
 [^s196]: Stated by Logitech, by their service. [Section 196](../../../docs/findings.md#s196)
 [^unchecked]: Not checked.
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
-[^t-touch-image]: Read in the firmware. [The test](../../../tests/test_harmony_touch_image.py)
-[^t-touch-api-names]: Read in the firmware. [The test](../../../tests/test_harmony_touch_api_names.py)
-[^t-touch-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_touch_recovery.py)
-[^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/touch-removal-runs.test.ts)
-[^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-image]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_image.py)
+[^t-touch-api-names]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
+[^t-touch-recovery]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_recovery.py)
+[^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-removal-runs.test.ts)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-first-sync.test.ts)

@@ -5,7 +5,7 @@ to these remotes. Two defects in its firmware handling were found while working 
 firmware layout, and they explain why the firmware had gone unexamined **on the two
 architectures this project has hardware for**.
 
-Everything below is asserted against a checkout in `tests/test_concordance_notes.py`, which reads
+Everything below is asserted against a checkout in `tests/usb_protocol/test_concordance_notes.py`, which reads
 the constants out of `libconcord/` and skips when there is no checkout to read. Measured against
 concordance 1.5.
 

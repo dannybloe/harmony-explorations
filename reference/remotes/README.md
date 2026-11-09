@@ -284,7 +284,7 @@ it; [the architectures](../architectures/README.md#three-ways-a-host-talks-to-a-
   carries rather than choosing one[^unchecked].
 
 [^s57]: Read in the firmware. [Section 57](../../docs/findings.md#s57)
-[^t-harmony-515]: Measured on a unit. [The test](../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../tests/harmony_5xx/test_harmony_515.py)
 [^s131]: Stated by Logitech, by their service. [Section 131](../../docs/findings.md#s131)
 [^s182]: Measured in configurations. [Section 182](../../docs/findings.md#s182)
 [^s387]: Measured on a unit. [Section 387](../../docs/findings.md#s387)
@@ -292,13 +292,13 @@ it; [the architectures](../architectures/README.md#three-ways-a-host-talks-to-a-
 [^s81]: Measured in configurations. [Section 81](../../docs/findings.md#s81)
 [^s208]: Stated by Logitech, in their client. [Section 208](../../docs/findings.md#s208)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../docs/findings.md#s136)
-[^t-product-table]: Stated by Logitech, by their service. [The test](../../tests/test_host_client.py)
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../tests/logitech/test_host_client.py)
 [^x-forum]: Stated by a third party. [The comparison table of harmony-remote-forum.de](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^s297]: Measured on a unit. [Section 297](../../docs/findings.md#s297)
 [^s264]: Measured on a unit. [Section 264](../../docs/findings.md#s264)
 [^s45]: Read in the firmware. [Section 45](../../docs/findings.md#s45)
 [^s62]: Measured in configurations. [Section 62](../../docs/findings.md#s62)
-[^t-capabilities]: Stated by Logitech, by their service. [The test](../../tests/test_product_capabilities.py)
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../tests/logitech/test_product_capabilities.py)
 [^s51]: Measured in configurations. [Section 51](../../docs/findings.md#s51)
 [^unchecked]: Not checked.
 [^s86]: Measured in configurations. [Section 86](../../docs/findings.md#s86)
@@ -306,4 +306,4 @@ it; [the architectures](../architectures/README.md#three-ways-a-host-talks-to-a-
 [^s127]: Read in the firmware. [Section 127](../../docs/findings.md#s127)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../packages/base/test/models.test.ts)
 [^s88]: Read in the firmware. [Section 88](../../docs/findings.md#s88)
-[^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../tests/test_harmony_300_group_4_send.py)
+[^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../tests/harmony_300_350/test_harmony_300_group_4_send.py)

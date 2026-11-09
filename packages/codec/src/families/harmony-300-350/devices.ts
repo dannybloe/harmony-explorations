@@ -10,7 +10,7 @@
  * So a composed device needs, besides what every family's device has, the map and the key: without the key its
  * map is never selected and nothing it holds can be sent.
  *
- * **What it is measured against**, `packages/codec/test/noscreen.test.ts`: the Panasonic plasma of the test
+ * **What it is measured against**, `packages/codec/test/families/harmony-300-350/noscreen.test.ts`: the Panasonic plasma of the test
  * setup composed from the catalogue onto Logitech's compile of three devices for the bench Harmony 350, which
  * has a free key, and every part held against the same catalogue device in Logitech's compile of the whole test
  * setup, part by part, since Logitech's compiler numbers lists and maps in an order no compile shows a rule for
@@ -23,7 +23,7 @@
  * switches its pin and starts two timers per device on the key, gains a second such block with two new timers,
  * so it reads as Logitech's press list for a key with two devices: one list, the block twice, the second block's
  * cancel stopping the first block's timers. Held against the four long press devices of Logitech's compile of the
- * test setup, `packages/codec/test/noscreen.test.ts`.
+ * test setup, `packages/codec/test/families/harmony-300-350/noscreen.test.ts`.
  *
  * **Logitech's routing is copied**, `todo-compile-350.md` 4.1.1, the rules and their counts in `keys.ts`: Input
  * borrows the TV mode device's binding, volume and mute the device `volumeFrom` names, a television's fifth
@@ -381,7 +381,7 @@ export function withStartUpSelect(c: Container, map: number): Container {
  * The start up event list without its select: the inverse of `withStartUpSelect`, which leaves entry 1's list as
  * entries 2 to 4's are, for a configuration whose device on infrared group 0 is taken out. **That is not what
  * Logitech writes there**: the one compile of the family whose top left key holds no device selects the map of its
- * one device, on group 2, `startUpGroup` in `constants.ts` and `test/noscreenconstants.test.ts`, so a removal that
+ * one device, on group 2, `startUpGroup` in `constants.ts` and `test/families/harmony-300-350/noscreenconstants.test.ts`, so a removal that
  * leaves another device would select it, and only a configuration with no device has no select.
  */
 export function withoutStartUpSelect(c: Container): Container {

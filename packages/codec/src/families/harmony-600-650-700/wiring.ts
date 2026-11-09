@@ -12,7 +12,7 @@
  *
  * * **The log area**, sixteen thousand eight byte records from `0x1E0000` to `0x200000`, the same on
  *   all thirteen. Of the firmware read, the Harmony One's writes its log area, section 47, and so does
- *   the Harmony 880 and 885's, `tests/test_harmony_885_log_area.py`; no arch 14 image here has been
+ *   the Harmony 880 and 885's, `tests/harmony_880_885/test_harmony_885_log_area.py`; no arch 14 image here has been
  *   found to. Built by `firmwaresections.ts`, with the parameter block, since
  *   `todo-compile-one.md` 6.4.
  * * **The event map**: thirty firmware status codes, code `k` to mode `N + k`, and `N` is the number of
@@ -928,7 +928,7 @@ export function rewiredForActivities(layout: ContainerLayout, before: WiringSpec
  * Reads the model off the skin, and then only the bytes `BuiltWiring.described` marks: the symbols
  * the generated structures name and do not generate, the three settings where they show, which timer
  * records are a device's, and how each activity key is bound. So a rebuild that equals the container
- * computed every other byte of these structures, which the blind control in `test/wiring.test.ts`
+ * computed every other byte of these structures, which the blind control in `test/families/harmony-600-650-700/wiring.test.ts`
  * checks by overwriting them first.
  */
 export function describeWiring(layout: ContainerLayout): WiringSpec {

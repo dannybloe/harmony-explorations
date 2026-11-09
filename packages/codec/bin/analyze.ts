@@ -157,7 +157,7 @@ const c = parse(file === '' ? blob : payloadOf(blob, path));
  *
  * **The report is the point, not the console output.** This service will be withdrawn, and when it is,
  * a recorded answer is the only external opinion this project will ever have about a stored code. So a
- * run writes the reply as it came, and `test/analyzed.test.ts` asserts the decoder against the file
+ * run writes the reply as it came, and `test/infrared/analyzed.test.ts` asserts the decoder against the file
  * rather than against the network.
  */
 interface Row {
@@ -192,7 +192,7 @@ outer: for (const group of irGroups(c) ?? []) {
     //
     // **`one reading, none once merged` is gone as a category**, section 164: the reader merges adjacent
     // durations of one kind itself now, so no record can be in it. The 36 rows recorded under that name
-    // are still in the fixture and `test/analyzed.test.ts` asserts against them, which is why the string
+    // are still in the fixture and `test/infrared/analyzed.test.ts` asserts against them, which is why the string
     // is not renamed there. What is worth sampling in its place is a record only the biphase reader
     // reads, since those are the ones whose number no reading of ours carries.
     const kind = readings.length === 2 ? 'both conventions'

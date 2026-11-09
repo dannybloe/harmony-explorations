@@ -650,7 +650,7 @@ export interface PowerOnInstruction {
  * **Arch 16 (Harmony 300 and 350) uses the same shape**, read once base slot 13 was placed in its slot
  * map: 13 of the 14 devices that send a code over the five configurations of that family carry exactly
  * one, and the fourteenth carries two, 100 and 70, which this leaves out rather than summing, so a caller
- * gets no value instead of half of one. `packages/codec/test/filefamilydelays.test.ts`.
+ * gets no value instead of half of one. `packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`.
  */
 export function powerOnInstructions(c: Container): Map<number, PowerOnInstruction> {
   const out = new Map<number, PowerOnInstruction>();

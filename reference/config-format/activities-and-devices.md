@@ -451,9 +451,9 @@ put there.
 [^s240]: Measured in configurations. [Section 240](../../docs/findings.md#s240)
 [^s285]: Measured in configurations. [Section 285](../../docs/findings.md#s285)
 [^s120]: Measured in configurations. [Section 120](../../docs/findings.md#s120)
-[^t-inventory]: Measured in configurations. [The test](../../packages/codec/test/inventory.test.ts)
-[^t-arch8-devices]: Measured in configurations. [The test](../../packages/codec/test/arch8devicelist.test.ts)
-[^t-side-keys]: Measured in configurations. [The test](../../packages/codec/test/sidekeysdevice.test.ts)
+[^t-inventory]: Measured in configurations. [The test](../../packages/codec/test/inventory/inventory.test.ts)
+[^t-arch8-devices]: Measured in configurations. [The test](../../packages/codec/test/inventory/arch8devicelist.test.ts)
+[^t-side-keys]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)
 [^unchecked]: Not checked.
 [^s273]: Measured in configurations. [Section 273](../../docs/findings.md#s273)
 [^s274]: Read in the firmware. [Section 274](../../docs/findings.md#s274)

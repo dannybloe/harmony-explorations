@@ -64,7 +64,7 @@ HEADER_TERMINATOR = b'</INFORMATION>'
 # **not** one of the six, so a version that looks like a gate is not one. Three arch 8 wrappers
 # state it inside `INTENDEDVERSION`, and this said one until `todo/todo-prepare-885.md` 2.2 counted
 # them; this reader keeps the six names only and drops it, as `packages/codec/src/container/ezhex.ts` does,
-# `packages/corpus/test/compatibility.test.ts`.
+# `packages/corpus/test/read/compatibility.test.ts`.
 INTENDED_VERSION_FIELDS = ('PROTOCOL', 'SKIN', 'FLASH', 'BOARD', 'SOFTWARETYPE',
                            'ARCHITECTURE')
 

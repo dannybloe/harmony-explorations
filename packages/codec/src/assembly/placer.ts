@@ -185,7 +185,7 @@ function calledLists(list: ContainerPiece): number[] {
  *
  * Refuses a loose piece of a kind it has no rule for, one its rule does not reach (a glyph no set
  * names, a picture no screen program draws), and a loose piece listed twice. Nothing about the
- * order `loose` arrives in reaches the result, which `test/placer.test.ts` checks by shuffling it.
+ * order `loose` arrives in reaches the result, which `test/assembly/placer.test.ts` checks by shuffling it.
  */
 export function placePieces(input: UnplacedContainer): Placement {
   if (input.tables.length !== BASE_SLOT_COUNT) {

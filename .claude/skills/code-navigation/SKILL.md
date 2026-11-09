@@ -59,7 +59,7 @@ address producing a readable listing and a wrong register map producing a readab
 tool that answers confidently is the one to check.
 
 **A value reference can resolve to a type, and then the real declaration is reported as unused.**
-Measured on 14 August 2026. `ide_diagnostics` on `packages/codec/test/sections.test.ts` reported
+Measured on 14 August 2026. `ide_diagnostics` on `packages/codec/test/container/sections.test.ts` reported
 `Unused constant entries` at the `for (const [name, sets, entries] of HANDLER_SETS)` on line 307, and
 `ide_find_references` on that position agreed: zero usages. The variable is read three lines further
 down, at `assert.equal(total, entries)`. `ide_find_definition` on **that** occurrence is what explains

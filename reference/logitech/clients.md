@@ -105,7 +105,7 @@ quotes them. The models they cover are [the product line](product-line.md).
 [^x-macos]: Stated by Logitech. [Harmony and macOS](https://support.myharmony.com/harmony-and-macos)
 [^s135]: Stated by Logitech, in their client. [Section 135](../../docs/findings.md#s135)
 [^s296]: Measured on a unit. [Section 296](../../docs/findings.md#s296)
-[^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/test_host_client.py)
+[^t-host-client]: Stated by Logitech, in their client. [The test](../../tests/logitech/test_host_client.py)
 [^s204]: Stated by Logitech, in their client. [Section 204](../../docs/findings.md#s204)
 [^s205]: Stated by Logitech, in their client. [Section 205](../../docs/findings.md#s205)
 [^unchecked]: Not checked.

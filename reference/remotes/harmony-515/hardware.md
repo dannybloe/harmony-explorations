@@ -12,5 +12,5 @@ What is inside a Harmony 515. The processor and the flash are the platform's and
 
 * The batteries, the transmitters, the processor part and the flash size.[^unchecked]
 
-[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
 [^unchecked]: Not checked.

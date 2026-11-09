@@ -196,10 +196,10 @@ try[^t-touch-in-use].
 [^x-touch-manual]: Stated by Logitech, in the manual. [The Harmony Touch user guide](https://www.manualslib.com/manual/641224/Logitech-Harmony-Touch.html)
 [^s200]: Measured on a unit. [Section 200](../../../docs/findings.md#s200)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
-[^t-touch-activities]: Measured on a unit. [The test](../../../packages/usb/test/touch-activities.test.ts)
-[^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/test_harmony_touch_activities.py)
+[^t-touch-activities]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-activities.test.ts)
+[^t-touch-activities-firmware]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_activities.py)
 [^unchecked]: Not checked.
-[^t-touch-keys]: Read in the firmware. [The test](../../../tests/test_harmony_touch_keys.py)
-[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/touch-full-bench-runs.test.ts)
-[^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
-[^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/test_harmony_touch_beyond_the_clients.py), class `WhichKeysMyHarmonyGivesALongPressInDeviceMode`
+[^t-touch-keys]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_keys.py)
+[^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-full-bench-runs.test.ts)
+[^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_host_client.py)
+[^t-touch-beyond-client]: Stated by Logitech, in their client. [The test](../../../tests/harmony_touch/test_harmony_touch_beyond_the_clients.py), class `WhichKeysMyHarmonyGivesALongPressInDeviceMode`

@@ -102,7 +102,7 @@
  * or a few from where the donor's sat, and nothing else changes: on `harvest_one_two_devices` lettered in ours, the
  * test setup's donor, the x of 10 texts of the firmware screens, 93 of the fixed ones, 32 of the tour's, 37 of the
  * status screens' and 25 of the clock's days and hours, and no other byte but the trailer's,
- * `test/onebuilders.test.ts`. **The help screens change more**: every block of theirs is wrapped at the questions'
+ * `test/families/harmony-one/onebuilders.test.ts`. **The help screens change more**: every block of theirs is wrapped at the questions'
  * 171 pixels, each paragraph flowed as one, and in our letters the attempt line is 177 pixels and breaks in two,
  * three bytes more on that donor, and the "If not" paragraph keeps three lines at other breaks; in Logitech's
  * letters the wrap gives Logitech's own lines, so a compile is rebuilt byte for byte.
@@ -315,7 +315,7 @@ function building<T>(what: OneBuilt, run: () => T): T {
  * description read off the configuration as the step before left it. `Family.composedBuilders` for the One
  * family; refuses with `OneBuildError` where a builder refuses. `composed` is the devices the composers added,
  * which the help screens ask about too; `parts` runs only those named, in the same order, for a caller measuring
- * what one part changes (`test/onebuilders.test.ts` holds the help screens apart, since they change the file's
+ * what one part changes (`test/families/harmony-one/onebuilders.test.ts` holds the help screens apart, since they change the file's
  * length in our letters). The pictures are not among them, `ONE_REBUILT`: named, they are passed over.
  */
 export function withOneBuilders(

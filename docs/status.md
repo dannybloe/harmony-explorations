@@ -61,7 +61,7 @@ while the full history lived in the roadmap that was retired that day, and it wa
 the same measurement
 with two samples missing and every intermediate column dropped. Two copies of one measurement in two
 documents is what the retirement of that document was for, so the full one moved here and the summary
-went. `tests/test_documents.py` holds this table's shape.*
+went. `tests/project/test_documents.py` holds this table's shape.*
 
 **The fraction of a configuration attributed to a structure the codec understands**, with any two
 structures claiming the same byte reported as the defect it is. `packages/codec/src/container/coverage.ts` answers it
@@ -121,7 +121,7 @@ time on**: decision 10 below puts the application first and stops soliciting dum
 table above stays honest about it, and closing it is not the next job.
 
 *Moved out of `docs/plans/002-the-roadmap.md` on 6 September 2026 when that document was retired. It is a
-measurement of where the reading stands, which is this document's job, and `tests/test_documents.py`
+measurement of where the reading stands, which is this document's job, and `tests/project/test_documents.py`
 holds the table's shape.*
 
 ## What the corpus holds
@@ -184,65 +184,65 @@ verified is that each backup is faithful; **restoring from one has never been tr
 take a whole configuration as a file, `/cfg/usercfg`, and each has been given its own back after other files. As of
 2 November 2026 `todo-compile-350.md` chapter 5 is done: one configuration built from nothing, every byte named by
 the generator that wrote it, with firmware event 0xFF bound so it serves both models (decision 28), sent 33 of 33
-expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/noscreenfinalunits.test.ts`.
+expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
 
 **The Harmony Touch is described from its own reading, thirty four syncs of ours have run on it, thirty two committed, twenty of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, a Settings of ours has been delivered and seen, an activity and a device of Logitech's have been taken out and the rest heard without them, a whole setup composed by us has run its full bench test, the empty configuration has been delivered, started on and put back, and a configuration built by us from nothing has been delivered, run and put back, the track's finish line.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
-directions of a sync are recorded, `packages/usb/test/touch-sync-both-ways.test.ts`. The documents are described
+directions of a sync are recorded, `packages/usb/test/touch/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
 `packages/codec/src/families/harmony-touch/`; what a host other than Logitech's server would have to answer is
 [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md). The bench Touch may be written,
 decision 29: the rail for its request channel exists, `assertTouchRequestAllowed` behind
 `HARMONY_TOUCH_REQUESTS`, `todo-touch.md` 6.3, with the abort, the delete of the stored documents and the restart
 as a recovery tier behind `HARMONY_TOUCH_RECOVERY`, 6.3.1. Two reads went through it first, 6.4, then the first
-sync answered by this project, 6.7, `packages/usb/test/touch-first-sync.test.ts`: the remote's changed settings
+sync answered by this project, 6.7, `packages/usb/test/touch/touch-first-sync.test.ts`: the remote's changed settings
 handed up and written back under a tag of ours, the six configuration documents answered 304 and taken, and a stop
 at the favourites, which a Touch synced through a computer always asks for without a tag,
-`tests/test_harmony_touch_favourites_untagged.py`; the abort, the read and the restart cleared it. The answerer now
+`tests/harmony_touch/test_harmony_touch_favourites_untagged.py`; the abort, the read and the restart cleared it. The answerer now
 answers a favourites request 304, and the second sync it answered ran to its end and was committed,
-`packages/usb/test/touch-second-sync.test.ts`: nothing handed up, the six documents, the three favourites and ten
+`packages/usb/test/touch/touch-second-sync.test.ts`: nothing handed up, the six documents, the three favourites and ten
 pictures each answered 304, `proxy://Finished` answered 200, the configuration hash the same before and after,
 and the remote starting normally with its favourites in place. So 6.7 is done, every answer of it a 304 or the
 finish. In 6.8 the remote's own six documents went back with 200 under tags of ours, in one write of 19 chunks,
 and were committed: the configuration hash then carried the tags of ours, a further `--unchanged` run was asked
 for all six with them, and the remote came back with its activities, settings and favourites,
-`packages/usb/test/touch-own-set-sync.test.ts`. In 6.9 the first changes of content reached it: four syncs each
+`packages/usb/test/touch/touch-own-set-sync.test.ts`. In 6.9 the first changes of content reached it: four syncs each
 delivered one document with one value changed, or put back, with 200 and the other five 304, and each was
 committed. A sequence's delay went from 1 second to 3 and the pause between its two infrared codes grew by about
 two seconds, then came back when the value did; an activity's name changed on the activity list and changed
 back. A closing `--unchanged` run was asked for the six with the last set's tags,
-`packages/usb/test/touch-changed-set-sync.test.ts`. Documents composed whole by this project reached it in 8.6, below.
+`packages/usb/test/touch/touch-changed-set-sync.test.ts`. Documents composed whole by this project reached it in 8.6, below.
 In 7.1 the Touch's first full bench test ran on the documents it holds, ten tests on the infrared monitor: every
 activity started, switched and stopped, the five favourites, every key of every activity's map and of six devices'
 own maps, tapped and held. 413 of the 418 expected codes and pauses held, every code in the order the model of its
 engine predicts; three single presses were missed and each heard on a retest, and two pauses ran late after a code
 the remote holds for two seconds, which a rule for held codes now allows,
-`packages/bench/test/touch-full-bench-runs.test.ts`. In 8.1 a device composed by this project reached it: Test Projector,
+`packages/bench/test/harmony-touch/touch-full-bench-runs.test.ts`. In 8.1 a device composed by this project reached it: Test Projector,
 eleven commands in a Sony 12 bit definition written from our own rhythm table under identifiers of ours, added to
 the device, map and protocol lists and delivered with those three 200 and the other three 304. The remote
 committed it and listed the device, and 15 of 15 expected codes were heard in device mode, its ten keys and the
 Blu-ray's five as a control, and its Power entry sent PowerToggle when tapped. A second sync took it out again and
-a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch-device-runs.test.ts`. In 8.2 an
+a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/harmony-touch/touch-device-runs.test.ts`. In 8.2 an
 activity composed by this project reached it: Test Cinema, a Custom activity of the Blu-ray and the LG TV under an
 identifier of ours, with start and end steps, a map sending to both devices and four screen entries under labels of
 ours, added to the activity and map lists and delivered with those two 200 and the other four 304. The remote
 committed it and listed it last with the custom picture, and 33 of 33 expected codes were heard: its start from Off,
 every key and entry, a switch to Watch TV and back, and Off, every timed pause in band. A second sync took it out
-again and a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/touch-activity-runs.test.ts`. In
+again and a closing `--unchanged` run was asked with that set's tags, `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`. In
 8.3 favourites composed by this project reached it: the user's favourites document with channel 61 added from the
 line up and the order reversed, and a logo drawn by us at that channel's station logo address, delivered with those
 two 200 and every other request 304. The remote committed them and showed the six in the new order with our logo on
 61, and 18 of 18 expected codes were heard, 61 sending 0 6 1 from the line up's number; the next sync asked for the
 logo with our tag, the configuration hash not moving since favourites are not in it. A second sync put both back,
 the closing `--unchanged` run asked for the logo with its old tag, and 7.1's favourites test held 15 of 15 after
-it, `packages/bench/test/touch-favourites-runs.test.ts`. In 8.4 a Settings and a Context composed by this project reached it:
+it, `packages/bench/test/harmony-touch/touch-favourites-runs.test.ts`. In 8.4 a Settings and a Context composed by this project reached it:
 the remote's own Settings with the screen brightness from 100 to 20 and the timeout from 10 to 30 seconds, and a
 Context rebuilt from a description of the seven fields a Touch reads, equal in content to the remote's, delivered
 with those two 200 and the other four 304. The remote committed both: the configuration hash carried Context's new
 tag, the screen was dimmed and, off the cable, took about 30 seconds after a touch to dim, with no restart. A
 second sync put both back, full brightness and about 10 seconds returned, and its first list had asked for the two
-with our tags; a closing `--unchanged` run followed, `packages/corpus/test/touch-settings-runs.test.ts`. In 8.5 an activity
+with our tags; a closing `--unchanged` run followed, `packages/corpus/test/touch/touch-settings-runs.test.ts`. In 8.5 an activity
 and a device of Logitech's were taken out: Listen to Music and the Denon AV Receiver, with the receiver's role in three
 other activities, their volume keys and swipes, one screen entry and the two infrared definitions only it used,
 delivered as four documents with 200 and Context and Settings 304. The remote committed them and listed four
@@ -250,19 +250,19 @@ activities and six devices; the three activities that had used the receiver were
 the volume keys sending nothing. A second sync put the four back. A first try stopped on a USB read timeout while
 its 13 chunk write was going out and the remote was seen restarting; the configuration hash then still answered with
 the set before's tags, and the same set went through on the next try. What made it stop is not known,
-`packages/bench/test/touch-removal-runs.test.ts`. In 8.6 the whole test setup was composed by this project: the seven
+`packages/bench/test/harmony-touch/touch-removal-runs.test.ts`. In 8.6 the whole test setup was composed by this project: the seven
 devices, five activities and 616 keys, gestures and screen entries the remote held, described and composed again under
 identifiers of ours onto the set with the four lists emptied, every device's record and codes carried from its
 catalogue entry, and compared with Logitech's documents field by field with nothing unexplained. Delivered as the four
 documents with 200 and Context and Settings 304, the remote committed it, and the ten 7.1 tests, unchanged, held 418
 of 418 on it, against 413 on Logitech's own; three attempts were started again, the person at the bench reporting a few mistakes here and there. A second
-sync put the remote's own four back, `packages/bench/test/touch-setup-runs.test.ts`. In 9.2 the empty configuration went to
+sync put the remote's own four back, `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`. In 9.2 the empty configuration went to
 it: the four lists with no device and no activity, Context and Settings its own. The remote committed it, asked for no
 favourites document in that sync and for only the two pictures of its background, and started on it after the person
 at the bench restarted it, its favourites page on its own screen for no favourites, no activity page, an empty device
 page; a text seen once right after the sync was not identified. The put back delivered the four and the three
 favourites documents with 200, the tuning device's favourites and the line up for the first time, and every stored
-picture had survived, `packages/bench/test/touch-empty-runs.test.ts`. In 9.4 the test setup built from nothing went to it:
+picture had survived, `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`. In 9.4 the test setup built from nothing went to it:
 all six documents and a background picture written by this project from a setup file, the archive of the catalogue,
 our rhythm table and a description of the account, every one of its 10671 fields credited to the generator that wrote
 it and none carried from a Logitech document, 9.3. The remote committed it, asked for our background at our own
@@ -270,7 +270,7 @@ address, and test 1 of 7.1, every activity started from off and ended, held 38 o
 and all five code families of our definitions, the first time the remote played definitions of ours for those
 families; the other nine tests were left out by decision, since what the set changes against 8.6 is its definitions
 and records, not which code sits under which key. A band at the foot of every screen was consistent with our
-background. The put back delivered the remote's own six, `packages/bench/test/touch-from-nothing-runs.test.ts`. With it
+background. The put back delivered the remote's own six, `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`. With it
 `todo-touch.md` is done.
 
 ## What is still open
@@ -339,7 +339,7 @@ every one.*
   the panel, and every other model; this said 44 until 9 October 2026, the drawing's count, which
   includes the panel's four touch areas. **A Harmony 885's keys have been mapped since**, every key on one
   unit and sixteen again on a second, by watching the key held in data memory over USB while it was
-  pressed, `tests/test_harmony_885_keys.py` and `reference/remotes/harmony-885/keys.md`, because an 885
+  pressed, `tests/harmony_880_885/test_harmony_885_keys.py` and `reference/remotes/harmony-885/keys.md`, because an 885
   scans its keys on the cable. The rest of this paragraph is about the Harmony 600 and the One. Measured as far as USB allows and no further, section 48: a
   remote on USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
   run the rest of its application, section 111, and "never runs its application" was the wording here
@@ -469,7 +469,7 @@ number to recompute. Answered entries are corrected in place below rather than d
   why the region is measured in eight byte units on arch 9 and arch 14, whose firmware is not known to
   write it. **On arch 8 it is answered**: the Harmony 880 and 885's application appends records of up to
   seven data bytes and their count to wherever base slot 2 points, and two of that platform's
-  containers append, `tests/test_harmony_885_log_area.py`. The same list sits in a Harmony 525
+  containers append, `tests/harmony_880_885/test_harmony_885_log_area.py`. The same list sits in a Harmony 525
   configuration, where the band is not read. This said three architectures' firmware
   never reads it and nothing in the corpus appends<!--superseded--> until then. Elsewhere it stays a
   firmware only question, like the three unused IR classes above, and on **arch 12 it is worse than

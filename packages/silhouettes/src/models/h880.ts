@@ -29,7 +29,7 @@
  * chevrons were read relative to the band, 2.5 pixels lower than where the moved photograph puts them.
  *
  * **29 keys carry the code Logitech's compiles for skin 15 put their own command on**, and every one of them is
- * the code the same key raised on a Harmony 885, `tests/test_harmony_880_keys.py`. No Harmony 880 has been
+ * the code the same key raised on a Harmony 885, `tests/harmony_880_885/test_harmony_880_keys.py`. No Harmony 880 has been
  * pressed. Ten configurations two people read off their 880s, compiled by Logitech, bind commands to codes,
  * and named through the infrared archive a command such as `Pause` says which key it was put on. A key gets
  * its code where devices of both contributors name it on that code and more devices name it there than any
@@ -89,7 +89,7 @@ const CHEVRONS: readonly Key[] = [
 
 /**
  * The keys Logitech's compiles for skin 15 name on a code, each on the code the 885's units raised for it,
- * `ESTABLISHED_880` in `tests/test_harmony_880_keys.py`; `tests/test_silhouettes.py` holds the drawing to it.
+ * `ESTABLISHED_880` in `tests/harmony_880_885/test_harmony_880_keys.py`; `tests/firmware/test_silhouettes.py` holds the drawing to it.
  */
 const ESTABLISHED: ReadonlySet<string> = new Set([
   'VolumeMute', 'VolumeUp', 'VolumeDown', 'DirectionUp', 'DirectionDown', 'DirectionLeft', 'DirectionRight',

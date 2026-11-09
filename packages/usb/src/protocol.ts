@@ -444,7 +444,7 @@ export const ESCAPE_RESET_ALT = 0x03;
  * The sub-commands each architecture's escape dispatches. Arch 9 has not been read.
  *
  * **Arch 8 (Harmony 880 and 885) since `todo-compile-885.md` 1.4**, read in the 885's application 4.4
- * before anything was sent, `tests/test_harmony_885_write_end.py`: the packet parser at `0x157D4` takes
+ * before anything was sent, `tests/harmony_880_885/test_harmony_885_write_end.py`: the packet parser at `0x157D4` takes
  * the escape before the command switch, `0x01` clears the command state and `0x02` and `0x03` set the
  * flag the main loop turns into a wait and a `RESET`; none replies and any other sub code does nothing.
  * **A row here is a fact about the firmware and not a permission**: the restart is `assertResetAllowed`'s,

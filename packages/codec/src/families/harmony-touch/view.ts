@@ -2,7 +2,7 @@
  * The Harmony Touch as the codec's main entry offers it, as the namespace `harmonyTouch`: its documents, the view
  * of them the remote reads, the check of what it would refuse or ignore, its engine's sends, and its family,
  * `todo.md` 7.3.6. Explicit names, so a module of this folder that gains an export does not join the main entry
- * by default; `test/surface.test.ts` holds the list. The composers of the folder, a device, an activity,
+ * by default; `test/package/surface.test.ts` holds the list. The composers of the folder, a device, an activity,
  * favourites, settings, a removal, a whole setup and the documents built from nothing, are the namespace of the
  * same name on `@harmony/codec/build`, `index.ts` in this folder, whole.
  */

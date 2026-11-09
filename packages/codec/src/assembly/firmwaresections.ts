@@ -11,7 +11,7 @@
  *   thirteen compiles section 312 lists, on arch 12 (Harmony One) sixteen records from `0x3FFFF0` to
  *   `0x400000` on its 19 distinct compiles, `todo-compile-one.md` 2.2, and on arch 16 (Harmony 300 and 350)
  *   8192 records from `0x070000` to `0x080000` on its 13 compiles, `todo-compile-350.md` 5.1.3,
- *   `test/noscreenconstants.test.ts`. Its capacity is a `u24` on arch 12 and a `u16` on arch 14 and 16, the
+ *   `test/families/harmony-300-350/noscreenconstants.test.ts`. Its capacity is a `u24` on arch 12 and a `u16` on arch 14 and 16, the
  *   readers' own `LOG_AREA_WIDE_ARCHITECTURES`;
  * * the parameter block's group lengths the firmware demands are the readers' `PARAMETER_GROUP_COUNTS`,
  *   and the twelve bytes the Harmony One's firmware reads past group 9's declared entries are the

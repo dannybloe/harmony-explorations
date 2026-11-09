@@ -31,7 +31,7 @@
  * interval by interval. The row whose rendering is closest wins, and a row whose rendering strays past the
  * tolerance anywhere is not a candidate at all.
  *
- * **What the raw text is, read in the Touch's engine.** `tests/test_harmony_touch_devices.py` anchors the reader
+ * **What the raw text is, read in the Touch's engine.** `tests/harmony_touch/test_harmony_touch_devices.py` anchors the reader
  * in the firmware image and its header holds the reading; the short of it: the remote keeps a command's `Raw`
  * only when its first character is `F`, and only sends it when the command's `KeyCode` is empty or null. It
  * takes the dashes out, then reads tokens of an optional `P` or `S` and hexadecimal digits, so any other
@@ -182,7 +182,7 @@ export function readTouchRaw(text: string):
  * and the original remote's oscillator is not exact, so a few per cent is ordinary. The families of the
  * rhythm table sit further apart than that on the intervals that carry their bits, which is what lets a wide
  * tolerance work: the closest rendering is chosen, and the tolerance only decides what is a candidate. The
- * calibration in `test/touch-learned.test.ts` states what this value scores at a jitter of four per cent.
+ * calibration in `test/families/harmony-touch/touch-learned.test.ts` states what this value scores at a jitter of four per cent.
  */
 export const LEARNED_TOLERANCE = 0.12;
 
@@ -389,7 +389,7 @@ export interface LearnedRaw {
  * `LEARNED_CARRIER_TOLERANCE`, at the row's own width, and the row whose rendering of the first frame is closest
  * wins, ties going to the row with more evidence behind it. A reading wider than the row's width is trimmed from the
  * left only where it is biphase, whose reader cannot tell lead in cells from payload; a two cell reading has to be
- * the row's width exactly. Trimming those as well was measured on the calibration in `test/touch-learned.test.ts`
+ * the row's width exactly. Trimming those as well was measured on the calibration in `test/families/harmony-touch/touch-learned.test.ts`
  * and is worse: at four per cent of jitter 7 more codes come back right and 24 more come back wrong, and at two
  * other seeds 9 more right against 26 and 18 more wrong. **Measured by hand and held by no test**, since holding
  * it would need the rejected rule kept in the code as an option. **A row is refused when a later frame of the

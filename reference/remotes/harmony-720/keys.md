@@ -98,8 +98,8 @@ reads it on the cable as it reads an 885, [memory.md](memory.md).[^t-885-keys]
 
 * Which printed key raises which code: no 720 was pressed.[^unchecked]
 
-[^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
-[^t-720-keys]: Measured in configurations. [The test](../../../tests/test_silhouettes.py)
+[^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
+[^t-720-keys]: Measured in configurations. [The test](../../../tests/firmware/test_silhouettes.py)
 [^s177]: Measured in configurations. [Section 177](../../../docs/findings.md#s177)
-[^t-885-keys]: Read in the firmware. [The test](../../../tests/test_harmony_885_keys.py)
+[^t-885-keys]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_keys.py)
 [^unchecked]: Not checked.

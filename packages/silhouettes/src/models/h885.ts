@@ -34,10 +34,10 @@
  * continuous silver part with a parting line between each colour key and its neighbours and none between
  * the two ends of a rocker. The seams are drawn where the photograph shows them.
  *
- * **The scan codes are the bench's**, `MEASURED` in `tests/test_harmony_885_keys.py`: every key pressed on a
+ * **The scan codes are the bench's**, `MEASURED` in `tests/harmony_880_885/test_harmony_885_keys.py`: every key pressed on a
  * Harmony 885 with the remote's data memory watched over USB, `todo-prepare-885.md` 2.4, the colour keys
  * and Play and Pause settled by their position. `CODES` below is that table under this drawing's names, and
- * `tests/test_silhouettes.py` holds the two against each other. Every key is `printed`: no code was named
+ * `tests/firmware/test_silhouettes.py` holds the two against each other. Every key is `printed`: no code was named
  * through Logitech's button maps.
  *
  * **Names.** Logitech's vocabulary where the key is one of theirs, the marking otherwise, as on the other
@@ -383,7 +383,7 @@ const OFF = centred([[24.3, 0, 0.6], [30, 4], [40, 6.3], [50, 6.7], [60, 5.9], [
 // ---------------------------------------------------------------------------------------------------------
 
 /**
- * Every key's scan code, `MEASURED` in `tests/test_harmony_885_keys.py` under this drawing's names. Nothing
+ * Every key's scan code, `MEASURED` in `tests/harmony_880_885/test_harmony_885_keys.py` under this drawing's names. Nothing
  * here is inferred: a key missing from this table would carry no code, and the check below refuses one.
  */
 const CODES: Readonly<Record<string, number>> = {

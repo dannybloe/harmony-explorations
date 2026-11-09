@@ -21,7 +21,7 @@
  * the reading, not a remote.
  *
  * `operationsOf` turns a recording into what the replay needs. Not a test file itself, so the runner does
- * not pick it up; it is imported by `packages/usb/test/touchsession.test.ts`, including from its
+ * not pick it up; it is imported by `packages/usb/test/touch/touchsession.test.ts`, including from its
  * subprocesses, and by the answerer's tests in `packages/corpus`. It lived in `packages/usb/test/` and was
  * exported from that package as `./test/fake-touch-remote` until `todo.md` 7.3.6 moved it into this kit.
  */

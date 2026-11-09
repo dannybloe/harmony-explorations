@@ -130,4 +130,4 @@ structure.[^s84]
 [^s55]: Measured in configurations. [Section 55](../../docs/findings.md#s55)
 [^s16]: Measured in configurations. [Section 16](../../docs/findings.md#s16)
 [^s84]: Measured in configurations. [Section 84](../../docs/findings.md#s84)
-[^t-885-slots]: Read in the firmware. [The test](../../tests/test_harmony_885_slots.py)
+[^t-885-slots]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_slots.py)

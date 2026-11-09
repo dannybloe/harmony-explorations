@@ -50,7 +50,7 @@
  * header, and not the reference, is where it is described. What it holds, against the fewest of Logitech's nineteen:
  * 67 modes and 1314 lists (84 and 1955), 14 hit pages, 29 font sets (section 427's 18 and 11 blended copies), 27 base
  * slot 11 entries (29), 25 timers (26); 486460 bytes built in 2026 and 489507 in a build year whose Year picker offers a
- * leap year (69 modes, 15 hit pages), `test/oneempty.test.ts`. It starts on the activity menu, the case the start's
+ * leap year (69 modes, 15 hit pages), `test/families/harmony-one/oneempty.test.ts`. It starts on the activity menu, the case the start's
  * ready map takes for location 0. An
  * activity menu with no row is Logitech's own on the four compiles with no activity, and an all off case with nothing
  * to switch off is `harvest_one_families_1`'s, section 430.
@@ -102,7 +102,7 @@ type PictureName = (typeof ONE_PICTURES)[number]['name'];
  * The picture each place of each screen draws past the whole screen one at 0, 0, by the screen's key in
  * `EMPTY_ONE_SCREENS` and the place: the firmware screens' and the power off help's icons, and the settings
  * buttons, a whole width row on Options and the Year picker and a pad on every other picker. What each of
- * Logitech's draws there on the sixteen English compiles of skin 54, `test/oneempty.test.ts`.
+ * Logitech's draws there on the sixteen English compiles of skin 54, `test/families/harmony-one/oneempty.test.ts`.
  */
 const PLACED: Readonly<Record<string, Readonly<Record<string, PictureName>>>> = {
   'firmware:lowBattery': { '58,103': 'Low Battery' },

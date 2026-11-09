@@ -698,10 +698,10 @@ client, and a cable host is not one the engine can answer[^t-touch-api-engine].
   build or another product of the generation[^unchecked].
 * What `setsleeptimer` and the help requests do on the screen of a Touch; read in the engine only[^unchecked].
 
-[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_recovery.py)
-[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
-[^t-touch-activities-firmware]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_activities.py)
-[^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)
-[^t-touch-confighash]: Measured on a unit. [The test](../../../../packages/usb/test/touch-confighash.test.ts)
-[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-first-sync.test.ts)
+[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_recovery.py)
+[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_engine.py)
+[^t-touch-activities-firmware]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_activities.py)
+[^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-host.test.ts)
+[^t-touch-confighash]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-confighash.test.ts)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-first-sync.test.ts)
 [^unchecked]: Not checked.

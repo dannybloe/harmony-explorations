@@ -169,7 +169,7 @@ export function writeChunkLengths(total: number): number[] {
  *
  * Pure, and separate from sending for two reasons. It is the derived protocol in executable form,
  * so it is worth testing byte for byte with no device present, which is what
- * `packages/usb/test/writes.test.ts` does. And a caller that wants to know what a write **would**
+ * `packages/usb/test/write/writes.test.ts` does. And a caller that wants to know what a write **would**
  * send, which is what the rehearsal script prints before it is allowed to send anything, must be
  * able to ask without a permission object.
  *

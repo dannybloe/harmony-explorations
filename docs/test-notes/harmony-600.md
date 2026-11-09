@@ -18,7 +18,7 @@ folder said about the bench before plan 009 step 3.1 moved it here.
 * **The 600's panel is the one this project confirmed as monochrome by looking**, on the bench unit,
   which `reference/capabilities.md` recorded as "seen at the bench" until plan 009's step 3.4; section 387
   measured what a colour becomes on it, and Logitech's service states it monochrome,
-  `tests/test_product_capabilities.py`.
+  `tests/logitech/test_product_capabilities.py`.
 * **A write target since 29 September 2026**, `CLAUDE.md` "Never write to a remote"; it runs build 0.2,
   and the architecture's README carried both in a "bench unit" column until plan 009 step 3.1 moved them
   here.
@@ -120,7 +120,7 @@ was measured.
 **The 33 byte report descriptor is byte for byte the 700's**, `81 06` included. So the input
 item flag difference described below really does track the architecture rather than the
 individual model or firmware version: the live arch 14 remote matches the other arch 14
-image, not the arch 12 one. The measured bytes are pinned in `tests/test_usbdesc.py`, which
+image, not the arch 12 one. The measured bytes are pinned in `tests/usb_protocol/test_usbdesc.py`, which
 turns the measurement into a regression test.
 
 ## Measured against two bench remotes

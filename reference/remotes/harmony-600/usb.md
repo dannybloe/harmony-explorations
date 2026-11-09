@@ -67,7 +67,7 @@ those are variables of another kind, and the configuration's own are live on the
 * The data memory, program memory and action queue members of the `0x1N` family, read in the 600's image
   and never sent[^s304b].
 
-[^t-usbdesc]: Measured on a unit. [The test](../../../tests/test_usbdesc.py)
+[^t-usbdesc]: Measured on a unit. [The test](../../../tests/usb_protocol/test_usbdesc.py)
 [^s281]: Measured on a unit. [Section 281](../../../docs/findings.md#s281)
 [^s19]: Measured on a unit. [Section 19](../../../docs/findings.md#s19)
 [^s302]: Measured on a unit. [Section 302](../../../docs/findings.md#s302)

@@ -912,7 +912,7 @@ The catalogue's fields named here are Logitech's[^s321b].
   and is not identified[^s321].
 
 `inputPlan`, `composeDeviceInputs`, `activityStartTargets` and `deviceStateMachines` in
-`packages/codec/src/compose/inputs.ts`; `packages/codec/test/inputs.test.ts`.
+`packages/codec/src/compose/inputs.ts`; `packages/codec/test/compose/inputs.test.ts`.
 
 **The state tables, built from a description**[^s324]. `buildStateTables` in
 `packages/codec/src/assembly/statetables.ts`, with the four slot family's facts of

@@ -45,7 +45,7 @@
  * activity**, the empty one a build from nothing starts from, `todo-compile-350.md` 5.1.6, Watch TV's press is bound
  * in the key table and the flag is created, as every input variable already was: `flag.reused` says which happened.
  *
- * **What it rests on**, `packages/codec/test/noscreenactivity.test.ts`: the test setup's activity composed onto
+ * **What it rests on**, `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`: the test setup's activity composed onto
  * Logitech's compile of three devices for the bench Harmony 350, after our LG TV and Denon, held part by part
  * against Logitech's compile of the whole test setup; and each of seven compiles of the current generation,
  * six for a Harmony 350 and one for a Harmony 300, given its own activity's devices again and compared with what

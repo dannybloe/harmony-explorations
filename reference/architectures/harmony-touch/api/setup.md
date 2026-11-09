@@ -353,8 +353,8 @@ path as it stands[^t-touch-api-setup].
 * Which network devices a Touch can reach for the content requests[^unchecked].
 * The hubs' branches of every handler here, read and not checked against a unit[^unchecked].
 
-[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_setup.py)
-[^t-touch-host]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_host.py)
-[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-first-sync.test.ts)
-[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-second-sync.test.ts)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
+[^t-touch-host]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_host.py)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-first-sync.test.ts)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-second-sync.test.ts)
 [^unchecked]: Not checked.

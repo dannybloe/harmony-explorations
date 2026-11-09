@@ -56,7 +56,7 @@ const XML_OPEN = 0x3c;
  * version that looks like a gate is not one. Three arch 8 wrappers state it inside `INTENDEDVERSION`,
  * and this said one until `todo/todo-prepare-885.md` 2.2 counted them. The reader looks up these six
  * names only, so it drops `SOFTWARE` before the comparison sees it, and the comparison's refusal of
- * an unknown field never meets it on a real file: `packages/corpus/test/compatibility.test.ts`.
+ * an unknown field never meets it on a real file: `packages/corpus/test/read/compatibility.test.ts`.
  */
 export const INTENDED_VERSION_FIELDS = [
   'PROTOCOL',

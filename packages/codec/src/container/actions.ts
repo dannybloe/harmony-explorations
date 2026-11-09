@@ -85,7 +85,7 @@ export const STATE_FROM_BYTE_REGISTER = 0xee;
  * Six, and the count is the point. `BANDS_1F` below carries the readings and this carries the
  * machine readable half of the same fact, so `stateVariableSite` can find a reference without a
  * second table of opcodes elsewhere. `TheStateVariableSitesMatchTheirReadings` in
- * `test/actions.test.ts` compares the two by reading the reading strings, so adding a sub opcode
+ * `test/container/actions.test.ts` compares the two by reading the reading strings, so adding a sub opcode
  * to one and not the other fails rather than drifting.
  *
  * **Two of these were nearly missed and that would have been silent**, section 277: a first survey
@@ -121,7 +121,7 @@ export interface StateVariableSite {
  * Measured over the fourteen programmed configurations: 3281 writes through the opcode, 3371 through
  * a low byte opcode and 1511 through the band, 8163 in all, of which **0 name a variable the
  * container's own base slot 13 does not have**. That closure is what says the three kinds are the
- * ones a generator uses, and it is asserted in `test/actions.test.ts`.
+ * ones a generator uses, and it is asserted in `test/container/actions.test.ts`.
  *
  * A variable index is **not** carried anywhere else a rewriter has to follow. Base slot 14's records
  * are selected by `0x72`'s **high** byte rather than being indexed by the variable, section 39, and

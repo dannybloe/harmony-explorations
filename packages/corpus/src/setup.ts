@@ -165,7 +165,7 @@ export function customPayload(existing: Record<string, unknown>, record: number)
 // The dashboard sends a Harmony 350 to a screen of its own, `FavouriteChannelsView` in the ButtonMapping task
 // package, which saves with `UpdateDeviceModeButtonMaps` onto the device mode map that
 // `GetDeviceModeButtonMaps` reads: hard buttons `Fav1` to `Fav5`, each a `ChannelButtonAssignment`. The
-// record holds exactly that after MyHarmony's save, `test/favourites.test.ts`. The Harmony 300 has its own
+// record holds exactly that after MyHarmony's save, `test/service/favourites.test.ts`. The Harmony 300 has its own
 // panel again and its save was not traced, so both are refused by `favouriteIndexBase` below until a stage
 // sends that operation, behind a door of its own.
 

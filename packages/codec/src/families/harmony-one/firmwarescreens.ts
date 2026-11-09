@@ -331,7 +331,7 @@ export function oneFirmwarePicturePlaces(mode: number): { x: number; y: number }
 /**
  * The hit page each of the ten is touched through, by its name in `hitpages.ts`' table, in mode order: a message over
  * OK where the screen draws OK, the page of no area on the two blanks, and the message alone on the rest, as that
- * table's namers and section 417 have them; on all sixteen English compiles, `test/onenumbering.test.ts`.
+ * table's namers and section 417 have them; on all sixteen English compiles, `test/families/harmony-one/onenumbering.test.ts`.
  */
 export const ONE_FIRMWARE_HIT_PAGES: readonly string[] = SCREENS.map((screen) => {
   if (screen.ok === true) return 'message and OK';

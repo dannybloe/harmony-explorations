@@ -18,9 +18,9 @@ Every step was a read.
 1. **Enumeration only**: product `0xC110`, `bcdDevice` `0x0811`, product string `Harmony Remote 0-4.4.2`,
    100 mA, one HID interface with interrupt endpoints `0x81` in and `0x02` out, 64 bytes, 1 ms. The
    report descriptor is the image's byte for byte, `TestTheLiveHarmony885MatchesItsImage` in
-   `tests/test_usbdesc.py`.
+   `tests/usb_protocol/test_usbdesc.py`.
 2. **`GET_VERSION`** through the library, which opened the remote unchanged: `44 21 49 01 80 11 08`. The
-   four fields the image predicts agree, `tests/test_arch8_usb.py`.
+   four fields the image predicts agree, `tests/harmony_880_885/test_arch8_usb.py`.
 3. **The library could not read flash on arch 8**, having no address rule for it, so the 885 image's
    `READ_FLASH` path was read first: it checks no address. The rule and the identity address were added
    on that reading, reads only.
@@ -54,7 +54,7 @@ on. The same reads, the same answers:
 `todo/todo-prepare-885.md` 2.1 and 2.3, one unit on the cable at a time. Every command was a read, and each
 unit was named by its identity block before anything else was read: `read-identity.ts --record h885_a`, and
 later `--record h885_b`, both answered unchanged. Both report the version block `44 21 49 01 80 11 08`. The
-facts are asserted in `tests/test_harmony_885_bench_reads.py`; the files are registered as `h885_a_*` and
+facts are asserted in `tests/harmony_880_885/test_harmony_885_bench_reads.py`; the files are registered as `h885_a_*` and
 `h885_b_*` in `tests/lab.py`.
 
 ### `h885_a`
@@ -69,7 +69,7 @@ facts are asserted in `tests/test_harmony_885_bench_reads.py`; the files are reg
    from there to `0x1D0000`. Remains of earlier configurations, by their shape; not decoded.
 4. **`read-ram.ts --address 0x108 --count 8` twice, seconds apart**: the same eight bytes both times but the
    first, the second, which went from 10 to 14. The clock, 2020-10-24 11:37, a Saturday; the bytes are in
-   the lab's file and `tests/test_harmony_885_bench_reads.py`. The
+   the lab's file and `tests/harmony_880_885/test_harmony_885_bench_reads.py`. The
    configuration's own records 0 to 6 state 2020-10-24 09:48:37, so the clock read 1 h 48 min 33 s past
    them; when the unit last started is not known.
 
@@ -102,7 +102,7 @@ where the configuration reader has one, is a gap in the bench tool.
 `44 21 49 01 80 11 08`, was compared with the header of every Harmony 880, 885, 880 Pro and 720 configuration
 file in the lab through the library's own comparison and rail, sixteen files. Four matched on all five fields
 they state, four downloads of one 885 configuration with identical headers; the other twelve were refused on
-skin and hardware version and nothing else. `packages/corpus/test/compatibility.test.ts` asserts the 885's
+skin and hardware version and nothing else. `packages/corpus/test/read/compatibility.test.ts` asserts the 885's
 match and five of the twelve refusals, the files the lab's registry names; the scripts and the whole table
 are the lab's.
 
@@ -114,7 +114,7 @@ are the lab's.
 Every command was a read. The remote showed its USB connected screen throughout, and its keys were scanned
 anyway. The Harmony Touch was on the cable as well during the first session, and the product id kept it
 out. The logs are registered as `h885_a_keys_*` and `h885_b_keys_check` in `tests/lab.py`, and
-`tests/test_harmony_885_keys.py` asserts what follows. The rules given for every session: never Power, OK
+`tests/harmony_880_885/test_harmony_885_keys.py` asserts what follows. The rules given for every session: never Power, OK
 and 0 down together, which restarts the remote, and no key down while the batteries go in or the cable goes
 on, since Power or OK held there keeps the bootloader. Each key is named by the step list's order, the key
 asked for at that point; the log holds codes only.
@@ -195,7 +195,7 @@ so the page warns against Glow rather than explaining it.
 8. **`read-config.ts` once**: 568020 bytes, no window retried, SHA-256 equal to `h885_a_config`'s.
 9. **Unplugged and used**: it woke, ran an activity and answered keys as before.
 
-**What the backup holds**, `tests/test_harmony_885_flash_backup.py`: the application is Logitech's published
+**What the backup holds**, `tests/harmony_880_885/test_harmony_885_flash_backup.py`: the application is Logitech's published
 885 image byte for byte; the bootloader differs from the published one in 33 bytes, 31 in the identity block's
 two per unit fields and two at `0x000162`, beside the battery calibration word; the configuration region is the earlier region read; the
 staging region holds 48129 bytes that are not `0xFF`; the log area is erased. Filed as `h885_a_flash` and
@@ -225,7 +225,7 @@ once B has its own backup and one block written back.
 8. **Unplugged and used**: it woke and responded to keys and an activity; what each should do on this unit's
    configuration was not compared.
 
-**What B's backup holds**, `tests/test_harmony_885_flash_backup.py`: the application is the published 885
+**What B's backup holds**, `tests/harmony_880_885/test_harmony_885_flash_backup.py`: the application is the published 885
 image; the bootloader differs from the published one in 34 bytes, all 32 of the identity block's per unit
 fields and the two at `0x000162`; the region is the earlier region read; the staging region holds 48129 bytes
 that are not `0xFF`, as on A, and the log area is erased. Filed as `h885_b_flash`, `h885_b_flash_2` and
@@ -253,7 +253,7 @@ the lab's work folder and written back with a fresh stamp. In order:
    bytes; the second stopped on a sequence break and filed nothing.
 8. **Unplugged and used**: it looked and behaved as before, as far as could be told at the bench.
 
-`tests/test_harmony_885_first_config_write.py`. Filed as `h885_b_written_1_4` (the stamped file, with the
+`tests/harmony_880_885/test_harmony_885_first_config_write.py`. Filed as `h885_b_written_1_4` (the stamped file, with the
 writer's journals beside it), `h885_b_after_1_4_config`, `h885_b_after_1_4_region` and `h885_b_clock_after_1_4`.
 
 **The sequence breaks are not only before a hand restart**, which the sections above said: two of the four
@@ -278,7 +278,7 @@ decided; B's own configuration stays in the lab backup. In order:
    and "1 OF 2" on the first, outside the activities and inside one; the Sony page shows its title and the
    eight labels where predicted; nothing looked wrong. What the keys send was not measured.
 
-Filed as `h885_b_written_2_1` and `h885_b_after_2_1_config`; `tests/test_harmony_885_first_config_write.py`.
+Filed as `h885_b_written_2_1` and `h885_b_after_2_1_config`; `tests/harmony_880_885/test_harmony_885_first_config_write.py`.
 **B's region has not been read since**, so the next write to B starts with a region read as its compare base.
 
 ## 8 November 2026: the Sony HT's power with its silence, on unit B
@@ -304,5 +304,5 @@ In order:
    monitor times a frame from the one before it, not from the key press. The screens were not reported changed.
 
 Filed as `h885_b_written_2_3`, `h885_b_after_2_3_config` and `h885_b_clock_after_2_3`;
-`tests/test_harmony_885_first_config_write.py`.
+`tests/harmony_880_885/test_harmony_885_first_config_write.py`.
 

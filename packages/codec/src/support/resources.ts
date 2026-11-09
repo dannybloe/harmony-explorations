@@ -11,7 +11,7 @@
  *
  * **Reading a configuration asks for none of them.** Our letters' alphabet, which `characterMap` tries on every
  * configuration, is generated data, `oxaniumalphabet.ts`, rather than drawn from Oxanium where it is read; until
- * that fix to 7.3.5 every reader that names a device refused through the main entry. `test/mainentryreads.test.ts`
+ * that fix to 7.3.5 every reader that names a device refused through the main entry. `test/package/mainentryreads.test.ts`
  * reads every family with nothing supplied. What still asks is drawing and encoding: building letters, icons and
  * pictures, the checks that rebuild a built file to attribute it, and a rendered screen written as a PNG.
  *

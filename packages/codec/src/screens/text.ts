@@ -417,7 +417,7 @@ export type OxaniumAlphabet = LetteredAlphabet & { drawnIn: Readonly<Record<stri
  * alphabet on every configuration, Logitech's included, so every reader that names a device refused through the
  * main entry: `devices` and `inventory` threw `ResourceError` in FreeHarmony, which imports the main entry alone.
  * The tables are what `oxaniumAlphabetFromFont` computes, written once by `bin/oxaniumalphabet.ts`, and
- * `test/oxaniumalphabet.test.ts` computes them from the font again and holds the module equal to them, so the
+ * `test/screens/oxaniumalphabet.test.ts` computes them from the font again and holds the module equal to them, so the
  * copy cannot drift. Reading them is also cheaper than drawing them: about forty milliseconds of inflating and
  * parsing against a second and more of rendering every face in every weight. Decoded once, on first use.
  */

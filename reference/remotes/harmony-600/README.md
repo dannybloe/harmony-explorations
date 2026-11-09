@@ -96,7 +96,7 @@ are the 600's own:
 [^s392b]: Measured on a unit. [Section 392](../../../docs/findings.md#s392)
 [^s23]: Measured on a unit. [Section 23](../../../docs/findings.md#s23)
 [^s17]: Measured in configurations. [Section 17](../../../docs/findings.md#s17)
-[^t-keypad]: Measured on a unit. [The test](../../../tests/test_keypad.py)
+[^t-keypad]: Measured on a unit. [The test](../../../tests/harmony_600_650_700/test_keypad.py)
 [^s390]: Measured on a unit. [Section 390](../../../docs/findings.md#s390)
 [^s88]: Measured on a unit. [Section 88](../../../docs/findings.md#s88)
 [^unchecked]: Not checked.

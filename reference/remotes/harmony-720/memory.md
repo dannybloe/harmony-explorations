@@ -12,5 +12,5 @@ the last key pressed at `0x3A1`, as theirs do,
 
 * Anything off a unit: the flash part and size, and what lies outside the configuration.[^unchecked]
 
-[^t-885-keys]: Read in the firmware. [The test](../../../tests/test_harmony_885_keys.py)
+[^t-885-keys]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_keys.py)
 [^unchecked]: Not checked.

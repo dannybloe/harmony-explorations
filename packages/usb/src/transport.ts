@@ -237,7 +237,7 @@ export function isMicrochipBootloader(vendorId: number, productId: number): bool
  * constant whose meaning is not established. Anything else is undefined rather than guessed,
  * because a guess names the wrong remote: an 885's 0x0811 read as BCD is 11, a Harmony 655.
  *
- * Kept in step with `harmony.usbdesc.skin_id` by `packages/usb/test/remote.test.ts`, which asserts
+ * Kept in step with `harmony.usbdesc.skin_id` by `packages/usb/test/transport/remote.test.ts`, which asserts
  * the same table. `docs/findings.md` section 113.
  */
 export function skinId(bcdDevice: number): number | undefined {

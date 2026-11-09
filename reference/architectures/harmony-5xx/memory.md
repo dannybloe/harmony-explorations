@@ -151,7 +151,7 @@ So every address here is read in the firmware and none is measured: the bare sca
 * Every model here but the Harmony 525.[^unchecked]
 
 [^unchecked]: Not checked.
-[^t-host-client]: Stated by Logitech, in their client. [The test](../../../tests/test_host_client.py)
+[^t-host-client]: Stated by Logitech, in their client. [The test](../../../tests/logitech/test_host_client.py)
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
 [^s119]: Read in the firmware. [Section 119](../../../docs/findings.md#s119)
 [^s267]: Read in the firmware. [Section 267](../../../docs/findings.md#s267)

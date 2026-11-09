@@ -49,7 +49,7 @@
  * piece in place and every address into a piece that moved, so `layOutContainer` lays the container out
  * again. It finds its way, which instruction is a text, which mode a program draws, which corner a label
  * sits in, through the container itself; none of that decides a byte of the output, which the blind
- * control in `test/screentexts.test.ts` checks.
+ * control in `test/families/harmony-600-650-700/screentexts.test.ts` checks.
  *
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */

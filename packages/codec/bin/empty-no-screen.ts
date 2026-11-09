@@ -9,7 +9,7 @@
  * infrared archive, which is the point of the file. What the configuration holds and why each part is what it is,
  * the start up selecting no map among them, is `packages/codec/src/families/harmony-300-350/empty.ts`; what it was held
  * against, three of Logitech's smallest compiles of the family part by part and every byte to a generator, is
- * `packages/codec/test/noscreenempty.test.ts`. The 5.1.5 file is
+ * `packages/codec/test/families/harmony-300-350/noscreenempty.test.ts`. The 5.1.5 file is
  *
  *   node packages/codec/bin/empty-no-screen.ts --out ../lab/work/setups/h350-empty/empty-350.bin
  *

@@ -10,7 +10,7 @@ disagreed with the datasheet in ways that silently changed the meaning of real c
 
 Both are the sort of error that produces a plausible-looking listing rather than an
 obvious failure, so there is one table now, it is range-checked at import time, and the
-encodings are asserted in `tests/test_isa.py` against the datasheet.
+encodings are asserted in `tests/firmware/test_isa.py` against the datasheet.
 
 Reference: Microchip PIC18F instruction set summary. Bit fields use the datasheet's
 notation:
@@ -127,7 +127,7 @@ FILE_DA_OPS: Dict[int, str] = {
 # Bits 3..1 of the high byte are the bit number, bit 0 is `a`.
 #
 # BTFSS is 1010 and BTFSC is 1011. Getting these the wrong way round inverts the sense
-# of every conditional in a listing, so `tests/test_isa.py` pins them both against the
+# of every conditional in a listing, so `tests/firmware/test_isa.py` pins them both against the
 # datasheet encoding and against a real wait loop from the Harmony firmware.
 BIT_OPS: Dict[int, str] = {
     0x7: 'BTG',

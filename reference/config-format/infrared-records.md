@@ -332,8 +332,8 @@ Each of these is a way to write a configuration that the remote accepts and that
 [^s349]: Measured in configurations. [Section 349](../../docs/findings.md#s349)
 [^s365b]: Read in the firmware. [Section 365](../../docs/findings.md#s365)
 [^unchecked]: Not checked.
-[^t-885-infrared]: Read in the firmware. [The test](../../tests/test_harmony_885_infrared.py)
-[^t-885-infrared-corpus]: Measured in configurations. [The test](../../tests/test_harmony_885_infrared.py)
+[^t-885-infrared]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_infrared.py)
+[^t-885-infrared-corpus]: Measured in configurations. [The test](../../tests/harmony_880_885/test_harmony_885_infrared.py)
 [^s42]: Read in the firmware. [Section 42](../../docs/findings.md#s42)
 [^s82]: Measured in configurations. [Section 82](../../docs/findings.md#s82)
 [^s65]: Measured in configurations. [Section 65](../../docs/findings.md#s65)

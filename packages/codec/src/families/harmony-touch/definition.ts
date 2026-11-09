@@ -22,7 +22,7 @@
  * states no trailer and no gap, and a definition made without them would send its frames back to back. Since
  * `todo-touch.md` 5.3.4 every stated row carries `held`, and 8 rows of the table's 681 still carry none, all
  * measured ones: 5 are refused for that, and 3 earlier as whole record shapes; 577 are written, and the 96 refused for a width the family's name does not give write at the
- * widths a caller states, `test/touch-definition.test.ts`.
+ * widths a caller states, `test/families/harmony-touch/touch-definition.test.ts`.
  *
  * **Reading a block back into segments is the inverse of `blockOfDefinition` in `archiveblock.ts`**, which built
  * those blocks out of Logitech's definitions in the first place, and of `pulsesOfBlock` in `irframe.ts`, which
@@ -132,7 +132,7 @@ export interface DefinitionOptions {
  * alike, and at the carriers of a few hundred kilohertz the test families state, a hundred whole numbers. The
  * rule is a reading of how Logitech writes a carrier, in round numbers, and its score is the closure's: it
  * gives Logitech's own carrier for 641 of the table's 681 rows, every one of which the archive names,
- * `test/touch-definition.test.ts`; `ATI 21 Bit`, a radio family at 433 MHz, is one of the 40 it misses. **The choice matters by one nanosecond at most**, since the Touch
+ * `test/families/harmony-touch/touch-definition.test.ts`; `ATI 21 Bit`, a radio family at 433 MHz, is one of the 40 it misses. **The choice matters by one nanosecond at most**, since the Touch
  * rounds the period of whichever carrier it is given, `roundedPeriodOfCarrier`, and every candidate's period
  * truncates to the same number.
  */
@@ -414,7 +414,7 @@ function leadOf(shape: FrameShape | undefined): number[] {
 
 /** A signed duration as an atom: positive the lamp flickering, otherwise dark. The bounds are null, as on
  * 12827 of the 12830 atoms of Logitech's catalogue, counting every header, trailer, literal and cell,
- * `test/touch-definition.test.ts`. */
+ * `test/families/harmony-touch/touch-definition.test.ts`. */
 const atom = (us: number): Atom => ({ Type: us > 0 ? 1 : 0, Value: Math.abs(us), MinValue: null, MaxValue: null });
 const atoms = (words: readonly number[]): Atom[] => words.map(atom);
 const cell = (bitType: number, words: readonly number[]): Encoding => ({ BitType: bitType, Atoms: atoms(words) });

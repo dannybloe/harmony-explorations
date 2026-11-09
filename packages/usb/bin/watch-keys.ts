@@ -17,7 +17,7 @@
  * A key that reads 0 means nothing is held, so a press and its release are two lines.
  *
  * The body runs only when this file is the program, so a test can import `defaultWatch` with no remote
- * attached, `packages/usb/test/watch-keys.test.ts`. The tables it chooses from are
+ * attached, `packages/usb/test/transport/watch-keys.test.ts`. The tables it chooses from are
  * `packages/base/src/keys.ts`, shared with the key reader page.
  */
 import { HarmonyRemote, listHarmony, openHarmony, skinId } from '@harmony/usb';

@@ -20,8 +20,8 @@ memory off a 350, only the files it serves.
 * Whether a long press takes 4 plus the place beyond the two configurations read with one[^unchecked]. This listed which group it takes, saying no configuration measured had one, until two were read.
 
 [^s263]: Measured in configurations. [Section 263](../../../docs/findings.md#s263)
-[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/test_harmony_350_keys.py)
+[^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
 [^s262]: Measured in configurations. [Section 262](../../../docs/findings.md#s262)
-[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_device_groups.py)
-[^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/codec/test/noscreenempty.test.ts)
+[^t-device-groups-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)
+[^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenempty.test.ts)
 [^unchecked]: Not checked.

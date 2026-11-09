@@ -1,0 +1,2567 @@
+"""
+Regression tests for every documented finding.
+
+The analysis in docs/ was produced by an AI and is published as such, so the claims need
+to be executable rather than merely written down. Each test here pins one statement from
+docs/findings.md. If a refactor breaks a conclusion, this is where it shows up.
+"""
+import os
+import re
+import unittest
+
+import lab
+from harmony import firmware, gspm
+from harmony.pic18 import chains, disasm, isa, trace
+
+
+class TestFirmwareHeader(unittest.TestCase):
+    # logical name -> (version, byte 6 which is the length's top byte, size field, true size)
+    EXPECTED = {
+        'one34_code': ('3.4', 0x00, 0xEA8A, 0x0EA92),
+        'h700_code': ('2.8', 0x01, 0x2B78, 0x12B80),
+        'h600_code': ('0.2', 0x01, 0x12B8, 0x112C0),
+    }
+
+    def test_header_fields(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*self.EXPECTED)
+        for name, (version, family, size_field, _) in self.EXPECTED.items():
+            with self.subTest(image=name):
+                h = firmware.parse_header(lab.load(name))
+                self.assertEqual(h.version, version)
+                self.assertEqual(h.family_byte, family)
+                self.assertEqual(h.size_field, size_field)
+                self.assertTrue(h.has_magic, '0x48 0x47 magic at offset 8')
+
+    def test_bytes_4_to_6_are_the_length_less_eight(self):
+        # Section 295: byte 6 is the length's top byte and not a family, so the three bytes state the
+        # true size outright, which the table above records independently as its last column.
+        lab.require(*self.EXPECTED)
+        for name, (_, _, _, true_size) in self.EXPECTED.items():
+            with self.subTest(image=name):
+                self.assertEqual(firmware.parse_header(lab.load(name)).stated_size, true_size)
+
+    def test_size_field_encodes_length_minus_eight(self):
+        lab.require('one34_code', 'h700_code')
+        for name in ('one34_code', 'h700_code'):
+            with self.subTest(image=name):
+                code = lab.load(name)
+                h = firmware.parse_header(code)
+                self.assertEqual(h.size_field, (len(code) - 8) & 0xFFFF)
+
+    def test_size_field_recovers_the_truncated_600_length(self):
+        """
+        concordance returns 65536 bytes; the real image is 70336. The header says so, and
+        that figure agrees independently with the highest observed branch target.
+        """
+        code = lab.load('h600_code')
+        self.assertEqual(len(code), 65536, 'the dump really is 64 KiB')
+        self.assertEqual(firmware.recover_size(code), 0x112C0)
+        self.assertEqual(0x112C0 - len(code), 4800, 'bytes missing from the dump')
+
+    def test_checksum_over_complete_images(self):
+        lab.require('one34_code', 'h700_code')
+        for name in ('one34_code', 'h700_code'):
+            with self.subTest(image=name):
+                self.assertTrue(firmware.verify_checksum(lab.load(name)))
+
+    def test_checksum_fails_on_the_truncated_image(self):
+        self.assertFalse(firmware.verify_checksum(lab.load('h600_code')))
+
+    def test_the_complete_600_image_verifies_where_the_truncated_one_does_not(self):
+        """The 600's firmware, read off the remote, checked by the image's own header.
+
+        This is the pair that makes the read trustworthy. The truncated dump fails its checksum
+        at every candidate length; the complete image passes at exactly one, 70336 bytes, which
+        is the length the size field encodes. A 16 bit checksum over 70 KiB does not agree by
+        accident, and the wrong lengths show what disagreement looks like.
+        """
+        code = lab.load('h600_code_complete')
+        self.assertEqual(len(code), 0x112C0, '70336 bytes')
+        self.assertTrue(firmware.verify_checksum(code))
+        h = firmware.parse_header(code, base=0x9000)
+        self.assertEqual(h.size_field, (len(code) - 8) & 0xFFFF)
+        self.assertEqual(h.entry_point, 0x1A26E, 'the entry point CLAUDE.md records for the 600')
+        # And it was past the truncation, which is why it could not be disassembled before.
+        self.assertGreater(h.entry_point, 0x9000 + 65536)
+        for wrong in (0x12C0, 0x212C0):
+            if wrong <= len(code):
+                self.assertFalse(firmware.verify_checksum(code[:wrong]),
+                                 'a wrong length must not verify')
+
+    def test_the_two_600_images_agree_wherever_both_have_bytes(self):
+        """65534 of 65536, and the two that differ are the two nobody can read.
+
+        The offset clamp at 0xFFC0 puts program 0x0FFFE and 0x0FFFF out of reach of a 62 byte
+        read, so the complete image takes those from the truncated dump. Everything else was
+        obtained twice, by different software years apart.
+        """
+        old = lab.load('h600_code')
+        new = lab.load('h600_code_complete')
+        self.assertEqual(old, new[:len(old)], 'the complete image contains the truncated one')
+
+    def test_the_ones_internal_page_holds_an_image_that_verifies(self):
+        """Code that no package in the corpus contains, checked by its own header.
+
+        On arch 12 the application runs from external NOR, so nothing in any `.hfw` covers the
+        internal flash. There is no second copy to compare against, which is why the checksum is
+        the whole argument: the image at +0x1000 declares its own length and its own checksum, and
+        both agree.
+        """
+        page = lab.load('one_internal_fe')
+        self.assertEqual(len(page), 0xFFFE, 'two bytes short of a page, per the offset clamp')
+        h = firmware.parse_header(page[0x1000:])
+        self.assertTrue(h.has_magic)
+        self.assertEqual(h.version_bcd, 0x34, 'firmware 3.4, like the remote it came from')
+        size = firmware.recover_size(page[0x1000:])
+        self.assertEqual(size, 45356)
+        self.assertTrue(firmware.verify_checksum(page[0x1000:0x1000 + size]))
+        # The bootloader sits below it and has no header of its own: the reset vector is at zero.
+        self.assertEqual(page[0:2], b'\xd2\xef', 'GOTO at the reset vector')
+
+    def test_the_600s_safe_mode_image_is_not_what_the_safe_dump_holds(self):
+        """`*-safe.bin` means different things on the two architectures.
+
+        The safety rails name that file as the first recovery path. On the One it holds the safe
+        mode container. On the 600 it is the application firmware from program 0x9000, truncated,
+        and the real safe mode is an image at internal 0xFE+0x1000 that nothing had read until the
+        internal pages were swept. Pinned because a rail resting on a wrong assumption is worse
+        than no rail.
+        """
+        page = lab.load('h600_internal_fe')
+        stored = lab.load('h600_code')
+        # What the safe dump actually is: the page from program 0x9000, not from zero. The dump
+        # runs past the end of this page, into the 0xFF one, so only the overlap is comparable.
+        overlap = len(page) - 0x9000
+        self.assertEqual(page[0x9000:], stored[:overlap])
+        self.assertNotEqual(page[:overlap], stored[:overlap], 'not a dump from program zero')
+        # The real safe mode image, which the safe dump does not contain at all.
+        h = firmware.parse_header(page[0x1000:])
+        self.assertTrue(h.has_magic)
+        self.assertEqual(h.version_bcd, 0x02)
+        size = h.size_field + 8
+        self.assertEqual(size, 24320)
+        self.assertTrue(firmware.verify_checksum(page[0x1000:0x1000 + size]))
+
+    # What each remote reports in version block fields 8 and 9, measured over USB and published in
+    # reference/usb-protocol/version-block.md. They are here because the refutation below needs both ends and only one
+    # of them is in a sample: no `h600_internal_ff` was ever taken, so "nothing at 0xFF +0x0000 and
+    # nothing at 0xFF +0xE000" is a hardware reading and not something this test can recompute.
+    REPORTED_IMAGE_FIELDS = {'h600': (0x00, 0x00), 'one': (0x34, 0x16)}
+
+    def test_version_block_field_8_names_an_image_the_600_does_not_have(self):
+        """Fields 8 and 9 were the last unidentified bytes of the version block.
+
+        Both name images in internal memory by version, and both read zero when the image is
+        absent. The 600 is the negative case for each, and this test carries the refutation of the
+        one competing reading: that field 8 names the safe mode image.
+
+        It used to assert only that the safe mode image is at version 0x02, which is byte for byte
+        what its neighbour above already asserts, so it restated its premise and tested nothing.
+        """
+        lab.require('h600_internal_fe')
+        page = lab.load('h600_internal_fe')
+        safe_mode_version = firmware.parse_header(page[0x1000:]).version_bcd
+        field_8, field_9 = self.REPORTED_IMAGE_FIELDS['h600']
+        # The refutation: the 600 does have a safe mode image, at a version that is not zero, and
+        # still reports zero in field 8. So field 8 cannot be naming it.
+        self.assertEqual(safe_mode_version, 0x02)
+        self.assertNotEqual(safe_mode_version, field_8,
+                            'field 8 would have to equal the safe mode version to name it')
+        self.assertEqual((field_8, field_9), (0x00, 0x00), 'the 600 is the negative case for both')
+        # And the positive case exists, so zero is a reading of an absent image rather than a field
+        # nothing ever fills.
+        self.assertNotEqual(self.REPORTED_IMAGE_FIELDS['one'], (0x00, 0x00))
+
+    def test_recover_size_checks_rather_than_guesses_when_it_can(self):
+        """It used to take the smallest candidate at least as long as the buffer.
+
+        Right for a truncated file, wrong for a buffer holding more than the image, which is what
+        reading the memory around an image produces: it answered 135872 for the 600. A candidate
+        inside the buffer can have its checksum verified instead.
+        """
+        code = lab.load('h600_code_complete')
+        self.assertEqual(firmware.recover_size(code), 0x112C0)
+        self.assertEqual(firmware.recover_size(code + b'\xff' * 4096), 0x112C0,
+                         'trailing bytes must not push the answer to the next 64 KiB')
+        self.assertEqual(firmware.recover_size(lab.load('h600_code')), 0x112C0,
+                         'the truncated case still works, by the fallback rule')
+
+
+class TestCycleDelayRoutine(unittest.TestCase):
+    """
+    0x10D00 is the most called routine in the arch 14 image: a computed jump into a run of
+    NOPs, giving a cycle-exact delay.
+    """
+    ADDR = 0x10D00
+    BASE = 0x9000
+
+    def test_computed_jump_into_a_nop_sled(self):
+        code = lab.load('h700_code')
+        lines = list(disasm.disassemble(code, self.BASE, self.ADDR, 3))
+        self.assertIn('ADDWF PCL,W', lines[0])
+        self.assertIn('MOVWF PCL', lines[1])
+        self.assertIn('NOP', lines[2])
+
+    def test_sled_is_one_hundred_nops_then_return(self):
+        """
+        The scaling constant in the IR path is 0x65 = 101, so a parameter of
+        (101 - x) * 2 lands x NOPs from the end and burns exactly x cycles. That only
+        works if the sled is exactly 100 long.
+        """
+        code = lab.load('h700_code')
+        offset = self.ADDR - self.BASE + 4          # past ADDWF PCL,W / MOVWF PCL
+        nops = 0
+        while code[offset + 2 * nops:offset + 2 * nops + 2] == b'\x00\x00':
+            nops += 1
+        self.assertEqual(nops, 100)
+        after = isa.decode(code, offset + 2 * nops, self.BASE)
+        self.assertEqual(after.mnemonic, 'RETURN')
+
+
+class TestTheSectionSeekerCensus(unittest.TestCase):
+    """Which sections the firmware ever fetches, computed rather than quoted.
+
+    The seeker takes a raw slot number in a register every caller loads with a literal, so one
+    scan gives the whole census. What it says is as interesting for what is missing: raw slots 0
+    and 1 appear on neither architecture, so base slot 0's name tree and base slot 1's
+    architecture record are read by the host and never by the remote. `docs/findings.md`
+    section 81.
+    """
+
+    SEEKERS = {'one34_code': (0x20000, 0x2BA76), 'h700_code': (0x9000, 0x10B92)}
+    # Sites, then the raw slots. The One skips raw 8, which is the NULL arch 12 inserts and the
+    # slot arch 14 does not have at all, so the gap is the container's and not the census's.
+    EXPECTED = {
+        'one34_code': (24, [n for n in range(2, 20) if n != 8]),
+        'h700_code': (19, list(range(3, 18))),
+    }
+
+    def census(self, name):
+        """Every call site of the seeker, with the literal slot each one loads."""
+        base, seeker = self.SEEKERS[name]
+        code = lab.load(name)
+        sites = trace.xrefs(code, base, [seeker])[seeker]
+        slots = []
+        for site in sites:
+            offset = site.addr - base
+            for back in range(2, 30, 2):
+                if offset - back < 0:
+                    break
+                instr = isa.decode(code, offset - back, base)
+                if instr.mnemonic == 'MOVLW':
+                    slots.append(instr.fields['k'])
+                    break
+                if instr.mnemonic in ('RETURN', 'RETLW', 'GOTO'):
+                    break
+        return sites, slots
+
+    def test_every_call_site_resolves_to_a_literal_slot(self):
+        """A site whose slot could not be recovered would make the absences below meaningless."""
+        for name in self.SEEKERS:
+            lab.require(name)
+            sites, slots = self.census(name)
+            with self.subTest(image=name):
+                self.assertEqual(len(slots), len(sites))
+                self.assertEqual(len(sites), self.EXPECTED[name][0])
+
+    def test_the_seeked_slots_are_the_ones_recorded(self):
+        for name, (_, expected) in self.EXPECTED.items():
+            lab.require(name)
+            _, slots = self.census(name)
+            with self.subTest(image=name):
+                self.assertEqual(sorted(set(slots)), expected)
+
+    def test_neither_firmware_ever_seeks_raw_slot_zero_or_one(self):
+        """The point of section 81: those two sections exist for the host software."""
+        for name in self.SEEKERS:
+            lab.require(name)
+            _, slots = self.census(name)
+            with self.subTest(image=name):
+                self.assertNotIn(0, slots)
+                self.assertNotIn(1, slots)
+
+
+class TestArch9Infrared(unittest.TestCase):
+    """The infrared chain on the Harmony 525, read out of the first arch 9 firmware.
+
+    Addresses are pinned rather than described, for the reason the rest of this file pins them:
+    finding them again is a search. `docs/findings.md` section 80.
+    """
+
+    BASE = 0x0000
+    PART = '4550'
+    SPI_READ_BYTE = 0x07F8E
+    SPI_WRITE_BYTE = 0x07F7A
+    CARRIER_ON = 0x07680
+    CARRIER_OFF = 0x076C0
+    PLAYER = 0x076CE
+    CLASS_DISPATCH = 0x05108
+    CLASS5 = 0x0513E
+    QUEUE_PUSH_PAIR = 0x0277C
+    # Section 82: the loader that reads a class 5 body, and the helpers it reads the fields with.
+    CLASS5_LOADER = 0x04FF6
+    SAVE_WALKING_POINTER = 0x05326
+    READ_U16 = 0x0658E
+    READ_U24 = 0x065BE
+    READ_U24_INTO_TBLPTR = 0x06560
+    CLASS5_SEEK_SYMBOL = 0x05370
+    INDEX_TO_ENTRY = 0x066F4
+
+    def code(self):
+        return lab.load('h525_code')
+
+    def text(self, at, count):
+        return '\n'.join(disasm.disassemble(self.code(), self.BASE, at, count, self.PART))
+
+    def test_the_spi_primitive_is_the_config_choke_point(self):
+        """The arch 9 analogue of arch 14's 0x1B9AC: every config byte comes through here."""
+        lab.require('h525_code')
+        self.assertIn('MOVFF SSPBUF,0x75c', self.text(self.SPI_READ_BYTE, 4))
+        self.assertIn('MOVFF 0x3f3,SSPBUF', self.text(self.SPI_WRITE_BYTE, 4))
+        # And the write is what the read is built on, which is how an SPI read works: clock a
+        # dummy byte out to clock the answer in.
+        self.assertIn('RCALL 0x07f7a', self.text(self.SPI_READ_BYTE, 4))
+
+    def test_the_carrier_is_ccp1_in_pwm_mode(self):
+        """0x0C into CCP1CON is PWM mode. On the default register map that address is CCPR1H,
+        where the same byte is a duty cycle and says nothing, which is why the map is chosen."""
+        lab.require('h525_code')
+        on = self.text(self.CARRIER_ON, 32)
+        self.assertIn('MOVWF PR2', on)
+        self.assertIn('MOVLW 0x0c', on)
+        self.assertIn('MOVWF CCP1CON', on)
+        self.assertIn('BSF T2CON,2', on)
+        off = self.text(self.CARRIER_OFF, 8)
+        self.assertIn('CLRF CCP1CON', off)
+        self.assertIn('BCF T2CON,2', off)
+
+    def test_a_pulse_is_a_u16_whose_top_bit_is_the_carrier(self):
+        """The player reads pairs of bytes out of a RAM queue at 0x600 and tests bit 15."""
+        lab.require('h525_code')
+        instr = isa.decode(self.code(), 0x07744, self.BASE)
+        self.assertEqual(instr.mnemonic, 'BTFSS')
+        self.assertEqual(instr.fields['b'], 7)
+        carrier_on = self.text(0x07748, 1)
+        # Bit set means carry the duty over from 0x22c; bit clear means clear the duty, so the
+        # top bit is carrier on and the rest is a timer count.
+        self.assertIn('MOVFF 0x22c,CCPR1', carrier_on)
+        self.assertIn('CLRF CCPR1', self.text(0x07752, 1))
+
+    def test_the_class_byte_is_switched_on_at_a_single_place(self):
+        """Class 1 and class 5 each get their own arm, and everything else falls through."""
+        lab.require('h525_code')
+        text = self.text(self.CLASS_DISPATCH, 30)
+        self.assertIn('DECF 0x2a,B,W', text)     # class 1
+        self.assertIn('MOVLW 0x05', text)        # class 5
+        self.assertIn('SUBWF 0x2a,B,W', text)
+
+    def test_class_five_pushes_u16_words_it_reads_from_the_config(self):
+        """The loop: a count, then that many words, each pushed as a pulse.
+
+        Where the words come from was open when section 80 was written and is closed by section 82.
+        `0x0658E` reads two bytes into the variable named by 0x14e and 0x14f.
+        """
+        lab.require('h525_code')
+        text = self.text(self.CLASS5, 80)
+        self.assertIn('CALL 0x0658e', text)
+        self.assertIn('CALL 0x0277c', text)
+        # And the push helper adds two to the queue's byte count, so a queue entry is a u16.
+        push = self.text(self.QUEUE_PUSH_PAIR, 16)
+        self.assertIn('MOVLW 0x02', push)
+        self.assertIn('ADDWF 0x2d8,F', push)
+
+    def test_the_two_read_helpers_state_their_own_widths(self):
+        """Section 82's field widths are literals in the code, not inferences from the data.
+
+        `0x0658E` reads a u16 into the pointer at 0x14e, `0x065BE` a u24 into the pointer at
+        0x150, each by clocking bytes through the SPI reader and stepping the destination.
+        """
+        lab.require('h525_code')
+        self.assertEqual(self.text(self.READ_U16, 15).count('CALL 0x07572'), 2)
+        self.assertEqual(self.text(self.READ_U24, 22).count('CALL 0x07572'), 3)
+
+    def test_the_loader_reads_a_table_pointer_only_for_class_five(self):
+        """The body's first two fields, and the class byte is what gates the first of them.
+
+        A class 1 pointer names durations straight away; a class 5 pointer names a body, and only
+        then does the loader take a u24 table address. Section 82.
+        """
+        lab.require('h525_code')
+        text = self.text(self.CLASS5_LOADER, 22)
+        self.assertIn('MOVLW 0x05', text)
+        self.assertIn('SUBWF 0x22a,W', text)          # the class byte, bank 2
+        self.assertIn('MOVLW 0x2d', text)             # destination 0x22d
+        self.assertIn('CALL 0x%05x' % self.READ_U24, text)
+        self.assertIn('MOVLW 0x30', text)             # destination 0x230, the u16 index count
+        self.assertIn('CALL 0x%05x' % self.READ_U16, text)
+        # And the read position afterwards becomes the walking pointer over the index stream.
+        self.assertIn('MOVFF TBLPTRL,0x291', self.text(self.SAVE_WALKING_POINTER, 4))
+
+    def test_an_index_reaches_a_three_byte_table_entry(self):
+        """`3 * index + 1`: the stride is the entry width and the one skips the table's count."""
+        lab.require('h525_code')
+        text = self.text(self.INDEX_TO_ENTRY, 20)
+        self.assertIn('MOVF 0x15c,W', text)           # the index byte
+        self.assertIn('MOVLW 0x03', text)             # three bytes an entry
+        self.assertIn('MULWF', text)
+        self.assertIn('MOVF 0x15b,W', text)           # the addend, loaded with 1 by 0x05370
+        self.assertIn('MOVWF 0x5b,B', self.text(self.CLASS5_SEEK_SYMBOL, 1))
+        self.assertIn('MOVLW 0x01', self.text(self.CLASS5 + 0x2C, 2))
+        # The entry itself is a u24 read straight into the table pointer and seeked.
+        self.assertIn('MOVWF TBLPTRU', self.text(self.READ_U24_INTO_TBLPTR, 8))
+
+
+class TestInfraredChain(unittest.TestCase):
+    BASE = 0x9000
+
+    def test_carrier_variables_have_the_expected_access_counts(self):
+        hits = trace.trace(lab.load('h700_code'), self.BASE, [0x08D, 0x08E, 0x3BF])
+        self.assertEqual(len(hits[0x08D]), 15)
+        self.assertEqual(len(hits[0x08E]), 7)
+        self.assertEqual(len(hits[0x3BF]), 2)
+
+    def test_the_mask_reaches_the_modulator_from_the_ring_buffer(self):
+        """0x3BF is written once, from 0xDBB, immediately before the modulator call."""
+        hits = trace.trace(lab.load('h700_code'), self.BASE, [0x3BF])
+        writes = [a for a in hits[0x3BF] if 'WRITE' in a.kind]
+        self.assertEqual(len(writes), 1)
+        self.assertEqual(writes[0].addr, 0x195EC)
+        self.assertIn('0xDBB', writes[0].detail)
+
+    def test_modulator_drives_portc_bit_2(self):
+        code = lab.load('h700_code')
+        text = '\n'.join(disasm.disassemble(code, self.BASE, 0x194B4, 8))
+        self.assertIn('BSF PORTC,2', text)
+        self.assertIn('BCF PORTC,2', text)
+        self.assertIn('CALL 0x10d00', text)
+
+    def test_enable_mask_is_inverted(self):
+        """
+        The half-cycle test is BTFSS, not BTFSC, so the guarded `BSF PORTC,2` runs when
+        the mask bit is CLEAR. The mask is active low. An earlier version of this project
+        had the two mnemonics swapped and stated the opposite polarity.
+        """
+        code = lab.load('h700_code')
+        instr = isa.decode(code, 0x194C4 - self.BASE, self.BASE)
+        self.assertEqual(instr.mnemonic, 'BTFSS')
+        self.assertEqual(instr.fields['b'], 0)
+        following = isa.decode(code, 0x194C6 - self.BASE, self.BASE)
+        self.assertEqual(following.mnemonic, 'BSF')
+
+    def test_carrier_period_field_scaling_closes_on_38khz(self):
+        """
+        The firmware computes cycles as value * 4 / 10 and then subtracts 19 cycles of loop
+        overhead. At 4 MIPS a 38 kHz carrier is a 26.3 us period, so the config stores 263.
+
+        **Every constant here is decoded out of the image, and until 13 August 2026 none of them
+        was.** This test used to be four lines of arithmetic on its own literals, `263 * 4 // 10 ==
+        105` and `105 / 4.0 == 26.25`, with no firmware, no config and no library in it: it passed
+        with no lab at all, and it would have passed if the firmware used any other numbers.
+        `CLAUDE.md` cites this closure under "Verification standard" as the project's model of an
+        independent numeric check, which is what made it worth repairing rather than deleting.
+
+        The closure only means something when the two ends are independent. One end is the datasheet
+        figure, a 38 kHz carrier, and the other is these three constants, so they have to come from
+        the code.
+        """
+        code = lab.load('h700_code')
+
+        # The multiplier is a shift count in WREG, consumed by the RLCF pair at 0x193E4, not a
+        # literal 4 anywhere: `MOVLW 0x02` then a two step 16 bit shift left.
+        shift = isa.decode(code, 0x193E0 - self.BASE, self.BASE)
+        self.assertEqual(shift.mnemonic, 'MOVLW')
+        loop = [isa.decode(code, a - self.BASE, self.BASE)
+                for a in (0x193E4, 0x193E6, 0x193E8, 0x193EA, 0x193EC)]
+        self.assertEqual([i.mnemonic for i in loop],
+                         ['BCF', 'RLCF', 'RLCF', 'DECF', 'BNZ'])
+        self.assertEqual(loop[4].fields['target'], 0x193E4, 'the shift really is a loop')
+        multiplier = 1 << shift.fields['k']
+
+        # The divisor, staged into the divide helper's argument pair before the call.
+        divisor = isa.decode(code, 0x193EE - self.BASE, self.BASE)
+        self.assertEqual(divisor.mnemonic, 'MOVLW')
+        self.assertEqual(isa.decode(code, 0x193FC - self.BASE, self.BASE).mnemonic, 'CALL')
+
+        # The loop overhead, subtracted and clamped at zero rather than allowed to wrap.
+        overhead = isa.decode(code, 0x1940C - self.BASE, self.BASE)
+        self.assertEqual(overhead.mnemonic, 'SUBLW')
+        clamp = isa.decode(code, 0x19410 - self.BASE, self.BASE)
+        self.assertEqual(clamp.mnemonic, 'CLRF', 'below the overhead it clamps at zero')
+
+        # Now the closure, with nothing of our own in it but the carrier frequency.
+        self.assertEqual((multiplier, divisor.fields['k'], overhead.fields['k']), (4, 10, 19))
+        stored = 263                         # what a config carries for 38 kHz, in units of 0.1 us
+        cycles = stored * multiplier // divisor.fields['k']
+        self.assertEqual(cycles, 105)
+        microseconds = cycles / 4.0          # 4 instruction cycles per microsecond, so 16 MHz
+        self.assertAlmostEqual(microseconds, 26.25, places=2)
+        # And back to a frequency, which is where the closure is either loose or it is not. 26.25 us
+        # is 38095 Hz rather than 38000, because a period of 26.3 us cannot be represented in whole
+        # units of 0.1 us: the field quantises 263.15 down to 263. The error is 0.2506%, measured
+        # rather than asserted at a round number, and it is stated here instead of being hidden
+        # behind a rounding, because a closure whose slack nobody wrote down is one nobody can check.
+        hertz = 1e6 / microseconds
+        self.assertAlmostEqual(hertz, 38095.24, places=1)
+        self.assertLess(abs(hertz - 38000) / 38000, 0.003)
+
+
+class TestKeypadScanner(unittest.TestCase):
+    BASE = 0x9000
+
+    def test_column_reader_returns_one_to_four(self):
+        code = lab.load('h700_code')
+        text = list(disasm.disassemble(code, self.BASE, 0x19094, 9))
+        self.assertIn('BTFSS PORTB,4', text[0])
+        self.assertIn('RETLW 0x01', text[1])
+        self.assertIn('BTFSS PORTB,7', text[6])
+        self.assertIn('RETLW 0x04', text[7])
+        self.assertIn('RETLW 0x00', text[8])
+
+    def test_columns_are_active_low(self):
+        """
+        BTFSS skips the RETLW when the bit is set, so a code is returned for the first line
+        found LOW. Consistent with the active-low row drive.
+        """
+        code = lab.load('h700_code')
+        instr = isa.decode(code, 0x19094 - self.BASE, self.BASE)
+        self.assertEqual(instr.mnemonic, 'BTFSS')
+
+    def test_key_code_is_row_times_four_plus_column(self):
+        code = lab.load('h700_code')
+        text = '\n'.join(disasm.disassemble(code, self.BASE, 0x19274, 12))
+        self.assertIn('MULLW 0x04', text)
+        self.assertIn('MOVF PRODL,W', text)
+
+    def test_hardwired_reset_combination_fires_when_the_key_is_pressed(self):
+        """
+        BTFSS PORTB,6 then RESET: the RESET executes when PORTB,6 is CLEAR, which in an
+        active-low matrix means the key is held. An earlier version of this project read
+        this as BTFSC and stated the inverse.
+        """
+        code = lab.load('h700_code')
+        test = isa.decode(code, 0x19120 - self.BASE, self.BASE)
+        self.assertEqual(test.mnemonic, 'BTFSS')
+        self.assertEqual(test.fields['b'], 6)
+        following = isa.decode(code, 0x19122 - self.BASE, self.BASE)
+        self.assertEqual(following.mnemonic, 'RESET')
+
+
+class TestArch14UsesSpi(unittest.TestCase):
+    BASE = 0x9000
+
+    def test_config_reads_go_through_the_mssp(self):
+        """
+        0x1B9AC clocks a byte in through SSP1BUF. That is hardware SPI, which means the
+        arch 14 config is not memory mapped, which in turn is why the firmware has to be
+        copied into internal flash to run.
+
+        The register was called SSPBUF here until the SFR table was rebuilt from the
+        PIC18F67J50 map. The address is the same 0xFC9; the part has two synchronous serial
+        ports, so the ports are now numbered and the config flash hangs off port 1.
+        """
+        code = lab.load('h700_code')
+        text = '\n'.join(disasm.disassemble(code, self.BASE, 0x1B9AC, 4))
+        self.assertIn('SETF SSP1BUF', text)
+        self.assertIn('MOVF SSP1BUF,W', text)
+        self.assertIn('BTFSS SSP1STAT,0', text)
+
+    def test_chip_select_is_latf_bit_7(self):
+        code = lab.load('h700_code')
+        text = '\n'.join(disasm.disassemble(code, self.BASE, 0x18CEC, 3))
+        self.assertIn('BSF LATF,7', text)
+        self.assertIn('BCF LATF,7', text)
+
+
+class TestArch9ScreenOpcodes22And23(unittest.TestCase):
+    """Section 101: a page select and a page transfer, not a row marker.
+
+    The lead was trelowney's, on 10 August 2026, and decision 7 says an upstream finding is a
+    hypothesis. So every address is asserted against this project's own 525 image, and the
+    dispatcher through `chains` rather than by eye.
+    """
+
+    NAME, BASE = 'h525_code', 0x0000
+    DISPATCH = 0x0465C
+    OPCODE_22, OPCODE_23 = 22, 23
+    ROW_MATH = 0x038EC
+    TRANSFER = 0x03898
+
+    def at(self, code, addr):
+        return isa.decode(code, addr - self.BASE, self.BASE)
+
+    def test_the_dispatcher_names_a_handler_for_both(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        table = chains.chain_table(code, self.BASE, self.DISPATCH)
+        self.assertIn(self.OPCODE_22, table)
+        self.assertIn(self.OPCODE_23, table)
+        self.assertEqual(table[self.OPCODE_22], 0x046D6)
+        self.assertEqual(table[self.OPCODE_23], 0x046E8)
+
+    def test_opcode_22_takes_one_byte_and_derives_the_page_bounds(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # One operand byte into 0xD9, then the call that keeps it and computes row * 8 and + 7.
+        call = self.at(code, 0x046E2)
+        self.assertEqual(call.mnemonic, 'CALL')
+        self.assertEqual(call.fields['target'], self.ROW_MATH)
+        self.assertEqual(self.at(code, 0x038F0).fields['k'], 8)
+        self.assertEqual(self.at(code, 0x038F4).mnemonic, 'MULWF')
+        self.assertEqual(self.at(code, 0x038FA).fields['k'], 7)
+
+    def test_the_transfer_sends_a_page_address_command(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # 0xB0 | page is the page address command of a page addressed controller, and it is what
+        # makes the operand a page index rather than a marker. This is the assertion the whole
+        # reading rests on. Which controller is a separate question, below: one command names a
+        # family of families, and naming a part on it was the error this section corrected.
+        self.assertEqual(self.at(code, self.TRANSFER).mnemonic, 'MOVLW')
+        self.assertEqual(self.at(code, self.TRANSFER).fields['k'], 0xB0)
+        self.assertEqual(self.at(code, 0x0389C).mnemonic, 'IORWF')
+        # And opcode 23 loads the panel's width before calling it.
+        self.assertEqual(self.at(code, 0x046EE).fields['k'], 0x60)
+        transfer = self.at(code, 0x04714)
+        self.assertEqual(transfer.mnemonic, 'CALL')
+        self.assertEqual(transfer.fields['target'], self.TRANSFER)
+
+    def test_opcode_23_brackets_the_transfer_with_two_port_bits(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # LATE bit 2 and LATA bit 5 around it, restored after. Asserted because a later reader
+        # changing the transfer has to keep the bracket, and because the arch 9 external latch is
+        # clocked with LATE.
+        self.assertEqual(self.at(code, 0x046E8).mnemonic, 'BSF')
+        self.assertEqual(self.at(code, 0x046EA).mnemonic, 'BCF')
+        self.assertEqual(self.at(code, 0x04718).mnemonic, 'BSF')
+        self.assertEqual(self.at(code, 0x0471A).mnemonic, 'BCF')
+
+
+class TestTheArch9DisplayControllerIsST7565Class(unittest.TestCase):
+    """Section 101, corrected on 10 August 2026: the page command names a family of families.
+
+    The reading of screen opcodes 22 and 23 rests on `0xB0 | page`, which the ST7565 and the
+    SSD1306 both use, so it cannot name a part. The rest of the driver can, and the test is the
+    positive and the negative together: an init sequence full of one family's commands is only
+    evidence if the other family's are absent.
+    """
+
+    NAME, BASE = 'h525_code', 0x0000
+    # The display driver, which holds both the init sequence and the page transfer.
+    LOW, HIGH = 0x03500, 0x03D00
+    LITERALS = ('MOVLW', 'IORLW', 'ADDLW')
+
+    # Commands only the ST7565 and UC1701 family define.
+    ST7565_ONLY = {0xE2: 'software reset', 0xA2: 'LCD bias', 0x24: 'resistor ratio 4',
+                   0x25: 'resistor ratio 5', 0x2F: 'power control', 0xF8: 'booster ratio'}
+    # Commands only the SSD1306 defines. The negative control, and an SSD1306 cannot be brought up
+    # without 0x8D at least, so their joint absence is the strong half of this.
+    SSD1306_ONLY = {0x8D: 'charge pump', 0xD5: 'display clock divide', 0xD9: 'precharge',
+                    0xDA: 'COM pins', 0xDB: 'VCOMH deselect', 0xA8: 'multiplex ratio',
+                    0xD3: 'display offset', 0x21: 'column address range',
+                    0x22: 'page address range'}
+
+    def sites(self, code):
+        """Every literal load in the driver region, value to offsets."""
+        out = {}
+        for off in range(self.LOW, min(self.HIGH, len(code)) - 1, 2):
+            ins = isa.decode(code, off, self.BASE)
+            if ins is None or ins.mnemonic not in self.LITERALS:
+                continue
+            k = ins.fields.get('k')
+            if k is not None:
+                out.setdefault(k, []).append(off)
+        return out
+
+    def test_every_st7565_only_command_appears_in_the_driver(self):
+        lab.require(self.NAME)
+        sites = self.sites(lab.load(self.NAME))
+        for value, name in sorted(self.ST7565_ONLY.items()):
+            with self.subTest(command='0x%02X %s' % (value, name)):
+                self.assertTrue(sites.get(value), '0x%02X %s is absent' % (value, name))
+
+    def test_no_ssd1306_only_command_appears_anywhere_in_the_driver(self):
+        """The negative control. Without this the positive result is just a list of byte values."""
+        lab.require(self.NAME)
+        sites = self.sites(lab.load(self.NAME))
+        found = {'0x%02X %s' % (v, n): sites.get(v) for v, n in self.SSD1306_ONLY.items()
+                 if sites.get(v)}
+        self.assertEqual(found, {})
+
+    def test_the_init_sequence_is_that_family_in_order(self):
+        """
+        Scattered literals are weak and a sequence is strong, so the order is asserted too: the
+        commands the family documents for bring-up, in the positions the firmware issues them.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        expected = [(0x0357A, 0xC0), (0x03582, 0xA0), (0x03586, 0x25), (0x0358E, 0x81),
+                    (0x03594, 0xA2), (0x0359C, 0xC0), (0x035A0, 0x24), (0x035C2, 0xF8),
+                    (0x035CA, 0x40), (0x035CE, 0xAF), (0x035D8, 0xE2), (0x035DE, 0xAE)]
+        for addr, value in expected:
+            with self.subTest(addr='0x%05X' % addr):
+                ins = isa.decode(code, addr - self.BASE, self.BASE)
+                self.assertEqual(ins.mnemonic, 'MOVLW')
+                self.assertEqual(ins.fields['k'], value)
+
+    def test_the_transfer_addresses_a_column_three_to_the_right_of_the_panels(self):
+        """
+        The renderer facing half. A page command alone would not need a column, and the offset of
+        three is what a controller with more RAM than panel produces.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        at = lambda a: isa.decode(code, a - self.BASE, self.BASE)   # noqa: E731
+        self.assertEqual(at(0x038BA).fields['k'], 3)
+        self.assertEqual(at(0x038C0).fields['k'], 3)
+        # The high nibble command is 0x10 | (col >> 4), built out of a swap and a mask.
+        self.assertEqual(at(0x03C3E).fields['k'], 0xF0)
+        self.assertEqual(at(0x03C40).mnemonic, 'SWAPF')
+        self.assertEqual(at(0x03C44).mnemonic, 'IORLW')
+        self.assertEqual(at(0x03C44).fields['k'], 0x10)
+        # And the low nibble is 0x00 | (col & 0x0F), which is why the mask is asserted rather than
+        # an OR: on this family the low nibble command's opcode bits are zero.
+        self.assertEqual(at(0x038C6).mnemonic, 'ANDLW')
+        self.assertEqual(at(0x038C6).fields['k'], 0x0F)
+
+    def test_one_command_in_the_init_is_unexplained_and_stays_recorded(self):
+        """Recorded rather than explained, so it cannot be quietly dropped from the sequence."""
+        lab.require(self.NAME)
+        ins = isa.decode(lab.load(self.NAME), 0x0357E - self.BASE, self.BASE)
+        self.assertEqual(ins.fields['k'], 0x89)
+        self.assertNotIn(0x89, self.ST7565_ONLY)
+        self.assertNotIn(0x89, self.SSD1306_ONLY)
+
+
+class TestScreenProgramPopulations(unittest.TestCase):
+    """Section 118: a count with no population attached, and what each population holds.
+
+    Section 101 explained a discrepancy by naming base slot 11, which carries no opcode 22 at all.
+    These tests pin each population separately, because the error was possible only while the
+    figures floated free of the code that produced them.
+    """
+
+    ARCH9 = ('h525_config', 'h525_config_2', 'h525_safemode_ahcm')
+
+    def containers(self):
+        lab.require(*self.ARCH9)
+        return [(n, gspm.parse(lab.load(n))) for n in self.ARCH9]
+
+    def count(self, container, addresses, opcode):
+        total = 0
+        for address in addresses:
+            for instruction in container.screen_program(address) or []:
+                total += instruction.opcode == opcode
+        return total
+
+    def test_base_slot_11_holds_no_screen_draw_at_all(self):
+        """The claim section 101 got wrong, asserted as the negative it is."""
+        for name, c in self.containers():
+            with self.subTest(sample=name):
+                slot = gspm.arch_slot(c.architecture, gspm.SCREEN_TABLE_SLOT)
+                addresses = c.pointer_array(slot) or []
+                self.assertTrue(addresses)
+                opcodes = set()
+                for address in addresses:
+                    opcodes |= {i.opcode for i in c.screen_program(address) or []}
+                # An end, a queued action list instruction, and in the safe mode container a
+                # switch. **No drawing opcode of any kind**, which is the claim: these programs
+                # queue work and branch, they do not put pixels on the panel. Asserted as a set
+                # difference rather than an equality, because the exact set is per container and
+                # an equality here would fail on the next sample without meaning anything.
+                self.assertEqual(opcodes - {gspm.SCREEN_END, gspm.SCREEN_QUEUE_INSTRUCTION,
+                                            gspm.SCREEN_SWITCH_NARROW, gspm.SCREEN_SWITCH_WIDE},
+                                 set())
+                for drawing in (2, 3, 4, 5, gspm.SCREEN_CALL):
+                    self.assertEqual(self.count(c, addresses, drawing), 0)
+
+    def test_every_mode_record_root_is_also_a_page_program(self):
+        """
+        The mechanism behind the double count, and the reason the total is not the sum of its
+        populations. Address identity, which holds on all three, rather than a product of counts.
+        """
+        for name, c in self.containers():
+            with self.subTest(sample=name):
+                pages = {p.program for p in c.mode_pages()}
+                roots = c.mode_program_roots()
+                self.assertTrue(roots)
+                self.assertTrue(set(roots) <= pages)
+
+    def test_the_product_of_counts_is_a_coincidence_the_safe_mode_container_breaks(self):
+        """
+        `records * 8` matches on the two user configs and not on the safe mode container, which
+        holds one page program drawing four rows instead of eight. Asserted so that nobody
+        reintroduces the arithmetic as the explanation.
+        """
+        lab.require(*self.ARCH9)
+        for name in ('h525_config', 'h525_config_2'):
+            with self.subTest(sample=name):
+                c = gspm.parse(lab.load(name))
+                roots = c.mode_program_roots()
+                self.assertEqual(self.count(c, roots, gspm.SCREEN_CALL), 8 * len(roots))
+        c = gspm.parse(lab.load('h525_safemode_ahcm'))
+        roots = c.mode_program_roots()
+        self.assertNotEqual(self.count(c, roots, gspm.SCREEN_CALL), 8 * len(roots))
+        self.assertEqual(self.count(c, roots, gspm.SCREEN_CALL), 8 * len(roots) - 4)
+
+    def test_the_reachable_walk_deduplicates_and_the_naive_one_does_not(self):
+        """Where 1992 came from. The deduplicated figure is the one a document may quote."""
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        programs, failed = c.reachable_screen_programs()
+        self.assertEqual(failed, [])
+        deduped = sum(i.opcode == gspm.SCREEN_CALL
+                      for prog in programs.values() for i in prog)
+        roots = c.screen_program_roots()
+        naive = self.count(c, roots, gspm.SCREEN_CALL)
+        self.assertEqual(deduped, 1080)
+        self.assertEqual(naive, 1992)
+        self.assertGreater(len(roots), len(set(roots)))
+
+
+class TestScreenOpcode3IsDestinationFirst(unittest.TestCase):
+    """Section 118. The order is settled by the page opcode 22 selected, not by the layout.
+
+    trelowney's lead, verified here against this project's own configs, and given a closure his
+    typographic argument does not need: a transfer cannot reach a page that is not selected.
+    """
+
+    DRAW = 3
+    ASYMMETRIC = (0, 12, 0, 0, 96, 1)
+
+    def draws(self, c):
+        """Every opcode 3, with the page selected when it runs."""
+        out = []
+        programs, _ = c.reachable_screen_programs()
+        for _, program in sorted(programs.items()):
+            page = None
+            for instruction in program:
+                if instruction.opcode == gspm.SCREEN_CALL and instruction.operands:
+                    page = instruction.operands[0]
+                elif instruction.opcode == self.DRAW and len(instruction.operands) >= 6:
+                    out.append((page, list(instruction.operands)))
+        return out
+
+    def test_the_asymmetric_draws_are_one_shape_naming_one_picture(self):
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        draws = self.draws(c)
+        asymmetric = [o for _, o in draws if tuple(o[0:2]) != tuple(o[2:4])]
+        self.assertEqual(len(draws), 1114)
+        self.assertEqual(len(asymmetric), 34)
+        self.assertEqual({tuple(o[0:6]) for o in asymmetric}, {self.ASYMMETRIC})
+        pictures = {int.from_bytes(bytes(o[6:9]), 'little') for o in asymmetric}
+        self.assertEqual(len(pictures), 1)
+        # A 96 by 64 bitmap, so a rule is one row off the top of a full screen of solid ink.
+        picture = c.bitmap_at(pictures.pop())
+        self.assertEqual((picture.stride, picture.rows), (96, 64))
+
+    def test_the_first_pair_is_the_one_inside_the_selected_page(self):
+        """
+        The closure. A page holds rows `8 * page` to `8 * page + 7` and a transfer cannot reach
+        outside it, so whichever pair lands inside is the destination. 55 of 55 against 0 of 55.
+        """
+        lab.require('h525_config', 'h525_config_2')
+        first = second = total = 0
+        for name in ('h525_config', 'h525_config_2'):
+            c = gspm.parse(lab.load(name))
+            for page, operands in self.draws(c):
+                if page is None or tuple(operands[0:2]) == tuple(operands[2:4]):
+                    continue
+                total += 1
+                low, high, height = page * 8, page * 8 + 7, operands[5]
+                first += low <= operands[1] and operands[1] + height - 1 <= high
+                second += low <= operands[3] and operands[3] + height - 1 <= high
+        self.assertEqual(total, 55)
+        self.assertEqual(first, 55)
+        self.assertEqual(second, 0)
+
+    def test_the_symmetric_draws_are_the_calibration_case(self):
+        """
+        A test that only fires on the disputed instructions proves nothing about the rule. Every
+        symmetric draw lands inside its own selected page too, which is the case whose answer was
+        never in doubt.
+        """
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        inside = total = 0
+        for page, operands in self.draws(c):
+            if page is None or tuple(operands[0:2]) != tuple(operands[2:4]):
+                continue
+            total += 1
+            low, high = page * 8, page * 8 + 7
+            inside += low <= operands[1] and operands[1] + operands[5] - 1 <= high
+        self.assertEqual(total, 1080)
+        self.assertEqual(inside, 1080)
+
+
+class TestTheFlashJournalOpcodesAreBoundedOrAbsent(unittest.TestCase):
+    """Section 118, against the caveat that a config could write to arbitrary flash.
+
+    The path is real and section 108 read it. These tests pin the two things that bound it, so a
+    later change to either is visible: the write routine's own refusals on arch 14, and the fact that
+    arch 12, whose firmware shares flash with its config, does not implement the opcodes.
+
+    Renamed from `TestAConfigCannotChooseWhereItWrites`, whose title is not true on every architecture:
+    the Harmony 880 and 885 also share one flash between firmware and config, and there a config's base
+    slot 2 chooses where the log append writes, bounded only below `0x010000`, and two corpus configs emit
+    it. `tests/harmony_880_885/test_harmony_885_log_area.py`. This docstring called arch 12 the one architecture whose
+    firmware shares flash with its config until then.
+    """
+
+    ARCH14, ARCH14_BASE = 'h700_code', 0x9000
+    ARCH12, ARCH12_BASE = 'one34_code', 0x020000
+    APPEND = 0x159F4          # what opcodes 0x65 and 0x66 reach
+    OUT_OF_RANGE = 0x15BDE    # where the bounds test sends an address it will not write
+
+    def test_the_append_routine_refuses_before_it_writes(self):
+        """
+        Five zero tests and two range tests, every one of them ending in a RETURN rather than in a
+        send. Both kinds are counted by shape, so the seven are seven and not "at least five".
+
+        It used to count RETURN instructions in a window and demand five or more, which is a floor
+        under the number it was measuring and counts the wrong thing besides: a RETURN is also how
+        the routine ends normally, so the count did not separate a refusal from a completion. Each
+        zero test is now identified as a `BNZ` over a RETURN it skips, and each range test as the
+        branch to the out of range arm, which is a different shape entirely.
+        """
+        lab.require(self.ARCH14)
+        code = lab.load(self.ARCH14)
+        zero_tests, range_tests = [], []
+        for addr in range(self.APPEND, self.OUT_OF_RANGE, 2):
+            ins = isa.decode(code, addr - self.ARCH14_BASE, self.ARCH14_BASE)
+            if ins is None:
+                continue
+            after = isa.decode(code, addr + 2 - self.ARCH14_BASE, self.ARCH14_BASE)
+            if (ins.mnemonic == 'BNZ' and ins.fields['target'] == addr + 4
+                    and after is not None and after.mnemonic == 'RETURN'):
+                zero_tests.append(addr)
+            if ins.mnemonic in ('BRA', 'GOTO') and ins.fields.get('target') == self.OUT_OF_RANGE:
+                range_tests.append(addr)
+        self.assertEqual(len(zero_tests), 5, 'the five zero tests')
+        self.assertEqual(len(range_tests), 2, 'the two range tests')
+        # And the out of range arm returns rather than clamping and carrying on: nothing between it
+        # and its RETURN is a call, so no send is reached from there.
+        tail = [isa.decode(code, a - self.ARCH14_BASE, self.ARCH14_BASE)
+                for a in range(self.OUT_OF_RANGE, self.OUT_OF_RANGE + 0x1A, 2)]
+        reached = tail[:1 + next(n for n, i in enumerate(tail)
+                                if i is not None and i.mnemonic == 'RETURN')]
+        self.assertEqual([i.mnemonic for i in reached if i is not None and 'CALL' in i.mnemonic], [])
+
+    def test_arch_12_implements_none_of_the_flash_writing_opcodes(self):
+        """
+        The structural half, and the one that matters for the write rails: arch 12 is where firmware
+        and config share one mapped NOR, and its dispatcher sends every opcode in 0x65 to 0x6E to
+        the common exit. Section 107 read the ladder; this asserts the consequence.
+        """
+        lab.require(self.ARCH12)
+        c12 = [gspm.parse(lab.load(n)) for n in ('one_config', 'one_config_unprogrammed')
+               if lab.path(n)]
+        self.assertTrue(c12)
+        for container in c12:
+            lists = container.action_lists() or []
+            self.assertTrue(lists)
+            used = {i.opcode for l in lists for i in l}
+            # No arch 12 config emits one, which is the corpus agreeing with the firmware.
+            self.assertEqual(used & {0x65, 0x66}, set())
+
+    def test_no_config_in_the_corpus_emits_0x65_or_0x66(self):
+        """The corpus wide negative for the two journal opcodes, across every architecture, so a new
+        sample that does stands out.
+
+        Renamed from `test_no_config_in_the_corpus_writes_to_flash`, which named more than the body
+        checks: `arch8_config_a` writes flash through the Harmony 880 and 885's `0x0F` band,
+        `tests/harmony_880_885/test_harmony_885_log_area.py`.
+        """
+        lab.require(*lab.CONTAINERS)
+        for name in lab.CONTAINERS:
+            with self.subTest(sample=name):
+                container = gspm.parse(lab.load(name))
+                used = {i.opcode for l in container.action_lists() or [] for i in l}
+                self.assertEqual(used & {0x65, 0x66}, set())
+
+
+class TestTheArch12BootloaderDoesTestAKey(unittest.TestCase):
+    """Section 189, correcting section 118. The bootloader reads the keypad, and this class asserted
+    the opposite until 27 August 2026.
+
+    The refuted claim was "the internal bootloader does not test a key ... zero reads",<!--superseded--> and the test
+    below is rewritten to state what is true rather than removed, per the house rule. Its old body is
+    kept as `old_scanner_shape` and asserted to find nothing, because the defect is the finding: a
+    guard written as `fields.get('a') != 0` discards every instruction that has **no** addressing
+    mode, and a `MOVFF` has none. `pic18_trace.py` does not have this defect and its docstring says
+    so; this test hand rolled a scanner instead of using it.
+
+    The procedure itself still comes from a third party repair sheet and is deliberately **not**
+    asserted here: a published instruction is not a property of this image, and which physical key
+    carries the code cannot be read from firmware at all, per section 48.
+    """
+
+    PORTS = frozenset({0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86})
+    PORT_ADDRESSES = frozenset(0xF00 | low for low in PORTS)
+    READS = ('BTFSS', 'BTFSC', 'MOVF')
+    BOOTLOADER_END = 0x1000
+    THE_ONE_READ = 0x0095A
+    PORTB = 0xF81
+
+    def port_access(self, code, low, high, reads_only):
+        out = []
+        for off in range(low, min(high, len(code) - 1), 2):
+            ins = isa.decode(code, off, 0)
+            if ins is None or ins.fields.get('a') != 0:
+                continue
+            if ins.fields.get('f') not in self.PORTS:
+                continue
+            if reads_only and ins.mnemonic not in self.READS:
+                continue
+            out.append((off, ins.mnemonic))
+        return out
+
+    def port_reads_including_movff(self, code, low, high):
+        """Every read of a port, counting the addressing modes the old scan threw away."""
+        out = []
+        for off in range(low, min(high, len(code) - 1), 2):
+            ins = isa.decode(code, off, 0)
+            if ins is None:
+                continue
+            if ins.mnemonic == 'MOVFF':
+                if ins.fields.get('src') in self.PORT_ADDRESSES:
+                    out.append((off, ins.mnemonic))
+                continue
+            if ins.mnemonic not in self.READS:
+                continue
+            if ins.fields.get('a') != 0 or ins.fields.get('f') not in self.PORTS:
+                continue
+            out.append((off, ins.mnemonic))
+        return out
+
+    def test_the_bootloader_reads_exactly_one_port_and_the_old_scan_could_not_see_it(self):
+        """
+        One read, `MOVFF PORTB,gprF3B`, inside the routine the boot decision calls. Three assertions,
+        and the middle one is the point: the old scanner's shape reports zero over the same bytes, so
+        the disagreement is between two readers of one image rather than between two images.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+
+        reads = self.port_reads_including_movff(code, 0, self.BOOTLOADER_END)
+        self.assertEqual(reads, [(self.THE_ONE_READ, 'MOVFF')])
+        self.assertEqual(isa.decode(code, self.THE_ONE_READ, 0).fields['src'], self.PORTB)
+
+        # The refuted reading, kept executable so the defect cannot come back silently.
+        self.assertEqual(self.port_access(code, 0, self.BOOTLOADER_END, True), [],
+                         'the old scan found nothing, which is why section 118 was wrong')
+
+        writes = self.port_access(code, 0, self.BOOTLOADER_END, False)
+        self.assertEqual(len(writes), 13, 'port writes in the bootloader, which is the positive half')
+
+    def test_the_safe_mode_image_does_read_the_matrix(self):
+        """The positive control for the scan, and consistent with a mode that answers buttons."""
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        reads = self.port_access(code, self.BOOTLOADER_END, 0x8000, True)
+        self.assertEqual(len(reads), 15, 'port reads above the bootloader, so safe mode does scan')
+
+    def test_no_literal_config_base_reaches_the_table_pointer(self):
+        """
+        The remaining thread, recorded as a measurement: the config base arrives in a variable, so
+        neither container address appears as a literal into TBLPTRU. Zero sites, which is why the
+        obvious search for the safe mode container's address finds nothing.
+        """
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        base, tblptru, sites = 0x020000, 0xFF8, 0
+        for off in range(0, len(code) - 3, 2):
+            a = isa.decode(code, off, base)
+            b = isa.decode(code, off + 2, base)
+            if a is None or b is None:
+                continue
+            if a.mnemonic == 'MOVLW' and b.mnemonic == 'MOVWF' and b.fields.get('f') == tblptru:
+                sites += 1
+        self.assertEqual(sites, 0)
+
+
+class TestTheArch9SafeModeImageIsNotTheApplication(unittest.TestCase):
+    """Section 118. Entering safe mode on arch 9 overwrites the application, so the images differ.
+
+    The live remote is not available to a test run, so what is asserted here is the half that lives
+    in the dump: the application's own accessors, and the absence of the safe mode ones. That
+    absence is what proved the resident image is a different one, so it is the assertion worth
+    keeping. The measured live bytes are in the section.
+    """
+
+    NAME = 'h525_code'
+    # Section 87's five accessors, in order: firmware version, software type, skin, platform,
+    # architecture. Read off the live remote as 30 / 0 / 22 / 9 / 9 running normally.
+    APPLICATION_ACCESSORS = 0x05774
+    APPLICATION = (0x30, 0x00, 0x16, 0x09, 0x09)
+    # What the same five must be in the image that answers in safe mode, from the version reply
+    # `20 25 12 ff 94 16 00` measured on 11 August 2026.
+    SAFE_MODE = (0x20, 0x04, 0x16, 0x00, 0x09)
+
+    def test_the_application_carries_its_five_accessors_where_expected(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        for i, value in enumerate(self.APPLICATION):
+            addr = self.APPLICATION_ACCESSORS + 2 * i
+            with self.subTest(field=i):
+                ins = isa.decode(code, addr, 0)
+                self.assertEqual(ins.mnemonic, 'RETLW')
+                self.assertEqual(ins.fields['k'], value)
+
+    def test_the_safe_mode_accessors_are_nowhere_in_the_dump(self):
+        """
+        The negative that identifies the resident image as a different one. Searched as the RETLW
+        run it would have to be, not as bare bytes, so a coincidental data match cannot satisfy it.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        run = b''.join(bytes([value, 0x0C]) for value in self.SAFE_MODE)
+        self.assertEqual(code.find(run), -1)
+        # The control: the application's own run is found this way, so the search works.
+        control = b''.join(bytes([value, 0x0C]) for value in self.APPLICATION)
+        self.assertEqual(code.find(control), self.APPLICATION_ACCESSORS)
+
+    def test_the_application_fills_the_part_leaving_no_room_for_a_second_image(self):
+        """
+        The mechanism behind the overwrite, from the dump alone: 32 KiB, a 4 KiB bootloader and an
+        application that populates almost all of the rest. A second image would have to fit somewhere
+        in here, and there is nowhere.
+
+        Scoped to internal program flash on purpose. Both images are resident in **external** flash,
+        which is where the one this erases comes from, so the crowding is what makes the copy
+        destructive rather than what makes safe mode a transfer.
+        `TestTheStagedFirmwareSurvivedSafeMode` is that half.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        self.assertEqual(len(code), 0x8000)
+        populated = sum(1 for b in code[0x1000:0x8000] if b != 0xFF)
+        self.assertGreater(populated / (0x8000 - 0x1000), 0.95)
+
+
+class TestArch9AddressesFourWindowsBelowItsFlash(unittest.TestCase):
+    """Section 119. What the protocol calls flash 0x200000 is the on chip EEPROM.
+
+    The validator is an XORLW chain, so it is decoded with `chains` and never read literally. Both
+    the application and the safe mode image carry it, which is the two sample requirement met inside
+    one architecture by two independently built programs.
+
+    Section 88 read this validator from its default arm and reported only the flash range, which is
+    why `packages/usb` refused three regions the device serves. Asserted here as the chain, so the
+    same mistake cannot be made by reading from the middle again.
+    """
+
+    # Where the chain starts in each image, and the base each image loads at.
+    APPLICATION = ('h525_code', 0x0000, 0x02E14)
+    SAFE_MODE = ('h525_safemode_firmware', 0x1000, 0x01836)
+    # Top byte to the offset bound its arm subtracts against. Every bound is a documented size of the
+    # PIC18F4550, which is the closure: the chain and the datasheet agree without either being fitted
+    # to the other.
+    WINDOWS = {0x00: 0x8000, 0x20: 0x0100, 0x30: 0x0008, 0x40: 0x0800}
+
+    def _chain(self, name, base, start):
+        lab.require(name)
+        return chains.chain_table(lab.load(name), base, start + 4)
+
+    def _windows(self, name, base, start):
+        """Decode each arm's own bound, so `WINDOWS` is a reading rather than four restated numbers.
+
+        An arm is a sixteen bit compare, `MOVLW lo; SUBWF; MOVLW hi; SUBWFB; BC out`, so the bound is
+        `lo | hi << 8`. Until 13 August 2026 both tests here compared `sorted(table)` against this
+        dict, which takes its **keys**: the four top bytes were checked twice and the four bounds by
+        nothing at all, in the one table whose values are what a read is refused against.
+        """
+        data = lab.load(name)
+        found = {}
+        for top, target in self._chain(name, base, start).items():
+            low = isa.decode(data, target - base, base)
+            high = isa.decode(data, target + 4 - base, base)
+            self.assertEqual([low.mnemonic, high.mnemonic], ['MOVLW', 'MOVLW'],
+                             'the arm at %s is not the compare this reads' % hex(target))
+            found[top] = low.fields['k'] | (high.fields['k'] << 8)
+        return found
+
+    def test_both_images_test_the_same_four_top_bytes(self):
+        for name, base, start in (self.APPLICATION, self.SAFE_MODE):
+            with self.subTest(image=name):
+                self.assertEqual(self._windows(name, base, start), self.WINDOWS)
+
+    def test_the_flash_range_test_is_the_default_arm_and_not_the_whole_rule(self):
+        """
+        The correction. Section 88 quoted 0x02E30, which is inside the fall through, so its rule is
+        what an unmatched top byte gets. The four cases are tested above it, and 0x02E30 is past the
+        last of their branches.
+        """
+        name, base, start = self.APPLICATION
+        table = self._chain(name, base, start)
+        # An `all(target < X or target > X)` line used to stand here, which is `target != X` written
+        # so that it reads as two bounds, and the line below already implies it. Removed rather than
+        # corrected: two assertions where the weaker one is a rearrangement of the stronger make a
+        # test look like it checks more than it does.
+        #
+        # Every case branches forward past the range test, so none of them reaches it.
+        self.assertTrue(all(target > 0x02E30 for target in table.values()))
+        self.assertTrue(table, 'the chain decoded to nothing, so nothing was checked')
+
+    def test_the_eeprom_arm_reaches_EEADR_and_EEDATA_in_both_images(self):
+        """
+        What names the window. A bound of 256 would fit several things; the register does not.
+        """
+        for name, base, helper in (('h525_code', 0x0000, 0x07D68),
+                                   ('h525_safemode_firmware', 0x1000, 0x034FE)):
+            with self.subTest(image=name):
+                lab.require(name)
+                text = '\n'.join(disasm.disassemble(lab.load(name), base, helper, 6, part='4550'))
+                self.assertIn('EEADR', text)
+                self.assertIn('EEDATA', text)
+
+    def test_the_safe_mode_image_can_write_the_eeprom_as_well_as_read_it(self):
+        """
+        Necessary for a one byte recovery to exist: the write arrives at a remote running the safe
+        mode image, not the application. Write enable is EECON1 bit 2, so the literal 0x04 into
+        EECON1 is what distinguishes a write path from a read path.
+        """
+        lab.require('h525_safemode_firmware')
+        text = '\n'.join(disasm.disassemble(
+            lab.load('h525_safemode_firmware'), 0x1000, 0x0350A, 8, part='4550'))
+        self.assertIn('EEADR', text)
+        self.assertIn('EEDATA', text)
+        self.assertIn('EECON1', text)
+
+    def test_the_library_serves_the_windows_the_firmware_serves(self):
+        """
+        The executable half of the correction, on the Python side of the mirror. The TypeScript
+        assertion is in `packages/usb/test/transport/protocol.test.ts`; this one exists so the bound table and
+        the chain cannot drift apart without a Python test failing too.
+
+        It used to repeat the line above it verbatim, which compares the chain's case values against
+        this dict's keys and reaches `packages/usb` not at all, so nothing here had ever checked the
+        claim in its own title. Section 88 is why that matters: reading this validator from its
+        default arm made the library refuse three regions the device serves. The library's copy is
+        read out of the TypeScript source rather than restated, because two copies of a derivation is
+        this repository's oldest rule and a third would be worse than the second.
+        """
+        name, base, start = self.APPLICATION
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            '..', '..', 'packages', 'usb', 'src', 'protocol.ts')
+        with open(path, encoding='utf-8') as fh:
+            source = fh.read()
+        body = source[source.index('ARCH9_WINDOWS'):]
+        body = body[:body.index('};')]
+        library = {int(top, 16): int(bound, 16) for top, bound in
+                   re.findall(r'(0x[0-9a-fA-F]+):\s*\{[^}]*bound:\s*(0x[0-9a-fA-F]+)', body)}
+        self.assertEqual(library, self._windows(name, base, start),
+                         'the arch 9 windows disagree between the firmware and the library')
+
+
+class TestTheArch9BootStateMachine(unittest.TestCase):
+    """Section 119. EEPROM byte 0 selects which of the two external images the bootloader installs.
+
+    Read out of the bootloader, which is the first 4 KiB of `h525_code`. This is what makes safe mode
+    latched, and the measured value on the stranded remote refuted the reading's first version: the
+    latch is passive, not an active reinstall.
+    """
+
+    NAME = 'h525_code'
+    CHAIN = 0x007AC
+    # Case value to the arm it dispatches to.
+    CASES = {0x01: 0x007F2, 0x02: 0x007C0, 0x05: 0x007F2, 0x06: 0x007BE}
+
+    def test_the_state_byte_comes_from_the_eeprom(self):
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x00AD0, 5, part='4550'))
+        self.assertIn('EECON1', text)
+        self.assertIn('EEADR', text)
+        self.assertIn('EEDATA', text)
+
+    def test_the_chain_dispatches_the_four_states_it_dispatches(self):
+        lab.require(self.NAME)
+        table = chains.chain_table(lab.load(self.NAME), 0x0000, self.CHAIN)
+        self.assertEqual(table, self.CASES)
+
+    def test_state_two_selects_the_application_and_marks_it_four(self):
+        """
+        concordance's byte, confirmed from the firmware rather than believed on its word. The arm
+        writes 4 to EEPROM address 0 and sets the image selector to 1.
+        """
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x007C0, 11, part='4550'))
+        self.assertIn('MOVLW 0x04', text)      # the value written back
+        self.assertIn('CALL 0x00adc', text)    # the EEPROM write helper
+        self.assertIn('MOVLW 0x01', text)      # the selector: the application
+        self.assertIn('CALL 0x00422', text)    # the install routine
+
+    def test_state_one_selects_the_safe_mode_image_and_marks_it_three(self):
+        """The mirror arm, which is what a remote that has been told to enter safe mode takes."""
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x007F2, 8, part='4550'))
+        self.assertIn('MOVLW 0x03', text)
+        self.assertIn('CALL 0x00adc', text)
+        self.assertIn('CLRF 0x09a', text)      # the selector: safe mode
+
+    def test_three_and_four_are_folded_before_the_chain_so_an_interrupted_install_retries(self):
+        """
+        Which is why the chain has no case for them, and why neither is a dead end. This is the power
+        fail interlock: the mark back is the same value that requests the retry.
+        """
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x00788, 12, part='4550'))
+        self.assertIn('MOVLW 0x03', text)
+        self.assertIn('MOVLW 0x04', text)
+        table = chains.chain_table(lab.load(self.NAME), 0x0000, self.CHAIN)
+        self.assertNotIn(0x03, table)
+        self.assertNotIn(0x04, table)
+
+    def test_the_selector_names_the_two_external_images(self):
+        """
+        The selector becomes a chip address: 0x010004 for the application and 0x000004 for safe mode,
+        the +4 being firmware_4847_offset and the `HG` magic the bootloader checks before copying.
+        """
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x00422, 24, part='4550'))
+        self.assertIn('DECF 0x09a', text)
+        self.assertIn('MOVLW 0x04', text)      # the offset of the magic
+        self.assertIn('MOVLW 0x48', text)      # 'H'
+        self.assertIn('MOVLW 0x47', text)      # 'G'
+        # The two arms differ in one byte, the high byte of the chip address: 0x01 for the
+        # application and cleared for safe mode. That is the whole of the selection.
+        self.assertIn('MOVLW 0x01\n  00434: 02 6f       MOVWF 0x202', text)
+        self.assertIn('CLRF 0x202', text)
+
+    def test_a_successful_install_leaves_six_and_the_application_clears_it(self):
+        """
+        The step the first reading of this section missed, and the measured zero is what found it. The
+        bootloader's 3 and 4 are in progress marks written before the copy; on success it writes 6 and
+        jumps to the application entry point, and the application consumes the 6 by writing 0 and
+        setting a status bit. That bit is why a recovered remote says so on its screen.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        after = '\n'.join(disasm.disassemble(code, 0x0000, 0x0082A, 10, part='4550'))
+        self.assertIn('MOVF 0x20c', after)      # the success flag
+        self.assertIn('MOVLW 0x06', after)      # the value written on success
+        self.assertIn('CALL 0x00adc', after)    # the EEPROM write helper
+        self.assertIn('GOTO 0x01008', after)    # the application entry point
+        consumer = '\n'.join(disasm.disassemble(code, 0x0000, 0x07900, 18, part='4550'))
+        self.assertIn('MOVLW 0x06', consumer)    # what it compares against
+        self.assertIn('CALL 0x07d74', consumer)  # the application's EEPROM write
+        self.assertIn('CLRF 0x25e', consumer)    # EEDATA = 0
+        self.assertIn('CLRF 0x25d', consumer)    # EEADR = 0
+        # The status bit, which is the only other thing this path does and therefore what makes the
+        # 6 a message. Matched on the bit number rather than the spacing of the mnemonic.
+        self.assertRegex(consumer, r'BSF 0x109\s*,\s*5')
+
+    def test_a_failed_application_install_falls_back_to_safe_mode(self):
+        """
+        The safety net. Both failure branches of the value 2 arm land on the value 1 arm, so a remote
+        whose application copy goes wrong ends up in safe mode rather than with nothing bootable.
+        """
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x007D4, 12, part='4550'))
+        self.assertEqual(text.count('BZ 0x007f2'), 2)
+        # And 0x007F2 is the arm that installs the safe mode image, which the test above pins.
+        self.assertIn('CALL 0x00422', text)
+
+    def test_state_zero_installs_nothing_which_is_why_the_latch_is_passive(self):
+        """
+        The measured value on the stranded 525, and the arm that refutes the first reading. Normal
+        boot validates the `HG` of whatever is already in internal program flash and runs it, so
+        safe mode persists by being resident rather than by being reinstalled.
+        """
+        lab.require(self.NAME)
+        table = chains.chain_table(lab.load(self.NAME), 0x0000, self.CHAIN)
+        self.assertNotIn(0x00, table)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x003BA, 10, part='4550'))
+        self.assertIn('MOVLW 0x48', text)
+        self.assertIn('MOVLW 0x47', text)
+        # And no EEPROM write on this path, which is what "installs nothing" means concretely.
+        self.assertNotIn('CALL 0x00adc', text)
+
+
+class TestTheStagedFirmwareSurvivedSafeMode(unittest.TestCase):
+    """Section 118. Two resident arch 9 images in external flash, and the internal region is a copy.
+
+    The claim these pin is not "external flash holds firmware", which section 118 argues from
+    concordance's table. It is the narrower measured one, in three parts: the copy read while the
+    remote was stranded in safe mode is byte identical to the copy read before any of it happened;
+    the 64 KiB below it is a second, distinct image carrying the accessor values a safe mode remote
+    reports; and internal program flash right now is a copy of that lower image. So entering safe
+    mode is a copy between two images the remote already holds, and leaving it is the other copy.
+    """
+
+    APPLICATION = 0x1000
+    END = 0x8000
+    LENGTH = END - APPLICATION
+
+    def test_the_safe_mode_read_matches_the_running_application(self):
+        lab.require('h525_staged_firmware', 'h525_code')
+        staged = lab.load('h525_staged_firmware')
+        code = lab.load('h525_code')
+        self.assertEqual(len(staged), self.LENGTH)
+        self.assertEqual(staged, code[self.APPLICATION:self.END])
+
+    def test_the_safe_mode_read_matches_the_august_read_of_the_same_address(self):
+        """
+        The second leg, and the reason the correction in section 118 was owed: this read was offered
+        as a missing backup when the lab already held the whole region. It is a confirmation, and a
+        confirmation needs the earlier copy to compare against.
+        """
+        lab.require('h525_staged_firmware', 'h525_external_firmware')
+        staged = lab.load('h525_staged_firmware')
+        external = lab.load('h525_external_firmware')
+        self.assertGreaterEqual(len(external), len(staged))
+        self.assertEqual(staged, external[:len(staged)])
+
+    def test_the_august_read_holds_the_safe_mode_container_above_the_application(self):
+        """
+        Why the earlier read is longer, and the check that its tail is content rather than erased
+        flash: the arch 9 safe mode container sits at region offset 0x8000, which is flash 0x818000.
+        """
+        lab.require('h525_external_firmware')
+        external = lab.load('h525_external_firmware')
+        self.assertEqual(len(external), 0x10000)
+        self.assertEqual(external[self.END:self.END + 4], b'AHCM')
+
+    def test_the_two_external_images_are_distinct_and_each_holds_one_accessor_run(self):
+        """
+        The pair that explains the overwrite: both images live in external flash, so the single
+        internal application region holds whichever one the bootloader copied in.
+
+        The accessor runs are what identify them, and they identify them exclusively: the safe mode
+        values are in the lower image and nowhere in the upper one, and the application's are the
+        other way round. Asserted as the `RETLW` run rather than as bare bytes, for the same reason
+        as the search above.
+        """
+        lab.require('h525_safemode_firmware', 'h525_external_firmware')
+        safemode = lab.load('h525_safemode_firmware')
+        staged = lab.load('h525_external_firmware')
+        self.assertNotEqual(safemode, staged)
+        # Section 87's five accessors, as the remote reports them in each state. The safe mode row is
+        # the version reply `20 25 12 ff 94 16 00` measured on 11 August 2026.
+        safe_run = b''.join(bytes([v, 0x0C]) for v in (0x20, 0x04, 0x16, 0x00, 0x09))
+        app_run = b''.join(bytes([v, 0x0C]) for v in (0x30, 0x00, 0x16, 0x09, 0x09))
+        self.assertEqual(safemode.find(safe_run), 0x1406)
+        self.assertEqual(safemode.find(app_run), -1)
+        self.assertEqual(staged.find(app_run), 0x4774)
+        self.assertEqual(staged.find(safe_run), -1)
+
+    def test_the_internal_region_read_in_safe_mode_is_a_copy_of_the_lower_image(self):
+        """
+        The measured window, pinned so the image and the device cannot drift apart.
+
+        62 bytes read off the stranded remote at internal `0x002400`, which under the convention the
+        0x810000 read established is external file offset `0x1400`. Written down as a prediction
+        before the read and confirmed by it, along with the negative: internal `0x001406`, where the
+        other convention would have put the run, holds something else.
+        """
+        lab.require('h525_safemode_firmware')
+        safemode = lab.load('h525_safemode_firmware')
+        live = bytes.fromhex(
+            '9b6f7fef1af0200c040c160c000c090ce2c3eef0e3c3eff072ec16f00001'
+            'da5103e115ec16f0fad7120090ec1bf0ffec0bf03dec19f0deec0bf0deec0bf0')
+        self.assertEqual(len(live), 62)
+        self.assertEqual(safemode[0x1400:0x1400 + len(live)], live)
+        # The negative window, also read off the remote. It is not the run, and the assertion is
+        # against the live bytes rather than against the image, since the point is what the device
+        # holds.
+        other = bytes.fromhex('e552e5cfdaff110000001dd889 9a0001'.replace(' ', ''))
+        self.assertEqual(len(other), 16)
+        self.assertNotIn(b''.join(bytes([v, 0x0C]) for v in (0x20, 0x04)), other)
+
+    def test_the_three_copies_are_not_trivially_equal(self):
+        """
+        The negative. Comparing 0xFF against 0xFF would satisfy every assertion above, so the shared
+        bytes have to be an image: mostly populated, and carrying the arch 9 firmware header.
+        """
+        lab.require('h525_staged_firmware')
+        staged = lab.load('h525_staged_firmware')
+        self.assertEqual(staged[4:6], b'HG')
+        populated = sum(1 for b in staged if b != 0xFF)
+        self.assertGreater(populated / len(staged), 0.95)
+
+
+class TestTheBootloaderIsAUsbFlashProgrammer(unittest.TestCase):
+    """Section 189. The recovery route is resident in internal flash on both bench architectures.
+
+    Two images, so the per architecture comparison is the evidence rather than a second reading of
+    one file. The claims that matter to a first write are the erase bound, which is what stops the
+    programmer destroying itself, and the convergence of every non handoff path on a USB loop, which
+    is what makes a remote with a destroyed image still answer a host.
+    """
+
+    # image -> (address of the command switch, address of the erase routine, unlock sites)
+    BOOTLOADERS = {
+        'one_internal_fe': (0x0047C, 0x003CA, (0x0032C, 0x00EE4)),
+        'h600_internal_fe': (0x001A8, 0x000F6, (0x00058, 0x00A78, 0x00B34)),
+    }
+
+    COMMANDS = frozenset(list(range(0x00, 0x0B)) + [0xFF])
+    BOOTLOADER_END = 0x1000
+    ERASE_FLOOR = 0x001000      # the bootloader's own end, and the same number
+    # An SFR reached through the access bank is encoded as the low byte of its address, so these
+    # are what an `f` field holds. EECON1 is 0xFA6, EECON2 0xFA7 and UCFG 0xF5F in full.
+    EECON1, EECON2, UCFG = 0xA6, 0xA7, 0x5F
+    WREN_AND_FREE = 0x14        # write enable plus the row erase bit
+
+    def test_both_bootloaders_carry_the_same_twelve_command_set(self):
+        """
+        Decoded through chains.py, because an XORLW chain's literals are not its case values. The
+        exact set is asserted rather than its size, and the shared routine is asserted as a count of
+        one pair so that a second coincidence would fail rather than pass.
+        """
+        lab.require(*self.BOOTLOADERS)
+        for name, (switch, _erase, _unlock) in self.BOOTLOADERS.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                cases = chains.xor_chain(code, 0, switch, limit=40)
+                values = [c.value for c in cases]
+                self.assertEqual(len(values), 12)
+                self.assertEqual(set(values), self.COMMANDS)
+                self.assertEqual(len(set(values)), 12, 'a switch cannot repeat a case')
+
+                # Exactly one pair of commands shares a routine, and it is 0x01 with 0x06.
+                by_target = {}
+                for case in cases:
+                    by_target.setdefault(case.target, []).append(case.value)
+                shared = sorted(v for vs in by_target.values() if len(vs) > 1 for v in vs)
+                self.assertEqual(shared, [0x01, 0x06])
+
+    def test_the_erase_command_refuses_to_erase_the_bootloader(self):
+        """
+        The finding's best closure, because it is a rail somebody wrote deliberately: a three byte
+        compare against 0x001000 and a branch past everything, so the erase cannot reach the 4 KiB
+        it is running from. There is no upper bound, which is the other half of that shape.
+        """
+        lab.require(*self.BOOTLOADERS)
+        for name, (_switch, erase, _unlock) in self.BOOTLOADERS.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                window = [isa.decode(code, erase + 2 * i, 0) for i in range(8)]
+
+                # The bound arrives as three literals, low byte first, against 0x422 to 0x424.
+                literals = [i.fields['k'] for i in window if i.mnemonic == 'MOVLW']
+                self.assertEqual(literals, [self.ERASE_FLOOR & 0xFF,
+                                            (self.ERASE_FLOOR >> 8) & 0xFF,
+                                            (self.ERASE_FLOOR >> 16) & 0xFF])
+                self.assertEqual([i.fields['f'] for i in window
+                                  if i.mnemonic in ('SUBWF', 'SUBWFB')], [0x22, 0x23, 0x24])
+
+                # Below the bound it branches out without ever arming EECON1.
+                out = window[7]
+                self.assertEqual(out.mnemonic, 'BNC')
+                armed = [erase + 2 * i for i, ins in enumerate(window)
+                         if ins.mnemonic == 'MOVWF' and ins.fields.get('f') == self.EECON1]
+                self.assertEqual(armed, [], 'nothing is armed before the bound is tested')
+                self.assertLess(out.fields['target'], erase + 2 * len(window) + 0x40)
+
+                # And past it, the erase bit goes in.
+                arm = [isa.decode(code, erase + 16 + 2 * i, 0) for i in range(2)]
+                self.assertEqual([a.mnemonic for a in arm], ['MOVLW', 'MOVWF'])
+                self.assertEqual(arm[0].fields['k'], self.WREN_AND_FREE)
+                self.assertEqual(arm[1].fields['f'], self.EECON1)
+
+    def test_the_two_erase_routines_are_one_routine_compiled_twice(self):
+        """
+        What makes this a finding rather than two readings: the same 23 instructions in the same
+        order on two architectures, differing only in where their branches land. A shared case set
+        could be coincidence; a shared instruction sequence is one source.
+        """
+        lab.require(*self.BOOTLOADERS)
+        shapes = []
+        for name, (_switch, erase, _unlock) in self.BOOTLOADERS.items():
+            code = lab.load(name)
+            shape = []
+            for i in range(23):
+                ins = isa.decode(code, erase + 2 * i, 0)
+                fields = {k: v for k, v in ins.fields.items() if k != 'target'}
+                shape.append((ins.mnemonic, tuple(sorted(fields.items()))))
+            shapes.append((name, shape))
+        self.assertEqual(shapes[0][1], shapes[1][1],
+                         '%s and %s disagree' % (shapes[0][0], shapes[1][0]))
+        self.assertEqual(shapes[0][1][-1][0], 'RETURN', 'the window ends on the routine')
+
+    def test_the_commit_is_the_pic18_unlock_and_the_sites_are_counted(self):
+        """
+        0x55 then 0xAA into EECON2. Counted exactly, so a fifth site appearing anywhere in either
+        bootloader is a change somebody has to look at rather than a passing bound.
+        """
+        lab.require(*self.BOOTLOADERS)
+        for name, (_switch, _erase, unlock) in self.BOOTLOADERS.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                found = []
+                for off in range(0, 0x1000 - 8, 2):
+                    w = [isa.decode(code, off + 2 * i, 0) for i in range(4)]
+                    if any(x is None for x in w):
+                        continue
+                    if [x.mnemonic for x in w] != ['MOVLW', 'MOVWF', 'MOVLW', 'MOVWF']:
+                        continue
+                    if w[0].fields.get('k') != 0x55 or w[2].fields.get('k') != 0xAA:
+                        continue
+                    if w[1].fields.get('f') != self.EECON2 or w[3].fields.get('f') != self.EECON2:
+                        continue
+                    found.append(off)
+                self.assertEqual(tuple(found), unlock)
+
+    # image -> the address of the bootloader's own device descriptor, inside the 4 KiB
+    DESCRIPTORS = {'one_internal_fe': 0x0F6E, 'h600_internal_fe': 0x0EA6}
+    MICROCHIP, LOGITECH = 0x04D8, 0x046D
+    BOOT_PRODUCT = 0x000B
+
+    def test_the_bootloader_enumerates_as_microchip_with_no_strings(self):
+        """
+        The bench observable for the recovery state, and the reason the screen is the wrong one: a
+        Harmony One in its bootloader is 04D8:000B with no product string, where a booted one is
+        046D:C121 and names itself. Decidable by enumeration alone, so no command and no rail.
+
+        Every string index is asserted zero because that is what makes the two impossible to confuse:
+        a device with no product string cannot be mistaken for one that says Harmony Remote.
+        """
+        lab.require(*self.DESCRIPTORS)
+        u16 = lambda b, o: b[o] | (b[o + 1] << 8)
+        for name, at in self.DESCRIPTORS.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                self.assertLess(at, self.BOOTLOADER_END, 'the descriptor is the bootloader\'s own')
+                dev = code[at:at + 18]
+                self.assertEqual((dev[0], dev[1]), (0x12, 0x01), 'a device descriptor')
+                self.assertEqual(u16(dev, 8), self.MICROCHIP)
+                self.assertEqual(u16(dev, 10), self.BOOT_PRODUCT)
+                self.assertEqual(u16(dev, 12), 0x0000, 'bcdDevice, so it claims no skin')
+                self.assertEqual(list(dev[14:17]), [0, 0, 0], 'manufacturer, product, serial')
+                self.assertEqual(dev[17], 1, 'one configuration')
+
+                # And the image above the bootloader is the other identity, which is the contrast
+                # that makes the observable work. Its block is found rather than assumed.
+                above = next(i for i in range(self.BOOTLOADER_END, len(code) - 18)
+                             if code[i] == 0x12 and code[i + 1] == 0x01
+                             and u16(code, i + 8) == self.LOGITECH)
+                self.assertEqual(u16(code, above + 8), self.LOGITECH)
+                self.assertNotEqual(u16(code, above + 10), self.BOOT_PRODUCT)
+
+    def test_both_endpoint_one_directions_share_one_buffer(self):
+        """
+        Which is why a reply write and a request address look alike, and why command 0x00 was read
+        backwards for an hour. The buffer descriptors state it: 0x40A/0x40B for OUT and 0x40E/0x40F
+        for IN, both 0x0420, with the reply length going into 0x40D.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        # MOVLW <byte> / MOVWF <bd field> pairs in the endpoint setup block.
+        setup = {}
+        for off in range(0x0300, 0x0330, 2):
+            a, b = isa.decode(code, off, 0), isa.decode(code, off + 2, 0)
+            if a is None or b is None:
+                continue
+            if a.mnemonic == 'MOVLW' and b.mnemonic == 'MOVWF' and b.fields.get('a') == 1:
+                setup[b.fields['f']] = a.fields['k']
+        self.assertEqual((setup.get(0x0A), setup.get(0x0B)), (0x20, 0x04), 'endpoint 1 OUT buffer')
+        self.assertEqual((setup.get(0x0E), setup.get(0x0F)), (0x20, 0x04), 'endpoint 1 IN buffer')
+
+    def test_command_zero_fills_a_reply_rather_than_setting_an_address(self):
+        """
+        The corrected row. Its routine writes two bytes into the shared buffer at +2 and +3 and the
+        caller sets the reply length to four, so it answers rather than configures. Asserted on both
+        images, since the correction would be worth little if it were one image's accident.
+        """
+        lab.require(*self.BOOTLOADERS)
+        for name, body in (('one_internal_fe', 0x004AE), ('h600_internal_fe', 0x001DA)):
+            with self.subTest(name):
+                code = lab.load(name)
+                call = isa.decode(code, body, 0)
+                self.assertIn(call.mnemonic, ('RCALL', 'CALL'))
+                routine = call.fields['target']
+
+                # Bank selects are skipped, since the routine opens with one on both images.
+                body_ins = [isa.decode(code, routine + 2 * i, 0) for i in range(6)]
+                stores = [i for i in body_ins if i.mnemonic != 'MOVLB']
+                # CLRF into +2, then MOVLW 0x02 / MOVWF into +3.
+                self.assertEqual(stores[0].mnemonic, 'CLRF')
+                self.assertEqual(stores[0].fields['f'], 0x22)
+                self.assertEqual(stores[1].fields['k'], 0x02)
+                self.assertEqual(stores[2].fields['f'], 0x23)
+                self.assertEqual(stores[3].mnemonic, 'RETURN', 'and it does nothing else')
+
+                # The reply length the caller sets, which is what makes it an answer.
+                after = [isa.decode(code, body + 2 * i, 0) for i in range(1, 4)]
+                lengths = [i.fields['k'] for i in after if i.mnemonic == 'MOVLW']
+                self.assertEqual(lengths, [0x04])
+
+    def test_the_two_bootloaders_arm_eecon1_identically_and_never_set_wprog(self):
+        """
+        The value sequence is a third witness for one source, after the case set and the erase
+        routine. It also pins the bit reading, because this section claimed `0xC4` reached the
+        configuration words and that was the generic PIC18 layout rather than this part's: gputils
+        gives the 87J50 and 67J50 `WR`, `WREN`, `WRERR`, `FREE` and `WPROG` at bits 1 to 5 with bits
+        6 and 7 **unimplemented**, where the Harmony 525's PIC18F4550 has `CFGS` and `EEPGD` there.
+
+        `WPROG` is asserted absent because it is the bit that would switch programming to one word at
+        a time, and its absence is what makes command 0x08 mean anything.
+        """
+        lab.require(*self.BOOTLOADERS)
+        WPROG = 1 << 5
+        sequences = []
+        for name in self.BOOTLOADERS:
+            code = lab.load(name)
+            armed = []
+            for off in range(0, self.BOOTLOADER_END - 2, 2):
+                ins = isa.decode(code, off, 0)
+                if ins is None or ins.fields.get('a') != 0:
+                    continue
+                if ins.fields.get('f') != self.EECON1:
+                    continue
+                if ins.mnemonic == 'CLRF':
+                    armed.append(0x00)
+                    continue
+                if ins.mnemonic != 'MOVWF':
+                    continue
+                # The literal is loaded immediately before the store on every site here.
+                before = isa.decode(code, off - 2, 0)
+                self.assertEqual(before.mnemonic, 'MOVLW', 'unexpected arming shape at %05x' % off)
+                armed.append(before.fields['k'])
+            sequences.append((name, armed))
+
+            with self.subTest(name):
+                self.assertEqual(armed, [0x04, 0x04, 0x14, 0x00, 0xC4, 0x14, 0x04])
+                self.assertEqual([v for v in armed if v & WPROG], [],
+                                 'WPROG would make this one word at a time')
+
+        self.assertEqual(sequences[0][1], sequences[1][1],
+                         '%s and %s arm differently' % (sequences[0][0], sequences[1][0]))
+
+    def test_every_path_that_does_not_hand_off_reaches_a_usb_loop_that_never_returns(self):
+        """
+        Why a Harmony One with a destroyed image still attaches. Measured on the arch 12 image, whose
+        addresses the section names: four branches converge on 0x000C4, which calls 0x002E8, which
+        configures USB and branches backwards inside itself. 0x00094 is deliberately not among them,
+        being the branch to the validator rather than to the loop.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        converge, loop = 0x000C4, 0x002E8
+
+        arrivals = []
+        for off in range(0, 0x200, 2):
+            ins = isa.decode(code, off, 0)
+            if ins is None or 'target' not in ins.fields:
+                continue
+            if ins.fields['target'] == converge:
+                arrivals.append(off)
+        self.assertEqual(arrivals, [0x00092, 0x000AC, 0x000BC, 0x000C2])
+
+        calls = [isa.decode(code, converge + 2 * i, 0) for i in range(6)]
+        self.assertIn(loop, [c.fields.get('target') for c in calls])
+
+        # UCFG is written, then a body that branches back above itself and never returns.
+        head = [isa.decode(code, loop + 2 * i, 0) for i in range(4)]
+        self.assertEqual(head[2].fields.get('f'), self.UCFG, 'UCFG')
+        back = isa.decode(code, 0x002FE, 0)
+        self.assertEqual(back.mnemonic, 'BRA')
+        self.assertEqual(back.fields['target'], 0x002F2)
+        self.assertLess(back.fields['target'], 0x002FE, 'the branch goes backwards, so it loops')
+
+    def test_the_keypad_scan_is_gated_on_external_flash_being_programmed(self):
+        """
+        The two steps in front of the scan, which is why "scans the keypad before anything else"<!--superseded-->
+        was the wrong phrasing in sections 87 and 189 both. One byte at external 0x020024 is rejected if
+        it is 0x00 or 0xFF, the two values blank and zeroed flash return, and the caller skips the
+        scan when the check fails.
+
+        Both rejected values are asserted, because a check for one of them would be a check that
+        something is there and a check for both is a check that it is programmed.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+
+        # The caller: read, keep the answer, and branch past the scan when it is zero.
+        call = isa.decode(code, 0x0006E, 0)
+        self.assertIn(call.mnemonic, ('RCALL', 'CALL'))
+        gate = call.fields['target']
+        skip = isa.decode(code, 0x00076, 0)
+        self.assertEqual(skip.mnemonic, 'BZ')
+        scan = isa.decode(code, 0x00078, 0)
+        self.assertIn(scan.mnemonic, ('RCALL', 'CALL'))
+        self.assertGreater(skip.fields['target'], 0x00078,
+                           'the branch goes past the scan, so a failed check skips it')
+
+        # The gate itself: the table pointer at external 0x020024, then two rejections.
+        # Walked by instruction length, because MOVFF is two words and a fixed stride of two
+        # decodes its second half as an instruction of its own.
+        window, at = [], gate
+        while len(window) < 14:
+            ins = isa.decode(code, at, 0)
+            if ins is None:
+                break
+            window.append(ins)
+            at += 2 * ins.words
+        literals = [i.fields['k'] for i in window if i.mnemonic == 'MOVLW']
+        self.assertEqual(literals[:2], [0x02, 0x24], 'the high and low bytes of 0x020024')
+        self.assertIn('TBLRD*', [i.mnemonic for i in window])
+        self.assertEqual([i.mnemonic for i in window if i.mnemonic == 'BZ'].count('BZ'), 2,
+                         'zero and 0xFF are both rejected')
+        self.assertIn(0xFF, literals, 'blank flash reads 0xFF and is refused')
+
+    def test_the_keypad_scan_reaches_the_matrix_over_the_external_memory_bus(self):
+        """
+        Which is why counting PORTx accesses understated it. Two helpers, one writing the row mask to
+        0x020020 and one reading the answer from 0x020021, both through the table pointer.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        for start, address, access in ((0x007C8, 0x020020, 'TBLWT*'),
+                                       (0x007DE, 0x020021, 'TBLRD*')):
+            with self.subTest(hex(start)):
+                window = [isa.decode(code, start + 2 * i, 0) for i in range(9)]
+                literals = [i.fields['k'] for i in window if i.mnemonic == 'MOVLW']
+                self.assertEqual(literals[:2], [(address >> 16) & 0xFF, address & 0xFF])
+                self.assertIn(access, [i.mnemonic for i in window])
+
+class TestTheSafeModeScreenListsTheRemotesImages(unittest.TestCase):
+    """Section 190. The five rows a Harmony One shows in safe mode are its five images.
+
+    Read off the remote's own screen on 27 August 2026 and matched against the images this project
+    derived from dumps taken over USB. **The match is on the checksum, not the version**, and that is
+    what makes it an identification: four of the five versions are 0x34, so version alone would place
+    nothing, where every checksum is distinct.
+
+    The screen is a photograph rather than a file, so the five rows are a literal here. That is stated
+    rather than hidden: what the test can check is that our own images reproduce those checksums and
+    that the version bytes in the same remote's `GET_VERSION` reply agree, and both of those are
+    computed from bytes in the lab.
+    """
+
+    # row -> (checksum, version, the version block field that carries it)
+    SCREEN = {
+        'A': (0xD8CD, 0x34, 11),   # the running application, external 0x020000
+        'B': (0xDB1C, 0x34, 10),   # internal 0xFE +0x1000, the safe mode image
+        'C': (0x0000, 0x34, 7),    # the bootloader, which has no header and so no checksum
+        'D': (0xCB09, 0x16, 9),    # internal 0xFF +0x0000
+        'E': (0xD9E9, 0x34, 8),    # internal 0xFF +0xE000
+    }
+    # The reply the same remote gave in safe mode, section 190.
+    SAFE_MODE_BLOCK = (0x34, 0x05, 0xC8, 0x1F, 0xC4, 0x36, 0x0C, 0x34, 0x34, 0x16, 0x34, 0x34)
+
+    def test_the_screens_versions_are_the_version_blocks_fields_seven_to_eleven(self):
+        """
+        Pure arithmetic over two recorded readings, so it needs no lab: every row's version equals the
+        byte in the field section 116 named for that image. The 0x16 is what carries this, since it is
+        the only value that appears once and it lands on field 9, the image at 0xFF +0x0000, which is
+        the one section 116 reads as version 1.6.
+        """
+        for row, (_checksum, version, field) in self.SCREEN.items():
+            with self.subTest(row=row):
+                self.assertEqual(self.SAFE_MODE_BLOCK[field], version)
+        self.assertEqual(sorted(f for _c, _v, f in self.SCREEN.values()), [7, 8, 9, 10, 11],
+                         'the five rows use the five version fields, each once')
+
+    def test_the_application_images_checksum_is_the_row_the_screen_calls_a(self):
+        """
+        The one row whose checksum is not already in `reference/architectures/harmony-one/memory.md`,
+        and the only one this
+        test can compute from a file: the external application's own header.
+        """
+        lab.require('one34_code')
+        header = firmware.parse_header(lab.load('one34_code'))
+        self.assertEqual(header.checksum, self.SCREEN['A'][0])
+        self.assertEqual(header.version, '3.4')
+
+    def test_the_bootloader_is_the_row_with_no_checksum_because_it_has_no_header(self):
+        """
+        Row C is identified by the **absence**, which is why it could be placed at all: it is the one
+        image on the remote with no header, so it is the only one that can show zero. Asserted as a
+        refusal to parse rather than as a zero, since that is the property doing the work.
+        """
+        lab.require('one_internal_fe')
+        page = lab.load('one_internal_fe')
+        self.assertEqual(self.SCREEN['C'][0], 0x0000, 'the screen shows no checksum for it')
+
+        # The bootloader occupies the first 4 KiB and carries no header magic anywhere in it, where
+        # each of the other images carries one at its own start.
+        self.assertNotIn(firmware.MAGIC, page[:0x1000],
+                         'the bootloader has no header, which is why it has no checksum')
+        self.assertIn(firmware.MAGIC, page[0x1000:0x1000 + 0x20],
+                      'and the image above it does, which is the control')
+
+    def test_the_five_checksums_are_distinct_so_the_match_is_forced(self):
+        """
+        The reason this is an identification and not an assignment. Four versions are 0x34, so a
+        version based match would leave three rows interchangeable; every checksum differs.
+        """
+        checksums = [c for c, _v, _f in self.SCREEN.values()]
+        self.assertEqual(len(set(checksums)), 5, 'distinct, so each row has one home')
+        versions = [v for _c, v, _f in self.SCREEN.values()]
+        self.assertEqual(sorted(versions).count(0x34), 4, 'and the versions could not have done it')
+
+class TestTheHarmonyOneWritesItsOwnExternalFlash(unittest.TestCase):
+    """Section 191. The parallel NOR programmer is resident in internal flash, and which level of the
+    remote can reach it is the whole finding.
+
+    The bootloader cannot, safe mode carries its own copy, and the application calls a library through
+    a jump table. Section 189 read the bootloader and wrote its limit for recovery, which is the third
+    time in a day a measurement on one level was written as a rule about the class, so every assertion
+    here names the level it is about.
+
+    **A command byte is a command because of where it is stored**, not because of its value. The first
+    version of the gate table was built by matching the AMD command literals and reported the sleep
+    routine as an erase, because it loads `0x80` for `MEMCON` and `0xF0` for `TRISH`. So
+    `committed_writes` requires the literal to reach `TABLAT` and be committed by a `TBLWT`.
+    """
+
+    LIBRARY_BASE = 0x10000      # internal page 0xFF covers program 0x010000 to 0x01FFFF
+    GATES = (0x01E00C, 0x01E00E, 0x01E010, 0x01E012, 0x01E014)
+    UNLOCK = ((0x022AAA, 0xAA), (0x022555, 0x55))
+    ERASE_GATE, PROGRAM_GATE, SLEEP_GATE = 0x01E00E, 0x01E012, 0x01E014
+    SECTOR_ERASE, PROGRAM, TABLAT = 0x30, 0xA0, 0xF5
+    # The duplicated block: the library's code, and where safe mode keeps its own copy.
+    LIBRARY_CODE, SAFE_MODE_COPY, COPY_BYTES = 0x01E018, 0x009CCA, 601
+
+    TBLPTRL, TBLPTRH, TBLPTRU = 0xF6, 0xF7, 0xF8
+
+    def committed_writes(self, code, base, lo, hi):
+        """Every byte that reaches memory, as (site, destination or None, value).
+
+        The destination is tracked as well as the value, because a byte is a command by virtue of
+        where it lands. `None` means the table pointer was not built from three literals in this
+        window, which is the ordinary case for a programmer writing a caller's address.
+        """
+        out, at, pending, staged, ptr = [], lo, None, None, {}
+        while at < min(hi, len(code) + base - 3):
+            ins = isa.decode(code, at - base, base)
+            if ins is None:
+                break
+            if ins.mnemonic == 'MOVLW':
+                pending = ins.fields['k']
+            elif ins.mnemonic == 'MOVWF' and ins.fields.get('a') == 0:
+                f = ins.fields.get('f')
+                if f == self.TABLAT:
+                    staged = pending
+                elif f == self.TBLPTRL:
+                    ptr['L'] = pending
+                elif f == self.TBLPTRH:
+                    ptr['H'] = pending
+                elif f == self.TBLPTRU:
+                    ptr['U'] = pending
+            elif ins.mnemonic.startswith('TBLWT') and staged is not None:
+                where = (((ptr['U'] << 16) | (ptr['H'] << 8) | ptr['L'])
+                         if len(ptr) == 3 else None)
+                out.append((at, where, staged))
+                staged = None
+            at += 2 * ins.words
+        return out
+
+    def test_the_gates_are_five_single_branches_into_the_library(self):
+        """What section 22 called "a run of BRA" and nobody followed. Section 186 identified the gate
+        correctly and then said the code behind it was in nothing this project holds; it is here."""
+        lab.require('one_page_ff')
+        code = lab.load('one_page_ff')
+        targets = []
+        for gate in self.GATES:
+            ins = isa.decode(code, gate - self.LIBRARY_BASE, self.LIBRARY_BASE)
+            self.assertEqual(ins.mnemonic, 'BRA', 'gate 0x%06X' % gate)
+            targets.append(ins.fields['target'])
+        self.assertEqual(len(set(targets)), 5, 'five gates, five distinct routines')
+        for target in targets:
+            self.assertTrue(0x01E000 < target < 0x01E27A, 'stays inside the library: 0x%06X' % target)
+
+    def test_the_application_is_what_calls_them_and_it_calls_all_five(self):
+        """
+        The gate's purpose, and the count matters: seven call sites over five gates, so no gate is
+        vestigial. Asserted exactly, since a gate falling out of use would be a change to look at.
+        """
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        base = 0x020000
+        sites = {gate: 0 for gate in self.GATES}
+        for off in range(0, len(code) - 3, 2):
+            ins = isa.decode(code, off, base)
+            if ins is None or ins.mnemonic not in ('CALL', 'GOTO'):
+                continue
+            target = ins.fields.get('target')
+            if target in sites:
+                sites[target] += 1
+        self.assertEqual(sites, {0x01E00C: 2, 0x01E00E: 1, 0x01E010: 1, 0x01E012: 1, 0x01E014: 2})
+
+    def test_the_unlock_is_the_amd_command_set_driven_as_bus_writes(self):
+        """
+        Two writes at addresses whose low twelve bits are 0xAAA and 0x555, which is the standard byte
+        mode unlock. The addresses are asserted in full **and** masked, because it is the low bits that
+        the device decodes and the upper ones that say which chip is being addressed.
+        """
+        lab.require('one_page_ff')
+        code = lab.load('one_page_ff')
+        writes = self.committed_writes(code, self.LIBRARY_BASE, self.LIBRARY_CODE, 0x01E0B8)
+        # The first version of this asserted a list against itself and could not fail. The address
+        # is the point, so it is read out of the image and compared to the constant.
+        self.assertEqual([(where, value) for _at, where, value in writes[:2]], list(self.UNLOCK))
+        for address, _value in self.UNLOCK:
+            self.assertIn(address & 0xFFF, (0xAAA, 0x555), 'the byte mode unlock offsets')
+            self.assertGreaterEqual(address, 0x020000, 'and above internal flash, so a bus write')
+        # No EECON1 is involved at all, which is what makes it a bus write rather than self
+        # programming, and is the difference from the bootloader's twelve command programmer.
+        armed = [at for at in range(self.LIBRARY_CODE, 0x01E27A, 2)
+                 if (lambda i: i is not None and i.fields.get('f') == 0xA6
+                     and i.fields.get('a') == 0 and i.mnemonic in ('MOVWF', 'CLRF', 'BSF'))(
+                     isa.decode(code, at - self.LIBRARY_BASE, self.LIBRARY_BASE))]
+        self.assertEqual(armed, [], 'the NOR path never touches EECON1')
+
+    def test_erase_and_program_are_separate_gates_so_programming_does_not_erase(self):
+        """
+        Section 186 closed this for arch 14 by reading the SPI opcodes and left the Harmony One open.
+        The answer agrees: the program gate emits no erase command, so the caller erases on both bench
+        architectures, which is what the rails assume.
+        """
+        lab.require('one_page_ff')
+        code = lab.load('one_page_ff')
+        gate_target = {}
+        for gate in self.GATES:
+            gate_target[gate] = isa.decode(code, gate - self.LIBRARY_BASE,
+                                           self.LIBRARY_BASE).fields['target']
+        bounds = sorted(gate_target.values())
+
+        def emitted(gate):
+            start = gate_target[gate]
+            later = [b for b in bounds if b > start]
+            end = min(later) if later else 0x01E27A
+            return [v for _at, _where, v in self.committed_writes(code, self.LIBRARY_BASE, start, end)]
+
+        self.assertIn(self.SECTOR_ERASE, emitted(self.ERASE_GATE))
+        self.assertIn(self.PROGRAM, emitted(self.PROGRAM_GATE))
+        self.assertNotIn(self.SECTOR_ERASE, emitted(self.PROGRAM_GATE),
+                         'programming does not erase first')
+        self.assertNotIn(self.PROGRAM, emitted(self.ERASE_GATE))
+        # And the sleep gate writes nothing to the chip, which is the false positive the literal
+        # matching version of this test reported as an erase.
+        self.assertEqual(emitted(self.SLEEP_GATE), [], 'the sleep routine touches no flash')
+
+    def test_the_sleep_gate_disables_the_external_bus_which_is_why_it_is_resident(self):
+        """
+        The reason the library exists at all: the instruction after the one that disables the bus
+        cannot be fetched from the bus. `MEMCON` is saved, bit 7 set, `SLEEP`, then restored.
+        """
+        lab.require('one_page_ff')
+        code = lab.load('one_page_ff')
+        MEMCON = 0xCB
+        at, seen = isa.decode(code, self.SLEEP_GATE - self.LIBRARY_BASE,
+                              self.LIBRARY_BASE).fields['target'], []
+        for _ in range(24):
+            ins = isa.decode(code, at - self.LIBRARY_BASE, self.LIBRARY_BASE)
+            if ins is None:
+                break
+            seen.append((ins.mnemonic, ins.fields.get('f'), ins.fields.get('k')))
+            at += 2 * ins.words
+        mnemonics = [m for m, _f, _k in seen]
+        self.assertIn('SLEEP', mnemonics)
+        self.assertIn(MEMCON, [f for _m, f, _k in seen], 'MEMCON is written')
+        self.assertIn(0x80, [k for _m, _f, k in seen], 'and bit 7, which disables the bus')
+
+    def test_safe_mode_carries_its_own_copy_and_the_bootloader_carries_none(self):
+        """
+        The level distinction, which is what section 189 got wrong. 601 bytes byte identical, and the
+        bootloader's whole complement of 0xAA literals accounted for as EECON2 unlocks rather than
+        merely not found, because "no unlock here" is a claim a weak search would also make.
+        """
+        lab.require('one_page_ff', 'one_internal_fe')
+        library = lab.load('one_page_ff')
+        page_fe = lab.load('one_internal_fe')
+
+        a = self.LIBRARY_CODE - self.LIBRARY_BASE
+        b = self.SAFE_MODE_COPY
+        self.assertEqual(library[a:a + self.COPY_BYTES], page_fe[b:b + self.COPY_BYTES])
+        self.assertNotEqual(library[a:a + self.COPY_BYTES + 1],
+                            page_fe[b:b + self.COPY_BYTES + 1],
+                            'and 601 is the whole run, so the count is exact')
+
+        # The bootloader: every 0xAA literal in it, and both are EECON2 unlocks.
+        EECON2 = 0xA7
+        unlocks = []
+        for at in range(0, 0x1000 - 2, 2):
+            ins = isa.decode(page_fe, at, 0)
+            if ins is None or ins.mnemonic != 'MOVLW' or ins.fields['k'] != 0xAA:
+                continue
+            after = isa.decode(page_fe, at + 2, 0)
+            self.assertEqual(after.fields.get('f'), EECON2,
+                             '0xAA at 0x%03X does not go to EECON2' % at)
+            unlocks.append(at)
+        self.assertEqual(unlocks, [0x330, 0xEE8], 'the two EECON2 unlocks and nothing else')
+        # This first asserted that the bootloader commits nothing at all, and the body could not
+        # reach that title: it commits three bytes, which is its own internal programmer loading
+        # holding latches. What matters is that none of them can begin an AMD unlock.
+        committed = self.committed_writes(page_fe, 0, 0, 0x1000)
+        self.assertEqual([value for _at, _where, value in committed], [0x04, 0xAC, 0x55])
+        self.assertNotIn(0xAA, [value for _at, _where, value in committed],
+                         'no 0xAA reaches memory, so no unlock can start in the bootloader')
+
+
+class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
+    """Section 192. A host does not hand the remote a flash address, it hands it a request that one
+    routine classifies into a target, a page and a refusal.
+
+    The finding is the interlock, and it is a **byte** rather than a bit. One routine per image reads
+    the top byte of the requested address and either selects internal program flash, selects the
+    external medium, or returns without selecting anything at all. Both the write handler and the
+    erase handler then dispatch on that byte, and its resting value refuses, so an address the
+    classifier rejects produces silence rather than a write somewhere else.
+
+    Two of this session's own mistakes are pinned here as controls, because both were false negatives
+    produced by searching bytes instead of reading instructions, and both looked like findings:
+
+    * a grep for the resolved register name missed `MOVWF 0xee,B`, the access bank spelling of the
+      same variable, and produced the claim that the internal flash arm was dead code. Same family as
+      the `EECON1` confusion section 189 already records, one layer along: there the access bank form
+      was read as a bank 0 variable, here a bank 1 variable's access bank form was not read at all.
+    * a byte pattern search for the internal page arm reported it absent from the application. The
+      pattern contained the variable's address, and the application keeps its copy one bank up, so the
+      pattern was a pattern about one image. **A byte pattern that contains a register address cannot
+      be used to compare two images.**
+
+    The classifier is one routine across two architectures and six images, four of them arch 14's
+    since section 281 added the Harmony 650's two. What is per architecture
+    is the external ceiling, and that is asserted per image rather than shared.
+    """
+
+    #: `BCF 0x00,0; CLRF 0x01; CLRF 0x02; MOVLW 0xFE; XORWF 0x00,W`, the top byte's bit 0 cleared
+    #: and compared with 0xFE, which is what makes 0xFE and 0xFF one case.
+    ANCHOR = bytes.fromhex('0090016a026afe0e0018')
+    ANCHOR_AT = 4               # the anchor sits this far past the routine's first instruction
+
+    #: The external ceiling is a refusal on the top byte, so it states the size of the medium the
+    #: architecture addresses: 4 MB on the Harmony One's parallel NOR, 2 MB on the serial part.
+    CEILINGS = {
+        'one_internal_fe': 0x40,
+        'one34_code': 0x40,
+        'h600_code_complete': 0x20,
+        'h700_code': 0x20,
+        # The Harmony 650's two, since section 281 made that unit arch 14's write target: the package
+        # and the one read off the bench unit, which is a different build.
+        'h650_code': 0x20,
+        'h650_bench_code': 0x20,
+    }
+    BASES = {
+        'one_internal_fe': 0x0000,
+        'one34_code': 0x020000,
+        'h600_code_complete': 0x9000,
+        'h700_code': 0x9000,
+        'h650_code': 0x9000,
+        'h650_bench_code': 0x9000,
+    }
+    ARCH12 = ('one_internal_fe', 'one34_code')
+    ARCH14 = ('h600_code_complete', 'h700_code', 'h650_code', 'h650_bench_code')
+
+    #: Safe mode's own copies of the three variables the classifier and both handlers share.
+    STATE, ADDRESS, SELECTOR = 0x1E7, 0x1E8, 0x1EE
+    #: Written to the register at external 0x020025, and the fixed window the access then uses.
+    BANK_REGISTER, BANK_BIAS, WINDOW_TOP = 0x020025, 0x03, 0x13
+    #: Section 47's log area writer refuses outside this range, from the action list language and with
+    #: nothing in common with the USB path. Its ceiling is this classifier's, which is the closure.
+    LOG_AREA_CEILING = 0x400000
+    #: Section 175's interlock blocks a write below this, read from the write executor.
+    SECTION_175_THRESHOLD = 0x020000
+
+    def classifier(self, code, base):
+        """Locate the one classifier in an image and read what it decides.
+
+        Returns (entry, ceiling, refusals). The ceiling is found semantically rather than by
+        position: the routine makes two zero extended comparisons on the top byte, and the one whose
+        terminating branch refuses on **carry** is the upper bound, where the other refuses on its
+        absence and is a compiler emitted `>= 0` that no byte can fail.
+        """
+        hit = code.find(self.ANCHOR)
+        self.assertNotEqual(hit, -1, 'no classifier in this image')
+        self.assertEqual(code.find(self.ANCHOR, hit + 1), -1, 'exactly one classifier per image')
+        entry = hit - self.ANCHOR_AT
+
+        ceiling, pending, candidate, refusals = None, None, None, []
+        off = entry
+        while off < entry + 0x90:
+            ins = isa.decode(code, off, base)
+            if ins is None:
+                break
+            if ins.mnemonic == 'MOVLW':
+                pending = ins.fields['k']
+            elif ins.mnemonic == 'SUBWF' and ins.fields.get('f') == 0x00:
+                candidate = pending
+            elif ins.mnemonic == 'BC' and pending == 0x00 and candidate is not None:
+                # carry means "not below", so refusing on carry bounds from above
+                ceiling = candidate if ceiling is None else ceiling
+            elif ins.mnemonic == 'RETLW':
+                refusals.append((base + off, ins.fields['k']))
+            off += 2 * ins.words
+        return base + entry, ceiling, refusals
+
+    def test_every_image_carries_exactly_one_classifier_and_its_ceiling_is_per_architecture(self):
+        """The shared half and the split half in one assertion, because the interesting thing is that
+        the routine is one routine and the number in it is not."""
+        lab.require(*self.CEILINGS)
+        found = {}
+        for name, ceiling in self.CEILINGS.items():
+            entry, read, _refusals = self.classifier(lab.load(name), self.BASES[name])
+            found[name] = read
+            self.assertIsNotNone(read, '%s: no upper bound found' % name)
+            self.assertGreater(entry, 0, name)
+        self.assertEqual(found, self.CEILINGS)
+        # And the split is by architecture rather than by image, which is the claim worth pinning:
+        # the images agree on each side, two on arch 12 and four on arch 14, and the two sides disagree.
+        self.assertEqual({found[n] for n in self.ARCH12}, {0x40})
+        self.assertEqual({found[n] for n in self.ARCH14}, {0x20})
+        self.assertNotEqual(found['one34_code'], found['h700_code'])
+
+    def test_the_harmony_ones_ceiling_is_the_log_area_writers_ceiling(self):
+        """The independent closure. Section 47 read a bound out of the action list language, where a
+        config asks the remote to reserve flash above itself and an out of range request zeroes the
+        count instead of writing. This is the USB command path, a different consumer with no shared
+        code, and it refuses at the same address."""
+        lab.require('one34_code')
+        _entry, ceiling, _refusals = self.classifier(lab.load('one34_code'), 0x020000)
+        self.assertEqual(ceiling << 16, self.LOG_AREA_CEILING)
+
+    def test_the_classifier_answers_three_ways_and_the_third_selects_nothing(self):
+        """Safe mode's copy, read in full: two arms that select a target and return 1, one that
+        returns 0 having selected nothing. The count is what matters, since an arm that fell through
+        to a neighbour is how a refusal becomes a write."""
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        _entry, _ceiling, refusals = self.classifier(code, 0x0000)
+        self.assertEqual([value for _at, value in refusals], [0x01, 0x01, 0x00],
+                         'accept, accept, refuse')
+        # The refusing return is reached from three separate branches, so it is the common exit and
+        # not one case's tail.
+        refuse_at = refusals[-1][0]
+        arrivals = 0
+        for off in range(0x07CAC, 0x07D16, 2):
+            ins = isa.decode(code, off, 0x0000)
+            if ins is not None and ins.fields.get('target') == refuse_at:
+                arrivals += 1
+        self.assertEqual(arrivals, 4, 'four branches refuse')
+
+    def test_the_selector_rests_at_refuse_and_only_the_classifier_moves_it(self):
+        """
+        The polarity, which is the half this project has twice got wrong on an interlock. The byte is
+        set to 0xFF at session reset and after every erase, and the only value that reaches it besides
+        0xFF is written inside the classifier. So the failure direction is a no-op.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        sets, clears, internal = [], [], []
+        for off in range(0x07000, 0x09000, 2):
+            ins = isa.decode(code, off, 0x0000)
+            if ins is None:
+                continue
+            f, a, m = ins.fields.get('f'), ins.fields.get('a'), ins.mnemonic
+            # Bank 1 is selected throughout these handlers, so the selector appears both as a
+            # resolved address and as an access bank byte. Counting only one spelling is the mistake
+            # this class's docstring records.
+            banked = (f == self.SELECTOR) or (f == (self.SELECTOR & 0xFF) and a == 1)
+            if not banked:
+                continue
+            if m == 'SETF':
+                sets.append(off)
+            elif m == 'CLRF':
+                clears.append(off)
+            elif m == 'MOVWF':
+                internal.append(off)
+        self.assertEqual(sets, [0x07CA8, 0x07D92, 0x07F12, 0x08082, 0x0809A, 0x08352, 0x0861C],
+                         'seven sites reset it to refuse, one of them in the spelling a grep for '
+                         'the resolved name cannot see')
+        self.assertEqual(clears, [0x07D12], 'the external arm is the only clear')
+        self.assertEqual(internal, [0x07D08], 'the internal arm is the only other write')
+        # And the value that arm writes, read out of the instruction before it.
+        self.assertEqual(isa.decode(code, 0x07D06, 0x0000).fields['k'], 0xFE)
+
+    def test_the_write_and_the_erase_handler_share_one_preamble(self):
+        """
+        Both reach the same NOR programmer through the same address preparation, so a rail derived
+        from one holds for the other. Asserted as byte equality of the two runs rather than by
+        reading each, because the claim is that they are the same code.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        erase, write, length = 0x07ED2, 0x0814E, 0x2E
+        self.assertEqual(code[erase:erase + length], code[write:write + length],
+                         'the erase and write preambles are identical bytes')
+        self.assertNotEqual(code[erase + length], code[write + length],
+                            'and 0x%02X is the whole run, not a prefix of it' % length)
+        # What that preamble does, read at the offsets rather than described: the requested top byte
+        # biased into the register at 0x020025, then replaced by the fixed window before use.
+        literal = lambda at: isa.decode(code, erase + at, 0x0000).fields['k']
+        self.assertEqual(literal(0x0C), self.BANK_BIAS, 'the bias subtracted from the top byte')
+        self.assertEqual((literal(0x16) << 16) | literal(0x1C), self.BANK_REGISTER)
+        self.assertEqual(literal(0x28), self.WINDOW_TOP, 'and the top byte it is replaced with')
+        # The three bytes it operates on are the request's address, copied in immediately above.
+        self.assertEqual([isa.decode(code, erase + at, 0x0000).fields['src'] for at in (0, 4, 8)],
+                         [self.ADDRESS, self.ADDRESS + 1, self.ADDRESS + 2])
+
+    def test_three_commands_share_the_classifier_in_both_harmony_one_images(self):
+        """
+        Which commands it serves, and the count is the closure. Safe mode calls it from its write,
+        read and erase handlers and from nowhere else, and the application calls its own copy exactly
+        three times too. So the read path this project has driven for a year and the write path it has
+        never used are bounded by the same routine, which is why the protocol's "internal page 0xFE"
+        and "internal page 0xFF" are this routine's `top & 1` and not a naming convention of ours.
+        """
+        lab.require('one_internal_fe', 'one34_code')
+        for name, base, entry, expected in (
+            ('one_internal_fe', 0x0000, 0x07CAC, [0x07E2C, 0x07E76, 0x07EA8]),
+            ('one34_code', 0x020000, 0x02637A, [0x026504, 0x02654E, 0x0265A4]),
+        ):
+            code = lab.load(name)
+            callers = []
+            for off in range(0, len(code) - 3, 2):
+                ins = isa.decode(code, off, base)
+                if ins is None:
+                    continue
+                if ins.mnemonic in ('CALL', 'RCALL') and ins.fields.get('target') == entry:
+                    callers.append(base + off)
+            self.assertEqual(callers, expected, name)
+        # And the located entry agrees with the address the callers name, which is what makes the
+        # anchor arithmetic checkable rather than assumed. It was four bytes out at first.
+        found, _c, _r = self.classifier(lab.load('one_internal_fe'), 0x0000)
+        self.assertEqual(found, 0x07CAC)
+        # Which command each caller belongs to, against handler bounds taken from the Harmony One's
+        # command handlers in reference/architectures/harmony-one/firmware.md, which moved there out of
+        # the command table in reference/usb-protocol/commands.md. That table is derived from the XORLW
+        # dispatch chain and so shares
+        # no reasoning with this routine, which is what makes the attribution a check rather than a
+        # restatement: three callers, three commands, and the fourth command in between untouched.
+        for handlers, callers, expected in (
+            ({'WRITE_FLASH': (0x07DEA, 0x07E34), 'READ_FLASH': (0x07E34, 0x07E7E),
+              'ERASE_FLASH': (0x07E7E, 0x07F16)},
+             [0x07E2C, 0x07E76, 0x07EA8], ['WRITE_FLASH', 'READ_FLASH', 'ERASE_FLASH']),
+            ({'WRITE_FLASH': (0x0264C2, 0x02650C), 'READ_FLASH': (0x02650C, 0x026556),
+              'START_IRCAP': (0x026556, 0x02657A), 'ERASE_FLASH': (0x02657A, 0x026626)},
+             [0x026504, 0x02654E, 0x0265A4], ['WRITE_FLASH', 'READ_FLASH', 'ERASE_FLASH']),
+        ):
+            named = []
+            for caller in callers:
+                inside = [name for name, (lo, hi) in handlers.items() if lo <= caller < hi]
+                self.assertEqual(len(inside), 1, 'one handler owns 0x%05X' % caller)
+                named.append(inside[0])
+            self.assertEqual(named, expected)
+
+    def test_the_internal_arm_lands_exactly_where_section_175s_interlock_guards(self):
+        """
+        The two interlocks compose rather than compete, and the boundary is the closure.
+
+        Section 175 read a bit at `0x1A4` bit 5 that blocks a write below `0x020000` unless a low erase
+        has just cleared it, from the write executor and knowing nothing about how a request reaches
+        that region. This classifier is the parser, and its internal arm produces `page << 16 | low`
+        with `page` in {0, 1}, so its whole range is `[0x000000, 0x020000)`. Same boundary, two routes,
+        neither derived from the other.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        # The mask is read out of the image rather than assumed: 0x01 applied to the top byte.
+        self.assertEqual(isa.decode(code, 0x07D0A, 0x0000).fields['k'], 0x01)
+        self.assertEqual(isa.decode(code, 0x07D0C, 0x0000).mnemonic, 'ANDWF')
+        pages = {0xFE & 0x01, 0xFF & 0x01}
+        self.assertEqual(pages, {0, 1})
+        reachable = [(page << 16, (page << 16) | 0xFFFF) for page in sorted(pages)]
+        self.assertEqual(reachable[0][0], 0x000000)
+        self.assertEqual(reachable[-1][1] + 1, self.SECTION_175_THRESHOLD)
+
+    def test_the_bank_register_is_the_harmony_ones_alone(self):
+        """
+        Paging is a property of the medium, so the register that does it should be absent where the
+        medium is serial. It is: both Harmony One images write it and neither arch 14 image builds
+        that pointer at all. This is what gives the 64 KiB erase block a reason, since forcing the
+        top byte leaves exactly sixteen bits of offset.
+        """
+        lab.require(*self.CEILINGS)
+        setup = bytes.fromhex('020ef86ef76a250ef66e')   # TBLPTR = 0x020025
+        counts = {name: lab.load(name).count(setup) for name in self.CEILINGS}
+        self.assertEqual(counts['one_internal_fe'], 20)
+        self.assertEqual(counts['one34_code'], 46)
+        self.assertEqual(counts['h600_code_complete'], 0, 'serial flash needs no page register')
+        self.assertEqual(counts['h700_code'], 0)
+        self.assertEqual(0x1000000 >> 8 >> 8, 0x100, 'sixteen bits of offset under a forced top byte')
+
+
+class TestBaseSlot17IsReadAsAHitMapAndNoLiteralNamesTheKeyTable(unittest.TestCase):
+    """
+    Section 328: on the four arch 14 application images read, the Harmony 600 0.2, Harmony 650 0.2
+    and 0.4 and Harmony 700 2.8, nothing found reaches the picture bank or the key table through where
+    they sit. A negative over what was read, not over the firmware.
+
+    Base slot 17 names the picture bank two bytes in front of it on every arch 14 compile, section 62,
+    and that is how this codec finds the bank. The firmware fetches base slot 17 at exactly two call
+    sites of its section seeker on every image here, and both index it the way the touch hit map is
+    indexed, sections 45 and 84: an offset of one, the count byte, loaded as a literal, then a call to
+    an indexer that multiplies the index by three and adds that offset. Neither adds the two bytes that
+    would reach the bank. Pictures are drawn by the address a screen program states, section 146.
+
+    Past the header, the cookie at 0 and `end_addr` at 4, the container validator's only fixed offset
+    is `0x5B`, where it compares the four bytes of `LWJL`. The key table sits at `0x5F` on every
+    compile and no literal instruction on any of the four loads that value, so it is reached through
+    base slot 6 like any other mode, section 311. An offset computed from the marker would not show in
+    a literal, which is why the test also pins that the one `0x5B` load is the marker check.
+    """
+
+    BASE = 0x9000
+    # image -> the section seeker, sections 35 and 81.
+    IMAGES = {
+        'h700_code': 0x10B92,
+        'h600_code_complete': 0x18020,
+        'h650_bench_code': 0x18020,
+        'h650_code': 0x10B72,
+    }
+    TOUCH_MAP_SLOT = 17
+    MARKER_OFFSET = 0x5B
+    KEY_TABLE_OFFSET = 0x5F
+    # Every PIC18 instruction that takes an eight bit literal, so the negative covers more than MOVLW.
+    LITERAL_MNEMONICS = ('MOVLW', 'ADDLW', 'SUBLW', 'XORLW', 'IORLW', 'ANDLW', 'RETLW', 'MULLW')
+
+    def slot_sites(self, code, seeker):
+        """Every seeker call site with the literal slot loaded in front of it."""
+        sites = {}
+        for site in trace.xrefs(code, self.BASE, [seeker])[seeker]:
+            offset = site.addr - self.BASE
+            for back in range(2, 30, 2):
+                instr = isa.decode(code, offset - back, self.BASE)
+                if instr.mnemonic == 'MOVLW':
+                    sites.setdefault(instr.fields['k'], []).append(site.addr)
+                    break
+        return sites
+
+    def following(self, code, addr, count):
+        out = []
+        offset = addr - self.BASE
+        for _ in range(count):
+            instr = isa.decode(code, offset, self.BASE)
+            out.append(instr)
+            offset += 2 * instr.words
+        return out
+
+    def test_base_slot_17_is_fetched_twice_and_indexed_one_byte_in_by_threes(self):
+        lab.require(*self.IMAGES)
+        for name, seeker in self.IMAGES.items():
+            code = lab.load(name)
+            with self.subTest(image=name):
+                sites = self.slot_sites(code, seeker)
+                self.assertEqual(len(sites.get(self.TOUCH_MAP_SLOT, [])), 2)
+                indexers = set()
+                for site in sites[self.TOUCH_MAP_SLOT]:
+                    after = self.following(code, site, 6)
+                    # The seeker call, a MOVFF of the index, then `MOVLW 0x01` into the offset
+                    # register and a call to the indexer. A bias of two, which is what reaching the
+                    # bank would take, would show as a different literal here.
+                    literals = [i.fields['k'] for i in after if i.mnemonic == 'MOVLW']
+                    self.assertEqual(literals, [1], hex(site))
+                    calls = [i.fields['target'] for i in after if i.mnemonic == 'CALL']
+                    self.assertEqual(calls[0], seeker, hex(site))
+                    self.assertEqual(len(calls), 2, hex(site))
+                    indexers.add(calls[1])
+                # Both sites call one indexer, and it multiplies the index by three: `MOVLW 0x03`
+                # straight before its first `MULWF`, entries of three bytes after the count.
+                self.assertEqual(len(indexers), 1)
+                body = self.following(code, indexers.pop(), 12)
+                first_multiply = next(k for k, i in enumerate(body) if i.mnemonic == 'MULWF')
+                self.assertEqual(body[first_multiply - 1].mnemonic, 'MOVLW')
+                self.assertEqual(body[first_multiply - 1].fields['k'], 3)
+
+    def test_0x5b_is_loaded_once_for_the_marker_check_and_no_literal_is_0x5f(self):
+        lab.require(*self.IMAGES)
+        for name in self.IMAGES:
+            code = lab.load(name)
+            markers = []
+            key_table = []
+            for addr, instr in isa.iter_instructions(code, self.BASE, 0, len(code)):
+                if instr.mnemonic == 'MOVLW' and instr.fields['k'] == self.MARKER_OFFSET:
+                    markers.append(addr)
+                if instr.mnemonic in self.LITERAL_MNEMONICS and instr.fields['k'] == self.KEY_TABLE_OFFSET:
+                    key_table.append(addr)
+            with self.subTest(image=name):
+                self.assertEqual(len(markers), 1)
+                self.assertEqual(key_table, [])
+                # And that one load is followed by the four letters of the marker, compared.
+                after = self.following(code, markers[0], 40)
+                letters = [i.fields['k'] for i in after if i.mnemonic == 'MOVLW' and 0x41 <= i.fields['k'] <= 0x5A]
+                self.assertEqual(bytes(letters[:4]), b'LWJL')
+
+
+class TestAQueuedScreenProgramIsIndexedByOneByte(unittest.TestCase):
+    """
+    Section 369: action `0x73` runs base slot 11 entry `operand & 0xff`, on the Harmony 600 0.2, the
+    Harmony 650 0.2 and 0.4, the Harmony 700 2.8 and the Harmony One 3.4. Section 73 read a sixteen bit
+    index there and it is one byte.
+
+    The run routine seeks the screen program slot, copies the operand's **low** byte alone into the
+    indexer's argument with `MOVFF`, loads the count header's size, 2, and calls the indexer; it never
+    names the operand's high byte. The indexer moves that one byte into the low half of its product and
+    clears the high half before multiplying by three. So a table of 6653 entries on a Harmony 650 has 256
+    a configuration can run, and section 366's appended entry 6653 ran as entry 253 and stalled the remote.
+
+    On the four arch 14 images the seeker is called with base slot 11 at exactly one site, this routine,
+    so nothing else in that firmware reads the table and an entry from 256 up is never reached.
+    """
+
+    # image -> (base, run routine, operand low register, slot literal, seeker)
+    IMAGES = {
+        'h650_bench_code': (0x9000, 0x16EB0, 0x738, 0x0B, 0x18020),
+        'h600_code_complete': (0x9000, 0x16EB0, 0x738, 0x0B, 0x18020),
+        'h650_code': (0x9000, 0x185EC, 0x391, 0x0B, 0x10B72),
+        'h700_code': (0x9000, 0x18814, 0x39D, 0x0B, 0x10B92),
+        'one34_code': (0x20000, 0x296F4, 0x2F1, 0x0C, 0x2BA76),
+    }
+
+    def routine(self, code, base, addr, limit=40):
+        """Instructions from `addr` up to and including the first `RETURN`."""
+        out = []
+        offset = addr - base
+        for _ in range(limit):
+            instr = isa.decode(code, offset, base)
+            out.append(instr)
+            if instr.mnemonic == 'RETURN':
+                break
+            offset += 2 * instr.words
+        return out
+
+    def test_the_run_routine_copies_the_operand_low_byte_alone_and_the_indexer_clears_the_high(self):
+        lab.require(*self.IMAGES)
+        for name, (base, run, low, slot, seeker) in self.IMAGES.items():
+            code = lab.load(name)
+            with self.subTest(image=name):
+                body = self.routine(code, base, run)
+                self.assertEqual([i.fields['k'] for i in body if i.mnemonic == 'MOVLW'], [slot, 2])
+                calls = [i.fields['target'] for i in body if i.mnemonic == 'CALL']
+                self.assertEqual(calls[0], seeker)
+                moves = [i for i in body if i.mnemonic == 'MOVFF']
+                self.assertEqual([m.fields['src'] for m in moves], [low])
+                # The high byte is named nowhere in the routine, by MOVFF or by a banked access.
+                touched = {i.fields.get('src') for i in body} | {i.fields.get('f') for i in body}
+                self.assertNotIn(low + 1, touched)
+                self.assertNotIn((low + 1) & 0xFF, {i.fields.get('f') for i in body if i.mnemonic != 'MOVLB'})
+                index = moves[0].fields['dst']
+                indexer = calls[1]
+                head = self.routine(code, base, indexer, 8)
+                multiply = next(k for k, i in enumerate(head) if i.mnemonic == 'MULWF')
+                before = head[:multiply]
+                reads = [i for i in before if i.mnemonic == 'MOVF']
+                self.assertEqual([r.fields['f'] for r in reads], [index & 0xFF])
+                cleared = [i for i in before if i.mnemonic == 'CLRF']
+                self.assertEqual(len(cleared), 1)
+                self.assertEqual(before[multiply - 1].mnemonic, 'MOVLW')
+                self.assertEqual(before[multiply - 1].fields['k'], 3)
+
+    def test_on_arch_14_the_screen_program_slot_is_sought_at_one_site_only(self):
+        arch14 = [name for name, spec in self.IMAGES.items() if spec[3] == 0x0B]
+        lab.require(*arch14)
+        for name in arch14:
+            base, run, _, slot, seeker = self.IMAGES[name]
+            code = lab.load(name)
+            sites = []
+            for site in trace.xrefs(code, base, [seeker])[seeker]:
+                offset = site.addr - base
+                for back in range(2, 30, 2):
+                    instr = isa.decode(code, offset - back, base)
+                    if instr.mnemonic == 'MOVLW':
+                        if instr.fields['k'] == slot:
+                            sites.append(site.addr)
+                        break
+            with self.subTest(image=name):
+                self.assertEqual(len(sites), 1)
+                self.assertTrue(run < sites[0] < run + 0x20, hex(sites[0]))
+
+if __name__ == '__main__':
+    unittest.main()

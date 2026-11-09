@@ -13,8 +13,8 @@ limits as settings rather than keep a track of its own. todo.md 3.7.
 client make per model (four devices against eight, no long press, a cut down activity, four or five
 favourites), and the printing. The remote itself runs one program built twice: the two applications
 align instruction for instruction, and the one difference that is not an address is how a send from an
-infrared group above 3 sets a pin, `tests/test_harmony_300_350_images.py`. Nothing in either reads which
-model a configuration states, `tests/test_harmony_350_skin.py`, and our write route does not compare it.
+infrared group above 3 sets a pin, `tests/harmony_300_350/test_harmony_300_350_images.py`. Nothing in either reads which
+model a configuration states, `tests/harmony_300_350/test_harmony_350_skin.py`, and our write route does not compare it.
 
 **Before working any item, load the `harmony-300-350` skill**, in this session and in every agent brief.
 
@@ -31,7 +31,7 @@ model a configuration states, `tests/test_harmony_350_skin.py`, and our write ro
 ## 2. The keys
 
 - [x] 2.1 Every key sends something: the unit's configuration with every unbound scan code given a send, and a bench test pressing every key, as the 350's keypad check before 2.2.2: the lab's `work/300-every-key/every-key.bin`, 12 keys given Info's list, `packages/bench/irtests/done/300-2-1-every-key.json` passed all 18 steps, no key silent or sending twice
-- [x] 2.2 Every key in two modes against the 350's key table, the predictions written first since the two share one moulding; then the codes onto the 300's drawing, its printed labels checked against the unit: 49 keys heard on the code of the 350 key in the same place, P1 to P5 held, four failed steps the US wording on the European unit; the European printing is its own drawing, `h300eu`, carrying the 49, `packages/bench/test/keys300.test.ts`
+- [x] 2.2 Every key in two modes against the 350's key table, the predictions written first since the two share one moulding; then the codes onto the 300's drawing, its printed labels checked against the unit: 49 keys heard on the code of the 350 key in the same place, P1 to P5 held, four failed steps the US wording on the European unit; the European printing is its own drawing, `h300eu`, carrying the 49, `packages/bench/test/harmony-300-350/keys300.test.ts`
 
 ## 3. A Logitech compile, written and used
 
@@ -44,10 +44,10 @@ Changed on 31 October 2026: the bench 300 already held a Logitech compile of its
 
 ## 4. Is it a 350
 
-- [x] 4.1 The two applications compared, both read off the units: one program linked twice, the only difference that is not an address the send kind a group above 3 gets, 0xFF on the 300 and 3 on the 350; bootloader and safe mode are other builds and run no configuration, `tests/test_harmony_300_350_images.py`
-- [x] 4.2 What the four send kinds do: the lists entry 0 binds to firmware events 0x2D to 0x30, read in the configurations, so the one difference is known before the bench says it: one list on four pins, `tests/test_harmony_300_350_send_events.py`, and then the hang it hid, `tests/test_harmony_300_group_4_send.py`
-- [x] 4.3 Logitech's compile of the 350's test setup written to the bench 300 and the 350's 3.3 bench test run on it, the predictions written first, the long press devices in groups 4 to 7 among the steps: as compiled it hangs the 300 at the first send from group 4, `tests/test_harmony_300_group_4_send.py`; with firmware event 0xFF bound to event 0x30's list, one entry in key map 0, all four groups above 3 sent and the remote kept working, the lab's `work/300-event-ff/`
-- [x] 4.4 The verdict in the reference, decided as decision 28, the 300 a 350 for configurations or what differs, and this track folded into the 350's with the device count, the long press and the favourites as the model's settings: `reference/architectures/harmony-300-350/README.md`, "Making a Harmony 300 behave as a Harmony 350", `packages/codec/test/noscreeneventff.test.ts`
+- [x] 4.1 The two applications compared, both read off the units: one program linked twice, the only difference that is not an address the send kind a group above 3 gets, 0xFF on the 300 and 3 on the 350; bootloader and safe mode are other builds and run no configuration, `tests/harmony_300_350/test_harmony_300_350_images.py`
+- [x] 4.2 What the four send kinds do: the lists entry 0 binds to firmware events 0x2D to 0x30, read in the configurations, so the one difference is known before the bench says it: one list on four pins, `tests/harmony_300_350/test_harmony_300_350_send_events.py`, and then the hang it hid, `tests/harmony_300_350/test_harmony_300_group_4_send.py`
+- [x] 4.3 Logitech's compile of the 350's test setup written to the bench 300 and the 350's 3.3 bench test run on it, the predictions written first, the long press devices in groups 4 to 7 among the steps: as compiled it hangs the 300 at the first send from group 4, `tests/harmony_300_350/test_harmony_300_group_4_send.py`; with firmware event 0xFF bound to event 0x30's list, one entry in key map 0, all four groups above 3 sent and the remote kept working, the lab's `work/300-event-ff/`
+- [x] 4.4 The verdict in the reference, decided as decision 28, the 300 a 350 for configurations or what differs, and this track folded into the 350's with the device count, the long press and the favourites as the model's settings: `reference/architectures/harmony-300-350/README.md`, "Making a Harmony 300 behave as a Harmony 350", `packages/codec/test/families/harmony-300-350/noscreeneventff.test.ts`
 
 ## 5. Logitech's 300 compile rebuilt
 

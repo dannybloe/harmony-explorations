@@ -4,7 +4,7 @@
  * builder returns the bytes, or a piece the frame places, and nothing here edits a container or reads one.
  *
  * **What is built**, each measured byte for byte on the 13 compiles of the family the lab holds, both models, by
- * `test/noscreenconstants.test.ts`, whose header holds the argument:
+ * `test/families/harmony-300-350/noscreenconstants.test.ts`, whose header holds the argument:
  *
  * * the log area, raw slot 2: the shared `buildLogArea`, whose table `LOG_AREAS` holds this architecture's
  *   region, 8 bytes;
@@ -71,10 +71,10 @@ const PUSH_FE = { opcode: STATE_BAND, operand: 0xfefe } as const;
 
 /**
  * The send events' tags in entry 0 and the output pin each one's list switches, `0x2D` pin 0, `0x2F` pin 1, `0x2E`
- * pin 2 and `0x30` pin 3, `tests/test_harmony_300_350_send_events.py`. In tag order.
+ * pin 2 and `0x30` pin 3, `tests/harmony_300_350/test_harmony_300_350_send_events.py`. In tag order.
  */
 export const SEND_EVENT_PINS: ReadonlyMap<number, number> = new Map([[0x2d, 0], [0x2e, 2], [0x2f, 1], [0x30, 3]]);
-/** The state variable the send events' lists test: the sending flag, `tests/test_harmony_350_clock.py`. */
+/** The state variable the send events' lists test: the sending flag, `tests/harmony_300_350/test_harmony_350_clock.py`. */
 export const SENDING_FLAG = 17;
 /** The instruction each send event's list ends with, which no image has been read for. */
 const SEND_EVENT_TAIL = { opcode: 0x07, operand: 0xfffa } as const;
@@ -242,7 +242,7 @@ export function noScreenSendEventEntries(numbers: NoScreenSendEventNumbers): Key
  * The firmware event a Harmony 300's application raises for a send from an infrared group above 3: the send kind
  * `0xFF`, which the 350's build masks to two bits and the 300's leaves, `reference/architectures/harmony-300-350/
  * firmware.md` "What a send does with its event, and why event `0xFF` stops it". No Logitech configuration of the
- * family binds it, 13 of 13, `tests/test_harmony_300_group_4_send.py`.
+ * family binds it, 13 of 13, `tests/harmony_300_350/test_harmony_300_group_4_send.py`.
  */
 export const UNMASKED_SEND_EVENT = 0xff;
 
@@ -250,7 +250,7 @@ export const UNMASKED_SEND_EVENT = 0xff;
  * The send event whose bound list event `UNMASKED_SEND_EVENT` is given: `0x30`, the event a 350 raises for a send
  * from group 3 and from every group above it, so the list a 300 then runs is the one a 350 runs for the same send.
  * Its list ends in `07 FFFA`, the acknowledgement that releases the sender, as the four bound lists all do; `0x30`
- * is the one the bench 300 was run with, `packages/codec/test/noscreeneventff.test.ts`, and the only one measured.
+ * is the one the bench 300 was run with, `packages/codec/test/families/harmony-300-350/noscreeneventff.test.ts`, and the only one measured.
  */
 export const ACKNOWLEDGED_AS = 0x30;
 

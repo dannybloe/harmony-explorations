@@ -28,7 +28,7 @@ import type { Model, ScanSource } from '../src/types.ts';
  * `decided` names every key whose code came from anywhere **but** section 133's button maps, scan by
  * scan. Those are the codes a frame cannot check, so each is a claim of its own archive section and is
  * stated here as one. The 133 codes are checked against the frames they send in the calibration
- * configurations, `packages/codec/test/irframe.test.ts`, which needs the lab.
+ * configurations, `packages/codec/test/infrared/irframe.test.ts`, which needs the lab.
  *
  * Until plan 009's step 3.3 these codes were checked against `reference/button-maps.md`, a Markdown table
  * this test parsed. The drawings hold the codes now, so there is no second copy to compare with, and
@@ -54,7 +54,7 @@ const EXPECTED: Readonly<Record<string, {
   },
   /**
    * The European printing, skin 79: the same 55 shapes, and 49 codes heard by pressing every key of a skin 79
-   * unit in two device modes, `todo-compile-300.md` 2.1 and 2.2, `packages/bench/test/keys300.test.ts`. Every
+   * unit in two device modes, `todo-compile-300.md` 2.1 and 2.2, `packages/bench/test/harmony-300-350/keys300.test.ts`. Every
    * one is a decision of its own, so all 49 are named below; each is the code of the 350 key in the same
    * place, and the six left are keys neither configuration on the unit tells apart: one binds nothing to
    * them, the other gives them Info's command, as it gives several codes.
@@ -158,7 +158,7 @@ const EXPECTED: Readonly<Record<string, {
    * own product photograph and the picture in Logitech's reviewer's guide for it, and 53 is what its
    * configurations' key tables hold, the 885's 55 less 19 and 60. No Harmony 880 has been pressed: 29 keys
    * carry the code Logitech's compiles for skin 15 name them on, each the code the same key raised on an
-   * 885, `tests/test_harmony_880_keys.py`, and the other 22 carry no code. The two chevrons share two
+   * 885, `tests/harmony_880_885/test_harmony_880_keys.py`, and the other 22 carry no code. The two chevrons share two
    * candidates, below.
    */
   h880: {
@@ -198,7 +198,7 @@ const EXPECTED: Readonly<Record<string, {
   /**
    * The count is the units': 55 keys pressed on a Harmony 885 raised 55 codes, exactly the press codes its
    * configuration's key table holds, and the nine codes no key raised are the nine the table leaves empty,
-   * `tests/test_harmony_885_keys.py`; the photograph the drawing was measured off shows the same 55. Every
+   * `tests/harmony_880_885/test_harmony_885_keys.py`; the photograph the drawing was measured off shows the same 55. Every
    * code was read off the remote's memory while its key was pressed, so all 55 are named below.
    */
   h885: {
@@ -338,7 +338,7 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      */
     /**
      * The Harmony 350 has one set left, Live alone on one of two codes no configuration binds,
-     * `packages/bench/test/keys350.test.ts`, which is why a set is stated by its size rather than by one
+     * `packages/bench/test/harmony-300-350/keys350.test.ts`, which is why a set is stated by its size rather than by one
      * size per model: a set of candidates may be larger than the keys sharing it. It had a second, four
      * favourite keys sharing the four codes favourite 5 did not take, until `todo-compile-350.md` 3.3 heard
      * them. The Harmony 300 has none on either printing: its drawings take no code from the 350's, `h300.ts`,
@@ -437,7 +437,7 @@ test('the screen carries the raster its own firmware draws into', () => {
     9: { width: 96, height: 64 },
     12: { width: 176, height: 220 },
     14: { width: 128, height: 128 },
-    // Arch 17 (Harmony Touch): read in its firmware, `tests/test_harmony_touch_keys.py`, and the size of
+    // Arch 17 (Harmony Touch): read in its firmware, `tests/harmony_touch/test_harmony_touch_keys.py`, and the size of
     // every one of the fifty screen captures in its own user guide, which was the only source until
     // `todo-touch.md` 3.2. It is the one row of `SCREEN_SIZES` no configuration measured.
     17: { width: 240, height: 320 },

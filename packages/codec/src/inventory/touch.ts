@@ -31,7 +31,7 @@ const PANEL_SCREEN = SCREEN_SIZES[TOUCH_MAP_ARCHITECTURE] as { width: number; he
  * one at each side, and the display is taken to span the gap between their inner edges. Containment
  * barely constrains it, since almost every rectangle is full width, so a wrong x scale would not show
  * up as a label falling outside its region. What saves this from mattering is that no activity label
- * depends on it: every one of them sits on a full width row, and `packages/codec/test/touch.test.ts`
+ * depends on it: every one of them sits on a full width row, and `packages/codec/test/inventory/touch.test.ts`
  * asserts that ignoring x entirely names the same activities.
  */
 /**

@@ -56,11 +56,11 @@ known beyond its name and that page.[^unchecked]
 
 [^s131]: Stated by Logitech, by their service. [Section 131](../../../docs/findings.md#s131)
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
-[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_bootloader.py)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
-[^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^unchecked]: Not checked.
 [^s129]: Measured in configurations. [Section 129](../../../docs/findings.md#s129)
-[^t-885-screens-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_screens.py)
-[^t-720-keys]: Measured in configurations. [The test](../../../tests/test_silhouettes.py)
+[^t-885-screens-corpus]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_screens.py)
+[^t-720-keys]: Measured in configurations. [The test](../../../tests/firmware/test_silhouettes.py)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)

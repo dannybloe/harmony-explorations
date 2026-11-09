@@ -218,15 +218,15 @@ stored documents' entity tags, [the engine](engine.md#harmonyenginegetconfighash
 * What reaches a Touch's engine other than the cable and its own screens[^unchecked].
 * The read back route on a unit[^unchecked].
 
-[^t-touch-api]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_names.py)
-[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_setup.py)
-[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_engine.py)
-[^t-touch-api-closure]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_api_closure.py)
-[^t-touch-host]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_host.py)
-[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/test_harmony_touch_recovery.py)
-[^t-touch-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-sync.test.ts)
-[^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch-host.test.ts)
-[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-first-sync.test.ts)
-[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch-second-sync.test.ts)
+[^t-touch-api]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_names.py)
+[^t-touch-api-setup]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
+[^t-touch-api-engine]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_engine.py)
+[^t-touch-api-closure]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_closure.py)
+[^t-touch-host]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_host.py)
+[^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_recovery.py)
+[^t-touch-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-sync.test.ts)
+[^t-touch-answers]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-host.test.ts)
+[^t-touch-first-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-first-sync.test.ts)
+[^t-touch-second-sync]: Measured on a unit. [The test](../../../../packages/usb/test/touch/touch-second-sync.test.ts)
 [^d29]: Chosen by this project. [Decision 29](../../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

@@ -16,7 +16,7 @@
  * commands. Held out one entry at a time, the fitting procedure without the orders set by hand predicts 1452
  * of 1480. On the 43 device modes of the account set up configurations, outside the fit, it gives 1223 of
  * 1330 bound keys. Findings section 397 has the counts, corrected per review, and
- * `test/composecatalogue.test.ts` scores the harvest's devices end to end.
+ * `test/compose/composecatalogue.test.ts` scores the harvest's devices end to end.
  *
  * **Several orders are a choice**, no device offering both candidates: Exit's Clear against Exit and
  * Return against Back, every candidate of the skip, rewind and fast forward keys, Channel Up's ChannelUp

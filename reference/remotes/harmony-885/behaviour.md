@@ -57,10 +57,10 @@ bootloader's own key scan restarts on the same three.[^t-885-end][^t-885-boot][^
 
 [^s151]: Stated by Logitech, in the manual. [Section 151](../../../docs/findings.md#s151)
 [^unchecked]: Not checked.
-[^t-885-start]: Read in the firmware. [The test](../../../tests/test_harmony_885_start_check.py)
-[^t-885-end]: Read in the firmware. [The test](../../../tests/test_harmony_885_write_end.py)
-[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
-[^t-885-delay]: Read in the firmware. [The test](../../../tests/test_harmony_885_delay.py)
-[^t-885-delay-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_delay.py)
-[^t-885-infrared]: Read in the firmware. [The test](../../../tests/test_harmony_885_infrared.py)
-[^t-885-power]: Measured in configurations. [The test](../../../packages/codec/test/sidekeysdevice.test.ts)
+[^t-885-start]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_start_check.py)
+[^t-885-end]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_write_end.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_bootloader.py)
+[^t-885-delay]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_delay.py)
+[^t-885-delay-corpus]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_delay.py)
+[^t-885-infrared]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_infrared.py)
+[^t-885-power]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)

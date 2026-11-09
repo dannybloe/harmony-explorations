@@ -276,7 +276,7 @@ const H700_DUMPS = new Set<string>([
  * so a block's offset in them is its distance from `0x020000`, which is what the compare below takes.
  *
  * **Unit A went first**, decision 30, `todo-compile-885.md` 1.3: `0x0C0000` written back unchanged on 7
- * November 2026, `tests/test_harmony_885_flash_backup.py`. Unit B joined after it, `H885_B_DUMPS` below.
+ * November 2026, `tests/harmony_880_885/test_harmony_885_flash_backup.py`. Unit B joined after it, `H885_B_DUMPS` below.
  *
  * **Which block, on this platform, is not the 525's choice**, and the reason is the platform's: the
  * firmware runs from the same flash part as the configuration, so while a block of the live

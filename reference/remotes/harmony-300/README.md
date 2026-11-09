@@ -69,5 +69,5 @@ and the activity a configuration can hold and the long press, is the family's. T
 [^unchecked]: Not checked.
 [^t-moulding]: Measured on a unit. [The test](../../../packages/silhouettes/test/models.test.ts)
 [^s265b]: Stated by Logitech, by their service. [Section 265](../../../docs/findings.md#s265)
-[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/test_harmony_350_keys.py)
-[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/test_harmony_300_keys.py)
+[^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
+[^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_300_keys.py)

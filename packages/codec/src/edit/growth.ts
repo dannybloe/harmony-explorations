@@ -161,7 +161,7 @@ export const IMPLIED_BY: Readonly<Record<string, { kind: ImpliedKind; because: s
   // **The key table is not here, and that was measured rather than reasoned.** Nothing points at
   // the four bytes after the end marker, so it looked like a fourth frame position, and it is not:
   // it **is** base slot 6's first mode record, section 52, so the mode table names it like any
-  // other mode. `test/growth.test.ts` demands every row be used, which is what caught the row.
+  // other mode. `test/edit/growth.test.ts` demands every row be used, which is what caught the row.
 
   // Packed after something else, with nothing naming them.
   'slot-6-page-list-copy': {

@@ -60,7 +60,7 @@ export const ARCH_8_PRODUCT = 0xc110;
  * the held key at `0x296`, still copied to `0x3A1`. **The product id cannot choose between them, and the
  * wrong choice is not merely silent**: on an 885 `0x296` holds what the keypad's debounce is loaded from,
  * set at start and not moved by the keys. The 785, skin 45, has no image here and gets no entry. Read in
- * the images, and the 885's measured on two units: `tests/test_harmony_885_keys.py`.
+ * the images, and the 885's measured on two units: `tests/harmony_880_885/test_harmony_885_keys.py`.
  */
 export const WATCH_BY_SKIN: Readonly<Record<number, Watch>> = {
   15: { name: 'Harmony 880', addresses: [0x0295, 0x03a1] },

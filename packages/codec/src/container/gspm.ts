@@ -686,7 +686,7 @@ export function findMarker(blob: Uint8Array): number {
  * "zero in every sample", which it is, because no name tree in the corpus reaches 64 KiB. Logitech
  * 's own client reads three bytes here, `reference/config-format/header-records.md`, and that is client sourced and
  * unconfirmed. It is adopted anyway because the two readings cannot disagree on any sample this
- * project has, `test/gspm.test.ts` says so, and the wider one is the one that survives a config
+ * project has, `test/container/gspm.test.ts` says so, and the wider one is the one that survives a config
  * the corpus does not contain. Same family as the font header's spare byte<!--superseded-->, which was
  * the first glyph code, section 78: when a byte next to a length is always zero, suspect the length.
  */

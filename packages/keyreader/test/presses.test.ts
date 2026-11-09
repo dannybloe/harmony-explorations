@@ -1,7 +1,7 @@
 /**
  * Two polled bytes into presses and releases, `src/presses.ts`, as published.
  *
- * The cases are the shapes an 885's keypad produced when it was measured, `tests/test_harmony_885_keys.py`:
+ * The cases are the shapes an 885's keypad produced when it was measured, `tests/harmony_880_885/test_harmony_885_keys.py`:
  * a press is the held byte going to a code and the copy following it; a release is the held byte going to
  * zero while the copy stays; one key straight to another happened once; and a change of the copy alone is a
  * key pressed and let go between two reads.

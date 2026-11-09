@@ -129,7 +129,7 @@ store and the firmware reinstall, which are read on the Harmony 600, 650 and 700
 
 [^unchecked]: Not checked.
 [^s76]: Measured on a unit. [Section 76](../../../docs/findings.md#s76)
-[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^s118]: Measured on a unit. [Section 118](../../../docs/findings.md#s118)
 [^s268]: Measured on a unit. [Section 268](../../../docs/findings.md#s268)

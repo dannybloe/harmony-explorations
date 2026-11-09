@@ -14,5 +14,5 @@ the other files, and a kind of note that recurs gets a file of its own.
 * Nothing in this file is a claim about a remote beyond the cited sources.[^unchecked]
 
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
-[^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^unchecked]: Not checked.

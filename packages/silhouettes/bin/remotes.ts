@@ -113,7 +113,7 @@ interface RemoteFolder {
    * is not measured from configurations' own full screen pictures.
    *
    * **The Harmony Touch is that row.** No configuration of a Touch has been read, section 200, so its
-   * raster is read in the firmware instead, `tests/test_harmony_touch_keys.py`. Until `todo-touch.md`
+   * raster is read in the firmware instead, `tests/harmony_touch/test_harmony_touch_keys.py`. Until `todo-touch.md`
    * 3.2 the codec had no row for it at all, and this field was `rasterFromDrawing`, naming the drawing's
    * raster from Logitech's user guide as the only source; `displayTable` refused a drawing with a screen
    * on an architecture with no row, and still does, since that is usually two sources disagreeing.
@@ -201,7 +201,7 @@ export const REMOTES: readonly RemoteFolder[] = [
   // does this row; the folder states both.
   {
     folder: 'harmony-touch', skins: [99], drawing: 'touch', architecture: 17, fileBasedProduct: 0xc12b,
-    rasterFrom: 'read in the firmware, since no configuration of this model has been read: the screens\' own constants, the kernel\'s panel entry, the drawing library and the touch driver, `tests/test_harmony_touch_keys.py`',
+    rasterFrom: 'read in the firmware, since no configuration of this model has been read: the screens\' own constants, the kernel\'s panel entry, the drawing library and the touch driver, `tests/harmony_touch/test_harmony_touch_keys.py`',
   },
   // The two models plan 009's step 3.5 gave folders before a unit or a drawing existed. One folder per
   // regional pair, named for one of the two as `harmony-525` is: skins 15 and 17 are the Harmony 880 and
@@ -379,7 +379,7 @@ function featureTable(skins: readonly number[]): string {
  *
  * **The footnote is the drawing's `scanFrom`, printed as plan 009 section 4's label `[^sN]`**, or the
  * test's own label where the source is a test, `scanFootnote`, so the page
- * this block lands in must define that label, and `tests/test_reference.py` fails a page that references
+ * this block lands in must define that label, and `tests/project/test_reference.py` fails a page that references
  * one it does not define. That coupling is the point: a scan code is a fact in the reference like any
  * other and carries its evidence, and the evidence words belong to the page, which knows whether its
  * model is the one the code was measured on or one that shares the face.
@@ -609,7 +609,7 @@ function fileBasedIdentity(architecture: number): string {
 /**
  * How far an escape row was read, where it is narrower than the architecture. The row is keyed by
  * architecture and printed on every model's page of it, and arch 8's was read in the Harmony 880 and 885
- * application 4.4 only (`tests/test_harmony_885_write_end.py`): the 720, the 785 and the 880 Pro run other
+ * application 4.4 only (`tests/harmony_880_885/test_harmony_885_write_end.py`): the 720, the 785 and the 880 Pro run other
  * builds. Pointed out by the review of `todo-compile-885.md` 1.4, when the row first appeared on the 720's page.
  */
 const ESCAPE_SCOPE: Readonly<Record<number, string>> = {

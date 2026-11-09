@@ -240,7 +240,7 @@ part of its answer: the catalogue holds ranges of near identical codesets, so a 
 `packages/codec/src` is the reader, and anything derived from Logitech's data stays on the machine that
 read it.[^d11]
 
-[^t-touch-engine]: Read in the firmware. [The test](../../tests/test_harmony_touch_devices.py)
+[^t-touch-engine]: Read in the firmware. [The test](../../tests/harmony_touch/test_harmony_touch_devices.py)
 [^s227]: Stated by Logitech, in their catalogue. [Section 227](../../docs/findings.md#s227)
 [^s160]: Measured in configurations. [Section 160](../../docs/findings.md#s160)
 [^s162]: Measured in configurations. [Section 162](../../docs/findings.md#s162)
@@ -251,7 +251,7 @@ read it.[^d11]
 [^s231]: Stated by Logitech, in their catalogue. [Section 231](../../docs/findings.md#s231)
 [^s361]: Stated by Logitech, in their catalogue. [Section 361](../../docs/findings.md#s361)
 [^s228]: Stated by Logitech, in their catalogue. [Section 228](../../docs/findings.md#s228)
-[^t-stated]: Measured in configurations. [The test](../../packages/codec/test/stated.test.ts)
+[^t-stated]: Measured in configurations. [The test](../../packages/codec/test/infrared/stated.test.ts)
 [^s230]: Stated by Logitech, in their catalogue. [Section 230](../../docs/findings.md#s230)
 [^s228b]: Measured in configurations. [Section 228](../../docs/findings.md#s228)
 [^s232]: Stated by Logitech, in their catalogue. [Section 232](../../docs/findings.md#s232)

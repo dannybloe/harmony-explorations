@@ -32,5 +32,5 @@ shared.[^t-harmony-515]
 
 * Any command beyond the reads, and the product string in safe mode.[^unchecked]
 
-[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
 [^unchecked]: Not checked.

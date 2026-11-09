@@ -30,4 +30,4 @@ sends, a fit for the device keys lighting.
 * Any light other than the device keys.
 
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 350 setup guide](https://www.logitech.com/assets/51207/harmony-350-qsg-and-iid.pdf)
-[^t-silhouette]: Stated by Logitech, in the manual. [The test](../../../tests/test_silhouettes.py)
+[^t-silhouette]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)

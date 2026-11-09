@@ -193,7 +193,7 @@ enable pin and no readback[^s106], [the hardware page](../../remotes/harmony-one
 [^s243]: Read in the firmware. [Section 243](../../../docs/findings.md#s243)
 [^s408]: Read in the firmware. [Section 408](../../../docs/findings.md#s408)
 [^s19]: Read in the firmware. [Section 19](../../../docs/findings.md#s19)
-[^t-usb-firmware]: Read in the firmware. [The test](../../../tests/test_usb_firmware.py)
+[^t-usb-firmware]: Read in the firmware. [The test](../../../tests/usb_protocol/test_usb_firmware.py)
 [^unchecked]: Not checked.
 [^s106]: Read in the firmware. [Section 106](../../../docs/findings.md#s106)
 [^s44]: Read in the firmware. [Section 44](../../../docs/findings.md#s44)

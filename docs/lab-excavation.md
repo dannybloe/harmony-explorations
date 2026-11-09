@@ -312,7 +312,7 @@ Two practical consequences for a dig:
 ## The grid, and where the excavation stands
 
 *Moved out of `docs/plans/002-the-roadmap.md`'s work sequence on 6 September 2026, when that document was retired.
-It belongs beside the method rather than in a plan: `tests/test_toolchain.py` holds the paths named
+It belongs beside the method rather than in a plan: `tests/project/test_toolchain.py` holds the paths named
 below against the lab itself, so this is the map the check reads.*
 
 **Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
@@ -524,7 +524,7 @@ register does not name. **The row count deliberately no longer appears here**, a
 correction of the same defect rather than a style change. It said 58 for a day, which was a count
 nothing recomputed; then 44 while the test asserted 45, until 30 August 2026; then 46 while the test
 asserted 48, until 4 September 2026. Each time the cause was identical, that the count is asserted in
-`tests/test_toolchain.py` and restated here and only one of the two moves when a row is added, and
+`tests/project/test_toolchain.py` and restated here and only one of the two moves when a row is added, and
 each time the fix was to update the copy. So the copy is gone: the number lives in the test, which
 recomputes it, and the register itself is one command away. So "did we already know this" is a **command** rather than a memory exercise:
 `make lab-check PATH_ARG=<path>`, which prints every register row bearing on a path, ancestors and

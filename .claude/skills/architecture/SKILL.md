@@ -105,7 +105,7 @@ identifiers inside keep their older names (`FOUR_SLOT`, `fourSlot...`, `noScreen
 **Who may reach a family's modules.** No family imports another; nothing outside `families/` imports a family's module,
 it asks the registry; the four entries at the top of `src` are the exception, since publishing a family's parts is
 their job (`./build` carries the Harmony 300 and 350's index and the Harmony Touch's, the main entry the Touch's view).
-`codec/test/generic.test.ts` holds both halves and reads the families off the directory, so a new family is covered
+`codec/test/package/generic.test.ts` holds both halves and reads the families off the directory, so a new family is covered
 without being named.
 
 ## The codec's folders
@@ -131,6 +131,14 @@ and `recipe/` reads the recipe a build starts from. `docs/README.md`'s codec ent
 module goes in the folder whose question it answers; a module that fits none is a reason to ask, not to add an
 eleventh folder or leave it loose at the top.
 
+**The tests follow the same folders**, `todo.md` 7.3.12. A codec test goes in the `test/` folder of the module it
+tests, `test/families/<family>/` for a family's own, and a test of the package as a whole (an entry, a surface, a
+guard such as `generic.test.ts`) in `test/package/`; a helper goes beside the tests that use it. `usb`, `corpus` and
+`bench`, whose `src` is flat, keep theirs in a handful of folders by subject, each with its `package/`, and the Python
+`tests/` too, in packages named as identifiers (`harmony_880_885`, `usb_protocol`), with `lab.py` and
+`reference_keys.py` at the top where every folder imports them. A package with fewer than ten test files stays flat.
+A test moved one folder deeper changes every relative path in it, `new URL(...)` and `join(here, '..')` included.
+
 **A large file is split by subject, and the original module re-exports its parts.** `inventory.ts` went from 3175
 lines to a docstring, its composition and seven parts beside it, each a section the file already had, every
 declaration moved whole with its comment and in its order. Importers keep their path and the entries carry exactly the
@@ -142,7 +150,7 @@ and after, and one output byte identical.
 
 **Plan 013 decision 5, `todo.md` 7.3.5.** The main entry, `./build` and `./internal` load in an Electron renderer or a
 browser: nothing they reach imports a Node module or names a Node global (`Buffer`, `process`, `require`, `__dirname`,
-`__filename`, `global`), `codec/test/mainentry.test.ts`, which walks the import graph with the compiler's own parser.
+`__filename`, `global`), `codec/test/package/mainentry.test.ts`, which walks the import graph with the compiler's own parser.
 
 * **Node lives in `*.node.ts` files and the `./node` entry**, `src/node.ts`, each reader beside the parser it feeds, so
   the line between the halves shows in a file listing. The Node entry carries the main entry whole, so a Node caller
@@ -155,7 +163,7 @@ browser: nothing they reach imports a Node module or names a Node global (`Buffe
   only the Node entry supplied Oxanium, so `devices`, `activities` and `inventory` threw on all of them and FreeHarmony's
   import test failed 9 of 9. The alphabet is generated data now, `screens/oxaniumalphabet.ts`, held to the font by its
   own test. **A reader never asks the loader for anything**; a resource is for drawing and building.
-  `codec/test/mainentryreads.test.ts` holds it in fresh processes over one configuration of every compiled family and
+  `codec/test/package/mainentryreads.test.ts` holds it in fresh processes over one configuration of every compiled family and
   of the remotes no family serves. **A type check of a consumer is not a run**: when a step changes what an entry
   loads, run a reader through it.
 * **A package outside this repository in the core** is on `PACKAGES` in `mainentry.test.ts` with the reason it loads in
@@ -165,7 +173,7 @@ browser: nothing they reach imports a Node module or names a Node global (`Buffe
 
 **Plan 013 decision 6, `todo.md` 7.3.6.** A package's main entry is what an application builds on: explicit names,
 grouped by what an application does with them, no `export *` from a module. **Each main entry is held to a list by its
-`test/surface.test.ts`**, which reads the entry's source through `@harmony/testkit/surface` (the only way to see its
+`surface.test.ts`** (`test/package/` where a package's tests are in folders), which reads the entry's source through `@harmony/testkit/surface` (the only way to see its
 types) and holds the loaded module to the same values. So a new public name is a line in that list's diff, and adding
 it is a decision about the surface, not a side effect of exporting a helper.
 
@@ -262,7 +270,7 @@ call, with a thin script over it, and none is on a main entry:
   what 8.2 was without the todo file. A todo item belongs in a header as provenance. A model number (`keys300`,
   `h885base`) or an architecture (`arch10`) in a name is a subject. What still carries a step in its name is recorded
   run input, the setups under `corpus/touch-setups/`, the plans under `bench/irtests/` and the constants that name
-  them, left as they were recorded, and one older test, `bench/test/final53.test.ts`, listed in `tests/test_toolchain.py`.
+  them, left as they were recorded, and one older test, `bench/test/harmony-300-350/final53.test.ts`, listed in `tests/project/test_toolchain.py`.
 * **The codec's tests show their family as the existing ones do**: `one*` for the Harmony One's, `noscreen*` for the
   300 and 350's, `touch-*` for the Harmony Touch's, and no prefix for the 600 family's, which was first. This is the
   convention found, not a rule a test holds; follow the files beside the one being added.
@@ -300,21 +308,21 @@ the check fail. A rule marked *no test* is held by this skill and review alone, 
 | each package depends on exactly its table's packages, at run time and for development | `lab/test/dependencies.test.ts`: "each package depends on exactly the packages of its table, at run time and for its tests" (since 7.3.9) |
 | no cycle between packages at run time | the same file: "the packages stand on each other at run time with no cycle", and "the control: a cycle is found, and the test kit closes one through the tests of the packages it stands on" (since 7.3.9); `tsc --build` refuses a reference cycle |
 | `base` depends on nothing, its modules import nothing | `base/test/base.test.ts`: "the package depends on nothing, and its tests on the test kit alone", "the four modules import nothing, and the index only them" |
-| the codec's `src` does not load `usb` | `codec/test/dependencies.test.ts`: "no file in the codec source imports @harmony/usb", "the codec states the base as a dependency and the transport only as a development one" |
+| the codec's `src` does not load `usb` | `codec/test/package/dependencies.test.ts`: "no file in the codec source imports @harmony/usb", "the codec states the base as a dependency and the transport only as a development one" |
 | what `src` loads is a run time dependency | `lab/test/dependencies.test.ts`: "what a library's src loads is a dependency it states for run time, but in the two packages listed" (since 7.3.9) |
 | no relative import across packages, none out of a library's `src` | the same file: "no file imports another package's files by a relative path, and no library src reaches out of its src", and its control (since 7.3.9) |
 | every npm dependency pinned exactly | the same file: "no dependency is specified as a range", "the lock file records the same exact specifiers" |
-| every directory of TypeScript in a project, every project referenced | `tests/test_toolchain.py` `TypeScriptProjects`: `test_every_directory_of_typescript_is_inside_its_own_project`, `experiments` among its directories since 7.3.9, and `test_the_root_project_references_every_package` |
-| the registry chooses by model, two kinds, a model no family serves refused | `codec/test/registry.test.ts`: "every model of the model table is chosen a compiled family by its architecture or refused naming it...", "a configuration no family serves is refused by each of the four questions...", "a Logitech configuration of the Harmony 525 and the 890 is refused by the four questions and still read" |
-| code outside the families names no remote, and reaches no family's module but through an entry | `codec/test/generic.test.ts`: "code outside the families names no remote but in the modules of the debt list...", with its control; every family's folder read off the directory since 7.3.9, where it named two |
+| every directory of TypeScript in a project, every project referenced | `tests/project/test_toolchain.py` `TypeScriptProjects`: `test_every_directory_of_typescript_is_inside_its_own_project`, `experiments` among its directories since 7.3.9, and `test_the_root_project_references_every_package` |
+| the registry chooses by model, two kinds, a model no family serves refused | `codec/test/families/registry.test.ts`: "every model of the model table is chosen a compiled family by its architecture or refused naming it...", "a configuration no family serves is refused by each of the four questions...", "a Logitech configuration of the Harmony 525 and the 890 is refused by the four questions and still read" |
+| code outside the families names no remote, and reaches no family's module but through an entry | `codec/test/package/generic.test.ts`: "code outside the families names no remote but in the modules of the debt list...", with its control; every family's folder read off the directory since 7.3.9, where it named two |
 | no family imports another | the same file: "no family imports another family's module, so each is reached through the registry alone", and its control (since 7.3.9) |
-| the codec's core loads anywhere, Node only in `*.node.ts` | `codec/test/mainentry.test.ts`: "no module the codec's main entry reaches imports a Node module or names a Node global", its control, "a source file that uses Node is named *.node.ts or is the Node entry...", "the Node entry carries every name of the main entry..." |
-| reading needs no resource | `codec/test/mainentryreads.test.ts`: "the main entry reads every family with no resource supplied, answering as the Node entry does", and its control |
-| each main entry an explicit list, no `export *`, each package's subpaths listed | `test/surface.test.ts` in `base`, `bench`, `codec`, `corpus`, `probe`, `silhouettes` and `usb`: "the main entry exports exactly its list, by explicit names", "the package exports exactly its list of subpaths"; the codec's also "the Harmony Touch on the main entry is its view, by explicit names, and no composer" and "the Node entry is the main entry whole and its own list". *No test* for `lab`'s and `testkit`'s, which no product is meant to build on, nor for `keyreader`, which has no `exports` and is bundled |
+| the codec's core loads anywhere, Node only in `*.node.ts` | `codec/test/package/mainentry.test.ts`: "no module the codec's main entry reaches imports a Node module or names a Node global", its control, "a source file that uses Node is named *.node.ts or is the Node entry...", "the Node entry carries every name of the main entry..." |
+| reading needs no resource | `codec/test/package/mainentryreads.test.ts`: "the main entry reads every family with no resource supplied, answering as the Node entry does", and its control |
+| each main entry an explicit list, no `export *`, each package's subpaths listed | `surface.test.ts` in `base`, `bench`, `codec`, `corpus`, `probe`, `silhouettes` and `usb`: "the main entry exports exactly its list, by explicit names", "the package exports exactly its list of subpaths"; the codec's also "the Harmony Touch on the main entry is its view, by explicit names, and no composer" and "the Node entry is the main entry whole and its own list". *No test* for `lab`'s and `testkit`'s, which no product is meant to build on, nor for `keyreader`, which has no `exports` and is bundled |
 | every module of a library's `src` reached from an entry, or listed with why | `lab/test/dependencies.test.ts`: "every module of a library's src is reached from one of its entries, or listed with why not", and its control (since 7.3.9) |
-| the rails off `usb`'s main entry, `./write` a list | `usb/test/surface.test.ts`: "the rails are off the main entry but for the refusal a caller meets, and whole on a subpath", "the write subpath exports exactly its list", "the package exports exactly its list of subpaths, and no test file"; `usb/test/rails.test.ts`: "the package offers no way to build a request that changes a remote" over every entry |
-| the write paths on write subpaths, never a main entry | `corpus/test/write-surface.test.ts`: "the write subpath exports exactly its list, by explicit names", "the two write functions are on the write subpath and on no other entry"; the file write by `usb`'s surface lists |
-| the writable units are the library's, refused before anything opens | `corpus/test/write-config-run.test.ts`: "refuses a label outside the list before it stamps, checks or opens anything"; `usb/test/file-family-run.test.ts`: "refuses a label outside the library's list before the container is judged or anything is opened", "holds the units the script's table held, and the script's table is the library's"; `corpus/test/touch-answer.test.ts`: "refuses a label outside the library's list with both flags set...", "holds one Touch, and the script names it from the library rather than a copy of its own" |
+| the rails off `usb`'s main entry, `./write` a list | `usb/test/package/surface.test.ts`: "the rails are off the main entry but for the refusal a caller meets, and whole on a subpath", "the write subpath exports exactly its list", "the package exports exactly its list of subpaths, and no test file"; `usb/test/write/rails.test.ts`: "the package offers no way to build a request that changes a remote" over every entry |
+| the write paths on write subpaths, never a main entry | `corpus/test/package/write-surface.test.ts`: "the write subpath exports exactly its list, by explicit names", "the two write functions are on the write subpath and on no other entry"; the file write by `usb`'s surface lists |
+| the writable units are the library's, refused before anything opens | `corpus/test/write/write-config-run.test.ts`: "refuses a label outside the list before it stamps, checks or opens anything"; `usb/test/file-protocol/file-family-run.test.ts`: "refuses a label outside the library's list before the container is judged or anything is opened", "holds the units the script's table held, and the script's table is the library's"; `corpus/test/touch/touch-answer.test.ts`: "refuses a label outside the library's list with both flags set...", "holds one Touch, and the script names it from the library rather than a copy of its own" |
 | the journal required | the type check: the line sink is a required option of `writeConfiguration` and `writeFileFamilyConfiguration` |
 | the test kit a development dependency only, imported by tests alone | `lab/test/dependencies.test.ts`: "the test kit is a development dependency only, and nothing but a test imports it" (since 7.3.9) |
 | `@harmony/lab` loaded by a library's `src` only where listed | the same file: "a library's src loads @harmony/lab in exactly the modules listed, each with why" (since 7.3.9); FreeHarmony's `test/boundary.test.ts` on its side |
@@ -322,16 +330,16 @@ the check fail. A rule marked *no test* is held by this skill and review alone, 
 | one reader for every script, `--help` runs nothing | `lab/test/scripts.test.ts`: "every script that runs reads its command line through @harmony/lab/cli, once", "no script reads process.argv itself...", "the call is the first thing a script runs"; `lab/test/cli.test.ts`: "--help prints the usage and exits 0 before the script runs, wherever it stands" |
 | one byte comparison | `base/test/bytes.test.ts`: "no module defines a byte comparison of its own, but this one and those listed", and its control (since 7.3.9). It reads a declaration's shape, so a copy written inline or under another signature passes |
 | no experiment in a library's `src`, none imported by it | the unreached module check and the relative import check above (since 7.3.9); a module that is an experiment and is also exported passes both, which review catches |
-| names by subject, never by todo step | `tests/test_toolchain.py` `FilesAreNamedBySubject`: `test_no_typescript_file_is_named_by_a_todo_step_but_those_listed`, and its control (since 7.3.9). It reads TypeScript file names; a step written as three digits would read as a model |
+| names by subject, never by todo step | `tests/project/test_toolchain.py` `FilesAreNamedBySubject`: `test_no_typescript_file_is_named_by_a_todo_step_but_those_listed`, and its control (since 7.3.9). It reads TypeScript file names; a step written as three digits would read as a model |
 | a new model through the registry | `registry.test.ts`'s exact counts and `generic.test.ts`'s family folders |
 | a module in the folder whose question it answers; a split re-exports its parts | *no test*: which folder a module belongs in is a judgement, and a split is checked once, as 7.3.8 did, not on every commit |
 
 **Run the guard files, not a suite**, after a structural change, each bare:
 
-    node --test packages/lab/test/dependencies.test.ts packages/codec/test/generic.test.ts packages/base/test/bytes.test.ts
-    node --test packages/codec/test/mainentry.test.ts packages/codec/test/mainentryreads.test.ts
-    node --test 'packages/*/test/surface.test.ts' packages/corpus/test/write-surface.test.ts
-    NO_COLOR=1 PYTHONPATH=src:tests python3 -m unittest tests.test_toolchain
+    node --test packages/lab/test/dependencies.test.ts packages/codec/test/package/generic.test.ts packages/base/test/bytes.test.ts
+    node --test packages/codec/test/package/mainentry.test.ts packages/codec/test/package/mainentryreads.test.ts
+    node --test 'packages/*/test/**/surface.test.ts' packages/corpus/test/package/write-surface.test.ts
+    NO_COLOR=1 PYTHONPATH=src:tests python3 -m unittest tests.project.test_toolchain
 
 ## Related
 

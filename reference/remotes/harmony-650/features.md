@@ -147,10 +147,10 @@ configuration is **not checked**[^unchecked].
 * Long press, beyond Logitech's statement and the firmware's three events[^unchecked].
 
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
-[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/test_host_client.py)
+[^t-product-table]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_host_client.py)
 [^s340]: Read in the firmware. [Section 340](../../../docs/findings.md#s340)
 [^unchecked]: Not checked.
-[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/test_product_capabilities.py)
+[^t-capabilities]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_product_capabilities.py)
 [^x-manual]: Stated by Logitech, in the manual. [The Harmony 650 user manual](https://www.logitech.com/assets/44635/3/harmony650-user-guide.pdf)
 [^s305]: Measured on a unit. [Section 305](../../../docs/findings.md#s305)
 [^s331]: Measured in configurations. [Section 331](../../../docs/findings.md#s331)

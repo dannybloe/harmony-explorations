@@ -27,5 +27,5 @@ Generated from `packages/corpus` and `packages/usb` by `make remote-reference-wr
 * Any of it on a cable.[^unchecked]
 
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
-[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_bootloader.py)
 [^unchecked]: Not checked.

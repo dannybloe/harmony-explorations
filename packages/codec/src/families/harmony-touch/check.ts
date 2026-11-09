@@ -214,7 +214,7 @@ const EVERY_FEATURE_LISTS = ['StartActions', 'FinishActions', 'NextActions', 'Pr
  * Every place the engine's configuration reader reads `__type`, in the four documents its load reads, walked
  * over the documents themselves and in the reader's own order. The reading is the lab's
  * `work/touch-firmware/notes/6.7.1-type-field.md`, with file and line per place, and the argument is the
- * header of `test/touch-check.test.ts`.
+ * header of `test/families/harmony-touch/touch-check.test.ts`.
  *
  * **Where it walks, by the reader's functions**, each list only where the reader reaches it:
  *
@@ -423,7 +423,7 @@ function endsWithAction(button: Record<string, unknown>, map: Record<string, unk
  * (`checkLists`) and a type name (`checkTypes`): walked over the documents themselves as those two are, because
  * the view reads leniently, and run beside them in `refusalsBeforeASync`. The reading, one row per place with
  * file and line, is the lab's `work/touch-firmware/notes/6.10-reader-raises.md`, section 1; the argument is the
- * header of `test/touch-check.test.ts`. Every rule is `refused`: each place raises inside `loadAll`, which
+ * header of `test/families/harmony-touch/touch-check.test.ts`. Every rule is `refused`: each place raises inside `loadAll`, which
  * nothing catches, and the task that loads the configuration ends, `firmware.md` "A configuration that fails to
  * load".
  *

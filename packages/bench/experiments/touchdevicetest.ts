@@ -15,7 +15,7 @@
  * its labels in the order of their `IndexInMenu`. The screen entry Power, which no key binds, is not in the test:
  * when it was written the model predicted a key and not a screen entry, so the lab's `notes/8.1-preflight.md` had
  * the entry pressed after the test, heard and not judged. The model has had a screen entry since the run,
- * `TouchEngine.entry` and the `{ entry }` action, and `test/touch-device-runs.test.ts` holds that it predicts that tap;
+ * `TouchEngine.entry` and the `{ entry }` action, and `test/harmony-touch/touch-device-runs.test.ts` holds that it predicts that tap;
  * the plan is left as it ran, so the file in `irtests/` stays the one the run carried.
  */
 import type { harmonyTouch } from '@harmony/codec/node';

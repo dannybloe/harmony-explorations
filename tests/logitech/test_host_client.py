@@ -1,0 +1,2074 @@
+#!/usr/bin/env python3
+"""The service API surface of Logitech's own client, recomputed rather than transcribed.
+
+`reference/logitech/service.md` documents which services Harmony Desktop talks to and which operations it
+declares on each. That is the answer to a product question, decision 11 in `docs/decisions.md`: whether
+Logitech's device database is reachable as its own call or only as a side effect of compiling a config.
+It is reachable as its own call, and the list below is why we believe that.
+
+**A list read off a screen once is a list nobody can check.** The house rule is to count
+programmatically, and it exists because a hand count of infrared codes here gave 107 and 55 when the
+figures were 108 and 54. So this test re-extracts the whole table from the mirrored client and asserts
+the document's figures, which also means that if the client is ever re-mirrored and its surface has
+moved, the document fails rather than quietly ages.
+
+What travels is operation names and counts, which is functional fact of the kind the interoperability
+rule of decision 9 in `docs/decisions.md` covers. Logitech's code stays in the lab, nothing is quoted, and the API
+keys the client carries in plain text are deliberately neither extracted nor asserted here.
+
+**None of this says the service answers.** It says what one client asks for. Section 56 measured
+`svcs.myharmony.com` authenticating and section 58 watched it compile a config; no call below has been
+made by this project.
+"""
+import datetime
+import io
+import os
+import re
+import unittest
+
+import lab
+from reference_keys import generated_keys
+from harmony import gspm
+
+#: Every service the client binds a URL for, with how many operations it declares on each. Both halves
+#: are asserted: a service with no operations is a real entry, since the client builds those calls by
+#: hand instead, and dropping it would hide that.
+SERVICES = {
+    'accountManager': 10,
+    'compileManager': 1,
+    'deletionManager': 2,
+    'deviceManager': 10,
+    'downloadManager': 1,
+    'easyZapperManager': 0,
+    'infraredAnalysisManager': 1,
+    'productsManager': 2,
+    'remoteManager': 6,
+    'security': 8,
+    'softwareUpdateService': 0,
+    'userAccountDirector': 18,
+    'userButtonMappingManager': 13,
+    'userFeatureManager': 3,
+}
+
+#: The operations that answer decision 11's question, and the service each one belongs to. Named
+#: individually because the count alone would survive any of them being renamed away.
+DEVICE_DATABASE = {
+    'deviceManager': [
+        'SearchGlobalDevices',
+        'GetCommands',
+        'GetGlobalLanguageCommands',
+        'GetAllTeachingCommandsForGivenPowerAndInputTypes',
+    ],
+    'userAccountDirector': ['SimpleRestSearchGlobalDevices'],
+    'userFeatureManager': ['CopyFeaturesFromGlobalDevice'],
+    # The one that matters to this repository rather than to the application: a configuration
+    # described by its author, in JSON, for a remote whose bytes we already read to the last one.
+    'downloadManager': ['RemoteConfigurationInJson'],
+}
+
+#: Calls the client builds by hand rather than declaring, so a count of declarations misses them.
+#: Three, and the point of asserting them is that the surface is "at least this", never "exactly".
+HAND_BUILT = ['Account', 'CheckEasyZapperAccount', 'GetSmartTVMenuNames']
+
+
+def service_table(source):
+    """Which operations each service declares, by walking the file once in order.
+
+    Each service client sets `this.url` from a named field and then declares its methods, so an
+    operation belongs to the last URL seen. That is an inference about the client's shape rather than
+    a parse of it, which is exactly why the totals are asserted: a wrong attribution would move them.
+    """
+    table = {}
+    current = None
+    pattern = re.compile(r'this\.url\s*=\s*f\.([A-Za-z0-9_]+)|declareMethod\("([A-Za-z0-9_]+)"')
+    for match in pattern.finditer(source):
+        service, method = match.group(1), match.group(2)
+        if service is not None:
+            current = service
+            table.setdefault(current, [])
+        elif current is not None:
+            table[current].append(method)
+    return table
+
+
+class ServiceSurface(unittest.TestCase):
+    def setUp(self):
+        lab.require('desktop_webapp_main')
+        self.source = lab.load('desktop_webapp_main').decode('utf-8', 'replace')
+        self.table = service_table(self.source)
+
+    def test_the_documented_services_and_their_operation_counts(self):
+        self.assertEqual({name: len(ops) for name, ops in self.table.items()}, SERVICES)
+        # Every declaration is attributed to a service, which is what says the walk did not lose any.
+        declared = len(re.findall(r'declareMethod\("', self.source))
+        self.assertEqual(sum(SERVICES.values()), declared)
+
+    def test_the_device_database_is_its_own_call_and_not_only_a_compile(self):
+        """Decision 11's question. If these move, the plan that rests on them has to move too."""
+        for service, operations in DEVICE_DATABASE.items():
+            for operation in operations:
+                with self.subTest(service=service, operation=operation):
+                    self.assertIn(operation, self.table.get(service, []))
+
+    def test_calls_the_client_builds_by_hand_are_counted_too(self):
+        found = set(re.findall(r'uriParams\s*=\s*"([A-Za-z0-9_]+)', self.source))
+        self.assertEqual(sorted(found), sorted(HAND_BUILT))
+        # And they are not in the declared table, which is the reason they need their own assertion.
+        declared = {op for ops in self.table.values() for op in ops}
+        self.assertEqual(found & declared, set())
+
+    def test_the_transport_is_json_rather_than_soap(self):
+        """A `.svc` endpoint implies SOAP to anyone who has met WCF, and this one is not.
+
+        It matters for what a client would cost to write: a JSON body over HTTP rather than an
+        envelope, a WSDL and a code generator. Asserted as a negative because the wrong assumption is
+        the expensive one.
+        """
+        self.assertEqual(len(re.findall(r'[Ss]oap', self.source)), 0)
+        self.assertGreater(len(re.findall(r'asJSON', self.source)), 0)
+
+    def test_the_button_map_operations_are_about_names_and_not_hardware(self):
+        """The trap this project has fallen into before, in a new place.
+
+        `GetRootButtonMap` and `GetDeviceModeButtonMaps` read like the physical button map, which
+        `CLAUDE.md` lists as open. They are not: they belong to the user's button **mapping** service,
+        alongside save and restore-to-default operations, so they map a named button to a command. That
+        agrees with what section 48 concluded from the firmware and with the reading in
+        `reference/logitech/service.md` that a host names buttons and the firmware resolves the name. Pinned so
+        that nobody reads the name and reopens a closed question.
+        """
+        mapping = self.table['userButtonMappingManager']
+        for operation in ('GetRootButtonMap', 'GetDeviceModeButtonMaps', 'GetButtonMaps'):
+            self.assertIn(operation, mapping)
+        for operation in ('SaveButtonMaps', 'RestoreToDefaultButtonMaps'):
+            self.assertIn(operation, mapping, 'the save side is what makes it a mapping service')
+        # And no operation anywhere promises a scan code, a matrix or a row and column.
+        every = {op for ops in self.table.values() for op in ops}
+        for word in ('Scan', 'Matrix', 'RowColumn', 'Keypad'):
+            self.assertEqual([op for op in every if word.lower() in op.lower()], [])
+
+#: The captured replies this file asserts against, so the guard and the tests cannot drift apart.
+PRODUCT_REPLIES = ('GetAllProducts.json', 'GetHarmonyProducts.json')
+
+#: What the product table says about the models this project works on, measured on 21 August 2026
+#: from the reply captured on 13 August. Named per skin rather than counted, because the point of
+#: each row is a different one.
+#:
+#: `max_activities` is the column with the lesson in it: the field **exists** and is null on every
+#: model anybody here could use, so the standing claim that no source states an activity limit is not
+#: merely unrefuted, it is confirmed with the field named. A future reader who finds `MaxActivities`
+#: in this reply and thinks the question is answered can read this instead of measuring again.
+#:
+#: `name` is the record's `DisplayName`. Skin 54's is "Harmony One+" where its `Name` is "Harmony One",
+#: and the per model capability answer says the same, `tests/logitech/test_product_capabilities.py`: the plus is
+#: the service's display name for the Harmony One's skin, not another product. Skins 72, 78 and 79 joined
+#: in `todo-reference.md` 3.4, so that every bench model's maxima rest on this reply: the Harmony 650's,
+#: and the Harmony 300's two regional skins, which differ in their favourite maximum, 5 against 4.
+PRODUCTS = {
+    22: {'name': 'Harmony 525', 'enabled': False, 'max_devices': 12, 'favourites': 0,
+         'max_activities': 255},
+    54: {'name': 'Harmony One+', 'enabled': True, 'max_devices': 15, 'favourites': 24,
+         'max_activities': None},
+    72: {'name': 'Harmony 650', 'enabled': True, 'max_devices': 8, 'favourites': 23,
+         'max_activities': None},
+    78: {'name': 'Harmony 300', 'enabled': True, 'max_devices': 4, 'favourites': 5,
+         'max_activities': None},
+    79: {'name': 'Harmony 300', 'enabled': True, 'max_devices': 4, 'favourites': 4,
+         'max_activities': None},
+    59: {'name': 'Harmony One EMEA', 'enabled': False, 'max_devices': 15, 'favourites': 0,
+         'max_activities': 255},
+    66: {'name': 'Harmony 700', 'enabled': True, 'max_devices': 8, 'favourites': 23,
+         'max_activities': None},
+    71: {'name': 'Harmony 600', 'enabled': True, 'max_devices': 5, 'favourites': 23,
+         'max_activities': None},
+    73: {'name': 'Harmony 600', 'enabled': True, 'max_devices': 5, 'favourites': 23,
+         'max_activities': None},
+    # The Harmony Touch, joined in `todo-touch.md` 3.2: its 15 devices and 50 favourites were the
+    # manual's alone in the reference until this row.
+    99: {'name': 'Harmony Touch', 'enabled': True, 'max_devices': 15, 'favourites': 50,
+         'max_activities': None},
+    # The two skins that run the Hops screens of the Touch's image, joined so the reference can name
+    # them, `reference/remotes/harmony-touch/keys.md`: the six home control keys are theirs.
+    111: {'name': 'Harmony Elite', 'enabled': False, 'max_devices': 15, 'favourites': 50,
+          'max_activities': None},
+    112: {'name': 'Harmony 950', 'enabled': True, 'max_devices': 15, 'favourites': 50,
+          'max_activities': None},
+}
+
+
+class ProductTable(unittest.TestCase):
+    """What Logitech's own product table states, and the two fields it states nothing in.
+
+    Section 136 read the refusal to compile for a Harmony 525 as "the likeliest reason is a stated per
+    product `IsEnabled` flag, false for skin 22, whose true set is exactly the client's own supported
+    list". That was an inference from two observations. This is the measurement.
+    """
+
+    def setUp(self):
+        lab.require_responses(*PRODUCT_REPLIES)
+        self.products = lab.response('GetAllProducts.json')
+        self.supported = lab.response('GetHarmonyProducts.json')['GetHarmonyProductsResult']
+
+    def test_the_supported_list_is_exactly_the_enabled_set(self):
+        """Section 136's inference, now an equality with no exception either way.
+
+        This is why a Harmony 525 cannot be registered and why its compile ends in a bare error: the
+        product is in the table, the table says it is not enabled, and the list the setup flow reads is
+        the enabled half of it. The equality is asserted in both directions, because a subset in either
+        direction would be a different claim and only one of them is true.
+        """
+        enabled = {p['SkinId'] for p in self.products if p['IsEnabled']}
+        listed = {p['SkinId'] for p in self.supported if p.get('SkinId') is not None}
+        self.assertEqual(enabled, listed)
+        # Exact, and both figures, since a share would hide which side moved. 19 of 120 skins, from
+        # 27 records, because a skin can appear more than once in the table.
+        self.assertEqual(len(enabled), 19)
+        self.assertEqual(len(self.products), 120)
+        self.assertNotIn(22, enabled, 'the Harmony 525 is the model this explains')
+
+    def test_the_nineteenth_enabled_skin_is_the_hub_generations_placeholder(self):
+        """Why one count says 18 enabled skins and another 19, settled in `todo-reference.md` 4.5.
+
+        Section 136 listed eighteen skins and section 145 counted nineteen, over the same reply. Both are
+        right: 27 records are enabled, nine of them carry skin 0 in place of a skin of their own, all of
+        the hub generation, and the other eighteen are section 136's list exactly. The 97 section 136
+        called products is the number of distinct skins over the 120 records.
+        """
+        records = [p for p in self.products if p['IsEnabled']]
+        self.assertEqual(len(records), 27)
+        self.assertEqual(sum(1 for p in records if p['SkinId'] == 0), 9)
+        self.assertEqual(sorted({p['SkinId'] for p in records} - {0}),
+                         [54, 66, 69, 71, 72, 73, 74, 75, 78, 79, 80, 81, 97, 99, 102, 104, 106, 112])
+        self.assertEqual(len({p['SkinId'] for p in self.products}), 97)
+
+    def test_the_table_agrees_with_our_own_model_figures(self):
+        """The device and favourite counts, which `packages/base/src/models.ts` already carries.
+
+        Asserted here rather than assumed: section 136 adopted the vendor's device counts, and this is
+        the reply that was adopted from. The favourite counts were in our table too and had never been
+        checked against it.
+        """
+        by_skin = {p['SkinId']: p for p in self.products}
+        for skin, expected in PRODUCTS.items():
+            with self.subTest(skin=skin):
+                got = by_skin[skin]
+                self.assertEqual(got['DisplayName'], expected['name'])
+                self.assertEqual(got['IsEnabled'], expected['enabled'])
+                self.assertEqual(got['MaxDevicesPerAccount'], expected['max_devices'])
+                self.assertEqual(got['MaxFavoriteChannels'], expected['favourites'])
+
+    def test_two_fields_that_would_have_answered_open_questions_are_empty(self):
+        """The negative result, asserted, because it is the one that saves the next afternoon.
+
+        `CompilerArchitecture` would have handed us the architecture per model, which this project
+        derives from firmware and from a config's own section slot 1. It is null on all 120.
+
+        `MaxActivities` would have answered the one figure `CLAUDE.md` says exists in no source, and it
+        is the more interesting of the two, because **it is served for one model**. The Harmony 350
+        states 1, which is true of that remote and is the only enabled model with any value at all.
+        Every model this project works on is null, and the disabled half carries a flat 255, which is a
+        sentinel rather than a generous limit. So the standing claim survives with its scope named: the
+        field exists, Logitech filled it in where they cared, and none of those places is a remote here.
+        """
+        self.assertEqual([p['CompilerArchitecture'] for p in self.products], [None] * 120)
+        by_skin = {p['SkinId']: p for p in self.products}
+        for skin, expected in PRODUCTS.items():
+            with self.subTest(skin=skin):
+                self.assertEqual(by_skin[skin]['MaxActivities'], expected['max_activities'])
+        # The one exception, named rather than excluded, because an exception nobody names is a rule
+        # nobody can trust. Asserted as the whole set so a second one cannot appear unnoticed.
+        stated = {p['SkinId']: p['MaxActivities'] for p in self.products
+                  if p['IsEnabled'] and p['MaxActivities'] is not None}
+        self.assertEqual(stated, {104: 1})
+        self.assertEqual(by_skin[104]['DisplayName'], 'Harmony 350')
+
+
+#: The button map captures, one per bench remote, and they are the only two files here whose names
+#: carry a skin, which is why they are safe to reach by name at all.
+BUTTON_MAP_REPLIES = ('GET_MapList_skin54.json', 'GET_MapList_skin71.json')
+
+
+def button_names(reply):
+    """Every button the maps in one reply name, by the kind of map naming it."""
+    per_kind = {}
+    for button_map in reply['ButtonMaps']:
+        kind = button_map['__type'].split(':')[0]
+        named = {b['ButtonKey'] for b in button_map['Buttons'] if b.get('ButtonKey')}
+        per_kind[kind] = per_kind.get(kind, set()) | named
+    return per_kind
+
+
+class ButtonMapCompleteness(unittest.TestCase):
+    """Whether the drawings used every name the vendor offered, and invented none.
+
+    Section 133 named a scan code by decoding its infrared record into the bit frame a device sees and
+    looking the frame up in the catalogue and button maps of the account that generated the config.
+    What it never checked is the **other** direction, section 145: that the vendor's own maps hold no
+    button left unplaced, and that nothing placed is a button the maps do not name.
+
+    Both sides come out exact on both remotes, which is a completeness closure rather than a new name.
+    The vendor names 36 buttons for the Harmony One and 40 for the Harmony 600. Section 145 found 32 and
+    36 of them placed and the four arrow keys of each left in two symmetric pairs; the devices' own maps
+    decided those pairs since, sections 398 and 323, so every name is placed now and nothing is left over
+    either way, on either remote.
+
+    **Where the placed names come from.** Until plan 009's step 3.3 this read `reference/button-maps.md`,
+    a hand kept table. The scan codes are the drawings' data now, and this reads them from the keys page
+    each drawing generates, `reference_keys.py`: a key whose name is Logitech's, `catalogue`, is a key
+    placed against a code.
+    """
+
+    def setUp(self):
+        lab.require_responses(*BUTTON_MAP_REPLIES)
+
+    def test_every_name_the_vendor_offers_is_accounted_for(self):
+        for reply, folder, placed_count in (
+            ('GET_MapList_skin54.json', 'harmony-one', 36),
+            ('GET_MapList_skin71.json', 'harmony-600', 40),
+        ):
+            with self.subTest(reply=reply):
+                kinds = button_names(lab.response(reply))
+                # A `RootButtonMap` is neither a device layout nor an activity's, and on the Harmony 600
+                # it holds exactly the two activity keys, which send no infrared code at all and are
+                # named by section 120's chain instead. So the population to compare against is the
+                # activity and device maps, and the root map is asserted separately below.
+                offered = kinds.get('ActivityButtonMap', set()) | kinds.get('DeviceButtonMap', set())
+                keys = generated_keys(folder)
+                placed = {name for name, (_, source, scan, _) in keys.items() if source == 'catalogue'}
+                self.assertEqual(len(placed), placed_count)
+                # Every one of them against a code: a name of Logitech's with no code would be a
+                # catalogue name nothing measured.
+                self.assertEqual({name for name in placed if keys[name][2] is None}, set())
+                self.assertEqual(offered - placed, set(), 'a name the drawing never placed')
+                self.assertEqual(placed - offered, set(), 'a name the vendor never offered')
+
+    def test_the_root_map_holds_the_keys_that_send_nothing(self):
+        """The exception, named, because section 145 claims it in prose.
+
+        The Harmony 600's activity keys are hard buttons in its maps and are never placed against a code
+        through a frame, because an activity key selects a handler set and sends nothing itself. This is
+        that claim as a measurement: they are the whole content of the root map, and they are in no other
+        map.
+        """
+        kinds = button_names(lab.response('GET_MapList_skin71.json'))
+        self.assertEqual(kinds.get('RootButtonMap'), {'MovieActivity', 'WatchTVActivity'})
+        others = kinds.get('ActivityButtonMap', set()) | kinds.get('DeviceButtonMap', set())
+        self.assertEqual(kinds['RootButtonMap'] & others, set())
+
+
+#: The three surfaces' button maps, read on 23 August 2026 once three favourite channels existed on the
+#: Harmony One, plus the reply from ten days earlier that is the before half of the control.
+CHANNEL_REPLIES = ('GetButtonMaps_skin54.json', 'GetButtonMaps_skin71.json',
+                   'GetButtonMaps_skin22.json', 'GET_MapList_skin54.json')
+
+
+def device_maps(maps):
+    """The device maps in a `GetButtonMaps` reply, keyed on their own identifier."""
+    return {m.get('ButtonMapIdentifier'): m
+            for m in maps if m['__type'].split(':')[0] == 'DeviceButtonMap'}
+
+
+def channel_buttons(reply):
+    """Every button in a reply whose action carries a channel number."""
+    found = []
+    for button_map in reply['GetButtonMapsResult']:
+        for button in button_map['Buttons']:
+            action = button.get('ButtonAction') or {}
+            if 'ButtonChannelAction' in str(action.get('__type')):
+                found.append((button, action))
+    return found
+
+
+class AFavouriteChannelIsAButton(unittest.TestCase):
+    """What the account states about a favourite channel, which is the input side of base slot 16.
+
+    Base slot 16 is the one section of the config format read entirely out of firmware and populated by
+    no file in the corpus, so a sample had to be manufactured: three favourite channels were created on
+    a Harmony One for a television, labelled `Chan1`, `Chan100` and `Chan666`. This test is what the
+    service says about them **before** anything is compiled, so that the compiled form is compared
+    against a stated intent rather than against a memory of one.
+
+    The claim is that a favourite channel is not a structure of its own. It is a soft button on the
+    television's own device map, on a menu Logitech calls `FavoriteChannels`, whose action carries the
+    channel and names the device.
+    """
+
+    def setUp(self):
+        lab.require_responses(*CHANNEL_REPLIES)
+
+    def test_the_three_channels_are_three_buttons_on_one_device(self):
+        found = channel_buttons(lab.response('GetButtonMaps_skin54.json'))
+        self.assertEqual(len(found), 3)
+        # The channel is **text**, which is why these are compared as strings: a leading zero can be
+        # authored, so nothing downstream may treat the field as a number.
+        self.assertEqual([a['ChannelNumber'] for _, a in found], ['1', '100', '666'])
+        self.assertEqual([b['TextOnRemote'] for b, _ in found], ['Chan1', 'Chan100', 'Chan666'])
+        self.assertEqual([b['MenuItem']['MenuName'] for b, _ in found], ['FavoriteChannels'] * 3)
+        self.assertEqual([b['MenuItem']['IndexInMenu'] for b, _ in found], [0, 1, 2])
+        self.assertEqual([b['__type'].split(':')[0] for b, _ in found], ['SoftRemoteButton'] * 3)
+        # All three name the same device, and it is one of the account's three.
+        self.assertEqual({a['DeviceId']['Value'] for _, a in found}, {83281442})
+
+    def test_the_feature_is_per_remote_and_not_per_household(self):
+        """The other two remotes on the same account carry none, over the same three devices.
+
+        Worth asserting because the alternative reading is that a channel belongs to the device, in
+        which case every remote that drives that television would carry it.
+        """
+        for reply in ('GetButtonMaps_skin71.json', 'GetButtonMaps_skin22.json'):
+            with self.subTest(reply=reply):
+                self.assertEqual(len(channel_buttons(lab.response(reply))), 0)
+
+    def test_creating_a_channel_added_exactly_three_buttons(self):
+        """The before and after control, and the point is the two devices that did not move.
+
+        The two reads are **different operations** ten days apart, `MapList` then `GetButtonMaps`, so a
+        difference in one map proves nothing on its own: the two calls could simply count differently.
+        The other two devices come back identical across both, which is what makes the third one's three
+        extra buttons the three channels rather than an artefact of the call.
+        """
+        before = device_maps(lab.response('GET_MapList_skin54.json')['ButtonMaps'])
+        after = device_maps(lab.response('GetButtonMaps_skin54.json')['GetButtonMapsResult'])
+        for device, count in (('83281443', 77), ('83281444', 52)):
+            with self.subTest(device=device):
+                self.assertEqual(len(before['16417Device%s' % device]['Buttons']), count)
+                self.assertEqual(len(after['device_%s' % device]['Buttons']), count)
+        # The television is the one map whose identifier is gone, because it is the one that got saved.
+        television = after[None]
+        self.assertEqual(len(before['16417Device83281442']['Buttons']), 74)
+        self.assertEqual(len(television['Buttons']), 77)
+        self.assertEqual(len(channel_buttons(
+            {'GetButtonMapsResult': [television]})), 3)
+
+    def test_only_the_edited_device_has_a_saved_map(self):
+        """A default map is named by a string and a saved one by a number, which is the state change.
+
+        Before, none of the three devices had a saved map identifier. After, the television has one and
+        the other two are still defaults. So authoring a channel persists that device's whole button map,
+        which is why a writer cannot treat a channel as an addition to something it does not own.
+        """
+        before = device_maps(lab.response('GET_MapList_skin54.json')['ButtonMaps'])
+        after = device_maps(lab.response('GetButtonMaps_skin54.json')['GetButtonMapsResult'])
+        self.assertEqual([m.get('ButtonMapId') for m in before.values()], [None, None, None])
+        saved = {k: (m.get('ButtonMapId') or {}).get('Value') is not None for k, m in after.items()}
+        self.assertEqual(saved, {None: True, 'device_83281443': False, 'device_83281444': False})
+
+
+SYNC_REPLIES = ('GetMyHousehold_account2_before_sync.json',
+                'GetMyHousehold_account2_after_sync.json')
+
+
+def only_remote(reply):
+    """The one remote record in a household reply, which every account here has exactly one of."""
+    accounts = reply['GetMyHouseholdResult']['Accounts']
+    assert len(accounts) == 1, len(accounts)
+    remotes = accounts[0]['Remotes']
+    assert len(remotes) == 1, len(remotes)
+    return remotes[0]
+
+
+class ASyncIsRecordedWhenTheClientSaysSo(unittest.TestCase):
+    """The account's record of a sync can disagree with the remote, and this is the pair that shows it.
+
+    On 23 August 2026 the client refused to show its ordinary interface for the spare Harmony One,
+    saying setup was not complete, and the re-sync it demanded failed until the machine was restarted.
+    The household record was read either side of the sync that finally succeeded.
+
+    **The control is outside the service.** That remote was already carrying the previous day's config,
+    which is known from the remote itself rather than from anything Logitech states: it was read off
+    over USB and filed as `one_spare_myharmony`, whose own accounting and round trip are asserted in
+    `packages/codec/test/container/calibration.test.ts`. So a programmed remote and a record saying it had never
+    been synced existed at the same moment.
+
+    What the pair cannot establish is the mechanism, since it is one occurrence. See
+    `reference/logitech/service.md`, "Syncing, and what the record says about it", for the reading. A
+    deliberate repeat would mean interrupting a sync at the moment the remote restarts, which is not a
+    thing to do to an irreplaceable remote.
+    """
+
+    def setUp(self):
+        lab.require_responses(*SYNC_REPLIES)
+        self.before = only_remote(lab.response(SYNC_REPLIES[0]))
+        self.after = only_remote(lab.response(SYNC_REPLIES[1]))
+
+    def test_the_account_had_no_record_of_any_sync_while_the_remote_was_programmed(self):
+        """Both dates empty is the claim, and `FirstSyncDate` is the half that matters.
+
+        A stale `LastSyncDate` would only say the account had lost track of the latest sync. An empty
+        `FirstSyncDate` says it had never recorded one at all, which is what makes the disagreement with
+        the hardware total rather than partial.
+        """
+        self.assertEqual(self.before['FirstSyncDate'], '')
+        self.assertEqual(self.before['LastSyncDate'], '')
+
+    def test_the_field_the_interface_keys_on_is_not_the_one_named_for_it(self):
+        """`IsSyncRequired` is false on both sides, so it is not what refused the interface.
+
+        Asserted because it is the field a reader would reach for first, and reaching for it would
+        produce a client that cannot tell the broken state from the healthy one.
+        """
+        self.assertIs(self.before['IsSyncRequired'], False)
+        self.assertIs(self.after['IsSyncRequired'], False)
+
+    def test_the_sync_wrote_both_dates_at_once_and_moved_nothing_else(self):
+        """The negative half: exactly two fields differ across the pair, and they hold one value.
+
+        Both dates being equal is what says the service treated this as the remote's first sync. The
+        rest of the record being byte for byte identical is what rules out the two reads having caught
+        the account mid-change for some unrelated reason.
+        """
+        moved = sorted(k for k in set(self.before) | set(self.after)
+                       if self.before.get(k) != self.after.get(k))
+        self.assertEqual(moved, ['FirstSyncDate', 'LastSyncDate'])
+        self.assertNotEqual(self.after['FirstSyncDate'], '')
+        self.assertEqual(self.after['FirstSyncDate'], self.after['LastSyncDate'])
+
+    def test_both_reads_are_the_same_remote(self):
+        """Without this the pair could be two different remotes and the whole reading would dissolve."""
+        for field in ('GlobalRemoteId', 'GlobalRemoteSkinId', 'SkinId'):
+            with self.subTest(field=field):
+                self.assertEqual(self.before[field], self.after[field])
+        # Skin 54 is the Harmony One, which is the unit the control was read off.
+        self.assertEqual(self.after['SkinId'], 54)
+
+
+class SyncingAHarmonyTouchNeverCompilesAConfiguration(unittest.TestCase):
+    """Section 202: MyHarmony's sync branches on the product's capabilities, and only one arm compiles.
+
+    Why this is a test and not just a paragraph. The claim is about somebody else's code, which is the
+    weakest kind of evidence this project accepts, so the least it can do is be recomputable: a reader
+    who doubts it can re-run this against the same source rather than trust a summary. It also guards
+    the specific mistake that produced the wrong version, which was reading a method **name** found in
+    a compiled assembly as though it were a call site.
+
+    Nothing of Logitech's text is reproduced. What is asserted is which operation is called and on what
+    condition, which is functional fact rather than expression.
+    """
+
+    def setUp(self):
+        lab.require('myharmony_sync_model', 'myharmony_update_manager')
+        self.sync = lab.load('myharmony_sync_model').decode('utf-8', 'replace')
+        self.update = lab.load('myharmony_update_manager').decode('utf-8', 'replace')
+
+    def test_the_sync_route_is_chosen_by_the_products_capabilities(self):
+        """The branch itself: two capabilities divert to provisioning before the compile arm is reached."""
+        entry = self.sync[self.sync.index('public void SyncRemote()'):]
+        entry = entry[:entry.index('private void')]
+        # Capability numbers are the client's own enumeration: 16 provisioning, 18 certificate
+        # activation, 12 locale. The first two reach the provisioning call and the third the compile.
+        self.assertIn('UpdateProvisionSupportedRemote', entry)
+        self.assertIn('UpdateRemote', entry)
+        self.assertLess(entry.index('UpdateProvisionSupportedRemote'), entry.index('UpdateRemote(GlobalState'),
+                        'the provisioning arms come first, so a Touch never reaches the compile arm')
+        for capability in (16, 18, 12):
+            with self.subTest(capability=capability):
+                self.assertIn('SupportedCapability)%d' % capability, entry)
+
+    def test_the_compile_the_sync_sends_is_the_one_this_project_already_sends(self):
+        """The correction: `StartCompileWithLocale` is the simulator's call, not the sync's.
+
+        Asserted from both ends, because the wrong reading was true of one end alone: the sync path
+        sends the settings variant, and the plain variant appears only in the simulator's method.
+        """
+        self.assertIn('StartCompileWithLocaleAndSettingsAsync', self.update)
+        self.assertNotIn('StartCompileWithLocaleAsync', self.update)
+        simulator = self.sync[self.sync.index('public void CompileEZSim()'):]
+        simulator = simulator[:simulator.index('protected void')]
+        self.assertIn('StartCompileWithLocaleAsync', simulator)
+
+    def test_the_provisioning_arm_declares_the_configuration_not_required(self):
+        """What makes the negative structural rather than a gap: that route asks for no configuration."""
+        arm = self.update[self.update.index('public void UpdateProvisionSupportedRemote'):]
+        arm = arm[:arm.index('public void UpdateRemote')]
+        self.assertIn('ConfigNotRequired = true', arm)
+        self.assertNotIn('StartCompile', arm)
+
+
+class AHarmonyTouchFetchesItsOwnConfiguration(unittest.TestCase):
+    """Section 203: the remote issues the requests and the client performs them.
+
+    The three things that make it a proxy rather than a download, each asserted separately so a partial
+    refutation says which part moved.
+    """
+
+    def setUp(self):
+        lab.require('myharmony_ds_controller')
+        self.source = lab.load('myharmony_ds_controller').decode('utf-8', 'replace')
+
+    def test_the_client_reads_a_request_list_off_the_remote(self):
+        self.assertIn('DSRequest', self.source)
+        self.assertIn('m_RequestQueue.Enqueue(request)', self.source)
+        # A request carries a verb, which is what makes it an HTTP request rather than a command.
+        self.assertIn('request.Verb', self.source)
+        self.assertIn('request.URI', self.source)
+
+    def test_the_session_is_the_remotes_and_carries_an_identifier(self):
+        self.assertIn('m_SessionID', self.source)
+        self.assertIn('?read&sessionId=', self.source)
+
+    def test_two_request_forms_are_terminal_rather_than_fetches(self):
+        for terminal in ('Finished', 'Abort'):
+            with self.subTest(terminal=terminal):
+                self.assertIn('request.URI.Contains("%s")' % terminal, self.source)
+
+
+CLASSIC_SOURCE = ('software', 'classic', 'src')
+#: Cookies at offset zero of a configuration container, one per architecture, plus the marker that
+#: follows the pointer table. Section 20 for the framing and the key facts table in `CLAUDE.md`.
+CONTAINER_COOKIES = ('GSPM', 'PTYY', 'TPTP', 'AHCM', 'WLWL')
+
+
+def classic_sources():
+    """Every decompiled Java file of the classic client, or None when the lab has not got them."""
+    if not lab.LAB:
+        return None
+    root = os.path.join(lab.LAB, *CLASSIC_SOURCE)
+    if not os.path.isdir(root):
+        return None
+    found = []
+    for base, _dirs, files in os.walk(root):
+        for name in files:
+            if name.endswith('.java'):
+                found.append(os.path.join(base, name))
+    return found
+
+
+class TheClassicClientIsAnExecutorAndNotABuilder(unittest.TestCase):
+    """Section 204: it cannot build a configuration and never looks inside one.
+
+    The note this came from argued it from **absent classes**, which is the weaker half: an absence of
+    names is evidence about names. The test that carries the claim is the positive one below, that not
+    one container cookie appears anywhere in the client, because a program that never recognises the
+    four bytes at the front of a configuration is not a program that composes them.
+
+    Nothing of Logitech's code is reproduced. What is asserted is the absence of a capability, which is
+    functional fact.
+    """
+
+    def setUp(self):
+        self.sources = classic_sources()
+        if self.sources is None:
+            self.skipTest('no decompiled classic client in the lab')
+        # Exact, per this repository's own rule. The population moves only when somebody adds or
+        # removes a file, and then it moves in the diff.
+        self.assertEqual(len(self.sources), 642, 'decompiled Java files of the classic client')
+
+    def read(self, path):
+        with io.open(path, encoding='utf-8', errors='replace') as fh:
+            return fh.read()
+
+    def test_no_container_cookie_appears_anywhere_in_the_client(self):
+        """The load bearing one. It does not parse a configuration, so it cannot have built one."""
+        for cookie in CONTAINER_COOKIES:
+            with self.subTest(cookie=cookie):
+                naming = [p for p in self.sources if cookie in self.read(p)]
+                self.assertEqual(naming, [], 'files naming the %s cookie' % cookie)
+
+    def test_the_control_is_that_this_search_can_find_something(self):
+        """Without it the test above passes on a search that matches nothing, whatever the client holds.
+
+        `EZHex` is the file the client **does** handle, so it must be found, and finding it is what says
+        the walk reached real source rather than an empty list.
+        """
+        naming = [p for p in self.sources if 'EZHex' in self.read(p)]
+        self.assertEqual(len(naming), 20, 'files naming the configuration file extension')
+
+    def test_it_models_no_activity_and_no_code_set(self):
+        """The note's own argument, kept because it says something the cookie test does not."""
+        names = sorted(os.path.basename(p)[:-len('.java')] for p in self.sources)
+        for concept in ('Activity', 'Codeset', 'CodeSet', 'Compiler'):
+            with self.subTest(concept=concept):
+                self.assertEqual([n for n in names if concept in n], [])
+
+    def test_every_class_named_for_a_device_is_transport_or_an_exception(self):
+        """Thirty of them, and not one is an appliance: this is where the note could have gone wrong."""
+        named = sorted(os.path.basename(p)[:-len('.java')] for p in self.sources
+                       if 'Device' in os.path.basename(p))
+        self.assertEqual(len(named), 30)
+        for name in named:
+            with self.subTest(name=name):
+                self.assertTrue(
+                    'Usb' in name or 'USB' in name or 'Exception' in name
+                    or 'Controller' in name or name in ('DeviceProperties', 'DevicesStatusRunnable',
+                                                        'TcpDeviceCommunicationChannel',
+                                                        'HIDUsbDeviceCommunicationChannel'),
+                    '%s is named for a device and is not transport' % name)
+
+
+class TheClassicClientMeasuresACaptureAndJudgesNothing(unittest.TestCase):
+    """Section 205: the only local acceptance test is a duration window; the server decided the rest.
+
+    The two claims that carry weight are the negative one, that no classification happens on the host,
+    and the merge, which agrees with section 164 by a route with nothing in common. Both are asserted
+    against the source rather than summarised, because a negative claim about somebody else's code is
+    the easiest kind to get wrong by not looking hard enough.
+    """
+
+    RECORDER = ('clientcommon', 'com', 'logitech', 'harmony', 'common', 'device', 'services',
+                'learnir', 'CarrierRecorder.java')
+    OPERATION = ('clientcommon', 'com', 'logitech', 'harmony', 'common', 'operation',
+                 'LearningOperation.java')
+
+    def setUp(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        root = os.path.join(lab.LAB, *CLASSIC_SOURCE)
+        if not os.path.isdir(root):
+            self.skipTest('no decompiled classic client in the lab')
+        self.recorder = self.read(os.path.join(root, *self.RECORDER))
+        self.operation = self.read(os.path.join(root, *self.OPERATION))
+
+    def read(self, path):
+        with io.open(path, encoding='utf-8', errors='replace') as fh:
+            return fh.read()
+
+    def test_the_carrier_is_measured_from_the_remotes_own_cycle_count(self):
+        """Not a table lookup and not an assumption, which is what makes it comparable to section 92."""
+        self.assertIn('i_numClocksInInitialEnvelope', self.recorder)
+        self.assertIn('i_initialEnvelopeTimeInMicroseconds / i_numClocksInInitialEnvelope',
+                      self.recorder)
+        self.assertIn('1000000.0 / periodInMicroseconds', self.recorder)
+
+    def test_adjacent_durations_of_one_kind_are_added_rather_than_appended(self):
+        """Section 164's merge, in the vendor's own capture path and reached by a different argument."""
+        self.assertIn('addTimeInMicroseconds', self.recorder)
+        merge = self.recorder[self.recorder.index('public void onCarrierIrDuration'):]
+        merge = merge[:merge.index('public void onCarrierIrFinished')]
+        self.assertIn('isCarrier() == i_isCarrier', merge)
+        self.assertIn('addTimeInMicroseconds(i_timeInMicroseconds)', merge)
+
+    def test_the_only_acceptance_test_is_a_duration_window(self):
+        """Ten milliseconds to one second, and nothing else stands between a capture and the upload."""
+        self.assertIn('MIN_CARRIER_LENGTH = 10000', self.operation)
+        self.assertIn('MAX_CARRIER_LENGTH = 1000000', self.operation)
+        self.assertIn('infraredLength < 10000', self.operation)
+        self.assertIn('infraredLength > 1000000', self.operation)
+
+    def test_the_verdict_comes_back_from_the_server(self):
+        """`TRYAGAIN` plus user messages, which is a judgement the host asks for rather than makes."""
+        self.assertIn('TRYAGAIN', self.operation)
+        self.assertIn('uploadDataToWebsite', self.operation)
+
+    def test_nothing_on_the_host_classifies_a_capture(self):
+        """The negative that section 42 predicted, checked over the whole client and not just this file."""
+        sources = classic_sources()
+        self.assertIsNotNone(sources)
+        for word in ('protocol family', 'RC5', 'RC6', 'NEC ', 'codeset', 'CodeSet'):
+            with self.subTest(word=word):
+                naming = [p for p in sources if word in self.read(p)]
+                self.assertEqual(naming, [], 'files naming %r' % word)
+
+
+#: The per architecture constant classes in the classic client's HID layer, section 206. One file per
+#: architecture, each a list of `private static final int`. They are `private` and nothing outside them
+#: names them, because the compiler inlined every use, so what survives decompilation is a declaration
+#: list: a table of names against values and no code. That is why it reads as documentation.
+PROTOCOL_CLASSES = ('software', 'classic', 'src', 'hidcommands', 'com', 'logitech', 'harmony',
+                    'hid', 'core')
+#: Which remote each of the seven is about. The four this project reads are the four it can check.
+PROTOCOL_ARCHITECTURES = (2, 3, 7, 8, 9, 12, 14)
+
+
+def protocol_constants(architecture):
+    """Every `static final int` of one Protocol class, as a name to value mapping.
+
+    Recomputed from the source each run rather than transcribed, for the reason the module docstring
+    gives: a table typed out once is a table nobody can check against the thing it came from.
+    """
+    if not lab.LAB:
+        return None
+    path = os.path.join(lab.LAB, *PROTOCOL_CLASSES)
+    path = os.path.join(path, 'Protocol%d.java' % architecture)
+    if not os.path.isfile(path):
+        return None
+    with io.open(path, encoding='utf-8', errors='replace') as fh:
+        text = fh.read()
+    found = {}
+    for name, value in re.findall(
+            r'static final int ([A-Z_0-9]+)\s*=\s*(0[xX][0-9a-fA-F]+|-?\d+)', text):
+        found[name] = int(value, 0)
+    return found
+
+
+class TheClassicClientCarriesAPerArchitectureConstantTable(unittest.TestCase):
+    """The seven per architecture tables, recomputed and checked against our own derivations.
+
+    **These tables are not a new find.** They were extracted on 9 August 2026 and
+    `reference/logitech/classic-client.md` states what they agree with; section 206 is the day a later session dug them up again from the same source
+    and had to be told so by its own register. What that session did leave behind is this class, which
+    is the thing the ledger never had: an executable check. Every number below is one this project
+    derived on its own, from the firmware or from the corpus, and the client is the second route.
+
+    Client sourced under decision 2, so the firmware and the corpus stay the authority. Nothing of
+    Logitech's code is reproduced: what travels is numbers this repository already publishes.
+    """
+
+    def setUp(self):
+        self.tables = {}
+        for architecture in PROTOCOL_ARCHITECTURES:
+            table = protocol_constants(architecture)
+            if table is None:
+                self.skipTest('no decompiled classic client in the lab')
+            self.tables[architecture] = table
+
+    def test_all_seven_tables_are_present_and_carry_constants(self):
+        """The control. Without it every assertion below passes on an empty mapping."""
+        self.assertEqual(sorted(self.tables), sorted(PROTOCOL_ARCHITECTURES))
+        sizes = {a: len(t) for a, t in self.tables.items()}
+        self.assertEqual(sizes, {2: 26, 3: 14, 7: 13, 8: 29, 9: 26, 12: 43, 14: 54})
+
+    def test_the_pointer_table_starts_where_section_20_corrected_it_to(self):
+        """`0x0B`, not `0x0C`, on every architecture whose table states it.
+
+        Section 20's correction, which both parsers here had wrong: an item is a spare byte and a
+        three byte address, so the table begins one byte earlier than a `u32` reading suggests.
+        """
+        for architecture in (8, 9, 12, 14):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertEqual(table['ADDRESS_MAGIC_SECTION_START'], gspm.SECTION_TABLE_OFFSET)
+                self.assertEqual(table['ITEM_SIZE'], gspm.SECTION_ITEM_SIZE)
+                self.assertEqual(table['POINTER_SIZE'], 3)
+
+    def test_the_section_count_is_the_pointer_count_this_project_reads(self):
+        """22 on the Harmony One and 20 on the other three, which is what the containers carry."""
+        counts = {a: self.tables[a]['NUM_SECTIONS'] for a in (7, 8, 9, 12, 14)}
+        self.assertEqual(counts, {7: 20, 8: 20, 9: 20, 12: 22, 14: 20})
+
+    def test_the_trailer_offset_closes_on_the_table_it_follows(self):
+        """`section start + 4 * count`, exactly, wherever both ends are stated.
+
+        The same arithmetic that made section 20's reading believable, arriving from the other side:
+        it is the vendor's own two numbers agreeing with the vendor's own third.
+        """
+        for architecture in (8, 9, 12):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertEqual(
+                    table['ADDRESS_MAGIC_TRAILER'],
+                    table['ADDRESS_MAGIC_SECTION_START'] + table['ITEM_SIZE'] * table['NUM_SECTIONS'])
+
+    def test_the_first_four_sections_carry_the_vendors_own_names(self):
+        """Base slots 0 to 3, named identically on all five architectures that have a section table.
+
+        `SECTION_FLASH_STORAGE` is base slot 2, which section 47 read as the log area from the
+        firmware and named for itself; `SECTION_CLOCK` is base slot 3.
+        """
+        for architecture in (7, 8, 9, 12, 14):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertEqual(table['SECTION_DATA'], 0)
+                self.assertEqual(table['SECTION_COMPILE_INFORMATION'], 1)
+                self.assertEqual(table['SECTION_FLASH_STORAGE'], 2)
+                self.assertEqual(table['SECTION_CLOCK'], 3)
+
+    def test_the_clock_records_frame_is_the_one_section_21_derived(self):
+        """`0xADDF` and `0xEFBF`, which this project found by searching for a repeated pair."""
+        header = int.from_bytes(gspm.CLOCK_COOKIE, 'little')
+        trail = int.from_bytes(gspm.CLOCK_END, 'little')
+        for architecture in (8, 12):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertEqual(table['CONFIGURATION_BASE_DATE_MAGIC_HEADER'], header)
+                self.assertEqual(table['CONFIGURATION_BASE_DATE_MAGIC_TRAIL'], trail)
+
+    def test_the_oldest_generation_frames_its_clock_one_less(self):
+        """`0xADDE` and `0xEFBE` on the second architecture, which is a generation this project holds
+        nothing else on. The pair moved by one at some point and the corpus cannot see it, because no
+        container here is older than arch 8."""
+        table = self.tables[2]
+        self.assertEqual(table['CONFIGURATION_BASE_DATE_MAGIC_HEADER'], 0xADDE)
+        self.assertEqual(table['CONFIGURATION_BASE_DATE_MAGIC_TRAIL'], 0xEFBE)
+
+    def test_the_magic_header_word_is_the_cookies_first_two_bytes_except_on_one_architecture(self):
+        """And the exception is asserted rather than explained away.
+
+        Arch 8 is `TP` of `TPTP`, arch 9 is `AH` of `AHCM`, arch 7 is `BM`, which corroborates
+        concordance's `BMBM` for a generation nobody here has a sample of. Arch 12 and arch 14 both
+        carry `GSPM` and their words are `PM` and `QM`, so the rule does not hold there and what the
+        client is matching on those two is unread.
+        """
+        pairs = {a: self.tables[a]['MAGIC_HEADER'].to_bytes(2, 'little')
+                 for a in (7, 8, 9, 12, 14)}
+        self.assertEqual(pairs[8], b'TP')
+        self.assertEqual(pairs[9], b'AH')
+        self.assertEqual(pairs[7], b'BM')
+        self.assertEqual(pairs[12], b'PM')
+        self.assertEqual(pairs[14], b'QM')
+
+    def test_three_named_offsets_are_the_item_layout_stated_a_fourth_time(self):
+        """`CONFIGURATION_DATA`, `..._EVENT` and `..._BASEDATE` are base slots 0, 2 and 3's address
+        fields, each one byte past its item's start.
+
+        That `+ 1` is the spare byte, so these three constants restate section 20's
+        `{ u8 spare; u24 address }` without ever saying so, and they restate it on the one
+        architecture whose table does not begin at `0x0B`: arch 7's begins at 8, which is what its
+        trailer implies, and all three offsets follow.
+        """
+        for architecture in (7, 8, 9, 12, 14):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                start = table.get('ADDRESS_MAGIC_SECTION_START')
+                if start is None:
+                    # Arch 7 states no section start. Recover it from the trailer, which is the only
+                    # other end of the same table, and the three offsets then have to agree with it.
+                    start = table['ADDRESS_MAGIC_TRAILER'] - table['ITEM_SIZE'] * table['NUM_SECTIONS']
+                    self.assertEqual(start, 8)
+                item = table['ITEM_SIZE']
+                self.assertEqual(table['CONFIGURATION_DATA_OFFSET'], start + item * 0 + 1)
+                self.assertEqual(table['CONFIGURATION_EVENT_OFFSET'], start + item * 2 + 1)
+                self.assertEqual(table['CONFIGURATION_BASEDATE_OFFSET'], start + item * 3 + 1)
+
+    def test_the_two_oldest_generations_have_no_section_table_at_all(self):
+        """Arch 2 and arch 3 name no sections and no item size, and their three offsets are not four
+        apart, so the pointer table is something the format grew rather than something it had."""
+        for architecture in (2, 3):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertNotIn('NUM_SECTIONS', table)
+                self.assertNotIn('ITEM_SIZE', table)
+                self.assertNotIn('SECTION_CLOCK', table)
+
+    def test_the_configuration_bases_are_the_ones_in_the_key_facts_table(self):
+        """`0x040000` on the Harmony One and `0x030000` on the Harmony 600 and 700."""
+        self.assertEqual(self.tables[12]['CONFIGURATION_BASE'], 0x040000)
+        self.assertEqual(self.tables[14]['CONFIGURATION_BASE'], 0x030000)
+
+    def test_the_stored_application_is_where_the_write_rail_puts_its_ceiling(self):
+        """`0x3D0000` for `0x20000`, inside the nominally writable configuration region.
+
+        That overlap is the reason `packages/usb` refuses an erase above `0x3D0000` rather than up to
+        the end of the part, and it was adopted from Logitech's host software with no firmware behind
+        it. This is a second, independent statement of the same two numbers.
+        """
+        table = self.tables[12]
+        self.assertEqual(table['CODE_NORMAL_APP_ADDRESS'], 0x3D0000)
+        self.assertEqual(table['CODE_NORMAL_APP_SIZE'], 0x20000)
+        self.assertEqual(table['CODE_USER_CONFIGURATION_ADDRESS'], 0x040000)
+        self.assertEqual(table['CODE_USER_CONFIGURATION_SIZE'], 0x400000 - 0x040000)
+
+    def test_the_harmony_525s_two_firmware_images_are_where_the_bench_found_them(self):
+        """`0x800000` and `0x810000`, read off the remote on 8 and 11 August 2026, section 118.
+
+        The safe mode image and the application, both identified from their own headers at the time
+        and then confirmed by a stranded remote reporting the safe mode one's version accessors.
+        """
+        table = self.tables[9]
+        self.assertEqual(table['CODE_SAFEMODE_ADDRESS'], 0x800000)
+        self.assertEqual(table['CODE_APP_FIRMWARE_ADDRESS'], 0x810000)
+        self.assertEqual(table['CODE_BOOT_ONLY_ADDRESS'], 0x000000)
+        self.assertEqual(table['CODE_BOOT_ONLY_SIZE'], 0x1000)
+        # The third region the client names for this architecture, and the one that disagrees with the
+        # remote: an embedded configuration of 32 KiB at 0x820000, where a Harmony 525 keeps its user
+        # configuration, longer than that, and its safe mode configuration sits at 0x818000. Asserted
+        # as what the client states, so the reference can cite it; which of the two maps is right about
+        # the word is `reference/architectures/harmony-5xx/memory.md`'s open question.
+        self.assertEqual(table['CODE_EMBEDDED_CONFIG_ADDRESS'], 0x820000)
+        self.assertEqual(table['CODE_EMBEDDED_CONFIG_SIZE'], 0x8000)
+        self.assertEqual(table['CODE_SAFEMODE_SIZE'], 0x10000)
+        self.assertEqual(table['CODE_APP_FIRMWARE_SIZE'], 0x10000)
+
+    def test_the_harmony_525s_eeprom_window_is_the_one_section_118_measured(self):
+        """Top byte `0x20`, which that section read as 256 bytes of EEPROM inside the address space
+        the protocol calls flash. The client calls the same number a virtual EEPROM address."""
+        self.assertEqual(self.tables[9]['VIRTUAL_PIC_EEPROM_ADDRESS'], 0x200000)
+
+
+class TheThreeRegionsTheLedgerCouldNotExplain(unittest.TestCase):
+    """Section 206: two of the client's unexplained arch 12 regions, and its arch 14 logging region.
+
+    All three sat in `reference/logitech/clients.md` as client sourced and unconfirmed for nineteen days while
+    the bytes that settle them were already in the lab. None of this needed a remote, a disassembler
+    or a service call, which is the whole point of recording it.
+    """
+
+    #: Internal program page `0xFF` covers `0x010000` to `0x020000`, so an address in that page is at
+    #: `address - PAGE_FF_BASE` of the image.
+    PAGE_FF_BASE = 0x010000
+    #: What the client calls a support library, and what section 191 read as the external flash
+    #: programmer the application calls at `0x01E018`.
+    PIC_LIBRARY = (0x01E000, 0x1000)
+    #: What the client calls a programmable logic device image, which is a claim about the hardware
+    #: rather than about the memory map: nothing else here suggests a Harmony One carries one.
+    CPLD_IMAGE = (0x010000, 0x4000)
+    #: Section 191's figure, from the other end: the resident programmer is 601 bytes.
+    PROGRAMMER_BYTES = 601
+
+    def setUp(self):
+        names = ('one_page_ff', 'one_spare_page_ff', 'h600_page_ff')
+        # Guard up front rather than per image, so a half present lab skips the whole claim instead
+        # of asserting a count over whichever units happen to be there.
+        lab.require(*names)
+        self.pages = {name: lab.load(name) for name in names}
+
+    #: Every region the client names in this page, address and size. `PIC_CONFIG` is the part's own
+    #: configuration words, which are a PIC18 fact rather than a Logitech one and sit at the top of
+    #: program memory on this family.
+    NAMED_REGIONS = ((0x010000, 0x4000), (0x01E000, 0x1000), (0x01F400, 0x400),
+                     (0x01F800, 0x400), (0x01FFF8, 8))
+
+    def named(self, address, shift=0):
+        """Whether an address falls inside a region the client names."""
+        return any(start + shift <= address < start + shift + size
+                   for start, size in self.NAMED_REGIONS)
+
+    def used(self, image, address, size):
+        """How many bytes of a region are not erased flash."""
+        start = address - self.PAGE_FF_BASE
+        return sum(1 for b in image[start:start + size] if b != 0xFF)
+
+    def test_the_support_library_holds_exactly_section_191s_programmer(self):
+        """601 bytes, on both Harmony Ones, which is the figure that section read off the code.
+
+        Two routes with nothing in common: section 191 measured the routine by disassembling it and
+        matching it against the copy inside the safe mode image, and this counts the bytes of the
+        region the client names. So `a support library` is not a lead any more, it is the external
+        flash programmer, and the row in the ledger can say so.
+        """
+        for name in ('one_page_ff', 'one_spare_page_ff'):
+            with self.subTest(unit=name):
+                self.assertEqual(self.used(self.pages[name], *self.PIC_LIBRARY),
+                                 self.PROGRAMMER_BYTES)
+
+    def test_the_programmable_logic_image_is_populated_rather_than_reserved(self):
+        """5939 bytes of 16384 on both Harmony Ones, so the region is used and not merely declared.
+
+        That does not read the image and does not confirm what the device is. It moves the claim from
+        `the client says there is a CPLD` to `there is an image where the client says one is`, which
+        is the difference between a name and a region nobody has looked in.
+        """
+        for name in ('one_page_ff', 'one_spare_page_ff'):
+            with self.subTest(unit=name):
+                self.assertEqual(self.used(self.pages[name], *self.CPLD_IMAGE), 5939)
+
+    def test_every_used_byte_of_a_harmony_ones_second_internal_page_is_named(self):
+        """6627 bytes on each of the two units, and every one inside a region the client names.
+
+        This is the closure, and it is stronger than either count above, because a wrong map does not
+        merely give a wrong number here, it leaves bytes outside every region. The page is the logic
+        device image, then forty kilobytes of erased flash, then the programmer, then the per unit
+        settings section 150 read, then the part's own configuration words at the very top.
+
+        The Harmony 600 is deliberately not in this test. Its application firmware lives in internal
+        flash and occupies the same page, so there is nothing for a map of empty space to close on.
+        That is the per architecture difference rather than a gap in the evidence: on a Harmony One
+        the configuration and the application are both in external flash, which is what leaves this
+        page free enough to be accounted for.
+        """
+        for name in ('one_page_ff', 'one_spare_page_ff'):
+            with self.subTest(unit=name):
+                image = self.pages[name]
+                used = [self.PAGE_FF_BASE + i for i, b in enumerate(image) if b != 0xFF]
+                self.assertEqual(len(used), 6627)
+                outside = [a for a in used if not self.named(a)]
+                self.assertEqual(outside, [])
+
+    def test_the_map_covers_a_third_of_the_page_and_holds_all_of_its_content(self):
+        """The control, and it is about width rather than position.
+
+        A map that named the whole page would close on anything, so the question is how much of the
+        page it leaves out: 22536 bytes of 65536, a little over a third, and the other 43000 hold not
+        one byte that is not erased flash. Shifting the map instead is the weaker control and was
+        tried first: the logic device region alone is 16 KiB, so a shift of `0x100` still covers all
+        but 551 of the used bytes, which would read as a near miss rather than a refutation.
+        """
+        covered = sum(size for _, size in self.NAMED_REGIONS)
+        self.assertEqual(covered, 22536)
+        image = self.pages['one_page_ff']
+        unnamed_and_used = [i for i, b in enumerate(image)
+                            if b != 0xFF and not self.named(self.PAGE_FF_BASE + i)]
+        self.assertEqual(unnamed_and_used, [])
+        self.assertEqual(len(image) - covered, 65534 - 22536)
+
+class TheArch14LoggingRegionIsWhatItsSafeModeConfigsDeclare(unittest.TestCase):
+    """Section 206: a client sourced number the corpus turns out to state, exactly.
+
+    `reference/architectures/harmony-600-650-700/memory.md` listed `USERLOGGING_BASE` as a smaller lead: arch 14 declares a 128 KiB
+    logging region at `0x0E0000`, and since section 47 found the log area's writer on arch 12 and
+    not on arch 14 (arch 8's was read later, `tests/harmony_880_885/test_harmony_885_log_area.py`), all that could be said was that the region exists on paper. Every arch 14 safe mode container in
+    the corpus declares exactly that range in base slot 2, so it comes off the unconfirmed ledger.
+
+    The user configs of the same architecture declare a range one megabyte higher, which is the top
+    128 KiB of a part twice the size, and the two are recorded side by side rather than reconciled.
+    """
+
+    #: `USERLOGGING_BASE` and `USERLOGGING_SIZE` from the arch 14 table.
+    CLIENT_REGION = (0x0E0000, 0x20000)
+    #: The three arch 14 containers Logitech shipped inside firmware, which are the ones that agree.
+    SAFE_MODE = ('h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm')
+    #: The three arch 14 configurations compiled for a remote, which declare the higher range.
+    USER_CONFIGS = ('h600_config', 'h700_config', 'h700_config_2')
+
+    def setUp(self):
+        table = protocol_constants(14)
+        if table is None:
+            self.skipTest('no decompiled classic client in the lab')
+        self.table = table
+        lab.require(*(self.SAFE_MODE + self.USER_CONFIGS))
+
+    def declared(self, name):
+        """Base slot 2's start and limit, as the container states them."""
+        container = gspm.parse(lab.load(name))
+        raw = gspm.arch_slot(container.architecture, gspm.LOG_SLOT)
+        section = container.sections[raw]
+        blob = container.blob
+        at = section.address - container.flash_base
+        # Eight bytes on arch 14: a u16 capacity, then two three byte addresses.
+        start = int.from_bytes(blob[at + 2:at + 5], 'little')
+        limit = int.from_bytes(blob[at + 5:at + 8], 'little')
+        return start, limit
+
+    def test_the_client_states_the_region_the_shipped_containers_declare(self):
+        """`0x0E0000` to `0x100000`, on all three, against the client's base and size."""
+        base, size = self.CLIENT_REGION
+        self.assertEqual(self.table['USERLOGGING_BASE'], base)
+        self.assertEqual(self.table['USERLOGGING_SIZE'], size)
+        for name in self.SAFE_MODE:
+            with self.subTest(container=name):
+                self.assertEqual(self.declared(name), (base, base + size))
+
+    def test_a_compiled_configuration_puts_it_a_megabyte_higher(self):
+        """`0x1E0000` to `0x200000`, which is the same 128 KiB at the top of a 2 MiB part.
+
+        Section 192 read arch 14's external medium as ending at `0x200000`, so a compiled config
+        reserves the top of the part it is actually on and the shipped containers reserve the top of
+        one half that size. Which of the two a given remote wants is not established here, and it
+        matters to a writer, because base slot 2 is a field a save would have to reproduce.
+        """
+        base, size = self.CLIENT_REGION
+        for name in self.USER_CONFIGS:
+            with self.subTest(container=name):
+                start, limit = self.declared(name)
+                self.assertEqual((start, limit), (0x1E0000, 0x200000))
+                self.assertEqual(limit - start, size)
+                self.assertEqual(start - base, 0x100000)
+
+
+class TheClientPicksATransportFromTheProductId(unittest.TestCase):
+    """Section 207: three unit factories, and only one of them speaks the command protocol.
+
+    This is the claim `packages/usb`'s `isTunnelledRemote` rests on, so it is checked against the
+    client's own source rather than remembered. What travels is which platform names appear in which
+    factory, which is functional fact of the kind the interoperability rule covers.
+    """
+
+    RESOURCES = ('software', 'classic', 'res', 'client', 'device.properties')
+    HID_FACTORY = ('hidcommands', 'com', 'logitech', 'harmony', 'hid', 'unit',
+                   'HidUnitFactoryImp.java')
+    CAPPUCCINO_FACTORY = ('cappuccino', 'com', 'logitech', 'harmony', 'cappuccino', 'unit',
+                          'CappuccinoUnitFactory.java')
+    COGNAC_FACTORY = ('cognac', 'com', 'logitech', 'harmony', 'cognac', 'unit',
+                      'CognacUnitFactory.java')
+
+    def setUp(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        self.properties = os.path.join(lab.LAB, *self.RESOURCES)
+        root = os.path.join(lab.LAB, *CLASSIC_SOURCE)
+        if not os.path.isfile(self.properties) or not os.path.isdir(root):
+            self.skipTest('no decompiled classic client in the lab')
+        self.root = root
+
+    def read(self, *parts):
+        with io.open(os.path.join(self.root, *parts), encoding='utf-8', errors='replace') as fh:
+            return fh.read()
+
+    def skins(self, platform):
+        """The skins one platform's keys name, recomputed from the shipped properties file."""
+        with io.open(self.properties, encoding='utf-8', errors='replace') as fh:
+            text = fh.read()
+        pattern = r'Device\.%s\.Skin\d+\s*=\s*(\d+)' % re.escape(platform)
+        return sorted(int(value) for value in re.findall(pattern, text))
+
+    def test_the_platforms_the_hid_factory_accepts_are_the_ones_we_read(self):
+        """Espresso, Mocha and Gin, and nothing else reaches a command report.
+
+        Those are architectures 8, 9 and 12, plus arch 14, whose skins the file lists inside the
+        Mocha group with the Molson name in a comment. So the HID family is exactly the four
+        architectures `packages/usb` opens.
+        """
+        source = self.read(*self.HID_FACTORY)
+        for platform in ('Espresso', 'Mocha', 'Gin'):
+            with self.subTest(platform=platform):
+                self.assertIn('get%sSkins()' % platform, source)
+        for platform in ('Cappuccino', 'Whisky', 'Sugar', 'Cognac'):
+            with self.subTest(platform=platform, absent=True):
+                self.assertNotIn('get%sSkins()' % platform, source)
+
+    def test_the_other_two_factories_take_the_platforms_the_first_refuses(self):
+        """And they put a datagram channel on the wire instead of command reports.
+
+        The names asserted are class names in the client, which is what makes this a check on the
+        transport rather than on a comment: a factory that constructed a plain channel would not
+        mention them.
+        """
+        cappuccino = self.read(*self.CAPPUCCINO_FACTORY)
+        for platform in ('Cappuccino', 'Whisky', 'Sugar'):
+            with self.subTest(platform=platform):
+                self.assertIn('get%sSkins()' % platform, cappuccino)
+        self.assertIn('UdpTcpUsbDeviceCommunicationChannel', cappuccino)
+        self.assertNotIn('HidChannel', cappuccino)
+
+        cognac = self.read(*self.COGNAC_FACTORY)
+        self.assertIn('getCognacSkins()', cognac)
+        self.assertIn('TcpDeviceCommunicationChannel', cognac)
+        self.assertIn('usblan', cognac)
+
+    def test_the_two_platforms_this_project_can_check_carry_the_skins_it_measured(self):
+        """The calibration, and the only part of the map with a second source.
+
+        Skin 15 is a Harmony 880 and 17 an 885, both arch 8, and the file puts both in Espresso; 22
+        is the bench Harmony 525, arch 9, and it is in Mocha; 19 is a Harmony 890 and 23 an 895, both
+        arch 10, and both are in Cappuccino. Each of those five was measured here from a config or a
+        remote before this file was read.
+        """
+        self.assertIn(15, self.skins('Espresso'))
+        self.assertIn(17, self.skins('Espresso'))
+        self.assertIn(22, self.skins('Mocha'))
+        self.assertIn(19, self.skins('Cappuccino'))
+        self.assertIn(23, self.skins('Cappuccino'))
+
+    def test_gin_is_one_skin_and_the_harmony_one_is_it(self):
+        """54 alone, which section 131 concluded from the allocation gaps and this states outright."""
+        self.assertEqual(self.skins('Gin'), [54])
+
+    def test_one_skin_is_in_two_platforms_and_that_is_recorded_rather_than_resolved(self):
+        """46 is listed under both Espresso and Mocha, which no reading here explains.
+
+        It matters because the factory chain tries Cognac, then Cappuccino, then HID, and both
+        groups that hold 46 are inside the HID one, so the client cannot notice. Recorded so that a
+        later reading of the skin table does not treat the platform map as a function.
+        """
+        self.assertIn(46, self.skins('Espresso'))
+        self.assertIn(46, self.skins('Mocha'))
+        overlaps = set(self.skins('Espresso')) & set(self.skins('Mocha'))
+        self.assertEqual(overlaps, {46}, 'the only skin two platforms share')
+
+    def test_the_join_with_the_model_names_has_the_shape_the_reference_states(self):
+        """35 of 46 named skins placed, 11 not, and 17 placed that no name covers.
+
+        `reference/architectures/README.md` publishes the join, so the counts are asserted here rather
+        than left to a reader to recount. The nine unplaced 6xx and 7xx models are unplaceable for a stated reason
+        and the check for that is the next assertion: their platform key holds a product id and no
+        skin list, which is why they fall out of a skin keyed join at all.
+        """
+        placed = {}
+        with io.open(self.properties, encoding='utf-8', errors='replace') as fh:
+            text = fh.read()
+        for platform, skin in re.findall(r'Device\.([A-Za-z.]+)\.Skin\d+\s*=\s*(\d+)', text):
+            placed.setdefault(int(skin), set()).add(platform)
+
+        named = set()
+        remote = os.path.join(lab.LAB, 'software', 'classic', 'res', 'client', 'skins', 'logitech',
+                              'intl', 'remote', 'remote.properties')
+        if not os.path.isfile(remote):
+            self.skipTest('no skin bundle in the lab')
+        with io.open(remote, encoding='utf-8', errors='replace') as fh:
+            for line in fh:
+                match = re.match(r'Remote\.Skin\d+\s*=\s*(\d+)', line)
+                if match:
+                    named.add(int(match.group(1)))
+
+        self.assertEqual(len(named), 46, 'skins the client has a model name for')
+        self.assertEqual(len(placed), 52, 'skins the client places on a platform')
+        self.assertEqual(len(named & set(placed)), 35, 'skins with both')
+        self.assertEqual(sorted(named - set(placed)), [3, 7, 9, 10, 11, 12, 13, 14, 16, 50, 58])
+        self.assertEqual(sorted(set(placed) - named),
+                         [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 38, 42, 43, 46, 47, 51])
+
+        # The old 6xx and 7xx family is keyed by product id and carries no skin list, which is the
+        # reason nine of the eleven fall out. Asserting the absence alone would not show that.
+        self.assertIn('Device.Intrigue.ProductId1', text)
+        self.assertNotIn('Device.Intrigue.Skin', text)
+
+    def test_the_platform_groups_are_transports_and_not_architectures(self):
+        """The Harmony 700, 600 and 650 sit in the group whose other members are Harmony 525s.
+
+        This is the assertion that stops the table in `reference/architectures/README.md` being read as an
+        architecture map. Skins 66, 71 and 72 are architecture 14 and skin 22 is architecture 9, and
+        all four are in Mocha, because what the group decides is which driver speaks to the remote.
+        """
+        mocha = set(self.skins('Mocha'))
+        for skin in (66, 71, 72):
+            with self.subTest(skin=skin):
+                self.assertIn(skin, mocha, 'an arch 14 remote in the arch 9 platform group')
+        self.assertIn(22, mocha, 'and the Harmony 525 is in it too, which is the point')
+
+    def test_two_cognac_skins_are_marked_as_having_no_zwave(self):
+        """A subset key, which is what makes the Z-Wave module a platform feature rather than a
+        transport one, and corroborates concordance's name for the range from the other side."""
+        self.assertEqual(self.skins('Cognac.NoZwave'), [52, 56])
+        for skin in (52, 56):
+            self.assertIn(skin, self.skins('Cognac'))
+
+
+class TheTeachingPicturesNameAnArchitecturePerSkin(unittest.TestCase):
+    """Section 208: `ImgTeach_<architecture>_<skin>`, and it agrees with concordance nine times.
+
+    The bundle is a list of pictures rather than a table of architectures, so the value of it is
+    entirely in the closure: composed with the client's own skin to model names it gives an
+    architecture per model, and concordance's model table gives the same column from a source that
+    has never seen these files. This test recomputes both halves and joins them.
+
+    Names and numbers travel, per the interoperability rule the rest of this file works under.
+    Nothing is adopted: `reference/architectures/README.md`'s architecture column is concordance's
+    either way.
+    """
+
+    IMAGES = ('software', 'classic', 'res', 'client', 'skins', 'logitech', 'intl', 'images')
+    REMOTE = ('software', 'classic', 'res', 'client', 'skins', 'logitech', 'intl', 'remote',
+              'remote.properties')
+
+    #: Concordance's `SupportedModels.md` table, as `reference/architectures/README.md` records it. Only
+    #: the four architectures the picture bundle names are needed, and the point of holding all of
+    #: each row is the control below: a model that appeared twice would make a mismatch invisible.
+    CONCORDANCE = {
+        2: ('745',),
+        3: ('748', '768'),
+        7: ('610', '620', '628', '655', '659', '660', '670', '675', '676', '680', '688'),
+        8: ('720', '785', '880', '882', '885'),
+    }
+
+    #: What the bundle states, which is what a regression here would move.
+    EXPECTED = {2: [2], 3: [3, 7], 7: [9, 10, 11, 12, 13, 14], 8: [15]}
+
+    #: The two skins the client names only by codename, resolved by Logitech's live catalogue,
+    #: section 131. A separate constant because it is a third source and the join is weaker for it.
+    LIVE_CATALOGUE = {50: 'Harmony 670', 58: 'Harmony 620'}
+
+    def setUp(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        self.images = os.path.join(lab.LAB, *self.IMAGES)
+        self.remote = os.path.join(lab.LAB, *self.REMOTE)
+        if not os.path.isdir(self.images) or not os.path.isfile(self.remote):
+            self.skipTest('no decompiled classic client in the lab')
+
+    def keys(self, name):
+        """The architecture and skin pairs one language variant of the bundle names."""
+        with io.open(os.path.join(self.images, name), encoding='utf-8', errors='replace') as fh:
+            text = fh.read()
+        return sorted({(int(a), int(b))
+                       for a, b in re.findall(r'ImgTeach_(\d+)_(\d+)\s*=', text)})
+
+    def models(self):
+        """Skin to the model the client names it, out of the comment above each entry."""
+        found = {}
+        last = None
+        with io.open(self.remote, encoding='utf-8', errors='replace') as fh:
+            for line in fh:
+                line = line.strip()
+                comment = re.match(r'#\s*(\S.*)$', line)
+                if comment:
+                    last = comment.group(1).strip()
+                    continue
+                entry = re.match(r'Remote\.Skin\d+\s*=\s*(\d+)$', line)
+                if entry:
+                    found[int(entry.group(1))] = last
+        return found
+
+    def test_the_bundle_states_ten_pairs_and_every_language_agrees(self):
+        """Ten, not "at least": a drawing added or dropped is exactly what would move this."""
+        expected = sorted((arch, skin)
+                          for arch, skins in self.EXPECTED.items() for skin in skins)
+        variants = sorted(name for name in os.listdir(self.images)
+                          if name.startswith('images') and name.endswith('.properties'))
+        self.assertEqual(len(variants), 4, 'language variants of the image bundle')
+        for name in variants:
+            with self.subTest(bundle=name):
+                self.assertEqual(self.keys(name), expected)
+
+    def test_every_model_the_join_names_sits_on_the_architecture_the_key_states(self):
+        """Nine of nine, against concordance, which has never seen this file.
+
+        The tenth pair is architecture 2 and skin 2, which the client gives no model name, so it is
+        asserted as unnamed rather than quietly dropped: an elimination against concordance's single
+        arch 2 model is what `reference/architectures/README.md` records and it is not a reading.
+        """
+        names = self.models()
+        self.assertEqual(len(names), 46, 'skins the client has a model name for')
+
+        checked = 0
+        for arch, skin in self.keys('images.properties'):
+            with self.subTest(architecture=arch, skin=skin):
+                name = names.get(skin)
+                if name is None:
+                    self.assertEqual((arch, skin), (2, 2), 'the only pair with no model name')
+                    continue
+                models = [m for m in self.CONCORDANCE[arch] if m in name]
+                self.assertEqual(len(models), 1,
+                                 '%s is not one of architecture %d\'s models' % (name, arch))
+                checked += 1
+        self.assertEqual(checked, 9)
+
+    def test_a_mismatched_key_would_show_because_no_model_sits_on_two_architectures(self):
+        """The control, and without it nine agreements prove nothing.
+
+        Every model concordance names appears in exactly one of its architecture rows, so pairing a
+        skin with the wrong architecture cannot be absorbed. Architectures 3 and 7 are the two with
+        room to be wrong and they are the two the bundle names most, and arch 3's two skins are arch
+        3's two models exactly.
+        """
+        seen = {}
+        for arch, models in self.CONCORDANCE.items():
+            for model in models:
+                self.assertNotIn(model, seen, 'a model on two architectures hides a mismatch')
+                seen[model] = arch
+        self.assertEqual(len(seen), 19)
+
+        names = self.models()
+        arch3 = {names[skin] for skin in self.EXPECTED[3]}
+        self.assertEqual(sorted(arch3), ['Harmony 748', 'Harmony 768'])
+        self.assertEqual(len(arch3), len(self.CONCORDANCE[3]),
+                         'arch 3 is named exactly, neither missing nor spare')
+
+    def test_all_eleven_skins_section_207_could_not_place_are_architecture_3_or_7(self):
+        """The gap fill, and the correction to section 207's "no reason found".
+
+        Eight are placed by the picture bundle outright. Skins 16, 50 and 58 are not, and their
+        models are in concordance's architecture 7 all the same, so the reason the join could not
+        place any of the eleven is one reason and not nine plus two.
+        """
+        unplaced = [3, 7, 9, 10, 11, 12, 13, 14, 16, 50, 58]
+        stated = {skin: arch for arch, skins in self.EXPECTED.items() for skin in skins}
+        names = self.models()
+
+        placed_here = [skin for skin in unplaced if skin in stated]
+        self.assertEqual(placed_here, [3, 7, 9, 10, 11, 12, 13, 14])
+
+        for skin in unplaced:
+            with self.subTest(skin=skin):
+                name = self.LIVE_CATALOGUE.get(skin, names[skin])
+                arch = stated.get(skin)
+                if arch is None:
+                    arch = 7
+                    self.assertIn(skin, (16, 50, 58), 'the three the bundle does not draw')
+                self.assertTrue(any(m in name for m in self.CONCORDANCE[arch]),
+                                '%s is not on architecture %d' % (name, arch))
+                self.assertIn(arch, (3, 7), 'the two product id matched families')
+
+    def test_the_two_codename_only_skins_need_a_third_source_and_it_is_the_live_catalogue(self):
+        """Skins 50 and 58 are named `Khalua` and `Baileys` here, which is a codename and not a model.
+
+        Separated from the test above because the chain for those two is a hop longer and rests on a
+        different source: the client gives the codename, section 131's read of the live catalogue
+        gives the model, and concordance gives the architecture. Asserting the codename here is what
+        makes that hop visible rather than hidden inside a lookup table.
+        """
+        names = self.models()
+        self.assertEqual(names[50], 'Khalua')
+        self.assertEqual(names[58], 'Baileys')
+        self.assertEqual(names[16], 'Harmony 675', 'the third one needs no extra hop')
+
+
+class TheTwoArchitectureMapsFromTheTwoClientsDoNotOverlap(unittest.TestCase):
+    """Section 208: the old client names skins 2 to 15 and the new one names 54 and up.
+
+    Written because the obvious reading of "both clients state an architecture per skin" is that
+    they corroborate each other, and they cannot: no skin appears in both. What corroborates the old
+    one is concordance, in the class above.
+    """
+
+    IMAGES = ('software', 'classic', 'res', 'client', 'skins', 'logitech', 'intl', 'images',
+              'images.properties')
+
+    #: Section 197's map, read off the newer client's per skin protocol templates.
+    TEMPLATE_SKINS = frozenset({54, 66, 68, 78, 82, 86, 96, 97, 99, 100, 102, 103, 104, 105, 106,
+                                108, 111, 112, 113, 115, 116, 400})
+
+    def test_no_skin_is_named_by_both_clients(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        path = os.path.join(lab.LAB, *self.IMAGES)
+        if not os.path.isfile(path):
+            self.skipTest('no decompiled classic client in the lab')
+        with io.open(path, encoding='utf-8', errors='replace') as fh:
+            classic = {int(skin) for _, skin in re.findall(r'ImgTeach_(\d+)_(\d+)\s*=', fh.read())}
+        self.assertEqual(sorted(classic), [2, 3, 7, 9, 10, 11, 12, 13, 14, 15])
+        self.assertEqual(classic & self.TEMPLATE_SKINS, set())
+        self.assertLess(max(classic), min(self.TEMPLATE_SKINS),
+                        'and they do not interleave either, which is what makes them two eras')
+
+
+
+class TheClientReadsTheClockOutOfBaseSlotThirteen(unittest.TestCase):
+    """Section 209: `TimeHidService` writes state variables 0 to 6, and disagrees with us once.
+
+    The agreement is worth a test because it is a **third** route to base slot 13's first seven
+    fields, after section 130's corpus reading and section 111's live measurement on a Harmony One.
+    The disagreements are worth one because the honest record of a client source is the places it
+    contradicts a measurement, not only the places it confirms one.
+
+    **It disagreed with us three times and two of them were ours**, section 322. Section 209 recorded
+    the client writing the day minus one and the weekday from Sunday as two places the client was off
+    against the corpus<!--superseded-->; the firmware counts both exactly that way, so the client was
+    right and this project's reader was a day early. The one disagreement left is the month's index on
+    architectures 9 and 14, which is checked against the corpus rather than asserted from the client:
+    the client would take the month from index 4 there, and the configs put it at index 5 exactly as
+    on architecture 12.
+    """
+
+    SERVICE = ('software', 'classic', 'src', 'hidcommands', 'com', 'logitech', 'harmony', 'hid',
+               'services', 'time', 'TimeHidService.java')
+
+    def source(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        path = os.path.join(lab.LAB, *self.SERVICE)
+        if not os.path.isfile(path):
+            self.skipTest('no decompiled classic client in the lab')
+        with io.open(path, encoding='utf-8', errors='replace') as fh:
+            return fh.read()
+
+    def test_the_client_walks_the_seven_fields_in_base_slot_13_order(self):
+        """Second, minute, hour, day, weekday, month, year, and the weekday read is conditional."""
+        text = self.source()
+        for field in ('NumSeconds', 'NumMinutes', 'NumHours', 'NumDays', 'DayOfWeek', 'NumMonths',
+                      'NumYears'):
+            with self.subTest(field=field):
+                self.assertIn(field, text)
+        self.assertIn('hasDayOfWeekStateVariable', text)
+
+    def test_the_day_of_week_is_taken_on_two_architectures_only(self):
+        """8 and 12, stated by the client, which is what makes the month index disagreement real."""
+        match = re.search(r'hasDayOfWeekStateVariable\(int \w+\)\s*\{\s*return ([^;]+);',
+                          self.source())
+        self.assertIsNotNone(match, 'the predicate moved')
+        architectures = sorted(int(n) for n in re.findall(r'==\s*(\d+)', match.group(1)))
+        self.assertEqual(architectures, [8, 12])
+
+    def test_the_month_is_at_index_five_on_every_architecture_in_the_corpus(self):
+        """The refutation, measured, because the client would read index 4 on arch 9 and arch 14.
+
+        Base slot 13's records hold the value a variable takes when the config is generated, section
+        130, so record 5's is the build timestamp's zero based month and record 6's is its year since
+        2000. Asserted per container over every user config rather than on the two that prompted it.
+        """
+        lab.require(*lab.USER_CONFIGS)
+        checked = 0
+        for name in lab.USER_CONFIGS:
+            with self.subTest(config=name):
+                container = gspm.parse(lab.load(name))
+                table = container.state_table()
+                self.assertIsNotNone(table)
+                stamp = container.built_at
+                self.assertIsNotNone(stamp, 'no build timestamp to compare against')
+
+                def first(index):
+                    off = container.blob_offset_of(table.entries[index])
+                    self.assertIsNotNone(off)
+                    return int.from_bytes(container.blob[off:off + 2], 'little')
+
+                self.assertEqual(first(3), stamp.day - 1, 'the day minus one, as the client writes it')
+                self.assertEqual(first(5), stamp.month - 1, 'the month sits at index 5')
+                self.assertEqual(first(6), stamp.year - 2000, 'and the year at index 6')
+                checked += 1
+        self.assertEqual(checked, 15)
+
+    def test_the_stored_weekday_counts_from_a_sunday_as_the_client_writes_it(self):
+        """What was recorded as the third disagreement, and it is an agreement, section 322.
+
+        This test was called "the stored weekday counts from a Saturday and not from a Sunday" and
+        asserted days since 1 January 2000 against the date as this project then read it, a day early.
+        On that wrong date the Saturday based count gives the stored byte, and on the right date the
+        Sunday based count gives the same byte, so the old assertion held on every container and told
+        nothing apart. What separates the two is the date, and the firmware fixes that. So the claim
+        is now the client's own convention, Java's `DAY_OF_WEEK` minus one, on the correct date, with
+        the old reading's arithmetic kept beside it to show it was the same byte one day back.
+        """
+        lab.require(*lab.USER_CONFIGS)
+        self.assertIn('DayOfWeek - 1', self.source(), 'the client writes DAY_OF_WEEK minus one')
+        epoch = datetime.date(2000, 1, 1)
+        for name in lab.USER_CONFIGS:
+            with self.subTest(config=name):
+                container = gspm.parse(lab.load(name))
+                table = container.state_table()
+                off = container.blob_offset_of(table.entries[4])
+                stored = int.from_bytes(container.blob[off:off + 2], 'little')
+                stamp = container.built_at.date()
+                self.assertEqual(stored, (stamp.weekday() + 1) % 7, 'Sunday based, on the date')
+                day_before = stamp - datetime.timedelta(days=1)
+                self.assertEqual(stored, (day_before - epoch).days % 7,
+                                 'and the Saturday epoch on the day before, which is the old reading')
+
+
+class EverySingleByteWriteIsReadBack(unittest.TestCase):
+    """Section 211: the client has no unverified single byte write, and its own bounds.
+
+    These are claims about Logitech's code, so they are recomputed from the source rather than
+    transcribed, per decision 9 in `docs/decisions.md`. What is asserted is what the client does, not
+    that the client is right about the hardware.
+    """
+
+    SERVICES = ('classic_ram_service', 'classic_eeprom_service', 'classic_program_service')
+
+    def setUp(self):
+        lab.require(*self.SERVICES)
+        self.source = {
+            name: lab.load(name).decode('utf-8', 'replace') for name in self.SERVICES
+        }
+
+    def test_no_service_offers_a_write_that_is_not_verified(self):
+        """Every write method reads the address back and compares before returning."""
+        for name, text in self.source.items():
+            with self.subTest(service=name):
+                writes = re.findall(r'public void (\w*[Ww]rite\w*)\(', text)
+                self.assertTrue(writes, 'the file parsed and has write methods')
+                # The naming is the claim: there is no `ramWrite` beside `verifyRamWrite`, so a
+                # caller cannot skip the read back by choosing a different method.
+                for method in writes:
+                    self.assertTrue(
+                        method.startswith('verify'),
+                        f'{method} is a write with no verify in its name',
+                    )
+                # And the body actually compares, rather than merely being named for it.
+                self.assertIn('!= this.', text, 'a write body compares what it read back')
+
+    def test_each_service_bounds_its_address_and_the_bound_is_only_an_assert(self):
+        """The bounds are Java asserts, which are off unless the JVM is started with -ea.
+
+        This is why the numbers are a lead and not a measurement of what the firmware enforces: the
+        shipped client does not check them at runtime. `packages/usb/src/rails.ts` bounds a RAM write
+        at the special function register page, 0xF40, which is far looser than the 256 here.
+        """
+        expected = {
+            'classic_ram_service': 256,
+            'classic_eeprom_service': 256,
+            'classic_program_service': 8192,
+        }
+        for name, bound in expected.items():
+            with self.subTest(service=name):
+                text = self.source[name]
+                self.assertIn(f'assert i_Address < {bound};', text)
+                # The control: the bound is reached only through `assert`, never through an `if`
+                # that throws, so nothing enforces it in a shipped build.
+                self.assertNotIn(f'if (i_Address >= {bound})', text)
+
+    def test_the_written_value_widths_disagree_and_that_is_the_clients_own_inconsistency(self):
+        """RAM takes a byte; EEPROM and program memory assert a fourteen bit value.
+
+        Recorded rather than explained. A byte wide on chip EEPROM has no use for 16383, so either
+        the assert is copied from the program memory service or the command's field is wider than
+        the storage. Nothing here can tell which, and it is not worth a guess.
+        """
+        self.assertIn('assert i_Value <= 255;', self.source['classic_ram_service'])
+        for name in ('classic_eeprom_service', 'classic_program_service'):
+            self.assertIn('assert i_Value <= 16383;', self.source[name])
+
+
+class TheClientsWriteTransferAndItsMacWorkaround(unittest.TestCase):
+    """Section 213: the rest of the same client's HID services.
+
+    Claims about Logitech's code, recomputed from the source rather than transcribed, per decision 9 in
+    `docs/decisions.md`. What is asserted is what their client does. Whether the firmware requires
+    any of it is a separate question and mostly still open.
+    """
+
+    SERVICES = ('classic_hid_base', 'classic_flash_service', 'classic_system_service',
+                'classic_state_service', 'classic_diagnostic_service')
+
+    def setUp(self):
+        lab.require(*self.SERVICES)
+        self.source = {name: lab.load(name).decode('utf-8', 'replace') for name in self.SERVICES}
+
+    def test_the_liveness_ping_runs_on_macos_only(self):
+        """The most load bearing row in section 213, because this project runs on macOS.
+
+        Every RAM access, every state variable access and every erased flash block is followed by
+        `selectivePingUnit`, and that method's whole body is a platform test. So the vendor shipped a
+        workaround for something that happens on one operating system, and it is the operating system
+        this project's own two unexplained intermittent faults were seen on.
+        """
+        base = self.source['classic_hid_base']
+        # The body is the platform test and the call, and nothing else: no retry, no delay.
+        self.assertRegex(
+            base,
+            r'public void selectivePingUnit\(\) \{\s*if \(OSUtil\.isMacOsx\(\)\) \{\s*'
+            r'this\.pingUnit\(\);',
+        )
+        # And it is called from the three services that talk to a running remote.
+        for name in ('classic_flash_service', 'classic_state_service'):
+            with self.subTest(service=name):
+                self.assertIn('selectivePingUnit()', self.source[name])
+
+    def test_the_ping_is_an_ordinary_read_whose_reply_is_checked(self):
+        """Not a network ping, despite the name it inherited from the datagram transport."""
+        diag = self.source['classic_diagnostic_service']
+        self.assertIn('public boolean pingUDP(int trips)', diag)
+        # One of two harmless reads, chosen by a flag: EEPROM byte zero, or the version block.
+        self.assertIn('new ReadEepromCommand(0)', diag)
+        self.assertIn('new GetVersionCommand()', diag)
+        # A reply that does not parse means the ping failed, which is what makes it a liveness test.
+        self.assertIn('returnValue.isValid()', diag)
+
+    def test_the_datagram_half_of_the_diagnostic_interface_is_stubbed_out(self):
+        """Corroborates section 207 from the other side: one interface, three transports.
+
+        `echoUDP` and `echoTCP` return nothing and the two channel methods do nothing, so the HID
+        implementation of this interface simply declines the datagram half. That is the same split
+        section 207 read out of the unit factories.
+        """
+        diag = self.source['classic_diagnostic_service']
+        for stub in ('public byte[] echoUDP', 'public byte[] echoTCP',
+                     'public void initiateDiagnosticTcpChannel', 'public void pingTCP'):
+            with self.subTest(method=stub):
+                self.assertIn(stub, diag)
+        self.assertEqual(diag.count('return new byte[0];'), 2, 'the two echoes return nothing')
+        # And there is no on device checksum: the method exists and throws, so a writer that wants to
+        # know whether a write landed has to read it back.
+        self.assertRegex(diag, r'public int calculateChecksum\([^)]*\)[^{]*\{\s*throw new ServiceException')
+
+    def test_a_flash_write_is_announce_then_a_batch_then_one_done(self):
+        """The same shape section 175 derived from the firmware, from an independent implementation.
+
+        Every data packet is built into an array first, a done packet is appended as the array's last
+        element, and the **whole array** goes to the sender in one call. So the client does not pace
+        its packets and does not read anything between them; it reads one reply after the batch.
+        """
+        flash = self.source['classic_flash_service']
+        self.assertIn('new WriteFlashCommand(i_Address, i_DataLength)', flash)
+        self.assertIn('command.getLastCommand()', flash)
+        self.assertIn('bytes[numPackets] = last.getRawBytes();', flash)
+        self.assertIn('this.sendHIDData(bytes);', flash)
+        # The batch send takes the array whole, with no sleep anywhere in the base class.
+        base = self.source['classic_hid_base']
+        self.assertIn('public void sendHIDData(byte[][] data)', base)
+        self.assertIn('this.m_HIDSender.sendHIDPackets(data);', base)
+        for paced in ('Thread.sleep', 'TimeUnit.', 'await'):
+            self.assertNotIn(paced, base, 'nothing in the send path delays a packet')
+
+    def test_a_chunk_is_retried_once_and_then_the_write_aborts(self):
+        """Not per byte and not indefinitely: one retry, then abort, then ping the unit."""
+        flash = self.source['classic_flash_service']
+        # Two nested calls to the same writer, the second inside the first's failure arm.
+        self.assertEqual(flash.count('if (!this.overwriteFlash(childProgress, currentAddress, '
+                                     'i_Data, dataOffset, thisChunkSize)) {'), 2)
+        self.assertIn('HIDServiceExceptionAbortingWrite', flash)
+        self.assertIn('this.pingUnit();', flash)
+
+    def test_erasing_before_a_write_is_the_callers_choice(self):
+        """`writeFlash` takes a flag; the erase is not implied by the write.
+
+        Which is why the question "does programming erase first" cannot be answered from this client:
+        it answers "when the caller says so". `docs/review-before-first-write.md` keeps it open.
+        """
+        flash = self.source['classic_flash_service']
+        self.assertIn('boolean i_EraseAll', flash)
+        self.assertRegex(flash, r'if \(i_EraseAll\) \{\s*this\.eraseFlash\(i_Address, i_Data\.length\);')
+        # And the write itself never reads back: no comparison anywhere in the chunk loop.
+        self.assertNotIn('compareByteArray', flash)
+
+    def test_the_identity_block_erase_differs_by_architecture(self):
+        """A write path nothing in this repository had described, and it destroys a unit's serial.
+
+        Arch 12 reads a kilobyte at the identity block, blanks the first 64 bytes and writes the
+        kilobyte back. Arch 14 writes 64 blank bytes with no read at all. The arch 7 and 8 arm writes
+        a bootloader unlock first, which is the only place in this client anything is unlocked before
+        a write.
+        """
+        system = self.source['classic_system_service']
+        self.assertIn('public boolean eraseLicense', system)
+        # The arch 12 read modify write.
+        self.assertIn('byte[] guid_memory_block = new byte[1024];', system)
+        self.assertIn('flashService.readFlash(childProgress, 0xFFF400, guid_memory_block);', system)
+        # 64 blanked, which is the block length `reference/architectures/harmony-one/memory.md` gives,
+        # not the 48 the
+        # ordinary identity read asks for.
+        self.assertIn('for (int i = 0; i < 64; ++i) {', system)
+        # And the unlock, which exists for arch 7 and 8 only.
+        self.assertIn('Protocol8.BOOTLOADER_UNLOCK_DATA', system)
+        self.assertIn('Protocol8.BOOTLOADER_UNLOCK_ADDRESS', system)
+
+    def test_the_identity_block_is_forty_eight_bytes_on_every_architecture_it_reads(self):
+        """Its address is per architecture and its length is not."""
+        system = self.source['classic_system_service']
+        # Seven and not four: `getGUID` has an arm each for architectures 3/7/8, 12, 14 and 9, and
+        # `setGUID` repeats three of them. Arch 9's write arm is the odd one and does not declare a
+        # buffer, because it writes rather than reads. Asserting 4 was a guess and the source said 7.
+        self.assertEqual(system.count('byte[] guid = new byte[48];'), 7,
+                         'four read arms plus three of the write arms')
+        for address in ('0xFFF400', '0x200010'):
+            with self.subTest(address=address):
+                self.assertIn(address, system)
+        # Arch 2 has no flash to read it from and takes three sixteen byte EEPROM reads instead.
+        self.assertEqual(system.count('eepromMultiRead(childProgress'), 3)
+        # And writing the serial on arch 9 passes erase-all **false**, where every other write in
+        # this client that targets flash passes true. Consistent with the address: `0x200010` is the
+        # on chip EEPROM window, and EEPROM takes a write without an erase first.
+        self.assertIn('flashService.writeFlash(childProgress, address, data.getBytes(true), false);',
+                      system)
+
+    def test_state_variables_are_word_wide_on_three_architectures_and_byte_wide_below(self):
+        """And architecture 14 falls between the two, which is evidence about this build.
+
+        `shouldUseWordStateCommands` names 8, 9 and 12. Everything else takes the byte path, whose own
+        assertion is that the architecture is below 8, so a Harmony 600 or 700 would violate it. That
+        fits the rest of this build, whose region table has an arch 12 arm and no other.
+        """
+        state = self.source['classic_state_service']
+        self.assertRegex(
+            state,
+            r'return this\.m_ArchitectureId == 8 \|\| this\.m_ArchitectureId == 9 '
+            r'\|\| this\.m_ArchitectureId == 12;',
+        )
+        self.assertIn('assert (this.m_ArchitectureId < 8);', state)
+
+    def test_writing_state_variables_back_matches_them_by_name(self):
+        """An index is not stable across a read and a write, and the client does not assume it is.
+
+        It re-reads the whole set, refuses unless the names still match, then looks each name's new
+        index up before writing. And it never writes one it considers a system variable, which is the
+        client's own version of the rail that base slot 13's first records are the firmware's.
+        """
+        state = self.source['classic_state_service']
+        self.assertIn('newValues.matchesNamesOnly(oldStateVariables)', state)
+        self.assertIn('if (variable.isSystem()) continue;', state)
+        self.assertIn('newValues.getIndexForName(variable.getName())', state)
+
+
+
+class TheClientsRegionTableNamesOneArchitectureAndTwoRegions(unittest.TestCase):
+    """Section 214: where the client's region reads are allowed to go, and where they are not.
+
+    This is the source end of a closure whose other end is a packet capture. The table asserted here
+    is read out of `UpdateHidService`; `packages/usb/test/transport/classic-capture.test.ts` asserts that the
+    extents Logitech's client actually read on a Harmony One are exactly what these four numbers
+    predict. The two were produced three weeks apart by routes with nothing in common, so neither is
+    derived from the other, and each can fail without the other.
+
+    Client sourced under decision 2. What is claimed is what their client will attempt, which is not
+    the same as what the firmware permits: the firmware may well serve a region read this client
+    never asks for.
+    """
+
+    FIXTURE = 'classic_update_service'
+
+    #: Architecture, region, address, size, exactly as the two switches state them.
+    TABLE = ((12, 3, 8192, 122880), (12, 4, 262144, 0x3C0000))
+
+    def setUp(self):
+        lab.require(self.FIXTURE)
+        self.source = lab.load(self.FIXTURE).decode('utf-8', 'replace')
+
+    def _lookup(self, name):
+        """The body of one of the two lookups, from its signature to the throw that ends it."""
+        start = self.source.index('private int %s(' % name)
+        end = self.source.index('Unable to get', start)
+        return self.source[start:end]
+
+    def test_the_two_lookups_name_exactly_one_architecture(self):
+        """The reason a Harmony 600 gets no region read out of this client at all.
+
+        Both switches open on the architecture and both carry a single case. So the vendor's own
+        classic client can read a region on architecture 12 and on nothing else, and the refusal is
+        not a device answer: it is thrown while building the call, before a packet exists.
+        """
+        for name in ('getRegionAddress', 'getRegionSize'):
+            body = self._lookup(name)
+            architectures = re.findall(r'switch \(architectureId\) \{\s*(.*?)\{', body, re.S)
+            self.assertEqual(len(architectures), 1, name)
+            # Assert the count as well as the value, so a second architecture appearing here fails
+            # rather than being silently absorbed by an `in` check.
+            cases = re.findall(r'case (\d+):', body)
+            self.assertEqual(cases[0], '12', name)
+            self.assertEqual(len(cases), 3, '%s: the architecture and its two regions' % name)
+
+    def test_the_four_numbers_are_the_ones_the_capture_closes_on(self):
+        """Transcribing these is the point: the closure is worthless if either side is recomputed."""
+        for architecture, region, address, size in self.TABLE:
+            self.assertEqual(architecture, 12)
+            self.assertRegex(
+                self._lookup('getRegionAddress'),
+                r'case %d: \{\s*address = %d;' % (region, address),
+            )
+            self.assertRegex(
+                self._lookup('getRegionSize'),
+                r'case %d: \{\s*size = (%d|0x%X);' % (region, size, size),
+            )
+
+    def test_an_unlisted_pair_throws_before_anything_is_sent(self):
+        """What makes probing every region id free, which is what our own read out relies on.
+
+        Both lookups start at -1 and throw when nothing assigned to them, and the throw is a plain
+        exception rather than a device call. So asking for a region an architecture has no entry for
+        costs one exception and no packet.
+        """
+        for name in ('getRegionAddress', 'getRegionSize'):
+            self.assertIn('= -1;', self._lookup(name))
+        self.assertEqual(self.source.count('throw new ServiceException("Unable to get'), 2)
+
+    def test_the_region_read_is_an_ordinary_flash_read(self):
+        """Region reading is not a second protocol, which is why our own reader reproduces it.
+
+        `readRegion` sizes a buffer from the table and hands the matching address to the flash
+        service. So a region is a name for an extent, and nothing on the wire says `region`.
+        """
+        self.assertRegex(
+            self.source,
+            r'(?s)public byte\[\] readRegion\([^)]*\) throws ServiceException \{.*?'
+            r'byte\[\] data = new byte\[this\.getRegionSize\(architectureId, regionId\)\];.*?'
+            r'readFlash\(progress, this\.getRegionAddress\(architectureId, regionId\), data\);',
+        )
+
+
+#: The JEDEC pair the two bench Harmony Ones report in their version block, manufacturer then
+#: device. Recorded in `reference/architectures/harmony-one/memory.md` and re-read off the spare on
+#: 30 August 2026 by `packages/usb/bin/rehearse-block.ts`, which now prints it for this reason.
+BENCH_ONE_FLASH = (0x1f, 0xc8)
+
+#: Where the write rehearsal erases, and the base of the arch 12 config region.
+REHEARSAL_BLOCK = 0x040000
+
+
+def flash_geometry(source, manufacturer, device):
+    """The block table Logitech's client builds for one JEDEC pair, as a list of (count, size).
+
+    Read out of the factory's nested switch rather than transcribed, which is this file's whole
+    convention: a table read off a screen once is a table nobody can check. Only the part below the
+    physical size marker is returned, which is the flash itself; what follows in every arm is the
+    unused hole and the internal program memory window, neither of which an erase address reaches.
+    """
+    outer = re.search(r'\n\s*case %d: \{' % manufacturer, source)
+    if outer is None:
+        return None
+    rest = source[outer.end():]
+    inner = re.search(r'\n\s*case %d: \{' % device, rest)
+    if inner is None:
+        return None
+    arm = rest[inner.end():]
+    end = arm.find('setPhysicalSerialFlashSize')
+    if end < 0:
+        end = arm.find('break;')
+    arm = arm[:end]
+    out = []
+    for count, size, single in re.findall(
+            r'addMultipleBlocks\((\d+),\s*(\d+)\)|addBlock\((\d+)\)', arm):
+        out.append((int(count), int(size)) if count else (1, int(single)))
+    return out
+
+
+def block_at(geometry, address):
+    """The (start, size) of the block an address falls in, walking the table from zero.
+
+    The same walk `eraseFlash` performs, which is why it is worth reproducing rather than indexing:
+    the client sums block lengths from address zero to find where to start erasing.
+    """
+    at = 0
+    for count, size in geometry:
+        for _ in range(count):
+            if at <= address < at + size:
+                return at, size
+            at += size
+    return None
+
+
+class TheEraseBlockAtTheRehearsalAddressIsSixtyFourKiB(unittest.TestCase):
+    """Section 221: which row of the client's flash table applies to the remote on the bench.
+
+    `ERASE_BLOCK_SIZE` in `packages/usb/src/rails.ts` has been client sourced and unconfirmed since
+    9 August 2026, and that docstring names the confirmation that costs no write: the client picks
+    its block table from the chip's JEDEC manufacturer and device id, which it reads over USB, so
+    reading that id off the unit and matching it to a row settles which row applies. The id is
+    `1F:C8`. This is that match, recomputed from the client's own factory.
+
+    It does not confirm that the chip erases 64 KiB. It confirms that **Logitech believed this
+    part does**, for the part the remote names, which is a strictly narrower and more useful claim
+    than the one the rail carried, and the remaining doubt is now about one row of one table rather
+    than about a whole architecture.
+    """
+
+    def setUp(self):
+        sources = classic_sources()
+        if sources is None:
+            self.skipTest('no decompiled classic client in the lab')
+        factory = [p for p in sources if p.endswith('FlashMemoryFactory.java')]
+        self.assertEqual(len(factory), 1, 'the flash memory factory, exactly once')
+        with io.open(factory[0], encoding='utf-8', errors='replace') as fh:
+            self.source = fh.read()
+
+    def test_the_bench_units_row_is_eight_small_blocks_then_sixty_three_large_ones(self):
+        geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
+        self.assertEqual(geometry, [(8, 8192), (63, 65536)])
+        # And it is a 4 MiB part, which is the same total the log area validator bounds itself by,
+        # section 47, and the total the ceiling at 0x3D0000 is measured down from, section 88.
+        self.assertEqual(sum(count * size for count, size in geometry), 0x400000)
+
+    def test_the_rehearsal_erases_a_whole_sixty_four_kilobyte_block_on_a_boundary(self):
+        """The claim the write rehearsal rests on, derived by the walk the client itself performs."""
+        geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
+        start, size = block_at(geometry, REHEARSAL_BLOCK)
+        self.assertEqual(size, 0x10000)
+        self.assertEqual(start, REHEARSAL_BLOCK, 'the address is a block boundary, so the walk '
+                                                 'starts exactly there')
+
+    def test_the_rail_carries_the_number_this_row_states(self):
+        """The ledger's own rule: a client sourced number is asserted against the code that uses it.
+
+        Without this the table could be re-read correctly while `ERASE_BLOCK_SIZE` said something
+        else, which is the two copies state this repository refuses everywhere.
+        """
+        rails = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..',
+                             'packages', 'usb', 'src', 'rails.ts')
+        with io.open(rails, encoding='utf-8') as fh:
+            text = fh.read()
+        table = re.search(r'ERASE_BLOCK_SIZE[^=]*= \{(.*?)\};', text, re.S)
+        self.assertIsNotNone(table, 'no erase block table in rails.ts')
+        rows = dict(re.findall(r'(\d+):\s*(0x[0-9a-f]+)', table.group(1)))
+        # **This asserted the whole table was one row until 5 September 2026.** Arch 9 (Harmony 525)
+        # gained one in section 267, so the equality failed for a reason that is not this claim: the
+        # ledger's rule is that a **client sourced** number is checked against the code that uses it,
+        # and arch 9's number is not client sourced at all. It was read out of the 525's own firmware,
+        # which the client's block table says nothing about, so this test deliberately does not judge
+        # it. `tests/harmony_5xx/test_harmony_525_flash.py` is what holds arch 9's row up, against the image.
+        #
+        # The row list is still pinned rather than only the arch 12 entry, because a row appearing
+        # from nowhere should make somebody look. It is the population that moved, not the claim.
+        # **Arch 14 (Harmony 600, 650 and 700) gained its row on 27 September 2026**, section 281, off
+        # the same kind of evidence as arch 9's, the eraser's opcode in its own firmware images, so
+        # this does not judge it either; `tests/harmony_600_650_700/test_arch14_write_target.py` does.
+        #
+        # **Arch 8 (Harmony 880 and 885) gained its row for `todo-compile-885.md` 1.2, and that one is
+        # client sourced**, so this does judge it: the client's walk for the Atmel part the 885's
+        # firmware knows, `1F:C0`, puts every block of the configuration region, `0x020000` to the
+        # ceiling at `0x1D0000`, on a 64 KiB boundary in a 64 KiB block. The other part, `01:49`, is device
+        # 73 under manufacturer 1, whose case falls through to device 76's body, which `flash_geometry`
+        # does not follow, so the fall through is asserted as text and the walk is run on 76's arm. The
+        # first rehearsal on a unit measures whichever part is fitted.
+        self.assertEqual(sorted(rows), ['12', '14', '8', '9'])
+        self.assertEqual(rows['12'], '0x10000')
+        geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
+        self.assertEqual(block_at(geometry, REHEARSAL_BLOCK)[1], 0x10000)
+        self.assertEqual(rows['8'], '0x10000')
+        atmel = flash_geometry(self.source, 0x1f, 0xc0)
+        for block in range(0x020000, 0x1D0000, 0x10000):
+            self.assertEqual(block_at(atmel, block), (block, 0x10000), hex(block))
+        self.assertRegex(self.source, r'case 73:\s*case 76:')
+        spansion = flash_geometry(self.source, 0x01, 76)
+        for block in range(0x020000, 0x1D0000, 0x10000):
+            self.assertEqual(block_at(spansion, block), (block, 0x10000), hex(block))
+
+    def test_the_fine_layout_is_per_chip_and_ours_is_not_the_one_the_documents_quoted(self):
+        """The correction this dig produced, and the control that the reader tells rows apart.
+
+        `reference/logitech/clients.md` said the arch 12 layout was `16K, 8K, 8K, 32K` then uniform 64 KiB
+        **for every chip the client lists**. Two of the three arch 12 rows begin with eight 8 KiB
+        blocks instead, and the bench part is one of those, so the quoted bottom belongs to a chip
+        neither Harmony One here carries. What survives is the half the rails use: every arch 12 row
+        is uniform 64 KiB above `0x010000`.
+        """
+        amd = flash_geometry(self.source, 1, 249)
+        self.assertEqual(amd, [(1, 16384), (1, 8192), (1, 8192), (1, 32768), (63, 65536)])
+        self.assertNotEqual(amd, flash_geometry(self.source, *BENCH_ONE_FLASH))
+        for pair in ((1, 249), (1, 126), BENCH_ONE_FLASH):
+            geometry = flash_geometry(self.source, *pair)
+            with self.subTest(pair=pair):
+                self.assertEqual(sum(c * s for c, s in geometry), 0x400000)
+                # Everything above the boot area is one size, which is the claim the rail needs and
+                # the only one all three rows agree on.
+                self.assertEqual(geometry[-1], (63, 65536))
+                self.assertEqual(sum(c * s for c, s in geometry[:-1]), 0x010000)
+
+
+
+if __name__ == '__main__':
+    unittest.main()

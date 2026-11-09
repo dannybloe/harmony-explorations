@@ -7,7 +7,7 @@
  * and writes flash, `blockwrite.ts`, `filewrite.ts` and `rehearsal.ts`, which is `./write`; the request
  * encoders of the commands that change a remote, `writes.ts`, and the authorisation of a report,
  * `authorise.ts`, which no entry carries; and the Harmony Touch's request session, `./touchsession`.
- * `test/rails.test.ts` enumerates every entry for a request builder that writes and for a way to authorise one.
+ * `test/write/rails.test.ts` enumerates every entry for a request builder that writes and for a way to authorise one.
  */
 
 // The command protocol: commands, selectors, the request encoders of the reads, and the version block.

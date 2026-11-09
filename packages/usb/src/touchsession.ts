@@ -25,7 +25,7 @@
  *
  * ## Whose bytes these are
  *
- * **Logitech's client's, reproduced byte for byte**, which is what `packages/usb/test/touchsession.test.ts`
+ * **Logitech's client's, reproduced byte for byte**, which is what `packages/usb/test/touch/touchsession.test.ts`
  * holds against the three recorded syncs: for every request of theirs on the allow list, the reports this
  * file sends are the reports their client sent, given the same replies. The shapes come from five of the
  * client's skin 99 templates, one per kind of request, and they differ in ways a single shape would get
@@ -308,7 +308,7 @@ export interface TouchRequestSession {
  * `touchsession.test.ts` holds both against a fake listener built from that reading, at a last chunk of 1,
  * 103 and 104 characters. **The whole line's length has been sent once with a line of more than one chunk**,
  * `todo-touch.md` 6.8's six documents, 571577 characters in 19 chunks with a last of 13577, and the remote acted on
- * the write once, as a whole, `packages/usb/test/touch-own-set-sync.test.ts`; a last chunk inside the shortfall has
+ * the write once, as a whole, `packages/usb/test/touch/touch-own-set-sync.test.ts`; a last chunk inside the shortfall has
  * not been sent with either number, and that the remote hands on each chunk as it arrives is read in its native
  * program and not tried.
  *

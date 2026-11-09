@@ -504,7 +504,7 @@ export function oneFixedScreenTemplates(year: number, tour: boolean): TemplateSc
  * message; Options' three rows, and its second page's two where it keeps the tour's rows; Screen Sensitivity's five
  * buttons; a confirmation's message over OK; the Year's three rows; a picker's page by how many of the six buttons
  * it fills, six, four, two or one; a blank screen's page of no area. Each page's hit page on all sixteen English
- * compiles of skin 54, `test/onenumbering.test.ts`, section 432.
+ * compiles of skin 54, `test/families/harmony-one/onenumbering.test.ts`, section 432.
  */
 export function oneFixedHitPages(year: number, tour: boolean): string[][] {
   const filled: Readonly<Record<number, string>> = { 6: 'six buttons', 5: 'five buttons', 4: 'four buttons', 2: 'two buttons', 1: 'one button' };

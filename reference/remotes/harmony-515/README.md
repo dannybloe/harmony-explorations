@@ -52,8 +52,8 @@ and 68 the Harmony 510,[^s207] and the forum table pairs the two as regional nam
 | [usb.md](usb.md) | its identity on the cable |
 | [misc.md](misc.md) | the rest |
 
-[^t-harmony-515]: Measured on a unit. [The test](../../../tests/test_harmony_515.py)
-[^t-harmony-515-c]: Measured in configurations. [The test](../../../tests/test_harmony_515.py)
+[^t-harmony-515]: Measured on a unit. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
+[^t-harmony-515-c]: Measured in configurations. [The test](../../../tests/harmony_5xx/test_harmony_515.py)
 [^unchecked]: Not checked.
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)

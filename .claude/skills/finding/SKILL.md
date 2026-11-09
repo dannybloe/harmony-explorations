@@ -22,7 +22,7 @@ claim that is not executable is only an assertion.
    `docs/findings.md` is a frozen archive and takes nothing new (decision 25). What was traced, which
    addresses, what the numbers were, the negative results, and what else it rules out: that is what
    a findings section used to hold, and the header is now where anyone checks why to believe it.
-   `tests/test_product_capabilities.py` is the shape: the facts, why a test, what it settled, and the
+   `tests/logitech/test_product_capabilities.py` is the shape: the facts, why a test, what it settled, and the
    standing of the source.
 3. **The regression test itself**, in `tests/` or a package's `test/`, which is what stops it
    silently rotting.
@@ -99,7 +99,7 @@ measures it, the footnote changes to that evidence and the page keeps one line s
 from the client. Decision 2 is the rule and `reference/logitech/clients.md` the standing of each client.
 
 All of it is subject to the house convention: **no em-dashes and no en-dashes**, verified by
-`make prose`, and `python3 tools/reference_guards.py` plus `tests/test_reference.py` check the
+`make prose`, and `python3 tools/reference_guards.py` plus `tests/project/test_reference.py` check the
 footnotes, the links and that the reference describes no bench and names nobody.
 
 ## The test
@@ -142,7 +142,7 @@ moment that happens only while writing a test.
   54 against 227 is the evidence. Three turned out to want a **closure** rather than a number.
 
   Both halves are enforced now, by `ABoundOnACorpusTotalIsExact` and
-  `APythonBoundOnACorpusTotalIsExact` in `tests/test_toolchain.py`: a numeric lower bound has to be
+  `APythonBoundOnACorpusTotalIsExact` in `tests/project/test_toolchain.py`: a numeric lower bound has to be
   named in `TYPESCRIPT_BOUNDS_WITH_A_REASON` or `PYTHON_BOUNDS_WITH_A_REASON`, which hold the 25 and
   the 10 that are a per item claim, a physical band, a consequence beside an exact assertion, somebody
   else's source, or a **churning population**, the last being the one ground only Python needs.
@@ -169,8 +169,8 @@ moment that happens only while writing a test.
   an exclusion into a check.
 
   **A third pair turned up the same day**, section 143: the `EXPECTED` tables every container framing
-  claim is asserted over held **17** names in `tests/test_gspm.py` and **13** in
-  `packages/codec/test/gspm.test.ts`, the Python set a strict superset, so the two sides reported 5
+  claim is asserted over held **17** names in `tests/config_format/test_gspm.py` and **13** in
+  `packages/codec/test/container/gspm.test.ts`, the Python set a strict superset, so the two sides reported 5
   base addresses and 4 from the same reader on the same corpus. It surfaced only because making both
   spans exact put two numbers beside each other that a pair of floors had hidden, which is the lesson:
   **when two lists disagree, look for the assertion that was letting them.**
@@ -307,7 +307,7 @@ make corpus
 and refuses any superseded phrasing outside a correction. It also runs in the pre-commit hook, so
 a document that contradicts the code cannot be committed without `--no-verify`.
 `make remote-reference` keeps the generated blocks of the model and architecture pages equal to the
-code, and `tests/test_reference.py` (in `make test`) fails on a footnote whose label, evidence words or
+code, and `tests/project/test_reference.py` (in `make test`) fails on a footnote whose label, evidence words or
 target are wrong.
 
 Then a commit whose message says what changed in the understanding, not which files moved.

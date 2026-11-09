@@ -8,7 +8,7 @@
  * number a screen takes, what it is (the screen an `0x7E` enters, the wiring's list an `0x7F` calls, the timer, the
  * program, the variable, the value map), so that a numbering by those names can be turned into each set's numbers,
  * `OneNumbering`. `emptynumbering.ts` makes such a numbering for an empty One; the closure test reads one off each
- * of Logitech's compiles and makes the compile's own numbers again from it, `test/onenumbering.test.ts`.
+ * of Logitech's compiles and makes the compile's own numbers again from it, `test/families/harmony-one/onenumbering.test.ts`.
  *
  * **Where the names come from.** A template step carries its role, `screentemplate.ts`' `named`: the fixed screens,
  * the firmware screens, the status screens, the power off help and the clock header state theirs in their templates

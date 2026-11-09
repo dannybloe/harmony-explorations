@@ -30,7 +30,7 @@
  *
  * **No scan code on this printing.** A European Harmony 300 was pressed key by key with the receiver
  * listening, and 49 of its keys came out on the code of the 350 key in the same place,
- * `packages/bench/test/keys300.test.ts`; `h300eu.ts` carries them. No US unit has been pressed, and the US
+ * `packages/bench/test/harmony-300-350/keys300.test.ts`; `h300eu.ts` carries them. No US unit has been pressed, and the US
  * printing puts other colours on the colour keys than the European one, so no code is drawn here: that the
  * US keys raise the same codes by place is the moulding's inference and not a measurement. `reprintKeys`
  * drops the codes and the candidates the 350 carries. This said that no Harmony 300 had been pressed until

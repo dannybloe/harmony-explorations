@@ -30,6 +30,6 @@ read off it and compared with the image, which also showed the image's own strin
 [^s116]: Read in the firmware. [Section 116](../../../docs/findings.md#s116)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^unchecked]: Not checked.
-[^t-arch8-usb]: Measured on a unit. [The test](../../../tests/test_arch8_usb.py)
-[^t-usbdesc]: Measured on a unit. [The test](../../../tests/test_usbdesc.py)
-[^t-885-boot]: Read in the firmware. [The test](../../../tests/test_harmony_885_bootloader.py)
+[^t-arch8-usb]: Measured on a unit. [The test](../../../tests/harmony_880_885/test_arch8_usb.py)
+[^t-usbdesc]: Measured on a unit. [The test](../../../tests/usb_protocol/test_usbdesc.py)
+[^t-885-boot]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_bootloader.py)

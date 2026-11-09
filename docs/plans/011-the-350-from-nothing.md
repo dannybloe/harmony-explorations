@@ -3,7 +3,7 @@
 **Status: done**, 2 November 2026: `todo-compile-350.md` chapter 5 finished, the build from nothing heard on the bench 350 and 300. Written 31 October 2026 for `todo-compile-350.md` chapter 5, sub-items 5.1 and 5.2. It
 carries out for the no screen family what [plan 008](008-the-650-from-nothing.md) carried out for the four slot
 family, measured first. Nothing here is built; the census it rests on is
-`packages/codec/test/noscreencensus.test.ts`, which reads and writes nothing.
+`packages/codec/test/families/harmony-300-350/noscreencensus.test.ts`, which reads and writes nothing.
 
 **The rule on this track.** The goal is to compile what Logitech's compiler compiles and compare. Wherever
 Logitech's compile makes a choice, our generators reproduce it, and a difference from Logitech is something to
@@ -110,7 +110,7 @@ What the counts say, in the order the plan uses them:
   the same file also finds (331 lists, 50 unreferenced, 10 the activity's).
 * **The metadata archive is the one part with a hard answer already.** It is 3033 bytes of the 350's file and 1610
   of the 300's. Node's zlib reproduces none of the three archives tried at any of 3465 settings, and stock zlib at
-  its defaults reproduces all six distinct archives the lab holds (`tests/test_harmony_350_metadata_deflate.py`),
+  its defaults reproduces all six distinct archives the lab holds (`tests/harmony_300_350/test_harmony_350_metadata_deflate.py`),
   so the archive needs a deflate of our own, calibrated against six streams. The text around the devices is the
   same 149 and 610 characters in 7 of 7 compiles. Two fields are not a function of the file: a device's number is
   the account's (consecutive within each of the five 350 compiles and within neither 300 compile) and the ZIP's

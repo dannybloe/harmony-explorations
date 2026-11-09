@@ -8,7 +8,7 @@
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.2-activity`,
  * which `packages/corpus/bin/touch-device-set.ts --activity` built, and the favourites' documents of the recorded
  * full sync, through the engine model `packages/codec/src/families/harmony-touch/engine.ts`; `experiments/touchactivitytest.ts` holds the plan and
- * `test/touch-activity-predicted.test.ts` that the file written is what this gives. The 8.1 script, `touch-device-tests.ts`, is the
+ * `test/harmony-touch/touch-activity-predicted.test.ts` that the file written is what this gives. The 8.1 script, `touch-device-tests.ts`, is the
  * same with 8.1's plan.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';

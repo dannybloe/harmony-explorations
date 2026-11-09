@@ -56,6 +56,6 @@ configuration for this model from here.
 [^s42]: Stated by Logitech, in the manual. [Section 42](../../../docs/findings.md#s42)
 [^s136]: Stated by Logitech, by their service. [Section 136](../../../docs/findings.md#s136)
 [^unchecked]: Not checked.
-[^t-885-number-sender]: Read in the firmware. [The test](../../../tests/test_harmony_885_number_sender.py)
-[^t-885-number-sender-corpus]: Measured in configurations. [The test](../../../tests/test_harmony_885_number_sender.py)
-[^t-885-unit-config]: Measured in configurations. [The test](../../../tests/test_harmony_885_bench_reads.py)
+[^t-885-number-sender]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_number_sender.py)
+[^t-885-number-sender-corpus]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_number_sender.py)
+[^t-885-unit-config]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_bench_reads.py)

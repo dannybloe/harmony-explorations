@@ -20,7 +20,7 @@
  * to the stored value, which sits six bytes from the end. `docs/findings.md` section 41.
  *
  * The Harmony 300 and 350 firmware writes the same two literals in its own validator, read in
- * `tests/test_harmony_350_file_write.py`, so the seed covers that family too.
+ * `tests/harmony_300_350/test_harmony_350_file_write.py`, so the seed covers that family too.
  */
 export const TRAILER_CHECKSUM_SEED = 0x4321;
 /** From the end of the container, ahead of the four byte marker. */

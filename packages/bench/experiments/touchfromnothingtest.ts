@@ -5,9 +5,9 @@
  * **Why the 7.1 tests and no new plan.** 9.1 builds all six documents from `packages/corpus/setups/touch-test.json`,
  * the archive of the catalogue and our rhythm table, and the comparison with 8.6's set, which the bench Touch ran 418 of
  * 418, found every field equal, equal after a normalisation the remote does not tell apart, or different for a stated
- * reason, and every one of the 373 commands sending the same, `packages/corpus/test/touch-nothing-set.test.ts`. So the
+ * reason, and every one of the 373 commands sending the same, `packages/corpus/test/touch/touch-nothing-set.test.ts`. So the
  * set is meant to behave as 8.6's did, and the ten 7.1 tests derived from it are the files in `irtests/` as they stand,
- * expectation for expectation, `test/touch-from-nothing-predicted.test.ts`: every activity started and ended, the switches, the favourites,
+ * expectation for expectation, `test/harmony-touch/touch-from-nothing-predicted.test.ts`: every activity started and ended, the switches, the favourites,
  * every key of every activity's map, and every device's own keys in device mode, 418 expectations in ten tests.
  *
  * **What the model cannot say, and the person notes**, beyond 8.6's list: the entries of each activity's and device's

@@ -221,7 +221,7 @@ could have written: `modeZeroKeyList`, `compilerTagOrder`, `buildNameTree` and `
 [^s319]: Measured in configurations. [Section 319](../../docs/findings.md#s319)
 [^s319b]: Read in the firmware. [Section 319](../../docs/findings.md#s319)
 [^unchecked]: Not checked.
-[^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/noscreen.test.ts)
-[^t-frame]: Measured in configurations. [The test](../../packages/codec/test/frame.test.ts)
-[^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/codec/test/noscreenfavourites.test.ts)
-[^t-noscreen-state-tables]: Measured in configurations. [The test](../../packages/codec/test/noscreenstatetables.test.ts)
+[^t-noscreen]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-300-350/noscreen.test.ts)
+[^t-frame]: Measured in configurations. [The test](../../packages/codec/test/assembly/frame.test.ts)
+[^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-300-350/noscreenfavourites.test.ts)
+[^t-noscreen-state-tables]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-300-350/noscreenstatetables.test.ts)

@@ -103,6 +103,6 @@ each rests on.
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)
 [^s201]: Measured on a unit. [Section 201](../../../docs/findings.md#s201)
 [^unchecked]: Not checked.
-[^t-harmony-350-file-write]: Read in the firmware. [The test](../../../tests/test_harmony_350_file_write.py)
-[^t-harmony-350-recovery]: Read in the firmware. [The test](../../../tests/test_harmony_350_recovery.py)
-[^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/test_harmony_300_350_images.py)
+[^t-harmony-350-file-write]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_file_write.py)
+[^t-harmony-350-recovery]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_recovery.py)
+[^t-harmony-300-350-images]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_300_350_images.py)

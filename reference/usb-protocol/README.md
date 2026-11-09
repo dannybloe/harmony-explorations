@@ -36,7 +36,7 @@ architecture, is `packages/usb/src/rails.ts`, generated into each architecture's
 **The command protocol is read out of the firmware**: the Harmony One 3.4 and Harmony 700 2.8 images
 first, then the Harmony 600, 650 and 525 images, and every part a host relies on has since been run against
 remotes of each architecture[^s19][^s19b][^s76]. The executable form of most of it is
-`tests/test_usb_firmware.py`, which reads each claim back out of the images, and
+`tests/usb_protocol/test_usb_firmware.py`, which reads each claim back out of the images, and
 `packages/usb/src/protocol.ts`, which is the library built from it.
 
 **It has been checked against Logitech's own client on the wire.** A capture of Logitech's classic client

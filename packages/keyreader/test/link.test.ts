@@ -10,7 +10,7 @@
  * software type after, in case a bootloader ever names itself differently.
  *
  * **What it makes of the answers**: the version block of a running Harmony 885 as measured,
- * `44 21 49 01 80 11 08` (`tests/test_arch8_usb.py`), is an 885 with skin 17, and the page reads the
+ * `44 21 49 01 80 11 08` (`tests/harmony_880_885/test_arch8_usb.py`), is an 885 with skin 17, and the page reads the
  * skin from that field because WebHID offers no `bcdDevice`. The reply byte before the fields is not in
  * that record; seven fields make it `0x27` by the rule `decodeReply` reads, the Harmony 525's measured
  * answer, and the 12 field form `0x28` decodes to the same identity, so the page does not depend on which.
