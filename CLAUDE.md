@@ -602,6 +602,9 @@ file's own header is where its reading lives.
 * **A difference between remotes lives in its family, never in a test of which remote it is**, plan 007.
   Before writing any build code in `packages/codec/src`, invoke the `code-for-a-family` skill; it holds the
   four questions and the check that catches a new architecture test in a diff.
+* **Where code goes and what a package may reach is the `architecture` skill**, plan 013 and decision 31.
+  Invoke it before adding a package, a module, a public name, a subpath, a dependency between packages, a
+  script or an experiment, and in every agent brief for structural work.
 * **TypeScript owns the codec and the write path; the Python side reads.** A reader is added towards
   `packages/codec` and removed away from Python. Count the rails, not the readers, when judging whether
   the port is complete.
