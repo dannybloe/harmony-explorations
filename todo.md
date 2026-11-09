@@ -150,6 +150,13 @@ After 3 produces something.
   - [x] 7.3.8 The codec's top level grouped into folders and its largest files split, `inventory.ts` first; the families named after the remotes they serve, as `reference/architectures/` does (`harmony-one`, `harmony-600-650-700`, `harmony-300-350`, `harmony-880-885`), and the Harmony Touch's `src/harmony-touch/` moved in beside them as `families/harmony-touch/`
   - [x] 7.3.9 The architecture rules as a skill with tests that enforce them, and the decision recorded: the `architecture` skill, [decision 31](docs/decisions.md#d31)
   - [x] 7.3.10 The three write paths as library functions, the scripts thin: the config write for the compiled remotes (`write-config.ts`), the file write for the Harmony 300 and 350, and answering the Harmony Touch's sync; the rails unchanged, so FreeHarmony can call them once writing is decided
+  - [ ] 7.3.11 One build from a recipe for every remote served, the 885 apart: [plan 014](docs/plans/014-one-build-from-a-recipe.md)
+    - [ ] 7.3.11.1 A recipe may carry a device's definition and codes, served before the archive
+    - [ ] 7.3.11.2 A recipe states its whole look, typeface, inks, colours and icons, and a reference recipe leans on no default
+    - [ ] 7.3.11.3 `buildFromRecipe` on the codec, each family's build from nothing as a member of its interface, the Harmony Touch's documents included
+    - [ ] 7.3.11.4 The lab's bench written builds found per remote, rebuilt from recipes and compared, every difference explained
+    - [ ] 7.3.11.5 References committed beside their recipes, decision 32: the pre-commit hook, `.gitignore` and `CLAUDE.md` along
+    - [ ] 7.3.11.6 One test per recipe against its reference, several recipes per remote, with no lab
 
 ---
 

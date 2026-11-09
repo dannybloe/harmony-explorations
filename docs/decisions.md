@@ -901,3 +901,21 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    a restructuring step. The write rails stay in `packages/usb/src/rails.ts` and on the transport, and `CLAUDE.md`
    "Never write to a remote" is unchanged. The FreeHarmony half of 7.3.6, its imports moved and `@harmony/lab` out of
    its product dependencies, waits for the pass that opens it up again, `todo.md` 7.3.
+
+32. <a id="d32"></a>**Configurations we built ourselves may be committed, as references beside the recipes that build
+   them; Logitech's compiles may not.** *Taken on 9 November 2026, in the conversation that asked for one build from a
+   recipe, plan 014, `todo.md` 7.3.11.* The tests of what this repository delivers, compiling and syncing, must run
+   on a checkout with no lab, so the bytes a recipe built before are committed beside the recipe, and the recipes
+   may carry the codes their few devices send.
+
+   **What stays out, and why it is not a matter of scrubbing.** The rule against committing a configuration was
+   always about copyright: a compile of Logitech's is their generated data, and a configuration carries no account
+   data in the first place, `samples/README.md`. So a compile of theirs, and a build composed onto one, stays in the
+   lab however much is scrubbed from it. A configuration of ours carries no serial and no account name, and a
+   Harmony Touch document of ours only identifiers we composed.
+
+   **What holds it.** A reference's own test rebuilds it from its recipe byte for byte, which a compile of
+   Logitech's cannot pass, so the test is the proof that a committed file is ours. The pre-commit hook lets a
+   configuration file in only in the references folder and only beside a recipe of the same name. This narrows the
+   reason given in `CLAUDE.md` "This repository is public", whose text already said a synthetic corpus would change
+   the answer; nothing else there changes.
