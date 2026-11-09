@@ -77,7 +77,7 @@ const TOUCH_TYPES = [
 
 /** What the Node entry adds to the main entry: the names that exist at run time. */
 const NODE_VALUES = [
-  'NODE_RESOURCES', 'archiveAt', 'archiveManifest', 'archiveProtocols', 'catalogueByRhythm', 'catalogueCommands',
+  'NODE_RESOURCES', 'archiveAt', 'archiveManifest', 'archiveProtocols', 'carryCodes', 'catalogueByRhythm', 'catalogueCommands',
   'catalogueDevice', 'catalogueDriving', 'catalogueManufacturers', 'catalogueModels', 'catalogueRules',
   'codeIndex', 'rawCaptureDevice', 'rawCaptureLine', 'rawDerivedState', 'segmentLengthsModule', 'statedSha256',
 ];

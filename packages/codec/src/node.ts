@@ -28,6 +28,8 @@ export {
   codeIndex,
 } from './catalogue/catalogue.node.ts';
 export { catalogueDriving } from './catalogue/driving.node.ts';
+// A recipe given its codes out of a checkout, so a build of it needs no archive, plan 014.
+export { carryCodes } from './catalogue/carried.node.ts';
 export { catalogueRules, rawCaptureDevice, rawCaptureLine, rawDerivedState, statedSha256 } from './catalogue/catalogueraw.node.ts';
 // The resources as Node supplies them, supplied as this module loads.
 export { NODE_RESOURCES } from './support/resources.node.ts';

@@ -37,6 +37,8 @@ misspelling is an error rather than a default.
 | `devices[].device` | its catalogue entry, `<manufacturer>/<file>` in the archive of decision 15 |
 | `devices[].poweredOnBetweenActivities` | optional, MyHarmony's keep this device on when switching activities |
 | `devices[].key` | optional, the Harmony 300 and 350's device key: `place` as the family counts it, from 0, and `press`, `short` or `long`, short unless given; plan 014 |
+| `devices[].definition` | optional, the device carried: `record`, the archive's device file as it is, and `commands`, its codeset's commands as `name` and `keycode`; served before any archive, so a recipe that carries every device builds with none. `packages/codec/bin/carry-codes.ts` fills it; plan 014 |
+| `protocols` | optional, the protocol definitions the carried commands are written in, as the archive's protocol files hold them |
 | `activities[]` | in the order the activity menu lists them |
 | `activities[].name` | as the menu draws it |
 | `activities[].type` | MyHarmony's type: `WatchTV`, `WatchDvd`, `ListenToMusic`, `Custom`; which activity key a type takes is a choice, `activityKeys` |

@@ -51,6 +51,20 @@ export interface RecipeDevice {
    * person chooses it in MyHarmony, so it is the recipe's, and only that family reads it.
    */
   readonly key?: RecipeDeviceKey;
+  /**
+   * The device's definition carried in the recipe, plan 014: the catalogue's record of it and its codeset's
+   * commands, served before any archive, `carriedCatalogue` in `catalogue/carried.ts`. Absent, the build reads the
+   * catalogue entry `device` names from the archive it is given.
+   */
+  readonly definition?: RecipeDefinition;
+}
+
+/** A device's definition carried in a recipe, `RecipeDevice.definition`. */
+export interface RecipeDefinition {
+  /** The catalogue's record of the device, as the archive's device file holds it: its codeset, power, inputs, timing. */
+  readonly record: Readonly<Record<string, unknown>>;
+  /** The commands of the codeset the record names, each its name and its keycode, the protocol and the numbers it sends. */
+  readonly commands: readonly { readonly name: string; readonly keycode: string }[];
 }
 
 /** A device key, `RecipeDevice.key`. */
@@ -124,6 +138,11 @@ export interface Recipe {
    * nothing else reads it.
    */
   readonly touch?: Readonly<Record<string, unknown>>;
+  /**
+   * The protocol definitions the carried devices' commands are written in, as the archive's protocol files hold
+   * them, plan 014; served before the archive's, by name.
+   */
+  readonly protocols?: readonly Readonly<Record<string, unknown>>[];
 }
 
 /** The model a recipe names, its skin and its definition, and the family that builds for it. */
@@ -214,18 +233,30 @@ function screenItem(value: unknown, what: string): RecipeScreenItem {
   return { device: text(one.device, `${what}'s device`), command: text(one.command, `${what}'s command`) };
 }
 
+/** A carried definition: a record naming its codeset, and commands each a name and a keycode. */
+function definitionOf(value: unknown, what: string): RecipeDefinition {
+  const d = fields(value, what, ['record', 'commands']);
+  const record = object(d.record, `${what}'s record`);
+  text(record.codeset, `${what}'s record's codeset`);
+  const commands = list(d.commands, `${what}'s commands`).map((one, k) => {
+    const c = fields(one, `${what}'s command ${k + 1}`, ['name', 'keycode']);
+    return { name: text(c.name, `${what}'s command ${k + 1}'s name`), keycode: text(c.keycode, `${what}'s command ${k + 1}'s keycode`) };
+  });
+  return { record, commands };
+}
+
 /**
  * A recipe out of parsed JSON, its shape checked: every field one a recipe has, every name a name, every
  * role one of the contract's. Refused with the first thing wrong, by where it is.
  */
 export function readRecipe(json: unknown): Recipe {
-  const top = fields(json, 'the recipe', ['model', 'devices', 'activities'], ['about', 'choices', 'favourites', 'touch']);
+  const top = fields(json, 'the recipe', ['model', 'devices', 'activities'], ['about', 'choices', 'favourites', 'touch', 'protocols']);
   const m = fields(top.model, 'the model', ['name'], ['skin']);
   if (m.skin !== undefined && !Number.isInteger(m.skin)) throw new RecipeError('the model\'s skin is not a number');
   const model: RecipeModel = { name: text(m.name, 'the model\'s name'), ...(m.skin === undefined ? {} : { skin: m.skin as number }) };
   const devices = list(top.devices, 'the devices').map((value, k): RecipeDevice => {
     const what = `device ${k + 1}`;
-    const d = fields(value, what, ['name', 'device'], ['poweredOnBetweenActivities', 'key']);
+    const d = fields(value, what, ['name', 'device'], ['poweredOnBetweenActivities', 'key', 'definition']);
     if (d.poweredOnBetweenActivities !== undefined && typeof d.poweredOnBetweenActivities !== 'boolean') {
       throw new RecipeError(`${what}'s poweredOnBetweenActivities is not true or false`);
     }
@@ -240,6 +271,7 @@ export function readRecipe(json: unknown): Recipe {
       name: text(d.name, `${what}'s name`), device: text(d.device, `${what}'s catalogue entry`),
       ...(d.poweredOnBetweenActivities === undefined ? {} : { poweredOnBetweenActivities: d.poweredOnBetweenActivities as boolean }),
       ...(key === undefined ? {} : { key }),
+      ...(d.definition === undefined ? {} : { definition: definitionOf(d.definition, `${what}'s definition`) }),
     };
   });
   const activities = list(top.activities, 'the activities').map((value, k): RecipeActivity => {
@@ -283,5 +315,12 @@ export function readRecipe(json: unknown): Recipe {
     ...(top.choices === undefined ? {} : { choices: object(top.choices, 'the choices') }),
     ...(favourites === undefined ? {} : { favourites }),
     ...(top.touch === undefined ? {} : { touch: object(top.touch, 'the Touch\'s part') }),
+    ...(top.protocols === undefined ? {} : {
+      protocols: list(top.protocols, 'the protocols').map((one, k) => {
+        const p = object(one, `protocol ${k + 1}`);
+        text(p.name, `protocol ${k + 1}'s name`);
+        return p;
+      }),
+    }),
   };
 }

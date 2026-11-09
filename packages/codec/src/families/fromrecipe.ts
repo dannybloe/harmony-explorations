@@ -18,6 +18,7 @@
  * `RecipeDevice.key`, and the Harmony Touch its own part, `Recipe.touch`, read by its setup reader, which also takes
  * the account's own identifiers from the sources, since those come off the remote and never sit in a recipe.
  */
+import { carriedCatalogue } from '../catalogue/carried.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import { readRecipe, RecipeError } from '../recipe/recipe.ts';
 import type { SyncDocuments } from './harmony-touch/documents.ts';
@@ -29,7 +30,10 @@ import { chooseByModel, NoFamilyError, type ModelChoice } from './registry.ts';
 export interface BuildSources {
   /** When it is built, `YYYY-MM-DDTHH:MM:SS`: every stamp and clock record a configuration holds is taken from it. */
   readonly builtAt: string;
-  /** The catalogue the codes of a device named by its catalogue entry come from: `archiveAt` of a checkout on Node. */
+  /**
+   * The catalogue the codes of a device the recipe names and does not carry come from: `archiveAt` of a checkout on
+   * Node. A device the recipe carries, `RecipeDevice.definition`, is served from the recipe first.
+   */
   readonly archive?: CatalogueSource;
   /** The Harmony Touch's account: the identifiers its documents carry, read off the remote and never in a recipe. */
   readonly account?: TouchAccount;
@@ -59,22 +63,24 @@ export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
     throw error;
   }
   const { family, skin } = choice;
+  if (family.kind === 'compiled' && family.fromRecipe === undefined) throw new RecipeError(`nothing here builds ${family.name} from a recipe yet`);
+  const recipe = readRecipe(json);
+  // The devices the recipe carries, over the archive given, `catalogue/carried.ts`.
+  const archive = carriedCatalogue(recipe, sources.archive);
   if (family.kind === 'document') {
-    if (sources.archive === undefined) throw new RecipeError(`the ${model.name} is built from the catalogue, and no archive was given`);
+    if (archive === undefined) throw new RecipeError(`the ${model.name} is built from the catalogue, and the recipe carries no device and no archive was given`);
     if (sources.account === undefined) throw new RecipeError(`the ${model.name}'s documents carry its account's identifiers, and no account was given`);
     const setup = family.readSetup(json);
     return {
       kind: 'documents', model: model.name, skin,
-      documents: family.build(setup, { archive: sources.archive, account: sources.account }) as SyncDocuments,
+      documents: family.build(setup, { archive, account: sources.account }) as SyncDocuments,
       pictures: family.buildPictures(setup) as readonly OwnPicture[],
     };
   }
-  if (family.fromRecipe === undefined) throw new RecipeError(`nothing here builds ${family.name} from a recipe yet`);
-  const recipe = readRecipe(json);
   if (recipe.touch !== undefined) throw new RecipeError(`the recipe has a Harmony Touch's part, and it is for the ${model.name}`);
   return {
     kind: 'configuration', model: model.name, skin,
-    bytes: family.fromRecipe(recipe, skin, { builtAt: sources.builtAt, ...(sources.archive === undefined ? {} : { archive: sources.archive }) }),
+    bytes: family.fromRecipe!(recipe, skin, { builtAt: sources.builtAt, ...(archive === undefined ? {} : { archive }) }),
   };
 }
 
