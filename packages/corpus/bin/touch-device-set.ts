@@ -1,7 +1,7 @@
 /**
  * Build a Harmony Touch set with a device of ours added, or taken out again, from a set the remote holds, check
- * it, and compare what the remote reports afterwards with it: `todo-touch.md` 8.1; and the same for an activity of
- * ours, 8.2. It opens no remote: it reads the lab and the description and writes into the lab.
+ * it, and compare what the remote reports afterwards with it; and the same for an activity of
+ * ours. It opens no remote: it reads the lab and the description and writes into the lab.
  *
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --device <description>
  *   node packages/corpus/bin/touch-device-set.ts --build <new lab folder> --from <set folder> --remove <device id>
@@ -81,7 +81,7 @@
  *
  * **`--build --empty`** builds the empty configuration, no device and no activity: the source's six with the four lists
  * emptied by the codec's `emptyTouchDocuments`, the four under new tags and Context and Settings the source's, content and
- * tags, `withEmpty` in `experiments/touchemptyset.ts`, `todo-touch.md` 9.2. **`--build --empty-back`** is its put back, and it is
+ * tags, `withEmpty` in `experiments/touchemptyset.ts`. **`--build --empty-back`** is its put back, and it is
  * not the six alone: the six as the set before the empty one states them, and beside them the three favourites
  * documents and the logos the remote asks for once it holds them, each as the remote held it before the empty set,
  * content and tag, `emptyBackOf`, since by the reading the empty set's commit drops every favourites document. The record
@@ -489,7 +489,7 @@ function describeSetup(folder: string): void {
   if (existsSync(out)) fail(`${out} exists, and a description is never written over`);
   const set = sixOf(readSet(insideTheLab(folder, 'the set folder')));
   const setup = harmonyTouch.describeTouchSetup(documentsOf(set), SETUP_IDS);
-  const about = `todo-touch.md 8.6: the bench Harmony Touch's whole test setup as the person built it in Logitech's software, `
+  const about = `The bench Harmony Touch's whole test setup as the person built it in Logitech's software, `
     + `described from the set it held, ${basename(folder)}, by describeTouchSetup in packages/codec/src/families/harmony-touch/setup.ts: each device `
     + 'by its maker and model, which find its catalogue record, and what was chosen for it, its name, control port, press repeats, delays, '
     + 'power and input settings and its own map; each activity with its roles, inputs, steps, map, gestures and sequences. Ids of ours, '
@@ -963,7 +963,7 @@ function checkTheRuns(set: TouchSet, source: TouchSet, from: string, touched: re
   for (const other of cli.values('same-as')) {
     const otherDir = insideTheLab(other, 'the set to compare with');
     // The six alone: a set compared with may carry favourites or pictures, whose addresses hold the account's
-    // identifiers and are never printed, `todo-touch.md` 8.4.
+    // identifiers and are never printed.
     const d = setDifferences(sixOf(readSet(otherDir)), sixOf(set));
     const differing = d.filter((x) => x.values.length > 0).map((x) => x.document);
     const tags = d.filter((x) => x.tagChanged).map((x) => x.document);

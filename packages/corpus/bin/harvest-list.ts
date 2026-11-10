@@ -1,5 +1,5 @@
 /**
- * The device list for a family harvest, `todo-secure-logitech.md` 2.1: for every infrared family the
+ * The device list for a family harvest: for every infrared family the
  * composer cannot write, a catalogue device whose codes hold it, so a Logitech compile of that device
  * shows how their compiler lays the family out.
  *

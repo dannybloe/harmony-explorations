@@ -1,5 +1,5 @@
 /**
- * The stamp every write puts on a configuration, todo-compile-650 1.3, and the rule that keeps a
+ * The stamp every write puts on a configuration, and the rule that keeps a
  * rerun of a stopped write able to recognise its own half written blocks.
  */
 import { test } from 'node:test';

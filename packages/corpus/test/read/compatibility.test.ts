@@ -35,7 +35,7 @@ import { encodeVersionBlock } from '@harmony/usb/internal';
  * than an independent measurement. They are labelled so, because a row that cannot fail is worth
  * knowing about.
  *
- * **The Harmony 885 row is measured**, `todo/todo-prepare-885.md` 2.2: its block is the one both bench
+ * **The Harmony 885 row is measured**: its block is the one both bench
  * 885s returned to `GET_VERSION`, `44 21 49 01 80 11 08` (`tests/harmony_880_885/test_arch8_usb.py`,
  * `docs/test-notes/harmony-885.md`), and the test below the population checks that this row encodes to
  * exactly those bytes. Its wrapper was written by Logitech's service and the block was read off a unit,
@@ -158,7 +158,7 @@ test('the wrong remote is refused for every config in the corpus', lab.skipUnles
 
 /**
  * The Harmony 885: a configuration file against the version block a unit reported, row D10 of
- * `docs/plans/012-the-legacy-remotes.md`, `todo/todo-prepare-885.md` 2.2.
+ * `docs/plans/012-the-legacy-remotes.md`.
  *
  * **What was measured.** Both bench 885s answer `GET_VERSION` with `44 21 49 01 80 11 08`: firmware 4.4,
  * hardware 2.1, flash fields 3 and 2 `01:49`, architecture 8, software type 0, skin 17, field 6 `0x08`.

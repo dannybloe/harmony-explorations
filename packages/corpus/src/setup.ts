@@ -21,7 +21,7 @@ import type { ActivityRoleName, Recipe, RecipeActivity, RecipeDevice } from '@ha
  * and only turn it off when I press the Off button": `IsPoweredOnBetweenActivities` in the device's power
  * feature, read in the client's power settings view. Absent means the default, off.
  *
- * **The codec's type**, since `todo-compile-650.md` 10.6: a setup file is the codec's recipe since 10.7.4,
+ * **The codec's type**: a setup file is the codec's recipe,
  * which its `assembleSetup` builds a container from, and the codec cannot import this package, so the shape lives there and this names
  * it. Two copies of one shape are two copies until one of them moves.
  */

@@ -1,5 +1,5 @@
 /**
- * Build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, check it, and compare what the remote reports
+ * Build a set of a Harmony Touch's own six documents under tags of ours, check it, and compare what the remote reports
  * afterwards with it. It opens no remote: it reads the lab and writes into it.
  *
  *   node packages/corpus/bin/touch-own-set.ts --build <new lab folder> --requests <request list answer> \

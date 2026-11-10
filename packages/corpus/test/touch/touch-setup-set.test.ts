@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch set of `todo-touch.md` 8.6: the whole test setup, seven devices and five activities, composed by us
+ * The Harmony Touch setup set: the whole test setup, seven devices and five activities, composed by us
  * from a description onto the set the bench Touch holds with every device and activity taken out, compared with
  * Logitech's documents field by field, and its put back; built by `experiments/touchsetupset.ts` and rehearsed through the real
  * answerer and session on the fake remote.
@@ -10,10 +10,10 @@
  *    from the source with the ids of `SETUP_IDS`, so a change to the describer or to the file shows here. It holds names,
  *    numbers and the shape of each map, and no value of the account: no favourites address, profile key or account id
  *    of the source appears in it, and no address at all.
- * 2. **The source is Logitech's documents**: of the set the bench Touch holds since 8.5's put back, `ActivityList`,
+ * 2. **The source is Logitech's documents**: of the set the bench Touch holds since the removal set's put back, `ActivityList`,
  *    `DeviceList`, `MapList`, `Context` and `ProtocolList` are the recorded full sync's as parsed JSON, and `Settings` is
  *    the remote's own, handed up in 6.7. So the comparison below is with what Logitech's service built.
- * 3. **The comparison, the heart of 8.6**: every field of our four documents against the same field of theirs, matched
+ * 3. **The comparison, the heart of the setup set**: every field of our four documents against the same field of theirs, matched
  *    by what the remote finds an entry by. Each is equal, equal after one of the five stated normalisations, or
  *    different for one of the eight stated reasons, and the counts are asserted exactly, row by row: ActivityList 194
  *    equal, 25 normalised, 74 different; DeviceList 6440, 32, 0; MapList 6859, 1124, 2725; ProtocolList 370, 0, 0; and
@@ -28,13 +28,13 @@
  * 6. **The sets the lab holds**, `work/touch-firmware/sets/8.6-setup` and `8.6-setup-back`, are what this derivation
  *    gives, read by fixture, `touch_setup_set` and `touch_setup_set_back`; what the remote did with the two is
  *    `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`.
- * 7. **On the fake remote**, the closing `--unchanged` run of 8.5 served as recorded, its first list asking with the
+ * 7. **On the fake remote**, the closing `--unchanged` run of the removal set served as recorded, its first list asking with the
  *    tags of the set the remote holds, which is the source: the setup answers the four 200 with its content and tags and
  *    Context and Settings 304, keeps every favourites document and picture the remote holds, and finishes; the put back
  *    the same with the source's content and tags; and the control, the setup on a remote holding it already, answers
  *    every request 304 but the finish.
  *
- * **Sources checked first.** The 8.6 brief in the lab; `touch-removal-set.test.ts` and its fake remote, whose shape this
+ * **Sources checked first.** The setup set brief in the lab; `touch-removal-set.test.ts` and its fake remote, whose shape this
  * follows; `setup.ts` in the codec and its test, `packages/codec/test/families/harmony-touch/touch-setup.test.ts`; the reference's
  * `activities-and-buttons.md` and `devices-and-infrared.md`; the lab's decompiled engine and the screens' Lua in the
  * lab's copy of the image for every reading the normalisations and differences name. Logitech's client was not
@@ -42,7 +42,7 @@
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it
  * under 18. The lab half reads the bench sets and the recorded lists, prints nothing out of them and touches no remote.
- * The source is the `touch_removal_set_back` fixture, `8.5-removal-back`, which 8.5's closing run found the remote
+ * The source is the `touch_removal_set_back` fixture, `8.5-removal-back`, which the removal set's closing run found the remote
  * holding.
  */
 import assert from 'node:assert/strict';
@@ -68,7 +68,7 @@ const CLOSING = 'touch_removal_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
 const DESCRIPTION = fileURLToPath(new URL('../../touch-setups/8.6-test-setup.json', import.meta.url));
-/** The two sets 8.6 built in the lab and delivered to the bench Touch, by fixture. */
+/** The two sets the setup set built in the lab and delivered to the bench Touch, by fixture. */
 const BUILT = 'touch_setup_set';
 const BUILT_BACK = 'touch_setup_set_back';
 const FOUR: readonly string[] = SETUP_DOCUMENTS;

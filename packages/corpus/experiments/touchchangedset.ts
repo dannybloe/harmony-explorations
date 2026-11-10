@@ -1,9 +1,9 @@
 /**
  * A set of a Harmony Touch's documents with **one value changed**, made from a set the remote already holds,
- * and the comparisons that say the change is that one value and nothing else: `todo-touch.md` 6.9.
+ * and the comparisons that say the change is that one value and nothing else.
  *
- * **What 6.9 is for.** 6.8 delivered the remote's own six documents back with 200 under tags of ours, and the
- * remote stored and committed them, so the answerer can put a document on a Touch. 6.9 is the first change of
+ * **What the changed set is for.** The own set delivered the remote's own six documents back with 200 under tags of ours, and the
+ * remote stored and committed them, so the answerer can put a document on a Touch. the changed set is the first change of
  * content: one delay and one label, each changed and put back, each heard or seen at the bench. The smallest
  * step that measures it changes one value of one document and keeps everything else exactly as the remote
  * holds it.
@@ -28,10 +28,10 @@
  * string, a number or a boolean already there, holding the value the caller says it holds, and the new value
  * has to be of the same type. An object, a list or a null is not changed here, nor is a value added or
  * removed: that is a family's editor, which `packages/codec/src/families/harmony-touch/` does not have for these
- * fields, and 6.9 does not need one. The codec's reader and check meet the changed set through the answerer's
+ * fields, and the changed set does not need one. The codec's reader and check meet the changed set through the answerer's
  * own gate, `prepareSet`, before the builder returns it.
  *
- * **Several documents at once, since `todo-touch.md` 8.1.** A device composed by the codec goes into three
+ * **Several documents at once.** A device composed by the codec goes into three
  * documents together, the device, map and protocol lists, so `changeDocuments` replaces any of the six by new
  * content and retags exactly those, by the same rules; `changeOneValue` is that with one value of one document.
  * The composing stays in the codec, `withTouchDevice` and `withoutTouchDevice` in
@@ -149,8 +149,8 @@ export function changeOneValue(options: {
 
 /**
  * Build a set with **several documents replaced at once**, each changed one under a new tag, or say why not:
- * `todo-touch.md` 8.1, where a device is added to the device, map and protocol lists together, and its put back
- * takes all three out again. `documents` maps a configuration document's name to its new content, parsed JSON;
+ * (a device is added to the device, map and protocol lists together, and its put back
+ * takes all three out again). `documents` maps a configuration document's name to its new content, parsed JSON;
  * the documents it does not name keep the source's content and tag, so a remote that committed the source is
  * answered 304 for them, and each named one is delivered with 200 under `setTag` with the new set's name. The
  * same reasons `changeOneValue` gives for one document hold for each: a tag never stated before is the mark only
@@ -166,7 +166,7 @@ export function changeDocuments(options: {
   readonly name: string;
   readonly tagsInPlay?: Iterable<string>;
   /**
-   * Documents delivered under a new tag although their content equals the source's, `todo-touch.md` 8.4, where Context
+   * Documents delivered under a new tag although their content equals the source's, where Context
    * is composed from a description equal to what the remote holds so that the run proves Context can be written with
    * no change of behaviour. Every other document whose content equals the source's is still refused.
    */
@@ -221,7 +221,7 @@ export function differences(a: unknown, b: unknown, at: readonly string[] = []):
  * `before` does not, and of those `before` holds that `after` does not, matched as parsed JSON and in order; and
  * whether everything else is equal, the entries both hold in the same order and every other field of the
  * document. **The structural diff for a list that grew or shrank**, where `differences` names only the list:
- * a device added shows here as one entry added to each of three lists and nothing else, `todo-touch.md` 8.1.
+ * a device added shows here as one entry added to each of three lists and nothing else.
  */
 export function listChanges(before: unknown, after: unknown, field: string): {
   readonly added: readonly number[];
@@ -257,22 +257,22 @@ export interface SetRecord {
   readonly change?: unknown;
   readonly device?: unknown;
   readonly removed?: unknown;
-  /** An activity added or taken out, `todo-touch.md` 8.2. */
+  /** An activity added or taken out. */
   readonly activity?: unknown;
   readonly removedActivity?: unknown;
-  /** Favourites and a logo of ours delivered, or put back as the remote held them, `todo-touch.md` 8.3. */
+  /** Favourites and a logo of ours delivered, or put back as the remote held them. */
   readonly favourites?: unknown;
   readonly favouritesBack?: unknown;
-  /** Settings of ours and Context composed from a description, or both put back as the remote held them, `todo-touch.md` 8.4. */
+  /** Settings of ours and Context composed from a description, or both put back as the remote held them. */
   readonly settings?: unknown;
   readonly settingsBack?: unknown;
-  /** Devices and activities of the remote's own taken out, or put back as the remote held them, `todo-touch.md` 8.5. */
+  /** Devices and activities of the remote's own taken out, or put back as the remote held them. */
   readonly removal?: unknown;
   readonly removalBack?: unknown;
-  /** A whole setup composed by us onto the set with its devices taken out, or put back as the remote held it, `todo-touch.md` 8.6. */
+  /** A whole setup composed by us onto the set with its devices taken out, or put back as the remote held it. */
   readonly setup?: unknown;
   readonly setupBack?: unknown;
-  /** The empty configuration, no device and no activity, or its put back with the favourites, `todo-touch.md` 9.2. */
+  /** The empty configuration, no device and no activity, or its put back with the favourites. */
   readonly empty?: unknown;
   readonly emptyBack?: unknown;
 }
@@ -280,11 +280,11 @@ export interface SetRecord {
 /**
  * Every tag stated by the set in `folder` and by each set it was built from, back to the first, which
  * `touch-own-set.ts` built and records no change of ours. A set built by `touch-changed-set.ts` records its
- * `change`, one built by `touch-device-set.ts` its `device` or `removed`, or for an activity, `todo-touch.md` 8.2,
- * its `activity` or `removedActivity`, or for favourites, 8.3, its `favourites` or `favouritesBack`, or for Settings
- * and Context, 8.4, its `settings` or `settingsBack`, or for devices and activities of the remote's taken out, 8.5,
- * its `removal` or `removalBack`, or for a whole setup of ours, 8.6, its `setup` or `setupBack`, or for the empty
- * configuration, 9.2, its `empty` or `emptyBack`; each names the set it came `from`.
+ * `change`, one built by `touch-device-set.ts` its `device` or `removed`, or for an activity, the activity set,
+ * its `activity` or `removedActivity`, or for favourites, the favourites set, its `favourites` or `favouritesBack`, or for Settings
+ * and Context, the settings set, its `settings` or `settingsBack`, or for devices and activities of the remote's taken out, the removal set,
+ * its `removal` or `removalBack`, or for a whole setup of ours, the setup set, its `setup` or `setupBack`, or for the empty
+ * configuration, the empty set, its `empty` or `emptyBack`; each names the set it came `from`.
  * `read` reads a folder's set and record, so this stays free of the file system. A folder met twice stops it.
  */
 export function chainTags(folder: string, read: (folder: string) => { readonly set: TouchSet; readonly record: SetRecord }): Set<string> {

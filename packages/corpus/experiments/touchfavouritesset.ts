@@ -1,10 +1,10 @@
 /**
  * A Harmony Touch set that delivers **favourites documents and pictures** beside the six configuration
- * documents, and the comparisons that say what it delivers: `todo-touch.md` 8.3.
+ * documents, and the comparisons that say what it delivers.
  *
- * **Why favourites need more than the six did.** Every set before 8.3 held the six configuration documents and
+ * **Why favourites need more than the six did.** Every set before the favourites set held the six configuration documents and
  * nothing else: the answerer answered every favourites request 304, so the remote kept its own copy, and every
- * picture 304 against the tag the remote sent, so it kept its own. A set of 8.3 also holds the favourites
+ * picture 304 against the tag the remote sent, so it kept its own. A favourites set also holds the favourites
  * documents it changes and the pictures of ours, each under its whole address, which `keyOf` in `touchsync.ts`
  * already matches a request by; the answerer then answers those 200 and everything else as before. **No change to
  * the set format was needed for that**: a set's answer was always an address, a body type, a tag and a body, the
@@ -12,7 +12,7 @@
  * builder below, the gate's picture rule (`pictureRefusals`, codec) and its favourites address rule
  * (`refusalsBeforeASync`, codec), and the hand over's clash rule for favourites (`favouritesClash`, answerer).
  *
- * **What the remote holds at a favourites address or a picture's is not in any set before 8.3**, since none
+ * **What the remote holds at a favourites address or a picture's is not in any set before the favourites set**, since none
  * delivered one: it is what the recorded full sync delivered, `touch_full_sync_recording`, the last sync of
  * Logitech's on the bench unit, after which every favourites document and picture was answered 304 and no hand
  * over handed a favourites change up. So `heldContent` walks a chain of sets back and takes, address by address,
@@ -21,7 +21,7 @@
  * **The tags.** A favourites document or picture of ours gets `setTag` with the set's name, so it is reproducible
  * and differs from every tag the chain states; a favourites document is asked for without a tag in every sync, so
  * its tag is stored and never seen again, and a picture's is what the next sync asks for it with. **A put back
- * states the tags the remote held before**, the recording's, rather than a third tag of ours as 6.9's put backs
+ * states the tags the remote held before**, the recording's, rather than a third tag of ours as the changed set's put backs
  * did: what the remote then holds is exactly what it held before, document, picture and tag, which is what a later
  * return to Logitech's service meets, and the picture's tag in the next request list still says the put back
  * arrived, since it differs from the tag the forward set left.
@@ -39,7 +39,7 @@ import { prepareSet, setTag, keyOf, type BodyType, type SetAnswer, type TouchSet
 /** A picture's address: Logitech's user image store, or the logical scheme for channel logos, as the answerer tells them. */
 export const isPictureAddress = (uri: string): boolean => uri.startsWith('content-image://') || uri.startsWith('https://');
 
-/** Whether an answer of a set is content of 8.3's kind, a favourites document or a picture, rather than one of the six. */
+/** Whether an answer of a set is content of the favourites set's kind, a favourites document or a picture, rather than one of the six. */
 export const isContent = (a: { readonly uri: string }): boolean => harmonyTouch.isFavouritesAddress(a.uri) || isPictureAddress(a.uri);
 
 /** What kind of content an address is, for a report that never quotes an address. */
@@ -67,7 +67,7 @@ export interface Content {
  * chain of sets back from it that delivered one, and `recorded`'s for every other address. `read` reads a folder's
  * set and record, as `chainTags` takes it, so this stays free of the file system.
  *
- * **It does not model a commit that drops content.** An empty set of `todo-touch.md` 9.2, recorded `empty`, makes the
+ * **It does not model a commit that drops content.** An empty set of, recorded `empty`, makes the
  * remote ask for no favourites document, and by the reading in the codec's `empty.ts` its commit drops them all; this
  * still answers the older sets' and `recorded`'s for a folder whose latest set is such a one. Its put back, recorded
  * `emptyBack`, delivers them again and so stands first in any chain through it, where the answer is right.

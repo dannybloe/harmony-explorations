@@ -1,5 +1,5 @@
 /**
- * The favourites stage's offline half, `todo-compile-350.md` 3.1: the `SaveButtonMaps` payload that puts a
+ * The favourites stage's offline half: the `SaveButtonMaps` payload that puts a
  * setup's favourite channels on a device of a test account's record, its door, and the read back's verdict.
  * Nothing here touches the network.
  *
@@ -238,7 +238,7 @@ test('on a captured reply: a button built here has exactly the members of a favo
 
 /**
  * The KPN's device mode map on the Harmony 350's test record, read after MyHarmony's favourites screen saved
- * its five channels, `todo-compile-350.md` 3.2. Guarded on the file itself like the capture above.
+ * its five channels. Guarded on the file itself like the capture above.
  */
 const MODE_CAPTURE = LAB === undefined ? undefined
   : join(LAB, 'work', 'myharmony', 'responses', '20261030-h350-setup_GetDeviceModeButtonMaps.json');

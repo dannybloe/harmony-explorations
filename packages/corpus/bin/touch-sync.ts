@@ -1,5 +1,5 @@
 /**
- * Drive a Harmony Touch's sync down end to end through the answerer, `src/touchsync.ts`. `todo-touch.md` 6.6,
+ * Drive a Harmony Touch's sync down end to end through the answerer, `src/touchsync.ts`,
  * under decision 29.
  *
  *   node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder>
@@ -15,21 +15,22 @@
  *   them untagged, and a 304 makes it copy its own, so it keeps them as it holds them and no document is
  *   written. **It is not write free**: every document the remote hands up first is written back to it with a
  *   tag of ours and committed, so that change never reaches Logitech's account. The documents otherwise end as
- *   the remote held them. `todo-touch.md` 6.7.
+ *   the remote held them.
  * * `--set <lab folder>`: every request answered from the set kept in that folder's `set.json`, `{ "answers":
  *   [...] }` in the shape of the answers Logitech's client wrote, `SetAnswer`; a tag the set leaves out is ours,
  *   a digest of the body. A favourites document the set holds is written with 200, and one it lacks answered
  *   304 so the remote keeps its own; a picture it lacks is answered 304 against the remote's tag, or 404 when
  *   the remote sent none. **A document the hand over hands up that the set also holds stops the run before the
  *   sync request**, since the set's copy would revert the change made on the remote. The folder has to be
- *   inside the lab. `todo-touch.md` 6.8 builds the first, with `touch-own-set.ts`.
+ *   inside the lab. `touch-own-set.ts` builds one of the remote's own documents, and the other `touch-*-set.ts`
+ *   scripts build the changed ones.
  *
  * **Without `--commit` it opens nothing.** It prints the mode, and for a set the gate's verdict, which a commit
  * would meet first, the answers by kind and how many tags are stated; whether the lab holds the unit record and
  * which flags are set; the steps a commit takes; and the line forms below.
  *
  * **With `--commit`, the two flags and the unit record it opens the Touch** through `openFileBasedRemote`,
- * by way of `answerTouchSync` in `src/touchsync.ts`, on `@harmony/corpus/write` since `todo.md` 7.3.10,
+ * by way of `answerTouchSync` in `src/touchsync.ts`, on `@harmony/corpus/write`,
  * opens a session, which reads the identity file and refuses any unit but the lab's `units/touch.txt`, and
  * runs the answerer, keeping every request, every answer and what the remote hands up in a new folder of the
  * lab's `reads/`. **It refuses with `HARMONY_TOUCH_RECOVERY` set**: a session driving a sync has no reason to
@@ -81,9 +82,9 @@
  * The session's own lines, one per request and the identity read, are printed too and do not start with
  * `sync:`.
  *
- * **`--unchanged --commit` has run three times on the bench unit**, `todo-touch.md` 6.7 and 6.8, and `--set --commit`
- * once, 6.8, which the remote committed, `packages/usb/test/touch/touch-own-set-sync.test.ts`.
- * This said nothing in the script had been run against a remote<!--superseded--> until 6.8's preflight.
+ * **`--unchanged --commit` ran three of the first four syncs on the bench unit**, and `--set --commit` the
+ * other, which the remote committed, `packages/usb/test/touch/touch-own-set-sync.test.ts`.
+ * This said nothing in the script had been run against a remote<!--superseded--> until a preflight read the runs.
  */
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
@@ -188,7 +189,7 @@ async function main(): Promise<void> {
   if (LAB === undefined) fail('no lab directory, so there is nowhere to keep the run');
   const folder = newReadFolder(LAB, `touch-sync-${unchanged ? 'unchanged' : 'set'}`);
 
-  // The run is the library's since `todo.md` 7.3.10: the flags again, the open, the session with its unit
+  // The run is the library's: the flags again, the open, the session with its unit
   // check, the answerer, and the transport closed.
   const outcome = await answerTouchSync({
     mode,

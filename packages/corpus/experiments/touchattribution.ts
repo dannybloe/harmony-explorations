@@ -1,13 +1,13 @@
 /**
  * **Which generator wrote each field of a Harmony Touch set built from nothing**, found by running the generators
- * again rather than by reading a table: `todo-touch.md` 9.3.
+ * again rather than by reading a table.
  *
- * **What 9.3 asks.** 9.1 built the whole test setup from `packages/corpus/setups/touch-test.json`, the archive of the
+ * **What the attribution check asks.** The from-nothing set built the whole test setup from `packages/corpus/setups/touch-test.json`, the archive of the
  * catalogue through our readers, our rhythm table, the lab's description of the account and a picture drawn by us,
  * `withNothing` in `touchnothingset.ts`, and its codec headers state per field which generator writes it. A table in a
  * header is a claim with no test behind it. So this walks every field of every document and picture of a built set
  * and names the generator that wrote it **by reproducing each generator's output on its own**, and a field no
- * generator reproduces is reported as carried from a Logitech document, when 8.6's set, Logitech's documents under
+ * generator reproduces is reported as carried from a Logitech document, when the setup set's, Logitech's documents under
  * tags of ours, holds the same value in the same field, or as unattributed.
  *
  * **How a generator is told from the code.** Each step of `buildTouchDocuments` is run again by itself, on the same
@@ -273,7 +273,7 @@ function logitechValues(logitech: TouchSet): Map<string, Set<string>> {
 
 /**
  * **Every field of `set` and who wrote it.** `logitech` is the set a field no generator reproduces is looked up in:
- * 8.6's, Logitech's documents.
+ * The setup set's, Logitech's documents.
  */
 export function attributeNothingSet(set: TouchSet, inputs: NothingInputs, logitech: TouchSet, layers: Layers = layersOf(inputs)): AttributedField[] {
   const theirs = logitechValues(logitech);

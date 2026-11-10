@@ -1,9 +1,9 @@
 /**
- * A Settings of ours and a Context composed by us on the Harmony Touch, `todo-touch.md` 8.4, as it ran: the screen's
+ * A Settings of ours and a Context composed by us on the Harmony Touch, as it ran: the screen's
  * brightness and its timeout changed in the remote's own settings document, Context rebuilt from a description of the
  * seven fields a Touch reads, both delivered in a sync, seen and timed at the bench, and both put back.
  *
- * **What was run.** After commit `fc56fc19`, the 8.4 preparation, and in the order of the lab's
+ * **What was run.** After commit `fc56fc19`, the settings set preparation, and in the order of the lab's
  * `work/touch-firmware/notes/8.4-preflight.md` section 6, each run read before the next:
  *
  * 1. `getconfighash` through the request rail, the remote holding `8.3-favourites-back`, whose six are
@@ -83,7 +83,7 @@ import {
 import { differences } from '../../experiments/touchchangedset.ts';
 import { settingsChanges } from '../../experiments/touchsettingsset.ts';
 
-/** `8.2-activity-back`, whose six `8.3-favourites-back` carries, content and tags: what the remote held before 8.4. */
+/** `8.2-activity-back`, whose six `8.3-favourites-back` carries, content and tags: what the remote held before the settings set. */
 const SOURCE = 'touch_activity_set_back';
 const SET = 'touch_settings_set';
 const BACK = 'touch_settings_set_back';
@@ -93,7 +93,7 @@ interface SetAnswer { uri: string; 'body-type': string; resource: unknown; etag:
 const setOf = (fixture: string): SetAnswer[] => (JSON.parse(new TextDecoder().decode(lab.require_(fixture))) as { answers: SetAnswer[] }).answers;
 const byName = (set: readonly SetAnswer[], name: string): SetAnswer => set.find((a) => resource(a.uri) === name)!;
 
-/** The two documents 8.4 delivers. */
+/** The two documents the settings set delivers. */
 const TWO = ['Settings', 'Context'];
 /** The answers of `set` that differ from `before`, content or tag. */
 const delivered = (set: readonly SetAnswer[], before: readonly SetAnswer[]): SetAnswer[] =>
@@ -111,7 +111,7 @@ const SET_RUNS = [
 const CLOSING = 'touch_settings_unchanged_';
 const ALL_RUNS = [...SET_RUNS.map((r) => r.prefix), CLOSING];
 
-/** The eight request lists every run of 8.4 handed out, as every run of 8.2 and 8.3 did. */
+/** The eight request lists every run of the settings set handed out, as every run of the activity set and the favourites set did. */
 const EIGHT = [
   Array(6).fill('document'), [], ['user favourites'], ['device favourites'], ['line up'], [], Array(10).fill('picture'), ['finished'],
 ];
@@ -125,7 +125,7 @@ const runFiles = (prefix: string): string[] => [
 /**
  * Every answer of one write against its request: an address the set delivers 200 with the set's type, tag and
  * content, every other tagged request 304 echoing its tag, an untagged favourites request 304 with a tag of ours,
- * the finish 200. 8.3's rule, written again here since a test file cannot import another.
+ * the finish 200. the favourites set's rule, written again here since a test file cannot import another.
  */
 function checkAnswers(asked: Request_[], ours: ReturnType<typeof written>, label: string, sent: readonly SetAnswer[]): void {
   const byUri = new Map(sent.map((a) => [a.uri, a]));
@@ -217,7 +217,7 @@ test('the first lists: the source\'s six before, Settings and Context with the f
       source.map((a) => `${resource(a.uri)} ${TWO.includes(resource(a.uri)) ? 'forward' : 'source'}`),
       source.map((a) => `${resource(a.uri)} source`),
     ]);
-    // The three favourites documents untagged in every run, as in 8.3.
+    // The three favourites documents untagged in every run, as in the favourites set.
     for (const p of ALL_RUNS) {
       assert.deepEqual([3, 4, 5].map((n) => list(`${p}list_${n}`).map((q) => hasTag(q))), [[false], [false], [false]], p);
     }

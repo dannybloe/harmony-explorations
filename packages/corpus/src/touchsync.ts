@@ -1,6 +1,6 @@
 /**
  * The answerer: a program of ours that drives a Harmony Touch's sync down end to end in place of Logitech's
- * client and service. `todo-touch.md` 6.6, under decision 29.
+ * client and service, under decision 29.
  *
  * **What a sync is, in one paragraph.** A Touch does not take a compiled file. It asks for its own documents
  * one at a time through one file on the cable, `/sys/hlapi`, and whoever is on the other end answers: a
@@ -14,7 +14,7 @@
  * **Why this lives in `packages/corpus` and not in `packages/usb`.** The answerer has to refuse a set the
  * codec's reader and check reject before anything of it is written, and the reader and the check are the
  * codec's, `packages/codec/src/families/harmony-touch/`. The codec depended on `packages/usb` when this was written, so
- * `packages/usb` could not import the codec (since `todo.md` 7.3.4 the codec's own source no longer does, its
+ * `packages/usb` could not import the codec (the codec's own source no longer does, its
  * tests and scripts still do, and nothing has been moved because of it), and an answerer there could only take the check as an argument: a gate a caller hands in
  * is a gate a caller can hand in empty, the lesson `CLAUDE.md` records for the configuration version check,
  * "a rail that asks a caller a question is a rail the caller answers". Here the answerer calls
@@ -38,9 +38,9 @@
  *    this request on the remote has been acted on, so every refusal after it names the recovery and what an
  *    abort would cost. **With a set, a document handed up that the set also holds stops the run** once the
  *    hand over has ended, before the sync request: the set's copy would overwrite the change made on the
- *    remote, `todo-touch.md` 6.8. The change is by then kept in the lab and committed on the remote, and no
+ *    remote. The change is by then kept in the lab and committed on the remote, and no
  *    sync is marked running. A favourites document is handed up to another address than the one a sync asks
- *    for it at, so it clashes by its kind, `favouritesClash`, `todo-touch.md` 8.3.
+ *    for it at, so it clashes by its kind, `favouritesClash`.
  * 4. **The sync started**, `SYNC`, and every list answered from the set until `proxy://Finished` or
  *    `proxy://Abort`, answered as Logitech's client answers both, a status of 200 and nothing else.
  *
@@ -51,21 +51,21 @@
  *   an answerer sends"
  * * **a picture the set lacks** with 304 against the tag the remote sent, since a tagged picture is one it
  *   holds, and with 404 when it sent none, which the remote logs and never aborts on; this answered every
- *   picture a set lacks 404 until `todo-touch.md` 6.8, whose set holds no pictures and whose run should change
- *   nothing a unit has not already committed but the six documents. **A favourites document the set lacks**
+ *   picture a set lacks 404 until the first set of the remote's own documents, which holds no pictures and whose
+ *   run should change nothing a unit has not already committed but the six documents. **A favourites document the set lacks**
  *   with 304, below; any other document the set lacks is a refusal of ours
  * * **in `unchanged` mode**, every document and picture with 304 against the tag the remote sent. **A document
  *   it sent no tag for is refused**: a request without a tag means either that the remote holds no file for
  *   it, when a 304 copies nothing and the document is missing from the new set, or that a change made on the
  *   remote's own screens erased the tag of a file it keeps, and this answerer cannot tell the two apart, "The
  *   entity tag an answerer sends". This header said a 304 there always copied a file the remote does not
- *   hold<!--superseded--> until the preflight of `todo-touch.md` 6.7 read the screens' put. **A picture it sent
+ *   hold<!--superseded--> until the preflight of the first sync on the bench unit read the screens' put. **A picture it sent
  *   no tag for is answered 404**, which the remote logs and never aborts on, and the screens copy every stored
  *   picture into the gathered set before asking, so a picture it holds stays
  * * **a favourites document, in either mode, with 304 whether or not the remote sent a tag**, unless a set
  *   holds one, when it is answered 200 with it. On a Touch synced through a computer every favourites request
  *   comes untagged, because the remote's screens look the document up in the set being gathered, where it is
- *   not yet: `tests/harmony_touch/test_harmony_touch_favourites_untagged.py`, found when 6.7's first run stopped there. A 304
+ *   not yet: `tests/harmony_touch/test_harmony_touch_favourites_untagged.py`, found when the first sync this project answered on the bench unit stopped there. A 304
  *   makes the remote copy its own committed document and its own stored tag into the new set, so it keeps
  *   exactly what it holds, and **writes no document**; one it does not hold stays missing, which costs no more
  *   than a 404 would. The answer still has to carry a tag, since an answer to a favourites request without
@@ -115,15 +115,15 @@
  * each, a log of the lines above, and what the remote handed up, under `handed-up/`, written before the
  * answer that takes it. The folder has to be new or empty, so a run never writes over another's.
  *
- * **`answerTouchSync` is the whole run an application calls**, `todo.md` 7.3.10, on `@harmony/corpus/write`:
+ * **`answerTouchSync` is the whole run an application calls**, on `@harmony/corpus/write`:
  * the two flags and the recovery flag checked before anything is opened, `assertTouchSyncAllowed`, the Touch
  * opened by the caller's `open`, the session with its unit check, `syncTouch`, and the transport closed. It was
- * the script's `--commit` until then, and `bin/touch-sync.ts` keeps its command line, the lab and the printing.
+ * once the script's `--commit`; `bin/touch-sync.ts` keeps its command line, the lab and the printing.
  *
- * **`unchanged` has driven three syncs on the bench unit**, `todo-touch.md` 6.7 and 6.8, and a set one, 6.8, the
+ * **`unchanged` drove three of the first four syncs on the bench unit**, and a set the other, the
  * remote's own six documents delivered with 200 under tags of ours and committed,
  * `packages/usb/test/touch/touch-own-set-sync.test.ts`. This
- * said nothing in the file had been run against a remote<!--superseded--> until 6.8's preflight read the runs.
+ * said nothing in the file had been run against a remote<!--superseded--> until a preflight read the runs.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
@@ -186,7 +186,7 @@ export type BodyType = 'application/json' | 'image/png';
 /**
  * One answer of a set: the address it answers, its body's type, its tag if the set states one, and the body,
  * a parsed JSON object for a document and base64 text for a picture. **The shape of the answers Logitech's
- * client wrote**, so a set can be taken from a recording as it stands, `todo-touch.md` 6.8.
+ * client wrote**, so a set can be taken from a recording as it stands.
  *
  * `uri` is matched by the key `keyOf` gives it: one of the six configuration documents by its name, so a set
  * answers the remote whatever account number its addresses carry, and anything else by the whole address.
@@ -225,7 +225,7 @@ export function keyOf(uri: string): string {
  * of Logitech's tags and still says whose it is. Theirs are five groups of hex digits of 33 to 36 characters,
  * the groups' leading zeros dropped, and none of the 25 in the two recorded syncs down is a version 4
  * identifier, `touch-own-set.test.ts`; this said theirs were random identifiers, version 4<!--superseded-->,
- * until the preflight of `todo-touch.md` 6.8 counted them. A Touch has stored and sent back tags of all
+ * until a preflight counted them. A Touch has stored and sent back tags of all
  * three lengths, so it holds a tag as text of any of them.
  */
 export function ourTag(answer: Pick<SetAnswer, 'body-type' | 'resource'>): string {
@@ -233,7 +233,7 @@ export function ourTag(answer: Pick<SetAnswer, 'body-type' | 'resource'>): strin
 }
 
 /**
- * **A tag of ours for a set's answer**, `todo-touch.md` 6.8: `ourTag`'s digest with the set's name in front.
+ * **A tag of ours for a set's answer**: `ourTag`'s digest with the set's name in front.
  * `ourTag` alone gives a document the tag the hand over already wrote for it when the remote handed that same
  * document up, so a set built from it would be answered 304 and deliver nothing; with the name, a set built
  * from documents the remote holds still states tags the remote does not hold, and each is a 200. The same name
@@ -277,8 +277,7 @@ const isObject = (x: unknown): boolean => typeof x === 'object' && x !== null &&
  * `answering-a-sync.md` "What the remote checks of an answer", made stricter where `touch-host.test.ts`'s
  * envelope is: a document is a JSON object, a picture is a PNG in base64, a stated tag is not empty, and no
  * two answers share a key. **And a picture is one the codec lets through**, `pictureRefusals` in
- * `packages/codec/src/families/harmony-touch/favourites.ts`, since `todo-touch.md` 8.3 put the first picture of ours in a
- * set: a channel logo, decoding, in the form every logo the remote was seen to draw has, and inside the box its
+ * `packages/codec/src/families/harmony-touch/favourites.ts`, since a set can carry a picture of ours: a channel logo, decoding, in the form every logo the remote was seen to draw has, and inside the box its
  * address asks for.
  */
 export function setRefusals(set: TouchSet): string[] {
@@ -300,7 +299,7 @@ export function setRefusals(set: TouchSet): string[] {
     } else if (a['body-type'] === 'image/png') {
       const bytes = typeof a.resource === 'string' ? Buffer.from(a.resource, 'base64') : Buffer.alloc(0);
       if (!PNG.every((b, i) => bytes[i] === b)) out.push(`${where} is a picture that is not a PNG in base64`);
-      // What the codec asks of a picture before the remote is handed it, `todo-touch.md` 8.3: a channel logo's
+      // What the codec asks of a picture before the remote is handed it: a channel logo's
       // address, a file that decodes, the form the remote was seen to draw, and the box the address asks for.
       else for (const r of harmonyTouch.pictureRefusals(a.uri, bytes)) out.push(`${where}: ${r}`);
     } else {
@@ -311,7 +310,7 @@ export function setRefusals(set: TouchSet): string[] {
 }
 
 /**
- * The gate, `todo-touch.md` 6.6: the set's envelope, `setRefusals`, then its documents through the codec's
+ * The gate: the set's envelope, `setRefusals`, then its documents through the codec's
  * reader and check, `refusalsBeforeASync`, which wants all six configuration documents, every list the
  * engine's reader walks, and no finding the check calls `refused`. Either a prepared set or the refusals,
  * each a sentence a person can act on.
@@ -323,7 +322,7 @@ export function prepareSet(set: TouchSet): { readonly set: PreparedSet } | { rea
   const findings = harmonyTouch.refusalsBeforeASync(documents);
   if (findings.length > 0) {
     // A favourites document's finding names it by its whole address, which carries the account's identifiers, so a
-    // refusal names its kind instead: the refusal is printed and kept in the lab's gate file, `todo-touch.md` 8.3.
+    // refusal names its kind instead: the refusal is printed and kept in the lab's gate file.
     return { refusals: findings.map((f) => `${f.document.includes('://') ? describe(f.document) : f.document}${f.path === '' ? '' : `.${f.path}`}: ${f.message} (${f.rule})`) };
   }
   const entries = new Map<string, SetAnswer & { etag: string }>();
@@ -365,7 +364,7 @@ const isFavourites = (uri: string): boolean =>
   [harmonyTouch.CONTENT_USER, harmonyTouch.CONTENT_DEVICE, harmonyTouch.CONTENT_SERVICE].some((p) => uri.startsWith(p));
 
 /**
- * Whether a favourites document the remote handed up is one a set would overwrite, `todo-touch.md` 8.3. The
+ * Whether a favourites document the remote handed up is one a set would overwrite. The
  * remote hands its user's favourites up to `content://1.0/user/` and the user's id, and a device's to
  * `content://1.0/device/` and the device document's id, the screens' `getRequest`, where a sync asks for the same
  * documents at `content://1.0/user;` and `content://1.0/device;` and a profile address: so the two keys never
@@ -417,7 +416,7 @@ export function answerOf(
     // A picture's failure is logged and never aborts, and a favourites document the set lacks is the remote's
     // own to keep; any other document a sync asks for and the set lacks would abort the whole sync, so it is
     // ours to refuse. A picture the remote asks for with a tag is one it holds, and is answered 304 against
-    // that tag as `unchanged` answers it, which is the answer a unit has committed, 6.7's second run; one
+    // that tag as `unchanged` answers it, which is the answer a unit has committed, in the second sync this project answered on the bench Touch; one
     // without a tag is answered 404.
     if (isPicture(request.uri) && tag !== undefined) return { statusCode: '304', uri: request.uri, etag: tag };
     if (isPicture(request.uri)) return { statusCode: '404', uri: request.uri };
@@ -701,7 +700,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
    * A `put` of the remote's own: the document kept in the lab, raw and parsed, **before** its answer exists,
    * then answered 200 with the same document and a tag of ours, as Logitech's client wrote back the service's
    * echo of it. A document whose list the engine's reader walks is checked for that list first, and for every
-   * type name the reader searches in it, `missing type`, `todo-touch.md` 6.7.1, so a reply of ours never hands
+   * type name the reader searches in it, `missing type`, so a reply of ours never hands
    * the remote a document it would raise on, even its own.
    */
   function keepAndEcho(r: RemoteRequest): WrittenAnswer | { refuse: string } {
@@ -722,7 +721,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     if (!isObject(document)) return { refuse: `the remote handed up ${describe(r.uri)} as something other than a JSON object` };
     if (r.uri.startsWith('harmony://')) {
       // Every place the engine's load raises on, read off this one document, `readerRaises`: a list, a type
-      // name, or since `todo-touch.md` 6.10 any other field the load computes with, keys by or lowers.
+      // name, or any other field the load computes with, keys by or lowers.
       let lists: number;
       try {
         lists = harmonyTouch.readerRaises({ [key]: document } as harmonyTouch.SyncDocuments).length;
@@ -784,8 +783,8 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     // The hand over ended at `proxy://Finished`, so it has committed: an abort from here on costs no tag.
     stage = 'sync';
     // A change the remote handed up to a document the set also holds would be overwritten by the set's copy
-    // at the commit, the change made on the remote reverted, which is the trap `todo-touch.md` 6.8's set is
-    // built around. So stop here, before the sync request: the change is kept in the lab and committed on the
+    // at the commit, the change made on the remote reverted, the trap for a set built from the remote's own
+    // documents before that change. So stop here, before the sync request: the change is kept in the lab and committed on the
     // remote under a tag of ours, no sync is marked running, and the set is rebuilt from what was handed up.
     if (prepared !== undefined) {
       const clashing = handedUp.filter((k) => prepared.entries.has(k) || favouritesClash(k, prepared));
@@ -812,7 +811,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The whole run, from the flags to the closed transport, `todo.md` 7.3.10
+// The whole run, from the flags to the closed transport
 // ---------------------------------------------------------------------------------------------------
 
 /**
@@ -822,7 +821,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
  * **Why the recovery flag refuses**: a session driving a sync has no reason to hold the recovery door,
  * `TOUCH_RECOVERY_DOOR` in `rails.ts`, and the recovery steps are a person's, one per run of
  * `packages/usb/bin/touch-recover.ts`; a sync run with that door open could reach the abort, the delete or the
- * restart through a bug of ours. These two checks were the script's until 7.3.10 moved them here, where an
+ * restart through a bug of ours. These two checks were once the script's and live here, where an
  * application meets them too; the request rail under the session still checks the two flags on every line.
  * The words are the script's, which its tests read.
  */
@@ -838,7 +837,7 @@ export function assertTouchSyncAllowed(): void {
 
 /**
  * **The Harmony Touches that may be synced, and no others**, decision 29: the one bench unit, by the label of its
- * record. `answerTouchSync` refuses any other label before it opens anything, `todo.md` 7.3.10's review, so the
+ * record. `answerTouchSync` refuses any other label before it opens anything, so the
  * list is the library's and not a caller's; the script's label is this one.
  */
 export const TOUCH_SYNC_UNITS = ['touch'] as const;
@@ -857,7 +856,7 @@ export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session'> {
 
 /**
  * Answer one sync of a Harmony Touch, from the flags to the closed transport: the library half of
- * `bin/touch-sync.ts`'s `--commit`, `todo.md` 7.3.10.
+ * `bin/touch-sync.ts`'s `--commit`.
  *
  * In order: `assertTouchSyncAllowed` and the label against `TOUCH_SYNC_UNITS`, before anything is opened; `open`; a
  * session, which reads the identity file and refuses any unit but `permittedUnit`, `openTouchRequestSession`;

@@ -1,8 +1,8 @@
 /**
  * A set of a Harmony Touch's own documents, for the answerer to deliver back to it with 200 and tags of ours,
- * and the two checks that read the remote afterwards: `todo-touch.md` 6.8.
+ * and the two checks that read the remote afterwards.
  *
- * **What 6.8 is for.** Every answer of ours a Touch has committed so far was a 304 or the finish, so what the
+ * **What the own set is for.** Every answer of ours a Touch has committed so far was a 304 or the finish, so what the
  * remote does with a document of ours delivered with 200 is the firmware reading's alone,
  * `reference/architectures/harmony-touch/answering-a-sync.md` "Not checked". The smallest step that measures
  * it changes one thing: the six configuration documents the remote already holds, delivered whole with 200

@@ -1,5 +1,5 @@
 /**
- * One run of `writeConfiguration` against `FakeClassicRemote`, for `write-config-run.test.ts`, `todo.md` 7.3.10.
+ * One run of `writeConfiguration` against `FakeClassicRemote`, for `write-config-run.test.ts`.
  *
  * **Two ways in.** A test calls `runWrite` in its own process for everything that happens in the shipped state,
  * the flags unset, which is every refusal and the dry run. A run that has to get past `assertFirstWriteAllowed`

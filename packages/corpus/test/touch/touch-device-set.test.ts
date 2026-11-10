@@ -1,28 +1,28 @@
 /**
- * A Harmony Touch set with a device of ours added, and the set that takes it out again, `todo-touch.md` 8.1:
+ * A Harmony Touch set with a device of ours added, and the set that takes it out again:
  * `changeDocuments`, `listChanges` and `chainTags` in `experiments/touchchangedset.ts`, the composing being the codec's
  * (`withTouchDevice`, `withoutTouchDevice`, `test/families/harmony-touch/touch-device-add.test.ts` there).
  *
  * **What has to hold, and why each test is here.**
  *
  * 1. **Several documents change at once and only those are retagged.** A device lives in three documents, so the
- *    one value step of 6.9 is generalised: `changeDocuments` replaces the documents it is given, retags exactly
+ *    one value step of the changed set is generalised: `changeDocuments` replaces the documents it is given, retags exactly
  *    those, and leaves the others with the source's tags, so a remote that committed the source is answered 304
  *    for them. A content equal to the source's is refused, since a document retagged with nothing changed would
  *    be delivered for nothing; `changeOneValue` now goes through the same function and its own tests stand.
  * 2. **The structural diff names an entry added to a list**, where `differences` names only the list: one entry
- *    added to each of three lists and nothing else is what 8.1's check reads. Its control is a list whose entry
+ *    added to each of three lists and nothing else is what the device set's check reads. Its control is a list whose entry
  *    was replaced, which shows as one taken out and one added, and a field changed beside the list.
- * 3. **The chain's tags reach past a device set**, so a later set built from one of 8.1's cannot reuse a tag the
+ * 3. **The chain's tags reach past a device set**, so a later set built from one of the device set's cannot reuse a tag the
  *    chain stated.
  * 4. **On the fake remote, through the real answerer and session, the bench run is rehearsed**: the request lists
- *    of the closing `--unchanged` run of 6.9 served as recorded, the remote asking for the six with the tags of
- *    6.9's last set, which is what the bench Touch holds; the device set answers DeviceList, MapList and
+ *    of the closing `--unchanged` run of the changed set served as recorded, the remote asking for the six with the tags of
+ *    the changed set's last set, which is what the bench Touch holds; the device set answers DeviceList, MapList and
  *    ProtocolList 200 with its content and tags, the other three 304, the three favourites 304, the ten pictures
  *    304, and the run finishes. The put back is rehearsed the same way with the remote holding the device set.
  *    **The control** is the device set answered to a remote holding it already: every request 304.
  *
- * **Sources checked first.** The 8.1 brief in the lab and the 6.9 preflight it follows; `touchsync.ts`
+ * **Sources checked first.** The device set brief in the lab and the changed set preflight it follows; `touchsync.ts`
  * (`answerOf`, `prepareSet`, `setTag`); `touch-changed-set.test.ts` and `touch-sync-run.ts`; the recorded lists
  * of the closing run, `packages/usb/test/touch/touch-changed-set-sync.test.ts`. Logitech's client was not consulted.
  *
@@ -73,7 +73,7 @@ function source(): TouchSet {
   };
 }
 
-/** The device of 8.1, read from the file the bench set was built from. */
+/** The device of the device set, read from the file the bench set was built from. */
 const DESCRIPTION = fileURLToPath(new URL('../../touch-devices/test-projector.json', import.meta.url));
 const projector = (): harmonyTouch.RowDevice => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { device: harmonyTouch.RowDevice }).device;
 
@@ -187,7 +187,7 @@ const SOURCE = 'touch_changed_set_label_back';
 const CLOSING = 'touch_changed_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
-/** The two sets 8.1 built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
+/** The two sets the device set built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
 const BUILT = 'touch_device_set';
 const BUILT_BACK = 'touch_device_set_back';
 

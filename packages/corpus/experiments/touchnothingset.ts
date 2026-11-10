@@ -1,10 +1,10 @@
 /**
  * A Harmony Touch set **built from a setup file with no Logitech document as input**, its put back, the description of
- * the account it takes its account values from, and the field by field comparison with 8.6's set: `todo-touch.md` 9.1.
+ * the account it takes its account values from, and the field by field comparison with the setup set's.
  *
- * **What 9.1 is for.** 8.6 composed the four documents that name devices and activities from a description and ran them
+ * **What the from-nothing set is for.** The setup set composed the four documents that name devices and activities from a description and ran them
  * on the bench Touch, 418 of 418, while every device's record, its codes and the definitions were carried from
- * Logitech's documents and Context and Settings stayed the remote's. 9.1 builds all six from
+ * Logitech's documents and Context and Settings stayed the remote's. the from-nothing set builds all six from
  * `packages/corpus/setups/touch-test.json`, the archive of the catalogue and our rhythm table, `buildTouchDocuments` in
  * the codec, and only the account's own values from a description of the account kept in the lab.
  *
@@ -25,13 +25,13 @@
  * carries every picture the remote stores, the person's own backgrounds and the channel logos among them, into the new
  * set.
  *
- * **The put back is the set the remote held before, content and tags**, its six documents, since 9.1 delivers all six.
+ * **The put back is the set the remote held before, content and tags**, its six documents, since the from-nothing set delivers all six.
  * It holds no picture: the remote's own Settings names the person's backgrounds, which the remote then asks for with the
  * tags it holds and is answered 304, and nothing asks for ours again; our two pictures stay stored on the remote, as
  * every stored picture is carried into every later set.
  *
- * **The comparison**, `compareNothing`, is 8.6's, `compareSetup`, over all six documents and with 9.1's rules: our
- * documents against 8.6's set, which the bench ran, every field. Each is equal, equal after a normalisation the remote
+ * **The comparison**, `compareNothing`, is the setup set's, `compareSetup`, over all six documents and with the from-nothing set's rules: our
+ * documents against the setup set's, which the bench ran, every field. Each is equal, equal after a normalisation the remote
  * does not tell apart (`NOTHING_NORMALISATIONS`), or different with why (`NOTHING_DIFFERENCES`); a field no row explains
  * fails the test. **The definitions are compared by what they send**, `waveformClosure`, command by command at each
  * device's repeat count, because ours are written from our table and theirs are Logitech's, so their fields differ by
@@ -47,11 +47,11 @@ import { compareSetup, type ComparisonRules, type DocumentComparison, type Pair 
 import { keyOf, ourTag, prepareSet, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 import { archiveAt } from '@harmony/codec/node';
 
-/** The six documents a set of 9.1 delivers, in the order the remote asks for them. */
+/** The six documents a from-nothing set delivers, in the order the remote asks for them. */
 export const NOTHING_DOCUMENTS: readonly string[] = harmonyTouch.CONFIGURATION_DOCUMENTS;
 
 /**
- * What a set of 9.1 takes from the account, as the lab keeps it: the codec's `TouchAccount`, and the address each of the
+ * What a from-nothing set takes from the account, as the lab keeps it: the codec's `TouchAccount`, and the address each of the
  * six answers carries, as the remote asks for it. Written by `describeTouchAccount`; never printed.
  */
 export interface TouchAccountFile extends harmonyTouch.TouchAccount {
@@ -148,7 +148,7 @@ export function putBackNothing(forward: TouchSet, before: TouchSet): { readonly 
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The comparison with 8.6's set
+// The comparison with the setup set's
 // ---------------------------------------------------------------------------------------------------
 
 /** A list of steps, null, absent or empty: every one of them sends nothing. */
@@ -218,12 +218,12 @@ const DEVICE_FIELDS_READ_BY_NOTHING = /^DevicesWithFeatures\[\]\.Device\.(Defaul
 const DEVICE_FIELDS_COPIED = /^DevicesWithFeatures\[\]\.Device\.(AutoDetectedDevice|BTAddress|DeviceAddedDate|DeviceCapabilitiesWithPriority(\[\]\..*)?|DeviceTypeDisplayName|Icon|SuggestedDisplay|DongleRFID|GlobalDeviceVersionId-|IsKeyboardAssociated|RegisterSection|RenewSection|Tokens)$/;
 /** The features' fields no reader on the remote names, the reference's list and the engine's reader. */
 const FEATURE_FIELDS_READ_BY_NOTHING = /^DevicesWithFeatures\[\]\.DeviceFeatures\[\]\.(CanSkipInputs|PowerOnResetInputName|ValueDelay|IsConfirmed|DateModified|Id|State|GlobalDeviceVersionId|GlobalDeviceVersionId-|HasAdditionalActions|IsActiveInput|PowerOffActionId|PowerOnActionId|PowerToggleActionId|ResetActions|.*Actions\[\]\.ActionId|Inputs\[\]\.(ActionId|ActionName|Attributes|DevActionType|HasAdditionalActions|Id|IsAutoSwitch|PortTypes(\[\]\..*)?|PressDuration|StateName|StateValue)|StateValues\[\]\.(IsAutoSwitch|Order))$/;
-/** Context's fields a Touch synced through a computer does not read, `settings.ts`, `todo-touch.md` 8.4. */
+/** Context's fields a Touch synced through a computer does not read, `settings.ts`. */
 const CONTEXT_FIELDS_NOT_READ = /^(AccountUri|ConfigVersion|CustomerId|DataConsent|GlobalRemoteUri|HouseholdDeviceProfileUri|HouseholdId-|KeyboardLocale|LatestSLAAccepted|LatestSLAAcceptedDate|Locale(\..*)?|Mode|Name|RemoteJid)$/;
 
 /**
- * **The differences, each with why it does not change what the remote does, or the prediction 9.4 tests where it may.**
- * Every one is a field 8.6's set holds and ours leaves out or holds another way.
+ * **The differences, each with why it does not change what the remote does, or the prediction the from-nothing run tests where it may.**
+ * Every one is a field the setup set's holds and ours leaves out or holds another way.
  */
 export const NOTHING_DIFFERENCES: ComparisonRules['differences'] = [
   {
@@ -381,12 +381,12 @@ export const NOTHING_DIFFERENCES: ComparisonRules['differences'] = [
     name: 'Context fields a Touch synced through a computer does not read',
     field: CONTEXT_FIELDS_NOT_READ,
     applies: (p) => !p.oursPresent,
-    why: 'left out; the reading of `todo-touch.md` 8.4, `settings.ts`: read by nothing on such a remote, or only by a hub\'s, a network '
+    why: 'left out; the reading in `settings.ts`: read by nothing on such a remote, or only by a hub\'s, a network '
       + 'client\'s or the pairing code. **Whether the remote takes a Context without them is the prediction 9.4 tests**',
   },
 ];
 
-/** 9.1's comparison: all six documents, the rules above, and three lists matched by a key of their own. */
+/** The from-nothing set's comparison: all six documents, the rules above, and three lists matched by a key of their own. */
 export const NOTHING_RULES: ComparisonRules = {
   documents: NOTHING_DOCUMENTS,
   normalisations: NOTHING_NORMALISATIONS,
@@ -401,7 +401,7 @@ export const NOTHING_RULES: ComparisonRules = {
   },
 };
 
-/** Our six documents against 8.6's, every field, by `NOTHING_RULES`. */
+/** Our six documents against the setup set's, every field, by `NOTHING_RULES`. */
 export function compareNothing(ours: harmonyTouch.SyncDocuments, theirs: harmonyTouch.SyncDocuments): DocumentComparison[] {
   return compareSetup(ours, theirs, NOTHING_RULES);
 }

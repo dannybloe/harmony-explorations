@@ -1,5 +1,5 @@
 /**
- * The harvest's offline half, `todo-secure-logitech.md` 1.1: the rail that refuses a write before a
+ * The harvest's offline half: the rail that refuses a write before a
  * request exists, the search match chosen by device id, the payload's shape, the compile's status word,
  * the ZIP reader and the split of a failed batch. Nothing here touches the network.
  */

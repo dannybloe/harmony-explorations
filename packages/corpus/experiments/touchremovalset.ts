@@ -1,6 +1,6 @@
 /**
  * A Harmony Touch set with devices and activities of the remote's own taken out, everything that names them with
- * them, and its put back: `todo-touch.md` 8.5. The removal is the codec's, `withoutTouchEntries` in
+ * them, and its put back. The removal is the codec's, `withoutTouchEntries` in
  * `packages/codec/src/families/harmony-touch/remove.ts`; this module puts its documents into a set, puts the set before back,
  * and says, entry by entry, what the removal took out and what it changed.
  *
@@ -10,7 +10,7 @@
  * content and tag, so a remote that committed the source answers them 304, `changeDocuments`. A removal that takes out
  * no definition leaves `ProtocolList` the source's.
  *
- * **The put back is what the remote held before, tags and all**, as 8.3's and 8.4's were: a removal of the remote's
+ * **The put back is what the remote held before, tags and all**, as the favourites set's and the settings set's were: a removal of the remote's
  * own devices cannot be undone by composing them again, since they are Logitech's records, so the put back delivers
  * the source's documents as the source states them. Its first request list then asks with the removal set's tags, and
  * a put back that arrived shows as the source's tags in the next run's first list and in the configuration hash.

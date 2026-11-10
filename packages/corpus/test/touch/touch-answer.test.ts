@@ -1,7 +1,7 @@
 /**
- * `answerTouchSync`, a Harmony Touch's sync answered as a function an application calls, `todo.md` 7.3.10.
+ * `answerTouchSync`, a Harmony Touch's sync answered as a function an application calls.
  *
- * **What this holds**: the run around the answerer that was `bin/touch-sync.ts`'s `--commit` until 7.3.10. The
+ * **What this holds**: the run around the answerer that was `bin/touch-sync.ts`'s `--commit` before the answerer moved into the library. The
  * two flags, and the recovery flag that refuses, are checked before the Touch is opened; the session's unit check
  * refuses another Touch before any request is written; a run that finishes has closed the transport, and so has
  * one that was refused. The words of the two flag refusals are the script's, which `touch-sync.test.ts` reads

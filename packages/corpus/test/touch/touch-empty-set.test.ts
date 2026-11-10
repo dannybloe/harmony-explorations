@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch sets of `todo-touch.md` 9.2: the empty configuration, no device and no activity, built from the set
+ * The Harmony Touch empty sets: the empty configuration, no device and no activity, built from the set
  * the bench Touch held, and its put back, which carries the favourites documents and logos beside the six; built by
  * `experiments/touchemptyset.ts` and rehearsed through the real answerer and session on the fake remote.
  *
@@ -13,14 +13,14 @@
  *    codec's `empty.ts`, which the run measures, `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`).
  * 2. **The put back is the six of the set before, content and tags, and eleven pieces of content**: the user's
  *    favourites document, the tuning device's, the line up, the uploaded logo and seven station logos, each as the
- *    remote held it before the empty set, which is the recorded full sync's content and tag, since 8.3's put back
+ *    remote held it before the empty set, which is the recorded full sync's content and tag, since the favourites set's put back
  *    restored exactly those and no set since delivered content. Every piece is one the remote asks for once it holds
  *    the six, and nothing it asks for is missing. **The control**: the same put back without the content, the six alone,
  *    answers each favourites document 304, which on a remote holding none copies nothing (the second control on the fake remote).
  * 3. **The sets the lab holds**, `work/touch-firmware/sets/9.2-empty` and `9.2-empty-back`, are what this derivation
  *    gives, read by fixture, `touch_empty_set` and `touch_empty_set_back`; they were built by the lab's
  *    `notes/9.2-build-sets.ts` before `touch-device-set.ts --empty` existed, and the script builds them byte for byte.
- * 4. **On the fake remote**, the lists of 8.6's closing run served as the reading predicts them, the five runs of the
+ * 4. **On the fake remote**, the lists of the setup set's closing run served as the reading predicts them, the five runs of the
  *    lab's `notes/9.2-preflight.md` section 7: the empty set on a remote holding the source answers the four 200 with
  *    its content and tags, Context and Settings 304, the two backgrounds 304 and the finish, in a first write of 1573
  *    characters, one chunk; the put back on a remote holding the empty set with its pictures carried answers the four
@@ -30,14 +30,14 @@
  *    remote holding it answers every request 304 but the finish, the control; and the six alone answer the favourites
  *    304. The write sizes are the ones the run's kept files measured.
  *
- * **Sources checked first.** The 9.2 preflight and brief in the lab; `touch-setup-set.test.ts`, whose shape this follows;
+ * **Sources checked first.** The empty set preflight and brief in the lab; `touch-setup-set.test.ts`, whose shape this follows;
  * the codec's `empty.ts` and its test; `touchfavouritesset.ts` for what the remote held and asks for; the reference's
  * `answering-a-sync.md` and `favourites-and-settings.md`. Logitech's client was not consulted: the documents are the
  * remote's, and what is checked is ours.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it
  * under 18. The lab half reads the bench sets and the recorded lists, prints nothing out of them and touches no remote.
- * The source is the `touch_setup_set_back` fixture, `8.6-setup-back`, which 9.2's first hash found the remote holding.
+ * The source is the `touch_setup_set_back` fixture, `8.6-setup-back`, which the empty set's first hash found the remote holding.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -63,7 +63,7 @@ const FULL = 'touch_full_sync_recording';
 const CLOSING = 'touch_setup_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
-/** The two sets 9.2 built in the lab and delivered to the bench Touch, by fixture. */
+/** The two sets the empty set built in the lab and delivered to the bench Touch, by fixture. */
 const BUILT = 'touch_empty_set';
 const BUILT_BACK = 'touch_empty_set_back';
 const FOUR: readonly string[] = EMPTY_DOCUMENTS;
@@ -121,7 +121,7 @@ describe('the 9.2 empty set and its put back', { skip: lab.needing(lab.skipUnles
       const was = held.get(a.uri);
       assert.ok(was !== undefined && was.etag === a.etag && was['body-type'] === a['body-type'] && isDeepStrictEqual(was.resource, a.resource), contentKind(a.uri));
     }
-    // What the remote held is the recorded full sync's, content and tags: 8.3's put back restored exactly those.
+    // What the remote held is the recorded full sync's, content and tags: the favourites set's put back restored exactly those.
     const byUri = new Map(recorded().map((a) => [a.uri, a]));
     for (const a of content) assert.ok(byUri.get(a.uri)?.etag === a.etag, contentKind(a.uri));
     assert.ok(!('refusals' in prepareSet(back)));

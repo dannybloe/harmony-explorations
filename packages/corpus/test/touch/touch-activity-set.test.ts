@@ -1,5 +1,5 @@
 /**
- * A Harmony Touch set with an activity of ours added, and the set that takes it out again, `todo-touch.md` 8.2:
+ * A Harmony Touch set with an activity of ours added, and the set that takes it out again:
  * `changeDocuments` and `chainTags` in `experiments/touchchangedset.ts` and `bin/touch-device-set.ts --activity`, the
  * composing being the codec's (`composeTouchActivity`, `withTouchActivity`, `withoutTouchActivity`,
  * `test/families/harmony-touch/touch-activity-add.test.ts` there).
@@ -11,22 +11,22 @@
  *    below: each activity id occurs in `ActivityList` once and in `MapList` only as its map's identifier, its map's
  *    `ActivityId-` and inside a screen entry's `MenuItem.MenuName`, and in the other four not at all. So a remote
  *    that committed the source is answered 304 for four documents and 200 for two.
- * 2. **The chain's tags reach past an activity set**, so a later set built from one of 8.2's cannot reuse a tag the
+ * 2. **The chain's tags reach past an activity set**, so a later set built from one of the activity set's cannot reuse a tag the
  *    chain stated; `chainTags` follows the record's `activity` and `removedActivity`.
  * 3. **On the fake remote, through the real answerer and session, the bench run is rehearsed**: the request lists
- *    of the closing `--unchanged` run of 8.1 served as recorded, the remote asking for the six with the tags of 8.1's
+ *    of the closing `--unchanged` run of the device set served as recorded, the remote asking for the six with the tags of the device set's
  *    put back, which is what the bench Touch holds; the activity set answers `ActivityList` and `MapList` 200 with its
  *    content and tags, the other four 304, the three favourites 304, the ten pictures 304, and the run finishes. The
- *    put back is rehearsed the same way with the remote holding the activity set, and its content is 8.1's put back's,
+ *    put back is rehearsed the same way with the remote holding the activity set, and its content is the device set's put back's,
  *    as parsed JSON. **The control** is the activity set answered to a remote holding it already: every request 304.
  *
- * **Sources checked first.** The 8.2 brief in the lab and the 8.1 preflight it follows; `touch-device-set.test.ts`,
- * whose shape this is; `touchsync.ts` (`answerOf`, `prepareSet`, `setTag`); the recorded lists of 8.1's closing run.
+ * **Sources checked first.** The activity set brief in the lab and the device set preflight it follows; `touch-device-set.test.ts`,
+ * whose shape this is; `touchsync.ts` (`answerOf`, `prepareSet`, `setTag`); the recorded lists of the device set's closing run.
  * Logitech's client was not consulted.
  *
  * **Width.** One model, the Harmony Touch, firmware 4.15.330; its firmware reports architecture 17 and Logitech's
  * templates file it under 18. The lab half reads the bench sets and the recorded lists, prints nothing out of them
- * and touches no remote. The two 8.2 sets are read by fixture, `touch_activity_set` and `touch_activity_set_back`, and
+ * and touches no remote. The two activity sets are read by fixture, `touch_activity_set` and `touch_activity_set_back`, and
  * what the remote did with them is `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
@@ -44,7 +44,7 @@ import { chainTags, changeDocuments, setDifferences } from '../../experiments/to
 import { keyOf, resultOf, setTag, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 
-/** The activity of 8.2, read from the file the bench set is built from. */
+/** The activity of the activity set, read from the file the bench set is built from. */
 const DESCRIPTION = fileURLToPath(new URL('../../touch-activities/test-cinema.json', import.meta.url));
 const cinema = (): harmonyTouch.OwnActivity => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { activity: harmonyTouch.OwnActivity }).activity;
 
@@ -82,12 +82,12 @@ describe('the chain of sets', () => {
 // The bench sets, rehearsed on the fake remote through the real answerer and session
 // ---------------------------------------------------------------------------------------------------
 
-/** What the bench Touch holds since 8.1's put back, and 8.1's closing `--unchanged` run, by fixture. */
+/** What the bench Touch holds since the device set's put back, and the device set's closing `--unchanged` run, by fixture. */
 const SOURCE = 'touch_device_set_back';
 const CLOSING = 'touch_device_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
-/** The two sets 8.2 built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
+/** The two sets the activity set built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
 const BUILT = 'touch_activity_set';
 const BUILT_BACK = 'touch_activity_set_back';
 

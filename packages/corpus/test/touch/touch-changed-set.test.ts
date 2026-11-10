@@ -1,5 +1,5 @@
 /**
- * A Harmony Touch set with one value changed, `experiments/touchchangedset.ts`, for `todo-touch.md` 6.9: one delay
+ * A Harmony Touch set with one value changed, `experiments/touchchangedset.ts`, for: one delay
  * and one label changed and put back, each heard or seen at the bench.
  *
  * **What has to hold, and why each test is here.**
@@ -25,7 +25,7 @@
  * 5. **The codec's reader reads the change as the engine will**: a sequence delay's `Duration` of 3 as 3000 ms
  *    and an activity's new name, `readConfiguration`.
  *
- * **Sources checked first.** The 6.9 brief in the lab; `touchsync.ts` `answerOf` and `prepareSet`;
+ * **Sources checked first.** The changed set brief in the lab; `touchsync.ts` `answerOf` and `prepareSet`;
  * `touchownset.ts` and its test; `answering-a-sync.md`; the engine's `loader/userconfigreader.lua`
  * `getSequenceActions` (a delay step's `Duration` times 1000) and `apihandler/activity.lua`
  * `fireCommandsList` (a step with no device sleeps its delay) in the lab's decompiled source. Logitech's client
@@ -70,7 +70,7 @@ function documents(): Record<string, unknown> {
     MapList: {
       ButtonMaps: [{
         // The identifier the engine keys a map by: a map without one raises in the reader, which the gate
-        // refuses since `todo-touch.md` 6.10.
+        // refuses.
         __type: 'ActivityButtonMap',
         ButtonMapIdentifier: '16417Activity1',
         Buttons: [],

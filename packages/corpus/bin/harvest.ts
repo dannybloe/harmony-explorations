@@ -1,7 +1,6 @@
 /**
  * Harvest Logitech compiles: put catalogue devices on a disposable remote record, have Logitech compile
- * it, file the result in the lab with a manifest, remove the devices again. `todo-secure-logitech.md`
- * 1.1; load the `gathering-logitech` skill before using it.
+ * it, file the result in the lab with a manifest, remove the devices again. Load the `gathering-logitech` skill before using it.
  *
  * ```
  * node packages/corpus/bin/harvest.ts --record 16318261 --model 72 --label families-001 \
@@ -41,7 +40,7 @@
  *
  * **The check that makes a compile count**, from the `gathering-logitech` skill: the fetched file is
  * parsed and must hold as many devices as went in. A per family check of the infrared records is
- * `todo-secure-logitech.md` 2.3's and runs over the filed compiles afterwards.
+ * not this script's: it runs over the filed compiles afterwards.
  *
  * Everything lands in the lab under `work/harvest/<label>/`: each compile's ZIP and its extracted
  * files, every reply the service gave, and `manifest.json`. Nothing of it enters this repository.
@@ -77,7 +76,7 @@ const cli = commandLine({
 
 /**
  * Every `--device`, as `cli.values` reads them, and an empty one for a `--device` with nothing after it, which the
- * check below then refuses: what this script's own reader did before `todo.md` 7.3.7.
+ * check below then refuses: what this script's own reader did before the scripts shared one command line reader.
  */
 function devicesGiven(): string[] {
   return cli.argv.at(-1) === '--device' ? [...cli.values('device'), ''] : cli.values('device');

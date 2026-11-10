@@ -1,21 +1,21 @@
 /**
  * A Harmony Touch set with **Settings of ours and Context composed from a description**, made from a set the remote
- * holds, its exact inverse, and the comparisons that say what changed: `todo-touch.md` 8.4.
+ * holds, its exact inverse, and the comparisons that say what changed.
  *
- * **What 8.4 is for.** Every set before it delivered Settings and Context only as the remote had them, 6.8's own
- * documents under tags of ours. 8.4 composes both in the codec, `composeTouchSettings` and `composeTouchContext` in
+ * **What the settings set is for.** Every set before it delivered Settings and Context only as the remote had them, the own set's own
+ * documents under tags of ours. the settings set composes both in the codec, `composeTouchSettings` and `composeTouchContext` in
  * `packages/codec/src/families/harmony-touch/settings.ts`: Settings with a row or two changed that a person can see or time at
  * the bench, and Context from a description of the seven fields a Touch reads, equal to what the remote holds, so that
  * the run proves Context can be written by us without changing what the remote does.
  *
- * **The set is the six and nothing else.** A source that delivered favourites or a picture, 8.3's put back, holds
+ * **The set is the six and nothing else.** A source that delivered favourites or a picture, the favourites set's put back, holds
  * them beside its six; once the source is committed the remote holds them, so they are left out here, and the
  * answerer keeps the remote's copy of each, a favourites document 304 and a picture 304 against its tag, as every set
- * before 8.3 did. Settings and Context get new tags, `setTag` with the set's name, through `changeDocuments`, Context
+ * before the favourites set did. Settings and Context get new tags, `setTag` with the set's name, through `changeDocuments`, Context
  * with `retagUnchanged` since its content is the source's; the other four keep the source's content and tags.
  *
- * **The put back is the source's Settings and Context, content and tags**, as 8.3's put back states the tags the
- * remote held before: the remote then holds exactly what it held before 8.4, and each run's first request list still
+ * **The put back is the source's Settings and Context, content and tags**, as the favourites set's put back states the tags the
+ * remote held before: the remote then holds exactly what it held before the settings set, and each run's first request list still
  * says which set it holds, since the forward set's two tags differ from the source's. `getconfighash` covers Context
  * and not Settings, so the hash says Context arrived and the request list of the next run says Settings did.
  *
@@ -30,7 +30,7 @@ import { changeDocuments, differences } from './touchchangedset.ts';
 import { isContent } from './touchfavouritesset.ts';
 import { keyOf, prepareSet, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 
-/** The two documents 8.4 delivers. */
+/** The two documents the settings set delivers. */
 export const SETTINGS_SET_DOCUMENTS = ['Settings', 'Context'] as const;
 
 /** The six configuration documents of a set, without the favourites documents and pictures a source may also carry. */
@@ -102,7 +102,7 @@ export interface RowChange {
 
 /**
  * Every row whose first value differs between two Settings documents, and whether everything else, the other rows
- * whole and every other field, is equal. **The structural diff for Settings**: the two rows of 8.4 and nothing else.
+ * whole and every other field, is equal. **The structural diff for Settings**: the two rows of the settings set and nothing else.
  * A value is reported only for a row `SETTING_ROWS` names, levels, seconds and yes or no; any other row is reported by
  * name alone, since the background's and the pictures' values are the account's.
  */

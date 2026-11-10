@@ -2,9 +2,8 @@
  * A session with Logitech's MyHarmony service: a login, a cookie, and calls that refuse to write unless
  * a named door is open.
  *
- * **Why this exists, and why here.** `todo-secure-logitech.md` gathers what only Logitech's compiler
- * knows while their service still runs, and item 1.1 moves the client for it out of the private lab into
- * this repository. The calls themselves are not secret and are the knowledge being secured: which
+ * **Why this exists, and why here.** What only Logitech's compiler knows has to be gathered while
+ * their service still runs, and the client for it moved out of the private lab into this repository. The calls themselves are not secret and are the knowledge being secured: which
  * operation, in which order, with which contract types, puts a device on an account and gets a compile
  * back. What stays in the lab is the credentials and every reply, since a reply can carry an account's
  * identity and a compiled file is Logitech's output.
@@ -52,12 +51,12 @@ export const DOORS: ReadonlyMap<string, string> = new Map([
   ['updatemultiple', 'MYHARMONY_ALLOW_DEVICE_WRITE'],
   ['deletedevices', 'MYHARMONY_ALLOW_DELETE'],
   // Saving an activity, opened on 8 October 2026 for the Harmony 650's starting setup,
-  // `todo-compile-650.md` 1.6; a kind of write the lab client never made.
+  // which Logitech then compiled as a compare base; a kind of write the lab client never made.
   ['saveactivities', 'MYHARMONY_ALLOW_ACTIVITY_WRITE'],
-  // Saving a device's power feature, opened for `todo-compile-650.md` 3.10: MyHarmony's "keep this
+  // Saving a device's power feature, opened for a Harmony 650 setup with a device kept on: MyHarmony's "keep this
   // device on when switching Activities" is a flag in it, saved through this call alone.
   ['saveuserfeatures', 'MYHARMONY_ALLOW_FEATURE_WRITE'],
-  // Saving a device's button map, opened for `todo-compile-350.md` 3.1: a favourite channel is a button on
+  // Saving a device's button map, opened for the Harmony 350's test setup: a favourite channel is a button on
   // the device's own map, and the service takes it only as that whole map, `build-setup.ts --stage
   // favourites`. One door for the operation, whatever map it carries, since the operation is the write.
   ['savebuttonmaps', 'MYHARMONY_ALLOW_BUTTONMAP_WRITE'],

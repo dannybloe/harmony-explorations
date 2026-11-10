@@ -1,8 +1,8 @@
 /**
  * `writeConfiguration`, the configuration write for the compiled families as a function an application calls,
- * `todo.md` 7.3.10, against `FakeClassicRemote` with the rails real.
+ * against `FakeClassicRemote` with the rails real.
  *
- * **What this holds.** The sequence `bin/write-config.ts` ran in its own body until 7.3.10, now the library's:
+ * **What this holds.** The sequence `bin/write-config.ts` ran in its own body before the write went into the library, now the library's:
  * which commands reach the remote and in what order, where each rail refuses relative to them, and that every
  * refusal the script met is met by the function, before anything changes the remote. The fake asserts the real
  * rail behind each command that changes a remote, so a write that gets past the first door here also built a
@@ -52,7 +52,7 @@ function withFlags(scenario: WriteScenario): WriteRun {
 describe('the units and models are the library\'s, and hold what the script\'s table held', () => {
   it('holds every unit with the name and the model `write-config.ts`\'s table gave it at 24590a98, and no other', () => {
     // Copied by hand from `TARGETS` in `packages/corpus/bin/write-config.ts` as it stood at 24590a98, the commit
-    // before 7.3.10, so a change to the list is a change to this test and is visible in its diff.
+    // before the write moved into the library, so a change to the list is a change to this test and is visible in its diff.
     assert.deepEqual(CONFIG_WRITE_UNITS, {
       h885_a: { name: 'the Harmony 885 unit A', model: 'Harmony 885' },
       h885_b: { name: 'the Harmony 885 unit B', model: 'Harmony 885' },

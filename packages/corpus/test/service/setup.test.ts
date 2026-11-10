@@ -1,5 +1,5 @@
 /**
- * The setup builder's offline half, `todo-compile-650.md` 1.6: the `SaveActivities` payload, its door,
+ * The setup builder's offline half: the `SaveActivities` payload, its door,
  * and the starting setup's own data checked against the catalogue it names. Nothing here touches the
  * network.
  */

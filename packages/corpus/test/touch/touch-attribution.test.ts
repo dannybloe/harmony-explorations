@@ -1,5 +1,5 @@
 /**
- * `todo-touch.md` 9.3: **every field of the Harmony Touch set built from nothing is credited to a generator, and none is
+ * **Every field of the Harmony Touch set built from nothing is credited to a generator, and none is
  * carried from a Logitech document**, found from the code rather than from the attribution tables in the headers of
  * `fromnothing.ts` and `archivedevice.ts`; and the set still passes the answerer's gate, the reader and the check.
  *
@@ -8,37 +8,37 @@
  * 1. **The inputs, by watching the file system.** While `withNothing` builds the set from the setup file and the
  *    account file, both handed over as parsed JSON, every file the process reads, tests for or lists is recorded:
  *    **every one is in the archive of the catalogue**, 56 calls on 15 distinct files (the archive's manifest, and per
- *    device of the seven its catalogue entry and its code set), and nothing in the lab and nothing of 8.6's set. Our
+ *    device of the seven its catalogue entry and its code set), and nothing in the lab and nothing of the setup set's. Our
  *    rhythm table is code, `PROTOCOLS` in the codec, so it is read by no file. So the only inputs are the five the brief names: the
  *    setup file, the archive through our readers, our rhythm table, the lab's account description and the picture drawn
  *    in `ourBackground`.
  * 2. **Every field and its generator**, `attributeNothingSet` in `experiments/touchattribution.ts`: each step of the build run
  *    again by itself and a field credited to the latest step whose own output holds that value at that place, the
  *    composer's own writes told from what it carries by composing the same devices onto skeleton records. On the lab's
- *    set, `work/touch-firmware/sets/9.1-nothing`, which 9.4 delivers: 10671 fields, per document and generator exactly as
+ *    set, `work/touch-firmware/sets/9.1-nothing`, which the from-nothing run delivers: 10671 fields, per document and generator exactly as
  *    `EXPECTED` below, **0 carried and 0 unattributed**. The split is the headers' tables, now measured: on the device
  *    list the composer writes 110 fields (each device's id, name, control port, press repeats and two delays, every
  *    feature's device id, each power choice and input delay, and the LG TV's channel tuning), the account's step the
  *    tuning device's favourites address and key, and the rest is the record as `deviceRecordOfArchive` writes it from
  *    the archive (1562, the maker and model among them, every command's name, transport and raw code), its features as
  *    `featuresOfDriving` writes them (633) and every key code as `keyCodeText` writes it into our definition (373).
- * 3. **The control**: the same set with one command's protocol id replaced by the one 8.6's set gives that command, a
+ * 3. **The control**: the same set with one command's protocol id replaced by the one the setup set's gives that command, a
  *    command naming Logitech's definition, reports that one field as carried from a Logitech document and every other
  *    field as before; with Logitech's icon added to a device, the same; and a value found in neither our generators nor
  *    Logitech's documents is reported unattributed. So "0 carried" can fail, and the two kinds are told apart. Each
  *    changed answer is retagged with `ourTag` of its new body, so the field is the only thing that differs; left with
  *    its old tag, the tag is reported unattributed as well.
  * 4. **The set passes the reader and the check**: the gate with 8 tags stated and none the answerer's, the reader 5
- *    activities, 7 devices, 12 maps and 5 definitions, the check the two findings of the screens' lists 8.6's set finds
- *    and nothing refused, and nothing `refusalsBeforeASync` refuses. 9.1 held the same on a set built afresh,
+ *    activities, 7 devices, 12 maps and 5 definitions, the check the two findings of the screens' lists the setup set's finds
+ *    and nothing refused, and nothing `refusalsBeforeASync` refuses. the from-nothing set held the same on a set built afresh,
  *    `touch-nothing-set.test.ts`; here it is held on the lab's set itself.
  *
  * **Why a field equal by coincidence is no hole.** A field our generator reproduces is ours whatever Logitech's
- * documents hold there: the key codes, for one, are the same text in 8.6's set, since 9.1's comparison lists no key code
+ * documents hold there: the key codes, for one, are the same text in the setup set's, since the from-nothing set's comparison lists no key code
  * among its differences, and the control that copies one in changes nothing, which is the claim. What the attribution cannot see is a generator that reads a Logitech document
  * itself, and that is what point 1 rules out.
  *
- * **Sources checked first.** The 9.3 and 9.4 brief in the lab; the codec's `fromnothing.ts` and `archivedevice.ts`, whose
+ * **Sources checked first.** The attribution check and the from-nothing run brief in the lab; the codec's `fromnothing.ts` and `archivedevice.ts`, whose
  * tables this checks; `touch-nothing-set.test.ts`, whose sets it reads. Logitech's client was not consulted: what is
  * attributed is ours.
  *
@@ -60,9 +60,9 @@ import { attributeNothingSet, attributionCounts, layersOf, withField, type Attri
 import { withNothing, type TouchAccountFile } from '../../experiments/touchnothingset.ts';
 import { keyOf, prepareSet, type TouchSet } from '../../src/touchsync.ts';
 
-/** 8.6's set, Logitech's documents under tags of ours, which a field no generator reproduces is looked up in. */
+/** The setup set's, Logitech's documents under tags of ours, which a field no generator reproduces is looked up in. */
 const SETUP = 'touch_setup_set';
-/** The account file and the set 9.1 built in the lab, which 9.4 delivers. */
+/** The account file and the set the from-nothing set built in the lab, which the from-nothing run delivers. */
 const ACCOUNT = 'touch_nothing_account';
 const BUILT = 'touch_nothing_set';
 const SETUP_FILE = fileURLToPath(new URL('../../setups/touch-test.json', import.meta.url));

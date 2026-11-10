@@ -1,5 +1,5 @@
 /**
- * One run of `answerTouchSync` against the fake Touch, for `touch-answer.test.ts`, `todo.md` 7.3.10.
+ * One run of `answerTouchSync` against the fake Touch, for `touch-answer.test.ts`.
  *
  * **Why a process of its own**, as `touch-sync-run.ts` gives: the rails read their flags once, when `rails.ts`
  * loads, so the test starts this file with the flags it wants and reads the result back as JSON. **Nothing here

@@ -1,12 +1,12 @@
 /**
- * The 9.4 run rehearsed on the fake remote, `todo-touch.md` 9.4: the set built from nothing delivered to a Harmony Touch
- * that holds what the bench Touch holds after 9.2, then the put back, then a closing `--unchanged` run, through the real
- * answerer and session, served the request lists **9.2's closing run recorded**, `reads/20261107T1138Z-touch-sync-unchanged`.
+ * The from-nothing run rehearsed on the fake remote: the set built from nothing delivered to a Harmony Touch
+ * that holds what the bench Touch holds after the empty set, then the put back, then a closing `--unchanged` run, through the real
+ * answerer and session, served the request lists **the empty set's closing run recorded**, `reads/20261107T1138Z-touch-sync-unchanged`.
  *
- * **Why those lists.** That run is the last sync the bench Touch answered: 9.2's put back had committed the six of 8.6's
+ * **Why those lists.** That run is the last sync the bench Touch answered: the empty set's put back had committed the six of the setup set's
  * put back with the favourites documents delivered again, and the closing run answered everything 304, so what it
- * asked is what the remote holds and will ask at 9.4's start. Its first list asked for the six with the tags of
- * `9.1-nothing-back`, which is 8.6's put back, content and tags; its three favourites requests were untagged, as every
+ * asked is what the remote holds and will ask at the from-nothing run's start. Its first list asked for the six with the tags of
+ * `9.1-nothing-back`, which is the setup set's put back, content and tags; its three favourites requests were untagged, as every
  * sync through a computer asks them; and its picture list asked for the person's background and its twin and the eight
  * logos, each with the tag the remote holds.
  *
@@ -29,17 +29,17 @@
  *    304 for everything but the finish, so the 200s above come from the tags and not from the answerer.
  *
  * **What the fake does not model**: what the remote does with the set, which is the bench run; and whether a 304 to a
- * favourites request finds a copy to keep, which 9.2 measured it does when the remote holds one: 9.2's put back
+ * favourites request finds a copy to keep, which the empty set measured it does when the remote holds one: the empty set's put back
  * delivered the three again, and the closing run's 304 kept them.
  *
- * **Sources checked first.** The 9.3 and 9.4 brief in the lab, 9.2's preflight and its runs, `touch-nothing-set.test.ts`
- * whose fake remote rehearsal on 8.6's closing lists this repeats on 9.2's. Logitech's client was not consulted.
+ * **Sources checked first.** The attribution check and the from-nothing run brief in the lab, the empty set's preflight and its runs, `touch-nothing-set.test.ts`
+ * whose fake remote rehearsal on the setup set's closing lists this repeats on the empty set's. Logitech's client was not consulted.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates file it
  * under 18. The recorded run is read by its fixtures, `touch_empty_unchanged_handover_list` and
- * `touch_empty_unchanged_list_1` to `_8`, named when 9.2 landed; nothing here prints a tag or an address.
+ * `touch_empty_unchanged_list_1` to `_8`, named when the empty set landed; nothing here prints a tag or an address.
  *
- * **The run it rehearsed, 9.4, went as rehearsed**: the forward run's six in one write of 381470 characters, 13 chunks,
+ * **The run it rehearsed, the from-nothing run, went as rehearsed**: the forward run's six in one write of 381470 characters, 13 chunks,
  * our two pictures 200 in one of 5288, the put back's six in 571577, 19 chunks, every other answer 304 but the finish,
  * and the closing run 304 throughout, `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`.
  */
@@ -59,10 +59,10 @@ import { NOTHING_DOCUMENTS } from '../../experiments/touchnothingset.ts';
 import { keyOf, resultOf, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 
-/** The set 9.1 built and its put back, by fixture. */
+/** The set the from-nothing set built and its put back, by fixture. */
 const BUILT = 'touch_nothing_set';
 const BUILT_BACK = 'touch_nothing_set_back';
-/** 9.2's closing run, by fixture: the hand over's list, and the eight lists of the sync down. */
+/** The empty set's closing run, by fixture: the hand over's list, and the eight lists of the sync down. */
 const HAND_OVER = 'touch_empty_unchanged_handover_list';
 const LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `touch_empty_unchanged_list_${n}`);
 

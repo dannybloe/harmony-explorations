@@ -1,5 +1,5 @@
 {
-  "what": "todo-touch.md 8.4: the bench Touch's screen brightness from 100 to 20, seen at the sync's end, and its screen timeout from 10 to 30 seconds, timed off the cable; every other row as the remote holds it",
+  "what": "The bench Touch's screen brightness from 100 to 20, seen at the sync's end, and its screen timeout from 10 to 30 seconds, timed off the cable; every other row as the remote holds it",
   "settings": {
     "values": { "ScreenBrightness": "20", "ScreenTimeout": "30" }
   }

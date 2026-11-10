@@ -9,12 +9,12 @@
  *   ... --commit --restart-only   section 282: the restart and nothing else
  *   ... --as-is                   write the file's own stamp, for putting a compile back unchanged
  *
- * **Every write stamps the configuration at the moment of writing**, todo-compile-650 1.3: the build
+ * **Every write stamps the configuration at the moment of writing**: the build
  * timestamp and the clock records, since a restart puts the remote's clock back to that stamp
  * (sections 111 and 310). The stamped file is saved over `--config` before the first erase, so the
  * lab holds what went onto the remote, and a rerun after a run that stopped past its erase writes
  * that saved file unchanged rather than stamping again, `stoppedAfterErase`. `--as-is` writes the
- * file as it is, which is what 1.6 needs for a compile written back unchanged, and `--drop-only` and
+ * file as it is, which is what a compile written back unchanged as a compare base needs, and `--drop-only` and
  * `--restart-only` imply it, since both compare the remote against the file and write nothing.
  *
  * **Two units since 27 September 2026, section 282**, chosen by the architecture read off the remote
@@ -32,7 +32,7 @@
  * The version string is not a build: the 600 and the 650 both report 0.2 and differ in 1395 bytes,
  * and 0.2 is listed for both only because section 282 found every routine involved identical.
  *
- * **Six since `todo-compile-885.md` 1.4**: the two bench Harmony 885s, units A and B, decision 30, on
+ * **Six with the two bench Harmony 885s**, units A and B, decision 30, on
  * arch 8, which every arch 8 model reports alike, so again the dump names the unit and the identity block
  * has to match its record. **Their write end is not the others'**, `reference/architectures/
  * harmony-880-885/usb.md` "How a write ends": the cache drop, `WRITE_MISC` selector 2, before the first
@@ -65,7 +65,7 @@
  * identified off its own identity block, the architecture comes off the device, and the erase is
  * measured against both neighbours.
  *
- * **The sequence is the library's since `todo.md` 7.3.10**, `writeConfiguration` in `src/writeconfig.ts`, on
+ * **The sequence is the library's**, `writeConfiguration` in `src/writeconfig.ts`, on
  * `@harmony/corpus/write`, so an application writes a remote through the same function this script calls. What
  * stays here is the bench's: the command line, the lab's names for the units and their region reads, reading
  * the two files, finding a stopped run's journal, opening the one remote attached, the journal file, the signal
@@ -146,8 +146,8 @@ const SPARE_DUMPS = new Set([
   'one_spare_screen_base',
   'one_spare_poweroff_base',
   'one_spare_page4_base',
-  // Read at the start of todo-compile-one: MyHarmony's sync of the spare with the two test activities of
-  // section 293 composed onto it, the compare base for that track's first write.
+  // MyHarmony's sync of the spare with the two test activities of section 293 composed onto it, read before
+  // the first write of a configuration composed for the One: the compare base for that write.
   'one_spare_track_start',
   // The same unit unchanged and read further, because the configuration with our look, section 399, outgrew it.
   'one_spare_look_base',
@@ -163,7 +163,7 @@ const SPARE_DUMPS = new Set([
   'one_spare_light60_written',
   // The spare at 20 s without the Remote Assistant at start, the base for the write giving composed rows their click.
   'one_spare_noassistant_written',
-  // The spare with composed rows clicking, read before the write without the tour, todo-compile-one.md 4.10.1.
+  // The spare with composed rows clicking, read before the write without the tour.
   'one_spare_tourfree_base',
   'one_spare_tourfree_written',
   'one_spare_pictures_written',
@@ -200,10 +200,10 @@ const H650_DUMPS = new Set([
   // Before section 309's test device with held power steps: the Panasonic configuration as MyHarmony
   // left it. The compare base for that write.
   'h650_plasma_base',
-  // After section 309's one byte write: the compare base for the seventh device, todo-compile-650 2.3.
+  // After section 309's one byte write: the compare base for the seventh device, the one that opens a new device list page, section 312.
   'h650_seventh_base',
   // After the seventh device, read back identical to that write: the compare base for the combined
-  // bench file, todo-compile-650 2.2 to 3.12.
+  // bench file, the device and activity features composed for the 650 in one configuration.
   'h650_combined_base',
   'h650_combined2_base',
   'h650_two_devices_base',
@@ -238,9 +238,9 @@ const H650_DUMPS = new Set([
   'h650_8_2_6_control',
   'h650_empty_base',
   'h650_empty_blended_base',
-  // Before todo-compile-650 11.2.3, the test setup built from nothing: the compare base for that write.
+  // Before the test setup built from nothing was written: the compare base for that write.
   'h650_11_2_3_base',
-  // Before 11.2.4, the same setup with its letters smoothed: the compare base for that write.
+  // Before the same setup with its letters smoothed: the compare base for that write.
   'h650_11_2_4_base',
   // With the smoothed setup on it, before the start up icon and the corner mark were moved: that write's base.
   'h650_11_2_4_look_base',
@@ -259,19 +259,19 @@ const H600_DUMPS = new Set<string>([
   // After the 600's first real write, the KPN box's power on delay raised from 15 to 45 tenths: the
   // two bytes the file changed and nothing else. The compare base for putting it back.
   'h600_kpn45_region',
-  // Before the empty configuration of `todo-compile-600.md` 1.4: the region to the 0x200000 ceiling.
+  // Before the empty configuration: the region to the 0x200000 ceiling.
   'h600_before_empty',
   // With our empty configuration on it, before the same file with the Off screen's mark at 0, section 387.
   'h600_empty_on',
-  // With the mark at 0 on it, before the empty configuration in grey 2, `todo-compile-600.md` 1.2.4.3.
+  // With the mark at 0 on it, before the empty configuration in grey 2.
   'h600_markoff_on',
-  // With the empty configuration in grey 2 on it, before its letters blended, `todo-compile-600.md` 1.2.4.
+  // With the empty configuration in grey 2 on it, before its letters blended.
   'h600_grey2_on',
-  // With the empty configuration in grey 2 and blended letters on it, before the five device setup, 2.2.
+  // With the empty configuration in grey 2 and blended letters on it, before the five device setup.
   'h600_blended_on',
-  // With the five device setup on it, after its bench run, 2.2.
+  // With the five device setup on it, after its bench run.
   'h600_setup5_on',
-  // With the six device file on it, the Switch the sixth, after its bench run, 2.2.2.
+  // With the six device file on it, the Switch the sixth, after its bench run.
   'h600_setup6_on',
 ]);
 const H700_DUMPS = new Set<string>([
@@ -282,7 +282,7 @@ const H700_DUMPS = new Set<string>([
   // After the 700's first real write, the Denon's power on delay raised from 60 to 90 tenths: the two
   // bytes the file changed and nothing else. The compare base for putting it back.
   'h700_delay90_region',
-  // Before the empty configuration built from nothing, todo-compile-700 1.4, section 382.
+  // Before the empty configuration built from nothing, section 382.
   'h700_before_empty',
   // With the empty configuration on it, section 383: the compare base for putting the original back.
   'h700_empty_on',
@@ -293,13 +293,13 @@ const H700_DUMPS = new Set<string>([
 ]);
 
 /**
- * The two bench Harmony 885s' region reads, arch 8, `todo-compile-885.md` 1.4. The same rule as every list
+ * The two bench Harmony 885s' region reads, arch 8. The same rule as every list
  * above: region reads only, each the unit's content when it was read, so a write adds the next one.
  *
  * **The first entries are the reads `rehearse-block.ts` compares against**, each taken twice and
  * identical, from the configuration's base at `0x020000` to the staging region at `0x1D0000`, so every
  * block a configuration can occupy is covered and none past the ceiling is. Unit A's are still its content
- * after 1.3, which wrote block `0x0C0000` back unchanged, `tests/harmony_880_885/test_harmony_885_flash_backup.py`; unit
+ * after the rehearsal that wrote block `0x0C0000` back unchanged, `tests/harmony_880_885/test_harmony_885_flash_backup.py`; unit
  * B's are from before anything was written to it. A write that lands makes them stale, which the block
  * compare refuses rather than trusts, and the read after it is what goes in next.
  */
@@ -310,14 +310,14 @@ const H885_A_DUMPS = new Set<string>([
 const H885_B_DUMPS = new Set<string>([
   'h885_b_region',
   'h885_b_region_2',
-  // B's region after todo-compile-885.md 1.4 wrote its own configuration back restamped: the current content
-  // since then, differing from the two above in that write's 17 stamp bytes. Read once; a second read met a
+  // B's region after the first configuration write to it put its own configuration back restamped: its content
+  // from then on, differing from the two above in that write's 17 stamp bytes. Read once; a second read met a
   // sequence break, and the one read is checked against the written file and the region before it instead,
-  // `tests/harmony_880_885/test_harmony_885_first_config_write.py`. Every write to B from 1.4 on compares against this.
+  // `tests/harmony_880_885/test_harmony_885_first_config_write.py`. The writes to B after that one compared against this, until the read below.
   'h885_b_after_1_4_region',
-  // B's region after todo-compile-885.md 2.1 wrote unit A's configuration with the Sony HT onto it: the file
-  // written in its first 572238 bytes, and the region after 1.4 everywhere outside the nine sectors that write
-  // erased. Read once, no window retried, before 2.3's write; every write to B from 2.3 on compares against this.
+  // B's region after unit A's configuration with the Sony HT was written onto it: the file written in its
+  // first 572238 bytes, and the region above everywhere outside the nine sectors that write erased. Read once,
+  // no window retried, before the next write to B; every write to B since compares against this.
   'h885_b_after_2_1_region',
 ]);
 
@@ -329,10 +329,10 @@ const H885_B_DUMPS = new Set<string>([
  * the units by the architecture the remote reports and the region read `--dump` names, never by an argument, for
  * the reason `rehearse-block.ts` gives, and the identity block read off the remote refuses any other unit, since
  * the 600 and the 650 enumerate identically and so do two Harmony Ones. What each model's write end needs is
- * `CONFIG_WRITE_MODELS` beside it, since `todo.md` 7.3.10 moved the sequence into the library.
+ * `CONFIG_WRITE_MODELS` beside it, in the library, which holds the sequence.
  *
  * **Several units per architecture since Danny's decision of 29 September 2026**, the Harmony 600 and the
- * Harmony 700 beside the 650, and the two bench Harmony 885s since `todo-compile-885.md` 1.4, decision 30.
+ * Harmony 700 beside the 650, and the two bench Harmony 885s, decision 30.
  */
 const REGIONS: Readonly<Record<ConfigWriteUnitLabel, ReadonlySet<string>>> = {
   h885_a: H885_A_DUMPS,

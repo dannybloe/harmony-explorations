@@ -23,7 +23,7 @@ import {
 import { MAX_WINDOW_RETRIES, readFlashWindow, type WindowRetry } from '@harmony/usb/readwindow';
 
 // Still exported from here, where callers and tests have always found it. The value lives once, beside
-// the loop it bounds, `todo-compile-885.md` 1.10.
+// the loop it bounds.
 export { MAX_WINDOW_RETRIES };
 
 /**
@@ -270,9 +270,8 @@ export async function readConfig(
   for (let at = head.length; at < header.length; at += chunk) {
     const count = Math.min(chunk, header.length - at);
     // **A window is retried, because a read is idempotent and the failure it has is transient.**
-    // Section 223, and the loop that does it is `readFlashWindow` in `@harmony/usb`, shared since
-    // `todo-compile-885.md` 1.10 with the two region readers, which had no retry and stopped on the
-    // first lost chunk. Its docstring carries the measurement and the bound. What stays here is the
+    // Section 223, and the loop that does it is `readFlashWindow` in `@harmony/usb`, shared
+    // with the two region readers, which once had no retry and stopped on the first lost chunk. Its docstring carries the measurement and the bound. What stays here is the
     // decision it encodes: this layer knows a config read has no side effect, so this layer is the
     // one that asks again, and `readFlash` underneath goes on reporting rather than absorbing.
     const got = await readFlashWindow(reader, profile.configBase + at, count, options.onRetry);

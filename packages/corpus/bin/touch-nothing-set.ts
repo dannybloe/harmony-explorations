@@ -1,11 +1,11 @@
 /**
  * Build a Harmony Touch set **from a setup file with no Logitech document as input**, its put back, and the description
- * of the account it takes the account's values from; and check a set built so against 8.6's: `todo-touch.md` 9.1. It
+ * of the account it takes the account's values from; and check a set built so against a set the remote held. It
  * opens no remote: it reads the lab, the setup file and the archive of the catalogue, and writes into the lab.
  *
  *   node packages/corpus/bin/touch-nothing-set.ts --describe-account <set folder> --out <new lab file>
  *   node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --setup <setup file> --account <lab file> [--archive <checkout>]
- *   node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --back <set folder> --from <9.1 set folder>
+ *   node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --back <set folder> --from <set folder built by --setup>
  *   node packages/corpus/bin/touch-nothing-set.ts --check <set folder> --against <set folder> [--held <set folder>] [--archive <checkout>]
  *       [--attribute --setup <setup file> --account <lab file>] [--hash <answer>] [--list <request list>]... [--written <write>]...
  *
@@ -29,12 +29,12 @@
  * `--held`, what the answerer writes for a remote that committed that set, and the size of the write; and the pictures
  * the set holds answered to a remote that holds none of them, and the size of that write alone.
  *
- * **`--attribute`**, `todo-touch.md` 9.3: every field of the set credited to the generator that wrote it, found by
+ * **`--attribute`**: every field of the set credited to the generator that wrote it, found by
  * running each step of the build again by itself, `attributeNothingSet` in `experiments/touchattribution.ts`, with the setup file
  * and the account file it was built from; NOT OK on a field no generator reproduces, which is named carried when
  * `--against`'s set, Logitech's documents, holds the same value in the same field.
  *
- * **A run's kept files**, `todo-touch.md` 9.4: `--hash`, a `getconfighash` answer, equal or not to the four tags the set
+ * **A run's kept files**: `--hash`, a `getconfighash` answer, equal or not to the four tags the set
  * states; `--list`, a request list, each of the six and each picture the set holds asked with the set's tag, another, none
  * or not at all; `--written`, a kept write of answers, each of the set's answers it carries 200 with the set's content and
  * tag or 304, and a write answering none of the set's passed over by name.
@@ -63,7 +63,7 @@ const cli = commandLine({
   usage: [
     'usage: node packages/corpus/bin/touch-nothing-set.ts --describe-account <set folder> --out <new lab file>',
     '       ... --build <new lab folder> --setup <setup file> --account <lab file> [--archive <checkout>]',
-    '       ... --build <new lab folder> --back <set folder> --from <9.1 set folder>',
+    '       ... --build <new lab folder> --back <set folder> --from <set folder built by --setup>',
     '       ... --check <set folder> --against <set folder> [--held <set folder>] [--archive <checkout>]',
     '         [--attribute --setup <setup file> --account <lab file>] [--hash <answer>] [--list <request list>]... [--written <write>]...',
   ].join('\n'),
@@ -103,7 +103,7 @@ function describeAccount(folder: string): void {
   const described = describeTouchAccount(readSet(insideTheLab(folder, 'the set')));
   if ('refusal' in described) fail(described.refusal);
   mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, `${JSON.stringify({ about: `todo-touch.md 9.1: the account's values, described from ${basename(folder)}; kept in the lab, never in the repository`, account: described.account }, null, 1)}\n`);
+  writeFileSync(out, `${JSON.stringify({ about: `The account's values, described from ${basename(folder)}; kept in the lab, never in the repository`, account: described.account }, null, 1)}\n`);
   console.log(`written: the account's values, ${Object.keys(described.account.addresses).length} addresses, to ${out}`);
 }
 
@@ -111,7 +111,7 @@ function build(folder: string): void {
   const out = newFolder(folder);
   const back = cli.value('back');
   if (back !== undefined) {
-    const from = insideTheLab(cli.value('from') ?? fail('--build --back needs --from <9.1 set folder>'), 'the set put back');
+    const from = insideTheLab(cli.value('from') ?? fail('--build --back needs --from <set folder built by --setup>'), 'the set put back');
     const before = insideTheLab(back, 'the set before');
     const put = putBackNothing(readSet(from), readSet(before));
     if ('refusals' in put) fail(put.refusals.join('\n'));

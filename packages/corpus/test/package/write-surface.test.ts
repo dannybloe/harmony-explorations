@@ -1,9 +1,9 @@
 /**
- * `@harmony/corpus/write`, held to a list, `todo.md` 7.3.10: the configuration write and the Touch's sync as
+ * `@harmony/corpus/write`, held to a list: the configuration write and the Touch's sync as
  * functions an application calls. A new name on the write subpath is a line in this file's diff, the rule
  * `packages/usb/test/package/surface.test.ts` keeps for `@harmony/usb/write`, and so is one taken away.
  *
- * **And the write is on no other entry.** 7.3.6 settled that a write function is never on a main entry, so an
+ * **And the write is on no other entry.** Plan 013 settled that a write function is never on a main entry, so an
  * application that only reads imports `@harmony/corpus` and never meets one; this asks every entry
  * `package.json` exports, read from the manifest rather than listed here, so a subpath added there is checked
  * without an edit here.

@@ -1,6 +1,6 @@
 /**
  * A pretend remote of the compiled families, the Harmony One, 600, 650, 700 and 885, for the configuration
- * write's tests, `todo.md` 7.3.10.
+ * write's tests.
  *
  * **What it is and is not.** It stands where `HarmonyRemote` stands, with the methods the write calls, over an
  * array of flash, and keeps every call in `calls` so a test can say in which order things reached the cable.

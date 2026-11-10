@@ -1,6 +1,6 @@
 /**
  * A Harmony Touch set holding **the empty configuration**, no device and no activity, and the put back that restores
- * what its commit dropped: `todo-touch.md` 9.2.
+ * what its commit dropped.
  *
  * **The empty set**, `withEmpty`: the six of the source with the four lists emptied by the codec's
  * `emptyTouchDocuments` (`packages/codec/src/families/harmony-touch/empty.ts`, whose header says why each document has the form
@@ -17,7 +17,7 @@
  * request for one is answered 200 rather than 404; asked with the tag the remote held they are answered 304. The two user
  * backgrounds are not in it: no set here holds a background, and the one shown when they are missing is built in.
  *
- * What 9.2's run on the bench Touch did with the two is `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`; the sets are held
+ * What the empty set's run on the bench Touch did with the two is `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`; the sets are held
  * here by `packages/corpus/test/touch/touch-empty-set.test.ts`. It never prints a value out of a document. Nothing here opens
  * a remote.
  */

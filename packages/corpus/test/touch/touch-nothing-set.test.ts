@@ -1,57 +1,57 @@
 /**
- * The Harmony Touch set of `todo-touch.md` 9.1: the whole test setup built from a setup file, the archive of the
- * catalogue and our rhythm table, **with no Logitech document as input**, compared field by field with 8.6's set, which
+ * The Harmony Touch from-nothing set: the whole test setup built from a setup file, the archive of the
+ * catalogue and our rhythm table, **with no Logitech document as input**, compared field by field with the setup set's, which
  * the bench Touch ran 418 of 418, and its put back; built by `experiments/touchnothingset.ts` over the codec's
  * `buildTouchDocuments`, and rehearsed through the real answerer and session on the fake remote.
  *
  * **What is held here.**
  *
  * 1. **The account's values are described, not copied by hand**: the lab's account file, the fixture
- *    `touch_nothing_account`, is what `describeTouchAccount` writes from 8.6's put back, the set the bench Touch holds:
+ *    `touch_nothing_account`, is what `describeTouchAccount` writes from the setup set's put back, the set the bench Touch holds:
  *    Context's seven fields a Touch reads, the tuning device's favourites address and key, and the six addresses. It is
  *    compared here without printing a value of it, and it stays in the lab.
  * 2. **The set is built from the setup file**: all six documents at the account's addresses, and our background and its
  *    twin at the two addresses our Settings makes the screens build, each under a digest of its content, `ourTag`, so
  *    the set states every tag and none is the answerer's; the gate passes, its picture rule among it; the reader reads 5
- *    activities, 7 devices, 12 maps and 5 definitions; and the check finds the two findings of the screens' lists 8.6's
+ *    activities, 7 devices, 12 maps and 5 definitions; and the check finds the two findings of the screens' lists the setup set's
  *    set finds, refusing nothing. **Why a background of ours**: the screens ask for the pictures Settings' `UserImages`
  *    names, and asking for any picture is what carries every stored picture into the new set; with no user background
  *    named, a set of ours made them ask for none, so the person's own backgrounds and pictures would have left, the
- *    finding of 9.2's preparation, `empty.ts` in the codec.
- * 3. **The comparison, the heart of 9.1**: every field of our six documents against the same field of 8.6's set,
+ *    finding of the empty set's preparation, `empty.ts` in the codec.
+ * 3. **The comparison, the heart of the from-nothing set**: every field of our six documents against the same field of the setup set's,
  *    matched by what the remote finds an entry by. Each is equal, equal after one of the seven stated normalisations, or
  *    different for one of the stated reasons, row by row: ActivityList 224 equal, 0 normalised, 0 different; DeviceList
  *    2318, 480, 3676; MapList 7362, 0, 531; Context 10, 0, 17; Settings 21, 0, 49; ProtocolList 320, 5, 59; and **no row
  *    unexplained**. ActivityList is equal whole, since an activity is composed from the same description by the same
- *    composer as in 8.6. Why each normalisation and difference changes nothing the remote does is the row's own text in
+ *    composer as in the setup set. Why each normalisation and difference changes nothing the remote does is the row's own text in
  *    `experiments/touchnothingset.ts`, with the reading behind it; the rows that rest on a prediction rather than a reading,
  *    entries with no icon, the Xbox's toggle bit, Context's fourteen fields, and our background shown with the person's
- *    own out of the picker until the put back, are what 9.4 runs.
+ *    own out of the picker until the put back, are what the from-nothing run runs.
  * 4. **What every command sends is the same**: our definitions are written from our rhythm table and theirs are
  *    Logitech's, so their fields differ by construction, and the claim is the waveform. Each of the 373 commands, 63,
- *    118, 31, 59, 38, 54 and 10 by device, sends the same pulses and gaps from our documents as from 8.6's, at its
- *    device's repeat count, `waveformClosure`; the one family 8.6's set states a toggle bit for is Microsoft 30 Bit, the
+ *    118, 31, 59, 38, 54 and 10 by device, sends the same pulses and gaps from our documents as from the setup set's, at its
+ *    device's repeat count, `waveformClosure`; the one family the setup set's states a toggle bit for is Microsoft 30 Bit, the
  *    Xbox's, which ours states none for.
  * 5. **The control**: the same setup file with one key of Watch TV sending another command is built and compared, and
  *    the comparison then holds an unexplained row, so "no row unexplained" can fail.
- * 6. **The write**: a remote holding 8.6's put back is answered all six 200 in one write of 381470 characters, 13 chunks
- *    of 31000, the last 9470; the list that asks for the pictures, as 8.6's closing run asked it with our two in place of
+ * 6. **The write**: a remote holding the setup set's put back is answered all six 200 in one write of 381470 characters, 13 chunks
+ *    of 31000, the last 9470; the list that asks for the pictures, as the setup set's closing run asked it with our two in place of
  *    the person's two, in one write of 5288 characters, one chunk, our two 200 and the eight logos 304; and the put
  *    back on a remote holding our set, all six 200 in 571577 characters, 19 chunks, the last 13577. None is larger than
- *    the 19 chunks of 6.8's write of six documents, which the bench Touch took.
+ *    the 19 chunks of the own set's write of six documents, which the bench Touch took.
  * 7. **The sets the lab holds**, `work/touch-firmware/sets/9.1-nothing` and `9.1-nothing-back`, are what this
  *    derivation gives, read by fixture, `touch_nothing_set` and `touch_nothing_set_back`.
- * 8. **On the fake remote**, the closing `--unchanged` run of 8.6 served as recorded, its first list asking with the
- *    tags of the set the remote holds, which is 8.6's put back, and its picture list asking for the backgrounds the
+ * 8. **On the fake remote**, the closing `--unchanged` run of the setup set served as recorded, its first list asking with the
+ *    tags of the set the remote holds, which is the setup set's put back, and its picture list asking for the backgrounds the
  *    Settings the remote holds by then names: our set answers all six 200 with its content and tags, our background and
  *    its twin 200, keeps every favourites document and logo the remote holds, and finishes; the put back answers the
- *    six 200 with 8.6's put back's content and tags and the person's backgrounds 304, asked with the tags the remote
+ *    six 200 with the setup set's put back's content and tags and the person's backgrounds 304, asked with the tags the remote
  *    holds; and the control, our set on a remote holding it already, answers every request 304 but the finish.
  *
- * **What this does not show** is what the remote does with the set: that is the 9.4 run. The favourites documents and
- * pictures stay the remote's, since nothing in a setup composes them and 9.1 builds the six configuration documents.
+ * **What this does not show** is what the remote does with the set: that is the from-nothing run run. The favourites documents and
+ * pictures stay the remote's, since nothing in a setup composes them and the from-nothing set builds the six configuration documents.
  *
- * **Sources checked first.** The 9.1 brief in the lab; `touch-setup-set.test.ts`, whose comparison and fake remote this
+ * **Sources checked first.** The from-nothing set brief in the lab; `touch-setup-set.test.ts`, whose comparison and fake remote this
  * follows; the codec's `fromnothing.ts`, `archivedevice.ts` and their test; `driving.ts`, `catalogue.ts` and `stated.ts`
  * for what crosses from the archive; the reference's `devices-and-infrared.md` and `favourites-and-settings.md`; and the
  * lab's decompiled engine and the screens' Lua in the lab's copy of the image for every reading the normalisations and
@@ -80,10 +80,10 @@ import { compareNothing, describeTouchAccount, NOTHING_DOCUMENTS, putBackNothing
 import { keyOf, ourTag, prepareSet, resultOf, type RemoteRequest, type TouchSet, type TouchSyncOutcome } from '../../src/touchsync.ts';
 import type { Scenario } from './touch-sync-run.ts';
 
-/** 8.6's set, which the bench ran, and its put back, which the bench Touch holds since. */
+/** The setup set's, which the bench ran, and its put back, which the bench Touch holds since. */
 const SETUP = 'touch_setup_set';
 const HELD = 'touch_setup_set_back';
-/** The account file and the two sets 9.1 built in the lab, by fixture. */
+/** The account file and the two sets the from-nothing set built in the lab, by fixture. */
 const ACCOUNT = 'touch_nothing_account';
 const BUILT = 'touch_nothing_set';
 const BUILT_BACK = 'touch_nothing_set_back';

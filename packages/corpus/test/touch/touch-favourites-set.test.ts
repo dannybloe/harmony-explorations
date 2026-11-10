@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch set of `todo-touch.md` 8.3: favourites of ours and a logo of ours delivered beside the six
+ * The Harmony Touch favourites set: favourites of ours and a logo of ours delivered beside the six
  * configuration documents the remote holds, and its exact inverse, built by `experiments/touchfavouritesset.ts` and
  * rehearsed through the real answerer and session on the fake remote.
  *
@@ -11,8 +11,8 @@
  *    and tags, so a remote that committed the source answers them 304; the tuning device's favourites and the line up
  *    are not in the set, so the answerer keeps the remote's copies.
  * 2. **The put back is what the remote held before**: the user's document and the station's logo as the recorded full
- *    sync delivered them, tags and all, since no set before 8.3 delivered either.
- * 3. **On the fake remote**, the closing `--unchanged` run of 8.2 served as recorded, its first list asking with the
+ *    sync delivered them, tags and all, since no set before the favourites set delivered either.
+ * 3. **On the fake remote**, the closing `--unchanged` run of the activity set served as recorded, its first list asking with the
  *    tags of the set the remote holds and each logo with the tag it holds: the set answers the six 304, the user's
  *    favourites 200, the other two favourites 304, the one logo of ours 200 and the other nine 304, and finishes; the
  *    put back the same with the remote's old content; and **the control**, the set on a remote that holds it already,
@@ -24,12 +24,12 @@
  *    neither, a picture the gate refuses, and a favourites document the screens raise on, named by its kind and never by
  *    its address, which carries the account's identifiers.
  *
- * **Sources checked first.** The 8.3 brief in the lab; `touchchangedset.ts`, `touch-activity-set.test.ts` and their
+ * **Sources checked first.** The favourites set brief in the lab; `touchchangedset.ts`, `touch-activity-set.test.ts` and their
  * fake remote, whose shape this follows; the screens' favourites code in the lab's firmware copy for the put addresses
  * (`getRequest` in `appscommon/harmony.lua`). Logitech's client was not consulted.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates
- * file it under 18. The two 8.3 sets are read by fixture, `touch_favourites_set` and `touch_favourites_set_back`, and
+ * file it under 18. The two favourites sets are read by fixture, `touch_favourites_set` and `touch_favourites_set_back`, and
  * what the remote did with them is `packages/bench/test/harmony-touch/touch-favourites-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
@@ -53,7 +53,7 @@ const CLOSING = 'touch_activity_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
 const DESCRIPTION = fileURLToPath(new URL('../../touch-favourites/8.3-favourites.json', import.meta.url));
-/** The two sets 8.3 built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
+/** The two sets the favourites set built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
 const BUILT = 'touch_favourites_set';
 const BUILT_BACK = 'touch_favourites_set_back';
 
@@ -161,7 +161,7 @@ function run(scenario: Scenario): Run {
 }
 
 /**
- * 8.2's closing run's lists as a remote holding `six` and the content `held` would hand them out: the six asked with
+ * The activity set's closing run's lists as a remote holding `six` and the content `held` would hand them out: the six asked with
  * `six`'s tags, every logo with the tag `held` states for it, the favourites untagged as every sync asks for them.
  */
 function listsHolding(six: TouchSet, held: ReadonlyMap<string, SetAnswer>): RemoteRequest[][] {

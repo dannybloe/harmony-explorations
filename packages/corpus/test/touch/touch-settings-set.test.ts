@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch set of `todo-touch.md` 8.4: Settings of ours and Context composed from a description, delivered
+ * The Harmony Touch settings set: Settings of ours and Context composed from a description, delivered
  * beside the four other configuration documents the remote holds, and its exact inverse, built by
  * `experiments/touchsettingsset.ts` and rehearsed through the real answerer and session on the fake remote.
  *
@@ -11,7 +11,7 @@
  *    The other four are the source's, content and tags, so a remote that committed the source answers them 304.
  * 2. **The put back is what the remote held before**: the source's Settings and Context, content and tags, so the
  *    put back is the source again.
- * 3. **On the fake remote**, the closing `--unchanged` run of 8.2 served as recorded with its first list asking for the
+ * 3. **On the fake remote**, the closing `--unchanged` run of the activity set served as recorded with its first list asking for the
  *    six with the tags of the set the remote holds: the set answers Settings and Context 200 and the four 304, keeps
  *    every favourites document and picture the remote holds, and finishes; the put back the same with the source's
  *    content and tags; and **the control**, the set on a remote that holds it already, answers all six 304.
@@ -21,12 +21,12 @@
  * 5. **The builder's refusals**: a description the codec refuses, a source without Settings, a tag already in play, and
  *    a put back of anything but the two documents.
  *
- * **Sources checked first.** The 8.4 brief in the lab; `touch-favourites-set.test.ts` and its fake remote, whose shape
+ * **Sources checked first.** The settings set brief in the lab; `touch-favourites-set.test.ts` and its fake remote, whose shape
  * this follows; the screens' settings code in the lab's firmware copy for the hand over (`updateRemoteSettings` in
  * `appscommon/harmony.lua`). Logitech's client was not consulted.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates
- * file it under 18. The two 8.4 sets are read by fixture, `touch_settings_set` and `touch_settings_set_back`, and
+ * file it under 18. The two settings sets are read by fixture, `touch_settings_set` and `touch_settings_set_back`, and
  * what the remote did with them is `touch-settings-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
@@ -50,7 +50,7 @@ const CLOSING = 'touch_activity_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
 const DESCRIPTION = fileURLToPath(new URL('../../touch-settings/8.4-settings.json', import.meta.url));
-/** The two sets 8.4 built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
+/** The two sets the settings set built in the lab and delivered to the bench Touch, by fixture, for the comparison with what this derivation gives. */
 const BUILT = 'touch_settings_set';
 const BUILT_BACK = 'touch_settings_set_back';
 
@@ -63,7 +63,7 @@ const requestsOf = (fixture: string): RemoteRequest[] => {
 };
 const answer = (set: TouchSet, document: string) => set.answers.find((a) => keyOf(a.uri) === document)!;
 
-/** The chain as the bench built it: the source, the 8.4 set, its put back, each built as the script builds it. */
+/** The chain as the bench built it: the source, the settings set, its put back, each built as the script builds it. */
 function chain(): { source: TouchSet; forward: TouchSet; back: TouchSet; context: harmonyTouch.OwnContext } {
   const source = json(SOURCE) as TouchSet;
   const context = harmonyTouch.describeTouchContext(answer(source, 'Context').resource as harmonyTouch.Context);
@@ -146,7 +146,7 @@ function run(scenario: Scenario): Run {
   return JSON.parse(out) as Run;
 }
 
-/** 8.2's closing run's lists as a remote holding `six` would hand them out: the six asked with `six`'s tags, the rest as recorded. */
+/** The activity set's closing run's lists as a remote holding `six` would hand them out: the six asked with `six`'s tags, the rest as recorded. */
 function listsHolding(six: TouchSet): RemoteRequest[][] {
   return CLOSING_LISTS.map(requestsOf).map((list) => list.map((r): RemoteRequest =>
     (r.uri.startsWith('harmony://') ? { ...r, etag: answer(six, keyOf(r.uri)).etag! } : r)));

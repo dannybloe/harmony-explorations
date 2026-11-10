@@ -1,6 +1,6 @@
 /**
  * Build a Harmony Touch set with one value changed from a set the remote holds, check it, and compare what the
- * remote reports afterwards with it: `todo-touch.md` 6.9. It opens no remote: it reads the lab and writes into
+ * remote reports afterwards with it. It opens no remote: it reads the lab and writes into
  * it.
  *
  *   node packages/corpus/bin/touch-changed-set.ts --build <new lab folder> --from <set folder> \

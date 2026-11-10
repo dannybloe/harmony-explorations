@@ -1,12 +1,12 @@
 /**
- * The set of a Harmony Touch's own documents that `todo-touch.md` 6.8 delivers back with 200, its builder
+ * The set of a Harmony Touch's own documents that delivers back with 200, its builder
  * `experiments/touchownset.ts`, the two comparisons that read the remote afterwards, and the shape of the tags a Touch
  * has been seen to store.
  *
  * **What the builder has to get right, and why each test is here.**
  *
  * 1. **A document goes into the set only when the remote's last request for it carried the tag its source was
- *    delivered under.** That is the protection against the trap the 6.8 brief names: Settings was changed on
+ *    delivered under.** That is the protection against the trap the own set brief names: Settings was changed on
  *    the remote's own screens after the recorded full sync, so the recording's copy is no longer what the
  *    remote holds, and delivering it would revert the change. The remote reports the tag of what it stores and
  *    stores a tag only with the document it came with, `answering-a-sync.md` "The entity tag an answerer
@@ -31,7 +31,7 @@
  *    (`core/resourcemanager.lua` `saveResource` keeps the tag it is given in an index entry encoded as JSON).
  *    It corrects the answerer's header, which called theirs random version 4 identifiers.
  *
- * **Sources checked first.** The 6.8 brief and the lab's `6.7-preflight.md`; `answering-a-sync.md` and
+ * **Sources checked first.** The own set brief and the lab's `6.7-preflight.md`; `answering-a-sync.md` and
  * `api/engine.md`; `touch-confighash.test.ts`, `touch-second-sync.test.ts` and `touch-first-sync.test.ts`; the
  * engine's `proxy/sync.lua` `syncResponseCallback` and `core/resourcemanager.lua` in the lab's decompiled
  * source. Logitech's client was not consulted beyond its recorded tags: what is checked is ours.

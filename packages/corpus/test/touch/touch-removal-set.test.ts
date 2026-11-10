@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch set of `todo-touch.md` 8.5: Listen to Music and the Denon AV Receiver, an activity and a device of
+ * The Harmony Touch removal set: Listen to Music and the Denon AV Receiver, an activity and a device of
  * the remote's own, taken out of the set the bench Touch holds with everything that names them, and the put back,
  * built by `experiments/touchremovalset.ts` and rehearsed through the real answerer and session on the fake remote.
  *
@@ -14,23 +14,23 @@
  *    each losing the receiver's role and, in their maps, its three volume keys and two swipes, their tap's long press
  *    set to null; Watch a Blu-ray's receiver entry taken out and its last entry moved down one; Switch Box and Play a
  *    Game moved up one place on the list; nothing added and the rest in the order it had.
- * 3. **On the fake remote**, the closing `--unchanged` run of 8.2 served as recorded with its first list asking for the
- *    six with the tags of the set the remote holds, which is that same set, since 8.3 and 8.4 each put back exactly what
+ * 3. **On the fake remote**, the closing `--unchanged` run of the activity set served as recorded with its first list asking for the
+ *    six with the tags of the set the remote holds, which is that same set, since the favourites set and the settings set each put back exactly what
  *    they found: the removal answers the four 200 with its content and tags and `Context` and `Settings` 304, keeps every
  *    favourites document and picture the remote holds, and finishes; the put back the same with the source's content and
  *    tags; and **the control**, the removal on a remote that holds it already, answers all six 304.
  * 4. **The builder's refusals**: the codec's (the device the favourites are tuned through, a name no entry carries), a
  *    put back of two equal sets, and of a set whose `Context` differs, which no removal changes.
  *
- * **Sources checked first.** The 8.5 brief in the lab; `touch-settings-set.test.ts` and `touch-activity-set.test.ts`
+ * **Sources checked first.** The removal set brief in the lab; `touch-settings-set.test.ts` and `touch-activity-set.test.ts`
  * and their fake remote, whose shape this follows; `remove.ts` in the codec and its test. Logitech's client was not
  * consulted.
  *
  * **Which architectures**: the Harmony Touch, firmware 4.15.330; its firmware reports 17 and Logitech's templates file
  * it under 18. The lab half reads the bench sets and the recorded lists, prints nothing out of them and touches no
- * remote. The source is the `touch_activity_set_back` fixture, which is the set the bench Touch holds after 8.4,
- * `8.4-settings-back`, content and tags: 8.4's put back restored exactly what 8.2's left, `touch-settings-set.test.ts`.
- * The two 8.5 sets are read by fixture, `touch_removal_set` and `touch_removal_set_back`, and `8.4-settings-back` as
+ * remote. The source is the `touch_activity_set_back` fixture, which is the set the bench Touch holds after the settings set,
+ * `8.4-settings-back`, content and tags: the settings set's put back restored exactly what the activity set's left, `touch-settings-set.test.ts`.
+ * The two removal sets are read by fixture, `touch_removal_set` and `touch_removal_set_back`, and `8.4-settings-back` as
  * `touch_settings_set_back`; what the remote did with the two is `packages/bench/test/harmony-touch/touch-removal-runs.test.ts`.
  */
 import assert from 'node:assert/strict';
@@ -54,7 +54,7 @@ const CLOSING = 'touch_activity_unchanged_';
 const CLOSING_LISTS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `${CLOSING}list_${n}`);
 const HAND_OVER_LIST = `${CLOSING}handover_list`;
 const DESCRIPTION = fileURLToPath(new URL('../../touch-removals/8.5-removal.json', import.meta.url));
-/** The two sets 8.5 built in the lab and delivered to the bench Touch, and the set it held before, by fixture. */
+/** The two sets the removal set built in the lab and delivered to the bench Touch, and the set it held before, by fixture. */
 const BUILT = 'touch_removal_set';
 const BUILT_BACK = 'touch_removal_set_back';
 const HELD = 'touch_settings_set_back';

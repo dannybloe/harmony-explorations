@@ -1,7 +1,7 @@
 /**
  * Put a setup on a remote record of a test account and have Logitech compile it, leaving the setup in
  * place: the counterpart of `harvest.ts`, which removes what it added. Written for the Harmony 650's
- * starting setup, `todo-compile-650.md` 1.6; load the `gathering-logitech` and `myharmony-service`
+ * starting setup, which Logitech compiled as a compare base; load the `gathering-logitech` and `myharmony-service`
  * skills before using it.
  *
  * ```
@@ -17,12 +17,12 @@
  *   and power records an activity's inputs are named against, into the lab.
  * * `activities` saves every setup activity the record does not already hold by that name, one
  *   `SaveActivities` each, in the setup's order (`MYHARMONY_ALLOW_ACTIVITY_WRITE=1`).
- * * `options` changes what is already on the record to match the setup, for `todo-compile-650.md` 3.10
- *   and 3.11: a device's keep on flag, `poweredOnBetweenActivities`, saved with `SaveUserFeatures`
+ * * `options` changes what is already on the record to match the setup, for the Harmony 650's
+ *   options setup, `setups/h650-options.json`: a device's keep on flag, `poweredOnBetweenActivities`, saved with `SaveUserFeatures`
  *   (`MYHARMONY_ALLOW_FEATURE_WRITE=1`), and an activity the setup calls `Custom` that the record holds
  *   as another type, saved again as `Custom` so it holds no activity key (`MYHARMONY_ALLOW_ACTIVITY_WRITE=1`).
  *   Only those two changes; any other difference is refused rather than guessed at.
- * * `favourites` puts the setup's favourite channels on their device, for `todo-compile-350.md` 3.1: it reads
+ * * `favourites` puts the setup's favourite channels on their device, for the Harmony 350's test setup: it reads
  *   the device's button map, refuses a map that already holds favourites, and saves the map with one button
  *   per channel appended, as MyHarmony's favourites screen does for a Harmony One, 600, 650 or 700; a Harmony
  *   300 or 350 is refused, since it keeps its favourites on its mode map, `favouriteIndexBase`. `favouritesPayload` in `src/setup.ts`, in

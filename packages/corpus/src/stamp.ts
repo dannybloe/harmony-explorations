@@ -1,7 +1,7 @@
 /**
  * Stamping a configuration at the moment it is written, which every write to a remote does.
  *
- * **Why every write and not only a save of an edit**, todo-compile-650 1.3 and section 310: a
+ * **Why every write and not only a save of an edit**, section 310: a
  * Harmony 650 puts its clock back to the configuration's stamp at every restart, and a write ends
  * in a restart, so a file carried to the remote with an old stamp sets the remote's clock back by
  * exactly that file's age. The same holds on the Harmony One, section 111. A small edit restarts the

@@ -1,5 +1,5 @@
 /**
- * `@harmony/corpus`'s main entry, held to a list, `todo.md` 7.3.6 and plan 013 decision 6: a new public name is a
+ * `@harmony/corpus`'s main entry, held to a list, plan 013 decision 6: a new public name is a
  * line in this file's diff, and so is one taken away. The list is read off the entry's source,
  * `@harmony/testkit/surface`, which shows the types a loaded module does not, and the loaded module is held to the
  * same values, so a reading of the source that missed a name fails here.
@@ -26,7 +26,7 @@ const TYPES = [
 ];
 
 /**
- * Every subpath `package.json` exports, `.` the main entry. `./write` since `todo.md` 7.3.10: the configuration
+ * Every subpath `package.json` exports, `.` the main entry. `./write`: the configuration
  * write and the Touch's sync as functions an application calls, held to their own list in `write-surface.test.ts`.
  */
 const SUBPATHS = [

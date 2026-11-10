@@ -1,9 +1,9 @@
 /**
  * Put a configuration onto a permitted remote of the compiled families, and verify it came back: the
- * library half of `bin/write-config.ts`, `todo.md` 7.3.10.
+ * library half of `bin/write-config.ts`.
  *
- * **Why this is a function now and not only a script.** The measure 7.3.10 set is an application that writes
- * a remote through the library and never through a script, and until then the write's whole sequence lived
+ * **Why this is a function now and not only a script.** The measure is an application that writes
+ * a remote through the library and never through a script, and the write's whole sequence once lived
  * in the script's `main`: the stamp, the checks the remote does not make, the unit check, the compare of every
  * block before any erase, the cache drop, the blocks, the read back and the restart. An application that
  * wanted to write would have had to copy that, and two copies of a write sequence are two copies until one of
@@ -153,7 +153,7 @@ const ARCH8_INSTALL_STATUS = 0x100;
 export const CONFIG_WRITE_MODELS = {
   // **4.4 is the build their write end was read in**, the 885's application, `tests/harmony_880_885/test_harmony_885_write_end.py`;
   // both bench units report it, version block `44 21 49 01 80 11 08`. The 880 runs the same application, but no
-  // 880 is a unit here. `todo-compile-885.md` 1.4.
+  // 880 is a unit here.
   'Harmony 885': {
     architecture: 8, sequenceReadOn: ['4.4'], dropRequired: ARCH8_DROP_REQUIRED, installStatusAt: ARCH8_INSTALL_STATUS,
   },
@@ -171,7 +171,7 @@ export type ConfigWriteModelName = keyof typeof CONFIG_WRITE_MODELS;
 /**
  * **The units that may be written, and no others**, `CLAUDE.md` "Never write to a remote": each by the label of
  * its record, with what the account calls it and its model. The script's table of targets was this list until
- * `todo.md` 7.3.10 made the write a function, and an independent review of that step found the list had become
+ * the write became a function, and an independent review of that change found the list had become
  * a caller's parameter: any label with any model and a record of the caller's choosing would have been written.
  * So the list and the pairing of a label with its model are the library's, and `writeConfiguration` refuses any
  * other label before it opens anything. A caller still supplies a unit's region reads and its record's text,
@@ -181,7 +181,7 @@ export type ConfigWriteModelName = keyof typeof CONFIG_WRITE_MODELS;
  * is a line in `rails.ts`. The order is the script's old table's, which a refusal lists units in.
  */
 export const CONFIG_WRITE_UNITS = {
-  // The two bench Harmony 885s, decision 30, `todo-compile-885.md` 1.4.
+  // The two bench Harmony 885s, decision 30.
   h885_a: { name: 'the Harmony 885 unit A', model: 'Harmony 885' },
   h885_b: { name: 'the Harmony 885 unit B', model: 'Harmony 885' },
   // The spare Harmony One, the first write target, section 222. Never the everyday One, which has no label here.
@@ -546,7 +546,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
      * One erase block, read in transfers the announce's count field can state.
      *
      * **Each transfer is asked for again on a failure, through the shared `readFlashWindow`**, since
-     * `todo-compile-885.md` 2.1's first commit stopped here: a `flash chunk out of sequence` during the
+     * the first commit of an 885 configuration with a composed device stopped here: a `flash chunk out of sequence` during the
      * compare before the first erase ended the run with nothing written, as such breaks had ended region
      * reads on both bench 885s (`docs/test-notes/harmony-885.md`). Every read this helper makes is a read,
      * whether it is the compare before an erase, a neighbour check or the read back after a write, so asking

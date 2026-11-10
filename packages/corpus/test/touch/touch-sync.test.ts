@@ -1,6 +1,6 @@
 /**
  * The answerer, `src/touchsync.ts`, and its script, `bin/touch-sync.ts`: a sync down driven end to end
- * against the fake Touch, `todo-touch.md` 6.6.
+ * against the fake Touch.
  *
  * **Nothing here touches a device.** Each run is `touch-sync-run.ts` in a process of its own with the two
  * request flags set, a real session over `FakeTouchRemote` behind the transport's guard, the remote answering
@@ -18,10 +18,10 @@
  *    first line says that what the remote hands up is written back with a tag of ours and committed. **One
  *    document without a tag is refused**, no answer of that list is written, and the recovery is named; **a
  *    picture without one is answered 404** and the run finishes, which is the control for the refusal,
- *    `todo-touch.md` 6.7's risk 6. **Each favourites document without one, the user's, a device's and a line
+ *    the first bench sync's risk of an unanswered picture. **Each favourites document without one, the user's, a device's and a line
  *    up, is answered 304 with `keptCopyTag`** and the run finishes, where the fake aborts the sync over a
  *    favourites answer without a tag, as the remote's engine does; the untagged document of the same run shape
- *    is the control, refused. That is 6.7's first run: it stopped at the user's favourites, which a Touch synced
+ *    is the control, refused. That is the first bench sync's run: it stopped at the user's favourites, which a Touch synced
  *    through a computer always asks for untagged, `tests/harmony_touch/test_harmony_touch_favourites_untagged.py`.
  * 3. **The gate**: a set missing each top level list the engine's reader walks, or a document, is refused
  *    before anything at all is written to the remote, not even the provisioning read, and names no recovery;
@@ -36,14 +36,14 @@
  *    a sync request answered 202 is refused with the recovery step. The fake's own rule has a control too: an
  *    answer to a favourites request without a tag, or a device's 404, is one it aborts over, and a picture's
  *    is not.
- * 6a. **A set of the remote's own documents**, `todo-touch.md` 6.8, rehearsed in the shape of 6.7's second run
+ * 6a. **A set of the remote's own documents**, rehearsed in the shape of the second bench sync's run
  *    with made up values: the six answered 200 with the document and the set's own tag, the three untagged
  *    favourites 304 with a kept copy tag, the ten tagged pictures 304 echoing their tags, and the finish; an
  *    untagged picture 404, the control. **A hand over that hands up a document the set holds stops the run
  *    before the sync request**, since the set's copy would revert the change made on the remote, where one
  *    handing up a favourites document the set lacks goes on, the control.
  * 7. **The lines**: every line any run reported matches one of `SYNC_LINES`.
- * 7a. **A write of answers that is not taken**, `todo-touch.md` 6.7's risk 4: a reply to the write that does
+ * 7a. **A write of answers that is not taken**, the first bench sync's risk of a write that is not taken: a reply to the write that does
  *    not name it, the listener's reply to a write it is still gathering, is refused at the first write, where
  *    the same run with a real reply finishes; and an address handed out a fourth time in one run is refused,
  *    where three times finishes.
@@ -369,7 +369,7 @@ describe('the hand over', () => {
   });
 
   it('refuses a handed up document holding an entry without the type name its own reader searches, and still keeps it', () => {
-    // A map list whose one button states no `__type`: the reader raises on it, `todo-touch.md` 6.7.1, so
+    // A map list whose one button states no `__type`: the reader raises on it, so
     // echoing it would hand the remote a document it raises on. The control is the same list with the name.
     const maps = (button: object) => ({ ButtonMaps: [{ __type: 'DeviceButtonMap', ButtonMapIdentifier: '16417Device1', Buttons: [button] }] });
     const putMaps = (document: unknown): RemoteRequest => ({
@@ -449,8 +449,8 @@ describe('the other rules of answering a sync', () => {
   });
 });
 
-describe('a set of the remote\'s own documents, todo-touch.md 6.8', () => {
-  // The second sync of 6.7 in shape, `reads/20261105T1218Z-touch-sync-unchanged/`, with made up values: a hand
+describe('a set of the remote\'s own documents', () => {
+  // The second bench sync in shape, `reads/20261105T1218Z-touch-sync-unchanged/`, with made up values: a hand
   // over that hands up nothing; the six asked for with the tags the remote holds; an empty list; the user's, a
   // device's and a line up's favourites one list each, untagged; an empty list; ten pictures, tagged; the finish.
   const PICTURES = Array.from({ length: 10 }, (_, i) => `content-image://1.0/station/s${i}/image;maxX=54;maxY=54;type=png`);

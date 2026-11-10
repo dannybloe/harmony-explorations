@@ -1,13 +1,13 @@
 /**
  * The pieces of a harvest that need no network: building the payloads, choosing a search match,
  * reading the compile's answer and splitting a batch that failed. `bin/harvest.ts` strings them together
- * with the service calls, `todo-secure-logitech.md` 1.1.
+ * with the service calls.
  *
  * **What a harvest is.** A list of devices out of Logitech's catalogue goes onto one disposable remote
  * record of a test account, Logitech compiles that record's configuration, the file is fetched into the
  * lab with a manifest naming every device, and the devices are removed again so the record is empty for
  * the next batch. The compile is the only way to see how their compiler lays out a device's infrared,
- * which is what `todo-process-logitech.md` works out afterwards.
+ * which is what reading the gathered compiles works out afterwards.
  *
  * Every payload shape here was read off Logitech's own client by the lab's Python scripts that first
  * made these calls, and is documented beside them there; this module rewrites them, field for field.

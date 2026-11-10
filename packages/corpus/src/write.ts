@@ -1,8 +1,7 @@
 /**
  * `@harmony/corpus/write`: writing a configuration to a remote, the two write paths that need the codec.
- * `todo.md` 7.3.10.
  *
- * **Why a subpath of its own and not the main entry.** `todo.md` 7.3.6 settled that a write function is never
+ * **Why a subpath of its own and not the main entry.** Decision 31 settled that a write function is never
  * on a main entry: an application that reads a remote imports `@harmony/corpus` and gets the reader, and one
  * that writes names this subpath, which is a decision visible in a diff. The same reasoning made
  * `@harmony/usb/write`, and the third write path, the file write for the Harmony 300 and 350, sits there,

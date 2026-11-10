@@ -1,11 +1,11 @@
 /**
  * A Harmony Touch set holding **a whole setup composed by us**, every device and every activity, its put back, and the
- * field by field comparison of our documents with Logitech's: `todo-touch.md` 8.6.
+ * field by field comparison of our documents with Logitech's.
  *
- * **What 8.6 is for.** 8.1 to 8.5 each changed one thing in a set Logitech's service built. 8.6 builds the four
+ * **What the setup set is for.** The device set to the removal set each changed one thing in a set Logitech's service built. the setup set builds the four
  * documents that name devices and activities from nothing but a description and the catalogue's records,
  * `composeTouchSetup` in `packages/codec/src/families/harmony-touch/setup.ts`, onto the set the remote holds with all of them
- * taken out, `setupBaseOf`. Context and Settings are the source's: a setup names neither, and 8.4 composed both.
+ * taken out, `setupBaseOf`. Context and Settings are the source's: a setup names neither, and the settings set composed both.
  *
  * **Which documents are delivered.** The four the setup composes, `ActivityList`, `DeviceList`, `MapList` and
  * `ProtocolList`, each under the tag `setTag` gives with the set's name, through `changeDocuments`; `retagUnchanged`
@@ -13,10 +13,10 @@
  * case, so that every document the setup composes is delivered and committed rather than kept from before. Context and
  * Settings keep the source's content and tag and are answered 304.
  *
- * **The put back is what the remote held before, tags and all**, `putBackSetup`, as 8.5's was: the four documents as
+ * **The put back is what the remote held before, tags and all**, `putBackSetup`, as the removal set's was: the four documents as
  * the source states them, which a remote that committed the setup asks for with the setup's tags.
  *
- * **The comparison**, `compareSetup`, is the heart of 8.6: our four documents against Logitech's, every field. A field
+ * **The comparison**, `compareSetup`, is the heart of the setup set: our four documents against Logitech's, every field. A field
  * is a value at the end of a path, a list's entries matched by what the remote finds them by (an activity and a device
  * by name, a map by its owner's name, a button by its kind, key, label, group and place, a role by its kind and device,
  * a step by its order, a command by its name), so that a field of ours is set beside the same field of theirs and not
@@ -40,7 +40,7 @@ import { putBackRemoval } from './touchremovalset.ts';
 import { sixOf } from './touchsettingsset.ts';
 import type { TouchSet } from '../src/touchsync.ts';
 
-/** Where a described setup's ids start, `OWN_IDS`: past the ids 8.1 and 8.2 used, 900000001 to 900000003. */
+/** Where a described setup's ids start, `OWN_IDS`: past the ids the device set and the activity set used, 900000001 to 900000003. */
 export const SETUP_IDS: harmonyTouch.SetupIds = { device: 900_000_101, activity: 900_000_201, sequence: 900_000_301 };
 
 /** The four documents a setup composes, in the order the remote asks for them. */
@@ -253,7 +253,7 @@ export interface IdMap {
 
 /**
  * The id map of two sets of documents: devices and activities by name, maps by their owner's, sequences by map and name,
- * and code definitions by their family's name, which `todo-touch.md` 9.1's definitions of ours are matched by.
+ * and code definitions by their family's name, which the from-nothing set's definitions of ours are matched by.
  */
 function idMapOf(ours: harmonyTouch.SyncDocuments, theirs: harmonyTouch.SyncDocuments): IdMap {
   const a = harmonyTouch.readConfiguration(ours);
@@ -335,7 +335,7 @@ const KEYED = new Set(['Activities', 'DevicesWithFeatures', 'ButtonMaps', 'Proto
 
 /**
  * What a comparison compares and how it explains a field: the documents, the normalisations and differences, and lists
- * matched by a key of their own beyond `KEYED`'s, each with the key. 8.6's is `SETUP_RULES`; `todo-touch.md` 9.1 states
+ * matched by a key of their own beyond `KEYED`'s, each with the key. the setup set's is `SETUP_RULES`; states
  * its own, `experiments/touchnothingset.ts`.
  */
 export interface ComparisonRules {
@@ -345,7 +345,7 @@ export interface ComparisonRules {
   readonly keyed?: Readonly<Record<string, (x: Json) => string>>;
 }
 
-/** 8.6's comparison: the four documents a setup composes, the five normalisations and the eight differences. */
+/** The setup set's comparison: the four documents a setup composes, the five normalisations and the eight differences. */
 export const SETUP_RULES: ComparisonRules = { documents: SETUP_DOCUMENTS, normalisations: NORMALISATIONS, differences: DIFFERENCES };
 
 /** Every leaf of a document, keyed by its path with entries named, and the order of every keyed list. */
@@ -416,7 +416,7 @@ export function compareSetup(ours: harmonyTouch.SyncDocuments, theirs: harmonyTo
       if (x === undefined || y === undefined) { note(field, 'different', 'unexplained, a list one side lacks'); continue; }
       const common = x.keys.filter((k) => y.keys.includes(k));
       if (JSON.stringify(common) === JSON.stringify(y.keys.filter((k) => x.keys.includes(k)))) { counts.equal += 1; continue; }
-      // An order is explained by a difference row naming it, `todo-touch.md` 9.1's commands; 8.6's rules name none.
+      // An order is explained by a difference row naming it, the from-nothing set's commands; the setup set's rules name none.
       const pair: Pair = { field, path, ours: x.keys, theirs: y.keys, oursPresent: true, theirsPresent: true };
       const explained = rules.differences.find((d) => d.field.test(field) && d.applies(pair));
       note(field, 'different', explained?.name ?? 'unexplained, another order');
