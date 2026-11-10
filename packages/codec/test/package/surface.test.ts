@@ -25,7 +25,7 @@ const VALUES = [
   'EzFileError', 'GspmError', 'INTENDED_VERSION_FIELDS', 'NoFamilyError', 'PROTOCOLS', 'QueueError', 'RecipeError',
   'ResourceError', 'SCREEN_SIZES', 'StateTableError', 'activities', 'activityBindings', 'activityCount',
   'activityNames', 'activityScreens', 'allChecksPass', 'applyEdits', 'assertQueueFits',
-  'assertStateTableConsistent', 'buildFromRecipe', 'builtDigest', 'chooseByModel', 'clockStateEdits', 'codeKey', 'commandsOfCodeset',
+  'assertStateTableConsistent', 'buildFromRecipe', 'builtDigest', 'capabilitiesOf', 'chooseByModel', 'clockStateEdits', 'codeKey', 'commandsOfCodeset',
   'configLanguage', 'decodePayload', 'describeChoices', 'deviceCount', 'deviceDelays', 'deviceDriving',
   'deviceListRows', 'deviceModeMaps', 'deviceOfRecord', 'devices', 'encodePng', 'familyKind', 'familyOfModel',
   'framesOfPulses', 'fromFirstMark', 'harmonyTouch', 'identifyCodeset', 'introductionTour', 'inventory', 'irFrame',
@@ -40,15 +40,16 @@ const VALUES = [
 /** The main entry: the types and interfaces, which only the source shows. */
 const TYPES = [
   'Activity', 'ActivityBinding', 'ActivityName', 'ActivityRoleName', 'ActivityScreens', 'AnyFamily',
-  'ArchiveManifest', 'ArchiveProtocol', 'BuildSources', 'Built', 'CatalogueCommand', 'CatalogueDevice', 'CatalogueManufacturer',
+  'ArchiveManifest', 'ArchiveProtocol', 'BenchModelKey', 'BuildSources', 'Built', 'CatalogueCommand', 'CatalogueDevice', 'CatalogueManufacturer',
   'CatalogueModel', 'CatalogueSource', 'CodecResources', 'ConfigLanguage', 'Device', 'DeviceChannelTuning',
   'DeviceDelays', 'DeviceDriving', 'DeviceInput', 'DeviceInputs', 'DeviceListRow', 'DeviceModeMap', 'DevicePower',
   'DeviceState', 'DeviceTiming', 'DocumentFamily', 'DocumentTypes', 'Edit', 'EditReport', 'EzHex',
   'Identification', 'InfraredCode', 'IntendedVersionField', 'IntroductionTour', 'Inventory', 'IrFrame', 'IrGroup',
-  'KeyCode', 'KeyLabel', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelChoice', 'ModelNamed', 'PngHeader',
+  'KeyCode', 'KeyLabel', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
+  'ModelProperties', 'PngHeader',
   'PowerOnDelay', 'ProntoCode', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
   'RecipeDevice', 'RecipeDeviceKey', 'RecipeFavourites', 'RecipeModel', 'RecipeScreenItem', 'RecipeSequenceStep', 'RecipeTarget',
-  'RenderedPage', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
+  'RenderedPage', 'Requirement', 'RequirementAnswer', 'RequirementState', 'RequirementStatus', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
 ];
 
 /** The Harmony Touch's view, `harmonyTouch` on the main entry: the names that exist at run time. */

@@ -12,6 +12,10 @@
  * loads them in a browser one module at a time and must not reach for anything else. **Explicit names**
  * here, all four modules' whole, held by `test/surface.test.ts`, `todo.md` 7.3.6; the byte comparison joined them
  * in `todo.md` 7.3.7.
+ *
+ * The fifth module is the FHSDK's requirements and every bench model's status on each, `requirements.ts`, decision
+ * 33: data with no dependency at all, which an application, the codec's capability answer and the generated
+ * document all read. Its names are on this entry like the others', and it is its own subpath too.
  */
 
 // The model table: a skin to a model and what its hardware can do.
@@ -33,3 +37,15 @@ export { ARCH_8_PRODUCT, WATCH, WATCH_BY_SKIN } from './keys.ts';
 export type { Watch } from './keys.ts';
 // Whether two byte arrays hold the same bytes, the one copy, `todo.md` 7.3.7.
 export { sameBytes } from './bytes.ts';
+// What the FHSDK must do for an application, numbered for good, and each bench model's status on every requirement
+// with its evidence, decision 33. The codec's `capabilitiesOf` joins these to a model's properties.
+export {
+  benchModel,
+  BENCH_MODELS,
+  requirement,
+  REQUIREMENT_STATUS_NAMES,
+  REQUIREMENT_SUBJECTS,
+  REQUIREMENTS,
+  requirementState,
+} from './requirements.ts';
+export type { BenchModel, BenchModelKey, Requirement, RequirementScope, RequirementState, RequirementStatus } from './requirements.ts';

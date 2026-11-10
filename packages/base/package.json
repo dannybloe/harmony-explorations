@@ -2,7 +2,7 @@
   "name": "@harmony/base",
   "version": "0.0.0",
   "private": true,
-  "description": "What every other package needs and nothing native: the model table, the trailer checksum, the key codes and the byte comparison",
+  "description": "What every other package needs and nothing native: the model table, the trailer checksum, the key codes, the byte comparison and the FHSDK's requirements with their statuses",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -10,7 +10,8 @@
     "./models": "./src/models.ts",
     "./trailer": "./src/trailer.ts",
     "./keys": "./src/keys.ts",
-    "./bytes": "./src/bytes.ts"
+    "./bytes": "./src/bytes.ts",
+    "./requirements": "./src/requirements.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"

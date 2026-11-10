@@ -29,6 +29,11 @@ docs/decisions.md               the numbered decisions, plus what this project i
                                 context. **The numbers are cited from here, from findings.md and
                                 from code comments, so they never change**; a decision that turns
                                 out wrong is corrected in place
+docs/remote-requirements.md     what the FHSDK must be able to do for an application, R1 onwards,
+                                numbers never reused, and every bench model's status on each: met,
+                                open, impossible or unknown, with the evidence. Generated from
+                                packages/base/src/requirements.ts but for its introduction, decision
+                                33; make requirements checks it, make requirements-write rewrites it
 docs/plans/                     one worked out plan per planning session, NNN-slug.md, each opening
                                 with a status line of open, done or superseded. The number is the
                                 order it was written and the date lives inside the document, since
@@ -304,7 +309,10 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 (harmony-600-650-700, harmony-one; harmony-300-350, a device,
                                 its favourite channels and the one activity; harmony-880-885;
                                 harmony-touch), and src/families/registry.ts
-                                is the one place that chooses a family. Plan 013 gives a family
+                                is the one place that chooses a family. Beside it
+                                src/families/capabilities.ts, `capabilitiesOf` on the main entry:
+                                a bench model's properties from the model table and its family,
+                                and its status on every requirement, decision 33. Plan 013 gives a family
                                 one of two kinds: compiled, src/families/family.ts, which builds
                                 a container, and document, src/families/document.ts, which builds
                                 the documents a Harmony Touch is given, src/families/harmony-touch/family.ts.
@@ -408,10 +416,13 @@ packages/base/                  TS: what every other package needs and nothing n
                                 checksum, src/trailer.ts; and where each model keeps the key being
                                 pressed, src/keys.ts, shared with the key reader page; and the one
                                 byte comparison, src/bytes.ts, `sameBytes`, since todo.md 7.3.7, which
-                                the codec re-exports and packages/usb's guards use. Imports
+                                the codec re-exports and packages/usb's guards use; and the FHSDK's
+                                requirements with every bench model's status and its evidence,
+                                src/requirements.ts, decision 33, held by test/requirements.test.ts
+                                and read by the codec's `capabilitiesOf`. Imports
                                 nothing outside Node's own and reads no disk, test/base.test.ts.
                                 The codec depends on it rather than on packages/usb. Its main entry
-                                names all four modules' exports explicitly, test/surface.test.ts,
+                                names all five modules' exports explicitly, test/surface.test.ts,
                                 and each is its own subpath. Its tests are a project of their own,
                                 test/tsconfig.json, for the reason packages/usb's are
 packages/usb/                   TS: the command protocol and the write rails, read path measured.
@@ -1081,6 +1092,9 @@ make remote-reference
                    against the code they come from, naming the file and block that drifted.
                    remote-reference-write rewrites them. Not called `remotes`, which is taken by
                    the line above. No lab, no network
+make requirements  check docs/remote-requirements.md against the requirements and their statuses in
+                   packages/base/src/requirements.ts, which generate all of it but the introduction;
+                   requirements-write rewrites it. No lab, no network, no remote
 make page          drive the bench page in the Chrome already installed, which is what checks the
                    page rather than the routes. Gated on HARMONY_PAGE_TESTS=1 and skips with no
                    Chrome, because playwright's browser download is deliberately not approved

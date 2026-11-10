@@ -26,18 +26,19 @@ function specifiers(source: string): string[] {
   return found;
 }
 
-test('the package holds exactly its four modules and its index', () => {
+test('the package holds exactly its five modules and its index', () => {
   // Exact, so a module added here is a decision that shows up in this diff and gets asked whether it belongs.
-  assert.deepEqual(readdirSync(SRC).sort(), ['bytes.ts', 'index.ts', 'keys.ts', 'models.ts', 'trailer.ts']);
+  assert.deepEqual(readdirSync(SRC).sort(), ['bytes.ts', 'index.ts', 'keys.ts', 'models.ts', 'requirements.ts', 'trailer.ts']);
 });
 
-test('the four modules import nothing, and the index only them', () => {
-  for (const name of ['bytes.ts', 'keys.ts', 'models.ts', 'trailer.ts']) {
+test('the five modules import nothing, and the index only them', () => {
+  for (const name of ['bytes.ts', 'keys.ts', 'models.ts', 'requirements.ts', 'trailer.ts']) {
     assert.deepEqual(specifiers(readFileSync(SRC + name, 'utf8')), [], name);
   }
   // The index may name a module more than once since `todo.md` 7.3.6, for its values and for its types,
   // `test/surface.test.ts`; still the modules and nothing else, the byte comparison the fourth since `todo.md` 7.3.7.
-  assert.deepEqual([...new Set(specifiers(readFileSync(SRC + 'index.ts', 'utf8')))], ['./models.ts', './trailer.ts', './keys.ts', './bytes.ts']);
+  // The requirements, the fifth, are data with no dependency at all.
+  assert.deepEqual([...new Set(specifiers(readFileSync(SRC + 'index.ts', 'utf8')))], ['./models.ts', './trailer.ts', './keys.ts', './bytes.ts', './requirements.ts']);
 });
 
 test('the package depends on nothing, and its tests on the test kit alone', () => {

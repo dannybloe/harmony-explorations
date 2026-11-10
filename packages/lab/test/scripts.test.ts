@@ -53,9 +53,9 @@ const NOT_RUN: Readonly<Record<string, string>> = {
 };
 
 test('the scan found the scripts, rather than nothing', () => {
-  // Without this a wrong path would make every check below pass on no files. 74 on 8 November 2026, 77 on 9 November with the codec's carry-codes, build-recipe and reference scripts.
+  // Without this a wrong path would make every check below pass on no files. 74 on 8 November 2026, 77 on 9 November with the codec's carry-codes, build-recipe and reference scripts, 78 on 10 November with the requirements document's.
   const all = scripts();
-  assert.equal(all.length, 77);
+  assert.equal(all.length, 78);
   for (const one of [...Object.keys(ENTRY_POINT_CHECKS), ...Object.keys(NOT_RUN)]) assert.ok(all.includes(one), one);
 });
 

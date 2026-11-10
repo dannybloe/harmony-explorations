@@ -43,7 +43,7 @@ Read off each `package.json` as of `todo.md` 7.3.10. "Run time" is `dependencies
 
 | package | what it is for | run time | development |
 |---|---|---|---|
-| `base` | what every package needs and nothing native: the model table, the trailer checksum, the key codes, the one byte comparison | nothing | `testkit` |
+| `base` | what every package needs and nothing native: the model table, the trailer checksum, the key codes, the one byte comparison, the FHSDK's requirements and their statuses | nothing | `testkit` |
 | `lab` | locates the private lab and the infrared archive, names the lab's images, skips a test cleanly without them; `./cli`, the one reader of a script's command line | nothing | nothing |
 | `usb` | the HID transport, the command protocol, the file protocol, the write rails and the file write | `base`, `node-hid` | `lab`, `testkit` |
 | `codec` | the one configuration codec: read, render, edit, compose, build, the Harmony Touch's documents included | `base`, `@mdi/font`, `opentype.js` | `lab`, `testkit`, `usb` |
@@ -182,10 +182,10 @@ the libraries built on it; there `export *` is the point:
 
 | package | main entry | subpaths |
 |---|---|---|
-| `codec` | read, show devices, activities and screens, edit in place, start a build through the recipe and the registry, check before a write, infrared; the Harmony Touch as the namespace `harmonyTouch`, its view with no composer | `./node` (the disk), `./build` (composers and builders, off the main entry by plan 007), `./internal` (the format's parts) |
+| `codec` | read, show devices, activities and screens, edit in place, start a build through the recipe and the registry, check before a write, infrared, a bench model's capabilities; the Harmony Touch as the namespace `harmonyTouch`, its view with no composer | `./node` (the disk), `./build` (composers and builders, off the main entry by plan 007), `./internal` (the format's parts) |
 | `usb` | find, open and read a remote, check a configuration; `RailError` and no other rail | `./rails` (whole), `./write` (its own list), `./internal`, `./protocol`, `./readwindow`, `./touchsession`, `./touchrecording`; `./models`, `./keys` and `./trailer` re-export `base` until FreeHarmony's half of 7.3.6 |
 | `corpus` | reading a configuration off a remote | `./read`, `./file`, `./write` (its own list) |
-| `base` | the model table, the trailer checksum, the key codes, `sameBytes` | `./models`, `./trailer`, `./keys`, `./bytes` |
+| `base` | the model table, the trailer checksum, the key codes, `sameBytes`, the requirements and their statuses | `./models`, `./trailer`, `./keys`, `./bytes`, `./requirements` |
 | `bench`, `probe`, `silhouettes` | their own lists | `./internal` |
 | `lab` | the locators and the image table | `./cli` |
 | `testkit` | none | `./touch-recording`, `./fake-touch-remote`, `./surface` |

@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -67,6 +67,8 @@ help:
 	@echo "key-reader   rebuild the browser page that reads a remote's keys, reference/key-reader/"
 	@echo "remote-reference  check the generated blocks of reference/remotes and reference/architectures"
 	@echo "remote-reference-write  rewrite those blocks from the code"
+	@echo "requirements  check docs/remote-requirements.md against the requirements and their statuses"
+	@echo "requirements-write  regenerate docs/remote-requirements.md from that data"
 	@echo "site         build the reference website into site/, strict; SITE_STRICT=false while chapters 3 and 4 run"
 	@echo "site-offline the same website for browsing from disk: open site/index.html, no server needed"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
@@ -371,6 +373,16 @@ remote-reference:
 
 remote-reference-write:
 	@node packages/silhouettes/bin/remotes.ts --write
+
+# The FHSDK's requirements and every bench model's status on each, decision 33. `docs/remote-requirements.md` is
+# generated from `packages/base/src/requirements.ts` but for its introduction, so a status is changed in the data and
+# this rewrites the document; the check fails naming the document when the two differ, and runs in `make ts` too,
+# packages/codec/test/package/requirements.test.ts. No lab, no network, no remote.
+requirements:
+	@node packages/codec/bin/requirements.ts
+
+requirements-write:
+	@node packages/codec/bin/requirements.ts --write
 
 # The reference website, todo-reference.md 7.1: MkDocs with the Material theme builds `reference/` into
 # `site/`, which is ignored and never committed; `mkdocs.yml` and `tools/site/hooks.py` say what is built

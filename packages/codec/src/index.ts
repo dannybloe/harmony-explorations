@@ -122,6 +122,13 @@ export type { ActivityRoleName } from './compose/activityroles.ts';
 export { chooseByModel, familyKind, familyOfModel, modelName, NoFamilyError } from './families/registry.ts';
 export type { AnyFamily, ModelChoice, ModelNamed } from './families/registry.ts';
 export type { DocumentFamily, DocumentTypes } from './families/document.ts';
+
+// What a bench model is and how far the FHSDK serves it: its properties and the status of every requirement with its
+// evidence, decision 33. An application offers a feature where its requirement is met on the model.
+export { capabilitiesOf } from './families/capabilities.ts';
+export type {
+  BenchModelKey, ModelCapabilities, ModelProperties, Requirement, RequirementAnswer, RequirementState, RequirementStatus,
+} from './families/capabilities.ts';
 export { ComposeError } from './shared/core.ts';
 
 // Before a write: the checks a writer runs before anything is erased, the action queue's peak depth and the
