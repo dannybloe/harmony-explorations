@@ -66,7 +66,7 @@ const favourites = (): Record<string, unknown> =>
 const derive = (answers: harmonyTouch.SyncAnswer[]) => touch71Tests(touch71Configuration({ answers }, favourites()));
 const plain = (d: TestDefinition): TestDefinition => JSON.parse(JSON.stringify(d)) as TestDefinition;
 
-test('the 8.6 run is the ten 7.1 test files as they stand: the setup composed from the description derives them file for file, as the set it describes does',
+test('the setup run is the ten full bench test files as they stand: the setup composed from the description derives them file for file, as the set it describes does',
   lab.needing(lab.skipUnless(SOURCE, FULL)), () => {
     const ours = derive(composedAnswers(description()));
     const theirs = derive(sourceSet().answers);
