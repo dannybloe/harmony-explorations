@@ -5,7 +5,7 @@
  * on no other entry of the package, and `rails.ts` is not on the main entry: a consumer of `@harmony/usb`
  * gets the read path and `RailError`, the refusal it meets, and not the machinery that erases flash. The
  * rails whole are their own subpath, `@harmony/usb/rails`, and this file carries the three a block writer
- * asserts, `todo.md` 7.3.6, which made `index.ts` say the same. `bin/rehearse-block.ts` reaches them by
+ * asserts, which `index.ts` says as well. `bin/rehearse-block.ts` reaches them by
  * relative path because it lives inside this package. A script that also needs `@harmony/codec`
  * cannot, since the container parser is where the trailer checksum lives and a writer that does not
  * check it can produce a file the remote refuses to boot.
@@ -38,7 +38,7 @@ export type { WritePermission } from './rails.ts';
 
 // The file based family's write path: the Harmony 300 and 350. A second protocol's writer beside the
 // first, behind its own rail, `assertFileWriteAllowed`. `writeFileFamilyConfiguration` is the whole run an
-// application calls, `todo.md` 7.3.10: the container, the open, the judgement and `writeFileConfig`.
+// application calls: the container, the open, the judgement and `writeFileConfig`.
 export {
   FILE_FAMILY_UNITS,
   FileWriteError,

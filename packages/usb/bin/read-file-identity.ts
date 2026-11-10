@@ -22,7 +22,7 @@
  *
  * ## `--record <label>`, the unit record the file write path compares against
  *
- * `todo-compile-350.md` 1.6. Reads one more file, `/sys/guid`, which is on `INERT_PATHS` and goes
+ * Reads one more file, `/sys/guid`, which is on `INERT_PATHS` and goes
  * through the same open for reading, read and close, and writes its two GUIDs to the lab's
  * `units/<label>.txt` in the form `read-identity.ts --record` writes for the command family. **It is
  * the same block**: sixteen `0xEE`, two GUIDs, and filler, 64 bytes, with the identity file's `guid`
@@ -35,7 +35,7 @@
  * unit without `--force`, since a label pointing at the wrong remote permits a write to it. The labels
  * `write-file-config.ts` looks for are `h350` and `h300`.
  *
- * ## A remote that refuses `/sys/guid`: the Harmony Touch, `todo-touch.md` 6.2
+ * ## A remote that refuses `/sys/guid`: the Harmony Touch
  *
  * A Touch refuses `/sys/guid` at open, `reference/remotes/harmony-touch/usb.md`, so it has no identity
  * block to record. What tells one Touch from another is the identity file's `serial_number`, which the

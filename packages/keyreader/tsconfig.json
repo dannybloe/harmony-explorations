@@ -16,6 +16,7 @@
   // modules that import nothing, keys and models from the first and protocol from the second, and the build
   // publishes them beside the page; nothing here is consumed as a package.
   // `@harmony/silhouettes` is one because the build reads the drawn models' keys from it, `bin/drawings.ts`;
-  // no module of it reaches the page. `@harmony/lab` is one for `bin/build.ts`'s command line, `todo.md` 7.3.7.
+  // no module of it reaches the page. `@harmony/lab` is one for `bin/build.ts`'s command line,
+  // which every script reads through the one reader in `@harmony/lab/cli`.
   "references": [{ "path": "../base" }, { "path": "../lab" }, { "path": "../usb" }, { "path": "../silhouettes" }]
 }

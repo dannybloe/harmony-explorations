@@ -1,5 +1,5 @@
 /**
- * The file based family's write path, `todo-compile-350.md` 1.6, tested against a fake remote.
+ * The file based family's write path, decision 26, tested against a fake remote.
  *
  * Nothing here touches a device. `fake-file-remote.ts` answers the way the 1.4 firmware reading says a
  * Harmony 300 or 350 does, so the whole sequence runs end to end and the exact bytes it sends are
@@ -352,8 +352,8 @@ describe('the guard: the write route reaches the transport only authorised, flag
   });
 
   it('keeps the writer out of every entry but the write subpath', async () => {
-    // Every entry and not the barrel alone since `todo.md` 7.3.6, which put most of the package under
-    // named subpaths, `entries.ts`.
+    // Every entry and not the barrel alone, since most of the package is under named subpaths,
+    // `entries.ts`.
     const exported = await exportedNames();
     for (const name of ['writeFileConfig', 'openForWritingReport', 'dataPacket', 'resetFilesystemReport',
       'rebootReport', 'checkReport', 'flushReport', 'authoriseReport']) {

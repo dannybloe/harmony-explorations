@@ -35,7 +35,7 @@
  * the two ends of a rocker. The seams are drawn where the photograph shows them.
  *
  * **The scan codes are the bench's**, `MEASURED` in `tests/harmony_880_885/test_harmony_885_keys.py`: every key pressed on a
- * Harmony 885 with the remote's data memory watched over USB, `todo-prepare-885.md` 2.4, the colour keys
+ * Harmony 885 with the remote's data memory watched over USB, the colour keys
  * and Play and Pause settled by their position. `CODES` below is that table under this drawing's names, and
  * `tests/firmware/test_silhouettes.py` holds the two against each other. Every key is `printed`: no code was named
  * through Logitech's button maps.

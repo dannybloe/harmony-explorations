@@ -1,8 +1,8 @@
 /**
  * Every script under `packages/<name>/bin` reads its command line through `@harmony/lab/cli`, and before anything
- * else it does, `todo.md` 7.3.7.
+ * else it does.
  *
- * Until then 68 scripts read `process.argv` by hand, each with its own copy of `argument` and `fail`, and only one
+ * Before this reader 68 scripts read `process.argv` by hand, each with its own copy of `argument` and `fail`, and only one
  * of them answered `--help`; the rest ran, which is how a `--help` given to `packages/codec/bin/render.ts` wrote a
  * file into the lab. So three things are held here, over every script, by reading their text, since a script runs
  * when it is imported and some of them open a remote:

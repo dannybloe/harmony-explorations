@@ -3,7 +3,8 @@
  *
  * The lab's read folders are named to the minute, and the Touch scripts made theirs with `recursive: true`,
  * so a second read of the same kind in the same minute wrote into the first one's folder: the
- * `getconfighash` read after `todo-touch.md` 6.8's sync replaced the read taken before it. The before read was
+ * `getconfighash` read after the sync that sent the Touch its own six documents back replaced the read taken
+ * before it. The before read was
  * not lost as a fact only because it had already been compared byte for byte with an earlier read. These
  * tests make the same two reads in one minute against a scratch lab and assert both survive.
  */

@@ -3,7 +3,7 @@
  * documents of Logitech's service, a device list and a protocol list, and the second is Logitech's own
  * catalogue definition of each protocol family, unchanged.
  *
- * **The question.** `todo-touch.md` 3.1 asks what the Touch does with each document of its configuration.
+ * **The question.** What the Touch does with each document of its configuration.
  * `touch-sync.test.ts` and `touch-sync-both-ways.test.ts` showed that the configuration is six documents of
  * Logitech's data model, handed to the remote as the service answered them. This file asks what two of
  * them, `DeviceList` and `ProtocolList`, hold in the shape the remote reads them, and how they relate to

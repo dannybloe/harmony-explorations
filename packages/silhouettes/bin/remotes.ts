@@ -81,8 +81,8 @@ interface RemoteFolder {
   /**
    * The drawing it uses, which may be a sibling's where the face is shared.
    *
-   * **Absent for a model nobody has drawn yet**, which was the Harmony 885's case until `todo-prepare-885.md`
-   * 2.4 and the Harmony 890's folder's until 2.5.3 drew the 890 Pro: plan 009 gives a model a full folder
+   * **Absent for a model nobody has drawn yet**, which was the Harmony 885's case until its face was drawn and
+   * the Harmony 890's folder's until the 890 Pro was drawn: plan 009 gives a model a full folder
    * before a unit or a drawing exists, so that a unit's arrival adds content and changes no path. Its keys and
    * display blocks then say that no drawing exists rather than failing, and `test/remotes.test.ts` names
    * exactly which folders may be without one, so a model that has a drawing cannot lose it unnoticed. No row is
@@ -102,9 +102,8 @@ interface RemoteFolder {
   /**
    * Skins the folder describes that none of its drawings serves, because that skin's face is not the one
    * drawn. `test/remotes.test.ts` holds the drawings' skins and these together to the folder's. The Harmony
-   * 890's folder has two, the 890 and 895, beside the 890 Pro its drawing serves, `todo-prepare-885.md` 2.5.3;
-   * the Harmony 880, skin 15, was the case in the 885's folder until its drawing landed as a printing of that
-   * folder, 2.5.
+   * 890's folder has two, the 890 and 895, beside the 890 Pro its drawing serves; the Harmony 880, skin 15, was
+   * the case in the 885's folder until its drawing landed as a printing of that folder.
    */
   readonly undrawn?: readonly number[];
   readonly architecture: number;
@@ -113,8 +112,8 @@ interface RemoteFolder {
    * is not measured from configurations' own full screen pictures.
    *
    * **The Harmony Touch is that row.** No configuration of a Touch has been read, section 200, so its
-   * raster is read in the firmware instead, `tests/harmony_touch/test_harmony_touch_keys.py`. Until `todo-touch.md`
-   * 3.2 the codec had no row for it at all, and this field was `rasterFromDrawing`, naming the drawing's
+   * raster is read in the firmware instead, `tests/harmony_touch/test_harmony_touch_keys.py`. Before that reading
+   * the codec had no row for it at all, and this field was `rasterFromDrawing`, naming the drawing's
    * raster from Logitech's user guide as the only source; `displayTable` refused a drawing with a screen
    * on an architecture with no row, and still does, since that is usually two sources disagreeing.
    */
@@ -259,14 +258,14 @@ export const ARCHITECTURES: readonly ArchitectureFolder[] = [
   // configurations depends on most, is the container page's one table for every architecture.
   { folder: 'harmony-880-885', architecture: 8, files: ARCHITECTURE_FILES, blocks: ['skins'] },
   { folder: 'harmony-890-895', architecture: 10, files: ARCHITECTURE_FILES, blocks: ['skins'] },
-  // The Harmony Touch's generation, plan 009's thin folder of three files, and three more since todo-touch
-  // 3.1, one per group of the documents a sync hands the remote: no memory page, because no address on it
+  // The Harmony Touch's generation, plan 009's thin folder of three files, and three more, one per group of the
+  // documents a sync hands the remote: no memory page, because no address on it
   // has been read, and no misc page, because nothing is left over. 17 is the remote's own
   // number and Logitech's templates say 18, section 197, so this row takes the remote's word the way the
   // model's row does and the folder's README states both. It carries the skin table alone: the USB
   // identity block would be a row of `none`, since `openHarmony` never opens this family, and the
-  // model's usb.md already says so beside its own copy of that block. `api` is a folder, todo-touch 5.2:
-  // the remote's interface as an API, one page per group of requests, indexed by its own README.
+  // model's usb.md already says so beside its own copy of that block. `api` is a folder: the remote's interface
+  // as an API, one page per group of requests, indexed by its own README.
   {
     folder: 'harmony-touch', architecture: 17,
     files: ['README.md', 'activities-and-buttons.md', 'answering-a-sync.md', 'api', 'devices-and-infrared.md', 'favourites-and-settings.md', 'firmware.md', 'usb.md'],
@@ -610,7 +609,7 @@ function fileBasedIdentity(architecture: number): string {
  * How far an escape row was read, where it is narrower than the architecture. The row is keyed by
  * architecture and printed on every model's page of it, and arch 8's was read in the Harmony 880 and 885
  * application 4.4 only (`tests/harmony_880_885/test_harmony_885_write_end.py`): the 720, the 785 and the 880 Pro run other
- * builds. Pointed out by the review of `todo-compile-885.md` 1.4, when the row first appeared on the 720's page.
+ * builds. Pointed out by a review when the row first appeared on the 720's page.
  */
 const ESCAPE_SCOPE: Readonly<Record<number, string>> = {
   8: ' in the Harmony 880 and 885 application 4.4; other arch 8 models not read',

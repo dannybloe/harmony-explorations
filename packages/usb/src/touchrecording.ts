@@ -1,8 +1,8 @@
 /**
  * The decoder of a sync of a Harmony Touch recorded through the lab's inspectable copy of Harmony Desktop:
  * a library, `@harmony/usb/touchrecording`, because the bench's and the corpus's scripts that derive what a
- * remote holds from a recorded sync run it as well as the tests do, `todo.md` 7.3.6. It lived in `test/` and was
- * exported as `./test/touch-recording` until then, so a runnable script depended on a test file.
+ * remote holds from a recorded sync run it as well as the tests do. It lived in `test/` and was
+ * exported as `./test/touch-recording` at first, so a runnable script depended on a test file.
  *
  * A recording is one JSON object a line: what the page's recorder posted, which is every web request with
  * its answer and every call through the page's `prompt()` bridge to the USB layer. This file turns the

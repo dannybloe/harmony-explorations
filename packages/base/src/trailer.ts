@@ -2,11 +2,11 @@
  * The configuration container's trailer checksum, the one copy.
  *
  * **It lived in `packages/codec/src/container/gspm.ts` until the file family's write rail needed it**,
- * `todo-compile-350.md` 1.6. That rail, `assertFileFamilyContainer` in `packages/usb/src/rails.ts`,
+ * the rail that guards a write to a Harmony 300 or 350. That rail, `assertFileFamilyContainer` in `packages/usb/src/rails.ts`,
  * refuses a container whose stored checksum does not recompute, and it has to compute the checksum
  * itself rather than be told: a rail that asks its caller is a rail the caller answers, section 225. So
  * the derivation moved to `packages/usb`, which the codec then depended on, and the codec re-exports it
- * under the same names. Since `todo.md` 7.3.4 it is here, in the base both packages depend on, so the
+ * under the same names. Now it is here, in the base both packages depend on, so the
  * codec no longer needs the transport to compute a checksum. One copy, reachable from both, which is
  * the rule; `packages/usb/src/trailer.ts` is a re-export of this file, not a second copy.
  *

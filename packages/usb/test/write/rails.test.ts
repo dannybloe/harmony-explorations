@@ -173,7 +173,7 @@ test('the package offers no way to build a request that changes a remote', async
   // The four encoders are in `writes.ts` now, which no entry re-exports. This asserts the entries
   // rather than the file, because a list of names in a docstring is what drifted in the first place,
   // and because the next write encoder somebody adds will be caught by it. **Every entry and not the
-  // barrel alone** since `todo.md` 7.3.6, which put most of the package under named subpaths: a rule
+  // barrel alone**, since most of the package is under named subpaths: a rule
   // checked against the main entry would pass with the same name one subpath away, `entries.ts`.
   const entries = await packageEntries();
   const barrel = Object.assign({}, ...entries.values()) as Record<string, unknown>;
@@ -199,7 +199,7 @@ test('the package offers no way to build a request that changes a remote', async
   assert.equal(typeof barrel['encodeRequest'], 'function',
     'the generic encoder is still exported, which is why the guard below has to exist');
   assert.equal(typeof entries.get('./protocol')?.['encodeRequest'], 'function', 'and it is the protocol subpath that has it');
-  assert.equal(entries.get('.')?.['encodeRequest'], undefined, 'and not the main entry, since todo.md 7.3.6');
+  assert.equal(entries.get('.')?.['encodeRequest'], undefined, 'and not the main entry');
 
   // The control: the encoders do exist, and importing them by path still works, so this is a boundary
   // rather than a deletion. `remote.ts` reaches them that way and the rails still gate every send.
@@ -275,13 +275,13 @@ test('a write target is refused the reboot unless its escape is traced and it is
   // The title was "a write target either dispatches the reset escape or is refused one" until then,
   // an either or that arch 14 made false by doing both.
   //
-  // **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.2 and landed in the refused arm**,
+  // **Arch 8 (Harmony 880 and 885) joined under decision 30 and landed in the refused arm**,
   // beside arch 9, with no `ESCAPE_SUB_COMMANDS` row and no place on the reset list. **It moved to the
-  // traced arm for 1.4**, its write end: the row states what the 885's application dispatches,
+  // traced arm with its write end**: the row states what the 885's application dispatches,
   // `tests/harmony_880_885/test_harmony_885_write_end.py`, and the reset list took it for the restart a write ends with.
   assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
   // **Arch 14 joined on 27 September 2026, section 282**, once its path was read on the Harmony 650's
-  // own build, and arch 8 for 1.4, so traced and permitted are the same three architectures now.
+  // own build, and arch 8 with its write end, so traced and permitted are the same three architectures now.
   assert.deepEqual([...ARCHITECTURES_WITH_A_RESET_TARGET], [8, 12, 14]);
   for (const architecture of ARCHITECTURES_WITH_A_RESET_TARGET) {
     assert.ok(ESCAPE_SUB_COMMANDS[architecture]?.includes(ESCAPE_RESET), `architecture ${architecture}`);
@@ -345,7 +345,7 @@ test('the reset escape is refused on a write target whose escape is unread, and 
         intendedVersion: {},
         versionBlock: rails.encodeVersionBlock({architecture: 14}),
       }),
-      // Arch 8 (Harmony 885), traced in its application 4.4 and on the list since todo-compile-885.md 1.4.
+      // Arch 8 (Harmony 885), traced in its application 4.4 and on the list for its write end, decision 30.
       say('arch 8', {
         ...IDEAL,
         architecture: 8,
@@ -385,7 +385,7 @@ test('the invalidate is allowed on every write target, arch 14 and arch 8 since 
     };
     console.log(JSON.stringify([say('arch 12', 12), say('arch 9', 9), say('arch 14', 14), say('arch 8', 8)]));
   `);
-  // Arch 8 (Harmony 885) since todo-compile-885.md 1.4, its selector 2 executor read in the 885's
+  // Arch 8 (Harmony 885) for its write end, decision 30, its selector 2 executor read in the 885's
   // application 4.4, `tests/harmony_880_885/test_harmony_885_write_end.py`.
   assert.deepEqual(JSON.parse(output), [
     'arch 12: allowed',
@@ -440,13 +440,13 @@ test("arch 14's write target is the Harmony 650, for the block path, the invalid
   // the Harmony 600 out now is the unit check, since both are arch 14; what this asserts is that the
   // arrival bought one path, the flash block, and not the three that have lists of their own.
   //
-  // **It moved again for `todo-compile-885.md` 1.2**: arch 8 (Harmony 880 and 885), the flash block path
-  // only, so it was on none of the three lists below. **1.4 put it on two of them**, the reboot and the
+  // **It moved again under decision 30**: arch 8 (Harmony 880 and 885), the flash block path
+  // only, so it was on none of the three lists below. **Its write end put it on two of them**, the reboot and the
   // invalidate, each for the one command an 885's write ends with; the RAM write stays shut, since selector
   // 7 reaches the unlock and the install status on that platform with no bound.
   assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
-  assert.ok(ARCHITECTURES_WITH_A_RESET_TARGET.includes(8), 'the reboot, arch 8, todo-compile-885.md 1.4');
-  assert.ok(ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(8), 'the invalidate, arch 8, 1.4');
+  assert.ok(ARCHITECTURES_WITH_A_RESET_TARGET.includes(8), 'the reboot, arch 8, for its write end');
+  assert.ok(ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(8), 'the invalidate, arch 8, for its write end');
   assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(8), 'the RAM write, arch 8');
   // The reboot and the invalidate followed in section 282, each on its own evidence: the escape path
   // and the selector 2 executor read on the Harmony 650's own build. The RAM write did not.
@@ -477,7 +477,7 @@ test('the writable range needs both a region and a ceiling, and a hole in either
   // `0x030000`, so it answers now, and no architecture is left with a region and no ceiling. So the
   // hole is tested through `writableRangeFrom`, the rule without the lookups; an architecture with
   // neither, arch 10 (Harmony 890 and 895), is the region half. This was arch 8 (Harmony 880 and 885)
-  // until `todo-compile-885.md` 1.2 gave it both rows.
+  // until it became a write target under decision 30, which gave it both rows.
   assert.deepEqual(writableRange({ ...IDEAL, architecture: 14, versionBlock: blockFor(14) }), {
     start: 0x030000,
     end: 0x031000,
@@ -538,7 +538,7 @@ test('an erase refuses an architecture with no recorded block size', () => {
   assert.deepEqual(eraseBoundsFor(9), { block: 0x10000, ceiling: 0x870000 });
   // Arch 14 answers since section 281, off three firmware images' eraser.
   assert.deepEqual(eraseBoundsFor(14), { block: 0x10000, ceiling: 0x200000 });
-  // Arch 8 answers since `todo-compile-885.md` 1.2, the ceiling the staging region below the log area.
+  // Arch 8 answers since decision 30, the ceiling the staging region below the log area.
   assert.deepEqual(eraseBoundsFor(8), { block: 0x10000, ceiling: 0x1d0000 });
   for (const architecture of [10, 16]) {
     assert.throws(() => eraseBoundsFor(architecture), RailError, `architecture ${architecture}`);
@@ -562,8 +562,8 @@ test('a config length that is missing or absurd does not produce a range', () =>
  */
 function withWritesEnabled(script: string, doors: Record<string, string> = {}): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
-  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
-  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  // The rails and the protocol and transport they are used with, as the barrel carried both before the rails
+  // went off the main entry to a subpath of their own; one namespace, so the scripts below read as they did.
   const railsPath = join(here, '..', '..', 'src', 'rails.ts').replaceAll('\\', '/');
   const internalPath = join(here, '..', '..', 'src', 'internal.ts').replaceAll('\\', '/');
   return execFileSync(
@@ -775,7 +775,7 @@ test('an architecture with no recorded block size is refused rather than loosely
   // **The subject moved to arch 8 (Harmony 880 and 885) on 27 September 2026**, when arch 14 gained
   // its rows off its own firmware, section 281, which is the second row landing through this test.
   //
-  // **And to arch 10 (Harmony 890 and 895) for `todo-compile-885.md` 1.2**, when arch 8 gained its rows
+  // **And to arch 10 (Harmony 890 and 895)**, when arch 8 gained its rows
   // off two outside sources under decision 30, the third row landing here. Arch 10 has no firmware image
   // anywhere, so nothing can give it one.
   assert.equal(ERASE_BLOCK_SIZE[10], undefined);
@@ -820,7 +820,7 @@ test('with writing enabled, the session end escape refuses everything but itself
     check('the other reset, 0x03', spare12, 0x03);
     check('arch 14 only sub-command 0x05', {...spare12, architecture: 14}, 0x05);
     check('arch 9, whose escape nobody has read', {...spare12, architecture: 9}, 0x01);
-    // Arch 8 (Harmony 885): its escape is read and dispatches 0x01, todo-compile-885.md 1.4, and the row
+    // Arch 8 (Harmony 885): its escape is read and dispatches 0x01, read for its write end, and the row
     // that says so is there for the restart; the session end has a list of its own that leaves it out.
     check('arch 8, read for the restart only', {...spare12, architecture: 8}, 0x01);
     check('another unit on the cable', {...spare12, identityBlock: another}, 0x01);
@@ -888,8 +888,8 @@ test('with the hang door open, it still refuses an even count', () => {
  */
 function withEnv(extra: Record<string, string>, script: string): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
-  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
-  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  // The rails and the protocol and transport they are used with, as the barrel carried both before the rails
+  // went off the main entry to a subpath of their own; one namespace, so the scripts below read as they did.
   const railsPath = join(here, '..', '..', 'src', 'rails.ts').replaceAll('\\', '/');
   const internalPath = join(here, '..', '..', 'src', 'internal.ts').replaceAll('\\', '/');
   return execFileSync(
@@ -1150,7 +1150,7 @@ test('with writing enabled a Harmony 525 is still refused, and it is the archite
 /**
  * Every door this package has, open at once: what the Harmony 885's write end must still never reach.
  *
- * `todo-compile-885.md` 1.4 put arch 8 (Harmony 880 and 885) on the reset and invalidate lists, so that
+ * Decision 30's write end put arch 8 (Harmony 880 and 885) on the reset and invalidate lists, so that
  * `write-config.ts` can end a write the 885's way, `reference/architectures/harmony-880-885/usb.md` "How a
  * write ends". Two steps of the other Harmonys' sequence must not reach an 885 and two commands reach the
  * guards of its flash, `tests/harmony_880_885/test_harmony_885_write_end.py` and `_erase_and_write.py`:

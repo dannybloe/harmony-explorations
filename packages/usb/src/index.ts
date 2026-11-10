@@ -2,7 +2,7 @@
  * `@harmony/usb`, the main entry: what an application finds a remote with, reads it with, and checks a
  * configuration against before anything is written.
  *
- * **Explicit names, grouped by what a caller does with them**, `todo.md` 7.3.6 and plan 013 decision 6, and
+ * **Explicit names, grouped by what a caller does with them**, plan 013 decision 6, and
  * `test/package/surface.test.ts` holds the list, so a new public name is a line in that list's diff. What a script, a
  * bench tool or a test needs beyond this is under a named subpath of `package.json`: `./internal` for the
  * protocol and the transport's parts, `./rails` for the rails, `./write` for the machinery that erases and

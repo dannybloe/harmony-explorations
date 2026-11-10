@@ -1,6 +1,6 @@
 /**
  * Writing a configuration to a remote of the **file based** family, the Harmony 300 and the Harmony
- * 350. `todo-compile-350.md` 1.6.
+ * 350, under decision 26.
  *
  * **Deliberately not in the barrel.** `index.ts` does not re-export this file, the same protection
  * `writes.ts` and `blockwrite.ts` have: a consumer of `@harmony/usb` gets the read path, and a caller
@@ -29,8 +29,8 @@
  *
  * * **The end marker is written.** A read of `/cfg/usercfg` comes back four bytes short, because the
  *   open for reading states `end_addr - 0x020000` as the size, and the boot validator demands `PTYY` at
- *   `end_addr`. So the container goes out whole. `todo-compile-350.md` 1.6 said to take the marker
- *   off, and the firmware says the opposite.
+ *   `end_addr`. So the container goes out whole. The first plan for this path said to take the
+ *   marker off, and the firmware says the opposite.
  * * **The checksum fields are ours.** The client copies them out of a package's manifest and never
  *   computes one; there is no package here. The firmware uses only the expected value, so the type,
  *   seed, offset and length are filled with the truth about this container (`XOR`, `0x4321`, from 0
@@ -598,15 +598,15 @@ export async function writeFileConfig(
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The whole run, from the container to the closed transport, `todo.md` 7.3.10
+// The whole run, from the container to the closed transport
 // ---------------------------------------------------------------------------------------------------
 
 /**
  * **The units of this family that may be written, and no others**, decision 26: each by the label of its record,
  * with its model and the skin its identity file states, `0x68` for a Harmony 350 and `0x4f` for a Harmony 300, a
  * second reading that costs nothing beside `/sys/guid`, which is the only thing on the cable that tells two units
- * apart, since both models enumerate as `0xC124`. This was `write-file-config.ts`'s table until `todo.md` 7.3.10,
- * and an independent review of that step found it had become a caller's parameter; so it is the library's, the
+ * apart, since both models enumerate as `0xC124`. This was `write-file-config.ts`'s table until the run moved into
+ * the library, and an independent review of that move found it had become a caller's parameter; so it is the library's, the
  * script's table is this one, and `writeFileFamilyConfiguration` refuses any other label before it opens anything.
  */
 export const FILE_FAMILY_UNITS: Readonly<Record<string, { readonly model: string; readonly skin: number }>> = {
@@ -665,7 +665,7 @@ export interface FileFamilyWriteResult {
 
 /**
  * Put a configuration onto a Harmony 300 or Harmony 350 and read it back: the library half of
- * `bin/write-file-config.ts`, `todo.md` 7.3.10, so an application writes one through the same function.
+ * `bin/write-file-config.ts`, so an application writes one through the same function.
  *
  * In order, and every line goes to `say` before the next step:
  *

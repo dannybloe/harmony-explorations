@@ -5,7 +5,7 @@
  * `@harmony/corpus`, which had it alone, and the two region readers, `packages/corpus/bin/read-region.ts`
  * and `packages/usb/bin/read-region.ts`, which had none and stopped on the first lost chunk without filing
  * anything. Both bench Harmony 885s met that on long reads, `docs/test-notes/harmony-885.md`, while
- * `readConfig` on the same cable finished. `todo-compile-885.md` 1.10 moved the loop here so the three
+ * `readConfig` on the same cable finished. So the loop is here and the three
  * share it: a derivation lives once, and two copies of a retry diverge the same way two copies of an
  * opcode table do, one of them gaining a bound or a report the other never hears about.
  *

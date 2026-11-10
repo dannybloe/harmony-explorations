@@ -2,7 +2,7 @@
  * The model table against what `packages/usb` can address, the one test of the table that needs the
  * transport, `packages/base/test/models.test.ts` holding the rest.
  *
- * It sat in that file until `todo.md` 7.3.4 moved the table to `packages/base`, whose tests may not import
+ * It sat in that file until the table moved to `packages/base`, whose tests may not import
  * this package. The claim is about the join between the two, so it stays with the side that owns the
  * address rules.
  */

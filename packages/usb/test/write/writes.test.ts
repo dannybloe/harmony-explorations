@@ -114,8 +114,8 @@ test('the builders refuse what the protocol cannot say', () => {
 test('no entry of the package exposes a way to build a write', async () => {
   // The rail in `writes.ts`'s docstring, restated here because this file is the reason to check it
   // again: adding four exported builders to that module is exactly the change that would tempt
-  // somebody to re-export it for convenience. Every entry and not the barrel alone since `todo.md`
-  // 7.3.6, which put most of the package under named subpaths, `entries.ts`.
+  // somebody to re-export it for convenience. Every entry and not the barrel alone, since most of
+  // the package is under named subpaths, `entries.ts`.
   const exported = await exportedNames();
   for (const name of ['writeFlashRequests', 'writeFlashDataRequest', 'doneRequest',
                       'writeChunkLengths', 'writeFlashRequest', 'eraseFlashRequest']) {

@@ -1,5 +1,5 @@
 /**
- * Ask a Harmony Touch one of the two reads its request channel carries, `todo-touch.md` 6.4: the
+ * Ask a Harmony Touch one of the two reads its request channel carries: the
  * provisioning information, or `getconfighash`, the entity tags of the stored documents.
  *
  *   node packages/usb/bin/touch-request.ts --request provisioning|confighash
@@ -20,7 +20,8 @@
  *
  * **What it prints may identify an account**: the provisioning answer carries the account and remote
  * numbers and an e-mail, so the terminal gets the answer's field names and sizes, and the values go to the
- * lab only. Only the two reads are offered here; the sync's requests are the answerer's, 6.6.
+ * lab only. Only the two reads are offered here; the sync's requests are the answerer's, `syncTouch` in
+ * `packages/corpus/src/touchsync.ts`.
  *
  * Nothing in this script has been run against a remote.
  */

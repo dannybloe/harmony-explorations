@@ -33,8 +33,8 @@
  * `packages/bench/test/harmony-300-350/keys300.test.ts`; `h300eu.ts` carries them. No US unit has been pressed, and the US
  * printing puts other colours on the colour keys than the European one, so no code is drawn here: that the
  * US keys raise the same codes by place is the moulding's inference and not a measurement. `reprintKeys`
- * drops the codes and the candidates the 350 carries. This said that no Harmony 300 had been pressed until
- * `todo-compile-300.md` 2.2.
+ * drops the codes and the candidates the 350 carries. This said that no Harmony 300 had been pressed until the
+ * European unit's two bench tests.
  */
 import { H350 } from './h350.ts';
 import type { Key, Label, Model, ScanSource } from '../types.ts';
@@ -129,7 +129,7 @@ export const H300: Model = {
   // differently and has its own drawing, `h300eu.ts`. This drawing served both from 9 October 2026, after it
   // had listed 78 alone and a drawing looked up by the skin a European remote states, 79, found nothing,
   // until a person holding a skin 79 unit said its colour keys and favourite block differ from this
-  // printing, `todo-compile-300.md` 2.2.
+  // printing.
   skins: [78],
   keys: reprintKeys(REPRINT),
   nameplate: { ...H350.nameplate!, text: 'Logitech' },

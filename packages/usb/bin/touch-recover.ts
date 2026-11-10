@@ -1,6 +1,6 @@
 /**
  * Send a Harmony Touch one step of the recovery tier, by hand, after a write has gone wrong: the abort of a
- * sync, the delete of every stored document, or the restart. `todo-touch.md` 6.3.1, decision 29.
+ * sync, the delete of every stored document, or the restart, decision 29.
  *
  *   node packages/usb/bin/touch-recover.ts --step abort|delete|reboot [--backup <lab folder>]
  *   HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 HARMONY_TOUCH_RECOVERY=1 \
@@ -27,8 +27,8 @@
  * has nothing worth keeping on it except what the backup holds**: the set it is stuck on is the set that
  * fails, and nothing over the cable reads a Touch's stored documents back by name,
  * `reference/architectures/harmony-touch/api/proxy.md` "Can a stored document be read back". So the backup
- * is whatever the set was built from or recorded as, in the lab, the backup `todo-touch.md` 6.5 takes being
- * the first, and the check is that a person named one.
+ * is whatever the set was built from or recorded as, in the lab, the recorded full sync taken before the first
+ * write being the first, and the check is that a person named one.
  *
  * What this cannot clear, and what then needs the remote's own factory reset and Logitech's client: a remote
  * whose system does not start, and one whose provisioning is gone. The `recovering-a-remote` skill's Harmony

@@ -244,7 +244,7 @@ export function sameUnit(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// A unit that has no identity block: the Harmony Touch, `todo-touch.md` 6.2.
+// A unit that has no identity block: the Harmony Touch.
 // ---------------------------------------------------------------------------------------------------
 
 /**

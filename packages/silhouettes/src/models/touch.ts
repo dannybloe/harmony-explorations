@@ -28,8 +28,8 @@
  * size come from the drawing's own printed mark, which the extraction reports per key.
  *
  * **No scan code appears anywhere in here, and that is the drawing's choice now rather than a gap.**
- * Until `todo-touch.md` 3.2 no key of a Touch could be numbered here. The firmware numbers every keypad
- * key since, twice: a bit of the key microcontroller and a Linux key code, each with the firmware's
+ * Before the Touch's firmware was read for its keys, no key of a Touch could be numbered here. The firmware
+ * numbers every keypad key, twice: a bit of the key microcontroller and a Linux key code, each with the firmware's
  * name, `tests/harmony_touch/test_harmony_touch_keys.py` and `reference/remotes/harmony-touch/keys.md`. Those
  * numbers are the firmware's and not a configuration's: a Touch's configuration binds keys by name, its
  * configuration is not reachable as a file and Logitech's service will not compile one, section 202. So

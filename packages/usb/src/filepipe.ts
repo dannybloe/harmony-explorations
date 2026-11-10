@@ -23,7 +23,7 @@
  * sits on the transport `openFileBasedRemote` returns: an allow list of the four commands that only
  * read, plus a check that an open asks for reading.
  *
- * **The write path exists since `todo-compile-350.md` 1.6, and it is not in this file.** It is
+ * **The write path exists, and it is not in this file.** It is
  * `filewrite.ts`, which the barrel does not re-export, behind `assertFileWriteAllowed` in `rails.ts`.
  * This said "there is no authorisation path here, because there is nothing to
  * authorise"<!--superseded--> until then. What the guard below gained is the second half of the
@@ -33,7 +33,7 @@
  * holding this transport still has no way to send a write, and the route reaches `/cfg/usercfg` and no
  * other path even for a caller who reaches the hatch by a deep import.
  *
- * **A second route since `todo-touch.md` 6.3: a Harmony Touch's request channel**, `/sys/hlapi`, which
+ * **A second route: a Harmony Touch's request channel**, `/sys/hlapi`, which
  * `touchsession.ts` drives behind `assertTouchRequestAllowed`. Its reports pass on the same three
  * conditions with that route's own flag, and on a fourth the file write route does not need: the name
  * a request line opens with is decoded off its first data packet and checked against the allow list,
@@ -547,7 +547,7 @@ export const NEVER_OPENED_PATHS: readonly string[] = [
  * The path an open request names, decoded off the bytes rather than taken from a caller.
  *
  * **Decoded one character per byte, high bytes kept.** It decoded as Node's `ascii` until the review of
- * `todo-touch.md` 6.3, and that decoding clears the high bit of every byte, so the bytes of
+ * the request rail, and that decoding clears the high bit of every byte, so the bytes of
  * `/sys/sysinf` and `0xEF` came out as `/sys/sysinfo` and would have passed the inert list as a path the
  * remote was never sent. `latin1` keeps every byte as itself, so a path with a byte above `0x7E` compares
  * equal to no name on any list, and `isCanonicalPath` refuses it.
@@ -571,8 +571,8 @@ export function requestedPath(report: Uint8Array): string | undefined {
  * **Why the guard asks this before it compares a path with any list.** Every list here compares a path
  * whole and exact, and nothing has read whether the remote's native name table matches a path the same
  * way. So `/sys//reboot`, `/sys/./reboot`, `/SYS/REBOOT`, `/sys/reboot/` and `//sys/reboot` each compare
- * unequal to `/sys/reboot` while the remote might resolve any of them to it; the review of `todo-touch.md`
- * 6.3 sent all five through the guard with the experiment door open and each went out. A path that is not
+ * unequal to `/sys/reboot` while the remote might resolve any of them to it; the review of the request
+ * rail sent all five through the guard with the experiment door open and each went out. A path that is not
  * canonical is refused at any open, whatever the flags, so the exact comparison and the remote's matching
  * cannot disagree about a name this library refuses. Every name in the native program's tables, the
  * Touch's and the Harmony 300 and 350's, is canonical by this rule, so nothing a session needs is lost.
@@ -831,7 +831,7 @@ export function carryTouchLine(report: Uint8Array, phase: TouchRoutePhase, carry
  * protocols cannot share one allow list, and a guard that silently misreads a protocol is worse
  * than no guard.
  *
- * **The write route's half**, `todo-compile-350.md` 1.6, is the arrangement `guardMutations` has had
+ * **The write route's half**, decision 26, is the arrangement `guardMutations` has had
  * since section 224, with one more condition. An authorisation is looked up by this object's identity
  * in `authorise.ts`, which the barrel does not offer, and consumed by the next write whether or not it
  * matches, so a permission cannot be left lying about. A report is sent on it only when its bytes are

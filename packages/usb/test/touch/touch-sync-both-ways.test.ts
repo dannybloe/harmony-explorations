@@ -4,11 +4,11 @@
  *
  * **The questions.** `touch-sync.test.ts` measured one sync of an account holding two devices and one
  * activity, which asked for six documents and nothing else, and the reference left open what a remote asks
- * for when the account holds favourites, sequences or pictures. `todo-touch.md` 2.2.1 filled the bench
- * Touch's account to cover the feature list of 1.3.2 (seven devices, five activities, sequences, delays,
+ * for when the account holds favourites, sequences or pictures. The bench
+ * Touch's account was filled to cover every feature the decompiled reader can hold (seven devices, five activities, sequences, delays,
  * long presses, screen labels, five favourite channels, one with an uploaded logo, and an uploaded
- * background), and 2.3 asked for one complete sync of it recorded whole. The reverse direction, the
- * remote's own changes going up, had been read in the engine (1.6) and recorded only empty, in the trial
+ * background), `packages/corpus/setups/touch-full.json`, and one complete sync of it recorded whole. The reverse
+ * direction, the remote's own changes going up, had been read in the engine and recorded only empty, in the trial
  * sync, whose `syncRemoteChanges` answered with nothing but `proxy://Finished`.
  *
  * **The instrument** is the trial's: the lab's copy of Harmony Desktop 1.0.303 recording every web request
@@ -25,7 +25,7 @@
  *    time: the six gets in one list, every one with an entity tag except Settings; then an empty list; then
  *    one `content://1.0/user;...` get, one `content://1.0/device;...` get and one
  *    `content://1.0/service/<id>` get, each alone in its list; then one list of ten pictures; then
- *    `POST proxy://Finished`. This is the order the engine reading of 1.6 predicted before the recording.
+ *    `POST proxy://Finished`. This is the order the engine reading predicted before the recording.
  * 3. **The pictures are addressed two ways**: the user's own pictures, the background and its `_small`
  *    twin, by absolute `https` address on Logitech's user image store, and the channel logos by the logical
  *    scheme `content-image://`: seven station logos and one custom logo, the one uploaded for a favourite.
@@ -40,7 +40,7 @@
  *
  * 5. **The remote hands its change over as one request, verb `put`**, the logical address of the remote's
  *    Settings and no entity tag, carrying its **whole** Settings document, URL encoded with `+` for a
- *    space; 1.6 read the shape in the engine and this measures it.
+ *    space; the engine reading gave the shape and this measures it.
  * 6. **The client sends that document to Logitech's service, the same as parsed JSON**, as the body of one `PUT` to the
  *    account's remote settings address, the service answers with the same document, and the client writes
  *    the answer back to the remote, status 200, `application/json`, with an entity tag. Three ends equal
@@ -58,7 +58,7 @@
  *
  * **Why the full sync skipped the reverse step** is Logitech's client and not the remote:
  * `tests/logitech/test_client_templates.py` holds that Harmony Desktop asks for the remote's changes only when the
- * account has no sync pending, and the account had the 2.2.1 edits pending. The two recordings are one case
+ * account has no sync pending, and the account had the edits that filled it pending. The two recordings are one case
  * each way and consistent with it.
  *
  * **What it rules out.** That a Touch's favourites or pictures arrive inside the six documents; that the
@@ -73,7 +73,7 @@
  *
  * **Sources checked first.** `touch-sync.test.ts` and the reference pages it feeds,
  * `reference/architectures/harmony-touch/usb.md` and `reference/remotes/harmony-touch/`; the Touch engine
- * and screens decompiled in the lab, whose sync request list (`todo-touch.md` 1.6) named this order;
+ * and screens decompiled in the lab, whose sync request list named this order;
  * Harmony Desktop's main script in the mirrored client for the reverse sync's condition.
  *
  * **Reviewed blind**: a second reader with a decoder of its own, given the questions and not these

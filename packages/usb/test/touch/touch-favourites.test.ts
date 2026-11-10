@@ -7,7 +7,7 @@
  *
  * **The question.** `touch-sync-both-ways.test.ts` measured that a sync of an account with favourites and
  * a background delivers three content documents and ten pictures after the six documents, each the same
- * as Logitech's service sent it, and left what is inside them to `todo-touch.md` 3.1: which fields the
+ * as Logitech's service sent it, and left what is inside them open: which fields the
  * remote uses, how a favourite becomes key presses, where the order lives, and what decides which
  * pictures are fetched.
  *
@@ -82,9 +82,9 @@
  * **Sources checked first.** `touch-sync-both-ways.test.ts` and `touch-sync.test.ts`, the reference's
  * `reference/architectures/harmony-touch/usb.md` and `reference/remotes/harmony-touch/`, Logitech's data
  * model in `reference/logitech/data-model/`, and the lab's reading of the Touch's screens and decompiled
- * engine for `todo-touch.md` 3.1, which named every field asserted here before this file existed. What each channel
+ * engine, which named every field asserted here before this file existed. What each channel
  * tuning setting is called in MyHarmony was seen on its screen when the account was set up
- * (`todo-touch.md` 2.2.1), and is not used as evidence here.
+ * to fill it, and is not used as evidence here.
  *
  * The fixtures hold the account's data, so this file asserts names, counts, structure and equalities and
  * prints no value out of them. It skips without the lab.

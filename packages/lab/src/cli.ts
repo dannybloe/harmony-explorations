@@ -1,7 +1,7 @@
 /**
  * The command line of every script under `packages/<name>/bin`, read one way.
  *
- * `todo.md` 7.3.7, plan 013 step 6. Until then each script carried its own `argument`, `fail`, `flag` and
+ * Plan 013 step 6. Before it each script carried its own `argument`, `fail`, `flag` and
  * `arguments_`, 33 copies of the first, and only one of the 68 that read a command line answered `--help`: the rest
  * ran, which is how a `--help` given to `packages/codec/bin/render.ts` wrote a file into the lab. Here
  * `--help` prints the script's usage and exits 0 before the script does anything else, for every script that reads

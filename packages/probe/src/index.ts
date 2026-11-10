@@ -3,7 +3,7 @@
  *
  * See `./report.ts` for what is in it and why nothing else is.
  *
- * **Explicit names**, held by `test/surface.test.ts`, `todo.md` 7.3.6: probing a remote and building the report.
+ * **Explicit names**, held by `test/surface.test.ts`, plan 013 decision 6: probing a remote and building the report.
  * The constants and the base search behind them are `./internal`.
  */
 

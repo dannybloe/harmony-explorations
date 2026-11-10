@@ -187,8 +187,8 @@ test('a slot whose key\'s high byte is 0xFF is empty, as the firmware\'s save te
 
 function withEnv(extra: Record<string, string>, script: string): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
-  // The rails and the protocol and transport they are used with, as the barrel carried both until `todo.md`
-  // 7.3.6 took the rails off the main entry; one namespace, so the scripts below read as they did.
+  // The rails and the protocol and transport they are used with, as the barrel carried both before the rails
+  // went off the main entry to a subpath of their own; one namespace, so the scripts below read as they did.
   const rails = join(here, '..', '..', 'src', 'rails.ts').replaceAll('\\', '/');
   const internal = join(here, '..', '..', 'src', 'internal.ts').replaceAll('\\', '/');
   return execFileSync(

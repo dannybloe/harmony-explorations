@@ -99,47 +99,47 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 212 with section 335's third bench configuration and its three bench runs.
   // 214 with two contributed Harmony 650 configurations, section 323.
   // 216 with the first harvest compile on the Harmony One and the Harmony 650, section 337.
-  // 217 with the 650's region before todo-compile-650 1.3's clock check.
-  // 219 with the starting setup's region and configuration, todo-compile-650 1.6.
-  // 220 with the bench 650's region after 2.3's write, the base for 3.9's.
-  // 221 with the region after 3.9's write, the base for 3.14's.
-  // 223 with the options setup's region and configuration, todo-compile-650 3.10.
-  // 224 with the region read before todo-compile-650 4.2's write.
+  // 217 with the 650's region before the clock check.
+  // 219 with the starting setup's region and configuration.
+  // 220 with the bench 650's region after its first write, the base for the next write.
+  // 221 with the region after that write, the base for the one after it.
+  // 223 with the options setup's region and configuration.
+  // 224 with the region read before a write.
   // 225 with Logitech's sequence compile, section 343.
   // 227 with the favourites compile and the region read after its sync, section 344.
   // 228 with the Remote Assistant off compile, section 345.
   // 229 with the tilt sensor off compile, section 346.
-  // 230 with the region read before todo-compile-650 5.1's write.
+  // 230 with the region read before a write.
   // 231 with Logitech's compile of the whole test setup, 5.2.
-  // 232 with our 5.1 file as written, 233 with Logitech's clean compile of the test setup, 234 with the region before 5.2.5, 235 before 6.2.13, 236 before 7.1, 237 after its stopped probe, 238 with the probe, 239 before 7.5.
-  // 242 with the friend's Harmony One, two reads, and Harmony 525, 243 with the region before 10.5, 244 before 9.1.2, 245 with the 9.1.2 file stuck on it, 246 before the freeze's variant A, 247 before the fixed 9.1.2, 248 before its bright test colours, 249 before 8.2.2, 250 before 8.2.6, 251 after it, 252 with the one bit control on it, 253 before the empty configuration, 11.1.1.4, 254 before its blended letters, 255 before 11.2.3, the setup built from nothing, 256 before 11.2.4, 257 before its two cosmetic changes, 258 with the Harmony 700's region before its empty configuration, 259 with it on, 260 before the test setup, 261 with its six devices on, 262 with its seven, 263 with them in bright colours, 264 with the Harmony 600's region before its empty configuration, 265 with it on, 266 with the mark at 0, 267 in grey 2, 268 with its letters blended, 269 with the five device setup on, 270 with the six device file on, 271 with the spare Harmony One at the start of todo-compile-one, 274 with the three harvest compiles for the One.
-  // 291 with the client's two write templates for the Harmony 300 and 350, todo-compile-350 1.2, 293 with
-  // the 350's firmware upgrade template and the client's firmware type converter, 1.4.
+  // 232 with our first file as written, 233 with Logitech's clean compile of the test setup, 234 with the region before a write, 235 before the next, 236 before 7.1, 237 after its stopped probe, 238 with the probe, 239 before 7.5.
+  // 242 with the friend's Harmony One, two reads, and Harmony 525, 243 with the region before a write, 244 before the next, 245 with a file stuck on it, 246 before the freeze's variant A, 247 before the fixed one, 248 before its bright test colours, 249 before another, 250 before another, 251 after it, 252 with the one bit control on it, 253 before the empty configuration, 254 before its blended letters, 255 before the setup built from nothing, 256 before the next, 257 before its two cosmetic changes, 258 with the Harmony 700's region before its empty configuration, 259 with it on, 260 before the test setup, 261 with its six devices on, 262 with its seven, 263 with them in bright colours, 264 with the Harmony 600's region before its empty configuration, 265 with it on, 266 with the mark at 0, 267 in grey 2, 268 with its letters blended, 269 with the five device setup on, 270 with the six device file on, 271 with the spare Harmony One at the start of the Harmony One compile track, 274 with the three harvest compiles for the One.
+  // 291 with the client's two write templates for the Harmony 300 and 350, 293 with
+  // the 350's firmware upgrade template and the client's firmware type converter.
   // 295 with the bench 350's own bootloader and safe mode image, read off it as files, 1.4's open half.
   // 297 with the bench 350's two power on delay runs on the receiver, 1.8.
   // 298 with the Harmony 350 configuration of harmony-decompiler issue 37, the long press, 2.4.
   // 299 with the bench 350's device key run, 2.3.
   // 300 with the bench 350's every key run, 2.2.2.
-  // 302 with the bench 350's two runs on Logitech's compile of the test setup, todo-compile-350 3.3.
-  // 304 with the bench 300's two key runs, todo-compile-300 2.1 and 2.2.
+  // 302 with the bench 350's two runs on Logitech's compile of the test setup.
+  // 304 with the bench 300's two key runs.
   // 308 with the Harmony 300's three firmware images and the Harmony 350's application, each read off its
   // unit, which `tests/harmony_300_350/test_harmony_300_350_images.py` compares.
-  // 311 with the three files of the bench 300's run on the compile with event 0xFF bound, todo-compile-300 4.3,
-  // and 312 with the bench 350's check of the same file, 4.4, and 314 with the empty configuration's run and its monitor log,
-  // todo-compile-350 5.1.5, and 316 with the final build's runs on the bench 350 and 300, 5.3.
+  // 311 with the three files of the bench 300's run on the compile with event 0xFF bound,
+  // and 312 with the bench 350's check of the same file, and 314 with the empty configuration's run and its monitor log,
+  // and 316 with the final build's runs on the bench 350 and 300.
   // 320 with the Harmony Touch's two update packages, the hubs' production package and the bench Touch's
-  // identity file, which `tests/harmony_touch/test_harmony_touch_image.py` reads, todo-touch 1.2.
+  // identity file, which `tests/harmony_touch/test_harmony_touch_image.py` reads.
   // 321 with the recording of a Touch sync through Harmony Desktop, `packages/usb/test/touch/touch-sync.test.ts`,
-  // todo-touch 2.3's trial, and 323 with the full setup's sync and the reverse sync after it, 2.3.
+  // the first trial, and 323 with the full setup's sync and the reverse sync after it.
   // 324 with the Harmony 515 from onyiaic as it came, and 328 with its two firmware images and the two
   // kkong42 posted for the model, and 329 with the classic client's arch 8 constants, which
   // `tests/harmony_880_885/test_harmony_885_bootloader.py` closes the bootloader unlock against.
   // 338 with the two bench Harmony 885s' configurations and regions, each read twice, and unit A's clock.
-  // 342 with the four keypad watches of the two bench Harmony 885s, todo-prepare-885.md 2.4, and 343 with
+  // 342 with the four keypad watches of the two bench Harmony 885s, and 343 with
   // unit B's colour and transport keys asked by position.
-  // 355 with the Touch's first `getconfighash` read, todo-touch 6.4, which had been registered on the
-  // TypeScript side alone, and the eleven files of 6.7's first sync answered by this project and its recovery.
-  // 380 with the 25 files of 6.7's second sync, the one the remote committed, and the config hash around it.
+  // 355 with the Touch's first `getconfighash` read, which had been registered on the
+  // TypeScript side alone, and the eleven files of the first bench sync answered by this project and its recovery.
+  // 380 with the 25 files of the second bench sync, the one the remote committed, and the config hash around it.
   // 422 with the 42 files of 6.8: the set of the remote's own documents with tags of ours, the sync that
   // delivered it with 200, the config hash after it and the third `--unchanged` run.
   // 526 with the 104 files of 6.9: the four sets that each change one value and put it back, the eight config
@@ -248,8 +248,8 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // 66 with two contributed Harmony 650 configurations, whose model is not yet in the corpus.
   // 68 with those two harvest compiles, whose devices no remote ever held.
   // 69 with that region, whose container is `h650_denon_gap_config`.
-  // 71 with the starting setup's configuration and its region, todo-compile-650 1.6.
-  // 72 with the bench 650's region after 2.3's write.
+  // 71 with the starting setup's configuration and its region.
+  // 72 with the bench 650's region after its first write.
   // 73 with the region after 3.9's write.
   // 75 with the options setup's region and configuration.
   // 76 with the region read before 4.2's write.
@@ -259,13 +259,13 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // 81 with the tilt sensor off compile.
   // 82 with the region read before 5.1's write.
   // 83 with Logitech's compile of the whole test setup.
-  // 84 with our 5.1 file as written, 85 with Logitech's clean compile of the test setup, 86 with the region before 5.2.5, 87 before 6.2.13, 88 before 7.1, 89 after its stopped probe, 90 with the probe, 91 before 7.5. 94 with the friend's Harmony One's two reads and Harmony 525, out of the totals until joining is decided. 95 before 10.5, 96 before 9.1.2, 97 with it stuck, 98 before variant A, 99 before the fixed 9.1.2, 100 before its bright build, 101 before 8.2.2, 102 before 8.2.6, 103 after it, 104 with the one bit control on it. 105 with the region before the empty configuration, 11.1.1.4, 106 before its blended letters, 107 before 11.2.3, 108 before 11.2.4, 109 before its two cosmetic changes, 110 with the Harmony 700's region before its empty configuration, 111 with it on, 112 before the test setup, 113 with its six devices on, 114 with its seven, 115 with them in bright colours, 116 with the Harmony 600's region before its empty configuration, 117 with it on, 118 with the mark at 0, 119 in grey 2, 120 with its letters blended, 121 with the five device setup on, 122 with the six device file on, 123 with the spare Harmony One at the start of todo-compile-one, 126 with the three harvest compiles for the One, section 306's reason. 142 with the Harmony 515 from onyiaic, out of the totals like the friend's remotes, and 144 with the two copies of its application image.
+  // 84 with our first file as written, 85 with Logitech's clean compile of the test setup, 86 with the region before a write, 87 before the next, 88 before a probe, 89 after its stopped probe, 90 with the probe, 91 before another. 94 with the friend's Harmony One's two reads and Harmony 525, out of the totals until joining is decided. 95 before a write, 96 before the next, 97 with it stuck, 98 before variant A, 99 before the fixed one, 100 before its bright build, 101 before another, 102 before another, 103 after it, 104 with the one bit control on it. 105 with the region before the empty configuration, 106 before its blended letters, 107 before 11.2.3, 108 before the next, 109 before its two cosmetic changes, 110 with the Harmony 700's region before its empty configuration, 111 with it on, 112 before the test setup, 113 with its six devices on, 114 with its seven, 115 with them in bright colours, 116 with the Harmony 600's region before its empty configuration, 117 with it on, 118 with the mark at 0, 119 in grey 2, 120 with its letters blended, 121 with the five device setup on, 122 with the six device file on, 123 with the spare Harmony One at the start of the Harmony One compile track, 126 with the three harvest compiles for the One, section 306's reason. 142 with the Harmony 515 from onyiaic, out of the totals like the friend's remotes, and 144 with the two copies of its application image.
   // 152 with the two bench Harmony 885s' configurations and regions, whose remote's bench configurations are
   // not in the corpus. 155 with unit A's whole flash, read twice, and its configuration after the first block
-  // write, todo-compile-885.md 1.3. 158 with unit B's, 1.8. 161 with B's
-  // configuration as 1.4 wrote it, read back and in its region. 162 with 2.1's composed file, unit A's
+  // write 158 with unit B's. 161 with B's
+  // configuration as the first whole write put it, read back and in its region. 162 with the first composed file, unit A's
   // configuration plus one catalogue device, whose container is counted under `h885_a_config`.
-  // 164 with B's configuration as 2.1 wrote it and read it back. 165 with 2.3's composed file, 166 with B's region before 2.3's write, 168 with 2.3's file as written and read back.
+  // 164 with B's configuration as the first composed file wrote it and read it back. 165 with the next composed file, 166 with B's region before its write, 168 with that file as written and read back.
   assert.equal(names.length, 168, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

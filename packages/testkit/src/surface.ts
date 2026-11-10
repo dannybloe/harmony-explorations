@@ -1,6 +1,6 @@
 /**
  * The names an entry of a package exports, read off its source, for each package's allow list test,
- * `surface.test.ts`, `todo.md` 7.3.6.
+ * `surface.test.ts`, plan 013 decision 6.
  *
  * **Why the source and not the module.** A loaded module shows its values and nothing else: an interface or a
  * type is erased before anything runs, so a test of `Object.keys` would let a new public type through. The source

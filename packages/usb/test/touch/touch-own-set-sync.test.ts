@@ -1,10 +1,10 @@
 /**
  * A Harmony Touch's own six configuration documents delivered back to it with 200 under entity tags of ours, by a
- * program of this project, and what the remote did with them, as measured on the bench unit: `todo-touch.md` 6.8.
+ * program of this project, and what the remote did with them, as measured on the bench unit.
  *
  * **What was run.** `packages/corpus/bin/touch-sync.ts --set <lab set> --commit`, the set built by
- * `packages/corpus/bin/touch-own-set.ts` out of the full sync of 2.3 for five documents and the remote's own hand
- * over of 6.7 for Settings, each the parsed document as delivered, under a tag of ours, `setTag` in
+ * `packages/corpus/bin/touch-own-set.ts` out of the recorded full sync for five documents and the remote's own hand
+ * over in `touch-first-sync.test.ts` for Settings, each the parsed document as delivered, under a tag of ours, `setTag` in
  * `packages/corpus/src/touchsync.ts`. Around it, through the request rail, `getconfighash` once before and once
  * after, and then a third `touch-sync.ts --unchanged --commit`. The lab's `work/touch-firmware/notes/6.8-preflight.md`
  * predicted every row below before the run.
@@ -12,9 +12,9 @@
  * **The read before the sync survives only as a comparison.** It and the read after fell in the same minute, and
  * the scripts of the time named a read's folder by the minute and wrote into a folder that already existed, so the
  * read after overwrote it; `newReadFolder` in `packages/lab/src/index.ts` refuses that now. Before it was
- * overwritten the before read was compared with `cmp` against the read after 6.7's second sync,
+ * overwritten the before read was compared with `cmp` against the read after the second sync, `touch-second-sync.test.ts`,
  * `touch_second_sync_confighash_after`, and was byte for byte equal. That comparison is a fact of the run and not
- * of a file: nothing here can assert it. So the hash's move is asserted against the 6.7 read, which stood for the
+ * of a file: nothing here can assert it. So the hash's move is asserted against that read, which stood for the
  * remote's state up to the run by that comparison.
  *
  * **What it measured, each against something independent of it.**

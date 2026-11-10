@@ -5,8 +5,7 @@
  * This module holds no device. Everything it knows about the remote comes through the `KeyLink` that
  * `connect` returns, which can read the key and let go and nothing else, so nothing written here can send
  * a byte of its own to a remote: `link.ts` explains why that is the whole point. **The three steps add no
- * message to the remote**: they consume the presses `onKey` receives, todo-prepare-885.md 2.6.2 and 2.6.3,
- * and if a mode ever seemed to need more from the remote, that would be a change to `link.ts` and its
+ * message to the remote**: they consume the presses `onKey` receives and nothing else, and if a mode ever seemed to need more from the remote, that would be a change to `link.ts` and its
  * tests, not to this file.
  *
  * The flow, in the order a person meets it:
@@ -30,7 +29,7 @@
  *
  * Every step shows the model's drawing where one exists (`drawings.js`, built from `reference/silhouettes/`),
  * and a plain list where none does. Every model the page reads has a drawing now, the Harmony 880 Pro and
- * 720 since `todo-prepare-885.md` 2.5.3; the list stays for a model that arrives without one.
+ * 720 the last to get one; the list stays for a model that arrives without one.
  *
  * Presses that arrive before a model is chosen are shown in the readout and go nowhere else: nothing has
  * been asked yet, and a mode starts clean when it starts.

@@ -2,7 +2,7 @@
  * What model a connected remote is, and what its hardware can do.
  *
  * The join a user interface needs, and the reason this is not in the codec: the question starts at the
- * device. It lived in `packages/usb` for that reason until `todo.md` 7.3.4 moved it to `packages/base`,
+ * device. It lived in `packages/usb` for that reason at first and is in `packages/base`,
  * since the codec's family registry and recipes read it too and the table itself has nothing to do with
  * USB; `@harmony/usb/models` re-exports it. `GET_VERSION` reports a **skin** number, `models.ts` turns that
  * into a model, and the model carries the capabilities. A config cannot answer this. It states its

@@ -1,10 +1,11 @@
 /**
  * The first changes of content a program of this project delivered to a Harmony Touch, and what the remote did
- * with them, as measured on the bench unit: `todo-touch.md` 6.9. One value of one document changed and put back,
+ * with them, as measured on the bench unit. One value of one document changed and put back,
  * twice: a sequence's delay step, heard on the infrared monitor, and an activity's name, seen on the screen.
  *
  * **What was run.** Four sets, each built by `packages/corpus/bin/touch-changed-set.ts` from the one before it,
- * the first from the 6.8 set the remote held: `6.9-delay`, MapList's `/ButtonMaps/8/Sequences/0/Actions/1/Duration`
+ * the first from the own set the remote held, its own six documents under tags of ours,
+ * `touch-own-set-sync.test.ts`: `6.9-delay`, MapList's `/ButtonMaps/8/Sequences/0/Actions/1/Duration`
  * from 1 to 3, the delay step between the Sony Blu-ray's Stop and its TopMenu in the sequence Yellow's short press
  * runs in Watch a Blu-ray; `6.9-delay-back`, 3 to 1; `6.9-label`, ActivityList's `/Activities/2/Name` from
  * "Listen to Music" to "Music Test"; `6.9-label-back`, the name back. Each changes that one value and gives that
@@ -24,16 +25,16 @@
  * 1. **Each set is its source with one value changed and one tag new.** Read off the lab's set files: the
  *    changed document's tag differs from the source's and the other five are the source's; the changed document
  *    differs from the source's only at the pointer, holding the old value there and the new one here; and both
- *    put back sets hold, as parsed JSON, exactly the 6.8 set's six documents.
- * 2. **Each run asked for the six with the previous set's tags**, the 6.8 set's for the first run, so each run's
+ *    put back sets hold, as parsed JSON, exactly the own set's six documents.
+ * 2. **Each run asked for the six with the previous set's tags**, the own set's for the first run, so each run's
  *    first request list is the evidence that the run before it delivered and committed its set: the button map
  *    list is not in `getconfighash`, so the two delay runs show their delivery only there, in the next run's list.
  * 3. **Each run answered the changed document 200 with the set's content and tag and the other five 304**, then
- *    the three favourites 304 with a tag of ours, the ten pictures 304 with their own tags, unchanged since 6.8,
+ *    the three favourites 304 with a tag of ours, the ten pictures 304 with their own tags, unchanged since the own set's sync,
  *    and the finish 200; the hand over was `proxy://Finished` alone and the answerer's outcome `finished`. The
  *    write of the one 200 was 349539 characters, twelve chunks of 31000 and a last of 8539, for each delay set,
  *    and one chunk, 10809 and 10816 characters, for the two label sets; each was replied 200 as a write.
- * 4. **The configuration hash** is the 6.8 set's four tags before and after both delay runs and before the label
+ * 4. **The configuration hash** is the own set's four tags before and after both delay runs and before the label
  *    run, since MapList is not one of the four it joins; after the label run it is `6.9-label`'s, read again
  *    before the last run, and after the last run it is `6.9-label-back`'s. The two ends are the set files in the
  *    lab and the remote's own report of its committed store.
@@ -210,13 +211,13 @@ test('each set is the one before with one value of one document changed and that
     assert.deepEqual([at(before[i]!.resource, r.pointer), at(after[i]!.resource, r.pointer)], [r.was, r.to], `${r.set}: the value`);
     assert.deepEqual(withValue(after[i]!.resource, r.pointer, r.was), before[i]!.resource, `${r.set}: nothing else in the document`);
   }
-  // Three distinct tags for each changed document over the chain: the 6.8 set's and one for each of the two sets
+  // Three distinct tags for each changed document over the chain: the own set's and one for each of the two sets
   // that changed it, so a tag the remote asks with names the set that delivered it.
   const tags = (doc: string) => new Set([OWN_SET, ...SETS].map((s) => setOf(s).find((a) => resource(a.uri) === doc)!.etag));
   assert.deepEqual([tags('MapList').size, tags('ActivityList').size], [3, 3]);
 });
 
-test('both put back sets hold exactly the 6.8 set\'s six documents as parsed JSON, under other tags', lab.skipUnless(OWN_SET, 'touch_changed_set_delay_back', 'touch_changed_set_label_back'), () => {
+test('both put back sets hold exactly the own set\'s six documents as parsed JSON, under other tags', lab.skipUnless(OWN_SET, 'touch_changed_set_delay_back', 'touch_changed_set_label_back'), () => {
   const own = setOf(OWN_SET);
   for (const back of ['touch_changed_set_delay_back', 'touch_changed_set_label_back']) {
     const s = setOf(back);
@@ -248,12 +249,12 @@ for (const r of RUNS) {
     assert.deepEqual([q.errorCode, q.mime], ['200', WRITE]);
   });
 
-  test(`run ${r.n}: the ten pictures were asked for at the addresses and with the tags of 6.8`, lab.skipUnless(`${prefix}list_7`, OWN_PICTURES), () => {
+  test(`run ${r.n}: the ten pictures were asked for at the addresses and with the tags of the own set's sync`, lab.skipUnless(`${prefix}list_7`, OWN_PICTURES), () => {
     assert.deepEqual(list(`${prefix}list_7`).map((q) => [q.uri, q.etag]), list(OWN_PICTURES).map((q) => [q.uri, q.etag]));
   });
 }
 
-test('the configuration hash stays 6.8\'s through both delay runs and moves to each label set\'s tags after its run', lab.skipUnless(OWN_HASH, OWN_SET, ...SETS, ...[1, 2, 3, 4].flatMap((n) => [`touch_changed_confighash_${n}_before`, `touch_changed_confighash_${n}_after`])), () => {
+test('the configuration hash stays the own set\'s through both delay runs and moves to each label set\'s tags after its run', lab.skipUnless(OWN_HASH, OWN_SET, ...SETS, ...[1, 2, 3, 4].flatMap((n) => [`touch_changed_confighash_${n}_before`, `touch_changed_confighash_${n}_after`])), () => {
   const read = (n: number, when: 'before' | 'after') => {
     const q = reply(`touch_changed_confighash_${n}_${when}`);
     assert.deepEqual([q.errorCode, q.mime], ['200', CONFIGHASH]);
@@ -262,7 +263,7 @@ test('the configuration hash stays 6.8\'s through both delay runs and moves to e
   const own = reply(OWN_HASH).result;
   const label = hashOf(setOf('touch_changed_set_label'));
   const back = hashOf(setOf('touch_changed_set_label_back'));
-  // The delay sets carry the 6.8 set's four hashed tags, since MapList is not one of them.
+  // The delay sets carry the own set's four hashed tags, since MapList is not one of them.
   assert.deepEqual([hashOf(setOf(OWN_SET)), hashOf(setOf('touch_changed_set_delay')), hashOf(setOf('touch_changed_set_delay_back'))], [own, own, own]);
   assert.equal(new Set([own, label, back]).size, 3, 'three different hashes');
   assert.deepEqual(

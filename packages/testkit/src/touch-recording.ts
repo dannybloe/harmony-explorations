@@ -6,10 +6,10 @@
  * recording by its name, and the readers of a run of this project's own answerer,
  * `packages/corpus/bin/touch-sync.ts`, whose folder in the lab keeps each request list, each write of answers
  * and each reply as a file of its own. One copy of them for every test that reads such a run, where the first
- * and second sync's tests each held their own until `todo-touch.md` 6.8 added a third. They assert, since a
+ * and second sync's tests each held their own until a third sync's tests arrived. They assert, since a
  * fixture that is not what its name says is a test's failure.
  *
- * Moved here from `packages/usb/test/touch-recording.ts` by `todo.md` 7.3.6, with the decoder moved into
+ * Moved here from `packages/usb/test/touch-recording.ts`, with the decoder moved into
  * `packages/usb/src/touchrecording.ts`. Not a test file itself, so the runner does not pick it up.
  */
 import assert from 'node:assert/strict';

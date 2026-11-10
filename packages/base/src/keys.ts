@@ -9,7 +9,7 @@
  * pulls in node-hid, which a browser cannot load. So the table sits in a module that **imports nothing**,
  * like `models.ts` here and `protocol.ts` in `packages/usb`, and both readers import it: the watcher
  * through the barrel of `packages/usb`, which re-exports it, and the page through the `@harmony/base/keys`
- * subpath. It moved from `packages/usb` to this package with `todo.md` 7.3.4.
+ * subpath. It lived in `packages/usb` before this package existed.
  *
  * Choosing an entry for an attached remote stays with each reader, because each learns the skin a different
  * way: the watcher from `bcdDevice` (`skinId`), which WebHID does not expose, and the page from the

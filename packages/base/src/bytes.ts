@@ -1,7 +1,7 @@
 /**
  * Whether two byte arrays hold the same bytes, the one copy.
  *
- * `todo.md` 7.3.7, plan 013 step 6. `todo.md` 7.3.5 gave the codec `sameBytes` in its `bytes.ts`, and eight more
+ * Plan 013 step 6. The codec had a `sameBytes` in its own `bytes.ts` first, and eight more
  * private copies stood beside it: the codec's `sequence.ts` and `glyphborrow.ts`, the Harmony 600, 650 and 700
  * family's `pictures.ts` and `assemble.ts`, `packages/usb`'s `transport.ts`, `filepipe.ts` and `filewrite.ts`, and
  * the test kit's fake Harmony Touch, with the same comparison written out inline in a few places more. **It is here

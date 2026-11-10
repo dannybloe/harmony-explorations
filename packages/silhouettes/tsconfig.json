@@ -11,6 +11,6 @@
   "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
   // `bin/remotes.ts` and its test read three other packages, as dev dependencies only: the library in
   // `src` stays free of them, which is what FreeHarmony consumes. `@harmony/lab` is one for the scripts'
-  // command lines, `todo.md` 7.3.7.
+  // command lines, which every script reads through the one reader in `@harmony/lab/cli`.
   "references": [{ "path": "../base" }, { "path": "../codec" }, { "path": "../corpus" }, { "path": "../lab" }, { "path": "../usb" }, { "path": "../testkit" }]
 }

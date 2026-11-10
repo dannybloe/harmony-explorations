@@ -3,8 +3,8 @@
  * `/sys/hlapi`, carrying six documents from Logitech's service to the remote unchanged.
  *
  * **The question.** The reference said the whole provisioning conversation rides on the file protocol's
- * request and response command, `0x08`, section 203, and that nothing had ever sent it. `todo-touch.md`
- * 2.1 asked whether a sync's traffic could be seen at all and 2.3 asks for one sync recorded whole. Both
+ * request and response command, `0x08`, section 203, and that nothing had ever sent it. Two questions
+ * followed, whether a sync's traffic could be seen at all and whether one sync could be recorded whole. Both
  * were answered by the same instrument: a copy of Harmony Desktop 1.0.303 in the lab that loads a library
  * of ours injecting a recorder into the client's page, which wraps `XMLHttpRequest`, `fetch` and
  * `prompt()`. The client's page reaches the USB layer through `prompt()`, a bridge it calls `SJbridge`,
@@ -34,7 +34,7 @@
  *
  * **What it rules out.** That a Touch's configuration is compiled, transformed or packed by the client:
  * it is Logitech's own account data in Logitech's own data model, `reference/logitech/data-model/`. And
- * that `0x08` is needed to drive a sync, which is what made `todo-touch.md` 2.4 a hardware experiment.
+ * that `0x08` is needed to drive a sync, which would have made sending it a hardware experiment.
  *
  * **Width.** One sync, one Touch, firmware 4.15.330 (asserted from the identity file the client read),
  * one account holding two devices and one activity, one client, Harmony Desktop. The seven skin 99
@@ -48,7 +48,7 @@
  * **Sources checked first.** `reference/architectures/harmony-touch/usb.md`, `reference/remotes/
  * harmony-touch/`, `reference/usb-protocol/file-protocol.md`, `docs/findings.md` sections 198 to 203,
  * Logitech's skin 99 templates in the mirrored client, MyHarmony's decompiled `DSController`, and the
- * Touch engine decompiled in the lab, whose sync request list (`todo-touch.md` 1.6) named these six
+ * Touch engine decompiled in the lab, whose sync request list named these six
  * resources before the recording existed. **How 0x08 got into the reference**: section 203 read the
  * proxy loop in MyHarmony's code and attributed it to the command described as "request and response
  * with no file" by its description alone; the templates beside it said `/sys/hlapi` all along.

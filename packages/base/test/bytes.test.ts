@@ -1,5 +1,5 @@
 /**
- * The one byte comparison, `src/bytes.ts`, `todo.md` 7.3.7.
+ * The one byte comparison, `src/bytes.ts`.
  *
  * **It took the place of eight private copies, four of them on a rail**: the transport's guard comparing a report
  * with the one authorised, the file family's guard doing the same, the unit check comparing two identity blocks, and
@@ -12,9 +12,9 @@
  * `packages/usb/src/blockwrite.ts`'s `firstDifference`, the write's read back compare, is not one of the copies and
  * was not moved: it answers where two blocks differ and refuses two of different lengths, which this cannot.
  *
- * The last test, `todo.md` 7.3.9 and the `architecture` skill, holds that no ninth copy is written: no module defines
+ * The last test, with the `architecture` skill, holds that no ninth copy is written: no module defines
  * a function of two byte arrays answering whether they agree, but this one and those listed. It reads the shape of
- * a declaration, so a copy written inline, as several that 7.3.7 replaced were, or under another signature passes it.
+ * a declaration, so a copy written inline, as several that this one replaced were, or under another signature passes it.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

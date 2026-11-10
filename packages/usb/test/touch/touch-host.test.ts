@@ -15,13 +15,13 @@
  * wrote during a sync and closed each document against the web answer it came from. This file asks the next
  * thing: of everything the client wrote, which parts does the **remote** insist on, so that a program other
  * than Logitech's, answering the same requests, would be taken for the server? The firmware reading of
- * `todo-touch.md` 4.2 (`tests/harmony_touch/test_harmony_touch_host.py` anchors it in the compiled engine) found the
+ * whether a program of ours could answer in the server's place (`tests/harmony_touch/test_harmony_touch_host.py` anchors it in the compiled engine) found the
  * remote checks the envelope of an answer and not its contents: the address is matched exactly, the status
  * is read as text and only some values pass, a 200 of a document needs a non empty entity tag, a document
  * only works as a parsed object, a picture needs a tag and is base64, and a long answer is announced first.
  * This file turns those rules, made stricter as above, into one predicate and shows every answer the client
- * wrote passes it while a single mutation of each kind fails, which is the offline acceptance rehearsal 4.2
- * proposes.
+ * wrote passes it while a single mutation of each kind fails, which is the offline acceptance rehearsal that
+ * reading proposes.
  *
  * **It is not a second measurement of the recordings.** The values, the per document equalities and the
  * counts are `touch-sync-both-ways.test.ts`'s; here the recordings are the calibration corpus for a rule,
@@ -41,7 +41,7 @@
  *
  * **Sources checked first.** `touch-recording.ts` and `touch-sync-both-ways.test.ts`;
  * `reference/architectures/harmony-touch/answering-a-sync.md` and `usb.md`; the firmware reading of
- * `todo-touch.md` 4.2, anchored in `tests/harmony_touch/test_harmony_touch_host.py`.
+ * whether a program of ours could answer a sync, anchored in `tests/harmony_touch/test_harmony_touch_host.py`.
  *
  * The fixtures hold the account's data, an auth token and the unit's serial, so this file asserts the shape
  * of an answer, counts and the predicate's verdict, and prints no value out of them. It skips without the lab.
@@ -126,7 +126,7 @@ for (const fixture of FIXTURES) {
  * Over all three recordings: **twelve** announcements, three, six and three, each equal to its write's
  * `responses` length and each short of the line by 68 characters plus the session id, 101 to 104. Four writes
  * went in more than one chunk, of 31000 characters each but the last, and the shortest last chunk was 2276
- * characters, so no recorded write came near the hazard. The two reviews of `todo-touch.md` 6.3 counted 12
+ * characters, so no recorded write came near the hazard. The two reviews of the request rail counted 12
  * and 9; the 9 left out the reverse sync, whose three announcements are all single chunk, and named the
  * shortfall as 102 to 104, which misses the full sync's largest write, whose session id is 33 characters.
  */

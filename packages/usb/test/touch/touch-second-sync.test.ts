@@ -1,6 +1,6 @@
 /**
  * The second sync of a Harmony Touch answered by a program of this project, the first one the remote committed,
- * as measured on the bench unit: `todo-touch.md` 6.7.
+ * as measured on the bench unit.
  *
  * **What was run.** `packages/corpus/bin/touch-sync.ts --unchanged --commit`, after the first run of
  * `touch-first-sync.test.ts` had stopped at the favourites and been recovered by abort and restart, and after
@@ -21,7 +21,7 @@
  *    settle is whether the stored Settings document is the one handed up then: the configuration hash leaves
  *    Settings out, and its content was not read.
  * 3. **The three favourites documents, the user's, the tuning device's and the provider's line up, were each
- *    asked for without a tag**, one list each, at the addresses the full sync of 2.3 had answered with 200 and
+ *    asked for without a tag**, one list each, at the addresses the recorded full sync had answered with 200 and
  *    a tag. Each was answered 304 with a tag of ours, a version 8 identifier, `keptCopyTag` in
  *    `packages/corpus/src/touchsync.ts`, and the remote went on. That all three came untagged is what the
  *    reading in `test_harmony_touch_favourites_untagged.py` predicts, the screens reading a favourites file
@@ -36,7 +36,7 @@
  *    screens have committed the new set, `answering-a-sync.md`, and our answer to it was 200. Every write of
  *    answers was replied 200 naming the write. **So a sync driven end to end by a program of ours was
  *    committed by a Touch.**
- * 6. **The configuration hash was the same before and after**, and the same as the first read of 6.4, so the
+ * 6. **The configuration hash was the same before and after**, and the same as the first read, `touch-confighash.test.ts`, so the
  *    four tags it carries (activity, device and protocol lists and the context) did not move. It leaves out
  *    the button map list and Settings, which item 2 covers for the run before.
  *
@@ -86,7 +86,7 @@ function fullSync() {
   return { answers: answersWritten(hlapi), asked: requestLists(hlapi).flat() };
 }
 
-test('the configuration hash was read 200 before and after, the same both times and the same as 6.4\'s', lab.skipUnless(BEFORE, AFTER, HASH_64), () => {
+test('the configuration hash was read 200 before and after, the same both times and the same as the first read\'s', lab.skipUnless(BEFORE, AFTER, HASH_64), () => {
   const before = reply(BEFORE);
   const after = reply(AFTER);
   assert.deepEqual([before.errorCode, before.mime], ['200', CONFIGHASH]);

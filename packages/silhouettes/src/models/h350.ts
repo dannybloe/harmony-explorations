@@ -24,10 +24,10 @@
  * **The scan codes are the bench's**, `HEARD`, `HEARD_ON_THE_SETUP` and `CANDIDATES` below. `openHarmony` refuses this
  * architecture, and the one path that reads it, `openFileBasedRemote`, reads its configuration as a
  * file and sees no key press, section 262, and no calibration configuration was compiled for it, section
- * 133. So a code was tied to a key by pressing it with an infrared receiver listening, `todo-compile-350.md`
- * 2.2.2, after the firmware's keypad scan was read and five configurations had narrowed every key to a code
- * or a set, `tests/harmony_300_350/test_harmony_350_keys.py`, and the keys that run could not reach on a configuration that
- * binds them, 3.3. This said no scan code appeared anywhere in here and that
+ * 133. So a code was tied to a key by pressing it with an infrared receiver listening, after the firmware's keypad
+ * scan was read and five configurations had narrowed every key to a code or a set,
+ * `tests/harmony_300_350/test_harmony_350_keys.py`, and the keys that run could not reach on a configuration that
+ * binds them, Logitech's compile of the test setup, `packages/bench/test/harmony-300-350/setup350.test.ts`. This said no scan code appeared anywhere in here and that
  * nobody had read this generation's keypad scanner until those two. Every key is still `printed`: the codes
  * were named by pressing, not through Logitech's button maps.
  *
@@ -191,7 +191,7 @@ const DRAWN: readonly Key[] = [
 ];
 
 /**
- * The 44 keys whose code was heard at the bench, `todo-compile-350.md` 2.2.2: each pressed on a Harmony 350
+ * The 44 keys whose code was heard at the bench: each pressed on a Harmony 350
  * with an infrared receiver listening, and its code the one binding of the mode in force that sends what
  * was heard, `tests/harmony_300_350/test_harmony_350_keys.py`, `TheBench350HeardEveryKey`. Power is the one binding of
  * each device's map that toggles a power state, and the two device keys the bench file binds are the ones
@@ -212,8 +212,7 @@ const HEARD: Readonly<Record<string, number>> = {
 };
 
 /**
- * The nine keys whose code was heard on Logitech's compile of the test setup, `todo-compile-350.md` 3.3: the
- * first run's file bound nothing to them. Each was pressed twice, in two runs, on a unit holding a file
+ * The nine keys whose code was heard on Logitech's compile of the test setup: the first run's file bound nothing to them. Each was pressed twice, in two runs, on a unit holding a file
  * that binds them, and its code is the one of the 56 that, raised at that point of the run, gives what the
  * receiver heard; for a device key that is what the keys after it sent in the mode it selected,
  * `packages/bench/test/harmony-300-350/setup350.test.ts`, and `TheBench350HeardTheTestSetup` in

@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch's request channel, `todo-touch.md` 6.2 and 6.3: the unit record a session checks, the
+ * The Harmony Touch's request channel, decision 29: the unit record a session checks, the
  * rail in `rails.ts`, the route on the transport, and the session in `touchsession.ts`.
  *
  * **Nothing here touches a device.** `fake-touch-remote.ts` answers as the recorded syncs show the remote
@@ -45,7 +45,7 @@
  *    before the answer writes included. The clock write and the stringified array, which the session never
  *    sends, are left out of the comparison; the counts say how many requests, commands and reports were
  *    compared, and that as many reports went out as the client sent.
- * 8. **The recovery tier**, `todo-touch.md` 6.3.1: the abort, the delete of every stored document and the
+ * 8. **The recovery tier**: the abort, the delete of every stored document and the
  *    restart, behind `HARMONY_TOUCH_RECOVERY` on top of the two request flags. Each of the three is refused
  *    by the rail and by the transport with that flag unset, every other flag set, and each passes both with
  *    it set; the flag alone opens neither of the other doors; the session refuses each before any report of
@@ -132,7 +132,7 @@ const PROVISIONING = 'vnd.logitech.setup/vnd.logitech.account?getprovisioninfo';
 
 /**
  * Spellings of `/sys/reboot` that compare unequal to it while the remote's matching of them is not read:
- * the five the review of 6.3 sent through the guard with the experiment door open, each of which went out
+ * the five the review of the request rail sent through the guard with the experiment door open, each of which went out
  * then, and a byte above `0x7E` that the old decoding cleared to `s`.
  */
 const VARIANT_SPELLINGS: readonly string[] = [
@@ -747,7 +747,7 @@ describe('the session, with the flags set', () => {
   });
 
   /**
-   * The announcement rule of `todo-touch.md` 6.6, against a fake listener built from the reading of
+   * The announcement rule `announcedLength` in `touchsession.ts` states, against a fake listener built from the reading of
    * `clientConnection`, `fake-touch-remote.ts`. A line of one whole chunk of 31000 characters and a last
    * chunk of 1, 103, 104 or 105, with a session id of 36 characters, so Logitech's number falls short of the
    * line by 46 + 11 + 36 + 11 = 104, the most the recordings measured. The whole line's length is acted on
@@ -783,7 +783,7 @@ describe('the session, with the flags set', () => {
   });
 });
 
-/** The neighbours the brief of 6.3.1 names, which stay refused with every flag set, the recovery door included. */
+/** The neighbours of the recovery verbs, which stay refused with every flag set, the recovery door included. */
 const RECOVERY_NEIGHBOURS: readonly string[] = [
   'vnd.logitech.setup/vnd.logitech.firmware?update',
   'vnd.logitech.setup/vnd.logitech.firmware?packageinstall',

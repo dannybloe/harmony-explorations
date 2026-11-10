@@ -1,6 +1,6 @@
 /**
  * The first sync of a Harmony Touch answered by a program of this project, and the recovery after it stopped,
- * as measured on the bench unit: `todo-touch.md` 6.7.
+ * as measured on the bench unit.
  *
  * **What was run.** `packages/corpus/bin/touch-sync.ts --unchanged --commit`, the remote on the port where it
  * shows its USB screen, with the settings changed on the remote beforehand (screen lock off). The answerer read
@@ -14,7 +14,7 @@
  *
  * 1. **The hand over handed up one document, Settings, untagged**, after a change on the remote, and nothing
  *    else, which is the reading in `answering-a-sync.md` that a change on the remote erases the tag and queues
- *    the whole document. The other end is the full sync of 2.3, Logitech's client's recording, in which
+ *    the whole document. The other end is the recorded full sync, Logitech's client's recording, in which
  *    Settings had been delivered with a tag.
  * 2. **The hand over committed our answer**: the sync's own list then carried, for Settings, exactly the tag
  *    our answer to the hand over had written, and not the full sync's or the reverse sync's, while the other
@@ -27,7 +27,7 @@
  * 4. **The user's favourites came without a tag**, at an address equal to the one the full sync answered with
  *    200 and a tag. Why is `tests/harmony_touch/test_harmony_touch_favourites_untagged.py`: in a sync through a computer the
  *    screens look the document up in the set being gathered, where it is not yet.
- * 5. **The recovery route of `todo-touch.md` 6.1 ran end to end**: after the refusal mid sync `getconfighash`
+ * 5. **The recovery route of `recovering-a-remote`'s Touch section ran end to end**: after the refusal mid sync `getconfighash`
  *    answered 202 with "sync in progress"; the abort answered 200; the read then answered 200 with the same
  *    hash as before the run, which is the full sync's four tags (`touch-confighash.test.ts`), so the abort
  *    cleared the flag and touched no stored document; and the restart answered 200. That the remote then
@@ -155,7 +155,7 @@ test('the recovery route: 202 while the sync was marked running, the abort 200, 
   const after = reply(AFTER);
   assert.equal(after.errorCode, '200');
   // The abort cleared the flag and touched no stored document: the hash is the one before the run, which is
-  // the first read's of 6.4.
+  // the first read's, `touch-confighash.test.ts`.
   assert.equal(after.result, before.result);
   assert.equal(before.result, reply(HASH_64).result);
   const reboot = reply(REBOOT);

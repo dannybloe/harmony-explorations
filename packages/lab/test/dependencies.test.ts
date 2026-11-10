@@ -9,7 +9,7 @@
  * This is a test rather than a line in CLAUDE.md because the rule is easy to break by accident:
  * `pnpm add` writes a caret by default, so the mistake is the tool's default behaviour.
  *
- * **And since `todo.md` 7.3.9 it holds what the packages may depend on**, the `architecture` skill and plan 013:
+ * **And it holds what the packages may depend on**, the `architecture` skill and plan 013:
  * which package stands on which, at run time and for its tests, held to a table so that a new dependency between
  * packages is a line in this file's diff; no cycle; what a library's `src` loads declared as what it needs at run
  * time; the test kit reached by tests alone; `@harmony/lab` loaded by a library's `src` only where listed; no
@@ -86,12 +86,12 @@ test('the lock file records the same exact specifiers', () => {
 test('the manifest scan found the workspace, rather than nothing', () => {
   // Without this, a wrong REPO_ROOT would make both checks above pass by finding no manifests.
   const found = manifests();
-  // Ten packages since `todo.md` 7.3.6 added `packages/testkit`.
+  // Ten packages, the test kit, `packages/testkit`, the last of them to be added.
   assert.equal(found.length, 11, 'the workspace manifests: the root plus ten packages');
   assert.ok(found.some((m) => m.path === 'packages/codec/package.json'));
 });
 
-// The packages' boundaries, `todo.md` 7.3.9.
+// The packages' boundaries, the `architecture` skill and plan 013.
 
 const PACKAGES = join(REPO_ROOT, 'packages');
 
@@ -192,7 +192,7 @@ test('the control: a cycle is found, and the test kit closes one through the tes
   assert.deepEqual(cycleIn({ a: ['b'], b: ['c'], c: ['a'], d: [] }), ['a', 'b', 'c', 'a']);
   assert.equal(cycleIn({ a: ['b'], b: ['c'], c: [] }), undefined);
   // Live: `base` and `usb` take the test kit for their tests and the kit stands on them, which is why those two
-  // packages' tests are a project of their own, `test/tsconfig.json`, since `todo.md` 7.3.6.
+  // packages' tests are a project of their own, `test/tsconfig.json`.
   const both: Record<string, string[]> = {};
   const runTime = workspaceGraph('dependencies');
   const development = workspaceGraph('devDependencies');
@@ -387,12 +387,12 @@ function unreached(name: string): string[] {
 test('every module of a library\'s src is reached from one of its entries, or listed with why not', () => {
   // A module no entry reaches is offered to no application. It is an experiment, which lives beside its script,
   // plan 013 decision 7, or a library part missing from an entry, or a part only scripts use. Each listed here is
-  // one of the last two, as found by `todo.md` 7.3.9; a module joining the list is a decision about which. The
+  // one of the last two, as found when this walk was first run; a module joining the list is a decision about which. The
   // first walk also found the Harmony 600 family's build from a setup and the Harmony One's build from nothing on
   // no entry, which left an application unable to build either; both are on `./build` since, and off this list.
   const LISTED: Readonly<Record<string, string>> = {
-    // The gathering track's client of Logitech's service, `todo-secure-logitech.md`, used by harvest.ts and
-    // build-setup.ts.
+    // The client of Logitech's service that gathers what it still serves while it still serves it, used by
+    // harvest.ts and build-setup.ts.
     'corpus/src/harvest.ts': 'a harvest\'s pieces that need no network',
     'corpus/src/myharmony.ts': 'a session with Logitech\'s service',
     'corpus/src/record.ts': 'the calls on one remote record the two scripts share',

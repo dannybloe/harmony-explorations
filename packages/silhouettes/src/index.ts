@@ -6,7 +6,7 @@
  * is the point: a button list that lived only in the XML would have to be parsed back or copied into
  * a second table, and two copies of a derivation is this repository's oldest rule.
  *
- * **Explicit names**, held by `test/surface.test.ts`, `todo.md` 7.3.6. What a model's geometry table is written
+ * **Explicit names**, held by `test/surface.test.ts`, plan 013 decision 6. What a model's geometry table is written
  * with, the shapes and the transforms of a path, is `./internal`, for the models here and this repository's
  * scripts.
  */

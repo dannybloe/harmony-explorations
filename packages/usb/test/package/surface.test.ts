@@ -1,5 +1,5 @@
 /**
- * `@harmony/usb`'s main entry, held to a list, `todo.md` 7.3.6 and plan 013 decision 6: a new public name is a line
+ * `@harmony/usb`'s main entry, held to a list, plan 013 decision 6: a new public name is a line
  * in this file's diff, and so is one taken away. The lists are read off the entries' source,
  * `@harmony/testkit/surface`, which shows the types a loaded module does not, and each loaded module is held to the
  * same values, so a reading of the source that missed a name fails here.
@@ -38,8 +38,8 @@ const TYPES = [
 ];
 
 /**
- * The write subpath, `./write`: the names that exist at run time. `writeFileFamilyConfiguration` joined in
- * `todo.md` 7.3.10, the whole file write for the Harmony 300 and 350 as one function an application calls, where
+ * The write subpath, `./write`: the names that exist at run time. `writeFileFamilyConfiguration` is
+ * the whole file write for the Harmony 300 and 350 as one function an application calls, where
  * the script's body had been; its rails are `writeFileConfig`'s and the transport's, unchanged. `FILE_FAMILY_UNITS`
  * joined with it after the review: the units it may write, which the library holds and the script reads.
  */
@@ -50,7 +50,7 @@ const WRITE_VALUES = [
   'withEndMarker', 'writeBlock', 'writeFileConfig', 'writeFileFamilyConfiguration',
 ];
 
-/** The write subpath, `./write`: the types and interfaces, which only the source shows; the three `FileFamily` ones, 7.3.10. */
+/** The write subpath, `./write`: the types and interfaces, which only the source shows; the three `FileFamily` ones with the whole file write. */
 const WRITE_TYPES = [
   'BlockWrite', 'CurrentContent', 'FileConfigWrite', 'FileFamilyUnit', 'FileFamilyWrite', 'FileFamilyWriteResult',
   'FileWriteFacts', 'FileWriteResult', 'WritePermission',

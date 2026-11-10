@@ -1,8 +1,8 @@
 /**
  * `writeFileFamilyConfiguration`, the file write for the Harmony 300 and 350 as a function an application calls,
- * `todo.md` 7.3.10, against `FakeFileRemote`.
+ * against `FakeFileRemote`.
  *
- * **What this holds**: the run that was `bin/write-file-config.ts`'s body until 7.3.10, around `writeFileConfig`,
+ * **What this holds**: the run that was `bin/write-file-config.ts`'s body at first, around `writeFileConfig`,
  * whose own sequence `filewrite.test.ts` holds byte for byte. The container is judged before anything is opened,
  * and a container as a remote serves it gets its end marker back; the skin, the unit and what the remote holds
  * are judged on the reads alone, so a dry run refuses where a commit would; a dry run sends nothing but reads; a

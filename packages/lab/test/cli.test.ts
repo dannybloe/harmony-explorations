@@ -1,5 +1,5 @@
 /**
- * The scripts' one command line reader, `src/cli.ts`, `todo.md` 7.3.7.
+ * The scripts' one command line reader, `src/cli.ts`.
  *
  * **What is held is that it reads exactly what the 68 hand written readers it replaced read**, since moving a script
  * onto it was not allowed to change a command line anyone types: the first `--name` wins, the word after an option

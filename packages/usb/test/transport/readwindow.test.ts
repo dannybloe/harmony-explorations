@@ -2,7 +2,7 @@
  * The one window retry, `src/readwindow.ts`, against a fake reader, so it runs with no lab and no remote.
  *
  * `readConfig`'s own two retry tests in `packages/corpus/test/read/read.test.ts` need a configuration from
- * the lab and skip without one, so the loop the three readers share since `todo-compile-885.md` 1.10 had
+ * the lab and skip without one, so the loop the three readers share had
  * nothing exercising it on a machine without the lab. These pin the loop itself: a window that fails
  * once comes back whole with the retry counted and reported, and a window that fails once more than the
  * budget fails the read with the transport's own error, after exactly `MAX_WINDOW_RETRIES + 1` attempts.

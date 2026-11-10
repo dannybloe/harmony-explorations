@@ -1,6 +1,6 @@
 /**
  * Every entry this package's `package.json` exports, loaded: what a caller of `@harmony/usb` can reach by an
- * import, `todo.md` 7.3.6.
+ * import.
  *
  * **Why the tests ask this and not the barrel.** Several rules here were written as "the barrel offers no
  * way to build a write", and they were checked against `index.ts` alone. Once the main entry became a short

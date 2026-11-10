@@ -568,7 +568,7 @@ test('a flash id comes from the remote, because the client table disagrees with 
   // Both halves above are literals declared here, so they record the disagreement and cannot notice
   // anybody hard coding the client's figures. What can: the library exporting no flash id at all, so a
   // table smuggled in has a name to find. The reading has to come off the remote, per skin, and this
-  // is what says so in a way that fails. Every entry of the package, since `todo.md` 7.3.6 put most of it
+  // is what says so in a way that fails. Every entry of the package, since most of it is
   // under subpaths, `entries.ts`.
   const exported = [...(await exportedNames()).keys()];
   assert.deepEqual(exported.filter((n) => /flash.*id/i.test(n)), [],

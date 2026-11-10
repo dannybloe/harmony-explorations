@@ -20,8 +20,7 @@
  * **Which drawings**: every drawn model whose skins include one the page reads keys on, `WATCH_BY_SKIN`:
  * the Harmony 720, 880, 880 Pro and 885. A drawing that lands in `packages/silhouettes` for another skin the
  * page reads reaches the page with no edit here except its words, `WORDS`, for every key it gives no printed
- * word, which the build asks for by refusing to run. The 880 Pro and the 720 came that way, in
- * `todo-prepare-885.md` 2.5.3.
+ * word, which the build asks for by refusing to run. The 880 Pro and the 720 came that way.
  *
  * **What each key carries to the page**: its name, the words a person knows it by, its scan code where
  * the drawing states one and its candidates where the drawing narrows it to a set, in the order the page

@@ -1,6 +1,6 @@
 /**
  * `@harmony/usb/internal`: the protocol and the transport's parts below the main entry, for this repository's
- * scripts, tests and the libraries built on this one, `todo.md` 7.3.6. Each module whole, so a name added to
+ * scripts, tests and the libraries built on this one. Each module whole, so a name added to
  * one is here without a second list; the main entry, `index.ts`, is the designed surface and this is not.
  *
  * **What is deliberately not here**: the rails, `rails.ts`, which are `./rails`; the machinery that erases

@@ -59,8 +59,7 @@ test('the page shows the Harmony 720, 880, 880 Pro and 885, the drawn models who
   // And every one of their skins is a skin the page reads, which is what put them here.
   for (const d of DRAWINGS) for (const skin of d.skins) assert.ok(skin in WATCH_BY_SKIN, `skin ${skin}`);
   // Every skin the page reads has a drawing now, so the typed name list, which stays for a model that arrives
-  // without one, is shown for none of today's. It was the 880 Pro's and the 720's until
-  // `todo-prepare-885.md` 2.5.3 drew them.
+  // without one, is shown for none of today's. It was the 880 Pro's and the 720's until they were drawn.
   const drawnSkins = new Set(DRAWINGS.flatMap((d) => d.skins));
   assert.deepEqual(Object.keys(WATCH_BY_SKIN).map(Number).filter((skin) => !drawnSkins.has(skin)), []);
 });

@@ -72,7 +72,7 @@ test('only a unit the rehearsal may run against has a flash size recorded', () =
   // named a property this table does not have. What the table actually bounds is the neighbour
   // reads, which happen in the **dry run**, before anything is written and on an architecture that
   // may never be written to at all. A hole is still not a default.
-  // Arch 14 (Harmony 650) since section 281, arch 8 (Harmony 885 unit A) since `todo-compile-885.md` 1.2.
+  // Arch 14 (Harmony 650) since section 281, arch 8 (Harmony 885 unit A) since decision 30.
   assert.deepEqual(Object.keys(NOMINAL_FLASH_SIZE).sort(), ['12', '14', '8', '9']);
 });
 
@@ -219,7 +219,7 @@ test('the config writer refuses a commit on a firmware build whose drop and rest
   // Danny's decision of 29 September 2026 made the Harmony 600 and 700 writable, and the 700 runs
   // another build than the one the 650's drop and restart were read in, section 282. So each model
   // names the builds read, and a commit on any other is refused. The 700 named none until section
-  // 299 read its 2.8. **Since `todo.md` 7.3.10 the write is a library function**, `writeConfiguration`
+  // 299 read its 2.8. **The write is a library function**, `writeConfiguration`
   // in `packages/corpus/src/writeconfig.ts`: the builds are its `CONFIG_WRITE_MODELS`, the units its
   // `CONFIG_WRITE_UNITS`, and the script keeps only each unit's region reads, so this reads both files.
   // Read as text rather than imported, since this package's tests cannot depend on `@harmony/corpus`.
@@ -242,7 +242,7 @@ test('the config writer refuses a commit on a firmware build whose drop and rest
   assert.match(script, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h700_delay90_region',/);
   assert.match(library, /if \(commit && !model\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new ConfigWriteRefusal/);
   assert.match(library, /const unit = candidates\.find\(\(one\) => one\.regions\.has\(dumpName\)\);/);
-  // The two bench Harmony 885s since `todo-compile-885.md` 1.4: their write end was read in the 885's
+  // The two bench Harmony 885s, decision 30: their write end was read in the 885's
   // application 4.4, `tests/harmony_880_885/test_harmony_885_write_end.py`, which both units report. Their compare bases
   // start with the region reads `rehearse-block.ts` takes, from the configuration's base to the staging region.
   assert.match(library, /'Harmony 885': \{\s*architecture: 8, sequenceReadOn: \['4\.4'\],/);
@@ -254,12 +254,12 @@ test('the config writer refuses a commit on a firmware build whose drop and rest
 });
 
 test("the config writer ends an 885's write with the drop and the restart, and sends nothing an 885 must not get", () => {
-  // `todo-compile-885.md` 1.4. The Harmony 880 and 885's write end, `reference/architectures/
+  // Decision 30. The Harmony 880 and 885's write end, `reference/architectures/
   // harmony-880-885/usb.md` "How a write ends": `WRITE_MISC` selector 2 before the first erase and the
   // restart `E1 02` after the read back, and of the other Harmonys' eight steps neither selector `0x0A`,
   // which an 885 never answers, nor the update status set to 2, which turns its next restart into an
   // install over the application. `rails.test.ts` holds the library's half, that nothing in it can send
-  // them to arch 8; this holds the write's, that it does not ask. Since `todo.md` 7.3.10 the write is
+  // them to arch 8; this holds the write's, that it does not ask. The write is
   // `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, read as text since this package's tests
   // cannot depend on `@harmony/corpus`.
   const text = readFileSync(fileURLToPath(new URL('../../../corpus/src/writeconfig.ts', import.meta.url)), 'utf8');
@@ -290,12 +290,12 @@ test("the config writer ends an 885's write with the drop and the restart, and s
 test("the config writer's code reads an 885's install status before the first erase and before each restart, and refuses on a value other than 0", () => {
   // A check on the script's source, since it cannot be imported: it holds the order and the refusal's
   // presence, and not that the value read off a remote is the right byte, which the first dry run shows.
-  // `todo-compile-885.md` 1.4. On the Harmony 880 and 885 the status byte at data `0x100` survives the
+  // On the Harmony 880 and 885 the status byte at data `0x100` survives the
   // `RESET` instruction `E1 02` ends in, and the bootloader then installs firmware over the application
   // unless it is 0, `reference/architectures/harmony-880-885/firmware.md` "What the bootloader does at power
   // on". Nothing this package can send to arch 8 sets it, and the script reads it anyway, because being
-  // wrong costs the application. Held here on the code of `writeConfiguration`, which the script calls since
-  // `todo.md` 7.3.10, read as text since this package's tests cannot depend on `@harmony/corpus`.
+  // wrong costs the application. Held here on the code of `writeConfiguration`, which the script calls,
+  // read as text since this package's tests cannot depend on `@harmony/corpus`.
   const text = readFileSync(fileURLToPath(new URL('../../../corpus/src/writeconfig.ts', import.meta.url)), 'utf8');
   const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   // A property of the two 885s, not a test of the architecture: both carry the address, nothing else does.
@@ -340,7 +340,7 @@ test('a dry run asks for no write permission, whether or not the target has one'
   // write permission, so a dry run on a permitted target is still a read. That is a property of the
   // script's shape and it can fail on any refactor, where the old assertion could only fail on a
   // decision. Arch 14 (Harmony 650) joined both on 27 September 2026, section 281.
-  // Arch 8 (Harmony 885 unit A) joined both for `todo-compile-885.md` 1.2.
+  // Arch 8 (Harmony 885 unit A) joined both under decision 30.
   assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [8, 9, 12, 14]);
   const text = rehearsalScript();
   const dryReturn = text.indexOf("dry run: nothing was written");

@@ -1,6 +1,6 @@
 /**
  * A session on a Harmony Touch's request channel, `/sys/hlapi`: one request line written, its answer
- * read. `todo-touch.md` 6.3, under decision 29.
+ * read, under decision 29.
  *
  * **Deliberately not in the barrel**, as `filewrite.ts` is not: a consumer of `@harmony/usb` gets the read
  * path, and a caller that means to write a request line reaches this by path, which is a decision visible
@@ -49,9 +49,9 @@
  * since Logitech's client never sends it, and goes in the provisioning read's shape, and so do the three
  * requests of the recovery tier, behind `HARMONY_TOUCH_RECOVERY`, for the same reason.
  *
- * This said "Nothing in this file has been sent to a remote" until `todo-touch.md` 6.4 sent the provisioning
- * read and `getconfighash` to the bench Touch; every request here has been sent since, through the thirty four
- * syncs of chapters 6 to 9 and the recovery tier's abort and restart in 6.7.
+ * This said "Nothing in this file has been sent to a remote" until the provisioning read and `getconfighash`
+ * went to the bench Touch; every request here has been sent since, through thirty four syncs and the recovery
+ * tier's abort and restart, `docs/test-notes/harmony-touch.md`.
  */
 import { authoriseReport } from './authorise.ts';
 import {
@@ -296,7 +296,7 @@ export interface TouchRequestSession {
  * Which number announces a write of answers: `line`, the whole line's length, or `responses`, the length of
  * its `responses` argument as Logitech's client states it, `announcedLength`.
  *
- * **`line` is this project's choice and the default**, `todo-touch.md` 6.6. The remote's cable listener,
+ * **`line` is this project's choice and the default**. The remote's cable listener,
  * `halhttpserverconnector.lua` `clientConnection`, keeps the announced number, adds each write command's
  * text after its `/api/` to what it holds, answers "go on" while it holds fewer characters than announced
  * and acts on what it holds as soon as it holds at least that many. What it holds is the line from the
@@ -307,7 +307,7 @@ export interface TouchRequestSession {
  * one chunk early, `answering-a-sync.md` "The number announced falls short of what the remote counts".
  * `touchsession.test.ts` holds both against a fake listener built from that reading, at a last chunk of 1,
  * 103 and 104 characters. **The whole line's length has been sent once with a line of more than one chunk**,
- * `todo-touch.md` 6.8's six documents, 571577 characters in 19 chunks with a last of 13577, and the remote acted on
+ * the remote's own six documents answered back, 571577 characters in 19 chunks with a last of 13577, and the remote acted on
  * the write once, as a whole, `packages/usb/test/touch/touch-own-set-sync.test.ts`; a last chunk inside the shortfall has
  * not been sent with either number, and that the remote hands on each chunk as it arrives is read in its native
  * program and not tried.

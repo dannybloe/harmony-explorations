@@ -3,7 +3,7 @@
  * full sync delivers, `ActivityList` and `MapList`, with `DeviceList` beside them where a closure needs
  * the devices.
  *
- * **The question.** `todo-touch.md` 3.1 asked what the remote does with every field of the activity list
+ * **The question.** What the remote does with every field of the activity list
  * and the button maps. The reading of the engine and the screens is `tests/harmony_touch/test_harmony_touch_activities.py`,
  * which also holds what the image itself shows; this file measures what the documents hold, so that every
  * rule the reading found is checked against the one account's documents that exist, and so that the

@@ -443,7 +443,7 @@ export const ESCAPE_RESET_ALT = 0x03;
 /**
  * The sub-commands each architecture's escape dispatches. Arch 9 has not been read.
  *
- * **Arch 8 (Harmony 880 and 885) since `todo-compile-885.md` 1.4**, read in the 885's application 4.4
+ * **Arch 8 (Harmony 880 and 885) since its write end, decision 30**, read in the 885's application 4.4
  * before anything was sent, `tests/harmony_880_885/test_harmony_885_write_end.py`: the packet parser at `0x157D4` takes
  * the escape before the command switch, `0x01` clears the command state and `0x02` and `0x03` set the
  * flag the main loop turns into a wait and a `RESET`; none replies and any other sub code does nothing.
@@ -518,7 +518,7 @@ export const DEFAULT_REGION_ARCHITECTURE = 12;
  * with no known answer rather than a safety rail.
  *
  * **Reads only.** `ARCHITECTURES_WITH_A_WRITE_TARGET` in `rails.ts` is the write gate. Arch 8 joined it
- * for `todo-compile-885.md` 1.2 with rows of its own in the erase tables, which is where a write is
+ * under decision 30 with rows of its own in the erase tables, which is where a write is
  * bounded; this read bound grants nothing, and adding it added no write target. This said arch 8 "is not
  * in it" and that the erase tables "still have no row"<!--superseded--> until then.
  */

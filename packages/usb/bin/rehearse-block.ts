@@ -275,7 +275,7 @@ const H700_DUMPS = new Set<string>([
  * November 2026 and identical, `docs/test-notes/harmony-885.md`. Both reads start at the region's base,
  * so a block's offset in them is its distance from `0x020000`, which is what the compare below takes.
  *
- * **Unit A went first**, decision 30, `todo-compile-885.md` 1.3: `0x0C0000` written back unchanged on 7
+ * **Unit A went first**, decision 30: `0x0C0000` written back unchanged on 7
  * November 2026, `tests/harmony_880_885/test_harmony_885_flash_backup.py`. Unit B joined after it, `H885_B_DUMPS` below.
  *
  * **Which block, on this platform, is not the 525's choice**, and the reason is the platform's: the
@@ -298,7 +298,7 @@ const H885_A_DUMPS = new Set<string>([
  * The Harmony 885 unit B's configuration region, arch 8, `0x020000` to `0x1D0000`, read twice on 5 November
  * 2026 after a hand restart and identical, `docs/test-notes/harmony-885.md`.
  *
- * **B joined after A's first write**, `todo-compile-885.md` 1.8, because its keys work better and the hands
+ * **B joined after A's first write**, under the same decision, because its keys work better and the hands
  * on tests run on it. **Its block is `0x0D0000`, not A's `0x0C0000`**, because the two units' flash differs
  * below it. B's configuration ends at `0x0BB8C7`, so on B the block under `0x0C0000` is the live
  * configuration's last, where on A it held only remains. An erase at `0x0C0000` that reached one byte lower
@@ -307,7 +307,7 @@ const H885_A_DUMPS = new Set<string>([
  * 171 bytes both units hold to `0x0D00AA`, which are not `0xFF` so a write that sent nothing would show, and
  * `0x0E0000` is erased. The price is the measurement: neither neighbour holds data next to the block, so this
  * rehearsal bounds the sector less tightly than A's did, and A's stays the one that measured it. Pointed out
- * by the review of 1.3 and 1.8.
+ * by the review of the two units' first rehearsals.
  */
 const H885_B_DUMPS = new Set<string>([
   'h885_b_region',
@@ -348,7 +348,7 @@ interface Target {
  * comparing is the step that has to happen before a write is authorised at all.
  */
 const TARGETS: Readonly<Record<number, readonly Target[]>> = {
-  // The two bench 885s, decision 30, A first and B after it, `todo-compile-885.md` 1.8. Every arch 8 model
+  // The two bench 885s, decision 30, A first and B after it. Every arch 8 model
   // reports one product id, so the dump says which unit is expected and the unit record is what says the
   // remote on the cable is that 885 and not the other, an 880 or a 720.
   8: [

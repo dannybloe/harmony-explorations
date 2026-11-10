@@ -1,6 +1,5 @@
 /**
- * One run of `writeFileFamilyConfiguration` against `FakeFileRemote`, for `file-family-run.test.ts`,
- * `todo.md` 7.3.10.
+ * One run of `writeFileFamilyConfiguration` against `FakeFileRemote`, for `file-family-run.test.ts`.
  *
  * **Two ways in**, the shape `filewrite.test.ts` uses: a test calls `runFileFamily` in its own process for the
  * shipped state, the flags unset, and starts this file as a process of its own with `HARMONY_ENABLE_WRITES=1` and

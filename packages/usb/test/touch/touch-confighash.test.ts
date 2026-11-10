@@ -1,8 +1,8 @@
 /**
  * What a Harmony Touch reports of its stored configuration when asked over the cable: the first request this
- * project sent a Touch, `todo-touch.md` 6.4.
+ * project sent a Touch.
  *
- * **The question.** Before anything is written to a Touch, chapter 6 needs to know what the remote holds,
+ * **The question.** Before anything is written to a Touch, the work needs to know what the remote holds,
  * so that a backup is a backup of that and a first write can be compared against it. The engine's
  * `getconfighash` was read in the firmware (`reference/architectures/harmony-touch/api/engine.md`) to answer
  * `result=` followed by the entity tags of the stored activity list, device list, function list, protocol
@@ -11,9 +11,9 @@
  * included, so whether a unit answers it on the cable and in that form was the reading's alone.
  *
  * **The instrument.** `packages/usb/bin/touch-request.ts --request confighash --commit`, through the request
- * rail of 6.3 (`openTouchRequestSession`, the unit checked against the lab's `units/touch.txt`), one open
+ * rail (`openTouchRequestSession`, the unit checked against the lab's `units/touch.txt`), one open
  * of `/sys/hlapi` for writing with the request line, one for reading the answer, kept in the lab. The
- * other end is the recorded full sync of 2.3, `touch-sync-both-ways.test.ts`: the tags Logitech's client
+ * other end is the recorded full sync, `touch-sync-both-ways.test.ts`: the tags Logitech's client
  * handed the remote with each of the six documents. **The two ends are independent**: one is what the
  * remote reports of its store, read off the unit, the other what a client wrote into it, recorded on the
  * way in, and neither was computed from the other.
@@ -24,8 +24,8 @@
  * * the engine reading's order and joining hold on a unit, for the four documents a computer's sync stores;
  * * the button map list and the settings are not in it, as read, so it says nothing about those two;
  * * the four documents the remote holds are the ones the full sync delivered, so that recording is a backup
- *   of them (6.5), and no sync down has reached the remote since. The settings were changed on the remote
- *   after it (the reverse sync of 2.3 uploaded them), which the hash cannot show.
+ *   of them, and no sync down has reached the remote since. The settings were changed on the remote
+ *   after it (the reverse sync recorded after it uploaded them), which the hash cannot show.
  *
  * **What would have falsified it**: a different order, a separator, a fifth tag, any tag not among the full
  * sync's, or a refusal while no sync runs. The control below permutes the four and asserts every other order

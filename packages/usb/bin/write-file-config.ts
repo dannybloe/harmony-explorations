@@ -1,5 +1,5 @@
 /**
- * Put a configuration onto a Harmony 300 or Harmony 350, and read it back. `todo-compile-350.md` 1.6.
+ * Put a configuration onto a Harmony 300 or Harmony 350, and read it back, under decision 26.
  *
  *   node packages/usb/bin/write-file-config.ts --unit h350 --config <file> --backup <file>
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FILE_WRITE=1 node packages/usb/bin/write-file-config.ts \
@@ -11,8 +11,8 @@
  * container's size and checksum, and how many chunks and packets it would take. A refusal there is the
  * same refusal a commit would meet, since both ask `assertFileWriteTarget`.
  *
- * **The run is `writeFileFamilyConfiguration` in `src/filewrite.ts`**, on `@harmony/usb/write` since `todo.md`
- * 7.3.10, so an application writes one of these remotes through the same function; this script keeps its
+ * **The run is `writeFileFamilyConfiguration` in `src/filewrite.ts`**, on `@harmony/usb/write`,
+ * so an application writes one of these remotes through the same function; this script keeps its
  * command line, the lab's unit records and models, the files and the journal.
  *
  * **With `--commit` and both flags it runs `writeFileConfig`**, whose docstring is the sequence: the
@@ -56,8 +56,8 @@ const cli = commandLine({
 });
 
 /**
- * The units decision 26 permits, and the skin each one's identity file states: the library's own list since
- * `todo.md` 7.3.10's review, so this script and an application cannot hold two that differ.
+ * The units decision 26 permits, and the skin each one's identity file states: the library's own list, as an
+ * independent review of moving the run into the library asked, so this script and an application cannot hold two that differ.
  */
 const UNITS = FILE_FAMILY_UNITS;
 
@@ -101,7 +101,7 @@ async function main(): Promise<void> {
   const permittedUnit = unitIdentityFromText(recorded);
 
   // The container and the backup, read here; what the container must be, and everything after it, is
-  // `writeFileFamilyConfiguration`'s since `todo.md` 7.3.10, which every line below is printed and journalled from.
+  // `writeFileFamilyConfiguration`'s, which every line below is printed and journalled from.
   const container = new Uint8Array(readFileSync(configPath));
   const backup = new Uint8Array(readFileSync(backupPath));
 

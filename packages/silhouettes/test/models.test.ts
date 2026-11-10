@@ -54,7 +54,7 @@ const EXPECTED: Readonly<Record<string, {
   },
   /**
    * The European printing, skin 79: the same 55 shapes, and 49 codes heard by pressing every key of a skin 79
-   * unit in two device modes, `todo-compile-300.md` 2.1 and 2.2, `packages/bench/test/harmony-300-350/keys300.test.ts`. Every
+   * unit in two device modes, `packages/bench/test/harmony-300-350/keys300.test.ts`. Every
    * one is a decision of its own, so all 49 are named below; each is the code of the 350 key in the same
    * place, and the six left are keys neither configuration on the unit tells apart: one binds nothing to
    * them, the other gives them Info's command, as it gives several codes.
@@ -80,8 +80,8 @@ const EXPECTED: Readonly<Record<string, {
    * page and the box contents page, and the cover photograph agrees for the 35 keys above the transport
    * block that it shows; the firmware's keypad scan numbers 56 codes, one of which no key raises.
    *
-   * 44 codes heard at the bench, `todo-compile-350.md` 2.2.2, and 9 more heard on Logitech's compile of the
-   * test setup, 3.3, and no other source: every one is a decision of its own, so all 53 are named below.
+   * 44 codes heard at the bench and 9 more heard on Logitech's compile of the test setup,
+   * `packages/bench/test/harmony-300-350/setup350.test.ts`, and no other source: every one is a decision of its own, so all 53 are named below.
    */
   h350: {
     buttons: 55,
@@ -340,8 +340,8 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      * The Harmony 350 has one set left, Live alone on one of two codes no configuration binds,
      * `packages/bench/test/harmony-300-350/keys350.test.ts`, which is why a set is stated by its size rather than by one
      * size per model: a set of candidates may be larger than the keys sharing it. It had a second, four
-     * favourite keys sharing the four codes favourite 5 did not take, until `todo-compile-350.md` 3.3 heard
-     * them. The Harmony 300 has none on either printing: its drawings take no code from the 350's, `h300.ts`,
+     * favourite keys sharing the four codes favourite 5 did not take, until the 350's first full bench test heard
+     * them, `packages/bench/test/harmony-300-350/setup350.test.ts`. The Harmony 300 has none on either printing: its drawings take no code from the 350's, `h300.ts`,
      * and the European one carries only what its own unit decided, `h300eu.ts`.
      *
      * The Harmony 880's two chevron keys share 20 and 52, the two of the 885's four colour key codes its key
@@ -439,7 +439,7 @@ test('the screen carries the raster its own firmware draws into', () => {
     14: { width: 128, height: 128 },
     // Arch 17 (Harmony Touch): read in its firmware, `tests/harmony_touch/test_harmony_touch_keys.py`, and the size of
     // every one of the fifty screen captures in its own user guide, which was the only source until
-    // `todo-touch.md` 3.2. It is the one row of `SCREEN_SIZES` no configuration measured.
+    // the firmware was read for it. It is the one row of `SCREEN_SIZES` no configuration measured.
     17: { width: 240, height: 320 },
   };
   /**

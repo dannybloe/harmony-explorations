@@ -42,8 +42,8 @@ export class RailError extends Error {}
  * than reasons.
  */
 export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
-  // **Arch 8 (Harmony 880 and 885): the user configuration at `0x020000`**, added for
-  // `todo-compile-885.md` 1.2 under decision 30. The application's own start check reads its
+  // **Arch 8 (Harmony 880 and 885): the user configuration at `0x020000`**, added when arch 8 became a
+  // flash block target under decision 30. The application's own start check reads its
   // configuration from here, `reference/architectures/harmony-880-885/memory.md`, and both bench 885s
   // were read from here, the `TPTP` cookie at this address. **This floor matters more here than on any
   // other architecture**, because the firmware's own floor is `0x010000` and nothing above it: the
@@ -129,15 +129,15 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
  */
 export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [8, 9, 12, 14];
 //
-// **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.2**, under decision 30, which
-// permits the two bench 885s, unit A first. The same shape as arch 9's arrival: it buys the flash block
-// path and nothing else. The reboot, the invalidate and the RAM write keep their lists, which did not hold
-// 8 until 1.4, so `rehearse-block.ts` was the one way in. **Which unit is on the cable is still the unit
+// **Arch 8 (Harmony 880 and 885) joined under decision 30**, which permits the two bench 885s, unit A
+// first. The same shape as arch 9's arrival: it buys the flash block path and nothing else. The reboot,
+// the invalidate and the RAM write keep their lists, which did not hold 8 until the whole configuration
+// write was read for it, so `rehearse-block.ts` was the one way in until then. **Which unit is on the cable is still the unit
 // check's**, since every arch 8 model reports one product id: the 880, 885, 880 Pro, 720 and 785 alike.
 // Two hazards this platform adds and the tables above hold: the firmware bounds an erase and a write from
 // `0x010000` up by nothing, and it runs from the same flash part as its configuration.
 //
-// **The write end joined for `todo-compile-885.md` 1.4, through the lists of its own paths**: arch 8 is on
+// **The write end joined later, under the same decision, through the lists of its own paths**: arch 8 is on
 // the reset list and the invalidate list below, each for the one command its own comment names, so
 // `write-config.ts` can end a write the 885's way. Selector `0x0A` has no sender in this package at all,
 // the update status byte is written only behind the reinstall and staging rails, which hold no arch 8
@@ -173,7 +173,7 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [8, 9, 12, 1
  * check "is what keeps a restart off it" until 9 October 2026.
  */
 //
-// **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.4**, decision 30, for the last step of
+// **Arch 8 (Harmony 880 and 885) joined under decision 30**, for the last step of
 // a configuration write on the two bench 885s and nothing else. The source is the 885's application 4.4,
 // read before anything was sent, `tests/harmony_880_885/test_harmony_885_write_end.py`: the parser takes the escape before
 // the command switch, `0x02` sets the flag the main loop turns into mode 3, and mode 3 waits 500 ticks and
@@ -204,7 +204,7 @@ export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [8, 12, 14];
  * both units read here would write nothing. The drop itself writes nothing persistent.
  */
 //
-// **Arch 8 (Harmony 880 and 885) joined for `todo-compile-885.md` 1.4**, decision 30, as the first step of a
+// **Arch 8 (Harmony 880 and 885) joined under decision 30**, as the first step of a
 // configuration write on the two bench 885s. Read in the 885's application 4.4 before it was sent,
 // `tests/harmony_880_885/test_harmony_885_write_end.py`: selector `0x02` walks two cached region records at `0x163BE` and
 // clears bits 2 and 3 of data `0x086`, which moves every lookup to the built in configuration until the
@@ -333,7 +333,7 @@ export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
   // walk over every block of the region, for both parts, is `tests/logitech/test_host_client.py`. A third, weaker
   // closure: the bootloader's own install erases once at `0x010000` and then writes 64 KiB, which works
   // only if that sector is at least that large. **The first rehearsal measured it from one side**,
-  // `todo-compile-885.md` 1.3 on unit A, `tests/harmony_880_885/test_harmony_885_flash_backup.py`: an erase at `0x0C0000`
+  // on unit A, `tests/harmony_880_885/test_harmony_885_flash_backup.py`: an erase at `0x0C0000`
   // cleared the block's bytes from that address on and left `0x0BFFFF` and `0x0D0000` intact, so the
   // sector there is aligned and no larger than 64 KiB. Not smaller than 64 KiB is still the two sources'
   // word: the block held nothing in its upper half, so 32 KiB is not excluded. A smaller sector could not
@@ -769,10 +769,10 @@ export const SFR_PAGE_START = 0xf40;
  * Architectures the session end escape, `0xE0 0x01`, may be sent to: the two it was sent to before arch 8's
  * escape was read.
  *
- * **Split out for `todo-compile-885.md` 1.4**, on the rule section 281 set for the reboot and the
+ * **Split out when arch 8 got its write end, decision 30**, on the rule section 281 set for the reboot and the
  * invalidate: one list per path. Until then the session end rail admitted any architecture with an
  * `ESCAPE_SUB_COMMANDS` row, which was arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700), both
- * sent it. 1.4 gave arch 8 (Harmony 880 and 885) a row so that the restart could pass its dispatch check,
+ * sent it. The write end gave arch 8 (Harmony 880 and 885) a row so that the restart could pass its dispatch check,
  * and the row is a true statement of what the firmware dispatches, `0x01` included; without this list the
  * same row would have opened the session end on an 885 as a side effect, which is exactly the widening
  * section 269 caught twice. So the list keeps what was reachable before, and arch 8 joining it is a
@@ -830,7 +830,7 @@ export function assertSessionEndAllowed(
     );
   }
   // After the dispatch checks, so that arch 9 (Harmony 525) is still refused for its unread escape and
-  // the list refuses only what is read and not chosen, arch 8 (Harmony 880 and 885) since 1.4.
+  // the list refuses only what is read and not chosen, arch 8 (Harmony 880 and 885) since its write end, decision 30.
   if (!ARCHITECTURES_WITH_A_SESSION_END_TARGET.includes(p.architecture)) {
     throw new RailError(
       `architecture ${p.architecture} dispatches the session end but is not on its list: its escape was `
@@ -1319,7 +1319,7 @@ export function assertSettingsWriteAllowed(
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The file based family's write path: the Harmony 300 and the Harmony 350, `todo-compile-350.md` 1.6.
+// The file based family's write path: the Harmony 300 and the Harmony 350, under decision 26.
 // ---------------------------------------------------------------------------------------------------
 
 /**
@@ -1417,7 +1417,7 @@ export interface FileFamilyContainer {
  *   validator looks for the marker there and the read size is computed from it.
  * * **`PTYY` as the last four bytes.** A read of `/cfg/usercfg` comes back four bytes short of a
  *   container and the boot validator demands the marker, so a container taken from a read has to have
- *   it put back. The todo item this rail answers said to take the marker off, and the firmware reading
+ *   it put back. The first plan for this path said to take the marker off, and the firmware reading
  *   says the opposite; the firmware wins, decision 2.
  * * the stored trailer checksum recomputing, since the boot validator recomputes it whenever setting
  *   `0x80` asks for it, which an absent setting does.
@@ -1557,7 +1557,7 @@ export function assertFileWriteAllowed(p: FileWritePermission): FileFamilyContai
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The Harmony Touch's request channel, `/sys/hlapi`: `todo-touch.md` 6.3, under decision 29.
+// The Harmony Touch's request channel, `/sys/hlapi`, under decision 29.
 // ---------------------------------------------------------------------------------------------------
 
 /**
@@ -1625,7 +1625,8 @@ export const TOUCH_READ_REQUESTS: readonly string[] = [
  * the engine tries the gathered set, which ends the task that loads the configuration,
  * `reference/architectures/harmony-touch/firmware.md`
  * "A configuration that fails to load". **The protection is upstream of the rail**: the answerer refuses a
- * set the codec's reader and check reject before any of it is written, `todo-touch.md` 6.6. **The way back
+ * set the codec's reader and check reject before any of it is written, since this rail reads no answer and
+ * cannot clear what a bad set leaves, `syncTouch` in `packages/corpus/src/touchsync.ts`. **The way back
  * when that protection fails is the recovery tier below**, `TOUCH_RECOVERY_REQUESTS`, behind a flag of its
  * own: a sync of ours stopped halfway, after `setup.sync` and before the commit, is cleared by the abort or a
  * restart, and a committed set the reader raises on by the delete and a restart, none of which is on this
@@ -1681,7 +1682,7 @@ export const TOUCH_RECOVERY_DOOR: boolean = process.env['HARMONY_TOUCH_RECOVERY'
  * package install among them; every other `setup.sync?` verb, `?begin` among them; `proxy.finished`, which
  * commits whatever set was gathered without loading it first, so one sent after a failed reload commits the
  * set it failed on; and `proxy.resource?put`, which writes content and belongs to the answerer,
- * `todo-touch.md` 6.6. **What still needs the remote's own factory reset**: a remote whose system does not
+ * `syncTouch` in `packages/corpus/src/touchsync.ts`. **What still needs the remote's own factory reset**: a remote whose system does not
  * start, which nothing over USB reaches, and one whose provisioning is gone, which only
  * `setup.account?provision` would restore and which no tier carries.
  */

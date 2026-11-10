@@ -74,13 +74,13 @@ try {
   const from = cli.value('from') === undefined ? base : address(cli.value('from'), '--from');
   const to = address(cli.value('to'), '--to');
   if (to <= from) fail(`--to 0x${to.toString(16)} is not above --from 0x${from.toString(16)}`);
-  // **Arch 8 (Harmony 880 and 885) reached this script with `todo-compile-885.md` 1.2**, which gave it a
-  // config region base for a write, and until then the missing base refused it. Two reads there are not
+  // **Arch 8 (Harmony 880 and 885) reached this script when it became a write target**, decision 30, which
+  // gave it a config region base for a write, and until then the missing base refused it. Two reads there are not
   // reads, `reference/architectures/harmony-880-885/usb.md` "Reading flash": from `0x1FE000` up sit the
   // keypad, the USB controller and the display, and a read ending on `0x000104` or `0x000105` runs code.
   // The library bounds a read by its start only, so this bounds the end, and keeps both ends even, which
   // is what keeps every chunk from ending alone on either of the two. Pointed out by the review of the
-  // 1.2 commit, as a read path that commit had opened without saying so.
+  // commit that made arch 8 a write target, as a read path that commit had opened without saying so.
   if (architecture === 8 && (to > 0x1fe000 || from % 2 !== 0 || to % 2 !== 0)) {
     fail('on a Harmony 880 or 885 a region read ends at or below 0x1fe000, where flash stops, and '
       + 'starts and ends on an even address, so no chunk ends alone on 0x000104 or 0x000105');
@@ -94,7 +94,7 @@ try {
   for (let done = 0; done < total; done += CHUNK) {
     const length = Math.min(CHUNK, total - done);
     // **A failed window is asked for again**, through `readFlashWindow`, the one retry loop
-    // `readConfig` uses too, section 223. Until `todo-compile-885.md` 1.10 this read had no retry, so a
+    // `readConfig` uses too, section 223. This read had no retry at first, so a
     // single lost chunk, `flash chunk out of sequence`, stopped the whole read and filed nothing, which
     // is what both bench Harmony 885s did on long reads, `docs/test-notes/harmony-885.md`. A retry sends
     // the same window again, the same address and count, so the arch 8 bounds above still describe
