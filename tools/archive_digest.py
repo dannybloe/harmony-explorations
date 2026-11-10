@@ -42,7 +42,7 @@ SECTION_HEADING = re.compile(r'^## (\d+)\. ')
 # The numbered decisions are the list items whose title is bold.
 DECISION_ITEM = re.compile(r'^(\d+)\. (?=\*\*)', re.M)
 
-# Moved by todo-reference 2.1, from `git diff -M` over its commits. A link to a document that plan 009
+# The documents plan 009 moved into `reference/`, from `git diff -M` over the commits that moved them. A link to a document that plan 009
 # cut by heading goes to the README the whole document became when it has no fragment. Keys are the
 # target as written in the archive (relative to docs/), values are the target now, also relative to
 # docs/.

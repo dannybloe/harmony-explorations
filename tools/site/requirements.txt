@@ -1,4 +1,4 @@
-# The website's build dependencies, todo-reference.md 7.1 and plan 009 section 3: MkDocs with the
+# The website's build dependencies, plan 009 section 3: MkDocs with the
 # Material theme and everything the two pull in, each pinned to an exact version and to the sha256 of
 # every wheel PyPI holds for it. Installed by `make site` with `--require-hashes --only-binary :all:`,
 # so pip refuses anything not listed here (an unpinned transitive dependency fails the install rather
@@ -28,7 +28,7 @@
 #   * requests and its four: a whole HTTP stack, for Material's social, privacy and blog plugins. None
 #     is enabled in mkdocs.yml, so the build makes no network request.
 #   * ghp-import, python-dateutil and six: MkDocs's `gh-deploy` command, which pushes a built site to a
-#     gh-pages branch. Never run here; publishing is a GitHub Action, todo-reference.md 7.2.
+#     gh-pages branch. Never run here; publishing is a GitHub Action, `.github/workflows/site.yml`.
 #   * watchdog: the file watcher behind `mkdocs serve`, a compiled extension.
 #   * colorama is required on every platform by Material, though it only matters on Windows.
 # Compiled wheels: markupsafe, pyyaml, watchdog, charset-normalizer. The rest are pure Python.

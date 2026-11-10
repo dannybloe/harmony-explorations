@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The metadata archive's deflate stream on the Harmony 300 and 350, and which zlib writes it.
 
-`todo-compile-350.md` 5.1, measured for plan 011. Raw slot 13 of every configuration of this family is a ZIP of
+Measured for plan 011. Raw slot 13 of every configuration of this family is a ZIP of
 one file, `MetaData.xml`, deflated, `packages/codec/src/container/metadata.ts`. A configuration built with nothing copied
 has to write that archive, and the first question is whether the deflate stream is something we can write
 byte for byte or only something that inflates to the same text. `packages/codec/test/families/harmony-300-350/noscreencensus.test.ts`

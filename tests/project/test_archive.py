@@ -2,7 +2,7 @@
 The archive stays an archive: `docs/findings.md` and `docs/decisions.md`, decision 25 and plan 009.
 
 Three claims, each with its own test, and each was shown failing on a planted violation before it was
-relied on (the todo-reference 2.2 note says how):
+relied on:
 
 1. **The archive is frozen.** Its text with the anchor lines removed and every link target blanked has
    the digest it had before the anchors were added. `tools/archive_digest.py` holds the normalisation,
@@ -40,7 +40,7 @@ _spec.loader.exec_module(reference_guards)
 FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74fc7"
 # Repinned for one recorded correction in place: decision 9's last sentence put its rule, its argument and
 # its ledger in `reference/logitech/clients.md`, which holds none of the three since plan 009, and now says
-# where each is (todo-reference chapter 4's follow-ups, item 125). The digest before it was d6d9727e.
+# where each is. The digest before it was d6d9727e.
 # Repinned again for decision 10's reversal, recorded at the end of its own entry: dumps are invited on the
 # front page again. The digest before it was 39af6d8e.
 # Repinned for decision 26, a new entry rather than an edit: the Harmony 300 and 350 may be written. The
@@ -56,12 +56,12 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # native program's name table. The digest before it was 1e1cdff4.
 # Repinned for decision 30, a new entry: the two bench Harmony 885s may be written, A first. The digest
 # before it was 5c191c6b.
-# Repinned for a paragraph added in place under decision 29, `todo-touch.md` 6.3.1: the recovery requests on
+# Repinned for a paragraph added in place under decision 29: the recovery requests on
 # the Touch's request rail behind a flag of their own. The digest before it was 5eb71fc4.
-# Repinned for decisions 31 and 32, two new entries: the libraries' structure as a rule with tests, `todo.md`
-# 7.3.9, and our own builds held as references by recipe and fingerprint, plan 014, corrected in place the day it
-# was taken. 31 had been added without repinning, so this check failed from 7.3.9 until 7.3.11. The digest before
-# them was 3a59f41f.
+# Repinned for decisions 31 and 32, two new entries: the libraries' structure as a rule with tests,
+# decision 31, and our own builds held as references by recipe and fingerprint, plan 014, corrected in place the
+# day it was taken. 31 had been added without repinning, so this check failed from the commit that added it until
+# this repin. The digest before them was 3a59f41f.
 # Repinned for decision 33, a new entry: code and tests never name a todo, and open work points at a
 # numbered requirement. The digest before it was ca39582a.
 DECISIONS_DIGEST = "f7ed1e961a62310749195ec116e5a51582e7df73ddba677d14a445423b5b357a"

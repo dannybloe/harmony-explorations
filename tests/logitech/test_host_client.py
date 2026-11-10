@@ -161,8 +161,8 @@ PRODUCT_REPLIES = ('GetAllProducts.json', 'GetHarmonyProducts.json')
 #:
 #: `name` is the record's `DisplayName`. Skin 54's is "Harmony One+" where its `Name` is "Harmony One",
 #: and the per model capability answer says the same, `tests/logitech/test_product_capabilities.py`: the plus is
-#: the service's display name for the Harmony One's skin, not another product. Skins 72, 78 and 79 joined
-#: in `todo-reference.md` 3.4, so that every bench model's maxima rest on this reply: the Harmony 650's,
+#: the service's display name for the Harmony One's skin, not another product. Skins 72, 78 and 79 are
+#: here so that every bench model's maxima rest on this reply: the Harmony 650's,
 #: and the Harmony 300's two regional skins, which differ in their favourite maximum, 5 against 4.
 PRODUCTS = {
     22: {'name': 'Harmony 525', 'enabled': False, 'max_devices': 12, 'favourites': 0,
@@ -183,7 +183,7 @@ PRODUCTS = {
          'max_activities': None},
     73: {'name': 'Harmony 600', 'enabled': True, 'max_devices': 5, 'favourites': 23,
          'max_activities': None},
-    # The Harmony Touch, joined in `todo-touch.md` 3.2: its 15 devices and 50 favourites were the
+    # The Harmony Touch: its 15 devices and 50 favourites were the
     # manual's alone in the reference until this row.
     99: {'name': 'Harmony Touch', 'enabled': True, 'max_devices': 15, 'favourites': 50,
          'max_activities': None},
@@ -227,7 +227,7 @@ class ProductTable(unittest.TestCase):
         self.assertNotIn(22, enabled, 'the Harmony 525 is the model this explains')
 
     def test_the_nineteenth_enabled_skin_is_the_hub_generations_placeholder(self):
-        """Why one count says 18 enabled skins and another 19, settled in `todo-reference.md` 4.5.
+        """Why one count says 18 enabled skins and another 19.
 
         Section 136 listed eighteen skins and section 145 counted nineteen, over the same reply. Both are
         right: 27 records are enabled, nine of them carry skin 0 in place of a skin of their own, all of
@@ -2027,7 +2027,7 @@ class TheEraseBlockAtTheRehearsalAddressIsSixtyFourKiB(unittest.TestCase):
         # the same kind of evidence as arch 9's, the eraser's opcode in its own firmware images, so
         # this does not judge it either; `tests/harmony_600_650_700/test_arch14_write_target.py` does.
         #
-        # **Arch 8 (Harmony 880 and 885) gained its row for `todo-compile-885.md` 1.2, and that one is
+        # **Arch 8 (Harmony 880 and 885) gained its row for its first block rehearsal, and that one is
         # client sourced**, so this does judge it: the client's walk for the Atmel part the 885's
         # firmware knows, `1F:C0`, puts every block of the configuration region, `0x020000` to the
         # ceiling at `0x1D0000`, on a 64 KiB boundary in a 64 KiB block. The other part, `01:49`, is device

@@ -2,7 +2,7 @@
 The Harmony 880 and 885's base slot 15: nine groups demanded, each of a demanded length, and a mismatch that
 falls back without a word.
 
-**Read in the firmware** on 4 November 2026, item 3.5 of `todo/todo-prepare-885.md`, in the 885's
+**Read in the firmware** on 4 November 2026, in the 885's
 application 4.4 (`arch8_code_885`, base `0x010000`) and the Harmony 720's. **Measured in configurations**
 over the sixteen distinct arch 8 containers of `tests/harmony_880_885/test_harmony_885_start_check.py`'s `CALIBRATION` and
 the built in configuration inside each of the five application images. No remote was opened. Addresses

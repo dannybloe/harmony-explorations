@@ -2,7 +2,7 @@
 How a write ends on the Harmony 880 and 885: the misc selectors, the escape, and a restart that alone takes
 up a new configuration.
 
-**Read in the firmware** on 4 November 2026, item 1.5 of `todo/todo-prepare-885.md`, in the 885's
+**Read in the firmware** on 4 November 2026, in the 885's
 application 4.4 (`arch8_code_885`, base `0x010000`; the 880's differs in the skin bytes only). No remote
 was opened. Decoded through `harmony.pic18.isa` and `harmony.pic18.chains`, the hand read fall through
 cases marked.
@@ -35,7 +35,7 @@ said neither the session end nor the restart is reached: true of the switch, wro
 (`0x16FCA`, from the mode switch at `0x16F6E`) writes the USB controller's register (`0x1221A`), loads 500
 into the countdown the message routine loads with 3000, waits for it, and executes `RESET` at `0x16FEC`.
 Half a second if a tick is a millisecond, not established. The processor restarts in the bootloader, which
-keeps the status byte after a `RESET` instruction (item 1.1), and the application's start routine
+keeps the status byte after a `RESET` instruction (`tests/harmony_880_885/test_harmony_885_bootloader.py`), and the application's start routine
 `0x180A4` clears `0x3F3`. That the register write detaches from the bus is inferred; the controller is not
 identified.
 
@@ -43,7 +43,7 @@ identified.
 `0x16FEC`, the escape's restart; `0x18146`, the power down routine's wake (`0x180C6`, called from the
 action interpreter at `0x139AE` for an operand low byte of exactly `0xF6`, the last step of a descending
 chain whose earlier steps send `0xF7`, `0xF8` and `0xF9` and up elsewhere, `0x13984` to `0x139AE`; that chain
-is opcode `0x07`'s band, `tests/harmony_880_885/test_harmony_885_actions.py`. **Corrected by item 3.1**: this said an
+is opcode `0x07`'s band, `tests/harmony_880_885/test_harmony_885_actions.py`. **Corrected by the action interpreter's reading**: this said an
 operand high byte, reached through the `0x3F` band, inferred and not traced; the register the chain tests,
 `0x3B2`, is the operand's low byte, and the ladder reaches it for opcodes `0x07` to `0x0E`). The routine
 returns at once unless input 2 of port B reads high and input 4 of port A low; otherwise it copies RAM
@@ -58,7 +58,7 @@ blind reviewer**: this header first called `0x1A764` a `RESET` no instruction re
 control flow and missed the copy, and gave the power down's operand as `0xF6` and up and its wake
 condition as port A alone. So the combination restarts by
 the `RESET` instruction and, by the bootloader's reset cause test, keeps the status byte; that `0xFD0` is
-the reset control register is inferred from the PIC18 family, item 1.1. Which printed keys have those scan
+the reset control register is inferred from the PIC18 family, `tests/harmony_880_885/test_harmony_885_bootloader.py`. Which printed keys have those scan
 codes is not established.
 
 ## Only a start takes up a configuration
@@ -113,7 +113,7 @@ It is the entry type switch of the infrared send queue's drain (`0x14A56`), on d
 top three bits of the queue entry being looked at (`ANDLW 0xE0` at `0x14A7C`): `0xE0`, `0xC0` and `0xA0`
 decoded, `0x80` the fall through. The queue is a ring at data `0x15D` to `0x17A`. That the release rules
 mean what the reading says, and which instruction pushes which entry type, is inferred and is the action
-interpreter's subject (item 3.1). `tests/harmony_880_885/test_arch8_usb.py` named its variable `0x0B8` and called it
+interpreter's subject (`tests/harmony_880_885/test_harmony_885_actions.py`). `tests/harmony_880_885/test_arch8_usb.py` named its variable `0x0B8` and called it
 unidentified; it is corrected there.
 
 ## A configuration write on this platform
@@ -124,7 +124,7 @@ status 0 and its read back, is harmless and worth keeping as a read, since a non
 restart into an application install; step 4, selector 2, answers `F0 A0` and keeps the remote off the
 region; steps 5 and 6 as on every platform (`tests/harmony_880_885/test_harmony_885_erase_and_write.py`); **step 7, status 2,
 must not be sent**: the bootloader would erase `0x010000` and copy 64 KiB from `0x1D0000` over the
-application at the restart (item 1.1); step 8, `E1 02`, no reply, and the remote comes back through its
+application at the restart (`tests/harmony_880_885/test_harmony_885_bootloader.py`); step 8, `E1 02`, no reply, and the remote comes back through its
 bootloader. Setting the clock after, if wanted, is selector 1 for the seven clock variables and then
 selector 8, as both clients do.
 

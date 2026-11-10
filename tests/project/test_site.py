@@ -1,5 +1,5 @@
 """
-The website's hook, `tools/site/hooks.py`, todo-reference.md 7.1 and plan 009 section 3.
+The website's hook, `tools/site/hooks.py`, plan 009 section 3.
 
 The site itself is checked by `make site`, whose strict build fails on any link it cannot resolve, and
 that needs MkDocs, which the ordinary suite does not have. What can be held here without it is the half of

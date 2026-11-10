@@ -1,6 +1,7 @@
 """
 Which key of a European Harmony 300 raises which scan code, heard by pressing every key with an infrared
-receiver listening: `todo-compile-300.md` 2.1 and 2.2, the lab's `h300_every_key_ir` and `h300_keys_ir`.
+receiver listening, once with every key given a send and once in two modes, the lab's `h300_every_key_ir` and
+`h300_keys_ir`.
 
 **The argument is the header of `packages/bench/test/harmony-300-350/keys300.test.ts`**, which matches both runs again from
 their pulses, walks the file the unit held key by key, and asks of every key pressed which of the 56 codes,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A Harmony Touch's keys, its screen and its power, read in its firmware rather than in its manual.
 
-**The question.** `todo-touch.md` 3.2 asked what of `reference/remotes/harmony-touch/` rests on the user
+**The question** was what of `reference/remotes/harmony-touch/` rests on the user
 guide alone, and whether the firmware states it. Until then the model pages said no key on a Touch could
 be numbered, that the two marks above the screen might be keys or areas of the touch panel, that the
 raster was the size of the manual's screen captures, and, by the manual, that a charging notification

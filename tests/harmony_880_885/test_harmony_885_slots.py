@@ -2,7 +2,7 @@
 The Harmony 880 and 885's section seeker: one routine, no checks, sixteen raw slots named by literals, and
 a base slot 17 the firmware reads as a digit entry table.
 
-**Read in the firmware** on 4 November 2026, item 3.4 of `todo/todo-prepare-885.md`, in the 885's
+**Read in the firmware** on 4 November 2026, in the 885's
 application 4.4 (`arch8_code_885`, base `0x010000`; the 880's and the 880 Pro's differ in two skin bytes,
 `tests/harmony_880_885/test_harmony_885_start_check.py`) and the Harmony 720's application. **Measured in configurations**
 over the sixteen distinct arch 8 containers of that file's `CALIBRATION`. No remote was opened. Addresses
@@ -14,7 +14,7 @@ architectures" (section 16: base slot `b` at raw `b`, at `b + 1` from 8 up on ar
 hit map, elsewhere where the picture bank starts), `reference/config-format/modes-and-keys.md` "Base slot
 8" (section 83: the leading list is four bytes on arch 8), `tests/harmony_300_350/test_harmony_350_slots.py` (the Harmony
 350's raw slot 12, a digit entry table driven by opcode `0x74`), and the earlier 885 tests, which name the
-seeker and several of its consumers. **Logitech's client, decision 2**: not searched for this item, since
+seeker and several of its consumers. **Logitech's client, decision 2**: not searched for this reading, since
 the question is which section the firmware reads, which no client answers.
 
 ## The seeker
@@ -60,7 +60,7 @@ number (`0x1970A`, the bound `MOVLW 0x06`).
 `0x24C`, and that byte is not the count: the `0x3F` band `0xE0` switches on its low nibble (the chain at
 `0x13576`), and case 0 sets `0x24C` to 1 and arms, case 1 clears it and calls the same routine, which then
 disarms, case 2 cancels the entry the operand's low byte names and case 3 finishes it. **The result note
-for this item said `0x24C` was the table's count**<!--superseded-->; the number sender's reading, item 3.7,
+for this item said `0x24C` was the table's count**<!--superseded-->; the number sender's reading, `tests/harmony_880_885/test_harmony_885_number_sender.py`,
 corrected it, and the chain is asserted here.
 
 **What this does not settle**: the reference calls base slot 17 the Harmony One's touch hit map, and the

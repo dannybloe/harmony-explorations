@@ -1,7 +1,7 @@
 """
 Which printed key of a Harmony 885 raises which scan code, and where the remote keeps the key just pressed.
 
-Item 2.4 of `todo/todo-prepare-885.md`, row F9 of plan 012. Two halves: **read in the firmware**, the 885
+Row F9 of plan 012. Two halves: **read in the firmware**, the 885
 application 4.4 (`arch8_code_885`, base `0x010000`) with the 880's, the 880 Pro's and the Harmony 720's
 images as cross checks; and **measured on a unit**, two bench Harmony 885s on 5 November 2026, their data
 memory polled over USB while keys were pressed by hand. No remote is opened by this file: it reads the

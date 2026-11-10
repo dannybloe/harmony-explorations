@@ -2,9 +2,9 @@
 """Why a Harmony Touch synced through a computer asks for its favourites without an entity tag, and what an
 answer to such a request does to the favourites it holds, read in the production image, 4.15.330.
 
-**The question.** `todo-touch.md` 6.7 ran the first sync answered by this project on the bench Touch. The six
+**The question.** The first sync answered by this project on the bench Touch. The six
 configuration documents came with their tags and were answered 304; then the remote asked for the user's
-favourites document **with no tag**, though the full sync of 2.3 had delivered that document with 200 and a
+favourites document **with no tag**, though the full sync recorded earlier from Logitech's client had delivered that document with 200 and a
 tag, at the same address (compared for equality only, `packages/usb/test/touch/touch-first-sync.test.ts`). The
 answerer refused, as it was built to. The question was which of four causes: never stored with a tag, stored
 under another key than the one looked up, the tag erased by a change on the remote, or a different address.

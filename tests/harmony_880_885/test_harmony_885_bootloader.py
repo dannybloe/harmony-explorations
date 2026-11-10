@@ -1,7 +1,7 @@
 """
 The Harmony 880 and 885 bootloader: a resident flash programmer speaking the application's protocol.
 
-**Read in the firmware** on 4 November 2026, item 1.1 of `todo/todo-prepare-885.md`, in both bootloader
+**Read in the firmware** on 4 November 2026, in both bootloader
 builds the lab holds (`arch8_boot_880` and `arch8_boot_885`, version 4.0, base `0x000000`) and, for the
 hand off and the image check, in both 4.4 applications (`arch8_code_880`, `arch8_code_885`, base
 `0x010000`). No remote was opened. Every instruction below is decoded through `harmony.pic18.isa` and
@@ -32,8 +32,8 @@ whose case set is `{0x10, 0x30, 0x50, 0xA0, 0xB0, 0xD0}` in both builds: version
 flash, write misc, read misc, erase. **No `0x70`**, which the application's chain at `0x15854` has;
 otherwise the case sets are equal. Neither chain holds the escape: both programs compare the masked
 command with `0xE0` before their switch, the application at `0x1580A` (what the application then does
-with it is item 1.5's). This header first said the application had no escape test, from
-`tests/harmony_880_885/test_arch8_usb.py`'s chain alone; item 1.2's reading found the comparison. Each case's parse
+with it is `tests/harmony_880_885/test_harmony_885_write_end.py`). This header first said the application had no escape test, from
+`tests/harmony_880_885/test_arch8_usb.py`'s chain alone; the start check's reading, `tests/harmony_880_885/test_harmony_885_start_check.py`, found the comparison. Each case's parse
 sets a command state in data `0x11B`, the first literal it loads (asserted): 1, 2, 4, 6, 7 and 5 for
 version, write, read, write misc, read misc and erase. The executor at `0x03F04` dispatches on 1, 3, 4,
 5, 6 and 7; state 2 is write flash's data phase, taken before the switch, and 3 its end (read, not
@@ -66,8 +66,8 @@ of `0xFD0` is the RI bit of a PIC18's `RCON`, clear only after a `RESET` instruc
 the status survives a reset by the `RESET` instruction, which is what the escape's restart executes, and
 not a power on: a battery pull cannot start a staged install. The routine then sets bits 4, 3, 2 and 1
 of `0xFD0` again (`0x062AE`), so any later reset that is not a `RESET` instruction finds bit 4 set,
-whatever the hardware does to it; that re-arm is asserted too. The 1.1 reading said the bootloader never
-clears the status at a cold start; item 1.2 found this call, and this test holds it.
+whatever the hardware does to it; that re-arm is asserted too. This file's first reading said the bootloader never
+clears the status at a cold start; the start check's reading found this call, and this test holds it.
 
 Then main, after setting up and copying the flash routines into RAM: clears the unlock byte (`0x056F2`), runs
 the **staged install** (`0x0221C`), then the **key** test (`0x020AC`, the scan, then the comparison at
@@ -82,7 +82,7 @@ the **staged install** (`0x0221C`), then the **key** test (`0x020AC`, the scan, 
   `0x020000` that is cut short and followed by a `RESET` instruction would resume from `0x1D0000`. Not
   after a power loss, which clears the status as above, and which interruption would leave 4 or 7 in
   place is not read. What puts 2 or 6 there, what sits at `0x1D0000` on a unit, and why the user
-  configuration's base `0x020000` is a source, are item 1.2's.
+  configuration's base `0x020000` is a source, are `tests/harmony_880_885/test_harmony_885_start_check.py`'s.
 
 **Where the two builds differ in behaviour**, from the reading's normalised diff and reviewer 2's: the
 status recorded while copying (above); write misc selector 2, one bit against two; two extra calls in the
@@ -124,12 +124,12 @@ because `0x202` was cleared before the switch, so the executor sends nothing; wh
 routine itself sends a packet is not read. Reads check no bound: one `TBLRD*` per byte (`0x05F34`),
 except that a read whose last byte is `0x000104` or `0x000105`, alone in its chunk, calls a routine
 instead (`0x040DE`, `0x04114`), the same special case as the application's. What those return was not
-read for item 1.1; item 1.8 read it, `tests/harmony_880_885/test_harmony_885_reads.py`: the newest byte of the hardware
+read in this file's first reading; the flash read's reading did, `tests/harmony_880_885/test_harmony_885_reads.py`: the newest byte of the hardware
 log at `0x000140`, and a measurement on the analogue converter, through the same two routines here
-(asserted below for both builds). This said a one byte read until item 1.8 found the test is on the
+(asserted below for both builds). This said a one byte read until that reading found the test is on the
 chunk, so any read ending there alone meets it.
 
-**Two more facts of the bootloader's own, read for items 1.3 and 1.4.** Its buffer program uses unlock
+**Two more facts of the bootloader's own, read for the application's erase and write**, `tests/harmony_880_885/test_harmony_885_erase_and_write.py`. Its buffer program uses unlock
 bypass, `0x20` once, then `0xA0` and the byte per byte, `0x90` and `0x00` to leave, and **programs every
 byte, `0xFF` included**, where the application's skips `0xFF`; neither erases. And its version answer
 reports the flash part's id bytes as the part gives them (`0x05EFE`, two autoselect reads into `0x211` and
@@ -166,7 +166,7 @@ reported and deliberately not changed here.
 
 ## The identity block, and the Harmony 720's bottom 64 KiB
 
-Added with items 4.1 and 4.2 of `todo/todo-prepare-885.md`, from the images alone, no remote opened.
+Read from the images alone, no remote opened.
 
 **Which bytes at `0x000110` are a serial.** The architecture's memory page said that was not checked,
 because the address sits inside the bootloader's region. In all five bottom-of-flash images of this
@@ -206,7 +206,7 @@ instead, so the 720's bootloader is not their build; which string it serves on t
 else in it, is not read. **The 720's application, 4.5, is a higher version number than the 4.4.2 the
 community comparison table gives every model it lists for this platform**, which says nothing about
 release order. What of the 720's application has been
-compared with the 885's is each chapter 3 test's own `TheHarmony720` class or `720` test.
+compared with the 885's is each application reading's own `TheHarmony720` class or `720` test.
 
 ## The reviewers
 
@@ -215,16 +215,15 @@ escape, the same power on order with the same literals, the checksum closing on 
 same floor and unlock, the same 37, 37 and 38 table pointer loads, the same descriptors and product
 string, and the same build difference in the staged install. It did not read the copied RAM routines,
 so it reported no check on write; the inner check is inside them, asserted here. It reported one thing
-not landed by item 1.1: the key scan at `0x04AC8` executes `RESET` when scan codes 2, 33 and 32 are all
-down and `PORTB & 0xB0` is zero, a `RESET` that would keep the status byte. **Landed with items 1.2 to
-1.8**: asserted below in both builds (`0x04AC8` and `0x04ABA`, called first by each build's key scan), and
+not landed by this file's first reading: the key scan at `0x04AC8` executes `RESET` when scan codes 2, 33 and 32 are all
+down and `PORTB & 0xB0` is zero, a `RESET` that would keep the status byte. **Landed with the readings that followed**: asserted below in both builds (`0x04AC8` and `0x04ABA`, called first by each build's key scan), and
 the application has the same combination at `0x189DA`, `tests/harmony_880_885/test_harmony_885_write_end.py`.
 
 Reviewer 2 audited the prose. Its corrections are in this header and the pages: the builds' other
 differences, the bootloader's own unlock and the selector 7 route, the special one byte reads, the
 executor's state set, the re-arm of the reset cause bits, the refused erase's dropped state, "every
 immediate load", and several overbroad words on the reference pages. Its note that the application's
-own escape pages still read as no escape handling is item 1.5's and left alone here.
+own escape pages still read as no escape handling is `tests/harmony_880_885/test_harmony_885_write_end.py`'s and left alone here.
 
 ## What it rules out
 
@@ -380,7 +379,7 @@ class TheCommandSwitchIsTheApplicationsNumbering(BootloaderTest):
         self.assertEqual(sorted(set(app) - set(boot)), [0x70])
         self.assertEqual(sorted(set(boot) - set(app)), [])
         # Neither switch holds the escape: both compare the masked command with 0xE0 before it, the
-        # application at 0x1580A. What the application does with it is item 1.5's and not read here.
+        # application at 0x1580A. What the application does with it is test_harmony_885_write_end.py's and not read here.
         self.assertNotIn(0xE0, app)
         self.assertEqual(window(application, APPLICATION_ESCAPE_TEST, 5, APPLICATION_BASE),
                          ['MOVLW 0xf0', 'ANDWF 0xb2', 'MOVLW 0xe0', 'SUBWF 0xb2', 'BNZ'])
@@ -761,7 +760,7 @@ class AFlashProgrammerWithOneFloor(BootloaderTest):
                 self.assertEqual(tail[-2:], ['BRA', 'RETURN'])
 
     def test_the_key_scan_restarts_by_reset_when_scan_codes_2_33_and_32_are_down(self):
-        # Reviewer 1's lead of item 1.1, landed with items 1.2 to 1.8. The key scan's first call; bits 4,
+        # Reviewer 1's lead on this file's first reading, landed with the readings that followed. The key scan's first call; bits 4,
         # 5 and 7 of the byte at 0x81 in the selected bank must read zero (whether that byte is port B
         # depends on the bank, which is not read); then the three scan codes, and a RESET instruction,
         # which the cold start test above lets keep the status byte.

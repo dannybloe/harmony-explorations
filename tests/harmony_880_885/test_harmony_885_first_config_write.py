@@ -1,7 +1,7 @@
 """
 The first whole configuration written to a Harmony 885 and restarted: unit B's own, with a fresh stamp.
 
-**Measured on a unit**, one Harmony 885, item 1.4 of `todo/todo-compile-885.md`. No remote is opened by this
+**Measured on a unit**, one Harmony 885. No remote is opened by this
 file; it reads what the bench session filed in the lab.
 
 ## What was done, in order
@@ -112,12 +112,12 @@ class TheClockAfterTheRestart(unittest.TestCase):
 
 
 class TheComposedConfigurationOnB(unittest.TestCase):
-    """Item 2.1: unit A's configuration with the Sony HT composed onto it, written to unit B.
+    """Unit A's configuration with the Sony HT composed onto it, written to unit B.
 
     **Measured on a unit.** The writer's first commit run stopped on a sequence break during its compare
     before the first erase, with nothing written; its block reads then gained the shared window retry and the
-    same command ran through: nine sectors, `0x020000` to `0x0A0000`, each matched against B's region after 1.4
-    before its erase, the whole configuration read back identical, the status 0 before and after, `E1 02`, and
+    same command ran through: nine sectors, `0x020000` to `0x0A0000`, each matched against B's region after its own
+    configuration was written back, before its erase, the whole configuration read back identical, the status 0 before and after, `E1 02`, and
     B back on the bus within ten seconds with its clock on the new stamp. Checked at the bench against the
     prediction in `packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts`'s header: the device list's second page shows
     Sony HT at the top left, outside the activities and inside one of them, its page shows the title and the
@@ -138,12 +138,12 @@ class TheComposedConfigurationOnB(unittest.TestCase):
 
 
 class TheRecomposedConfigurationOnB(unittest.TestCase):
-    """Items 2.2 and 2.3: the same composition with the Sony HT's power records opening with its silence and
-    sent at a quantity of 1, written to unit B over 2.1's.
+    """The same composition with the Sony HT's power records opening with its silence and
+    sent at a quantity of 1, written to unit B over the first composition.
 
     **Measured on a unit.** B's region was read first, once, no window retried (`h885_b_after_2_1_region`): it
-    holds 2.1's written file in its first 572238 bytes and differs from the region after 1.4 only in the nine
-    sectors 2.1 erased, so it is the compare base. The dry run and the commit each found seven sectors to
+    holds the first composition's written file in its first 572238 bytes and differs from the region read after
+    B's own configuration was written back only in the nine sectors the first composition's write erased, so it is the compare base. The dry run and the commit each found seven sectors to
     write, `0x020000` and `0x050000` to `0x0A0000`, every one matching that region before its erase. The
     commit erased and wrote the seven, each erase staying inside its own block, read the whole configuration
     back identical to the file (one window asked for again during a block compare and one during the read
@@ -161,7 +161,7 @@ class TheRecomposedConfigurationOnB(unittest.TestCase):
                     'h885_b_after_2_1_region', 'h885_b_written_2_1', 'h885_b_after_1_4_region',
                     'h885_b_clock_after_2_3')
 
-    def test_the_compare_base_is_2_1s_file_and_otherwise_the_region_before_it(self):
+    def test_the_compare_base_is_the_first_compositions_file_and_otherwise_the_region_before_it(self):
         region = lab.load('h885_b_after_2_1_region')
         written = lab.load('h885_b_written_2_1')
         self.assertEqual(region[:len(written)], written)
@@ -178,7 +178,7 @@ class TheRecomposedConfigurationOnB(unittest.TestCase):
         self.assertEqual(len(composed), len(written))
         differing = [i for i in range(len(composed)) if composed[i] != written[i]]
         # The stamp's fields that moved between composing and writing: two in the build timestamp in the first
-        # sector and two in the clock records, which sit in the sector at 0x060000 in this file. 2.1's moved six,
+        # sector and two in the clock records, which sit in the sector at 0x060000 in this file. The first composition's moved six,
         # three in each sector, since more of the stamp's fields changed between its compose and its write.
         self.assertEqual(len(differing), 4)
         self.assertEqual({(REGION_BASE + i) & ~(SECTOR - 1) for i in differing}, {0x020000, 0x060000})

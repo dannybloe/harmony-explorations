@@ -2,7 +2,7 @@
 The Harmony 880 and 885's inter device delay: the opening silence of a device's infrared codes, per device, held
 for every later code because the remote has one transmitter.
 
-**Read in the firmware** on 4 November 2026, item 3.11 of `todo/todo-prepare-885.md`, in the 885's application
+**Read in the firmware** on 4 November 2026, in the 885's application
 4.4 (`arch8_code_885`, base `0x010000`). **Measured in configurations** over the sixteen distinct arch 8
 containers of `tests/harmony_880_885/test_harmony_885_start_check.py`'s `CALIBRATION`, six configurations' lineages, one of them
 a Harmony 720's; every count below is a sum over copies, so a device read in four copies counts four times. No
@@ -13,9 +13,9 @@ remote was opened. Which state variable is `CurrentActivityState` is read throug
 inter device delay in a state variable, sections 234, 235 and 303; on the other architectures "where they keep an
 inter device delay, if they keep one, is open"<!--superseded-->, section 235c), `reference/infrared/sending.md` (the compiler's
 lead in silence and its spelling, section 174; the Harmony One's power records opening with the device's delay
-between devices, sections 337 and 433), `reference/config-format/actions.md` (the one block copy) and item 3.1
-of this track, which found no inter device delay in the interpreter. **Logitech's client, decision 2**: not
-searched for this item; Logitech's catalogue was compared in the lab for the devices the owners' sheets name,
+between devices, sections 337 and 433), `reference/config-format/actions.md` (the one block copy) and
+`tests/harmony_880_885/test_harmony_885_actions.py`, which found no inter device delay in the interpreter. **Logitech's client, decision 2**: not
+searched for this reading; Logitech's catalogue was compared in the lab for the devices the owners' sheets name,
 and it does not decide the reading either way (three of eight agree, and the same owners demonstrably edited
 other delays), so nothing here rests on it.
 
@@ -53,7 +53,7 @@ transmission sets (`0x14ED4`). The one other branch to it, at `0x14E7E`, tests a
 before it have forced to 3, so it is never taken. The transmitter calls the picker `0x14860`, from its one call
 site, only when variable 17 is 2. So while a lead plays no other code to any device starts: **the
 silence in front of a device's code holds every later code**, which is the delay a person sets "between
-devices". A `0x7C` holds only its own device (item 3.1).
+devices". A `0x7C` holds only its own device (`tests/harmony_880_885/test_harmony_885_actions.py`).
 
 ## How sure
 

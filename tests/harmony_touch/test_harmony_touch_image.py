@@ -4,7 +4,7 @@ DaVinci family, with a signature over what runs, the remote's engine in compiled
 source.
 
 **The question.** `reference/architectures/harmony-touch/firmware.md` said the remotes' package had not
-been opened and its processor was not checked, and `todo-touch.md` 1.2 asked for both, as the first step
+been opened and its processor was not checked, and both were asked for, as the first step
 of finding out where a Touch keeps its configuration. Logitech's update service serves this package under
 skin 99, fetched on 28 August 2026 on both of its channels into the lab's `firmware/packages/sus/` (section
 196): production 4.15.330 and preview 4.15.250. The descriptor names the skins it is for, asserted below;
@@ -78,7 +78,7 @@ machine 40, ARM; the hubs' is big endian, machine 8, MIPS.
   for its twelfth byte, the integral flag, which stock Lua writes as 0 or 1 and these carry as 4; walked with
   the stock 5.1 layout and 8 byte numbers, each file is consumed to its last byte, so that byte is the only
   departure. It is why an off the shelf decompiler refuses the files as they are and reads them with that
-  byte set to 0 (`todo-touch.md` 1.3.1). The engine's module names include `tasks/harmonyengine/loader/userconfigreader.lua`,
+  byte set to 0, which is how the lab's decompiled copy in `work/touch-firmware/luaworks-src/` was made. The engine's module names include `tasks/harmonyengine/loader/userconfigreader.lua`,
   `tasks/harmonywebservices/proxy/sync.lua` and `tasks/hal/core/hbus.lua`. Fourteen more Lua files under
   `opt/share/lua` are libraries and not counted.
 
@@ -94,7 +94,7 @@ the image by version.
 is DA850's, the boot arguments, the firmware files for three other parts and how each is installed, and
 that the engine is compiled Lua while the screens are source. **Not settled**: which DA850 variant; the
 RAM actually fitted, beyond what the kernel is told; the flash size; what the CC2544 does; and where the
-configuration lives, which is `todo-touch.md` 1.3. What the MSP430 and the `tps6507x` do was settled later,
+configuration lives, which `reference/architectures/harmony-touch/README.md` has since answered. What the MSP430 and the `tps6507x` do was settled later,
 in `tests/harmony_touch/test_harmony_touch_keys.py`: the MSP430 reports the keypad's keys, and the `tps6507x` is the
 power controller the board declares, whose LED the screens drive as the key light. The engine's strings name
 JSON files under `/data/resources/`, `ActivityList.json`, `DeviceList.json` and others, and that is a lead

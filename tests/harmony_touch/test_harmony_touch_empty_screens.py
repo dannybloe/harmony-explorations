@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """What a Harmony Touch's screens show with no activity and no favourites, and where those words come from, read in
-the production image, 4.15.330: `todo-touch.md` 9.2.
+the production image, 4.15.330.
 
-**The question.** 9.2 delivered an empty configuration, no device and no activity, to the bench Touch, and the person
+**The question.** A run of ours delivered an empty configuration, no device and no activity, to the bench Touch, and the person
 at the bench reported, held by no file but one photograph, the favourites page showing "Please sign in to your Harmony
 account to add your favorite TV channels.", and right after the sync, off the cable, a text seen once and not brought
 back, "the remote says it is empty and something like Please sign in to your Harmony account". Which text that was is
@@ -25,7 +25,7 @@ the two texts that fit the report, and about the moment the second can appear.
    `ActivityNotification` false, and the activity list's and the device page's `showActivityWindow` set it true again,
    which by their comments is when a set with activities arrives. Its English text opens "You have not set up any
    Activities." and asks the person to sign in to their Harmony account.
-4. **`loadScreens` runs at three moments, not two.** The 9.2 preflight read it at the screens' start and on a
+4. **`loadScreens` runs at three moments, not two.** The preflight before that run read it at the screens' start and on a
    `PowerOffActivity` event with the list empty, and predicted the notice only after a restart. **It also runs when the
    remote leaves USB power after showing its USB screen**: `updatePowerState`, called for every change of the power
    controller's `powersource` file, pushes the USB screen and sets `activeStack` to `"sync"` when the source becomes

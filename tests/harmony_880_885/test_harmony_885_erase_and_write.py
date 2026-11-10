@@ -1,13 +1,13 @@
 """
 The Harmony 880 and 885 application's erase and write: a floor, no ceiling, and replies that say nothing.
 
-**Read in the firmware** on 4 November 2026, items 1.3 and 1.4 of `todo/todo-prepare-885.md`, in the
+**Read in the firmware** on 4 November 2026, in the
 885's application 4.4 (`arch8_code_885`, base `0x010000`); the 880's application differs in the two skin
 bytes only, `tests/harmony_880_885/test_harmony_885_start_check.py`, so every address holds for it. No remote was opened.
 Decoded through `harmony.pic18.isa` and `harmony.pic18.chains`, with the hand read fall through cases
 marked.
 
-**Sources checked before the work**: `tests/harmony_880_885/test_harmony_885_bootloader.py`, item 1.1, the bootloader's
+**Sources checked before the work**: `tests/harmony_880_885/test_harmony_885_bootloader.py`, the bootloader's
 erase and write, whose floor and unlock this application repeats; `tests/harmony_880_885/test_arch8_usb.py`, which found
 the address checker `0x19B5C` and its one caller; `reference/architectures/harmony-880-885/` and
 `reference/usb-protocol/commands.md`. **Logitech's client, decision 2**: MyHarmony holds no write path for
@@ -22,7 +22,7 @@ stated by Logitech, in their client, and not asserted here. **concordance** list
 
 The application copies its own flash routines, `0x0199C2` to `0x019B50`, into RAM slot 1 (`0x19D28`)
 before every erase and every write, and calls them at `0x1FFE52` erase, `0x1FFE54` id read, `0x1FFE56`
-program a byte, `0x1FFE58` program a buffer: the bootloader's four entries, item 1.1, from a separate
+program a byte, `0x1FFE58` program a buffer: the bootloader's four entries, `tests/harmony_880_885/test_harmony_885_bootloader.py`, from a separate
 build of the same code. **The inner check** at `0x1FFFC0`, the first call of erase and both programs and
 not of the id read: an address at or above `0x010000` passes; below it only if data `0x23A` is `0xA7`,
 which also sets bit 3 of the port latch at `0xF86`. That bit is cleared only by `0x19B52`, which nothing
@@ -32,7 +32,7 @@ calls.
 one table write at the host's address unchanged, and polls. Nothing rounds, masks or counts the address and
 no sector table exists in the code, so one erase removes whatever sector of the part holds the address.
 The code assumes one size in one place, the bootloader's: its staged install erases once at `0x010000`
-and programs 64 KiB (item 1.1). **The sector map comes from outside the firmware**: Logitech's classic
+and programs 64 KiB (`tests/harmony_880_885/test_harmony_885_bootloader.py`). **The sector map comes from outside the firmware**: Logitech's classic
 client gives both parts eight 8 KiB blocks then thirty one of 64 KiB to `0x200000`, concordance gives
 `01:49` 16, 8, 8 and 32 KiB then 64 KiB. They agree above `0x010000` and disagree below it. No datasheet
 was compared.
@@ -108,7 +108,7 @@ sets and clears the unlock around its one byte program, as the bootloader's log 
 Erase every sector it writes, at the sector's base, and read it back; verify every write by reading back,
 since `F0 30` says only that the done packet arrived; never write or erase below `0x020000`, where the
 running application from `0x010000` is guarded by nothing and the bootloader below by the unlock alone;
-never at or above `0x1FE000` (item 1.8's device window); never announce a write at `0x000104` or
+never at or above `0x1FE000` (the device window, `tests/harmony_880_885/test_harmony_885_reads.py`); never announce a write at `0x000104` or
 `0x000106`; send only the nibbles 0 to 7, `0x08`, `0x09` and `0x0A`; and restart the remote after any use
 of the unlock. The library's own rails are unchanged by this reading.
 
@@ -119,7 +119,7 @@ program or an erase reaches the host. Open: which part a unit carries (the bootl
 would say, a read); what the part does on a program that would raise a bit; what the latch bit at
 `0xF86` drives; how long a 64 KiB erase takes; whether the USB controller drops a report that arrives
 while interrupts are off; and the table pointer's width, which decides whether an address above
-`0x3FFFFF` aliases low past the unlock (item 1.8).
+`0x3FFFFF` aliases low past the unlock (`tests/harmony_880_885/test_harmony_885_reads.py`).
 
 ## Reviewers
 

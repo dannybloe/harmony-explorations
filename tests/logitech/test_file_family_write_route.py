@@ -1,7 +1,7 @@
 """
 How Logitech's client writes a configuration to a Harmony 300 or 350, recomputed from its own templates.
 
-`todo-compile-350.md` 1.2, read in MyHarmony's decompiled `Web.Driver` before anything about the write is
+Read in MyHarmony's decompiled `Web.Driver` before anything about the write is
 derived (decision 2). The templates for skin 78, the Harmony 300, and skin 104, the Harmony 350, run the
 same seven commands in the same order and differ only in the model id:
 
@@ -19,7 +19,8 @@ package's file as shipped and never computes the checksum itself; the size it op
 
 **Stated by Logitech, in their client, and nothing more.** None of it has been sent to a remote. What the
 firmware does with each step, and above all what the file system reset at step 1 erases, is
-`todo-compile-350.md` 1.3, and a writer of ours follows none of this until that is read. The questions the
+the firmware's to answer, and it is read in `tests/harmony_300_350/test_harmony_350_file_write.py`; this file
+holds only what the client states. The questions the
 client does not answer are in `reference/usb-protocol/file-protocol.md`.
 
 Logitech's templates stay in the lab and nothing of them is quoted beyond command numbers and conditions.

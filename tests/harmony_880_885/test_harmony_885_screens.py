@@ -3,7 +3,7 @@ The Harmony 880 and 885's screen interpreter: eleven opcodes and an end, opcode 
 160 less `x`, a width of 0 run 256 times, a switch that falls through into the bytes after it, and no wide text
 code.
 
-**Read in the firmware** on 4 November 2026, item 3.9 of `todo/todo-prepare-885.md`, in the 885's application
+**Read in the firmware** on 4 November 2026, in the 885's application
 4.4 (`arch8_code_885`, base `0x010000`; the 880's differs in two skin bytes only,
 `tests/harmony_880_885/test_harmony_885_start_check.py`), and compared against the Harmony 720's. **Measured in configurations**
 over the sixteen distinct arch 8 containers of that file's `CALIBRATION`, six configurations' lineages, one of
@@ -17,7 +17,7 @@ Harmony One 3.4, 600 0.2 and 700 2.8, section 40, with opcode 21's length inferr
 configurations; the fill, section 425, not checked on arch 8; opcodes 22 and 23, sections 64, 85 and 185, not
 read on arch 8 or 14; where a program ends, section 84; the wide code, section 121; base slot 7's count zero
 discriminator, section 78; the renderer's low byte and its row stop at 128, section 50, on the Harmony 700 2.8),
-`gspm.SCREEN_FIXED_OPERANDS` and its comment on opcode 21, and items 3.1 and 3.4 of this track. **Logitech's
+`gspm.SCREEN_FIXED_OPERANDS` and its comment on opcode 21, and `tests/harmony_880_885/test_harmony_885_actions.py` and `tests/harmony_880_885/test_harmony_885_slots.py`. **Logitech's
 client, decision 2**: not searched; what an opcode draws is the firmware's alone.
 
 ## The dispatcher, `0x17B9C`

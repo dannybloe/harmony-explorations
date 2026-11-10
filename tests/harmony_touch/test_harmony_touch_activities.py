@@ -3,7 +3,7 @@
 show it: which screens run, which fields the engine never reads, how long a long press is, and where the
 delays are converted.
 
-**The question.** `todo-touch.md` 3.1 asked what the remote does with every field of the two documents that
+**The question** was what the remote does with every field of the two documents that
 describe activities and button maps, `ActivityList` and `MapList`, which the remote fetches as JSON through
 the computer (`reference/architectures/harmony-touch/usb.md`). Two programs read them, and they read them
 differently: the engine, compiled Lua under `opt/luaworks`, parses both once into its own tables and sends

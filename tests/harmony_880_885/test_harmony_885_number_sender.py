@@ -3,7 +3,7 @@ The Harmony 880 and 885's number sender: base slot 16 read by one routine, drive
 with a Harmony 720 configuration that uses it; and on seven images, a prefix that fires from 10000 when
 neither of its flags is set.
 
-**Read in the firmware** on 4 November 2026, item 3.7 of `todo/todo-prepare-885.md`, in the 885's application
+**Read in the firmware** on 4 November 2026, in the 885's application
 4.4 (`arch8_code_885`, base `0x010000`; the 880's differs in two skin bytes only,
 `tests/harmony_880_885/test_harmony_885_start_check.py`) and the Harmony 720's, and for the prefix threshold also in the
 Harmony 700 2.8 (`h700_code`), the Harmony 600 0.2 complete image (`h600_code_complete`), the Harmony 650 0.4
@@ -16,14 +16,14 @@ are the 885 application's unless named.
 (section 39's layout and conversion, read on the Harmony 700, 600 and One; sections 154 and 156, the Harmony
 One compiles that carry a record; section 262, the Harmony 300 and 350), the `writing-a-config` skill's two
 favourite channel rows, `gspm.number_senders`, `BANDS_1F` in `packages/codec/src/container/actions.ts` and
-`NUMBER_SENDER_BAND` in `packages/codec/src/families/harmony-300-350/lists.ts`, and items 3.1 and 3.4 of this
-track (the `0x1F` dispatch and the seeker's census, where raw slot 17 is sought once). **Logitech's client,
-decision 2**: not searched for this item; how a number becomes digits is the firmware's alone, and the 720's
+`NUMBER_SENDER_BAND` in `packages/codec/src/families/harmony-300-350/lists.ts`, and `tests/harmony_880_885/test_harmony_885_actions.py` and
+`tests/harmony_880_885/test_harmony_885_slots.py` (the `0x1F` dispatch and the seeker's census, where raw slot 17 is sought once). **Logitech's client,
+decision 2**: not searched for this reading; how a number becomes digits is the firmware's alone, and the 720's
 configuration is itself a Logitech compile.
 
 ## The routine
 
-`0x19340` is the only function that seeks raw slot 17, which is base slot 16 on arch 8 (item 3.4's census
+`0x19340` is the only function that seeks raw slot 17, which is base slot 16 on arch 8 (`tests/harmony_880_885/test_harmony_885_slots.py`'s census
 of the seeker's 22 literals), and it has one caller, the `0x1F` band ladder at `0x1372A`. **The band ladder
 on the operand's high byte**, from `0x136DE`: at or above `0xF6` it loads the byte register `0x30A` into
 `0x29C` and calls the base slot 14 consumer `0x10C14`; at `0xF5` it loads the byte register into `0x299` and
@@ -47,7 +47,7 @@ first of two or more takes the first table, and the rest the middle one.
 
 It spools four times: the instruction at `+0x05` (`0x193B0`), the prefix (`0x19528`), one per digit in the loop
 (`0x195CC`) and the instruction at `+0x08` (`0x195F2`). So with a minimum at or below 6 one call queues up to
-nine instructions, and the spooler drops what does not fit without a word (item 3.2). `assertQueueFits` in
+nine instructions, and the spooler drops what does not fit without a word (`tests/harmony_880_885/test_harmony_885_queue.py`). `assertQueueFits` in
 `packages/codec/src/container/queue.ts` expands only `0x7F` calls and cannot see these pushes: a codec candidate.
 
 ## The prefix fires from 10000, on seven images
@@ -77,7 +77,7 @@ compare's three registers and the ten thousands loop that increments the compare
 | Harmony 525 | `0x006E5C` | `0x708` |
 
 It matters only for a record whose prefix instruction is not zero and whose flags set neither bit, which no
-configuration read holds: the 720's prefix is zero, and the spooler drops a zero instruction (item 3.1).
+configuration read holds: the 720's prefix is zero, and the spooler drops a zero instruction (`tests/harmony_880_885/test_harmony_885_actions.py`).
 
 ## The corpus
 

@@ -299,7 +299,7 @@ KNOWN = {
     # The Harmony 700 after Harmony Desktop rewrote it on 2.8, read on 29 September 2026.
     'h700_28_config_region': datetime.date(2026, 9, 29),
     # The 650 after the Panasonic television was synced on 1 October 2026: stored day 0, which the old
-    # reading refused, so this is also the case that exposed it, todo-compile-650 1.3.1.
+    # reading refused, so this is also the case that exposed it.
     'h650_panasonic_config': datetime.date(2026, 10, 1),
     # Section 306 to 308's compiles, fetched on 2 October 2026 into directories named for that day.
     'h700_power_hold_compile': datetime.date(2026, 10, 2),

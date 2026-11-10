@@ -1,14 +1,14 @@
 """
 The Harmony 880 and 885 write their own flash in one place, the log area, and a configuration says where.
 
-**Read in the firmware** on 4 November 2026, item 1.7 of `todo/todo-prepare-885.md`, in the 885's
+**Read in the firmware** on 4 November 2026, in the 885's
 application 4.4 (`arch8_code_885`, base `0x010000`; the 880's differs in the two skin bytes only,
 `tests/harmony_880_885/test_harmony_885_start_check.py`, and none of the routines below holds either), and for the
 EEPROM and the message screens in both bootloaders. **Measured in configurations** over the sixteen
 byte distinct arch 8 containers of the start check's calibration, which are six configurations' lineages:
 the four harmony-decompiler `Update` reads, the five Bedroom files, the four Living Room files, and one
 each of an 880 Pro, a second 880 and a Harmony 720. **The Harmony 720's application is a different build**
-(item 1.6) and its log routines are not compared, so everything read here is the 880 and 885 build's. No
+(`tests/harmony_880_885/test_harmony_885_start_check.py`) and its log routines are not compared, so everything read here is the 880 and 885 build's. No
 remote was opened. Every instruction is
 decoded through `harmony.pic18.isa`, every switch through `harmony.pic18.chains`. Addresses are the 885
 application's unless a line says otherwise.
@@ -20,7 +20,7 @@ there as unread; `reference/architectures/harmony-600-650-700/memory.md`, which 
 the log area's one writer; the archive's sections 47 and 111 (the Harmony One's writer and its dead
 region), 108 (arch 14's flash journal, the same `0x0F` band) and 118 (`tests/firmware/test_findings.py`,
 `TestTheFlashJournalOpcodesAreBoundedOrAbsent`, whose corpus wide negative is about opcodes `0x65` and
-`0x66` alone); items 1.1 to 1.6 and 1.8 of this track, `tests/harmony_880_885/test_harmony_885_*.py`. **Logitech's client,
+`0x66` alone); the other firmware readings of this platform, `tests/harmony_880_885/test_harmony_885_*.py`. **Logitech's client,
 decision 2**: MyHarmony names nothing of this platform. The classic client names base slot 2
 `SECTION_FLASH_STORAGE` and, for architectures 7, 8 and 9, parses an eight byte entry whose byte at `+7`
 says how many bytes are used, `0xFF` meaning erased (stated by Logitech, in their client;
@@ -96,7 +96,7 @@ nothing; and **the one byte program `0x1FFE56` three times**: `0x1A2C2` in the w
 version log append the write drain reaches at `0x000104`; and `0x184B6` in the migration `0x18408`, which
 **nothing transfers control to**: no `CALL`, `RCALL`, `GOTO` or branch names it (asserted). The reading also found no stored copy of its address (the two `04 C2`
 byte pairs in the image are `MOVFF 0x204` operands), so the migration is dead in the application as far as
-static references go; the bootloader runs its own at every start (item 1.1). Of the 116 `TBLWT` in the
+static references go; the bootloader runs its own at every start (`tests/harmony_880_885/test_harmony_885_bootloader.py`). Of the 116 `TBLWT` in the
 application's code, 7 are the RAM routines' source; the reading classed the rest by their table pointer
 loads as writes to the USB controller and the display at `0x1FE080` to `0x1FE0C1`, 58 resolved by script
 and the others sampled, so that half is the reading's and only the count is asserted. **So the list of
@@ -121,7 +121,7 @@ Selector 7 writes any data byte through `FSR0`, unbounded, in the application an
 (`tests/harmony_880_885/test_harmony_885_write_end.py` and `tests/harmony_880_885/test_harmony_885_bootloader.py`). In the application
 that reaches the guards of a flash write this reading found in data memory: the unlock (data `0x23A`), the staged install's status (`0x100`), the
 configuration flags (`0x086`), the log's next address and records left (`0x28D` to `0x291`), and the RAM
-the flash routines run from (data `0x400` up, mapped at `0x1FFE00` up, inferred in item 1.1). **The
+the flash routines run from (data `0x400` up, mapped at `0x1FFE00` up, inferred in the bootloader's reading). **The
 copier skips a slot whose flag at data `0x212` plus the slot already names the set it would load**
 (`0x19D36` to `0x19D42`, asserted), so, given that mapping, a byte changed there by selector 7 is the code
 the next erase, write or log append runs. And every special function register, whose meanings here rest on the PIC18
@@ -132,7 +132,7 @@ family and are inferred.
 "FLASH Memory ID", "FLASH Memory Erase", "FLASH Memory Write" and "FLASH Memory Clear" sit at
 `0x01E17A`, `0x01E1A8`, `0x01E1D9` and `0x01E20A`, inside the built in configuration (`0x01E000` to
 `0x01FB89`), in both applications, and nowhere in either bootloader. By the strings' layout they are the
-built in configuration's message screens 5 to 8 (item 1.2's `messages.py` in the lab; not asserted).
+built in configuration's message screens 5 to 8 (the start check reading's `messages.py` in the lab; not asserted).
 **The application never asks for them**: the message routine `0x16A18` is called from seven places with
 the numbers `0x00`, `0x09`, `0x0A`, `0x16`, `0x19`, `0x1A` and `0x1B`, its fallback `0x169F4` with `0x02`
 and with the message routine's own argument. Each bootloader's error display (`0x05326` in the 885's, `0x05318` in the 880's)

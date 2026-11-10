@@ -1,4 +1,4 @@
-"""MkDocs hooks for the reference website, todo-reference.md 7.1 and plan 009 section 3.
+"""MkDocs hooks for the reference website, plan 009 section 3.
 
 The site is built from `reference/` alone (`docs_dir: reference` in `mkdocs.yml`), but the reference
 links out of that folder all the time, and it does so on purpose: a fact's footnote names the archive

@@ -187,7 +187,7 @@ LISTING = ROOT / 'reference' / 'logitech' / 'data-model' / 'entities.md'
 class TheAreaTableNamesEveryAreaWithAnExactCount(unittest.TestCase):
     """Every area, every count, and the 44 contracts that belong to none of them.
 
-    **Read from the generated listing's headings since `todo-reference.md` 4.5.** `model.md` carried
+    **Read from the generated listing's headings.** `model.md` carried
     a hand table of the 28 areas and their counts, a second copy of what `entities.md` states in its
     own headings, and plan 009 drops it for those headings. The claims are the same and so are the
     assertions: every area named, every count exact, the column summing to the contracts that declare
@@ -448,7 +448,7 @@ class NoSourceForTheOperationSurfaceIsASupersetOfAnother(unittest.TestCase):
                                 'SecurityDirector'])
 
     def test_the_button_maps_are_read_with_the_mapping_managers_get_button_maps(self):
-        """Which `GetButtonMaps` reads an account's button maps, settled in `todo-reference.md` 4.5.
+        """Which `GetButtonMaps` reads an account's button maps.
 
         Three operations carry the name and the documents named two different ones: the service page
         said `UserButtonMappingManager/GetButtonMaps`, the `myharmony-service` skill said

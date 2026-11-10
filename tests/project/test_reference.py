@@ -1,5 +1,5 @@
 """
-The reference stays a reference: plan 009 section 5, decision 25, `todo-reference.md` 2.3.
+The reference stays a reference: plan 009 section 5, decision 25.
 
 Five guards, each defined once in `tools/reference_guards.py` and each run here in full:
 
@@ -17,8 +17,8 @@ Five guards, each defined once in `tools/reference_guards.py` and each run here 
 5. **Links resolve**, file and anchor, in `reference/`, `docs/`, the root documents and the skills.
    The archive's own links are `tests/project/test_archive.py`'s.
 
-**The pinned lists, and why they may only shrink.** The reference is not clean when these guards are
-written; chapters 3 and 4 of `todo-reference.md` clean it. So `PINNED` below holds exactly what each
+**The pinned lists, and why they may only shrink.** The reference was not clean when these guards were
+written, and was cleaned file by file afterwards. So `PINNED` below holds exactly what each
 guard finds today, as counts per file and per kind, written by `tools/reference_guards.py --pin`. Two
 tests per guard hold it to that:
 
@@ -32,8 +32,8 @@ waved through and must not be committed; the fix is in the document, not here. A
 reaches a key: `redact` turns a key holding one into a digest.
 
 **Each guard was shown failing before it was relied on**, twice over. Once on the real tree, by
-planting one violation per guard in a reference page and watching the first test fail (the
-`todo-reference.md` 2.3 note says how). And permanently, in `PlantedViolations`: each checker is run
+planting one violation per guard in a reference page and watching the first test fail. And
+permanently, in `PlantedViolations`: each checker is run
 over a small synthetic tree holding one violation of each kind it knows, and must report every one of
 them and nothing on the clean twin. A guard whose checker went blind would pass its pinned list
 trivially, which is the failure that class exists to catch.
@@ -229,12 +229,11 @@ class PlantedViolations(unittest.TestCase):
     def test_footnotes(self):
         good = (
             'Fact[^s1], choice[^d1], later[^t-thing], outside[^x-forum], open[^unchecked], again[^s1b].\n\n'
-            # A reference directly followed by a colon is still a reference, todo-reference 3.1's
-            # follow up: the guard once told a definition by its colon and missed this one.
+            # A reference directly followed by a colon is still a reference: the guard once told a
+            # definition by its colon and missed this one.
             'As measured[^s1c]: a colon after a reference.\n\n'
-            # And one at a line's start behind inline code, todo-reference chapter 4's follow up: the
-            # definition test once read the line with its code removed, so this read as a second
-            # definition of s1c.
+            # And one at a line's start behind inline code: the definition test once read the line
+            # with its code removed, so this read as a second definition of s1c.
             '`57`[^s1c]: a line that opens with code.\n\n'
             '[^s1]: Read in the firmware. [Section 1](../docs/findings.md#s1)\n'
             '[^d1]: Chosen by this project. [Decision 1](../docs/decisions.md#d1)\n'

@@ -325,7 +325,7 @@ SEEKER_CALLERS = {
     0x19D68: 12, 0x19DE4: 12,
 }
 #: The container test the host's check runs: the GSPM comparison, then the LWJL one at a hardcoded
-#: offset. This said the container validator until todo-compile-350 1.3 read the write path: the
+#: offset. This said the container validator until the write path was read: the
 #: validator that runs at start is 0x16090 and hardcodes the same 0x47 at 0x160D8, which
 #: `tests/harmony_300_350/test_harmony_350_file_write.py` asserts, so the pointer count has a fourth route.
 VALIDATOR = 0x14AE8

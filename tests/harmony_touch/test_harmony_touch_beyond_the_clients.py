@@ -2,7 +2,7 @@
 """What a Harmony Touch acts on that neither of Logitech's clients lets a person set, read in the production
 image, 4.15.330, and in MyHarmony's and Harmony Desktop's code.
 
-**The question.** `todo-touch.md` 5.1: every field the remote's engine and screens read, set against what
+**The question.** Every field the remote's engine and screens read, set against what
 MyHarmony and Harmony Desktop let a person set, so that what is left over is a list of what FreeHarmony
 could offer beyond Logitech's software. A field read is not a feature, so each item left over was checked
 for what the remote does with it, and a field read and then ignored is excluded. Out of scope is fixed
@@ -15,11 +15,12 @@ MyHarmony sets it, whether Harmony Desktop does, and whether the remote's own sc
 the three against their cited lines, which re-read most of them and made searches the readings had not,
 and a blind re-reading of seven headline claims by an agent that saw neither the readings nor the
 reference. The blind reading agreed on all seven; the review let every item stand, eight of them with a
-correction. All of it is in the lab beside the engine's decompiled source, `todo-touch.md` 5.1.
+correction. All of it is in the lab beside the engine's decompiled source, `work/touch-firmware/notes/5.1-review.md` and its
+neighbours.
 
 **What is asserted here, and what is the lab's reading.** The screens ship as Lua source in the image, so
 what they do is asserted against the image. The engine ships compiled, and what it does is the lab's
-reading of it decompiled (`todo-touch.md` 1.3.1); the engine items below are that reading, and what is
+reading of it decompiled, into the lab's `work/touch-firmware/luaworks-src/`; the engine items below are that reading, and what is
 asserted of them is only that the compiled files the reading cites carry each field's name. MyHarmony's and Harmony Desktop's code are in the lab, and what is asserted of them is where a
 field's name occurs at all, with a control on each side, since a search that finds nothing proves only as
 much as a search that can find something.
@@ -97,8 +98,8 @@ favourites); `Remote.WifiSettings` and `Error.GlobalError` are not, so "nowhere 
 was decompiled.
 
 **Sources checked first.** `reference/architectures/harmony-touch/` and `reference/remotes/harmony-touch/`,
-which held most of the screens' side already; the lab's feature list for `todo-touch.md` 1.3.2 and its
-setup note for 2.2.1; MyHarmony's decompiled code, decision 2; Harmony Desktop's web application.
+which held most of the screens' side already; the lab's feature list, `notes/1.3.2-the-feature-list.md`, and
+its note on filling the bench setup, `notes/2.2.1-filling-the-setup.md`; MyHarmony's decompiled code, decision 2; Harmony Desktop's web application.
 
 **Standing.** The screens' side "Read in the firmware"; the clients' side "Stated by Logitech, in their
 client", since what a client offers is the client's to say.

@@ -3,7 +3,7 @@ The Harmony 880 and 885's timers: two at once, a third start lost, a running ind
 twice, one instruction fired, none kept across a restart; and on six images a duration past 65535 seconds
 wraps rather than being clamped.
 
-**Read in the firmware** on 4 November 2026, item 3.6 of `todo/todo-prepare-885.md`, in the 885's
+**Read in the firmware** on 4 November 2026, in the 885's
 application 4.4 (`arch8_code_885`, base `0x010000`) and the Harmony 720's, and for the duration compare in
 the Harmony 700 2.8 (`h700_code`), the Harmony 600 0.2 complete image (`h600_code_complete`), the Harmony
 650 0.4 (`h650_code`) and the Harmony One 3.4 (`one34_code`), which are the four images section 43 read.

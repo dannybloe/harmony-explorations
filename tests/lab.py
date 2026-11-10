@@ -127,7 +127,7 @@ IMAGES = {
     # The bench Harmony 350's own bootloader and safe mode image, read off it as the files
     # `/fw/bootloader` and `/fw/safemode` on 27 October 2026, read only, into the lab's
     # `reads/20261027T1929Z-h350-fw/`. Neither is in Logitech's package, which carries the application
-    # alone, so these are what answered `todo-compile-350.md` 1.4's open half,
+    # alone, so these are what answered how a 350 of this family is recovered,
     # `tests/harmony_300_350/test_harmony_350_boot.py`. They load at 0x000000 and 0x001000. The safe mode file is the
     # image less its last eight bytes, because the remote states an internal image's size as its
     # header's length field.
@@ -142,7 +142,7 @@ IMAGES = {
     # its last eight bytes, byte for byte, which is what shows the package is what a 350 runs.
     # The firmware package Logitech's update service serves the Harmony Touch, both channels, fetched
     # on 28 August 2026 (section 196), and the Touch's identity file read on 2 November 2026 with a
-    # setup on it (todo-touch.md 1.1), which `tests/harmony_touch/test_harmony_touch_image.py` holds against the
+    # setup on it, which `tests/harmony_touch/test_harmony_touch_image.py` holds against the
     # image. The identity file carries the unit's serial, so only named fields are read out of it.
     'touch_package_production': 'firmware/packages/sus/skin99-touch-production-4.15.330.hfw2',
     'touch_package_preview': 'firmware/packages/sus/skin99-touch-preview-4.15.250.hfw2',
@@ -154,7 +154,7 @@ IMAGES = {
     'touch_full_sync_recording': 'reads/20261102T1520Z-touch-sync-full-setup/bridge.log',
     'touch_reverse_sync_recording': 'reads/20261102T1524Z-touch-reverse-sync/bridge.log',
     # The first request sent the bench Touch, `getconfighash`, read by `packages/usb/test/touch/touch-confighash.test.ts`;
-    # then the first sync answered by this project and the recovery after it, `todo-touch.md` 6.7, read by
+    # then the first sync answered by this project and the recovery after it, read by
     # `packages/usb/test/touch/touch-first-sync.test.ts`. Named here to keep the two tables identical.
     'touch_confighash_read': 'reads/20261105T0930Z-touch-confighash/answer.txt',
     'touch_first_sync_confighash_before': 'reads/20261105T1051Z-touch-confighash/answer.txt',
@@ -168,7 +168,7 @@ IMAGES = {
     'touch_recovery_abort': 'reads/20261105T1054Z-touch-recover-abort/answer.txt',
     'touch_recovery_confighash_after': 'reads/20261105T1054Z-touch-confighash/answer.txt',
     'touch_recovery_reboot': 'reads/20261105T1054Z-touch-recover-reboot/answer.txt',
-    # The second sync answered by this project, `todo-touch.md` 6.7, which the remote committed, and the config
+    # The second sync answered by this project, which the remote committed, and the config
     # hash before and after it, read by `packages/usb/test/touch/touch-second-sync.test.ts`. Named here to keep the two
     # tables identical.
     'touch_second_sync_confighash_before': 'reads/20261105T1217Z-touch-confighash/answer.txt',
@@ -196,7 +196,7 @@ IMAGES = {
     'touch_second_sync_list_8': 'reads/20261105T1218Z-touch-sync-unchanged/018-request-list-answer.txt',
     'touch_second_sync_answers_8': 'reads/20261105T1218Z-touch-sync-unchanged/019-answers-request.txt',
     'touch_second_sync_reply_8': 'reads/20261105T1218Z-touch-sync-unchanged/019-answers-answer.txt',
-    # The sync of todo-touch.md 6.8, the remote's own six documents answered with 200 under tags of ours, the set,
+    # The first set answered with 200, the remote's own six documents under tags of ours, the set,
     # the config hash after it and the third `--unchanged` run, read by `packages/usb/test/touch/touch-own-set-sync.test.ts`.
     # Named here to keep the two tables identical.
     'touch_own_set': 'work/touch-firmware/sets/6.8-own-documents/set.json',
@@ -241,7 +241,7 @@ IMAGES = {
     'touch_own_set_unchanged_answers_7': 'reads/20261105T1419Z-touch-sync-unchanged/017-answers-request.txt',
     'touch_own_set_unchanged_list_8': 'reads/20261105T1419Z-touch-sync-unchanged/018-request-list-answer.txt',
     'touch_own_set_unchanged_answers_8': 'reads/20261105T1419Z-touch-sync-unchanged/019-answers-request.txt',
-    # The four syncs of todo-touch.md 6.9, each changing one value of one document and putting it back, the config
+    # The first changes, four syncs each changing one value of one document and putting it back, the config
     # hash around each, the closing `--unchanged` run and the three bench runs that timed the delay, read by
     # `packages/usb/test/touch/touch-changed-set-sync.test.ts`. Named here to keep the two tables identical.
     'touch_changed_set_delay': 'work/touch-firmware/sets/6.9-delay/set.json',
@@ -259,11 +259,11 @@ IMAGES = {
     'touch_changed_ir_before': 'reads/20261105T145423Z-ir-test-harmony-touch-the-test-sequence-s-delay.json',
     'touch_changed_ir_delay': 'reads/20261105T150025Z-ir-test-harmony-touch-the-test-sequence-s-delay.json',
     'touch_changed_ir_back': 'reads/20261105T150311Z-ir-test-harmony-touch-the-test-sequence-s-delay.json',
-    # The two infrared monitor runs of todo-touch.md 3.2's bench checks, the calibration of 7.1's engine model,
-    # packages/bench/test/touch71.test.ts.
+    # The two infrared monitor runs of the bench checks that measured the Touch's keys, the calibration of the full
+    # bench test's engine model, packages/bench/test/touch71.test.ts.
     'touch_monitor_ir_checks': 'reads/20261103T070731Z-ir-test-harmony-touch-off-held-device-mode-left-by-home-and-a-long-press.json',
     'touch_monitor_ir_home': 'reads/20261103T072815Z-ir-test-harmony-touch-the-home-button-leaves-device-mode.json',
-    # todo-touch.md 7.1, the Touch's first full bench test: the ten complete runs and the monitor's log that holds
+    # The Touch's first full bench test: the ten complete runs and the monitor's log that holds
     # them and the live retest of the three presses they missed, packages/bench/test/touch71-runs.test.ts.
     'touch_7_1_starts': 'reads/20261106T092337Z-ir-test-harmony-touch-7-1-every-activity-started-from-off-and-off.json',
     'touch_7_1_switches': 'reads/20261106T092617Z-ir-test-harmony-touch-7-1-switching-between-activities.json',
@@ -365,7 +365,7 @@ IMAGES = {
     'touch_changed_unchanged_answers_7': 'reads/20261105T1506Z-touch-sync-unchanged/017-answers-request.txt',
     'touch_changed_unchanged_list_8': 'reads/20261105T1506Z-touch-sync-unchanged/018-request-list-answer.txt',
     'touch_changed_unchanged_answers_8': 'reads/20261105T1506Z-touch-sync-unchanged/019-answers-request.txt',
-    # The device of 8.1, todo-touch.md: the two sets, the three config hash reads, the two syncs that delivered the
+    # The first device composed by us: the two sets, the three config hash reads, the two syncs that delivered the
     # sets, the closing `--unchanged` run, the bench run and the monitor log, read by
     # packages/bench/test/touch81-runs.test.ts. Named here to keep the two tables identical.
     'touch_device_set': 'work/touch-firmware/sets/8.1-device/set.json',
@@ -430,7 +430,7 @@ IMAGES = {
     'touch_device_unchanged_answers_8': 'reads/20261106T1208Z-touch-sync-unchanged/019-answers-request.txt',
     'touch_8_1_run': 'reads/20261106T115546Z-ir-test-harmony-touch-8-1-test-projector-in-device-mode.json',
     'touch_8_1_monitor': 'reads/20261106T1155Z-ir-monitor.jsonl',
-    # The activity of 8.2, todo-touch.md: the two sets, the three config hash reads, the two syncs that delivered the
+    # The first activity composed by us: the two sets, the three config hash reads, the two syncs that delivered the
     # sets, the closing `--unchanged` run, the bench run and the monitor log, read by
     # packages/bench/test/touch82-runs.test.ts. Named here to keep the two tables identical.
     'touch_activity_set': 'work/touch-firmware/sets/8.2-activity/set.json',
@@ -493,8 +493,8 @@ IMAGES = {
     'touch_activity_unchanged_answers_8': 'reads/20261106T1255Z-touch-sync-unchanged/019-answers-request.txt',
     'touch_8_2_run': 'reads/20261106T124813Z-ir-test-harmony-touch-8-2-test-cinema-an-activity-of-ours.json',
     'touch_8_2_monitor': 'reads/20261106T1237Z-ir-monitor.jsonl',
-    # The favourites of 8.3, todo-touch.md: the two sets, the three config hash reads, the two syncs that delivered
-    # the sets, the closing `--unchanged` run, the bench run and the monitor log, and the 7.1 favourites test run
+    # The favourites composed by us: the two sets, the three config hash reads, the two syncs that delivered
+    # the sets, the closing `--unchanged` run, the bench run and the monitor log, and the full bench test's favourites test run
     # again after the put back, read by packages/bench/test/touch83-runs.test.ts. Named here to keep the two tables
     # identical.
     'touch_favourites_set': 'work/touch-firmware/sets/8.3-favourites/set.json',
@@ -562,7 +562,7 @@ IMAGES = {
     'touch_8_3_favourites_rerun': 'reads/20261106T134514Z-ir-test-harmony-touch-7-1-the-favourite-channels-and-their-logos.json',
     'touch_8_3_favourites_rerun_start_1': 'reads/20261106T134420Z-ir-test-harmony-touch-7-1-the-favourite-channels-and-their-logos.json',
     'touch_8_3_favourites_rerun_start_2': 'reads/20261106T134453Z-ir-test-harmony-touch-7-1-the-favourite-channels-and-their-logos.json',
-    # The settings of 8.4, todo-touch.md: the two sets, the three config hash reads, the two syncs that delivered
+    # The settings composed by us: the two sets, the three config hash reads, the two syncs that delivered
     # the sets with the reply to their kept write, and the closing `--unchanged` run, read by
     # packages/corpus/test/touch84-runs.test.ts. The Context description is not a fixture: it holds the account's
     # values. Named here to keep the two tables identical.
@@ -624,7 +624,7 @@ IMAGES = {
     'touch_settings_unchanged_answers_5': 'reads/20261106T1418Z-touch-sync-unchanged/014-answers-request.txt',
     'touch_settings_unchanged_answers_7': 'reads/20261106T1418Z-touch-sync-unchanged/017-answers-request.txt',
     'touch_settings_unchanged_answers_8': 'reads/20261106T1418Z-touch-sync-unchanged/019-answers-request.txt',
-    # The removal of 8.5, todo-touch.md: the two sets, the five config hash reads, the first try that stopped on a
+    # The first removal: the two sets, the five config hash reads, the first try that stopped on a
     # USB read timeout with what it kept, the two committed syncs with the reply to their kept write, the closing
     # `--unchanged` run, the bench run and the monitor log, read by packages/bench/test/touch85-runs.test.ts.
     # Named here to keep the two tables identical.
@@ -697,8 +697,8 @@ IMAGES = {
     'touch_removal_unchanged_answers_8': 'reads/20261106T1503Z-touch-sync-unchanged/019-answers-request.txt',
     'touch_8_5_run': 'reads/20261106T145719Z-ir-test-harmony-touch-8-5-listen-to-music-and-the-denon-av-receiver-taken-out.json',
     'touch_8_5_monitor': 'reads/20261106T1444Z-ir-monitor.jsonl',
-    # The whole test setup of 8.6, todo-touch.md: the two sets, the three config hash reads, the two committed syncs
-    # with the reply to their kept write, the closing `--unchanged` run, the ten 7.1 bench runs with the three
+    # The whole test setup composed onto the recorded set: the two sets, the three config hash reads, the two committed syncs
+    # with the reply to their kept write, the closing `--unchanged` run, the ten full bench test runs with the three
     # superseded attempts, and the monitor log, read by packages/bench/test/touch86-runs.test.ts.
     # Named here to keep the two tables identical.
     'touch_setup_set': 'work/touch-firmware/sets/8.6-setup/set.json',
@@ -773,11 +773,11 @@ IMAGES = {
     'touch_8_6_music_keys_superseded_1': 'reads/20261107T091912Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
     'touch_8_6_music_keys_superseded_2': 'reads/20261107T091922Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
     'touch_8_6_monitor': 'reads/20261107T0904Z-ir-monitor.jsonl',
-    # todo-touch.md 9.1: the set built from nothing, its put back and the account's description; packages/lab names why.
+    # The whole test setup built from nothing: the set, its put back and the account's description; packages/lab names why.
     'touch_nothing_set': 'work/touch-firmware/sets/9.1-nothing/set.json',
     'touch_nothing_set_back': 'work/touch-firmware/sets/9.1-nothing-back/set.json',
     'touch_nothing_account': 'work/touch-firmware/descriptions/9.1-account.json',
-    # The empty configuration of 9.2, todo-touch.md: the two sets, the four config hash reads, the two committed
+    # The empty configuration: the two sets, the four config hash reads, the two committed
     # syncs with the replies to their kept write and to the line up's write, the closing `--unchanged` run, the
     # photograph of the favourites page and the monitor log, read by packages/bench/test/touch92-runs.test.ts.
     # Named here to keep the two tables identical.
@@ -836,7 +836,7 @@ IMAGES = {
     'touch_empty_unchanged_answers_8': 'reads/20261107T1138Z-touch-sync-unchanged/019-answers-request.txt',
     'touch_9_2_favourites_photo': 'reads/20261107T1130Z-touch-9.2-empty-favourites-photo.png',
     'touch_9_2_monitor': 'reads/20261107T1124Z-ir-monitor.jsonl',
-    # The set built from nothing delivered in 9.4, todo-touch.md: the three config hash reads, the two committed
+    # The set built from nothing delivered to the bench Touch: the three config hash reads, the two committed
     # syncs with the replies to their kept write and to the forward run's picture write, the closing `--unchanged`
     # run, the one bench test with its two attempts started again, the monitor log and the two photographs, read by
     # packages/bench/test/touch94-runs.test.ts. Named here to keep the two tables identical.
@@ -947,18 +947,18 @@ IMAGES = {
     # The Harmony 650's whole configuration region, fourteen blocks from 0x030000, the compare base
     # for write-config.ts on that unit, section 282.
     'h650_config_region': '20260927T1022Z-h650-config-region.bin',
-    # The same region after 1.4.2's write, the Denon's power on delay at 90 tenths. Differs from
+    # The same region after the delay write, the Denon's power on delay at 90 tenths. Differs from
     # the one above in exactly the delay byte and the trailer checksum; the compare base for the revert.
     'h650_delay90_region': '20260927T1110Z-h650-delay90-region.bin',
-    # The same region after 1.4.3's write, the composed LG television, section 285. The compare
+    # The same region after the next write, the composed LG television, section 285. The compare
     # base for the next write.
     'h650_lg_region': '20260928T0705Z-h650-lg-region.bin',
     # And after section 286's write, the introduction tour skipped. The compare base after that.
     'h650_notour_region': '20260928T0752Z-h650-notour-region.bin',
-    # The same content read before 1.4.4, reaching 0x120000: the one above byte for byte and the
+    # The same content read before the activity write, reaching 0x120000: the one above byte for byte and the
     # block at 0x110000 erased. The compare base for that write.
     'h650_pre144_region': '20260928T1242Z-h650-pre-1-4-4-region.bin',
-    # After 1.4.4's write, the composed activity LG kijken: the written file byte for byte and the
+    # After that write, the composed activity LG kijken: the written file byte for byte and the
     # rest of the block at 0x110000 erased, where the read ends. The compare base after that.
     'h650_post144_region': '20260928T1306Z-h650-post-1-4-4-region.bin',
     # After timer 1, the screen light, went from 8 to 20 seconds: two bytes, read after a battery pull.
@@ -970,8 +970,8 @@ IMAGES = {
     # The 650 as it stood before section 309's one byte write, with six devices: the compare base
     # for that write and the configuration its long press version was composed against.
     'h650_plasma_base': '20261002T1408Z-h650-pre-plasma-region-region.bin',
-    # The 650 after section 309's one byte write: the compare base for the seventh device of
-    # todo-compile-650 2.3, section 312.
+    # The 650 after section 309's one byte write: the compare base for the seventh device,
+    # the first on a new device list page, section 312.
     'h650_seventh_base': '20261003T1404Z-h650-pre-seventh-region-region.bin',
     # The 650 after the seventh device: the compare base for the combined bench file.
     'h650_combined_base': '20261004T0554Z-h650-pre-combined-region.bin',
@@ -985,17 +985,18 @@ IMAGES = {
     # The delay between devices on the bench, section 335: the file written for the third run, and
     # the three runs in order.
     'h650_denon_gap_config': 'h650-denon-gap-2s.bin',
-    # The 650's region before todo-compile-650 1.3's clock check, container `h650_denon_gap_config`.
+    # The 650's region before the clock check, container `h650_denon_gap_config`.
     'h650_clock_base': '20261008T0633Z-h650-clock-base-region.bin',
-    # todo-compile-650 1.5's starting setup, Logitech's compile synced by MyHarmony and read off the
-    # 650: the region and its configuration, the compare base for todo-compile-650's writes.
+    # The starting setup, Logitech's compile synced by MyHarmony and read off the 650: the region and
+    # its configuration, the compare base for every later write to the 650.
     'h650_start_base': '20261008T0721Z-h650-start-region.bin',
     'h650_start_config': '20261008T0722Z-h650-start-config.bin',
-    # The bench 650's region after todo-compile-650 2.3's write, the compare base for 3.9's.
+    # The bench 650's region after the seventh device's write, the compare base for the write that
+    # composes picking the running activity again.
     'h650_bench_2_3_base': '20261008T0930Z-h650-bench-2-3-region.bin',
-    # The bench 650's region after 3.9's write, the compare base for 3.14's.
+    # The bench 650's region after that write, the compare base for the passthrough device's.
     'h650_bench_3_9_base': '20261008T0951Z-h650-bench-3-9-region.bin',
-    # The starting setup with the Denon kept on and Muziek Custom, synced by MyHarmony, 3.10 and 3.11.
+    # The starting setup with the Denon kept on and Muziek Custom, synced by MyHarmony.
     'h650_options_base': '20261008T1237Z-h650-options-region.bin',
     'h650_options_config': '20261008T1238Z-h650-options-config.bin',
     'h650_bench_4_2_base': '20261008T1507Z-h650-bench-4-2-region.bin',
@@ -1093,19 +1094,19 @@ IMAGES = {
     'h600_ram_after_battery_pull': '20261001T1045Z-h600-ram-e00-after-battery-pull.txt',
     'h600_ram_after_restore': '20261001T1100Z-h600-ram-e00-after-restore.txt',
     # The bench test before and after the raise, and the monitor logs each run's frames are in.
-    # todo-compile-350 2.3, the bench 350's device keys pressed.
+    # The bench 350's device keys pressed.
     'h350_device_keys_ir': '20261030T112024Z-ir-test-harmony-350-which-device-each-device-key-selects.json',
-    # todo-compile-350 2.2.2, every key of the bench 350 pressed in the TV's and the receiver's modes.
+    # Every key of the bench 350 pressed in the TV's and the receiver's modes.
     'h350_keys_ir': '20261030T142422Z-ir-test-harmony-350-every-key-in-the-tv-s-and-the-receiver-s-modes.json',
-    # todo-compile-350 3.3, Logitech's compile of the test setup on the bench 350, run twice; the first run's
+    # Logitech's compile of the test setup on the bench 350, run twice; the first run's
     # stored verdicts are not the result, packages/lab says why.
     'h350_logitech_setup_ir': '20261031T111033Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
     'h350_logitech_setup_ir_2': '20261031T112340Z-ir-test-harmony-350-logitech-s-compile-of-the-test-setup.json',
-    # todo-compile-300 2.1 and 2.2, every key of the bench 300 pressed; the second run's four failed steps are
+    # Every key of the bench 300 pressed, then every key in two modes; the second run's four failed steps are
     # the test's US wording on a European unit, packages/lab says why.
     'h300_every_key_ir': '20261031T125339Z-ir-test-harmony-300-every-key-sends-something.json',
     'h300_keys_ir': '20261031T131916Z-ir-test-harmony-300-every-key-in-the-tv-s-and-the-kpn-s-modes.json',
-    # todo-compile-300 4.3, Logitech's compile of the Harmony 350's test setup with firmware event 0xFF bound, on the
+    # Logitech's compile of the Harmony 350's test setup with firmware event 0xFF bound, on the
     # bench 300: the first run of the 20 steps, its first two steps redone, and the monitor log the third group 6 send
     # was heard in live. packages/lab says which steps each holds.
     'h300_event_ff_ir': '20261101T083956Z-ir-test-harmony-300-logitech-s-compile-of-the-harmony-350-s-test-setup.json',
@@ -1113,13 +1114,14 @@ IMAGES = {
     'h300_event_ff_monitor': '20261031T1211Z-ir-monitor.jsonl',
     # The same file on the bench 350, a two step check: the entry is harmless where the build never raises 0xFF.
     'h350_event_ff_ir': '20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json',
-    # todo-compile-350 5.1.5, the empty configuration built from nothing on the bench 350, and the monitor's log.
+    # The empty configuration built from nothing on the bench 350, and the monitor's log.
     'h350_empty_ir': '20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json',
     'h350_empty_monitor': '20261031T1211Z-ir-monitor.jsonl',
-    # todo-compile-350 5.3, the final build from nothing on the bench 350 and the bench 300.
+    # The final build from nothing on the bench 350 and the bench 300.
     'h350_final_ir': '20261102T063358Z-ir-test-harmony-350-the-final-test-setup-with-event-0xff-bound.json',
     'h300_final_ir': '20261102T064721Z-ir-test-harmony-300-the-final-test-setup-with-event-0xff-bound.json',
-    # todo-compile-350 1.8; the first file is named for 10 s and holds the 3 s run, packages/lab says why.
+    # The bench 350's TV power on delay at 3 s and at 10 s; the first file is named for 10 s and holds the 3 s
+    # run, packages/lab says why.
     'h350_delay_ir_3s': '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
     'h350_delay_ir_10s': '20261030T095433Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
     'h600_delay_ir_before': '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
@@ -1444,7 +1446,7 @@ IMAGES = {
     # pair on arch 16, and what refuted section 264's reading of raw slot 8 as a per model field.
     'h300_programmed_config': 'harmony-300-programmed-config.bin',
     # A Harmony 350 configuration another owner posted as harmony-decompiler issue 37: the only one here
-    # with a second device on a device key, todo-compile-350 2.4. A ZIP holding the bare container as
+    # with a second device on a device key, where its long press was read. A ZIP holding the bare container as
     # `Result.EzHex`, a name other lab files share, so the ZIP is the fixture and a reader unpacks it.
     # Neither parser takes the ZIP, so it sits outside every population without being listed.
     'h350_issue37_config': 'H350-Config.EZHex',
@@ -1467,11 +1469,11 @@ IMAGES = {
     'myharmony_update_manager': 'RemoteUpdateManager.cs',
     'myharmony_ds_controller': 'DSController.cs',
     # The client's templates for writing a configuration to the Harmony 300 and the Harmony 350, skins 78
-    # and 104, `todo-compile-350.md` 1.2. What travels is the order of the commands and their conditions.
+    # and 104. What travels is the order of the commands and their conditions.
     'myharmony_write_h300': 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN78.userconfiguration.xml',
     'myharmony_write_h350': 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN104.userconfiguration.xml',
     # The same client's firmware template for the Harmony 350 and the converter that names the firmware
-    # type a remote reports, `todo-compile-350.md` 1.4, recovery. What travels is the order of the
+    # type a remote reports, read for recovering a remote of this family. What travels is the order of the
     # commands and which number means safe mode.
     'myharmony_firmware_h350': 'Logitech.Harmony.Web.Driver.Resources.Templates.SKIN104.firmwareupgrade.xml',
     'myharmony_firmware_type': 'FirmwareTypeConverter.cs',
@@ -1511,7 +1513,7 @@ IMAGES = {
     # project has ever had on packages/corpus/src/read.ts; the embedded one has no counterpart.
     'vendor_region_user_config': 'vendor-region4-user-config.bin',
     'vendor_region_embedded_config': 'vendor-region3-embedded-config.bin',
-    # The two bench Harmony 885s, todo-prepare-885.md 2.1 and 2.3: each unit's configuration read twice
+    # The two bench Harmony 885s: each unit's configuration read twice
     # from 0x020000 by its own stated length, and its flash from 0x020000 to 0x1D0000 read twice, the
     # configuration's first bytes and the remains of earlier configurations after it. Then unit A's clock,
     # data memory 0x108 to 0x10F over READ_MISC selector 7, two reads seconds apart, as text.
@@ -1525,39 +1527,39 @@ IMAGES = {
     'h885_b_config_2': '20261105T0855Z-h885-b-config-2-config.bin',
     'h885_b_region': '20261105T0914Z-h885-b-region-region.bin',
     'h885_b_region_2': '20261105T0915Z-h885-b-region-2-region.bin',
-    # Unit A's whole flash, 0x000000 to 0x1FE000, read twice before its first write, todo-compile-885.md
-    # 1.3, and its configuration read once after that write. tests/harmony_880_885/test_harmony_885_flash_backup.py.
+    # Unit A's whole flash, 0x000000 to 0x1FE000, read twice before its first write,
+    # and its configuration read once after that write. tests/harmony_880_885/test_harmony_885_flash_backup.py.
     # Out of the parseable population, below.
     'h885_a_flash': '20261107T0939Z-h885-a-flash-region.bin',
     'h885_a_flash_2': '20261107T1023Z-h885-a-flash-2-region.bin',
     'h885_a_after_block_config': '20261107T1024Z-h885-a-after-block-config.bin',
-    # The same for unit B, todo-compile-885.md 1.8, its block 0x0D0000.
+    # The same for unit B, its block 0x0D0000.
     'h885_b_flash': '20261107T1041Z-h885-b-flash-region.bin',
     'h885_b_flash_2': '20261107T1045Z-h885-b-flash-2-region.bin',
     'h885_b_after_block_config': '20261107T1047Z-h885-b-after-block-config.bin',
-    # Unit B after todo-compile-885.md 1.4: the stamped file as written, the configuration read back, the
+    # Unit B after its first whole configuration write: the stamped file as written, the configuration read back, the
     # region read once, and data memory 0x100 to 0x10F read after the restart, as text.
     'h885_b_written_1_4': 'h885-b-own.bin',
     'h885_b_after_1_4_config': '20261107T1111Z-h885-b-after-1-4-config.bin',
     'h885_b_after_1_4_region': '20261107T111248Z-h885-b-after-1.4-region-region-0x20000-0x1d0000.bin',
     'h885_b_clock_after_1_4': '20261107T1110Z-h885-b-clock-after-1-4.txt',
-    # todo-compile-885.md 2.1: the first catalogue device composed onto unit A's configuration, the Sony
+    # The first catalogue device composed onto unit A's configuration, the Sony
     # DAV-C540 as "Sony HT", by compose-device.ts and stamped by it, in the lab's work folder.
     # packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts composes it again; test_harmony_885_start_check.py checks it.
     'h885_composed_2_1': 'h885-a-plus-sony-ht.bin',
-    # todo-compile-885.md 2.2 and 2.3: the same device composed again, its power step opening with its delay
+    # The same device composed again, its power step opening with its delay
     # between devices and sent at a quantity of 1, by compose-device.ts and stamped, in writes/2.3/.
     'h885_composed_2_3': 'h885-a-plus-sony-ht-2-3.bin',
-    # Unit B after todo-compile-885.md 2.1: the composed configuration as written, and read back.
+    # Unit B after the first composed device was written: the composed configuration as written, and read back.
     'h885_b_written_2_1': 'h885-a-plus-sony-ht-to-write.bin',
     'h885_b_after_2_1_config': '20261107T1505Z-h885-b-after-2-1-config.bin',
-    # B's region read before 2.3's write, the compare base for every write to B from then on.
+    # B's region read before the recomposed device's write, the compare base for every write to B from then on.
     'h885_b_after_2_1_region': '20261107T154934Z-h885-b-after-2.1-region-region-0x20000-0x1d0000.bin',
-    # Unit B after todo-compile-885.md 2.3: the composed file as written, read back, and the clock after.
+    # Unit B after the recomposed device was written: the composed file as written, read back, and the clock after.
     'h885_b_written_2_3': 'h885-a-plus-sony-ht-2-3-to-write.bin',
     'h885_b_after_2_3_config': '20261107T1555Z-h885-b-after-2-3-config-config.bin',
     'h885_b_clock_after_2_3': '20261107T1552Z-h885-b-clock-after-2-3.txt',
-    # The keypad watched on both bench Harmony 885s, todo-prepare-885.md 2.4: watch-keys.ts polling data
+    # The keypad watched on both bench Harmony 885s, for which key sends which scan code: watch-keys.ts polling data
     # memory 0x295 (the key held) and 0x3A1 (the last key pressed) while keys were pressed by hand, as
     # text. Unit A before its key contacts were cleaned, A opened and pressed freely, A's run through
     # every key in a set order, and B's check of sixteen keys. tests/harmony_880_885/test_harmony_885_keys.py.
@@ -1654,15 +1656,15 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # joins the corpus is a decision of its own, since every corpus wide total
                       # would move, and a compare base is not the place to take it.
                       'h650_config_region',
-                      # And that region after 1.4.2's write, for the same reason.
+                      # And that region after the delay write, for the same reason.
                       'h650_delay90_region',
-                      # And after 1.4.3's write, the composed LG television.
+                      # And after the composed LG television's write.
                       'h650_lg_region',
                       # And after section 286's write, the introduction tour skipped.
                       'h650_notour_region',
-                      # And the same read before 1.4.4, one block longer.
+                      # And the same read before the composed activity's write, one block longer.
                       'h650_pre144_region',
-                      # And after 1.4.4's write, the composed activity.
+                      # And after the composed activity's write.
                       'h650_post144_region',
                       # And after the screen light timer went to 20 seconds.
                       'h650_glow20_region',
@@ -1714,7 +1716,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_denon_gap_base',
                       # The file written for section 335's third bench run.
                       'h650_denon_gap_config',
-                      # The region before 1.3's clock check.
+                      # The region before the clock check.
                       'h650_clock_base',
                       # The starting setup's compile as the 650 holds it, and its region.
                       'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base', 'h650_bench_3_9_base',
@@ -1756,7 +1758,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h885_a_flash', 'h885_a_flash_2', 'h885_a_after_block_config',
                       'h885_b_flash', 'h885_b_flash_2', 'h885_b_after_block_config',
                       'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region',
-                      # A composition of ours onto unit A's configuration, todo-compile-885.md 2.1:
+                      # A composition of ours onto unit A's configuration, the first catalogue device:
                       # not a configuration any remote was compiled to, so counted in no total.
                       'h885_composed_2_1', 'h885_b_written_2_1', 'h885_b_after_2_1_config',
                       'h885_b_after_2_1_region', 'h885_composed_2_3',

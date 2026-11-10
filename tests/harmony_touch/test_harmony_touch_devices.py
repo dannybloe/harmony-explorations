@@ -3,7 +3,7 @@
 pulses itself, in its Lua engine, from the command's key code and the family's definition, and hands one
 packet of durations to a native program.
 
-**The question.** `todo-touch.md` 3.1 asks what the Touch does with each document of its configuration.
+**The question** is what the Touch does with each document of its configuration.
 `packages/usb/test/touch/touch-devices.test.ts` measures what the device list and the protocol list hold, and
 that the protocol list is Logitech's catalogue definitions unchanged. This file holds what the engine does
 with them, read in the decompiled engine and anchored here in the compiled files of the production package
@@ -124,8 +124,8 @@ the sibling product (`hops`). So whatever a writer puts in a device list travels
 fields included.
 
 **9. A learned raw code's grammar**, read in the infrared manager's raw code path and the loader, for
-`packages/codec/src/families/harmony-touch/learned.ts`, which writes the text and reads it back by this grammar
-(`todo-touch.md` 5.3). The loader keeps a command's `Raw` only when it is not null and its first character
+`packages/codec/src/families/harmony-touch/learned.ts`, which writes the text and reads it back by this grammar,
+so that a device of ours can carry a code learned from its original remote. The loader keeps a command's `Raw` only when it is not null and its first character
 is `F`, and the manager sends the key code instead whenever the command's `KeyCode` is a non empty string,
 so a raw command states `KeyCode` null or empty. The manager then removes every dash (`gsub` with `%-`), and
 walks the text with `gmatch` and `[PS]?%x+`: an optional upper case `P` or `S` and one or more hexadecimal

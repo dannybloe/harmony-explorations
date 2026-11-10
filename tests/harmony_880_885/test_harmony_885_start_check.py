@@ -1,7 +1,7 @@
 """
 The Harmony 880 and 885 at start: a safe mode that is a configuration, and a check that runs once.
 
-**Read in the firmware** on 4 November 2026, items 1.2 and 1.6 of `todo/todo-prepare-885.md`, in the
+**Read in the firmware** on 4 November 2026, in the
 885's application 4.4 (`arch8_code_885`, base `0x010000`) and, for the build question, in the 880's, the
 880 Pro's, an 880's from a second contributor and the Harmony 720's application images. No remote was
 opened. Every instruction is decoded through `harmony.pic18.isa`, every switch through
@@ -9,7 +9,7 @@ opened. Every instruction is decoded through `harmony.pic18.isa`, every switch t
 
 **Sources checked before the work**: `reference/architectures/harmony-880-885/`, which listed the
 application's own safe mode as not checked and held the built in configuration at
-`0x01E000` as a container nobody had seen used; `tests/harmony_880_885/test_harmony_885_bootloader.py`, item 1.1, for
+`0x01E000` as a container nobody had seen used; `tests/harmony_880_885/test_harmony_885_bootloader.py`, for
 the bootloader's half of start; the archive's sections 114 (the built in configuration found), 249 and
 250 (the Harmony One's and the 600's start check, which this is compared with) and 41 (the trailer
 checksum). **Logitech's client, decision 2**: MyHarmony names nothing of this platform; the classic
@@ -18,7 +18,7 @@ its bootloader writer, so Logitech's own software treats the bootloader as this 
 program (stated by Logitech, in their client; not asserted here, since it is a statement about a
 host's choice and not about the remote). The same client's firmware update for this platform writes a new
 application at `0x1D0000`, its address of new code here, and then sets the status byte to 2, so the
-bootloader installs it at the next restart (stated by Logitech, in their client; item 1.1 holds the
+bootloader installs it at the next restart (stated by Logitech, in their client; the bootloader's reading holds the
 address, and the order is not asserted).
 
 ## A safe mode that is a configuration
@@ -47,8 +47,8 @@ it read, so it cannot set a bit that was clear. Asserted below by a scan. That n
 `0x167BA` through a table the scan cannot see is inferred, not proved: no stored copy of its address
 was found in either byte order by the reading.
 
-**The program half of safe mode is the bootloader**, item 1.1: the application reaches it by restarting
-(the escape's restart, a three key combination, and the power down routine's wake, item 1.5 and
+**The program half of safe mode is the bootloader**, `tests/harmony_880_885/test_harmony_885_bootloader.py`: the application reaches it by restarting
+(the escape's restart, a three key combination, and the power down routine's wake,
 `tests/harmony_880_885/test_harmony_885_write_end.py`), and nothing in the application writes the staged install status
 byte with a value of its own: data `0x100` has one direct writer, the `MOVFF` at `0x1827E`, whose two
 callers are write misc selector 6 (`0x159F0`, with the host's two bytes) and the start routine (`0x180C0`,
@@ -135,7 +135,7 @@ every call target and every branch offset, so it is the same code relocated and 
 ## Negative results
 
 No polled re-check (two callers). No compare of the identity block with anything in the configuration:
-it is tested for blankness only. The bootloader holds no cookie compare at all (item 1.1's reading:
+it is tested for blankness only. The bootloader holds no cookie compare at all (the bootloader's reading:
 no `TP`, `WL` or `DK` literal pair in either bootloader). The Harmony 525's and arch 14's gate on a
 settings bit for the checksum has no counterpart: the checksum here is unconditional.
 
@@ -547,14 +547,14 @@ class TheCorpusPassesTheCheckAsRead(unittest.TestCase):
 
 
 class TheFirstComposedConfigurationPassesTheCheck(unittest.TestCase):
-    """`todo-compile-885.md` 2.1: a catalogue device composed onto unit A's configuration by the codec.
+    """A catalogue device composed onto unit A's configuration by the codec.
 
     The codec stamps the trailer with its own checksum, and its own reader agrees with it, which is the same
     derivation at both ends. What this adds is the other end: the check as the 885's application performs it,
     with the cookie, the marker, the end marker and the seeds decoded out of the code, so a configuration of
     ours that this passes is one the remote runs rather than replaces with its built in one at start. The
-    control is the file with one byte of its body changed, which the same check must refuse. 2.3's file, the
-    same device with its power step opening with its delay between devices, is checked the same way.
+    control is the file with one byte of its body changed, which the same check must refuse. The second file, the
+    same device recomposed with its power step opening with its delay between devices, is checked the same way.
     """
 
     def test_the_composed_file_passes_and_a_changed_byte_does_not(self):

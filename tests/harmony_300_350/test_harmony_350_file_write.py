@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What the Harmony 300 and 350 firmware does with each step of a file write, read in its 1.4 image.
 
-`todo-compile-350.md` 1.3. Logitech's client writes a configuration to this family in seven commands,
+Logitech's client writes a configuration to this family in seven commands,
 recorded from its own templates in the lab note `work/350-write-route/client.md`: the file system reset
 `0xFF 0x66`, open `W` with a size, write in chunks, device control `0x06` subcommand `0x01` (the check),
 flush `0x05` only when the check answered `m`, close, and the reboot `0xFF 0x00` only when the package

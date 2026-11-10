@@ -523,11 +523,11 @@ class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
 
     def test_exactly_the_stated_keys_carry_a_code_or_candidates(self):
         """
-        On the Harmony 350, 53 keys carry the code they were heard sending with, 44 in `todo-compile-350.md`
-        2.2.2 and nine in 3.3, and Live a set of candidates; DVR carries neither, because its press sent a
+        On the Harmony 350, 53 keys carry the code they were heard sending with, 44 in the run
+        that pressed every key and nine on Logitech's compile of the test setup, and Live a set of candidates; DVR carries neither, because its press sent a
         frame OK's binding sends as well, and the drawing takes a code from a press that decides it alone.
         This said no key on this remote was tied to a scan code, and none carried candidates either, until
-        2.2.2's run, and that 44 carried a code and five a set until 3.3's. The Harmony 300's class states
+        the every key run, and that 44 carried a code and five a set until the run on the test setup. The Harmony 300's class states
         none.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
@@ -572,7 +572,7 @@ class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
     # Harmony 350 and on a skin 79 Harmony 300, and no skin 78 remote has been pressed. The moulding makes it
     # likely the codes are the same by place, which is an inference, so `h300.ts` drops every code and
     # candidate it takes over with the shapes. This said no Harmony 300 had been pressed until
-    # `todo-compile-300.md` 2.2.
+    # the European one was.
     CODES = {}
     CANDIDATES = {}
 
@@ -596,7 +596,7 @@ class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
 class TestTheHarmony300EuropeanSilhouette(TestTheHarmony350Silhouette):
     """
     The Harmony 300's European printing, skin 79, on the same moulding, and 49 keys tied to a code by pressing
-    every key of a skin 79 unit, `todo-compile-300.md` 2.1 and 2.2, `packages/bench/test/harmony-300-350/keys300.test.ts`.
+    every key of a skin 79 unit, `packages/bench/test/harmony-300-350/keys300.test.ts`.
 
     The printing is the statement of a person holding that unit, with a photograph of its upper half shown at
     the bench and not kept: the colour keys red, green, yellow, blue with no letters, as on the 350, and the
@@ -838,7 +838,7 @@ class TestTheHarmony880Silhouette(_SilhouetteConventions, unittest.TestCase):
         name them on, exactly `ESTABLISHED_880` in `tests/harmony_880_885/test_harmony_880_keys.py`, and no other key carries
         one. The two chevron keys carry 20 and 52, the two of the 885's four colour key codes an 880's key
         table keeps; which of them each raises is not settled, and both carry the pair. No other key carries a
-        candidate. This said no key claims a code until todo-prepare-885.md 2.5.2.
+        candidate. This said no key claims a code until the 880's keys were measured in configurations.
         """
         from harmony_880_885.test_harmony_880_keys import ESTABLISHED_880
         buttons = _buttons(_tree(self.NAME).getroot())

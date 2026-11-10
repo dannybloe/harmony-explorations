@@ -6,8 +6,8 @@ The five guards of `reference/`, plan 009 section 5, and the script that pins th
     python3 tools/reference_guards.py --counts  the counts only
     python3 tools/reference_guards.py --pin     rewrite the pinned lists in tests/project/test_reference.py
 
-**Why there is a pinned list at all.** The guards were written in `todo-reference.md` 2.3, before the
-reference is clean: chapters 3 and 4 clean it, file by file. A guard that failed until then would be
+**Why there is a pinned list at all.** The guards were written before the reference was clean, and it
+was cleaned afterwards, file by file. A guard that failed until then would be
 switched off or ignored, and a guard that passed because it checked less would be worse. So each guard
 runs in full, and `tests/project/test_reference.py` holds the exact list of what it finds today, as counts per
 file and per kind. The test fails on anything not on the list and on any count that rose, so nothing
@@ -57,7 +57,7 @@ EXEMPT_FROM_BENCH = frozenset(
     for name in ('model.json', 'operations.json', 'entities.md', 'core-model.mmd'))
 
 # The bench words of plan 009 section 5, each a pattern and the kind it is counted under. Word
-# boundaries, so `label` is not `lab` and `todo-reference.md` is `todo`. Case is ignored: "Lab" opens
+# boundaries, so `label` is not `lab` and a todo file's name still counts as `todo`. Case is ignored: "Lab" opens
 # a sentence as often as "lab" sits in one.
 BENCH_WORDS = (
     ('bench', r'\bbench(?:es)?\b'),
@@ -78,13 +78,13 @@ COPY_PATTERNS = (
     ('its checkout', r'\b(?:ir|infrared) archive\b'),
     ('its variable', r'\bHARMONY_IR_ARCHIVE\b'),
     ('decision 15', r'\bdecision 15\b|decisions\.md#d15\b|\[\^d15\]'),
-    # How the documents moved in by 2.1 speak of the copy: "the archive" (plan 009's table of passages
+    # How the documents plan 009 moved in speak of the copy: "the archive" (plan 009's table of passages
     # naming it, "the archive's name", "in the archive", "archive commands"), "catalogue, archived", and
     # the converter's module. Not the container's metadata archive, not an archived firmware package
     # (`archived` is not `archive`), and not the findings archive, which the reference names as an
     # "archive section" or "the findings archive" when it names it in words at all. The hyphenated
     # lookbehinds are the same two names as a link's anchor, `container.md#the-metadata-archive`,
-    # which the guard counted as the copy until todo-reference 4.1 named a heading that way.
+    # which the guard counted as the copy when a heading was first named that way.
     ('the archive, meaning the copy',
      r'(?<!metadata )(?<!metadata-)(?<!findings )(?<!findings-)\barchive\b(?!\s+sections?\b)'
      r'|\bcatalogue, archived\b'

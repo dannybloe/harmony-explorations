@@ -3,7 +3,7 @@
 registers in these four groups, what kind of request each is, which parameters each handler reads, and five
 findings that came out of reading them all.
 
-**The question.** `todo-touch.md` 5.2.2 asked for every request a Harmony Touch's engine registers under
+**The question** was to have every request a Harmony Touch's engine registers under
 `setup.`, `proxy.`, `connect.`, `control.button`, `harmony.system`, `harmony.firmware`, `harmony.manualsync`
 and `harmony.log` to be documented in full, in four pages under `reference/architectures/harmony-touch/api/`:
 `setup.md`, `proxy.md`, `connect.md` and `system.md`. It also asked to settle whether any of them hands a

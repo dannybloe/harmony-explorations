@@ -2,7 +2,7 @@
 """The Harmony 300 and 350's state variables: where they live, which the firmware owns, and a clock
 that runs to the minute and nothing above it.
 
-`todo-compile-350.md` 2.5. `tests/harmony_300_350/test_harmony_350_slots.py` had read raw slot 9 as base slot 13 for its
+`tests/harmony_300_350/test_harmony_350_slots.py` had read raw slot 9 as base slot 13 for its
 layout and its seeder only, and the family's `memory.md` listed the rest as not checked: which variables
 the firmware owns, where they sit in data memory, and whether the clock record a configuration carries
 seeds a clock the remote then runs. This file answers all three on the 1.4 image, and the answer to the

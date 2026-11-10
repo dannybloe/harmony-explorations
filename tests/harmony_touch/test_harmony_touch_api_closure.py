@@ -4,7 +4,7 @@
 overview indexes every page, and the overview's two shared rules that no page's own test holds, the shape of
 an answer on the cable and the names handed back to the native program.
 
-**The question.** `todo-touch.md` 5.2.4 asked for one closure over the API pages: two agents wrote seven pages
+**The question** was one closure over the API pages: two agents wrote seven pages
 for the software layer, `setup.md`, `proxy.md`, `connect.md` and `system.md` (held by
 `test_harmony_touch_api_setup.py`) and `engine.md`, `activityengine.md` and `automation.md` (held by
 `test_harmony_touch_api_engine.py`), each test holding its own pages against its own groups. Neither can see a

@@ -2,7 +2,7 @@
 """The Harmony Touch's engine, activity engine and home control requests, `harmony.engine?*`,
 `harmony.activityengine?*` and `harmony.automation?*`, as the production firmware registers and handles them.
 
-**The question.** `todo-touch.md` 5.2.3 asked for every request of these three groups documented in full: what
+**The question** was to have every request of these three groups documented in full: what
 each does, its parameters, its answers, the checks the engine runs before it, which screen or engine code
 sends it, how it relates to the configuration documents, and whether any of them reads a stored document back
 or reports the running configuration to a computer on the cable. The pages are

@@ -2,7 +2,7 @@
 The Harmony 880 and 885's flash read: chunk sizes, two last bytes that are not flash, and a window that is
 devices.
 
-**Read in the firmware** on 4 November 2026, item 1.8 of `todo/todo-prepare-885.md`, in the 885's
+**Read in the firmware** on 4 November 2026, in the 885's
 application 4.4 (`arch8_code_885`, base `0x010000`; the 880's differs in the skin bytes only) and, for the
 special cases, in both bootloaders. No remote was opened, and `packages/usb` was read and not changed.
 Decoded through `harmony.pic18.isa`.
@@ -21,7 +21,7 @@ other.
 no check, no reply. **Executor** (`0x15D0C`): a count of zero sends `F0 50` and ends. Otherwise one chunk per
 call. With `n` the remaining count, the chunk's length is 63 when `n >= 63`, and otherwise `n + 1`
 rounded down to 63, 31, 15 or 7, or left as it is below 7. **The length counts the sequence byte**, so a
-chunk carries 62, 30, 14 or 6 data bytes, or the last 1 to 5. That refines what item 1.1 and
+chunk carries 62, 30, 14 or 6 data bytes, or the last 1 to 5. That refines what `tests/harmony_880_885/test_harmony_885_bootloader.py` and
 `tests/harmony_880_885/test_arch8_usb.py` said, chunks of 63, 31, 15 and 7: those are the lengths, not the data. The
 header byte is `0x60` or'd with the length nibble, 63, 31 and 15 coded `0x0A`, `0x09`, `0x08`. Each data byte
 is one `TBLRD*` at a 24 bit address with no mask (`0x1A29C`). **Advance** (`0x15F5E`): the sequence plus
@@ -61,7 +61,7 @@ was not landed.
 
 **The address is not masked**: the three bytes go into the table pointer unchanged and increment with a
 full 24 bit carry, so a read that starts below `0x200000` and runs past it continues above it. The top
-8 KiB below `0x200000` is devices (item 1.1): the keypad latches at `0x1FE040` and `0x1FE041`, the USB
+8 KiB below `0x200000` is devices (`tests/harmony_880_885/test_harmony_885_bootloader.py`): the keypad latches at `0x1FE040` and `0x1FE041`, the USB
 controller's data and index at `0x1FE080` and `0x1FE081`, the display controller's command and data at
 `0x1FE0C0` and `0x1FE0C1`, and the RAM window from `0x1FFE00`. A read there is a bus cycle on a device: of
 the display's data port it would, on the controller family its commands fit, advance the controller's

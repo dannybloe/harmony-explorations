@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What a Harmony 300 or 350 runs before its application, read in its own bootloader and safe mode image.
 
-`todo-compile-350.md` 1.4 read recovery in the 1.4 **application** alone and left four questions open,
+`tests/harmony_300_350/test_harmony_350_recovery.py` read recovery in the 1.4 **application** alone and left four questions open,
 because the two images below it were in no file the lab held: how each is entered, whether entering
 either destroys the application (it does on the Harmony 525), what each serves over USB, and which keys
 are read. The bench Harmony 350 serves both as files, `/fw/bootloader` and `/fw/safemode`, and they were

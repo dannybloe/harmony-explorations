@@ -2,7 +2,7 @@
 """What a Harmony Touch's firmware does with its Context and Settings documents, its favourite channels and
 its pictures, read in the production image, 4.15.330.
 
-**The question.** `todo-touch.md` 3.1 asked, for every field of the documents a sync delivers besides the
+**The question** was, for every field of the documents a sync delivers besides the
 configuration proper, what the remote does with it. `packages/usb/test/touch/touch-favourites.test.ts` holds
 the documents as three recorded syncs delivered them; this file holds the firmware half, in
 `reference/architectures/harmony-touch/favourites-and-settings.md`.
@@ -11,8 +11,8 @@ the documents as three recorded syncs delivered them; this file holds the firmwa
 `opt/luadraws`, so what they do is asserted here against the image itself: a constant's value, which
 function names a field, which functions call another. The engine, `opt/luaworks`, ships as compiled Lua,
 `tests/harmony_touch/test_harmony_touch_image.py`, so it is asserted only by the names its files carry as string
-constants, and **what the engine does with them is the lab's reading of the engine decompiled**, for
-`todo-touch.md` 1.3.1; the decompiled files cited there compile back to the originals but for the jumps
+constants, and **what the engine does with them is the lab's reading of the engine decompiled**, into
+the lab's `work/touch-firmware/luaworks-src/`; the decompiled files cited there compile back to the originals but for the jumps
 of twelve functions in eight files, none of them cited here. The reading, file by file:
 
 * **How a favourite becomes key presses** (`harmonyengine/apihandler/activity.lua`, `model/device.lua`,
@@ -113,7 +113,7 @@ of twelve functions in eight files, none of them cited here. The reading, file b
    control scenes, then per favourites activity its favourites' logos and its popular channels' logos,
    after every picture already held has been carried into the new set.
 14. **Where a change made on the remote is handed up, what is carried from one set to the next, and how a drawn
-   picture is kept**, read for `todo-touch.md` 8.3, whose run delivered a user's favourites document and a logo of
+   picture is kept**, read for the run that delivered a user's favourites document and a logo of
    ours: the screens' `getRequest` puts the user's favourites document to `content://1.0/user/` and its `id`, and a
    device's to `content://1.0/device/` and its `id`, not to the addresses a sync asks for them at; `copyImages`
    copies every file ending `.png` from `/data/resources` into the set being gathered, with its index entry, and asks
@@ -121,10 +121,10 @@ of twelve functions in eight files, none of them cited here. The reading, file b
    layer keeps decoded pictures in one cache of 6 MiB keyed by the picture's file path, which drops the least
    recently used when full and which nothing else empties, `draws/cache.lua` having no other removal and
    `draws/imageManager.lua` making the one cache. So a picture replaced at the same path may be drawn from the old
-   decoding until it is pushed out or the screens restart; in the 8.3 run the added channel's tile showed the new
+   decoding until it is pushed out or the screens restart; in that run the added channel's tile showed the new
    logo at once, which says only that the old one was not in the cache at that path then.
 15. **When a delivered Settings acts, and the two values whose cost is more than one screen**, read for
-   `todo-touch.md` 8.4, whose run delivered a Settings of ours. At a committed sync's end the screens' finish
+   the run that delivered a Settings of ours. At a committed sync's end the screens' finish
    callback empties their document cache (`resMgr.init()`, which sets `resourceCache = {}`) before calling the
    sync's subscriber, and the subscriber of a sync answered 200 shows the sync complete screen and posts `syncDone`
    (`appscommon/sync.lua`). `juniper/init.lua`'s `syncDone` handler sets, in this order, the screen's backlight, the
@@ -161,8 +161,9 @@ never exercised.
 Touch's is asserted. The preview build, 4.15.250, is not checked.
 
 **Sources checked first.** `reference/architectures/harmony-touch/` and `reference/remotes/harmony-touch/`,
-`tests/harmony_touch/test_harmony_touch_image.py` for how the image is read, the lab's notes for `todo-touch.md` 1.3.2,
-1.6 and 2.3, which had read parts of this and were wrong in places the reference never carried (the user document
+`tests/harmony_touch/test_harmony_touch_image.py` for how the image is read, the lab's notes on the feature list,
+the sync's request list and the full sync decoded (`notes/1.3.2-the-feature-list.md`, `notes/1.6-the-sync-request-list.md`
+and `notes/2.3-full-sync-decoded.md`), which had read parts of this and were wrong in places the reference never carried (the user document
 said to hold dial positions, a settings list with three rows missing and three that never arrive, an
 empty value said to fall back straight to the firmware's default, and the account's 24 hour clock taken
 for a conflict with the firmware's 12 hour default when the default only applies with no value), and

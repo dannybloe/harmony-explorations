@@ -69,7 +69,7 @@ help:
 	@echo "remote-reference-write  rewrite those blocks from the code"
 	@echo "requirements  check docs/remote-requirements.md against the requirements and their statuses"
 	@echo "requirements-write  regenerate docs/remote-requirements.md from that data"
-	@echo "site         build the reference website into site/, strict; SITE_STRICT=false while chapters 3 and 4 run"
+	@echo "site         build the reference website into site/, strict; SITE_STRICT=false builds past a warning"
 	@echo "site-offline the same website for browsing from disk: open site/index.html, no server needed"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
@@ -307,8 +307,9 @@ segmentlengths:
 prontocheck:
 	@node packages/codec/bin/prontocheck.ts $(PRONTOCHECK_ARGS)
 
-# Which of the archive's two million commands the catalogue composer writes and why it refuses the rest,
-# todo-process-logitech chapter 2, whose done criterion is that this refuses nothing. A command is judged
+# Which of the archive's two million commands the catalogue composer writes and why it refuses the rest.
+# The aim is that it refuses nothing, since every refused command is one a device added from the
+# catalogue cannot send, R10; it still refuses some today. A command is judged
 # per device since section 348, because a family stating no repeat count composes at the device's own.
 # Needs the archive checkout, no lab and no network; about forty seconds, so not in `make all`.
 composecensus:
@@ -323,8 +324,8 @@ composecensus:
 catalogue:
 	@node packages/codec/bin/catalogue.ts $(CATALOGUE_ARGS)
 
-# Keep the infrared archive and its raw capture current and derive what the archive drops, todo-later 1.3
-# and 1.4: pull the archive checkout, fetch a newer raw release from GitHub when its SHA256SUMS differ from
+# Keep the infrared archive and its raw capture current and derive what the archive drops: pull the
+# archive checkout, fetch a newer raw release from GitHub when its SHA256SUMS differ from
 # the lab's, and in one pass over the 5.5 GB capture write a seekable copy, an index of every device and
 # the side file of fields the archive drops into the lab's `work/ir-archive-raw/derived/`. The derivation
 # runs only when those files are absent or stale. Needs the network, the archive and the lab; not in
@@ -384,13 +385,13 @@ requirements:
 requirements-write:
 	@node packages/codec/bin/requirements.ts --write
 
-# The reference website, todo-reference.md 7.1: MkDocs with the Material theme builds `reference/` into
+# The reference website, plan 009 section 3: MkDocs with the Material theme builds `reference/` into
 # `site/`, which is ignored and never committed; `mkdocs.yml` and `tools/site/hooks.py` say what is built
 # and how the links that leave `reference/` are handled.
 #
 # **Strict unless told otherwise.** `make site` fails on any broken link, broken anchor, page left out of
-# the navigation or page the navigation names that is missing. Until todo-reference.md chapters 3 and 4
-# have made that pass, `make site SITE_STRICT=false` builds the site and prints the same warnings.
+# the navigation or page the navigation names that is missing. For a page still being worked
+# on, `make site SITE_STRICT=false` builds the site anyway and prints the same warnings.
 #
 # **The environment lives outside the repository**, under `~/.cache`, and that is not a matter of taste:
 # `tools/facts.py` and `tests/project/test_toolchain.py` walk every `.py`, `.md` and `.txt` file in the checkout

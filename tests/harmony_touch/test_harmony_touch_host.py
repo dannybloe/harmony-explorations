@@ -3,7 +3,7 @@
 to one file is forwarded to the engine without filtering, the engine runs no security check because the host
 is `juniper`, and the sync handlers check the envelope of an answer rather than its contents.
 
-**The question.** `todo-touch.md` 4.1 and 4.2 ask whether a program of this project could configure a
+**The question** is whether a program of this project could configure a
 Harmony Touch, by pushing a document straight onto it or by answering the sync the remote drives, and what
 the remote would insist on either way. `packages/usb/test/touch/touch-host.test.ts` measures the envelope in three
 recorded syncs of Logitech's client. This file holds the firmware side: the chain a request takes from the
@@ -17,7 +17,7 @@ string constant is the tag 4, a 32 bit length counting a closing NUL, the bytes 
 constant is the tag 3 and a double; a constant asserted below is present in that exact encoding in the named
 file, which is what a function of that file can use. The reading itself, which function uses which constant
 and in what order, is the decompiled engine source in the private working copy, named by file and line in
-`todo-touch.md` 4.1 and 4.2 and not repeated here. The native USB program `usr/bin/hal` is an ARM binary,
+the lab's `work/touch-firmware/notes/4.1-a-direct-route.md` and `4.2-answering-the-remote.md` and not repeated here. The native USB program `usr/bin/hal` is an ARM binary,
 searched for its strings; its control flow was read as a disassembly in the working copy and is not decoded
 here. So this file shows the constants the reading rests on are in the image; it does not re-derive the
 reading.
@@ -50,7 +50,7 @@ no swap, which the sync's commit does; and the account function that compares th
 the data folder on the hubs' host name only, while the branch a `juniper` Touch takes hands its removal a
 global nothing assigns, read from the function's own `GETGLOBAL` and `SETGLOBAL` instructions with the
 readers of `test_harmony_touch_api_engine.py`. **That last one is a correction**: this file and the page
-read the erase as a Touch's until todo-touch 5.2.2 asked which branch each of the function's two removals
+read the erase as a Touch's until a later reading asked which branch each of the function's two removals
 sits on. **Read, not asserted**: the order of the checks inside a function where a branch lies
 between them, that a refusal stops the rest of a write's answers, and what the engine does after a reload
 fails. Those are the decompiled reading.
@@ -64,7 +64,7 @@ remote does with an answer in practice, which no program of this project has dri
 
 **Sources checked first.** `reference/architectures/harmony-touch/answering-a-sync.md`, `usb.md` and the
 three document pages; `tests/harmony_touch/test_harmony_touch_image.py`, whose readers this file imports; the decompiled
-engine and the native program in the working copy, read in `todo-touch.md` 4.1 and 4.2; Logitech's client
+engine and the native program in the working copy, read in the lab notes above; Logitech's client
 was not consulted for this step, which reads the remote's own firmware.
 
 **Width.** One build, the production 4.15.330 image; the measured side, one Harmony Touch and one client
@@ -299,7 +299,8 @@ class TheReaderNeedsEachDocumentsArray(TheImage):
 
 
 class AProvisioningErasesTheDataFolderOnAHubOnly(TheImage):
-    """4.2, corrected in todo-touch 5.2.2 and settled per branch in 5.2's review: provisioning compares the
+    """Read when asking whether a program of ours could answer a sync, then corrected and settled per branch
+    when the setup requests were documented: provisioning compares the
     incoming account, mode, discovery server and remote number against the stored ones, and when any differs
     it enters a removal of the data folder. That compare runs **for every host, before the host name branch**,
     against the module's stored values. The removal itself is split: the `pimentoblue` branch declares
@@ -434,8 +435,8 @@ def lua_function(source, name):
 class AChangeOnTheRemoteErasesItsTagAndKeepsTheFile(TheImage):
     """**A request with no entity tag does not mean the remote holds no file.** A change made on the remote's own
     screens is saved with no tag and the file kept, and the whole document is queued to go up to the account; the
-    next sync then asks for it without a tag. `todo-touch.md` 6.7, from the preflight of the first sync this
-    project drives, the lab's `work/touch-firmware/notes/6.7-preflight.md`.
+    next sync then asks for it without a tag. Read in the preflight of the first sync this project drives, the
+    lab's `work/touch-firmware/notes/6.7-preflight.md`.
 
     **What was read, in the decompiled engine and the screens' source.** The screens build the request for a
     change in `getRequest` (`appscommon/harmony.lua`): an address and the document, `json.encode`d, and no tag,
@@ -516,7 +517,8 @@ class AChangeOnTheRemoteErasesItsTagAndKeepsTheFile(TheImage):
 
 class TheScreensTakePartOnlyOnUSBPower(TheImage):
     """**A Touch's screens ignore a sync unless the remote is powered over USB**, and nothing a host can ask
-    on the request channel says which power source it is on. `todo-touch.md` 6.7.
+    on the request channel says which power source it is on. Read in the same preflight, before the first sync
+    this project drives.
 
     **What was read, in the screens' source** (`appscommon/harmony.lua`). The three callbacks a sync needs from
     the screens return at once while `usbDisconnected` is set: `syncCallback` (the sync's progress, and on a

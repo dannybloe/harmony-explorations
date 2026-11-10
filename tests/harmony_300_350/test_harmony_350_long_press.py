@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Harmony 300 and 350's long press: how the 1.4 firmware times a held key, and how a device key uses it.
 
-`todo-compile-350.md` 2.4. Logitech's setup guide says each of the Harmony 350's four device keys holds
+Logitech's setup guide says each of the Harmony 350's four device keys holds
 one device on a short press and can hold a second on "a longer two second press"; the Harmony 300 has no
 long press. The question was where a configuration stores that a key has a second device, how the
 firmware times the press and selects it, and what a key with only one device does on a long press.

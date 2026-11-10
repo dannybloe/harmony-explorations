@@ -1,7 +1,7 @@
 """
 Bench unit A's whole flash before its first write, and the one block written back unchanged.
 
-**Measured on a unit**, one Harmony 885, item 1.3 of `todo/todo-compile-885.md`. No remote is opened by this
+**Measured on a unit**, one Harmony 885. No remote is opened by this
 file; it reads what the bench session filed in the lab.
 
 ## What was done, in order
@@ -14,7 +14,7 @@ file; it reads what the bench session filed in the lab.
    `0x1FE000`, where the device window starts. The first read finished. The second stopped twice on a
    `flash chunk out of sequence`, once late in the run and once early, and filed nothing; after the unit was
    restarted by hand it finished with no break. The same as unit B's region reads on 5 November 2026: breaks
-   before a hand restart and none after, then; after 1.4's restart breaks came back,
+   before a hand restart and none after, then; after the restart that ended unit B's first whole configuration write breaks came back,
    `tests/harmony_880_885/test_harmony_885_first_config_write.py`. The cause is open; the console output was not filed.
 3. `rehearse-block.ts ... --commit` with both write flags: the unit check passed, the block read off the remote
    matched the dump, the neighbours `0x0B0000` and `0x0D0000` were read, `0x0C0000` was erased and read back
@@ -165,7 +165,7 @@ class TheBlockWrittenBack(unittest.TestCase):
 
 
 class UnitB(unittest.TestCase):
-    """Unit B, item 1.8: the same backup and one block written back, at `0x0D0000`.
+    """Unit B: the same backup and one block written back, at `0x0D0000`.
 
     **Why another block than A's.** B's configuration ends at `0x0BB8C7`, so the block under `0x0C0000` is
     live configuration on B; at `0x0D0000` both neighbours hold only remains or nothing. B's second flash read

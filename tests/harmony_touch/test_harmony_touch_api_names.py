@@ -2,7 +2,7 @@
 """The names a Harmony Touch answers to over the file protocol, as its native USB program registers and
 handles them.
 
-**The question.** `todo-touch.md` 5.2.1 asked for every name the remote answers to over the cable documented
+**The question** was to have every name the remote answers to over the cable documented
 in full: file or action, what reading or writing it does and returns, which act on being opened, and how
 `/sys/hlapi` reaches the remote's software. Two answers were wanted above the rest: whether a stored
 configuration can be read back off a Touch and by which route, and whether `/sys/factoryreset` and
@@ -58,7 +58,7 @@ the page once read the two actions as both acting on a write, which this correct
    paths the transport refuses at any open whatever the flags, is exactly the four names that act on a write,
    the two that act on an open and the two firmware names, `ACT_ON_A_WRITE`, `ACT_ON_AN_OPEN` and
    `TAKE_FIRMWARE` here. Read off the TypeScript source, so the two languages cannot hold different lists, and
-   static: it runs without the lab. The review of `todo-touch.md` 6.3 found every TypeScript test iterating the
+   static: it runs without the lab. A review of the request channel's rail found every TypeScript test iterating the
    exported list, so an emptied list passed them all; `touchsession.test.ts` names the eight as literals too.
 
 **The controls.** Each was made by replacing a string in the page or in an expected value and reversing it,

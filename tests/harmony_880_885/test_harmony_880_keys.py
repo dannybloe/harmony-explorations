@@ -1,7 +1,7 @@
 """
 Which key of a Harmony 880 raises which scan code, as far as Logitech's own compiles for the 880 can say.
 
-Item 2.5.2 of `todo/todo-prepare-885.md`. **Measured in configurations**: no Harmony 880 has been pressed on
+**Measured in configurations**: no Harmony 880 has been pressed on
 a unit, and nothing in this file opens a remote. The 880's drawing, `packages/silhouettes/src/models/h880.ts`,
 carries exactly `ESTABLISHED_880`, which `tests/firmware/test_silhouettes.py` holds it to.
 

@@ -5,7 +5,7 @@ generation's remotes under. Nothing on the remote or in either client compares t
 
 **The question.** `reference/architectures/harmony-touch/README.md` held two numbers and settled neither:
 the remote's `/sys/sysinfo` reports `arch 0x11`, 17 (section 200), and all 22 of Logitech's protocol
-templates for skin 99 declare `architectureid` 18 (section 197). `todo-touch.md` 1.7 asked which one the
+templates for skin 99 declare `architectureid` 18 (section 197). The question was which one the
 firmware uses for itself. The answer is that the two numbers name different things, and this file holds
 what shows it.
 

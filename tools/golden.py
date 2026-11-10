@@ -128,7 +128,7 @@ CONTAINERS = (
     'h650_devicelist_region',
     'h650_plasma_base',
     'h650_seventh_base',
-    # The 650's compare bases after the seventh device, todo-compile-650's bench files, and the file
+    # The 650's compare bases after the seventh device, the Harmony 650's bench files, and the file
     # written for section 335's third bench run.
     'h650_combined_base',
     'h650_combined2_base',
@@ -254,7 +254,7 @@ CONTAINERS = (
     # so, which is the gap that test exists to report. Their vectors were written by generating only
     # the missing files, and the 112 already stored were compared first and all still matched.
     #
-    # The bench regions and configurations of todo-compile-650, in registration order.
+    # The bench Harmony 650's regions and configurations, in registration order.
     'h650_clock_base', 'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base',
     'h650_bench_3_9_base', 'h650_options_base', 'h650_options_config', 'h650_bench_4_2_base',
     'h650_sequence_config', 'h650_favourites_config', 'h650_favourites_base',
@@ -265,7 +265,7 @@ CONTAINERS = (
     'h650_11_2_3_base', 'h650_11_2_4_base', 'h650_11_2_4_look_base',
     'h650_8_2_6_after', 'h650_8_2_6_control', 'h650_test_config_clean', 'h650_milestone_5_1_config',
     'h650_assistant_off_config', 'h650_tilt_off_config',
-    # The bench regions of todo-compile-700 and todo-compile-600.
+    # The bench regions of the Harmony 700 and the Harmony 600.
     'h700_before_empty', 'h700_empty_on', 'h700_before_setup', 'h700_six_on', 'h700_seven_on',
     'h700_bright_on',
     'h600_before_empty', 'h600_empty_on', 'h600_markoff_on', 'h600_grey2_on', 'h600_blended_on',
@@ -282,16 +282,16 @@ CONTAINERS = (
     'h515_onyiaic_asfound_config',
     # Both copies of its application image, each carrying the safe mode container at 0x8000.
     'h515_application_firmware', 'h515_contributed_application',
-    # The spare Harmony One's bench regions of todo-compile-one.
+    # The spare Harmony One's bench regions.
     'one_spare_track_start', 'one_spare_look_base', 'one_spare_look_written',
     'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',
     'one_spare_light60_written', 'one_spare_noassistant_written',
     'one_spare_tourfree_base', 'one_spare_tourfree_written', 'one_spare_pictures_written', 'one_spare_options_written',
     'one_spare_lists_written', 'one_spare_devlistfix_written', 'one_spare_pictures2_written', 'one_spare_empty_written',
-    # The two bench Harmony 885s' configurations and regions, each read twice, todo-prepare-885.md 2.1.
+    # The two bench Harmony 885s' configurations and regions, each read twice.
     'h885_a_config', 'h885_a_config_2', 'h885_a_region', 'h885_a_region_2',
     'h885_b_config', 'h885_b_config_2', 'h885_b_region', 'h885_b_region_2',
-    # The bench 885s' later registrations, todo-compile-885.md: whole flash reads (each holds the
+    # The bench 885s' later registrations: whole flash reads (each holds the
     # configuration at 0x020000), the configuration read after each write, the file written, and our own
     # compositions onto unit A's configuration. All parse, so each gets a vector; the compositions are
     # containers this project's composer built, which makes a disagreement between the two codecs about them

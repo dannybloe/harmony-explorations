@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Harmony 300 and 350's raw slots 5, 6, 8, 9, 12 and 14, read where the 1.4 firmware seeks them.
 
-`todo-compile-350.md` 2.1. Section 259 found the family's section seeker at `0x10BCE`, `0x0B + 4 * slot`
+Section 259 found the family's section seeker at `0x10BCE`, `0x0B + 4 * slot`
 from a literal its fourteen callers load, and named six slots from the configuration's side; sections 260
 to 265 named two more and measured raw 6 at devices plus one and raw 8 at twice the devices without
 naming either. This file reads the callers for the six that were left, and the result is that three of
@@ -154,8 +154,8 @@ not five, and raw 14's absence is of direct references.
 * In all five configurations `narrow + wide == count`, `narrow again == narrow` and `wide` is 1; the
   table is `8 + 3 * count` bytes and ends exactly where raw 10's first parameter group begins; and every
   record read in base slot 13's layout keeps every non negative `from` and `to` inside its own `max`.
-* Which variables the firmware owns, where they live and whether the clock runs is `todo-compile-350.md`
-  2.5 and is not read here.
+* Which variables the firmware owns, where they live and whether the clock runs is not read here; it is
+  `tests/harmony_300_350/test_harmony_350_clock.py`.
 
 ## Raw slot 12, a digit entry table nothing fills
 

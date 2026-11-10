@@ -2,7 +2,7 @@
 The Harmony 880 and 885's action interpreter: the same instruction language with a ladder of its own, a
 send that waits for the configuration's acknowledgement, and an all zero instruction that never runs.
 
-**Read in the firmware** on 4 November 2026, item 3.1 of `todo/todo-prepare-885.md`, in the 885's
+**Read in the firmware** on 4 November 2026, in the 885's
 application 4.4 (`arch8_code_885`, base `0x010000`; the 880's and the 880 Pro's differ in the two skin bytes
 only, `tests/harmony_880_885/test_harmony_885_start_check.py`). **Measured in configurations** over the sixteen byte
 distinct arch 8 containers of that file's `CALIBRATION`, six configurations' lineages, one of them a
@@ -17,11 +17,11 @@ arithmetic block, which said of the Harmony 880 and 885 that whether they implem
 not read; its `0x7C` paragraphs, sections 70 and 236 (the fold, the per device ordering, read on the
 Harmony 700 and the Harmony One); section 140 (the two armed conditional and the zero arm); section 278
 (a bare send from a transition sends nothing on a Harmony One); `reference/config-format/state.md`'s
-firmware variables table, which had no meaning for variable 17 on arch 8; and items 1.1 to 1.9 of this
-track, which named the power down routine. **Logitech's client, decision 2**: MyHarmony's source was
+firmware variables table, which had no meaning for variable 17 on arch 8; and the platform's
+earlier firmware readings, `tests/harmony_880_885/test_harmony_885_*.py`, which named the power down routine. **Logitech's client, decision 2**: MyHarmony's source was
 searched by the names `ActionList`, `StateVariable` and `InterDeviceDelay`; the hits are account fields of
 a device and the Harmony Touch's driver, nothing about this platform's interpreter. The classic client was
-not searched for this item.
+not searched for this reading.
 
 ## The dispatch
 
@@ -116,7 +116,7 @@ nothing in the infrared path reads where an entry came from, and no unit was tri
 **No inter device delay in the interpreter.** Only three arms call the infrared queue's push, `0x7D`,
 `0x7C` and the deferred instruction, so the interpreter adds no delay of its own between devices; how the
 drain orders entries by device is not read here. Where an account's inter device delay goes on this
-platform is item 3.11.
+platform is `tests/harmony_880_885/test_harmony_885_delay.py`.
 
 ## The deferred instruction, `0x3F` band `0xD0`
 
@@ -124,7 +124,7 @@ platform is item 3.11.
 (`0x135BE`, `0x135C4`, `0x135CA`, no empty test) as its argument and pushes the four into the infrared
 queue at `0x14700`, its only caller (`0x135E8`). The drain releases it into the action queue's tail by a
 rule the nibble selects (the drain's entry type chain is asserted in `tests/harmony_880_885/test_harmony_885_write_end.py`);
-by item 3.1's reading, nibble 0 waits until nothing but delays and finished sends is ahead. **That release
+by this file's reading, nibble 0 waits until nothing but delays and finished sends is ahead. **That release
 rule is not asserted here.** 77 uses, every one nibble 0, every one the first of a two instruction list
 whose second is a `0x7F`. Item 3.1 found such a list called last in each of four activity start lists of one
 configuration, by hand; that is not asserted either.

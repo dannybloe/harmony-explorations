@@ -16,7 +16,7 @@ bytes of the image rather than any document:
   USB report descriptor, and on arch 8 the text of its flash commands;
 * and on arch 9 the alternative fill starts at 13, beside section 274's guard at the same literal.
 
-**Arch 16 joined in `todo-compile-350.md` 2.5**, the Harmony 300 and 350's 1.4 image (`h350_code`): its
+**Arch 16**, the Harmony 300 and 350's 1.4 image (`h350_code`): its
 variables start at `0x108` as the Harmony One's and the 880 and 885's do, its fill starts at 18 and stops
 at `0xC0`, the Harmony 600's ceiling, its memory check starts at `0x11A`, and it stores directly into 13,
 16 and 17, the Harmony 600 and 650's three. Above 17 its one hit is inside its USB report descriptor. The

@@ -32,7 +32,7 @@ The command dispatch is the `XORLW` chain at `0x15854`, on the masked command by
 arch 14 (Harmony 600, 650 and 700), and no case for the `0xE0` escape. **This header went on to say that
 neither the session end nor the restart is reached, and that was wrong**: the parser that feeds the
 dispatch compares the masked command with `0xE0` at `0x1580A` first, and handles `0x01`, `0x02` and
-`0x03`, item 1.5 of `todo/todo-prepare-885.md`, `tests/harmony_880_885/test_harmony_885_write_end.py`. The test below
+`0x03`, `tests/harmony_880_885/test_harmony_885_write_end.py`. The test below
 named for the switch asserts the switch and nothing more. It also named a chain testing `0xE0` at
 `0x14B12` "on the variable at `0x0B8`" and left it unidentified: the variable is data `0x2B8`, in bank 2,
 and the chain is the infrared send queue's entry type switch, nothing to do with USB, the same test file.
@@ -41,7 +41,7 @@ and the chain is the infrared send queue's entry type switch, nothing to do with
 `WRITE_FLASH`: three address bytes into `0x25B` to `0x25D` and two count bytes into `0x25E` and
 `0x25F`, calling nothing but the routine that takes the next byte off the packet. The read state at `0x15D0C` acknowledges an empty count with `F0 50`, and
 otherwise sends chunks of length 63, 31, 15 and 7, the sequence byte included, so 62, 30, 14 or 6 data
-bytes and a last 1 to 5 (item 1.8 refined this, `tests/harmony_880_885/test_harmony_885_reads.py`), and fetches each byte through
+bytes and a last 1 to 5 (refined by `tests/harmony_880_885/test_harmony_885_reads.py`), and fetches each byte through
 `0x1908E`, whose primitive at `0x1A29C` loads the 24 bit address into the table pointer and does
 one `TBLRD*`. **Nothing on that path calls an address check**: the checker is `0x19B5C`, and its one
 caller in the whole image is the erase handler, at `0x15908`. An inline comparison would not show up as
@@ -55,8 +55,8 @@ here, the part being ROMless by concordance's table, so the library refuses them
 
 **A chunk of one byte whose address is `0x000104` or `0x000105`** does not fetch flash, it calls
 `0x182FA` or `0x11C1C` and sends what they return. The test is on the chunk's length, so a longer read
-whose last chunk is that one byte would meet it too. What they return was not checked here; item 1.8 read
-it: the newest hardware log byte, and a measurement on the analogue converter,
+whose last chunk is that one byte would meet it too. What they return was not checked here; the flash read's reading
+read it: the newest hardware log byte, and a measurement on the analogue converter,
 `tests/harmony_880_885/test_harmony_885_reads.py`.
 
 ## What it rules out

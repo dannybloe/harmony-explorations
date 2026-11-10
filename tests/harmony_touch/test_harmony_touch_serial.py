@@ -3,8 +3,8 @@
 remote's native program copies out of the unit's manufacturing record, and the empty string when there is
 no record.
 
-**The question.** `todo-touch.md` 6.2 asks for the bench Touch's unit record, so that the request channel's
-rail (6.3) can check which remote is on the cable. The other remotes on the bench are recorded by their
+**The question** was what the bench Touch's unit record should hold, so that the request channel's
+rail can check which remote is on the cable. The other remotes on the bench are recorded by their
 identity block's two GUIDs, and a Touch refuses `/sys/guid` at open (section 200), so the one per unit value
 it offers is the `serial_number` line of `/sys/sysinfo`. Two things had to be known before a rail could
 lean on it: where the value comes from, and whether it can be the same on two units. The second is the

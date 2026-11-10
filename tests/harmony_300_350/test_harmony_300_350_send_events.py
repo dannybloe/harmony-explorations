@@ -11,7 +11,7 @@ bound events stand; the sentences about the 300's group above 3, kept as written
 **The question.** `tests/harmony_300_350/test_harmony_300_350_images.py` found that the two applications are one program but
 for one routine: the action list dispatcher's arm for `0x7D`, a send, which maps the group to a send kind
 in `0x203`. A group of 4 or more is `0xFF` on the 300 and 3 on the 350, so the 300 raises firmware event
-`0x2D`, group 0's, where the 350 raises `0x30`, group 3's. `todo-compile-300.md` 4.2 asks what the events
+`0x2D`, group 0's, where the 350 raises `0x30`, group 3's. The question is what the events
 do, and whether running `0x2D`'s list in place of `0x30`'s changes anything a person or a device meets.
 
 **Sources checked first.** `reference/architectures/harmony-300-350/firmware.md` and `memory.md` for the
@@ -54,8 +54,8 @@ not read: the fit with the device keys lighting while the remote sends rests on 
 about the Device buttons and on all four lists switching on the sending flag, not on a trace to the board.
 So the difference is invisible if the four pins light the four device keys alike, and visible as another
 light blinking if they do not. **Not checked**: that mapping, the `0x07 FFFA`, and whether an event raised
-while another list runs is dropped. The bench test written for `todo-compile-300.md` 4.3,
-`packages/bench/irtests/done/300-4-3-350-compile.json`, sends from groups 4 to 7 on a 300, and a receiver hears
+while another list runs is dropped. The bench test that ran Logitech's compile of the 350's
+test setup on a 300, `packages/bench/irtests/done/300-4-3-350-compile.json`, sends from groups 4 to 7 on a 300, and a receiver hears
 the codes and cannot see the pins, so it can confirm the first half of the answer and not the second.
 
 **Width.** Arch 16 alone, one image build per model; 13 configurations, 2 of them read off a 300 and

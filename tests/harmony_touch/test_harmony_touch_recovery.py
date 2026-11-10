@@ -4,7 +4,7 @@ Logitech's two desktop clients: what the engine does with a set that fails to lo
 halfway leaves, what the remote's own factory reset erases and how it is armed, what Logitech's recovery
 routes send, and what lies below the application.
 
-**The question.** `todo-touch.md` 6.1 asked, before the first write to a Touch, how a remote is brought back
+**The question**, asked before the first write to a Touch, was how a remote is brought back
 after a sync of ours leaves it in a bad state, and how sure that is. The page is the "Recovery" section of
 `reference/architectures/harmony-touch/firmware.md`, and the route a person follows is the Harmony Touch
 section of `.claude/skills/recovering-a-remote/SKILL.md`. The private working note with every file and line
@@ -28,7 +28,7 @@ makes the loader return nothing: the store's read decodes inside `safeCall`, and
 `tasks/harmonyengine/main.lua` returns nil on any nil. A document that is valid JSON but lacks an array the
 reader walks makes the reader raise: the reader's functions walk `ipairs` of each top level array with no
 guard, and the reader's one `safeCall` is around an activity's `Alternatives`. **Three lists inside the
-documents are walked the same way**, read for `todo-touch.md` 6.6 in `userconfigreader.lua`: a device entry's
+documents are walked the same way**, read for the answerer, the program of ours that drives a sync, in `userconfigreader.lua`: a device entry's
 `DeviceFeatures`, handed by `getDevicesConfiguration` to `getStatesConfiguration`, which walks it with no
 test; each map's `Buttons`, in `getButtonMaps`; and a sequence's `Actions`, walked by
 `getSequenceActions`, which holds no `type` test at all. Beside them the reader tests `type(x) == "table"`
@@ -135,7 +135,7 @@ bytes measured after the bench reset (section 195) is **not explained** here.
 **5. Back to Logitech's service.** MyHarmony sends the remote's own tag with each request it forwards:
 `RestService.Get` puts it in header 31 of `HttpRequestHeader`, `If-None-Match`, and `RestService.Put` in
 header 29, `If-Match`, numbers taken as .NET's. So tags of ours reach Logitech's service. What the service
-does with a tag it did not issue is not readable here, and is 6.8's to measure. A remote that has no file
+does with a tag it did not issue is not readable here, and has not been measured. A remote that has no file
 for a document sends no tag for it (`test_harmony_touch_host.py`), so `setup.sync?deleteresources` before
 Logitech's sync takes the tags out of the question.
 

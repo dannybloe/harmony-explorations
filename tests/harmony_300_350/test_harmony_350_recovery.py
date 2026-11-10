@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """How a Harmony 300 or 350 recovers from a failed write, read in its 1.4 application image.
 
-`todo-compile-350.md` 1.4, the recovery half of the plan before the first write. One image, 1.4, the one
+The recovery half of the plan before the first write. One image, 1.4, the one
 the package's manifest names for skins 78, 79 and 104, so every claim covers the Harmony 300 and the
 Harmony 350 running that build and no other; other builds are not checked. The image is the
 **application** alone, internal `0x9000` onwards: the 4 KiB bootloader at internal `0x000000` and the

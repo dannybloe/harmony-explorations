@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Harmony 300 and 350's scan codes: what the 1.4 firmware numbers a key, and which key is which.
 
-`todo-compile-350.md` 2.2. Until this file nothing tied a key on this family to the number the remote's
+Until this file nothing tied a key on this family to the number the remote's
 keypad scanner gives it, so the configuration's key maps could be read and not understood. Two halves:
 the firmware half here says what a key code **is** on this image, read; the configuration half here and in
 `packages/bench/test/harmony-300-350/keys350.test.ts` says **which printed key** each code is, measured in the five lab
@@ -62,7 +62,7 @@ Harmony 300 files (`h300_config`, `h300_programmed_config`).
   group 0, Cable/Sat 1, DVD 2 and VCR/Aux 3, each identified in Logitech's catalogue on a configuration
   given one device per key. So code 5 is the top left device key, 1 the top right, 7 the bottom left and 4
   the bottom right on the 350 as well, whatever a given unit prints on them, since the two are one
-  moulding. **That last step is inferred**: the 350's group to key mapping is `todo-compile-350.md` 2.3, and
+  moulding. **That last step is inferred**: the 350's group to key mapping is `tests/harmony_300_350/test_harmony_350_device_groups.py`, and
   what is measured on the 350 is thinner than four keys in three files: codes 5 and 1 select groups 0 and 1
   in all three, code 7 is bound in one of them, and code 4 selects group 3 in one and a map with no codes
   in the other two.
@@ -117,7 +117,7 @@ the Harmony 300). The reference: both models' `keys.md`, the family's README, `m
   device keys (1 and 4) were listed here until that run heard them.
 * A US Harmony 300, skin 78, pressed. A European one, skin 79, was, `packages/bench/test/harmony-300-350/keys300.test.ts`,
   and 49 of its keys came out on the code of the 350 key in the same place; this said no 300 had been
-  pressed with the receiver listening until `todo-compile-300.md` 2.2.
+  pressed with the receiver listening until the European one was.
 * The US Harmony 300's colour keys. Both the 300's files send the `Red` command from code 13 and `Green`,
   `Yellow` and `Blue` from 27, 28 and 29, the codes of the 350's red, green, yellow and blue keys, while
   the US drawing, skin 78, prints yellow, blue, red and green on those four positions. Either the US 300
@@ -519,7 +519,7 @@ def _first_sends(c, entry):
 
 
 class TheBench350HeardEveryKey(unittest.TestCase):
-    """`todo-compile-350.md` 2.2.2: every key of the bench Harmony 350 pressed with the receiver listening.
+    """Every key of the bench Harmony 350 pressed with the receiver listening.
 
     The unit held `work/350-delay/before.bin`, the LG television on group 0 and the Denon receiver on group
     2, and nothing else; the test is `packages/bench/irtests/350-2-2-keys.json` and the prediction it scores
@@ -665,7 +665,7 @@ def _setup_config():
 
 
 class TheBench350HeardTheTestSetup(unittest.TestCase):
-    """`todo-compile-350.md` 3.3: the nine keys the every key run left, heard on a file that binds them.
+    """The nine keys the every key run left, heard on a file that binds them.
 
     The bench Harmony 350 held Logitech's compile of the test setup, eight devices on the four device keys,
     Watch TV, and the favourite channels 1, 2, 3, 666 and 07 on the KPN, and
@@ -815,7 +815,7 @@ class TheHarmony350DrawingCarriesTheCodesHeard(unittest.TestCase):
 
     The 41 keys `HEARD` names, Power, and the two device keys whose release was heard selecting a device,
     all with this file's footnote; and the nine keys heard on Logitech's compile of the test setup,
-    `todo-compile-350.md` 3.3, with the footnote of `TheBench350HeardTheTestSetup` above, whose argument is
+    with the footnote of `TheBench350HeardTheTestSetup` above, whose argument is
     `packages/bench/test/harmony-300-350/setup350.test.ts`: the two device keys on the right, Watch TV, Menu, Enter and
     favourites 1 to 4. Needs no lab, since
     both sides are in the repository.

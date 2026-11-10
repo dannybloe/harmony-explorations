@@ -9,7 +9,7 @@ offers with their defaults, and a list of named capabilities, none of them denie
 that statement, model by model, and it is what the model pages of `reference/remotes/` restate in their
 "What Logitech's service states" sections, each row footnoted to this file.
 
-**Why a test and not a sentence.** Until `todo-reference.md` 3.4 these answers were restated in a hand
+**Why a test and not a sentence.** Until this file these answers were restated in a hand
 table in `reference/capabilities.md` and in six features pages, and no archive section and no test held
 them, so every row resting on them alone was marked not checked. The answers were filed by the probe of
 the `myharmony-service` skill, one per model, and this file reads each one and asserts the statement

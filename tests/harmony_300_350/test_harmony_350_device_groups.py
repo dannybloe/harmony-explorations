@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Which infrared group a device takes on the Harmony 300 and 350, and which key event picks it.
 
-`todo-compile-350.md` 2.3. On the Harmony 300 a device's infrared group is the device key it was put
+On the Harmony 300 a device's infrared group is the device key it was put
 on, TV 0, Cable/Sat 1, DVD 2 and VCR/Aux 3, section 265, which identified all four groups of a
 configuration with one device per key in Logitech's catalogue
 (`packages/codec/test/catalogue/catalogue.test.ts`, "a Harmony 300 device group is indexed by its device type
@@ -118,7 +118,7 @@ the long ones. A compile through Logitech's service onto a 350 that puts **a dev
 short press, a second on Cable/PC's long press and a third on AVR/Game's long press, with nothing on
 either short press of those two keys**, separates them: `4 + key` gives the two long press devices groups
 5 and 6, the lowest unused group gives 1 and 2, and any interleaving gives 3 and 5. The same file shows how
-the long press is stored, `todo-compile-350.md` 2.4: which event and which binding select the second
+the long press is stored, `tests/harmony_300_350/test_harmony_350_long_press.py`: which event and which binding select the second
 device.
 
 A bench check settles the one inference above, that scan 7 is the key printed `AVR/Game` on a 350:

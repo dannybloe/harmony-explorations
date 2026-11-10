@@ -2,7 +2,7 @@
 The Harmony 880 and 885's state variables: 64 bytes, the two counts right after them, and no bound a
 configuration is checked against, so 64 bytes is a writer's ceiling.
 
-**Read in the firmware** on 4 November 2026, item 3.3 of `todo/todo-prepare-885.md`, in the 885's
+**Read in the firmware** on 4 November 2026, in the 885's
 application 4.4 (`arch8_code_885`, base `0x010000`; the 880's and the 880 Pro's differ in the two skin bytes
 only, `tests/harmony_880_885/test_harmony_885_start_check.py`) and the Harmony 720's application. **Measured in
 configurations** over the sixteen distinct arch 8 containers of that file's `CALIBRATION` and the built in
@@ -14,11 +14,11 @@ application's.
 `0xFF` on the Harmony 700, `0xC0` on the Harmony 600, arch 9 unread), "Variables 7 to 17 belong to the
 firmware too" (section 284: no data memory checksum on the arch 8 images) and "A configuration holds at
 most 128 state variables" (section 331); `reference/architectures/harmony-880-885/memory.md`, which put
-the storage at `0x108` to `0x147` and the counts at `0x148` and `0x149` from item 1.5's reading, and listed
+the storage at `0x108` to `0x147` and the counts at `0x148` and `0x149` from the write end's reading, and listed
 whether the interpreter's writes check the 64 byte bound as not read; `tests/harmony_880_885/test_harmony_885_write_end.py`,
 the loader's one caller. **Logitech's client, decision 2**: MyHarmony's source was searched by the name
 `StateVariable`; the hit is the Harmony Touch's driver, nothing about this platform's storage. The classic
-client was not searched for this item.
+client was not searched for this reading.
 
 ## The loader
 
@@ -63,7 +63,7 @@ established: the configurations hold 15 to 23 own variables for 3 to 7 devices.
 `narrow` must be at least 18 as well: the firmware writes variable 17 as one byte at `0x119`, which is
 `0x108 + 17` only while every variable below 18 is narrow (`tests/harmony_880_885/test_harmony_885_actions.py`). The
 firmware's ownership of 13 to 17 is section 284's; this file reads variable 17 alone. Every configuration read has 32 or more narrow. The "15 to 23 own variables for 3 to 7
-devices" above is item 3.3's count through the codec's device reader, not asserted here.
+devices" above is a count through the codec's device reader, not asserted here.
 
 ## The corpus
 

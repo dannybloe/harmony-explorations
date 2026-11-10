@@ -3,7 +3,7 @@ The Harmony 880 and 885's infrared player: the reference's record read through i
 the processor's PWM rounded to 250 ns with no clamp, one toggle bit per infrared group in eight, a one microsecond word
 that is where a released key stops, and six microseconds taken off every duration.
 
-**Read in the firmware** on 4 November 2026, item 3.8 of `todo/todo-prepare-885.md`, in the 885's application
+**Read in the firmware** on 4 November 2026, in the 885's application
 4.4 (`arch8_code_885`, base `0x010000`; the 880's differs in two skin bytes only,
 `tests/harmony_880_885/test_harmony_885_start_check.py`), and compared against the Harmony 720's, the 880 Pro's and a second
 880's applications. **Measured in configurations** over the sixteen distinct arch 8 containers of that file's
@@ -20,8 +20,8 @@ clears bit 2 of `0xF82`, the CCP1 pin on port C.
 read on the Harmony 650 and One; the 256000 clamp, section 92, on the Harmony 700), `reference/infrared/sending.md`
 (the software carrier of section 13 on the Harmony 700 2.8; the compiler's spelling, section 174; the trailing
 microsecond, section 309), `docs/findings.md` section 91, which lists CCP1 written `0x0C` on the One 3.4, the
-700 2.8, the 600 0.2 and the 525 images, section 80 (the 525's player subtracts six), and item 3.1 of this
-track (the infrared queue, variable 17 and the `0x2D` handshake). **Logitech's client, decision 2**: not
+700 2.8, the 600 0.2 and the 525 images, section 80 (the 525's player subtracts six), and `tests/harmony_880_885/test_harmony_885_actions.py`
+(the infrared queue, variable 17 and the `0x2D` handshake). **Logitech's client, decision 2**: not
 searched; how the remote plays a record is the firmware's alone.
 
 ## The loader, `0x17C86`

@@ -1,7 +1,7 @@
 """
 The two bench Harmony 885s read over USB: each configuration whole, the flash after it, and a clock that runs.
 
-**Measured on a unit**, two units, on 5 November 2026, items 2.1 and 2.3 of `todo/todo-prepare-885.md`. No
+**Measured on a unit**, two units, on 5 November 2026. No
 remote is opened by this file; it reads what the bench session filed in the lab. Every command sent in that
 session was a read: `read-identity.ts --record` first on each unit (the identity block matched the unit's
 record, which is what says which unit was on the cable), then `read-config.ts` twice, `read-region.ts` twice
@@ -22,7 +22,7 @@ Harmony One's flash keeping 408034 bytes of an earlier configuration) and sectio
 **Logitech's client, decision 2**: the classic client's constants for this platform (`classic_protocol8`, mined
 into the lab's `PROTOCOL-CONSTANTS.md`) name the bootloader, the identity block at `0x000110` and the staging
 address `0x1D0000`, and **no** user configuration base; `0x020000` is concordance's and the firmware's own
-base selector's, `0x191C2`. The same client recalculates and sets the clock after a write, item 1.5; how it
+base selector's, `0x191C2`. The same client recalculates and sets the clock after a write, `tests/harmony_880_885/test_harmony_885_write_end.py`; how it
 reads the clock was not re-read here. MyHarmony does not serve this platform.
 
 ## The configurations
@@ -47,8 +47,8 @@ recorded.
 Unit A's configuration ends at `0x0AAAD4` and unit B's at `0x0BB8C7`. **Up to the next 64 KiB boundary
 everything is erased**, and from that boundary, `0x0B0000` on A and `0x0C0000` on B, the bytes are not: A holds
 86601 bytes that are not `0xFF` past its configuration and B 11743, the last of them at `0x0D00AA` on both,
-and erased from there to `0x1D0000`. Erased up to the boundary and not beyond it is the shape item 1.3's reading
-predicts for a write that erased only the sectors it needed, one erase removing one 64 KiB sector by every
+and erased from there to `0x1D0000`. Erased up to the boundary and not beyond it is the shape the erase and write reading
+(`tests/harmony_880_885/test_harmony_885_erase_and_write.py`) predicts for a write that erased only the sectors it needed, one erase removing one 64 KiB sector by every
 source above `0x010000`. **The data alone cannot tell that from a 32 KiB half**: both configurations end in
 the upper half of their sector, so the next 32 KiB and 64 KiB boundaries coincide; a 4 KiB sector is excluded,
 since it would have left A's remains from `0x0AB000`.

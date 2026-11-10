@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The Harmony 300 and 350's power on delay: what the 1.4 firmware does with a `0x7C`.
 
-`todo-compile-350.md` 1.8 asks for one delay changed on the bench 350 and heard on the infrared
-receiver. The question this file answers first is which delay a receiver can hear, and the answer is a
+The first change made to the bench 350's configuration was one delay, changed and heard on the infrared
+receiver, and put back. The question this file answers first is which delay a receiver can hear, and the answer is a
 device's **power on delay**: the one `0x7C` at the top level of the list a device's `Power` variable runs
 when it goes from off to on, the shape arch 8, 9 and 12 use (the Harmony 880 and 885, the Harmony 525 and
 the Harmony One), `reference/config-format/actions.md`. It holds back the **next code to that same

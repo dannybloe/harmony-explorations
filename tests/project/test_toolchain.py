@@ -31,9 +31,9 @@ sys.path.insert(0, os.path.join(ROOT, 'src'))
 #: Directories of TypeScript in a package, all of which a `tsconfig.json` must include when present.
 #: `bin` is here because of the bug in the module docstring, and `web` is not: it is a browser page,
 #: served as it is, and `packages/bench` deliberately has no DOM types so that a server file cannot
-#: reference `window` and typecheck. `experiments` since `todo.md` 7.3.9: plan 013 decision 7 put a
-#: package's experiments there, beside its scripts, and both packages that have one include it, which
-#: nothing held until then.
+#: reference `window` and typecheck. `experiments` because plan 013 decision 7 puts a package's
+#: experiments there, beside its scripts, and both packages that have one include it, which nothing
+#: held before this list named it.
 SOURCE_DIRECTORIES = ('src', 'test', 'bin', 'experiments')
 
 
@@ -69,8 +69,8 @@ class TypeScriptProjects(unittest.TestCase):
                 found += 1
                 with self.subTest(package=name, directory=directory):
                     # Or a project of its own inside the directory, which is how a package's tests are kept
-                    # when they use the test kit that is built on the package, `todo.md` 7.3.6: one project
-                    # holding both would form a reference cycle.
+                    # when they use the test kit that is built on the package: one project holding both
+                    # would form a reference cycle.
                     own = os.path.join(path, directory, 'tsconfig.json')
                     if os.path.isfile(own):
                         self.assertIn('**/*.ts', read_jsonc(own).get('include', []))
@@ -81,16 +81,16 @@ class TypeScriptProjects(unittest.TestCase):
         # A guard on the guard: if the packages ever move, this test must fail rather than pass by
         # having found nothing to check. Exact, not a floor of 12, per section 143: the number is
         # decided by the workspace layout and moves only when a package or a directory is added,
-        # and then it moves in the diff rather than being absorbed. 25 since `todo.md` 7.3.4 added
-        # `packages/base`, with its `src` and `test`; 26 since 7.3.6 added `packages/testkit`, its `src`;
-        # 28 since 7.3.9 counts the `experiments` of `packages/bench` and `packages/corpus`.
+        # and then it moves in the diff rather than being absorbed. 25 with `packages/base`, its `src`
+        # and `test`; 26 with `packages/testkit`, its `src`; 28 with the `experiments` of
+        # `packages/bench` and `packages/corpus`.
         self.assertEqual(found, 28, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
         """`make ts` builds the root, so a package missing from it is a package nobody compiles.
 
-        And a directory with a project of its own, a package's tests since `todo.md` 7.3.6, is referenced
-        too, or nothing builds it.
+        And a directory with a project of its own, which is how a package's tests that use the test kit are
+        kept, is referenced too, or nothing builds it.
         """
         root = read_jsonc(os.path.join(ROOT, 'tsconfig.json'))
         referenced = {os.path.normpath(r['path']) for r in root.get('references', [])}
@@ -104,10 +104,10 @@ class TypeScriptProjects(unittest.TestCase):
 
 
 #: TypeScript files whose name carries a todo step, each with why it stays. A name by step tells a reader
-#: nothing without the todo file, plan 013 decision 3, and `todo.md` 7.3.1 renamed the Harmony Touch's
-#: tests by subject; this one is older than the rule and was found by the check below in 7.3.9.
+#: nothing without the todo file, plan 013 decision 3, and the Harmony Touch's tests were renamed by
+#: subject for that reason; this one is older than the rule and was found by the check below.
 NAMED_BY_STEP = {
-    'packages/bench/test/harmony-300-350/final53.test.ts': '`todo-compile-350.md` 5.3, the two final bench tests of the Harmony 300 and 350',
+    'packages/bench/test/harmony-300-350/final53.test.ts': 'the two final bench tests of the Harmony 300 and 350, named like the recorded plans they hold, `irtests/done/350-5-3-final.json` and `irtests/done/300-5-3-final.json`',
 }
 
 
@@ -295,46 +295,46 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 45 since `tests/firmware/test_clock_counting.py`, section 322.
         # 47 since `tests/firmware/test_touch_send.py`, section 337.
         # 48 since `tests/firmware/test_toggle_groups.py`, section 365. 49 with `tests/firmware/test_screen_fill.py`, section 425.
-        # 50 with `tests/project/test_archive.py`, todo-reference 2.2, and 51 with `tests/project/test_reference.py`, 2.3.
-        # 52 with `tests/project/test_site.py`, todo-reference 7.1.
-        # 53 with `tests/logitech/test_product_capabilities.py`, todo-reference 3.4.
-        # 54 with `tests/harmony_880_885/test_arch8_usb.py`, 55 with `tests/logitech/test_file_family_write_route.py`, 56 with `tests/harmony_300_350/test_harmony_350_file_write.py`, todo-compile-350 1.3.
-        # 57 with `tests/harmony_300_350/test_harmony_350_recovery.py`, todo-compile-350 1.4.
-        # 58 with `tests/harmony_300_350/test_harmony_350_slots.py`, todo-compile-350 2.1.
-        # 59 with `tests/harmony_300_350/test_harmony_350_boot.py`, the bootloader and safe mode of todo-compile-350 1.4.
-        # 60 with `tests/harmony_300_350/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/harmony_300_350/test_harmony_350_boot.py`.
-        # 61 with `tests/harmony_300_350/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
-        # 62 with `tests/harmony_300_350/test_harmony_350_clock.py`, todo-compile-350 2.5.
-        # 63 with `tests/harmony_300_350/test_harmony_350_long_press.py`, todo-compile-350 2.4.
-        # 64 with `tests/harmony_300_350/test_harmony_350_keys.py`, todo-compile-350 2.2, and 65 with
+        # 50 with `tests/project/test_archive.py`, and 51 with `tests/project/test_reference.py`.
+        # 52 with `tests/project/test_site.py`.
+        # 53 with `tests/logitech/test_product_capabilities.py`.
+        # 54 with `tests/harmony_880_885/test_arch8_usb.py`, 55 with `tests/logitech/test_file_family_write_route.py`, 56 with `tests/harmony_300_350/test_harmony_350_file_write.py`.
+        # 57 with `tests/harmony_300_350/test_harmony_350_recovery.py`.
+        # 58 with `tests/harmony_300_350/test_harmony_350_slots.py`.
+        # 59 with `tests/harmony_300_350/test_harmony_350_boot.py`, the Harmony 350's bootloader and safe mode images.
+        # 60 with `tests/harmony_300_350/test_harmony_350_delay.py`, after `tests/harmony_300_350/test_harmony_350_boot.py`.
+        # 61 with `tests/harmony_300_350/test_harmony_350_device_groups.py`.
+        # 62 with `tests/harmony_300_350/test_harmony_350_clock.py`.
+        # 63 with `tests/harmony_300_350/test_harmony_350_long_press.py`.
+        # 64 with `tests/harmony_300_350/test_harmony_350_keys.py`, and 65 with
         # `tests/harmony_300_350/test_harmony_350_metadata_deflate.py`, plan 011.
-        # 66 with `tests/harmony_300_350/test_harmony_300_keys.py`, todo-compile-300 2.2.
+        # 66 with `tests/harmony_300_350/test_harmony_300_keys.py`.
         # 67 with `tests/harmony_300_350/test_harmony_350_skin.py`, the skin read in the firmware.
         # 68 with `tests/harmony_300_350/test_harmony_300_350_images.py`, the Harmony 300's three images against the 350's, and
         # 69 with `tests/harmony_300_350/test_harmony_300_350_send_events.py`, what the four send kinds do, and
         # 70 with `tests/harmony_300_350/test_harmony_300_group_4_send.py`, why a send from a group above 3 sends nothing.
-        # 71 with `tests/harmony_touch/test_harmony_touch_image.py`, the Harmony Touch's package, todo-touch 1.2.
-        # 75 with `tests/harmony_touch/test_harmony_touch_architecture.py`, todo-touch 1.7, and the three of 3.1,
+        # 71 with `tests/harmony_touch/test_harmony_touch_image.py`, the Harmony Touch's package.
+        # 75 with `tests/harmony_touch/test_harmony_touch_architecture.py`, and the three of what its firmware does with each document,
         # `tests/harmony_touch/test_harmony_touch_activities.py`, `_devices.py` and `_favourites.py`.
-        # 76 with `tests/harmony_touch/test_harmony_touch_keys.py`, todo-touch 3.2, and 77 with
-        # `tests/harmony_touch/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
-        # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
+        # 76 with `tests/harmony_touch/test_harmony_touch_keys.py`, and 77 with
+        # `tests/harmony_touch/test_harmony_touch_host.py`.
+        # 78 to 81 with the four of the Harmony Touch's interface as an API:
         # `tests/harmony_touch/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
         # 82 with `tests/harmony_5xx/test_harmony_515.py`, the first Harmony 515 on the bench, and 83 with
-        # `tests/harmony_880_885/test_harmony_885_bootloader.py`, todo-prepare-885 1.1.
-        # 84 to 87 with todo-prepare-885 1.2 to 1.6 and 1.8: `tests/harmony_880_885/test_harmony_885_start_check.py`,
-        # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with 1.7,
+        # `tests/harmony_880_885/test_harmony_885_bootloader.py`.
+        # 84 to 87 with the Harmony 885's write path: `tests/harmony_880_885/test_harmony_885_start_check.py`,
+        # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with
         # `tests/harmony_880_885/test_harmony_885_log_area.py`. 89 with `tests/harmony_touch/test_harmony_touch_beyond_the_clients.py`,
-        # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
-        # `tests/harmony_880_885/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
-        # 3.10, `tests/harmony_880_885/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
-        # 3.7, 3.8, 3.9 and 3.11, `tests/harmony_880_885/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
-        # `_delay.py`. 101 with 2.1 and 2.3, `tests/harmony_880_885/test_harmony_885_bench_reads.py`. 102 with 2.4,
-        # `tests/harmony_880_885/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/harmony_touch/test_harmony_touch_recovery.py`,
-        # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/harmony_880_885/test_harmony_880_keys.py`.
-        # 107 with todo-compile-885 1.3, `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with 1.4,
+        # which landed on main beside them. 90 to 92 with
+        # `tests/harmony_880_885/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with
+        # `tests/harmony_880_885/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
+        # `tests/harmony_880_885/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
+        # `_delay.py`. 101 with `tests/harmony_880_885/test_harmony_885_bench_reads.py`. 102 with
+        # `tests/harmony_880_885/test_harmony_885_keys.py`. 103 to 105 with `tests/harmony_touch/test_harmony_touch_recovery.py`,
+        # `_serial.py` and `_favourites_untagged.py`. 106 with `tests/harmony_880_885/test_harmony_880_keys.py`.
+        # 107 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with
         # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
-        # todo-touch 9.2, `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main.
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main.
         self.assertEqual(len(files), 110, 'the Python test files')
         with_block = 0
         for path in files:
@@ -361,44 +361,45 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 45 since `tests/firmware/test_touch_send.py`, section 337, which carries one.
         # 46 since `tests/firmware/test_toggle_groups.py`, section 365, which carries one.
         # 47 since `tests/firmware/test_screen_fill.py`, section 425, which carries one.
-        # 49 with `tests/project/test_archive.py` and `tests/project/test_reference.py`, todo-reference 2.2 and 2.3,
-        # which carry one each. 50 with `tests/project/test_site.py`, todo-reference 7.1, which carries one.
-        # 51 with `tests/logitech/test_product_capabilities.py`, todo-reference 3.4, which carries one.
+        # 49 with `tests/project/test_archive.py` and `tests/project/test_reference.py`,
+        # which carry one each. 50 with `tests/project/test_site.py`, which carries one.
+        # 51 with `tests/logitech/test_product_capabilities.py`, which carries one.
         # 52, 53 and 54 with `tests/harmony_880_885/test_arch8_usb.py`, `tests/logitech/test_file_family_write_route.py` and `tests/harmony_300_350/test_harmony_350_file_write.py`, one each.
-        # 55 with `tests/harmony_300_350/test_harmony_350_recovery.py`, todo-compile-350 1.4, which carries one.
-        # 56 with `tests/harmony_300_350/test_harmony_350_slots.py`, todo-compile-350 2.1, which carries one.
-        # 57 with `tests/harmony_300_350/test_harmony_350_boot.py`, todo-compile-350 1.4's two images, which carries one.
-        # 57 with `tests/harmony_300_350/test_harmony_350_delay.py`, todo-compile-350 1.8, which carries one.
-        # 59 with `tests/harmony_300_350/test_harmony_350_device_groups.py`, todo-compile-350 2.3, which carries one.
-        # 60 with `tests/harmony_300_350/test_harmony_350_clock.py`, todo-compile-350 2.5, which carries one.
-        # 61 with `tests/harmony_300_350/test_harmony_350_long_press.py`, todo-compile-350 2.4, which carries one.
-        # 62 with `tests/harmony_300_350/test_harmony_350_keys.py`, todo-compile-350 2.2, which carries one.
+        # 55 with `tests/harmony_300_350/test_harmony_350_recovery.py`, which carries one.
+        # 56 with `tests/harmony_300_350/test_harmony_350_slots.py`, which carries one.
+        # 57 with `tests/harmony_300_350/test_harmony_350_boot.py`, its bootloader and safe mode images, which carries one.
+        # 57 with `tests/harmony_300_350/test_harmony_350_delay.py`, which carries one.
+        # 59 with `tests/harmony_300_350/test_harmony_350_device_groups.py`, which carries one.
+        # 60 with `tests/harmony_300_350/test_harmony_350_clock.py`, which carries one.
+        # 61 with `tests/harmony_300_350/test_harmony_350_long_press.py`, which carries one.
+        # 62 with `tests/harmony_300_350/test_harmony_350_keys.py`, which carries one.
         # 63 with `tests/harmony_300_350/test_harmony_350_metadata_deflate.py`, plan 011, which carries one.
-        # 64 with `tests/harmony_300_350/test_harmony_300_keys.py`, todo-compile-300 2.2, which carries one.
+        # 64 with `tests/harmony_300_350/test_harmony_300_keys.py`, which carries one.
         # 65 with `tests/harmony_300_350/test_harmony_350_skin.py`, the skin read in the firmware, which carries one.
         # 66 with `tests/harmony_300_350/test_harmony_300_350_images.py`, which carries one.
         # 67 with `tests/harmony_300_350/test_harmony_300_350_send_events.py`, which carries one.
         # 68 with `tests/harmony_300_350/test_harmony_300_group_4_send.py`, which carries one.
-        # 69 with `tests/harmony_touch/test_harmony_touch_image.py`, todo-touch 1.2, which carries one.
-        # 73 with the four Harmony Touch files of todo-touch 1.7 and 3.1, each of which carries one.
-        # 74 with `tests/harmony_touch/test_harmony_touch_keys.py`, todo-touch 3.2, and 75 with
-        # `tests/harmony_touch/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2, which carry one each.
-        # 76 to 79 with the four of todo-touch 5.2, `tests/harmony_touch/test_harmony_touch_api_names.py`, `_setup.py`,
+        # 69 with `tests/harmony_touch/test_harmony_touch_image.py`, which carries one.
+        # 73 with the four Harmony Touch files of its architecture and of what its firmware does with each document, each of which carries one.
+        # 74 with `tests/harmony_touch/test_harmony_touch_keys.py`, and 75 with
+        # `tests/harmony_touch/test_harmony_touch_host.py`, which carry one each.
+        # 76 to 79 with the four of the Harmony Touch's interface as an API, `tests/harmony_touch/test_harmony_touch_api_names.py`, `_setup.py`,
         # `_engine.py` and `_closure.py`, which carry one each. 80 with `tests/harmony_5xx/test_harmony_515.py`.
         # 81 with `tests/harmony_880_885/test_harmony_885_bootloader.py`, which carries one, and 82 to 85 with the four
-        # files of todo-prepare-885 1.2 to 1.6 and 1.8, which carry one each. 86 with
-        # `tests/harmony_880_885/test_harmony_885_log_area.py`, 1.7, which carries one. 87 with
-        # `tests/harmony_touch/test_harmony_touch_beyond_the_clients.py`, todo-touch 5.1, which carries one. 88 to 90 with
-        # the three files of todo-prepare-885 3.1 to 3.3, which carry one each. 91 to 94 with the four of
-        # 3.4, 3.5, 3.6 and 3.10, which carry one each. 95 to 98 with the four of 3.7, 3.8, 3.9 and 3.11, which
-        # carry one each. 99 with `tests/harmony_880_885/test_harmony_885_bench_reads.py`, 2.1 and 2.3, which carries one. 100
-        # with `tests/harmony_880_885/test_harmony_885_keys.py`, 2.4, which carries one. 101 to 103 with todo-touch 6.1 to 6.7's
+        # files of the Harmony 885's write path, which carry one each. 86 with
+        # `tests/harmony_880_885/test_harmony_885_log_area.py`, which carries one. 87 with
+        # `tests/harmony_touch/test_harmony_touch_beyond_the_clients.py`, which carries one. 88 to 90 with
+        # the three files of the Harmony 885's actions, queue and state, which carry one each. 91 to 94 with the four
+        # of its slots, parameters, timers and stamp, which carry one each. 95 to 98 with the four of its number
+        # sender, infrared, screens and delay, which
+        # carry one each. 99 with `tests/harmony_880_885/test_harmony_885_bench_reads.py`, which carries one. 100
+        # with `tests/harmony_880_885/test_harmony_885_keys.py`, which carries one. 101 to 103 with the Harmony Touch's
         # three files, `tests/harmony_touch/test_harmony_touch_recovery.py`, `_serial.py` and `_favourites_untagged.py`, which
-        # carry one each. 104 with `tests/harmony_880_885/test_harmony_880_keys.py`, todo-prepare-885 2.5.2, which carries one.
-        # 105 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`, todo-compile-885 1.3, which carries one. 106
-        # with `tests/harmony_880_885/test_harmony_885_first_config_write.py`, 1.4, which carries one. 107 with
+        # carry one each. 104 with `tests/harmony_880_885/test_harmony_880_keys.py`, which carries one.
+        # 105 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`, which carries one. 106
+        # with `tests/harmony_880_885/test_harmony_885_first_config_write.py`, which carries one. 107 with
         # `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`, which carries one. 108 with
-        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, todo-touch 9.2, merged from main, which carries one.
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main, which carries one.
         self.assertEqual(with_block, 108,
                          'files carrying a __main__ block, of %d' % len(files))
 
@@ -533,8 +534,8 @@ TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE = {
 
 
 #: The TypeScript files a test scanner is meant to cover, as git lists them: every `.ts` under
-#: `packages/<name>/test/` at any depth, since `todo.md` 7.3.12 put each package's tests in folders by
-#: subject (one directory level until then), so helpers such as `tagfive.ts` count as well
+#: `packages/<name>/test/` at any depth, since each package's tests are in folders by subject (one
+#: directory level once), so helpers such as `tagfive.ts` count as well
 #: as the `*.test.ts` files, because the scanners read what the glob reads. This is written as a
 #: regular expression over git's own listing and not as a second glob, so the two enumerations
 #: share no code and a glob that silently matched too little disagrees with it.
@@ -616,7 +617,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         counted, scanned = self._offenders()
         # What this asserts is that the scan read exactly the TypeScript test files git lists, as sets
         # so that a difference names the files. It used to assert a literal count, bumped by hand for
-        # every new file (48 at section 210, 153 at todo-compile-350 3.1), and the history of those
+        # every new file (48 at section 210, 153 later), and the history of those
         # bumps is in git. The literal guarded against a glob that matches nothing or too little and
         # so reports every file clean; the comparison guards the same thing without a floor, and
         # without a number that moves with unrelated work.
@@ -750,8 +751,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
         # The scan has to have read exactly the TypeScript test files git lists, compared as sets so
-        # that a difference names the files. This was a literal count (48 at section 210, 153 at
-        # todo-compile-350 3.1) bumped by hand for every new file, which guarded against a glob that
+        # that a difference names the files. This was a literal count (48 at section 210, 153 later)
+        # bumped by hand for every new file, which guarded against a glob that
         # matches too little and so finds no bounds at all; the comparison does the same without a
         # floor and without the bump. Its sibling above makes the same comparison.
         expected = git_listed_typescript_tests(self)
@@ -869,43 +870,43 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 45 since `tests/firmware/test_clock_counting.py`, section 322.
         # 47 since `tests/firmware/test_touch_send.py`, section 337.
         # 48 since `tests/firmware/test_toggle_groups.py`, section 365. 49 with `tests/firmware/test_screen_fill.py`, section 425.
-        # 50 with `tests/project/test_archive.py`, todo-reference 2.2, and 51 with `tests/project/test_reference.py`, 2.3.
-        # 52 with `tests/project/test_site.py`, todo-reference 7.1.
-        # 53 with `tests/logitech/test_product_capabilities.py`, todo-reference 3.4.
-        # 54 with `tests/harmony_880_885/test_arch8_usb.py`, 55 with `tests/logitech/test_file_family_write_route.py`, 56 with `tests/harmony_300_350/test_harmony_350_file_write.py`, todo-compile-350 1.3.
-        # 57 with `tests/harmony_300_350/test_harmony_350_recovery.py`, todo-compile-350 1.4.
-        # 58 with `tests/harmony_300_350/test_harmony_350_slots.py`, todo-compile-350 2.1.
-        # 59 with `tests/harmony_300_350/test_harmony_350_boot.py`, todo-compile-350 1.4's two images.
-        # 60 with `tests/harmony_300_350/test_harmony_350_delay.py`, todo-compile-350 1.8, after `tests/harmony_300_350/test_harmony_350_boot.py`.
-        # 61 with `tests/harmony_300_350/test_harmony_350_device_groups.py`, todo-compile-350 2.3.
-        # 62 with `tests/harmony_300_350/test_harmony_350_clock.py`, todo-compile-350 2.5.
-        # 63 with `tests/harmony_300_350/test_harmony_350_long_press.py`, todo-compile-350 2.4.
-        # 64 with `tests/harmony_300_350/test_harmony_350_keys.py`, todo-compile-350 2.2, and 65 with
+        # 50 with `tests/project/test_archive.py`, and 51 with `tests/project/test_reference.py`.
+        # 52 with `tests/project/test_site.py`.
+        # 53 with `tests/logitech/test_product_capabilities.py`.
+        # 54 with `tests/harmony_880_885/test_arch8_usb.py`, 55 with `tests/logitech/test_file_family_write_route.py`, 56 with `tests/harmony_300_350/test_harmony_350_file_write.py`.
+        # 57 with `tests/harmony_300_350/test_harmony_350_recovery.py`.
+        # 58 with `tests/harmony_300_350/test_harmony_350_slots.py`.
+        # 59 with `tests/harmony_300_350/test_harmony_350_boot.py`, its bootloader and safe mode images.
+        # 60 with `tests/harmony_300_350/test_harmony_350_delay.py`, after `tests/harmony_300_350/test_harmony_350_boot.py`.
+        # 61 with `tests/harmony_300_350/test_harmony_350_device_groups.py`.
+        # 62 with `tests/harmony_300_350/test_harmony_350_clock.py`.
+        # 63 with `tests/harmony_300_350/test_harmony_350_long_press.py`.
+        # 64 with `tests/harmony_300_350/test_harmony_350_keys.py`, and 65 with
         # `tests/harmony_300_350/test_harmony_350_metadata_deflate.py`, plan 011.
-        # 66 with `tests/harmony_300_350/test_harmony_300_keys.py`, todo-compile-300 2.2.
+        # 66 with `tests/harmony_300_350/test_harmony_300_keys.py`.
         # 67 with `tests/harmony_300_350/test_harmony_350_skin.py`, the skin read in the firmware.
         # 68 with `tests/harmony_300_350/test_harmony_300_350_images.py`, 69 with `tests/harmony_300_350/test_harmony_300_350_send_events.py`,
         # 70 with `tests/harmony_300_350/test_harmony_300_group_4_send.py`, 71 with `tests/harmony_touch/test_harmony_touch_image.py`,
-        # 75 with the four Harmony Touch files of todo-touch 1.7 and 3.1,
-        # 76 with `tests/harmony_touch/test_harmony_touch_keys.py`, todo-touch 3.2, and 77 with
-        # `tests/harmony_touch/test_harmony_touch_host.py`, todo-touch 4.1 and 4.2.
-        # 78 to 81 with the four of todo-touch 5.2, the Harmony Touch's interface as an API:
+        # 75 with the four Harmony Touch files of its architecture and of what its firmware does with each document,
+        # 76 with `tests/harmony_touch/test_harmony_touch_keys.py`, and 77 with
+        # `tests/harmony_touch/test_harmony_touch_host.py`.
+        # 78 to 81 with the four of the Harmony Touch's interface as an API:
         # `tests/harmony_touch/test_harmony_touch_api_names.py`, `_setup.py`, `_engine.py` and `_closure.py`.
         # 82 with `tests/harmony_5xx/test_harmony_515.py`, the first Harmony 515 on the bench, and 83 with
-        # `tests/harmony_880_885/test_harmony_885_bootloader.py`, todo-prepare-885 1.1.
-        # 84 to 87 with todo-prepare-885 1.2 to 1.6 and 1.8: `tests/harmony_880_885/test_harmony_885_start_check.py`,
-        # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with 1.7,
+        # `tests/harmony_880_885/test_harmony_885_bootloader.py`.
+        # 84 to 87 with the Harmony 885's write path: `tests/harmony_880_885/test_harmony_885_start_check.py`,
+        # `_erase_and_write.py`, `_write_end.py` and `_reads.py`. 88 with
         # `tests/harmony_880_885/test_harmony_885_log_area.py`. 89 with `tests/harmony_touch/test_harmony_touch_beyond_the_clients.py`,
-        # todo-touch 5.1, which landed on main beside them. 90 to 92 with todo-prepare-885 3.1 to 3.3,
-        # `tests/harmony_880_885/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with 3.4, 3.5, 3.6 and
-        # 3.10, `tests/harmony_880_885/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
-        # 3.7, 3.8, 3.9 and 3.11, `tests/harmony_880_885/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
-        # `_delay.py`. 101 with 2.1 and 2.3, `tests/harmony_880_885/test_harmony_885_bench_reads.py`. 102 with 2.4,
-        # `tests/harmony_880_885/test_harmony_885_keys.py`. 103 to 105 with todo-touch 6.1 to 6.7, `tests/harmony_touch/test_harmony_touch_recovery.py`,
-        # `_serial.py` and `_favourites_untagged.py`. 106 with todo-prepare-885 2.5.2, `tests/harmony_880_885/test_harmony_880_keys.py`.
-        # 107 with todo-compile-885 1.3, `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with 1.4,
+        # which landed on main beside them. 90 to 92 with
+        # `tests/harmony_880_885/test_harmony_885_actions.py`, `_queue.py` and `_state.py`. 93 to 96 with
+        # `tests/harmony_880_885/test_harmony_885_slots.py`, `_parameters.py`, `_timers.py` and `_stamp.py`. 97 to 100 with
+        # `tests/harmony_880_885/test_harmony_885_number_sender.py`, `_infrared.py`, `_screens.py` and
+        # `_delay.py`. 101 with `tests/harmony_880_885/test_harmony_885_bench_reads.py`. 102 with
+        # `tests/harmony_880_885/test_harmony_885_keys.py`. 103 to 105 with `tests/harmony_touch/test_harmony_touch_recovery.py`,
+        # `_serial.py` and `_favourites_untagged.py`. 106 with `tests/harmony_880_885/test_harmony_880_keys.py`.
+        # 107 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with
         # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
-        # todo-touch 9.2, `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main.
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main.
         self.assertEqual(len(scanned), 110, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
@@ -1477,7 +1478,7 @@ class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
 
     # **The grid moved out of the retired roadmap on 6 September 2026** and this said
     # `### Step 9: excavate the lab`, which was the plan's numbering for it. It lives beside its own
-    # method now, and "step 9" is a dead name: `todo.md` carries the work as L2.
+    # method now, and "step 9" is a dead name.
     GRID_HEADING = '## The grid, and where the excavation stands'
 
     def _grid_paths(self):
@@ -1583,29 +1584,29 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/plan-1.2.10/`, section 294. 80 since `work/plan-L7/`, section 301. 81 since `work/plan-L6/`, the
         # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305, and 83 since
         # `work/plan-4.3.4/`, the Harmony 650's long press version write, section 309. 86 since
-        # `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives, todo-later 1.3. 91 since
-        # `work/test-setup/`, the scan behind plan 006, and 92 since `work/harvest/`, todo-secure-logitech.
-        # 93 since `work/setups/`, the setup builder of todo-compile-650 1.6, and 94 since
-        # `work/bench-2-3/`, todo-compile-650 2.3. 96 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14. 97 since `work/bench-3-14/`. 98 since `work/bench-3-11/`, section 341. 99 since `work/bench-4-2/`, section 342. 100 since `work/bench-5-1/`, todo-compile-650 5.1.
-        # 101 with `work/agent-5-2-4/`, todo-compile-650 5.2.4, 102 with `work/agent-2-2-5/`, 103 with `work/bench-5-2-5/`, 104 with `work/agent-6-2-11/`, 6.2.11, 105 with `work/bench-6-2-13/`, 106 with `work/probe-7-1/`, 107 with `work/agent-7-3/`, 7.3, 108 with `work/agent-7-4/`, 7.4, 109 with `work/bench-7-5/`, 7.5, which did not move this count when it landed, 110 with `work/agent-8-1/`, 8.1, 111 with `work/review-358/` and 112 with `work/review-358-blind/`, section 358's two reviewers, and 113 with `work/agent-2-1/`, todo-process-logitech 2.1, section 359, 114 with `work/agent-10-2-2/`, 10.2.2, section 360, and 115 and 116 with `work/review-360/` and `work/review-360-blind/`, its two reviewers. 117 with `work/agent-2-3/`, todo-process-logitech 2.3, section 361, and 118 and 119 with `work/review-2-3/` and `work/review-2-3-blind/`, its two reviewers. 120 with `work/agent-10-6/`, todo-compile-650 10.6, section 362, and 121 and 122 with `work/review-10-6/` and `work/review-10-6-blind/`, its two reviewers. 123 with `work/agent-9-1/`, todo-compile-650 9.1, section 363, and 124 and 125 with `work/review-9-1/` and `work/review-9-1-blind/`, its two reviewers. 126 with `work/agent-10-6b/`, 10.6's follow-up, section 364, and 127 and 128 with `work/review-10-6b/` and `work/review-10-6b-blind/`, its two reviewers. 129 with `work/bench-10-5/`, todo-compile-650 10.5's bench file. 130 with `work/agent-2-5/`, todo-process-logitech 2.5, section 365, and 131 and 132 with `work/review-2-5/` and `work/review-2-5-blind/`, its two reviewers. 133 with `fonts/`, the Oxanium typeface of decision 19. 134 with `work/sample-8-2/`, todo-compile-650 8.2's sample, and 135 with `work/colours-9-1-2/`, 9.1.2, section 366, and 136 and 137 with `work/review-366/` and `work/review-366-blind/`, its two reviewers. 138 with `work/glyph-order/`, the glyph byte order measured, and 139 with `work/agent-glyph-order/`, section 367. 140 with `work/fonts-8-2/`, 8.2, 141 with `work/agent-glyph-sharing/`, and 142 and 143 with `work/review-368-blind/` and `work/review-368/`, section 368's two reviewers.
+        # `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives. 91 since
+        # `work/test-setup/`, the scan behind plan 006, and 92 since `work/harvest/`, the gathering of Logitech's service.
+        # 93 since `work/setups/`, the Harmony 650's setup builder, and 94 since
+        # `work/bench-2-3/`. 96 since `work/bench-3-9/` and `work/agent-3-14/`. 97 since `work/bench-3-14/`. 98 since `work/bench-3-11/`, section 341. 99 since `work/bench-4-2/`, section 342. 100 since `work/bench-5-1/`.
+        # 101 with `work/agent-5-2-4/`, 102 with `work/agent-2-2-5/`, 103 with `work/bench-5-2-5/`, 104 with `work/agent-6-2-11/`, 105 with `work/bench-6-2-13/`, 106 with `work/probe-7-1/`, 107 with `work/agent-7-3/`, 108 with `work/agent-7-4/`, 109 with `work/bench-7-5/`, which did not move this count when it landed, 110 with `work/agent-8-1/`, 111 with `work/review-358/` and 112 with `work/review-358-blind/`, section 358's two reviewers, and 113 with `work/agent-2-1/`, section 359, 114 with `work/agent-10-2-2/`, section 360, and 115 and 116 with `work/review-360/` and `work/review-360-blind/`, its two reviewers. 117 with `work/agent-2-3/`, section 361, and 118 and 119 with `work/review-2-3/` and `work/review-2-3-blind/`, its two reviewers. 120 with `work/agent-10-6/`, section 362, and 121 and 122 with `work/review-10-6/` and `work/review-10-6-blind/`, its two reviewers. 123 with `work/agent-9-1/`, section 363, and 124 and 125 with `work/review-9-1/` and `work/review-9-1-blind/`, its two reviewers. 126 with `work/agent-10-6b/`, section 362's follow-up, section 364, and 127 and 128 with `work/review-10-6b/` and `work/review-10-6b-blind/`, its two reviewers. 129 with `work/bench-10-5/`, a Harmony 650 bench file. 130 with `work/agent-2-5/`, section 365, and 131 and 132 with `work/review-2-5/` and `work/review-2-5-blind/`, its two reviewers. 133 with `fonts/`, the Oxanium typeface of decision 19. 134 with `work/sample-8-2/`, a Harmony 650 sample, and 135 with `work/colours-9-1-2/`, section 366, and 136 and 137 with `work/review-366/` and `work/review-366-blind/`, its two reviewers. 138 with `work/glyph-order/`, the glyph byte order measured, and 139 with `work/agent-glyph-order/`, section 367. 140 with `work/fonts-8-2/`, 141 with `work/agent-glyph-sharing/`, and 142 and 143 with `work/review-368-blind/` and `work/review-368/`, section 368's two reviewers.
         # 144 to 149 with `work/fonts-aa/`, `work/fonts-8-2-6/`, `work/freeze-9-1-2/`,
         # `work/agent-freeze-9-1-2/`, `work/fonts-10-8/` and `work/pictures-9-1-2-2/`, sections 366 to 373.
-        # 150 and 151 with `work/agent-11-1-1/` and `work/empty-11-1-1/`, todo-compile-650 11.1.1.
+        # 150 and 151 with `work/agent-11-1-1/` and `work/empty-11-1-1/`.
         # 163 with the twelve work folders of the Harmony 600, 700 and One tracks, registered at once.
-        # 165 with `work/350-delay/`, todo-compile-350 1.8, and 166 with `work/350-every-key/`, 2.2.2.
-        # 167 with `work/300-delay/`, todo-compile-300 1.5, and 168 with `work/300-every-key/`, 2.1 and 2.2.
+        # 165 with `work/350-delay/`, the 350's delay measurement, and 166 with `work/350-every-key/`.
+        # 167 with `work/300-delay/`, the 300's delay measurement, and 168 with `work/300-every-key/`.
         # 172 with the four firmware reads of 31 October 2026, `reads/20261031T-h300-fw/` and
         # `reads/20261031T-h350-fw-first/` each with its second read beside it.
         # 173 with `reference/images/`, the bench photographs, 1 November 2026, and 174 with `work/300-event-ff/`.
-        # 175 with `work/touch-firmware/`, the Harmony Touch's package unpacked, todo-touch 1.2, and 177 with
-        # `software/unluac/` and `software/lua-5.1.5-dl/`, the decompiler and the compiler source, 1.3.1.
+        # 175 with `work/touch-firmware/`, the Harmony Touch's package unpacked, and 177 with
+        # `software/unluac/` and `software/lua-5.1.5-dl/`, the decompiler and the compiler source.
         # 178 with `dumps/danny/harmony-885/`, a bench 885's owner's device list ahead of its dump.
         # 180 with `work/harmony-desktop-inspectable/` and `reads/20261102T1350Z-touch-sync-harmony-desktop/`,
-        # the inspectable copy of Harmony Desktop and the Touch sync recorded through it, todo-touch 2.1 and 2.3.
-        # 181 with `reads/20261102T1520Z-touch-sync-full-setup/`, the sync after the setup was filled, 2.3,
+        # the inspectable copy of Harmony Desktop and the Touch sync recorded through it.
+        # 181 with `reads/20261102T1520Z-touch-sync-full-setup/`, the sync after the setup was filled,
         # and 182 with `reads/20261102T1524Z-touch-reverse-sync/`, the reverse sync recorded after it.
         # 183 with `work/legacy-remotes/`, the legacy remotes track, plan 012, and 184 with `work/webhid/`, the
-        # browser key read, todo-prepare-885 2.6. 185 with `work/architecture-review/`, the review of the packages.
+        # browser key read. 185 with `work/architecture-review/`, the review of the packages.
         # 187 with `work/requirements/`, the candidates for the requirements list, decision 33.
         self.assertEqual(len(named), 187, "lab paths the register names")
         for path in sorted(named):
@@ -1704,25 +1705,25 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # the Harmony 600's, and 59 since `work/ir-archive-raw/`, the infrared archive's raw capture,
         # section 305.
         # 60 since `work/plan-4.3.4/`, section 309.
-        # 63 since `work/ir-archive-raw/derived/`, todo-later 1.3.
-        # 69 since `work/test-setup/` and `work/harvest/`, todo-secure-logitech; both rows landed on 7
+        # 63 since `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives.
+        # 69 since `work/test-setup/` and `work/harvest/`; both rows landed on 7
         # October 2026 without this count, which stayed at 67 until the next run of this test.
-        # 70 since `work/setups/`, todo-compile-650 1.6, and 71 since `work/bench-2-3/`, 2.3.
-        # 73 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14, and 74 since `work/bench-3-14/`.
+        # 70 since `work/setups/`, the Harmony 650's setup builder, and 71 since `work/bench-2-3/`.
+        # 73 since `work/bench-3-9/` and `work/agent-3-14/`, and 74 since `work/bench-3-14/`.
         # 75 since `work/bench-3-11/`, section 341, and 76 since `work/bench-4-2/`, section 342.
-        # 77 since `work/bench-5-1/`, todo-compile-650 5.1, and 78 with `work/agent-5-2-4/`, 5.2.4, 79 with `work/agent-2-2-5/`, 80 with `work/bench-5-2-5/`, 81 with `work/agent-6-2-11/`, 6.2.11, 82 with `work/bench-6-2-13/`, 83 with `work/probe-7-1/`, 84 with `work/agent-7-3/`, 85 with `work/agent-7-4/`, 86 with `work/bench-7-5/`, 87 with `work/agent-8-1/`, 88 with `work/review-358/`, 89 with `work/review-358-blind/`, 90 with `work/agent-2-1/`, section 359, 91 with `work/agent-10-2-2/`, section 360, 92 with `work/review-360/` and 93 with `work/review-360-blind/`. 94 with `work/agent-2-3/`, section 361, 95 with `work/review-2-3/` and 96 with `work/review-2-3-blind/`. 97 with `work/agent-10-6/`, section 362, 98 with `work/review-10-6/` and 99 with `work/review-10-6-blind/`. 100 with `work/agent-9-1/`, section 363, 101 with `work/review-9-1/` and 102 with `work/review-9-1-blind/`. 103 with `work/agent-10-6b/`, section 364, 104 with `work/review-10-6b/` and 105 with `work/review-10-6b-blind/`. 106 with `work/bench-10-5/`. 107 with `work/agent-2-5/`, section 365, 108 with `work/review-2-5/` and 109 with `work/review-2-5-blind/`. 110 with `fonts/`. 117 to 120 with `work/fonts-8-2/`, `work/agent-glyph-sharing/`, `work/review-368-blind/` and `work/review-368/`, section 368. 121 to 126 with `work/fonts-aa/`, `work/fonts-8-2-6/`,
+        # 77 since `work/bench-5-1/`, and 78 with `work/agent-5-2-4/`, 79 with `work/agent-2-2-5/`, 80 with `work/bench-5-2-5/`, 81 with `work/agent-6-2-11/`, 82 with `work/bench-6-2-13/`, 83 with `work/probe-7-1/`, 84 with `work/agent-7-3/`, 85 with `work/agent-7-4/`, 86 with `work/bench-7-5/`, 87 with `work/agent-8-1/`, 88 with `work/review-358/`, 89 with `work/review-358-blind/`, 90 with `work/agent-2-1/`, section 359, 91 with `work/agent-10-2-2/`, section 360, 92 with `work/review-360/` and 93 with `work/review-360-blind/`. 94 with `work/agent-2-3/`, section 361, 95 with `work/review-2-3/` and 96 with `work/review-2-3-blind/`. 97 with `work/agent-10-6/`, section 362, 98 with `work/review-10-6/` and 99 with `work/review-10-6-blind/`. 100 with `work/agent-9-1/`, section 363, 101 with `work/review-9-1/` and 102 with `work/review-9-1-blind/`. 103 with `work/agent-10-6b/`, section 364, 104 with `work/review-10-6b/` and 105 with `work/review-10-6b-blind/`. 106 with `work/bench-10-5/`. 107 with `work/agent-2-5/`, section 365, 108 with `work/review-2-5/` and 109 with `work/review-2-5-blind/`. 110 with `fonts/`. 117 to 120 with `work/fonts-8-2/`, `work/agent-glyph-sharing/`, `work/review-368-blind/` and `work/review-368/`, section 368. 121 to 126 with `work/fonts-aa/`, `work/fonts-8-2-6/`,
         # `work/freeze-9-1-2/`, `work/agent-freeze-9-1-2/`, `work/fonts-10-8/` and `work/pictures-9-1-2-2/`.
         # 127 and 128 with `work/agent-11-1-1/` and `work/empty-11-1-1/`.
         # 140 with the twelve work folders of the Harmony 600, 700 and One tracks.
-        # 142 with `work/350-delay/`, todo-compile-350 1.8, and 143 with `work/350-every-key/`, 2.2.2.
-        # 144 with `work/300-delay/`, todo-compile-300 1.5, and 145 with `work/300-every-key/`, 2.1 and 2.2.
+        # 142 with `work/350-delay/`, the 350's delay measurement, and 143 with `work/350-every-key/`.
+        # 144 with `work/300-delay/`, the 300's delay measurement, and 145 with `work/300-every-key/`.
         # 146 and 147 with the two firmware read rows of 31 October 2026, the Harmony 300's and the 350's.
         # 148 with `reference/images/`, the bench photographs, and 149 with `work/300-event-ff/`.
-        # 150 with `work/touch-firmware/`, todo-touch 1.2, and 152 with `software/unluac/` and
-        # `software/lua-5.1.5-dl/`, 1.3.1, and 153 with `dumps/danny/harmony-885/`.
-        # 155 with `work/harmony-desktop-inspectable/` and the recorded Touch sync's read, todo-touch 2.1 and 2.3,
-        # and 156 with the full setup's sync, 2.3, and 157 with the reverse sync after it.
-        # 158 with `work/legacy-remotes/`, plan 012, and 159 with `work/webhid/`, todo-prepare-885 2.6.
+        # 150 with `work/touch-firmware/`, the Harmony Touch's package unpacked, and 152 with `software/unluac/` and
+        # `software/lua-5.1.5-dl/`, the decompiler and the compiler source, and 153 with `dumps/danny/harmony-885/`.
+        # 155 with `work/harmony-desktop-inspectable/` and the recorded Touch sync's read,
+        # and 156 with the full setup's sync, and 157 with the reverse sync after it.
+        # 158 with `work/legacy-remotes/`, plan 012, and 159 with `work/webhid/`, the browser key read.
         # 160 with `work/architecture-review/`, the review of the packages, 161 with `work/recipe-references/`,
         # the bench builds rebuilt from recipes, and 162 with `work/requirements/`, decision 33.
         self.assertEqual(len(rows), 162)
@@ -1948,7 +1949,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # names `rehearse-block.ts`. The mildest entry on the list and the cheapest to withhold.
         # 24 later the same day, and it is one withheld document becoming three rather than two new
         # leaks: `docs/roadmap.md` was retired, its decisions became `docs/decisions.md`, its
-        # reasoning `docs/plans/002-the-roadmap.md`, and the sequence it carried is `todo.md`.
+        # reasoning `docs/plans/002-the-roadmap.md`, and the sequence it carried is in the repository's todo list.
         # 25 with `docs/README.md`, the document map moved out of `CLAUDE.md` on 7 October 2026.
         # 28 since 10 October 2026: the Harmony 525's skill, whose write procedure names
         # `rehearse-block.ts`, and its two reference folders, which state what an erase address
@@ -1960,9 +1961,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 29 since plan 009's step 3.2 removed the Harmony 525's memory map: its erase and write
         # mechanism moved into `reference/architectures/harmony-5xx/`, which a row already withholds,
         # and that row now carries the map's history. Nothing widened; the list was re-read.
-        # 32 with the Harmony 885's compile track: its skill, its test notes and `todo-compile-885.md`,
+        # 32 with the Harmony 885's compile track: its skill, its test notes and its track's todo file,
         # each naming `rehearse-block.ts` and the first block written on arch 8.
-        # 36 with `todo.md` 7.3.10: the configuration write's library function, which took the script's
+        # 36 with the configuration write's library function, which took the script's
         # sequence, and its fake remote, runner and test, which drive it and name the flash write rail.
         self.assertEqual(len(must), 36, 'the withhold list should resolve to 36 paths, got %s'
                          % sorted(must))
@@ -2060,7 +2061,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # `docs/decisions.md` and the rest of it `docs/plans/002-the-roadmap.md`, so one withheld file
         # became two. No new writing, and both are on the list.
         #
-        # **37 on 29 September 2026**: `todo.md`, whose items for the Harmony 600's and the Harmony
+        # **37 on 29 September 2026**: the todo list, whose items for the Harmony 600's and the Harmony
         # 700's first writes name `rehearse-block.ts`. It is withheld already, as one of the files
         # that restate the sequence, so nothing widens and the list was re-read before this moved.
         #
@@ -2083,13 +2084,13 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # and leaves the reasoning about an interlock to the documents that own it. It stays withheld,
         # since it still states the client's write transfer; nothing started stating the path, and the
         # list was re-read.
-        # 44 with the Harmony 885's compile track: its skill, its test notes, `todo-compile-885.md` and
+        # 44 with the Harmony 885's compile track: its skill, its test notes, its track's todo file and
         # `tests/harmony_880_885/test_harmony_885_flash_backup.py` name `rehearse-block.ts`. The first three went on the
         # withhold list; the test sits under `tests/`, already withheld. The list was re-read.
-        # 45 with `todo.md` 7.3.6: `packages/usb/test/package/surface.test.ts` holds the write subpath's names to a
+        # 45 with `packages/usb/test/package/surface.test.ts`, which holds the write subpath's names to a
         # list, `assertFirstWriteAllowed` among them. It is inside `packages/usb/`, withheld whole, so
         # nothing widens; the list was re-read.
-        # 49 with `todo.md` 7.3.10: `packages/corpus/src/writeconfig.ts`, the configuration write as a library
+        # 49 with `packages/corpus/src/writeconfig.ts`, the configuration write as a library
         # function, which states the sequence `write-config.ts` stated, and the three test files that drive it
         # against a fake remote asserting the flash write rail. All four went on the withhold list in the same
         # commit; the list was re-read.
