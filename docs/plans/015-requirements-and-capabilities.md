@@ -43,3 +43,19 @@ without breaking comments.
 
 The requirements come first because the sweep points at them, and the sweep before the restructure because the
 restructure renumbers and moves the files the code names.
+
+## Refined the same day, once the first list was in
+
+The generated `docs/remote-requirements.md` held every status with its evidence beside it and turned out unreadable
+as an overview, and its "met" was typed by hand beside the test that showed it, a link nothing kept true when the
+test changed. So:
+
+1. **A test names the requirement it proves**, and a model's met is derived from the tests that prove the requirement
+   for it, with a bench run where the requirement shows on a remote. Only open, unknown and impossible stay written
+   by hand, each with its reason. What an application reads at run time is generated from the proofs and checked.
+2. **A todo per bench remote**, `todo/todo-<model key>.md`: a generated checklist of the requirements possible on that
+   remote, ticked where proven, an unknown one marked to be found out first and an impossible one left out, since it
+   reads as a todo; below it, a part written by hand for the remote's own work.
+3. **The requirements document gets short**: what each requirement means and one table of where each remote stands;
+   the evidence goes to a file of its own.
+4. Then the restructure of `todo.md`, as above.

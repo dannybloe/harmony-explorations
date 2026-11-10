@@ -162,7 +162,8 @@ After 3 produces something.
     - [x] 7.3.13.1 The requirements and every bench model's status as data, `docs/remote-requirements.md` generated from it, and the capability API
     - [x] 7.3.13.2 The sweep: no todo named in code or tests, each reason written out or pointed at the reference, a decision or a requirement
     - [x] 7.3.13.3 The guard test, with what remains as a debt list that only goes down
-    - [ ] 7.3.13.4 `todo.md` restructured around the FHSDK, per plan 015
+    - [ ] 7.3.13.4 A test names the requirement it proves and a met is derived from the proofs; a generated checklist per bench remote with its own part below; the requirements document short and its evidence apart
+    - [ ] 7.3.13.5 `todo.md` restructured around the FHSDK, per plan 015
 
 ---
 
