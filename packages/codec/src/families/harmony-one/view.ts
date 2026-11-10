@@ -1,7 +1,7 @@
 /**
  * A Harmony One configuration as a person meets it, reduced to names two configurations of one setup share, so that
  * two of them can be compared by what they draw, what every key and touch does and every action list either can run,
- * rather than byte for byte. `todo-compile-one.md` 8.1.5, findings section 436: the test setup composed onto
+ * rather than byte for byte. Findings section 436: the test setup composed onto
  * Logitech's compile of two devices against the same setup composed onto our empty One.
  *
  * **Why not the four slot family's `setupView`.** That one names a screen item by the corner its label sits in, and

@@ -1,6 +1,6 @@
 /**
- * The Harmony One's look over a configuration composed onto a Logitech compile, `todo-compile-one.md`
- * 1.2.11.2.7: the steps findings sections 396 to 400 measured and the spare Harmony One showed, moved here out
+ * The Harmony One's look over a configuration composed onto a Logitech compile:
+ * the steps findings sections 396 to 400 measured and the spare Harmony One showed, moved here out
  * of the lab script that ran them, in the order that script ran them.
  *
  * Two halves, because the letters have to be in place before anything is composed: every name a composer spells
@@ -40,7 +40,7 @@ export function letterOneDonor(c: Container, choices: OneChoices): LetteredDonor
 }
 
 /**
- * The faces of a donor of ours, `todo-compile-one.md` 8.1.2: the empty One, section 434, unblended, which a setup is
+ * The faces of a donor of ours, section 435: the empty One, section 434, unblended, which a setup is
  * composed onto in place of a Logitech compile. A donor is ours where its font table is the stated one,
  * `buildOneFontTable` in `choices`' weights, set for set and glyph for glyph, as the Harmony 650's `donorFaces` holds
  * an empty configuration to its stated table, findings section 377; its faces are then the stated table's, which the
@@ -80,7 +80,8 @@ export function oneDonorFaces(c: Container, choices: OneChoices): readonly SetFa
  *
  * Returns the copies the blending made with the configuration, since a select it repointed names a copy and a
  * reader that knows a role by one font, a screen builder's description, has to be pointed back at the set the
- * copy was blended from to read the result, `unblendedSelects`; `todo-compile-one.md` 3.2.2's attribution does.
+ * copy was blended from to read the result, `unblendedSelects`; the composed path's attribution, `oneBuiltBytes` in
+ * `builders.ts`, does.
  */
 export function withOneLook(
   c: Container, faces: readonly SetFace[], choices: OneChoices, deviceType: (name: string | undefined) => number | undefined,

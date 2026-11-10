@@ -1,5 +1,5 @@
 /**
- * The Harmony One's clock header built from a description: `todo-compile-one.md` 4.7, findings section 414.
+ * The Harmony One's clock header built from a description, findings section 414.
  * The four screen programs that draw the strip along the top of the screen, base slot 11 entries 0 to 3 on
  * every compile read, and the six lists the clock's minute and hour call. Built through the template engine
  * of sections 411 and 412, `screentemplate.ts`, as programs of their own: no mode calls them, a queued
@@ -34,7 +34,7 @@
  * they are unnamed in the name tree. Nothing else names the six lists, on any of the nineteen.
  *
  * **What the description carries**: which entry each program is; the sixteen pictures once each, by role, a
- * picture drawn from several places taken from a shared table (`pictureOf`), 5.3's to build; the clock's font;
+ * picture drawn from several places taken from a shared table (`pictureOf`), which `pictures.ts` draws; the clock's font;
  * the homes of the texts drawn by reference to a copy outside the programs, on the sixteen the sixty minutes,
  * held by section 411's clock pickers on all but one compile, where another mode of nineteen pages holds ten; whether the hour is twelve or twenty four; and the lists'
  * indices and the minute's two variables. **Everything else is generated**: every opcode and operand, the
@@ -87,7 +87,7 @@ const SENDING = 17;
 const LEVELS = 8;
 
 // ---------------------------------------------------------------------------------------------------------
-// The sixteen pictures, by slot: what a description carries once each, and what chapter 5.3 builds.
+// The sixteen pictures, by slot: what a description carries once each, and what `pictures.ts` draws.
 
 /**
  * The gauge's eight levels are slots 0 to 7. The sixteen slots are sixteen addresses and thirteen images: the
@@ -190,7 +190,7 @@ const INCREMENT: Step = { kind: 'number', opcode: BAND, band: 0xf2, what: 'varia
 const LOAD_ZERO = k(BAND, 0xfb00);
 /**
  * One of the minute's two calls: load 0, then a list testing a variable against it and incrementing it. The variable
- * by its role, `todo-compile-one.md` 7.1.4, for a configuration numbered from nothing, `numbering.ts`.
+ * by its role, section 432, for a configuration numbered from nothing, `numbering.ts`.
  */
 const count = (variable: string): Step => owns(LOAD_ZERO, owns(named(TEST, variable), named(INCREMENT, variable)));
 /**
@@ -325,7 +325,7 @@ export function describeOneClockHeader(c: Container, layout: ContainerLayout, re
 
 /**
  * The four programs for a clock of `hours` and the two calls, as templates, for a configuration numbered from nothing,
- * `numbering.ts`, `todo-compile-one.md` 7.1.4.
+ * `numbering.ts`, section 432.
  */
 export function oneClockHeaderTemplates(hours: 12 | 24): { programs: TemplateProgram<ClockHeaderFont>[]; calls: Omit<TemplateCall, 'at'>[] } {
   return { programs: clockHeaderPrograms(hours), calls: CALL_STEPS() };

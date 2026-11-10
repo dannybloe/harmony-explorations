@@ -1,10 +1,9 @@
 /**
  * The Harmony One's screens built from a template: the language a fixed screen is written in, the reader that
  * takes a description of a configuration's numbering off its screens against a template, and the builder that
- * makes the screens again from that description. Shared by `fixedscreens.ts` (`todo-compile-one.md` 4.4.4.1,
- * findings section 411) and `tourscreens.ts` (4.4.4.2, section 412), so that both read and build a screen
- * the same way rather than each keeping a copy. It was `fixedscreens.ts`' own until 4.4.4.2 needed it a second
- * time.
+ * makes the screens again from that description. Shared by `fixedscreens.ts` (findings
+ * section 411) and `tourscreens.ts` (section 412), so that both read and build a screen the same way rather than
+ * each keeping a copy.
  *
  * **What a template screen is**, `TemplateScreen`: its own key map, the presses it swallows and its handlers;
  * its chrome, the program every page calls; and its pages, each a hit page, a page list, the list's copy and
@@ -29,22 +28,22 @@
  * **The mode entry's first byte** is generated: 1 exactly where the screen's own key map binds tag `0x29`,
  * section 411's 139 of 139 over the nineteen compiles.
  *
- * **Programs of their own**, `TemplateProgram`, since `todo-compile-one.md` 4.7 (section 414): a base slot 11
+ * **Programs of their own**, `TemplateProgram` (section 414): a base slot 11
  * entry that no mode calls, read and built by the same program reader and writer as a screen's pages, with the
  * lists a state transition calls beside them, `TemplateCall`, and put back by `withTemplatePrograms`. The
  * clock's header programs needed three things the screens did not, each generic to the language: a switch on
  * a variable the firmware owns, a constant of the template; a switch inside an arm, whose join closes as the
  * arm would; and pictures drawn from several places, taken from a shared table by slot.
  *
- * **A text wrapped to a width**, `wrapped`, since `todo-compile-one.md` 4.6 (section 415): the help screens'
+ * **A text wrapped to a width**, `wrapped` (section 415): the help screens'
  * questions name a device, so how many lines a question takes is the device name's and the font's, not the
  * template's. The template states the words, the width and the block; the builder breaks the words into lines
- * with the font in force, `wrapLines`, and centres each. Since `todo-compile-one.md` 3.2.2.4 a wrapped part is rows
+ * with the font in force, `wrapLines`, and centres each. A wrapped part is rows
  * of a block, every block of the help screens is one, and the reader takes each row's lines by their words,
  * `joinLines`, rather than every text in a row, since one block may follow another and since the description of a
  * configuration lettered anew reads the lines Logitech's letters made while the builder breaks them in its own.
  *
- * **Roles**, `named`, since 3.2.2.4: a number step may say which number of the configuration's it is, and
+ * **Roles**, `named`: a number step may say which number of the configuration's it is, and
  * `templateNumberSlots` walks a screen in the order the builder takes its numbers, so a caller can read each
  * role's value off the screens a configuration holds and number a screen it does not hold yet, the help screens'
  * questions about a composed device. The reader and the builder ignore roles.
@@ -81,8 +80,8 @@ export const HALF = SCREEN_WIDTH / 2;
 
 /**
  * What a number the configuration chose is, for the reader of a description; each is read the same way. `set` is a
- * base slot 9 entry, the keypad map an activity menu row selects, `todo-compile-one.md` 4.1. `pause` is a `0x7C`'s
- * operand, a device's wait in a sequence an activity's pad runs, `todo-compile-one.md` 4.3.
+ * base slot 9 entry, the keypad map an activity menu row selects (section 419). `pause` is a `0x7C`'s
+ * operand, a device's wait in a sequence an activity's pad runs (section 423).
  */
 export type NumberKind = 'list' | 'mode' | 'program' | 'timer' | 'map' | 'variable' | 'set' | 'pause';
 
@@ -109,15 +108,16 @@ export const write = (value: number): Step => ({ kind: 'write', operand: value }
  * A number step given a name, its **role**: which number of the configuration's it is, where the step's kind
  * says only what sort of number it is. The reader and the builder ignore it, so a template reads and builds the
  * same with roles or without. What it is for is numbering screens a configuration does not hold yet, the help
- * screens of a device a composer added, section 415 and `todo-compile-one.md` 3.2.2.4: `templateNumberSlots`
+ * screens of a device a composer added, section 415: `templateNumberSlots`
  * walks a screen in the order the builder takes its numbers, and a caller that knows the value of each role
  * (read off the screens the configuration does hold, by the same walk) can number a new screen from it.
  *
  * **An `owns` step takes one too**, since its list's own index is a number the builder takes: so a list that holds
  * fewer steps in one form of a screen than in another is carried by name, `carriedNumbers`, where its contents would
- * not match. Options' entering list of one page, `todo-compile-one.md` 4.10.2.
+ * not match. Options' entering list is one: on one page it holds only the timer and the light list, where on two
+ * pages it also lights the page keys, section 421.
  *
- * **And a state write**, since `todo-compile-one.md` 7.1.4, whose variable is a number the builder takes: so a
+ * **And a state write**, whose variable is a number the builder takes: so a
  * configuration built from nothing knows which of its variables each write names, `numbering.ts`. `carriedNumbers`
  * still carries a write by what it is and not by its role, as it did before writes took one.
  */
@@ -202,7 +202,7 @@ export type Part<F extends string = string> =
    * Rows of text, each broken into lines no wider than `width` pixels by `wrapLines`, every line centred on the
    * screen, the lines `pitch` apart in a block centred on y `centre`, an empty row a line's place left blank as
    * in `centredBlock`: the help screens' questions, section 415, whose line count follows the device name they
-   * hold, and since `todo-compile-one.md` 3.2.2.4 every other block of the help screens, so a fixed line our
+   * hold, and every other block of the help screens, so a fixed line our
    * letters make wider than `width` breaks by the questions' rule rather than leaving the screen. A row that fits
    * is one line where `centredBlock` would have put it, so a block whose every row fits is that block. One text
    * instruction per line.
@@ -414,8 +414,8 @@ function switchTables(one: ScreenInstruction): { exact: number[]; ranges: [numbe
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// One instruction against its step, read and written: shared by the template's screens and programs and, since
-// `todo-compile-one.md` 6.5, by the firmware screens' lists below them, `firmwarescreens.ts`, whose own older
+// One instruction against its step, read and written: shared by the template's screens and programs and
+// by the firmware screens' lists below them (section 418), `firmwarescreens.ts`, whose own older
 // language takes a template step wherever a list of the configuration's is built rather than named.
 
 /**
@@ -989,7 +989,7 @@ function writeScreen<F extends string>(
  * picture a stand in, so neither the configuration nor its fonts are needed. **So a description's numbers for
  * this screen pair one to one with what this returns**, and a caller can read each number's role off the
  * steps, `named`, or number a screen no configuration holds from roles it knows the values of: section 415's
- * help screens for a device a composer added, `todo-compile-one.md` 3.2.2.4.
+ * help screens for a device a composer added.
  */
 export function templateNumberSlots<F extends string>(screen: TemplateScreen<F>): Step[] {
   const slots: Step[] = [];
@@ -997,7 +997,7 @@ export function templateNumberSlots<F extends string>(screen: TemplateScreen<F>)
   const fonts = new Proxy({} as Record<F, number>, { get: () => 0 });
   // Each list a distinct index, so the lists built on the way are never built two ways; a write's variable 0, since a
   // write names its variable in seven bits and a screen of many rows takes more than 127 numbers, which the menu of
-  // eight activities showed when `todo-compile-one.md` 7.1.4 first walked every compile's.
+  // eight activities showed when every compile's was walked (section 432).
   writeScreen(screen, () => ({ codes: [], width: 0 }), fonts, new Map(), new Map(), new Map(), {
     numbers: [], pictures: Array<PieceTarget>(256).fill(stand),
     numberOf: (step) => { slots.push(step); return step.kind === 'write' ? 0 : slots.length; },
@@ -1008,7 +1008,8 @@ export function templateNumberSlots<F extends string>(screen: TemplateScreen<F>)
 /**
  * Where a template screen draws each picture the description supplies, in the order it takes them: the builder's own
  * walk with a stand in for every picture, read back off the programs it made. So a caller can carry pictures from one
- * form of a screen to another by place, `todo-compile-one.md` 4.10's Options, whose row buttons differ by row.
+ * form of a screen to another by place, as Options without the Remote Assistant's and the Tutorial's rows needs,
+ * whose row buttons differ by row (section 421).
  */
 export function templatePicturePlaces<F extends string>(screen: TemplateScreen<F>): { x: number; y: number }[] {
   const stands = Array.from({ length: 256 }, (): PieceTarget => ({ to: { bytes: new Uint8Array(0), refs: [], owner: 'picture-bank' }, offset: 0 }));
@@ -1042,7 +1043,7 @@ function stepSignature(step: Step): string {
 }
 
 /**
- * A screen's numbers carried from one form of it to another, `todo-compile-one.md` 4.10: Options without the Remote
+ * A screen's numbers carried from one form of it to another, section 421: Options without the Remote
  * Assistant's and the Tutorial's rows, numbered from the Options the configuration holds. Slot by slot in
  * `templateNumberSlots`' order: a number with a role takes the value that role holds in `from`, the same at every
  * place `from` names it, and any other slot the value of the same step, by what it is, at the same occurrence.
@@ -1084,7 +1085,7 @@ export function carriedNumbers<F extends string>(
  * first program to draw a text holds it inline. Everything but the description's numbers is generated. `c` is
  * read for its fonts and character map only, which spell the words and measure them. `map` is the character map
  * the words are spelled by, the configuration's by default: an activity's start up title spells its joiner by the
- * One family's, `oneCharacterMap`, `todo-compile-one.md` 4.3.
+ * One family's, `oneCharacterMap`.
  */
 export function buildTemplateScreens<F extends string>(
   c: Container, spec: TemplateScreensSpec<F>, screens: readonly TemplateScreen<F>[], map: CharacterMap | undefined = characterMap(c),

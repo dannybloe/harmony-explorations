@@ -1,5 +1,5 @@
 /**
- * The labels on the Harmony One's pads centred by their own letters, `todo-compile-one.md` 1.2.11.2, asked for
+ * The labels on the Harmony One's pads centred by their own letters, asked for
  * on 16 October 2026 when the labels on the screens looked to sit at different heights.
  *
  * **They sat low, and Logitech's sit just as low.** A pad's label lines are drawn at the heights Logitech's

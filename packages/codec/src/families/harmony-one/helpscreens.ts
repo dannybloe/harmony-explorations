@@ -1,5 +1,5 @@
 /**
- * The Harmony One's power off help built whole from a description: `todo-compile-one.md` 4.6, findings section
+ * The Harmony One's power off help built whole from a description, findings section
  * 415, through the template engine of sections 411 to 414, `screentemplate.ts`.
  *
  * **What it is, for a person holding the remote.** Pressing Help while nothing is on (the remote's "PowerOff"
@@ -19,7 +19,7 @@
  * problem?"; 4n + 2 screens. **With no device to turn off** (`harvest_one_families_1`, the one compile whose
  * household holds none) two screens: the attempt screen, its enter handler two timers and its leave one bound
  * directly, and "Nothing to do", which the first of those timers enters after three seconds. The test setup's donor,
- * `harvest_one_two_devices`, holds two: ten screens, the "four generic ones" `todo-compile-one.md` 3.2.1 listed
+ * `harvest_one_two_devices`, holds two: ten screens, the four once counted as generic
  * being the attempt, the "If not" and the two devices' "Did that fix the problem?", which go with the devices.
  *
  * **Which screen goes where is the configuration's numbering**, the modes each screen's lists enter, and the
@@ -33,8 +33,8 @@
  * remote's own lists they call), the timers, the value map Help and Yes run, the base slot 11 programs, the
  * modes the lists enter, and the three fonts. **What is generated**: every opcode and constant operand, the tags
  * and their order, every list of the screens' own, every word (the questions from the device names), how a
- * question breaks into lines (`wrapLines` at 171 pixels), every place, which text is inline, the records, and since
- * `todo-compile-one.md` 7.1.6 the hit page each kind of screen is touched through, the attempt screen's, every
+ * question breaks into lines (`wrapLines` at 171 pixels), every place, which text is inline, the records, and
+ * the hit page each kind of screen is touched through, the attempt screen's, every
  * question's and "Nothing to do"'s, `HELP_HIT_PARTS`, at the index the description reads, section 429.
  *
  * **Where text goes**, every text of the 4n + 2 on the eighteen: the title "PowerOff" at 6, 4 (section 411's
@@ -46,9 +46,9 @@
  * **What is not built**: the lists these screens' own lists call (the devices' power off lists and five of the
  * remote's own on every compile with a device, which stay the configuration's and are named by index), the value
  * map, the timer that enters "Nothing to do" and its list, and what enters the attempt screen, a queued `0x7E` in
- * a value map's case for value 0 (`todo-compile-one.md` 6.6).
+ * a value map's case for value 0 (`caseprograms.ts`, section 416).
  *
- * **On the composed path since `todo-compile-one.md` 3.2.2.4**, `builders.ts`, through `withOneHelpChain`: the
+ * **On the composed path**, `builders.ts`, through `withOneHelpChain`: the
  * chain the donor holds, rebuilt, and four questions for every device the composers added that has a power
  * variable, numbered from the chain's own screens by the role each number plays (`named`, `helpNumbering`). Every
  * block of text is wrapped at the questions' 171 pixels, `block`, which leaves Logitech's lines where they are and
@@ -56,7 +56,7 @@
  * are each one paragraph flowed by the same wrap.
  *
  * English only; skin 54 and the European skin 59. The Harmony One alone, the One family's; the Harmony 600,
- * 650 and 700 are the four slot family, whose help is postponed (`todo-later.md` 3.3) and not built anywhere.
+ * 650 and 700 are the four slot family, whose help is not built anywhere yet, requirement R44.
  * Read only towards hardware: the result is pieces.
  */
 import type { Container } from '../../container/gspm.ts';
@@ -111,7 +111,7 @@ export const ATTEMPT_LINE = 'Attemping to fix the problem...';
  * gives exactly Logitech's lines on all eighteen English compiles ("Keep the remote pointed to" over "your system.",
  * and "If not, the remote will ask you" over "questions to help correct the" over "problem."), so the compiles
  * rebuild byte for byte, and in letters of other widths the paragraph flows again rather than leaving a word alone
- * on a line, as wrapping each of Logitech's lines did in ours until `todo-compile-one.md` 3.2.2.4 was revised.
+ * on a line, as wrapping each of Logitech's lines on its own would in ours.
  */
 const ATTEMPT_TEXT = 'Keep the remote pointed to your system.';
 const FIXED = 'Did that fix the problem?';
@@ -142,7 +142,7 @@ const SEVEN = k(7, 0xfffb);
 
 /*
  * **Every number the template takes from the configuration carries a role**, `named`, so the screens a composed
- * device needs can be numbered from the ones the configuration holds, `todo-compile-one.md` 3.2.2.4: the reader
+ * device needs can be numbered from the ones the configuration holds: the reader
  * and the builder ignore roles, and `helpNumbering` reads each role's value off the chain as described and gives
  * it to the new screens. The roles are what section 415's numbers turned out to be on the test setup's donor:
  * the same two of the remote's lists open every enter handler after the timer, or before it and again after it,
@@ -187,7 +187,7 @@ function question(name: string, own: readonly Entry[], no: Step, yes: Step, word
 
 /**
  * Rows of a block centred on y `centre`, each wrapped at the questions' width, `wrapped`: a question about a
- * device, wrapped as its name makes it, and since `todo-compile-one.md` 3.2.2.4 every other block of these
+ * device, wrapped as its name makes it, and every other block of these
  * screens, each paragraph of them one row. In Logitech's letters the wrap gives Logitech's own lines on all eighteen
  * English compiles, the attempt line one line at 170, so the compiles rebuild byte for byte; in ours the attempt
  * line is 177 and breaks in two, where it would otherwise start off the screen, and the "If not" paragraph flows
@@ -252,7 +252,7 @@ export function helpScreens(devices: readonly HelpDevice[]): HelpScreen[] {
   // timers enters after three seconds through a list of the configuration's (`07 FFFB`, one of the remote's
   // lists, the enter), neither built here. `harvest_one_families_1` alone, one compile.
   if (devices.length === 0) {
-    // The roles, `todo-compile-one.md` 7.1.4: the three second timer first, then the attempt screen's own; "Nothing to do"
+    // The roles, section 432: the three second timer first, then the attempt screen's own; "Nothing to do"
     // starts the questions' timer and lights channel 7, and switches it off through the off list the other screens build.
     return [attempt(owns(named(TIMER_START, 'three second timer'), ATTEMPT_START), ATTEMPT_CANCEL), {
       name: NOTHING_SCREEN,
@@ -496,7 +496,7 @@ export interface OneHelpScreensDescribed extends Omit<TemplateScreensDescribed<H
 
 /**
  * The hit page a screen of the chain is touched through, `HELP_HIT_PARTS`, by what the screen is: the attempt
- * screen, "Nothing to do", or a question, every other one. `todo-compile-one.md` 7.1.6, findings section 429.
+ * screen, "Nothing to do", or a question, every other one. Findings section 429.
  */
 function helpHitParts(screen: HelpScreen): readonly HitPart[] {
   if (screen.name === ATTEMPT_SCREEN) return HELP_HIT_PARTS.attempt;
@@ -580,7 +580,7 @@ export function checkOneHelpScreens(c: Container, read?: ValueReader): { devices
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// A composed device's help, `todo-compile-one.md` 3.2.2.4.
+// A composed device's help, section 415's "putting it on the path".
 
 /**
  * A chain as a description reads it, numbered by role, `named`: every role's one value (the remote's lists, the
@@ -664,10 +664,10 @@ export function numberedHelpScreens(
 export const FIRST_DEVICE_HELP_LISTS: Readonly<Record<string, string>> = { 'enter list 1': 'keyLights.4.1.1', 'seven list': 'lights' };
 
 /**
- * A chain of no device numbered for the first devices it asks about, `todo-compile-one.md` 8.1.1: the empty One's,
- * section 434, where until now a composed device's questions were numbered from a device's the chain held. The roles
- * the two screens hold, `chainNumbering`, with those a question takes that they do not, `FIRST_DEVICE_HELP_LISTS`: the
- * wiring's two lists by their catalogue names, the light 7 lists "Nothing to do" runs, and the list switching channel
+ * A chain of no device numbered for the first devices it asks about: the empty One's, section 434. A chain that holds
+ * a device numbers a composed device's questions from that device's, and this one has none to number from. What it is
+ * numbered from instead: the roles the two screens hold, `chainNumbering`, with those a question takes that they do
+ * not, `FIRST_DEVICE_HELP_LISTS`: the wiring's two lists by their catalogue names, the light 7 lists "Nothing to do" runs, and the list switching channel
  * 5 off, found by its instructions among the configuration's lists. Refuses where any is not found.
  */
 function firstHelpNumbering(c: Container, d: OneHelpScreensDescribed): HelpNumbering {
@@ -755,7 +755,7 @@ export function composedHelpDevice(c: Container, note: ComposedDeviceNote): Comp
 
 /**
  * The power off help put in place of the configuration's own, asking about every composed device too:
- * `todo-compile-one.md` 3.2.2.4, section 415's "putting it on the path". With no composed device asked about,
+ * section 415's "putting it on the path". With no composed device asked about,
  * the chain described, built and put back, as `checkOneHelpScreens` does without the comparison.
  *
  * **With some**, each gets the four screens a device's questions are, after the chain's own devices, in the
@@ -777,7 +777,7 @@ export function composedHelpDevice(c: Container, note: ComposedDeviceNote): Comp
  *    builder on the composed path puts its part; the stand ins' places read by `recordReading`, which the
  *    description reads every record by.
  *
- * The value map's case entering the attempt screen stays where it is (`todo-compile-one.md` 6.6): the attempt
+ * The value map's case entering the attempt screen stays where it is (`caseprograms.ts`): the attempt
  * screen keeps its mode. Refused: a chain with no device, a composed device already asked about by name, and
  * whatever the description, the numbering or the builder refuses.
  */
@@ -793,7 +793,7 @@ export function withOneHelpChain(start: Container, composed: readonly ComposedDe
   const asked = new Set(d0.spec.devices.map((one) => one.name));
   const twice = added.find((one) => asked.has(one.name));
   if (twice !== undefined) throw new ScreenRecordError(`the power off help already asks about ${twice.name}`);
-  // A chain of no device, the empty One's, `todo-compile-one.md` 8.1.1: its two screens become the attempt screen
+  // A chain of no device, the empty One's: its two screens become the attempt screen
   // and the "If not" question, which takes "Nothing to do"'s mode, its lists of their own reused and more appended,
   // and every question is touched through the question's hit page, `firstQuestionPage`.
   const noDevice = d0.spec.devices.length === 0;
@@ -915,7 +915,7 @@ export function withOneHelpChain(start: Container, composed: readonly ComposedDe
 }
 
 /**
- * `withOneHelpChain`'s last step on a chain of no device, `todo-compile-one.md` 8.1.1: the two screens it held no
+ * `withOneHelpChain`'s last step on a chain of no device: the two screens it held no
  * longer read as the template they were described by, "Nothing to do"'s page list holding the "If not" question's two
  * bindings now, so every screen of the chain is read where it sits by `recordReading`, as the stand ins are, and its
  * pictures off the programs the configuration holds: the attempt screen's its own, and every question's those of

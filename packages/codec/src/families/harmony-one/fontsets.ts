@@ -1,5 +1,5 @@
 /**
- * The Harmony One's font table stated rather than read off a donor: `todo-compile-one.md` 7.1.1, findings
+ * The Harmony One's font table stated rather than read off a donor, findings
  * section 427, the One family's half of what `harmony-600-650-700/empty.ts`' `EMPTY_FONT_SETS` does for the Harmony 650.
  *
  * Until now the One family only re-lettered a Logitech compile's sets, `letterOneDonor`: which sets exist, in
@@ -19,7 +19,7 @@
  *   compile where one of those has more than one page. A table of ours holds neither. It holds the two copies
  *   `letterOneDonor` adds in their place, `ONE_ADDED_SETS`: the title's face in `startTitleWeight` and the
  *   fixed screens' count face in the activity title's colours, each smoothed against black, the colour our
- *   screens draw under both, `todo-compile-one.md` 5.3.3.
+ *   screens draw under both, section 422.
  * * **The code order**, `ONE_GLYPH_ORDER`: every compile hands out its first 60 codes in one order, the same
  *   on all sixteen, and the 61st follows the setup's names. Ours keeps those 60 where Logitech puts them and
  *   gives the other 35 printable characters the codes after them in ASCII order, so every set spells all 95.

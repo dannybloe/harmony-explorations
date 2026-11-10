@@ -9,12 +9,11 @@
  * front of it, section 287: no command opens with that step on the Harmony One, the 525 or the arch 8
  * configuration, `compose.test.ts`. It was also the send a configuration no family serves got, `sendsOf` in the
  * registry, from before plan 007 until plan 013 decision 2, which refuses such a configuration. **The wait at the end of the on list is the Harmony One's**, section
- * 393, and the Harmony 880 and 885's too, so the device half is shared since `todo-compile-885.md` 2.1,
- * `shared/sendpair.ts`; this said it was the Harmony One's alone until the 885's compiles were read for it.
+ * 393, and the Harmony 880 and 885's too, so the device half is shared,
+ * `shared/sendpair.ts`.
  *
- * Moved out of `shared/devices.ts`, `inputs.ts`, `sequence.ts` and `composecatalogue.ts` with
- * `todo-compile-one.md` 3.3.3.4, where each module tested a trait, `sendPrelude`, and built or matched this
- * shape itself; nothing in what is built or matched changed.
+ * Kept here rather than in `shared/devices.ts`, `inputs.ts`, `sequence.ts` and `composecatalogue.ts`, so that no
+ * shared module tests a trait, `sendPrelude`, to build or match this shape itself.
  */
 import type { DeviceSends, ListBody, SendList, SendShape } from '../family.ts';
 import type { Container, Instruction } from '../../container/gspm.ts';
@@ -26,12 +25,12 @@ import { pairDeviceSends } from '../../shared/sendpair.ts';
 /**
  * A device's lists after its sends: none, or where the device states a power on delay, the on list, every
  * step of the on action and then the device's own `0x7C` with the delay in tenths, as Logitech's compiler
- * writes it on eight catalogue devices of eight, findings section 393, `todo-compile-one.md` 1.2. It goes
+ * writes it on eight catalogue devices of eight, findings section 393. It goes
  * straight after the sends. A delay past one quantity byte is not composed: no compile of a One here shows how
  * one is split.
  *
- * The lists themselves are `pairDeviceSends` in `shared/sendpair.ts` since `todo-compile-885.md` 2.1, where the
- * Harmony 880 and 885 turned out to write the same bytes; this family states only its largest wait, the byte's
+ * The lists themselves are `pairDeviceSends` in `shared/sendpair.ts`, since the
+ * Harmony 880 and 885 write the same bytes; this family states only its largest wait, the byte's
  * 255, with the refusal it always gave.
  */
 function oneDevice(c: Container, group: number, device: ComposeDevice): DeviceSends {

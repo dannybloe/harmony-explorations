@@ -1,13 +1,13 @@
 /**
- * The two tables of a Harmony One configuration that no other builder on the composed path writes,
- * `todo-compile-one.md` 6.7: raw slot 18, the section the One's table inserts and the base layout does not
- * have, and base slot 16's table, the number senders. Until this module both came out of the donor as they
- * were, three bytes on the test setup, `test/families/harmony-one/composesetup.test.ts`.
+ * The two tables of a Harmony One configuration that no other builder on the composed path writes:
+ * raw slot 18, the section the One's table inserts and the base layout does not
+ * have, and base slot 16's table, the number senders. Without this module both would come out of the donor
+ * as they are, three bytes on the test setup, `test/families/harmony-one/composesetup.test.ts`.
  *
  * **Raw slot 18 is generated whole, as a constant**, because it is one: two zero bytes on all 36 distinct
  * Harmony One containers in the lab, Logitech's nineteen compiles, ours and the safe mode one alike, with
- * nothing parked in front of it on any of them (`frame.ts`, measured in `test/assembly/frame.test.ts`;
- * `todo-compile-one.md` 2.2). The firmware seeks the slot twice, section 38, and what it does with what it
+ * nothing parked in front of it on any of them (`frame.ts`, measured in `test/assembly/frame.test.ts`).
+ * The firmware seeks the slot twice, section 38, and what it does with what it
  * finds there is unread. So the builder writes the one form every container shows and **refuses a
  * configuration holding another**, rather than overwriting bytes whose meaning nothing here knows: there is
  * no description to read, so a different value is a configuration nothing here has seen, not one to rebuild.

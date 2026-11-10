@@ -1,6 +1,6 @@
 /**
  * The Harmony One's fixed screens past the firmware's ten, built whole from a description:
- * `todo-compile-one.md` 4.4.4.1, findings section 411, the way `firmwarescreens.ts` built the ten (section 409).
+ * findings section 411, the way `firmwarescreens.ts` built the ten (section 409).
  *
  * Section 408 listed what a configuration of ours needs beyond the ten firmware screens: the status screen
  * the firmware draws by number, code 9's "LCD Module Failed" (mode 19 on every compile); the seven blank
@@ -8,7 +8,7 @@
  * eight pickers, Year, Month, three Day pickers (28, 30 and 31 days), Hour, Minute and Time of Day. Section
  * 405's census holds them as fixed modes of role `other`, at mode numbers that differ per compile, since they
  * sit between the setup's screens. Twenty three screens; the welcome tour and the Remote Assistant are
- * 4.4.4.2's.
+ * `tourscreens.ts`'.
  *
  * **One shape each once the numbering is set aside**, measured on the sixteen English compiles of skin 54:
  * every tag, opcode and constant operand, every list's length, every word, its font role and its place, the
@@ -60,7 +60,7 @@
  * and their order, every list's instructions, the switches' cases, every word and where it is drawn, the page
  * counts and numbers, which text is drawn inline, and the programs' and records' bytes.
  *
- * **The lists below them are built too**, since `todo-compile-one.md` 6.5, section 418: the 154 on each of the
+ * **The lists below them are built too**, section 418: the 154 on each of the
  * sixteen that the screens' own lists call, through every level, and the wiring does not build, among them the
  * clock's setters and handlers, the key lights' off lists and the list turning the Remote Assistant on, each at the
  * index the description reads. What is left below them, five lists, is the wiring's; section 411 named all 207
@@ -68,12 +68,12 @@
  * `oneBuiltBytes` gives its bytes to the first in `ONE_BUILT` order.
  *
  * **A leap year in the Year picker's range** brings two screens more, the leap year's Month picker and the Day 29
- * picker, after the twenty three, `oneFixedScreenNames`, since `todo-compile-one.md` 7.1.7, section 434: until then
- * such a build year was refused. Their shape is the other pickers', read on Logitech's two European compiles, which
+ * picker, after the twenty three, `oneFixedScreenNames`, section 434, so such a build
+ * year is built rather than refused. Their shape is the other pickers', read on Logitech's two European compiles, which
  * hold them in English.
  *
- * **The template language, the description reader and the builder are `screentemplate.ts`'**, moved there when
- * 4.4.4.2's tour and Remote Assistant needed them a second time (section 412); this module keeps the twenty three
+ * **The template language, the description reader and the builder are `screentemplate.ts`'**, shared there with
+ * the tour and the Remote Assistant, which need them too (section 412); this module keeps the twenty three
  * screens, how each is found and the build year.
  *
  * English only; skin 54, the Harmony One the spare reports. Read only towards hardware: the result is pieces.
@@ -163,9 +163,10 @@ function picker(
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// Roles, `todo-compile-one.md` 7.1.4: every number the screens take that is not a list of their own says which
+// Roles, section 432: every number the screens take that is not a list of their own says which
 // number of the configuration's it is, `named`, so a configuration built from nothing can number them,
-// `numbering.ts`. The reader and the builder ignore roles; Options' roles are older, 4.10.2's, and keep their names.
+// `numbering.ts`. The reader and the builder ignore roles; Options' roles were named
+// first, for carrying Options from one form to the other (section 421), and keep their names.
 
 /** The enter of the screen named `screen`, by its name in `ONE_FIXED_SCREENS`. */
 const to = (screen: string): Step => named(ENTER, `mode ${screen}`);
@@ -344,7 +345,7 @@ const OPTIONS_OWN: readonly Entry[] = [
  * Options of one page enters as Logitech's one page screens do, the timer and channel 5's on list and **not** the page
  * keys' on list: Screen Sensitivity's and Time of Day's entering lists are exactly that on every compile read, where
  * every screen of several pages calls the page keys' list as well. Calling it lit the page keys over a screen with
- * nothing to turn to, which the spare Harmony One showed at the bench, `todo-compile-one.md` 4.10.2. Leaving still
+ * nothing to turn to, which the spare Harmony One showed at the bench, section 421. Leaving still
  * switches them off, as the one page screens' leaving lists do too.
  */
 const OPTIONS_ONE_PAGE_OWN: readonly Entry[] = [
@@ -360,7 +361,7 @@ const soundRow = (y: number): FixedPart => ({
 /**
  * Options. **As Logitech's compiles hold it**, measured on the sixteen English compiles of skin 54, two pages:
  * "Turn Remote Assistant On" or "Off", "Tutorial" and "Date and Time", then "Turn Screen Sounds Off" or "On" and
- * "Screen Sensitivity". **Without the welcome tour and the Remote Assistant**, `todo-compile-one.md` 4.10, our form,
+ * "Screen Sensitivity". **Without the welcome tour and the Remote Assistant**, section 421, our form,
  * the first two rows are gone and the three left are one page in the same order: so its own key map swallows the page
  * arrows, as every one page screen's does (section 275), and it draws no page count and no page number. Which form a
  * configuration holds is its Options' page count, `optionsForm`.
@@ -500,7 +501,7 @@ export function oneFixedScreenTemplates(year: number, tour: boolean): TemplateSc
 
 /**
  * The hit page each page of the twenty three is touched through, by its name in `hitpages.ts`' table, per screen in
- * the order a description lists them, for a configuration numbered from nothing, `todo-compile-one.md` 7.1.4: code 9's
+ * the order a description lists them, for a configuration numbered from nothing, section 432: code 9's
  * message; Options' three rows, and its second page's two where it keeps the tour's rows; Screen Sensitivity's five
  * buttons; a confirmation's message over OK; the Year's three rows; a picker's page by how many of the six buttons
  * it fills, six, four, two or one; a blank screen's page of no area. Each page's hit page on all sixteen English
@@ -616,7 +617,7 @@ export interface OneFixedScreensSpec extends TemplateScreensSpec<FixedScreenFont
   year: number;
   /**
    * Whether Options holds the Remote Assistant's and the Tutorial's rows, on two pages as Logitech's compiles do,
-   * or is the one page our configurations hold without the tour and the assistant, `todo-compile-one.md` 4.10.
+   * or is the one page our configurations hold without the tour and the assistant, section 421.
    */
   tour: boolean;
 }
@@ -689,7 +690,7 @@ export function checkOneFixedScreens(c: Container, read?: ValueReader): { screen
 
 /**
  * The configuration with Options in its form without the Remote Assistant's and the Tutorial's rows, our form,
- * `todo-compile-one.md` 4.10, findings section 421: one page of "Date and Time", the screen sounds' row and "Screen
+ * findings section 421: one page of "Date and Time", the screen sounds' row and "Screen
  * Sensitivity", numbered from the Options the configuration holds. A configuration holding that form already is
  * returned as it is.
  *

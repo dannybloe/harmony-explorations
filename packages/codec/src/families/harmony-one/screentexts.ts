@@ -1,5 +1,5 @@
 /**
- * Every text a Harmony One configuration draws, spelled from its word: `todo-compile-one.md` 5.1, section 406,
+ * Every text a Harmony One configuration draws, spelled from its word, section 406,
  * the One family's half of what section 358 did for the Harmony 600, 650 and 700.
  *
  * A text instruction draws glyph codes, and a code is the configuration's own number for a character in the
@@ -21,7 +21,7 @@
  *
  * **What is read and not generated**: each text's place, the font it is drawn in, the fonts themselves and the
  * character map. Where a text sits on the One's screens is the rule of the screen it is on, and building those
- * screens is `todo-compile-one.md` chapter 4; the device pages and an activity's screens already place theirs,
+ * screens is each screen builder's work; the device pages and an activity's screens already place theirs,
  * `screens.ts` and `activityscreen.ts`. How a pad label is broken over its lines is the device composer's rule,
  * section 394, `oneLabelLines`, so each line is read as a word of its own here. A code the character map does
  * not resolve leaves no word, and such a text keeps its codes; none of the nineteen compiles draws one.
@@ -57,7 +57,7 @@ export const TITLE_JOINER = '\u{E000}';
  *
  * **On a donor lettered in ours both blanks are in every set and draw the same**, `letterOneDonor`, so the
  * joiner cannot be told from the space there and its titles read as words with a space; spelling them back then
- * gives the space's code, not the joiner's. The rule is for Logitech's compiles, which is what 5.1 reads. Refused
+ * gives the space's code, not the joiner's. The rule is for Logitech's compiles, which is what this module reads. Refused
  * where the blanks part any other way, which no compile does.
  */
 export function titleJoinerCode(c: Container, map: CharacterMap): number | undefined {

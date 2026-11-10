@@ -1,9 +1,9 @@
 /**
- * The Harmony One's activity screens built whole from a description: `todo-compile-one.md` 4.3, findings section 423,
+ * The Harmony One's activity screens built whole from a description, findings section 423,
  * every activity's **start up screen** and **working screen**, through the template engine of sections 411 to 415,
  * `screentemplate.ts`, and the hit page rules of section 417, `hitpages.ts`, as the activity menu (`activitymenu.ts`,
  * section 419) and the device pages (`devicepages.ts`, section 420) are built. Not to be confused with
- * `activityscreen.ts`, the composer that adds an activity's two screens to a configuration and since 4.3 hands them to
+ * `activityscreen.ts`, the composer that adds an activity's two screens to a configuration and hands them to
  * this template to be laid out, `withOneActivityScreensRebuilt`.
  *
  * **What they are.** Starting an activity shows its start up screen, "Starting" and the activity's name over the

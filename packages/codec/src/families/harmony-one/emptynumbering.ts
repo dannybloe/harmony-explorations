@@ -1,7 +1,7 @@
 /**
  * A Harmony One built from nothing, numbered: every mode, variable, value map, list and hit page of a configuration
  * with no device and no activity, and from that numbering the description each screen set's builder takes.
- * `todo-compile-one.md` 7.1.4, findings section 432. The One family's half of what `families/harmony-600-650-700/empty.ts`
+ * Findings section 432. The One family's half of what `families/harmony-600-650-700/empty.ts`
  * numbers for the Harmony 650.
  *
  * **Why.** Every screen builder of the One family takes a description, and until now every description was read off
@@ -29,11 +29,11 @@
  *   first use on all nineteen compiles of Logitech's.
  *
  * **What it does not decide**, since none of it is a number: the fonts, which `EMPTY_ONE_FONTS` states as the
- * indices 7.1.1's stated table puts them at, its order `harvest_one_two_devices`'; the pictures, which the caller supplies by the place each screen draws one, since
- * the look is 7.1.2's; and the homes, the texts drawn by reference to a copy elsewhere, none unless given. So
+ * indices the stated table of `fontsets.ts` puts them at, its order `harvest_one_two_devices`'; the pictures, which the caller supplies by the place each screen draws one, since
+ * the look is `pictures.ts`'; and the homes, the texts drawn by reference to a copy elsewhere, none unless given. So
  * `emptyOneSpecs` takes the pictures and makes the rest.
  *
- * **Not checked on a remote**, `todo-compile-one.md` 7.2: that a remote runs these screens with these numbers. What is
+ * **Not checked on a remote**: that a remote runs these screens with these numbers. What is
  * checked: each set's numbers, made from names read off a compile, are that compile's own numbers, on all sixteen
  * English compiles of skin 54, `test/families/harmony-one/onenumbering.test.ts`.
  *

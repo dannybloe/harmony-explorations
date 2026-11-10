@@ -51,14 +51,14 @@ import { contentKey } from '../../screens/screencategories.ts';
 /**
  * The Harmony One's half of `composeDeviceScreen`, whose docstring describes it.
  *
- * **The device's pages are built, not copied**, `todo-compile-one.md` 4.2 and 3.2.2.8: the mode, its own key map,
+ * **The device's pages are built, not copied**, section 420: the mode, its own key map,
  * its pages, their lists and copies and its hit pages come out of the One family's device page template,
  * `withOneDevicePage` in `devicepages.ts`, numbered from the configuration's own device modes, in Logitech's shape
  * with our look's one difference, a font select before every pad. Before that this composer drew the chrome off
  * the configuration's bar, copied the keys below the screen and their words off an existing device page, shared
- * that page's handler lists and named one hit page of six pads for every page, section 401 and 1.2.11.2.11.
+ * that page's handler lists and named one hit page of six pads for every page, section 401.
  *
- * **The device lists are built too**, since `todo-compile-one.md` 4.3.3: every list is described and built again
+ * **The device lists are built too**: every list is described and built again
  * with the device's row at its end, `withOneDeviceListRow` in `devicelists.ts`, in place of a row appended to each
  * list's last page, a list every row shared and a new page where the last was full, findings section 424.
  */
@@ -87,7 +87,7 @@ export function composeOneDeviceScreen(
   // letters than the font 7 its pads are drawn in, and cannot spell `Mode`.
   // On a configuration holding no device page at all, the empty One, the first device's pads are drawn in the font
   // the fixed screens draw their items in, which is the device pages' pad font on every compile holding both,
-  // `firstDevicePageFonts`, `todo-compile-one.md` 8.1.1.
+  // `firstDevicePageFonts`, section 435.
   const padFont = padFontOf(c) ?? (oneDeviceModes(c).length === 0 ? firstDevicePageFonts(c).row : undefined);
   if (padFont === undefined) throw new ComposeError('no device page shows which font a pad is drawn in');
   const rowSet = sets[padFont];
@@ -101,8 +101,8 @@ export function composeOneDeviceScreen(
 
   // The menus and the new mode's index, refused before anything moves.
   // The device lists are found by their rows, `deviceListMenus`; a configuration with no device has no row to find
-  // them by, and its lists are found by their title, `oneDeviceLists`, as the empty One's are, `todo-compile-one.md`
-  // 8.1.1. The rows' marker is read only where there are rows, since the lists are built again with the device's row.
+  // them by, and its lists are found by their title, `oneDeviceLists`, as the empty One's are,
+  // section 435. The rows' marker is read only where there are rows, since the lists are built again with the device's row.
   const found = deviceListMenus(c);
   const menus = found.menus.length > 0 ? found.menus : oneDeviceLists(c).map((one) => one.mode);
   if (menus.length === 0 || (found.menus.length > 0 && found.marker === undefined)) {
@@ -116,10 +116,10 @@ export function composeOneDeviceScreen(
   // `compiled.keys`, a list per scan, every other key bound to nothing, section 271's device mode map.
   let current = withOneDevicePage(c, mode, label, pads, options.compiled?.keys ?? new Map(), options.choices ?? ONE_CHOICES);
 
-  // 2. A row on every device list, by building the lists again, `withOneDeviceListRow`, `todo-compile-one.md`
-  // 4.3.3: each row runs a list of its own, click, enter the mode, mark device mode, as on Logitech's lists, section
-  // 424, and a list whose last page was full gains a page. Until then this step appended a row to each list's last
-  // page and one list every row shared, which left the lists in a shape no compile of Logitech's has.
+  // 2. A row on every device list, by building the lists again, `withOneDeviceListRow`:
+  // each row runs a list of its own, click, enter the mode, mark device mode, as on Logitech's lists, section
+  // 424, and a list whose last page was full gains a page. Appending a row to each list's last page with one list
+  // every row shared, as this step once did, left the lists in a shape no compile of Logitech's has.
   const pagesBefore = menus.map((menu) => modeRecords(current)?.[menu]?.pages.length ?? 0);
   const rowList = (current.actionLists() ?? []).length;
   current = withOneDeviceListRow(current, mode, label, options.iconLike, options.choices ?? ONE_CHOICES);
@@ -331,8 +331,8 @@ export function composeOneActivityRow(
   if (map === undefined) throw new ComposeError('the config carries no character map');
   // This composer copies the first row's pictures, so a menu with no row is refused. A row in our pictures, which
   // the activity's type gives, is not added here: the family builds the whole menu again for it,
-  // `withOneActivityMenuRow` in `activitymenu.ts`, `todo-compile-one.md` 4.1, where until then this composer drew
-  // our row box and icon and appended the row as it appends one copied.
+  // `withOneActivityMenuRow` in `activitymenu.ts`, section 419, rather than this composer drawing
+  // our row box and icon and appending the row as it appends one copied.
   if (startLayout.rows.length === 0) {
     throw new ComposeError('the activity menu has no row to copy a picture from, and no type to draw one for');
   }
@@ -438,7 +438,7 @@ export function composeOneActivityRow(
 
 /**
  * Add a one row page to the activity menu, whose last page is full, and put the row on it: the
- * Harmony One's (arch 12) counterpart of `composeMenuPage`, and `todo.md` 1.2.2, section 293.
+ * Harmony One's (arch 12) counterpart of `composeMenuPage`, section 293.
  *
  * **A separate builder from the device list's**, decision 17, because the page is not the same page:
  * an activity menu page offers two bottom keys where a device list page offers one, and draws their
@@ -718,10 +718,10 @@ export function composeOneActivityScreen(
   c: Container, activity: number, label: string, rows: readonly ComposeRow[],
   options: WithChoices<ComposeActivityScreenOptions, OneChoices> = {},
 ): ComposedActivityScreen {
-  // A configuration with no activity has no screen to copy the frame from, and its screens are built,
-  // `todo-compile-one.md` 1.2.11.2; this copying path stays for configurations with activities until the
-  // builder is checked against all 64 of Logitech's, 1.2.11.2.6, and then goes.
+  // A configuration with no activity has no screen to copy the frame from, and its screens are built.
   // So are the screens of a configuration whose working screens are all ours, each drawing our pad box.
+  // Any other configuration with activities still takes this copying path, though the builder rebuilt 52 of
+  // Logitech's 64 activities part for part when checked against them, section 402.
   if (activityBindings(c).length === 0 || allWorkingScreensOurs(c, options.choices ?? ONE_CHOICES)) {
     return buildOneActivityScreens(c, activity, label, rows, options);
   }

@@ -1,11 +1,11 @@
 /**
- * The Harmony One's fixed pictures drawn by us in place of Logitech's, `todo-compile-one.md` 5.3.1 and 5.3.3,
+ * The Harmony One's fixed pictures drawn by us in place of Logitech's,
  * findings section 422: the status strip along the top of every screen, the pictures of the firmware screens and
  * the power off help, the settings screens' buttons, and the whole screen background, named by 66 to 314 draw
  * instructions a compile over the sixteen (75 on the test setup's donor), as the sample of 18 October 2026 drew them and
  * as was decided on it the same day.
  *
- * **What a picture of ours keeps of Logitech's: its size, nothing else**, `todo-compile-one.md` 7.1.2, findings
+ * **What a picture of ours keeps of Logitech's: its size, nothing else**, findings
  * section 428. Each one is drawn at exactly the size of the picture it replaces, stated here, so a picture of another
  * size is refused rather than drawn, and **it is transparent where our own drawing leaves a pixel empty**,
  * `onePictureOwnRows`, which reads no configuration: a configuration built from nothing has every picture,
@@ -32,17 +32,17 @@
  *   and Options: one flat box in `OneChoices.settingsBox`, `activityBoxRows`, with the pixels outside its rounded
  *   corners black, decided on the sample: smaller to store than undrawn ones and the same on a black screen.
  *   Logitech draws three images of each, one per place; ours draws one image and stores it in each of their places;
- * * **the whole screen background**, all black and stored three times by Logitech, 5.3.3: **one** picture of ours,
+ * * **the whole screen background**, all black and stored three times by Logitech: **one** picture of ours,
  *   and the three photographs of blurred lights six blank screens show, entered by timers, draw it too, so those
  *   screens show nothing. What those six are for is open, section 408; a seventh blank screen draws the charging
  *   screen's picture, which has its own entry. The copies and the photographs are taken out of the bank and every draw of
- *   theirs is pointed at the one. **And then, 5.3.4, the one is no picture at all**: every draw of it becomes one fill of
+ *   theirs is pointed at the one. **And then the one is no picture at all**: every draw of it becomes one fill of
  *   the screen, screen opcode 1, `withPictureFilled`, and the 77445 bytes leave the bank, unless
  *   `OneChoices.backgroundFill` keeps the picture. It has to draw every pixel either way: the Harmony One draws a page
  *   over what the screen held, with no clear before it, so a pixel left undrawn would show the screen before, section 425.
  *
- * **What is not drawn here.** The welcome tour's illustrations, since the tour is left out by default (4.10,
- * section 421) and kept as Logitech's where the choice keeps it. The device pages' pads and the device list's rows
+ * **What is not drawn here.** The welcome tour's illustrations, since the tour is left out by default (section
+ * 421) and kept as Logitech's where the choice keeps it. The device pages' pads and the device list's rows
  * and icons, which the look draws in `OneChoices.deviceBox`, `devicelook.ts`, and which since this section takes
  * Logitech's it no longer draws out of the bank. The pictures the setup's composers draw, the activities', are ours
  * already.
@@ -86,12 +86,12 @@ export type OnePictureDrawing =
    * left corner at `at`, which may lie outside the picture, the icon then cut at the edge as Logitech's ink is.
    * `paper` is where the black under it is drawn: the whole picture, by default, or `'circle'`, a disc the size of a
    * circle icon's own circle, radius 10 of the icon font's 24 units, centred on the grid square, every pixel outside it
-   * that the icon does not ink left empty, `todo-compile-one.md` 7.1.2, section 428.
+   * that the icon does not ink left empty, section 428.
    */
   | { readonly kind: 'icon'; readonly at: readonly [number, number]; readonly size: number; readonly paper?: 'circle' }
   /** A flat box in `OneChoices.settingsBox`, the pixels outside its rounded corners black. */
   | { readonly kind: 'settings box' }
-  /** The one whole screen background, black, which every picture of this kind is taken out for and drawn as, 5.3.3. */
+  /** The one whole screen background, black, which every picture of this kind is taken out for and drawn as. */
   | { readonly kind: 'background' };
 
 export interface OnePictureEntry {
@@ -159,7 +159,7 @@ export const ONE_PICTURES: readonly OnePictureEntry[] = [
     name: 'settings row', keys: ['081687e888fd4bfb', '39c3ce30ae35d411', '4c71e54675cafa8d'], width: 164, height: 50,
     drawing: { kind: 'settings box' },
   },
-  // 5.3.3: the background, named by 66 to 314 draw instructions a compile, the firmware and status screens among them,
+  // The background, named by 66 to 314 draw instructions a compile, the firmware and status screens among them,
   // and the three photographs, each drawn by two of the six blank screens a timer enters whose purpose is open.
   { name: 'whole screen background', keys: ['4cb48913f37bd3c2'], width: 176, height: 220, drawing: { kind: 'background' } },
   {
@@ -194,7 +194,7 @@ function gaugeRows(level: number): Rows {
 }
 
 /**
- * Ours of `entry` by its rule alone, `todo-compile-one.md` 7.1.2: every pixel the drawing draws, and empty, undefined,
+ * Ours of `entry` by its rule alone, section 428: every pixel the drawing draws, and empty, undefined,
  * where it draws none, which is the picture's transparency. It takes no configuration and reads no picture, so a
  * configuration built from nothing has every fixed picture, and the composed path puts these in place of Logitech's
  * unless `OneChoices.logitechMasks` keeps the masked form, `onePictureRows`.
@@ -240,7 +240,7 @@ export function onePictureOwnBytes(entry: OnePictureEntry, choices: OneChoices):
 
 /**
  * Every fixed picture of ours by its rule alone, one per entry of `ONE_PICTURES` in its order, for a configuration
- * that holds no picture of Logitech's to take a mask from, `todo-compile-one.md` 7.1. Nothing here takes a
+ * that holds no picture of Logitech's to take a mask from, section 428. Nothing here takes a
  * configuration. The background's entry is among them though the composed path draws it as a fill by default,
  * `OneChoices.backgroundFill`: whether it becomes one is the placing step's business, not the drawing's.
  */
@@ -322,9 +322,9 @@ export interface OnePicturesPlaced {
   container: Container;
   /** The pictures given ours in their place, by entry name, a name once per picture. */
   replaced: string[];
-  /** The pictures taken out and drawn as the one background, 5.3.3: its copies and the photographs. */
+  /** The pictures taken out and drawn as the one background: its copies and the photographs. */
   merged: number;
-  /** The draws of the background made one fill each, 5.3.4, and 0 where `OneChoices.backgroundFill` keeps the picture. */
+  /** The draws of the background made one fill each, and 0 where `OneChoices.backgroundFill` keeps the picture. */
   filled: number;
 }
 
@@ -356,7 +356,7 @@ export function withOnePictures(c: Container, choices: OneChoices): OnePicturesP
   if (replace.size === 0 && onto.size === 0) return { container: c, replaced, merged: 0, filled: 0 };
   const placed = layOutContainer(withReplacedPictures(layout, replace, onto));
   if (!choices.backgroundFill || one === undefined) return { container: placed.container, replaced, merged: onto.size, filled: 0 };
-  // 5.3.4: the background, ours and all black, drawn by one fill where it was drawn, and out of the bank.
+  // The background, ours and all black, drawn by one fill where it was drawn, and out of the bank.
   const ours = replace.get(one.piece) as Uint8Array;
   const background = readOnePictures(placed.container).pictures
     .find((picture) => sameBytes(picture.piece.bytes, ours));

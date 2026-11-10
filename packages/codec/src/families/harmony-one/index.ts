@@ -38,20 +38,20 @@ export const ONE: Family<OneChoices> = {
   composeDeviceScreen: composeOneDeviceScreen,
   activityMenu: oneActivityMenu,
   // The Harmony One writes the marker outside its rows 2 to 9 times, section 329; the leftover entry's Devices key list
-  // writes it 1 on all nineteen compiles, which names it on a configuration with no row, `todo-compile-one.md` 8.1.1.
+  // writes it 1 on all nineteen compiles, which names it on a configuration with no row, section 435.
   menuMarkerWriter: oneMenuMarkerWriter,
   // A row in our pictures, which the activity's type gives, the composed path's, is put on by building the whole menu
-  // again, `todo-compile-one.md` 4.1; without a type the copying composer adds one to a menu of Logitech's in its look.
+  // again, section 419; without a type the copying composer adds one to a menu of Logitech's in its look.
   composeActivityRow: (c, label, set, menu, marker, options) => (options.type === undefined
     ? composeOneActivityRow(c, label, set, menu, marker, options)
     : withOneActivityMenuRow(c, label, set, menu, marker, options)),
   composeActivityScreen: composeOneActivityScreen,
   // The Devices item opens a list of the activity's own, every device with those its start switches on first, as on
-  // Logitech's compiles, `todo-compile-one.md` 4.3.3, findings section 424; until then it opened the idle list.
+  // Logitech's compiles, findings section 424, rather than the idle list.
   activityDeviceList: withOneActivityDeviceList,
   composedLook: { letterDonor: letterOneDonor, look: withOneLook, donorOfOurs: oneDonorFaces },
-  // The parts the donor carried that a builder of the family's makes from a description, `todo-compile-one.md` 3.2.2,
-  // after the welcome tour and the Remote Assistant are left out unless chosen, 4.10.
+  // The parts the donor carried that a builder of the family's makes from a description,
+  // after the welcome tour and the Remote Assistant are left out unless chosen, section 421.
   composedBuilders: withOneComposedBuilders,
   composedSkins: new Set([54]),
   // The configuration a recipe describes, from nothing, plan 014.

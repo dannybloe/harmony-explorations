@@ -2,7 +2,7 @@
  * Room for a Harmony One menu grown in place: a page added to the end of a mode with its list, its copy and a stand in
  * program, and a tagged list grown to its built length. What a builder needs before `withModeRecords` replaces a
  * menu's pieces with the built ones, since that step replaces records and adds none. The activity menu's,
- * `activitymenu.ts`, `todo-compile-one.md` 4.1, and since 4.3.3 the device lists' too, `devicelists.ts`, which grow
+ * `activitymenu.ts`, and the device lists' too, `devicelists.ts`, which grow
  * the same way and whose pages hold a switch the activity menu's do not, so the stand in program is the caller's.
  *
  * The Harmony One alone, the One family's: its page records carry a lead byte, section 275.

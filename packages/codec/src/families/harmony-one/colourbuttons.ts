@@ -1,5 +1,5 @@
 /**
- * The Harmony One's colour buttons, `todo-compile-one.md` 1.2.11.2: a pad whose label names one of the four
+ * The Harmony One's colour buttons: a pad whose label names one of the four
  * colour keys a television's remote carries is drawn as a circle in that colour on our box, rather than as
  * the word. Asked for on 16 October 2026, after the everyday Harmony One's own configuration was seen to draw
  * them: on one activity page, a glossy circle drawn over the pad under each of the words Red, Yellow, Green and
@@ -15,8 +15,9 @@
  * the word is for whoever cannot tell the colours apart. Where it stays, the circle is drawn larger,
  * `colourCircle.withLabel`, so that a word inside it lies on one colour and is smoothed against it, which is why
  * our pages select the pad font before every label; "Yellow" is still wider than the circle at the rows its
- * letters occupy and stays unsmoothed, `todo-compile-one.md` 1.2.11.2.8. Where it goes, its text instruction is cut out of the page, a text
- * drawn by reference with its pointer, and a word other texts draw by reference once those are gone.
+ * letters occupy and stays unsmoothed, findings section 399, which is still to settle before the word could stay by
+ * default (R42). Where it goes, its text instruction is cut out of the page, a text drawn by reference with its
+ * pointer, and a word other texts draw by reference once those are gone.
  *
  * Runs on a composed configuration, after the device look and before the letters are blended, and reaches
  * every page that draws a pad: the activity screens and the device pages, Logitech's donor pages included.

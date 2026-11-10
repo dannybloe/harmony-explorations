@@ -1,9 +1,9 @@
 /**
- * The Harmony One's skeleton, laid out from nothing: `todo-compile-one.md` 7.1.3, the One family's half of
+ * The Harmony One's skeleton, laid out from nothing, findings section 431, the One family's half of
  * what `families/harmony-600-650-700/empty.ts`' `buildEmptySkeleton` is for the Harmony 650, plan 008 step 1.
  *
  * Every other Harmony One configuration this codec writes starts from one of Logitech's compiles and replaces
- * parts of it. The empty One, 7.1, starts from no file, and this module is its frame: every table the
+ * parts of it. The empty One starts from no file, and this module is its frame: every table the
  * container states, in the empty form an empty One holds or in the form a caller hands it, our font table,
  * the state tables with the clock stamped, the key table and the Harmony One's own raw slot 18, handed to
  * the placer, `placePieces` (section 426, the rule of section 328 unchanged on the One), and laid out by
@@ -27,7 +27,7 @@
  *   every compile states its region, `buildLogArea`, and the wiring's log area replaces it. Base slots 2, 4, 8,
  *   12 and 15 are the wiring's, `buildOneWiring` through `emptyOneWiring`, so the skeleton holds none of it.
  *
- * **The seam with the numbering**, `todo-compile-one.md` 7.1.4, and the assembly, 7.1.7. The skeleton numbers
+ * **The seam with the numbering**, `numbering.ts`, and the assembly, `empty.ts`. The skeleton numbers
  * nothing. Everything that names a mode, a list, a variable, a value map, an entry, a program or a hit page by
  * its index comes in as `OneSkeletonParts`: a table for any base slot but the four the skeleton builds, the
  * key table, the configuration's own variables and value maps with the clock's two lists, the body and the
@@ -53,7 +53,7 @@
  * spells from as an argument, `speller(c)`, `oneCharacterMap(c)` and the font table's sets and widths read off it,
  * so a builder given the probe spells in our codes and measures in our widths, and the probe itself is in no result.
  *
- * **All 18 sets stay, which 7.1.1 left to this item.** Nine of them are selected by no reachable program on the
+ * **All 18 sets stay.** Nine of them are selected by no reachable program on the
  * composed setup. Five, sets 1, 4, 5, 6 and 8, because every select of them names a copy blended against a
  * background: the copy is made from the set when blending runs, after the screens are drawn, and the set stays
  * as the fallback a select keeps where its texts sit on more than one colour, `blending.ts`; leaving it out
@@ -142,7 +142,7 @@ export interface OneSkeletonOptions {
 }
 
 /**
- * What fills the skeleton: everything that is numbered, the numbering's (7.1.4) and the builders' (7.1.7). Each
+ * What fills the skeleton: everything that is numbered, the numbering's (`numbering.ts`) and the builders' (`empty.ts`). Each
  * is empty where it is not given.
  */
 export interface OneSkeletonParts {

@@ -1,6 +1,5 @@
 /**
- * The commands a mode's pages show on the Harmony One, the One family's `screenItems` and `drawsName`,
- * `todo-compile-one.md` 1.2.9.
+ * The commands a mode's pages show on the Harmony One, the One family's `screenItems` and `drawsName`.
  *
  * An item is a pad: one of the six places, `DEVICE_PAGE_SLOTS`, bound by the page's list on its scan,
  * `DEVICE_PAGE_SCANS`, with the lines drawn inside its box. **A label cannot be read back into the name it

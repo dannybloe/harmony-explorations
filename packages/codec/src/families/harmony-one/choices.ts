@@ -1,6 +1,6 @@
 /**
- * Every choice of ours the One family makes, the Harmony One, with the value it had as a constant before
- * `todo-compile-650.md` 10.7.3 as its default. The rule that sorts a constant here rather than into the
+ * Every choice of ours the One family makes, the Harmony One, each defaulting to the value it had
+ * while it was a constant. The rule that sorts a constant here rather than into the
  * module using it is `harmony-600-650-700/choices.ts`'s: nothing on a remote or in Logitech's compiles fixes it.
  *
  * One survives the sort. The row fonts `menus.ts` keeps are the corpus's own, font 9 for a device page's
@@ -26,7 +26,7 @@ export interface OneChoices extends CommonChoices {
    * in a blue gradient and its device pads in orange. Ours were a blue gradient, the look agreed on 15 October
    * 2026, and are one flat blue since 16 October, first the middle of that gradient and then a deeper blue
    * chosen with the colour playground: a label's letters are smoothed against the colour behind them, which a
-   * gradient does not have, `todo-compile-one.md` 1.2.11.2.1.
+   * gradient does not have.
    */
   readonly activityBox: { readonly fill: string; readonly rim: string };
   /**
@@ -39,8 +39,8 @@ export interface OneChoices extends CommonChoices {
   /**
    * The colours of the settings screens' boxes, as `activityBox`: the rows on Options and the pads of the clock
    * pickers and Screen Sensitivity, which Logitech draws in a green gradient. Neither an activity's colour nor a
-   * device's, so a third one, chosen on 18 October 2026 with the colour playground, `todo-compile-one.md` 5.3.2.
-   * The pictures that take it are 5.3.1's, `pictures.ts`.
+   * device's, so a third one, chosen on 18 October 2026 with the colour playground.
+   * The pictures that take it are the fixed pictures of `pictures.ts`.
    */
   readonly settingsBox: { readonly fill: string; readonly rim: string };
   /**
@@ -49,12 +49,12 @@ export interface OneChoices extends CommonChoices {
    * section 422. Off by default: ours are drawn in their place, each Logitech's size, its transparency by
    * `logitechMasks`, as the sample of 18
    * October 2026 drew them and as decided on it, and the background is one black picture those six screens draw
-   * too, `todo-compile-one.md` 5.3.1 and 5.3.3.
+   * too, section 422.
    */
   readonly logitechPictures: boolean;
   /**
    * Whether our fixed pictures take their transparency off the Logitech picture each replaces, its mask, as section 422
-   * drew them, `onePictureRows`. Off by default, `todo-compile-one.md` 7.1.2, decided: a picture is transparent where
+   * drew them, `onePictureRows`. Off by default, as decided: a picture is transparent where
    * our own drawing leaves a pixel empty, `onePictureOwnRows`, which reads no picture of Logitech's and is what a
    * configuration built from nothing has, findings section 428. The masked form stays on offer while no remote has
    * shown the rule's own. Taken only where `logitechPictures` is off.
@@ -175,7 +175,7 @@ export const ONE_CHOICES: OneChoices = {
 };
 
 /**
- * **A recipe's choices over `ONE_CHOICES`**, checked, plan 014 and `todo.md` 7.3.11.2, `Family.readChoices`: a choice
+ * **A recipe's choices over `ONE_CHOICES`**, checked, plan 014, `Family.readChoices`: a choice
  * the family does not make is refused by name, so a misspelt one is not silently the default, and an icon is refused
  * where Material Design Icons has none of that name. **Each choice is taken whole**: a recipe that states
  * `activityBox` states its fill and its rim, since a reference recipe states every choice anyway and a half stated box

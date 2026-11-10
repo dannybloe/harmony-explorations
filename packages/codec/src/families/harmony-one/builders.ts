@@ -1,5 +1,5 @@
 /**
- * The Harmony One's builders on the composed path, `todo-compile-one.md` 3.2.2: the parts a setup composed onto a
+ * The Harmony One's builders on the composed path: the parts a setup composed onto a
  * Logitech compile used to carry out of the donor, built instead from a description of the configuration being
  * composed, and the measurement that says which bytes of a finished configuration they reproduce.
  *
@@ -22,7 +22,7 @@
  *    where each sits, and on the composed path ours take their place last, step 13;
  * 6. the power off help, section 415, `helpscreens.ts`, after the screens whose texts it may draw by reference
  *    ("Yes", "No", the title), as the status screens follow the firmware screens: the chain the configuration
- *    holds, and since `todo-compile-one.md` 3.2.2.4 four questions for every composed device with a power
+ *    holds, and four questions for every composed device with a power
  *    variable, `withOneHelpChain`, after the donor's devices in the order composed, a choice of ours, each sent
  *    unasked where the catalogue states its power discrete, section 415's rule with its exception. The new screens
  *    are numbered from the chain's own by role and take the next free modes and base slot 10 lists, so they add
@@ -47,14 +47,14 @@
  *    table, section 416, `caseprograms.ts`, after the clock header because the table names its four programs at
  *    their entries, and after the composers because the table names every case, the activities' among them. The
  *    table is generated whole, so it is the composition's only because the activity composer enters every case it
- *    makes as Logitech's compiler does, `withOneScreenTable`, `todo-compile-one.md` 3.2.2.3; the device composer's
+ *    makes as Logitech's compiler does, `withOneScreenTable`; the device composer's
  *    one contribution, the all off's power variables and list, is read back off the composed file;
  * 9. the 23 hit pages the fixed screens name and the touch map's table over every page, section 417, `hitpages.ts`,
  *    at any point after the composers, since it reads only the leads of the screen pages naming them and writes
  *    nothing a screen builder reads; each page keeps the index the configuration gave it, so the screens' builders,
  *    which read the same leads, agree with it. The touch map's other pages are the screen sets' that name them, built
- *    above: the activity menu's, the device pages' and lists', the activity screens', and the power off help's three
- *    since `todo-compile-one.md` 7.1.6, section 429, the generic help screen's among them. The
+ *    above: the activity menu's, the device pages' and lists', the activity screens', and the power off help's three,
+ *    section 429, the generic help screen's among them. The
  *    composed table is not in Logitech's first use order, the composers appending their pages at the end,
  *    `withHitPage`, which is not this builder's to change, since it keeps the numbering it reads. Every page is named
  *    by a mode page since the activity menu is built, section 419: the two named by nothing, section 417, were the
@@ -65,19 +65,19 @@
  *    after the clock header, whose two calls are instructions of the clock's state records naming its lists by
  *    index: the clock header keeps the indices its description read, so the records' calls stay right;
  * 12. raw slot 18, two zero bytes generated as the constant every One container holds, and base slot 16's
- *    table generated from the number sender records it names, `smalltables.ts`, `todo-compile-one.md` 6.7: the
+ *    table generated from the number sender records it names, `smalltables.ts`: the
  *    one refusing a raw slot 18 holding anything else, the other keeping a donor's records as they are;
  * 13. on the composed path only, and after every builder above, ours in place of Logitech's fixed pictures, the
  *    status strip's, the firmware screens', the power off help's, the settings buttons' and the one whole screen
- *    background the six blank screens drawing photographs draw too, `pictures.ts`, `todo-compile-one.md` 5.3.1 and 5.3.3, section 422,
+ *    background the six blank screens drawing photographs draw too, `pictures.ts`, section 422,
  *    unless `OneChoices.logitechPictures` keeps them, each transparent where our own drawing leaves a pixel empty,
- *    7.1.2, section 428, or inside the mask of Logitech's it replaces with `OneChoices.logitechMasks`. A choice and not a rebuild, as leaving the tour out is, so
+ *    section 428, or inside the mask of Logitech's it replaces with `OneChoices.logitechMasks`. A choice and not a rebuild, as leaving the tour out is, so
  *    `withOneBuilders` does not run it and Logitech's compile still comes back byte for byte through the rest;
  *    last, since the screens' descriptions read a picture as a reference and not by its bytes, and the background's
  *    copies and photographs taken out make several references one; and the background then drawn by one fill a draw,
- *    `OneChoices.backgroundFill`, 5.3.4, section 425, which the descriptions read as the background, `fillTarget`.
+ *    `OneChoices.backgroundFill`, section 425, which the descriptions read as the background, `fillTarget`.
  *
- * **The lists below the screens are the screen sets' and the wiring's**, `todo-compile-one.md` 3.2.2.5, section
+ * **The lists below the screens are the screen sets' and the wiring's**, section
  * 418: every list a set's own lists call, through every level, is built either by that set or by the wiring, never
  * both, and none is left to the donor. Logitech's compiler shares a few between sets, the key lights' off lists and
  * the list turning the Remote Assistant on, and each set reaching one states it and builds it alike; `mark` takes
@@ -116,7 +116,7 @@
  * whose numbers disagree (section 416), two hit pages read at one index (section 417), and at the help screens a
  * composed device the chain already asks about by name, one whose catalogue states no power type, a donor whose
  * chain asks about no device, and a role of the chain's numbering held two ways (section 415), and a raw slot 18
- * holding anything but two zero bytes (`todo-compile-one.md` 6.7). Nothing falls back
+ * holding anything but two zero bytes, which is all every One container holds. Nothing falls back
  * to the donor's part.
  *
  * Arch 12 (Harmony One) alone, skin 54 as `composeSetup` takes it; every builder here is the One family's but the
@@ -171,7 +171,7 @@ export type OneBuilt = (typeof ONE_BUILT)[number];
 export const ONE_REBUILT: readonly OneBuilt[] = ONE_BUILT.filter((what) => what !== 'pictures');
 
 /**
- * The two small tables, `smalltables.ts`, `todo-compile-one.md` 6.7: each a configuration taken apart and
+ * The two small tables, `smalltables.ts`: each a configuration taken apart and
  * answered with its generated piece in place, so the path lays it out and the attribution finds the piece.
  */
 const SMALL_TABLES: Readonly<Record<'raw slot 18' | 'number senders', (c: Container) => WithGenerated>> = {
@@ -252,7 +252,7 @@ const SCREENS: Readonly<Record<ScreenBuilt, (c: Container) => ScreenBuild>> = {
     const d = describeOneDevicePages(c, layout);
     return { ...d, layout: withOneDevicePages(layout, buildOneDevicePages(c, d.spec), d.place) };
   },
-  // Every device list as the configuration holds it, `todo-compile-one.md` 4.3.3: on the composed path each was built
+  // Every device list as the configuration holds it, section 424: on the composed path each was built
   // by the same template, `withOneDeviceListRow` and `withOneActivityDeviceList`, so this rebuilds them and
   // Logitech's alike.
   'device lists': (c) => {
@@ -268,7 +268,7 @@ const SCREENS: Readonly<Record<ScreenBuilt, (c: Container) => ScreenBuild>> = {
     return { ...d, layout: withOneActivityScreenSet(layout, buildOneActivityScreenSet(c, d.spec), d.place) };
   },
   // The table is generated whole from the clock header's entries and the value maps, so on a configuration whose
-  // table the rule does not give, the composition before `todo-compile-one.md` 3.2.2.3 among them, the rebuild is
+  // table the rule does not give, such as one whose activity composer did not enter each case it made, the rebuild is
   // another length and the comparison refuses it.
   'case programs': (c) => {
     const layout = takeApart(c);
@@ -351,17 +351,17 @@ export function withOneBuilders(
 
 /**
  * `Family.composedBuilders` for the One family: the welcome tour and the Remote Assistant left out first unless the
- * choice keeps them, `withoutTourAndAssistant`, `todo-compile-one.md` 4.10, and then every builder, `withOneBuilders`,
+ * choice keeps them, `withoutTourAndAssistant`, section 421, and then every builder, `withOneBuilders`,
  * so each describes the configuration as it will be: Options in its one page, no tour for the tour's builder to read
  * and the hit pages without theirs; and last ours in place of Logitech's fixed pictures unless the choice keeps
- * theirs, `withOnePictures`, `todo-compile-one.md` 5.3. A refusal of either step is the composition's, named as the
+ * theirs, `withOnePictures`, section 422. A refusal of either step is the composition's, named as the
  * builders' are.
  */
 export function withOneComposedBuilders(
   c: Container, composed: readonly ComposedDeviceNote[], choices: OneChoices, options: ComposedBuildersOptions = {},
 ): { container: Container; built: OneBuilt[] } {
   // A donor of ours, the empty One, holds no tour and no Remote Assistant unless chosen and draws our pictures
-  // already, so neither step runs on it, `todo-compile-one.md` 8.1.2.
+  // already, so neither step runs on it, section 435.
   const ours = options.donorOfOurs === true;
   const start = choices.welcomeTour || ours ? c : building('tour and Remote Assistant', () => withoutTourAndAssistant(c).container);
   const built = withOneBuilders(start, composed);
@@ -400,7 +400,7 @@ export interface OneBuiltBytes {
  *
  * **The pictures by what they are**: a picture is ours where one of `pictures.ts`' drawings gives its bytes exactly,
  * in `choices`' colours and icons, by its rule alone or, with `OneChoices.logitechMasks`, inside the picture's own
- * mask, `oneOurPictures`, `todo-compile-one.md` 7.1.2, section 428. No byte of one is read as a value: the mask, where
+ * mask, `oneOurPictures`, section 428. No byte of one is read as a value: the mask, where
  * it is taken, says only which pixels are drawn.
  *
  * Refuses, with the builder's message, where a builder refuses the configuration or does not rebuild it.

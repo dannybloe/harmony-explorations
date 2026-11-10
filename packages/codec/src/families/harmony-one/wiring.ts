@@ -1,11 +1,11 @@
 /**
- * The Harmony One's own wiring, built from a description: `todo-compile-one.md` 6.3, findings section 410.
+ * The Harmony One's own wiring, built from a description, findings section 410.
  *
  * What a One configuration carries besides its devices, activities and screens and connects the remote's
  * own events to it: the event map, base slot 8's leading list, the timers, base slot 9's seven entries
  * nothing selects and the one left over, and the action lists those name, followed through every call. The
  * log area and the parameter block, which `families/harmony-600-650-700/wiring.ts` builds with the rest on the Harmony
- * 600, 650 and 700, are built here too, by 6.4's builders, so one call swaps every piece a check compares. The engine, the
+ * 600, 650 and 700, are built here too, by `firmwaresections.ts`' builders, so one call swaps every piece a check compares. The engine, the
  * encoding of an instruction, a list and an entry and the swap into a layout, is `wiringparts.ts`, shared
  * with the four slot family; this module is the catalogue and the numbering, the One's alone.
  *
@@ -28,8 +28,8 @@
  *
  * **What it does not build**: base slot 10's lists before the start list, which the wiring reaches none of
  * (named from mode records, screen programs and the key table), the two between it and the front, the
- * screens the wiring enters (`todo-compile-one.md` 4.4.3 and 4.4.4), the activities' entries, and every list
- * that starts a redraw timer. Names here are this module's labels, not readings of the firmware: by purpose
+ * screens the wiring enters (`firmwarescreens.ts`, `fixedscreens.ts`, `tourscreens.ts`), the activities' entries, and every
+ * list that starts a redraw timer. Names here are this module's labels, not readings of the firmware: by purpose
  * where a section reads it, otherwise by where the list is bound, `e1.0x26` being
  * entry 1's binding of tag `0x26` and `e1.0x26.3` the list its fourth instruction calls.
  *
@@ -827,7 +827,7 @@ export function checkOneWiring(c: Container): WiringChecked {
 /**
  * The configuration's wiring built again with the start's ladder as `one_config` holds it, its last rung alone, and
  * the leftover entry without the scan 34 press that writes the Remote Assistant's variable 1: the Remote Assistant at
- * start left out, `todo-compile-one.md` 4.10, findings section 421. The ladder's `07 FFFB` goes with it, since no
+ * start left out, findings section 421. The ladder's `07 FFFB` goes with it, since no
  * compile holds one without the assistant (section 410). Every list the assistant's rungs were is left in base slot
  * 10, reached by nothing, for the caller to drop; a configuration whose wiring keeps no ladder is returned as it is.
  */

@@ -1,5 +1,5 @@
 /**
- * The Harmony One's status screens built whole from a description: `todo-compile-one.md` 4.5, findings section
+ * The Harmony One's status screens built whole from a description, findings section
  * 413, through the template engine of sections 411 and 412, `screentemplate.ts`.
  *
  * **What they are.** The head of a Harmony One configuration's mode table holds one screen per status code, thirty,
@@ -9,7 +9,7 @@
  * standing, so the other twenty nine are drawn by nothing as read. They are carried anyway because every compile of
  * Logitech's carries them and nobody has run a Harmony One configuration without them; this module builds them so that a
  * configuration of ours can carry them too. **Leaving them out** (a head 29 modes shorter and the event map
- * renumbered) is the other branch of 4.5 and needs a remote to say whether it accepts that: section 413.
+ * renumbered) is the other way to go and needs a remote to say whether it accepts that: section 413.
  *
  * **One shape, thirty texts.** Every status screen is code 9's shape, measured on the sixteen English compiles
  * of skin 54 and both European ones: its own key map swallows the page arrows, starts a timer on entering and

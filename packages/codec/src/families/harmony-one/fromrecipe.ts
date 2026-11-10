@@ -1,5 +1,5 @@
 /**
- * The Harmony One built from a recipe, `Family.fromRecipe`, plan 014 and `todo.md` 7.3.11: the empty configuration of
+ * The Harmony One built from a recipe, `Family.fromRecipe`, plan 014: the empty configuration of
  * `empty.ts` when the recipe holds no device and no activity, and otherwise the recipe composed onto that configuration
  * by `composeSetup`, the route `bin/empty-one.ts` has taken for every setup of ours the spare Harmony One ran.
  *
@@ -8,7 +8,7 @@
  * last, over every text the composers add, `EmptyOneOptions.blend`.
  *
  * **The recipe's choices over `ONE_CHOICES`**, `oneChoices`, in both: the empty configuration is built with them,
- * and `composeSetup` reads them again through `Family.readChoices` for every step it runs, `todo.md` 7.3.11.2.
+ * and `composeSetup` reads them again through `Family.readChoices` for every step it runs.
  */
 import type { Recipe } from '../../recipe/recipe.ts';
 import { composeSetup } from '../../shared/setup.ts';

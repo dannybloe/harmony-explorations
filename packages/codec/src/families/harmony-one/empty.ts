@@ -1,5 +1,5 @@
 /**
- * The Harmony One built from nothing, assembled: `todo-compile-one.md` 7.1.7, the One family's half of what
+ * The Harmony One built from nothing, assembled, findings section 434, the One family's half of what
  * `families/harmony-600-650-700/empty.ts`' `buildEmptyConfiguration` is for the Harmony 650, plan 008.
  *
  * Every other route to a Harmony One configuration starts from one of Logitech's compiles and overwrites parts of it.
@@ -42,11 +42,11 @@
  * three hold a leap year the fixed screens add a Day 29 picker and a second Month picker, `fixedscreens.ts`.
  *
  * **What no Logitech compile shows**, since every one of the nineteen holds at least one device: no device at all, device
- * lists with no row, base slot 5 with no infrared group. Inferred, and seen on a remote since `todo-compile-one.md` 7.2:
- * written to the spare Harmony One, 486460 bytes as 8 erase blocks read back byte for byte, it started on My Activities
- * with no activity, the clock ran, the device list opened with no row and All Off redrew My Activities; that run is the
- * todo item's record and in no findings section, the archive being frozen at 436. Section 434 lists what the empty One
- * alone holds. A configuration built from nothing is a design choice of this project with no decision yet, so this
+ * lists with no row, base slot 5 with no infrared group. Inferred, and seen on a remote: written to the spare Harmony
+ * One, 486460 bytes as 8 erase blocks read back byte for byte, it started on My Activities with no activity, the clock
+ * ran, the device list opened with no row and All Off redrew My Activities; that run is recorded in
+ * `docs/test-notes/harmony-one.md` and in no findings section, the archive being frozen at 436. Section 434 lists what
+ * the empty One alone holds. A configuration built from nothing is a design choice of this project with no decision yet, so this
  * header, and not the reference, is where it is described. What it holds, against the fewest of Logitech's nineteen:
  * 67 modes and 1314 lists (84 and 1955), 14 hit pages, 29 font sets (section 427's 18 and 11 blended copies), 27 base
  * slot 11 entries (29), 25 timers (26); 486460 bytes built in 2026 and 489507 in a build year whose Year picker offers a
@@ -153,7 +153,7 @@ export interface EmptyOneOptions {
   choices?: OneChoices;
   /**
    * Whether our letters are blended into the colour under each text, the look's last step; true unless given. False
-   * gives a donor of ours, which a setup is composed onto, `todo-compile-one.md` 8.1.2: the blending runs once, last,
+   * gives a donor of ours, which a setup is composed onto, section 435: the blending runs once, last,
    * over every text the composers add, as on the Harmony 650's empty configuration, findings section 377, and a
    * screen's description knows a role by one font, which the blending splits by background.
    */
@@ -386,7 +386,7 @@ export function buildEmptyOneConfiguration(options: EmptyOneOptions): EmptyOneCo
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// Which bytes of a finished file our generators make, `todo-compile-one.md` 7.1.8.
+// Which bytes of a finished file our generators make, section 434.
 
 /**
  * Who makes a byte, in the order a byte two of them reach is given: the builders of `builders.ts` first, each by its

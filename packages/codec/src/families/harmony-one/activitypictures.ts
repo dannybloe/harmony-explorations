@@ -1,5 +1,5 @@
 /**
- * The Harmony One's activity pictures, drawn by us under decision 24, `todo-compile-one.md` 1.2.11.2.1: the
+ * The Harmony One's activity pictures, drawn by us under decision 24: the
  * pads of an activity's working screen, its row on the activity menu, and the icon its start up screen
  * shows. The look was shown and agreed on 15 October 2026: rounded boxes in a light to dark blue gradient,
  * white icons of the icon font over them, and one box for every pad. The colours and the icons are choices,
@@ -161,7 +161,7 @@ export const ACTIVITY_ROW_FACE = 'One15';
 
 /**
  * The weight a text on one of our boxes is lettered in when the blending step smooths it, `WeightFor`: the
- * labels on the activity, the device and, since `todo-compile-one.md` 5.3.1 draws the settings screens' buttons,
+ * labels on the activity, the device and, since `pictures.ts` draws the settings screens' buttons,
  * the settings boxes in `labelWeight`, lighter than their face's own, and every other text in its set's weight.
  * Read off the colour under the text, which on a box of ours is its fill.
  */

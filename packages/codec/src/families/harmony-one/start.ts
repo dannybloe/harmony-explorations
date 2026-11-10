@@ -3,8 +3,8 @@
  * every timer cancelled, as all 60 real enter lists open, then the activity's writes, the list every
  * activity calls to say one is running, and last a deferred call to a list that enters the working screen
  * once what is queued ahead of it has gone. `ONE_START` is what the shared activity composer asks for the
- * shape, `Family.activityStart`; `shared/activities.ts` built it inline behind a test of
- * a trait, `startSequence`, until `todo-compile-one.md` 3.3.3.4.
+ * shape, `Family.activityStart`, so `shared/activities.ts` does not build it inline
+ * behind a test of a trait, `startSequence`.
  *
  * **Ours is not the corpus's in two ways**, section 279: every real deferred list calls `{1F:FB02, 7F:...}`,
  * the Remote Assistant's branch, where ours enters the working screen directly, and every real enter list

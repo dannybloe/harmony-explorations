@@ -1,6 +1,6 @@
 /**
  * Which command each hard key of the Harmony One sends in a catalogue device's device mode, as Logitech's
- * compiler binds them: the One family's `deviceModeKeys`, `todo-compile-one.md` 1.2.10.
+ * compiler binds them: the One family's `deviceModeKeys`.
  *
  * **Fitted to the One's own compiles, not carried over from the Harmony 650's `HARD_KEYS` by key name**,
  * which binds other commands to some of the same keys: on the One, Channel Up sends PresetNext on the Philips

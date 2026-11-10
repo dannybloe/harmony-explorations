@@ -1,6 +1,6 @@
 /**
  * The Harmony One's screen sets numbered by role: which number of the configuration's every number a screen set takes
- * is, and the rule that numbers the lists of the screens' own. `todo-compile-one.md` 7.1.4, findings section 432.
+ * is, and the rule that numbers the lists of the screens' own. Findings section 432.
  *
  * **Why.** Every screen builder of the One family takes a description whose numbers sit in one walk order, and until
  * now the only way to get those numbers was to read them off a Logitech compile, `describeOne*`. A configuration
@@ -11,8 +11,8 @@
  * of Logitech's compiles and makes the compile's own numbers again from it, `test/families/harmony-one/onenumbering.test.ts`.
  *
  * **Where the names come from.** A template step carries its role, `screentemplate.ts`' `named`: the fixed screens,
- * the firmware screens, the status screens, the power off help and the clock header state theirs in their templates
- * since 7.1.4, and Options, the help chain, the activity menu and the device lists stated theirs before. Each set's
+ * the firmware screens, the status screens, the power off help and the clock header state theirs in their templates,
+ * and Options, the help chain, the activity menu and the device lists theirs. Each set's
  * roles are its own words ("timer", "map", "light 5 on"); `roleKey` turns a set's word into the numbering's, one
  * vocabulary for the whole configuration:
  *

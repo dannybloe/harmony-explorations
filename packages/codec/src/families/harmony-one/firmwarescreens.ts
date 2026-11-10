@@ -1,6 +1,6 @@
 /**
- * The Harmony One's ten firmware screens built whole from a description: `todo-compile-one.md` 4.4.3, as
- * the Harmony 650's were in its 7.4, section 357.
+ * The Harmony One's ten firmware screens built whole from a description, findings section 409, as
+ * the Harmony 650's are, section 357.
  *
  * Every Harmony One configuration opens its mode table with the screens the event map's fallback counts,
  * ten, before its thirty status screens, section 405: Low Battery, USB Connected, two blanks, Update
@@ -33,7 +33,7 @@
  *   which on Low Battery and the charging problem screen bind the press of scan 49, each to a list of
  *   its own: the copy's is 239 and 240 on all sixteen, the factory file and the Dutch compile, and 238 and 239
  *   on the everyday One's, where the page list's varies on every compile;
- * * **the lists below it**, since `todo-compile-one.md` 6.5, section 418: every list its own lists call, through
+ * * **the lists below it**, section 418: every list its own lists call, through
  *   every level, that the wiring does not build, 18 over the ten screens on all sixteen, each at the index the
  *   description reads, written in `screentemplate.ts`' steps. The six left below them are the wiring's.
  *
@@ -100,7 +100,7 @@ export const ONE_FIRMWARE_KEYPAD: readonly number[] = Array.from({ length: 55 },
 type Operand = number | 'list' | 'timer' | 'program';
 /**
  * `role` says which number of the configuration's a list or a program is, as `screentemplate.ts`' `named` does, so a
- * configuration built from nothing can number the screens, `numbering.ts`, `todo-compile-one.md` 7.1.4. A timer takes
+ * configuration built from nothing can number the screens, `numbering.ts`, section 432. A timer takes
  * none: it is the screen's own, the one its enter handler starts. The reader and the builder ignore roles.
  */
 interface Plain { opcode: number; operand: Operand; band?: number; role?: string }
@@ -281,7 +281,7 @@ function slotsOf(screen: OneFirmwareScreen): string[] {
 
 /**
  * A number a firmware screen takes, in `slotsOf`' walk order, for a configuration numbered from nothing,
- * `todo-compile-one.md` 7.1.4: one instruction's operand, by its role (a timer has none, being the screen's own), or a
+ * section 432: one instruction's operand, by its role (a timer has none, being the screen's own), or a
  * list below the screens with every number in it, its template step, and whether a list of the screens' own calls it
  * (`called`) or a tag or a page list binds it straight.
  */
@@ -320,7 +320,7 @@ export function oneFirmwareSlots(mode: number): OneFirmwareSlot[] {
 /**
  * Where screen `mode` of the ten draws the pictures its description supplies, in order: the full screen picture at the
  * origin, and the second where the screen draws one. For a configuration numbered from nothing, whose pictures are
- * supplied by place, `todo-compile-one.md` 7.1.4.
+ * supplied by place, section 432.
  */
 export function oneFirmwarePicturePlaces(mode: number): { x: number; y: number }[] {
   const screen = SCREENS[mode];

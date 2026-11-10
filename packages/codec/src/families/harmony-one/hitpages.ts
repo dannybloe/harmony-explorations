@@ -1,5 +1,5 @@
 /**
- * The Harmony One's hit pages the fixed screens name, built from a description: `todo-compile-one.md` 4.8,
+ * The Harmony One's hit pages the fixed screens name, built from a description,
  * findings section 417, beside the screens sections 409 to 413 built.
  *
  * **What a hit page is.** The One's screen is touched through base slot 17, the touch hit map, section 45: a table
@@ -11,8 +11,8 @@
  * (section 411) and the welcome tour and Remote Assistant (section 412) are 103 screen pages on each of the sixteen
  * English compiles of skin 54, and they name 23 distinct hit pages, each page the same shape on all sixteen.
  * Section 405's census counts 25 hit pages in every one of the sixteen: the other two are named by setup screens
- * alone, a device page's six commands with both page keys (`todo-compile-one.md` 4.2) and the generic help
- * screen's, drawn "Attemping to fix the problem..." (4.6), and are not built here: the device pages build the first,
+ * alone, a device page's six commands with both page keys and the generic help
+ * screen's, drawn "Attemping to fix the problem...", and are not built here: the device pages build the first,
  * `devicepages.ts`, and the help screens the second with their other two, `HELP_HIT_PARTS` below, section 429.
  *
  * **What is generated, by rules measured on all nineteen Harmony One compiles** (section 417):
@@ -49,7 +49,7 @@
  * USB Connected and the first blank screen, always name pages 0, 1 and 2, and the other 20 take indices that move
  * with the setup's screens between them. This module keeps every index the description read and builds the table
  * from it; it does not renumber, so the composed path can give the screens' builders the same indices.
- * On the composed path since `todo-compile-one.md` 3.2.2.3, `builders.ts`, where the composers' pages keep the
+ * On the composed path, `builders.ts`, where the composers' pages keep the
  * numbering they were appended in, `withHitPage`, which is not first use, and this builder keeps it.
  *
  * **Where the pages sit**: each built page in place of the configuration's, its areas then its header, so Logitech's
@@ -131,7 +131,7 @@ export function buttonArea(x: number, y: number, width: number): HitRectangle | 
 /**
  * A part of a hit page: a button by its picture, a key below the screen, or a rectangle the module states. Exported
  * with `whole`, `hitPageAreasOf` and `hitPageRunOf` for the activity menu's pages, `activitymenu.ts`,
- * `todo-compile-one.md` 4.1, whose rows are whole width buttons and whose keys are the two below the screen, so they
+ * section 419, whose rows are whole width buttons and whose keys are the two below the screen, so they
  * take these rules rather than a copy of them.
  */
 export type HitPart =
@@ -160,7 +160,7 @@ interface HitShape {
 
 /**
  * The hit pages a configuration of ours holds only where it keeps the welcome tour and the Remote Assistant,
- * `todo-compile-one.md` 4.10: the tour's ten, the assistant's question, and Options' second page's, which Options
+ * section 421: the tour's ten, the assistant's question, and Options' second page's, which Options
  * without the tour's rows does not have. Every compile of Logitech's holds all of them; a configuration whose namer of
  * one of these is absent describes and builds the rest.
  */
@@ -235,7 +235,7 @@ const SHAPES: readonly HitShape[] = [
 
 /**
  * The hit pages the power off help's screens are touched through, `helpscreens.ts`, which builds them with its
- * screens, `todo-compile-one.md` 7.1.6, findings section 429; each its parts in order, the edges after them as on
+ * screens, findings section 429; each its parts in order, the edges after them as on
  * every page. Stated rather than generated where a rectangle is drawn around text, as the tour's are, and the same on
  * every English compile of skin 54 that holds the screen:
  *
@@ -414,7 +414,7 @@ export function describeOneHitPages(
 /**
  * Where a configuration's hit pages sit: every page of its table as its run of pieces, the areas and then the header,
  * and the table itself. `describeOneHitPages`' half that reads no namer, so the activity menu's builder,
- * `activitymenu.ts`, `todo-compile-one.md` 4.1, puts its pages back through `withOneHitPages` the same way. Refuses
+ * `activitymenu.ts`, section 419, puts its pages back through `withOneHitPages` the same way. Refuses
  * a page whose areas do not sit in front of its header as every compile places them.
  */
 export function oneHitPagesPlace(c: Container, layout: ContainerLayout): OneHitPagesPlace {
@@ -566,7 +566,7 @@ export function namedHitPages(c: Container): Set<number> {
 }
 
 /**
- * The configuration without the hit pages `drop` names, `todo-compile-one.md` 4.10, findings section 421: each page's
+ * The configuration without the hit pages `drop` names, findings section 421: each page's
  * areas and header taken out, the touch map's table without its entry and its count restated, and every page
  * record's lead renumbered past the pages dropped below it. Nothing but the table names a hit page's pieces and
  * nothing but a lead names its index, section 417, so those are the places a drop moves. Refuses a page some screen

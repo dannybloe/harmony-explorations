@@ -1,5 +1,5 @@
 /**
- * The Harmony One's device pages built whole from a description: `todo-compile-one.md` 4.2, findings section 420,
+ * The Harmony One's device pages built whole from a description, findings section 420,
  * through the template engine of sections 411 to 415, `screentemplate.ts`, and the hit page rules of section 417,
  * `hitpages.ts`, as the activity menu is built, `activitymenu.ts`, section 419.
  *
@@ -48,7 +48,7 @@
  * a name cut with `..` cannot be read back whole. A composer lays a name out with `oneLabelLines` and hands the
  * lines in.
  *
- * **Our look is a choice of the same template**, decision 24 and `todo-compile-one.md` 1.2.11.2.7: the pad and
+ * **Our look is a choice of the same template**, decision 24: the pad and
  * background pictures and the fonts are the description's, and one structural difference is the One family's,
  * `selectEach`: our pages select the pad font before every pad rather than once a page, so that a colour button's
  * word, which sits on its circle and not on the box, can be smoothed against its own background,
@@ -525,7 +525,7 @@ function sharedRoles(spec: OneDevicePagesSpec): Map<string, number> {
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// A device's pages added on the composed path, `todo-compile-one.md` 4.2 and 3.2.2.8.
+// A device's pages added on the composed path, section 420.
 
 /** A pad of a composed device: its label laid out in lines, `oneLabelLines`, and the list of the command it sends. */
 export interface ComposedPad { lines: string[]; command: number }
@@ -535,8 +535,8 @@ const STAND_IN_PAGE = 4 + 12 + 1 + 4 + 4;
 
 /**
  * A device's pages put on the configuration as a mode of their own, built by `devicePageScreen` in our look:
- * `composeOneDeviceScreen`'s middle, `todo-compile-one.md` 4.2 and 3.2.2.8, where the copying composer drew the
- * frame off an existing device page and bound the keys below the screen as that page binds them.
+ * `composeOneDeviceScreen`'s middle, in place of copying the
+ * frame off an existing device page and binding the keys below the screen as that page binds them.
  *
  * 1. **The device pages as they are, described**, `describeOneDevicePages`, and their shared numbering read by
  *    role, `sharedRoles`: the timer, the light lists, the value maps the keys below the screen map through, the
@@ -561,7 +561,7 @@ export function withOneDevicePage(
   choices: OneChoices = ONE_CHOICES,
 ): Container {
   // 1. The device pages as they are; on a configuration holding none, the empty One, what the first one takes from the
-  // configuration's other screens, `firstDevicePage`, `todo-compile-one.md` 8.1.1, with the timer and the pad
+  // configuration's other screens, `firstDevicePage`, section 435, with the timer and the pad
   // picture it brings added.
   const heldModes = oneDeviceModes(into);
   const opening = heldModes.length === 0 ? firstDevicePage(into, choices) : undefined;
@@ -753,7 +753,7 @@ function backgroundOf(c: Container, page: number | undefined): number | PieceTar
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// The first device page, on a configuration holding none, `todo-compile-one.md` 8.1.1.
+// The first device page, on a configuration holding none, section 435.
 
 /**
  * The numbering keys the shared roles of the first device page take, by role: the wiring's lists and variables by
@@ -859,8 +859,8 @@ interface FirstDevicePage {
 }
 
 /**
- * What the first device page composed onto a configuration holding none takes, `todo-compile-one.md` 8.1.1: the
- * empty One, section 434, where until now the composer read all of it off a device page Logitech's compile held.
+ * What the first device page composed onto a configuration holding none takes: the
+ * empty One, section 434, which holds no device page to read it all off, as a Logitech compile does.
  *
  * * **The shared roles**, `firstDeviceRoles`, by the names they have on every compile, section 435.
  * * **The off lists**, a list of the configuration's own of the same instructions where there is one, the device

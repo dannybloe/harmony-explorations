@@ -1,5 +1,5 @@
 /**
- * How long the Harmony One's screen stays lit, findings section 400, `todo-compile-one.md` 1.2.11.2.9.
+ * How long the Harmony One's screen stays lit, findings section 400.
  *
  * **The light is a timer the configuration holds**, as on the Harmony 600, 650 and 700, section 292, but not in
  * their shape: every one of Logitech's nineteen One compiles holds exactly one pair of timers queueing two lists

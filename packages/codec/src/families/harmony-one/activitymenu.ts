@@ -1,5 +1,5 @@
 /**
- * The Harmony One's activity menu built whole from a description: `todo-compile-one.md` 4.1, findings section 419,
+ * The Harmony One's activity menu built whole from a description, findings section 419,
  * through the template engine of sections 411 to 415, `screentemplate.ts`, and the hit page rules of section 417,
  * `hitpages.ts`.
  *
@@ -43,7 +43,7 @@
  *
  * **Our look is not a second builder**: our menu differs from Logitech's in its pictures (our row box and the
  * activity type's icon, `activitypictures.ts`) and its fonts (our letters), which are the description's, so the same
- * template builds both, decision 24 and `todo-compile-one.md` 1.2.11.2.7.
+ * template builds both, decision 24.
  *
  * **On the composed path**, `withOneActivityMenuRow`: an activity's row is added by describing the menu as it
  * is, adding the row to the description and building the whole menu again, so nothing of the donor's menu is carried
@@ -436,7 +436,7 @@ function numberedMenu(rows: readonly string[], roles: ReadonlyMap<string, number
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// A row added on the composed path, `todo-compile-one.md` 4.1 and 3.2.2.7.
+// A row added on the composed path.
 
 /** A state write's opcode is this plus its variable, section 33: the device mode marker's write, `activityMenus`. */
 const STATE_WRITE = 0x80;
@@ -470,7 +470,7 @@ function hitShape(areas: readonly { x: number; width: number; y: number; height:
 }
 
 /**
- * An activity's row put on the activity menu by building the whole menu again, `todo-compile-one.md` 4.1 and 3.2.2.7:
+ * An activity's row put on the activity menu by building the whole menu again:
  * the One family's `composeActivityRow` wherever the row is drawn in our pictures, which is wherever the activity's
  * type is given, the composed path among them.
  *
@@ -623,7 +623,7 @@ export function withOneActivityMenuRow(
   const reading = recordReading(c, layout, blobReader(c));
   const f = reading.frame('Activity Menu', menu);
   // A picture, or the fill drawn in a picture's place once the background is made one, `withPictureFilled`, which a
-  // donor of ours, the empty One, holds already, `todo-compile-one.md` 8.1.2.
+  // donor of ours, the empty One, holds already, section 435.
   const drawn = (program: readonly ScreenInstruction[]): PieceTarget[] => program
     .filter((one) => one.opcode === SCREEN_DRAW_IMAGE || one.opcode === SCREEN_FILL).map((one) => (one.opcode === SCREEN_FILL
       ? fillTarget(one.operands[2] as number, one.operands[3] as number, ((one.operands[4] as number) << 8) | (one.operands[5] as number))

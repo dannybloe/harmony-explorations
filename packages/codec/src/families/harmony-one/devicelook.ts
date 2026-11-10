@@ -1,5 +1,5 @@
 /**
- * The Harmony One's device mode in our look, decision 24, `todo-compile-one.md` 1.2.11.2: the pads of every
+ * The Harmony One's device mode in our look, decision 24: the pads of every
  * device page and the rows of the device list drawn as our flat boxes in `OneChoices.deviceBox`, and every
  * icon a device list row wears drawn by us for the device's type. Asked for on 16 October 2026, alongside the
  * activity boxes, so that a label's letters can be smoothed against the one colour behind them, which
@@ -10,12 +10,11 @@
  * of those draws is pointed at a picture of ours added to the bank, which changes the draw's three address
  * bytes and nothing else, so no program moves and the pages composed onto the configuration and the donor's
  * own are recoloured alike. Logitech's pictures it no longer draws are then taken out of the bank,
- * `withoutUndrawnPictures`, since `todo-compile-one.md` 5.3.1, findings section 422: they were left there drawn by
- * nothing until then. **Every** device list is recoloured, since `todo-compile-one.md` 4.3.3, findings section 424:
- * the list the Devices item opens with nothing running, each activity's own and the one list nothing enters, which
- * this step left in Logitech's look until then because it read the rows of one list, `deviceListRows`. That list
- * nothing enters still drew Logitech's row pictures and icons, so they stayed in the bank, 42612 bytes on the test
- * setup; with every list read, nothing draws them and they go with the pads.
+ * `withoutUndrawnPictures`, findings section 422, rather than left there drawn by
+ * nothing. **Every** device list is recoloured, findings section 424: the list the Devices item opens with nothing
+ * running, each activity's own and the one list nothing enters. Reading the rows of one list alone, `deviceListRows`,
+ * would leave the list nothing enters drawing Logitech's row pictures and icons, which would then stay in the bank,
+ * 42612 bytes on the test setup; with every list read, nothing draws them and they go with the pads.
  *
  * Which pictures are pads is read, not tabulated: whatever a device mode's page draws at one of the six pad
  * places, `DEVICE_PAGE_SLOTS`. On the six Harmony One configurations measured those are pictures that nothing

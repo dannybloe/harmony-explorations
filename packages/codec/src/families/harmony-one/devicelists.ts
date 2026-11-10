@@ -1,5 +1,5 @@
 /**
- * The Harmony One's device lists built whole from a description: `todo-compile-one.md` 4.3.3, findings section 424,
+ * The Harmony One's device lists built whole from a description, findings section 424,
  * through the template engine of sections 411 to 415, `screentemplate.ts`, and the hit page rules of section 417,
  * `hitpages.ts`, as the activity menu (`activitymenu.ts`, section 419) and the device pages (`devicepages.ts`,
  * section 420) are built.
@@ -299,7 +299,7 @@ export interface OneDeviceList {
 export function oneDeviceLists(c: Container): OneDeviceList[] {
   const { menus: rowed } = deviceListMenus(c);
   // A configuration with no device has no row to find a list by, so its lists are found by their title: the empty One,
-  // `todo-compile-one.md` 7.1.7. Every compile of Logitech's has a device, so this reads none of theirs.
+  // section 434. Every compile of Logitech's has a device, so this reads none of theirs.
   const menus = rowed.length > 0 ? rowed : titledDeviceLists(c);
   if (menus.length === 0) return [];
   const roles = oneValueMapRoles(c);
@@ -331,7 +331,7 @@ export function oneDeviceLists(c: Container): OneDeviceList[] {
  * The device lists of a configuration with no device, by their look: every mode whose first page calls a chrome
  * drawing the list's title, "Devices", at the title's place, `TITLE_AT`. On a configuration with a device the rows
  * find the lists, `deviceListMenus`, and this is not asked; a device page is titled by its device's name and the
- * activity menu "My Activities", so on the empty One, `todo-compile-one.md` 7.1.7, the two lists of no row are the only
+ * activity menu "My Activities", so on the empty One, section 434, the two lists of no row are the only
  * modes titled so.
  */
 function titledDeviceLists(c: Container): number[] {
@@ -568,8 +568,8 @@ function numberedList(shape: DeviceListShape, roles: ReadonlyMap<string, number>
 
 /**
  * The numbers a list of `shape` takes, in its walk's order, every one from `roles`: `numberedList` with no fresh index
- * to hand out, for a list whose every number the caller chose, a list of no rows among them, `todo-compile-one.md`
- * 7.1.6. Refuses a role `roles` does not hold.
+ * to hand out, for a list whose every number the caller chose, a list of no rows among them, section
+ * 429. Refuses a role `roles` does not hold.
  */
 export function deviceListNumbers(shape: DeviceListShape, roles: ReadonlyMap<string, number>): number[] {
   return numberedList(shape, roles, () => {
@@ -578,7 +578,7 @@ export function deviceListNumbers(shape: DeviceListShape, roles: ReadonlyMap<str
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// The composed path: a row on every list, and an activity's own list, `todo-compile-one.md` 4.3.3.
+// The composed path: a row on every list, and an activity's own list, section 424.
 
 /**
  * The widest a line of a row's name is drawn, in pixels of the row font: all 659 rows of the eighteen English
@@ -914,7 +914,7 @@ function emptyListRow(c: Container, lists: readonly OneDeviceList[], choices: On
 }
 
 /**
- * A device's row put on every device list by building the lists again, `todo-compile-one.md` 4.3.3: the One
+ * A device's row put on every device list by building the lists again, section 424: the One
  * family's device composer, in place of appending a row to each the way `composeMenuPage` appends one.
  *
  * 1. **The lists as they are, described**, `describeOneDeviceLists`, and each one's numbering read by role,
@@ -934,7 +934,7 @@ export function withOneDeviceListRow(
 ): Container {
   const lists = oneDeviceLists(given);
   if (lists.length === 0) throw new ComposeError('no device list to put a row on');
-  // A list with no row has none to take the new row's pictures from, the empty One's, `todo-compile-one.md` 8.1.1: its
+  // A list with no row has none to take the new row's pictures from, the empty One's, section 435: its
   // first row draws our row box and the icon of a device of no named type, smoothed against the list's background,
   // put in the bank first. Our look then gives the row its icon by the device's type, as it does every row,
   // `devicelook.ts`, and leaves out the icon nothing draws by then. On Logitech's compiles every list has a row.
@@ -942,7 +942,7 @@ export function withOneDeviceListRow(
   const start = firstRow === undefined ? given : withBankPictures(given, [firstRow.box, firstRow.icon]).container;
   const held = describeOneDeviceLists(start, takeApart(start), blobReader(start), lists);
   const { plans, roles } = heldPlans(start, held, lists);
-  // Lists of no row select no row font, the empty One's, `todo-compile-one.md` 8.1.1: their first row is drawn in the
+  // Lists of no row select no row font, the empty One's: their first row is drawn in the
   // font the fixed screens draw their whole width rows in, which is the device lists' row font on all sixteen English
   // compiles of skin 54 that describe both, findings section 435.
   const heldFonts = { ...held.spec.screen.fonts };
@@ -987,7 +987,7 @@ export function withOneDeviceListRow(
 
 /**
  * An activity's own device list composed onto a Harmony One configuration, and the Devices item pointed at it while
- * the activity runs, `todo-compile-one.md` 4.3.3: the One family's `Family.activityDeviceList`, run after the
+ * the activity runs, section 424: the One family's `Family.activityDeviceList`, run after the
  * activity composer, which points it at the idle list, and after the menu row.
  *
  * **Its rows are the idle list's devices, the ones the activity's start switches on first**, in the order it switches
@@ -1110,7 +1110,7 @@ export function withOneActivityDeviceList(start: Container, activity: number): U
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// A configuration with no device: the two lists of no rows, `todo-compile-one.md` 7.1.6.
+// A configuration with no device: the two lists of no rows, section 429.
 
 /**
  * The device lists of a configuration with no device and no activity, in mode order, findings section 429: the idle
@@ -1127,9 +1127,9 @@ export function withOneActivityDeviceList(start: Container, activity: number): U
  * and its key words alone, selecting no row font, touched through its keys and the edges, and rebuilt by its template
  * the same way, section 419, though on four compiles of one test account. Against it, Logitech's compiler does special
  * case zero on this remote: the power off help with no device to ask about is "Nothing to do" and not its template with
- * no device in it, section 415. Seen on a remote since `todo-compile-one.md` 7.2: the empty One written to the spare
- * Harmony One started on My Activities and its device list opened with no row; that run is recorded in the todo item
- * and in no findings section, since the archive was frozen at section 436 by then.
+ * no device in it, section 415. Seen on a remote: the empty One written to the spare Harmony One
+ * started on My Activities and its device list opened with no row; that run is recorded in
+ * `docs/test-notes/harmony-one.md` and in no findings section, since the archive was frozen at section 436 by then.
  *
  * **The list nothing enters maps scan 55 once, bound straight**: once per other device list, which is the idle list
  * alone here, the form measured on the four compiles with no activity, section 424. Measured, not inferred.
@@ -1176,9 +1176,9 @@ export function emptyOneDeviceListsSpec(numbering: EmptyDeviceListsNumbering): O
 }
 
 /**
- * The two lists of no rows put into a Logitech compile with no activity, after its modes, `todo-compile-one.md` 7.1.6:
- * a file the zero row form can be laid out in, read back and drawn before a configuration with no device exists to
- * hold it (7.1.7). Nothing enters the two new modes; the compile's own lists stay as they were.
+ * The two lists of no rows put into a Logitech compile with no activity, after its modes, section 429:
+ * a Logitech file the zero row form can be laid out in, read back and drawn, beside the empty One of `empty.ts`,
+ * which holds it as built. Nothing enters the two new modes; the compile's own lists stay as they were.
  *
  * Numbered as an activity's own list is, `withOneActivityDeviceList`: every number the lists share from the
  * configuration's list of the same kind, by role, and every list of their own the next free base slot 10 index;

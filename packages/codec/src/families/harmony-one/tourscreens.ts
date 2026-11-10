@@ -1,6 +1,6 @@
 /**
- * The Harmony One's welcome tour and Remote Assistant built whole from a description: `todo-compile-one.md`
- * 4.4.4.2, findings section 412, the way `fixedscreens.ts` built the twenty three of section 411 and through the
+ * The Harmony One's welcome tour and Remote Assistant built whole from a description,
+ * findings section 412, the way `fixedscreens.ts` built the twenty three of section 411 and through the
  * same engine, `screentemplate.ts`.
  *
  * **The welcome tour is eleven screens**, each one page drawing a picture, a few lines of text left aligned at
@@ -30,7 +30,7 @@
  * entry's events 1 and 5 run the ladder. So the configuration still holds a path to the five, and they are built;
  * what raises those two events is not read, and the path was not seen on a remote. Leaving them out needs the
  * wiring without its ladder, as `one_config` is, and Options without the two rows: `withoutTourAndAssistant`,
- * `todo-compile-one.md` 4.10, section 421, the composed path's default since, after which a configuration holds
+ * section 421, the composed path's default, after which a configuration holds
  * none of the sixteen and this module describes and builds nothing.
  *
  * **One shape each once the numbering is set aside**, measured on the sixteen English compiles of skin 54 and
@@ -46,7 +46,7 @@
  * 2)`, twelve apart in a block centred on y 111, and its keys' words on the halves, "Yes" on the left and "OK" and
  * "No" on the right, section 411's rules. The tour's y are measured constants.
  *
- * **The lists below them are built too**, since `todo-compile-one.md` 6.5, section 418: the 17 the screens' own
+ * **The lists below them are built too**, section 418: the 17 the screens' own
  * lists call, through every level, that the wiring does not build, 13 where "Devices Off Again"'s OK does not go
  * on to the tour, among them the key lights' off lists, what leaving the tour and the assistant runs and what the
  * assistant's buttons run, each at the index the description reads. What is left below them, seven or six lists, is
@@ -378,7 +378,7 @@ export function oneTourScreenModes(c: Container, layout: ContainerLayout = takeA
   if (!withAssistant) {
     const held = ONE_ASSISTANT_SCREENS.filter((name) => found.has(name));
     if (held.length > 0) throw new ScreenRecordError(`the wiring keeps no Remote Assistant and the configuration holds ${held.join(', ')}`);
-    // Ours without the tour as well, `todo-compile-one.md` 4.10: none of the eleven, which no compile of Logitech's is.
+    // Ours without the tour as well, section 421: none of the eleven, which no compile of Logitech's is.
     if (ONE_TOUR_SCREENS.every((name) => !found.has(name))) return { modes: [], assistant: false, tour: false };
   }
   const names = [...ONE_TOUR_SCREENS, ...(withAssistant ? ONE_ASSISTANT_SCREENS : [])];
@@ -399,7 +399,7 @@ export function oneTourScreenModes(c: Container, layout: ContainerLayout = takeA
 export interface OneTourScreensSpec extends TemplateScreensSpec<TourScreenFont> {
   /**
    * Whether the tour's eleven are described and built: every compile of Logitech's holds them, and ours leave them
-   * out with the assistant's five unless chosen, `todo-compile-one.md` 4.10, which this module then builds nothing of.
+   * out with the assistant's five unless chosen, section 421, which this module then builds nothing of.
    */
   tour: boolean;
   /** Whether the Remote Assistant's five are described and built after the tour's eleven: the wiring's ladder. */

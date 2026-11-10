@@ -1,6 +1,6 @@
 /**
  * The wiring, the timers, the fixed cases and the hour list of a Harmony One built from nothing, no device and no
- * activity: `todo-compile-one.md` 7.1.5, findings section 430. The One family's half of what
+ * activity: findings section 430. The One family's half of what
  * `families/harmony-600-650-700/empty.ts`' `emptyWiring` is for the Harmony 650.
  *
  * Section 410 built the One's own wiring from a description read off a configuration, and `oneWiringNeeds` said
@@ -17,7 +17,7 @@
  * timer are the same screens on every English compile, `EMPTY_ONE_REDRAW_CLASSES` below. A configuration with no
  * activity holds thirteen classes, measured on the four that have none; one with activities holds more, since its
  * start up and working screens bring classes of their own. The empty One holds eleven of the thirteen: no device, so
- * no device page; no Remote Assistant, `todo-compile-one.md` 4.10, so not the assistant's Hide Question, which is a
+ * no device page; no Remote Assistant, section 421, so not the assistant's Hide Question, which is a
  * class of its own. **That eleven is our derivation and not Logitech's**: no compile of theirs holds no device or no
  * assistant screen at once, and what holds on all nineteen is that no redraw timer is started by no screen, so a
  * class with no screen has no timer.
@@ -31,7 +31,7 @@
  * Dutch compile, it is read as the first device question. So the empty One, with nothing to switch off, holds it.
  *
  * **What is the caller's**: the modes, since which mode each screen is belongs to the empty One's numbering,
- * `todo-compile-one.md` 7.1.4, and the base slot 10 index the numbering starts at. **What is stated here, in an order
+ * `numbering.ts`, section 432, and the base slot 10 index the numbering starts at. **What is stated here, in an order
  * of ours**: the timer table, Logitech's own order on `harvest_one_two_devices` with its device timer's place taken by
  * the three second one and its last two redraw names left out (the two classes the empty One lacks hold its 7th and
  * 11th, and ours take the first eleven names in the relative order it holds them); the variables, after the firmware's eighteen
@@ -45,7 +45,7 @@
  * cases' four, the page and button sound toggles'); 18 variables after the firmware's, the activity counter 0 to 0 as on
  * the four compiles with no activity; and 15 value maps, every role of section 416's catalogue but the start up toggle.
  * A choice of this project with no decision yet, so described here and not in the reference. Run on a remote with the
- * rest of the empty One, `todo-compile-one.md` 7.2, `empty.ts`.
+ * rest of the empty One, `empty.ts`, `docs/test-notes/harmony-one.md`.
  *
  * The Harmony One alone, the One family's, arch 12: the Harmony 600, 650 and 700's is `families/harmony-600-650-700/empty.ts`.
  * Read only towards hardware: the result is pieces.
@@ -169,7 +169,7 @@ const SCHEDULED = 0x01;
  * again, the shape every redraw timer of the nineteen compiles has, section 430 (`[73 clock, 73 charging, 1F EBnn]`,
  * the timer record `01 000004 list 7F`). The programs are the configuration's own, `oneClockHeaderEntries`.
  *
- * **For the first device page on a configuration with none**, `todo-compile-one.md` 8.1.1: the device pages are a
+ * **For the first device page on a configuration with none**, section 435: the device pages are a
  * class of their own, section 430, so an empty One, which holds no device and no timer started by no screen, holds no
  * timer for them, and the first device composed onto it has to bring one, as a class with a screen has a timer. The
  * list goes at the action table's end, the record after the last record and the pointer at the table's end; where a
@@ -205,7 +205,7 @@ export function appendOneRedrawTimer(c: Container): { container: Container; time
 // ---------------------------------------------------------------------------------------------------------
 // The modes the caller gives.
 
-/** The modes an empty One's wiring and fixed cases enter, which its numbering gives, `todo-compile-one.md` 7.1.4. */
+/** The modes an empty One's wiring and fixed cases enter, which its numbering gives, `numbering.ts`. */
 export const EMPTY_ONE_MODES = [
   'Blank 1', 'Blank 2', 'Blank 3', 'Blank 4', 'Blank 5', 'Blank 6', 'Blank 7',
   'activity menu', 'idle device list', 'help attempt', 'help after',

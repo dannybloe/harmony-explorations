@@ -1,5 +1,5 @@
 /**
- * The Harmony One's welcome tour and Remote Assistant left out of a configuration, `todo-compile-one.md` 4.10,
+ * The Harmony One's welcome tour and Remote Assistant left out of a configuration,
  * findings section 421: decided on 18 October 2026, a person reads the manual instead. The eleven screens of the tour
  * and the five of the Remote Assistant, section 412, go, with the lists only they run, the hit pages only they are
  * touched through and the pictures only they draw; Options loses "Turn Remote Assistant On" and "Tutorial"; the Help
@@ -24,7 +24,8 @@
  * nothing after, `dropLists`, renumbering base slot 10, with any list nothing reached before either that still names
  * one of those, three on five of the sixteen compiles; every hit page named before and by nothing after,
  * `withoutHitPages`; and the texts' form rule applied once more over what is left. Any other list nothing reached
- * before stays as it was (`todo-compile-one.md` 6.7's 34 on the test setup).
+ * before stays as it was (the donor's 34 on the test setup, kept because dropping them renumbers
+ * every list after them, `composesetup.test.ts`).
  *
  * **What stays and is reached by nothing**: the assistant's value map, its two case programs and their lists, since
  * leaving a value map out renumbers base slot 14 and the `0x72` that name it, which nothing here does yet; it writes

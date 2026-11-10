@@ -1,6 +1,5 @@
 /**
- * A command's name laid out on a Harmony One pad the way Logitech's compiler lays it, findings section 394,
- * `todo-compile-one.md` 1.2.6.
+ * A command's name laid out on a Harmony One pad the way Logitech's compiler lays it, findings section 394.
  *
  * **What a pad is.** A touchable command on a device page or an activity screen is a box 81 pixels wide and
  * 50 high at one of six places, `DEVICE_PAGE_SLOTS`, with the command's name drawn inside it. The composers

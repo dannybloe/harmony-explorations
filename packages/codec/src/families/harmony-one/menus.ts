@@ -715,7 +715,7 @@ const ENTER_TAG = 0x06;
 const LEAVE_TAG = 0x07;
 
 /**
- * The lights of a screen's page keys switched on as it is entered, `todo-compile-one.md` 1.2.11.2.10.
+ * The lights of a screen's page keys switched on as it is entered.
  *
  * **The firmware has no page logic for these lights**: it switches a key's light exactly when an action
  * list says so, through band `0xC0`, and Logitech's compiler puts the call switching the page keys' pair on
@@ -770,7 +770,7 @@ export function withPageKeyLights(c: Container, mode: number): Container {
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// The menu marker outside the rows, `todo-compile-one.md` 8.1.1.
+// The menu marker outside the rows, section 435.
 
 /** The Devices key's press, scan 55, as the leftover entry binds it, section 329's entry: `0x80 | 55`. */
 const DEVICES_KEY_PRESS = 0xb7;

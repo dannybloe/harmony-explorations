@@ -1,7 +1,7 @@
 /**
  * How the One family's font sets are lettered in our letters, `withOxaniumFonts`: which of our faces a set of
- * Logitech's becomes and whether sets may share a glyph. `fonttable.ts` held both as tests of the architecture
- * until `todo-compile-one.md` 3.3.3.5; it measures a set and asks the family, `Family.fonts`.
+ * Logitech's becomes and whether sets may share a glyph. `fonttable.ts` measures a set and asks
+ * the family, `Family.fonts`, rather than testing the architecture itself.
  *
  * **The Harmony One's faces go by height**, `lettering.ts`'s `OXANIUM_FACE_SPECS`: every 14 pixel set of its
  * nineteen compiles is bold and every 16 pixel set the greeting's, so only the 15 pixel sets need the stroke,
@@ -21,7 +21,7 @@ import type { FamilyFonts } from '../family.ts';
 import type { FaceOrRefusal, SetMeasurement } from '../../drawing/fonttable.ts';
 import type { OxaniumFaceName } from '../../drawing/lettering.ts';
 
-/** The five faces measured on the Harmony One, `todo-compile-one.md` 5.2. `lettering.ts` held this until 3.3.3.5. */
+/** The five faces measured on the Harmony One, findings section 396. */
 export const HARMONY_ONE_FACES: readonly OxaniumFaceName[] = ['One16', 'One15', 'OneR15', 'One14', 'One11'];
 
 /** The face of ours a Harmony One set measured so is lettered in, by the table in the header. */
