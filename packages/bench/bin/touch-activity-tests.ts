@@ -1,5 +1,5 @@
 /**
- * Write or check the Harmony Touch's 8.2 bench test, `todo-touch.md` 8.2: an activity of ours, started, used,
+ * Write or check the Harmony Touch's bench test for an activity of ours: an activity of ours, started, used,
  * switched to and from a recorded activity, and ended.
  *
  *   node packages/bench/bin/touch-activity-tests.ts            print the test's steps and expectations, write nothing

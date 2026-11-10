@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch's bench test for an activity of ours, `todo-touch.md` 8.2, held against the documents it is
+ * The Harmony Touch's bench test for an activity of ours, held against the documents it is
  * derived from, and the claim that its start can be told from every recorded activity's by ear.
  *
  * **What the test is.** One file in `irtests/`, `touch-8-2-activity.json`: Off; Test Cinema started from Off; every

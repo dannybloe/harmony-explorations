@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch's bench test for favourites of ours, `todo-touch.md` 8.3, held against the documents it is derived
+ * The Harmony Touch's bench test for favourites of ours, held against the documents it is derived
  * from, and the claim that what is heard tells the new favourites from the old.
  *
  * **What the test is.** One file in `irtests/`, `touch-8-3-favourites.json`: Off; the favourites screen and the first

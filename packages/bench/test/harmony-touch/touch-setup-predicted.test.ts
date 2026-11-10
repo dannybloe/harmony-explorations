@@ -1,6 +1,6 @@
 /**
- * The Harmony Touch's bench test for 8.6, `todo-touch.md` 8.6, held against the documents it is derived from: the whole
- * test setup composed by us, and the ten 7.1 tests as the run, `experiments/touchsetuptest.ts`.
+ * The Harmony Touch's bench test for the whole test setup composed by us, held against the documents it is derived
+ * from, with the ten `touch-7-1` tests of the first full bench test as the run, `experiments/touchsetuptest.ts`.
  *
  * **What is held.** The ten 7.1 tests derived from the setup composed out of `packages/corpus/touch-setups/
  * 8.6-test-setup.json` onto the source set, by the same derivation 7.1 uses (`touch71Tests` over

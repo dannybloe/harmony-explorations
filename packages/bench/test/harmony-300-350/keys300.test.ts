@@ -1,6 +1,6 @@
 /**
  * Which key of the bench Harmony 300 raises which scan code, heard by pressing every key with the receiver
- * listening, `todo-compile-300.md` 2.1 and 2.2, against the predictions committed before the second run,
+ * listening, in two bench tests, against the predictions committed before the second run,
  * `docs/predictions/harmony-300-keys.md`.
  *
  * **What was run.** Two bench tests on the bench Harmony 300, which is the European model, skin 79. The

@@ -1,6 +1,6 @@
 {
   "name": "Harmony 350, Logitech's compile with event 0xFF bound",
-  "description": "Logitech's compile of the test setup with one entry added to key map 0: firmware event 0xFF bound to event 0x30's list, the entry that makes a Harmony 300 send from groups 4 to 7. Predicted: on the Harmony 350, whose build never raises 0xFF, every step hears exactly what the unpatched compile's 3.3 run heard, todo-compile-300 4.4 and decision 28.",
+  "description": "Logitech's compile of the test setup with one entry added to key map 0: firmware event 0xFF bound to event 0x30's list, the entry that makes a Harmony 300 send from groups 4 to 7. Predicted: on the Harmony 350, whose build never raises 0xFF, every step hears exactly what the unpatched compile's 3.3 run heard, and decision 28.",
   "steps": [
     {
       "instruction": "Unplug from USB. Hold TV/Media 2 s → Volume Up → Up",

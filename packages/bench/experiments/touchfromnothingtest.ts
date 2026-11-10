@@ -1,6 +1,6 @@
 /**
- * The Harmony Touch's bench test for 9.1, `todo-touch.md` 9.1, run in 9.4: the whole test setup built from a setup file
- * with no Logitech document as input, and run as the 7.1 tests themselves.
+ * The Harmony Touch's bench test for the test setup built from nothing: the whole test setup built from a setup file
+ * with no Logitech document as input, and run as the ten `touch-7-1` tests of the first full bench test themselves.
  *
  * **Why the 7.1 tests and no new plan.** 9.1 builds all six documents from `packages/corpus/setups/touch-test.json`,
  * the archive of the catalogue and our rhythm table, and the comparison with 8.6's set, which the bench Touch ran 418 of

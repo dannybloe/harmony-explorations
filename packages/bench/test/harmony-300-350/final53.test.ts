@@ -1,7 +1,7 @@
 /**
- * The two bench tests of `todo-compile-350.md` 5.3, one per remote, held against the file both are run on: the lab's
- * `work/setups/h350-test/from-nothing-5.4.bin`, the test setup built from nothing with firmware event `0xFF` bound,
- * 5.4. `irtests/350-5-3-final.json` is for the bench Harmony 350 and `irtests/300-5-3-final.json` for the bench Harmony
+ * The file based family's final bench tests, one per remote, held against the file both are run on: the lab's
+ * `work/setups/h350-test/from-nothing-5.4.bin`, the test setup built from nothing with firmware event `0xFF` bound.
+ * `irtests/350-5-3-final.json` is for the bench Harmony 350 and `irtests/300-5-3-final.json` for the bench Harmony
  * 300, the European printing.
  *
  * **Why two files for one configuration.** Decision 28 makes the two remotes one for configurations, and the steps are
@@ -11,9 +11,10 @@
  * 3 in the place of the 350's favourite 5 and Teletext in the place of its favourite 3),
  * `reference/remotes/harmony-300/keys.md`. The expectations are one derivation and the two files carry them alike.
  *
- * **The steps** are 5.1.6's, `fromnothing350.test.ts`, every device key short and long, a power variable on and off,
- * Watch TV on and off and the favourites, with one change: Kodi's step presses Exit where 5.1.6 pressed Enter, since
- * Enter was never tied to a code on a Harmony 300 and Exit was heard from Kodi there, `todo-compile-300.md` 4.3. The
+ * **The steps** are those of the 350's bench test of the setup built from nothing, `fromnothing350.test.ts`, every
+ * device key short and long, a power variable on and off, Watch TV on and off and the favourites, with one change:
+ * Kodi's step presses Exit where that test pressed Enter, since Enter was never tied to a code on a Harmony 300 and
+ * Exit was heard from Kodi there, `eventff300.test.ts`. The
  * four long press steps send from infrared groups 4, 5, 6 and 7, which is what hung the Harmony 300 before the entry,
  * the second test.
  *

@@ -1,8 +1,9 @@
 /**
- * The Harmony Touch's bench test for 8.5, `todo-touch.md` 8.5: Listen to Music and the Denon AV Receiver taken out of
- * the documents, and the activities that lost the receiver started, used, switched and ended without a code of it,
- * with what the remote is predicted to send derived from the documents by `families/harmony-touch/engine.ts`, never written by hand. The
- * same derivation as 7.1's to 8.3's, `touchTest` in `touchbench.ts`; only the plan is new.
+ * The Harmony Touch's bench test for a removal: Listen to Music and the Denon AV Receiver taken out of the documents,
+ * and the activities that lost the receiver started, used, switched and ended without a code of it, with what the
+ * remote is predicted to send derived from the documents by `families/harmony-touch/engine.ts`, never written by hand.
+ * The same derivation as the first full bench test's and the device, activity and favourites tests', `touchTest` in
+ * `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.5-removal`, the set the bench Touch holds since 8.4,
  * `8.4-settings-back`, with the activity and the device taken out by `packages/corpus/bin/touch-device-set.ts
@@ -70,7 +71,7 @@ export function touch85Plans(c: Configuration): TouchTestPlan[] {
     id: 'touch-8-5-removal',
     name: `Harmony Touch 8.5, ${TOUCH_8_5_REMOVED.activity} and the ${TOUCH_8_5_REMOVED.device} taken out`,
     summary: `An activity and a device of the remote's own taken out: the activities that lost the ${TOUCH_8_5_REMOVED.device} started, used, switched and ended without a code of it.`,
-    description: 'todo-touch.md 8.5, on the bench Harmony Touch holding work/touch-firmware/sets/8.5-removal: the set of 8.4\'s put back '
+    description: 'On the bench Harmony Touch holding work/touch-firmware/sets/8.5-removal: the settings set\'s put back '
       + `with ${TOUCH_8_5_REMOVED.activity} and the ${TOUCH_8_5_REMOVED.device} taken out, with everything naming them `
       + '(packages/corpus/touch-removals/8.5-removal.json). Every expectation is derived from that set by '
       + 'packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch\'s own documents. Step 1 presses '

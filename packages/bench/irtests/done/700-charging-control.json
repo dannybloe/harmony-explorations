@@ -1,6 +1,6 @@
 {
   "name": "Harmony 700, the charging screen with Logitech's own configuration",
-  "description": "todo-compile-700 1.4, the control for section 383: on our empty configuration no charging screen showed on a phone charger, with either set of batteries. Logitech's own configuration, the one the remote held before, is back on it unchanged. The question is only whether this configuration shows a charging screen, a battery filling up under a lightning bolt, with these batteries; nothing is predicted, and nothing is sent, so the Flirc hears nothing. Use the mark button to say what the screen shows at each step.",
+  "description": "The control for section 383: on our empty configuration no charging screen showed on a phone charger, with either set of batteries. Logitech's own configuration, the one the remote held before, is back on it unchanged. The question is only whether this configuration shows a charging screen, a battery filling up under a lightning bolt, with these batteries; nothing is predicted, and nothing is sent, so the Flirc hears nothing. Use the mark button to say what the screen shows at each step.",
   "steps": [
     {
       "instruction": "Unplug the cable. Expect Logitech's own screens for the activities this configuration holds. Say what the screen shows",

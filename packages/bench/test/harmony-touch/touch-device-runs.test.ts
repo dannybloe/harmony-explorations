@@ -1,5 +1,5 @@
 /**
- * A device of ours on the Harmony Touch, `todo-touch.md` 8.1, as it ran: Test Projector added to the set the
+ * A device of ours on the Harmony Touch, as it ran: Test Projector added to the set the
  * bench Touch holds, delivered, heard in device mode and taken out again.
  *
  * **What was run.** After commit `5f296d09`, the 8.1 preparation, and in the order of the lab's

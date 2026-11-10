@@ -1,5 +1,5 @@
 /**
- * Write or check the Harmony Touch's 7.1 bench tests, `todo-touch.md` 7.1.
+ * Write or check the Harmony Touch's first full bench tests, the ten `touch-7-1` files.
  *
  *   node packages/bench/bin/touch-tests.ts            print each test's steps and expectations, write nothing
  *   node packages/bench/bin/touch-tests.ts --write    write them to packages/bench/irtests/touch-7-1-*.json

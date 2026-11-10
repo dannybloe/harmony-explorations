@@ -1,5 +1,5 @@
 /**
- * An activity and a device of the remote's own taken out of a Harmony Touch, `todo-touch.md` 8.5, as it ran: Listen to
+ * An activity and a device of the remote's own taken out of a Harmony Touch, as it ran: Listen to
  * Music and the Denon AV Receiver taken out of the four documents that name them, delivered in a sync, the remaining
  * activities heard at the receiver without a code of the receiver, and both put back. And the first try, which
  * stopped while its answers were being written and left the remote on the set before it.

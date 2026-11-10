@@ -1,5 +1,5 @@
 /**
- * Write or check the Harmony Touch's 8.1 bench test, `todo-touch.md` 8.1: device mode for a device of ours.
+ * Write or check the Harmony Touch's bench test for a device of ours: device mode for that device.
  *
  *   node packages/bench/bin/touch-device-tests.ts            print the test's steps and expectations, write nothing
  *   node packages/bench/bin/touch-device-tests.ts --write    write it to packages/bench/irtests/touch-8-1-*.json

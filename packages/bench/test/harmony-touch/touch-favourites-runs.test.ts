@@ -1,5 +1,5 @@
 /**
- * Favourites of ours and a logo of ours on the Harmony Touch, `todo-touch.md` 8.3, as it ran: the user's favourites
+ * Favourites of ours and a logo of ours on the Harmony Touch, as it ran: the user's favourites
  * document changed, a channel added from the line up, the order reversed, a logo drawn by this project delivered at
  * the added channel's station logo, all heard at the receiver, and both put back.
  *

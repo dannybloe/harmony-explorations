@@ -1,5 +1,5 @@
 /**
- * Write or check the Harmony Touch's 8.3 bench test, `todo-touch.md` 8.3: favourites of ours, in a new order with a
+ * Write or check the Harmony Touch's bench test for favourites of ours: favourites of ours, in a new order with a
  * channel added, each tapped, and a logo of ours to look at.
  *
  *   node packages/bench/bin/touch-favourites-tests.ts            print the test's steps and expectations, write nothing

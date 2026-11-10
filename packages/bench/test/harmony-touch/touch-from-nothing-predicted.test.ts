@@ -1,6 +1,7 @@
 /**
- * The Harmony Touch's bench test for 9.1, `todo-touch.md` 9.1, held against the documents it is derived from: the whole
- * test setup built from a setup file with no Logitech document as input, and the ten 7.1 tests as the run,
+ * The Harmony Touch's bench test for the test setup built from nothing, held against the documents it is derived from:
+ * the whole test setup built from a setup file with no Logitech document as input, and the ten `touch-7-1` tests of
+ * the first full bench test as the run,
  * `experiments/touchfromnothingtest.ts`.
  *
  * **What is held.** The ten 7.1 tests derived from the set 9.1 built in the lab, `work/touch-firmware/sets/9.1-nothing`,

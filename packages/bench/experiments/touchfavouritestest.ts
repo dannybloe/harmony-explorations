@@ -1,8 +1,8 @@
 /**
- * The Harmony Touch's bench test for favourites of ours, `todo-touch.md` 8.3: every favourite tapped in the order the
- * favourites screen is to show them, with what the remote is predicted to send derived from the documents by
- * `families/harmony-touch/engine.ts`, never written by hand, and what the person is to look at: the order and the logo of ours. The
- * same derivation as 7.1's, `touchTest` in `touchbench.ts`; only the plan is new.
+ * The Harmony Touch's bench test for favourites of ours: every favourite tapped in the order the favourites screen is
+ * to show them, with what the remote is predicted to send derived from the documents by
+ * `families/harmony-touch/engine.ts`, never written by hand, and what the person is to look at: the order and the logo
+ * of ours. The same derivation as the first full bench test's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The configuration it is derived from** is what the bench Touch holds once `work/touch-firmware/sets/8.3-favourites`
  * is committed: that set's six documents, which are `8.2-activity-back`'s, its user's favourites document, and the
@@ -57,8 +57,8 @@ export function touch83Plans(c: Configuration, added: readonly string[], logoTex
     id: 'touch-8-3-favourites',
     name: 'Harmony Touch 8.3, favourites of ours and a logo of ours',
     summary: 'The favourites in a new order with a channel added, each tapped: its channel as digits to the LG TV; and the logo of ours.',
-    description: 'todo-touch.md 8.3, on the bench Harmony Touch holding work/touch-firmware/sets/8.3-favourites: the six documents of '
-      + '8.2\'s put back, the user\'s favourites document of ours and a logo of ours; the tuning device\'s favourites and the line up '
+    description: 'On the bench Harmony Touch holding work/touch-firmware/sets/8.3-favourites: the six documents of '
+      + 'the activity set\'s put back, the user\'s favourites document of ours and a logo of ours; the tuning device\'s favourites and the line up '
       + 'as the remote held them (packages/corpus/touch-favourites/8.3-favourites.json). Every expectation is derived by '
       + 'packages/bench/src/touchengine.ts. Step 1 presses Off and is not judged. '
       + `In step 2, before tapping, write in the problem field the order the favourites screen shows, reading each row left to right, `

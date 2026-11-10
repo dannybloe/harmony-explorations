@@ -1,5 +1,5 @@
 /**
- * Write or check the Harmony Touch's 8.5 bench test, `todo-touch.md` 8.5: Listen to Music and the Denon AV Receiver
+ * Write or check the Harmony Touch's bench test for a removal: Listen to Music and the Denon AV Receiver
  * taken out, and the activities that lost the receiver started, used, switched and ended without a code of it.
  *
  *   node packages/bench/bin/touch-removal-tests.ts            print the test's steps and expectations, write nothing

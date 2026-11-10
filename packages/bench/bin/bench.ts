@@ -29,7 +29,8 @@ const cli = commandLine({
   flags: ['port'],
 });
 
-// `--port` with nothing after it is NaN rather than the default, as it was before `todo.md` 7.3.7.
+// `--port` with nothing after it is NaN rather than the default, as it was before the scripts shared one command
+// line reader.
 const port = cli.flag('port') ? Number(cli.value('port')) : DEFAULT_PORT;
 
 // The infrared monitor's code book is built on first use, since it parses every bench remote's

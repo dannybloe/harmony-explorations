@@ -1,8 +1,8 @@
 /**
- * The Harmony Touch's bench test for an activity of ours, `todo-touch.md` 8.2: the activity started from Off, its
- * keys and its screen entries, a switch to a recorded activity and back, and Off, with what the remote is predicted
- * to send derived from the documents by `families/harmony-touch/engine.ts`, never written by hand. The same derivation as 7.1's and
- * 8.1's, `touchTest` in `touchbench.ts`; only the plan is new.
+ * The Harmony Touch's bench test for an activity of ours: the activity started from Off, its keys and its screen
+ * entries, a switch to a recorded activity and back, and Off, with what the remote is predicted to send derived from
+ * the documents by `families/harmony-touch/engine.ts`, never written by hand. The same derivation as the first full
+ * bench test's and the device test's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.2-activity`, the set the bench Touch holds since 8.1,
  * `8.1-device-back`, with Test Cinema added, `packages/corpus/bin/touch-device-set.ts --activity` and
@@ -66,7 +66,7 @@ export function touch82Plans(c: Configuration): TouchTestPlan[] {
     id: 'touch-8-2-activity',
     name: `Harmony Touch 8.2, ${TOUCH_8_2_ACTIVITY}, an activity of ours`,
     summary: `An activity of ours: started from Off, its keys and screen entries, a switch to ${TOUCH_8_2_OTHER} and back, and Off.`,
-    description: 'todo-touch.md 8.2, on the bench Harmony Touch holding work/touch-firmware/sets/8.2-activity: the set of 8.1\'s '
+    description: 'On the bench Harmony Touch holding work/touch-firmware/sets/8.2-activity: the device set\'s '
       + `put back with an activity of ours added, ${TOUCH_8_2_ACTIVITY}, composed from the bench devices by name `
       + '(packages/corpus/touch-activities/test-cinema.json). Every expectation is derived from that set by '
       + 'packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch\'s own documents. Step 1 presses '

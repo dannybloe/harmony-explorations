@@ -1,8 +1,8 @@
 /**
- * The test setup built from nothing on a Harmony Touch, `todo-touch.md` 9.4, as it ran: the six documents and our
- * background written in 9.1 from a setup file, the archive of the catalogue through our readers, our rhythm table and a
- * description of the account, with no Logitech document as input, delivered in a sync and committed, used with one 7.1
- * bench test, and put back.
+ * The test setup built from nothing on a Harmony Touch, as it ran: the six documents and our background written
+ * beforehand from a setup file, the archive of the catalogue through our readers, our rhythm table and a description of
+ * the account, with no Logitech document as input, delivered in a sync and committed, used with one `touch-7-1` bench
+ * test, and put back.
  *
  * **What was run.** After commit `8d4d004b`, the 9.3 and 9.4 preparation, and commit `81526d34`, which moved nine of the
  * ten 7.1 tests to `irtests/done/` so that the bench listed test 1 alone, in the order of the lab's

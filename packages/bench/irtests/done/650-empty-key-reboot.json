@@ -1,6 +1,6 @@
 {
   "name": "Harmony 650, which press reboots it with the empty Listen to Music key",
-  "description": "todo-compile-650 3.11, after the first run: the empty key opened the 'add an Activity' screen and Exit returned, then the button beside Muziek rebooted the remote. Nothing the remote reads differs from Logitech's compile except the Listen to Music key and the list it calls, so this separates two causes: starting Muziek from the menu at all, or starting anything after a visit to the 'add an Activity' screen. Keep the remote off the cable and pointed at the Flirc.",
+  "description": "After the first run: the empty key opened the 'add an Activity' screen and Exit returned, then the button beside Muziek rebooted the remote. Nothing the remote reads differs from Logitech's compile except the Listen to Music key and the list it calls, so this separates two causes: starting Muziek from the menu at all, or starting anything after a visit to the 'add an Activity' screen. Keep the remote off the cable and pointed at the Flirc.",
   "steps": [
     {
       "instruction": "Press All Off once and wait until it is quiet. Do NOT press Listen to Music in this step or the next"

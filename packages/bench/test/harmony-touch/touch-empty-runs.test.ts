@@ -1,5 +1,5 @@
 /**
- * The empty configuration on a Harmony Touch, `todo-touch.md` 9.2, as it ran: no device and no activity delivered in a
+ * The empty configuration on a Harmony Touch, as it ran: no device and no activity delivered in a
  * sync and committed, looked at by the person at the bench, and put back with the favourites documents the empty set's
  * commit was read to drop.
  *

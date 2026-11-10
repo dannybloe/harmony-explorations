@@ -1,7 +1,7 @@
 /**
- * The whole test setup composed by us on a Harmony Touch, `todo-touch.md` 8.6, as it ran: every device and every
- * activity of the set the bench Touch held composed from a description with ids of ours, delivered in a sync, the ten
- * 7.1 bench tests run on it, and the remote's own put back.
+ * The whole test setup composed by us on a Harmony Touch, as it ran: every device and every activity of the set the
+ * bench Touch held composed from a description with ids of ours, delivered in a sync, the ten `touch-7-1` bench tests
+ * run on it, and the remote's own put back.
  *
  * **What was run.** After commit `a50473a9`, the 8.6 preparation, and commit `72a96edc`, which moved the Touch bench
  * tests already run to `irtests/done/` so that the bench listed the ten 7.1 tests alone, in the order of the lab's

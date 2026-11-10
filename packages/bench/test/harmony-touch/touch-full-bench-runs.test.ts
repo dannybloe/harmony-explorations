@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch's first full bench test, `todo-touch.md` 7.1, as it ran: ten runs at the bench held against
+ * The Harmony Touch's first full bench test, as it ran: ten runs at the bench held against
  * what the documents the remote holds predict, `touch-full-bench-predicted.test.ts` holding how those predictions are made.
  *
  * **What was run.** The ten tests of `irtests/touch-7-1-*.json`, one complete run each, on the bench Touch holding

@@ -1,7 +1,7 @@
 /**
- * The Harmony Touch's bench test for a device of ours, `todo-touch.md` 8.1: device mode for the composed device,
- * each of its keys, with what the remote is predicted to send derived from the documents by `families/harmony-touch/engine.ts`,
- * never written by hand. The same derivation as 7.1's, `touchTest` in `touchbench.ts`; only the plan is new.
+ * The Harmony Touch's bench test for a device of ours: device mode for the composed device, each of its keys, with
+ * what the remote is predicted to send derived from the documents by `families/harmony-touch/engine.ts`, never written
+ * by hand. The same derivation as the first full bench test's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.1-device`, the bench set of 6.9 with the Test
  * Projector added, `packages/corpus/bin/touch-device-set.ts` and `packages/corpus/touch-devices/test-projector.json`.
@@ -54,7 +54,7 @@ export function touch81Plans(c: Configuration): TouchTestPlan[] {
     id: 'touch-8-1-device-mode',
     name: `Harmony Touch 8.1, ${TOUCH_8_1_DEVICE} in device mode`,
     summary: `A device of ours: chosen from the Devices list, each key of its own map tapped, then the ${TOUCH_8_1_CONTROL}'s navigation keys as a control.`,
-    description: 'todo-touch.md 8.1, on the bench Harmony Touch holding work/touch-firmware/sets/8.1-device: the set of 6.9 with a '
+    description: 'On the bench Harmony Touch holding work/touch-firmware/sets/8.1-device: the changed set with a '
       + `device of ours added, ${TOUCH_8_1_DEVICE}, composed from the rhythm table's Sony 12 Bit row with numbers of ours `
       + '(packages/corpus/touch-devices/test-projector.json). Every expectation is derived from that set by '
       + 'packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch\'s own documents. Step 1 presses '

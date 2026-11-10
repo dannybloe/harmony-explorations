@@ -1,6 +1,6 @@
 /**
  * What a Harmony 300 sent from infrared groups 4 to 7 once firmware event `0xFF` was bound, held against the file
- * it ran: `todo-compile-300.md` 4.3, after `tests/harmony_300_350/test_harmony_300_group_4_send.py`.
+ * it ran, the bench check of the trace in `tests/harmony_300_350/test_harmony_300_group_4_send.py`.
  *
  * **The question.** The trace said a send from a group above 3 raises event `0xFF` on the 300's build, that no
  * configuration binds it, and that the sender therefore waits for ever. Its prediction (c): binding `0xFF` in key

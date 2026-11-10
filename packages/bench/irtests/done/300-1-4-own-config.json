@@ -1,6 +1,6 @@
 {
   "name": "Harmony 300, its own configuration written back",
-  "description": "todo-compile-300 1.4: the bench 300's own configuration, the four devices Logitech's service put on it, written back unchanged over the file protocol. Each step expects what that file binds, traced key by key: the TV key selects the Panasonic television, Cable/Sat the KPN box, DVD the Panasonic player and VCR/Aux the Sony recorder, and a device key sends nothing itself. The catalogue names none of the KPN's codes, so those are expected by their number in the file. The 300 has no screen, so the receiver is the only witness.",
+  "description": "The bench 300's own configuration, the four devices Logitech's service put on it, written back unchanged over the file protocol. Each step expects what that file binds, traced key by key: the TV key selects the Panasonic television, Cable/Sat the KPN box, DVD the Panasonic player and VCR/Aux the Sony recorder, and a device key sends nothing itself. The catalogue names none of the KPN's codes, so those are expected by their number in the file. The 300 has no screen, so the receiver is the only witness.",
   "steps": [
     {
       "instruction": "Unplug the Harmony 300 from USB and point it at the receiver. Press TV, the top left device key, once"

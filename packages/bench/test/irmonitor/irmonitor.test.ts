@@ -192,7 +192,7 @@ test('a code no bench remote holds is unknown, decoded where it can be, and offe
 });
 
 test('a frame nothing reads is unreadable, and a press, a repeat and a bare repeat are not', () => {
-  // One of the 21 frames a camera put into the bench run of todo-compile-650 11.2.3, as the receiver
+  // One of the 21 frames a camera put into the Harmony 650's bench run of the test setup built from nothing, as the receiver
   // printed it: no stored code fits it and it decodes to no number.
   const { source, book, frames } = monitor();
   source.feed('+1000000');

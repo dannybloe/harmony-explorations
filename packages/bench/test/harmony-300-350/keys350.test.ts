@@ -1,7 +1,7 @@
 /**
  * Which printed key on a Harmony 350 raises which scan code, named by what the keys send.
  *
- * `todo-compile-350.md` 2.2. The argument is the header of `tests/harmony_300_350/test_harmony_350_keys.py`, which holds the
+ * The argument is the header of `tests/harmony_300_350/test_harmony_350_keys.py`, which holds the
  * firmware half (a key map's tag is an event type plus the code the keypad scan computes, 1 to 56) and the
  * keys whose binding says what they are: the four device keys, Watch TV, Power and the five favourites.
  * This file holds the rest, which needs the bench's infrared monitor and so lives beside it.
@@ -32,7 +32,7 @@
  * scans no catalogue lookup names here, 25 and 26, and the configurations left them to the arrow pair as
  * two candidates; Live is 43 or 56, which nothing binds.
  *
- * **Checked on a remote**, `todo-compile-350.md` 2.2.2: `packages/bench/irtests/350-2-2-keys.json` pressed
+ * **Checked on a remote**: `packages/bench/irtests/done/350-2-2-keys.json` pressed
  * every key of the bench Harmony 350 in two device modes with the receiver listening, and
  * `TheBench350HeardEveryKey` in `tests/harmony_300_350/test_harmony_350_keys.py` holds the run. The 38 keys of this table
  * it heard send came out on the codes below, and three keys the configurations could not decide it did:
@@ -40,7 +40,7 @@
  * was not reached by that run, because the file the unit held binds nothing to those keys: Menu, DVR,
  * Enter, Watch TV, the top right and bottom right device keys, favourites 1 to 4 and Live.
  *
- * **Then on Logitech's compile of the test setup**, `todo-compile-350.md` 3.3, which binds all of those but
+ * **Then on Logitech's compile of the test setup**, which binds all of those but
  * Live: two runs of `packages/bench/irtests/done/350-3-3-logitech-setup.json`, held in
  * `packages/bench/test/harmony-300-350/setup350.test.ts`. Every key this table had decided and those runs pressed came out on
  * its code, and favourites 1 to 4, a set of four here until then, are 8, 9, 11 and 34 in that order,

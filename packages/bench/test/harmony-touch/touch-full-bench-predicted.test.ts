@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch's first full bench test, `todo-touch.md` 7.1, held against the documents the remote holds and
+ * The Harmony Touch's first full bench test, held against the documents the remote holds and
  * against the bench runs the Touch has already given.
  *
  * **What the tests are.** Ten files in `irtests/`, `touch-7-1-*.json`: every activity started from Off and ended,

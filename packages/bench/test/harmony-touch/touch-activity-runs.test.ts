@@ -1,5 +1,5 @@
 /**
- * An activity of ours on the Harmony Touch, `todo-touch.md` 8.2, as it ran: Test Cinema added to the set the bench
+ * An activity of ours on the Harmony Touch, as it ran: Test Cinema added to the set the bench
  * Touch holds, delivered, started, used, switched away from and back to, stopped, and taken out again.
  *
  * **What was run.** After commit `74f98f70`, the 8.2 preparation, and in the order of the lab's

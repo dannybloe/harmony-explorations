@@ -1,11 +1,10 @@
 /**
- * The Harmony 350's bench test of the test setup built from nothing, `todo-compile-350.md` 5.1.6, held against the
- * file it tests.
+ * The Harmony 350's bench test of the test setup built from nothing, held against the file it tests.
  *
  * **What the file is.** `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts` builds the whole test setup with no
- * Logitech file as input: the empty configuration of 5.1.5 with the eight devices, Watch TV and the five favourite
+ * Logitech file as input: the family's empty configuration with the eight devices, Watch TV and the five favourite
  * channels composed onto it, the lab's `work/setups/h350-test/from-nothing-5.1.6.bin`. **Everything the bench hears is
- * ours**, unlike the 4.5 run, whose LG TV, Denon, KPN and Watch TV were Logitech's: so this test presses every device
+ * ours**, unlike the run of our composed setup, `composed350.test.ts`, whose LG TV, Denon, KPN and Watch TV were Logitech's: so this test presses every device
  * key short and long, a device whose power key switches its power variable, Watch TV on and off, and the five
  * favourites.
  *
@@ -14,10 +13,9 @@
  * sends the same codes, compared by their bytes. **The one that differs is chosen to**: in the KPN's mode, Channel Up
  * and the digit 1 send the KPN's own codes from our file and nothing from Logitech's, whose KPN map binds 12 keys
  * where ours binds the family's 43, because that account's mode map for the KPN is the one the setup builder saved,
- * which the service reads with its hard buttons unassigned, a reason found after this run, `todo-compile-350.md`
- * 5.1.7 and `noscreenfromnothing.test.ts`. So the run hears
- * whether our fuller map works, where every other step can only agree with what was heard from Logitech's compile in
- * the 3.3 run.
+ * which the service reads with its hard buttons unassigned, a reason found after this run,
+ * `noscreenfromnothing.test.ts`. So the run hears whether our fuller map works, where every other step can only agree
+ * with what was heard from Logitech's compile in the 350's first full bench test, `setup350.test.ts`.
  *
  * **How the monitor names the codes.** A code that is a record byte for byte equal to one of Logitech's compile, in
  * the same infrared group, is expected as the monitor names it from that compile, as the 4.5 test does: the compile

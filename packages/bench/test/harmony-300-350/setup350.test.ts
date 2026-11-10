@@ -1,5 +1,5 @@
 /**
- * The Harmony 350's first full bench test, `todo-compile-350.md` 3.3, held against the file it tests.
+ * The Harmony 350's first full bench test, held against the file it tests.
  *
  * **What this is for.** `packages/bench/irtests/350-3-3-logitech-setup.json` tells the person at the bench
  * which keys to press and what the receiver should hear. Every expectation in it was derived from the
@@ -49,7 +49,7 @@
  * what `SCAN` below states; since each code sends a channel of its own, the channel heard names the code
  * whatever the prediction, so the run settles it either way. It settled it as predicted, below.
  *
- * ## The runs, `todo-compile-350.md` 3.3
+ * ## The runs
  *
  * **What was done.** The compile was written to the bench Harmony 350 through `write-file-config.ts`, with
  * the first compile named as the backup since the remote held it. The first attempt found no remote of the
@@ -462,7 +462,7 @@ test('every expectation in the bench test is what the monitor will name the code
   });
 
 // ---------------------------------------------------------------------------------------------------------
-// The two runs, `todo-compile-350.md` 3.3: the lab's `h350_logitech_setup_ir` and `h350_logitech_setup_ir_2`.
+// The two runs: the lab's `h350_logitech_setup_ir` and `h350_logitech_setup_ir_2`.
 // ---------------------------------------------------------------------------------------------------------
 
 /** The two run files of the bench test, by their lab names, in the order they were run. */

@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch's bench test for a device of ours, `todo-touch.md` 8.1, held against the documents it is
+ * The Harmony Touch's bench test for a device of ours, held against the documents it is
  * derived from and against every code the bench's monitor can name.
  *
  * **What the test is.** One file in `irtests/`, `touch-8-1-device-mode.json`: Off, the Test Projector chosen from

@@ -1,5 +1,5 @@
 /**
- * The Harmony 350's bench test of our composed test setup, `todo-compile-350.md` 4.5, held against the file it tests.
+ * The Harmony 350's bench test of our composed test setup, held against the file it tests.
  *
  * **What the file is.** `packages/codec/test/families/harmony-300-350/noscreensetup.test.ts` takes Logitech's first compile of the test setup,
  * takes out the five devices the family's removal step can, the Knoll, Kodi, the Switch, the Sony HT and the Plasma,

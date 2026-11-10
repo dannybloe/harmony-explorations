@@ -1,6 +1,6 @@
 /**
- * The Harmony Touch's bench test for 8.5, `todo-touch.md` 8.5, held against the documents it is derived from: Listen to
- * Music and the Denon AV Receiver taken out, and the activities that lost the receiver predicted to start, take keys,
+ * The Harmony Touch's bench test for a removal, held against the documents it is derived from: Listen to Music and
+ * the Denon AV Receiver taken out, and the activities that lost the receiver predicted to start, take keys,
  * switch and end without a code of it.
  *
  * **What the test is.** One file in `irtests/`, `touch-8-5-removal.json`: Off; Watch TV from Off; Volume Up, Volume

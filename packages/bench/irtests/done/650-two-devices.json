@@ -1,6 +1,6 @@
 {
   "name": "Harmony 650, two devices composed in one write",
-  "description": "todo-compile-650 2.7, one write of lab/work/bench-2-7/h650-two-devices.bin: the Panasonic TX-29AK40F as 'Pana' and the Knoll HDP-1100 as 'Knoll', composed in one run onto the 650's own configuration (h650_panasonic_config), section 331. Neither device is in an activity, so only their own pages send their codes. Keep the remote pointed at the Flirc. The three buttons below the screen are the left arrow, the centre button and the right arrow; the four buttons beside the screen each choose the label in the corner next to them.",
+  "description": "One write of lab/work/bench-2-7/h650-two-devices.bin: the Panasonic TX-29AK40F as 'Pana' and the Knoll HDP-1100 as 'Knoll', composed in one run onto the 650's own configuration (h650_panasonic_config), section 331. Neither device is in an activity, so only their own pages send their codes. Keep the remote pointed at the Flirc. The three buttons below the screen are the left arrow, the centre button and the right arrow; the four buttons beside the screen each choose the label in the corner next to them.",
   "steps": [
     {
       "instruction": "Start on the remote's ordinary screen. Press the centre button below the screen ('Devices'). Expect the screen 'Devices 1/2' with PS3 top left, KPN top right, Kodi bottom left and TV bottom right, and 'Activities' at the bottom. The Flirc hears nothing"

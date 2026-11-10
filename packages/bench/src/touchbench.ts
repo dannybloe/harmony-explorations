@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch's first full bench test, `todo-touch.md` 7.1: what a person does at the bench, step by
+ * The Harmony Touch's first full bench test: what a person does at the bench, step by
  * step, and what the remote is predicted to send for it, derived from the documents the remote holds by
  * the codec's model of the Touch's engine, `packages/codec/src/families/harmony-touch/engine.ts`, never written by hand.
  *
@@ -43,8 +43,8 @@ export function monitorFirstFrame(once: readonly Pulse[]): readonly Pulse[] {
 
 /**
  * The model of the Touch's engine, `harmonyTouch.TouchEngine` in the codec, with its sends timed as the bench's
- * monitor hears them. The engine moved to the codec in `todo.md` 7.3.1 and this is the one part of it that was the
- * bench's: the receiver's cut of a frame, `monitorFirstFrame`.
+ * monitor hears them. The engine itself is the codec's, since knowledge about a remote lives there, plan 013
+ * decision 7, and this is the one part of it that is the bench's: the receiver's cut of a frame, `monitorFirstFrame`.
  */
 export class BenchTouchEngine extends harmonyTouch.TouchEngine {
   constructor(config: Configuration, timing: harmonyTouch.Timing) {
@@ -53,8 +53,8 @@ export class BenchTouchEngine extends harmonyTouch.TouchEngine {
 }
 
 /**
- * The set the bench Touch holds since `todo-touch.md` 6.9, by its path in the lab: the predictions are made from
- * it, and the monitor names the Touch's codes from it, `BENCH_TOUCH_SETS` in `irmonitor.ts`.
+ * The set the bench Touch holds since a sequence's delay and an activity's name were each changed and put back, by its
+ * path in the lab: the predictions are made from it, and the monitor names the Touch's codes from it, `BENCH_TOUCH_SETS` in `irmonitor.ts`.
  */
 export const TOUCH_7_1_SET = 'work/touch-firmware/sets/6.9-label-back/set.json';
 
@@ -270,7 +270,7 @@ function activityNames(c: Configuration): string[] {
  */
 export function touch71Plans(c: Configuration): TouchTestPlan[] {
   const activities = activityNames(c);
-  const common = 'todo-touch.md 7.1, on the bench Harmony Touch holding work/touch-firmware/sets/6.9-label-back (the recorded full sync\'s documents under tags of ours, 6.8 and 6.9). Every expectation is derived from those documents by packages/bench/src/touchengine.ts, a model of the engine read in the firmware, and named as the monitor names a code of the Touch\'s own documents. Step 1 presses Off so no activity runs and the engine holds every device off; what it sends depends on what ran before and is not judged.';
+  const common = 'On the bench Harmony Touch holding work/touch-firmware/sets/6.9-label-back (the recorded full sync\'s documents under tags of ours, as put back by the own set and the changed set). Every expectation is derived from those documents by packages/bench/src/touchengine.ts, a model of the engine read in the firmware, and named as the monitor names a code of the Touch\'s own documents. Step 1 presses Off so no activity runs and the engine holds every device off; what it sends depends on what ran before and is not judged.';
   const wait = 'Wait for the codes to stop before pressing Next: an activity start runs about 15 seconds, most of it the LG TV\'s 10 second power on delay.';
   const plans: TouchTestPlan[] = [];
   plans.push({

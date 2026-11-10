@@ -28,9 +28,9 @@
  *    candidates and is shown as one, since a number alone is held by several manufacturers.
  * A capture neither route names is still reported, as unknown, with its raw durations.
  *
- * **A Harmony Touch is named by its own documents**, since `todo-touch.md` 7.1: it holds no configuration file,
- * so the first route had nothing to match its codes against, and a code of a device no other bench remote holds,
- * the Sony Blu-ray of 6.9, came unnamed. `BENCH_TOUCH_SETS` lists the set the bench Touch holds; every command of
+ * **A Harmony Touch is named by its own documents**: it holds no configuration file, so the first route had nothing
+ * to match its codes against, and a code of a device no other bench remote holds, the Sony Blu-ray, came unnamed in
+ * the Touch's earlier runs. `BENCH_TOUCH_SETS` lists the set the bench Touch holds; every command of
  * it is rendered by the codec's renderer of a catalogue definition, `waveformOfArchiveCommand`, at the device's own
  * definition, with its toggle bit both ways, and a capture matching one is that device's command by the documents'
  * own names, which the catalogue route then leaves alone. Held against every press of the Touch's earlier bench
@@ -71,31 +71,30 @@ export const DEFAULT_IRTOOLS = '/Applications/Flirc.app/Contents/Resources/irtoo
  * the lab is skipped rather than refused.
  */
 export const BENCH_CONFIGS: readonly string[] = [
-  // The Harmony 600's since it holds the six device file, `todo-compile-600.md` 2.2.2, which is the five
-  // device test setup plus the Switch; Logitech's own compile it held before named none of those devices.
+  // The Harmony 600's since it holds the six device file, which is the five device test setup plus the Switch; Logitech's own compile it held before named none of those devices.
   'one_config', 'one_spare_page4_base', 'h600_setup6_on', 'h650_devicelist_region',
   'h700_28_config_region', 'h525_config_2',
   // The bench Harmony 350's, by its path in the lab rather than a lab name, since it is a working copy
-  // and no lab table names it; todo-compile-350 1.8's bench test. `bin/bench.ts` loads a path.
+  // and no lab table names it; the bench test of the 350's power on delay ran on it. `bin/bench.ts` loads a path.
   'work/350-delay/before.bin',
-  // What it holds since todo-compile-350 3.2, Logitech's compile of the test setup, by path for the same
-  // reason and because every compile in `work/setups/` carries this file name; 3.3's bench test.
+  // What it held next, Logitech's compile of the test setup, by path for the same reason and because every
+  // compile in `work/setups/` carries this file name; the 350's first full bench test ran on it.
   'work/setups/h350-test/compile-Result.EzHex',
-  // The test setup built from nothing, todo-compile-350 5.1.6, which the bench Harmony 350 holds for that item's bench
-  // test: the compile names every code it shares with it, and this the KPN's codes the compile does not store.
+  // The test setup built from nothing, which the bench Harmony 350 holds for its bench test of that setup: the
+  // compile names every code it shares with it, and this the KPN's codes the compile does not store.
   'work/setups/h350-test/from-nothing-5.1.6.bin',
-  // The same setup with firmware event 0xFF bound, todo-compile-350 5.4, which both the bench Harmony 350 and the bench
-  // Harmony 300 are given for 5.3's bench tests: every code the tests expect is named from this file.
+  // The same setup with firmware event 0xFF bound, which both the bench Harmony 350 and the bench Harmony 300 are
+  // given for the family's final bench tests, one per remote: every code the tests expect is named from this file.
   'work/setups/h350-test/from-nothing-5.4.bin',
   // The bench Harmony 300's own configuration, the four devices Logitech's service put on it, written back
-  // unchanged by todo-compile-300 1.4; that item's bench test.
+  // unchanged over the file protocol, and the bench test of that write.
   'h300_programmed_config',
 ];
 
 /**
  * The Harmony Touch sets whose own documents name a capture, by their path in the lab: the set the bench Touch
- * holds, `todo-touch.md` 6.9 and 7.1, the same set with the device of ours that 8.1 adds, whose codes no other
- * set or configuration holds, and the set with the activity of ours that 8.2 adds, which sends only the bench
+ * holds for its first full bench test, the same set with the device of ours added, whose codes no other set or
+ * configuration holds, and the set with the activity of ours added, which sends only the bench
  * devices' codes and is listed so the monitor names from the set the remote holds during that test. A set is the
  * answerer's file, `packages/corpus/bin/touch-sync.ts --set`, and a Touch keeps no configuration a host can read, so
  * this is what the remote holds as far as anything here knows. A code several sets hold matches once per set, under

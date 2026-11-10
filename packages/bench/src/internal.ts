@@ -1,5 +1,5 @@
 /**
- * `@harmony/bench/internal`: the bench instrument's modules whole, `todo.md` 7.3.6, for this repository's
+ * `@harmony/bench/internal`: the bench instrument's modules whole, plan 013 decision 6, for this repository's
  * scripts and tests. The main entry, `index.ts`, is what starts the instrument.
  */
 export * from './bench.ts';

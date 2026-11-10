@@ -1,6 +1,6 @@
 /**
- * The Harmony Touch's bench test for 8.6, `todo-touch.md` 8.6: the whole test setup, every device and every activity,
- * composed by us from a description, and run as the 7.1 tests themselves.
+ * The Harmony Touch's bench test for the whole test setup, every device and every activity, composed by us from a
+ * description, and run as the ten `touch-7-1` tests of the first full bench test themselves.
  *
  * **Why the 7.1 tests and no new plan.** 8.6 composes the four documents that name devices and activities from
  * `packages/corpus/touch-setups/8.6-test-setup.json`, which describes the set the bench Touch holds, and the comparison
