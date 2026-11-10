@@ -1800,7 +1800,7 @@ export interface StatedProtocol {
    * whose duration is the repeat rate the user feels, section 127. Same shape as \`tail\`. Whether
    * a record carries one at all is the command's own property, so \`heldOf\` states the population
    * On a stated row it is derived from Logitech's definition rather than measured, and every stated row
-   * carries one since todo-touch 5.3.4, a repetition holding no count.
+   * carries one, a repetition holding no count.
    * this was measured over, and Toshiba's is its ditto frame alone with no copy in it.
    */
   readonly held?: {
@@ -1827,7 +1827,7 @@ export interface StatedProtocol {
   readonly heldOf?: number;
   /**
    * The first transmission at **one** repetition: what precedes the repetition, then one of it. Written on a
-   * stated row whose definition states no repeat count, where \`tail\` is not, todo-touch 5.3.4.
+   * stated row whose definition states no repeat count, where \`tail\` is not.
    *
    * **Why a field of its own and not a \`tail\` at a count of 1.** A \`tail\` is the compiler's first block, the
    * repetition sent as many times as the family's count, and a builder of a compiled configuration sends it as
@@ -2083,7 +2083,7 @@ if (write) {
       return `{ copy: '${item.copy}'${item.at === undefined ? '' : `, at: ${item.at}`}`
         + `${item.shape === undefined ? '' : `, shape: ${item.shape}`} }`;
     }
-    // \`ofCopy\` was missing here until todo-touch 5.3.4, the third field this list has dropped: no row carried
+    // \`ofCopy\` was once missing here, the third field this list has dropped: no row carried
     // one while blocks were written only where a count is stated, and twelve count free rows do.
     if ('words' in item) return `{ words: [${item.words.join(', ')}]${item.ofCopy === true ? ', ofCopy: true' : ''} }`;
     return `{ pad: ${item.pad}${item.period === undefined ? '' : `, period: ${item.period}`} }`;
@@ -2148,7 +2148,7 @@ if (write) {
    * composer builds such a family's blocks per device, and the table still holds none: a row here would
    * fix one device's count for every device, which is what the measured rows of 26 such families do.
    *
-   * **Where the count is unstated the row carries `held` and `opening` instead**, todo-touch 5.3.4: one
+   * **Where the count is unstated the row carries `held` and `opening` instead**: one
    * repetition, and the first transmission at one repetition, neither of which holds a count. A compiled
    * configuration's builder reads `tail` for a press and so still refuses such a family; a Harmony Touch,
    * which takes its count from the device and never from the family, writes its definition from these two.
@@ -2170,7 +2170,7 @@ if (write) {
     const why = built === undefined ? 'the definition states no repeat count'
       : 'refusal' in built ? built.refusal : undefined;
     if (why !== undefined) blockRefused.set(why, (blockRefused.get(why) ?? 0) + 1);
-    // **Where no count is stated, the two blocks that need none**, todo-touch 5.3.4: one repetition,
+    // **Where no count is stated, the two blocks that need none**: one repetition,
     // \`held\`, and the first transmission at one repetition, \`opening\`. The count is left out rather
     // than guessed, so no \`tail\` is written and a compiled configuration's builder still refuses.
     const once = one.pressMinimumRepeats !== null ? undefined : blockOfDefinition(one, 1);
@@ -2222,8 +2222,8 @@ if (write) {
     + `\n  // count: this corpus holds no record of any of these families. ${withBlockCount} of them carry a`
     + `\n  // whole block, being the ones whose definition states how many times a repetition is sent;`
     + `\n  // the rest carry no \`tail\`, so \`blockOfStatedCode\` refuses their press, and carry instead the two`
-    + `\n  // blocks that state no count, \`held\` and \`opening\`, which a Harmony Touch's definition is written from,`
-    + `\n  // todo-touch 5.3.4. The count is`
+    + `\n  // blocks that state no count, \`held\` and \`opening\`, which a Harmony Touch's definition is written from.`
+    + `\n  // The count is`
     + `\n  // never guessed: see blockOfDefinition in src/catalogue/archiveblock.ts.\n${statedOut}`;
 
   const seedsOut = DOCUMENTED.map((e) =>

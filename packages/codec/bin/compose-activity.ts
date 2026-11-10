@@ -13,10 +13,10 @@
  *
  * **A pass through device**, an HDMI switch the picture only passes through, is a device in
  * `--targets` and in no role: its power at 1 and its input, and nothing in `--roles`. That is all
- * Logitech's compiler gives one, `todo-compile-650.md` 3.14, and `activityFromRoles` is the same
+ * Logitech's compiler gives one, and `activityFromRoles` is the same
  * rule for a caller that states the activity as MyHarmony does, devices with roles.
  *
- * The counterpart of `compose-device.ts` and the same job for chapter 1: run the composition on a
+ * The counterpart of `compose-device.ts` and the same job for an activity: run the composition on a
  * real configuration and print every check somebody should read before the result goes near a
  * remote. `composeActivity` builds what the remote **runs** and `composeActivityMenuRow` builds what
  * **starts** it, and neither is worth anything without the other, so this does both and refuses if

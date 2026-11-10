@@ -1,5 +1,5 @@
 /**
- * A recipe given its codes out of the infrared archive, plan 014 and `todo.md` 7.3.11.1: every device's definition and
+ * A recipe given its codes out of the infrared archive, plan 014: every device's definition and
  * the protocol definitions its commands use, written into a copy of the recipe, so a build of that copy needs no
  * archive. `carryCodes` in `src/catalogue/carried.node.ts` does the work.
  *

@@ -1,7 +1,7 @@
 /**
  * Which of the infrared archive's commands the catalogue composer writes, and why the rest are refused:
- * the composer's own test over every command, `todo-process-logitech.md` chapter 2, whose done
- * criterion is that this refuses nothing.
+ * the composer's own test over every command. The aim is that this refuses nothing, and while it
+ * refuses some, adding any catalogue device is open, R10.
  *
  * **A command is judged per device, since section 348.** Until then composing a code was a property of
  * the code alone, `composableKeycode`, because a code composed only where the rhythm table held a whole
@@ -21,13 +21,13 @@
  * family's majority is not the number `TABLE_PRESS_REPEATS` holds.
  *
  * It prints the composer's verdict before section 348, the table alone, beside the verdict now, so the
- * one number this step moves is visible next to the ones it does not.
+ * one number section 348 moved is visible next to the ones it did not.
  *
- * **Since section 361** it also prints the two classes todo-process-logitech 2.3 named, as the table alone
+ * **Since section 361** it also prints the two classes that section names, as the table alone
  * refused them: a family spelt otherwise than its definition, which found no rhythm, and a code the family's
  * whole table block does not take; and how many of each now write.
  *
- * **Since todo-process-logitech 2.5, section 365**, a command composes when its toggle bit flipped composes
+ * **Since section 365** a command composes when its toggle bit flipped composes
  * too, since a toggling code's record carries both as two pointer groups, and a code naming a release group
  * is built from the definition with the release behind the record's third pointer. The census prints how
  * many written commands carry each.
@@ -190,7 +190,7 @@ function readTable(keycode: string, family: string): void {
 }
 
 /**
- * The commands whose code the family's name cannot read, `todo-process-logitech.md` 2.1, section 359: the
+ * The commands whose code the family's name cannot read, section 359: the
  * composer reads them at the widths the definition states now, so how many compose and why the rest do not.
  */
 let unnamed = 0;
@@ -200,7 +200,7 @@ const unnamedWhy = new Map<string, number>();
 /** Commands the table composes whose block the definition's reading changes, section 359. */
 let tableReread = 0;
 /**
- * todo-process-logitech 2.3, section 361: the commands the table alone refused as having no rhythm, every one
+ * Section 361: the commands the table alone refused as having no rhythm, every one
  * a family spelt otherwise than its definition, and those it refused because the family's whole block does
  * not take the code; per class, the commands, the spellings, and how many now write.
  */
@@ -349,7 +349,7 @@ if (cli.flag('families')) {
   }
 }
 console.log(`and of the commands the table composes, ${tableReread} get another block read at the definition's widths`);
-// Section 361: the two classes todo-process-logitech 2.3 names, as the table alone refused them.
+// Section 361: the two classes it names, as the table alone refused them.
 for (const [kind, what] of [['rhythm', 'a family spelt otherwise than its definition, which the table alone found no rhythm for'],
   ['block', "a code the family's whole table block does not take"]] as const) {
   const row = leftover.get(kind) ?? { commands: 0, written: 0, families: new Set<string>() };
@@ -357,7 +357,7 @@ for (const [kind, what] of [['rhythm', 'a family spelt otherwise than its defini
 }
 console.log('\nwhy a command is still refused, by its first refusing device:');
 for (const [why, n] of [...reasons].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(7)}  ${why}`);
-// The families the table refused only for want of a whole block, todo-process-logitech 2.2's share.
+// The families the table refused only for want of a whole block: the share a device's own count could settle, section 348.
 const countOnly = refusing('before').filter((one) => [...(refusedBefore.get(one) ?? [])].every((k) => k === 'no whole block'));
 const countOnlyStill = countOnly.filter((one) => perFamily.get(one)!.after < perFamily.get(one)!.commands);
 const countOnlyCommands = (list: string[], key: 'before' | 'after') => list.reduce((n, one) =>

@@ -1,5 +1,5 @@
 /**
- * Build the empty Harmony One, `todo-compile-one.md` 7.1.7, and write it to a file, with the screens to look at
+ * Build the empty Harmony One and write it to a file, with the screens to look at
  * before it goes near a remote.
  *
  * ```
@@ -14,7 +14,7 @@
  * carried, `oneAttributedBytes`, and the Harmony One's writable region. `--built-at` stamps the clock and picks the
  * Year picker's three years, the moment of running unless given; the writer stamps the file again when it writes it.
  *
- * `--setup` composes a setup onto the empty One, `todo-compile-one.md` 8.1.2, findings section 435: the empty One built
+ * `--setup` composes a setup onto the empty One, findings section 435: the empty One built
  * unblended, since the look blends once over every text the composers add, and the setup's devices and activities
  * composed onto it by `composeSetup` with the infrared archive `HARMONY_IR_ARCHIVE` or the checkout beside this
  * repository names, stamped at `--built-at`. The file written is the composed setup, held to every parse check, the
@@ -28,8 +28,8 @@
  * `--setup`, the first activity's working screen and the first device's page in place of Options. Nothing
  * is written anywhere `--out` and `--screens` do not name: the lab is the caller's to choose.
  *
- * Read only towards hardware: no remote is opened. Writing the result to the spare Harmony One is `todo-compile-one.md`
- * 7.2, through `packages/corpus/bin/write-config.ts` and the `harmony-one` skill.
+ * Read only towards hardware: no remote is opened. Writing the result to the spare Harmony One goes
+ * through `packages/corpus/bin/write-config.ts` and the `harmony-one` skill.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

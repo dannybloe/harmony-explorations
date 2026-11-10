@@ -1,6 +1,6 @@
 /**
- * The Harmony 300 or 350 configuration with no device and no activity, built from nothing, `todo-compile-350.md`
- * 5.1.5, and written as a file for the bench unit.
+ * The Harmony 300 or 350 configuration with no device and no activity, built from nothing,
+ * and written as a file for the bench unit.
  *
  *   node packages/codec/bin/empty-no-screen.ts --out <file> [--skin 104] [--built-at YYYY-MM-DDTHH:MM:SS]
  *
@@ -9,13 +9,13 @@
  * infrared archive, which is the point of the file. What the configuration holds and why each part is what it is,
  * the start up selecting no map among them, is `packages/codec/src/families/harmony-300-350/empty.ts`; what it was held
  * against, three of Logitech's smallest compiles of the family part by part and every byte to a generator, is
- * `packages/codec/test/families/harmony-300-350/noscreenempty.test.ts`. The 5.1.5 file is
+ * `packages/codec/test/families/harmony-300-350/noscreenempty.test.ts`. The first file written is
  *
  *   node packages/codec/bin/empty-no-screen.ts --out ../lab/work/setups/h350-empty/empty-350.bin
  *
- * and since `todo-compile-350.md` 5.4 the empty configuration binds firmware event `0xFF` to the list event `0x30`
- * runs, decision 28, four bytes more; that file is `--out ../lab/work/setups/h350-empty/empty-350-5.4.bin`, the 5.1.5
- * file staying as it was written.
+ * and the empty configuration now binds firmware event `0xFF` to the list event `0x30` runs, decision 28, four bytes
+ * more; that file is `--out ../lab/work/setups/h350-empty/empty-350-5.4.bin`, the first file staying as it was
+ * written.
  *
  * **Skins.** 104, the Harmony 350, and 79, the European Harmony 300, the two whose infrared allocation a compile has
  * stated. Skin 78 is refused by the builder, since no configuration stating it has been read.

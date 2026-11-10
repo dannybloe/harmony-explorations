@@ -1,6 +1,6 @@
 /**
- * Two configurations of the same setup compared by what a person sees and hears, `todo-compile-650.md`
- * 5.2: every key and screen item in every activity, device mode and the idle state.
+ * Two configurations of the same setup compared by what a person sees and hears:
+ * every key and screen item in every activity, device mode and the idle state.
  *
  *   node packages/codec/bin/compare-setup.ts --a <lab name or file> --b <lab name or file> [--records] [--menu-order]
  *

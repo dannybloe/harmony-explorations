@@ -53,11 +53,11 @@
  * device whether or not `--commands` names them, since a transition can only send a record the device
  * has, and they are not put on the screen: a page shows what `--commands` asks for and nothing more.
  * The input variable and its values are printed, because that variable and a value are what an
- * activity's `--targets` names to put the device on an input. Added for the combined bench file of
- * todo-compile-650 2.5 and 3.6, which needed a catalogue device with inputs on a configuration that
+ * activity's `--targets` names to put the device on an input. Added for a bench file that
+ * needed a catalogue device with inputs on a configuration that
  * gets a screen page, and the library had both halves with no command line that joined them.
  *
- * **`--catalogue <file>` composes several devices in one run**, todo-compile-650 2.7, section 331: a
+ * **`--catalogue <file>` composes several devices in one run**, section 331: a
  * JSON array of devices, each an object with the flags above as fields, `manufacturer`, `model`,
  * `label`, and optionally `title`, `full`, `commands` and `labels` as arrays, `iconLike`, `keysLike`,
  * `powerSteps: false`, `powerOff: false`, `inputs`, `powerOnDelay` and `interDeviceDelay`. They are

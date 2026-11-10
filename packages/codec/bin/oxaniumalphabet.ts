@@ -1,6 +1,6 @@
 /**
  * Regenerate `src/screens/oxaniumalphabet.ts`, our own letters' alphabet as data, so reading a configuration needs no
- * font, a fix to `todo.md` 7.3.5.
+ * font, `src/screens/text.ts` says why.
  *
  * ```
  * node packages/codec/bin/oxaniumalphabet.ts            check the module against the font
@@ -9,7 +9,7 @@
  *
  * **Why the alphabet is generated rather than drawn where it is read.** `characterMap` tries every alphabet on
  * every configuration, so a reader that names a device asks for ours even on a Logitech compile, and drawing
- * it needs Oxanium's files, which since 7.3.5 only the Node entry supplies. The alphabet is a function of the
+ * it needs Oxanium's files, which only the Node entry supplies. The alphabet is a function of the
  * font and of `lettering.ts`'s faces alone, so it is computed here once, `oxaniumAlphabetFromFont`, and
  * written as `packOxaniumAlphabet` encodes it. Run this with `--write` after any change to the faces, the
  * weights, the characters or the way a form or a structure is read; `test/screens/oxaniumalphabet.test.ts` fails until

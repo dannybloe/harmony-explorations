@@ -1,6 +1,6 @@
 /**
  * `make catalogue-raw`: keep the infrared archive and its raw capture current, and derive from the
- * capture what the archive drops. Todo-later items 1.3 and 1.4.
+ * capture what the archive drops.
  *
  * Four steps, in order, each reported:
  *
@@ -13,7 +13,8 @@
  * 3. **One streaming pass** over the capture writes three files into `derived/`: a copy re-compressed as
  *    independent gzip members of `RAW_BLOCK_LINES` lines, an index of every device's member, and the side
  *    file of `RAW_FIELDS`. The pass also projects every raw action list the way the archive does and
- *    compares it with the archive's, which is item 1.4's measurement and the alignment the side file
+ *    compares it with the archive's, which is section 305's measurement, that every per input and per state list is in
+ *    Order sequence, and the alignment the side file
  *    depends on, `packages/codec/src/catalogue/catalogueraw.ts`.
  * 4. **A lookup is timed**, the cold one that loads the index and the warm ones after it.
  *
@@ -291,7 +292,7 @@ if (needed) {
   for (const [file, size] of Object.entries(sizes)) console.log(`  ${file}: ${megabytes(size)}`);
   console.log(`  side file entries: ${Object.keys(side).length} devices, values stored ${JSON.stringify(stored)}`);
   console.log(`  devices whose inputs do not line up by name: ${inputsUnaligned}; paths left unaligned: ${unalignedPaths}`);
-  console.log('lists compared with the archive, item 1.4 (family: compared, stored out of Order, archive equals'
+  console.log('lists compared with the archive, section 305 (family: compared, stored out of Order, archive equals'
     + ' Order sequence, archive equals stored order; of the out of Order ones, the same two):');
   for (const [family, counts] of families) {
     console.log(`  ${family}: ${counts.compared}, ${counts.outOfOrder}, ${counts.sorted}, ${counts.stored}; `

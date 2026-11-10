@@ -1,5 +1,5 @@
 /**
- * Build a recipe from nothing for whichever remote it names, `buildFromRecipe`, plan 014 and `todo.md` 7.3.11: a
+ * Build a recipe from nothing for whichever remote it names, `buildFromRecipe`, plan 014: a
  * configuration file for a compiled family, or for the Harmony Touch a folder of its six documents as JSON and its
  * pictures as PNG files. Opens no remote; sending is the write scripts' work, behind their rails.
  *

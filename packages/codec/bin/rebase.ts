@@ -1,5 +1,5 @@
 /**
- * Link a container for another flash address, `rebase` in `relocate.ts`, `todo-compile-650.md` 7.1.1.
+ * Link a container for another flash address, `rebase` in `relocate.ts`.
  *
  *   node packages/codec/bin/rebase.ts --in <lab name or file> --base 0x30000 --out <file>
  *

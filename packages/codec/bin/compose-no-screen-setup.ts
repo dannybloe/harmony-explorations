@@ -1,6 +1,5 @@
 /**
- * A whole setup composed onto a Harmony 350 configuration, `todo-compile-350.md` 4.5, and written as a file for the
- * bench unit.
+ * A whole setup composed onto a Harmony 350 configuration, and written as a file for the bench unit.
  *
  *   node packages/codec/bin/compose-no-screen-setup.ts --donor <config> --setup <recipe.json> --out <file> \
  *       [--take-out 'Knoll,Kodi,Switch,Sony HT,Plasma']
@@ -28,13 +27,13 @@
  * `reference/architectures/harmony-300-350/memory.md`, and Logitech's compile was written to the bench unit with
  * its own.
  *
- * **Built from nothing**, `todo-compile-350.md` 5.1.6: `--from-nothing` in place of `--donor` composes the whole setup
+ * **Built from nothing**: `--from-nothing` in place of `--donor` composes the whole setup
  * onto the empty configuration of `buildEmptyNoScreenConfiguration`, devices, Watch TV and favourite channels, so no
  * Logitech file goes in, `buildNoScreenSetup`. Which key each device goes on is then not read off a donor and is
  * given, `--keys`, each device as `name:place` for a short press or `name:place:long`, the place 0 top left to 3
  * bottom right; and the moment the file is built at is `--built-at`, the moment of running unless given, since the
- * stamp, the clock records and the archive's time are taken from it. The 5.1.7 file, which adds the LG TV's Back and
- * its channel finish's copy to 5.1.6's, the lab keeping both, is
+ * stamp, the clock records and the archive's time are taken from it. The later file, which adds the LG TV's Back
+ * and its channel finish's copy to the first, the lab keeping both, is
  *
  *   node packages/codec/bin/compose-no-screen-setup.ts --from-nothing \
  *       --setup packages/corpus/setups/h350-test.json \
@@ -42,10 +41,10 @@
  *       --out ../lab/work/setups/h350-test/from-nothing-5.1.7.bin
  *
  * with the keys Logitech's service chose for the test setup, `h350-test.json`'s own account of its compile.
- * **Since 5.4 a build from nothing binds firmware event `0xFF`** to the list event `0x30` runs, decision 28, so the
+ * **A build from nothing binds firmware event `0xFF`** to the list event `0x30` runs, decision 28, so the
  * file serves the Harmony 300 as well as the Harmony 350; the same command with `--out
- * ../lab/work/setups/h350-test/from-nothing-5.4.bin` wrote that file, the 5.1.6 and 5.1.7 files staying in the lab as
- * they were, without the entry. `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts` rebuilds the 5.4 file from its own
+ * ../lab/work/setups/h350-test/from-nothing-5.4.bin` wrote that file, the two earlier files staying in the lab as
+ * they were, without the entry. `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts` rebuilds that file from its own
  * stamp and holds it against Logitech's second compile part by part. A composition onto `--donor` does not add the
  * entry, `families/harmony-300-350/setup.ts` says why.
  */

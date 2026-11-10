@@ -86,7 +86,7 @@ const SEEDS: Seed[] = [
       // after which the rule that one code is one character settles `I`.
       { container: 'one_config', codes: { 32: 'l', 50: 'I', 72: '+' } },
       // Shapes no earlier source draws, found when the Harmony One's fonts were re-lettered in ours,
-      // `todo-compile-one.md` 5.2, which needs every glyph's character: a `Z` in the pad font, a `#` and a
+      // which needs every glyph's character: a `Z` in the pad font, a `#` and a
       // `*`, and an `X` in the regular 15, the bold 15 and the bold 14. Each was read off its glyph; only the
       // `X` spells a name base slot 0's ASCII carries too, `test/screens/text.test.ts`, findings section 396.
       { container: 'harvest_one_two_devices', codes: { 73: 'Z' } },
@@ -119,7 +119,7 @@ const SEEDS: Seed[] = [
       // label, the quotes around `"Help"`, and a button label beginning with the letter.
       { container: 'h700_config', codes: { 47: 'I', 70: 'Z', 71: '_', 72: '"', 75: 'Q' } },
       // The Harmony 650's, for three characters in eight shapes neither draws in the fonts the 650 uses, found when
-      // `todo-compile-650.md` 8.2 re-lettered every glyph and needed every one named. Each was read from
+      // our letters replaced every glyph and needed every one named. Each was read from
       // its glyph and confirmed by its word: the colon in the Denon's sound mode `DTS NEO:X`, the `J` of
       // `JazzClub`, both on 12 of the 13 compiles, and another owner's `I` of `Insert batteries`.
       { container: 'h650_test_config_clean', codes: { 74: ':', 76: 'J' } },
@@ -145,7 +145,7 @@ const SEEDS: Seed[] = [
       { container: 'arch8_config_880', codes: { 66: '<' } },
       { container: 'arch8_config_885', codes: { 52: 'I', 71: '<' } },
       // Bench unit A's Dutch configuration, for the four codes it draws that no shape here named, found when
-      // `todo-compile-885.md` 1.6's letters were borrowed into it: a borrow gives a character with no code a new
+      // letters were borrowed into it, `src/drawing/glyphborrow.ts`: a borrow gives a character with no code a new
       // one, so an unread `J` would have become a second code for `J`. Each was read from its glyph and confirmed
       // by its word: the apostrophe of `Infrarood-LED's`, the `ë` of `beëindigd`, the `J` of `Ja` and of
       // `Tijd instellen: Jaar`, and the closing bracket of the `(+10 dB)` run of labels.
