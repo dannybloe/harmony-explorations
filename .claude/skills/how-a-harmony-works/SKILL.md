@@ -39,7 +39,7 @@ The argument for each is on the page above; these are the conclusions a design t
   device's own screen record. It never reconstructs one from what the activities agree on: that
   reconstruction is wrong on 136 of the 1032 pairs where they agree and blind to 568 keys no activity
   binds, `reference/config-format/modes-and-keys.md`. This skill called where a device's map lives
-  an open question<!--superseded--> long after section 271 had read it, until `todo-reference.md` 6.2.
+  an open question<!--superseded--> long after section 271 had read it, until `todo/done/todo-reference.md` 6.2.
 * **The buttons other devices hold are the activity editor's constraint**, never the device editor's.
 * **The screen is the bigger half of device mode in use**: what people build there is pages of a
   device's rarer commands. Which half is larger in a configuration varies, so neither is the main one.

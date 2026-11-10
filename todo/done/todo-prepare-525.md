@@ -1,10 +1,12 @@
 # Todo: prepare the Harmony 525 and 515 for writing
 
+**Archived:** its open items went to the Harmony 525's own part, [todo-harmony-525.md](../todo-harmony-525.md).
+
 **The finish line**: every rail a writer needs answered for this platform, from its own firmware where
 possible, so that composing for it, `todo-later.md` 5.4, starts from a closed table. The bench 525 is
 already a write target, one block written back unchanged (section 269); nothing is composed or written on
 this track. The 515 goes with the 525, sharing the platform. The plan, the rows (D1 and so on) and what
-step 0 found are [plan 012](../docs/plans/012-the-legacy-remotes.md).
+step 0 found are [plan 012](../../docs/plans/012-the-legacy-remotes.md).
 
 **Before any item**: read `../lab/work/legacy-remotes/HANDOVER.md`, load the `harmony-525` skill, write
 the item's brief into `../lab/work/legacy-remotes/notes/harmony-525/` and update the handover's state,

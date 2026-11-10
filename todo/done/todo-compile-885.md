@@ -1,5 +1,7 @@
 # Todo: compile for the Harmony 885
 
+**Archived:** its open items went to the Harmony 885's own part, [todo-harmony-885.md](../todo-harmony-885.md).
+
 **The finish line**: a configuration for the Harmony 885 built entirely by us, nothing copied out of a
 Logitech file, written to the remote and used. The same finish line as
 [todo-compile-650.md](todo-compile-650.md), chosen over stopping at the milestone of chapter 5.
@@ -9,7 +11,7 @@ no Logitech compile of our test setup to check against. The compare base is unit
 read off it in [todo-prepare-885.md](todo-prepare-885.md) 2.1, with the contributed 880 and 885
 configurations beside it; a step is checked by what the remote does on the bench and by the base.
 
-**Before any item**: read `../lab/work/legacy-remotes/HANDOVER.md` and [plan 012](../docs/plans/012-the-legacy-remotes.md),
+**Before any item**: read `../lab/work/legacy-remotes/HANDOVER.md` and [plan 012](../../docs/plans/012-the-legacy-remotes.md),
 write the item's brief into `../lab/work/legacy-remotes/notes/harmony-885/` and update the handover's state,
 both before the item starts. **Load the `harmony-885` skill first**, in this session and in every agent brief. Before any build code in `packages/codec/src`, load `code-for-a-family`.
 

@@ -15,7 +15,7 @@ three, each needing a battery pull.
 Before changing any byte of a container: an edit in `packages/codec/src/edit/edit.ts`, a relocation through
 `relocate.ts`, a composer that builds a device, an activity, a sequence, a menu or a screen, the write path
 in `packages/usb` and the configuration write, `writeConfiguration` in `packages/corpus/src/writeconfig.ts`
-(on `@harmony/corpus/write` since `todo.md` 7.3.10) with `packages/corpus/bin/write-config.ts` its script,
+(on `@harmony/corpus/write` since `todo/done/todo-sequence.md` 7.3.10) with `packages/corpus/bin/write-config.ts` its script,
 and whenever somebody asks whether an edit is safe. Before writing build code in `packages/codec/src`, load `code-for-a-family` as well.
 
 ## What frames it
@@ -43,7 +43,7 @@ checklist that argues each.
 |---|---|
 | base slot 13's `narrow` and `wide` size the state variable storage, and `count` does not | so appending a variable moves **two** words of that header. The firmware allocates `narrow + 2 * wide` and paints `0xFE` over everything above it at each boot, while the seeding loop runs over `count`, so raising the count alone buys a variable that is seeded and then erased, silently. Ours did: the device appeared on the menu, beeped and started nothing. `assertStateTableConsistent` |
 | a configuration holds at most 128 state variables | a write names its variable in seven bits, and Logitech's own eight device compiles hold 112 to 124, section 331. A device costs three plus its inputs. The model's device count, eight on a Harmony 650, is checked first and binds before the ceiling on every configuration measured; the ceiling refused only compositions past that count |
-| on arch 8 (Harmony 880 and 885) the state variables have 64 bytes | keep `narrow + 2 * wide` at most 64: 63 variables with the one wide variable every configuration there declares, 45 of them the configuration's own, and `narrow` at least 18. The firmware checks nothing, and past 64 the start's seeding writes over the two counts that follow the storage, inferred from the arithmetic. The sixteen containers read, six configurations, use 34 to 42. `tests/harmony_880_885/test_harmony_885_state.py`; the side keys family refuses a composed device that would pass it, `families/harmony-880-885/sends.ts`, and nothing else in `packages/codec` checks it yet, `todo-compile-885.md` 4.3 |
+| on arch 8 (Harmony 880 and 885) the state variables have 64 bytes | keep `narrow + 2 * wide` at most 64: 63 variables with the one wide variable every configuration there declares, 45 of them the configuration's own, and `narrow` at least 18. The firmware checks nothing, and past 64 the start's seeding writes over the two counts that follow the storage, inferred from the arithmetic. The sixteen containers read, six configurations, use 34 to 42. `tests/harmony_880_885/test_harmony_885_state.py`; the side keys family refuses a composed device that would pass it, `families/harmony-880-885/sends.ts`, and nothing else in `packages/codec` checks it yet, `todo/done/todo-compile-885.md` 4.3 |
 | every send is paired with a `0x7C` naming the same device | emit `{0x7D, 0x7C}`, never the send alone. All 4267<!--fact:send_lists--> send lists of the user configurations are the pair and none is bare, and a bare one sends from a key press and **nothing** from an activity's transition, measured on the spare Harmony One, section 278. On arch 14 each also opens with a `0x7F` delay step of three lists, and the composer emits it, section 287 |
 | base slot 13's first seven records are the clock | stamp them, and reuse none of the firmware's block: 0 to 17 on arch 8, 12, 14 and 16 (Harmony 880 and 885, Harmony One, Harmony 600, 650 and 700, Harmony 300 and 350) and 0 to 12 on arch 9 (Harmony 525), section 284 and `tests/harmony_300_350/test_harmony_350_clock.py`. Eight values, since the year's maximum always moves with it; the day counts from 0, so a 31st is 30 and its maximum stays 30, section 322. Arch 9 (Harmony 525) keeps its own |
 | base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
@@ -66,7 +66,7 @@ checklist that argues each.
 | a toggling code's record holds two groups, the code as stated and then with its toggle bit flipped | the firmware flips one bit per infrared group on each send and plays the first group while it is set, read on the Harmony 650 and the Harmony One, and on arch 8 (Harmony 880 and 885) with eight bits, `tests/harmony_880_885/test_harmony_885_infrared.py`; a release goes in the record's third pointer as its own block. Section 365 |
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device; on arch 8 (Harmony 880 and 885) the PWM rounds to 250 ns, so for a carrier in whole hundreds of hertz from 16 to 100 kHz either plays the same there |
 | on arch 8 (Harmony 880 and 885) the player reads a record through its own start | keep the own start exact, one or two pointer groups, at most 256 records a group, and a carrier from about 15.6 kHz up, since nothing clamps it; end every once and held block with a `0x0001` word, where a released key stops, and write no word whose duration bits are 0 to 5 other than the bare `0x0000` and `0x0001`, which plays as about 65.5 ms. Groups 8 and up toggle with groups 0 and up. `tests/harmony_880_885/test_harmony_885_infrared.py` |
-| on arch 8 (Harmony 880 and 885) the codes a switch sends open with a silence of the device's own, inferred to be the delay between devices | so changing it rewrites each such record's opening words, a length change through `relocate.ts`, and a device composed without it switches back to back. The silence holds every later code, to every device; since `todo-compile-885.md` 2.3 the side keys family composes this silence in front of both power records of every device it composes, the long press version included, `SendShape.powerStep`; its other page keys still send the 50 ms form, 2.9. `tests/harmony_880_885/test_harmony_885_delay.py`, `packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts` |
+| on arch 8 (Harmony 880 and 885) the codes a switch sends open with a silence of the device's own, inferred to be the delay between devices | so changing it rewrites each such record's opening words, a length change through `relocate.ts`, and a device composed without it switches back to back. The silence holds every later code, to every device; since `todo/done/todo-compile-885.md` 2.3 the side keys family composes this silence in front of both power records of every device it composes, the long press version included, `SendShape.powerStep`; its other page keys still send the 50 ms form, 2.9. `tests/harmony_880_885/test_harmony_885_delay.py`, `packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts` |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |
 | on arch 8 (Harmony 880 and 885) the screen language is eleven opcodes and the end | 22 and 23 do not exist and any other byte ends a page silently; 21 inverts and carries no address; keep fills and inverts inside 128 by 160 and never a width of 0, since the fill clips only at `160 - x` and a 0 runs 256 pixels; the bytes after a switch are its default arm; a text byte is one code, with no wide code. `tests/harmony_880_885/test_harmony_885_screens.py` |
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
@@ -98,7 +98,7 @@ checklist that argues each.
   checked by `composeCatalogueDevices`, binds first on every configuration measured. **On arch 8 (Harmony
   880 and 885) 64 bytes bind before the 128 does**, `narrow + 2 * wide` at most 64, same section: the
   firmware checks nothing, and the codec holds it for a composed device only, the side keys family's send, the
-  rest being `todo-compile-885.md` 4.3. Whether it binds before the fifteen device limit
+  rest being `todo/done/todo-compile-885.md` 4.3. Whether it binds before the fifteen device limit
   is not established.
 * **The clock is the first seven records and the firmware owns more**, "Variables 0 to 6 are the clock",
   "Variables 7 to 17 belong to the firmware too" and "What a writer does with the clock". Stamp eight
@@ -112,7 +112,7 @@ checklist that argues each.
 * **A delay saved on the remote wins over the configuration's at start**, arch 14 (Harmony 600, 650 and
   700), "On arch 14 a delay saved on the remote wins". **Read the settings store before writing a delay**;
   the Harmony 600's KPN box went to 45 tenths in flash and the remote kept 10. A composed device gets
-  neither the save nor the restore program (`todo.md` L10). `setPowerOnDelayVariable` bounds the value to
+  neither the save nor the restore program (`todo/todo-help.md` item 5). `setPowerOnDelayVariable` bounds the value to
   the 451 case table, not to the record's `max`.
 * **Base slot 15's group lengths and entry count are demanded**, "The firmware demands the lengths": a
   different length or count is silently replaced by defaults or ignored, and a group index does not port
@@ -242,7 +242,7 @@ checklist that argues each.
 * **On arch 8 the delay between devices is, by inference, the codes' opening silence**, `reference/infrared/sending.md`, "The
   delay between devices on the Harmony 880 and 885": changing it is a relocation. A power step composed for these
   remotes opens with the device's `interDeviceDelay` and is sent at a quantity of 1, as their compiles spell it, the
-  long press version included, `SendShape.powerStep` in `families/harmony-880-885/sends.ts`, `todo-compile-885.md` 2.3;
+  long press version included, `SendShape.powerStep` in `families/harmony-880-885/sends.ts`, `todo/done/todo-compile-885.md` 2.3;
   `composeDevice` still gives a Harmony One's power step no lead, which its compiles do carry.
 * **A carrier period is truncated, not rounded**, per record.
 * **A frame can be rebuilt; its tail cannot be copied from a sibling**, which may carry the sibling's

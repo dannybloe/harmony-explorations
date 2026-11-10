@@ -99,3 +99,7 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 ## The remote's own work
 
 Work for the Harmony 350 that no requirement above names, written by hand and kept when the list is regenerated.
+
+From the Harmony 350's compile track, `todo/done/todo-compile-350.md`.
+- [ ] Replacing a device's input variable, which needs a variable removal step, for composing an activity onto a file that already has one (was `todo-compile-350.md` 4.2.1; building from nothing, chapter 5, does not need it)
+- [ ] Stepping or mixed inputs, and inputs on a device whose key delay is not one tenth, which no Logitech file of this family shows (was `todo-compile-350.md` 4.2.2)

@@ -46,7 +46,7 @@ a report that only ever contains good news stops being read as information.
   "arch 12". This is a standing rule for all conversation here and it matters most in a report, because
   the numbers are this project's internal handle and map to nothing on the desk.
 * **English in conversation, even when the question came in Dutch**, per the standing preference;
-  documents and code are English anyway. This said Dutch until `todo-reference.md` 6.2, which is why the
+  documents and code are English anyway. This said Dutch until `todo/done/todo-reference.md` 6.2, which is why the
   accepted example below is in Dutch: the register is what it shows, not the language.
 * **A number needs its denominator.** "98,9%" says less than "3100 van de 3106 toetsen".
 * **No em-dashes and no en-dashes**, like everything else published here.

@@ -381,7 +381,7 @@ The route, in order:
    set that carries all three favourites documents and the pictures. 9.2's put back, `9.2-empty-back`, carries the three
    favourites documents and the eight logos as the remote held them, delivered and committed once; no set carries the
    two user backgrounds, so after a delete those would be lost; ask first. `proxy.resource?put` of the corrected document would also do, saved
-   before its reload is tried, and is not on any tier: putting content is the answerer's, `todo-touch.md`
+   before its reload is tried, and is not on any tier: putting content is the answerer's, `todo/done/todo-touch.md`
    6.6. Then restart.
 5. **The restart.** `setup.firmware?reboot`, `--step reboot` with the same flags, restarts the remote two
    seconds after it answers 200, without the configuration task; **it answers 202 and restarts nothing
@@ -416,8 +416,8 @@ then `--step delete --backup <lab folder>` only when the stored set itself is wh
 `setup.firmware?` and `setup.sync?` verb stays refused, and so do `proxy.finished`, which commits a gathered
 set without loading it, and `proxy.resource?put`. **The rail still reads no answer's content**, so answers
 that are valid JSON and lack a list, a type name or another field the reader needs are saved as written; **the protection is the answerer
-refusing a set the codec's reader and check reject before any of it is written**, `todo-touch.md` 6.6, and
-the tier is the way back when that fails. The abort and the restart have been sent to a unit once, after the first sync of ours stopped mid sync (`todo-touch.md` 6.7): `getconfighash` 202, abort 200, `getconfighash` 200 with the tags unchanged, restart 200, the remote starting normally. The delete has never been sent.
+refusing a set the codec's reader and check reject before any of it is written**, `todo/done/todo-touch.md` 6.6, and
+the tier is the way back when that fails. The abort and the restart have been sent to a unit once, after the first sync of ours stopped mid sync (`todo/done/todo-touch.md` 6.7): `getconfighash` 202, abort 200, `getconfighash` 200 with the tags unchanged, restart 200, the remote starting normally. The delete has never been sent.
 
 **What still needs the remote's own factory reset, step 6, and Logitech's client**: a remote whose system
 does not start, below, which nothing over USB reaches; and a remote whose provisioning is gone, which only
@@ -456,7 +456,7 @@ What must never be part of that route:
 
 **Read before planning any write to this platform, and before deciding what a recovery would be.** The two
 Harmony 885s on the bench may be written, unit A first, decision 30, and arch 8 is in
-`ARCHITECTURES_WITH_A_WRITE_TARGET` for the flash block path since `todo-compile-885.md` 1.2; this said
+`ARCHITECTURES_WITH_A_WRITE_TARGET` for the flash block path since `todo/done/todo-compile-885.md` 1.2; this said
 they "are read only" and the platform "not in" the list<!--superseded--> until then. Nothing has been
 written to either yet, so this section is still what a recovery would consist of, and not a record of one. Everything in it is read in the firmware, the application 4.4 and both bootloader builds 4.0,
 the 880's and the 885's; none of it has been run on a unit, and no command has been sent to a bootloader on

@@ -57,7 +57,7 @@ hardware. Reach for it for those and for the `susKey`, and for nothing else.
 
 **For adding devices, compiling and removing devices, use the repository's client**:
 `packages/corpus/src/myharmony.ts` and `packages/corpus/bin/harvest.ts`, written on 7 October 2026 for
-`todo-secure-logitech.md` 1.1. The calls are the knowledge being secured, so they belong where this
+`todo/done/todo-secure-logitech.md` 1.1. The calls are the knowledge being secured, so they belong where this
 repository's checks can see them; the credentials still come from the lab's `credentials.env` (or
 `MYHARMONY_EMAIL<n>` and `MYHARMONY_PASSWORD<n>` in the environment), and every reply and compiled file
 is filed in the lab, never here. Its writes sit behind **the same named doors** as the lab client's, so a
@@ -269,7 +269,7 @@ unidentified**, and both hub images are in the lab, so comparing them is what wo
 ## A remote's serial can be blocked, and a harvest did it
 
 **Read this before any write to either account.** On 7 October 2026 the family harvest of
-`todo-secure-logitech.md` 2.2 got the **spare Harmony One** blocked by Logitech's service, after about
+`todo/todo-logitech.md` G2.2 got the **spare Harmony One** blocked by Logitech's service, after about
 42 device adds with their removals on the one entry carrying its serial; Logitech lifted the block,
 reported on 12 October 2026. The remote kept working over USB, because the block is on the service's
 side; what is lost while it lasts is everything that goes through their service for that serial. The

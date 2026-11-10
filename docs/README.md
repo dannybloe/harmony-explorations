@@ -17,19 +17,23 @@ docs/status.md                  where the work stands: what reads, what the corp
                                 sections moved out of this file on 29 August 2026, because carrying
                                 them here cost about 12600 tokens in every session to restate
                                 claims that live in docs/findings.md with a test each
-todo.md                         THE sequence, and the only place it lives: seven numbered chapters
-                                as markdown checkboxes, sub-items indented, one line each. Either
+todo.md                         THE sequence, and the only place it lives, of the FHSDK's work only: a
+                                chapter of the bench remotes, then the abilities, as markdown
+                                checkboxes, sub-items indented, one line each. Either
                                 of us adds, ticks or removes an item. It replaced docs/roadmap.md
                                 on 6 September 2026, which was doing four jobs and carried 1121 of
                                 its 2404 lines as three separate accounts of what to do next
-todo/                           every track's own todo file, one per track under the name it always
-                                had, so a comment citing "todo-compile-650 3.9" still finds it.
-                                Moved out of the root on 4 November 2026; todo.md stays there.
-                                Beside them a checklist per bench remote, todo-<model key>.md,
-                                nine: the requirements possible on that remote by subject, a box
-                                each, ticked where a test proves it, generated between its markers
-                                by make requirements-write; the header and the part for the
-                                remote's own work below the list are written by hand and kept
+todo/                           a checklist per bench remote, todo-<model key>.md, nine: the
+                                requirements possible on that remote by subject, a box each, ticked
+                                where a test proves it, generated between its markers by make
+                                requirements-write; the header and the part for the remote's own
+                                work below the list are written by hand and kept. Beside them the
+                                files of abilities too long for a few lines (todo-help.md and
+                                todo-logitech.md), todo-loose-ends.md, and todo-fh.md, the
+                                FreeHarmony items kept for reference. todo/done/ holds the finished
+                                tracks under the names they always had, so a mention such as
+                                "todo/done/todo-compile-650 3.9" still finds it, each with one
+                                line in its header saying where its open items went.
 docs/decisions.md               the numbered decisions, plus what this project is and its
                                 context. **The numbers are cited from here, from findings.md and
                                 from code comments, so they never change**; a decision that turns
@@ -152,7 +156,7 @@ docs/predictions/harmony-350-programmed.md
 docs/predictions/harmony-350-keys.md
                                 what every key of the bench Harmony 350 should send in its TV's and
                                 its receiver's mode, written before the keys were pressed with the
-                                Flirc listening, todo-compile-350 2.2
+                                Flirc listening, todo/done/todo-compile-350 2.2
 docs/predictions/sequence-delay.md
                                 the same for how a sequence states its delays. **Scored on
                                 29 August 2026 and its headline prediction was wrong**: the pause is
@@ -171,7 +175,7 @@ src/harmony/                    the research library, see below
 tools/                          thin command line wrappers, no logic of their own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tests/                          one regression test per documented finding, in folders by subject since
-                                todo.md 7.3.12: firmware/, config_format/, usb_protocol/, logitech/, one
+                                todo/done/todo-sequence.md 7.3.12: firmware/, config_format/, usb_protocol/, logitech/, one
                                 per family of models (harmony_300_350/ and the rest) and project/, with
                                 lab.py, reference_keys.py and proves.py at the top; proves.py is the
                                 line a test carries to say which requirement it proves, the Python
@@ -209,7 +213,7 @@ reference/architectures/        what one architecture's models share, stated onc
                                 configurations, images and Logitech's own material, the 880 and 890
                                 having model folders beside them, reference/remotes/harmony-885/ and
                                 harmony-890/, and the 720 one of its own, harmony-720/, since
-                                todo-prepare-885.md 2.5.3. Its README compares the execution models, and
+                                todo/done/todo-prepare-885.md 2.5.3. Its README compares the execution models, and
                                 each folder's memory.md carries the architecture's memory layout,
                                 since plan 009's step 3.2; a model's own rows are in its model
                                 folder's memory.md and what is one unit's is in docs/test-notes/
@@ -222,7 +226,7 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
                                 scan code is measured carries it as data-scan and the rest carry
                                 none rather than a guess
 reference/key-reader/           a browser page that reads which key is pressed on a Harmony, through
-                                WebHID, read only, todo-prepare-885.md 2.6. **Generated** by
+                                WebHID, read only, todo/done/todo-prepare-885.md 2.6. **Generated** by
                                 packages/keyreader/bin/build.ts (`make key-reader`) and never edited
                                 by hand; the website copies the folder as it is, at /key-reader/
 docs/lab-register.md            the lab, artefact by artefact: what each thing is, how deep anybody
@@ -249,7 +253,7 @@ bin/test-output-hook.py        refuses a test run whose output is piped or redir
                                 after a written rule against the pipe was worked around with a
                                 redirect three runs in a row. Fails open by design
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
-mkdocs.yml                      the reference website, todo-reference.md 7.1: built from reference/
+mkdocs.yml                      the reference website, todo/done/todo-reference.md 7.1: built from reference/
                                 alone, the navigation of plan 009 section 1, every link check at
                                 warning level and strict unless SITE_STRICT=false. The built site/
                                 is never committed
@@ -259,7 +263,7 @@ tools/site/                     what that build needs: hooks.py publishes docs/f
                                 Material and all they pull in, by hash, with the check of each
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
                                 second agent runs the same rituals rather than a copy of them. Not
-                                every skill is: this said "all eleven" until `todo.md` 7.3.9, when
+                                every skill is: this said "all eleven" until `todo/done/todo-sequence.md` 7.3.9, when
                                 the per remote skills had long been missing, so the directory's own
                                 listing is the list. `py-lsp` and `ts-lsp` are there too, as real
                                 tracked directories rather than symlinks, which this said they
@@ -283,7 +287,7 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 reads it back, same length edits with their refusals, the screen's
                                 text, the renderer, and the infrared frame decoder and encoder.
                                 Outside the families the source is grouped by what a module is
-                                for, todo.md 7.3.8, with the four entries left at the top:
+                                for, todo/done/todo-sequence.md 7.3.8, with the four entries left at the top:
                                 src/container/, the container and its sections, read and
                                 encoded (gspm with clock and slots, ezhex, sections, tables,
                                 valuemap, actions, queue, memo, modezero, emit, coverage,
@@ -351,30 +355,30 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 remote would refuse or ignore, tested in test/families/harmony-touch/touch-reader.test.ts
                                 and test/families/harmony-touch/touch-check.test.ts. Its settings.ts composes a Touch's
                                 Settings as a change of the rows the remote holds and its Context
-                                from a description of the seven fields a Touch reads, todo-touch.md
+                                from a description of the seven fields a Touch reads, todo/done/todo-touch.md
                                 8.4, tested in test/families/harmony-touch/touch-settings.test.ts. Its remove.ts takes
                                 devices and activities of the remote's own out of the documents
-                                with everything that names them, todo-touch.md 8.5, tested in
+                                with everything that names them, todo/done/todo-touch.md 8.5, tested in
                                 test/families/harmony-touch/touch-removal.test.ts. Its setup.ts composes a whole setup,
                                 every device and activity, from a description onto a set with the
                                 four lists emptied, carrying each device's catalogue record, and
-                                describes a set as such a description, todo-touch.md 8.6, with
+                                describes a set as such a description, todo/done/todo-touch.md 8.6, with
                                 the ordered form of a map, composeButtons, in compose.ts; tested in
                                 test/families/harmony-touch/touch-setup.test.ts. Its empty.ts builds the empty
                                 configuration, no device and no activity, and says what a commit
-                                of it keeps of the favourites and the pictures, todo-touch.md 9.2,
+                                of it keeps of the favourites and the pictures, todo/done/todo-touch.md 9.2,
                                 tested in test/families/harmony-touch/touch-empty.test.ts. Its fromnothing.ts and
                                 archivedevice.ts write every document and a background picture
                                 from a setup file, the archive of the catalogue, our rhythm table
                                 and a description of the account, with no Logitech document as
-                                input, todo-touch.md 9.1, tested in test/families/harmony-touch/touch-fromnothing.test.ts.
+                                input, todo/done/todo-touch.md 9.1, tested in test/families/harmony-touch/touch-fromnothing.test.ts.
                                 Its engine.ts models what the remote's engine sends for a press,
-                                and when, from the documents, todo-touch.md 7.1, moved from
-                                packages/bench in todo.md 7.3.1 as knowledge about the remote; the
+                                and when, from the documents, todo/done/todo-touch.md 7.1, moved from
+                                packages/bench in todo/done/todo-sequence.md 7.3.1 as knowledge about the remote; the
                                 receiver's cut of a frame is handed to it, and packages/bench's
                                 tests calibrate and hold it. The folder is not
                                 touch.ts, which is the Harmony One's touch screen.
-                                Four entries, plan 013 decisions 5 and 6, todo.md 7.3.5 and 7.3.6:
+                                Four entries, plan 013 decisions 5 and 6, todo/done/todo-sequence.md 7.3.5 and 7.3.6:
                                 @harmony/codec, src/index.ts, is what an application reads, names,
                                 edits, starts a build with, checks before a write and learns codes
                                 with, in explicit names that test/package/surface.test.ts holds to a list,
@@ -398,7 +402,7 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 data, src/screens/oxaniumalphabet.ts, held to the font by
                                 test/screens/oxaniumalphabet.test.ts, and test/package/mainentryreads.test.ts
                                 reads every family through the main entry with nothing supplied
-packages/testkit/               TS: what the tests of several packages share, todo.md 7.3.6, never a
+packages/testkit/               TS: what the tests of several packages share, todo/done/todo-sequence.md 7.3.6, never a
                                 product's dependency, only a dev dependency: `./touch-recording`, a
                                 recorded Touch sync read out of the lab by name with the readers of
                                 a run of the answerer, over packages/usb's decoder;
@@ -416,7 +420,7 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 separate locator on purpose: both make their tests skip when
                                 absent and the rules about what may be copied out of each are
                                 opposite. And src/cli.ts, `@harmony/lab/cli`, the one reader of a
-                                script's command line, todo.md 7.3.7: every script under
+                                script's command line, todo/done/todo-sequence.md 7.3.7: every script under
                                 packages/<name>/bin reads its options through it, so each answers
                                 --help with its usage and exits 0 before doing anything, and an
                                 option is read as the 68 hand written readers it replaced read it
@@ -436,7 +440,7 @@ packages/base/                  TS: what every other package needs and nothing n
                                 its hardware capabilities, src/models.ts; the container's trailer
                                 checksum, src/trailer.ts; and where each model keeps the key being
                                 pressed, src/keys.ts, shared with the key reader page; and the one
-                                byte comparison, src/bytes.ts, `sameBytes`, since todo.md 7.3.7, which
+                                byte comparison, src/bytes.ts, `sameBytes`, since todo/done/todo-sequence.md 7.3.7, which
                                 the codec re-exports and packages/usb's guards use; and the FHSDK's
                                 requirements with every bench model's status and its evidence,
                                 src/requirements.ts, decision 33, held by test/requirements.test.ts
@@ -461,7 +465,7 @@ packages/usb/                   TS: the command protocol and the write rails, re
                                 `@harmony/usb/write` subpath, which carries the three rails a block
                                 writer asserts, so that a third write caller is a decision visible
                                 in a diff. The file write for the Harmony 300 and 350 is on it too,
-                                `writeFileConfig` and, since `todo.md` 7.3.10, the whole run an
+                                `writeFileConfig` and, since `todo/done/todo-sequence.md` 7.3.10, the whole run an
                                 application calls, `writeFileFamilyConfiguration`, with
                                 bin/write-file-config.ts its script. `./internal` is the protocol and the transport's parts
                                 each module whole, for this repository's scripts and tests;
@@ -496,31 +500,31 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 before anything is sent, and packages/usb cannot import the codec.
                                 The Touch's experiments, the set builders of its numbered bench
                                 steps, live in `experiments/` beside the scripts in `bin/` that run
-                                them and outside `src/`, since `todo.md` 7.3.1 and plan 013
+                                them and outside `src/`, since `todo/done/todo-sequence.md` 7.3.1 and plan 013
                                 decision 7: no library imports them and the barrel exports none.
                                 They are `experiments/touchownset.ts`, which builds a set of a Touch's own
-                                documents for it to deliver, `todo-touch.md` 6.8, and
+                                documents for it to deliver, `todo/done/todo-touch.md` 6.8, and
                                 `experiments/touchchangedset.ts`, which changes one value of such a set,
-                                `todo-touch.md` 6.9, and `experiments/touchfavouritesset.ts`, which builds a
+                                `todo/done/todo-touch.md` 6.9, and `experiments/touchfavouritesset.ts`, which builds a
                                 set's favourites documents and pictures of ours and their put back
-                                from what the remote holds, `todo-touch.md` 8.3, and
+                                from what the remote holds, `todo/done/todo-touch.md` 8.3, and
                                 `experiments/touchsettingsset.ts`, which builds a set with a Settings and a
-                                Context of ours and its put back, `todo-touch.md` 8.4, and
+                                Context of ours and its put back, `todo/done/todo-touch.md` 8.4, and
                                 `experiments/touchremovalset.ts`, which builds a set with devices and
                                 activities of the remote's own taken out and its put back,
-                                `todo-touch.md` 8.5, and `experiments/touchsetupset.ts`, which builds a set
+                                `todo/done/todo-touch.md` 8.5, and `experiments/touchsetupset.ts`, which builds a set
                                 with the whole setup composed from a description, compares it with
                                 Logitech's documents field by field and builds its put back,
-                                `todo-touch.md` 8.6, tested in `test/touch/touch-setup-set.test.ts`, and
+                                `todo/done/todo-touch.md` 8.6, tested in `test/touch/touch-setup-set.test.ts`, and
                                 `experiments/touchemptyset.ts`, which builds the empty configuration and its
                                 put back with the favourites documents and logos the remote held,
-                                `todo-touch.md` 9.2, tested in `test/touch/touch-empty-set.test.ts`, and
+                                `todo/done/todo-touch.md` 9.2, tested in `test/touch/touch-empty-set.test.ts`, and
                                 `experiments/touchnothingset.ts`, which builds the set from nothing, its put
                                 back and its comparison with 8.6's set field by field and command by
-                                command, `todo-touch.md` 9.1, tested in `test/touch/touch-nothing-set.test.ts`,
+                                command, `todo/done/todo-touch.md` 9.1, tested in `test/touch/touch-nothing-set.test.ts`,
                                 and `experiments/touchattribution.ts`, which credits every field of such a set
                                 to the generator that wrote it by running each step of the build again,
-                                `todo-touch.md` 9.3, tested in `test/touch/touch-attribution.test.ts`, with
+                                `todo/done/todo-touch.md` 9.3, tested in `test/touch/touch-attribution.test.ts`, with
                                 the 9.4 run rehearsed on the fake remote in
                                 `test/touch/touch-nothing-run.test.ts`; the setup file it is built from is
                                 `setups/touch-test.json`; the
@@ -532,7 +536,7 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 test/package/surface.test.ts; `./read` the reader module whole, which loads
                                 without the transport; `./write` the configuration write and the
                                 Touch's sync, `writeConfiguration` and `answerTouchSync`, as functions
-                                an application calls, `todo.md` 7.3.10, test/package/write-surface.test.ts;
+                                an application calls, `todo/done/todo-sequence.md` 7.3.10, test/package/write-surface.test.ts;
                                 `./file` filing a read in the lab corpus
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
@@ -541,10 +545,10 @@ packages/bench/                 TS: the bench instrument, a server plus two page
                                 whose runs are filed in the lab. It only listens; never `sendir`.
                                 For a Harmony Touch, the codec's `families/harmony-touch/engine.ts` models
                                 what its engine sends and when, and `src/touchbench.ts` times it as
-                                the monitor hears it, `BenchTouchEngine`, and derives `todo-touch.md`
+                                the monitor hears it, `BenchTouchEngine`, and derives `todo/done/todo-touch.md`
                                 7.1's bench tests from the documents the remote holds; the plans of
                                 the later bench tests, 8.1 to 9.1, are in `experiments/`, beside the
-                                scripts in `bin/` that write them, since `todo.md` 7.3.1; the monitor
+                                scripts in `bin/` that write them, since `todo/done/todo-sequence.md` 7.3.1; the monitor
                                 names a Touch's codes from those documents, `BENCH_TOUCH_SETS`.
                                 The main entry is what starts the instrument, test/package/surface.test.ts;
                                 `./internal` its modules whole
@@ -930,7 +934,7 @@ change the code it comes from and run the write target. The names are `remote-re
 
 The project skills carry the rituals that are easy to half-perform, and three of them exist
 because the guidance was too long to keep in this file. Among them (this said "eleven" until
-`todo.md` 7.3.9, with more than that in `.claude/skills/`, which is the list):
+`todo/done/todo-sequence.md` 7.3.9, with more than that in `.claude/skills/`, which is the list):
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
@@ -983,7 +987,7 @@ needing the batteries out.
   surfaces with the write paths on write subpaths, the test kit and the lab kept out of what a product
   loads, one reader for every script, experiments beside their scripts, names by subject, and where a
   new model goes, with the test that holds each rule. Load it before adding a package, a module, a
-  public name, a subpath, a dependency, a script or an experiment. Written in `todo.md` 7.3.9 with the
+  public name, a subpath, a dependency, a script or an experiment. Written in `todo/done/todo-sequence.md` 7.3.9 with the
   checks it names: `packages/lab/test/dependencies.test.ts` holds the dependencies between packages,
   what a library's `src` loads and reaches, the test kit and the lab; `packages/codec/test/package/generic.test.ts`
   every family's folder; `packages/base/test/bytes.test.ts` the one byte comparison; and
@@ -1078,7 +1082,7 @@ make prontocheck   our own waveforms against the ones the archive's renderer pro
                    in `make all`, since a fresh clone has no archive
 make composecensus which of the archive's commands the catalogue composer writes and why it refuses the
                    rest, by family and by reason, beside the verdict of the rhythm table alone. The
-                   composer's own test over the archive, todo-process-logitech chapter 2, judged per
+                   composer's own test over the archive, todo-logitech chapter P2, judged per
                    device since section 348. Needs the archive checkout, no lab and no network, about
                    forty seconds. Not in `make all`. Run as `node packages/codec/bin/composecensus.ts
                    --families` it also lists, family by family, the commands whose code the family's
@@ -1099,7 +1103,7 @@ make alphabets     regenerate the glyph shape table from the hand read seeds; AL
 make oxanium-alphabet
                    check src/screens/oxaniumalphabet.ts, our own letters' alphabet computed from Oxanium and
                    written as data so the main entry reads a configuration with no font supplied, a
-                   fix to todo.md 7.3.5; OXANIUM_ALPHABET_ARGS=--write regenerates it. No lab
+                   fix to todo/done/todo-sequence.md 7.3.5; OXANIUM_ALPHABET_ARGS=--write regenerates it. No lab
 make remotes       list attached remotes, enumeration only, opens nothing. Four buckets, and the
                    three extra ones exist because each was once invisible or once wrongly claimed. A
                    device in a Microchip bootloader is reported separately, which is what a Harmony
@@ -1138,7 +1142,7 @@ make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop.
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
 make site          build the reference website into site/, strict: any broken link, anchor or page
                    missing from the navigation fails it. SITE_STRICT=false prints the same warnings
-                   and builds anyway, for as long as todo-reference.md chapters 3 and 4 run. Its
+                   and builds anyway, for as long as todo/done/todo-reference.md chapters 3 and 4 run. Its
                    environment is made once under ~/.cache, never inside the checkout
 make all           everything except ghidra and bench
 ```
@@ -1209,18 +1213,18 @@ node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--raw] [--record
                        Reads only. Opens the device.
 node packages/usb/bin/write-file-config.ts --unit h350 --config <file> --backup <file> [--commit] [--no-reboot]
                        write a configuration to a Harmony 350 or 300 through the file protocol,
-                       `todo-compile-350.md` 1.6. Without `--commit` it reads the identity file,
+                       `todo/done/todo-compile-350.md` 1.6. Without `--commit` it reads the identity file,
                        `/sys/guid` and the configuration and says what a commit would do; a refusal
                        there is the one a commit would meet. `--commit` needs HARMONY_ENABLE_WRITES=1
                        **and** HARMONY_FILE_WRITE=1, and runs `writeFileConfig`, by way of
-                       `writeFileFamilyConfiguration` since `todo.md` 7.3.10: the file system
+                       `writeFileFamilyConfiguration` since `todo/done/todo-sequence.md` 7.3.10: the file system
                        reset, the open for writing (which erases the configuration before it is
                        answered), the chunks, the check, the flush, the close, a read back compared
                        byte for byte, and the reboot. A file read off a remote has its end marker put
                        back. Every line is journalled beside `--config`. Unrun on a remote.
 node packages/usb/bin/touch-request.ts --request provisioning|confighash [--commit]
                        ask a Harmony Touch one of the two reads its request channel carries,
-                       `todo-touch.md` 6.4. Without `--commit` it opens nothing and prints the reports
+                       `todo/done/todo-touch.md` 6.4. Without `--commit` it opens nothing and prints the reports
                        a commit would send. `--commit` needs HARMONY_ENABLE_WRITES=1 **and**
                        HARMONY_TOUCH_REQUESTS=1, since even a read is a write into `/sys/hlapi`, and the
                        lab's `units/touch.txt`; it opens a session through `touchsession.ts`, whose rail
@@ -1240,7 +1244,7 @@ node packages/usb/bin/touch-recover.ts --step abort|delete|reboot [--backup <lab
                        else. Keeps the answer in the lab's `reads/`. Unrun on a remote.
 node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commit]
                        drive a Harmony Touch's sync down end to end through the answerer,
-                       `todo-touch.md` 6.6: the provisioning read, the remote's own changes handed
+                       `todo/done/todo-touch.md` 6.6: the provisioning read, the remote's own changes handed
                        up and kept in the lab first, the sync, and every request list answered until
                        `proxy://Finished` or `proxy://Abort`. `--unchanged` answers every document
                        304 against the tag the remote sends and refuses one it sends none for;
@@ -1268,29 +1272,29 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        `packages/bench/test/harmony-touch/touch-removal-runs.test.ts`, `touch-setup-runs.test.ts`,
                        `touch-empty-runs.test.ts` and `touch-from-nothing-runs.test.ts`.
 node packages/bench/bin/touch-tests.ts [--write]
-                       derive `todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
+                       derive `todo/done/todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model
                        `packages/codec/src/families/harmony-touch/engine.ts`, and print them, or with `--write` write
                        `irtests/touch-7-1-*.json`; `test/harmony-touch/touch-full-bench-predicted.test.ts` holds the files equal to
                        what this gives, and `test/harmony-touch/touch-full-bench-runs.test.ts` the ten runs of them at the
                        bench. Reads the lab only. Opens nothing, sends nothing. The same ten files are
-                       `todo-touch.md` 8.6's bench test, `experiments/touchsetuptest.ts`: `test/harmony-touch/touch-setup-predicted.test.ts` holds
+                       `todo/done/todo-touch.md` 8.6's bench test, `experiments/touchsetuptest.ts`: `test/harmony-touch/touch-setup-predicted.test.ts` holds
                        that the whole setup composed from `packages/corpus/touch-setups/8.6-test-setup.json`
                        derives them file for file, with a control, and `test/harmony-touch/touch-setup-runs.test.ts` the
                        ten runs of them on the remote holding that setup, 418 of 418, with the three
-                       attempts started again. They are `todo-touch.md` 9.1's bench test as well,
+                       attempts started again. They are `todo/done/todo-touch.md` 9.1's bench test as well,
                        `experiments/touchfromnothingtest.ts`: `test/harmony-touch/touch-from-nothing-predicted.test.ts` holds that the set built from nothing
                        derives them file for file, and `test/harmony-touch/touch-from-nothing-runs.test.ts` the run of test 1
                        on the remote holding that set in 9.4, 38 of 38, with two attempts started again.
 node packages/bench/bin/touch-device-tests.ts [--write]
-                       derive `todo-touch.md` 8.1's bench test, a device of ours in device mode, from
+                       derive `todo/done/todo-touch.md` 8.1's bench test, a device of ours in device mode, from
                        the lab's `8.1-device` set and the recorded favourites through the same engine
                        model, the plan in `experiments/touchdevicetest.ts`, and print it, or with `--write` write
                        `irtests/touch-8-1-device-mode.json`, kept in `irtests/done/` after its run; `test/harmony-touch/touch-device-predicted.test.ts` holds the file
                        equal to what this gives, and `test/harmony-touch/touch-device-runs.test.ts` its run at the bench.
                        Reads the lab only. Opens nothing, sends nothing.
 node packages/bench/bin/touch-activity-tests.ts [--write]
-                       derive `todo-touch.md` 8.2's bench test, an activity of ours started, used,
+                       derive `todo/done/todo-touch.md` 8.2's bench test, an activity of ours started, used,
                        switched and stopped, from the lab's `8.1-device-back` set with the activity of
                        `packages/corpus/touch-activities/test-cinema.json` added and the recorded
                        favourites, through the same engine model, the plan in `experiments/touchactivitytest.ts`, and print
@@ -1299,7 +1303,7 @@ node packages/bench/bin/touch-activity-tests.ts [--write]
                        `test/harmony-touch/touch-activity-runs.test.ts` its run at the bench. Reads the lab only. Opens
                        nothing, sends nothing.
 node packages/bench/bin/touch-favourites-tests.ts [--write]
-                       derive `todo-touch.md` 8.3's bench test, every favourite tapped in the order the
+                       derive `todo/done/todo-touch.md` 8.3's bench test, every favourite tapped in the order the
                        favourites screen is to show them, from the lab's `8.2-activity-back` set with the
                        favourites of `packages/corpus/touch-favourites/8.3-favourites.json` composed onto
                        the recorded favourites documents, through the same engine model, the plan in
@@ -1308,7 +1312,7 @@ node packages/bench/bin/touch-favourites-tests.ts [--write]
                        to what this gives, and `test/harmony-touch/touch-favourites-runs.test.ts` its run at the bench. Reads
                        the lab only. Opens nothing, sends nothing.
 node packages/bench/bin/touch-removal-tests.ts [--write]
-                       derive `todo-touch.md` 8.5's bench test, the activities that lost a device taken
+                       derive `todo/done/todo-touch.md` 8.5's bench test, the activities that lost a device taken
                        out started, used, switched and ended without a code of it, from the lab's
                        `8.5-removal` set and the recorded favourites, through the same engine model, the
                        plan in `experiments/touchremovaltest.ts`, and print it, or with `--write` write
@@ -1317,7 +1321,7 @@ node packages/bench/bin/touch-removal-tests.ts [--write]
                        its run at the bench. Reads the lab only. Opens nothing, sends nothing.
 node packages/corpus/bin/touch-own-set.ts --build <lab folder> --requests <list> [--handed-up <answers>]
 node packages/corpus/bin/touch-own-set.ts --check <set folder> [--hash <answer>] [--list <list>]
-                       build the set `todo-touch.md` 6.8 delivers to a Harmony Touch, its own six
+                       build the set `todo/done/todo-touch.md` 6.8 delivers to a Harmony Touch, its own six
                        documents with tags of ours, `experiments/touchownset.ts`: from the recorded full sync,
                        a document a hand over of ours wrote back replacing its copy, each only when the
                        tag the remote last asked with equals its source's. `--check` reads the set back
@@ -1329,7 +1333,7 @@ node packages/corpus/bin/touch-changed-set.ts --build <lab folder> --from <set f
   --pointer <JSON Pointer> --was <value> --to <value>
 node packages/corpus/bin/touch-changed-set.ts --check <set folder> [--same-as <set>] [--written <answers>] \
   [--hash <answer>] [--list <list>]
-                       build a set with one value of one document changed, `todo-touch.md` 6.9,
+                       build a set with one value of one document changed, `todo/done/todo-touch.md` 6.9,
                        `experiments/touchchangedset.ts`: a copy of a set the remote holds, the value checked
                        against `--was` first, that document alone under a new tag so the answerer
                        answers the other five 304, and no tag the chain of sets has stated before; a
@@ -1358,7 +1362,7 @@ node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <set fo
 node packages/corpus/bin/touch-device-set.ts --build <lab folder> --from <empty set folder> --empty-back
 node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <set>] [--written <answers>] \
   [--hash <answer>] [--list <list>]
-                       build a set with a device of ours added, or taken out again, `todo-touch.md`
+                       build a set with a device of ours added, or taken out again, `todo/done/todo-touch.md`
                        8.1, or with an activity of ours, 8.2: the device composed from a description such as
                        `packages/corpus/touch-devices/test-projector.json` by the codec's
                        `composeTouchDeviceOfRow` and added by `withTouchDevice`, or taken out by
@@ -1426,7 +1430,7 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        that holds none of the six, which it did until it was changed to pass them over.
 node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --setup <file> --account <lab file> | --build <new lab folder> --back <set> --from <set> | --describe-account <set> --out <new lab file> | --check <set> [options]
                        build a Harmony Touch set from a setup file with no Logitech document as input,
-                       `todo-touch.md` 9.1: `--build --setup` writes the six documents and our background
+                       `todo/done/todo-touch.md` 9.1: `--build --setup` writes the six documents and our background
                        and its twin from `packages/corpus/setups/touch-test.json`, the archive of the
                        catalogue and the lab's description of the account, each under a digest of its
                        content, `withNothing` in `experiments/touchnothingset.ts`; `--build --back` the put back,
@@ -1435,10 +1439,10 @@ node packages/corpus/bin/touch-nothing-set.ts --build <new lab folder> --setup <
                        with `--against`, compares it with that set field by field, `compareNothing`, and
                        command by command, `waveformClosure`, NOT OK on anything no row explains; with
                        `--held`, the answers and the size of the write for a remote holding that set.
-                       `--attribute`, `todo-touch.md` 9.3, credits every field to the generator that
+                       `--attribute`, `todo/done/todo-touch.md` 9.3, credits every field to the generator that
                        wrote it, `attributeNothingSet` in `experiments/touchattribution.ts`, NOT OK on a field no
                        generator reproduces. `--hash`, `--list` and `--written` judge a run's kept files,
-                       `todo-touch.md` 9.4: a `getconfighash` answer against the set's four tags, a request
+                       `todo/done/todo-touch.md` 9.4: a `getconfighash` answer against the set's four tags, a request
                        list against the set's tags, and a kept write of answers against the set's
                        content, a write that answers none of the set's passed over by name. Opens
                        nothing; prints counts, names and verdicts, never a tag, an address or a value of
@@ -1473,7 +1477,7 @@ node packages/corpus/bin/read-region.ts --label <name> --address 0x820000 [--cou
                        region unless `--anywhere`, which is about what the artefact gets filed as
                        rather than about what is safe to read. Opens the device.
 node packages/corpus/bin/harvest.ts --record <id> --model <skin> --label <name> --device <make>/<file>.json
-                       todo-secure-logitech's harvest: catalogue devices onto an empty remote record of a
+                       todo-logitech's harvest (chapter G2): catalogue devices onto an empty remote record of a
                        test account, a Logitech compile, the file and every reply into the lab's
                        `work/harvest/<label>/`, the devices removed again. Never touches a remote. Without
                        `--commit` it only reads; with it, three account writes, each behind the lab

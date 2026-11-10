@@ -1,14 +1,16 @@
 # Todo: later
 
+**Archived:** dissolved: its open items went to [todo.md](../../todo.md) chapters 2 to 11, the checklists' own parts, [todo-help.md](../todo-help.md), [todo-logitech.md](../todo-logitech.md), [todo-loose-ends.md](../todo-loose-ends.md) and [todo-fh.md](../todo-fh.md), or were duplicates of items there.
+
 Everything that has to be done eventually for the library and FreeHarmony to be complete, and that is
 not on the route to a configuration built entirely by us for the Harmony 650. That route is
 [todo-compile-650.md](todo-compile-650.md). An item moves there when it turns out to block it. What needs
 Logitech's service is gathered in [todo-secure-logitech.md](todo-secure-logitech.md) and processed in
-[todo-process-logitech.md](todo-process-logitech.md), both worked beside [todo.md](../todo.md), which sets
+[todo-process-logitech.md](todo-process-logitech.md), both worked beside [todo.md](../../todo.md), which sets
 the order. The application's own items are in
-[todo-freeharmony.md](todo-freeharmony.md).
+[todo-freeharmony.md](../todo-fh.md).
 
-The old numbers in brackets are [todo.md](../todo.md)'s, which stays as it is until everything in it has a
+The old numbers in brackets are [todo.md](../../todo.md)'s, which stays as it is until everything in it has a
 home in one of the two files.
 
 ---
@@ -50,7 +52,7 @@ home in one of the two files.
 
 ## 4. The app
 
-Moved to [todo-freeharmony.md](todo-freeharmony.md) chapter 1.
+Moved to [todo-freeharmony.md](../todo-fh.md) chapter 1.
 
 ## 5. Other remotes, after the Harmony 650
 
@@ -115,7 +117,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.27 Stepping or mixed inputs, and inputs on a device whose key delay is not one tenth, which no Logitech file of this family shows (was `todo-compile-350.md` 4.2.2)
 - [ ] 6.28 The Harmony Touch's gestures: its engine reads them (`todo-touch.md` 5.1) and neither MyHarmony nor Harmony Desktop ever let a person set them, so FreeHarmony composing none loses nothing anyone had; left out of `todo-touch.md` chapters 6 to 9 on 5 November 2026
 
-## 8. The specification and the code are the product ([plan 005](../docs/plans/005-specs-and-code.md))
+## 8. The specification and the code are the product ([plan 005](../../docs/plans/005-specs-and-code.md))
 
 Moved to [todo-reference.md](todo-reference.md) on 24 October 2026, with what was done here: the decision (8.1, decision 25) and a drawing for every bench model (8.5).
 

@@ -65,7 +65,7 @@ procedure on top of those.
    `packages/corpus/bin/write-config.ts`. Then raise the two counts in `packages/lab/test/parity.test.ts`.
 
    The sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, on `@harmony/corpus/write`
-   since `todo.md` 7.3.10, so an application writes through the same function; the script is its bench
+   since `todo/done/todo-sequence.md` 7.3.10, so an application writes through the same function; the script is its bench
    front, and the steps here stay the script's.
 3. **Dry run**, which reads only:
 
@@ -102,7 +102,7 @@ on the screen, and a screen command goes out after a click and usually after the
 devices, so a monitor sees it later than the same command on a key, findings section 337. The One's
 runs are the four `one-*.json` in `packages/bench/irtests/done/`, listed in
 `docs/test-notes/harmony-one.md`; this said `one-spare-activities.json` was the only one until
-`todo-reference.md` 6.2.
+`todo/done/todo-reference.md` 6.2.
 
 ## Where things live
 

@@ -1,6 +1,6 @@
 ---
 name: harmony-885
-description: "Everything needed before working on the Harmony 885 (and the 880, which runs the same application): where its facts are (read them first), the rails that are this model's own (two permitted bench units with A first, an erase and a write with no ceiling above the application, a write end that differs from every other Harmony's, the install statuses that copy over the application), the backup a write needs, the write procedure as far as it is established, and what the key page and Glow do on the cable. Use before any task on the Harmony 880 or 885 or an arch 8 configuration, before any item of todo-compile-885.md, before plugging an 885 in, before reading, writing or composing an 885 configuration, and in every agent brief for 885 work."
+description: "Everything needed before working on the Harmony 885 (and the 880, which runs the same application): where its facts are (read them first), the rails that are this model's own (two permitted bench units with A first, an erase and a write with no ceiling above the application, a write end that differs from every other Harmony's, the install statuses that copy over the application), the backup a write needs, the write procedure as far as it is established, and what the key page and Glow do on the cable. Use before any task on the Harmony 880 or 885 or an arch 8 configuration, before any item of todo/done/todo-compile-885.md, before plugging an 885 in, before reading, writing or composing an 885 configuration, and in every agent brief for 885 work."
 ---
 
 # Working on the Harmony 885
@@ -29,7 +29,7 @@ In this order, every time, including in an agent:
 4. The `recovering-a-remote` skill's section "The Harmony 880 and 885" **before planning any write**, and
    before anything that touches the bootloader, the staged install or the identity block.
 5. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person.
-6. While `todo-compile-885.md` runs: the lab's `work/legacy-remotes/HANDOVER.md`, and a brief per item in
+6. While `todo/done/todo-compile-885.md` runs: the lab's `work/legacy-remotes/HANDOVER.md`, and a brief per item in
    `work/legacy-remotes/notes/harmony-885/` written before the item starts.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap, and
@@ -46,7 +46,7 @@ require of a session.
 
 * **Two bench units may be written, `h885_a` first**, decision 30. Which unit is on the cable is read off its
   identity block against the lab's `units/h885_a.txt` or `units/h885_b.txt`, never assumed from the port or a
-  sticker. **Permission is not a write path**: since `todo-compile-885.md` 1.2 the library opens the flash
+  sticker. **Permission is not a write path**: since `todo/done/todo-compile-885.md` 1.2 the library opens the flash
   block path for unit A and, since 1.8, unit B, through `rehearse-block.ts`; since 1.4 the cache drop and
   the restart as well, so that `write-config.ts` can write a whole configuration to either unit. It refuses
   every other write to this platform: the RAM write, the session end, the update status and the settings
@@ -81,7 +81,7 @@ and identical, as the `recovering-a-remote` section says. **Both units' are in t
 twice, the second with `--label h885-b-flash-2`, and the same with `h885-a-` for unit A; a backup taken
 again is taken the same way. The reader reads `0x4000` chunks from zero, so no chunk ends
 alone on `0x000104` or `0x000105`. **A `flash chunk out of sequence` is asked for again**, the same window up to
-twice, since `todo-compile-885.md` 1.10 (`packages/usb/src/readwindow.ts`, shared with the configuration
+twice, since `todo/done/todo-compile-885.md` 1.10 (`packages/usb/src/readwindow.ts`, shared with the configuration
 reader), and the reader prints how many windows it retried. A hand restart made the breaks rarer on both units
 and did not end them; a read that still fails after its retries is reported, not rerun blind. The identity block at `0x000110` and the battery calibration
 word at `0x000160` are what a recovery puts back and nothing else holds them.
@@ -89,7 +89,7 @@ word at `0x000160` are what a recovery puts back and nothing else holds them.
 ## 4. Writing the 885's configuration
 
 **Two writers: one block through `rehearse-block.ts`, and since 1.4 a whole configuration through
-`write-config.ts`, on both units.** `todo-compile-885.md` 1.2 made the platform a flash block target; 1.3 wrote
+`write-config.ts`, on both units.** `todo/done/todo-compile-885.md` 1.2 made the platform a flash block target; 1.3 wrote
 one block of unit A back unchanged, `0x0C0000`, and 1.8 one of unit B, `0x0D0000`; 1.4 gave `write-config.ts`
 both units and the 885's write end, and ran it once on unit B: its own configuration restamped, three sectors
 rewritten, the restart, B back within five seconds holding the file and its clock reseeded,
@@ -124,7 +124,7 @@ hold on each unit before choosing; the rule is that no neighbour of the block is
 
 **The commit waits for the backup** in section 3, and for the flags `CLAUDE.md` names.
 
-### The whole configuration, `todo-compile-885.md` 1.4
+### The whole configuration, `todo/done/todo-compile-885.md` 1.4
 
 The writer is `packages/corpus/bin/write-config.ts`, the one every other model uses, with both 885s among its
 targets since 1.4; its sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts` since `todo.md`
@@ -199,7 +199,7 @@ the 885 follows them.
 | the rails | `packages/usb/src/rails.ts`: `CONFIG_REGION_BASE`, `WRITABLE_CEILING`, `ERASE_BLOCK_SIZE` and the per path lists |
 | the unit records | the lab's `units/h885_a.txt` and `units/h885_b.txt`, never copied into this repository |
 | configurations, region reads, key logs | the lab, named in `packages/lab` and `tests/lab.py` with the prefix `h885_` |
-| the track | `todo/todo-compile-885.md`, after `todo/todo-prepare-885.md`, plan 012 |
+| the track | `todo/done/todo-compile-885.md`, after `todo/done/todo-prepare-885.md`, plan 012 |
 
 ## Related
 

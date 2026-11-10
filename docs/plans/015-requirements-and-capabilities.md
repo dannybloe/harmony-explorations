@@ -1,8 +1,8 @@
 # Plan 015: the FHSDK's requirements, its capability API, and code that names no todo
 
-**Status: open.** Written 10 November 2026, in the conversation that set out to restructure `todo.md` around the
-FHSDK, the libraries, reference and tools an application such as FreeHarmony builds on. Its items are `todo.md`
-7.3.13. The rules it rests on are [decision 33](../decisions.md#d33).
+**Status: done.** Written 10 November 2026, in the conversation that set out to restructure `todo.md` around the
+FHSDK, the libraries, reference and tools an application such as FreeHarmony builds on. Its items were `todo.md`
+7.3.13, now in `todo/done/todo-sequence.md`. The rules it rests on are [decision 33](../decisions.md#d33).
 
 ## Why
 

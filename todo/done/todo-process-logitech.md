@@ -1,11 +1,13 @@
 # Todo: process what was gathered from Logitech's service
 
+**Archived:** merged with its gathering partner; its open items went to [todo-logitech.md](../todo-logitech.md), chapters P2 and P3.
+
 **What this is**: [todo-secure-logitech.md](todo-secure-logitech.md) gathers Logitech's compiles into the
 lab while their service still runs. This todo works out the rules from those files and lands them in the
 proper places in this repository: the rhythm table the composer writes infrared from, the format
 specification, the findings and the per remote reference. None of it needs the service.
 
-**The order is [todo.md](../todo.md)'s**: this todo is worked beside it, on what the gathering todo has filed, whenever an item there needs a rule from Logitech's compiles. It was written to come after the gathering and before the Harmony 650's track resumed; changed on 2 November 2026, for the same reason as the gathering todo's.
+**The order is [todo.md](../../todo.md)'s**: this todo is worked beside it, on what the gathering todo has filed, whenever an item there needs a rule from Logitech's compiles. It was written to come after the gathering and before the Harmony 650's track resumed; changed on 2 November 2026, for the same reason as the gathering todo's.
 
 ---
 

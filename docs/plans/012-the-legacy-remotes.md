@@ -1,7 +1,7 @@
 # Plan 012: the legacy remotes, prepared for writing
 
-**Status: open.** Written 4 November 2026. Its items are [todo-prepare-885.md](../../todo/todo-prepare-885.md)
-and [todo-prepare-525.md](../../todo/todo-prepare-525.md), linked from `todo-later.md` 5.6 and 5.4. The track
+**Status: open.** Written 4 November 2026. Its items are [todo-prepare-885.md](../../todo/done/todo-prepare-885.md)
+and [todo-prepare-525.md](../../todo/done/todo-prepare-525.md), linked from `todo-later.md` 5.6 and 5.4. The track
 runs beside `todo.md`'s sequence and not in it.
 
 ## What the track is

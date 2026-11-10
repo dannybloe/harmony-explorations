@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Put the finding skill's gate in front of a session at the moment `reference/` gains a tested fact.
 
-**What it fires on moved with the reference, todo-reference.md 6.2.** It fired on a new `## N.` section
+**What it fires on moved with the reference, todo/done/todo-reference.md 6.2.** It fired on a new `## N.` section
 in `docs/findings.md` until that document became a frozen archive, after which it could never fire. A
 new fact now lands on its reference page with a footnote naming the test that holds it, `[^t-name]:` in
 plan 009 section 4's convention, so a new definition of that shape in a file under `reference/` is the

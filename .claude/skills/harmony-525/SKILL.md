@@ -42,7 +42,7 @@ require of a session. The mechanisms are in the reference, linked per rail.
 * **The 525 is a permitted write target.** One of the units that section names, and its first write, one
   block of its own bytes put back unchanged, is findings section 269 and `docs/test-notes/harmony-525.md`. **Permitted is not capable**:
   nothing can compile a configuration for this model, so there is no vendor built file to check one of
-  ours against, and the next step on it is `todo-later.md` 5.4 rather than anything improvised.
+  ours against, and the next step on it is requirement R21 and the preparation items in the checklist `todo/todo-harmony-525.md`, rather than anything improvised.
 * **An erase is bounded only by the flash part.** The firmware erases any of the eight 64 KiB blocks it is
   handed, and the block directly below the configuration holds the application firmware, the one below
   that the safe mode image. `packages/usb/src/rails.ts` is the only thing that refuses a wrong address, so
@@ -108,7 +108,7 @@ as it happened and rerun only with the same arguments once the cause is understo
 memory window and every `READ_MISC` selector but 1 answer zeros, which is the firmware and not the
 cable. **Selector 1 is served**, with its value in the byte after the one a naive decoder takes,
 `reference/architectures/harmony-5xx/usb.md`; this said every data memory read answers zeros until
-`todo-reference.md` 6.2.
+`todo/done/todo-reference.md` 6.2.
 
 ## 4. Bench tests
 

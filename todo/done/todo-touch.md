@@ -1,5 +1,7 @@
 # Todo: describe the Harmony Touch
 
+**Archived:** its two open items went to the Harmony Touch's own part, [todo-harmony-touch.md](../todo-harmony-touch.md).
+
 **The aim**: know the Harmony Touch well enough that its configuration can be described, read and, if the
 route allows it, put on the remote by us. It is the one remote on the bench that MyHarmony still supports
 and that this project has not described from its own reading, and the sooner what Logitech's service knows
@@ -10,7 +12,7 @@ first and in depth, and a recording of a sync follows with what the firmware sho
 configuration file and the computer writes it. A Touch takes no compiled file. During a sync it hands the
 computer a list of web requests, the computer performs them and passes the answers back, and the remote
 assembles its configuration itself. Read in MyHarmony's code and never observed:
-[the platform's usb.md](../reference/architectures/harmony-touch/usb.md), sections 202 and 203. Logitech's
+[the platform's usb.md](../../reference/architectures/harmony-touch/usb.md), sections 202 and 203. Logitech's
 client also describes writing a user configuration onto a Touch as a file, with the read back switched off,
 section 198, so a direct route may exist beside the sync.
 
@@ -27,7 +29,7 @@ unpacked from them stay in the lab; only names, sizes and findings come into thi
 
 **Chapters 1 to 5 done on 4 November 2026**: the Touch is described from its firmware and two recorded syncs, its configuration is read and checked by the codec, and a device of our own can be composed in the documents it reads; nothing has been written to a Touch, decision 29.
 
-**Extended on 5 November 2026 with chapters 6 to 9, to the finish line of the Harmony One and the 600 family**: a configuration built entirely by us, nothing copied out of a Logitech document, put on the bench Touch and used. The route is answering a sync in place of Logitech's server, [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md), the remote's own designed path, which gathers a new set aside and swaps it in whole; the direct resource put is for a single document at most. The account and remote numbers the remote reports, which an answerer echoes, are account data and stay in the lab as a serial does.
+**Extended on 5 November 2026 with chapters 6 to 9, to the finish line of the Harmony One and the 600 family**: a configuration built entirely by us, nothing copied out of a Logitech document, put on the bench Touch and used. The route is answering a sync in place of Logitech's server, [answering a sync](../../reference/architectures/harmony-touch/answering-a-sync.md), the remote's own designed path, which gathers a new set aside and swaps it in whole; the direct resource put is for a single document at most. The account and remote numbers the remote reports, which an answerer echoes, are account data and stay in the lab as a serial does.
 
 **Done on 7 November 2026**: every item of chapters 1 to 9 is ticked, 9.4 the finish line, a configuration built entirely by us from a setup file, with no Logitech document as input, answered to the bench Touch, committed and used, `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`.
 

@@ -1,4 +1,4 @@
-# The reference website, todo-reference.md 7.2 and plan 009. On every push to main this builds the site
+# The reference website, todo/done/todo-reference.md 7.2 and plan 009. On every push to main this builds the site
 # exactly as `make site` does locally (the same pinned requirements, installed with every hash checked and
 # wheels only, then `mkdocs build` in strict mode) and publishes it to GitHub Pages. The built site is
 # never committed.

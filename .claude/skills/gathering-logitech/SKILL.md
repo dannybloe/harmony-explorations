@@ -1,6 +1,6 @@
 ---
 name: gathering-logitech
-description: "Everything needed before working on the gathering track, todo-secure-logitech.md: why it races a possible shutdown of Logitech's service, what is in scope, when an item counts as done, and where every result goes. Use before any item of todo-secure-logitech.md, before compiling anything through Logitech's service for that track, and in every agent brief for it."
+description: "Everything needed before working on the gathering track, chapters G1 to G6 of todo/todo-logitech.md: why it races a possible shutdown of Logitech's service, what is in scope, when an item counts as done, and where every result goes. Use before any gathering item of todo/todo-logitech.md, before compiling anything through Logitech's service for that track, and in every agent brief for it."
 ---
 
 # Gathering what only Logitech's service knows
@@ -10,10 +10,10 @@ because two copies of a fact are two copies until one of them moves.
 
 ## 1. Read these first
 
-1. `todo-secure-logitech.md`: the plan, which item the task is, and what is already recorded on it.
+1. `todo/todo-logitech.md`, its gathering chapters G1 to G6: the plan, which item the task is, and what is already recorded on it.
 2. The `myharmony-service` skill: the accounts, the rails for writes, and the traps already met. **Load
    it before anything that talks to the service.** The harvest itself is `packages/corpus/bin/harvest.ts`,
-   item 1.1; its header holds the rails and the usage.
+   item 1.1 of `todo/done/todo-secure-logitech.md`; its header holds the rails and the usage.
 3. Per model, its reference folder in `reference/remotes/`, where every model has its ten pages: what
    Logitech's service states about a model is its `features.md`, read rather than guessed. What the
    service is and what it answers is `reference/logitech/service.md`, and what our test accounts hold is
@@ -25,12 +25,12 @@ Logitech's service still compiles configurations and can be withdrawn without no
 database is archived and safe; how their compiler turns it into bytes on a remote is only learned by
 comparing their compiles with the database, and that needs the service. So this track **gathers**: it
 compiles and files. **Working out the rules from the files is the next todo's**,
-`todo-process-logitech.md`, and does not belong here: a gathering item that starts explaining a file is
+the processing chapters P2 and P3 of `todo/todo-logitech.md`, and does not belong here: a gathering item that starts explaining a file is
 spending time the race does not have.
 
 **Scope**: the bench models that get a compile, the Harmony One, 600, 650, 700, 300 and 350. The 525 is
-discontinued and the Touch gets no configuration file, `todo-secure-logitech.md` 3.1. Infrared families
-are compiled on the Harmony One, which holds 15 devices per configuration, after the check in item 1.2.
+discontinued and the Touch gets no configuration file, `todo/done/todo-secure-logitech.md` 3.1. Infrared families
+are compiled on the Harmony One, which holds 15 devices per configuration, after the check in item G1.2.
 
 ## 3. When an item is done
 
@@ -44,7 +44,7 @@ of the item, not of the next todo.
 * **A compiled file stays in the lab**, with a manifest naming every device that went into it. It is
   Logitech's output, so it never enters this repository.
 * **Names and numbers about it come here**: the index of the harvest and how the service is used,
-  `todo-secure-logitech.md` chapter 5. Nothing gathered may be findable only in the lab.
+  `todo/todo-logitech.md` chapter G5. Nothing gathered may be findable only in the lab.
 * **No personal names in any document.** Write "needs a go-ahead", "decided on <date>", "the bench's
   KPN box".
 

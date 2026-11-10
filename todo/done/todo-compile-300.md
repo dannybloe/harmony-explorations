@@ -1,5 +1,7 @@
 # Todo: compile for the Harmony 300
 
+**Archived:** every item is ticked, nothing is open.
+
 **Closed on 1 November 2026, folded into [todo-compile-350.md](todo-compile-350.md) by decision 28**: the
 Harmony 300 and the Harmony 350 are one remote for configurations, one configuration entry bringing a 300
 level with a 350. What was still open moved: 5.2 to the 350's 4.6, 5.3 to `todo-freeharmony.md` 1.7,

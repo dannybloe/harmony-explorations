@@ -107,3 +107,74 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 ## The remote's own work
 
 Work for the Harmony 885 that no requirement above names, written by hand and kept when the list is regenerated.
+
+The open items of the compile track, `todo/done/todo-compile-885.md`, which is archived with its ticked items. The numbers are that track's, so the cross references between items still read. Before any item: the `harmony-885` skill, the legacy remotes handover in the lab and [plan 012](../docs/plans/012-the-legacy-remotes.md).
+
+### 2. Devices, everything that can be checked in device mode
+
+- [ ] 2.4 A new device list page when the last one is full
+- [ ] 2.5 A full device: every command the catalogue holds, on as many device mode pages as it takes
+- [ ] 2.6 A device's inputs, directly or by stepping through them
+- [ ] 2.7 Several devices composed at once into one configuration
+- [ ] 2.8 A device on a device list whose last page has room: a free cell on an existing page, on every copy of the list
+- [ ] 2.9 A device page's keys send what Logitech's do: on these remotes a code with no held part opens with the device's silence, 1375 of 1375 (`sidekeysdevice.test.ts`), and most page keys send that form, where a composed device's keys send the 50 ms form with a repeat; also its power command's own record beside the step's, where Logitech keeps one
+
+### 3. Activities
+
+- [ ] 3.1 How an activity is built on the 885, read in the base and the contributed configurations
+- [ ] 3.2 Compose an activity: menu row, start up and working screens, its devices on and the rest off
+- [ ] 3.3 The activity's key map from its roles, volume to one device and channels to another
+- [ ] 3.4 The activity's own screen pages
+- [ ] 3.5 Off switches every device off; picking the running activity again
+- [ ] 3.6 A new activity menu page when the last one is full
+- [ ] 3.7 A passthrough device in an activity
+- [ ] 3.8 Help and anything like the Remote Assistant left out, as on the 650
+
+### 4. What else the test setup uses
+
+- [ ] 4.1 Sequences, within the two timers and the queue the firmware allows (prepare 3.2, 3.6)
+- [ ] 4.2 The settings the 885 has, at the values chosen
+- [ ] 4.3 The state variables within the 64 byte ceiling (prepare 3.3)
+
+### 5. Milestone: the test setup, composed on the starting configuration
+
+- [ ] 5.1 Compose the rest of the test setup onto the base and write it to unit A, every key and screen item heard and seen on the bench
+- [ ] 5.2 Check it against the base's own devices and activities: what Logitech's compile did for a kind of thing, ours does the same, or the difference is named
+
+### 6. Our composers stop borrowing parts from the base
+
+- [ ] 6.1 List what each composer copies out of the configuration it is given
+- [ ] 6.2 Build each of those ourselves, and write and check the setup again as in 5.1
+
+### 7. Screens built by us
+
+- [ ] 7.1 How the 885 draws a screen, written up as a screen family of the codec beside the One's and the four slot one (plan 007)
+- [ ] 7.2 Probe: an almost empty configuration on unit A, to see what the remote demands at minimum
+- [ ] 7.3 Categorise every screen: the same on every 885, dynamic, or depending on the configuration
+- [ ] 7.4 The device list, the activity menu and Off built by us
+- [ ] 7.5 The firmware's own screens and the setup screens the probe shows are needed
+- [ ] 7.6 Written to unit A with every screen this chapter builds, and checked as in 5.1
+
+### 8. Text and fonts
+
+- [ ] 8.1 Generate the text inside every screen program rather than carrying it
+- [ ] 8.2 Our letters, Oxanium as on the 650 (decision 19), in the 885's font format
+- [ ] 8.3 Written to unit A and looked at
+
+### 9. Pictures
+
+- [ ] 9.1 The pictures drawn by rule, in the 885's encoding (section 363 reproduced Logitech's on arch 8)
+- [ ] 9.2 The designed pictures and icons replaced by our own
+
+### 10. The container from nothing
+
+- [ ] 10.1 The frame: cookies, format word, the architecture record, the section table and every address, the trailer checksum
+- [ ] 10.2 The firmware's own wiring, the event map, the timers and the log area's numbers (base slot 2 as every configuration states it)
+- [ ] 10.3 The state variables and the name tree
+- [ ] 10.4 Place the pictures and glyph sets
+- [ ] 10.5 An empty starting configuration built by our own generators, no device and no activity, written once to unit A
+
+### 11. The finish line
+
+- [ ] 11.1 Build the test setup with no Logitech file as input, every byte from one of our generators
+- [ ] 11.2 Write it to unit A and check it as in 5.1

@@ -74,7 +74,7 @@ reference/logitech/data-model/catalogue-model.pdf
 # 14000 lines, regenerated on every load.
 .claude/skills/harmony-remote/.claude-plugin/types/
 
-# The reference website built by `make site` (todo-reference.md 7.1). Built from reference/ and never
+# The reference website built by `make site` (todo/done/todo-reference.md 7.1). Built from reference/ and never
 # committed; a GitHub Action publishes it. Anchored with a leading slash, since a bare `site/` would also
 # ignore `tools/site/`, which holds the build itself.
 /site/

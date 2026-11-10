@@ -1,15 +1,15 @@
-# The reference website, todo-reference.md 7.1 and plan 009 sections 1 and 3. Built from `reference/`
+# The reference website, todo/done/todo-reference.md 7.1 and plan 009 sections 1 and 3. Built from `reference/`
 # alone; the archive, `docs/findings.md`, is published beside it one page per section by
 # `tools/site/hooks.py`, which also rewrites every link that leaves `reference/`. The built site is never
 # committed (`site/` is in `.gitignore`); `make site` builds it locally and a GitHub Action will publish it
-# (todo-reference.md 7.2).
+# (todo/done/todo-reference.md 7.2).
 #
 # **Strict by default, switchable.** Every check below is at warning level, and in strict mode a single
 # warning fails the build: a broken link, a broken anchor, a page in `reference/` the navigation leaves
 # out, a page the navigation names that does not exist, and anything the hook could not place. That is
-# what makes the build a guard on every link from chapter 3 of todo-reference.md on. The reference is not
+# what makes the build a guard on every link from chapter 3 of todo/done/todo-reference.md on. The reference is not
 # finished yet, so the same build with `SITE_STRICT=false` (`make site SITE_STRICT=false`) reports the same
-# warnings and still writes the site. Use that until todo-reference.md chapters 3 and 4 have made the
+# warnings and still writes the site. Use that until todo/done/todo-reference.md chapters 3 and 4 have made the
 # strict build pass, then never again.
 
 site_name: How a Harmony works

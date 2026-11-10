@@ -6,7 +6,7 @@ The bench Harmony 885s: what was done to them, in order. What the remote and its
 **Two Harmony 885s are on the bench, and both may be written, unit A first**, decision 30. This said
 "neither may be written"<!--superseded--> until that decision. One block has been written to unit A, back
 unchanged, and nothing to B; this said "Nothing has been written to either"<!--superseded--> until then. Arch 8 is in
-`ARCHITECTURES_WITH_A_WRITE_TARGET` since `todo/todo-compile-885.md` 1.2, for the flash block path, unit A and
+`ARCHITECTURES_WITH_A_WRITE_TARGET` since `todo/done/todo-compile-885.md` 1.2, for the flash block path, unit A and
 since 1.8 unit B; this said it was "still not in" the list<!--superseded--> until then. Before them, everything known about
 this architecture came from a contributor's firmware images and configurations, read off their remotes.
 
@@ -51,7 +51,7 @@ on. The same reads, the same answers:
 
 ## 5 November 2026: each unit's configuration and region, and unit A's clock
 
-`todo/todo-prepare-885.md` 2.1 and 2.3, one unit on the cable at a time. Every command was a read, and each
+`todo/done/todo-prepare-885.md` 2.1 and 2.3, one unit on the cable at a time. Every command was a read, and each
 unit was named by its identity block before anything else was read: `read-identity.ts --record h885_a`, and
 later `--record h885_b`, both answered unchanged. Both report the version block `44 21 49 01 80 11 08`. The
 facts are asserted in `tests/harmony_880_885/test_harmony_885_bench_reads.py`; the files are registered as `h885_a_*` and
@@ -98,7 +98,7 @@ where the configuration reader has one, is a gap in the bench tool.
 
 ## 5 November 2026: the version block against the configuration files, at the desk
 
-`todo/todo-prepare-885.md` 2.2, **no remote involved**: the version block both units had reported,
+`todo/done/todo-prepare-885.md` 2.2, **no remote involved**: the version block both units had reported,
 `44 21 49 01 80 11 08`, was compared with the header of every Harmony 880, 885, 880 Pro and 720 configuration
 file in the lab through the library's own comparison and rail, sixteen files. Four matched on all five fields
 they state, four downloads of one 885 configuration with identical headers; the other twelve were refused on
@@ -108,7 +108,7 @@ are the lab's.
 
 ## 5 November 2026: every key pressed, watched over USB
 
-`todo/todo-prepare-885.md` 2.4. One unit on the cable at a time, named by its identity block first
+`todo/done/todo-prepare-885.md` 2.4. One unit on the cable at a time, named by its identity block first
 (`read-identity.ts --record`, unchanged both times), then `watch-keys.ts --product 0xc110 --address
 0x295,0x3a1`, which polls the two data memory bytes with `READ_MISC` selector 7 and prints each change.
 Every command was a read. The remote showed its USB connected screen throughout, and its keys were scanned
@@ -164,7 +164,7 @@ lab; the test header says how it was read and scores it, 49 keys right and six w
 
 ## 6 November 2026: the key page in Chrome, and Glow
 
-The key page, `todo/todo-prepare-885.md` 2.6, run in Chrome against a bench 885 at the desk; which unit was
+The key page, `todo/done/todo-prepare-885.md` 2.6, run in Chrome against a bench 885 at the desk; which unit was
 not recorded. It sends the version request and the one byte read of the held key and nothing else. It
 connected, proposed the model from the skin, and showed every press, in all three steps.
 
@@ -176,7 +176,7 @@ so the page warns against Glow rather than explaining it.
 
 ## 7 November 2026: unit A's whole flash, and the first write to a Harmony 885
 
-`todo/todo-compile-885.md` 1.3, **unit A on the cable, unit B for a moment first**. In order:
+`todo/done/todo-compile-885.md` 1.3, **unit A on the cable, unit B for a moment first**. In order:
 
 1. **The block rehearsal's dry run with B connected by mistake**: refused at the unit check, its identity
    block not unit A's record. Nothing past the identity was read.
@@ -211,7 +211,7 @@ once B has its own backup and one block written back.
 
 ## 7 November 2026: unit B's whole flash, and one block written back
 
-`todo/todo-compile-885.md` 1.8, **unit B on the cable**. In order:
+`todo/done/todo-compile-885.md` 1.8, **unit B on the cable**. In order:
 
 1. **The dry run at `0x0C0000`**: the identity matched `h885_b`. That block was then given up, after the
    review of 1.3: on B the block under it is live configuration, B's ending at `0x0BB8C7`.
@@ -236,7 +236,7 @@ to here; the next section met them after a restart too.
 
 ## 7 November 2026: the first whole configuration, unit B's own, restarted
 
-`todo/todo-compile-885.md` 1.4, **unit B on the cable**. Its own configuration, `h885_b_config`, copied into
+`todo/done/todo-compile-885.md` 1.4, **unit B on the cable**. Its own configuration, `h885_b_config`, copied into
 the lab's work folder and written back with a fresh stamp. In order:
 
 1. **The dry run**: stopped on a `flash chunk out of sequence` while comparing blocks; nothing written.
@@ -262,7 +262,7 @@ readers stop. Their window retry is the gap to close before the next long read.
 
 ## 7 November 2026: the first composed device, the Sony HT, on unit B
 
-`todo/todo-compile-885.md` 2.1, **unit B on the cable**. The file is unit A's configuration with the Sony HT
+`todo/done/todo-compile-885.md` 2.1, **unit B on the cable**. The file is unit A's configuration with the Sony HT
 composed onto it (`h885_composed_2_1`), so B now carries A's devices and activities plus the Sony, as 1.6
 decided; B's own configuration stays in the lab backup. In order:
 
@@ -283,7 +283,7 @@ Filed as `h885_b_written_2_1` and `h885_b_after_2_1_config`; `tests/harmony_880_
 
 ## 8 November 2026: the Sony HT's power with its silence, on unit B
 
-`todo/todo-compile-885.md` 2.2 and 2.3, **unit B on the cable**. The file is 2.1's composition again with the
+`todo/done/todo-compile-885.md` 2.2 and 2.3, **unit B on the cable**. The file is 2.1's composition again with the
 Sony HT's two power records opening with 500 ms of silence and sent at a quantity of 1 (`h885_composed_2_3`).
 In order:
 

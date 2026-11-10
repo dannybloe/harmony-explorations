@@ -110,3 +110,8 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 ## The remote's own work
 
 Work for the Harmony One that no requirement above names, written by hand and kept when the list is regenerated.
+
+From the Harmony One's compile track, `todo/done/todo-compile-one.md`, and the old later list.
+- [ ] A power on delay: not composed, a composed device gets none on the Harmony One
+- [ ] A Harmony One colour button's word wider than its circle ("Yellow") lies on two colours and stays unsmoothed; settle it before the words go back on by default (a whole button in the colour was tried and rejected); was `todo-compile-one.md` 1.2.11.2.8, findings section 399
+- [ ] The Harmony One without its 29 status screens (was `todo-compile-one.md` 4.9), a choice and not a need, since 4.5 builds them: leave the 29 status screens out, the event map keeping code 9 on its screen in a form neither family builds yet, the head 29 modes shorter and every mode above it renumbered, the 58 lists out of base slot 10, which first needed `listCallSites` in `assemble.ts` to find a Harmony One's list calls (it read raw slots 10 and 8 and found 1553 of 3067 on `harvest_one_two_devices`, none inside an action list, section 413; repaired by 4.10, section 421); then a write to the spare Harmony One to see that it starts, section 413

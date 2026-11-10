@@ -368,7 +368,7 @@ drawing coordinates, so anything expressed in screen pixels lands in the right p
   `test/models.test.ts`: a traced model goes in `LEVEL`, since its tilt is in the path and every `angle`
   is 0, and a model measured off a photograph stays off it, so the test demands at least one key at an
   angle and a drawing that forgot step 3 fails. This bullet asked every model for an angled row until
-  `todo-reference.md` 6.2. Every model was traced and level until the Harmony 885, the first measured
+  `todo/done/todo-reference.md` 6.2. Every model was traced and level until the Harmony 885, the first measured
   off a photograph, `h885.ts`, since no line drawing of it exists and its manual's picture is raster
 
 ## Step 8: the check that actually decides it

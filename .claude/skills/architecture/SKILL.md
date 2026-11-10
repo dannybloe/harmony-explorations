@@ -37,7 +37,7 @@ table of every kind of difference met so far, which this skill does not repeat.
 
 ## The packages, bottom up
 
-Read off each `package.json` as of `todo.md` 7.3.10. "Run time" is `dependencies`, what the package's `src` loads;
+Read off each `package.json` as of `todo/done/todo-sequence.md` 7.3.10. "Run time" is `dependencies`, what the package's `src` loads;
 "development" is `devDependencies`, what only its tests, scripts and experiments load. Both columns are held exactly by
 `packages/lab/test/dependencies.test.ts`, so a new dependency between packages is a line in that file's diff.
 
@@ -94,11 +94,11 @@ Touch's firmware reports 17, which it shares with the hubs.
 
 **A family that does not serve a model refuses**, everywhere, plan 013 decision 2. `traitsOf`, `sendsOf`,
 `activityStartOf` and `choicesOf` refuse a configuration no family serves through `NoFamilyError`, naming its
-architecture and model, where until `todo.md` 7.3.3 they gave it the Harmony One's shapes. A reader that has to read
+architecture and model, where until `todo/done/todo-sequence.md` 7.3.3 they gave it the Harmony One's shapes. A reader that has to read
 such a configuration asks `familyOf(c)`, which answers undefined, and reads on its own terms.
 
 **Each family's folder is named after its remotes**, as `reference/architectures/` names them: `harmony-one/`,
-`harmony-600-650-700/`, `harmony-300-350/`, `harmony-880-885/` and `harmony-touch/`, `todo.md` 7.3.8. "Touch" means the
+`harmony-600-650-700/`, `harmony-300-350/`, `harmony-880-885/` and `harmony-touch/`, `todo/done/todo-sequence.md` 7.3.8. "Touch" means the
 Harmony Touch, or the Harmony One's touch panel where a reader of base slot 17 says so, and never a family. The
 identifiers inside keep their older names (`FOUR_SLOT`, `fourSlot...`, `noScreen...`, `sideKeys...`).
 
@@ -110,7 +110,7 @@ without being named.
 
 ## The codec's folders
 
-**`todo.md` 7.3.8.** Outside `families/`, `shared/` and `recipe/`, the codec's modules sit in ten folders by what a
+**`todo/done/todo-sequence.md` 7.3.8.** Outside `families/`, `shared/` and `recipe/`, the codec's modules sit in ten folders by what a
 module is for, and the four entries stay at the top of `src`:
 
 | folder | what sits there | which entry carries it |
@@ -131,7 +131,7 @@ and `recipe/` reads the recipe a build starts from. `docs/README.md`'s codec ent
 module goes in the folder whose question it answers; a module that fits none is a reason to ask, not to add an
 eleventh folder or leave it loose at the top.
 
-**The tests follow the same folders**, `todo.md` 7.3.12. A codec test goes in the `test/` folder of the module it
+**The tests follow the same folders**, `todo/done/todo-sequence.md` 7.3.12. A codec test goes in the `test/` folder of the module it
 tests, `test/families/<family>/` for a family's own, and a test of the package as a whole (an entry, a surface, a
 guard such as `generic.test.ts`) in `test/package/`; a helper goes beside the tests that use it. `usb`, `corpus` and
 `bench`, whose `src` is flat, keep theirs in a handful of folders by subject, each with its `package/`, and the Python
@@ -148,7 +148,7 @@ and after, and one output byte identical.
 
 ## The codec's core loads anywhere, and reads with no resource
 
-**Plan 013 decision 5, `todo.md` 7.3.5.** The main entry, `./build` and `./internal` load in an Electron renderer or a
+**Plan 013 decision 5, `todo/done/todo-sequence.md` 7.3.5.** The main entry, `./build` and `./internal` load in an Electron renderer or a
 browser: nothing they reach imports a Node module or names a Node global (`Buffer`, `process`, `require`, `__dirname`,
 `__filename`, `global`), `codec/test/package/mainentry.test.ts`, which walks the import graph with the compiler's own parser.
 
@@ -171,7 +171,7 @@ browser: nothing they reach imports a Node module or names a Node global (`Buffe
 
 ## Explicit public surfaces
 
-**Plan 013 decision 6, `todo.md` 7.3.6.** A package's main entry is what an application builds on: explicit names,
+**Plan 013 decision 6, `todo/done/todo-sequence.md` 7.3.6.** A package's main entry is what an application builds on: explicit names,
 grouped by what an application does with them, no `export *` from a module. **Each main entry is held to a list by its
 `surface.test.ts`** (`test/package/` where a package's tests are in folders), which reads the entry's source through `@harmony/testkit/surface` (the only way to see its
 types) and holds the loaded module to the same values. So a new public name is a line in that list's diff, and adding
@@ -206,7 +206,7 @@ the libraries built on it; there `export *` is the point:
 
 ## The write paths
 
-**`todo.md` 7.3.10.** Each of the three ways this library changes a remote is a library function an application can
+**`todo/done/todo-sequence.md` 7.3.10.** Each of the three ways this library changes a remote is a library function an application can
 call, with a thin script over it, and none is on a main entry:
 
 | path | function | subpath | the units it may write |
@@ -250,7 +250,7 @@ call, with a thin script over it, and none is on a main entry:
 
 ## Scripts, experiments and names
 
-* **One reader for every script's command line**, `@harmony/lab/cli`, `todo.md` 7.3.7. Every script under
+* **One reader for every script's command line**, `@harmony/lab/cli`, `todo/done/todo-sequence.md` 7.3.7. Every script under
   `packages/<name>/bin` declares the names it reads, each of which must appear in its usage text, and calls the reader
   first; **`--help` prints the usage and exits 0 before the script does anything**. The reader keeps the hand written
   readers' rules exactly (the first occurrence wins, the word after an option is its value even when it is another

@@ -2028,7 +2028,8 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # each naming `rehearse-block.ts` and the first block written on arch 8.
         # 36 with the configuration write's library function, which took the script's
         # sequence, and its fake remote, runner and test, which drive it and name the flash write rail.
-        self.assertEqual(len(must), 36, 'the withhold list should resolve to 36 paths, got %s'
+        # 37 with the archived sequence, the old root todo kept whole with its mention of the block rehearsal.
+        self.assertEqual(len(must), 37, 'the withhold list should resolve to 37 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):

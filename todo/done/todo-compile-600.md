@@ -1,5 +1,7 @@
 # Todo: compile for the Harmony 600
 
+**Archived:** every item is ticked, nothing is open.
+
 **The finish line**: a configuration for the Harmony 600 built entirely by us, nothing copied out of a
 Logitech file, written to the bench 600 and used. The same finish line as
 [todo-compile-650.md](todo-compile-650.md) and [todo-compile-700.md](todo-compile-700.md), and the same

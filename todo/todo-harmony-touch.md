@@ -112,3 +112,14 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 ## The remote's own work
 
 Work for the Harmony Touch that no requirement above names, written by hand and kept when the list is regenerated.
+
+The open items of the Touch track, `todo/done/todo-touch.md`, which is archived with its ticked items; the numbers are that track's.
+
+### 10. After the finish line
+
+- [ ] 10.2 Key layouts composed by rule from the activity's type, the devices' roles and the catalogue, as the Harmony One's and the 650's families do, so the setup file holds only what a person chooses
+- [ ] 10.3 Whether the Xbox acts on the same key twice under our definition without its toggle bit, at the bench
+
+### Left out on purpose
+
+- [ ] The Harmony Touch's gestures: its engine reads them (`todo-touch.md` 5.1) and neither MyHarmony nor Harmony Desktop ever let a person set them, so FreeHarmony composing none loses nothing anyone had; left out of `todo-touch.md` chapters 6 to 9 on 5 November 2026

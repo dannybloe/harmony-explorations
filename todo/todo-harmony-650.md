@@ -111,3 +111,6 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 ## The remote's own work
 
 Work for the Harmony 650 that no requirement above names, written by hand and kept when the list is regenerated.
+
+A bench anomaly, kept until it is seen again or explained.
+- [ ] A black screen on the Harmony 650 after unplugging, once, after the write of a 20 second screen timer, cleared by a battery pull with the configuration intact; not seen after the next write (section 292)

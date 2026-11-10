@@ -281,7 +281,7 @@ Two dynamic routes exist, both read-only:
   (Harmony One) it can label a section**, section 111: a connected Harmony One has read its base slot 15
   and is executing, so a candidate variable can hold a real value. **On arch 14 the configuration's
   state variables are live on the cable too**, section 387, on the Harmony 600, 650 and 700; this entry
-  said a connected 600 had not loaded its config<!--superseded-->, section 110, until `todo-reference.md`
+  said a connected 600 had not loaded its config<!--superseded-->, section 110, until `todo/done/todo-reference.md`
   6.2, and section 110's zero variables were journal variables, another kind. Whether a per subsystem
   pointer variable is live there is not checked. Two things temper it everywhere. A remote on USB is in USB
   mode, so its normal user interface cannot be driven by hand and the values are whatever the last

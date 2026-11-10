@@ -1,6 +1,6 @@
 ---
 name: harmony-650
-description: "Everything needed before working on the Harmony 650: where its facts are (read them first), how a configuration is written to the bench unit step by step, and how a bench test is written and run with the Flirc. Use before any task on the Harmony 650 or a todo-compile-650.md item, before composing, writing or reading a 650 configuration, before writing a bench test for it, and in every agent brief for 650 work."
+description: "Everything needed before working on the Harmony 650: where its facts are (read them first), how a configuration is written to the bench unit step by step, and how a bench test is written and run with the Flirc. Use before any task on the Harmony 650 or a todo/done/todo-compile-650.md item, before composing, writing or reading a 650 configuration, before writing a bench test for it, and in every agent brief for 650 work."
 ---
 
 # Working on the Harmony 650
@@ -23,7 +23,7 @@ In this order, every time, including in an agent:
 2. `reference/architectures/harmony-600-650-700/README.md`: what the 650 shares with the 600 and 700,
    architecture 14, including its memory layout. In conversation say "the Harmony 650", never the bare
    architecture number.
-3. `todo-compile-650.md`: the plan, which item the task is, and the evidence already recorded on it.
+3. `todo/done/todo-compile-650.md`: the plan, which item the task is, and the evidence already recorded on it.
 4. `reference/how-a-harmony-works.md` when the task touches what the remote does for a person: activities,
    device mode, Help, the device list.
 
@@ -46,7 +46,7 @@ the `writing-a-config` skill; this is the procedure on top of those, in the orde
    in `packages/lab/test/parity.test.ts`. The test fails until all four agree.
 
    The sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, on `@harmony/corpus/write`
-   since `todo.md` 7.3.10, so an application writes through the same function; the script is its bench
+   since `todo/done/todo-sequence.md` 7.3.10, so an application writes through the same function; the script is its bench
    front, and the steps here stay the script's.
 3. **Dry run**, which reads only and prints which blocks would be written:
 
@@ -115,7 +115,7 @@ prove it wrong.
 |---|---|
 | the public reference | `reference/remotes/harmony-650/` and `reference/architectures/harmony-600-650-700/` |
 | the bench unit: its reads, writes, account and bench runs | `docs/test-notes/harmony-650.md`, with the account in `docs/test-notes/accounts.md` |
-| the plan | `todo-compile-650.md` |
+| the plan | `todo/done/todo-compile-650.md` |
 | the drawing | `packages/silhouettes/src/models/h650.ts`, rendered into `reference/silhouettes/h650.svg` |
 | the unit record | the lab's `units/h650.txt`, never copied into this repository |
 | region reads and compiles | the lab's `reads/`, named in `packages/lab` and `tests/lab.py` with the prefix `h650_` |

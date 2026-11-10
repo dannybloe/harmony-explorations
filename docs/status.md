@@ -182,7 +182,7 @@ verified is that each backup is faithful; **restoring from one has never been tr
 
 **The file based family is written too, through its own railed path**, decision 26: the bench Harmony 300 and 350
 take a whole configuration as a file, `/cfg/usercfg`, and each has been given its own back after other files. As of
-2 November 2026 `todo-compile-350.md` chapter 5 is done: one configuration built from nothing, every byte named by
+2 November 2026 `todo/done/todo-compile-350.md` chapter 5 is done: one configuration built from nothing, every byte named by
 the generator that wrote it, with firmware event 0xFF bound so it serves both models (decision 28), sent 33 of 33
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, read only.
@@ -194,7 +194,7 @@ field by field in [its platform pages](../reference/architectures/harmony-touch/
 `packages/codec/src/families/harmony-touch/`; what a host other than Logitech's server would have to answer is
 [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md). The bench Touch may be written,
 decision 29: the rail for its request channel exists, `assertTouchRequestAllowed` behind
-`HARMONY_TOUCH_REQUESTS`, `todo-touch.md` 6.3, with the abort, the delete of the stored documents and the restart
+`HARMONY_TOUCH_REQUESTS`, `todo/done/todo-touch.md` 6.3, with the abort, the delete of the stored documents and the restart
 as a recovery tier behind `HARMONY_TOUCH_RECOVERY`, 6.3.1. Two reads went through it first, 6.4, then the first
 sync answered by this project, 6.7, `packages/usb/test/touch/touch-first-sync.test.ts`: the remote's changed settings
 handed up and written back under a tag of ours, the six configuration documents answered 304 and taken, and a stop
@@ -271,7 +271,7 @@ and all five code families of our definitions, the first time the remote played 
 families; the other nine tests were left out by decision, since what the set changes against 8.6 is its definitions
 and records, not which code sits under which key. A band at the foot of every screen was consistent with our
 background. The put back delivered the remote's own six, `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`. With it
-`todo-touch.md` is done.
+`todo/done/todo-touch.md` is done.
 
 ## What is still open
 

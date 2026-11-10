@@ -1,5 +1,7 @@
 # Todo: the reference
 
+**Archived:** every item is ticked, nothing is open.
+
 **The finish line**: everything this project knows about how a Harmony works, in `reference/`, once, in a
 clear structure a stranger can read, and published as a website from it. This is `todo.md` 3.6, and it
 takes over `todo-later.md` chapter 8, plan 005's steps, which now live here.

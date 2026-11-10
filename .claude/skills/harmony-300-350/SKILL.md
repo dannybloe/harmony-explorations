@@ -44,12 +44,12 @@ silence about favourite channels was read as their absence.
 * **`openHarmony` refuses both models**, and that is the rail rather than a gap to be closed: this family
   speaks a file protocol in which a path can be an action. `make remotes` reports them separately.
 * **Both bench units may be written, decision 26, through one path and only that one**, built in
-  `todo-compile-350.md` 1.6: `writeFileConfig` in `packages/usb/src/filewrite.ts`, behind
+  `todo/done/todo-compile-350.md` 1.6: `writeFileConfig` in `packages/usb/src/filewrite.ts`, behind
   `assertFileWriteAllowed` in `rails.ts`, `HARMONY_ENABLE_WRITES=1` and `HARMONY_FILE_WRITE=1`. It opens
   `/cfg/usercfg` and nothing else, checks `/sys/guid` against the lab's `units/h350.txt` or `units/h300.txt`
   (recorded with `read-file-identity.ts --record`), writes the whole container **with** its end marker,
   and reads it back. The whole run, the container, the reads and the judgement around it, is
-  `writeFileFamilyConfiguration` beside it on `@harmony/usb/write` since `todo.md` 7.3.10, so an application
+  `writeFileFamilyConfiguration` beside it on `@harmony/usb/write` since `todo/done/todo-sequence.md` 7.3.10, so an application
   writes through it, and the two units it may write, `h350` and `h300` with their model and skin, are its own
   `FILE_FAMILY_UNITS`; the script is `packages/usb/bin/write-file-config.ts`, read only without `--commit`.
   A task that seems to need a write goes through it, not around it.

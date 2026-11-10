@@ -1,9 +1,11 @@
 # Todo: prepare the Harmony 880 and 885 for writing
 
+**Archived:** every item is ticked, nothing is open.
+
 **The finish line**: every rail a writer needs answered for this platform, from its own firmware where
 possible, and then the question whether the bench 885 may be written, asked and not assumed. Nothing is
 written to an 885 on this track. The plan, the rows (D1 and so on) and what step 0 found are
-[plan 012](../docs/plans/012-the-legacy-remotes.md).
+[plan 012](../../docs/plans/012-the-legacy-remotes.md).
 
 **Before any item**: read `../lab/work/legacy-remotes/HANDOVER.md`, write the item's brief into
 `../lab/work/legacy-remotes/notes/harmony-885/` and update the handover's state, both **before** the item

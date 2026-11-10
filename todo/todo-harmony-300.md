@@ -98,3 +98,6 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 ## The remote's own work
 
 Work for the Harmony 300 that no requirement above names, written by hand and kept when the list is regenerated.
+
+Optional, since decision 28 made a track of it unnecessary.
+- [ ] Optional second sample for the no screen composers: Logitech's four device compile for the bench Harmony 300, `h300_programmed_config`, rebuilt by our composers from `packages/corpus/setups/h300-test.json` and compared part by part (was `todo-compile-300.md` 5.1 and 5.4, made unnecessary as a track by decision 28)
