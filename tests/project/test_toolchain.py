@@ -154,6 +154,67 @@ class FilesAreNamedBySubject(unittest.TestCase):
                 self.assertEqual(step_numbers(name), [], name)
 
 
+TODO_NAME = re.compile(
+    r'todo\.md|todo-(compile|prepare|process|secure|later|touch|reference|freeharmony|fh|loose)[a-z0-9-]*')
+"""A todo file named: the root one, or a track's, by the prefixes every track file has carried. Written with an
+escaped dot and a parenthesis after the dash, so this file's own source matches nothing."""
+
+CODE_THAT_NAMES_NO_TODO = (':(glob)packages/**', ':(glob)src/**', ':(glob)tests/**', ':(glob)tools/**', 'Makefile',
+                           ':(glob).githooks/**')
+"""Everything that is code or a test: every package whole, the Python library, its tests, the tools, the Makefile and
+the hooks. Documents (`docs/`, `reference/`, the skills, `CLAUDE.md`, the todos themselves) may name a todo."""
+
+NAMES_A_TODO_WITH_A_REASON = {
+    # The test's subject is the root todo file itself: it reads the file and checks what it cites.
+    'tests/project/test_documents.py': 2,
+    # A planted line of a reference page that the reference guard has to flag, the word todo among what it bans.
+    'tests/project/test_reference.py': 1,
+}
+"""The files of code that may name a todo, with how many lines do. Exact, so a mention added anywhere fails, and one
+taken out of a listed file fails until its count comes down; the list is a debt that only goes down."""
+
+
+def lines_naming_a_todo(text):
+    """The lines of a text that name a todo file, as the guard counts them."""
+    return [line for line in text.split('\n') if TODO_NAME.search(line)]
+
+
+class CodeAndTestsNameNoTodo(unittest.TestCase):
+    """Decision 33: code and tests never name a todo, since a todo is renumbered, archived and removed and a comment
+    that cites one breaks then. A comment says what the code does and why in its own words, and points, where the
+    evidence is outside the code, at `reference/`, a decision or a requirement of `docs/remote-requirements.md`.
+
+    Written once the sweep had taken out what was there: 2067 lines in 697 files named a todo when it was counted,
+    and three remain, each in `NAMES_A_TODO_WITH_A_REASON` with its reason. The census reads what git tracks, so a
+    scratch file or a dependency's folder is not counted."""
+
+    def test_no_code_or_test_names_a_todo_but_the_files_listed(self):
+        listed = subprocess.run(['git', 'grep', '-c', '-E', TODO_NAME.pattern, '--', *CODE_THAT_NAMES_NO_TODO],
+                                cwd=ROOT, capture_output=True, text=True)
+        # git grep answers 1 when nothing matches, which is a census of nothing and not a failure of the command.
+        self.assertIn(listed.returncode, (0, 1), listed.stderr)
+        found = {}
+        for row in listed.stdout.splitlines():
+            path, count = row.rsplit(':', 1)
+            found[path] = int(count)
+        self.assertEqual(found, NAMES_A_TODO_WITH_A_REASON,
+                         'a todo named in code or a test: say it in the comment\'s own words, or point at the '
+                         'reference, a decision or a requirement, decision 33')
+
+    def test_the_control_a_track_file_and_the_root_file_are_found_and_neighbours_are_not(self):
+        # Joined from two halves, so the lines are found when the test runs and this file's own source is not.
+        todo = 'todo'
+        named = (f'see {todo}-compile-650.md 10.6', f'the 350 track, {todo}-compile-350 1.8', f'`{todo}.md` 7.3.9',
+                 f'{todo}-touch 6.3', f'{todo}-prepare-885.md 2.6')
+        for line in named:
+            with self.subTest(line=line):
+                self.assertEqual(lines_naming_a_todo(line), [line])
+        for line in ('a todo item is temporary', 'node --test reports todo 0', 'the todos are documents',
+                     "TODO_NAME's own pattern, todo\\.md", 'decision 33, requirement R42'):
+            with self.subTest(line=line):
+                self.assertEqual(lines_naming_a_todo(line), [])
+
+
 class PyrightConfiguration(unittest.TestCase):
     """The configuration, not pyright: `make pyright` runs the tool and skips without it."""
 

@@ -161,7 +161,7 @@ After 3 produces something.
   - [ ] 7.3.13 The FHSDK's requirements and a capability API per model, and code that names no todo: [plan 015](docs/plans/015-requirements-and-capabilities.md), [decision 33](docs/decisions.md#d33)
     - [x] 7.3.13.1 The requirements and every bench model's status as data, `docs/remote-requirements.md` generated from it, and the capability API
     - [x] 7.3.13.2 The sweep: no todo named in code or tests, each reason written out or pointed at the reference, a decision or a requirement
-    - [ ] 7.3.13.3 The guard test, with what remains as a debt list that only goes down
+    - [x] 7.3.13.3 The guard test, with what remains as a debt list that only goes down
     - [ ] 7.3.13.4 `todo.md` restructured around the FHSDK, per plan 015
 
 ---

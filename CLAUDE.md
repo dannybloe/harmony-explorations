@@ -620,7 +620,8 @@ file's own header is where its reading lives.
   the evidence is outside the code: a fact about the remote's own behaviour points at `reference/`, a deliberate
   refusal at its decision, and work still open at its requirement number in `docs/remote-requirements.md`. **This
   is the one most easily broken**, because the todo item is what a session is working on and naming it feels like
-  provenance: 1575 mentions in 610 files had piled up before it was written down. Documents may name todos.
+  provenance: 2067 lines in 697 files had piled up before it was written down. Documents may name todos.
+  `CodeAndTestsNameNoTodo` in `tests/project/test_toolchain.py` holds it, with the three lines that may stay listed.
 * **When something new is confirmed, four things happen together**: the fact in its home in
   `reference/` with its footnote; the argument in the header of its regression test, since the archive
   takes nothing new, which the `[^t-name]` footnote links; the regression test; and a sweep of every
