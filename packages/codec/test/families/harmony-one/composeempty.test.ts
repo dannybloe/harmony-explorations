@@ -1,6 +1,5 @@
 /**
- * The test setup composed onto the empty Harmony One, `todo-compile-one.md` 8.1.1, 8.1.2 and 8.1.4, findings section
- * 435: the seven devices and five activities of `composesetup.test.ts`, onto `buildEmptyOneConfiguration` (section
+ * The test setup composed onto the empty Harmony One, findings section 435: the seven devices and five activities of `composesetup.test.ts`, onto `buildEmptyOneConfiguration` (section
  * 434) rather than a Logitech compile, so the donor holds no byte of Logitech's and nothing is lettered or redrawn.
  *
  * **What is held on the composition**: its steps, with no lettering step and no step turning Logitech's pictures into
@@ -123,9 +122,9 @@ const NEEDS = { skip: skipWithoutIrArchive().skip };
 const NEEDS_DONOR = { skip: skipUnless('harvest_one_two_devices').skip || skipWithoutIrArchive().skip };
 
 // ---------------------------------------------------------------------------------------------------------
-// 8.1.2, the composition.
+// The composition.
 
-test('8.1.2: the One test setup composed onto the empty One is not lettered and draws no Logitech picture over, its letters the stated table\'s, and passes every check at 905173 bytes',
+test('the One test setup composed onto the empty One is not lettered and draws no Logitech picture over, its letters the stated table\'s, and passes every check at 905173 bytes',
      slow(NEEDS), () => {
   const out = composed();
   const c = out.container;
@@ -162,7 +161,7 @@ test('8.1.2: the One test setup composed onto the empty One is not lettered and 
   assert.equal(c.blob.length, 905173);
 });
 
-test('8.1.2: a donor is ours where its font table is the stated one, the empty One unblended, and not a Logitech compile or the empty One blended',
+test('a donor is ours where its font table is the stated one, the empty One unblended, and not a Logitech compile or the empty One blended',
      NEEDS_DONOR, () => {
   assert.equal(oneDonorFaces(empty().container, ONE_CHOICES)?.length, 18);
   assert.equal(oneDonorFaces(compile('harvest_one_two_devices'), ONE_CHOICES), undefined);
@@ -171,7 +170,7 @@ test('8.1.2: a donor is ours where its font table is the stated one, the empty O
     /a donor of ours holds 29 font sets where the stated table holds 18, so it is blended/);
 });
 
-test('8.1.2: the unblended empty One, the donor, is every byte made by a generator and none carried',
+test('the unblended empty One, the donor, is every byte made by a generator and none carried',
      () => {
   const a = oneAttributedBytes(empty().container, []);
   assert.deepEqual(Object.fromEntries(a.carried), {});
@@ -179,9 +178,9 @@ test('8.1.2: the unblended empty One, the donor, is every byte made by a generat
 });
 
 // ---------------------------------------------------------------------------------------------------------
-// 8.1.4, carried.
+// What is carried.
 
-test('8.1.4: the setup composed onto the empty One carries no byte of its donor, where the census without the builders\' attribution finds the donor\'s units all over it',
+test('the setup composed onto the empty One carries no byte of its donor, where the census without the builders\' attribution finds the donor\'s units all over it',
      NEEDS, () => {
   const c = composed().container;
   assert.deepEqual(carried(c, empty().container, written()), {});
@@ -193,7 +192,7 @@ test('8.1.4: the setup composed onto the empty One carries no byte of its donor,
   assert.equal(Object.values(uncredited).reduce((n, one) => n + one, 0), UNCREDITED);
 });
 
-test('8.1.4: of the bytes nothing on the path wrote, the composed file shares with Logitech\'s compile of two devices only 130 send lists, 910 bytes, the device composer\'s sends to devices 0 and 1, 65 each, neither device the same',
+test('of the bytes nothing on the path wrote, the composed file shares with Logitech\'s compile of two devices only 130 send lists, 910 bytes, the device composer\'s sends to devices 0 and 1, 65 each, neither device the same',
      NEEDS_DONOR, () => {
   const c = composed().container;
   // The census against the compile the donor path composes onto. The donor here holds no byte of Logitech's and the
@@ -224,7 +223,7 @@ test('8.1.4: of the bytes nothing on the path wrote, the composed file shares wi
   assert.deepEqual(devices(compile('harvest_one_two_devices')).map((one) => one.name), ['LG_OLED65G26LA', 'Denon_AVR-X4800H']);
 });
 
-test('8.1.4: the lists nothing in the composed setup reaches are 16, all the composers\', the commands no key binds and five base slot 9 selections, and none the donor\'s, where the donor path keeps 34 of Logitech\'s',
+test('the lists nothing in the composed setup reaches are 16, all the composers\', the commands no key binds and five base slot 9 selections, and none the donor\'s, where the donor path keeps 34 of Logitech\'s',
      NEEDS, () => {
   const c = composed().container;
   const lists = c.actionLists()!;
@@ -245,7 +244,7 @@ test('8.1.4: the lists nothing in the composed setup reaches are 16, all the com
     '1f ff08', '1f ff09', '1f ff0a', '1f ff0b', '1f ff0c']);
 });
 
-test('8.1.1: the composed setup\'s power off help asks about its seven devices in the order composed, its lists numbered as Logitech\'s compiles number a question\'s',
+test('the composed setup\'s power off help asks about its seven devices in the order composed, its lists numbered as Logitech\'s compiles number a question\'s',
      NEEDS, () => {
   const c = composed().container;
   const layout = takeApart(c);
@@ -271,9 +270,9 @@ function helpListsHold(c: Container, d: ReturnType<typeof describeOneHelpScreens
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// 8.1.1, what the composers state, held on Logitech's compiles.
+// What the composers state, held on Logitech's compiles.
 
-test('8.1.1: on all nineteen Harmony One compiles the menu marker the rows write is the variable the idle Devices key\'s list writes last, nine variables over them',
+test('on all nineteen Harmony One compiles the menu marker the rows write is the variable the idle Devices key\'s list writes last, nine variables over them',
      skipUnless(...NINETEEN), () => {
   const markers = NINETEEN.map((name) => {
     const c = compile(name);
@@ -294,7 +293,7 @@ test('8.1.1: on all nineteen Harmony One compiles the menu marker the rows write
   assert.equal(oneMenuMarkerWriter(parse(bytes)), undefined);
 });
 
-test('8.1.1: on the fifteen English compiles holding a device page, every device page\'s shared numbers are the ones its key names, and they are not one set of numbers',
+test('on the fifteen English compiles holding a device page, every device page\'s shared numbers are the ones its key names, and they are not one set of numbers',
      slow(skipUnless(...SIXTEEN)), () => {
   const names = withDevicePages();
   assert.equal(names.length, 15);
@@ -321,7 +320,7 @@ test('8.1.1: on the fifteen English compiles holding a device page, every device
 });
 
 
-test('8.1.1: on each compile walked of the fifteen, the pair on a step and all fifteen in the slow tier, each off list a device page or a power off question leaves by is the only list of its content',
+test('on each compile walked of the fifteen, the pair on a step and all fifteen in the slow tier, each off list a device page or a power off question leaves by is the only list of its content',
      skipUnless(...SIXTEEN), () => {
   for (const name of withDevicePages(sampled(ONE_SKIN_54_FAMILY))) {
     const c = compile(name);
@@ -348,7 +347,7 @@ test('8.1.1: on each compile walked of the fifteen, the pair on a step and all f
   assert.notDeepEqual(listsHolding(c, offList([6], wiring.variables.keyLight7!)), [roles.get('page keys off')]);
 });
 
-test('8.1.1: on the fifteen, a device page draws in the device lists\' title and left fonts, the activity menu\'s right font, the fixed screens\' item font and the One11 set in the title\'s colours',
+test('on the fifteen, a device page draws in the device lists\' title and left fonts, the activity menu\'s right font, the fixed screens\' item font and the One11 set in the title\'s colours',
      slow(skipUnless(...SIXTEEN)), () => {
   let counted = 0;
   for (const name of withDevicePages()) {
@@ -371,7 +370,7 @@ test('8.1.1: on the fifteen, a device page draws in the device lists\' title and
 });
 
 
-test('8.1.1: on the sixteen, a device list\'s rows are drawn in the fixed screens\' wide font and not their item font',
+test('on the sixteen, a device list\'s rows are drawn in the fixed screens\' wide font and not their item font',
      skipUnless(...SIXTEEN), () => {
   for (const name of SIXTEEN) {
     const c = compile(name);

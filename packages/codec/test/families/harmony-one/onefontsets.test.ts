@@ -1,5 +1,5 @@
 /**
- * The Harmony One's font table stated rather than read off a donor, `todo-compile-one.md` 7.1.1, findings section 427.
+ * The Harmony One's font table stated rather than read off a donor, findings section 427.
  *
  * Three claims. The sixteen English compiles of skin 54 hold sixteen sets in common, each found by the role a
  * builder's description reads and each the face and colours `ONE_FONT_SETS` states, and two more exactly where

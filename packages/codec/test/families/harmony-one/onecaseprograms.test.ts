@@ -1,6 +1,6 @@
 /**
  * The Harmony One's base slot 11 case programs, their lists and the table, built from a description,
- * `todo-compile-one.md` 6.6, findings section 416.
+ * findings section 416.
  *
  * **The blind control makes "generated" a test**, as sections 409 to 414 did: every byte of the case programs,
  * their lists and the table that the description does not read is overwritten, in the file the description reads
@@ -80,18 +80,18 @@ const EXPECTED: Readonly<Record<string, { records: number; cases: number; lists:
   one_friend_asfound_config: { records: 16, cases: 25, lists: 7, entries: 33, described: 28, structure: 509 },
 };
 
-test('todo-compile-one 6.6: the case programs, their lists and base slot 11\'s table of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description',
+test('the case programs, their lists and base slot 11\'s table of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description',
      skipUnless(...NAMES), () => {
   assert.equal(ONE_VALUE_MAP_ROLES.length, 16);
   for (const name of NAMES) assert.deepEqual(checkOneCasePrograms(parse(require_(name))), EXPECTED[name], name);
 });
 
-test('todo-compile-one 6.6: beyond the sixteen, the everyday One\'s compile with no start up toggle, the European factory file and the Dutch compile rebuild byte for byte too',
+test('beyond the sixteen, the everyday One\'s compile with no start up toggle, the European factory file and the Dutch compile rebuild byte for byte too',
      skipUnless(...BEYOND), () => {
   for (const name of BEYOND) assert.deepEqual(checkOneCasePrograms(parse(require_(name))), EXPECTED[name], name);
 });
 
-test('todo-compile-one 6.6: on all nineteen every value map takes exactly one role, sixteen roles on eighteen and fifteen on the everyday One\'s compile, which has no start up toggle, in four orders',
+test('on all nineteen every value map takes exactly one role, sixteen roles on eighteen and fifteen on the everyday One\'s compile, which has no start up toggle, in four orders',
      skipUnless(...ALL), () => {
   const counts = new Map<number, number>();
   const orders = new Map<string, number>();
@@ -111,7 +111,7 @@ test('todo-compile-one 6.6: on all nineteen every value map takes exactly one ro
   assert.deepEqual([...orders.values()].sort((a, b) => b - a), [11, 4, 3, 1]);
 });
 
-test('todo-compile-one 6.6: the table is the clock header\'s four programs at their entries, then every value map case\'s program in base slot 14\'s order, each record\'s cases as stored and its ranges after, no program twice: 805 entries over the nineteen, four plus our cases plus four per activity on each, and only the four run by entry',
+test('the table is the clock header\'s four programs at their entries, then every value map case\'s program in base slot 14\'s order, each record\'s cases as stored and its ranges after, no program twice: 805 entries over the nineteen, four plus our cases plus four per activity on each, and only the four run by entry',
      skipUnless(...ALL), () => {
   let entries = 0;
   let queued = 0;
@@ -151,7 +151,7 @@ test('todo-compile-one 6.6: the table is the clock header\'s four programs at th
   assert.deepEqual({ queued, beyond }, { queued: 19806, beyond: 0 });
 });
 
-test('todo-compile-one 6.6: the activities\' cases, not built here, are one per activity in each of devices, its unread copy, working and select, 64 activities and 256 cases over the nineteen, and select holds none at the idle value',
+test('the activities\' cases, not built here, are one per activity in each of devices, its unread copy, working and select, 64 activities and 256 cases over the nineteen, and select holds none at the idle value',
      skipUnless(...ALL), () => {
   const perRole = new Map<string, number>();
   let activities = 0;
@@ -173,7 +173,7 @@ test('todo-compile-one 6.6: the activities\' cases, not built here, are one per 
   assert.deepEqual(Object.fromEntries(perRole), { devices: 64, 'devices unread': 64, working: 64, select: 64 });
 });
 
-test('todo-compile-one 6.6: the unread copy of devices holds the same cases as devices and no instruction looks it up, and help is looked up by one handler set\'s tag 0xA6 alone, on the location, on all nineteen',
+test('the unread copy of devices holds the same cases as devices and no instruction looks it up, and help is looked up by one handler set\'s tag 0xA6 alone, on the location, on all nineteen',
      skipUnless(...ALL), () => {
   let unread = 0;
   let help = 0;
@@ -221,7 +221,7 @@ test('todo-compile-one 6.6: the unread copy of devices holds the same cases as d
   assert.equal(help, 19);
 });
 
-test('todo-compile-one 6.6: the all off writes 0 into every power variable, as the end with none, the write with one and a list with several: 1, 2 and 16 of the nineteen',
+test('the all off writes 0 into every power variable, as the end with none, the write with one and a list with several: 1, 2 and 16 of the nineteen',
      skipUnless(...ALL), () => {
   const forms = new Map<string, number>();
   for (const name of ALL) {
@@ -237,7 +237,7 @@ test('todo-compile-one 6.6: the all off writes 0 into every power variable, as t
   assert.deepEqual(Object.fromEntries(forms), { list: 16, write: 2, end: 1 });
 });
 
-test('todo-compile-one 6.6: the case programs are laid out in table order, back to back, in two runs, the frames the second, on all nineteen',
+test('the case programs are laid out in table order, back to back, in two runs, the frames the second, on all nineteen',
      skipUnless(...ALL), () => {
   for (const name of ALL) {
     const c = parse(require_(name));
@@ -260,7 +260,7 @@ test('todo-compile-one 6.6: the case programs are laid out in table order, back 
   }
 });
 
-test('todo-compile-one 6.6: a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the case programs, their lists or the table outside the description reaches the build',
+test('a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the case programs, their lists or the table outside the description reaches the build',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   const walked = sampled(ONE_SKIN_54_FAMILY);
   const totals = { structure: 0, described: 0, blinded: 0 };
@@ -301,7 +301,7 @@ test('todo-compile-one 6.6: a blinded input rebuilds each of the sixteen walked,
   if (walked.length === NAMES.length) assert.deepEqual(totals, { structure: 8720, described: 487, blinded: 8233 });
 });
 
-test('todo-compile-one 6.6: a description with the page lists swapped, devices\' record, the sound variable or the all off\'s order changed, or the header\'s entries reordered, is refused by the rebuild, and one with the idle value moved, a case built for another value or a list it does not hold by the put back; the records of the roles nothing built names change nothing',
+test('a description with the page lists swapped, devices\' record, the sound variable or the all off\'s order changed, or the header\'s entries reordered, is refused by the rebuild, and one with the idle value moved, a case built for another value or a list it does not hold by the put back; the records of the roles nothing built names change nothing',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   type Described = ReturnType<typeof describeOneCasePrograms>;

@@ -1,5 +1,5 @@
 /**
- * The Harmony One's activity screens built whole from a description, `todo-compile-one.md` 4.3, findings section 423:
+ * The Harmony One's activity screens built whole from a description, findings section 423:
  * every activity's start up screen and working screen, their own key maps, chromes, pages, the lists they run but a
  * pad's command, the copies and the hit pages, every byte from the activities' names, their pads' label lines and
  * what each pad runs, and the configuration's numbering.
@@ -77,7 +77,7 @@ const ENGLISH = Object.keys(ACTIVITIES);
 const SKIN_54 = ENGLISH.filter((name) => name !== 'one_config' && name !== 'one_config_unprogrammed');
 const DUTCH = 'one_friend_asfound_config';
 
-test('todo-compile-one 4.3: the activity screens of the fourteen English Harmony One compiles that hold an activity are rebuilt byte for byte from a description, 63 activities\' start up and working screens (the four compiles of devices alone hold none and contribute nothing), and the Dutch compile is refused by its words',
+test('the activity screens of the fourteen English Harmony One compiles that hold an activity are rebuilt byte for byte from a description, 63 activities\' start up and working screens (the four compiles of devices alone hold none and contribute nothing), and the Dutch compile is refused by its words',
      skipUnless(...ENGLISH, DUTCH), () => {
   assert.equal(SKIN_54.length, 16);
   const tally = {
@@ -132,7 +132,7 @@ test('todo-compile-one 4.3: the activity screens of the fourteen English Harmony
   assert.throws(() => checkOneActivityScreens(parse(require_(DUTCH))), /is titled 'Bezig met starten.*', not 'Starting' and a name/);
 });
 
-test('todo-compile-one 4.3: the working screens the One family\'s working record enters are the inventory\'s activity screens on every compile with an activity, and one start up screen stands beside each',
+test('the working screens the One family\'s working record enters are the inventory\'s activity screens on every compile with an activity, and one start up screen stands beside each',
      skipUnless(...ENGLISH), () => {
   let compiles = 0;
   for (const name of ENGLISH) {
@@ -146,7 +146,7 @@ test('todo-compile-one 4.3: the working screens the One family\'s working record
   assert.equal(compiles, 14);
 });
 
-test('todo-compile-one 4.3: a blinded input rebuilds the activity screens of the fourteen compiles that hold an activity: no byte of them outside the description reaches the build, 63603 of the 69417 blinded landing in the layout the builder starts from',
+test('a blinded input rebuilds the activity screens of the fourteen compiles that hold an activity: no byte of them outside the description reaches the build, 63603 of the 69417 blinded landing in the layout the builder starts from',
      skipUnless(...ENGLISH), () => {
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0, landed: 0 };
   for (const name of ENGLISH) {
@@ -195,7 +195,7 @@ test('todo-compile-one 4.3: a blinded input rebuilds the activity screens of the
  */
 const BLIND = { structure: 91037, inside: 21620, outside: 1282, blinded: 69417, landed: 63603 };
 
-test('todo-compile-one 4.3: a description with two labels swapped, a pad dropped, the favourites taken away, instruction 1 taken away, the title\'s blank made a space, our select before every pad, or a page of other shape named to the start up screen\'s hit page is refused, by the builder or the byte comparison',
+test('a description with two labels swapped, a pad dropped, the favourites taken away, instruction 1 taken away, the title\'s blank made a space, our select before every pad, or a page of other shape named to the start up screen\'s hit page is refused, by the builder or the byte comparison',
      skipUnless('calibration_favchannels'), () => {
   const c = parse(require_('calibration_favchannels'));
   type Spec = ReturnType<typeof describeOneActivityScreens>['spec'];
@@ -233,7 +233,7 @@ test('todo-compile-one 4.3: a description with two labels swapped, a pad dropped
   }), /two activity screen pages of other shapes are both hit page/);
 });
 
-test('todo-compile-one 4.3: screen instruction 1 is on an activity\'s working screen exactly when its start up icon is one picture, 23 of 23 and 0 of 41 on the 64 activities of the fifteen compiles with one, a correlation over 8 icons and not a derivation',
+test('screen instruction 1 is on an activity\'s working screen exactly when its start up icon is one picture, 23 of 23 and 0 of 41 on the 64 activities of the fifteen compiles with one, a correlation over 8 icons and not a derivation',
      skipUnless(...ENGLISH, DUTCH), () => {
   // Found by the picture's content and never by the activity's name: the start up page's third picture, after the full
   // screen picture and the signal, is the type's icon. The 64th activity is the Dutch compile's.
@@ -272,7 +272,7 @@ test('todo-compile-one 4.3: screen instruction 1 is on an activity\'s working sc
 /** Pads to compose, with labels our letters spell, each calling one of the compile's lists. */
 const ROWS = ['Power', 'Mute', 'Input', 'Menu', 'Guide', 'Info', 'Exit', 'Back'].map((label, k) => ({ label, list: 1 + k }));
 
-test('todo-compile-one 4.3: an activity composed onto a Logitech compile lettered in ours, with no activity or with eight, takes screens this rebuilds byte for byte with Logitech\'s, in our look',
+test('an activity composed onto a Logitech compile lettered in ours, with no activity or with eight, takes screens this rebuilds byte for byte with Logitech\'s, in our look',
      skipUnless('harvest_one_two_devices', 'one_config'), () => {
   for (const [name, held] of [['harvest_one_two_devices', 0], ['one_config', 8]] as const) {
     const start = parse(letterOneDonor(parse(require_(name)), ONE_CHOICES).bytes);

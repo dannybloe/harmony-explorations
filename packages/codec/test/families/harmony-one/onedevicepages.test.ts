@@ -1,5 +1,5 @@
 /**
- * The Harmony One's device pages built whole from a description, `todo-compile-one.md` 4.2, findings section 420:
+ * The Harmony One's device pages built whole from a description, findings section 420:
  * every device mode's own key map (the device's map of the hard keys, section 271), its chrome, its pages of pads
  * and the keys below the screen, their lists and copies, the lists those run but a pad's command, and the hit pages,
  * every byte from the devices' names, their label lines, the keys they bind and the configuration's numbering.
@@ -72,7 +72,7 @@ const DEVICES: Record<string, [number, number, number, number, number, number, n
 const ENGLISH = Object.keys(DEVICES);
 const DUTCH = 'one_friend_asfound_config';
 
-test('todo-compile-one 4.2: the device pages of all eighteen English Harmony One compiles are rebuilt byte for byte from a description, 89 device modes of one to 22 pages, and the Dutch compile is refused by its words',
+test('the device pages of all eighteen English Harmony One compiles are rebuilt byte for byte from a description, 89 device modes of one to 22 pages, and the Dutch compile is refused by its words',
      skipUnless(...ENGLISH, DUTCH), () => {
   let modes = 0;
   let longest = 0;
@@ -109,7 +109,7 @@ test('todo-compile-one 4.2: the device pages of all eighteen English Harmony One
   assert.throws(() => checkOneDevicePages(parse(require_(DUTCH))), /font 14 has no glyph for 'e'/);
 });
 
-test('todo-compile-one 4.2: harvest_one_families_1\'s mode 73 is a device page by shape that the device reader names no device for, and the template rebuilds it byte for byte when it is named, one mode of 44 pages and 263 pads',
+test('harvest_one_families_1\'s mode 73 is a device page by shape that the device reader names no device for, and the template rebuilds it byte for byte when it is named, one mode of 44 pages and 263 pads',
      skipUnless('harvest_one_families_1'), () => {
   // Found by the blind re-measure of section 420: the compile's two devices carry no mode in `devices`, so the
   // builder, which takes its modes from that reader, builds none there and the mode stays as it was. Named by hand
@@ -127,7 +127,7 @@ test('todo-compile-one 4.2: harvest_one_families_1\'s mode 73 is a device page b
                    [1, 44, 263, 4 * 1 + 2 * 44 + 2 * 263 + 3, 15848]);
 });
 
-test('todo-compile-one 4.2: a blinded input rebuilds the device pages of all eighteen: no byte of them outside the description reaches the build',
+test('a blinded input rebuilds the device pages of all eighteen: no byte of them outside the description reaches the build',
      skipUnless(...ENGLISH), () => {
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
   for (const name of ENGLISH) {
@@ -169,7 +169,7 @@ test('todo-compile-one 4.2: a blinded input rebuilds the device pages of all eig
  */
 const BLIND = { structure: 225511, inside: 84887, outside: 2112, blinded: 140624 };
 
-test('todo-compile-one 4.2: a description with two labels swapped, a pad dropped, a key\'s command moved, two pads given one list, the key fonts swapped, our select before every pad, or two pages of other shapes named to one hit page is refused, by the builder or the byte comparison',
+test('a description with two labels swapped, a pad dropped, a key\'s command moved, two pads given one list, the key fonts swapped, our select before every pad, or two pages of other shapes named to one hit page is refused, by the builder or the byte comparison',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   type Spec = ReturnType<typeof describeOneDevicePages>['spec'];
@@ -228,7 +228,7 @@ function composeOne(c: Container, label: string, count: number, keys?: ReadonlyM
   return parse(composeDeviceScreen(parse(device.bytes), label, rows, { compiled: { title: label, keys: keys ?? new Map([[3, device.lists[1]!]]) } }).bytes);
 }
 
-test('todo-compile-one 4.2 and 3.2.2.8: devices composed onto a Logitech compile take pages this rebuilds byte for byte, Logitech\'s and ours, one page and two, each page on the hit page of its shape',
+test('devices composed onto a Logitech compile take pages this rebuilds byte for byte, Logitech\'s and ours, one page and two, each page on the hit page of its shape',
      skipUnless('one_config'), () => {
   // Lettered in ours first, as the composed path letters its donor, `letterOneDonor`: a Logitech compile's fonts
   // hold the letters its own texts use and no others.

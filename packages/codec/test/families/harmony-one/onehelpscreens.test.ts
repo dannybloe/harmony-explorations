@@ -1,5 +1,5 @@
 /**
- * The Harmony One's power off help built from a description, `todo-compile-one.md` 4.6, findings section 415: the
+ * The Harmony One's power off help built from a description, findings section 415: the
  * screens Help runs while nothing is on, the attempt screen, the "If not" question and four questions per device,
  * built so that a configuration of ours can carry them as Logitech's does.
  *
@@ -43,7 +43,7 @@ import { listsBelow } from './screenlists.ts';
 import { ONE } from '../../../src/families/harmony-one/index.ts';
 import '../../../src/support/resources.node.ts';
 
-test('todo-compile-one 3.2.2.4: on the test setup\'s donor lettered in ours the attempt line, 177 pixels, breaks in two by the questions\' wrap at 171 and the "If not" paragraph flows onto three lines of its own, each block centred again, where the engine refused the attempt line, which would start at x -1',
+test('on the test setup\'s donor lettered in ours the attempt line, 177 pixels, breaks in two by the questions\' wrap at 171 and the "If not" paragraph flows onto three lines of its own, each block centred again, where the engine refused the attempt line, which would start at x -1',
      skipUnless('harvest_one_two_devices'), () => {
   // As `composeSetup` letters the donor before anything is composed, section 415.
   const lettered = parse(ONE.composedLook!.letterDonor(parse(require_('harvest_one_two_devices')), ONE.choices).bytes);
@@ -126,7 +126,7 @@ const OURS = [
 const IF_NOT_DRAWN = ['Did that fix the problem? 16,119', 'If not, the remote will ask 13,143', 'you questions to help correct 4,155', 'the problem. 51,167'];
 const ENGLISH = [...SIXTEEN, ...Object.keys(EUROPEAN)];
 
-test('todo-compile-one 3.2.2.4: the power off help\'s own words wrapped at the questions\' 171 pixels in Logitech\'s letters give Logitech\'s own lines on all eighteen English compiles, each paragraph flowed as one, the attempt line one line at 170, the widest; and each compile rebuilds byte for byte',
+test('the power off help\'s own words wrapped at the questions\' 171 pixels in Logitech\'s letters give Logitech\'s own lines on all eighteen English compiles, each paragraph flowed as one, the attempt line one line at 170, the widest; and each compile rebuilds byte for byte',
      skipUnless(...ENGLISH), () => {
   let widest = 0;
   for (const name of ENGLISH) {
@@ -143,7 +143,7 @@ test('todo-compile-one 3.2.2.4: the power off help\'s own words wrapped at the q
   assert.equal(widest, 170);
 });
 
-test('todo-compile-one 3.2.2.4: on every English compile with a device the chain\'s numbers read by role give back the description\'s, each role one value throughout, which is what numbers a composed device\'s questions; a role held two ways is refused',
+test('on every English compile with a device the chain\'s numbers read by role give back the description\'s, each role one value throughout, which is what numbers a composed device\'s questions; a role held two ways is refused',
      skipUnless(...ENGLISH), () => {
   let chains = 0;
   for (const name of ENGLISH) {
@@ -167,7 +167,7 @@ test('todo-compile-one 3.2.2.4: on every English compile with a device the chain
     (error: Error) => error instanceof ScreenRecordError && /^Help If Not holds 18 as its question timer where the chain's other screens hold 19$/.test(error.message));
 });
 
-test('todo-compile-one 4.6: the power off help of the sixteen English compiles of skin 54 is rebuilt byte for byte from a description, 4n + 2 screens for n devices and the two of the household with none, 332 screens and 2589 lists over the sixteen',
+test('the power off help of the sixteen English compiles of skin 54 is rebuilt byte for byte from a description, 4n + 2 screens for n devices and the two of the household with none, 332 screens and 2589 lists over the sixteen',
      skipUnless(...SIXTEEN), () => {
   const totals = { devices: 0, screens: 0, lists: 0 };
   for (const name of SIXTEEN) {
@@ -181,7 +181,7 @@ test('todo-compile-one 4.6: the power off help of the sixteen English compiles o
   assert.deepEqual(totals, { devices: 75, screens: 332, lists: 2589 });
 });
 
-test('todo-compile-one 4.6: beyond the sixteen, both European compiles rebuild the same way, and the Dutch compile is refused, its attempt screen drawing other words',
+test('beyond the sixteen, both European compiles rebuild the same way, and the Dutch compile is refused, its attempt screen drawing other words',
      skipUnless(...Object.keys(EUROPEAN), DUTCH), () => {
   for (const [name, want] of Object.entries(EUROPEAN)) assert.deepEqual(checkOneHelpScreens(parse(require_(name))), want, name);
   // No language branch: the attempt screen is found by its English words, and the Dutch compile draws its own.
@@ -210,7 +210,7 @@ function textsOf(c: Container, mode: number): { word: string; x: number; y: numb
   return out.filter((t) => t.x !== -1);
 }
 
-test('todo-compile-one 4.6: every text of the power off help sits by the rules on all eighteen English compiles: the title at 6, 4 twice, questions centred rounded down in a block centred on y 143, "Yes" and "No" on the halves at y 201, the attempt\'s first line at y 43 and its other two centred on y 168',
+test('every text of the power off help sits by the rules on all eighteen English compiles: the title at 6, 4 twice, questions centred rounded down in a block centred on y 143, "Yes" and "No" on the halves at y 201, the attempt\'s first line at y 43 and its other two centred on y 168',
      skipUnless(...ENGLISH), () => {
   let texts = 0;
   let odd = 0;
@@ -269,7 +269,7 @@ function questions(c: Container): { lines: string[]; font: number }[] {
   return out;
 }
 
-test('todo-compile-one 4.6: every help question of the eighteen English compiles, on, off or an input, the power off help\'s and every activity\'s, breaks into the lines drawn by one greedy wrap at 171 pixels, at spaces and after hyphens; 171 is the widest line drawn and 172 the narrowest a next piece makes',
+test('every help question of the eighteen English compiles, on, off or an input, the power off help\'s and every activity\'s, breaks into the lines drawn by one greedy wrap at 171 pixels, at spaces and after hyphens; 171 is the widest line drawn and 172 the narrowest a next piece makes',
      skipUnless(...ENGLISH), () => {
   let all = 0;
   let wrapped = 0;
@@ -296,7 +296,7 @@ test('todo-compile-one 4.6: every help question of the eighteen English compiles
   assert.deepEqual({ all, wrapped, widest, narrowestOver }, { all: 957, wrapped: 426, widest: 171, narrowestOver: 172 });
 });
 
-test('todo-compile-one 4.6: on the eighteen English compiles the attempt screen resends the power off lists of exactly the devices whose first question resends them, in the chain\'s order, and every screen titled "PowerOff" is in the chain',
+test('on the eighteen English compiles the attempt screen resends the power off lists of exactly the devices whose first question resends them, in the chain\'s order, and every screen titled "PowerOff" is in the chain',
      skipUnless(...ENGLISH), () => {
   const totals = { devices: 0, resent: 0, twoLists: 0 };
   for (const name of ENGLISH) {
@@ -321,7 +321,7 @@ test('todo-compile-one 4.6: on the eighteen English compiles the attempt screen 
   assert.deepEqual(totals, { devices: 80, resent: 39, twoLists: 1 });
 });
 
-test('todo-compile-one 4.6: of the 80 chain entries of the eighteen English compiles, the 34 whose power is a toggle are not resent unasked and the 39 discrete ones are, and the PS3, discrete, is not, on all seven compiles that hold it',
+test('of the 80 chain entries of the eighteen English compiles, the 34 whose power is a toggle are not resent unasked and the 39 discrete ones are, and the PS3, discrete, is not, on all seven compiles that hold it',
      skipUnless(...ENGLISH), () => {
   // Per entry: its power variable is the one whose change to off sends the codes (0x7D) its power off lists send,
   // and a toggle is a variable whose change to on sends those same codes. Two places, so the reading is checked
@@ -364,7 +364,7 @@ test('todo-compile-one 4.6: of the 80 chain entries of the eighteen English comp
   assert.equal(ps3, 7);
 });
 
-test('todo-compile-one 4.6: with no device in the chain, harvest_one_families_1, "Nothing to do" is entered by one list, the instruction of a three second timer the attempt screen starts first',
+test('with no device in the chain, harvest_one_families_1, "Nothing to do" is entered by one list, the instruction of a three second timer the attempt screen starts first',
      skipUnless('harvest_one_families_1'), () => {
   const c = parse(require_('harvest_one_families_1'));
   const [attempt, nothing] = oneHelpScreenModes(c).modes as [number, number];
@@ -379,7 +379,7 @@ test('todo-compile-one 4.6: with no device in the chain, harvest_one_families_1,
   assert.deepEqual((lists[enter?.operand as number] ?? [])[0], { opcode: 0x1f, operand: 0xeb00 | timer });
 });
 
-test('todo-compile-one 4.6: a blinded input rebuilds all sixteen: no byte of the screens outside the description reaches the build',
+test('a blinded input rebuilds all sixteen: no byte of the screens outside the description reaches the build',
      skipUnless(...SIXTEEN), () => {
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
   for (const name of SIXTEEN) {
@@ -414,7 +414,7 @@ test('todo-compile-one 4.6: a blinded input rebuilds all sixteen: no byte of the
   assert.deepEqual(totals, { structure: 70790, inside: 23702, outside: 2031, blinded: 47088 });
 });
 
-test('todo-compile-one 4.6: a description with a name changed, two devices swapped, a device\'s resend or list count changed, no device sent unasked, a timer moved, a list moved, the two fonts swapped or two screens\' modes swapped is refused, by the builder or the byte comparison',
+test('a description with a name changed, two devices swapped, a device\'s resend or list count changed, no device sent unasked, a timer moved, a list moved, the two fonts swapped or two screens\' modes swapped is refused, by the builder or the byte comparison',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   type Spec = ReturnType<typeof describeOneHelpScreens>['spec'];
@@ -449,7 +449,7 @@ test('todo-compile-one 4.6: a description with a name changed, two devices swapp
   }), moved);
 });
 
-test('todo-compile-one 4.6: the lists built are named by nothing outside the help screens on all eighteen English compiles, and every list below them is reached from outside too, so nothing below is the help screens\' alone',
+test('the lists built are named by nothing outside the help screens on all eighteen English compiles, and every list below them is reached from outside too, so nothing below is the help screens\' alone',
      skipUnless(...ENGLISH), () => {
   const totals = { below: 0, shared: 0 };
   for (const name of ENGLISH) {
@@ -469,7 +469,7 @@ test('todo-compile-one 4.6: the lists built are named by nothing outside the hel
 const areaForm = (areas: readonly { x: number; width: number; y: number; height: number; code: number }[]): string =>
   areas.map((a) => `${a.x},${a.width},${a.y},${a.height}:${a.code}`).join(' ');
 
-test('todo-compile-one 7.1.6: the power off help is touched through three hit pages, the attempt screen\'s, every question\'s and "Nothing to do"\'s, each one page wherever it is named on the sixteen English compiles of skin 54, and built from HELP_HIT_PARTS byte for byte with the screens: 32 pages of 2657 bytes',
+test('the power off help is touched through three hit pages, the attempt screen\'s, every question\'s and "Nothing to do"\'s, each one page wherever it is named on the sixteen English compiles of skin 54, and built from HELP_HIT_PARTS byte for byte with the screens: 32 pages of 2657 bytes',
      skipUnless(...SIXTEEN), () => {
   const kinds = new Map<string, Set<string>>();
   let pages = 0;
@@ -504,7 +504,7 @@ test('todo-compile-one 7.1.6: the power off help is touched through three hit pa
   assert.deepEqual({ pages, bytes }, { pages: 32, bytes: 2657 });
 });
 
-test('todo-compile-one 7.1.6: the attempt screen\'s and the questions\' hit pages swapped in a description are not copied back: the builder puts each kind\'s page at the index it is given and the file differs; and two kinds named to one index are refused',
+test('the attempt screen\'s and the questions\' hit pages swapped in a description are not copied back: the builder puts each kind\'s page at the index it is given and the file differs; and two kinds named to one index are refused',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   const rebuilt = (change: (spec: ReturnType<typeof describeOneHelpScreens>['spec']) => void): Uint8Array => {

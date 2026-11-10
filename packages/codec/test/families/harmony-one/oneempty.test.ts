@@ -1,5 +1,5 @@
 /**
- * The empty Harmony One assembled, `todo-compile-one.md` 7.1.7 to 7.1.9, findings section 434: every part by its
+ * The empty Harmony One assembled, findings section 434: every part by its
  * generator on section 432's numbering, laid out through section 431's skeleton, for the build year it is built in.
  *
  * **What is held, with no lab**: the file parses and passes every container check, takes apart into itself and fits the
@@ -78,9 +78,9 @@ const SIXTEEN = ONE_SKIN_54_FAMILY.full;
 const PLACES = 257;
 
 // ---------------------------------------------------------------------------------------------------------
-// 7.1.7, the file.
+// The file.
 
-test('7.1.7: the empty One parses, passes every container check, takes apart into itself and fits the Harmony One\'s writable region', () => {
+test('the empty One parses, passes every container check, takes apart into itself and fits the Harmony One\'s writable region', () => {
   const { bytes, container: c } = build(BUILT_AT);
   assert.equal(bytes.length, 486460);
   assert.ok(c.allChecksPass);
@@ -94,7 +94,7 @@ test('7.1.7: the empty One parses, passes every container check, takes apart int
   assert.ok(bytes.length <= 0x3d0000 - 0x040000);
 });
 
-test('7.1.7: the empty One holds section 432\'s numbering: 67 modes, 1314 lists, 14 hit pages, 20 one byte variables after the firmware\'s, the assistant started at 0 as Logitech starts it', () => {
+test('the empty One holds section 432\'s numbering: 67 modes, 1314 lists, 14 hit pages, 20 one byte variables after the firmware\'s, the assistant started at 0 as Logitech starts it', () => {
   const built = build(BUILT_AT);
   const c = built.container;
   assert.equal(modeRecords(c)?.length, 67);
@@ -123,7 +123,7 @@ test('7.1.7: the empty One holds section 432\'s numbering: 67 modes, 1314 lists,
   assert.equal(describeOneClockHeader(view, layout).spec.hours, 12);
 });
 
-test('7.1.7: the remote starts on the activity menu, the case its start\'s ready map takes at the location it starts at', () => {
+test('the remote starts on the activity menu, the case its start\'s ready map takes at the location it starts at', () => {
   const built = build(BUILT_AT);
   const c = built.container;
   const ready = valueMaps(c)?.[oneValueMapRoles(c).records.get('menu') as number];
@@ -131,7 +131,7 @@ test('7.1.7: the remote starts on the activity menu, the case its start\'s ready
   assert.deepEqual(start, { opcode: ENTER_MODE, operand: built.numbering.modes.get('activity menu') });
 });
 
-test('7.1.7: the screens to show before a write, the activity menu the remote starts on, the idle device list and Options, render with no picture or glyph missing', () => {
+test('the screens to show before a write, the activity menu the remote starts on, the idle device list and Options, render with no picture or glyph missing', () => {
   const built = build(BUILT_AT);
   const c = built.container;
   const records = modeRecords(c) ?? [];
@@ -145,9 +145,9 @@ test('7.1.7: the screens to show before a write, the activity menu the remote st
 });
 
 // ---------------------------------------------------------------------------------------------------------
-// 7.1.8, every byte attributed.
+// Every byte attributed.
 
-test('7.1.8: every byte of the empty One is made by a generator, frame, letters, table headers and builders, and none carried', () => {
+test('every byte of the empty One is made by a generator, frame, letters, table headers and builders, and none carried', () => {
   const built = build(BUILT_AT);
   const a = oneAttributedBytes(built.container, built.blended);
   assert.deepEqual(Object.fromEntries(a.carried), {});
@@ -160,7 +160,7 @@ test('7.1.8: every byte of the empty One is made by a generator, frame, letters,
   assert.equal(Object.values(a.generated).reduce((n, v) => n + v, 0), a.total);
 });
 
-test('7.1.8, the control: a file whose frame is not the one laying it out again generates is refused, not attributed', () => {
+test('the control: a file whose frame is not the one laying it out again generates is refused, not attributed', () => {
   const built = build(BUILT_AT);
   // A byte of the trailer, the frame claim the parse does not need to find the file's parts: it still takes the file
   // apart, and the checksum no longer agrees.
@@ -173,7 +173,7 @@ test('7.1.8, the control: a file whose frame is not the one laying it out again 
   assert.throws(() => oneAttributedBytes(c, built.blended), (error: Error) => error instanceof EmptyOneError && /does not lay out again into itself/.test(error.message));
 });
 
-test('7.1.8, the control: one byte of one of our glyphs changed is found carried, with the set that names it', () => {
+test('the control: one byte of one of our glyphs changed is found carried, with the set that names it', () => {
   const built = build(BUILT_AT);
   const c = built.container;
   // The set's last code, a character no screen of the empty One spells: a glyph a builder spells would make that
@@ -196,7 +196,7 @@ test('7.1.8, the control: one byte of one of our glyphs changed is found carried
   assert.equal(glyph.length, 73);
 });
 
-test('7.1.8, the control: a picture of Logitech\'s planted in place of ours is found carried, by its owner and every byte of it',
+test('the control: a picture of Logitech\'s planted in place of ours is found carried, by its owner and every byte of it',
   skipUnless('harvest_one_two_devices'), () => {
     const built = build(BUILT_AT);
     const name = 'battery gauge 3';
@@ -216,7 +216,7 @@ test('7.1.8, the control: a picture of Logitech\'s planted in place of ours is f
 // ---------------------------------------------------------------------------------------------------------
 // The build year, a leap year in the Year picker's range.
 
-test('7.1.7: a build year whose Year picker offers a leap year builds, with the leap year\'s Month picker and the Day 29 picker, and every byte attributed', () => {
+test('a build year whose Year picker offers a leap year builds, with the leap year\'s Month picker and the Day 29 picker, and every byte attributed', () => {
   assert.deepEqual(oneFixedScreenNames(2027).slice(23), [LEAP_MONTH, 'Day 29']);
   assert.deepEqual(oneFixedScreenNames(2026), ONE_FIXED_SCREENS);
   const built = build(LEAP_BUILT_AT);
@@ -256,7 +256,7 @@ function entryNames(): (bytes: Uint8Array) => string | undefined {
   };
 }
 
-test('7.1.7: every screen of the empty One draws at each place the picture each of Logitech\'s sixteen walked draws there, the clock header\'s slots too: the pair on a step, all sixteen in the slow tier',
+test('every screen of the empty One draws at each place the picture each of Logitech\'s sixteen walked draws there, the clock header\'s slots too: the pair on a step, all sixteen in the slow tier',
   skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
     const walked = sampled(ONE_SKIN_54_FAMILY);
     const nameOf = entryNames();
@@ -291,7 +291,7 @@ test('7.1.7: every screen of the empty One draws at each place the picture each 
     assert.equal(places, PLACES * walked.length);
   });
 
-test('7.1.9: what no compile of Logitech\'s shows: every One compile read holds a device and an infrared group, the empty One none, and fewer modes, lists and base slot 11 entries than any',
+test('what no compile of Logitech\'s shows: every One compile read holds a device and an infrared group, the empty One none, and fewer modes, lists and base slot 11 entries than any',
   skipUnless(...SIXTEEN, 'one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'), () => {
     const nineteen = [...SIXTEEN, 'one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'].map((name) => parse(require_(name)));
     const census = (c: Container): number[] => [devices(c).length, c.pointerArray(archSlot(12, 5))?.length ?? 0,
@@ -307,7 +307,7 @@ test('7.1.9: what no compile of Logitech\'s shows: every One compile read holds 
     assert.equal(c.blob[c.blobOffsetOf(c.sections[archSlot(12, 5)]?.address as number) as number], 0);
   });
 
-test('7.1.7: "Nothing to do" draws the pictures harvest_one_families_1, the one compile holding it, draws', skipUnless('harvest_one_families_1'), () => {
+test('"Nothing to do" draws the pictures harvest_one_families_1, the one compile holding it, draws', skipUnless('harvest_one_families_1'), () => {
   const c = parse(require_('harvest_one_families_1'));
   const help = describeOneHelpScreens(c, takeApart(c)).spec.screens;
   const nameOf = entryNames();
@@ -317,7 +317,7 @@ test('7.1.7: "Nothing to do" draws the pictures harvest_one_families_1, the one 
   assert.deepEqual(after.places.map((place) => emptyOnePictureAt(after.key, place)), help[1]?.pictures.map((one) => nameOf(one.to.bytes)));
 });
 
-test('7.1.7: mode 0\'s own key map, the key table, is the one all sixteen compiles hold', skipUnless(...SIXTEEN), () => {
+test('mode 0\'s own key map, the key table, is the one all sixteen compiles hold', skipUnless(...SIXTEEN), () => {
   const ours = takeApart(build(BUILT_AT).container).keyTable.bytes;
   for (const compile of SIXTEEN) assert.deepEqual(takeApart(parse(require_(compile))).keyTable.bytes, ours, compile);
 });

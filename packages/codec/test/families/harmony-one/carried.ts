@@ -1,8 +1,8 @@
 /**
- * What a composed Harmony One setup carries out of a Logitech compile, `todo-compile-one.md` 3.2's listing: the census
+ * What a composed Harmony One setup carries out of a Logitech compile, listed by kind: the census
  * that cuts a configuration into units and counts the output's units a donor holds, shared by the setup composed onto
- * Logitech's compile, `composesetup.test.ts`, and the one composed onto the empty One, `composeempty.test.ts`, since
- * `todo-compile-one.md` 8.1.4. Moved here unchanged out of the first, so both count with one census.
+ * Logitech's compile, `composesetup.test.ts`, and the one composed onto the empty One, `composeempty.test.ts`, so
+ * both count with one census.
  */
 import assert from 'node:assert/strict';
 
@@ -13,8 +13,8 @@ import type { DonorDeviceRequest } from '../../../src/compose/composecatalogue.t
 
 /**
  * The bytes nothing on the composed path takes from the donor: the frame computes the header, the section table,
- * the marker, the architecture record, the clock section and the trailer (6.1), and the letterer writes every
- * glyph set (1.2.7), 22 of whose glyphs on this donor, a space in nine sets and shapes such as `.` and `I`, come
+ * the marker, the architecture record, the clock section and the trailer, and the letterer writes every
+ * glyph set, 22 of whose glyphs on this donor, a space in nine sets and shapes such as `.` and `I`, come
  * out byte for byte as Logitech's.
  */
 export const NEVER_CARRIED = new Set(['header', 'section-table', 'marker', 'trailer', 'slot-1-arch', 'slot-3-clock', 'glyph', 'font-set']);
@@ -27,8 +27,8 @@ export interface Unit { kind: string; key: string; skeleton: string; bytes: numb
  * bytes with every address field the census knows zeroed. A unit's skeleton is its key with the texts, fonts,
  * text positions and pictures abstracted, which is what is left of a screen once ours are put in.
  *
- * `built`, per byte, is nonzero where a builder on the composed path reproduces the byte, `oneBuiltBytes`, since
- * `todo-compile-one.md` 3.2.2: a unit counts only its bytes no builder reproduces, and a unit every byte of which
+ * `built`, per byte, is nonzero where a builder on the composed path reproduces the byte, `oneBuiltBytes`: a unit
+ * counts only its bytes no builder reproduces, and a unit every byte of which
  * a builder reproduces is left out, so it neither counts nor takes a donor unit a carried one could match. A
  * builder's part comes out byte for byte as Logitech's in places, the wiring whole, and only this tells it from
  * the donor's.

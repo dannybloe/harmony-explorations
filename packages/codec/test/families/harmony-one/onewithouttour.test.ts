@@ -1,6 +1,6 @@
 /**
- * The welcome tour and the start's Remote Assistant left out of a Harmony One configuration, `todo-compile-one.md`
- * 4.10, `docs/findings.md` section 421, and the list census that leaving anything out of base slot 10 rests on.
+ * The welcome tour and the start's Remote Assistant left out of a Harmony One configuration, `docs/findings.md`
+ * section 421, and the list census that leaving anything out of base slot 10 rests on.
  *
  * **Three things are measured here.** The census, `listCallSites`, over the nineteen Harmony One compiles: since it
  * reads base slots 10 and 8 through `archSlot` it finds the calls inside action lists, which reading raw slots 10
@@ -70,7 +70,7 @@ const CENSUS: Readonly<Record<string, [number, number, number]>> = {
   one_friend_asfound_config: [3281, 90, 774],
 };
 
-test('todo-compile-one 4.10: on each Harmony One compile walked, the pair on a step and all nineteen and their total in the slow tier, every list nothing reaches drops out, none below the start list, with every check passing, the wiring still read, and every list reached after',
+test('on each Harmony One compile walked, the pair on a step and all nineteen and their total in the slow tier, every list nothing reaches drops out, none below the start list, with every check passing, the wiring still read, and every list reached after',
      skipUnless(...SKIN_54, ...BEYOND), () => {
   const walked = sampled(ONE_FAMILY, [...SKIN_54, ...BEYOND]);
   const got: Record<string, [number, number, number]> = {};
@@ -90,12 +90,12 @@ test('todo-compile-one 4.10: on each Harmony One compile walked, the pair on a s
     got[name] = [census.length, d.dropped.length, d.length];
   }
   assert.deepEqual(got, Object.fromEntries(walked.map((name) => [name, CENSUS[name]])));
-  // 102324 places in all; reading raw slots 10 and 8, as the census did before 4.10, found 1553 of the 3067 on the
+  // 102324 places in all; reading raw slots 10 and 8, as the census did before section 421, found 1553 of the 3067 on the
   // donor, none inside an action list, and the drop refused, section 413. A total of all nineteen.
   if (walked.length === ONE_FAMILY.full.length) assert.equal(Object.values(got).reduce((sum, one) => sum + one[0], 0), 102324);
 });
 
-test('todo-compile-one 4.10: on the test setup\'s donor every holder of the census names lists the drop moves and the drop refuses a census short of it, but the leading list, whose one call is the start list',
+test('on the test setup\'s donor every holder of the census names lists the drop moves and the drop refuses a census short of it, but the leading list, whose one call is the start list',
      skipUnless('harvest_one_two_devices'), () => {
   const c = containerOf('harvest_one_two_devices');
   const census = listCallSites(c);
@@ -127,7 +127,7 @@ test('todo-compile-one 4.10: on the test setup\'s donor every holder of the cens
   assert.equal(census.length, 3067);
 });
 
-test('todo-compile-one 4.10: of the 3094 three byte runs `lo hi 7F` naming a list in the donor\'s file the census holds 3067, and the 27 it does not hold sit in no action list: 11 before the first section, 12 in base slot 10\'s address array, 4 in raw slots 4, 6 and 13',
+test('of the 3094 three byte runs `lo hi 7F` naming a list in the donor\'s file the census holds 3067, and the 27 it does not hold sit in no action list: 11 before the first section, 12 in base slot 10\'s address array, 4 in raw slots 4, 6 and 13',
      skipUnless('harvest_one_two_devices'), () => {
   const c = containerOf('harvest_one_two_devices');
   const lists = c.actionLists()!;
@@ -158,8 +158,8 @@ test('todo-compile-one 4.10: of the 3094 three byte runs `lo hi 7F` naming a lis
 // The tour and the Remote Assistant left out
 
 /**
- * Per compile: the bytes the file came down by (six more since `todo-compile-one.md` 4.10.2, Options of one page
- * entering without the page keys' on list, as Logitech's one page screens enter), the lists taken out and their bytes, of those the ones nothing
+ * Per compile: the bytes the file came down by (six more once Options of one page entered without the page keys'
+ * on list, as Logitech's one page screens enter), the lists taken out and their bytes, of those the ones nothing
  * reached before either, and the hit pages taken out. Every compile loses the sixteen modes and the eleven
  * pictures only they drew.
  */
@@ -174,7 +174,7 @@ const LEFT_OUT: Readonly<Record<string, [number, number, number, number, number]
   phase7_before: [245338, 118, 940, 0, 12], phase7_after: [245334, 118, 940, 0, 12],
 };
 
-test('todo-compile-one 4.10: on the sixteen English compiles of skin 54 the tour\'s eleven screens and the Remote Assistant\'s five go with what only they reach, nothing left names any of it, every check holds, and every builder of the family rebuilds the result byte for byte',
+test('on the sixteen English compiles of skin 54 the tour\'s eleven screens and the Remote Assistant\'s five go with what only they reach, nothing left names any of it, every check holds, and every builder of the family rebuilds the result byte for byte',
      slow(skipUnless(...SKIN_54)), () => {
   const got: Record<string, [number, number, number, number, number]> = {};
   for (const name of SKIN_54) {
@@ -208,7 +208,7 @@ test('todo-compile-one 4.10: on the sixteen English compiles of skin 54 the tour
   assert.deepEqual(got, LEFT_OUT);
 });
 
-test('todo-compile-one 4.10: the three compiles beyond the sixteen are refused, by the fixed screens\' finder and the tour\'s',
+test('the three compiles beyond the sixteen are refused, by the fixed screens\' finder and the tour\'s',
      skipUnless(...BEYOND), () => {
   // The European two by the Time of Day picker skin 59 does not hold, since section 434 reads their second Month
   // picker as the leap year's rather than refusing it.
@@ -218,7 +218,7 @@ test('todo-compile-one 4.10: the three compiles beyond the sixteen are refused, 
   assert.throws(() => withoutTourAndAssistant(containerOf('one_friend_asfound_config')), /holds 0 screens of the look of Tour Another Activity, not one/);
 });
 
-test('todo-compile-one 4.10: where a screen that stays draws text by reference into the sixteen, dropping them without first drawing the texts away is refused by the step each compile walked is recorded for, the drop on eleven and the Options step on three of all sixteen in the slow tier, the pair on a step, and the real sequence goes through on every one walked',
+test('where a screen that stays draws text by reference into the sixteen, dropping them without first drawing the texts away is refused by the step each compile walked is recorded for, the drop on eleven and the Options step on three of all sixteen in the slow tier, the pair on a step, and the real sequence goes through on every one walked',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   const walked = sampled(ONE_SKIN_54_FAMILY);
   // The control on `withTextsSharedAway`, per compile, with the step that refuses named. The ladder and Options steps
@@ -256,7 +256,7 @@ test('todo-compile-one 4.10: where a screen that stays draws text by reference i
   for (const name of walked) assert.ok(withoutTourAndAssistant(containerOf(name)).container.allChecksPass, name);
 });
 
-test('todo-compile-one 4.10: Options comes out one page, its three rows Date and Time, Sounds and Screen Sensitivity, without Tutorial or Turn Remote Assistant, its page turn keys swallowed and no page count or number drawn',
+test('Options comes out one page, its three rows Date and Time, Sounds and Screen Sensitivity, without Tutorial or Turn Remote Assistant, its page turn keys swallowed and no page count or number drawn',
      skipUnless('harvest_one_two_devices'), () => {
   const pageOf = (c: Container) => {
     const mode = oneFixedScreenModes(c)[ONE_FIXED_SCREENS.indexOf('Options')]!;
@@ -288,7 +288,7 @@ test('todo-compile-one 4.10: Options comes out one page, its three rows Date and
   assert.deepEqual(after.lists, [['50 7f', '51 72', '48 7f', '49 72']]);
 });
 
-test('todo-compile-one 4.10.2: on each English compile of skin 54 walked, the pair on a step and all sixteen in the slow tier, Options of one page enters as Screen Sensitivity, a screen of one page, does, its timer and the same light list, without the page keys\' on list that two page Options and Month call',
+test('on each English compile of skin 54 walked, the pair on a step and all sixteen in the slow tier, Options of one page enters as Screen Sensitivity, a screen of one page, does, its timer and the same light list, without the page keys\' on list that two page Options and Month call',
      skipUnless(...SKIN_54), () => {
   // Each entering list's steps as `opcode operand`, read through the record reader the builders use.
   const entering = (c: Container, name: string): string[] => {
@@ -321,11 +321,11 @@ test('todo-compile-one 4.10.2: on each English compile of skin 54 walked, the pa
 // ---------------------------------------------------------------------------------------------------------
 // The choice
 
-test('todo-compile-one 4.10: the composed path leaves the tour and the Remote Assistant out unless the family\'s choice keeps them, and kept it builds what it built before',
+test('the composed path leaves the tour and the Remote Assistant out unless the family\'s choice keeps them, and kept it builds what it built before',
      skipUnless('harvest_one_two_devices'), () => {
   assert.equal(ONE_CHOICES.welcomeTour, false);
   const c = containerOf('harvest_one_two_devices');
-  // Logitech's pictures kept, `todo-compile-one.md` 5.3's choice, so what is held here is the tour's choice alone.
+  // Logitech's pictures kept, the family's choice of section 422, so what is held here is the tour's choice alone.
   const kept = withOneComposedBuilders(c, [], { ...ONE_CHOICES, welcomeTour: true, logitechPictures: true }).container;
   assert.equal(Buffer.compare(kept.blob, withOneBuilders(c).container.blob), 0);
   assert.equal(Buffer.compare(kept.blob, c.blob), 0);

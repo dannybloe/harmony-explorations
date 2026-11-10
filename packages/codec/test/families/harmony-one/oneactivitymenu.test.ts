@@ -1,5 +1,5 @@
 /**
- * The Harmony One's activity menu built whole from a description, `todo-compile-one.md` 4.1, findings section 419:
+ * The Harmony One's activity menu built whole from a description, findings section 419:
  * the screen "My Activities" with a row per activity, three to a page, its page lists and their copies, the lists
  * they run, and its hit pages, every byte from the activities' names in menu order and the configuration's numbering.
  *
@@ -79,7 +79,7 @@ const MENUS: Record<string, [number, number, number, number, number, number]> = 
 const ENGLISH = Object.keys(MENUS);
 const DUTCH = 'one_friend_asfound_config';
 
-test('todo-compile-one 4.1: the activity menu of all eighteen English Harmony One compiles is rebuilt byte for byte from a description, menus of 0, 1, 2, 3, 7 and 8 activities, and the Dutch compile is refused by its words',
+test('the activity menu of all eighteen English Harmony One compiles is rebuilt byte for byte from a description, menus of 0, 1, 2, 3, 7 and 8 activities, and the Dutch compile is refused by its words',
      skipUnless(...ENGLISH, DUTCH), () => {
   for (const name of ENGLISH) {
     const got = checkOneActivityMenu(parse(require_(name)));
@@ -95,7 +95,7 @@ test('todo-compile-one 4.1: the activity menu of all eighteen English Harmony On
   assert.throws(() => checkOneActivityMenu(parse(require_(DUTCH))), /font 3 has no glyph for 'A'/);
 });
 
-test('todo-compile-one 4.1: a blinded input rebuilds the activity menu of all eighteen: no byte of the menu outside the description reaches the build',
+test('a blinded input rebuilds the activity menu of all eighteen: no byte of the menu outside the description reaches the build',
      skipUnless(...ENGLISH), () => {
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
   for (const name of ENGLISH) {
@@ -132,7 +132,7 @@ test('todo-compile-one 4.1: a blinded input rebuilds the activity menu of all ei
   assert.deepEqual(totals, { structure: 11474, inside: 2758, outside: 476, blinded: 8716 });
 });
 
-test('todo-compile-one 4.1: a description with two rows swapped, a row dropped, a keypad map moved, two rows given one list, the key fonts swapped or two pages named to one hit page is refused, by the builder or the byte comparison',
+test('a description with two rows swapped, a row dropped, a keypad map moved, two rows given one list, the key fonts swapped or two pages named to one hit page is refused, by the builder or the byte comparison',
      skipUnless('one_spare_myharmony'), () => {
   const c = parse(require_('one_spare_myharmony'));
   type Spec = ReturnType<typeof describeOneActivityMenu>['spec'];
@@ -166,7 +166,7 @@ test('todo-compile-one 4.1: a description with two rows swapped, a row dropped, 
     /two pages of the activity menu of other shapes are both hit page/);
 });
 
-test('todo-compile-one 4.1: on all eighteen English compiles each page\'s hit page is named by no other screen, and its areas are the two keys first on the first page and last on every other, the rows top to bottom, then the two edges',
+test('on all eighteen English compiles each page\'s hit page is named by no other screen, and its areas are the two keys first on the first page and last on every other, the rows top to bottom, then the two edges',
      skipUnless(...ENGLISH), () => {
   for (const name of ENGLISH) {
     const c = parse(require_(name));
@@ -212,7 +212,7 @@ function unnamed(c: Container): number[] {
   return touchPages(c)!.records.flatMap((_, index) => (leads.has(index) ? [] : [index]));
 }
 
-test('todo-compile-one 4.1 and 3.2.2.7: four rows added to a Logitech compile with none by building the whole menu again come out a menu this rebuilds byte for byte each time, from one page to two, every hit page named by something',
+test('four rows added to a Logitech compile with none by building the whole menu again come out a menu this rebuilds byte for byte each time, from one page to two, every hit page named by something',
      skipUnless('harvest_one_two_devices'), () => {
   // Lettered in ours first, as the composed path does, so every name finds its letters.
   const start = parse(letterOneDonor(parse(require_('harvest_one_two_devices')), ONE_CHOICES).bytes);

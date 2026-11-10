@@ -1,6 +1,5 @@
 /**
- * The Harmony One's screen sets numbered by role, and an empty One numbered from nothing: `todo-compile-one.md` 7.1.4,
- * findings section 432.
+ * The Harmony One's screen sets numbered by role, and an empty One numbered from nothing: findings section 432.
  *
  * **The closure first.** On each of the sixteen English compiles of skin 54, every number every screen set an empty
  * One holds takes is read off the compile as a value of a name, `readKeys`, across all the sets at once, so one name
@@ -295,7 +294,7 @@ test('every name read off the sixteen is what an independent reader finds', skip
   assert.deepEqual(Object.fromEntries([...kinds].sort()), { list: 169, map: 128, mode: 587, program: 64, setup: 2313, timer: 561, variable: 256 });
 });
 
-test('the fonts an empty One states are the ones harvest_one_two_devices\' descriptions read, the compile whose order 7.1.1\'s table took', skipUnless('harvest_one_two_devices'), () => {
+test('the fonts an empty One states are the ones harvest_one_two_devices\' descriptions read, the compile whose order the stated font table took', skipUnless('harvest_one_two_devices'), () => {
   const c = containerOf('harvest_one_two_devices');
   const layout = takeApart(c);
   const pick = (fonts: Record<string, number>, of: Record<string, number>): Record<string, number> =>
@@ -383,7 +382,7 @@ test('an empty One\'s screens own 790 lists, numbered end to end after the wirin
   const n = emptyOneNumbering({ year: 2026 });
   assert.equal(n.wiring.nextList, 524);
   assert.equal(n.nextList - n.wiring.nextList, 790);
-  // A stand in for every picture: the builders take where it is, and the look is 7.1.2's.
+  // A stand in for every picture: the builders take where it is, and the look is the rule's alone, section 428.
   const stand = (): PieceTarget => ({ to: { bytes: new Uint8Array([0]), refs: [], owner: 'picture-bank' }, offset: 0 });
   const specs = emptyOneSpecs(n, {
     picture: stand,

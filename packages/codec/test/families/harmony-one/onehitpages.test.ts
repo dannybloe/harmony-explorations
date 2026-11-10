@@ -1,6 +1,5 @@
 /**
- * The Harmony One's hit pages the fixed screens name, built from a description, `todo-compile-one.md` 4.8, findings
- * section 417: the touch map's pages (base slot 17) that the firmware screens, the status screens, the fixed screens,
+ * The Harmony One's hit pages the fixed screens name, built from a description, findings section 417: the touch map's pages (base slot 17) that the firmware screens, the status screens, the fixed screens,
  * the welcome tour and the Remote Assistant are touched through, and the map's table.
  *
  * **The blind control makes "generated" a test**, as sections 409 to 414 did: every byte of the 23 pages and of the
@@ -73,7 +72,7 @@ const pageForm = (areas: readonly { x: number; width: number; y: number; height:
 /** A built hit page's form, as `oneHitPageAreas` generates it. */
 const builtForm = (name: string): string => pageForm(oneHitPageAreas(name).map(({ area, code }) => ({ ...area, code })));
 
-test('todo-compile-one 4.8: the 23 hit pages the fixed screens name are rebuilt byte for byte from a description on the sixteen English compiles of skin 54, the map\'s table with them, 34 of their 79 rectangles stated and the rest generated',
+test('the 23 hit pages the fixed screens name are rebuilt byte for byte from a description on the sixteen English compiles of skin 54, the map\'s table with them, 34 of their 79 rectangles stated and the rest generated',
      skipUnless(...SIXTEEN), () => {
   assert.equal(ONE_HIT_PAGES.length, 23);
   for (const [name, structure] of SKIN_54) {
@@ -84,7 +83,7 @@ test('todo-compile-one 4.8: the 23 hit pages the fixed screens name are rebuilt 
   assert.equal(1500 + 398 + 1 + 3 * 29, 1986);
 });
 
-test('todo-compile-one 4.8: on all nineteen compiles every area\'s code is its place on the page, the two edge strips close every page, every page\'s areas sit in front of its header and are its own, no two pages are one shape, and the table is in first use order',
+test('on all nineteen compiles every area\'s code is its place on the page, the two edge strips close every page, every page\'s areas sit in front of its header and are its own, no two pages are one shape, and the table is in first use order',
      skipUnless(...NINETEEN), () => {
   const totals = { pages: 0, areas: 0, codes: 0, edges: 0, placed: 0, firstUse: 0, unique: 0 };
   for (const name of NINETEEN) {
@@ -144,7 +143,7 @@ function pagesDrawn(c: Container): { mode: number; page: number; have: Set<strin
   return out;
 }
 
-test('todo-compile-one 4.8: on every mode page of the nineteen compiles a button drawn on the grid has its rectangle on the page\'s hit page, 8430 of 8430, and the keys below the screen go with a word there, the right one both ways',
+test('on every mode page of the nineteen compiles a button drawn on the grid has its rectangle on the page\'s hit page, 8430 of 8430, and the keys below the screen go with a word there, the right one both ways',
      skipUnless(...NINETEEN), () => {
   const t = { pages: 0, buttons: 0, found: 0, lowered: 0, cells: 0, cellsFromButtons: 0, leftWord: 0, leftWordArea: 0, leftArea: 0, leftAreaWord: 0, rightWord: 0, rightWordArea: 0, rightArea: 0, rightAreaWord: 0 };
   const strays = new Set<string>();
@@ -187,7 +186,7 @@ function fixedScreenModes(c: Container): number[] {
   return [...ONE_FIRMWARE_SCREENS.map((_, mode) => mode), ...oneStatusScreenModes(c), ...oneFixedScreenModes(c), ...oneTourScreenModes(c).modes];
 }
 
-test('todo-compile-one 4.8: the 103 pages of the fixed screens name the 23 hit pages built and no other, each page the same one on all sixteen; the census\'s two other hit pages in every compile are named by setup screens alone',
+test('the 103 pages of the fixed screens name the 23 hit pages built and no other, each page the same one on all sixteen; the census\'s two other hit pages in every compile are named by setup screens alone',
      skipUnless(...SIXTEEN), () => {
   const built = new Map(ONE_HIT_PAGES.map((name) => [builtForm(name), name]));
   const byPage = new Map<string, Set<string>>();
@@ -237,7 +236,7 @@ test('todo-compile-one 4.8: the 103 pages of the fixed screens name the 23 hit p
   assert.ok(others.every((one) => namedBySetup.every((set) => set.has(one))));
 });
 
-test('todo-compile-one 4.8: a blinded input rebuilds all sixteen: no byte of the 23 pages or the table reaches the build',
+test('a blinded input rebuilds all sixteen: no byte of the 23 pages or the table reaches the build',
      skipUnless(...SIXTEEN), () => {
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
   for (const name of SIXTEEN) {
@@ -272,7 +271,7 @@ test('todo-compile-one 4.8: a blinded input rebuilds all sixteen: no byte of the
   assert.deepEqual(totals, { structure: 32052, inside: 0, outside: 368, blinded: 32052 });
 });
 
-test('todo-compile-one 4.8: the head\'s three pages are indices 0, 1 and 2 on all sixteen and the other twenty move with the setup; two pages\' indices swapped, a page moved onto a setup page\'s index or the table one page short give a different file, and two at one index is refused',
+test('the head\'s three pages are indices 0, 1 and 2 on all sixteen and the other twenty move with the setup; two pages\' indices swapped, a page moved onto a setup page\'s index or the table one page short give a different file, and two at one index is refused',
      skipUnless(...SIXTEEN), () => {
   const spread = new Map<string, Set<number>>();
   for (const name of SIXTEEN) {
@@ -311,7 +310,7 @@ test('todo-compile-one 4.8: the head\'s three pages are indices 0, 1 and 2 on al
   assert.throws(() => tamper((d) => { d.place.runs.pop(); }), differs);
 });
 
-test('todo-compile-one 4.8: beyond the sixteen, the Dutch compile holds all 23 pages as built and the two European ones all but the Time of Day picker\'s, the everyday One\'s the Remote Assistant\'s question too; all three are refused by the fixed screens\' finder, the European two since section 434 for the Time of Day picker skin 59 does not hold rather than for a second Month picker',
+test('beyond the sixteen, the Dutch compile holds all 23 pages as built and the two European ones all but the Time of Day picker\'s, the everyday One\'s the Remote Assistant\'s question too; all three are refused by the fixed screens\' finder, the European two since section 434 for the Time of Day picker skin 59 does not hold rather than for a second Month picker',
      skipUnless(...EUROPEAN, DUTCH), () => {
   const missing = [...EUROPEAN, DUTCH].map((name) => {
     const forms = new Set(touchPages(load(name))!.records.map((page) => pageForm(page.areas)));

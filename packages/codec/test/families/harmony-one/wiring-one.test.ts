@@ -1,5 +1,5 @@
 /**
- * The Harmony One's own wiring built from a description, `todo-compile-one.md` 6.3, findings section 410,
+ * The Harmony One's own wiring built from a description, findings section 410,
  * measured against Logitech's 19 distinct One compiles as `test/families/harmony-600-650-700/wiring.test.ts` measures the Harmony 600, 650
  * and 700's against theirs.
  *
@@ -38,8 +38,8 @@ const ONES = [...ONE_SKIN_54_FAMILY.full, ...ONE_FAMILY.full.filter((name) => !O
 const OUR_WRITES = ['one_spare_light60_written', 'one_spare_noassistant_written', 'one_spare_glow_written',
   'one_spare_look_written', 'one_spare_written_by_us', 'one_spare_arrows_written', 'one_spare_bottom_written'] as const;
 
-// Over the 19 compiles. 62992, 24352 and 62992 until `todo-compile-one.md` 6.5 added the 14 lists the transitions
-// of `readyVar`, `relightVar` and `settleVar` call, 98 bytes a compile, 67 generated and 31 described, section 418.
+// Over the 19 compiles. 62992, 24352 and 62992 until section 418 added the 14 lists the transitions
+// of `readyVar`, `relightVar` and `settleVar` call, 98 bytes a compile, 67 generated and 31 described.
 const GENERATED = 64265;
 const DESCRIBED = 24941;
 const CHANGED = 64265;

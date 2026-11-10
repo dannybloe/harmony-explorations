@@ -1,5 +1,5 @@
 /**
- * The Harmony One's welcome tour and Remote Assistant built from a description, `todo-compile-one.md` 4.4.4.2,
+ * The Harmony One's welcome tour and Remote Assistant built from a description,
  * findings section 412: the tour's eleven screens always, and the assistant's five where the wiring keeps the
  * start's ladder on its variable, section 410's `startupAssistant`.
  *
@@ -53,7 +53,7 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
  * The sixteen English compiles of skin 54, section 405, with what each check reads: the bytes of the sixteen
  * screens and the bytes the description reads, which differ by compile because a text is drawn inline or by
  * reference to a copy outside the screens as the compile's other screens fall, and the lists built. Since
- * `todo-compile-one.md` 6.5 those count the lists below the screens the wiring does not build, section 418: 17,
+ * section 418 those count the lists below the screens the wiring does not build: 17,
  * 152 bytes of which the description reads 46 and the setting's one byte, on the eleven where "Devices Off
  * Again"'s OK goes on to the tour, and 13, 112 bytes of which it reads 31, on the five where it does not.
  */
@@ -95,7 +95,7 @@ function assistantLooks(c: ReturnType<typeof parse>): number {
   }).length;
 }
 
-test('todo-compile-one 4.4.4.2 and 6.5: the tour\'s 11 screens and the Remote Assistant\'s 5 of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, their own 98 lists and 17 below them on eleven, 13 on five',
+test('the tour\'s 11 screens and the Remote Assistant\'s 5 of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, their own 98 lists and 17 below them on eleven, 13 on five',
      skipUnless(...NAMES), () => {
   assert.equal(ONE_TOUR_SCREENS.length, 11);
   assert.equal(ONE_ASSISTANT_SCREENS.length, 5);
@@ -104,7 +104,7 @@ test('todo-compile-one 4.4.4.2 and 6.5: the tour\'s 11 screens and the Remote As
   }
 });
 
-test('todo-compile-one 4.4.4.2: beyond the sixteen, the European compiles rebuild too, the everyday One\'s with the tour alone since its wiring keeps no Remote Assistant, and the Dutch compile is refused for its words',
+test('beyond the sixteen, the European compiles rebuild too, the everyday One\'s with the tour alone since its wiring keeps no Remote Assistant, and the Dutch compile is refused for its words',
      skipUnless('one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'), () => {
   // The everyday One's tour builds the three lists below it, the off lists of channel 7 and the page keys and
   // what leaving the tour runs, 24 bytes of which 5 are read; the factory file's sixteen the five's 13.
@@ -114,7 +114,7 @@ test('todo-compile-one 4.4.4.2: beyond the sixteen, the European compiles rebuil
     (error: Error) => error instanceof ScreenRecordError && /holds 0 screens of the look of Tour Another Activity, not one/.test(error.message));
 });
 
-test('todo-compile-one 4.4.4.2: on all eighteen English compiles the tour\'s eleven are laid out in one order and the wiring decides the Remote Assistant: its ladder on 17 with all five screens, the welcome and "Devices Off" the ladder\'s own, and on the everyday One\'s none of the five and no ladder',
+test('on all eighteen English compiles the tour\'s eleven are laid out in one order and the wiring decides the Remote Assistant: its ladder on 17 with all five screens, the welcome and "Devices Off" the ladder\'s own, and on the everyday One\'s none of the five and no ladder',
      skipUnless(...NAMES, 'one_config', 'one_config_unprogrammed'), () => {
   const tally = { withLadder: 0, withoutLadder: 0 };
   for (const name of [...NAMES, 'one_config', 'one_config_unprogrammed']) {
@@ -144,7 +144,7 @@ test('todo-compile-one 4.4.4.2: on all eighteen English compiles the tour\'s ele
   assert.deepEqual(tally, { withLadder: 17, withoutLadder: 1 });
 });
 
-test('todo-compile-one 4.4.4.2: Options\' Tutorial row, scan 49 on its first page, enters the tour\'s "Welcome!" through every call, on the sixteen',
+test('Options\' Tutorial row, scan 49 on its first page, enters the tour\'s "Welcome!" through every call, on the sixteen',
      skipUnless(...NAMES), () => {
   const names = [...ONE_TOUR_SCREENS, ...ONE_ASSISTANT_SCREENS];
   for (const name of NAMES) {
@@ -169,7 +169,7 @@ test('todo-compile-one 4.4.4.2: Options\' Tutorial row, scan 49 on its first pag
   }
 });
 
-test('todo-compile-one 4.4.4.2: starting past the Remote Assistant keeps its ladder, which the leftover entry\'s events 1 and 5 still run to the welcome, and Options still writes its variable 1, so the configuration still holds a path to the five and they are still built, on the sixteen',
+test('starting past the Remote Assistant keeps its ladder, which the leftover entry\'s events 1 and 5 still run to the welcome, and Options still writes its variable 1, so the configuration still holds a path to the five and they are still built, on the sixteen',
      skipUnless(...NAMES), () => {
   for (const name of NAMES) {
     const c = parse(require_(name));
@@ -212,7 +212,7 @@ test('todo-compile-one 4.4.4.2: starting past the Remote Assistant keeps its lad
   }
 });
 
-test('todo-compile-one 4.4.4.2: a mode\'s own key map is in the wide form exactly where it binds a state write, one on each of the 18 compiles with a Remote Assistant and none on the everyday One\'s, each binding scan 34\'s press to the write, flagged 1, and the other 90 bindings 0',
+test('a mode\'s own key map is in the wide form exactly where it binds a state write, one on each of the 18 compiles with a Remote Assistant and none on the everyday One\'s, each binding scan 34\'s press to the write, flagged 1, and the other 90 bindings 0',
      skipUnless(...NAMES, ...BEYOND), () => {
   const count = { wideWithWrite: 0, wideWithout: 0, narrowWithWrite: 0, flagged: 0, unflagged: 0, other: 0 };
   const perCompile: number[] = [];
@@ -239,7 +239,7 @@ test('todo-compile-one 4.4.4.2: a mode\'s own key map is in the wide form exactl
   assert.deepEqual([...flaggedTags], [0x80 | 34]);
 });
 
-test('todo-compile-one 4.4.4.2: a blinded input rebuilds all sixteen: no byte of the screens outside the description reaches the build',
+test('a blinded input rebuilds all sixteen: no byte of the screens outside the description reaches the build',
      skipUnless(...NAMES), () => {
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
   for (const name of NAMES) {
@@ -279,7 +279,7 @@ test('todo-compile-one 4.4.4.2: a blinded input rebuilds all sixteen: no byte of
   assert.deepEqual(totals, { structure: 63586, inside: 11948, outside: 1278, blinded: 51638 });
 });
 
-test('todo-compile-one 4.4.4.2: a description with a timer moved, two screens\' pictures swapped, the welcome\'s variable moved, two tour screens\' modes swapped or the Remote Assistant left out is refused',
+test('a description with a timer moved, two screens\' pictures swapped, the welcome\'s variable moved, two tour screens\' modes swapped or the Remote Assistant left out is refused',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   type Spec = ReturnType<typeof describeOneTourScreens>['spec'];
@@ -318,7 +318,7 @@ test('todo-compile-one 4.4.4.2: a description with a timer moved, two screens\' 
     (error: Error) => error instanceof ScreenRecordError && /11 records were built for 16 places/.test(error.message));
 });
 
-test('todo-compile-one 4.4.4.2 and 6.5: of the 99 lists the sixteen screens name, the 98 their own are named by nothing outside them and the 99th is named from outside too; the setting read off one byte agrees with the walk: on 11 "Devices Off Again"\'s OK leads on to the tour\'s "Welcome!" and 17 lists are built below, on 5 it does not and 13 are; what is left below is named from outside, so none runs for these screens alone',
+test('of the 99 lists the sixteen screens name, the 98 their own are named by nothing outside them and the 99th is named from outside too; the setting read off one byte agrees with the walk: on 11 "Devices Off Again"\'s OK leads on to the tour\'s "Welcome!" and 17 lists are built below, on 5 it does not and 13 are; what is left below is named from outside, so none runs for these screens alone',
      skipUnless(...NAMES), () => {
   const names = [...ONE_TOUR_SCREENS, ...ONE_ASSISTANT_SCREENS];
   const found = NAMES.map((name) => {
@@ -355,7 +355,8 @@ test('todo-compile-one 4.4.4.2 and 6.5: of the 99 lists the sixteen screens name
       ownNamedFromOutside: below.namedFromOutside.filter((index) => own.has(index)).length,
     }] as const;
   });
-  // Until `todo-compile-one.md` 6.5 the 98 were all the builder made, named by nothing outside, and the walk found
+  // Before the lists below the screens were built the 98 were all the builder made, named by nothing outside, and
+  // the walk found
   // 69 lists below them where the OK leads on and 22 where it does not, 56 or 59 and 15 of those shared. Since
   // section 418 the lists below that the wiring does not build are built too, and of all built `namedFromOutside`
   // are named directly from outside as well: the off lists of the page keys, of channel 5 and of channel 7 and,
@@ -386,7 +387,7 @@ test('todo-compile-one 4.4.4.2 and 6.5: of the 99 lists the sixteen screens name
   });
 });
 
-test('todo-compile-one 4.4.4.2: no text crosses between these sixteen screens and section 411\'s twenty three, so the two are built apart without moving an inline copy, and with them they are section 405\'s 38 fixed screens past the head',
+test('no text crosses between these sixteen screens and section 411\'s twenty three, so the two are built apart without moving an inline copy, and with them they are section 405\'s 38 fixed screens past the head',
      skipUnless(...NAMES), () => {
   const population = NAMES.map((name) => {
     const c = parse(require_(name));

@@ -1,6 +1,6 @@
 /**
  * The Harmony One's activity screens as our builder makes them, checked against every activity of Logitech's One
- * compiles, findings section 402, `todo-compile-one.md` 1.2.11.2.6: each activity rebuilt from its name and its
+ * compiles, findings section 402: each activity rebuilt from its name and its
  * pads onto its own compile, lettered in ours, and its working screen and start up screen compared with
  * Logitech's part by part.
  *
@@ -330,7 +330,7 @@ test('section 402: screen instruction 1 stands on the working screens of 23 of L
 /** The four records an activity's case goes in, by the One family's catalogue, section 416. */
 const ACTIVITY_ROLES = ['devices', 'devices unread', 'working', 'select'] as const;
 
-test('todo-compile-one 3.2.2.3: an activity our builder composes onto each Logitech One compile walked, the pair on a step and all nineteen and their tally in the slow tier, takes a case in the four records every activity of theirs has one in, the unread copy of the Devices record among them, and base slot 11\'s table then names its cases as their compiler names every case, the case programs\' builder rebuilding the file with the table it generates',
+test('an activity our builder composes onto each Logitech One compile walked, the pair on a step and all nineteen and their tally in the slow tier, takes a case in the four records every activity of theirs has one in, the unread copy of the Devices record among them, and base slot 11\'s table then names its cases as their compiler names every case, the case programs\' builder rebuilding the file with the table it generates',
      skipUnless(...WITH_ACTIVITIES, ...WITHOUT_ACTIVITIES), () => {
   // Section 402's method: each compile lettered in ours, as `composeSetup` letters its donor, and an activity built
   // onto it under a fresh number. Its pads do not matter here, so it has none.
@@ -374,7 +374,8 @@ test('todo-compile-one 3.2.2.3: an activity our builder composes onto each Logit
     ], name);
     // And the table: the case programs' builder generates it whole by the rule every compile of theirs follows and
     // rebuilds the composed file byte for byte, four entries longer than the compile's. Before
-    // `todo-compile-one.md` 3.2.2.3 this refused, the generated table naming cases the composed one did not.
+    // the case programs were built, section 416, this refused, the generated table naming cases the composed one did
+    // not.
     assert.equal(checkOneCasePrograms(b).entries, entries + 4, name);
     tally.compiles += 1;
   }

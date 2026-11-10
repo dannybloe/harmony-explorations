@@ -1,7 +1,7 @@
 /**
- * The Harmony One's fixed screens past the firmware's ten built from a description, `todo-compile-one.md`
- * 4.4.4.1, findings section 411: code 9's status screen, Options, screen sensitivity's picker and five
- * confirmations, the clock's eight pickers and the seven blank screens the timers enter.
+ * The Harmony One's fixed screens past the firmware's ten built from a description, findings section 411: code
+ * 9's status screen, Options, screen sensitivity's picker and five confirmations, the clock's eight pickers and the
+ * seven blank screens the timers enter.
  *
  * **The blind control makes "generated" a test**, as section 409's did: every byte of the screens the
  * description does not read is overwritten, in the file the description reads and the fonts are spelled
@@ -35,7 +35,7 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
 /**
  * The sixteen English compiles of skin 54, section 405, with what each check reads: the bytes of the 23
  * screens and the bytes the description reads, which differ by compile because a text is drawn inline or by
- * reference to a copy outside the screens as the compile's other screens fall. Since `todo-compile-one.md` 6.5
+ * reference to a copy outside the screens as the compile's other screens fall. Since section 418
  * the screens' bytes count the 154 lists below them, 1210 bytes on every compile, and the description reads
  * 73 bytes of those, their indices and the variables their writes name, section 418.
  */
@@ -62,17 +62,17 @@ const NAMES = Object.keys(SKIN_54);
 /** The three Harmony One compiles beyond the sixteen: the European factory file and its programmed copy, and the Dutch one. */
 const BEYOND = ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'];
 
-test('todo-compile-one 4.4.4.1 and 6.5: the 23 fixed screens past the firmware\'s ten of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, 685 lists among them, their own 531 and 154 below them',
+test('the 23 fixed screens past the firmware\'s ten of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, 685 lists among them, their own 531 and 154 below them',
      skipUnless(...NAMES), () => {
   assert.equal(ONE_FIXED_SCREENS.length, 23);
-  // The 531 their own key maps, page lists, copies and chromes name, section 411, and since `todo-compile-one.md`
-  // 6.5 the 154 below those that the wiring does not build, section 418.
+  // The 531 their own key maps, page lists, copies and chromes name, section 411, and since section 418
+  // the 154 below those that the wiring does not build.
   for (const name of NAMES) {
     assert.deepEqual(checkOneFixedScreens(parse(require_(name))), { screens: 23, lists: 685, ...SKIN_54[name] }, name);
   }
 });
 
-test('todo-compile-one 4.4.4.1, rewritten by section 434: beyond the sixteen, the European compiles are refused for the Time of Day picker skin 59 does not hold and the Dutch one for its words, no longer for a Year picker offering a leap year; a build year of 2027 asks for the two screens a leap year brings, and 2030 is refused for a digit the compile\'s font set does not hold',
+test('beyond the sixteen, as section 434 has it, the European compiles are refused for the Time of Day picker skin 59 does not hold and the Dutch one for its words, no longer for a Year picker offering a leap year; a build year of 2027 asks for the two screens a leap year brings, and 2030 is refused for a digit the compile\'s font set does not hold',
      skipUnless('one_config', 'one_config_unprogrammed', 'one_friend_asfound_config', 'harvest_one_two_devices'), () => {
   // Built in 2023 and in 2013, their Year pickers offer 2024 and 2012, with a Day 29 picker and a second Month
   // picker leading February to it. Section 434 builds those two, so the leap year no longer refuses them: the
@@ -111,7 +111,7 @@ function pageWords(c: Container, record: { pages: { program: number }[] }): stri
   }));
 }
 
-test('todo-compile-one 4.4.4.1: on all nineteen Harmony One compiles the Year picker offers the build year and the year either side, its 0x79 is minus the first of them less 2000, and where those hold a leap year a Day picker of 29 days is there too',
+test('on all nineteen Harmony One compiles the Year picker offers the build year and the year either side, its 0x79 is minus the first of them less 2000, and where those hold a leap year a Day picker of 29 days is there too',
      skipUnless(...NAMES, ...BEYOND), () => {
   for (const name of [...NAMES, ...BEYOND]) {
     const c = parse(require_(name));
@@ -135,7 +135,7 @@ test('todo-compile-one 4.4.4.1: on all nineteen Harmony One compiles the Year pi
   }
 });
 
-test('todo-compile-one 4.4.4.1: a Harmony One mode entry\'s first byte is 1 exactly where its own key map binds tag 0x29, 139 of 139, and 0 on the other 3455 of the nineteen compiles',
+test('a Harmony One mode entry\'s first byte is 1 exactly where its own key map binds tag 0x29, 139 of 139, and 0 on the other 3455 of the nineteen compiles',
      skipUnless(...NAMES, ...BEYOND), () => {
   const count = { bindsAndOne: 0, bindsAndZero: 0, noneAndOne: 0, noneAndZero: 0 };
   for (const name of [...NAMES, ...BEYOND]) {
@@ -150,7 +150,7 @@ test('todo-compile-one 4.4.4.1: a Harmony One mode entry\'s first byte is 1 exac
   assert.deepEqual(count, { bindsAndOne: 139, bindsAndZero: 0, noneAndOne: 0, noneAndZero: 3455 });
 });
 
-test('todo-compile-one 4.4.4.1: a blinded input rebuilds all sixteen: no byte of the screens outside the description reaches the build',
+test('a blinded input rebuilds all sixteen: no byte of the screens outside the description reaches the build',
      skipUnless(...NAMES), () => {
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
   for (const name of NAMES) {
@@ -190,7 +190,7 @@ test('todo-compile-one 4.4.4.1: a blinded input rebuilds all sixteen: no byte of
   assert.deepEqual(totals, { structure: 229640, inside: 66584, outside: 596, blinded: 163056 });
 });
 
-test('todo-compile-one 4.4.4.1: a description with a timer moved, two pictures swapped or two screens\' modes swapped is refused by the byte comparison',
+test('a description with a timer moved, two pictures swapped or two screens\' modes swapped is refused by the byte comparison',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   type Spec = ReturnType<typeof describeOneFixedScreens>['spec'];
@@ -219,7 +219,7 @@ test('todo-compile-one 4.4.4.1: a description with a timer moved, two pictures s
   }), moved);
 });
 
-test('todo-compile-one 4.4.4.1 and 6.5: of the 685 lists built, the 531 the screens name are named by nothing outside them, and of the 154 below those 6 are named from outside too; the 53 left below are each named from outside or reached from a list that is, so none runs for these screens alone',
+test('of the 685 lists built, the 531 the screens name are named by nothing outside them, and of the 154 below those 6 are named from outside too; the 53 left below are each named from outside or reached from a list that is, so none runs for these screens alone',
      skipUnless(...NAMES), () => {
   const found = NAMES.map((name) => {
     const c = parse(require_(name));
@@ -235,8 +235,9 @@ test('todo-compile-one 4.4.4.1 and 6.5: of the 685 lists built, the 531 the scre
       ownNamedFromOutside: below.namedFromOutside.filter((index) => own.has(index)).length,
     };
   });
-  // Until `todo-compile-one.md` 6.5 the 531 were all the builder made and the walk found 207 lists below them,
-  // 147 run by these screens alone and 60 shared, 17 of them named directly from outside. Since section 418 the
+  // Before the lists below the screens were built the 531 were all the builder made and the walk found 207
+  // lists below them, 147 run by these screens alone and 60 shared, 17 of them named directly from outside. Since
+  // section 418 the
   // 154 below that the wiring does not build are built too: the 147 and 7 shared ones, the off lists of the page
   // keys, of channel 5 and of channel 7, the list turning the Remote Assistant on, which the tour reaches, and
   // the clock handlers' last two lists and the one they share, which lists nothing reaches name too (section

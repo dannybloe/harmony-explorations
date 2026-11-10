@@ -1,5 +1,5 @@
 /**
- * The Harmony One's twenty nine status screens past code 9's built from a description, `todo-compile-one.md` 4.5,
+ * The Harmony One's twenty nine status screens past code 9's built from a description,
  * findings section 413: the screens the event map names for every status code but 9, which section 408 found the
  * firmware never draws, built so that a configuration of ours can carry them as Logitech's does.
  *
@@ -59,7 +59,7 @@ const SKIN_54 = ONE_SKIN_54_FAMILY.full;
 const EUROPEAN = ['one_config', 'one_config_unprogrammed'];
 const DUTCH = 'one_friend_asfound_config';
 
-test('todo-compile-one 4.5: the 29 status screens past code 9\'s of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, 58 lists among them',
+test('the 29 status screens past code 9\'s of the sixteen English compiles of skin 54 are rebuilt byte for byte from a description, 58 lists among them',
      skipUnless(...SKIN_54), () => {
   assert.equal(STATUS_LINES.length, 30);
   assert.equal(ONE_STATUS_SCREENS.length, 29);
@@ -69,7 +69,7 @@ test('todo-compile-one 4.5: the 29 status screens past code 9\'s of the sixteen 
   }
 });
 
-test('todo-compile-one 4.5: beyond the sixteen, both European compiles rebuild the same, code 9\'s screen through the same statusScreen too, and the Dutch compile is refused, its code 16 screen drawing two lines where English draws one',
+test('beyond the sixteen, both European compiles rebuild the same, code 9\'s screen through the same statusScreen too, and the Dutch compile is refused, its code 16 screen drawing two lines where English draws one',
      skipUnless(...EUROPEAN, DUTCH), () => {
   for (const name of EUROPEAN) {
     const c = parse(require_(name));
@@ -112,7 +112,7 @@ function statusTexts(c: Container): { code: number; texts: { word: string; x: nu
   });
 }
 
-test('todo-compile-one 4.5: every line of the thirty status screens is centred on the screen rounded down and the lines sit twelve apart centred on y 168, on the sixteen, both European compiles and the Dutch one in its own words; 31 of the 54 lines past code 9\'s have an odd remainder',
+test('every line of the thirty status screens is centred on the screen rounded down and the lines sit twelve apart centred on y 168, on the sixteen, both European compiles and the Dutch one in its own words; 31 of the 54 lines past code 9\'s have an odd remainder',
      skipUnless(...SKIN_54, ...EUROPEAN, DUTCH), () => {
   for (const name of [...SKIN_54, ...EUROPEAN, DUTCH]) {
     const c = parse(require_(name));
@@ -141,7 +141,7 @@ test('todo-compile-one 4.5: every line of the thirty status screens is centred o
   }
 });
 
-test('todo-compile-one 4.5: a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the screens outside the description reaches the build',
+test('a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the screens outside the description reaches the build',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   const walked = sampled(ONE_SKIN_54_FAMILY);
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
@@ -181,7 +181,7 @@ test('todo-compile-one 4.5: a blinded input rebuilds each of the sixteen walked,
   if (walked.length === SKIN_54.length) assert.deepEqual(totals, { structure: 61952, inside: 11184, outside: 208, blinded: 50768 });
 });
 
-test('todo-compile-one 4.5: a description with a timer moved, a list moved, the two fonts swapped, the home dropped or two screens\' modes swapped is refused, by the builder or the byte comparison',
+test('a description with a timer moved, a list moved, the two fonts swapped, the home dropped or two screens\' modes swapped is refused, by the builder or the byte comparison',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   type Spec = ReturnType<typeof describeOneStatusScreens>['spec'];
@@ -214,7 +214,7 @@ test('todo-compile-one 4.5: a description with a timer moved, a list moved, the 
   }), moved);
 });
 
-test('todo-compile-one 4.5: the event map names status code k at mode 10 + k for all thirty codes on all nineteen compiles, so the 29 are found by the event map alone',
+test('the event map names status code k at mode 10 + k for all thirty codes on all nineteen compiles, so the 29 are found by the event map alone',
      skipUnless(...SKIN_54, ...EUROPEAN, DUTCH), () => {
   for (const name of [...SKIN_54, ...EUROPEAN, DUTCH]) {
     const c = parse(require_(name));
@@ -225,7 +225,7 @@ test('todo-compile-one 4.5: the event map names status code k at mode 10 + k for
   }
 });
 
-test('todo-compile-one 4.5: the 58 lists built are named by nothing outside the 29 screens and call no list, on the sixteen and both European compiles; one text outside is drawn by reference into the screens, the European everyday One\'s "Clear"',
+test('the 58 lists built are named by nothing outside the 29 screens and call no list, on the sixteen and both European compiles; one text outside is drawn by reference into the screens, the European everyday One\'s "Clear"',
      skipUnless(...SKIN_54, ...EUROPEAN), () => {
   for (const name of [...SKIN_54, ...EUROPEAN]) {
     const c = parse(require_(name));

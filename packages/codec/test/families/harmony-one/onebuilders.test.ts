@@ -1,11 +1,8 @@
 /**
- * The Harmony One's builders on the composed path, `todo-compile-one.md` 3.2.2, `families/harmony-one/builders.ts`: the
+ * The Harmony One's builders on the composed path, `families/harmony-one/builders.ts`: the
  * firmware screens, the fixed screens, the tour and Remote Assistant, the status screens, the clock header, the help
  * screens, the activity menu, the case programs, the hit pages, the wiring, the state tables, raw slot 18 and base
- * slot 16's table, each built from a description of the configuration being composed in place of the donor's part;
- * the first five and the wiring and state tables since 3.2.2.1, the status screens and the clock header since
- * 3.2.2.2, the case programs and the hit pages since 3.2.2.3, the help screens since 3.2.2.4, the two small tables
- * since 3.2.2.6, the activity menu since 3.2.2.7.
+ * slot 16's table, each built from a description of the configuration being composed in place of the donor's part.
  *
  * What is held here is what the composition in `composesetup.test.ts` cannot show cheaply: that on Logitech's own
  * compile the fourteen come back byte for byte, so putting them on the path changes nothing a builder does not mean to;
@@ -66,7 +63,7 @@ const lettered = (): Container => {
   return letteredOnce;
 };
 
-test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the sixteen builders on the composed path give back every byte as it was',
+test('on Logitech\'s compile of two devices the sixteen builders on the composed path give back every byte as it was',
      skipUnless(DONOR), () => {
   const donor = parse(require_(DONOR));
   const out = withOneBuilders(donor);
@@ -82,7 +79,7 @@ test('todo-compile-one 3.2.2: on Logitech\'s compile of two devices the sixteen 
 /** Every builder but the help screens, whose wrapped lines change the file's length, held apart below. */
 const BUT_HELP = ONE_BUILT.filter((what) => what !== 'help screens');
 
-test('todo-compile-one 3.2.2: on that compile lettered in ours the builders but the help screens move the x of 463 texts, 10 of the firmware screens, 93 of the fixed screens, 32 of the tour\'s, 37 of the status screens\', 25 of the clock\'s, the activity menu\'s two key words, the device pages\' 260 and the device lists\' four key words, placing them in our letters\' widths, and change no other byte but the trailer',
+test('on that compile lettered in ours the builders but the help screens move the x of 463 texts, 10 of the firmware screens, 93 of the fixed screens, 32 of the tour\'s, 37 of the status screens\', 25 of the clock\'s, the activity menu\'s two key words, the device pages\' 260 and the device lists\' four key words, placing them in our letters\' widths, and change no other byte but the trailer',
      skipUnless(DONOR), () => {
   const before = lettered();
   const after = withOneBuilders(before, [], BUT_HELP).container;
@@ -136,7 +133,7 @@ test('todo-compile-one 3.2.2: on that compile lettered in ours the builders but 
   // ones whose width in our letters rounds to the same place as in Logitech's staying put. The clock's 25 are all
   // in the clock itself, the days ending at x 138 and the hours at 156, which our letters' widths end elsewhere;
   // its minutes start at 158 whatever their width and do not move. The case programs and the hit pages draw no
-  // text, so they move nothing here, 3.2.2.3. The activity menu's two are "Options" and "Devices", centred on the
+  // text, so they move nothing here. The activity menu's two are "Options" and "Devices", centred on the
   // halves below the screen, section 419; the donor's menu holds no row, so no name of one moves. The device pages'
   // 260, section 420, are 172 lines of their 123 pads' labels, each centred on its pad, and the 88 words below the
   // screen, the four of each of the 22 pages, centred on their halves; the device pages built before section 420
@@ -155,7 +152,7 @@ function textsOf(c: Container, mode: number): string[] {
   });
 }
 
-test('todo-compile-one 3.2.2.4: on that compile lettered in ours the help screens break the attempt line, 177 pixels in our letters, by the questions\' wrap at 171 and flow the "If not" paragraph onto three lines of their own, each block centred again; three bytes longer, and the rest is the other builders\' alone',
+test('on that compile lettered in ours the help screens break the attempt line, 177 pixels in our letters, by the questions\' wrap at 171 and flow the "If not" paragraph onto three lines of their own, each block centred again; three bytes longer, and the rest is the other builders\' alone',
      skipUnless(DONOR), () => {
   const without = withOneBuilders(lettered(), [], BUT_HELP).container;
   const all = withOneBuilders(lettered()).container;
@@ -178,7 +175,7 @@ test('todo-compile-one 3.2.2.4: on that compile lettered in ours the help screen
   assert.equal(ATTEMPT_LINE, 'Attemping to fix the problem...');
 });
 
-test('todo-compile-one 3.2.2.4: a composed device with a power variable gets its four questions after the chain\'s own, numbered from the chain, and the result reads and rebuilds as a chain of three; one with none is not asked about; one the chain asks about already, or whose catalogue states no power type, is refused',
+test('a composed device with a power variable gets its four questions after the chain\'s own, numbered from the chain, and the result reads and rebuilds as a chain of three; one with none is not asked about; one the chain asks about already, or whose catalogue states no power type, is refused',
      skipUnless(DONOR), () => {
   const donor = parse(require_(DONOR));
   // The donor's LG told of as a composed device under another name: it has a power variable, so the chain asks
@@ -191,8 +188,7 @@ test('todo-compile-one 3.2.2.4: a composed device with a power variable gets its
   // Its 32 lists appended to base slot 10, eight a question, and every screen read back and rebuilt byte for byte.
   assert.equal(out.actionLists()!.length - donor.actionLists()!.length, 32);
   // The donor's 2198 bytes and 660 read grow by the four screens and their lists, 816 bytes, 270 of them read; and the
-  // two hit pages the chain is touched through, 167 bytes, the help screens' since `todo-compile-one.md` 7.1.6,
-  // section 429, which the new questions name too and so do not grow.
+  // two hit pages the chain is touched through, 167 bytes, the help screens' since section 429, which the new questions name too and so do not grow.
   assert.deepEqual(checkOneHelpScreens(out), { devices: 3, screens: 14, lists: 108, described: 930, structure: 3181 });
   // The new first question asks by the name it was given, one line; and the LG, the last of the chain's own, goes
   // on to it where it left help before, from its first question's Yes and its "Did that fix the problem?"'s No.
@@ -211,7 +207,7 @@ test('todo-compile-one 3.2.2.4: a composed device with a power variable gets its
     (error: unknown) => error instanceof OneBuildError && /^building the Harmony One's help screens: the catalogue states no power type for Television/.test(error.message));
 });
 
-test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, never the donor\'s part kept: a stamp offering a leap year the file holds no screens for, the Dutch compile, the everyday One\'s, an event map naming one status screen for two codes, a clock header with two gauges, an idle write of another value and two hit pages at one index',
+test('a builder\'s refusal is the composed path\'s, never the donor\'s part kept: a stamp offering a leap year the file holds no screens for, the Dutch compile, the everyday One\'s, an event map naming one status screen for two codes, a clock header with two gauges, an idle write of another value and two hit pages at one index',
      skipUnless(DONOR, 'one_friend_asfound_config', 'one_config'), () => {
   // Logitech's compile stamped a year later: its Year picker would offer 2028, and the stamp then says the file holds
   // the leap year's Month picker and the Day 29 picker, which a compile of 2026 does not. Refused for building them
@@ -225,8 +221,8 @@ test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, neve
     (error: unknown) => error instanceof OneBuildError && /^building the Harmony One's firmware screens: a reference names the inside of a replaced structure/.test(error.message));
   assert.throws(() => withOneBuilders(parse(require_('one_config'))),
     (error: unknown) => error instanceof OneBuildError && /^building the Harmony One's firmware screens: USB Connected's binding of tag 0x7 is list 532, not 64/.test(error.message));
-  // Past those three, which the firmware screens refuse before anything else runs, each builder 3.2.2.2 put on the
-  // path refuses for itself, every builder before it having passed. The status screens: code 5's entry in the
+  // Past those three, which the firmware screens refuse before anything else runs, the status screens and the clock
+  // header each refuse for themselves, every builder before it having passed. The status screens: code 5's entry in the
   // event map pointed at code 6's screen, so the screens are no longer one per code.
   const donor = parse(require_(DONOR));
   const map = eventMap(donor)!;
@@ -243,7 +239,7 @@ test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, neve
   gauges[sending.start + 1] = 9;
   assert.throws(() => withOneBuilders(parse(gauges)),
     (error: unknown) => error instanceof OneBuildError && /^building the Harmony One's clock header: the configuration holds 2 programs of the look of gauge, not one$/.test(error.message));
-  // 3.2.2.3's two. The case programs: the idle case's write made to write the value after the idle value, so the
+  // The case programs' and the hit pages' two. The case programs: the idle case's write made to write the value after the idle value, so the
   // description reads two idle values, the write's and the working record's idle case's.
   const roles = oneValueMapRoles(donor);
   const idleCase = valueMaps(donor)![roles.records.get('idle')!]!.entries[0]![1];
@@ -261,7 +257,7 @@ test('todo-compile-one 3.2.2: a builder\'s refusal is the composed path\'s, neve
     (error: unknown) => error instanceof OneBuildError && /^building the Harmony One's hit pages: message and OK and message are both hit page 0$/.test(error.message));
   // And the family's member on the composed path is this function behind the tour's choice, which `composeSetup`
   // calls on every composition: the tour and the Remote Assistant left out first unless the choice keeps them,
-  // `todo-compile-one.md` 4.10, `test/families/harmony-one/onewithouttour.test.ts`.
+  // section 421, `test/families/harmony-one/onewithouttour.test.ts`.
   assert.equal(ONE.composedBuilders, withOneComposedBuilders);
 });
 
@@ -276,17 +272,17 @@ const donorBuilt = (): Container => {
   return donorBuiltOnce;
 };
 
-test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on Logitech\'s compile of two devices, the help screens\' 2365 and the case programs\' 497 being what their own checks span on that compile, and the hit pages\' 1910 their check\'s 1986 less the 76 of the page the device lists build first, sections 415, 416, 417 and 424',
+test('the attribution counts each builder\'s bytes on Logitech\'s compile of two devices, the help screens\' 2365 and the case programs\' 497 being what their own checks span on that compile, and the hit pages\' 1910 their check\'s 1986 less the 76 of the page the device lists build first, sections 415, 416, 417 and 424',
      skipUnless(DONOR), () => {
   const a = oneBuiltBytes(donorBuilt(), []);
   // Each part's bytes, its description's included. The help screens' 2365 are their ten screens and 76 lists, 2198,
-  // and since `todo-compile-one.md` 7.1.6 the two hit pages those are touched through, 4 and 24, 167, section 429: the
+  // and since section 429 the two hit pages those are touched through, 4 and 24, 167: the
   // structure `checkOneHelpScreens` reports on this compile, section 415. The case programs' 497 are their 25 programs, seven lists and
   // the table of 29 entries, the structure `checkOneCasePrograms` reports on this compile; the hit pages' 1986 the
   // 23 pages and the touch map's table of 29, `checkOneHitPages`'. Two independent counts of one span: the module
   // checks claim it from their descriptions, the attribution from what the rebuild put where.
   // The firmware screens', the fixed screens', the tour's and the wiring's 3099, 13139, 3900 and 4527 until
-  // `todo-compile-one.md` 6.5 built the lists below the screens and the wiring's variables' transitions, section 418.
+  // the lists below the screens and the wiring's variables' transitions were built, section 418.
   // The activity menu's 260 are its 284, `checkOneActivityMenu`'s on this compile, section 419, less the three off
   // lists its leaving calls, the page keys' and lights 5 and 7's, 24 bytes, which the firmware screens build first.
   // The device pages' 8684 are `checkOneDevicePages`' structure on this compile, section 420: two devices, 22 pages,
@@ -294,8 +290,8 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // The device lists' 632 are the 649 of `checkOneDeviceLists`' structure on this compile, section 424, less 17
   // bytes of two lists below the screens the device pages build first; and the 76 bytes of the one hit page its
   // lists lead to, which the hit pages' 1986 held until then, so theirs is 1910.
-  // The activity screens' 0 since `todo-compile-one.md` 4.3, section 423: the compile holds no activity.
-  // The pictures' 234897, since `todo-compile-one.md` 5.3, section 422, are, on this compile, Logitech's five all black
+  // The activity screens' 0, section 423: the compile holds no activity.
+  // The pictures' 234897, since section 422, are, on this compile, Logitech's five all black
   // pictures, which our rule draws byte for byte: the whole screen background's three copies, 77445 each, the sending mark off, 797,
   // and the clock face, 1765. The pictures are ours by choice on the composed path and not rebuilt on Logitech's
   // compile, so these five are the only ones of its pictures any of ours reproduces. This compile stores the background
@@ -310,7 +306,7 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   // Of those, the bytes read as values: the help screens' 660 and the case programs' 28 are sections 415's and 416's
   // figures for this compile; the hit
   // pages read only the leads of the pages naming them, which lie outside what they build; raw slot 18 is a
-  // constant and base slot 16's table a count and addresses, 6.7. The activity menu's 57 are its 60 on this compile,
+  // constant and base slot 16's table a count and addresses. The activity menu's 57 are its 60 on this compile,
   // section 419, less the three off lists' variables, read by the firmware screens, which build those lists first.
   // 401, 3967, 680 and 1243 for the four before section 418. The device pages' 3482 are the 3555 their check reads
   // on this compile, section 420, less the 73 it reads outside what it builds, the glyph codes of texts other screens
@@ -325,12 +321,12 @@ test('todo-compile-one 3.2.2.3: the attribution counts each builder\'s bytes on 
   });
 });
 
-test('todo-compile-one 3.2.2.3: the attribution refuses a case entered in no table, as the activity composer entered them before, at the case programs, and a hit page\'s rectangle moved, at the hit pages',
+test('the attribution refuses a case entered in no table, as the activity composer entered them before, at the case programs, and a hit page\'s rectangle moved, at the hit pages',
      skipUnless(DONOR), () => {
   // A case appended to the unread copy of the Devices record the way the activity composer appended every case
-  // until 3.2.2.3, its program put in base slot 11 and named by address only: the case programs' table, generated
+  // before the case programs had a builder, its program put in base slot 11 and named by address only: the case programs' table, generated
   // whole, names one program more, and the rebuild is one entry, three bytes, longer. On the donor as the composed
-  // path leaves it, centred, `donorBuilt`: since 3.2.2.4 the sets before a set of another length are compared first,
+  // path leaves it, centred, `donorBuilt`: since the help screens joined the path the sets before a set of another length are compared first,
   // and the donor's clock pickers, whose words the look centres, would be named before the case programs.
   const donor = donorBuilt();
   const roles = oneValueMapRoles(donor);
@@ -349,7 +345,7 @@ test('todo-compile-one 3.2.2.3: the attribution refuses a case entered in no tab
     (error: unknown) => error instanceof OneBuildError && /^building the Harmony One's hit pages: the built records differ from the configuration's at byte 9759, in the hit page message and OK, hit page 0$/.test(error.message));
 });
 
-test('todo-compile-one 3.2.2: the attribution refuses the donor lettered in ours, whose screens still sit where Logitech placed them for its letters, at the first firmware screen text the builder places otherwise',
+test('the attribution refuses the donor lettered in ours, whose screens still sit where Logitech placed them for its letters, at the first firmware screen text the builder places otherwise',
      skipUnless(DONOR), () => {
   assert.throws(() => oneBuiltBytes(lettered(), []),
     (error: unknown) => error instanceof OneBuildError
@@ -357,11 +353,11 @@ test('todo-compile-one 3.2.2: the attribution refuses the donor lettered in ours
 });
 
 // ---------------------------------------------------------------------------------------------------------
-// The two small tables and the lists nothing reaches, `todo-compile-one.md` 6.7, over every One compile.
+// The two small tables and the lists nothing reaches, over every One compile.
 
 const NINETEEN = ONE_FAMILY.full;
 
-test('todo-compile-one 6.7: raw slot 18 and base slot 16\'s table rebuild byte for byte on each One compile walked, two zero bytes on each and a count with an address per number sender, one on eight of all nineteen in the slow tier and the pair on a step; a raw slot 18 holding anything else is refused',
+test('raw slot 18 and base slot 16\'s table rebuild byte for byte on each One compile walked, two zero bytes on each and a count with an address per number sender, one on eight of all nineteen in the slow tier and the pair on a step; a raw slot 18 holding anything else is refused',
      skipUnless(...sampled(ONE_FAMILY)), () => {
   const walked = sampled(ONE_FAMILY);
   const senders: Record<number, number> = {};
@@ -394,7 +390,7 @@ test('todo-compile-one 6.7: raw slot 18 and base slot 16\'s table rebuild byte f
   assert.throws(() => withOneInsertedSection(layout), /^Error: raw slot 18 holds 2 bytes, 0001, where every Harmony One container holds two zero bytes/);
 });
 
-test('todo-compile-one 6.7: every one of the nineteen One compiles holds base slot 10 lists nothing reaches, 44 to 193 of them, so a configuration carrying some is Logitech\'s own form',
+test('every one of the nineteen One compiles holds base slot 10 lists nothing reaches, 44 to 193 of them, so a configuration carrying some is Logitech\'s own form',
      skipUnless(...NINETEEN), () => {
   const counts = NINETEEN.map((name) => {
     const c = parse(require_(name));
@@ -402,6 +398,6 @@ test('todo-compile-one 6.7: every one of the nineteen One compiles holds base sl
     return c.actionLists()!.filter((_, index) => !reached.has(index)).length;
   });
   assert.deepEqual([Math.min(...counts), Math.max(...counts)], [44, 193]);
-  // The test setup's donor, by the same walk: 59, the 34 the composed setup carries among them, 6.7.
+  // The test setup's donor, by the same walk: 59, the 34 the composed setup carries among them, `composesetup.test.ts`.
   assert.equal(counts[NINETEEN.indexOf(DONOR)], 59);
 });

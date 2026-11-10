@@ -1,5 +1,5 @@
 /**
- * The Harmony One's clock header built from a description, `todo-compile-one.md` 4.7, findings section 414: the
+ * The Harmony One's clock header built from a description, findings section 414: the
  * four screen programs along the top of the screen, base slot 11 entries 0 to 3, and the six lists the clock's
  * minute and hour call.
  *
@@ -51,13 +51,13 @@ const BEYOND = ['one_config', 'one_config_unprogrammed', 'one_friend_asfound_con
  */
 const ON_THE_SIXTEEN = { programs: 4, pieces: 249, lists: 6, described: 461, structure: 3558 };
 
-test('todo-compile-one 4.7: the clock header of the sixteen English compiles of skin 54 is rebuilt byte for byte from a description, four programs in 249 pieces and the six lists the minute and the hour call, 3558 bytes each',
+test('the clock header of the sixteen English compiles of skin 54 is rebuilt byte for byte from a description, four programs in 249 pieces and the six lists the minute and the hour call, 3558 bytes each',
      skipUnless(...NAMES), () => {
   assert.equal(CLOCK_HEADER_PROGRAMS.length, 4);
   for (const name of NAMES) assert.deepEqual(checkOneClockHeader(parse(require_(name))), ON_THE_SIXTEEN, name);
 });
 
-test('todo-compile-one 4.7: beyond the sixteen, both European compiles rebuild on a twenty four hour clock, 21 bytes longer for twelve more hours held inline, and the Dutch compile is refused for its days',
+test('beyond the sixteen, both European compiles rebuild on a twenty four hour clock, 21 bytes longer for twelve more hours held inline, and the Dutch compile is refused for its days',
      skipUnless(...BEYOND), () => {
   for (const name of ['one_config', 'one_config_unprogrammed']) {
     const c = parse(require_(name));
@@ -71,7 +71,7 @@ test('todo-compile-one 4.7: beyond the sixteen, both European compiles rebuild o
     (error: Error) => error instanceof ScreenRecordError && /draws Sunday as "zo", another language than English/.test(error.message));
 });
 
-test('todo-compile-one 4.7: on all nineteen compiles the four programs are base slot 11 entries 0 to 3, in three orders, and on the eighteen that describe laid out one after another in entry order and each in the order its reader reads it',
+test('on all nineteen compiles the four programs are base slot 11 entries 0 to 3, in three orders, and on the eighteen that describe laid out one after another in entry order and each in the order its reader reads it',
      skipUnless(...NAMES, ...BEYOND), () => {
   const orders = new Map<string, number>();
   let contiguous = 0;
@@ -99,7 +99,7 @@ test('todo-compile-one 4.7: on all nineteen compiles the four programs are base 
   assert.equal(contiguous, 18);
 });
 
-test('todo-compile-one 4.7: who runs the four agrees with what they are found to be by look: every list running any of them runs the gauge, the clock and the sending mark, or the clock and the charging gauge, and a screen program queues the sending mark alone, on all nineteen',
+test('who runs the four agrees with what they are found to be by look: every list running any of them runs the gauge, the clock and the sending mark, or the clock and the charging gauge, and a screen program queues the sending mark alone, on all nineteen',
      skipUnless(...NAMES, ...BEYOND), () => {
   const shapes = new Map<string, number>();
   const queued = new Map<string, number>();
@@ -129,7 +129,7 @@ test('todo-compile-one 4.7: who runs the four agrees with what they are found to
   assert.deepEqual(Object.fromEntries(queued), { sending: 3195 });
 });
 
-test('todo-compile-one 4.7: the sixteen shared pictures sit at sixteen addresses, exactly the pictures section 405 found only the clock\'s programs draw, and hold thirteen images, the full gauge stored three times and level 4 twice, on each of the sixteen walked, the pair on a step and all sixteen in the slow tier',
+test('the sixteen shared pictures sit at sixteen addresses, exactly the pictures section 405 found only the clock\'s programs draw, and hold thirteen images, the full gauge stored three times and level 4 twice, on each of the sixteen walked, the pair on a step and all sixteen in the slow tier',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   assert.equal(CLOCK_HEADER_PICTURES, 16);
   for (const name of sampled(ONE_SKIN_54_FAMILY)) {
@@ -152,7 +152,7 @@ test('todo-compile-one 4.7: the sixteen shared pictures sit at sixteen addresses
   }
 });
 
-test('todo-compile-one 4.7: the clock draws 19 words inline, the seven days and twelve hours, and the sixty minutes by reference to copies outside it, 950 of the 960 held by section 411\'s clock pickers and 10 by none of them, on the sixteen',
+test('the clock draws 19 words inline, the seven days and twelve hours, and the sixty minutes by reference to copies outside it, 950 of the 960 held by section 411\'s clock pickers and 10 by none of them, on the sixteen',
      skipUnless(...NAMES), () => {
   const holders = new Map<string, number>();
   for (const name of NAMES) {
@@ -180,7 +180,7 @@ test('todo-compile-one 4.7: the clock draws 19 words inline, the seven days and 
   assert.deepEqual(Object.fromEntries(holders), { 'Minute': 647, 'Day 28': 294, 'Day 30': 6, 'Day 31': 3, 'none of them': 10 });
 });
 
-test('todo-compile-one 4.7: the six lists the minute and the hour call are 42 bytes and called by no other action list, on all nineteen',
+test('the six lists the minute and the hour call are 42 bytes and called by no other action list, on all nineteen',
      skipUnless(...NAMES, ...BEYOND), () => {
   for (const name of [...NAMES, ...BEYOND]) {
     const c = parse(require_(name));
@@ -200,7 +200,7 @@ test('todo-compile-one 4.7: the six lists the minute and the hour call are 42 by
   }
 });
 
-test('todo-compile-one 4.7: a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the programs or lists outside the description reaches the build',
+test('a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte of the programs or lists outside the description reaches the build',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   const walked = sampled(ONE_SKIN_54_FAMILY);
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
@@ -239,7 +239,7 @@ test('todo-compile-one 4.7: a blinded input rebuilds each of the sixteen walked,
   if (walked.length === NAMES.length) assert.deepEqual(totals, { structure: 56928, inside: 5392, outside: 1984, blinded: 51536 });
 });
 
-test('todo-compile-one 4.7: a description with two gauge pictures swapped, a twenty four hour clock, or a counted variable moved is refused by the rebuild, the clock\'s font moved by its speller and a shared picture short by the builder; the entries order the build alone and change nothing it compares',
+test('a description with two gauge pictures swapped, a twenty four hour clock, or a counted variable moved is refused by the rebuild, the clock\'s font moved by its speller and a shared picture short by the builder; the entries order the build alone and change nothing it compares',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   type Spec = ReturnType<typeof describeOneClockHeader>['spec'];
@@ -270,7 +270,7 @@ test('todo-compile-one 4.7: a description with two gauge pictures swapped, a twe
     (error: Error) => error instanceof ScreenRecordError && /too few pictures for the clock/.test(error.message));
 });
 
-test('todo-compile-one 4.7: the four entries the finder gives name the four programs\' starts in the configuration\'s base slot 11 table, the clock opening with its face and the other three with a switch, on the sixteen',
+test('the four entries the finder gives name the four programs\' starts in the configuration\'s base slot 11 table, the clock opening with its face and the other three with a switch, on the sixteen',
      skipUnless(...NAMES), () => {
   for (const name of NAMES) {
     const c = parse(require_(name));

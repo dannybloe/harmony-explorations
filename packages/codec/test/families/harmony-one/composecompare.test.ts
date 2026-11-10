@@ -1,5 +1,5 @@
 /**
- * The Harmony One test setup composed two ways and compared by what a person meets, `todo-compile-one.md` 8.1.5,
+ * The Harmony One test setup composed two ways and compared by what a person meets,
  * findings section 436: onto Logitech's compile of two devices, `harvest_one_two_devices` (`composesetup.test.ts`,
  * section 433), and onto our own empty One (`composeempty.test.ts`, section 435). Every text drawn on every screen,
  * what every key and every touch does on every screen, in every activity and in device mode down to the infrared
@@ -150,7 +150,7 @@ const offOrder = (value: string | undefined): string[] =>
 
 // ---------------------------------------------------------------------------------------------------------
 
-test('8.1.5: the two compositions differ in 388 places, every one of them one of seven causes and none unexplained', slow(NEEDS), () => {
+test('the two compositions differ in 388 places, every one of them one of seven causes and none unexplained', slow(NEEDS), () => {
   const differences = compareOneViews(a(), b());
   const counted = Object.fromEntries([...causes(differences)].map(([cause, list]) => [cause, list.length]));
   assert.deepEqual(counted, {
@@ -165,7 +165,7 @@ test('8.1.5: the two compositions differ in 388 places, every one of them one of
   assert.equal(differences.length, 388);
 });
 
-test('8.1.5: each view runs exactly the lists listsReached counts and holds every mode, timer, value map and state variable, so nothing either file can run goes uncompared', NEEDS, () => {
+test('each view runs exactly the lists listsReached counts and holds every mode, timer, value map and state variable, so nothing either file can run goes uncompared', NEEDS, () => {
   for (const [composed, size, reached] of [[onLogitech(), 4095, 2776], [onEmpty(), 4093, 2771]] as const) {
     const { view, lists } = viewOf(composed.container);
     assert.equal(view.size, size);
@@ -180,7 +180,7 @@ test('8.1.5: each view runs exactly the lists listsReached counts and holds ever
   }
 });
 
-test('8.1.5: device order: each composition lists, asks about and switches off its devices in one order, Logitech\'s two first on its compile and the setup\'s on ours', NEEDS, () => {
+test('device order: each composition lists, asks about and switches off its devices in one order, Logitech\'s two first on its compile and the setup\'s on ours', NEEDS, () => {
   const logitech = ['Denon', 'LG TV', 'Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT'];
   const setup = ['LG TV', 'Plasma', 'Denon', 'KPN', 'Kodi', 'Switch', 'Sony HT'];
   assert.deepEqual(recipe().devices.map((one) => one.name), setup);
@@ -209,7 +209,7 @@ test('8.1.5: device order: each composition lists, asks about and switches off i
   assert.equal(blind(a().get('map map@(keys idle 1.4) | 0')), blind(b().get('map map@(keys idle 1.4) | 0')));
 });
 
-test('8.1.5: the donor\'s labels: the composition onto Logitech\'s compile draws its two devices as Logitech named them', NEEDS, () => {
+test('the donor\'s labels: the composition onto Logitech\'s compile draws its two devices as Logitech named them', NEEDS, () => {
   const idle = 'screen screen@(keys idle 183.0) | page 1';
   assert.equal(a().get(`${idle} | texts`), '/@18,18 / 1@13,18 / 3@23,18 / Activities@21,202 / Activity@24,207 / Current@26,196 / Denon AVR-@63,50 '
     + '/ Devices@6,4 / LG@63,104 / OLED65G26LA@63,116 / Plasma@63,164 / X4800H@63,62 / pages@35,18');
@@ -223,7 +223,7 @@ test('8.1.5: the donor\'s labels: the composition onto Logitech\'s compile draws
   assert.deepEqual(rows(a(), watch), rows(b(), watch));
 });
 
-test('8.1.5: the donor\'s device pages offer the codes ours offer, on as many pages, but for plain power pads where ours send the power step', NEEDS, () => {
+test('the donor\'s device pages offer the codes ours offer, on as many pages, but for plain power pads where ours send the power step', NEEDS, () => {
   // What a device page's touches send, each code once, without the key of its blocks.
   const offered = (view: OneView, device: string): Set<string> => new Set([...view]
     .filter(([key]) => key.startsWith(`screen device ${device} | page `) && / \| event \d code \d+$/.test(key) && !key.includes('| copy |'))
@@ -246,7 +246,7 @@ test('8.1.5: the donor\'s device pages offer the codes ours offer, on as many pa
   assert.deepEqual([...offered(a(), 'Plasma')].sort(), [...offered(b(), 'Plasma')].sort());
 });
 
-test('8.1.5: the donor LG\'s online power, the assistant\'s starting value and the two timers nothing starts', NEEDS, () => {
+test('the donor LG\'s online power, the assistant\'s starting value and the two timers nothing starts', NEEDS, () => {
   // The donor's LG keeps Logitech's online power variable, set 30 s after the LG is switched on and cleared when it is
   // switched off; nothing reads it.
   assert.equal(a().get('variable LG_TV_OnlinePower_2'), 'starts 0, at most 1');
@@ -265,7 +265,7 @@ test('8.1.5: the donor LG\'s online power, the assistant\'s starting value and t
   assert.deepEqual(unstarted(b()), ['kind 1, 3 s: {7']);
 });
 
-test('8.1.5: the donor\'s Denon and LG put on an input send the input meant, and the two compositions agree on every entry of those two devices\' input variables', NEEDS, () => {
+test('the donor\'s Denon and LG put on an input send the input meant, and the two compositions agree on every entry of those two devices\' input variables', NEEDS, () => {
   // Four input variables and their 43 transitions: Denon's 19, the LG's inputs 10, its screens 8 and its TV inputs 6.
   const inputs = [...a().keys()].filter((one) => /^variable (Denon|LG_TV)_(Input|Screen|TVInput)/.test(one));
   assert.equal(inputs.length, 47);

@@ -1,6 +1,6 @@
 /**
- * Every text of Logitech's Harmony One compiles spelled from its word, findings section 406, `todo-compile-one.md`
- * 5.1: `describeOneScreenTexts` reads each text instruction's word, font and place, `buildOneScreenTexts`
+ * Every text of Logitech's Harmony One compiles spelled from its word, findings section 406:
+ * `describeOneScreenTexts` reads each text instruction's word, font and place, `buildOneScreenTexts`
  * spells the word in its font and decides by the first copy rule whether it is drawn inline or by reference,
  * `withScreenTexts` writes it into the compile taken apart, and the compile is laid out again and compared byte for
  * byte. The population is the 18 English compiles; the Dutch one, `one_friend_asfound_config`, is reported on its

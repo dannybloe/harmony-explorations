@@ -1,5 +1,5 @@
 /**
- * The Harmony One's ten firmware screens built from a description, `todo-compile-one.md` 4.4.3: what a
+ * The Harmony One's ten firmware screens built from a description, findings section 409: what a
  * description of them carries is the configuration's numbering, and the builder generates the rest.
  *
  * **The blind control makes that a test**, as section 357's did for the Harmony 650: every byte of the
@@ -29,10 +29,10 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
 /** The sixteen English compiles of skin 54, section 405. */
 const SKIN_54 = ONE_SKIN_54_FAMILY.full;
 
-test('todo-compile-one 4.4.3 and 6.5: the ten firmware screens of the sixteen English Harmony One compiles of skin 54 are rebuilt byte for byte from a description, 196 lists among them, 18 more than before section 418',
+test('the ten firmware screens of the sixteen English Harmony One compiles of skin 54 are rebuilt byte for byte from a description, 196 lists among them, 18 more than before section 418',
      skipUnless(...SKIN_54), () => {
-  // 178 the screens' own, section 409, and since `todo-compile-one.md` 6.5 the 18 below them that the wiring does
-  // not build, section 418: 16 nothing else reachable runs (three of them, USB Connected's setters, are also called
+  // 178 the screens' own, section 409, and since section 418 the 18 below them that the wiring does
+  // not build: 16 nothing else reachable runs (three of them, USB Connected's setters, are also called
   // by lists nothing reaches), and the off lists of channel 7 and of the page keys, which the fixed screens and the
   // tour reach too. Seven of the 18 the screens' records bind directly.
   for (const name of SKIN_54) {
@@ -40,7 +40,7 @@ test('todo-compile-one 4.4.3 and 6.5: the ten firmware screens of the sixteen En
   }
 });
 
-test('todo-compile-one 4.4.3: beyond the sixteen, the European factory file rebuilds, the everyday One\'s compile is refused for a leave handler calling another list, and the Dutch compile for its words',
+test('beyond the sixteen, the European factory file rebuilds, the everyday One\'s compile is refused for a leave handler calling another list, and the Dutch compile for its words',
      skipUnless('one_config', 'one_config_unprogrammed', 'one_friend_asfound_config'), () => {
   assert.deepEqual(checkOneFirmwareScreens(parse(require_('one_config_unprogrammed'))), { lists: 196, described: 439 });
   assert.throws(() => checkOneFirmwareScreens(parse(require_('one_config'))),
@@ -51,7 +51,7 @@ test('todo-compile-one 4.4.3: beyond the sixteen, the European factory file rebu
     (error: Error) => error instanceof ScreenRecordError && /a reference names the inside of a replaced structure/.test(error.message));
 });
 
-test('todo-compile-one 4.4.3: a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte the builder writes is taken from the screens\' own bytes',
+test('a blinded input rebuilds each of the sixteen walked, the pair on a step and all sixteen and their totals in the slow tier: no byte the builder writes is taken from the screens\' own bytes',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   const walked = sampled(ONE_SKIN_54_FAMILY);
   const totals = { structure: 0, described: 0, readAddresses: 0, blinded: 0 };
@@ -89,7 +89,7 @@ test('todo-compile-one 4.4.3: a blinded input rebuilds each of the sixteen walke
     assert.ok([...first.described].every((at) => first.structure.has(at)), `${name}: a read outside the screens`);
   }
   // Per compile the screens are 3099 bytes, section 409, and the 18 lists below them 138 more since
-  // `todo-compile-one.md` 6.5, section 418: 439 the description reads, 39 of them the addresses of thirteen
+  // section 418: 439 the description reads, 39 of them the addresses of thirteen
   // pictures and 400 the numbers, the fonts and the hit pages, 38 of those the indices and variables of the lists
   // below; and 2798 the builder writes, every one blinded. No address is read without being described.
   // The same on each of the sixteen, so exact per compile walked.
@@ -97,7 +97,7 @@ test('todo-compile-one 4.4.3: a blinded input rebuilds each of the sixteen walke
   assert.deepEqual(totals, { structure: n * 3237, described: n * 439, readAddresses: 0, blinded: n * 2798 });
 });
 
-test('todo-compile-one 4.4.3 and 6.5: a description with one number moved, or a picture swapped, is refused by the byte comparison, and a list below moved to an index the screens do not reach by their placing',
+test('a description with one number moved, or a picture swapped, is refused by the byte comparison, and a list below moved to an index the screens do not reach by their placing',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   const tamper = (change: (spec: ReturnType<typeof describeOneFirmwareScreens>['spec']) => void): void => {

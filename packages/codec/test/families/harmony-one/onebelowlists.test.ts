@@ -1,5 +1,5 @@
 /**
- * The Harmony One's lists below its screens, `todo-compile-one.md` 6.5, findings section 418: the base slot 10
+ * The Harmony One's lists below its screens, findings section 418: the base slot 10
  * lists the firmware screens, the fixed screens and the tour and Remote Assistant reach only through a list of
  * their own, and the lists the transitions of three of the wiring's own variables call. Each builder's own test
  * holds its rebuild byte for byte and its blind control, `onefirmwarescreens.test.ts`,

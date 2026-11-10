@@ -1,5 +1,5 @@
 /**
- * The Harmony One's fixed pictures drawn by us, `todo-compile-one.md` 5.3.1 and 5.3.3, findings section 422,
+ * The Harmony One's fixed pictures drawn by us, findings section 422,
  * `families/harmony-one/pictures.ts`: every picture of ours Logitech's size with Logitech's transparency mask, each icon
  * where Logitech's ink sits, and the whole screen background one black picture that the six blank screens drawing
  * photographs draw too. Logitech's pictures are read off the lab's compiles here and never written into the repository.
@@ -8,7 +8,7 @@
  * picture of ours is Logitech's by construction, so a mask comparison cannot fail and only shows the comparison works;
  * the size of ours encoded against Logitech's is the closure with two ends, our encoder and Logitech's own bytes.
  *
- * **Since `todo-compile-one.md` 7.1.2, section 428, the masked form is a choice**, `OneChoices.logitechMasks`, off by
+ * **Since section 428 the masked form is a choice**, `OneChoices.logitechMasks`, off by
  * default: each picture is transparent where our own drawing leaves a pixel empty, built with no configuration at all,
  * and the tests of the masked form above name it. The last tests here are the rule's own.
  */
@@ -36,11 +36,11 @@ const DONOR = 'harvest_one_two_devices';
 /** The compiles of the sixteen that store the whole screen background three times; the other twelve store it four times. */
 const THREE_BACKGROUNDS = new Set(['harvest_one_two_devices', 'harvest_one_families_1', 'harvest_one_families_2', 'harvest_one_families_3']);
 const backgrounds = (name: string): number => (THREE_BACKGROUNDS.has(name) ? 3 : 4);
-/** The family's choices with the background left a picture, which is how 5.3.1 to 5.3.3 placed it; 5.3.4 makes it a fill. */
+/** The family's choices with the background left a picture, as section 422 placed it; section 425 makes it a fill. */
 const AS_PICTURE = { ...ONE_CHOICES, backgroundFill: false };
 /**
  * The same with each picture inside the mask of Logitech's it replaces, `OneChoices.logitechMasks`, which is how
- * 5.3.1 drew them; 7.1.2 draws them by their rule alone, section 428, and these tests of the masked form keep it on.
+ * section 422 drew them; section 428 draws them by their rule alone, and these tests of the masked form keep it on.
  */
 const MASKED = { ...AS_PICTURE, logitechMasks: true };
 
@@ -52,7 +52,7 @@ function sameMask(a: Rows, b: Rows): boolean {
     && row.every((v, x) => (v === undefined) === (b[y]![x] === undefined)));
 }
 
-test('todo-compile-one 5.3: every one of the 29 pictures of Logitech\'s the module names is held by each of the sixteen English compiles of skin 54, at its entry\'s size, 37 or 38 pictures a compile as the background is stored three or four times',
+test('every one of the 29 pictures of Logitech\'s the module names is held by each of the sixteen English compiles of skin 54, at its entry\'s size, 37 or 38 pictures a compile as the background is stored three or four times',
      skipUnless(...SIXTEEN), () => {
   const keys = ONE_PICTURES.flatMap((entry) => entry.keys);
   assert.equal(keys.length, 29);
@@ -71,12 +71,12 @@ test('todo-compile-one 5.3: every one of the 29 pictures of Logitech\'s the modu
   }
 });
 
-test('todo-compile-one 5.3.1: on each of the sixteen walked, the pair on a step and all sixteen in the slow tier, every picture of ours encodes to as many bytes as the Logitech picture it replaces and sits in that picture\'s place in the bank, with the mask taken from it, in the masked form',
+test('on each of the sixteen walked, the pair on a step and all sixteen in the slow tier, every picture of ours encodes to as many bytes as the Logitech picture it replaces and sits in that picture\'s place in the bank, with the mask taken from it, in the masked form',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   for (const name of sampled(ONE_SKIN_54_FAMILY)) {
     const c = parse(require_(name));
     const { pictures } = readOnePictures(c);
-    // The background kept a picture: this is the replacement and the merge, and the fill 5.3.4 makes of the
+    // The background kept a picture: this is the replacement and the merge, and the fill section 425 makes of the
     // background afterwards is `screenfill.test.ts`'s, section 425. The form of section 422, the masked one.
     const placed = withOnePictures(c, MASKED);
     const after = picturesByContent(placed.container);
@@ -122,7 +122,7 @@ test('todo-compile-one 5.3.1: on each of the sixteen walked, the pair on a step 
 /** The sixteen and the three Harmony One compiles outside them: the everyday One's, its unprogrammed one and the Dutch one. */
 const NINETEEN = ONE_FAMILY.full;
 
-test('todo-compile-one 5.3.1: on all nineteen Harmony One compiles every named picture of ours in the masked form encodes to as many bytes as Logitech\'s own, 716 of 716, the two ends being our encoder and the length Logitech\'s header states',
+test('on all nineteen Harmony One compiles every named picture of ours in the masked form encodes to as many bytes as Logitech\'s own, 716 of 716, the two ends being our encoder and the length Logitech\'s header states',
      skipUnless(...NINETEEN), () => {
   let total = 0;
   for (const name of NINETEEN) {
@@ -135,7 +135,7 @@ test('todo-compile-one 5.3.1: on all nineteen Harmony One compiles every named p
   assert.equal(total, 716);
 });
 
-test('todo-compile-one 5.3.1: the mask comparison used here tells a mask one pixel off apart, and an entry of another size is refused rather than drawn',
+test('the mask comparison used here tells a mask one pixel off apart, and an entry of another size is refused rather than drawn',
      skipUnless(DONOR), () => {
   const { pictures } = readOnePictures(parse(require_(DONOR)));
   const cross = pictures.find((one) => one.entry?.name === 'charging problem')!;
@@ -171,7 +171,7 @@ function placeOf(pixels: Rows, scale: number): { at: [number, number]; size: num
   return { at: [Math.round(x0 + w / 2 - size / 2), Math.round(y0 + h / 2 - size / 2)], size };
 }
 
-test('todo-compile-one 5.3.1: each of the seven icons sits where section 373\'s rule puts it when measured off Logitech\'s picture, the rule being fitted to these same seven and no outside sample',
+test('each of the seven icons sits where section 373\'s rule puts it when measured off Logitech\'s picture, the rule being fitted to these same seven and no outside sample',
      skipUnless(DONOR), () => {
   const { pictures } = readOnePictures(parse(require_(DONOR)));
   const icons = ONE_PICTURES.filter((entry) => entry.drawing.kind === 'icon');
@@ -196,7 +196,7 @@ function namings(c: Container): Map<string, number> {
   return out;
 }
 
-test('todo-compile-one 5.3.3: on Logitech\'s compile of two devices the whole screen background is one black picture, 77445 bytes where its three copies and the three photographs took six times that, and every draw of any of the four draws it',
+test('on Logitech\'s compile of two devices the whole screen background is one black picture, 77445 bytes where its three copies and the three photographs took six times that, and every draw of any of the four draws it',
      skipUnless(DONOR), () => {
   const c = parse(require_(DONOR));
   const before = namings(c);
@@ -205,7 +205,7 @@ test('todo-compile-one 5.3.3: on Logitech\'s compile of two devices the whole sc
   // The references to the background's three copies, 75 on this compile (66 to 314 over the sixteen), and to each
   // photograph two: six blank screens a timer enters draw them, which is all this says of what they are for.
   assert.deepEqual(background.map((key) => before.get(key)), [75, 2, 2, 2]);
-  // The background kept a picture, as 5.3.3 left it; 5.3.4 makes it one fill, `screenfill.test.ts`, section 425. In the
+  // The background kept a picture, as section 422 left it; section 425 makes it one fill, `screenfill.test.ts`. In the
   // masked form, where every other picture of ours is as long as Logitech's; by the rule alone, section 428, 783 bytes
   // fewer: the cross 876 fewer, its paper only its circle, and the thirteen gauge copies a net 93 more.
   const placed = withOnePictures(c, MASKED).container;
@@ -225,7 +225,7 @@ test('todo-compile-one 5.3.3: on Logitech\'s compile of two devices the whole sc
     (error: unknown) => error instanceof PictureError && /merged onto one that is merged itself/.test(error.message));
 });
 
-test('todo-compile-one 5.3: on the composed path ours go in unless the choice keeps Logitech\'s, and the attribution, which recognises a picture by reproducing it with the drawing rule, counts 31 on the finished file, 32 with the background left a picture, and on Logitech\'s compile of two devices, with three background copies, the five all black ones the rule reproduces',
+test('on the composed path ours go in unless the choice keeps Logitech\'s, and the attribution, which recognises a picture by reproducing it with the drawing rule, counts 31 on the finished file, 32 with the background left a picture, and on Logitech\'s compile of two devices, with three background copies, the five all black ones the rule reproduces',
      skipUnless(DONOR), () => {
   assert.equal(ONE_CHOICES.logitechPictures, false);
   const c = parse(require_(DONOR));
@@ -238,7 +238,7 @@ test('todo-compile-one 5.3: on the composed path ours go in unless the choice ke
   assert.equal(Buffer.compare(ours.container.blob, withOnePictures(kept.container, ONE_CHOICES).container.blob), 0);
   // Ours found by reproducing each with the drawing rule, which is what the attribution does and so cannot miss one of
   // ours: 31 pictures, the 37 less the five taken out for the one background and less that background, which is a
-  // fill since `todo-compile-one.md` 5.3.4, section 425. With the background left a picture it is 32.
+  // fill since section 425. With the background left a picture it is 32.
   assert.equal(oneOurPictures(ours.container, ONE_CHOICES).length, 31);
   const pictured = withOneComposedBuilders(c, [], AS_PICTURE);
   assert.equal(oneOurPictures(pictured.container, AS_PICTURE).length, 32);
@@ -252,12 +252,12 @@ test('todo-compile-one 5.3: on the composed path ours go in unless the choice ke
 });
 
 // ---------------------------------------------------------------------------------------------------------
-// `todo-compile-one.md` 7.1.2, section 428: the fixed pictures by their rule alone.
+// Section 428: the fixed pictures by their rule alone.
 
 /** The pixels a picture leaves empty, as `x,y`, row by row. */
 const emptyAt = (rows: Rows): string[] => rows.flatMap((row, y) => row.flatMap((v, x) => (v === undefined ? [`${x},${y}`] : [])));
 
-test('todo-compile-one 7.1.2: every one of the 23 fixed pictures is built by its rule with no configuration present, at its stated size, 296739 bytes, and only the battery gauges\' ten and the cross have an empty pixel, the gauges each at row 0 and column 0 and nowhere else, the cross 4458 pixels outside its circle',
+test('every one of the 23 fixed pictures is built by its rule with no configuration present, at its stated size, 296739 bytes, and only the battery gauges\' ten and the cross have an empty pixel, the gauges each at row 0 and column 0 and nowhere else, the cross 4458 pixels outside its circle',
      () => {
   // No lab and no configuration: this test runs in a clone with neither, so it cannot read a picture off one.
   const built = oneFixedPictures(ONE_CHOICES);
@@ -293,7 +293,7 @@ test('todo-compile-one 7.1.2: every one of the 23 fixed pictures is built by its
   assert.equal(built.reduce((sum, one) => sum + one.bytes.length, 0), 296739);
 });
 
-test('todo-compile-one 7.1.2: on each of the sixteen walked, the pair on a step and all sixteen in the slow tier, the step puts in each of its 32 places exactly the picture the rule built with no configuration, and the masked form differs at 14 of those places, so a step that drew inside Logitech\'s mask would not pass',
+test('on each of the sixteen walked, the pair on a step and all sixteen in the slow tier, the step puts in each of its 32 places exactly the picture the rule built with no configuration, and the masked form differs at 14 of those places, so a step that drew inside Logitech\'s mask would not pass',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   const fixed = new Map(oneFixedPictures(AS_PICTURE).map((one) => [one.entry, contentKey(one.bytes)]));
   for (const name of sampled(ONE_SKIN_54_FAMILY)) {
@@ -321,7 +321,7 @@ test('todo-compile-one 7.1.2: on each of the sixteen walked, the pair on a step 
   }
 });
 
-test('todo-compile-one 7.1.2: the cross built by the rule\'s form is the same whatever the pixels of the picture it replaces, every pixel made undrawn giving the same bytes where the masked form changes, and either form refuses a picture of another size than its entry',
+test('the cross built by the rule\'s form is the same whatever the pixels of the picture it replaces, every pixel made undrawn giving the same bytes where the masked form changes, and either form refuses a picture of another size than its entry',
      skipUnless(DONOR), () => {
   const { pictures } = readOnePictures(parse(require_(DONOR)));
   const cross = pictures.find((one) => one.entry?.name === 'charging problem')!;
@@ -360,7 +360,7 @@ function differences(name: string): { entry: string; counts: [number, number, nu
   return out;
 }
 
-test('todo-compile-one 7.1.2: on every stored copy of all nineteen Harmony One compiles the rule\'s form differs from the masked form at three to five pixels of eight gauge drawings, 30 of level 0\'s and 39 of level 3\'s, of which the mask had cut 27 of our outline and tip, and at the 430 pixels between our cross\'s circle and the edge of Logitech\'s, empty in ours; on the other twelve drawings at none',
+test('on every stored copy of all nineteen Harmony One compiles the rule\'s form differs from the masked form at three to five pixels of eight gauge drawings, 30 of level 0\'s and 39 of level 3\'s, of which the mask had cut 27 of our outline and tip, and at the 430 pixels between our cross\'s circle and the edge of Logitech\'s, empty in ours; on the other twelve drawings at none',
      skipUnless(...NINETEEN), () => {
   const expected = new Map<string, [number, number, number]>([
     ['battery gauge 0', [0, 0, 30]], ['battery gauge 1', [4, 1, 0]], ['battery gauge 2', [4, 0, 0]],

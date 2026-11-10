@@ -1,7 +1,7 @@
 /**
  * Which base slot 10 lists a set of screens owns, shared by the Harmony One's fixed screens test
  * (`onefixedscreens.test.ts`, findings section 411) and its tour and Remote Assistant test
- * (`onetourscreens.test.ts`, section 412), and since `todo-compile-one.md` 6.7 the lists anything can run,
+ * (`onetourscreens.test.ts`, section 412), and the lists anything can run,
  * `listsReached`, by the composed setup's test (`composesetup.test.ts`).
  *
  * **It lives in one file because it is one derivation**, as `tagfive.ts` is: both tests claim that the lists a
@@ -106,8 +106,8 @@ export function namedByRecords(c: Container, modes: ReadonlySet<number>): Set<nu
 }
 
 /**
- * What a screen set leaves below the lists it builds, set against the wiring's, section 418's claim since
- * `todo-compile-one.md` 6.5: through every call from the lists the set builds, the lists it does not build
+ * What a screen set leaves below the lists it builds, set against the wiring's, section 418's claim: through every
+ * call from the lists the set builds, the lists it does not build
  * (`left`, how many), those of them the wiring does not build either (`notWiring`, which a builder that states
  * every list below its screens needs empty), and the lists both the set and the wiring build (`both`, which
  * needs empty too, or one list would be two builders' and the attribution would take the first).
@@ -171,7 +171,7 @@ export function listsBelow(
 }
 
 /**
- * The base slot 10 lists something can run, `todo-compile-one.md` 6.7: every list `namedOutside` finds named by
+ * The base slot 10 lists something can run: every list `namedOutside` finds named by
  * a holder that is not an action list (with no modes set apart, so every mode, every screen program reachable
  * from base slot 11, the value maps and the modes, and every other holder it walks), and every instruction a
  * base slot 16 number sender queues, its own three and its digit tables', section 154, which `namedOutside`

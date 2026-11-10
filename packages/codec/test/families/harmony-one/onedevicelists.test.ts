@@ -1,5 +1,5 @@
 /**
- * The Harmony One's device lists built whole from a description, `todo-compile-one.md` 4.3.3, findings section 424:
+ * The Harmony One's device lists built whole from a description, findings section 424:
  * every list the Devices item opens, the one with no activity running and each activity's own, and the one list
  * nothing enters, each from its kind, its rows' names as the lines they are drawn in and the configuration's
  * numbering.
@@ -92,7 +92,7 @@ const ENGLISH = Object.keys(LISTS);
 const DUTCH = 'one_friend_asfound_config';
 const ALL = [...ENGLISH, DUTCH];
 
-test('todo-compile-one 4.3.3: the device lists of all eighteen English Harmony One compiles are rebuilt byte for byte from a description, 99 lists of one to fifteen devices, and the Dutch compile is refused by its words',
+test('the device lists of all eighteen English Harmony One compiles are rebuilt byte for byte from a description, 99 lists of one to fifteen devices, and the Dutch compile is refused by its words',
      skipUnless(...ALL), () => {
   // Every list of a compile holds every device once, so a list's rows are the compile's rows over its lists.
   const totals = { lists: 0, rows: 0, shortest: Infinity, longest: 0 };
@@ -131,7 +131,7 @@ function rowsOf(c: Container, mode: number): number[] {
   });
 }
 
-test('todo-compile-one 4.3.3: every Harmony One compile holds one device list nothing enters, no three bytes of it naming its mode where every other list\'s mode is named, its rows in the idle list\'s order, and its scan 55 list mapping once per other list, activities and 1',
+test('every Harmony One compile holds one device list nothing enters, no three bytes of it naming its mode where every other list\'s mode is named, its rows in the idle list\'s order, and its scan 55 list mapping once per other list, activities and 1',
      skipUnless(...ALL), () => {
   const tally = { compiles: 0, unreached: 0, idleOrder: 0, scan55: 0, unreachedNamed: 0, reachedNamed: 0, reached: 0 };
   for (const name of ALL) {
@@ -196,7 +196,7 @@ test('sections 402 and 424: the devices an activity\'s start switches on, in tha
   });
 });
 
-test('todo-compile-one 4.3.3: every row name of the eighteen\'s device lists is its name broken at 101 pixels, and at any width from 101 to 103 and none outside it',
+test('every row name of the eighteen\'s device lists is its name broken at 101 pixels, and at any width from 101 to 103 and none outside it',
      skipUnless(...ENGLISH), () => {
   const fits = new Map<number, number>();
   let rows = 0;
@@ -232,7 +232,7 @@ test('todo-compile-one 4.3.3: every row name of the eighteen\'s device lists is 
  */
 const FITS: [number, number][] = [[99, 641], [100, 650], [101, 659], [102, 659], [103, 659], [104, 648], [105, 623]];
 
-test('todo-compile-one 4.3.3: a blinded input rebuilds the device lists of all eighteen: no byte of them outside the description reaches the build',
+test('a blinded input rebuilds the device lists of all eighteen: no byte of them outside the description reaches the build',
      skipUnless(...ENGLISH), () => {
   const totals = { structure: 0, inside: 0, outside: 0, blinded: 0 };
   for (const name of ENGLISH) {
@@ -273,7 +273,7 @@ test('todo-compile-one 4.3.3: a blinded input rebuilds the device lists of all e
  */
 const BLIND = { structure: 63937, inside: 20087, outside: 413, blinded: 43850 };
 
-test('todo-compile-one 4.3.3: a description with two rows swapped, a list\'s kind flipped, scan 55 mapped once more or two pages of other shapes named to one hit page is refused, by the builder or the byte comparison',
+test('a description with two rows swapped, a list\'s kind flipped, scan 55 mapped once more or two pages of other shapes named to one hit page is refused, by the builder or the byte comparison',
      skipUnless('phase7_after'), () => {
   // A compile of four lists of four devices, each two pages.
   const c = parse(require_('phase7_after'));
@@ -322,7 +322,7 @@ function composeOne(c: Container, label: string): Container {
   return parse(composeDeviceScreen(parse(device.bytes), label, rows, { compiled: { title: label, keys: new Map([[3, device.lists[1]!]]) } }).bytes);
 }
 
-test('todo-compile-one 4.3.3: devices composed onto a Logitech compile take a row at the end of every device list by the lists being built again, which this rebuilds byte for byte, a list of a full last page gaining a page',
+test('devices composed onto a Logitech compile take a row at the end of every device list by the lists being built again, which this rebuilds byte for byte, a list of a full last page gaining a page',
      skipUnless('one_config', 'calibration_one'), () => {
   for (const [name, added] of [['one_config', 1], ['calibration_one', 2]] as const) {
     // Lettered in ours first, as the composed path letters its donor, `letterOneDonor`.
@@ -344,7 +344,7 @@ test('todo-compile-one 4.3.3: devices composed onto a Logitech compile take a ro
 });
 
 // ---------------------------------------------------------------------------------------------------------
-// The lists of no rows, `todo-compile-one.md` 7.1.6, findings section 429.
+// The lists of no rows, findings section 429.
 
 /** The four English compiles with no activity, one test account's: one device, two, two and four. */
 const NO_ACTIVITY = ['harvest_one_families_1', 'harvest_one_two_devices', 'harvest_one_families_2', 'harvest_one_families_3'];
@@ -359,7 +359,7 @@ function onePageLengths(c: Container, built: ReturnType<typeof buildOneDeviceLis
     page.start + page.length - c.blobOffsetOf(page.areas[0]!.address)!];
 }
 
-test('todo-compile-one 7.1.6: on every one page device list of the eighteen English compiles the own key map and the page\'s record do not change with the rows and the page list, its copy and its hit page grow by one step a row, 4, 4 and 15 bytes; the lists of no rows sit at the steps\' zero, 5, 5 and 46',
+test('on every one page device list of the eighteen English compiles the own key map and the page\'s record do not change with the rows and the page list, its copy and its hit page grow by one step a row, 4, 4 and 15 bytes; the lists of no rows sit at the steps\' zero, 5, 5 and 46',
      skipUnless(...ENGLISH), () => {
   const byRows = new Map<number, Set<string>>();
   const lists = new Map<number, number>();
@@ -387,7 +387,7 @@ test('todo-compile-one 7.1.6: on every one page device list of the eighteen Engl
   for (const s of [0, 1]) assert.deepEqual(onePageLengths(container, built, s, d.spec.screen.screens[s]!.leads[0]!), [25, 7, 5, 5, 46]);
 });
 
-test('todo-compile-one 7.1.6: Logitech\'s own activity menu of no row, on the four compiles with no activity, is one page drawing the chrome and its two key words alone, a font selected for each, and touched through its two keys and the edges; its Devices key and both Devices records\' idle cases enter the idle device list; and no mode of the nineteen holds no page',
+test('Logitech\'s own activity menu of no row, on the four compiles with no activity, is one page drawing the chrome and its two key words alone, a font selected for each, and touched through its two keys and the edges; its Devices key and both Devices records\' idle cases enter the idle device list; and no mode of the nineteen holds no page',
      skipUnless(...NO_ACTIVITY, ...ALL), () => {
   for (const name of NO_ACTIVITY) {
     const c = parse(require_(name));
@@ -418,7 +418,7 @@ test('todo-compile-one 7.1.6: Logitech\'s own activity menu of no row, on the fo
   assert.equal(modes, 3594);
 });
 
-test('todo-compile-one 7.1.6: the two device lists of no rows, put into two compiles with no activity, of one device and of two, read back as EMPTY_DEVICE_LISTS and rebuild byte for byte, one page each, the left key at 48 alone, the description\'s fonts the title\'s and the left key\'s alone; and the description made from their numbering by role is the one read',
+test('the two device lists of no rows, put into two compiles with no activity, of one device and of two, read back as EMPTY_DEVICE_LISTS and rebuild byte for byte, one page each, the left key at 48 alone, the description\'s fonts the title\'s and the left key\'s alone; and the description made from their numbering by role is the one read',
      skipUnless('harvest_one_families_1', 'harvest_one_two_devices', 'one_spare_after_sync'), () => {
   for (const name of ['harvest_one_families_1', 'harvest_one_two_devices']) {
     const c = parse(require_(name));

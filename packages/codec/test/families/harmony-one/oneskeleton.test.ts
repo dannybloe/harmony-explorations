@@ -1,6 +1,6 @@
 /**
  * The Harmony One's skeleton laid out from nothing and the probe the screen builders spell through,
- * `todo-compile-one.md` 7.1.3, findings section 431.
+ * findings section 431.
  *
  * **No lab for the first four**: the point is that the skeleton comes out of the codec with no Logitech file as
  * input. It passes every check the parser runs, the emitter's round trip and the inventory, every byte of it is
@@ -72,14 +72,14 @@ function gapsOf(c: Container): [number, number][] {
   return gaps;
 }
 
-test('7.1.3: the skeleton lays out from nothing, every parse check passing and every byte claimed but the empty key table', () => {
+test('the skeleton lays out from nothing, every parse check passing and every byte claimed but the empty key table', () => {
   const built = buildOneSkeleton(OPTIONS);
   const c = built.container;
   assert.ok(c.allChecksPass);
   assert.equal(c.architecture, 12);
   assert.equal(c.versionWord! & 0xff, 54);
   assert.equal(built.bytes.length, SKELETON_LENGTH);
-  // The key table is the empty tagged list until the firmware screens give mode 0 its own map, 7.1.7.
+  // The key table is the empty tagged list until the firmware screens give mode 0 its own map, `oneempty.test.ts`.
   assert.deepEqual(gapsOf(c), [[KEY_TABLE_AT, 2]]);
   assert.deepEqual([...c.blob.subarray(KEY_TABLE_AT, KEY_TABLE_AT + 2)], [0, 0]);
   // The checks a Logitech compile is read with: the emitter's round trip and the inventory. The frame's own,
@@ -107,7 +107,7 @@ test('7.1.3: the skeleton lays out from nothing, every parse check passing and e
   assert.equal(c.blobOffsetOf(c.sections[19]!.address), raw18 + 2);
 });
 
-test('7.1.3: the skeleton holds the stated font table and the stamped clock', () => {
+test('the skeleton holds the stated font table and the stamped clock', () => {
   const built = buildOneSkeleton(OPTIONS);
   const c = built.container;
   const stated = buildOneFontTable(ONE_CHOICES);
@@ -148,7 +148,7 @@ test('7.1.3: the skeleton holds the stated font table and the stamped clock', ()
   assert.equal(c.builtAt, BUILT_AT);
 });
 
-test('7.1.3: the skeleton refuses a skin it is not laid out for and a part for a table that is its own or none', () => {
+test('the skeleton refuses a skin it is not laid out for and a part for a table that is its own or none', () => {
   assert.deepEqual([...ONE_SKELETON_SKINS], [54]);
   assert.throws(() => buildOneSkeleton({ ...OPTIONS, skin: 59 }), (e: unknown) => e instanceof OneSkeletonError && /not skin 59/.test(e.message));
   const one = { bytes: new Uint8Array(1), refs: [], owner: 'slot-7-table' };
@@ -156,7 +156,7 @@ test('7.1.3: the skeleton refuses a skin it is not laid out for and a part for a
   for (const slot of [1, 3, 18, 19, 20]) assert.throws(() => layOutOneSkeleton(OPTIONS, { tables: { [slot]: one } }), /no table sits/);
 });
 
-test('7.1.3: the probe reads back every code as the character the table states, and the skeleton spells nothing', () => {
+test('the probe reads back every code as the character the table states, and the skeleton spells nothing', () => {
   const skeleton = buildOneSkeleton(OPTIONS).container;
   // The control: a configuration that draws no text has no character map, so nothing spells through it.
   assert.equal(characterMap(skeleton), undefined);
@@ -223,7 +223,7 @@ function widthsOf(c: Container, stride = 3): Record<number, number> {
 /** Entries in the Harmony One's key table on every compile, section 311. */
 const KEY_TABLE_ENTRIES = 55;
 
-test('7.1.3: the empty tables take the count widths, raw slot 18 the two zero bytes, of all nineteen compiles, whose key table is one constant naming lists 0 to 54', skipUnless(...ONES), () => {
+test('the empty tables take the count widths, raw slot 18 the two zero bytes, of all nineteen compiles, whose key table is one constant naming lists 0 to 54', skipUnless(...ONES), () => {
   // The control: the same reading with four bytes an entry, the `u32` table section 20 corrected, disagrees
   // with the statement on every compile, so the agreement is the three byte entries' and not the reading's.
   let refuted = 0;
@@ -255,7 +255,7 @@ test('7.1.3: the empty tables take the count widths, raw slot 18 the two zero by
  */
 const SAME_ORDER = { harvest_one_two_devices: { texts: 1059, first: 950, differ: 106 }, harvest_one_families_1: { texts: 1231, first: 1185, differ: 46 } } as const;
 
-test('7.1.3: every text of the two compiles with no activity in our table order spells through the probe, in Logitech\'s codes where it is among the first 60',
+test('every text of the two compiles with no activity in our table order spells through the probe, in Logitech\'s codes where it is among the first 60',
   skipUnless(...Object.keys(SAME_ORDER)), () => {
     const probe = oneSpellingContainer(OPTIONS);
     for (const [name, want] of Object.entries(SAME_ORDER)) {
@@ -282,7 +282,7 @@ test('7.1.3: every text of the two compiles with no activity in our table order 
     }
   });
 
-test('7.1.3: every screen set builds through the probe from a description of Logitech\'s compile of two devices, and none through the skeleton',
+test('every screen set builds through the probe from a description of Logitech\'s compile of two devices, and none through the skeleton',
   skipUnless('harvest_one_two_devices'), () => {
     const c = parse(load('harvest_one_two_devices') as Uint8Array);
     const layout = takeApart(c);

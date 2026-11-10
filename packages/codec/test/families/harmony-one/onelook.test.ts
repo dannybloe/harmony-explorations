@@ -1,5 +1,5 @@
 /**
- * The Harmony One's look in our own pictures, findings section 399, `todo-compile-one.md` 1.2.11.2: what
+ * The Harmony One's look in our own pictures, findings section 399: what
  * Logitech's nineteen Harmony One compiles draw on their pads, and the family's steps that draw ours instead,
  * the device look, the colour buttons and the labels centred by their letters.
  *
