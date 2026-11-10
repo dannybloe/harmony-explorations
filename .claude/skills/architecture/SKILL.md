@@ -267,7 +267,10 @@ call, with a thin script over it, and none is on a main entry:
   engine came out of bench runs and is `families/harmony-touch/engine.ts`, so an application can ask what an activity
   will send.
 * **Names by subject, never by todo step.** `touch-device-runs.test.ts`, not `touch82.test.ts`: a reader cannot tell
-  what 8.2 was without the todo file. A todo item belongs in a header as provenance. A model number (`keys300`,
+  what 8.2 was without the todo file. **Nor in a comment or a header**, decision 33: this said a todo item
+  belongs in a header as provenance<!--superseded--> until that decision, and 1575 mentions followed. A comment says
+  what it means in its own words; a pointer goes to `reference/`, a decision or a requirement number, never a todo,
+  and history is git's. A model number (`keys300`,
   `h885base`) or an architecture (`arch10`) in a name is a subject. What still carries a step in its name is recorded
   run input, the setups under `corpus/touch-setups/`, the plans under `bench/irtests/` and the constants that name
   them, left as they were recorded, and one older test, `bench/test/harmony-300-350/final53.test.ts`, listed in `tests/project/test_toolchain.py`.

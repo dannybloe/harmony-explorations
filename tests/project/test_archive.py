@@ -62,10 +62,12 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # 7.3.9, and our own builds held as references by recipe and fingerprint, plan 014, corrected in place the day it
 # was taken. 31 had been added without repinning, so this check failed from 7.3.9 until 7.3.11. The digest before
 # them was 3a59f41f.
-DECISIONS_DIGEST = "ca39582a6b7056331834fa87f39bb8b154e2602076f0e50db69fb7eaf3d324af"
+# Repinned for decision 33, a new entry: code and tests never name a todo, and open work points at a
+# numbered requirement. The digest before it was ca39582a.
+DECISIONS_DIGEST = "f7ed1e961a62310749195ec116e5a51582e7df73ddba677d14a445423b5b357a"
 
 SECTIONS = 436
-DECISIONS = 32
+DECISIONS = 33
 
 
 def anchor_problems(findings, decisions):

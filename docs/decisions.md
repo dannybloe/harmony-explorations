@@ -921,3 +921,38 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    lab. A recipe's carried codes are the archive's, a few devices' worth, no more than learning them off a remote
    would give, which the person judged acceptable for the tests; a Harmony Touch reference uses an invented account,
    John Doe's, never a real one's identifiers.
+
+33. <a id="d33"></a>**Code and tests never name a todo; a comment says what it means in its own words, and open work
+   points at a requirement.** *Taken on 10 November 2026, in the conversation that restructured `todo.md` around the
+   FHSDK, the libraries, reference and tools an application builds on.* A todo is temporary: an item is ticked, a
+   track file is archived or removed, a chapter is renumbered. A comment that cites one breaks when that happens,
+   and when this was decided code and tests named a todo 1575 times in 610 files, which is what kept a track file
+   from being renamed or removed at all.
+
+   **The rule, for every comment, docstring and test header.** A comment is self-contained: it says what the code
+   does and why, in its own words, and the tests confirm it. A mention that only records history ("moved in step
+   X", "added for item Y") is not written, since git holds it. A reason that lived in a todo is written out in the
+   comment. A pointer is kept only where the evidence is outside the code and no test of the code can show it:
+
+   * **a fact about the remote's own behaviour**, read in its firmware or measured on a unit, points at its home in
+     `reference/`, so a reader can check it and nobody simplifies it away;
+   * **a decision**, by its number, above all on the write rails, so a refusal reads as deliberate;
+   * **work still open** points at its requirement, below, by number. The code says what it does today, and a
+     refusal says it at run time.
+
+   Documents are not code and keep naming todos where that is their job: plans, the frozen archive, `CLAUDE.md`,
+   the skills and the todos themselves.
+
+   **The requirements are the permanent home of open work.** What the FHSDK must be able to do for an application
+   is a list of requirements, each with a number `R1`, `R2`, ... that is never renumbered or reused; a requirement
+   dropped stays, marked withdrawn. Each bench model has a status per requirement: met, open, impossible on this
+   model (with its evidence), or unknown, which counts as open. **Met** means in the FHSDK, tested, and, for
+   anything that touches a remote, shown working on a bench unit of that model; a build that passes every test and
+   never ran on the remote is open. The requirements and the statuses are data in the FHSDK, which a capability API
+   returns per model with the model's properties (its limits, screen, favourites and keys, from its family), and the
+   table in `docs/remote-requirements.md` is generated from that data with a test that the two agree. An application
+   offers a feature where it is met and has the other statuses for a developer.
+
+   **Held by** a guard test over the code and the tests, with the mentions that remain as a debt list that only
+   goes down, once the sweep that removes them has run; until then this decision and `CLAUDE.md` are the rule for
+   everything new.

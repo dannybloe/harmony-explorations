@@ -584,8 +584,8 @@ file's own header is where its reading lives.
 * **`docs/findings.md` is the frozen archive** of the arguments, sections 1 to 436, grepped and read in
   ranges, never loaded whole, and it takes nothing new.
 * `docs/status.md`, where the work stands; `todo.md`, which alone sets the order and stays in the root as
-  the entry point, while every track's own todo file lives in `todo/` under its unchanged name, so a
-  mention by name in a comment still finds it, and says in its header what it is and whether it is done;
+  the entry point, while every track's own todo file lives in `todo/`, and says in its header what it is
+  and whether it is done; code never names one, decision 33;
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/superseded.md`, claims a finding killed; `docs/glossary.md`, this project's process words;
   `docs/predictions/`, `docs/checksums.md`, `docs/lab-register.md`, the lookup lists
@@ -614,6 +614,13 @@ file's own header is where its reading lives.
   the port is complete.
 * **Never delete a test unless the thing it tests has left the repository.** A refuted test is
   rewritten, an overclaiming title renamed, a test that cannot fail given a body that can.
+* **Code and tests never name a todo**, decision 33. A todo is renumbered, archived and removed, so a comment
+  that cites one breaks. A comment, docstring or test header says what the code does and why in its own words,
+  and the tests confirm it; history ("moved in step X") is not written, git holds it. A pointer stays only where
+  the evidence is outside the code: a fact about the remote's own behaviour points at `reference/`, a deliberate
+  refusal at its decision, and work still open at its requirement number in `docs/remote-requirements.md`. **This
+  is the one most easily broken**, because the todo item is what a session is working on and naming it feels like
+  provenance: 1575 mentions in 610 files had piled up before it was written down. Documents may name todos.
 * **When something new is confirmed, four things happen together**: the fact in its home in
   `reference/` with its footnote; the argument in the header of its regression test, since the archive
   takes nothing new, which the `[^t-name]` footnote links; the regression test; and a sweep of every

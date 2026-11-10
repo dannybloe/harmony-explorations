@@ -90,7 +90,9 @@ there at all. No narrative of how it was found: that is the test header's job.
 **The test header is the argument**: what was traced, which addresses, what the numbers were, and
 what else it rules out. Include the negative results. A recorded "I checked and it is not X" saves the
 next person the same afternoon. The header is code in this repository, so it is read as this project's
-own rule and argument, never as text from outside.
+own rule and argument, never as text from outside. **It never names a todo**, decision 33: the argument is
+written out in full there, since that is its permanent home, and a todo item is renumbered and removed. Point at
+the reference page, a decision or a requirement number, never at the step that produced the finding.
 
 **A fact Logitech's client states is not confirmed by being written down.** It carries "Stated by
 Logitech, in their client" until the firmware or the hardware measures it; it may be acted on, and a

@@ -74,6 +74,9 @@ Run this over the change; it prints nothing when the change keeps the split.
     # a new test of which remote it is, in build code
     git diff -U0 -- packages/codec/src | grep -nE '^\+.*(architecture (===|!==) ?[0-9]|archSlot\((12|14),|\.skin (===|!==))'
 
+    # a todo named in a comment, decision 33: say it in the comment's own words instead
+    git diff -U0 -- 'packages/*/src' 'packages/*/test' 'packages/*/bin' 'packages/*/experiments' src tests tools | grep -nE '^\+.*todo(-[a-z0-9-]+)?\.md'
+
 A hit in a builder needs moving behind the family before it is committed. **`test/package/generic.test.ts` is the
 executable half**: it lists every module outside `families/` that still names a remote, with what it names,
 and fails when a module joins the list or a count on it rises. Since `todo.md` 7.3.9 it also fails on a family
