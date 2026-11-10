@@ -85,7 +85,7 @@ import {
   sizeOfSet,
 } from '../../../src/families/harmony-600-650-700/devicemode.ts';
 
-/** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
+/** The inks our letters are drawn in, the four slot family's default. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;
 
 // ---------------------------------------------------------------------------------------------------
@@ -531,7 +531,7 @@ const NAMED = {
 };
 
 /** The thirteen arch 14 configurations Logitech compiled, section 312, which the width table is the union of. */
-test('8.2.3: the six sizes in our letters are Logitech\'s heights with every printable character, and the rules measure in them',
+test('the six sizes in our letters are Logitech\'s heights with every printable character, and the rules measure in them',
   () => {
     assert.deepEqual(oxaniumLabelSizes().map((one) => [one.name, one.height]), LABEL_SIZES.map((one) => [one.name, one.height]));
     for (const one of oxaniumLabelSizes()) assert.equal(one.widths.size, 95, one.name);
@@ -550,7 +550,7 @@ test('8.2.3: the six sizes in our letters are Logitech\'s heights with every pri
 
 const H650_13 = H650_FAMILY.full;
 
-test('8.2.3: re-lettered, every set of each Harmony 650 compile walked is the size it was, by our table and by nothing of Logitech\'s: the pair on a step, all 13 and their tally in the slow tier',
+test('re-lettered, every set of each Harmony 650 compile walked is the size it was, by our table and by nothing of Logitech\'s: the pair on a step, all 13 and their tally in the slow tier',
   needing(skipUnless(...sampled(H650_FAMILY))), () => {
     const walked = sampled(H650_FAMILY);
     const tally = new Map<string, number>();

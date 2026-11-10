@@ -1,6 +1,6 @@
 /**
  * A device mode page's chrome and a device mode's key map on a Harmony 600, 650 or 700, built rather than
- * copied off another device in the configuration, section 330, `todo-compile-650.md` 6.2.6 and 6.2.7, and
+ * copied off another device in the configuration, section 330, and
  * the one wrap rule a label breaks by.
  *
  * The population is the thirteen Logitech compiles section 312 lists, the Harmony 700 pair counted

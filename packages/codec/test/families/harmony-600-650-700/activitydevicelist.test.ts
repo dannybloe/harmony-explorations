@@ -1,6 +1,5 @@
 /**
- * An activity's own device list on a Harmony 600, 650 or 700, built rather than copied, section 352,
- * `todo-compile-650.md` 6.2.11. Until then the composer moved the idle list's label instructions to their
+ * An activity's own device list on a Harmony 600, 650 or 700, built rather than copied, section 352. Until then the composer moved the idle list's label instructions to their
  * new corners, ran the idle list's row lists and took the word "Activity" off another activity's list.
  *
  * The population is every configuration with an activity Logitech compiled for an arch 14 remote that the

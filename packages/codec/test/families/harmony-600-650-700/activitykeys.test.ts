@@ -229,7 +229,7 @@ test('a composed activity goes on the key it is given, and on no key without one
 
 test('an activity saved again as Custom keeps its Listen to Music key in Logitech\'s compile',
   skipUnless('h650_start_config', 'h650_options_config'), () => {
-    // todo-compile-650 3.11's attempt at an empty key: Muziek saved again as Custom, its group read back
+    // The attempt at an empty key: Muziek saved again as Custom, its group read back
     // as 0 on the account. Logitech's compile still puts it on the Listen to Music key, and Kodi
     // kijken, Custom from the start, still holds no key. So the type does not decide the key alone.
     for (const name of ['h650_start_config', 'h650_options_config']) {
@@ -245,7 +245,7 @@ test('an activity saved again as Custom keeps its Listen to Music key in Logitec
 
 test('in every compile measured a key is empty only where the activities number two, fewer than the keys',
      skipUnless(...COMPILES, 'h650_start_config', 'h650_options_config'), () => {
-  // Section 340: the measurement behind todo-compile-650 3.11's next step. It states the pattern over
+  // Section 340: the measurement behind the next attempt at an empty key. It states the pattern over
   // these fifteen compiles and not its cause.
   const seen = [...COMPILES, 'h650_start_config', 'h650_options_config'].map((name) => {
     const c = parseConfig(require_(name));
@@ -260,7 +260,7 @@ test('in every compile measured a key is empty only where the activities number 
 
 test('a key is emptied on a compile with all three taken by appending Logitech\'s list first, and the rest reads as before',
   skipUnless('h650_options_config', 'calibration_h600'), () => {
-    // Section 341, todo-compile-650 3.11: the configuration written to the bench Harmony 650, where the
+    // Section 341: the configuration written to the bench Harmony 650, where the
     // key opened the "add an Activity" screen and Exit returned. Logitech compiles the list only while a
     // key is empty, so on this compile the same length edit refuses and an append has to come first.
     const base = parse(require_('h650_options_config'));

@@ -4,7 +4,7 @@
  *
  * **Why it exists.** `buildEmptyConfiguration` takes the family's look piece by piece, and only `empty.test.ts`
  * assembled those pieces from `FOUR_SLOT_CHOICES`, so nothing outside the tests could build the configuration a
- * setup is composed onto. `todo.md` 7.3.9's check of what no entry reaches missed it, since that check is per
+ * setup is composed onto. The check of what no entry reaches missed it, since that check is per
  * module and `empty.ts` is reached through `assemble.ts`; it surfaced when the person asked whether the 600 can be
  * built from nothing at all. The wrapper reads every piece out of one set of choices, and this holds it byte for
  * byte to the assembly `empty.test.ts` has always built with, on the three models the family builds for.

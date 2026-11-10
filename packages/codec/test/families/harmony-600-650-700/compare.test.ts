@@ -1,5 +1,5 @@
 /**
- * `todo-compile-650.md` 5.2: our file for the Harmony 650's test setup against Logitech's compile of the
+ * Our file for the Harmony 650's test setup against Logitech's compile of the
  * same setup, compared by what a person sees and hears, `compare.ts`.
  */
 import test from 'node:test';
@@ -56,7 +56,7 @@ test('once the account matches the test setup, Logitech\'s compile and our 5.1 f
     const ours = setupView(parse(require_('h650_milestone_5_1_config')));
     const theirs = setupView(parse(require_('h650_test_config_clean')));
     assert.equal(theirs.size, 639);
-    // todo-compile-650 5.2.3: 4.2's sequence taken off TV kijken's Red in MyHarmony and compiled again,
+    // The sequence of step 4.2 of the setup taken off TV kijken's Red in MyHarmony and compiled again,
     // so the one difference a person would hear is gone; what stays is 5.2.2's and 5.2.4's.
     assert.deepEqual(compareViews(ours, theirs).map((one) => `${one.kind}: ${one.key}`), [
       'records: activity Plasma kijken | page 1 | scan 34',

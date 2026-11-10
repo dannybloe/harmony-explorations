@@ -1,5 +1,5 @@
 /**
- * The firmware's own wiring built from a description, `todo-compile-650.md` 10.2, section 347,
+ * The firmware's own wiring built from a description, section 347,
  * measured against Logitech's own compiles.
  *
  * **The measurement is the round trip section 324 used.** `takeApart` cuts each compile into pieces,
@@ -16,7 +16,7 @@
  * **The failing controls are the alternatives**: entry 1's order under the other model's tie, the
  * Harmony 600's parameter block built as a Harmony 650's, and the refusals.
  *
- * **Section 360, `todo-compile-650.md` 10.2.2, built the lists those call**: the tree of comparisons on the
+ * **Section 360, built the lists those call**: the tree of comparisons on the
  * firmware's own variables, the idle entry's two lists, `start`'s last call and the tour's start list. Its
  * tests are at the end: the 22 compiles of sections 356 to 358 and the one with no activities byte for
  * byte, a blind control whose description reads nothing but the bytes it marks, the three lists still
@@ -359,7 +359,7 @@ test('the wiring refuses what it cannot build', skipUnless('h650_config_region',
 });
 
 // ---------------------------------------------------------------------------------------------------
-// Section 360, todo-compile-650.md 10.2.2: the lists the wiring calls.
+// Section 360: the lists the wiring calls.
 // ---------------------------------------------------------------------------------------------------
 
 /** The 22 compiles sections 356 to 358 measure, and the one compile with no activities. */
@@ -650,7 +650,7 @@ test('section 360: the "add Activities" rule is keyed on the activity count and 
   const keyless = { ...some, activityKeys: none.activityKeys };
   assert.deepEqual(scan4(keyless), scan4(some));
   assert.notDeepEqual(scan4(keyless), scan4(none));
-  // The Harmony 600 with no activity is a configuration of ours since `todo-compile-600.md` 1.1, section 387,
+  // The Harmony 600 with no activity is a configuration of ours since section 387,
   // the 650's form carried over as the Harmony 700's is since section 382, `emptyWiring`'s test.
   assert.deepEqual(scan4({ ...none, model: 'harmony-600' }), scan4(none));
   // The control: both as read build.

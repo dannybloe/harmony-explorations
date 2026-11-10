@@ -1,5 +1,5 @@
 /**
- * The firmware's own screens built whole from a description, `todo-compile-650.md` 7.4, section 357,
+ * The firmware's own screens built whole from a description, section 357,
  * measured against Logitech's own compiles.
  *
  * **The measurement is section 356's round trip**: `takeApart` cuts each compile into pieces,
@@ -346,7 +346,7 @@ test('the welcome tour, measured and not built: in Logitech\'s skipped form noth
   assert.deepEqual([...sizes].sort((a, b) => a - b), [1698, 1699, 1701]);
 });
 
-test('the test setup composed by todo-compile-650 6.2.13, its firmware screens rebuilt on top of section 356\'s three records, shows a person nothing Logitech\'s clean compile does not but the menu\'s order',
+test('the test setup composed for the Harmony 650, its firmware screens rebuilt on top of section 356\'s three records, shows a person nothing Logitech\'s clean compile does not but the menu\'s order',
      skipUnless('h650_7_1_base', 'h650_test_config_clean'), () => {
   const composed = containerOf('h650_7_1_base');
   const clean = containerOf('h650_test_config_clean');

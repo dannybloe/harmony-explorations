@@ -1,5 +1,5 @@
 /**
- * The Harmony 650's backgrounds as one colour per state, `todo-compile-650.md` 9.1.2, section 366.
+ * The Harmony 650's backgrounds as one colour per state, section 366.
  *
  * Three claims. The colours are the ones decided, in the panel's own form. Which state a screen is in is
  * read by structure, and on Logitech's 13 compiles the device and activity states agree with the grey and

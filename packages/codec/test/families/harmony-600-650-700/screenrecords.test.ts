@@ -1,6 +1,5 @@
 /**
- * The idle device list's, the activity menu's and Off's whole mode records built from a description,
- * `todo-compile-650.md` 7.3, section 356, measured against Logitech's own compiles.
+ * The idle device list's, the activity menu's and Off's whole mode records built from a description, section 356, measured against Logitech's own compiles.
  *
  * **The measurement is section 347's round trip.** `takeApart` cuts each compile into pieces,
  * `describeScreenRecords` reads only what a composer would supply, `buildScreenRecords` builds each record's
@@ -254,7 +253,7 @@ test('the activity menu\'s rows follow the description\'s order: Logitech\'s row
   assert.throws(() => inActivityOrder(d.spec, entries.slice(1)), ScreenRecordError);
 });
 
-test('the test setup composed by todo-compile-650 6.2.13, its three records rebuilt with the menu in the setup file\'s order, shows a person nothing Logitech\'s clean compile does not but the menu\'s order',
+test('the test setup composed for the Harmony 650, its three records rebuilt with the menu in the setup file\'s order, shows a person nothing Logitech\'s clean compile does not but the menu\'s order',
      skipUnless('h650_7_1_base', 'h650_test_config_clean'), () => {
   // `h650_7_1_base` holds the 6.2.13 file as the 650 held it: `step1.ts` and `compose-activity.ts` onto
   // Logitech's starting compile.

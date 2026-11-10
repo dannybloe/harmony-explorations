@@ -1,5 +1,5 @@
 /**
- * A setup description and a donor in, a whole container out: `todo-compile-650.md` 10.6, sections 362 and 364.
+ * A setup description and a donor in, a whole container out, sections 362 and 364.
  *
  * **Four things are measured here.** The list census a renumbering of base slot 10 rests on, over 22
  * Logitech compiles of the Harmony 600, 650 and 700: dropping every list they reach by nothing changes
@@ -457,7 +457,7 @@ test('with no screen stated, the composed activity\'s screen is empty: the menu\
   assert.equal(texts.filter((one) => one.text.startsWith('activity menu|')).length, 8);
 });
 
-test('8.2.3: in our letters the test setup assembles on Logitech\'s starting compile with every label in its page\'s font, and Teletext, too wide for it in ours, a size down',
+test('in our letters the test setup assembles on Logitech\'s starting compile with every label in its page\'s font, and Teletext, too wide for it in ours, a size down',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
   const out = assembled({ ...setupOf('h650-test.json'), choices: { letters: 'oxanium' } }, 'h650_start_config', composing());
   assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
@@ -487,7 +487,7 @@ test('8.2.3: in our letters the test setup assembles on Logitech\'s starting com
   assert.equal(a.carried.get('slot-7-glyph'), undefined);
 });
 
-test('10.7.3: the four slot family\'s choices reach the assembly: state colours and blended letters as its last two steps, a label too wide refused when that is chosen, and blending refused without our letters',
+test('the four slot family\'s choices reach the assembly: state colours and blended letters as its last two steps, a label too wide refused when that is chosen, and blending refused without our letters',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
@@ -506,7 +506,7 @@ test('10.7.3: the four slot family\'s choices reach the assembly: state colours 
   checkBlendedLetters(out.container, out.faces, out.blended);
 });
 
-test('10.7.5: the letters\' colours are a choice, and letters in other inks are read back as ours, by every reader that reads letters',
+test('the letters\' colours are a choice, and letters in other inks are read back as ours, by every reader that reads letters',
      slow(needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean'))), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
@@ -544,7 +544,7 @@ test('10.7.5: the letters\' colours are a choice, and letters in other inks are 
     /three colours/);
 });
 
-test('10.8.5: the weight each face is drawn in is a choice, and a configuration in other weights is read and measured in them with no memory of the build',
+test('the weight each face is drawn in is a choice, and a configuration in other weights is read and measured in them with no memory of the build',
      slow(needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean'))), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
@@ -583,7 +583,7 @@ test('10.8.5: the weight each face is drawn in is a choice, and a configuration 
     /F15 in Light is lighter than R15 in Regular/);
 });
 
-test('9.1.2.2: our pictures replace the six that are no state\'s background, after the checks and the colours, the setup and every text unchanged',
+test('our pictures replace the six that are no state\'s background, after the checks and the colours, the setup and every text unchanged',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');

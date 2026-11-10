@@ -1,5 +1,5 @@
 /**
- * Every text of an arch 14 configuration generated from its word and its font, `todo-compile-650.md` 8.1,
+ * Every text of an arch 14 configuration generated from its word and its font,
  * section 358, measured against Logitech's own compiles.
  *
  * **The measurement is section 356's round trip over the whole configuration**: `takeApart` cuts each
@@ -313,7 +313,7 @@ test('checkScreenTexts passes Logitech\'s clean compile and refuses a corner lab
   assert.throws(() => checkScreenTexts(nudge(pointer + 3, 1)), refused(/'s title '.*' is drawn by reference where it is built inline/));
 });
 
-test('a configuration whose firmware wiring is not read is refused as one, not with a reader\'s own error, the bench file of todo-compile-650 4.2; and the compile with no activities, whose menus are read since section 375, at its two row list\'s title',
+test('a configuration whose firmware wiring is not read is refused as one, not with a reader\'s own error, the bench file of the Harmony 650\'s first writes; and the compile with no activities, whose menus are read since section 375, at its two row list\'s title',
      skipUnless('harvest_650_two_devices', 'h650_bench_4_2_base'), () => {
   // The compile with no activities was refused at its wiring here until section 360 read it, then at its
   // menus, whose activity menu has no row, until section 375 found it by its record. What refuses now is a
@@ -325,7 +325,7 @@ test('a configuration whose firmware wiring is not read is refused as one, not w
     (error: Error) => error instanceof ScreenTextError && /wiring is not read: read at offset 7/.test(error.message));
 });
 
-test('checkScreenTexts refuses the test setup as todo-compile-650 6.2.13 composed it: a page counter drawn by reference before any copy of it is drawn inline',
+test('checkScreenTexts refuses the test setup as the Harmony 650\'s test setup composed it: a page counter drawn by reference before any copy of it is drawn inline',
      skipUnless('h650_7_1_base'), () => {
   assert.throws(() => checkScreenTexts(containerOf('h650_7_1_base')),
     (error: Error) => error instanceof ScreenTextError && /'s counter '3' is drawn by reference where it is built inline/.test(error.message));

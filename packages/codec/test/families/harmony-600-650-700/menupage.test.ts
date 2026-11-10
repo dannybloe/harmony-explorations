@@ -1,6 +1,6 @@
 /**
  * An arch 14 menu page on a Harmony 600, 650 or 700, built rather than copied off the menu's own last
- * page, section 334, `todo-compile-650.md` 6.2.9: the device lists, idle, an activity's own and the two
+ * page, section 334: the device lists, idle, an activity's own and the two
  * row one, and the activity menu.
  *
  * The population is the thirteen Logitech compiles section 312 lists, the Harmony 700 pair counted
@@ -218,7 +218,7 @@ const HOLDING: Readonly<Record<string, number>> = { 1: 7, 2: 5, 3: 13 };
 
 test('a Harmony One device menu\'s hit page of one, two or three rows is one geometry over every compile, each the one before with a row 872 units below its last',
      skipUnless(...ONE_MENU_COMPILES), () => {
-  // What `composeOneDeviceScreen` grows a page of one or two rows by, `todo-compile-one.md` 1.2.9: the page of a
+  // What `composeOneDeviceScreen` grows a page of one or two rows by: the page of a
   // row more is this page with a row added a step below its last, the bottom key moved one scan up and the edges
   // unmoved. Few compiles hold two of the sizes, so the evidence is that each size has **one** geometry over all
   // of them, compared without the areas' own addresses, which only say where each is stored; the three are then

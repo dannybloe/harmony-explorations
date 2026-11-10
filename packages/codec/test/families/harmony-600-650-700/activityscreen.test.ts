@@ -1,7 +1,7 @@
 /**
  * An arch 14 activity's start up screen, its working screen and the cases its keyed records hold, on a
  * Harmony 600, 650 or 700, built rather than copied off another activity of the configuration, section
- * 336, `todo-compile-650.md` 6.2.10.
+ * 336.
  *
  * The population is the thirteen Logitech compiles section 312 lists, the Harmony 700 pair counted
  * twice. The shape is sections 330 and 334's: the builder builds, every screen and case the

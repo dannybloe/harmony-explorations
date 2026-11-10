@@ -1,5 +1,5 @@
 /**
- * The Harmony 650's pictures, `todo-compile-650.md` 9.1, section 363, measured against Logitech's own
+ * The Harmony 650's pictures, section 363, measured against Logitech's own
  * compiles, and the encoder the rule pictures need, measured against every picture and glyph the corpus
  * holds.
  *

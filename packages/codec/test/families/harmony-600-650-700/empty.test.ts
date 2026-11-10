@@ -1,5 +1,5 @@
 /**
- * The Harmony 650 built from nothing, `todo-compile-650.md` 11.1.1 and plan 008. No lab: the point of
+ * The Harmony 650 built from nothing.1 and plan 008. No lab: the point of
  * these is that a configuration comes out of the codec with no Logitech file as input. The tests that read
  * the lab are calibrations against every compile, our corner program and the structural readings of
  * section 375, and they skip without it.
@@ -68,13 +68,13 @@ import '../../../src/support/resources.node.ts';
 
 const BUILT_AT = '2026-10-12T12:00:00';
 
-test('11.1.1.1: the skeleton lays out from nothing, every container check passing and every byte claimed', () => {
+test('the skeleton lays out from nothing, every container check passing and every byte claimed', () => {
   const built = buildEmptySkeleton({ skin: 72, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks });
   const c = built.container;
   assert.ok(c.allChecksPass);
   assert.equal(c.architecture, 14);
   assert.equal(c.versionWord! & 0xff, 72);
-  // Every byte is some reader's but the key table's, which no mode names until mode 0 exists, 11.1.1.3.
+  // Every byte is some reader's but the key table's, which no mode names until mode 0 exists.
   const gaps: [number, number][] = [];
   let at = 0;
   for (const one of claims(c).sort((a, b) => a.start - b.start)) {
@@ -119,7 +119,7 @@ function queued(c: Container, address: number): { opcode: number; operand: numbe
   return { opcode: operands[2]!, operand: operands[0]! | (operands[1]! << 8) };
 }
 
-test('11.1.1.2: the wiring and the state tables read back as the description they were built from', () => {
+test('the wiring and the state tables read back as the description they were built from', () => {
   const built = buildEmpty();
   const c = built.container;
   assert.ok(c.allChecksPass);
@@ -139,14 +139,14 @@ test('11.1.1.2: the wiring and the state tables read back as the description the
   assert.deepEqual(c.actionLists()![built.wiring.hourList], [{ opcode: 0x1f, operand: 0xf203 }, { opcode: 0x1f, operand: 0xf204 }]);
 });
 
-test('11.1.1.3: the firmware screens rebuild byte for byte from their own description', () => {
+test('the firmware screens rebuild byte for byte from their own description', () => {
   const c = buildEmpty().container;
   const checked = checkFirmwareScreens(c);
   assert.equal(checked.screens, 14);
   assert.equal(checked.lists, 10);
 });
 
-test('11.1.1.3, and todo-compile-700.md 1.1 on the Harmony 700: the menus\' keys lead where a compile with activities leads with none running', () => {
+test('on the Harmony 650 and on the Harmony 700: the menus\' keys lead where a compile with activities leads with none running', () => {
   for (const skin of [72, 66]) menusLead(skin);
 });
 
@@ -190,7 +190,7 @@ function menusLead(skin: number): void {
   assert.deepEqual(list.slice(1), [{ opcode: 0x07, operand: 0xfffd }, { opcode: ENTER_MODE, operand: FIRMWARE_SCREENS[emptyModelOf(skin)].indexOf('addActivities') }]);
 }
 
-test('11.1.1.3: every page has its copy where the reader finds it, and the bank holds what the screens draw', () => {
+test('every page has its copy where the reader finds it, and the bank holds what the screens draw', () => {
   const built = buildEmpty();
   const c = built.container;
   const pages = modePages(c);
@@ -207,7 +207,7 @@ test('11.1.1.3: every page has its copy where the reader finds it, and the bank 
   assert.equal(characterMap(c)?.drawn.resolved, characterMap(c)?.drawn.total);
 });
 
-test('11.1.1.4: our letters blend into the colour under each text, read back as the assembly reads them', () => {
+test('our letters blend into the colour under each text, read back as the assembly reads them', () => {
   const one = buildEmpty(false);
   const built = buildEmpty(true);
   const c = built.container;
@@ -255,7 +255,7 @@ test('section 374: our corner program is every compile\'s, byte for byte but its
     assert.equal(cornerPlaceAt(ours, entry), CORNER_PLACES.ours);
   });
 
-test('11.1.1.4: the empty configuration reads back as ours, its three screens rebuilt and every byte attributed to a generator, none carried', () => {
+test('the empty configuration reads back as ours, its three screens rebuilt and every byte attributed to a generator, none carried', () => {
   const c = buildEmpty().container;
   assert.deepEqual(checkScreenRecords(c), { structure: 485, rows: 0, pages: 3 });
   const a = attributeBytes(c);
@@ -267,7 +267,7 @@ test('11.1.1.4: the empty configuration reads back as ours, its three screens re
   assert.equal(Object.values(a.generated).reduce((n, v) => n + v, 0), a.total);
 });
 
-test('todo-compile-700.md 1.1 to 1.3: the Harmony 700 built from nothing: its wiring and state tables read back, its nineteen firmware screens and three of ours rebuild, mode 0\'s key table is the charging frame\'s, and every byte attributed to a generator, none carried', () => {
+test('the Harmony 700 built from nothing: its wiring and state tables read back, its nineteen firmware screens and three of ours rebuild, mode 0\'s key table is the charging frame\'s, and every byte attributed to a generator, none carried', () => {
   const built = buildEmpty(false, 66);
   const c = built.container;
   assert.ok(c.allChecksPass);
@@ -456,7 +456,7 @@ test('section 379: the first activity goes onto the empty configuration through 
   }
 });
 
-test('11.2.2: one activity named as a device or as a word of the menus composes and reads back by its name, at its label on the activity menu', skipWithoutIrArchive(), () => {
+test('one activity named as a device or as a word of the menus composes and reads back by its name, at its label on the activity menu', skipWithoutIrArchive(), () => {
   const donor = buildEmpty().bytes;
   for (const name of ['LG TV', 'Denon', 'Devices', 'Activities', 'Back']) {
     const recipe = {
@@ -522,7 +522,7 @@ function drawnDeviceLists(c: Container): string[][][] {
       .filter((text) => !['Devices', 'Activities', 'Activity', '1', '2', '/'].includes(text))));
 }
 
-test('todo-compile-700.md 2.1: the whole test setup assembles on the Harmony 700\'s empty configuration in our look, and the setup comparison finds nothing different from the Harmony 650\'s in 627 slots, nor in the activity keys and the six drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
+test('the whole test setup assembles on the Harmony 700\'s empty configuration in our look, and the setup comparison finds nothing different from the Harmony 650\'s in 627 slots, nor in the activity keys and the six drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   const on = (skin: number, name: string, blendLetters: boolean) => assembleSetup({
     ...setup, model: { name, skin }, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters },
@@ -550,7 +550,7 @@ test('todo-compile-700.md 2.1: the whole test setup assembles on the Harmony 700
   assert.deepEqual([...attributeBytes(seven).carried.keys()].sort(), [...attributeBytes(six).carried.keys()].sort());
 });
 
-test('todo-compile-700.md 2.1: Logitech\'s seven Harmony 700 compiles do not read as our look, and the assembly refuses one as a donor', skipUnless(
+test('Logitech\'s seven Harmony 700 compiles do not read as our look, and the assembly refuses one as a donor', skipUnless(
   'h700_config', 'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile', 'h700_power_hold_compile_2',
   'h700_power_hold_compile_3', 'h700_power_hold_compile_4'), () => {
   for (const name of ['h700_config', 'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile',
@@ -584,7 +584,7 @@ test('decision 20 on a build from nothing: the state colours are a choice, writt
   assert.throws(() => recolouredStates(plain, { ...bright, idle: bright.device }), /have to differ/);
 });
 
-test('todo-compile-700.md 2.3: a file of ours starts the mark the Off screen waits for at 1, and draws its start up and Off titles two rows below Logitech\'s', () => {
+test('a file of ours starts the mark the Off screen waits for at 1, and draws its start up and Off titles two rows below Logitech\'s', () => {
   // Logitech's compiles start it at 0 and set it from the tour, which a file of ours does not hold; at 0 the
   // bench Harmony 700 did not show "Turning system off" on the test setup, section 386, though its empty
   // configuration did, section 383, and on the Harmony 600 it did not show with the mark read 1, section 387.
@@ -598,11 +598,11 @@ test('todo-compile-700.md 2.3: a file of ours starts the mark the Off screen wai
   assert.equal(strings.find((one) => one.text === 'Turning system off')?.y, 7);
 });
 
-test('todo-compile-700.md 2.3: a Logitech compile keeps its start up titles at y 5 and 19', skipUnless('h700_config'), () => {
+test('a Logitech compile keeps its start up titles at y 5 and 19', skipUnless('h700_config'), () => {
   assert.deepEqual(startupTitleYs(parse(require_('h700_config'))), [5, 19]);
 });
 
-test('todo-compile-600.md 1.1: the Harmony 600 built from nothing, skins 73 and 71, rebuilds by every checker with every byte attributed, and differs from the Harmony 650\'s only in its skin, its settings block and the checksum', () => {
+test('the Harmony 600 built from nothing, skins 73 and 71, rebuilds by every checker with every byte attributed, and differs from the Harmony 650\'s only in its skin, its settings block and the checksum', () => {
   for (const skin of [73, 71]) {
     const c = buildEmpty(false, skin).container;
     assert.ok(c.allChecksPass, `skin ${skin}`);
@@ -626,7 +626,7 @@ test('todo-compile-600.md 1.1: the Harmony 600 built from nothing, skins 73 and 
   assert.deepEqual([...h600.subarray(runs[1]![0], runs[1]![1] + 1)], [1, 0, 3, 0, 5]);
 });
 
-test('todo-compile-600.md 1.2.4: the Harmony 600 draws every state in one look, so its first device\'s pages take the idle look and add none, and a recolouring takes one colour', skipWithoutIrArchive(), () => {
+test('the Harmony 600 draws every state in one look, so its first device\'s pages take the idle look and add none, and a recolouring takes one colour', skipWithoutIrArchive(), () => {
   const empty = buildEmpty(false, 71).container;
   const idle = FOUR_SLOT_CHOICES.stateColours.idle;
   // Before any page of theirs, the device and activity states read as the idle one.
@@ -658,7 +658,7 @@ test('todo-compile-600.md 1.2.4: the Harmony 600 draws every state in one look, 
   assert.deepEqual(ourStateColours(grey2), { idle: one, device: one, activity: one });
 });
 
-test('todo-compile-600.md 1.2.4: the Harmony 600\'s letters blend, every drawn code still reads, and the file stays in its one grey', () => {
+test('the Harmony 600\'s letters blend, every drawn code still reads, and the file stays in its one grey', () => {
   const build = (blendLetters: boolean) => buildEmptyConfiguration({
     skin: 71, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, blendLetters,
     look: { ...LOOK, idleColour: FOUR_SLOT_CHOICES.oneLookColour },
@@ -686,7 +686,7 @@ function fiveDeviceSetup(): Recipe {
   } as Recipe;
 }
 
-test('todo-compile-600.md 2.1: the five device test setup assembles on the Harmony 600\'s empty configuration with every page in its one grey, smaller than the 650\'s by exactly its two further looks, and the setup comparison finds nothing different from the 650\'s in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
+test('the five device test setup assembles on the Harmony 600\'s empty configuration with every page in its one grey, smaller than the 650\'s by exactly its two further looks, and the setup comparison finds nothing different from the 650\'s in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
   const setup = fiveDeviceSetup();
   const on = (skin: number, name: string, colour: number) => assembleSetup({
     ...setup, model: { name, skin }, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false },
@@ -757,7 +757,7 @@ test('todo-compile-600.md 2.1: the five device test setup assembles on the Harmo
   assert.deepEqual(compareViews(view, setupView(blended), { menuOrder: true }), []);
 });
 
-test('todo-compile-600.md 2.1: Logitech\'s two Harmony 600 compiles do not read as our look, the assembly refuses one as a donor, and the seven device setup is refused at the 600\'s five', skipUnless('h600_config', 'calibration_h600'), () => {
+test('Logitech\'s two Harmony 600 compiles do not read as our look, the assembly refuses one as a donor, and the seven device setup is refused at the 600\'s five', skipUnless('h600_config', 'calibration_h600'), () => {
   for (const name of ['h600_config', 'calibration_h600']) assert.equal(inOurLook(parse(new Uint8Array(require_(name)))), false, name);
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   // Logitech's compile states 73, so the recipe names 73 too and the refusal is the donor's and not the number's.
