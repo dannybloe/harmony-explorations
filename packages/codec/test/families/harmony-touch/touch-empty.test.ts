@@ -50,6 +50,7 @@ import { ComposeRefusal } from '../../../src/families/harmony-touch/compose.ts';
 import { CONFIGURATION_DOCUMENTS, documentsOfAnswers, type SyncAnswer, type SyncDocuments } from '../../../src/families/harmony-touch/documents.ts';
 import { emptyTouchDocuments, favouritesAskedFor, keptAtTheCommit, userBackgroundsAsked } from '../../../src/families/harmony-touch/empty.ts';
 import { readConfiguration } from '../../../src/families/harmony-touch/read.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** The set the bench Touch holds since 8.6's put back, which equals 8.5's. */
 const BENCH = 'touch_setup_set_back';
@@ -76,6 +77,7 @@ function madeUp(): Json {
 }
 
 test('the empty set is the six documents, the four lists emptied and every other field kept, Context and Settings as they stand', () => {
+  proves(61, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-empty-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const source = madeUp();
   const empty: Json = emptyTouchDocuments(source);
   assert.deepEqual(Object.keys(empty).sort(), [...CONFIGURATION_DOCUMENTS].sort());

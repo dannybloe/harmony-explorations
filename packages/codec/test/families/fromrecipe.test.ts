@@ -19,6 +19,7 @@ import { buildTouchDocuments, ourBackground, readTouchSetupFile } from '../../sr
 import { buildEmptyFourSlotConfiguration, buildEmptyNoScreenConfiguration, buildEmptyOneConfiguration, fourSlotChoices } from '../../src/build.ts';
 import { OUR_FOUR_SLOT_CHOICES } from '../../src/families/harmony-600-650-700/choices.ts';
 import { ONE_CHOICES } from '../../src/families/harmony-one/choices.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const BUILT_AT = '2026-11-09T12:00:00';
 
@@ -31,6 +32,7 @@ function bytesOf(json: unknown): Uint8Array {
 }
 
 test('an empty recipe gives each compiled family\'s own empty configuration, byte for byte', () => {
+  proves(61, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
   assert.deepEqual(bytesOf(empty('Harmony One', 54)), buildEmptyOneConfiguration({ skin: 54, builtAt: BUILT_AT }).bytes, 'Harmony One');
   // A build from nothing takes our look, `OUR_FOUR_SLOT_CHOICES`, on the three models of the family.
   for (const [name, skin] of [['Harmony 650', 72], ['Harmony 600', 71], ['Harmony 700', 66]] as const) {
@@ -52,6 +54,7 @@ test('the control: the stamp and a choice in the recipe reach the bytes', () => 
 });
 
 test('what an application is refused, each naming what is wrong', () => {
+  proves(7, ['harmony-one', 'harmony-350']);
   const refused = (json: unknown, sources: Parameters<typeof buildFromRecipe>[1], message: RegExp): void => {
     assert.throws(() => buildFromRecipe(json, sources), (error: unknown) => error instanceof Error && message.test(error.message));
   };
@@ -69,6 +72,7 @@ test('what an application is refused, each naming what is wrong', () => {
 });
 
 test('a recipe\'s choices reach the Harmony One, and a reference recipe can say it states them all', () => {
+  proves(4, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
   // Every choice stated at its default builds as no choice stated; one changed changes the bytes.
   const plain = bytesOf(empty('Harmony One', 54));
   assert.deepEqual(bytesOf({ ...(empty('Harmony One', 54) as object), choices: ONE_CHOICES }), plain);

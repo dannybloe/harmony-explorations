@@ -46,6 +46,7 @@ import { documentsOfAnswers, type SyncDocuments } from '../../../src/families/ha
 import { readConfiguration } from '../../../src/families/harmony-touch/read.ts';
 import { pulsesOfStatedRow, statedProtocol } from '../../../src/infrared/stated.ts';
 import { answersOf, FULL } from './touch-sync.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** A device of ours in the shape of 8.1's: Sony 12 Bit, numbers of ours, keys by name, one entry screen only. */
 function rowDevice(over: Partial<RowDevice> = {}): RowDevice {
@@ -81,6 +82,7 @@ function documents(): SyncDocuments {
 }
 
 test('a device of a row and numbers composes and reads back: one definition, every command its key code, its map by the engine\'s identifier, no finding', () => {
+  proves(35, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-device-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const composed = composeTouchDeviceOfRow(rowDevice());
   assert.equal(composed.protocols.length, 1);
   assert.equal(composed.protocols[0]!['Id-'], 900000002);

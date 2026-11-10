@@ -25,13 +25,13 @@ const VALUES = [
 
 /** The main entry's types and interfaces, which only the source shows. */
 const TYPES = [
-  'BenchModel', 'BenchModelKey', 'Model', 'MotionSensor', 'Panel', 'Requirement', 'RequirementScope', 'RequirementState',
+  'BenchModel', 'BenchModelKey', 'Model', 'MotionSensor', 'Panel', 'Proof', 'Requirement', 'RequirementScope', 'RequirementState',
   'RequirementStatus', 'Watch',
 ];
 
 /** Every subpath `package.json` exports, `.` the main entry. */
 const SUBPATHS = [
-  '.', './models', './trailer', './keys', './bytes', './requirements',
+  '.', './models', './trailer', './keys', './bytes', './requirements', './proofs',
 ];
 
 test('the main entry exports exactly its list, by explicit names', async () => {

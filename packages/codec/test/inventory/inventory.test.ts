@@ -87,6 +87,7 @@ import {
 import { INLINE_DELAY_CONTAINERS } from '../../bin/corpus.ts';
 import { tagFiveMisfit } from './tagfive.ts';
 import '../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** `[sample, named variables, activities, devices, device ids in the names]`. */
 const INVENTORY: readonly [string, number, number, number, number][] = [
@@ -807,6 +808,7 @@ test('the codes of a list are kept in the order it sends them', skipWithoutLab()
 });
 
 test('the composed inventory says the same as the readers it composes', skipWithoutLab(), () => {
+  proves(2, ['harmony-one', 'harmony-600', 'harmony-650', 'harmony-525']);
   // `inventory` exists so that an application does not assemble this itself, section 126, so the one
   // thing it must not do is answer differently.
   let checked = 0;

@@ -28,6 +28,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { imagePath, require_, skipWithoutLab } from '@harmony/lab';
+import { proves } from '@harmony/testkit/proof';
 
 const CHILD = fileURLToPath(new URL('./readanswers.ts', import.meta.url));
 
@@ -63,6 +64,7 @@ function answer(entry: 'main' | 'node', mode: 'as-written' | 'from-font'): Answe
 }
 
 test('the main entry reads every family with no resource supplied, answering as the Node entry does', skipWithoutLab(), () => {
+  proves(74, 'every');
   const main = answer('main', 'as-written');
   const node = answer('node', 'as-written');
   // The two processes are what they claim to be: one holds no resource, the other all five.

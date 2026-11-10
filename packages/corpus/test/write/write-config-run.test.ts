@@ -28,6 +28,7 @@ import { skipUnless } from '@harmony/lab';
 import { stoppedAfterErase } from '../../src/stamp.ts';
 import { CONFIG_WRITE_MODELS, CONFIG_WRITE_UNITS } from '../../src/write.ts';
 import { runWrite, type WriteRun, type WriteScenario } from './write-config-run.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const ONE = 'one_spare_20260830';
 const H885 = 'h885_a_config';
@@ -154,6 +155,10 @@ describe('the shipped state, the flags unset', () => {
   });
 
   it('refuses another unit on the cable at its identity block, before any block is read', skipUnless(ONE), async () => {
+    proves(63, ['harmony-one'], ['docs/test-notes/harmony-one.md#telling-the-two-ones-apart']);
+    proves(63, ['harmony-650'], ['docs/test-notes/harmony-650.md#the-unit']);
+    proves(63, ['harmony-700'], ['docs/test-notes/harmony-700.md#what-was-sent-to-the-unit']);
+    proves(63, ['harmony-885'], ['docs/test-notes/harmony-885.md#7-november-2026-unit-as-whole-flash-and-the-first-write-to-a-harmony-885']);
     const run = await runWrite({ sample: ONE, architecture: 12, onCable: 2 });
     assert.equal(run.error?.name, 'RailError');
     assert.deepEqual(run.calls, ['drainLeftovers', 'getVersion', 'readUnitIdentity', 'close']);
@@ -192,6 +197,7 @@ describe('the shipped state, the flags unset', () => {
 
 describe('the writes, each in a process with the two flags set and the fake as the only remote', () => {
   it('a Harmony One: the stamp saved, the drop, each block written and read back, the whole read back, the restart', skipUnless(ONE), () => {
+    proves(5, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
     const run = withFlags({ sample: ONE, architecture: 12, commit: true });
     assert.equal(run.error, undefined, run.error?.message);
     assert.equal(run.outcome?.outcome, 'written');
@@ -247,6 +253,11 @@ describe('the writes, each in a process with the two flags set and the fake as t
   });
 
   it('a Harmony 650: the arch 14 drop, each block written and read back, the restart, and no install status read', skipUnless(H650), () => {
+    proves(5, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
+    proves(5, ['harmony-650'], ['docs/test-notes/harmony-650.md#what-has-been-sent-to-this-unit']);
+    proves(5, ['harmony-700'], ['docs/test-notes/harmony-700.md#what-was-sent-to-the-unit']);
+    proves(59, ['harmony-650'], ['docs/test-notes/harmony-650.md#what-has-been-sent-to-this-unit']);
+    proves(59, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
     const run = withFlags({ sample: H650, architecture: 14, commit: true });
     assert.equal(run.error, undefined, run.error?.message);
     assert.equal(run.outcome?.outcome, 'written');
@@ -266,6 +277,8 @@ describe('the writes, each in a process with the two flags set and the fake as t
   });
 
   it('a Harmony 885: the status read before the first erase and before the restart, the drop and the restart its own', skipUnless(H885), () => {
+    proves(5, ['harmony-885'], ['docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted']);
+    proves(59, ['harmony-885'], ['docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted']);
     const run = withFlags({ sample: H885, architecture: 8, commit: true });
     assert.equal(run.outcome?.outcome, 'written', run.error?.message);
     assert.ok(run.holdsTheConfig);

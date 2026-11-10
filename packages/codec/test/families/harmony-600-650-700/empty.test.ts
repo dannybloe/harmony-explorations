@@ -65,6 +65,7 @@ import { stateBackgroundColour } from '../../../src/families/harmony-600-650-700
 import { compareViews, setupView } from '../../../src/families/harmony-600-650-700/compare.ts';
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
 import '../../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const BUILT_AT = '2026-10-12T12:00:00';
 
@@ -603,6 +604,7 @@ test('a Logitech compile keeps its start up titles at y 5 and 19', skipUnless('h
 });
 
 test('the Harmony 600 built from nothing, skins 73 and 71, rebuilds by every checker with every byte attributed, and differs from the Harmony 650\'s only in its skin, its settings block and the checksum', () => {
+  proves(61, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
   for (const skin of [73, 71]) {
     const c = buildEmpty(false, skin).container;
     assert.ok(c.allChecksPass, `skin ${skin}`);
@@ -687,6 +689,8 @@ function fiveDeviceSetup(): Recipe {
 }
 
 test('the five device test setup assembles on the Harmony 600\'s empty configuration with every page in its one grey, smaller than the 650\'s by exactly its two further looks, and the setup comparison finds nothing different from the 650\'s in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
+  proves(2, ['harmony-600']);
+  proves(4, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
   const setup = fiveDeviceSetup();
   const on = (skin: number, name: string, colour: number) => assembleSetup({
     ...setup, model: { name, skin }, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false },
@@ -758,6 +762,7 @@ test('the five device test setup assembles on the Harmony 600\'s empty configura
 });
 
 test('Logitech\'s two Harmony 600 compiles do not read as our look, the assembly refuses one as a donor, and the seven device setup is refused at the 600\'s five', skipUnless('h600_config', 'calibration_h600'), () => {
+  proves(7, ['harmony-600']);
   for (const name of ['h600_config', 'calibration_h600']) assert.equal(inOurLook(parse(new Uint8Array(require_(name)))), false, name);
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   // Logitech's compile states 73, so the recipe names 73 too and the refusal is the donor's and not the number's.

@@ -25,6 +25,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { isBuiltin } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import ts from 'typescript';
+import { proves } from '@harmony/testkit/proof';
 
 const PACKAGE = new URL('../..', import.meta.url).pathname;
 const SOURCE = join(PACKAGE, 'src');
@@ -129,6 +130,7 @@ function walk(entry: string, read: (file: string) => string = (file) => readFile
 const described = (uses: readonly Use[]): string => uses.map((one) => `${one.file}: ${one.what}`).join('\n');
 
 test('no module the codec\'s main entry reaches imports a Node module or names a Node global', () => {
+  proves(74, 'every');
   // And none the two subpaths reach, `./build` and `./internal`, which load anywhere too: most of what the main entry
   // once carried is under them now, plan 013 decision 6.
   const reached: string[] = [];

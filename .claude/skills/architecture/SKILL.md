@@ -43,11 +43,11 @@ Read off each `package.json` as of `todo.md` 7.3.10. "Run time" is `dependencies
 
 | package | what it is for | run time | development |
 |---|---|---|---|
-| `base` | what every package needs and nothing native: the model table, the trailer checksum, the key codes, the one byte comparison, the FHSDK's requirements and their statuses | nothing | `testkit` |
-| `lab` | locates the private lab and the infrared archive, names the lab's images, skips a test cleanly without them; `./cli`, the one reader of a script's command line | nothing | nothing |
+| `base` | what every package needs and nothing native: the model table, the trailer checksum, the key codes, the one byte comparison, the FHSDK's requirements and their statuses, the proofs the tests carry | nothing | `testkit` |
+| `lab` | locates the private lab and the infrared archive, names the lab's images, skips a test cleanly without them; `./cli`, the one reader of a script's command line | nothing | `testkit` |
 | `usb` | the HID transport, the command protocol, the file protocol, the write rails and the file write | `base`, `node-hid` | `lab`, `testkit` |
 | `codec` | the one configuration codec: read, render, edit, compose, build, the Harmony Touch's documents included | `base`, `@mdi/font`, `opentype.js` | `lab`, `testkit`, `usb` |
-| `testkit` | what tests share across packages; never a product's dependency | `base`, `lab`, `usb` | nothing |
+| `testkit` | what tests share across packages, the line a test says which requirement it proves with among them; never a product's dependency | `base`, `lab`, `usb` | nothing |
 | `corpus` | reads a configuration off a remote and files it; writes one back; answers the Harmony Touch's sync | `codec`, `lab`, `usb` | `base`, `testkit` |
 | `probe` | a structural report about a remote, publishable because it carries shape and not contents | `codec`, `lab`, `usb` | `testkit` |
 | `bench` | the bench instrument and the infrared monitor, rough on purpose | `base`, `codec`, `corpus`, `lab`, `usb` | `testkit`, `playwright` |
@@ -58,9 +58,9 @@ The rules the table keeps:
 
 * **Downward only, and no cycle.** `base` and `lab` are the floor; `usb` and `codec` stand on `base` and never on each
   other at run time; everything else stands on those. A cycle through the test kit is real, `base` and `usb` take it
-  for their tests and it stands on them, and `tsc --build` refuses a cycle between project references, which is why
-  those two packages' tests are a project of their own, `packages/base/test/tsconfig.json` and
-  `packages/usb/test/tsconfig.json`.
+  for their tests and it stands on them, and `lab` too since its tests carry proofs, and `tsc --build` refuses a cycle
+  between project references, which is why those three packages' tests are a project of their own,
+  `packages/base/test/tsconfig.json`, `packages/lab/test/tsconfig.json` and `packages/usb/test/tsconfig.json`.
 * **Across packages by package name and an exported subpath, never by a relative path** into another package's files,
   so what one package takes of another is on that package's surface.
 * **What `src` loads at run time is a run time dependency**; what only tests, scripts and experiments load is a
@@ -185,10 +185,10 @@ the libraries built on it; there `export *` is the point:
 | `codec` | read, show devices, activities and screens, edit in place, start a build through the recipe and the registry, check before a write, infrared, a bench model's capabilities; the Harmony Touch as the namespace `harmonyTouch`, its view with no composer | `./node` (the disk), `./build` (composers and builders, off the main entry by plan 007), `./internal` (the format's parts) |
 | `usb` | find, open and read a remote, check a configuration; `RailError` and no other rail | `./rails` (whole), `./write` (its own list), `./internal`, `./protocol`, `./readwindow`, `./touchsession`, `./touchrecording`; `./models`, `./keys` and `./trailer` re-export `base` until FreeHarmony's half of 7.3.6 |
 | `corpus` | reading a configuration off a remote | `./read`, `./file`, `./write` (its own list) |
-| `base` | the model table, the trailer checksum, the key codes, `sameBytes`, the requirements and their statuses | `./models`, `./trailer`, `./keys`, `./bytes`, `./requirements` |
+| `base` | the model table, the trailer checksum, the key codes, `sameBytes`, the requirements and their statuses | `./models`, `./trailer`, `./keys`, `./bytes`, `./requirements`, `./proofs` (generated from the tests' proofs) |
 | `bench`, `probe`, `silhouettes` | their own lists | `./internal` |
 | `lab` | the locators and the image table | `./cli` |
-| `testkit` | none | `./touch-recording`, `./fake-touch-remote`, `./surface` |
+| `testkit` | none | `./touch-recording`, `./fake-touch-remote`, `./surface`, `./proof` |
 
 * **Composers stay off a main entry.** An application starts a build from the recipe and the registry.
 * **A subpath is named by what it is** (`./node`, `./build`, `./internal`, `./write`), never by who uses it, and every
@@ -230,7 +230,9 @@ call, with a thin script over it, and none is on a main entry:
 ## Test helpers and the lab
 
 * **What tests share across packages is in `@harmony/testkit`**, only ever a development dependency, and imported by
-  tests alone: the lab readers of a recorded Touch sync, the pretend Touch, the reader of an entry's names. Until 7.3.6
+  tests alone: the lab readers of a recorded Touch sync, the pretend Touch, the reader of an entry's names, and
+  `proves`, the line a test carries to say which requirement it proves, decision 33, whose Python half is
+  `tests/proves.py` beside `lab.py`. Until 7.3.6
   two of these were `@harmony/usb/test/*` subpaths and five runnable scripts imported them. **A script never imports
   the test kit**; what a script needs is a library, as the recorded sync's decoder became `@harmony/usb/touchrecording`.
 * **`@harmony/lab` is a test, bench and script dependency, never a product one.** It locates a private folder of
@@ -310,7 +312,7 @@ the check fail. A rule marked *no test* is held by this skill and review alone, 
 |---|---|
 | each package depends on exactly its table's packages, at run time and for development | `lab/test/dependencies.test.ts`: "each package depends on exactly the packages of its table, at run time and for its tests" (since 7.3.9) |
 | no cycle between packages at run time | the same file: "the packages stand on each other at run time with no cycle", and "the control: a cycle is found, and the test kit closes one through the tests of the packages it stands on" (since 7.3.9); `tsc --build` refuses a reference cycle |
-| `base` depends on nothing, its modules import nothing | `base/test/base.test.ts`: "the package depends on nothing, and its tests on the test kit alone", "the four modules import nothing, and the index only them" |
+| `base` depends on nothing, its modules import nothing but the requirements their generated proofs | `base/test/base.test.ts`: "the package depends on nothing, and its tests on the test kit alone", "the six modules import nothing but the requirements their proofs, and the index only them" |
 | the codec's `src` does not load `usb` | `codec/test/package/dependencies.test.ts`: "no file in the codec source imports @harmony/usb", "the codec states the base as a dependency and the transport only as a development one" |
 | what `src` loads is a run time dependency | `lab/test/dependencies.test.ts`: "what a library's src loads is a dependency it states for run time, but in the two packages listed" (since 7.3.9) |
 | no relative import across packages, none out of a library's `src` | the same file: "no file imports another package's files by a relative path, and no library src reaches out of its src", and its control (since 7.3.9) |

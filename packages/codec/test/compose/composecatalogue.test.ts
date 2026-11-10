@@ -80,6 +80,7 @@ import {
   taggedList,
   valueMaps,
 } from '../../src/internal.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const CALL = 0x7f;
 const SEND = 0x7d;
@@ -199,6 +200,7 @@ test('several catalogue devices composed in one run are the bytes of composing t
 
 test('several devices are refused past the model\'s device count, under a label already taken, and as an empty list',
   needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config')), () => {
+    proves(7, ['harmony-one', 'harmony-650', 'harmony-700']);
     const base = open('h650_panasonic_config');
     const [pana, knoll] = PAIRS[0]!.devices.map(requestOf) as [CatalogueDeviceRequest, CatalogueDeviceRequest];
     // Six devices; a Harmony 650 holds eight, Logitech's own figure for its account.
@@ -445,6 +447,7 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
 
 test('a whole composed device draws no corner label in a font its pages use for the title, the counter or the bottom bar',
   needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config')), () => {
+    proves(35, ['harmony-650'], ['docs/test-notes/harmony-650.md#bench-runs']);
     // On the Harmony 650 a font set carries its colour in its glyphs, and the title's font has a label's
     // size: the TX-P42GT30E's 'Direct TVRecord' fitted no white font of that size and was drawn in the
     // green title font, which the remote showed as the label's shadow alone, at the bench

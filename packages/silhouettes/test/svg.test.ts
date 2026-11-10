@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 import { DETAIL, LAYERS, MODELS, toSvg } from '../src/index.ts';
 import { DEFAULTS, elementId } from '../src/svg.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const drawn = Object.entries(MODELS);
@@ -116,6 +117,7 @@ test('an element id is the name in kebab case', () => {
 });
 
 test('a key is addressable by name, kind, provenance and code', () => {
+  proves(43, ['harmony-touch']);
   for (const [id, model] of drawn) {
     const svg = toSvg(model);
     for (const key of model.keys) {

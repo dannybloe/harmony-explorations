@@ -11,8 +11,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ARCH_8_PRODUCT, WATCH } from '../../src/keys.ts';
 import { defaultWatch } from '../../bin/watch-keys.ts';
+import { proves } from '@harmony/testkit/proof';
 
 test('an 880, an 885 and an 880 Pro watch the held key at 0x295 and the last pressed at 0x3a1', () => {
+  proves(67, ['harmony-885'], ['docs/test-notes/harmony-885.md#5-november-2026-every-key-pressed-watched-over-usb']);
   // `bcdDevice` on arch 8 is protocol 8 in the high byte and the skin in plain binary below it.
   for (const [release, name] of [
     [0x080f, 'Harmony 880'],

@@ -15,6 +15,7 @@ import { load, require_, skipUnless } from '@harmony/lab';
 
 import { profileFor, readConfig, type ConfigReader } from '../../src/index.ts';
 import { describe, fileNames, fileRead, fileRegion, regionFileNames, FileError, slug, stamp } from '../../src/file.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const H600 = 0xc122;
 const WHEN = new Date('2026-08-06T11:45:09.000Z');
@@ -73,6 +74,8 @@ test('the sidecar records what the blob cannot say about itself', skipUnless('h6
 });
 
 test('a read lands as two files and refuses to overwrite an earlier one', skipUnless('h600_config'), async (t) => {
+  proves(58, ['harmony-one'], ['docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups']);
+  proves(58, ['harmony-650'], ['docs/test-notes/harmony-650.md#memory-as-read']);
   const root = mkdtempSync(join(tmpdir(), 'harmony-corpus-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
 
@@ -95,6 +98,8 @@ test('a read lands as two files and refuses to overwrite an earlier one', skipUn
 });
 
 test('a region read is filed under its own suffix so nothing mistakes it for a config', () => {
+  proves(58, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
+  proves(58, ['harmony-700'], ['docs/test-notes/harmony-700.md#arrival-and-repair']);
   // The two artefacts are different and a corpus that cannot tell them apart has wrong totals: a
   // configuration read stops where the container says, a region read stops where the caller says.
   // On the Harmony 525 that is the difference between 51195 bytes and a 64 KiB erase block.
@@ -149,6 +154,7 @@ test('a region sidecar records the range, which the blob cannot state itself', (
 
 test('the 525 region read agrees with the config read taken a month earlier',
   skipUnless('h525_region_820000', 'h525_config_2'), () => {
+    proves(58, ['harmony-525'], ['docs/test-notes/harmony-525.md#what-has-been-done-over-usb-in-sum']);
     // **Two reads of one remote, a month apart, by different code paths**, and the agreement is what
     // makes the region read worth putting in front of a write. `read-config.ts` parses the
     // container header and stops at the length the container states; `read-region.ts` reads a stated

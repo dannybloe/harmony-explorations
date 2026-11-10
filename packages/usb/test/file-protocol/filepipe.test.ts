@@ -47,6 +47,7 @@ import {
   requestedPath,
 } from '../../src/filepipe.ts';
 import { TransportError, type Transport } from '../../src/transport.ts';
+import { proves } from '@harmony/testkit/proof';
 
 interface Recording extends Transport {
   readonly sent: Uint8Array[];
@@ -284,6 +285,9 @@ describe('the guard is the rail, and it refuses every command that writes', () =
 
 describe('reading a file', () => {
   it('opens, reassembles the data packets, stops at the terminator and closes', async () => {
+    proves(1, ['harmony-350'], ['docs/test-notes/harmony-350.md#what-has-been-read-off-it']);
+    proves(58, ['harmony-300'], ['docs/test-notes/harmony-300.md']);
+    proves(58, ['harmony-350'], ['docs/test-notes/harmony-350.md#what-has-been-read-off-it']);
     const header = reply(FILE_READ);
     const first = new Uint8Array(FILE_REPORT_BYTES);
     first[0] = 0; // sequence
@@ -399,6 +403,8 @@ describe('reading a file', () => {
 
 describe('the identity file is text, and the firmware states its field names', () => {
   it('parses a name and a value per line', () => {
+    proves(64, ['harmony-300'], ['docs/test-notes/harmony-300.md#its-three-firmware-images-read-and-compared-with-the-350s']);
+    proves(64, ['harmony-touch'], ['docs/test-notes/harmony-touch.md']);
     const text = ['arch 0x10', 'skin 0x68', 'link_type hid', 'link_packet_length 64', ''].join('\n');
     const fields = parseSysInfo(text);
     assert.equal(fields.get('arch'), '0x10');

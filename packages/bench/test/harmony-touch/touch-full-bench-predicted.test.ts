@@ -64,6 +64,7 @@ import { answersWritten, commands, records, sessions } from '@harmony/testkit/to
 import { CodeBook } from '../../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../../src/irsession.ts';
 import { BenchTouchEngine, PAUSE_SLACK_MS, TIMING, touch71Configuration, touch71Tests, TOUCH_7_1_SET, type Send } from '../../src/touchbench.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const SET = 'touch_changed_set_label_back';
 const FULL = 'touch_full_sync_recording';
@@ -201,6 +202,7 @@ const touchBook = (set: string): CodeBook => new CodeBook((name) => (name === se
 
 test('the model names every code the five earlier runs heard, in order, and every pause of a start lies in its band',
   lab.needing(lab.skipUnless(SET, FULL, RUN_CHECKS, RUN_HOME, RUN_BEFORE, RUN_DELAY, RUN_BACK, SET_68, SET_DELAY, SET_DELAY_BACK)), () => {
+    proves(2, ['harmony-touch']);
     const book = touchBook(SET);
     let codes = 0;
     let pauses = 0;

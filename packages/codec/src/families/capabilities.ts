@@ -33,7 +33,7 @@ import { FAVOURITES_LIMIT } from './harmony-touch/favourites.ts';
 import { chooseByModel, familyKind, NoFamilyError, type AnyFamily } from './registry.ts';
 
 // The requirement types an application meets in an answer, so it needs no second import to name them.
-export type { BenchModelKey, Requirement, RequirementState, RequirementStatus } from '@harmony/base/requirements';
+export type { BenchModelKey, Proof, Requirement, RequirementState, RequirementStatus } from '@harmony/base/requirements';
 
 /** What a model is, as far as the libraries hold it. A field left out is a value nothing here states. */
 export interface ModelProperties {

@@ -17,6 +17,7 @@ import { load, skipUnless } from '@harmony/lab';
 
 import { Bench, type BenchDeps } from '../../src/index.ts';
 import { VERSION_FIELDS, type OpenRemote } from '../../src/internal.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const ONE = 0xc121;
 const H600 = 0xc122;
@@ -79,6 +80,7 @@ test('a model with no config base is listed rather than hidden or thrown', async
 });
 
 test('the version block is named where a name has been earned and numbered where it has not', async () => {
+  proves(64, ['harmony-600'], ['docs/test-notes/harmony-600.md#measured-against-two-bench-remotes']);
   const closed = { count: 0 };
   const bench = new Bench(
     deps({

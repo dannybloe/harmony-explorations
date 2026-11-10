@@ -14,6 +14,7 @@ import pathlib
 import unittest
 
 import lab
+from proves import proves
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 
@@ -46,6 +47,7 @@ class TheRegionIsFiveBlocksAndAllFiveAreInHand(unittest.TestCase):
                 self.assertEqual(len(lab.load(label)), BLOCK)
 
     def test_the_five_blocks_span_the_region_the_rails_state(self):
+        proves(58, ['harmony-525'], ['docs/test-notes/harmony-525.md#what-has-been-done-over-usb-in-sum'])
         # Derived from the rail rather than restated, so a change to either constant fails here
         # instead of leaving this file describing a region that has moved.
         rails = (ROOT / 'packages' / 'usb' / 'src' / 'rails.ts').read_text()

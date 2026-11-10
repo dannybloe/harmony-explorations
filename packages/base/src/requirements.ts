@@ -13,8 +13,9 @@
  *
  * * `met`: in the FHSDK, shown by a test in this repository, and, for a requirement whose ability shows on a
  *   remote (`needsBench` below), shown working on a bench unit of that model, by a bench test or a passage of the
- *   model's test notes in `docs/test-notes/`. Both halves are named in the evidence, or the status is not met. A
- *   build that passes every test and never ran on the remote is open.
+ *   model's test notes in `docs/test-notes/`. **A met is proven, never written**: the test says so itself, by a call
+ *   of `proves` naming the requirement, the models and the bench record, and the met is derived from those calls,
+ *   below. A build that passes every test and never ran on the remote is open.
  * * `open`: the model can plainly do it and the FHSDK does not yet, or does it without that evidence.
  * * `impossible`: the model cannot, by its hardware or firmware, and a page of `reference/` says so; or this project
  *   does not do it on that model by a decision, whose entry in `docs/decisions.md` is then the evidence, as the
@@ -28,14 +29,25 @@
  *
  * **Why this is data in the base rather than a document.** The application asks per model, through the codec's
  * `capabilitiesOf`, which also needs the family registry; a document cannot be asked, and a second copy of the
- * list in code would drift from it. So the list and the statuses live here, with no import at all, and
- * `docs/remote-requirements.md` is generated from them by `packages/codec/bin/requirements.ts`, with a test that
- * fails when the committed document differs from what this data generates.
+ * list in code would drift from it. So the list and the statuses live here, importing nothing but the proofs, and
+ * `docs/remote-requirements.md`, `docs/remote-requirements-evidence.md` and a checklist per bench remote under
+ * `todo/` are generated from them by `packages/codec/bin/requirements.ts`, with a test that fails when a committed
+ * file differs from what the data generates.
  *
- * **The statuses were judged conservatively**, by reading every model's test notes and bench tests for both
- * halves of the evidence; a status changes here, in the same commit as the test or the bench run that moves it,
- * and the document is regenerated with `make requirements-write`.
+ * **Where the proofs come from.** An application reads statuses at run time and cannot read test sources, so the
+ * generator reads them, statically, and writes what it finds into `proofs.ts` beside this module: every call of
+ * `proves` in a test, with the test's file and title. That module is generated and checked against the sources, so
+ * it is never edited by hand; a test that gains or loses a proof is followed by `make requirements-write`.
+ *
+ * **The written statuses were judged conservatively**, by reading every model's test notes and bench tests for both
+ * halves of the evidence; one changes here, in the same commit as the test or the bench run that moves it. A status
+ * that becomes met is taken out of the data below and its proof put into the test that shows it.
  */
+import { PROOFS, type Proof } from './proofs.ts';
+
+// The proofs, so an application and the checks reach them through this module, the one the subpath names.
+export { PROOFS };
+export type { Proof };
 
 /** Where a requirement stands on one model. */
 export type RequirementStatus = 'met' | 'open' | 'impossible' | 'unknown';
@@ -306,58 +318,63 @@ export function benchModel(keyOrSkin: BenchModelKey | number): BenchModel | unde
 /**
  * One requirement's status on one model, with what it rests on. Every path is relative to the repository's root and
  * names a file that exists, a test-notes passage by its heading's anchor; `test/requirements.test.ts` holds both.
+ *
+ * **A met is never written here.** It is derived from the proofs, the calls of `proves` inside the tests that show a
+ * requirement, which `packages/codec/bin/requirements.ts` reads off the test sources into `proofs.ts`: a requirement
+ * is met on a model when at least one proof names it for that model, and its tests and bench records are the
+ * proofs'. What is written by hand below is the other three, open, impossible and unknown, each with its reason. So
+ * a test rewritten to show something else takes its proof with it, where a met typed here would have stayed.
  */
 export interface RequirementState {
   readonly status: RequirementStatus;
-  /** The tests in this repository that show it. Required for met. */
+  /** The test files whose proofs make it met, in the order of the proofs. Empty but for met. */
   readonly tests: readonly string[];
-  /** Where it was shown on a bench unit of the model: a bench test, or a passage of `docs/test-notes/`. */
+  /** Where it was shown on a bench unit of the model, the proofs' bench records together. Empty but for met. */
   readonly bench: readonly string[];
+  /** The proofs a met rests on, each naming its test by file and title. Empty but for met. */
+  readonly proofs: readonly Proof[];
   /**
    * The reference pages a status rests on: for impossible the page that says the model cannot, or the entry of
    * `docs/decisions.md` that rules it out, one of the two required; for unknown the page that leaves the question
    * open, where one does.
    */
   readonly reference: readonly string[];
-  /** In one sentence: what is shown, what is missing, why not, or what is not known. */
+  /**
+   * In one sentence: what is missing, why not, or what is not known, as written; for a met, generated from its
+   * proofs, saying how many tests prove it and whether it was shown on a unit, since the tests' own titles say what.
+   */
   readonly why: string;
 }
 
-/** Met, with the tests and the bench demonstrations that show it. */
-function met(tests: readonly string[], bench: readonly string[], why: string): RequirementState {
-  return { status: 'met', tests, bench, reference: [], why };
-}
+/** The written statuses carry no proof; the field is for a met. */
+const NO_PROOF: readonly Proof[] = [];
 
 /** Open, saying what is missing. */
 function open(why: string): RequirementState {
-  return { status: 'open', tests: [], bench: [], reference: [], why };
+  return { status: 'open', tests: [], bench: [], proofs: NO_PROOF, reference: [], why };
 }
 
 /** Impossible on the model, with the reference page that says so. */
 function impossible(reference: readonly string[], why: string): RequirementState {
-  return { status: 'impossible', tests: [], bench: [], reference, why };
+  return { status: 'impossible', tests: [], bench: [], proofs: NO_PROOF, reference, why };
 }
 
 /** Unknown, saying what is not known, with the reference page that leaves it open where one does. */
 function unknown(why: string, reference: readonly string[] = []): RequirementState {
-  return { status: 'unknown', tests: [], bench: [], reference, why };
+  return { status: 'unknown', tests: [], bench: [], proofs: NO_PROOF, reference, why };
 }
 
 /**
- * Every bench model's status on every requirement of the models, R1 to R72 but R68, judged by reading the model's test notes,
- * its bench tests and its reference pages for both halves of the evidence. Where a requirement does not depend on
- * the remote, as Pronto Hex does not, every model carries the same answer.
+ * Every bench model's written status on the requirements of the models, R1 to R72 but R68, that no proof makes met:
+ * open, impossible or unknown, each with its reason, judged by reading the model's test notes, its bench tests and its
+ * reference pages. A requirement a proof names for the model has no entry here, and one with neither is a fault,
+ * `test/requirements.test.ts`: every requirement on every model is proven or written, never both.
  */
 const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, RequirementState>>>> = {
   // The Harmony One.
   'harmony-one': {
-    1: met(['packages/corpus/test/read/read.test.ts'], ['docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups'], 'The configuration is read whole and checked, and the spare\'s read matched its stored copy byte for byte.'),
-    2: met(['packages/codec/test/inventory/inventory.test.ts', 'packages/codec/test/families/harmony-one/composecompare.test.ts'], [], 'The readers name devices, activities, keys, screens and codes on One compiles, and the view says what every binding sends.'),
     3: open('Nothing turns a One configuration back into a recipe, and no record of ours is carried inside one yet.'),
-    4: met(['packages/codec/test/recipe/references.test.ts', 'packages/codec/test/families/fromrecipe.test.ts'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it'], 'The test setup recipe builds to the fingerprint of the file written to the spare, which drove its devices as predicted.'),
-    5: met(['packages/corpus/test/write/write-config-run.test.ts', 'packages/usb/test/write/blockwrite.test.ts'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it'], 'The writer erases, writes, reads back and restarts, and the spare started on what was written.'),
     6: open('The writer permits only the bench units on its list; a One never seen cannot be recorded and made a write target.'),
-    7: met(['packages/codec/test/container/queue.test.ts', 'packages/codec/test/families/fromrecipe.test.ts', 'packages/codec/test/compose/composecatalogue.test.ts'], [], 'An overflowing action queue, too many devices and an unserved model are refused, each saying what is wrong.'),
     8: open('Nothing reads back what was changed on the One itself, such as its Options settings, so no change is detected or kept.'),
     9: open('The catalogue lists manufacturers and models, but there is no search by type and no help for typing errors.'),
     10: open('Catalogue devices compose and were heard, but no code set version can be chosen and inputs chosen through a menu are refused.'),
@@ -370,10 +387,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open('Repeats follow the catalogue\'s count; nothing lets a repeat count be set.'),
     18: open('Nothing sets how a device tunes a channel number.'),
     19: open('Nothing adds, fixes or removes one command of a device, or puts back its original code.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'Codes are written and read as Pronto Hex, and malformed strings are refused, whatever the remote.'),
-    21: met(['packages/codec/test/families/harmony-one/oneactivity.test.ts', 'packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it'], 'Typed activities are built, and on the spare starting, switching and Off sent exactly the codes the file predicted.'),
     22: open('Keys are mapped from roles and the Denon\'s volume was heard; the learned command part does not exist for the One.'),
-    23: met(['packages/codec/test/compose/inputs.test.ts', 'packages/codec/test/families/harmony-one/composecompare.test.ts'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it'], 'An activity sets each named device\'s input or leaves it alone, and the LG and Denon went to the inputs asked for.'),
     24: open('The pass through test covers the Harmony 650 only, and no One test note records the switch being driven.'),
     25: open('An activity\'s name is set only when a recipe is built; no test or run shows an existing activity renamed.'),
     26: open('Nothing removes an activity from a configuration; only building a recipe without it would leave it out.'),
@@ -408,13 +422,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     55: open('How a learned code is stored in a One configuration is not known, so none can be used.'),
     56: open('A learned code is recognised by the Harmony Touch\'s reader; nothing keeps one in a Harmony One configuration.'),
     57: open('Code numbers are ranked against the catalogue\'s codesets, but no test identifies a device from a few taught commands.'),
-    58: met(['packages/corpus/test/read/read.test.ts', 'packages/corpus/test/read/file.test.ts'], ['docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups'], 'The configuration is read whole and filed on the computer, and the spare\'s stored copies match the remote.'),
     59: open('A whole backup has never been put back on a One; only one block of its own was written back unchanged.'),
     60: open('Nothing adapts a setup to another model or copies devices and activities from one setup into another.'),
-    61: met(['packages/codec/test/families/fromrecipe.test.ts', 'packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it'], 'An empty recipe builds the empty One, which was written to the spare and started with no activity.'),
-    62: met(['packages/usb/test/transport/remote.test.ts', 'packages/usb/test/transport/hardware.test.ts'], ['docs/test-notes/harmony-one.md#telling-the-two-ones-apart'], 'Attached remotes are listed and named by vendor, product and skin without opening them, and the bench Ones enumerate.'),
-    63: met(['packages/usb/test/transport/identity.test.ts', 'packages/corpus/test/write/write-config-run.test.ts'], ['docs/test-notes/harmony-one.md#telling-the-two-ones-apart'], 'Units are told apart by the identity block\'s two GUIDs, and a write to the wrong One is refused.'),
-    64: met(['packages/usb/test/transport/remote.test.ts', 'packages/usb/test/transport/hardware.test.ts'], ['docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups'], 'The version block gives firmware, hardware and architecture, and the spare\'s firmware matched the archived package.'),
     65: open('The One\'s battery reading has not been checked, and nothing warns or refuses a write when it is low.'),
     66: open('A read reports progress, but a write does not, and nothing makes the One show it is being written.'),
     67: impossible(['reference/remotes/harmony-one/behaviour.md#on-the-cable'], 'On the cable the One\'s keypad handler stops, so a key press cannot be watched live.'),
@@ -425,13 +434,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
   },
   // The Harmony 600.
   'harmony-600': {
-    1: met(['packages/corpus/test/read/read.test.ts', 'tests/harmony_600_650_700/test_arch14_write_target.py'], ['docs/test-notes/harmony-600.md#the-bench-600s-memory-as-read'], 'The read stops at the header\'s length and refuses a bad end marker or checksum; the unit\'s read matched its own file byte for byte.'),
-    2: met(['packages/codec/test/inventory/inventory.test.ts', 'packages/codec/test/families/harmony-600-650-700/empty.test.ts'], [], 'The 600\'s own configuration reads into its devices, activities and keys, and a 600 setup\'s view is compared slot by slot.'),
     3: open('Nothing turns a compiled configuration back into a recipe, and the record of ours carried inside a configuration is not built.'),
-    4: met(['packages/codec/test/recipe/references.test.ts', 'packages/codec/test/families/harmony-600-650-700/empty.test.ts'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'The empty 600 and the five device setup build from recipes, byte for byte the files the 600 ran.'),
-    5: met(['tests/harmony_600_650_700/test_arch14_write_target.py', 'packages/corpus/test/write/write-config-run.test.ts'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'Whole writes with the cache drop and restart read back identical on the 600, and a changed delay was then heard.'),
     6: open('Every write path permits only the bench units\' records; taking up a remote never seen as a write target is not built.'),
-    7: met(['packages/codec/test/families/harmony-600-650-700/empty.test.ts', 'packages/codec/test/container/queue.test.ts', 'packages/corpus/test/read/compatibility.test.ts'], [], 'A setup past the 600\'s five devices is refused naming the limit; a container overflowing the action queue is refused naming the list.'),
     8: open('Saved delays are read and cleared on the 600, but nothing compares with the last write or keeps them in a new build.'),
     9: open('The catalogue lists manufacturers and models, but offers no help for typing errors.'),
     10: open('Catalogue devices with commands, power and inputs ran on the 600; choosing a code set version is not offered.'),
@@ -444,16 +448,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open('Repeat counts are composed from the catalogue; nothing lets an application set them.'),
     18: open('Channel tuning comes from the catalogue entry; nothing lets an application set it.'),
     19: open('Nothing adds, fixes or removes one command of a device, or puts a fixed one back.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'Codes are written as Pronto Hex and read from it, and a written string reads back as the train that wrote it.'),
-    21: met(['packages/codec/test/compose/compose.test.ts'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'Activities composed for the 600 started, switched and ended with All Off on it, every code as the file predicted.'),
     22: open('Keys mapped from roles ran on the 600; a learned command landing on its usual key is not built, since learning is not.'),
-    23: met(['packages/codec/test/compose/inputs.test.ts'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'Each device\'s input in an activity, or none, is composed; the 600 sent the LG\'s HDMI 1 and the Denon\'s CBL/SAT.'),
     24: open('A pass through device ran on the 600 only in a six device build, made by raising the library\'s refused limit.'),
     25: open('An activity\'s name comes from the recipe, but no run on the 600 changed a name and showed the new one.'),
     26: open('Nothing removes an activity from an existing setup, and no run on the 600 dropped one.'),
     27: unknown('No reference page says whether the 600\'s monochrome screen can show an activity icon.'),
     28: open('The menu follows the recipe\'s order, but no 600 run records the order shown, nor an activity\'s device list order.'),
-    29: met(['packages/codec/test/families/harmony-600-650-700/activitykeys.test.ts'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'Activities go on the activity keys by a stated choice; on the 600 Watch TV and Watch a Movie started theirs.'),
     30: open('Extra commands, pauses or a sequence at an activity\'s start or end are not offered.'),
     31: open('A recipe cannot state a key binding in an activity; the keypad comes from roles only.'),
     32: open('Device mode\'s map comes from the catalogue only; a recipe cannot change what a key sends there.'),
@@ -461,13 +461,11 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     34: open('Screen commands ran on the 600, but no activity there held more than one page, so paging is not shown.'),
     35: open('Device pages come from the catalogue only; choosing their commands is not offered.'),
     36: open('A screen button opening a page of the user\'s own commands is not built.'),
-    37: met(['packages/codec/test/compose/sequence.test.ts', 'packages/codec/test/container/queue.test.ts'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'The Radio sequence, two commands with a 2 second pause, was sent from the 600\'s screen; an overflowing one is refused.'),
     38: impossible(['reference/remotes/harmony-600/features.md#the-capability-fields', 'reference/architectures/harmony-600-650-700/README.md#keys'], 'The firmware tells no long press from a short one, and Logitech declares none for the 600.'),
     39: impossible(['reference/remotes/harmony-600/behaviour.md#device-mode-in-and-out'], 'The 600 has no device keys; a device is chosen from a list under the centre key.'),
     40: impossible(['reference/remotes/harmony-600/display.md#the-panel'], 'The 600 has no touch panel.'),
     41: open('Pages render as stored, but what the monochrome panel makes of each colour is not measured.'),
     42: open('Letters, blending and the one grey were seen on the 600; state colours are refused and other looks were never written to it.'),
-    43: met(['packages/silhouettes/test/models.test.ts', 'tests/harmony_600_650_700/test_keypad.py'], [], 'The 600 is drawn with its 54 keys, each named and carrying its scan code, checked against keys pressed on a unit.'),
     44: open('Help is left out of every build of this family; advanced help and its delay fixing are not built.'),
     45: open('Every composer refuses favourites; the 600 shows them on Watch TV\'s screen by its manual.'),
     46: open('No favourite is built for the 600, so no favourite icon either.'),
@@ -482,13 +480,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     55: open('How a learned code is stored on this family is not read, so none can be used.'),
     56: open('A learned code is recognised by the Harmony Touch\'s reader; nothing keeps one in a 600 configuration.'),
     57: open('Code numbers are ranked against the catalogue\'s codesets, but no test identifies a device from a few taught commands.'),
-    58: met(['packages/corpus/test/read/file.test.ts', 'tests/harmony_600_650_700/test_arch14_write_target.py'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'Reads and region reads are filed to disk; the 600\'s whole flash was backed up and reads back as that backup.'),
-    59: met(['tests/harmony_600_650_700/test_arch14_write_target.py'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'The 600\'s original configuration was written back after a change, and the region then read as the backup.'),
     60: open('A setup past the 600\'s limits is refused, not adapted; the five device setup was cut by hand.'),
-    61: met(['packages/codec/test/families/harmony-600-650-700/empty.test.ts', 'packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'], 'The empty 600 configuration, no device or activity, builds from a recipe and was written to the 600 and run.'),
     62: open('Listing and the model from the release number are tested, but the 600\'s enumeration was recorded with the system\'s tools, not the FHSDK.'),
-    63: met(['packages/usb/test/transport/identity.test.ts', 'tests/harmony_600_650_700/test_arch14_write_target.py'], ['docs/test-notes/harmony-600.md#the-bench-600s-memory-as-read'], 'The identity block\'s two GUIDs tell the 600 from the 650, which shares its ids; every 600 write matched its record first.'),
-    64: met(['packages/usb/test/transport/protocol.test.ts', 'packages/bench/test/instrument/bench.test.ts'], ['docs/test-notes/harmony-600.md#measured-against-two-bench-remotes'], 'The version block gives firmware, hardware version, skin and flash id, read off the 600 by the FHSDK.'),
     65: open('The battery read exists but was never sent to a 600, and no low battery warning or refusal is built.'),
     66: open('Read progress is reported, but nothing makes the remote show it is being written.'),
     67: open('A watch address exists for the 600, but no run names a pressed key live; on the cable only matrix columns were read.'),
@@ -499,13 +492,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
   },
   // The Harmony 650.
   'harmony-650': {
-    1: met(['packages/corpus/test/read/read.test.ts'], ['docs/test-notes/harmony-650.md#memory-as-read'], 'The configuration is read whole with its end marker and checksum checked, and the bench read matched the flash byte for byte.'),
-    2: met(['packages/codec/test/families/harmony-600-650-700/compare.test.ts', 'packages/codec/test/inventory/inventory.test.ts'], [], 'The readers and setupView turn a 650 configuration into its devices, activities, keys, screens and what each sends.'),
     3: open('Nothing reads a compiled 650 configuration back into a recipe, and the record of ours carried inside is not built.'),
     4: open('The 650 test setup builds to its fingerprint, but no test note records a recipe build running, and the build the remote ran differs.'),
-    5: met(['packages/corpus/test/write/write-config-run.test.ts'], ['docs/test-notes/harmony-650.md#what-has-been-sent-to-this-unit'], 'Configurations are erased, written, read back, compared and restarted, and the 650 ran the changed delay straight after.'),
     6: open('Writes go only to units on the bench\'s fixed list; a stranger\'s 650 cannot be recorded and made a write target.'),
-    7: met(['packages/codec/test/compose/composecatalogue.test.ts', 'packages/codec/test/compose/sequence.test.ts', 'packages/corpus/test/read/compatibility.test.ts'], [], 'Too many devices, an overfull action queue and a configuration for another remote are refused, each naming what is wrong.'),
     8: open('The settings store has never been read on a 650, and nothing offers keeping or discarding changes made on the remote.'),
     9: open('The catalogue lists manufacturers and their models, but there is no search by type and no help with typing errors.'),
     10: open('Catalogue devices compose and ran on the 650, but nothing lets the user choose between a device\'s code sets.'),
@@ -518,7 +507,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open('A device\'s repeat count is taken from the catalogue, and nothing lets an application set it.'),
     18: open('Channel tuning is composed for the Harmony 300, 350 and Touch, not for the 650\'s family.'),
     19: open('Commands can be chosen when composing a device, but nothing fixes a command\'s code or puts the original back.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'Pronto Hex is both read and written, and a written string reads back as the pulse train that wrote it.'),
     21: open('Composed activities started and All Off ran on the 650, but its test notes record no switching between activities.'),
     22: open('The key map built from roles ran on the 650, but the learned command half needs learning, which does not exist.'),
     23: open('An activity\'s device inputs compose, but no test note shows one being set on the 650.'),
@@ -533,9 +521,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     32: open('Nothing changes what a key sends in a device\'s own map.'),
     33: open('Device mode maps compose and composed pages sent on the 650, but no test note shows every key and page.'),
     34: open('An activity\'s screen items come from the recipe, but no test note shows a composed activity screen on the 650.'),
-    35: met(['packages/codec/test/compose/composecatalogue.test.ts'], ['docs/test-notes/harmony-650.md#bench-runs'], 'Commands chosen for a composed device go on its device mode pages, and two composed devices sent from their pages.'),
     36: open('No screen button that opens a page of the user\'s own commands is built.'),
-    37: met(['packages/codec/test/compose/sequence.test.ts'], ['docs/test-notes/harmony-650.md#bench-runs'], 'A sequence with pauses is composed within the action queue, bound to a key, and heard with its pauses.'),
     38: impossible(['reference/remotes/harmony-650/keys.md#what-pressing-a-key-raises'], 'The firmware raises press, repeat and release only, so no key has a held action.'),
     39: impossible(['reference/remotes/harmony-650/keys.md#what-pressing-a-key-raises'], 'The 650 has no device keys and no long press.'),
     40: impossible(['reference/remotes/harmony-650/display.md#the-panel'], 'The 650\'s screen has no touch, so there are no gestures.'),
@@ -556,13 +542,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     55: open('How a compiled remote stores a learned code is not read, so nothing puts one into a 650 device.'),
     56: open('A learned code is recognised by the Harmony Touch\'s reader; nothing keeps one in a 650 configuration.'),
     57: open('Code numbers are ranked against the catalogue\'s codesets, but no test identifies a device from a few taught commands.'),
-    58: met(['packages/corpus/test/read/file.test.ts', 'packages/corpus/test/read/read.test.ts'], ['docs/test-notes/harmony-650.md#memory-as-read'], 'The whole configuration and flash are read off the 650 and filed on the computer.'),
-    59: met(['packages/corpus/test/write/write-config-run.test.ts'], ['docs/test-notes/harmony-650.md#what-has-been-sent-to-this-unit'], 'The earlier configuration was written back onto the same 650 and read back.'),
     60: open('Nothing moves a setup to another remote, or copies devices and activities from one setup into another.'),
     61: open('The empty 650 builds to its fingerprint, but no test note records it running, and the build written differs.'),
     62: open('Listing finds product 0xC122 but names it a Harmony 600 or 700; telling a 650 apart needs its skin.'),
-    63: met(['packages/usb/test/transport/identity.test.ts', 'packages/corpus/test/write/write-config-run.test.ts'], ['docs/test-notes/harmony-650.md#the-unit'], 'The unit is told apart by its two identity GUIDs, recorded for the bench 650, and another unit is refused.'),
-    64: met(['packages/usb/test/transport/remote.test.ts', 'packages/usb/test/transport/protocol.test.ts'], ['docs/test-notes/harmony-650.md#the-unit'], 'The version block is read off the 650: firmware, hardware and software type.'),
     65: open('The battery voltage is read on the 650, but there is no level, no threshold and no warning or refusal.'),
     66: open('A read reports progress, but nothing makes the 650 show that it is being written.'),
     67: open('The key watch uses the Harmony 600\'s memory address for every remote of its product id, and the 650\'s is not read.'),
@@ -576,10 +558,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     1: open('readConfig is tested on the family\'s samples, but the 700 unit was only ever read as raw regions, never through it.'),
     2: open('The reader handles the 700\'s compiles, but deviceModeMaps still picks a help screen for their A/V switch, pinned as a fault.'),
     3: open('Nothing turns a compiled configuration back into a recipe, and no record of ours is carried inside one.'),
-    4: met(['packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it'], 'The seven device test setup, built from its recipe alone, ran on the 700 as the file predicts.'),
-    5: met(['packages/corpus/test/write/write-config-run.test.ts', 'tests/harmony_600_650_700/test_arch14_write_target.py'], ['docs/test-notes/harmony-700.md#what-was-sent-to-the-unit'], 'Whole configurations went to the unit with the drop and restart, each block read back byte for byte, and ran.'),
     6: open('Writes are permitted only to the bench units the library lists; a remote never seen cannot be taken on.'),
-    7: met(['packages/codec/test/container/queue.test.ts', 'packages/usb/test/transport/compatible.test.ts', 'packages/codec/test/compose/composecatalogue.test.ts'], [], 'A queue overflow, a configuration for another remote and a device past the model\'s count are each refused with what is wrong.'),
     8: open('The settings store reader exists, but the store read was never sent to a 700 and nothing detects changes.'),
     9: open('The catalogue lists manufacturers, models and types, but nothing helps with a misspelt search.'),
     10: open('Catalogue devices with commands, power and inputs ran on the 700; choosing among a device\'s code set versions is not offered.'),
@@ -592,8 +571,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open('Repeats are composed from the catalogue; nothing lets an application set them.'),
     18: open('Channel tuning is taken from the catalogue record; nothing lets an application set it.'),
     19: open('Nothing adds, fixes, removes or restores a single command of a device.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'The codec writes and reads Pronto Hex, refusing malformed strings, independent of the remote.'),
-    21: met(['packages/codec/test/compose/compose.test.ts'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it'], 'Four activities of four kinds started, switched and ended with All Off on the 700, every decoded code as the file sends.'),
     22: open('Keys from roles ran on the 700, volume to the receiver and channels to the box; learned commands cannot exist to land.'),
     23: open('Inputs set per activity ran on the 700; no device with inputs was left alone in any activity run.'),
     24: open('The one activity with a pass through device was built but never started on the 700.'),
@@ -601,15 +578,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     26: open('A setup lacking one activity ran on the 700, but removal is only a rebuild from a smaller recipe, untested as such.'),
     27: unknown('No page says whether a 700\'s activity menu can show an icon per activity.'),
     28: open('The menu follows the recipe\'s order on the 700; an activity\'s device list order is fixed by the build, not chosen.'),
-    29: met(['packages/codec/test/families/harmony-600-650-700/activitykeys.test.ts'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it'], 'Activities went on the keys the recipe\'s choice names and started from them on the 700; an unused key showed the placeholder.'),
     30: open('Starts and ends are composed from the devices; adding commands, pauses or a sequence to them is not offered.'),
     31: open('A recipe cannot override what a key does in an activity on this family.'),
     32: open('A recipe cannot change a key or a screen button in device mode on this family.'),
-    33: met(['packages/codec/test/families/harmony-600-650-700/devicemode.test.ts'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it'], 'Device mode is laid out from the catalogue as Logitech\'s compiles do, and the receiver\'s pages and keys ran on the 700.'),
     34: open('Labelled, ordered activity screen items ran on the 700, but never more than one page of them.'),
     35: open('Device mode pages follow the catalogue; a recipe cannot choose their commands.'),
     36: open('Nothing builds a screen button that opens a page of the user\'s own commands.'),
-    37: met(['packages/codec/test/compose/sequence.test.ts', 'packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it'], 'Radio, the box\'s 1, a 2 second pause and its 2, on a screen button, was heard on the 700; overflow is refused.'),
     38: impossible(['reference/remotes/harmony-700/README.md#key-numbers'], 'The 700 has no long press, by Logitech\'s service.'),
     39: impossible(['reference/remotes/harmony-700/behaviour.md#device-mode-in-and-out'], 'The 700 has no device keys; device mode is a list opened by the centre key below the screen.'),
     40: impossible(['reference/remotes/harmony-700/display.md#the-panel'], 'The 700\'s screen has no touch panel, so there are no gestures.'),
@@ -630,25 +604,17 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     55: open('How a learned code is stored in this family\'s configuration is not known, so none can be used.'),
     56: open('A learned code is recognised by the Harmony Touch\'s reader; nothing keeps one in a 700 configuration.'),
     57: open('Code numbers are ranked against the catalogue\'s codesets, but no test identifies a device from a few taught commands.'),
-    58: met(['packages/corpus/test/read/file.test.ts'], ['docs/test-notes/harmony-700.md#arrival-and-repair'], 'The unit\'s configuration region, external flash and both internal pages were read and kept on the computer.'),
-    59: met(['packages/corpus/test/write/write-config-run.test.ts'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it'], 'The unit\'s own earlier configuration, Logitech\'s, was written back and read back byte for byte, and ran.'),
     60: open('The 650\'s test setup was rebuilt for the 700 and ran; copying parts between setups and fitting to limits are not offered.'),
-    61: met(['packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it'], 'An empty configuration built from nothing was written to the 700 and it started with no device or activity.'),
     62: open('The 600, 650 and 700 share one product id, and the 700\'s descriptor word naming its skin was never checked on the unit.'),
-    63: met(['packages/usb/test/transport/identity.test.ts', 'tests/harmony_600_650_700/test_arch14_write_target.py', 'packages/corpus/test/write/write-config-run.test.ts'], ['docs/test-notes/harmony-700.md#what-was-sent-to-the-unit'], 'The unit is told apart by its identity block, matched to its record before every write; a wrong label is refused.'),
     64: open('Firmware, flash, architecture and skin were read off the unit; the hardware version a 700 reports is not recorded.'),
     65: open('The battery voltage read exists in the 700\'s firmware but was never asked of the unit, and no threshold exists.'),
     66: open('Read progress is reported, but nothing makes the remote show that it is being written.'),
     67: open('The key watch takes the 600\'s address for this product id; the 700\'s own address is not chosen.'),
     69: open('Safe mode was recognised on this unit, but nothing tells whether a newer firmware exists.'),
-    70: met(['packages/usb/test/write/firmware.test.ts'], ['docs/test-notes/harmony-700.md#arrival-and-repair'], 'Logitech\'s 2.8 image, from a file, was staged and installed on the unit; fetching it from the update service is in no library.'),
-    71: met(['packages/usb/test/write/firmware.test.ts'], ['docs/test-notes/harmony-700.md#arrival-and-repair'], 'The unit arrived stuck in safe mode and was repaired by asking it to reinstall its staged application.'),
     72: open('Logitech\'s service still answers for the 700, but its client is bound to test accounts and on no public entry.'),
   },
   // The Harmony 525.
   'harmony-525': {
-    1: met(['packages/corpus/test/read/read.test.ts'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026'], 'readConfig reads the 525 at its own base and length, and a read off the unit was filed with its checksum recomputing.'),
-    2: met(['packages/codec/test/inventory/inventory.test.ts', 'packages/codec/test/screens/render.test.ts'], [], 'The readers give the devices, activities, key bindings, delays and codes of both 525 configurations, and draw every page.'),
     3: open('Nothing turns a compiled configuration back into a recipe, and nothing builds for the 525 that could carry a record of ours.'),
     4: open('No codec family serves the 525, so nothing builds a configuration for it from a recipe.'),
     5: open('Only one block of the unit\'s own bytes was written back; the whole configuration writer refuses a 525.'),
@@ -666,7 +632,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open('Nothing composes a repeat count for a 525 device.'),
     18: open('Nothing composes channel tuning for a 525 device.'),
     19: open('Nothing adds, fixes or restores a device command in a 525 configuration.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'Pronto Hex is read and written by the codec, whatever the remote.'),
     21: open('Nothing composes an activity for the 525.'),
     22: open('No activity key map from device roles is built for the 525.'),
     23: open('No activity input setting is built for the 525.'),
@@ -704,13 +669,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     55: open('Nothing puts a learned code into a 525 device.'),
     56: open('A learned code is recognised by the Harmony Touch\'s reader; nothing keeps one in a 525 configuration.'),
     57: open('Code numbers are ranked against the catalogue\'s codesets, but no test identifies a device from a few taught commands.'),
-    58: met(['packages/corpus/test/read/file.test.ts', 'tests/harmony_5xx/test_harmony_525_region.py'], ['docs/test-notes/harmony-525.md#what-has-been-done-over-usb-in-sum'], 'The unit\'s configuration region, firmware images, internal flash and EEPROM were read and filed on the computer.'),
     59: open('One block was put back through a script; nothing restores a whole backup to a 525.'),
     60: open('Nothing reads a 525 setup into a recipe or builds one for it.'),
     61: open('Nothing builds an empty configuration for the 525.'),
-    62: met(['packages/usb/test/transport/remote.test.ts', 'packages/base/test/models.test.ts'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026'], 'Product id 0xC111 is recognised as a Harmony, and skin 22 from its bcdDevice names the 525, as the unit reported.'),
-    63: met(['packages/usb/test/transport/identity.test.ts'], ['docs/test-notes/harmony-525.md#what-has-been-done-over-usb-in-sum'], 'The 525\'s identity block is read from EEPROM and units are compared by their two GUIDs, so a different unit does not match.'),
-    64: met(['packages/usb/test/transport/protocol.test.ts', 'packages/usb/test/transport/remote.test.ts'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026'], 'The 525\'s seven field version block decodes to firmware, board, flash id, architecture and skin, matching the unit\'s reply.'),
     65: unknown('No battery reading over USB is known on the 525, and whether one exists is not settled.', ['reference/remotes/harmony-525/hardware.md#power']),
     66: open('Read progress is tested only on another model\'s sample, and nothing shows a write on the 525\'s screen.'),
     67: unknown('The scan code\'s address is read in the firmware, but no live memory read of a running 525 is known.', ['reference/remotes/harmony-525/keys.md#fifty-keys-and-every-one-is-bound']),
@@ -721,11 +682,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
   },
   // The Harmony 885.
   'harmony-885': {
-    1: met(['packages/corpus/test/read/read.test.ts', 'tests/harmony_880_885/test_harmony_885_bench_reads.py'], ['docs/test-notes/harmony-885.md#5-november-2026-each-units-configuration-and-region-and-unit-as-clock'], 'readConfig read both units\' configurations whole, end marker and checksum passing, and each unit\'s two reads agree.'),
     2: open('Devices, activities, screens and codes are read on the 885, but no view predicts what each key sends there.'),
     3: open('Nothing turns a compiled 885 configuration back into a recipe.'),
     4: open('No build from a recipe serves the 885; a device can only be composed onto an existing configuration.'),
-    5: met(['packages/corpus/test/write/write-config-run.test.ts', 'tests/harmony_880_885/test_harmony_885_first_config_write.py'], ['docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted'], 'writeConfiguration wrote unit B, read it back identical, restarted it, and B came back running the written file.'),
     6: open('The writer\'s unit list holds only the two bench 885s; nothing records and adopts a remote never seen.'),
     7: open('The model check and the queue rail cover the 885; nothing checks a whole configuration\'s 64 state bytes or log area before writing.'),
     8: unknown('The 885 has no settings store, and whether anything a person changes on it reaches its configuration is not known.', ['reference/remotes/harmony-885/memory.md#harmony-885-memory']),
@@ -740,7 +699,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open('A composed device\'s sends go at a fixed quantity of 1; nothing lets it be set.'),
     18: open('Nothing composes channel entry for an 885 device.'),
     19: open('Nothing adds, fixes, removes or restores a single command in an 885 configuration.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'readPronto and writePronto read and write Pronto Hex and refuse malformed strings, whatever the remote.'),
     21: open('Activities are not composed for the 885; the family refuses an activity\'s start, menu row and screen.'),
     22: open('An activity\'s key map from roles is refused for the 885.'),
     23: open('Activities and device inputs are not composed for the 885.'),
@@ -763,7 +721,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     40: impossible(['reference/remotes/harmony-885/display.md#the-panel'], 'The 885\'s screen is not a touch screen, so there are no gestures.'),
     41: open('885 pages render, but no rendered screen was compared with what a unit draws.'),
     42: open('The 885\'s fonts and pictures are borrowed from its configuration; nothing of ours chooses its look.'),
-    43: met(['tests/firmware/test_silhouettes.py', 'packages/silhouettes/test/models.test.ts'], [], 'The 885\'s face is drawn, and every key carries the scan code measured on the units.'),
     44: open('The 885 has on remote help by its manual; none is composed for it.'),
     45: open('Unit B\'s own configuration holds favourites, but nothing composes a favourite for the 885.'),
     46: open('Nothing composes a favourite, or its icon, for the 885.'),
@@ -778,16 +735,10 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     55: open('Nothing puts a learned code into an 885 device.'),
     56: open('A learned code is recognised by the Harmony Touch\'s reader; nothing keeps one in an 885 configuration.'),
     57: open('Code numbers are ranked against the catalogue\'s codesets, but no test identifies a device from a few taught commands.'),
-    58: met(['packages/corpus/test/read/read.test.ts', 'tests/harmony_880_885/test_harmony_885_flash_backup.py'], ['docs/test-notes/harmony-885.md#7-november-2026-unit-as-whole-flash-and-the-first-write-to-a-harmony-885'], 'Each unit\'s configuration and whole flash were read twice and kept, and the two copies are identical.'),
-    59: met(['packages/corpus/test/write/write-config-run.test.ts', 'tests/harmony_880_885/test_harmony_885_first_config_write.py'], ['docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted'], 'Unit B\'s own backed up configuration went back onto it, and the remote holds it byte for byte.'),
     60: open('Nothing moves a setup to another model or copies devices and activities between setups, adapted to limits.'),
     61: open('No empty configuration is built for the 885.'),
-    62: met(['packages/usb/test/transport/remote.test.ts', 'tests/usb_protocol/test_usbdesc.py'], ['docs/test-notes/harmony-885.md#the-first-unit-h885_a'], 'Product 0xC110 is listed as a Harmony, and bcdDevice 0x0811 names skin 17, as enumerated on a unit.'),
-    63: met(['packages/usb/test/transport/identity.test.ts', 'packages/corpus/test/write/write-config-run.test.ts'], ['docs/test-notes/harmony-885.md#7-november-2026-unit-as-whole-flash-and-the-first-write-to-a-harmony-885'], 'Each unit is named by its identity block, and unit B was refused when unit A was expected.'),
-    64: met(['tests/harmony_880_885/test_arch8_usb.py'], ['docs/test-notes/harmony-885.md#the-first-unit-h885_a'], 'The version block read through the library gives firmware 4.4, hardware 2.1, the skin and the flash ids, on both units.'),
     65: unknown('One read takes a hardware measurement, but what it measures is not identified, so a battery level is not known.', ['reference/architectures/harmony-880-885/usb.md#reading-flash']),
     66: open('Read progress exists, but the 885 showed nothing during a write, and nothing makes it show one.'),
-    67: met(['packages/usb/test/transport/watch-keys.test.ts', 'tests/harmony_880_885/test_harmony_885_keys.py'], ['docs/test-notes/harmony-885.md#5-november-2026-every-key-pressed-watched-over-usb'], 'The held key and the last key pressed are polled over USB, and every key was mapped that way on a unit.'),
     69: open('Nothing tells an 885 in its bootloader from a running one, and no list of firmware versions is held.'),
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('Nothing in the libraries brings a stuck 885 back; its recovery has only been read in the firmware.'),
@@ -799,9 +750,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     2: open('Devices and power on delays are read from 300 files, but no library reader says what each key sends.'),
     3: open('Nothing reads a configuration of this family back into a recipe.'),
     4: open('The 350\'s build ran on the 300 and every expected code was heard, but a recipe naming the 300 is refused once it holds a television or a long press, so the 300\'s own recipe does not build whole.'),
-    5: met(['packages/usb/test/file-protocol/file-family-run.test.ts', 'packages/usb/test/file-protocol/filewrite.test.ts'], ['docs/test-notes/harmony-300.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts'], 'The file write verifies by reading back and restarts, and the unit then ran what was written.'),
     6: open('The writer serves only the two bench units on its own list; a remote never seen cannot be recorded and written.'),
-    7: met(['packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts', 'packages/usb/test/file-protocol/filewrite.test.ts'], [], 'A setup past the 300\'s four infrared groups is refused naming the group, and an oversized or broken container is refused.'),
     8: unknown('Whether a Harmony 300 ever changes its own configuration is not known; it has no help to fix delays.'),
     9: open('The catalogue lists manufacturers and models, but offers no help for typing errors.'),
     10: open('Catalogue devices with power and inputs were built and heard on the unit, but no code set version can be chosen.'),
@@ -814,7 +763,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open('Nothing sets how many times a device\'s commands repeat.'),
     18: open('Channel digits and the tuning finish follow the catalogue; how a device tunes a number cannot be chosen.'),
     19: open('Nothing adds, fixes or removes one command of a device, or restores its original code, for this family.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'Pronto Hex strings are read and written, and malformed ones are refused.'),
     21: open('Watch TV ran on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.'),
     22: open('Only the channel changing role picks the map Watch TV ends in; other roles map no keys and learned commands are not handled.'),
     23: open('The inputs were heard on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.'),
@@ -852,13 +800,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     55: open('Nothing puts a learned code into a configuration of this family.'),
     56: open('A learned code is recognised by the Harmony Touch\'s reader; nothing keeps one in a 300 configuration.'),
     57: open('Code numbers are ranked against the catalogue\'s codesets, but no test identifies a device from a few taught commands.'),
-    58: met(['packages/usb/test/file-protocol/filepipe.test.ts'], ['docs/test-notes/harmony-300.md'], 'Every readable file, the configuration among them, was read off the unit twice with identical results.'),
-    59: met(['packages/usb/test/file-protocol/file-family-run.test.ts'], ['docs/test-notes/harmony-300.md'], 'The unit\'s own backup, as read, went back with its end marker restored, verified, and ran.'),
     60: open('The 350\'s build ran unchanged on the 300, but nothing adapts a setup to another model or copies devices between setups.'),
     61: open('The empty configuration builds for the 300 and passes the writer\'s check, but was never written to a 300.'),
-    62: met(['packages/usb/test/transport/remote.test.ts', 'packages/usb/test/package/surface.test.ts'], ['docs/test-notes/harmony-300.md#the-unit'], 'The family is listed without being opened, and the descriptor read off the unit names a Harmony 300.'),
     63: open('Units are told apart by their identity file and the unit matched its record, but a wrong unit was refused only on a fake.'),
-    64: met(['packages/usb/test/file-protocol/filepipe.test.ts'], ['docs/test-notes/harmony-300.md#its-three-firmware-images-read-and-compared-with-the-350s'], 'The identity file gives architecture, skin and firmware version, and the unit reported its firmware and skin.'),
     65: unknown('A battery file is in the family\'s file table but was never read, so whether it holds a level is not known.'),
     66: open('Neither the read nor the write reports progress, and whether the keys light while writing is not checked.'),
     67: unknown('No way to watch key presses live over this family\'s file protocol is known.'),
@@ -869,13 +813,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
   },
   // The Harmony 350.
   'harmony-350': {
-    1: met(['packages/usb/test/file-protocol/filewrite.test.ts', 'packages/usb/test/file-protocol/filepipe.test.ts'], ['docs/test-notes/harmony-350.md#what-has-been-read-off-it'], 'The configuration file is read off the unit, the end marker put back, and its checksum checks.'),
     2: open('The public readers name devices and read 13 of 14 delays; Watch TV and what each key sends are read only through internals.'),
     3: open('Nothing reads a 350 configuration back into a recipe, and no record of ours is carried inside.'),
-    4: met(['packages/codec/test/recipe/references.test.ts', 'packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts'], 'The recipe build of the test setup is the file the unit ran, every expected code heard.'),
-    5: met(['packages/usb/test/file-protocol/filewrite.test.ts', 'packages/usb/test/file-protocol/file-family-run.test.ts'], ['docs/test-notes/harmony-350.md'], 'The file writer wrote, read back identical, restarted, and the unit then sent the file\'s codes.'),
     6: open('The writer\'s unit list holds the bench units only; a remote never seen cannot be recorded and written.'),
-    7: met(['packages/codec/test/families/fromrecipe.test.ts', 'packages/codec/test/families/harmony-300-350/noscreensetup.test.ts', 'packages/usb/test/file-protocol/filewrite.test.ts'], [], 'Builds and writes refuse a second activity, a bad key, too many favourites and an oversized file, naming each.'),
     8: open('The writer refuses a file it did not write, shown on the unit; keeping or discarding that change is not offered.'),
     9: open('The catalogue can be browsed by manufacturer and model, but nothing helps with typing errors.'),
     10: open('Catalogue devices compose and were heard on the unit; choosing among a device\'s code set versions is not offered.'),
@@ -888,10 +828,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open('The repeat count follows the catalogue and cannot be set; nothing about it was checked on a remote.'),
     18: open('Channel tuning comes from the catalogue entry as it is; nothing lets it be set.'),
     19: open('Nothing adds, fixes or removes a single command of a device on this family.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'Codes are read from and written to Pronto Hex, the same for every model.'),
-    21: met(['packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts', 'packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts'], 'Watch TV built from a recipe started and stopped its devices on the unit; with one activity there is nothing to switch to.'),
     22: open('Roles choose Watch TV\'s final device map and volume source; a learned command landing on its usual key is not offered.'),
-    23: met(['packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts', 'packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts'], ['docs/test-notes/harmony-350.md'], 'The recipe\'s input for each device in Watch TV is set, others left alone, and the receiver\'s input was heard.'),
     24: open('No test or run includes a device with no role in Watch TV.'),
     25: open('The activity\'s name is stored nowhere the 350 shows; nothing renames it and no run shows one.'),
     26: open('A setup with devices and no Watch TV was never built in a test or run on the unit.'),
@@ -907,7 +844,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     36: impossible(['reference/remotes/harmony-350/display.md#harmony-350-display'], 'The 350 has no screen.'),
     37: open('Nothing composes a named sequence for this family; the limits it would survive were not measured.'),
     38: open('Only device keys get a long press, choosing a second device; a held command on any other key is not offered.'),
-    39: met(['packages/codec/test/families/harmony-300-350/noscreen.test.ts', 'packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts'], 'Eight devices on the four device keys, short and long, were each heard selected on the unit.'),
     40: impossible(['reference/remotes/harmony-350/display.md#harmony-350-display'], 'The 350 has no screen, so no touch gestures.'),
     41: impossible(['reference/remotes/harmony-350/display.md#harmony-350-display'], 'The 350 has no screen to draw.'),
     42: impossible(['reference/remotes/harmony-350/display.md#harmony-350-display'], 'The 350 has no screen.'),
@@ -926,12 +862,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     55: open('Nothing puts a learned code into a device of this family.'),
     56: open('A learned code is recognised by the Harmony Touch\'s reader; nothing keeps one in a 350 configuration.'),
     57: open('Code numbers are ranked against the catalogue\'s codesets, but no test identifies a device from a few taught commands.'),
-    58: met(['packages/usb/test/file-protocol/filepipe.test.ts', 'packages/usb/test/file-protocol/filewrite.test.ts'], ['docs/test-notes/harmony-350.md#what-has-been-read-off-it'], 'Every readable file, the configuration among them, was read off the unit twice, identical, and kept.'),
-    59: met(['packages/usb/test/file-protocol/filewrite.test.ts'], ['docs/test-notes/harmony-350.md'], 'The unit\'s own backed up configuration was written back, verified, and the remote ran it.'),
     60: open('Nothing moves another remote\'s setup onto a 350 adapted to its limits.'),
-    61: met(['packages/codec/test/families/harmony-300-350/noscreenempty.test.ts'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts'], 'The empty configuration was written to the unit, read back identical, and the remote then sent nothing.'),
     62: open('Enumeration finds it unopened and reads skin 104, but no model record names skin 104 a Harmony 350.'),
-    63: met(['packages/usb/test/file-protocol/filewrite.test.ts', 'packages/usb/test/file-protocol/file-family-run.test.ts'], ['docs/test-notes/harmony-350.md'], 'The writer checks the unit\'s own identity file against its record and refuses another unit.'),
     64: open('The identity text is read and parsed, but no firmware version beyond the product string\'s has been read off the unit.'),
     65: unknown('The battery file was never read, so whether the 350 reports a level is not known.', ['reference/remotes/harmony-350/usb.md#not-checked']),
     66: open('The writer reports each chunk as it goes; what the remote shows while written is not recorded or offered.'),
@@ -944,9 +876,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
   // The Harmony Touch.
   'harmony-touch': {
     1: open('No route reads the Touch\'s stored documents back; the firmware\'s put and request route is read but has never been sent.'),
-    2: met(['packages/codec/test/families/harmony-touch/touch-reader.test.ts', 'packages/bench/test/harmony-touch/touch-full-bench-predicted.test.ts'], [], 'The Touch reader turns a set of documents into devices, activities, maps, entries, delays and codes, and the engine model predicts every send.'),
-    3: met(['packages/codec/test/families/harmony-touch/touch-setup.test.ts'], [], 'describeTouchSetup turns a set into a setup description, favourites included, and composing it again gives the same remote.'),
-    4: met(['packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts'], ['packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'All six documents and a background built from a setup file were committed and every activity played its codes.'),
     5: open('answerTouchSync delivers and the remote commits and runs it, but no library step verifies afterwards; the hash check is a script\'s.'),
     6: open('The answerer syncs only the one bench unit named in its own list; a stranger\'s Touch cannot be recorded and written.'),
     7: open('The gate refuses sets the remote would mishandle and names each, but nothing refuses more than the 15 devices Logitech states.'),
@@ -955,42 +884,27 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     10: open('Devices are built from catalogue entries and heard, but the builder takes the entry\'s one code set and offers no version choice.'),
     11: open('A learned code becomes a definition in tests, but no device of taught commands has been composed and sent on the unit.'),
     12: open('No library step renames a device, and no renamed device has been delivered to the unit.'),
-    13: met(['packages/codec/test/families/harmony-touch/touch-removal.test.ts'], ['packages/bench/test/harmony-touch/touch-removal-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'A receiver used by three activities was taken out with everything naming it; removing the favourites\' tuning device is refused and said.'),
     14: open('Kept on and a held power code compose, but always on, no power, one or two keys and extra power commands are not set or shown.'),
     15: open('A device\'s inputs and how it changes them come only from its catalogue entry; nothing lets them be set.'),
     16: open('Delays a setup states are composed and their pauses heard in band, but putting them back to defaults is not shown.'),
     17: open('A repeat count is composed, but six taps sent four or five frames where three were predicted, unexplained.'),
     18: open('A channel tuning setting composes, but no composed tuning was heard; the favourites heard ran on Logitech\'s carried tuning.'),
     19: open('No library step adds, fixes or removes one command of a device, or restores a fixed one.'),
-    20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'writePronto and readPronto export and import codes as Pronto Hex, the same for every model.'),
-    21: met(['packages/codec/test/families/harmony-touch/touch-activity-add.test.ts'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'An activity composed by us was listed, started, used, switched to Watch TV and back, and stopped by Off as its record states.'),
     22: open('The Touch\'s maps are stated key by key; nothing maps an activity\'s keys from its devices\' jobs.'),
-    23: met(['packages/codec/test/families/harmony-touch/touch-activity-add.test.ts'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'The activity of ours set the television to HDMI 2 and left the player\'s input alone, heard as composed.'),
-    24: met(['packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts'], ['packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'The HDMI switch with no job in Switch Box is built as a pass through device and its power and input were heard.'),
     25: open('A rename was shown on the unit only through an experiment\'s hand edit; no library function renames an activity.'),
-    26: met(['packages/codec/test/families/harmony-touch/touch-removal.test.ts'], ['packages/bench/test/harmony-touch/touch-removal-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'Listen to Music was taken out with everything naming it, gone from the list, and the rest ran.'),
     27: open('The composer writes an activity with no picture of its own, so it shows its type\'s default picture.'),
     28: open('Places are composed and renumbered after a removal, but reordering the activity list or an activity\'s devices was never shown.'),
     29: impossible(['reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing'], 'The Touch has no activity keys; its 27 keypad keys and two touch zones include none.'),
-    30: met(['packages/codec/test/families/harmony-touch/touch-activity-add.test.ts'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'A composed start pause and command and an end command were heard; a sequence is not a step kind a Touch activity holds.'),
-    31: met(['packages/codec/test/families/harmony-touch/touch-activity-add.test.ts', 'packages/codec/test/families/harmony-touch/touch-setup.test.ts'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'packages/bench/test/harmony-touch/touch-setup-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'Keys composed by us sent their devices\' commands and sequences, heard on the unit, and keys left unbound sent nothing.'),
     32: open('A device\'s own keys are composed and heard, but a device map can bind only that device\'s commands, never another\'s.'),
     33: open('keysByName binds keys by exact command name only; nothing lays out a device mode map and screen as Logitech\'s software would.'),
-    34: met(['packages/codec/test/families/harmony-touch/touch-activity-add.test.ts'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'Four labelled entries composed for an activity showed in their order and each sent its command when tapped.'),
-    35: met(['packages/codec/test/families/harmony-touch/touch-device-add.test.ts', 'packages/codec/test/families/harmony-touch/touch-compose.test.ts'], ['packages/bench/test/harmony-touch/touch-device-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'A device of ours showed its eleven screen entries in order and its Power entry sent its own code.'),
     36: unknown('Whether a Touch screen entry can open a page of the user\'s own commands and come back is not known.'),
-    37: met(['packages/codec/test/families/harmony-touch/touch-setup.test.ts'], ['packages/bench/test/harmony-touch/touch-setup-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'A sequence with a pause composed by us on a key and an entry was heard; the composer refuses one the remote would not run.'),
-    38: met(['packages/codec/test/families/harmony-touch/touch-setup.test.ts', 'packages/codec/test/families/harmony-touch/touch-compose.test.ts'], ['packages/bench/test/harmony-touch/touch-setup-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'Long presses composed by us were held in every activity and device test and sent their second commands.'),
     39: impossible(['reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing'], 'The Touch has no device keys; its keys and touch zones list none.'),
     40: open('Gestures are composed in a whole setup, but no gesture has been performed on the unit and heard.'),
     41: open('Nothing renders the Touch\'s screens; the remote draws them from the documents.'),
     42: open('Only our background picture is drawn and shown; typeface, inks, icons and theme are not offered.'),
-    43: met(['packages/silhouettes/test/models.test.ts', 'packages/silhouettes/test/svg.test.ts'], [], 'The Touch\'s face is drawn with all 29 keys and each key is addressable by name.'),
     44: open('The Touch has help on its screen, but nothing builds or checks it for activities of ours.'),
     45: open('Adding and reordering were shown, but no favourite can be removed or named by the composer.'),
-    46: met(['packages/codec/test/families/harmony-touch/touch-favourites.test.ts'], ['packages/bench/test/harmony-touch/touch-favourites-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'A logo drawn by us was stored and shown on its favourite\'s tile.'),
     47: open('Two settings were changed on the unit; reading settings off it, the touch sound, the tutorial and defaults are not done.'),
-    48: met(['packages/codec/test/families/harmony-touch/touch-settings.test.ts'], ['packages/corpus/test/touch/touch-settings-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'Brightness 20 and a 30 second timeout composed by us dimmed the screen and timed about 30 seconds.'),
     49: unknown('Whether a Touch carries the accelerometer is not checked, and the bench unit\'s settings offer no tilt entry.'),
     50: unknown('Whether a Touch has a Remote Assistant or a Starting Activity message to switch is not known.'),
     51: unknown('An activity field marks guided or manual help, but whether that is Smart or Full help is not known.'),
@@ -998,44 +912,99 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     53: unknown('Whether a Touch offers a slideshow of the user\'s pictures is not known.'),
     54: open('The Touch learns through its infrared window by the manual, but nothing here sends a learning request to it.'),
     55: open('A learned code composes into a device in tests, but none has been sent from the unit.'),
-    56: met(['packages/codec/test/families/harmony-touch/touch-learned.test.ts'], [], 'A learned code is recognised as its family and value, or kept as its raw capture when it fits none.'),
     57: open('identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.'),
     58: open('The stored documents cannot be read off the remote, so a backup comes only from a recorded Logitech sync.'),
-    59: met(['packages/corpus/test/touch/touch-answer.test.ts', 'packages/corpus/test/touch/touch-sync.test.ts'], ['packages/usb/test/touch/touch-own-set-sync.test.ts', 'docs/test-notes/harmony-touch.md'], 'The remote\'s own six documents held by the app were delivered back and committed, and the remote ran normally.'),
     60: open('Nothing moves a Touch setup to another remote or model, or copies devices between setups adapted to limits.'),
-    61: met(['packages/codec/test/families/harmony-touch/touch-empty.test.ts'], ['packages/bench/test/harmony-touch/touch-empty-runs.test.ts', 'docs/test-notes/harmony-touch.md'], 'A configuration with no device and no activity was committed and the remote started on it with its empty pages.'),
     62: open('A Touch is listed as file based without being claimed, but its model is not named: skin 99 has no record.'),
     63: open('The unit is recorded and matched on the cable, but refusing a wrong unit is shown only in tests.'),
-    64: met(['packages/usb/test/file-protocol/filepipe.test.ts'], ['docs/test-notes/harmony-touch.md'], 'The identity file read on the unit gave its firmware version, architecture, skin and hardware version.'),
     65: open('The firmware names battery charge readings, but nothing reads them and no write warns on a low battery.'),
     66: open('The answerer logs each request list but gives no progress measure, and what the remote shows meanwhile is not recorded.'),
     67: unknown('Whether a Touch can report key presses live over USB is not known; it is never opened that way.'),
     69: open('The firmware version is read, but its running or recovery state and whether a newer version exists are not.'),
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
-    71: met(['packages/usb/test/touch/touchsession.test.ts', 'tests/harmony_touch/test_harmony_touch_recovery.py'], ['packages/usb/test/touch/touch-first-sync.test.ts', 'docs/test-notes/harmony-touch.md'], 'A sync left running was recovered on the unit by abort and restart, and the remote started normally.'),
     72: open('Logitech\'s service serves the Touch, but the service client is on no public entry, so no import is offered.'),
   },
 };
 
-/** The requirements about the FHSDK as a whole, R68 and R73 to R75: one status each, shared by every model. */
+/**
+ * The written statuses of the requirements about the FHSDK as a whole, R68 and R73 to R75, one each and shared by
+ * every model, for those no proof makes met. R73 and R74 are proven, so they are not here.
+ */
 const WHOLE_STATUSES: Readonly<Record<number, RequirementState>> = {
-  73: met(['packages/codec/test/catalogue/carried.test.ts', 'packages/lab/test/dependencies.test.ts'], [],
-    'A recipe that carries its codes builds with no archive, and the only client of Logitech\'s service is reached by no entry, so nothing an application loads needs a network or an account.'),
-  74: met(['packages/codec/test/package/mainentry.test.ts', 'packages/codec/test/package/mainentryreads.test.ts', 'packages/base/test/base.test.ts'], [],
-    'The codec\'s three entries and the base load with no Node module, and the main entry reads every family with no resource supplied; the USB half is Node\'s.'),
   75: open('Every package is private and unpublished, and an application links the folder beside it.'),
   68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the nine bench models is recorded.'),
 };
 
 /**
+ * The written status of a requirement on a model, or undefined where none is written: the model's own, or for a
+ * requirement about the FHSDK as a whole, the one every model shares. For the checks over the data, which need to
+ * see a written status and a proof side by side; an application asks `requirementState`.
+ */
+export function writtenStatus(model: BenchModelKey, number: number): RequirementState | undefined {
+  const asked = requirement(number);
+  if (asked === undefined) return undefined;
+  return asked.scope === 'whole' ? WHOLE_STATUSES[number] : MODEL_STATUSES[model][number];
+}
+
+/** The proofs among `proofs` that prove requirement `number` for `model`: those naming the model, or every model. */
+export function proofsFor(proofs: readonly Proof[], model: BenchModelKey, number: number): Proof[] {
+  return proofs.filter((proof) => proof.requirement === number && (proof.models === 'every' || proof.models.includes(model)));
+}
+
+/** Each distinct value of a list once, in the order first met. */
+const once = (values: readonly string[]): string[] => [...new Set(values)];
+
+/** A count in words for a short sentence: one, two, ... and the digits past ten. */
+function counted(n: number, noun: string): string {
+  const words = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+  return `${words[n] ?? String(n)} ${noun}${n === 1 ? '' : 's'}`;
+}
+
+/** The met a set of proofs gives, its tests, bench records and a sentence saying what it rests on. */
+function metBy(proofs: readonly Proof[]): RequirementState {
+  const tests = once(proofs.map((proof) => proof.test));
+  const bench = once(proofs.flatMap((proof) => proof.bench));
+  const shown = bench.length === 0 ? '' : `, and shown working on a unit in ${counted(bench.length, 'record')}`;
+  const why = `Proven by ${counted(proofs.length, 'test')} in ${counted(tests.length, 'file')}${shown}.`;
+  return { status: 'met', tests, bench, proofs, reference: [], why };
+}
+
+/**
+ * The status of a requirement on a model given a set of proofs: the written one where there is one, otherwise met
+ * by the proofs that name it for the model. Throws for a number never given, and for a requirement with neither a
+ * written status nor a proof, which `test/requirements.test.ts` rules out for the committed data. The generator asks
+ * this with the proofs it has just read off the sources, so a document it writes agrees with the module it writes.
+ */
+export function requirementStateFrom(proofs: readonly Proof[], model: BenchModelKey, number: number): RequirementState {
+  const asked = requirement(number);
+  if (asked === undefined) throw new RangeError(`no requirement R${number}`);
+  const written = writtenStatus(model, number);
+  if (written !== undefined) return written;
+  const proving = proofsFor(proofs, model, number);
+  if (proving.length === 0) throw new RangeError(`R${number} has no status for the ${model}`);
+  return metBy(proving);
+}
+
+/**
+ * Every state asked for once, kept, so the same question answers with the same object, which an application may
+ * compare by identity; the proofs are fixed data, so nothing changes what a key answers.
+ */
+const ANSWERED = new Map<string, RequirementState>();
+
+/**
  * The status of a requirement on a model: the model's own, or for a requirement about the FHSDK as a whole, the one
- * every model shares. Throws for a number never given, since asking for one is a mistake in the caller and not a
- * status. Every model has an entry for every requirement, `test/requirements.test.ts`.
+ * every model shares; met where the committed proofs, `proofs.ts`, prove it. Throws for a number never given, since
+ * asking for one is a mistake in the caller and not a status. Every model has a status for every requirement,
+ * `test/requirements.test.ts`.
  */
 export function requirementState(model: BenchModelKey, number: number): RequirementState {
   const asked = requirement(number);
   if (asked === undefined) throw new RangeError(`no requirement R${number}`);
-  const state = asked.scope === 'whole' ? WHOLE_STATUSES[number] : MODEL_STATUSES[model][number];
-  if (state === undefined) throw new RangeError(`R${number} has no status for the ${model}`);
+  // A whole requirement is one status for every model, so it is kept once rather than once per model.
+  const key = asked.scope === 'whole' ? `whole:${number}` : `${model}:${number}`;
+  const known = ANSWERED.get(key);
+  if (known !== undefined) return known;
+  const state = requirementStateFrom(PROOFS, model, number);
+  ANSWERED.set(key, state);
   return state;
 }

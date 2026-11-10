@@ -172,6 +172,7 @@ import re
 import unittest
 
 import lab
+from proves import proves
 from harmony import gspm
 from harmony.pic18 import isa
 from harmony.pic18 import trace
@@ -491,6 +492,7 @@ class TheBenchLogs(unittest.TestCase):
         self.assertEqual(len(logged), 71)
 
     def test_every_named_key_raised_its_measured_code_on_unit_a(self):
+        proves(67, ['harmony-885'], ['docs/test-notes/harmony-885.md#5-november-2026-every-key-pressed-watched-over-usb'])
         named = [(n, c) for n, c in A_MAP if c is not None and n not in (AGAIN, PAUSE_OR_PLAY, UNNAMED)]
         self.assertEqual([(n, c) for n, c in named if MEASURED[n] != c], [])
         # 53 of the 55 keys by name; Pause and Play only as the pair below.

@@ -49,6 +49,7 @@ import {
 import { readConfiguration, stationLogo } from '../../../src/families/harmony-touch/read.ts';
 import { FULL, answersOf } from './touch-sync.ts';
 import '../../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const SIX = 'touch_activity_set_back';
 const STATION = stationLogo('station');
@@ -196,6 +197,7 @@ test('every picture the recorded full sync delivered passes the picture rule, it
 
 test('the 8.3 favourites change the user\'s document alone: the channel added from the line up first, the five reversed, a logo at its station\'s address',
   lab.needing(lab.skipUnless(SIX, FULL)), () => {
+    proves(46, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-favourites-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
     const documents = held();
     assert.deepEqual(numbersOf(documents), ['666', '1', '2', '3', '4']);
     const out = composeTouchFavourites(THE_DESCRIPTION, documents);

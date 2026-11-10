@@ -57,6 +57,7 @@ import { trailerChecksum } from '../../src/trailer.ts';
 import { TransportError, type Transport } from '../../src/transport.ts';
 import { FakeFileRemote } from './fake-file-remote.ts';
 import { exportedNames } from '../package/entries.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** The bytes as a hex string, which is how an assertion about a packet is easiest to read. */
 function hex(bytes: Uint8Array, length = bytes.length): string {
@@ -210,6 +211,8 @@ describe('a container this family accepts, and the ones it would not', () => {
   // every configuration read off a Harmony 300 or 350, each stored as read or with its marker put back.
   const FAMILY_CONFIGS = FILE_BASED_FAMILY.full;
   it('accepts all five configurations read off the family, once the end marker is on', skipUnless(...FAMILY_CONFIGS), () => {
+    proves(1, ['harmony-350'], ['docs/test-notes/harmony-350.md#what-has-been-read-off-it']);
+    proves(58, ['harmony-350'], ['docs/test-notes/harmony-350.md#what-has-been-read-off-it']);
     for (const name of FAMILY_CONFIGS) {
       const stored = load(name);
       assert.ok(stored !== undefined, name);
@@ -221,6 +224,7 @@ describe('a container this family accepts, and the ones it would not', () => {
   });
 
   it('refuses a container longer than the file, since the firmware would write it into the log', () => {
+    proves(7, ['harmony-300', 'harmony-350']);
     assert.doesNotThrow(() => assertFileFamilyContainer(container(FILE_FAMILY_CONFIG_MAX)));
     assert.throws(() => assertFileFamilyContainer(container(FILE_FAMILY_CONFIG_MAX + 2)), /log/);
   });
@@ -248,6 +252,7 @@ describe('the target: the path, the remote and the unit', () => {
   });
 
   it('refuses a different unit, and a unit whose GUIDs are filler', () => {
+    proves(63, ['harmony-350'], ['docs/test-notes/harmony-350.md']);
     assert.throws(() => assertFileWriteTarget({ ...permission, guid: ANOTHER_UNIT }), /not the unit/);
     const filler = new Uint8Array(IDENTITY_BYTES).fill(0xee);
     assert.throws(() => assertFileWriteTarget({ ...permission, guid: filler }), /cannot be identified/);
@@ -272,6 +277,7 @@ describe('nothing the lab cannot put back is erased', () => {
   const next = container(6000, 2);
 
   it('passes when the remote holds the backup, as read or whole', () => {
+    proves(59, ['harmony-350'], ['docs/test-notes/harmony-350.md']);
     const current = backup.subarray(0, 4996);
     assert.equal(judgeCurrentContent(current, backup, next), 'the backup');
     assert.equal(judgeCurrentContent(current, current, next), 'the backup');
@@ -479,6 +485,8 @@ function run(extra: Record<string, string> = {}): Run {
 
 describe('the whole write against a fake remote, with both flags set', () => {
   it('writes, checks, closes, reads back identical and reboots, in the client\'s order', () => {
+    proves(5, ['harmony-300'], ['docs/test-notes/harmony-300.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
+    proves(5, ['harmony-350'], ['docs/test-notes/harmony-350.md']);
     const result = run();
     assert.equal(result.outcome, 'written', result.lines.join('\n'));
     assert.equal(result.flashHoldsIt, true);

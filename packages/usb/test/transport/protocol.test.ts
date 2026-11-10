@@ -51,6 +51,7 @@ import {
 import { ARCHITECTURES_WITH_A_WRITE_TARGET, CONFIG_REGION_BASE, WRITABLE_CEILING } from '../../src/rails.ts';
 // By path, because the barrel deliberately does not carry these: `writes.ts` is the rail.
 import { eraseFlashRequest, writeFlashRequest, writeMiscRequest } from '../../src/writes.ts';
+import { proves } from '@harmony/testkit/proof';
 
 test('the length nibble mapping is the one the firmware implements', () => {
   for (let n = 0; n <= 7; n += 1) assert.equal(payloadLengthForNibble(n), n);
@@ -338,6 +339,7 @@ test('a version reply is cut to twelve fields by the count the firmware copies',
 });
 
 test('a Harmony 525 answers 0x27 and seven fields, which used to decode as anonymous data', () => {
+  proves(64, ['harmony-525'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026']);
   // The exact reply measured on the bench on 8 August 2026, every byte of it identified: firmware
   // 3.0, board 2.5.0, flash 0xFF:0x12, architecture 9, skin 22, and 0x09 where arch 12 and arch 14
   // carry a compiled in 0x0C. Matching the whole byte 0x28 instead of the high nibble is what made
@@ -428,6 +430,8 @@ test('the version fields we derived are the ones the client reads, in order', ()
 });
 
 test('the whole block reads back as the three bench remotes reported it', () => {
+  proves(64, ['harmony-600'], ['docs/test-notes/harmony-600.md#measured-against-two-bench-remotes']);
+  proves(64, ['harmony-650'], ['docs/test-notes/harmony-650.md#the-unit']);
   /**
    * The reading of `reference/usb-protocol/version-block.md`, as one assertion per architecture.
    *

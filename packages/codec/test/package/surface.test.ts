@@ -47,7 +47,7 @@ const TYPES = [
   'Identification', 'InfraredCode', 'IntendedVersionField', 'IntroductionTour', 'Inventory', 'IrFrame', 'IrGroup',
   'KeyCode', 'KeyLabel', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
   'ModelProperties', 'PngHeader',
-  'PowerOnDelay', 'ProntoCode', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
+  'PowerOnDelay', 'ProntoCode', 'Proof', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
   'RecipeDevice', 'RecipeDeviceKey', 'RecipeFavourites', 'RecipeModel', 'RecipeScreenItem', 'RecipeSequenceStep', 'RecipeTarget',
   'RenderedPage', 'Requirement', 'RequirementAnswer', 'RequirementState', 'RequirementStatus', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
 ];

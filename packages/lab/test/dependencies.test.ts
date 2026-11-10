@@ -25,6 +25,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { dirname, join, normalize, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { proves } from '@harmony/testkit/proof';
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..');
 
@@ -138,7 +139,8 @@ const FOR_DEVELOPMENT: Readonly<Record<string, readonly string[]>> = {
   corpus: ['@harmony/base', '@harmony/testkit'],
   // The page's `src` loads `@harmony/base` and `@harmony/usb`, bundled for a browser by `bin/build.ts`.
   keyreader: ['@harmony/base', '@harmony/lab', '@harmony/silhouettes', '@harmony/usb'],
-  lab: [],
+  // A test says which requirement it proves through the kit, `@harmony/testkit/proof`.
+  lab: ['@harmony/testkit'],
   probe: ['@harmony/testkit'],
   silhouettes: ['@harmony/base', '@harmony/codec', '@harmony/corpus', '@harmony/lab', '@harmony/testkit', '@harmony/usb'],
   testkit: [],
@@ -385,6 +387,7 @@ function unreached(name: string): string[] {
 }
 
 test('every module of a library\'s src is reached from one of its entries, or listed with why not', () => {
+  proves(73, 'every');
   // A module no entry reaches is offered to no application. It is an experiment, which lives beside its script,
   // plan 013 decision 7, or a library part missing from an entry, or a part only scripts use. Each listed here is
   // one of the last two, as found when this walk was first run; a module joining the list is a decision about which. The

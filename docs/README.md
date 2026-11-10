@@ -24,16 +24,28 @@ todo.md                         THE sequence, and the only place it lives: seven
                                 its 2404 lines as three separate accounts of what to do next
 todo/                           every track's own todo file, one per track under the name it always
                                 had, so a comment citing "todo-compile-650 3.9" still finds it.
-                                Moved out of the root on 4 November 2026; todo.md stays there
+                                Moved out of the root on 4 November 2026; todo.md stays there.
+                                Beside them a checklist per bench remote, todo-<model key>.md,
+                                nine: the requirements possible on that remote by subject, a box
+                                each, ticked where a test proves it, generated between its markers
+                                by make requirements-write; the header and the part for the
+                                remote's own work below the list are written by hand and kept
 docs/decisions.md               the numbered decisions, plus what this project is and its
                                 context. **The numbers are cited from here, from findings.md and
                                 from code comments, so they never change**; a decision that turns
                                 out wrong is corrected in place
 docs/remote-requirements.md     what the FHSDK must be able to do for an application, R1 onwards,
-                                numbers never reused, and every bench model's status on each: met,
-                                open, impossible or unknown, with the evidence. Generated from
-                                packages/base/src/requirements.ts but for its introduction, decision
-                                33; make requirements checks it, make requirements-write rewrites it
+                                numbers never reused: the introduction, one table of where each
+                                bench remote stands, proven, open, unknown and impossible, and the
+                                requirements by subject. A met is proven by a test, which says so
+                                with a call of `proves`; open, unknown and impossible are written
+                                in packages/base/src/requirements.ts. Generated but for its
+                                introduction, decision 33; make requirements checks it, make
+                                requirements-write rewrites it
+docs/remote-requirements-evidence.md
+                                generated whole beside it: every status on every bench model with
+                                what it rests on, the proving tests by file and title and the
+                                bench records for a met, the reason for the rest
 docs/plans/                     one worked out plan per planning session, NNN-slug.md, each opening
                                 with a status line of open, done or superseded. The number is the
                                 order it was written and the date lives inside the document, since
@@ -161,7 +173,9 @@ tools/ghidra/                   headless script plus extracted branch target see
 tests/                          one regression test per documented finding, in folders by subject since
                                 todo.md 7.3.12: firmware/, config_format/, usb_protocol/, logitech/, one
                                 per family of models (harmony_300_350/ and the rest) and project/, with
-                                lab.py and reference_keys.py at the top
+                                lab.py, reference_keys.py and proves.py at the top; proves.py is the
+                                line a test carries to say which requirement it proves, the Python
+                                half of packages/testkit's `./proof`
 docs/checksums.md               provenance, load addresses, public sample checksums
 docs/superseded.md              claims a finding killed, which no document may restate
 docs/test-notes/                this project's own units, accounts and configurations, kept out of
@@ -389,10 +403,14 @@ packages/testkit/               TS: what the tests of several packages share, to
                                 recorded Touch sync read out of the lab by name with the readers of
                                 a run of the answerer, over packages/usb's decoder;
                                 `./fake-touch-remote`, the pretend Touch the request session's and
-                                the answerer's tests drive; and `./surface`, the names an entry
+                                the answerer's tests drive; `./surface`, the names an entry
                                 exports read off its source, for each package's
                                 surface.test.ts. Both moved out of packages/usb/test, which
-                                exported them through its package.json
+                                exported them through its package.json. And `./proof`, `proves`,
+                                the line inside a test that says which requirement it proves for
+                                which bench models and where it was shown on a unit, decision 33;
+                                it checks its own arguments and nothing else, and
+                                packages/codec/bin/requirements.ts reads the calls off the sources
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when
@@ -409,7 +427,10 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 family's compiles once, whole and with a pair, so a per compile
                                 test walks `sampled(family)`, the pair on a step and the whole
                                 list under HARMONY_SLOW_TESTS=1. tests/project/test_toolchain.py's
-                                TheCorpusWidePopulationsAgree holds the lists and refuses a copy
+                                TheCorpusWidePopulationsAgree holds the lists and refuses a copy.
+                                Its tests are a project of their own, test/tsconfig.json, since one
+                                says which requirement it proves through packages/testkit, which is
+                                built on this package
 packages/base/                  TS: what every other package needs and nothing native, plan 013
                                 decision 4: the table that turns a reported skin into a model and
                                 its hardware capabilities, src/models.ts; the container's trailer
@@ -419,11 +440,14 @@ packages/base/                  TS: what every other package needs and nothing n
                                 the codec re-exports and packages/usb's guards use; and the FHSDK's
                                 requirements with every bench model's status and its evidence,
                                 src/requirements.ts, decision 33, held by test/requirements.test.ts
-                                and read by the codec's `capabilitiesOf`. Imports
+                                and read by the codec's `capabilitiesOf`; a met there is derived
+                                from src/proofs.ts, every proof the tests carry, generated from the
+                                test sources by make requirements-write and never edited, which the
+                                requirements module imports and nothing else does. Imports
                                 nothing outside Node's own and reads no disk, test/base.test.ts.
                                 The codec depends on it rather than on packages/usb. Its main entry
-                                names all five modules' exports explicitly, test/surface.test.ts,
-                                and each is its own subpath. Its tests are a project of their own,
+                                names the modules' exports explicitly, test/surface.test.ts,
+                                and each module is its own subpath. Its tests are a project of their own,
                                 test/tsconfig.json, for the reason packages/usb's are
 packages/usb/                   TS: the command protocol and the write rails, read path measured.
                                 Also the **second** protocol, for the file based family openHarmony
@@ -1092,9 +1116,11 @@ make remote-reference
                    against the code they come from, naming the file and block that drifted.
                    remote-reference-write rewrites them. Not called `remotes`, which is taken by
                    the line above. No lab, no network
-make requirements  check docs/remote-requirements.md against the requirements and their statuses in
-                   packages/base/src/requirements.ts, which generate all of it but the introduction;
-                   requirements-write rewrites it. No lab, no network, no remote
+make requirements  read every test's proofs and check what they and the statuses written in
+                   packages/base/src/requirements.ts generate: packages/base/src/proofs.ts,
+                   docs/remote-requirements.md but its introduction, docs/remote-requirements-evidence.md
+                   and the nine bench checklists in todo/; requirements-write rewrites them. No lab,
+                   no network, no remote
 make page          drive the bench page in the Chrome already installed, which is what checks the
                    page rather than the routes. Gated on HARMONY_PAGE_TESTS=1 and skips with no
                    Chrome, because playwright's browser download is deliberately not approved

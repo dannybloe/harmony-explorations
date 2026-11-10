@@ -63,6 +63,7 @@ import { CONFIGURATION_DOCUMENTS, documentsOfAnswers, type SyncDocuments } from 
 import { readConfiguration } from '../../../src/families/harmony-touch/read.ts';
 import { removalOfNames, withoutTouchActivities, withoutTouchDevices, withoutTouchEntries } from '../../../src/families/harmony-touch/remove.ts';
 import { answersOf, FULL } from './touch-sync.ts';
+import { proves } from '@harmony/testkit/proof';
 
 type Json = Record<string, unknown>;
 
@@ -127,6 +128,8 @@ const mapOf = (docs: { MapList: unknown }, id: number): Json => list(docs.MapLis
 const buttonsOf = (m: Json): string[] => (m['Buttons'] as Json[]).map((b) => String(b['ButtonKey'] ?? b['TextOnRemote']));
 
 test('taking out an activity and a device takes out everything naming them and changes nothing else', () => {
+  proves(13, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-removal-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
+  proves(26, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-removal-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const docs = documents();
   const out = withoutTouchEntries(docs, { activities: [MUSIC], devices: [RECEIVER] });
   assert.deepEqual(Object.keys(out).sort(), ['ActivityList', 'DeviceList', 'MapList', 'ProtocolList'], 'Context and Settings are not returned');

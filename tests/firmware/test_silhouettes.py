@@ -29,6 +29,7 @@ import unittest
 import xml.etree.ElementTree as ET
 
 from reference_keys import generated_keys
+from proves import proves
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 SILHOUETTES = os.path.normpath(os.path.join(_HERE, '..', '..', 'reference', 'silhouettes'))
@@ -768,6 +769,7 @@ class TestTheHarmony885Silhouette(_SilhouetteConventions, unittest.TestCase):
         each key was pressed, under the drawing's names, in both directions. A code typed wrongly into the
         model file fails here, and no key carries a set of candidates.
         """
+        proves(43, ['harmony-885'])
         from harmony_880_885.test_harmony_885_keys import MEASURED
         self.assertEqual(sorted(self.DRAWING_NAMES), sorted(MEASURED))
         buttons = _buttons(_tree(self.NAME).getroot())

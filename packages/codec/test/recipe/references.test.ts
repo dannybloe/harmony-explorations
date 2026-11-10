@@ -33,6 +33,7 @@ import { fileURLToPath } from 'node:url';
 import { LAB, skipWithoutLab, slow } from '@harmony/lab';
 import '../../src/support/resources.node.ts';
 import { buildFromRecipe, builtDigest, parse, saveEdits, unstatedChoices, type Built } from '../../src/node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const FOLDER = fileURLToPath(new URL('../references/', import.meta.url));
 
@@ -94,6 +95,17 @@ test('the control: a reference built with another stamp has another fingerprint,
 });
 
 test('the references a remote ran are its bench files byte for byte, stamped as their writes stamped them', slow(skipWithoutLab()), () => {
+  proves(4, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
+  proves(4, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
+  proves(4, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
+  proves(4, ['harmony-350'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
+  proves(21, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
+  proves(21, ['harmony-350'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
+  proves(37, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
+  proves(39, ['harmony-350'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
+  proves(61, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
+  proves(61, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
+  proves(61, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
   const ran = REFERENCES.filter((r) => r.benchFile !== undefined);
   assert.deepEqual(ran.map((r) => r.name), ['one-empty', 'one-test', 'h600-empty', 'h600-five', 'h700-test-bright', 'h350-test']);
   for (const r of ran) {

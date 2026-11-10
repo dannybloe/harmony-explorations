@@ -24,6 +24,7 @@ import {
   worstQueueRun,
 } from '../../src/container/queue.ts';
 import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../../src/internal.ts';
+import { proves } from '@harmony/testkit/proof';
 
 // The two opcodes come from the one place each is named, `sections.ts` and `inventory.ts`, rather
 // than being spelled again here. `ACTION_LIST_INDEX_OPCODE`'s own docstring argues that a test hard
@@ -176,6 +177,7 @@ test('the only lists the model cannot follow are one Harmony 700 cycle, twelve o
   });
 
 test('a list that fits is accepted and one that does not is refused', () => {
+  proves(37, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
   const send: Instruction = { opcode: SEND, operand: 0x0101 };
   const call = (to: number): Instruction => ({ opcode: CALL, operand: to });
   // List 0 calls list 1 twenty times; list 1 is one send. Depth never passes 20 + 1.
@@ -200,6 +202,7 @@ test('a cycle is reported as undecided rather than as an overflow', () => {
 });
 
 test('the rail refuses a container whose lists overflow, and says which one', () => {
+  proves(7, ['harmony-one', 'harmony-600', 'harmony-700']);
   // A container is what `assertQueueFits` takes, so the refusal is exercised through a stub that
   // answers the one question it asks. Nothing else of a container is reached.
   const deep: Instruction[][] = [];

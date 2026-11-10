@@ -54,6 +54,7 @@ import {
   type InputPlan,
 } from '../../src/build.ts';
 import { irFrame } from '../../src/infrared/irframe.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */
 const ARCH14 = ARCH14_FAMILY.full;
@@ -187,6 +188,7 @@ test('every arch 14 input variable is reached by value or by stepping, and every
 
 test('an arch 14 activity starts its devices, then sets their inputs in the order they were switched on, before switching any off',
      skipUnless(...ARCH14), () => {
+  proves(23, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
   // Read off the enter list, tag 1 of every activity's handler set, following its calls: each write
   // of a device's Power or Input variable, and of the activity counter, in the order they run. A
   // write behind the silent flag is skipped, since it records a value without running a transition.
@@ -616,6 +618,7 @@ const ONE_CALIBRATION = [
 test('on the Harmony One, three devices Logitech compiled, composed again from the catalogue, agree transition for transition but for the connected app',
      needing(skipUnless(...new Set(ONE_CALIBRATION.map(([config]) => config)), 'harvest_one_two_devices'),
              skipWithoutIrArchive()), () => {
+  proves(23, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
   // The same route as the 600 family's calibration above, on a Harmony One host: the One's send is the
   // send and its quantity with no prelude, `Family.sends`, and everything an input does is
   // the 600 family's, which is what this measures rather than assumes.

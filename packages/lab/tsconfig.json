@@ -4,5 +4,8 @@
     "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  // The library. The tests are a project of their own, `test/tsconfig.json`, for the reason
+  // `packages/usb/tsconfig.json` gives: a test says which requirement it proves through the test kit, which is built
+  // on this package, so one project holding both would form a cycle `tsc --build` refuses.
+  "include": ["src/**/*.ts"]
 }

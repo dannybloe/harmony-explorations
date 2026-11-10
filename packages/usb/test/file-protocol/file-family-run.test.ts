@@ -23,6 +23,7 @@ import { readFileSync } from 'node:fs';
 import { FILE_FAMILY_UNITS } from '../../src/filewrite.ts';
 import { exportedNames } from '../package/entries.ts';
 import { runFileFamily, type FileFamilyRun, type FileFamilyScenario } from './file-family-run.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** The read path's four commands, ping, open, read and close: nothing that writes. */
 const onlyReads = (sent: readonly string[]): boolean => sent.every((r) => ['ff 00', 'ff 01', 'ff 04', 'ff 07'].includes(r));
@@ -62,6 +63,7 @@ describe('the file write as a library function, in the shipped state', () => {
   });
 
   it('refuses a remote stating another skin, another unit, and a configuration the caller holds no copy of, on the reads alone', async () => {
+    proves(63, ['harmony-350'], ['docs/test-notes/harmony-350.md']);
     // The record names the Harmony 300, whose skin the library holds, and the remote states a Harmony 350's.
     const skin = await runFileFamily({ label: 'h300' });
     assert.equal(skin.error?.message, 'the remote states skin 0x68, and a Harmony 300 states 0x4f: this is not the unit h300 names');
@@ -103,6 +105,9 @@ describe('the file write as a library function, in the shipped state', () => {
 
 describe('the file write as a library function, with both flags set and the fake as the only remote', () => {
   it('writes, verifies and reboots, and arms the caller\'s interrupt after the reads and before anything that writes', () => {
+    proves(5, ['harmony-300'], ['docs/test-notes/harmony-300.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
+    proves(5, ['harmony-350'], ['docs/test-notes/harmony-350.md']);
+    proves(59, ['harmony-300'], ['docs/test-notes/harmony-300.md']);
     const run = withFlags({ commit: true });
     assert.equal(run.error, undefined, run.error?.message);
     assert.ok(run.flashHoldsIt && run.rebooted);

@@ -77,6 +77,7 @@ import { checkConfiguration, findingsByRule, refusalsBeforeASync } from '../../.
 import { documentsOfAnswers, type SyncDocuments } from '../../../src/families/harmony-touch/documents.ts';
 import { FIRMWARE_SETTINGS, readConfiguration, type Configuration } from '../../../src/families/harmony-touch/read.ts';
 import { answersOf, FULL, requestsOf, REVERSE, TRIAL } from './touch-sync.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const cache = new Map<string, { documents: SyncDocuments; c: Configuration }>();
 function read(fixture: string): { documents: SyncDocuments; c: Configuration } {
@@ -90,6 +91,7 @@ function read(fixture: string): { documents: SyncDocuments; c: Configuration } {
 }
 
 test('the full sync reads whole: every command finds its protocol, every map its owner, every action its command', lab.skipUnless(FULL), () => {
+  proves(2, ['harmony-touch']);
   const { c } = read(FULL);
   assert.deepEqual(c.absent, []);
   assert.equal(c.protocols.length, 5);

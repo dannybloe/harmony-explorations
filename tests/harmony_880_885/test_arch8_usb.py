@@ -69,6 +69,7 @@ import hashlib
 import unittest
 
 import lab
+from proves import proves
 from harmony.pic18 import chains, isa
 
 BASE = 0x10000
@@ -107,6 +108,7 @@ class TestTheRemoteAnswersWhatTheImagePredicts(unittest.TestCase):
         self.code = lab.load('arch8_code_885')
 
     def test_the_four_predicted_fields_are_the_accessors_constants(self):
+        proves(64, ['harmony-885'], ['docs/test-notes/harmony-885.md#the-first-unit-h885_a'])
         listing = instructions(self.code, VERSION_ACCESSOR, VERSION_ACCESSOR + 10)
         constants = [ins.fields['k'] for _, ins in listing]
         self.assertEqual([ins.mnemonic for _, ins in listing], ['RETLW'] * 5)

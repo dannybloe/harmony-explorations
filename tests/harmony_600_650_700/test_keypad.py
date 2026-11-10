@@ -13,6 +13,7 @@ an independent artefact.
 import unittest
 
 import lab
+from proves import proves
 
 # One row per physical button, in the order they were pressed, with the column the device
 # reported. Columns are 1 to 4, matching the firmware's own column reader, which returns 1 for
@@ -74,6 +75,7 @@ class TestTheHarmony600Keypad(unittest.TestCase):
         55 and 56 are unoccupied. Those two sit in columns 3 and 4, and the measured census is short
         by exactly one in column 3 and one in column 4.
         """
+        proves(43, ['harmony-600'])
         import collections
 
         from harmony import gspm

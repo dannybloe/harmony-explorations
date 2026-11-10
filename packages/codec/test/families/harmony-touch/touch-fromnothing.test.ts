@@ -70,6 +70,7 @@ import type { TouchSetup } from '../../../src/families/harmony-touch/setup.ts';
 import { RecipeError } from '../../../src/recipe/recipe.ts';
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
 import '../../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 // The setup file and the documents are JSON; the broken ones are built as such.
 type Json = any;
@@ -235,6 +236,8 @@ test('with the archive: the refusals of a family with no id of ours, an id not o
 });
 
 test('with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone', skipWithoutIrArchive(), () => {
+  proves(4, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
+  proves(24, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const docs: SyncDocuments = buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE!), account: ACCOUNT });
   assert.deepEqual(Object.keys(docs), ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList']);
   const read = readConfiguration(docs);

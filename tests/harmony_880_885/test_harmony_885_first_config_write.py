@@ -44,6 +44,7 @@ import datetime
 import unittest
 
 import lab
+from proves import proves
 from harmony import gspm
 
 STAMPED = 'h885_b_written_1_4'
@@ -72,6 +73,8 @@ class TheConfigurationWrittenToB(unittest.TestCase):
         self.written = lab.load(STAMPED)
 
     def test_what_the_remote_holds_afterwards_is_the_file(self):
+        proves(5, ['harmony-885'], ['docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted'])
+        proves(59, ['harmony-885'], ['docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted'])
         self.assertEqual(len(self.written), 637127)
         self.assertEqual(lab.load('h885_b_after_1_4_config'), self.written)
         region = lab.load('h885_b_after_1_4_region')

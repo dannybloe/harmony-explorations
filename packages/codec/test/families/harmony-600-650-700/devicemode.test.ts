@@ -84,6 +84,7 @@ import {
   placeLabel,
   sizeOfSet,
 } from '../../../src/families/harmony-600-650-700/devicemode.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** The inks our letters are drawn in, the four slot family's default. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;
@@ -701,6 +702,7 @@ const CONTROL: readonly string[] = ['Sony_TV', 'Panasonic_TV', 'Sony_KE-50MR1E']
 
 test('section 325: a catalogue device composed whole reads back as the compiler\'s device mode',
   slow(needing(skipWithoutIrArchive(), skipUnless(...FIXTURES))), () => {
+    proves(33, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
     const s = score();
     const control = score();
     const notWhole: string[] = [];

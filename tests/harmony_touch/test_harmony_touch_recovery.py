@@ -178,6 +178,7 @@ import unittest
 import xml.etree.ElementTree as ElementTree
 
 import lab
+from proves import proves
 from .test_harmony_touch_activities import prototypes
 from .test_harmony_touch_api_names import c_string
 from .test_harmony_touch_architecture import Elf
@@ -397,6 +398,7 @@ class TheCableStillReachesTheEngine(TheImage):
         self.assertIn(b'config_new', strings_in(self.function_with(SYNC, 'syncAbort', 'config_new', 'remote')))
 
     def test_the_abort_cleans_the_store_before_it_reloads(self):
+        proves(71, ['harmony-touch'], ['packages/usb/test/touch/touch-first-sync.test.ts', 'docs/test-notes/harmony-touch.md'])
         abort = self.function_with(SYNC, 'syncAbort', 'config_new', 'remote')
         store, reload = self.order(abort, 'syncAbort', 'config_new')
         self.assertLess(store, reload)

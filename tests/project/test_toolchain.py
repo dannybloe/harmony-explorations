@@ -155,9 +155,10 @@ class FilesAreNamedBySubject(unittest.TestCase):
 
 
 TODO_NAME = re.compile(
-    r'todo\.md|todo-(compile|prepare|process|secure|later|touch|reference|freeharmony|fh|loose)[a-z0-9-]*')
-"""A todo file named: the root one, or a track's, by the prefixes every track file has carried. Written with an
-escaped dot and a parenthesis after the dash, so this file's own source matches nothing."""
+    r'todo\.md|todo-(compile|prepare|process|secure|later|touch|reference|freeharmony|fh|loose|harmony)[a-z0-9-]*')
+"""A todo file named: the root one, or a track's, by the prefixes every track file has carried, and a bench remote's
+generated checklist, named after the model's key. Written with an escaped dot and a parenthesis after the dash, so this
+file's own source matches nothing."""
 
 CODE_THAT_NAMES_NO_TODO = (':(glob)packages/**', ':(glob)src/**', ':(glob)tests/**', ':(glob)tools/**', 'Makefile',
                            ':(glob).githooks/**')
@@ -205,7 +206,7 @@ class CodeAndTestsNameNoTodo(unittest.TestCase):
         # Joined from two halves, so the lines are found when the test runs and this file's own source is not.
         todo = 'todo'
         named = (f'see {todo}-compile-650.md 10.6', f'the 350 track, {todo}-compile-350 1.8', f'`{todo}.md` 7.3.9',
-                 f'{todo}-touch 6.3', f'{todo}-prepare-885.md 2.6')
+                 f'{todo}-touch 6.3', f'{todo}-prepare-885.md 2.6', f'the checklist, {todo}-harmony-650.md')
         for line in named:
             with self.subTest(line=line):
                 self.assertEqual(lines_naming_a_todo(line), [line])
@@ -395,8 +396,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `_serial.py` and `_favourites_untagged.py`. 106 with `tests/harmony_880_885/test_harmony_880_keys.py`.
         # 107 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with
         # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
-        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main.
-        self.assertEqual(len(files), 110, 'the Python test files')
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main. 111 with `tests/project/test_proves.py`.
+        self.assertEqual(len(files), 111, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -460,8 +461,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 105 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`, which carries one. 106
         # with `tests/harmony_880_885/test_harmony_885_first_config_write.py`, which carries one. 107 with
         # `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`, which carries one. 108 with
-        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main, which carries one.
-        self.assertEqual(with_block, 108,
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main, which carries one. 109 with
+        # `tests/project/test_proves.py`, which carries one.
+        self.assertEqual(with_block, 109,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -967,8 +969,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `_serial.py` and `_favourites_untagged.py`. 106 with `tests/harmony_880_885/test_harmony_880_keys.py`.
         # 107 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with
         # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
-        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main.
-        self.assertEqual(len(scanned), 110, 'Python test files, which moves when one is added')
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main. 111 with `tests/project/test_proves.py`.
+        self.assertEqual(len(scanned), 111, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

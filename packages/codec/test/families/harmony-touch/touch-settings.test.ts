@@ -50,6 +50,7 @@ import { readSettings } from '../../../src/families/harmony-touch/read.ts';
 import {
   CONTEXT_FIELDS_READ, SETTING_ROWS, composeTouchContext, composeTouchSettings, describeTouchContext, luaNumber, type OwnContext,
 } from '../../../src/families/harmony-touch/settings.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const SIX = 'touch_activity_set_back';
 
@@ -97,6 +98,7 @@ function refusalOf(f: () => unknown): string | undefined {
 const values = (s: Json): Record<string, unknown> => Object.fromEntries((s.Settings as Json[]).map((r) => [r.Name, r.Values[0]]));
 
 test('composing Settings changes exactly the first value of each row named, and carries every other row and field', () => {
+  proves(48, ['harmony-touch'], ['packages/corpus/test/touch/touch-settings-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const held = settings();
   const out = composeTouchSettings({ values: { ScreenBrightness: '20', ScreenTimeout: '30' } }, held) as Json;
   const want = settings();

@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import { MAX_TRANSFER, reportCount, transfersFor } from '../../src/blockwrite.ts';
 import { writeChunkLengths, writeFlashRequests } from '../../src/writes.ts';
 import { MAX_PAYLOAD } from '../../src/protocol.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const BLOCK = 0x10000;
 const AT = 0x040000;
@@ -35,6 +36,7 @@ test('a transfer is fifty packets, which is what both working implementations se
 });
 
 test('the transfers tile the block exactly, with no gap and no overlap', () => {
+  proves(5, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
   const plan = transfersFor(AT, BLOCK);
   let expected = AT;
   for (const transfer of plan) {

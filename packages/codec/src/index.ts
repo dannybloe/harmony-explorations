@@ -127,7 +127,7 @@ export type { DocumentFamily, DocumentTypes } from './families/document.ts';
 // evidence, decision 33. An application offers a feature where its requirement is met on the model.
 export { capabilitiesOf } from './families/capabilities.ts';
 export type {
-  BenchModelKey, ModelCapabilities, ModelProperties, Requirement, RequirementAnswer, RequirementState, RequirementStatus,
+  BenchModelKey, ModelCapabilities, ModelProperties, Proof, Requirement, RequirementAnswer, RequirementState, RequirementStatus,
 } from './families/capabilities.ts';
 export { ComposeError } from './shared/core.ts';
 

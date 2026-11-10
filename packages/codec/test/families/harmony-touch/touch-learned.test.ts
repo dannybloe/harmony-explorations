@@ -63,6 +63,7 @@ import {
 import { mergedIntervals, type Pulse } from '../../../src/infrared/irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from '../../../src/infrared/protocols.ts';
 import { pulsesOfStatedRow, statedCode, statedProtocol } from '../../../src/infrared/stated.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const mark = (us: number): Pulse => ({ mark: true, us });
 const space = (us: number): Pulse => ({ mark: false, us });
@@ -227,6 +228,7 @@ test('the calibration renders three codes of every row whose name states a width
 });
 
 test('at four per cent of jitter 876 of 1679 codes come back as their row and value, 8 wrong and 681 raw', () => {
+  proves(56, ['harmony-touch']);
   // 876 of 1679 right, 99 the same lamp under another name or the other way up, 8 wrong: 8 of the 983 codes
   // answered with a row of the table. The rest are refused and go raw or get a row of our own. By shape, two
   // cells: 759 right, 77 the same lamp, 8 wrong, 14 a row of our own, 374 raw; biphase: 117, 22, 0, 1, 151; the

@@ -36,6 +36,7 @@ import { valueMaps } from '../../../src/container/valuemap.ts';
 import { listsReached } from './screenlists.ts';
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
 import '../../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../../../corpus/setups/one-test.json', import.meta.url), 'utf8')));
 
@@ -166,6 +167,7 @@ test('the two compositions differ in 388 places, every one of them one of seven 
 });
 
 test('each view runs exactly the lists listsReached counts and holds every mode, timer, value map and state variable, so nothing either file can run goes uncompared', NEEDS, () => {
+  proves(2, ['harmony-one']);
   for (const [composed, size, reached] of [[onLogitech(), 4095, 2776], [onEmpty(), 4093, 2771]] as const) {
     const { view, lists } = viewOf(composed.container);
     assert.equal(view.size, size);
@@ -266,6 +268,7 @@ test('the donor LG\'s online power, the assistant\'s starting value and the two 
 });
 
 test('the donor\'s Denon and LG put on an input send the input meant, and the two compositions agree on every entry of those two devices\' input variables', NEEDS, () => {
+  proves(23, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
   // Four input variables and their 43 transitions: Denon's 19, the LG's inputs 10, its screens 8 and its TV inputs 6.
   const inputs = [...a().keys()].filter((one) => /^variable (Denon|LG_TV)_(Input|Screen|TVInput)/.test(one));
   assert.equal(inputs.length, 47);

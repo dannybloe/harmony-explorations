@@ -22,6 +22,7 @@ import { REINSTALL_MAX_IMAGE, assertReinstallAllowed } from '../../src/rails.ts'
 import { checkFirmwareImage, firmwareImageChecksum } from '../../src/internal.ts';
 import { updateStatusReadRequest } from '../../src/protocol.ts';
 import { updateStatusWriteRequest } from '../../src/writes.ts';
+import { proves } from '@harmony/testkit/proof';
 
 function lab(name: string): Uint8Array {
   return new Uint8Array(readFileSync(imagePath(name)!));
@@ -84,6 +85,7 @@ test('after the reinstall the application is the staged image, and only the dama
   skipUnless('h700_internal_fe', 'h700_internal_ff', 'h700_repaired_internal_fe', 'h700_repaired_internal_ff',
     'h700_staging_region'),
   () => {
+    proves(71, ['harmony-700'], ['docs/test-notes/harmony-700.md#arrival-and-repair']);
     const before = internal('h700_internal_fe', 'h700_internal_ff');
     const after = internal('h700_repaired_internal_fe', 'h700_repaired_internal_ff');
     const staged = lab('h700_staging_region');
@@ -364,6 +366,7 @@ test('the first stage run left the staging region blank and the embedded configu
 test('after staging and installing 2.8, the application is the 2.8 image and nothing else in internal flash or the staging region changed',
   skipUnless('h700_28_internal_fe', 'h700_28_internal_ff', 'h700_posthd_internal_fe', 'h700_posthd_internal_ff',
     'h700_28_staging_region', 'h700_posthd_staging_region', 'h700_code'), () => {
+    proves(70, ['harmony-700'], ['docs/test-notes/harmony-700.md#arrival-and-repair']);
     const image = lab('h700_code');
     const before = internal('h700_posthd_internal_fe', 'h700_posthd_internal_ff');
     const after = internal('h700_28_internal_fe', 'h700_28_internal_ff');

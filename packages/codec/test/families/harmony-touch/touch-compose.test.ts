@@ -42,6 +42,7 @@ import { pulsesOfStatedRow, statedProtocol } from '../../../src/infrared/stated.
 import { documentsOfAnswers, kindOf, type IrProtocol, type SyncDocuments } from '../../../src/families/harmony-touch/documents.ts';
 import { readConfiguration } from '../../../src/families/harmony-touch/read.ts';
 import { answersOf, FULL } from './touch-sync.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /**
  * A definition written by hand for the test, a pulse distance family of 32 bits under a name of our own:
@@ -100,6 +101,7 @@ function documentsOf(d: OwnDevice): SyncDocuments {
 }
 
 test('the codec\'s reader finds the device\'s map, every command its code and every key and entry its command, and the check finds nothing', () => {
+  proves(35, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-device-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const c = readConfiguration(documentsOf(device()));
   assert.equal(c.devices.length, 1);
   const d = c.devices[0]!;
@@ -177,6 +179,7 @@ test('every field we state is one Logitech\'s own device, command, map, button a
 });
 
 test('the list counts from the first index Logitech\'s device lists count from, and a press and a long press are their event numbers', lab.skipUnless(FULL), () => {
+  proves(38, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-setup-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const theirs = documentsOfAnswers(answersOf(FULL));
   const maps = theirs.MapList!.ButtonMaps.filter((m) => kindOf(m) === 'DeviceButtonMap');
   // A list entry is any screen entry outside the number pad's group 2: Logitech's maps also hold group 36

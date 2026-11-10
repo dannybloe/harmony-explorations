@@ -19,6 +19,7 @@ import {
   identityAddress,
   unitDiscriminator,
 } from '../../src/internal.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** A block in a real one's shape: `0xEE` serial field, two written GUIDs, sixteen zeroes. */
 function block(seed: number): Uint8Array {
@@ -69,6 +70,11 @@ test('an identity with no per unit value is refused rather than matched', () => 
 });
 
 test('the discriminator is the two GUIDs and nothing else', () => {
+  proves(63, ['harmony-one'], ['docs/test-notes/harmony-one.md#telling-the-two-ones-apart']);
+  proves(63, ['harmony-600'], ['docs/test-notes/harmony-600.md#the-bench-600s-memory-as-read']);
+  proves(63, ['harmony-650'], ['docs/test-notes/harmony-650.md#the-unit']);
+  proves(63, ['harmony-700'], ['docs/test-notes/harmony-700.md#what-was-sent-to-the-unit']);
+  proves(63, ['harmony-885'], ['docs/test-notes/harmony-885.md#7-november-2026-unit-as-whole-flash-and-the-first-write-to-a-harmony-885']);
   const b = block(3);
   const discriminator = unitDiscriminator(b);
   assert.equal(discriminator.length, 32);
@@ -124,6 +130,7 @@ test('the block is read from the page and offset three remotes confirmed', () =>
 });
 
 test('the identity block is in a different kind of memory on the Harmony 525', () => {
+  proves(63, ['harmony-525'], ['docs/test-notes/harmony-525.md#what-has-been-done-over-usb-in-sum']);
   // Found on hardware on 6 September 2026, as a refusal: `readUnitIdentity` sent arch 12 (Harmony
   // One)'s address to a Harmony 525 and the address validator threw, because arch 9 has no 0xFF
   // window at all. concordance states the location per architecture in its own ArchList, and the

@@ -42,6 +42,7 @@ import {
   softwareTypeFromVersion,
   transportOver,
 } from '../../src/internal.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /**
  * An identity block in the shape a remote's really is: `0xEE` where the serial field is, which is
@@ -178,6 +179,9 @@ test('a pinned architecture survives the remote disagreeing with it', async () =
 });
 
 test('a version block is twelve bytes', async () => {
+  proves(64, ['harmony-one'], ['docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups']);
+  proves(64, ['harmony-650'], ['docs/test-notes/harmony-650.md#the-unit']);
+  proves(64, ['harmony-525'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026']);
   const fields = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   const { transport } = scriptedRemote([report(0x28, ...fields)], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
@@ -375,6 +379,7 @@ test('the transport adapter passes reports through both ways', async () => {
 });
 
 test('device matching is the Logitech vendor and the Harmony product range', () => {
+  proves(62, ['harmony-one'], ['docs/test-notes/harmony-one.md#telling-the-two-ones-apart']);
   assert.ok(isHarmony(0x046d, 0xc110));
   assert.ok(isHarmony(0x046d, 0xc14f));
   assert.ok(!isHarmony(0x046d, 0xc150), 'just past the range');
@@ -403,6 +408,7 @@ test('a bootloader is Microchip, and asking that question never widens what can 
 });
 
 test('two families sit inside the Harmony range and openHarmony refuses both', () => {
+  proves(62, ['harmony-300'], ['docs/test-notes/harmony-300.md#the-unit']);
   // Found on 27 August 2026 with a Harmony Touch and a Harmony 350 on the bench, before either had
   // been opened. `isHarmony` was a plain range and both of them sit inside it, so this library would
   // have claimed a Touch and started sending it a command layer its family does not implement.
@@ -462,6 +468,8 @@ test('two families sit inside the Harmony range and openHarmony refuses both', (
 });
 
 test('the skin comes out of bcdDevice, and its encoding is per firmware generation', () => {
+  proves(62, ['harmony-525'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026']);
+  proves(62, ['harmony-885'], ['docs/test-notes/harmony-885.md#the-first-unit-h885_a']);
   // Seven pairs, each an image's bcdDevice against the `<SKIN>` a config of that model states.
   // The Python side asserts the same table from the files themselves, in `tests/usb_protocol/test_usbdesc.py`;
   // this one pins the arithmetic so the two implementations cannot drift.

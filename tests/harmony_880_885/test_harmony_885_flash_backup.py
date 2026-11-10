@@ -72,6 +72,7 @@ import re
 import unittest
 
 import lab
+from proves import proves
 
 FLASH = ('h885_a_flash', 'h885_a_flash_2')
 FLASH_END = 0x1FE000
@@ -104,6 +105,7 @@ class TheWholeFlashBackup(unittest.TestCase):
         self.flash = lab.load('h885_a_flash')
 
     def test_the_two_reads_are_identical_and_end_at_the_device_window(self):
+        proves(58, ['harmony-885'], ['docs/test-notes/harmony-885.md#7-november-2026-unit-as-whole-flash-and-the-first-write-to-a-harmony-885'])
         second = lab.load('h885_a_flash_2')
         self.assertEqual(len(self.flash), FLASH_END)
         self.assertEqual(hashlib.sha256(self.flash).digest(), hashlib.sha256(second).digest())

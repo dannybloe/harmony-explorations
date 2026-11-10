@@ -13,6 +13,7 @@ import re
 import unittest
 
 import lab
+from proves import proves
 from harmony import usbdesc
 
 BASES = {'h700_code': 0x9000, 'one34_code': 0x20000}
@@ -265,6 +266,7 @@ class TestBcdDeviceCarriesTheSkin(unittest.TestCase):
         the arch 8 and arch 9 words carry 8 and 9 there. So the byte is not the protocol number
         and not the architecture. The other remote's architecture was not measured.
         """
+        proves(62, ['harmony-885'], ['docs/test-notes/harmony-885.md#the-first-unit-h885_a'])
         self.assertEqual(usbdesc.skin_id(0x1078), 78, 'Harmony 300')
         self.assertEqual(usbdesc.skin_id(0x1099), 99, 'Harmony Touch')
 

@@ -76,6 +76,7 @@ import {
 import { bytes, irBlockWords, irHeaderPointers, stateRecords, stateVariables, taggedList } from '../../../src/internal.ts';
 import { composeNoScreenActivity, inputPlan, composeNoScreenDevice, mapOfGroup } from '../../../src/build.ts';
 import { recordKey } from './noscreenparts.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
@@ -187,6 +188,7 @@ function composed() {
 }
 
 test('the composed Watch TV is Logitech\'s step for step, the LG\'s and the Denon\'s power, the flag, the inputs on the way on and the KPN\'s map, and the KPN\'s toggle is the donor\'s', needsAll, () => {
+  proves(21, ['harmony-350'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
   const { theirs, donor, ours, out } = composed();
   const mine = steps(ours);
   const logitech = steps(theirs);
@@ -225,6 +227,7 @@ test('the composed Watch TV is Logitech\'s step for step, the LG\'s and the Deno
 });
 
 test('the input variables are Logitech\'s: the Denon\'s nineteen values each send Logitech\'s record for that input, and the LG\'s has one value and sends nothing', needsAll, () => {
+  proves(23, ['harmony-350'], ['docs/test-notes/harmony-350.md']);
   const { theirs, ours } = composed();
   const variable = (c: Container, name: string) => {
     const index = stateVariables(c).find((one) => one.name === name)!.index;

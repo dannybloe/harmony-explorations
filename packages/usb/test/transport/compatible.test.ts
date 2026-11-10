@@ -23,6 +23,7 @@ import {
 } from '../../src/index.ts';
 import { assertConfigIsForThisRemote } from '../../src/rails.ts';
 import { encodeVersionBlock } from '../../src/internal.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /**
  * A Harmony 525's own `GET_VERSION` reply, minus the report header byte `0x27`.
@@ -105,6 +106,7 @@ test("a remote's own config matches it on every field the config states", () => 
 });
 
 test('the calibration case: a wrong remote is refused, and on the fields that differ', () => {
+  proves(7, ['harmony-700']);
   // The finding gate asks for a case whose answer is known and for the score of wrong answers. A
   // Harmony 525's block against a Harmony One's config must disagree on four of the five stated
   // fields, and agree on `SOFTWARETYPE`, since every config in the corpus declares 0 and every

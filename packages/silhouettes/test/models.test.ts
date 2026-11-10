@@ -15,6 +15,7 @@ import { test } from 'node:test';
 import { MODELS, SCAN_SOURCES, keyOf, keyOfScan, pathBounds, pathPolygon } from '../src/index.ts';
 import { transformPath } from '../src/internal.ts';
 import type { Model, ScanSource } from '../src/types.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /**
  * What each model's button count is, where the number comes from, and how many scan codes each source
@@ -268,6 +269,7 @@ test('every drawn model states its button count and where that number comes from
 });
 
 test('a name identifies one key, and every key has one', () => {
+  proves(43, ['harmony-600', 'harmony-885', 'harmony-touch']);
   for (const [id, model] of drawn) {
     const names = model.keys.map((k) => k.name);
     assert.equal(new Set(names).size, names.length, `${id}: a name is claimed twice`);

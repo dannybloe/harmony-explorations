@@ -137,6 +137,7 @@ import { FIRST_DEVICE_IDENTIFIER } from '../../src/shared/core.ts';
 import { textGlyphs } from '../../src/shared/spelling.ts';
 import { FOUR_SLOT_ITEMS } from '../../src/families/harmony-600-650-700/geometry.ts';
 import '../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /**
  * The goal device's commands, as the catalogue states them for the LG 42LM3400: power is a toggle
@@ -3658,6 +3659,8 @@ test('every arch 14 start up screen is one page binding nothing, and every worki
 
 test('an activity composed on a Harmony 650, 600 and 700 opens on a start up screen of its own and ends on a working screen of its own',
      skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  proves(21, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
+  proves(21, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
   let composed = 0;
   let listedCount = 0;
   for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {

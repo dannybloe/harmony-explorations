@@ -99,6 +99,7 @@ import {
 } from '../../../src/build.ts';
 import { nameNodes, stateRecords, taggedListBytes, trailerChecksum } from '../../../src/internal.ts';
 import { allLists, maps, namer, spelled } from './noscreenparts.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const MOMENT = '2026-11-01T12:00:00';
 const FLASH_BASE = 0x020000;
@@ -221,6 +222,7 @@ function account(bytes: Uint8Array, skin: number, builtAt: string): { disagreeme
 }
 
 test('the empty Harmony 350 and Harmony 300 configurations pass the writer\'s check, from a skin and a moment alone', () => {
+  proves(61, ['harmony-350'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts']);
   // 1105 and 1081 bytes since the entry was added, four more than before: the entry binding event 0xFF.
   for (const [skin, length, groups] of [[104, 1105, 8], [79, 1081, 4]] as const) {
     const built = buildEmptyNoScreenConfiguration({ skin, builtAt: MOMENT });

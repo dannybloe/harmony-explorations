@@ -15,6 +15,7 @@ import { load, skipUnless } from '@harmony/lab';
 
 import { PROFILES, profileFor, ReadError, readConfig, type ConfigReader, type RemoteProfile } from '../../src/index.ts';
 import { DEFAULT_CHUNK_BYTES, HEADER_PROBE, MAX_WINDOW_RETRIES, parseHeader } from '../../src/read.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const ONE = 0xc121;
 const H600 = 0xc122;
@@ -59,6 +60,7 @@ test('the known models have a config base and everything else is refused', () =>
 });
 
 test('the 525 reads at 0x820000 and its container counts from 0x020000', () => {
+  proves(1, ['harmony-525'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026']);
   // Two address spaces a megabyte apart, measured on the bench on 8 August 2026. This test used to
   // assert the opposite of every line of it: that the base was `0x020000`, that the entry was
   // `unverified`, and that no profile may ever carry `0x820000` because bit 23 was a flag. The
@@ -110,6 +112,8 @@ test('the 880 and 885 read at 0x020000 in one address space, below the staging r
 
 test('every arch 8 configuration in the lab gets its exact length from the 880 and 885 profile',
   skipUnless(...ARCH8_CONFIGS.map(([name]) => name)), () => {
+    proves(1, ['harmony-885'], ['docs/test-notes/harmony-885.md#5-november-2026-each-units-configuration-and-region-and-unit-as-clock']);
+    proves(58, ['harmony-885'], ['docs/test-notes/harmony-885.md#7-november-2026-unit-as-whole-flash-and-the-first-write-to-a-harmony-885']);
     // The independent check on the base: a wrong base turns `end_addr` into a wrong length, and the
     // file's own length is known without the header. Exact on all six, the 880's, the 885's and
     // four contributed ones.
@@ -155,6 +159,8 @@ test('end_addr in the header gives the exact length, on both architectures', ski
 });
 
 test('the read is bounded by the config, not by the config region', skipUnless('one_config'), async () => {
+  proves(58, ['harmony-one'], ['docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups']);
+  proves(58, ['harmony-650'], ['docs/test-notes/harmony-650.md#memory-as-read']);
   const config = configOf('one_config');
   const profile = profileFor(ONE);
   const { reader, asked, total } = fakeRemote(config, profile);
@@ -207,6 +213,7 @@ test('a base address with no container behind it is refused, not read', async ()
 });
 
 test('a config whose end marker is missing is not filed', skipUnless('h600_config'), async () => {
+  proves(1, ['harmony-600'], ['docs/test-notes/harmony-600.md#the-bench-600s-memory-as-read']);
   const config = Uint8Array.from(configOf('h600_config'));
   const profile = profileFor(H600);
   // Damage the marker the header promises is there. Everything else about the read still works,
@@ -224,6 +231,7 @@ test('a config whose end marker is missing is not filed', skipUnless('h600_confi
 });
 
 test('a config whose trailer checksum does not recompute is not filed', skipUnless('h600_config'), async () => {
+  proves(1, ['harmony-650'], ['docs/test-notes/harmony-650.md#memory-as-read']);
   const config = Uint8Array.from(configOf('h600_config'));
   const profile = profileFor(H600);
   // Two transposed words would be invisible, so damage one word instead. The point of this check is
@@ -242,6 +250,7 @@ test('a config whose trailer checksum does not recompute is not filed', skipUnle
 });
 
 test('an undamaged read passes both closures', skipUnless('one_config', 'h600_config'), async () => {
+  proves(1, ['harmony-one'], ['docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups']);
   // The negative of the two tests above: a check that cannot pass is as useless as one that cannot
   // fail, and this one runs on every read of a real config on both bench architectures.
   for (const [sample, product] of [['one_config', ONE], ['h600_config', H600]] as const) {

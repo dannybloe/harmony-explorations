@@ -80,6 +80,7 @@ import { skipUnless } from '@harmony/lab';
 
 import { RECOVERY, SYNC_LINES, keptCopyTag, ourTag, setTag, type RemoteRequest, type SetAnswer, type TouchSyncOutcome } from '../../src/touchsync.ts';
 import { recordedSyncAnswers, refusedByTheEngine, type Scenario } from './touch-sync-run.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const FULL = 'touch_full_sync_recording';
 const TRIAL = 'touch_sync_recording';
@@ -463,6 +464,7 @@ describe('a set of the remote\'s own documents', () => {
   const ownSet = (): SetAnswer[] => setOf(smallest()).map((a) => ({ ...a, etag: setTag(a, 'made-up') }));
 
   it('answers the six 200 with the document and its tag, the favourites 304 so the remote keeps its own, and the tagged pictures 304', () => {
+    proves(59, ['harmony-touch'], ['packages/usb/test/touch/touch-own-set-sync.test.ts', 'docs/test-notes/harmony-touch.md']);
     const answers = ownSet();
     const r = run({ mode: { kind: 'set', set: { answers } }, sync: secondRunShape(tagged) });
     assert.equal(r.outcome.ending, 'finished', r.outcome.reason);

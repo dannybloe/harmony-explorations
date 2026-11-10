@@ -36,6 +36,7 @@ import {
 } from '../../../src/internal.ts';
 import { appendActionLists, composeActivity, restamped } from '../../../src/build.ts';
 import '../../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** The thirteen Logitech compiles section 314 measured, the same population as the inventory test's. */
 const COMPILES = ARCH14_FAMILY.full;
@@ -200,6 +201,8 @@ test('only an activity\'s entry goes on a key, and only on a Harmony 600, 650 or
 
 test('a composed activity goes on the key it is given, and on no key without one',
      skipUnless('h650_config_region', 'h700_config', 'one_config'), () => {
+  proves(29, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
+  proves(29, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
   for (const name of ['h650_config_region', 'h700_config'] as const) {
     const c = parse(require_(name));
     const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));

@@ -37,6 +37,7 @@ import { ONE_CHOICES } from '../../../src/families/harmony-one/choices.ts';
 import { fontsOfFace } from '../../../src/families/harmony-one/labels.ts';
 import { letterOneDonor } from '../../../src/families/harmony-one/look.ts';
 import '../../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** The Harmony One compiles that hold an activity, fifteen of the nineteen. */
 const WITH_ACTIVITIES = ['one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'one_spare_myharmony', 'one_spare_20260830',
@@ -332,6 +333,7 @@ const ACTIVITY_ROLES = ['devices', 'devices unread', 'working', 'select'] as con
 
 test('an activity our builder composes onto each Logitech One compile walked, the pair on a step and all nineteen and their tally in the slow tier, takes a case in the four records every activity of theirs has one in, the unread copy of the Devices record among them, and base slot 11\'s table then names its cases as their compiler names every case, the case programs\' builder rebuilding the file with the table it generates',
      skipUnless(...WITH_ACTIVITIES, ...WITHOUT_ACTIVITIES), () => {
+  proves(21, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
   // Section 402's method: each compile lettered in ours, as `composeSetup` letters its donor, and an activity built
   // onto it under a fresh number. Its pads do not matter here, so it has none.
   const tally = { compiles: 0, theirs: 0, notLettered: [] as string[] };

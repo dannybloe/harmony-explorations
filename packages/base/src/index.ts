@@ -13,8 +13,9 @@
  * here, all four modules' whole, held by `test/surface.test.ts`; the byte comparison joined them last.
  *
  * The fifth module is the FHSDK's requirements and every bench model's status on each, `requirements.ts`, decision
- * 33: data with no dependency at all, which an application, the codec's capability answer and the generated
- * document all read. Its names are on this entry like the others', and it is its own subpath too.
+ * 33: data, which an application, the codec's capability answer and the generated documents all read. Its one
+ * import is the sixth, `proofs.ts`, the proofs in the tests that make a requirement met, generated from the test
+ * sources so an application can read them; its type is on this entry, and both are their own subpaths too.
  */
 
 // The model table: a skin to a model and what its hardware can do.
@@ -47,4 +48,4 @@ export {
   REQUIREMENTS,
   requirementState,
 } from './requirements.ts';
-export type { BenchModel, BenchModelKey, Requirement, RequirementScope, RequirementState, RequirementStatus } from './requirements.ts';
+export type { BenchModel, BenchModelKey, Proof, Requirement, RequirementScope, RequirementState, RequirementStatus } from './requirements.ts';

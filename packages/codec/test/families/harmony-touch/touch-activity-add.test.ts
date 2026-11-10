@@ -50,6 +50,7 @@ import {
 import { documentsOfAnswers, type SyncDocuments } from '../../../src/families/harmony-touch/documents.ts';
 import { readConfiguration } from '../../../src/families/harmony-touch/read.ts';
 import { answersOf, FULL } from './touch-sync.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** Made up documents of Logitech's shape: a TV with two inputs and a player, one activity, and their three maps. */
 function documents(): SyncDocuments {
@@ -98,6 +99,11 @@ function activity(over: Partial<OwnActivity> = {}): OwnActivity {
 }
 
 test('an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine\'s identifier, no finding', () => {
+  proves(21, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
+  proves(23, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
+  proves(30, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
+  proves(31, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'packages/bench/test/harmony-touch/touch-setup-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
+  proves(34, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const docs = documents();
   const added = { ...docs, ...withTouchActivity(docs, composeTouchActivity(activity(), docs)) };
   assert.deepEqual(refusalsBeforeASync(added), []);

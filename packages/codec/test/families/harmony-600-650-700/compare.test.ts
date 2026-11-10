@@ -13,9 +13,11 @@ import type { Container } from '../../../src/container/gspm.ts';
 import { activities } from '../../../src/inventory/inventory.ts';
 import { compareViews, setupView } from '../../../src/families/harmony-600-650-700/compare.ts';
 import '../../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 test('a file compared with itself differs nowhere, and the view reaches every part of the 650 test setup',
   skipUnless('h650_test_config'), () => {
+    proves(2, ['harmony-650']);
     const view = setupView(parse(require_('h650_test_config')));
     assert.deepEqual(compareViews(view, view), []);
     const contexts = new Set([...view.keys()].map((key) => key.split(' | ')[0]));

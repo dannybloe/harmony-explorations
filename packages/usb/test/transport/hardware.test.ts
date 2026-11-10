@@ -24,6 +24,7 @@ import assert from 'node:assert/strict';
 import { load } from '@harmony/lab';
 import { isHarmony, listHarmony } from '../../src/index.ts';
 import { HARMONY_PRODUCT_FIRST, HARMONY_PRODUCT_LAST } from '../../src/internal.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** Product ids of the bench remotes, so a test can refuse to run against the wrong one. */
 const HARMONY_600 = 0xc122;
@@ -106,6 +107,7 @@ test('node-hid loads and enumerates the bus', async () => {
 });
 
 test('an attached Harmony is recognised by vendor and product range', async (t) => {
+  proves(62, ['harmony-one'], ['docs/test-notes/harmony-one.md#telling-the-two-ones-apart']);
   const found = await listHarmony();
   if (found.length === 0) {
     t.skip('no Harmony remote attached');
@@ -178,6 +180,7 @@ for (const unit of BENCH) {
 }
 
 test('the version block is twelve bytes and the flash id in it matches concordance', async (t) => {
+  proves(64, ['harmony-one'], ['docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups']);
   if (!HARDWARE || !(await present(HARMONY_600))) {
     t.skip('needs HARMONY_HARDWARE_TESTS=1 and the Harmony 600 attached');
     return;

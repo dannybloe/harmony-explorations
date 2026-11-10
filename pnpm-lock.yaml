@@ -108,7 +108,11 @@ importers:
         specifier: workspace:*
         version: link:../usb
 
-  packages/lab: {}
+  packages/lab:
+    devDependencies:
+      '@harmony/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/probe:
     dependencies:

@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    // Where these files went when they were part of the package's own project, so `dist/` holds the same.
+    "outDir": "../dist/test"
+  },
+  // `packages/lab`'s tests, a project of their own, `../tsconfig.json` says why.
+  "include": ["**/*.ts"],
+  "references": [{ "path": ".." }, { "path": "../../testkit" }]
+}

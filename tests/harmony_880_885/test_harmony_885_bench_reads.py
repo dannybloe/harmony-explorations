@@ -123,6 +123,7 @@ import datetime
 import unittest
 
 import lab
+from proves import proves
 from harmony import gspm
 from .test_harmony_885_start_check import USER_BASE, CheckAsRead, Flash, application
 
@@ -171,6 +172,7 @@ class TheConfigurationReads(unittest.TestCase):
         lab.require(*ALL)
 
     def test_each_units_two_reads_are_identical_and_568020_and_637127_bytes_long(self):
+        proves(1, ['harmony-885'], ['docs/test-notes/harmony-885.md#5-november-2026-each-units-configuration-and-region-and-unit-as-clock'])
         lengths = {}
         for unit in UNITS:
             config, config_2, _, _ = reads(unit)

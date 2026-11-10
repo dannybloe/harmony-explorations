@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import { TOUCH_SYNC_UNITS } from '../../src/write.ts';
 import { runAnswer, type AnswerRun, type AnswerScenario } from './touch-answer-run.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const NEEDS = '--commit needs HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1';
 
@@ -53,6 +54,7 @@ describe('answering a sync as a library function', () => {
   });
 
   it('with both flags runs the sync to proxy://Finished and closes the Touch', () => {
+    proves(59, ['harmony-touch'], ['packages/usb/test/touch/touch-own-set-sync.test.ts', 'docs/test-notes/harmony-touch.md']);
     const run = withFlags(BOTH);
     assert.equal(run.error, undefined, run.error?.message);
     assert.equal(run.outcome?.ending, 'finished');

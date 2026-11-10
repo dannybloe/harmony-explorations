@@ -77,6 +77,7 @@ import {
   composeTouchSetup, describeTouchSetup, catalogueOfSet, setupBaseOf, type TouchSetup,
 } from '../../../src/families/harmony-touch/setup.ts';
 import { answersOf, FULL } from './touch-sync.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const IDS = { device: 900000101, activity: 900000201, sequence: 900000301 };
 
@@ -172,6 +173,9 @@ test('the base is the four lists emptied and nothing else, and a set lacking one
 });
 
 test('a whole setup composes and reads back: devices from their catalogue record with what the person chose, maps in the ordered form, an activity with the favourites, a channel step and a sequence', () => {
+  proves(31, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-activity-runs.test.ts', 'packages/bench/test/harmony-touch/touch-setup-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
+  proves(37, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-setup-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
+  proves(38, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-setup-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   const docs = composed();
   assert.deepEqual(refusalsBeforeASync(docs), []);
   const c = readConfiguration(docs);
@@ -322,6 +326,7 @@ function view(c: Configuration): unknown {
 }
 
 test('describing Logitech\'s own documents and composing the description gives the same remote: every device, activity, map, favourite and finding, compared by name', lab.skipUnless(FULL), () => {
+  proves(3, ['harmony-touch']);
   const docs = documentsOfAnswers(answersOf(FULL));
   const description = describeTouchSetup(docs, IDS);
   assert.deepEqual([description.devices.length, description.activities.length], [7, 5]);

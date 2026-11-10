@@ -112,6 +112,7 @@ import {
 } from '../../src/touchsession.ts';
 import { TransportError } from '../../src/transport.ts';
 import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
+import { proves } from '@harmony/testkit/proof';
 
 /** A made up serial. */
 const SERIAL = '20000101000000-424242';
@@ -892,6 +893,7 @@ describe('the recovery tier, behind HARMONY_TOUCH_RECOVERY', () => {
   });
 
   it('sends each recovery request in the provisioning read\'s shape with the flag, one line each', () => {
+    proves(71, ['harmony-touch'], ['packages/usb/test/touch/touch-first-sync.test.ts', 'docs/test-notes/harmony-touch.md']);
     const output = withEnv(RECOVERY_FLAGS, `
       const results = {};
       for (const line of rails.TOUCH_RECOVERY_REQUESTS) {

@@ -86,6 +86,7 @@ import { bytes, compilerHash, stateRecords, stateVariables, taggedList } from '.
 import { familyOf, familyOfArchitecture } from '../../../src/families/registry.ts';
 import { onceWithoutLeadIn, recordKey, spelled, spelledMap } from './noscreenparts.ts';
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** Logitech's compile of the test setup, by its path in the lab, as `packages/bench/test/harmony-300-350/setup350.test.ts` names it. */
 const COMPILE = 'work/setups/h350-test/compile-Result.EzHex';
@@ -567,6 +568,7 @@ function longComposed() {
 
 test('a long press device takes group 4 plus its key\'s place on all four keys, the group Logitech\'s compile gives the same device',
   needsAll, () => {
+    proves(39, ['harmony-350'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
     const { ours, theirs, outs } = longComposed();
     assert.ok(ours.allChecksPass);
     // Logitech's group for each, read off its compile by the device's name.

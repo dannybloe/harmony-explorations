@@ -19,8 +19,10 @@ import {
   hasLongPress,
   modelForSkin,
 } from '../src/index.ts';
+import { proves } from '@harmony/testkit/proof';
 
 test('the six confirmed skins name the models they were confirmed as', () => {
+  proves(62, ['harmony-525'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026']);
   // From firmware literals and live remotes, none of which consulted Logitech's client table.
   // `reference/remotes/README.md`, "What each field is worth". These are the calibration for every
   // other row.

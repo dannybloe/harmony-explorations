@@ -27,6 +27,7 @@ import re
 import unittest
 
 import lab
+from proves import proves
 from harmony.pic18 import chains, isa
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -121,6 +122,7 @@ class TheHarmony650IsToldFromTheHarmony600ByItsIdentityAlone(unittest.TestCase):
                 self.assertFalse(_uniform(guids[0x10:]), 'the second GUID is filler')
 
     def test_the_two_units_differ(self):
+        proves(63, ['harmony-600'], ['docs/test-notes/harmony-600.md#the-bench-600s-memory-as-read'])
         self.assertNotEqual(self.h600, self.h650)
 
     def test_the_650s_unit_record_is_its_own_identity_and_not_the_600s(self):
@@ -931,6 +933,7 @@ class TheHarmony700sFirstBlockWentBackUnchanged(unittest.TestCase):
         self.assertEqual(sum(1 for byte in self.before[:0x10000] if byte != 0xFF), 64366)
 
     def test_the_run_erased_checked_both_neighbours_and_read_the_block_back(self):
+        proves(63, ['harmony-700'], ['docs/test-notes/harmony-700.md#what-was-sent-to-the-unit'])
         for line in ('unit identity', 'which matches the recorded h700',
                      'erasing 0x30000',
                      'erased, and the block reads back as all ones',
@@ -990,6 +993,7 @@ class TheHarmony700sDelayWriteWasHeardAndWentBack(unittest.TestCase):
         self.assertEqual(region[at + 2] | region[at + 3] << 8, 65277)
 
     def test_both_writes_ran_the_whole_sequence_and_the_stopped_one_ended_after_an_erase(self):
+        proves(5, ['harmony-700'], ['docs/test-notes/harmony-700.md#what-was-sent-to-the-unit'])
         names = ('h700_delay90_write_log', 'h700_delay60_write_log', 'h700_delay60_stopped_log')
         lab.require(*names)
         raised, restored, stopped = (lab.load(name).decode('utf-8') for name in names)
@@ -1115,6 +1119,7 @@ class TheHarmony600sFirstBlockWentBackUnchanged(unittest.TestCase):
         self.assertEqual(self.low + self.after, self.external)
 
     def test_the_block_written_was_configuration_and_its_container_is_h600_config(self):
+        proves(1, ['harmony-600'], ['docs/test-notes/harmony-600.md#the-bench-600s-memory-as-read'])
         from harmony import gspm
         container = gspm.parse(self.before)
         self.assertTrue(container.all_checks_pass)
@@ -1129,6 +1134,7 @@ class TheHarmony600sFirstBlockWentBackUnchanged(unittest.TestCase):
         self.assertEqual(wrapped[at:], self.before[:len(wrapped) - at])
 
     def test_the_backup_holds_the_0_2_application_and_the_safe_mode_configuration(self):
+        proves(58, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'])
         # A backup that a restore could use: the application in internal program memory from
         # 0xFE +0x9000 and staged in external flash at 0x000000, and the safe mode container at
         # external 0x020000, each byte for byte the image the lab already held.
@@ -1196,6 +1202,7 @@ class TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore(unittest.TestCase)
         return self.BANK + (index if index < narrow else narrow + 2 * (index - narrow))
 
     def test_the_raise_moved_the_delay_and_the_trailer_and_the_revert_put_the_region_back(self):
+        proves(59, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'])
         names = ('h600_after_rehearsal_region', 'h600_kpn45_region', 'h600_kpn15_restored_region')
         lab.require(*names)
         before, raised, restored = (lab.load(name) for name in names)
@@ -1215,6 +1222,7 @@ class TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore(unittest.TestCase)
         self.assertEqual((table.narrow, table.wide), (55, 19))
 
     def test_both_writes_ran_the_whole_sequence(self):
+        proves(5, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit'])
         names = ('h600_kpn45_write_log', 'h600_kpn15_restore_write_log')
         lab.require(*names)
         for name in names:

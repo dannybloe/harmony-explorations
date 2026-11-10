@@ -23,6 +23,7 @@ import {
 } from '@harmony/usb';
 import { assertConfigIsForThisRemote } from '@harmony/usb/rails';
 import { encodeVersionBlock } from '@harmony/usb/internal';
+import { proves } from '@harmony/testkit/proof';
 
 /**
  * Every config in the corpus whose wrapper states a version, with the remote it was built for.
@@ -126,6 +127,7 @@ test('a config read off a remote states nothing, and that is not a match',
   });
 
 test('the wrong remote is refused for every config in the corpus', lab.skipUnless(...ALL), () => {
+  proves(7, ['harmony-600', 'harmony-650']);
   // The control, and it is the one that gives the test above its meaning: every wrapper, against
   // every **other** architecture's remote, must disagree. Without this, a comparison that always
   // returned compatible would pass the test above on all eleven.

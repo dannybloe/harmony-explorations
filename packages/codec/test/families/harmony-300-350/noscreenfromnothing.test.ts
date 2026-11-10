@@ -132,6 +132,7 @@ import { nameOfLabel } from '../../../src/shared/core.ts';
 import { allLists, maps, records, recordKey, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
 import { sameBytes } from '../../../src/support/bytes.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const needsArchive = needing(skipWithoutIrArchive());
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
@@ -218,6 +219,8 @@ const same = sameBytes;
 
 test('the whole test setup builds with no Logitech file: every device, Watch TV with its flag and inputs, and the favourites, and passes the writer\'s checks',
   needsArchive, () => {
+    proves(4, ['harmony-350'], ['docs/test-notes/harmony-350.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
+    proves(23, ['harmony-350'], ['docs/test-notes/harmony-350.md']);
     const { out, ours } = built();
     assert.ok(ours.allChecksPass);
     assertFileFamilyContainer(out.bytes);
@@ -477,6 +480,7 @@ test('built from nothing, the KPN\'s map is the same catalogue KPN\'s on an acco
 
 test('the test setup cannot be built for the Harmony 300\'s own skin, so the Harmony 350 build, with event 0xFF bound, is the file for both',
   needsArchive, () => {
+    proves(7, ['harmony-300']);
     // Skin 79, the bench Harmony 300's: the device composer refuses a television's favourite key, whose command is
     // measured on the 350 alone, and even a setup with no television refuses a long press, since the 300's
     // configurations allocate four infrared groups and a long press takes a group from 4 up.

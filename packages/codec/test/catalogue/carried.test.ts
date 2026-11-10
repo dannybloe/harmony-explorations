@@ -15,6 +15,7 @@ import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import '../../src/support/resources.node.ts';
 import { carriedCatalogue } from '../../src/catalogue/carried.ts';
 import { archiveAt, buildFromRecipe, carryCodes, readRecipe, type Built } from '../../src/node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const BUILT_AT = '2026-11-09T12:00:00';
 
@@ -34,6 +35,7 @@ const bytes = (built: Built): Uint8Array => {
 };
 
 test('a recipe with its codes carried builds as the archive does, byte for byte, with no archive', skipWithoutIrArchive(), () => {
+  proves(73, 'every');
   const carried = carryCodes(SMALL, IR_ARCHIVE!);
   const fromArchive = bytes(buildFromRecipe(SMALL, { builtAt: BUILT_AT, archive: archiveAt(IR_ARCHIVE!) }));
   const fromRecipe = bytes(buildFromRecipe(carried, { builtAt: BUILT_AT }));

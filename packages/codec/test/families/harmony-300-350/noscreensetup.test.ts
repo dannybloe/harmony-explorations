@@ -73,6 +73,7 @@ import { composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, without
 import { taggedList } from '../../../src/internal.ts';
 import { allLists, maps, records, senders, startUp, timerRecords, transitions } from './noscreenparts.ts';
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
 
@@ -214,6 +215,7 @@ test('the file in the lab for the bench unit is this composition byte for byte, 
 
 test('the setup composer refuses a key that disagrees with the configuration, a device with no key, and an activity naming a composed device',
   needs, () => {
+    proves(7, ['harmony-350']);
     const { donor } = composed();
     assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: { ...KEYS, 'LG TV': { place: 1, press: 'short' }, Plasma: { place: 0, press: 'short' } } }),
       (error: unknown) => error instanceof ComposeError && /holds LG TV on group 0, and the keys put it on group 1/.test(error.message));

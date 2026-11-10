@@ -61,6 +61,7 @@ import {
 } from '../../src/build.ts';
 import { listSends, setupView } from '../../src/families/harmony-600-650-700/compare.ts';
 import '../../src/support/resources.node.ts';
+import { proves } from '@harmony/testkit/proof';
 
 /** Every arch 14 configuration Logitech compiled that the lab holds, as `compose.test.ts` lists them. */
 const ARCH14 = ARCH14_FAMILY.full;
@@ -468,6 +469,7 @@ test('bound to a key of the activity, the sequence is what that key runs', skipU
 
 test('the composer refuses a sequence the action queue cannot hold, at the exact boundary',
      skipUnless('h650_config_region', 'one_spare_20260830', 'h525_config'), () => {
+  proves(7, ['harmony-650']);
   const c = parse(require_('h650_config_region'));
   const tv = activities(c).find((one) => one.name === 'TV kijken')!;
   const groups = activityPauseGroups(c, tv.set);
@@ -500,6 +502,7 @@ test('the composer refuses a sequence the action queue cannot hold, at the exact
 
 test('the sequence heard on the Harmony 650: three of the KPN box\'s own sends and two pauses naming TV kijken\'s three devices',
   skipUnless('h650_bench_4_2_base'), () => {
+    proves(37, ['harmony-650'], ['docs/test-notes/harmony-650.md#bench-runs']);
     // Section 342. Composed again onto what the remote held before the write: KPN 1,
     // 2 s, KPN 2, 20 s, KPN Red, on Red in TV kijken. Each command reuses the send list the activity's own
     // key for it calls, so nothing is created, and each pause is one 0x7C per device of the activity.
@@ -592,6 +595,8 @@ const PLASMA_RADIO = 'activity Plasma kijken | page 1 | scan 34';
 
 test('the Radio sequence composed again as our file of the Harmony 650\'s test setup composed it now stores what Logitech\'s compile of the test setup stores',
   skipUnless('h650_start_config', 'h650_test_config_clean', 'h650_milestone_5_1_config'), () => {
+    proves(37, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
+    proves(37, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
     // Section 349. The composer calls of the lab's `work/bench-5-1/step1.ts`, which built our file of the
     // test setup: the KPN box kept on, then KPN 1, 2 s, KPN 2 for Plasma kijken's screen, with the
     // records the KPN box's own 1 and 2 keys send in device mode.

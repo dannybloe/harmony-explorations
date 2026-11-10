@@ -67,8 +67,8 @@ help:
 	@echo "key-reader   rebuild the browser page that reads a remote's keys, reference/key-reader/"
 	@echo "remote-reference  check the generated blocks of reference/remotes and reference/architectures"
 	@echo "remote-reference-write  rewrite those blocks from the code"
-	@echo "requirements  check docs/remote-requirements.md against the requirements and their statuses"
-	@echo "requirements-write  regenerate docs/remote-requirements.md from that data"
+	@echo "requirements  check the proofs in the tests, the requirements documents and the bench checklists agree"
+	@echo "requirements-write  regenerate the proofs module, both requirements documents and the nine checklists"
 	@echo "site         build the reference website into site/, strict; SITE_STRICT=false builds past a warning"
 	@echo "site-offline the same website for browsing from disk: open site/index.html, no server needed"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
@@ -375,10 +375,13 @@ remote-reference:
 remote-reference-write:
 	@node packages/silhouettes/bin/remotes.ts --write
 
-# The FHSDK's requirements and every bench model's status on each, decision 33. `docs/remote-requirements.md` is
-# generated from `packages/base/src/requirements.ts` but for its introduction, so a status is changed in the data and
-# this rewrites the document; the check fails naming the document when the two differ, and runs in `make ts` too,
-# packages/codec/test/package/requirements.test.ts. No lab, no network, no remote.
+# The FHSDK's requirements and every bench model's status on each, decision 33. A met is proven by a test, which
+# carries a call of `proves` naming the requirement, the models and the bench record; the generator reads those off
+# every test source statically and writes `packages/base/src/proofs.ts`, which an application reads, then
+# `docs/remote-requirements.md` but for its introduction, `docs/remote-requirements-evidence.md` and each bench
+# remote's checklist in the todo folder, from the proofs and the statuses written in `packages/base/src/requirements.ts`.
+# The check fails naming each file that differs, and runs in `make ts` too, packages/codec/test/package/requirements.test.ts.
+# No lab, no network, no remote.
 requirements:
 	@node packages/codec/bin/requirements.ts
 

@@ -11,6 +11,9 @@
       "path": "./packages/lab"
     },
     {
+      "path": "./packages/lab/test"
+    },
+    {
       "path": "./packages/codec"
     },
     {

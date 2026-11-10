@@ -11,6 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { proves } from '@harmony/testkit/proof';
 
 const SRC = fileURLToPath(new URL('../src/', import.meta.url));
 const MANIFEST = fileURLToPath(new URL('../package.json', import.meta.url));
@@ -26,18 +27,21 @@ function specifiers(source: string): string[] {
   return found;
 }
 
-test('the package holds exactly its five modules and its index', () => {
+test('the package holds exactly its six modules and its index', () => {
   // Exact, so a module added here is a decision that shows up in this diff and gets asked whether it belongs.
-  assert.deepEqual(readdirSync(SRC).sort(), ['bytes.ts', 'index.ts', 'keys.ts', 'models.ts', 'requirements.ts', 'trailer.ts']);
+  assert.deepEqual(readdirSync(SRC).sort(), ['bytes.ts', 'index.ts', 'keys.ts', 'models.ts', 'proofs.ts', 'requirements.ts', 'trailer.ts']);
 });
 
-test('the five modules import nothing, and the index only them', () => {
-  for (const name of ['bytes.ts', 'keys.ts', 'models.ts', 'requirements.ts', 'trailer.ts']) {
+test('the six modules import nothing but the requirements their proofs, and the index only them', () => {
+  proves(74, 'every');
+  for (const name of ['bytes.ts', 'keys.ts', 'models.ts', 'proofs.ts', 'trailer.ts']) {
     assert.deepEqual(specifiers(readFileSync(SRC + name, 'utf8')), [], name);
   }
+  // The requirements derive a met from the proofs, generated data beside them, and import nothing else.
+  assert.deepEqual(specifiers(readFileSync(SRC + 'requirements.ts', 'utf8')), ['./proofs.ts']);
   // The index may name a module more than once, for its values and for its types, `test/surface.test.ts`; still
   // the modules and nothing else, the byte comparison the fourth.
-  // The requirements, the fifth, are data with no dependency at all.
+  // The requirements, the fifth, are data, the proofs beside them their one import.
   assert.deepEqual([...new Set(specifiers(readFileSync(SRC + 'index.ts', 'utf8')))], ['./models.ts', './trailer.ts', './keys.ts', './bytes.ts', './requirements.ts']);
 });
 

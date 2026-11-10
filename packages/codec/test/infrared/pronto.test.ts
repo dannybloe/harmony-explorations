@@ -27,8 +27,10 @@ import {
   PRONTO_CLOCK, prontoCarrier, prontoPairs, prontoUnits, readPronto, writePronto,
 } from '../../src/infrared/pronto.ts';
 import { statedCode } from '../../src/infrared/stated.ts';
+import { proves } from '@harmony/testkit/proof';
 
 test('a Pronto header states the carrier as a count and the sections as pairs', () => {
+  proves(20, 'every');
   // A real learned code, `Sony 12 Bit`, from the archive's own README. 0x0068 is 104, and 104 units of
   // the Philips clock is 25.09 microseconds, which is 39.9 kHz: Sony's 40 kHz to within the resolution
   // the format has. The 13 is the once section's pair count.
