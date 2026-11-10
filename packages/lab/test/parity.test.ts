@@ -71,11 +71,11 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 110 since the bench Harmony 650's own firmware, which is not the published package's, section 281.
   // 111 since that unit's identity page, which is what keeps the Harmony 600 out, section 281.
   // 112 since that unit's whole configuration region, write-config.ts's compare base, section 282.
-  // 113 since that region again after 1.4.2's delay write, the compare base for the revert.
+  // 113 since that region again after its delay write, the compare base for the revert.
   // 114 since the 650's state variable snapshots across a bare restart, section 283.
   // 115 since its data memory dumps across a third restart.
   // 116 since the variables' own bank across a fourth.
-  // 117 since the configuration region after 1.4.3's composed device, section 285.
+  // 117 since the configuration region after its composed device, section 285.
   // 118 since that region after the introduction tour was skipped, section 286.
   // 120 since the reads either side of 1.4.4's composed activity, section 291.
   // 121 since the region after the screen light timer went to 20 seconds, section 292, 122 at 10.
@@ -228,7 +228,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // section 282: its container is counted nowhere, and it is excluded so that registering a compare
   // base does not quietly add a configuration to every corpus wide total. Whether the 650 joins the
   // corpus is a decision of its own.
-  // 23 with that region again after 1.4.2's delay write, the same kind, and 24 with it after 1.4.3's
+  // 23 with that region again after its delay write, the same kind, and 24 with it after its composed device's
   // composed device, section 285, and 25 with it after the tour skip, section 286, 27 with the reads
   // either side of 1.4.4, section 291, and 28 and 29 with the 20 and 10 second screen timers. 30 is
   // the spare's compare base for its four page activity menu write, section 293, the first shape.
@@ -259,7 +259,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // 81 with the tilt sensor off compile.
   // 82 with the region read before 5.1's write.
   // 83 with Logitech's compile of the whole test setup.
-  // 84 with our first file as written, 85 with Logitech's clean compile of the test setup, 86 with the region before a write, 87 before the next, 88 before a probe, 89 after its stopped probe, 90 with the probe, 91 before another. 94 with the friend's Harmony One's two reads and Harmony 525, out of the totals until joining is decided. 95 before a write, 96 before the next, 97 with it stuck, 98 before variant A, 99 before the fixed one, 100 before its bright build, 101 before another, 102 before another, 103 after it, 104 with the one bit control on it. 105 with the region before the empty configuration, 106 before its blended letters, 107 before 11.2.3, 108 before the next, 109 before its two cosmetic changes, 110 with the Harmony 700's region before its empty configuration, 111 with it on, 112 before the test setup, 113 with its six devices on, 114 with its seven, 115 with them in bright colours, 116 with the Harmony 600's region before its empty configuration, 117 with it on, 118 with the mark at 0, 119 in grey 2, 120 with its letters blended, 121 with the five device setup on, 122 with the six device file on, 123 with the spare Harmony One at the start of the Harmony One compile track, 126 with the three harvest compiles for the One, section 306's reason. 142 with the Harmony 515 from onyiaic, out of the totals like the friend's remotes, and 144 with the two copies of its application image.
+  // 84 with our first file as written, 85 with Logitech's clean compile of the test setup, 86 with the region before a write, 87 before the next, 88 before a probe, 89 after its stopped probe, 90 with the probe, 91 before another. 94 with the friend's Harmony One's two reads and Harmony 525, out of the totals until joining is decided. 95 before a write, 96 before the next, 97 with it stuck, 98 before variant A, 99 before the fixed one, 100 before its bright build, 101 before another, 102 before another, 103 after it, 104 with the one bit control on it. 105 with the region before the empty configuration, 106 before its blended letters, 107 before another, 108 before the next, 109 before its two cosmetic changes, 110 with the Harmony 700's region before its empty configuration, 111 with it on, 112 before the test setup, 113 with its six devices on, 114 with its seven, 115 with them in bright colours, 116 with the Harmony 600's region before its empty configuration, 117 with it on, 118 with the mark at 0, 119 in grey 2, 120 with its letters blended, 121 with the five device setup on, 122 with the six device file on, 123 with the spare Harmony One at the start of the Harmony One compile track, 126 with the three harvest compiles for the One, section 306's reason. 142 with the Harmony 515 from onyiaic, out of the totals like the friend's remotes, and 144 with the two copies of its application image.
   // 152 with the two bench Harmony 885s' configurations and regions, whose remote's bench configurations are
   // not in the corpus. 155 with unit A's whole flash, read twice, and its configuration after the first block
   // write 158 with unit B's. 161 with B's

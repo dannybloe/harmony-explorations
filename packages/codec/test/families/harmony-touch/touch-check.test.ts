@@ -114,7 +114,7 @@
  *   whatever they cost, a device's name, a screen entry's text and a sequence's name. The rows are
  *   `SCREEN_ROWS`. The note's other rows, each costing one screen, one key or a timer, are **not refused**,
  *   and the reference names them so. This said the rows costing the screens' hearing of the engine until a
- *   restart were not refused either, until 6.10.2 below refused them.
+ *   restart were not refused either, until the gate below refused them.
  *
  * **A defect this found in the view**: `read.ts` threw on a device's `Commands` stated as an object and on an IR
  * protocol's segment lists stated as one, where its header promises to read a malformed document without
@@ -817,7 +817,7 @@ test('the gate refuses an entry without a type name, or with one that is null, a
 });
 
 test('a button\'s three actions, which the reader tests for a type name first, are refused only for one the search raises on', () => {
-  // The engine's reader's findings: since 6.10.2 the gate also refuses a press on an activity's map without a
+  // The engine's reader's findings: the gate also refuses a press on an activity's map without a
   // type name, which the screens search, and that is asserted with the screens' rows below.
   const places = (d: Json) => readerRaises(d as SyncDocuments).map((f) => [f.rule, f.effect, f.document, f.path]);
   const guarded = typePlaces(everyPath()).filter((p) => p.guarded);
@@ -1023,7 +1023,7 @@ test('the gate refuses each value the load raises on, at its one place and by it
 
 test('a button without a name is refused only when it ends with an action, by the reader\'s own test of that', () => {
   // The engine's reader's findings: the screens refuse a screen entry of an activity's map without an index
-  // whatever its action, since 6.10.2, which the screens' rows below assert.
+  // whatever its action, which the screens' rows below assert.
   const places = (d: Json) => readerRaises(d as SyncDocuments).map((f) => [f.rule, f.effect, f.document, f.path]);
   const nameless = (change: (b: Json, m: Json) => void): Json => {
     const d = everyField();
@@ -1225,7 +1225,7 @@ test('the screens: each place is asked only where they read it', () => {
   // An activity picture's address is read in the sync when it is not a string; with a null picture too.
   assert.deepEqual(screens((() => { const d = everyScreen(); Object.assign(activity(d), { ImageKey: null, BaseImageUri: true }); return d; })()), ['Activities[0].BaseImageUri']);
   // Roles are read at start on the activity that tunes channels and on a television activity, which is the error
-  // screen; on any other activity, since 6.10.2, when it starts or finishes starting, which is the screens deaf.
+  // screen; on any other activity, when it starts or finishes starting, which is the screens deaf.
   const other = (Type: number, IsTuningDefault: boolean) => {
     const d = everyScreen();
     Object.assign(activity(d), { Type, IsTuningDefault });

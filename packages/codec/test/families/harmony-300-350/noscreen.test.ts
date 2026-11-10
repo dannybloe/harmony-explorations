@@ -31,7 +31,7 @@
  * that account's mode map for it is the one the setup builder saved to put the favourites on, which reads its hard
  * buttons as unassigned.7 and `noscreenfromnothing.test.ts`. This gave the reason as the
  * map being the one the activity ends in, until `noscreenactivity.test.ts` found the activity ending in another KPN
- * box's map, of 33 bindings sending one of its own codes, on two other compiles; and then no reason, until 5.1.7.
+ * box's map, of 33 bindings sending one of its own codes, on two other compiles; and then no reason, until the LG TV's stored copies were composed.
  *
  * **The power on delay's waits are a closure**: the catalogue's power on delay, read by `catalogueDevicePower`,
  * split by `powerOnWaits`, is the waits Logitech's compile writes on each of the eight devices, the Knoll's 250
@@ -139,7 +139,7 @@ test('the registry hands the Harmony 300 and 350 their own family, which refuses
   attempt('sends.sendLists', () => f.sends.sendLists(c));
   attempt('sends.newSendLists', () => f.sends.newSendLists([], 0, 0, 1, 0));
   assert.equal(refusals.length, 16);
-  // The state tables answer since 5.1.2, noscreenstatetables.test.ts.
+  // The state tables answer, noscreenstatetables.test.ts.
   assert.ok(f.stateTables.measuredOn.length > 0);
   // The fonts answer with a reason, which is how that member refuses; and nothing is lettered.
   assert.match(f.fonts.refusal(104)!, /no screen/);

@@ -61,7 +61,7 @@
  *     `0x30` entry calls, and Logitech's binds nothing to it, decision 28. Every other entry of the key table is
  *     Logitech's, in Logitech's order.
  *
- * **A correction**: until 5.1.7 the LG TV's records and two lists differed too, Logitech storing its Back and a copy
+ * **A correction**: until its stored copies were composed, the LG TV's records and two lists differed too, Logitech storing its Back and a copy
  * of a code the catalogue names OK without its opening silence, each with a send list nothing calls, "for no rule
  * read". The rules are read now, `noscreenstored.test.ts`: the OK is the catalogue's channel tuning finish, stored as
  * a one block copy beside the digits' wherever a device states one, and the Back a television's, stored where no key

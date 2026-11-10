@@ -394,7 +394,7 @@ const PLASMA_KIJKEN_SCREEN: readonly RecipeScreenItem[] = [
 
 test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the 6.2.13 file put through the same assembly but for its build stamp and where its new case programs sit, and lays 147798 bytes as content',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_7_1_base', 'h650_test_config_clean')), () => {
-  // The setup file states the screen, since 10.7.4.
+  // The setup file states the screen.
   assert.deepEqual(setupOf('h650-test.json').activities.find((one) => one.name === 'Plasma kijken')?.screen, PLASMA_KIJKEN_SCREEN);
   const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config'), ...composing() });
   assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });

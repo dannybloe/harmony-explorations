@@ -376,7 +376,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 68 since the compare base for the working screen write, section 279.
   // 69 since the compare base for the power off write, section 280.
   // 70 since the Harmony 650's configuration region, section 282, the first arch 14 compare base.
-  // 71 since that region after 1.4.2's delay write, 72 since the region after 1.4.3's composed device,
+  // 71 since that region after its delay write, 72 since the region after its composed device,
   // 73 since the region after section 286's tour skip, 74 and 75 since the reads either side of
   // 1.4.4's composed activity, section 291, and 76 and 77 since the screen light timer at 20 and at
   // 10, section 292, and 78 since the spare Harmony One's region before its four page menu, 293,
@@ -427,8 +427,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 63 since the compare base for the working screen write, section 279.
   // 64 since the compare base for the power off write, section 280.
   // 65 since the Harmony 650's configuration region, section 282.
-  // 66 since that region after 1.4.2's delay write.
-  // 67 since that region after 1.4.3's composed device, section 285, which carries its key table
+  // 66 since that region after its delay write.
+  // 67 since that region after its composed device, section 285, which carries its key table
   // unchanged: the composer adds a device mode and menu entries and no key table entry.
   // 68 since the region after section 286's tour skip, which changes one action list instruction.
   // 70 since the reads either side of 1.4.4's composed activity, section 291, and 71 since the screen
@@ -486,8 +486,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // be compared wherever they can be, not because it is a second sample.
   // 34 since the Harmony 650's configuration region, section 282: its MyHarmony configuration
   // declares no number sender.
-  // 35 since that region after 1.4.2's delay write, the same configuration with one delay changed.
-  // 36 since that region after 1.4.3's composed device, section 285, which adds none either, and 37
+  // 35 since that region after its delay write, the same configuration with one delay changed.
+  // 36 since that region after its composed device, section 285, which adds none either, and 37
   // since the region after section 286's tour skip, 39 since the reads either side of 1.4.4's
   // composed activity, section 291, and 40 and 41 since the screen light timer at 20 and at 10. The
   // spare's region before its four page menu, section 293, carries a number sender, so not 42; 42
@@ -582,8 +582,8 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 68 since the compare base for the working screen write, section 279.
   // 69 since the compare base for the power off write, section 280.
   // 70 since the Harmony 650's configuration region, section 282.
-  // 71 since that region after 1.4.2's delay write, the compare base for the revert, and 72 since the
-  // region after 1.4.3's composed device, and 73 since the region after section 286's tour skip,
+  // 71 since that region after its delay write, the compare base for the revert, and 72 since the
+  // region after its composed device, and 73 since the region after section 286's tour skip,
   // 75 since the reads either side of 1.4.4, section 291, 77 since the 20 and 10 second timers, and
   // 78 since the spare's region before its four page menu, section 293, and 79 since the 650's
   // after section 294, and 80 since the Harmony 700's external flash, section 295, and 81 since that

@@ -282,7 +282,7 @@ test('the firmware\'s records, the clock and the widths are the family\'s on all
     assert.equal(c.sections.length, 15, `${label}: fifteen raw slots and so no base slot 14`);
   }
   assert.deepEqual(tally, { firmware: 13, touchFirmware: 0, clockBare: 13, widest: NO_SCREEN_NARROW_MAX, oneWide: 13, fourSlotRefused: 13 });
-  // The family member answers now, where it refused until 5.1.2.
+  // The family member answers now, where it refused before the family's state tables were built.
   assert.equal(NO_SCREEN_FAMILY.stateTables, NO_SCREEN_STATE_TABLES);
 });
 

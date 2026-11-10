@@ -36,7 +36,7 @@
  * architecture 16, whose round trip over all seven files is `frame.test.ts`'s, the name tree builder, the
  * architecture record builder and the timestamp builder reproduce those sections of all seven files byte for byte, the
  * constant sections and lists are built by `noscreenconstants.test.ts` over 13 compiles, the five tables of a count
- * and three byte addresses are rebuilt on all seven from the pieces they name (since 5.1.5, which builds the empty
+ * and three byte addresses are rebuilt on all seven from the pieces they name (the empty build, which builds the empty
  * configuration through the same two generators), the family's own members
  * refuse as the registry says, and the device composer emits lists of exactly the roles the table credits it with. A verdict that stops
  * being true fails here, so a generator written for this family forces the census to move.
@@ -45,7 +45,7 @@
  * 3465 settings of level, strategy, memory level and window, while the same search finds the stream Node's own
  * zlib wrote; stock zlib at its defaults reproduces all six distinct archives, which `tests/
  * test_harmony_350_metadata_deflate.py` holds. So the archive needs a deflate of our own, calibrated against
- * those six, and `deflate.ts` is that deflate: since 5.1.4 `noScreenMetadataSection` builds the archive with it and the
+ * those six, and `deflate.ts` is that deflate: `noScreenMetadataSection` builds the archive with it and the
  * census counts the archive as `builds`, given the two choices below, `metadatabuild.test.ts`. The text around the devices is the same 149 and 610 characters in 7 of 7 compiles, a device's number
  * is the account's, and the ZIP's time is the stamp's less whole hours and 413 to 419 seconds, the three probes
  * below; what the check of 5.2 does about the last two is plan 011's.
@@ -298,7 +298,7 @@ export const VERDICTS: Readonly<Record<string, { verdict: Verdict; by: string }>
   'clock record': { verdict: 'builds', by: 'buildTimestampSection, 7 of 7 files' },
   'infrared group arrays': { verdict: 'builds', by: 'fillIrGroup, into the donor\'s group at its allocation; also run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts' },
   'infrared group table': { verdict: 'builds', by: 'countedTable at NO_SCREEN_COUNT_WIDTHS, the count INFRARED_GROUPS_BY_SKIN in 7 of 7; the five counted tables of all seven compiles rebuilt, the order of the entries being the numbering, description by plan 011; buildEmptyNoScreenConfiguration builds it from nothing' },
-  'infrared record headers': { verdict: 'builds', by: 'composeIrGroup and irBuildRecord through composeDeviceFor, and the digit copies through deviceDigitLists; 51 of the plasma\'s 51 records, word for word; also run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, every device\'s records Logitech\'s by content but the KPN\'s 30 more for its fuller map, the account\'s saved map and not a rule, and since 5.1.7 the LG TV\'s Back and channel finish copy too, noscreenstored.test.ts' },
+  'infrared record headers': { verdict: 'builds', by: 'composeIrGroup and irBuildRecord through composeDeviceFor, and the digit copies through deviceDigitLists; 51 of the plasma\'s 51 records, word for word; also run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, every device\'s records Logitech\'s by content but the KPN\'s 30 more for its fuller map, the account\'s saved map and not a rule, and the LG TV\'s Back and channel finish copy too, noscreenstored.test.ts' },
   'infrared blocks': { verdict: 'builds', by: 'the same; also run onto the empty configuration with no Logitech file, buildNoScreenSetup, noscreenfromnothing.test.ts, the same exceptions' },
   'start up table': { verdict: 'builds', by: 'noScreenStartUpTable, 13 of 13 compiles, noscreenconstants.test.ts' },
   'list, start up': { verdict: 'builds', by: 'noScreenStartUpLists: the hold list, the four device selects and the empty list, 13 of 13 compiles, noscreenconstants.test.ts' },
@@ -604,7 +604,7 @@ test('the device composer emits lists of the roles the census credits it with, a
 
 test('built from nothing, the test setup holds every category of Logitech\'s compile and no other, each from a generator of ours',
   needing(skipWithoutLab(), skipWithoutIrArchive()), () => {
-    // The probe the composers' `builds` rests on since 5.1.6: no Logitech container goes in, so every category the
+    // The probe the composers' `builds` rests on: no Logitech container goes in, so every category the
     // census finds in the result came from a generator of ours, and every category Logitech's compile holds is found.
     const recipe = JSON.parse(readFileSync(new URL('../../../../corpus/setups/h350-test.json', import.meta.url), 'utf8')) as Recipe;
     const keys = {
