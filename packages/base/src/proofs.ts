@@ -115,12 +115,6 @@ export const PROOFS: readonly Proof[] = [
     bench: [],
   },
   {
-    requirement: 2, models: ["harmony-525"],
-    test: "packages/codec/test/screens/render.test.ts",
-    title: "every page of every config draws with nothing left unresolved",
-    bench: [],
-  },
-  {
     requirement: 3, models: ["harmony-touch"],
     test: "packages/codec/test/families/harmony-touch/touch-setup.test.ts",
     title: "describing Logitech's own documents and composing the description gives the same remote: every device, activity, map, favourite and finding, compared by name",
@@ -229,12 +223,6 @@ export const PROOFS: readonly Proof[] = [
     bench: ["docs/test-notes/harmony-350.md"],
   },
   {
-    requirement: 5, models: ["harmony-one"],
-    test: "packages/usb/test/write/blockwrite.test.ts",
-    title: "the transfers tile the block exactly, with no gap and no overlap",
-    bench: ["docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it"],
-  },
-  {
     requirement: 5, models: ["harmony-600"],
     test: "tests/harmony_600_650_700/test_arch14_write_target.py",
     title: "TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore.test_both_writes_ran_the_whole_sequence",
@@ -253,7 +241,7 @@ export const PROOFS: readonly Proof[] = [
     bench: ["docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted"],
   },
   {
-    requirement: 7, models: ["harmony-one", "harmony-650", "harmony-700"],
+    requirement: 7, models: ["harmony-650", "harmony-700"],
     test: "packages/codec/test/compose/composecatalogue.test.ts",
     title: "several devices are refused past the model's device count, under a label already taken, and as an empty list",
     bench: [],
@@ -761,12 +749,6 @@ export const PROOFS: readonly Proof[] = [
     test: "packages/base/test/models.test.ts",
     title: "the six confirmed skins name the models they were confirmed as",
     bench: ["docs/test-notes/harmony-525.md#the-first-session-8-august-2026"],
-  },
-  {
-    requirement: 62, models: ["harmony-300"],
-    test: "packages/usb/test/package/surface.test.ts",
-    title: "the main entry exports exactly its list, by explicit names",
-    bench: ["docs/test-notes/harmony-300.md#the-unit"],
   },
   {
     requirement: 62, models: ["harmony-one"],

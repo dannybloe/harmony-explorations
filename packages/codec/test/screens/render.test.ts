@@ -40,7 +40,6 @@ import {
   screenSwitch,
 } from '../../src/internal.ts';
 import '../../src/support/resources.node.ts';
-import { proves } from '@harmony/testkit/proof';
 /**
  * The whole corpus, safe mode containers included, since those are the counterexamples that have
  * caught two picture readers already, sections 78 and 85.
@@ -75,7 +74,6 @@ const NO_FULL_SCREEN_PICTURE = [
 ];
 
 test('every page of every config draws with nothing left unresolved', skipWithoutLab(), () => {
-  proves(2, ['harmony-525']);
   // The coverage claim, and it is a strong one because it is not a share: over every mode page of every
   // container in the corpus, no picture the program names fails to decode and no glyph code is missing
   // from the font the program selected. A renderer is where a wrong extent or a wrong first glyph code

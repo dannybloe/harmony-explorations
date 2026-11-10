@@ -15,7 +15,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { entryNames } from '@harmony/testkit/surface';
-import { proves } from '@harmony/testkit/proof';
 
 const ENTRY = new URL('../../src/index.ts', import.meta.url);
 const WRITE = new URL('../../src/write.ts', import.meta.url);
@@ -64,7 +63,6 @@ const SUBPATHS = [
 ];
 
 test('the main entry exports exactly its list, by explicit names', async () => {
-  proves(62, ['harmony-300'], ['docs/test-notes/harmony-300.md#the-unit']);
   const names = entryNames(ENTRY);
   assert.deepEqual(names.starExports, [], 'an export * makes every name of a module public by default');
   assert.deepEqual(names.values, VALUES);

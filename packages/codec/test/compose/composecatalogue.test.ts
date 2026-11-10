@@ -200,7 +200,7 @@ test('several catalogue devices composed in one run are the bytes of composing t
 
 test('several devices are refused past the model\'s device count, under a label already taken, and as an empty list',
   needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config')), () => {
-    proves(7, ['harmony-one', 'harmony-650', 'harmony-700']);
+    proves(7, ['harmony-650', 'harmony-700']);
     const base = open('h650_panasonic_config');
     const [pana, knoll] = PAIRS[0]!.devices.map(requestOf) as [CatalogueDeviceRequest, CatalogueDeviceRequest];
     // Six devices; a Harmony 650 holds eight, Logitech's own figure for its account.
