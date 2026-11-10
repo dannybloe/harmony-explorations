@@ -6,10 +6,9 @@
  * device's lists, the input composer for a send of a composed device, and the sequence composer for the
  * configuration's sends and a new one.
  *
- * Moved out of `shared/devices.ts`, `inputs.ts` and `sequence.ts` with `todo-compile-one.md` 3.3.3.4, where
- * each module tested a trait, `sendPrelude`, and built this shape itself; nothing in what is built changed.
- * The donor input matcher has no answer here, `SendShape.donorSendList` absent: it matches a send and its
- * quantity alone, and nothing has matched a send behind this prelude.
+ * The shared device, input and sequence composers ask this rather than each testing a trait and building
+ * the shape itself. The donor input matcher has no answer here, `SendShape.donorSendList` absent: it matches a send
+ * and its quantity alone, and nothing has matched a send behind this prelude.
  */
 import { STATE_BAND } from '../../container/actions.ts';
 import type { DelayDefaults, DeviceSends, ListBody, SendList, SendShape } from '../family.ts';

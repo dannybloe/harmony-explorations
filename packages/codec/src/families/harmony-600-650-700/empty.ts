@@ -1,5 +1,5 @@
 /**
- * The Harmony 650 built from nothing: `todo-compile-650.md` 11.1.1, plan 008.
+ * The Harmony 650 built from nothing, plan 008.
  *
  * Every other route to a configuration starts from a Logitech compile and overwrites parts of it. This one
  * starts from no file at all: it numbers every table entry itself, asks each generator for fresh pieces on
@@ -139,12 +139,12 @@ export function emptyFontTable(
 }
 
 /**
- * The models an empty configuration is built for, by skin: the Harmony 650's two, and since
- * `todo-compile-700.md` the Harmony 700's 66. Its EMEA twin 69 has no compile or unit here and stays out.
+ * The models an empty configuration is built for, by skin: the Harmony 650's two, and the Harmony 700's 66. Its EMEA
+ * twin 69 has no compile or unit here and stays out.
  */
 export type EmptyModel = 'harmony-600' | 'harmony-650' | 'harmony-700';
 /**
- * The skins an empty configuration is built for. The Harmony 600's two since `todo-compile-600.md` 1.1: 73,
+ * The skins an empty configuration is built for. The Harmony 600's two: 73,
  * the European 600 that Logitech's compile of the bench unit's configuration, `h600_config`, states, and 71,
  * `calibration_h600`'s and the one the bench unit itself reports, section 387. A file of ours states the number
  * the remote reports, decision 23, so 71 on the bench 600; the builder takes either.
@@ -255,7 +255,7 @@ export const EMPTY_VARIABLES: readonly (readonly [string, StateVariableSpec])[] 
   ['lowBattery', { first: 0, max: 1 }],
   // Starts at 1, where every compile of Logitech's starts it at 0: the Off screen, "Turning system off", is
   // entered only while it is 1, and nothing on a remote set it on the bench Harmony 700, which read 0 over
-  // USB and showed no Off screen with two files of ours, todo-compile-700.md 2.3. Logitech's own setter is the
+  // USB and showed no Off screen with two files of ours, section 386. Logitech's own setter is the
   // tour's start list, run by an entry point nobody has seen run, section 357; a file of ours holds no tour.
   ['tourMark', { first: 1, max: 1 }],
   ['usb', { first: 0, max: 3 }],
@@ -466,8 +466,8 @@ function ourPicture(pictures: EmptyPictures, name: OurPictureName): ContainerPie
  * Where a corner program draws the mark and the patch over it, the screen's bottom right corner. Logitech's
  * compiles draw them at 114, 112, level with the top of the bottom bar, 70 of 70 on 24 compiles, section 374.
  * Ours are three rows lower, so the mark's 10 rows are centred on the bar's 16, rows 112 to 127, as was asked
- * for at the bench after `todo-compile-650.md` 11.2.4. A program is read at either place, and a state's look
- * added to a configuration takes the place its existing corner program draws at, so patch and mark move together.
+ * for at the bench after a file of ours was seen on the Harmony 650. A program is read at either place, and a state's
+ * look added to a configuration takes the place its existing corner program draws at, so patch and mark move together.
  */
 export const CORNER_PLACES = { logitech: [114, 112], ours: [114, 115] } as const satisfies Record<string, readonly [number, number]>;
 type CornerPlace = (typeof CORNER_PLACES)[keyof typeof CORNER_PLACES];
@@ -567,10 +567,9 @@ export const EMPTY_SCREEN_FONTS = {
 
 /**
  * Which picture each firmware screen draws, by `FIRMWARE_SCREENS` name, the rest the plain background: on the
- * Harmony 650 as on 2 of 2 of its compiles read, and on the Harmony 700 as on its compiles drawn for
- * `todo-compile-700.md` 1.2, which draw a filling battery on the four charging frames, the empty battery the
- * 650 draws on its battery blank screen on "Please charge your remote" instead, and a full battery on the
- * battery blank screen.
+ * Harmony 650 as on 2 of 2 of its compiles read, and on the Harmony 700 as on Logitech's compiles of it, which
+ * draw a filling battery on the four charging frames, the empty battery the 650 draws on its battery blank
+ * screen on "Please charge your remote" instead, and a full battery on the battery blank screen.
  */
 const SIX_FIFTY_SCREEN_PICTURES: Readonly<Record<string, OurPictureName>> = {
   usbConnected: 'USB Connected',
@@ -829,15 +828,16 @@ export interface EmptyFourSlotOptions {
  * setup is composed onto by `assembleSetup`.
  *
  * `buildEmptyConfiguration` takes the look piece by piece, inks, settings, colours and pictures, which only this
- * repository's tests assembled from the choices, so no caller outside them could build one; `todo.md` 7.3.9 found it
- * on no entry. This reads every piece out of one `FourSlotChoices` the way those tests do, and the letters are blended
- * as the choices say. `test/families/harmony-600-650-700/emptyfourslot.test.ts` holds it byte for byte to the tests' own assembly.
+ * repository's tests assembled from the choices, so no caller outside them could build one, and no entry offered
+ * it. This reads every piece out of one `FourSlotChoices` the way those tests do, and the letters are blended
+ * as the choices say. `test/families/harmony-600-650-700/emptyfourslot.test.ts` holds it byte for byte to the tests'
+ * own assembly.
  */
 export function buildEmptyFourSlotConfiguration(options: EmptyFourSlotOptions): EmptyConfiguration {
   const choices = options.choices ?? FOUR_SLOT_CHOICES;
   // A model drawn in one look, the Harmony 600, draws its idle state, as every other, in `oneLookColour`, as every
-  // empty Harmony 600 configuration of ours that a remote ran did, `todo-compile-600.md` 1.2.4 and plan 014's
-  // references; the others draw the idle state colour.
+  // empty Harmony 600 configuration of ours that a remote ran did, section 387 and plan 014's references; the
+  // others draw the idle state colour.
   const idleColour = ONE_LOOK_SKINS.has(options.skin) ? choices.oneLookColour : choices.stateColours.idle;
   return buildEmptyConfiguration({
     skin: options.skin,

@@ -2,8 +2,8 @@
  * How Logitech's compiler lays a device out on the four slot family's pages, the Harmony 600, 650 and 700:
  * which command each hard key takes, `HARD_KEYS`, how a label is sized and split over two lines, how a
  * title is cut, and where the page counter sits. Section 325. What every family shares, which commands go
- * to the keys and which to the screen in what order, is `devicemode.ts`; this moved out of it with
- * `todo-compile-one.md` 3.3.3.3.
+ * to the keys and which to the screen in what order, is the shared `devicemode.ts`; this is the family's own
+ * half.
  *
  * Read off the same twenty devices as the shared half, and two things to know before trusting it:
  *
@@ -146,12 +146,12 @@ export const TITLE_SIZE = LABEL_SIZES[TITLE_RUNG] as LabelSize;
 const LABEL_FACES = ['F15', 'F14W', 'F14', 'F13', 'F11', 'F10'] as const satisfies readonly OxaniumFaceName[];
 
 /**
- * The same six sizes in our letters, `todo-compile-650.md` 8.2.3: each rung is the face `withOxaniumFonts`
- * letters Logitech's sets of that size in, `F15`, `F14W`, `F14`, `F13`, `F11` and `F10`, at Logitech's
- * heights and with every printable character's width, in the weight given per face and its default
- * otherwise, 10.8.5. A configuration re-lettered by `withOxaniumFonts` carries these widths and no others,
+ * The same six sizes in our letters: each rung is the face `withOxaniumFonts` letters Logitech's sets of that
+ * size in, `F15`, `F14W`, `F14`, `F13`, `F11` and `F10`, at Logitech's heights and with every printable
+ * character's width, in the weight given per face, `FourSlotChoices.faceWeights`, and its default otherwise. A
+ * configuration re-lettered by `withOxaniumFonts` carries these widths and no others,
  * so its sizes are recognised by this table and its labels, titles and counters measured in it, `ladderOf`.
- * Built on first use per set of weights, since the faces are rendered on demand, 10.8; the rules
+ * Built on first use per set of weights, since the faces are rendered on demand; the rules
  * themselves, where a label breaks and how far a title may run, are the compiler's in pixels and stay.
  */
 export function oxaniumLabelSizes(weights: Readonly<Partial<Record<OxaniumFaceName, OxaniumWeight>>> = {}): readonly LabelSize[] {
@@ -458,7 +458,7 @@ export function fontsBySize(
  * Logitech's otherwise. Re-lettering leaves no set of Logitech's widths behind, so the two never mix.
  */
 export function ladderOf(c: Container, map: { codes: ReadonlyMap<number, string> }): readonly LabelSize[] {
-  // The weights the configuration's label faces are in, read off its letters, 10.8.5. A label face shares
+  // The weights the configuration's label faces are in, read off its letters. A label face shares
   // its geometry with the regular face of its height, so its sets and the regular face's both read as
   // either; by Logitech's convention, which the choice is held to, the label face is the heavier.
   const weights: Partial<Record<OxaniumFaceName, OxaniumWeight>> = {};

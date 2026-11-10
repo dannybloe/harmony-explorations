@@ -1,21 +1,20 @@
 /**
- * A setup description in, a whole container out: `todo-compile-650.md` 10.6, `docs/findings.md` sections
- * 362 and 364.
+ * A setup description in, a whole container out: `docs/findings.md` sections 362 and 364.
  *
- * Until this module a configuration of ours was a chain of lab scripts, each starting from a Logitech
- * compile and replacing a part: the 6.2.13 file's composers, then the 7.5 file's three screen passes,
- * then 10.2.2's wiring. This is that chain as one function with its inputs named, so that the
- * finish line's audit, 11.1, has one thing to look at and one input to swap:
+ * Before this module a configuration of ours was a chain of lab scripts, each starting from a Logitech
+ * compile and replacing a part: the composers, then the three screen passes, then the wiring. This is that
+ * chain as one function with its inputs named, so that the audit of what is ours, section 380, has one
+ * thing to look at and one input to swap:
  *
  * * **the recipe**, the file `packages/corpus/setups/` already holds, `recipe/recipe.ts`: the model it is
  *   for, the devices, the activities and their order, which devices stay on between activities, each
  *   activity's working screen, and the choices. What the model can hold comes from its definition;
  * * **the donor**, a container every part comes from that no generator builds yet, named as a
- *   parameter rather than buried in a script, so that 11.1 can hand in a different one and count what
+ *   parameter rather than buried in a script, so that the audit can hand in a different one and count what
  *   is left;
  *   its choices are the four slot family's, `FourSlotChoices`: the letters, the backgrounds and their
  *   colours, blending, the settings, which activity key a type of activity takes, what to do with a label
- *   too wide and the delays a device starts with, each the family's default unless given, 10.7.3.
+ *   too wide and the delays a device starts with, each the family's default unless given.
  *
  * **What it does, in order**, each a generator or a composer this project already has and a check that
  * it calibrated against Logitech's compiles:
@@ -47,10 +46,10 @@
  * 14. with the state colours chosen, one flat colour per screen state in place of the designed
  *     backgrounds, decision 20, `withStateBackgrounds`;
  * 15. with our pictures chosen, the six pictures that are no state's background drawn from icons,
- *     `todo-compile-650.md` 9.1.2.2, `buildOurPictures`;
+ *     `buildOurPictures`;
  * 16. with blending chosen, our letters blended into the colour under each text, decision 22,
  *     `withBlendedLetters`. All three run on the placed file, the order the files written to the Harmony 650
- *     were built in, `todo-compile-650.md` 9.1.2.1 and 8.2.6.
+ *     were built in.
  *
  * Step 0 letters the donor in ours when that is chosen, before any composer spells a label.
  *
@@ -68,11 +67,10 @@
  * alone, see `ASSEMBLY_SKINS` and `OUR_DONOR_SKINS` in `skins.ts`. Read only towards hardware, like everything
  * in this package: the result is bytes.
  *
- * **Moved into the family with `todo-compile-one.md` 3.3.3.2**, out of `assemble.ts`, unchanged but for where
- * its names come from: the chain is the Harmony 600, 650 and 700's whole, every step one of this family's
- * generators. What stayed in `assemble.ts` is the renumbering of base slot 10 the chain's step 12 runs,
- * `listCallSites`, `namedLists` and `dropLists`, which reads and rewrites the container's own structures and
- * names no remote. The skin sets it gates on are the family's, `skins.ts`, and the state tables it builds are
+ * **The chain is the family's own**, apart from `assemble.ts`: it is the Harmony 600, 650 and 700's whole,
+ * every step one of this family's generators. What `assemble.ts` keeps is the renumbering of base slot 10 the chain's
+ * step 12 runs, `listCallSites`, `namedLists` and `dropLists`, which reads and rewrites the container's own structures
+ * and names no remote. The skin sets it gates on are the family's, `skins.ts`, and the state tables it builds are
  * the family's own facts, `FOUR_SLOT_STATE_TABLES`, where it asked the registry for them.
  */
 import { type Recipe, recipeTarget } from '../../recipe/recipe.ts';
@@ -191,7 +189,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   // 0. Our letters, before any composer spells a label, so none has to borrow one. Lettering the donor
   //    in our own font table means every set spells every printable character, so every label a composer
   //    writes is drawn in the font its page uses and none is borrowed from another size, and the text
-  //    step places every text in our letters' widths, `withOxaniumFonts`, decision 19, 8.2.3.
+  //    step places every text in our letters' widths, `withOxaniumFonts`, decision 19.
   if (!ours && choices.letters === 'oxanium') {
     const lettered = withOxaniumFonts(takeApart(c), choices.letterInks, choices.faceWeights);
     c = layOutContainer(lettered.layout).container;
@@ -290,8 +288,8 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   }
   // On a donor of ours the composers draw in the colours the file has, the defaults on an empty one, and the
   // chosen ones are written over them here, decision 20: a state's background and corner patch, same length.
-  // A model drawn in one look, the Harmony 600, takes `oneLookColour` for all three, `todo-compile-600.md`
-  // 1.2.4, and refuses state colours chosen apart, which it has no looks to draw in.
+  // A model drawn in one look, the Harmony 600, takes `oneLookColour` for all three, and refuses state colours
+  // chosen apart, which it has no looks to draw in.
   if (ours && oneLook(c)) {
     if (SCREEN_STATES.some((state) => choices.stateColours[state] !== FOUR_SLOT_CHOICES.stateColours[state])) {
       throw new AssemblyError(`the ${setup.model.name} draws every state in one look, so its colour is oneLookColour and not stateColours`);
@@ -308,7 +306,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
     note('state colours', SCREEN_STATES.filter((state) => read[state] !== undefined).join(', '));
   }
 
-  // 15. Our pictures, the six that are no state's background drawn from icons, 9.1.2.2. On the placed file
+  // 15. Our pictures, the six that are no state's background drawn from icons. On the placed file
   //     and after the checks and the colours, since the composers, several checks and the colours' screen
   //     records find the start up picture by Logitech's artwork; before the blending, which reads the colour
   //     under each text.
@@ -365,9 +363,9 @@ function donorFaces(c: Container, choices: FourSlotChoices): SetFace[] {
 }
 
 /**
- * Every parked piece of a kind the placer has no rule for, into the body: `placer.ts`' since `todo-compile-one.md`
- * 6.2, where the Harmony One's composed path takes it too, and re-exported here for the todo-compile-650 10.5 bench
- * file, which imports it from this module.
+ * Every parked piece of a kind the placer has no rule for, into the body: `placer.ts`', where the Harmony One's
+ * composed path takes it too, and re-exported here for a bench script in the lab that places a file our way and
+ * imports it from this module.
  */
 export { composedIntoBody };
 
@@ -482,8 +480,8 @@ export interface AttributedBytes {
  * a word's glyph codes, a setting), since those come from wherever the description came from, which in
  * `assembleSetup` is the donor. Everything else is carried, and is reported by what claims it.
  *
- * This is the count `todo-compile-650.md` 11.1 asks for, "every byte comes from one of our
- * generators", over a finished file and with no memory of how it was made, so it measures a Logitech
+ * This is the count that shows a build from nothing holds nothing of Logitech's, "every byte comes from one of
+ * our generators", section 380, over a finished file and with no memory of how it was made, so it measures a Logitech
  * compile and an assembled container alike.
  */
 export function attributeBytes(c: Container): AttributedBytes {

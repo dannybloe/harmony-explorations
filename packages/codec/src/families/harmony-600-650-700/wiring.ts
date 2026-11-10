@@ -1,20 +1,19 @@
 /**
- * The firmware's own wiring, built from a description: `todo-compile-650.md` 10.2, section 347.
+ * The firmware's own wiring, built from a description, section 347.
  *
  * Section 318's frame lays a container out from pieces and section 324 builds the state variables.
  * What every arch 14 configuration carries besides its devices, activities and screens is the part
  * that connects the remote's own events to the configuration: the log area's three numbers, the event
  * map from a status code to its screen, the parameter block, the timers, base slot 8's leading list of
  * start up entry points, base slot 9's five fixed entries and the one left over, and the action lists
- * those name. Until this module all of it came out of a Logitech compile.
+ * those name. Without this module all of it would come out of a Logitech compile.
  *
  * **What is generated**, each measured on the thirteen compiles section 312 lists:
  *
  * * **The log area**, sixteen thousand eight byte records from `0x1E0000` to `0x200000`, the same on
  *   all thirteen. Of the firmware read, the Harmony One's writes its log area, section 47, and so does
  *   the Harmony 880 and 885's, `tests/harmony_880_885/test_harmony_885_log_area.py`; no arch 14 image here has been
- *   found to. Built by `firmwaresections.ts`, with the parameter block, since
- *   `todo-compile-one.md` 6.4.
+ *   found to. Built by `firmwaresections.ts`, with the parameter block.
  * * **The event map**: thirty firmware status codes, code `k` to mode `N + k`, and `N` is the number of
  *   screens the firmware owns at the front of base slot 6, fourteen on the Harmony 600 and 650 and
  *   nineteen on the Harmony 700. So it follows from the model.
@@ -35,26 +34,25 @@
  *   list the lead calls when the remote goes quiet. Entry 2 is the first the key walk consults,
  *   section 333, so these run under every activity.
  * * **The tree the generated lists call**, section 360: comparisons on the firmware's own variables
- *   and three of the configuration's, `conditionals`, built since `todo-compile-650.md` 10.2.2.
+ *   and three of the configuration's, `conditionals`.
  *
  * **What is carried**, the description: which list, mode, variable, value map or base slot 9 entry a
  * generated structure names when that thing is not itself generated here, every list's index among
- * them. Three lists the generated ones call are not built, each belonging to something the Harmony
- * 650's track leaves out: the restore of saved delays, the Assistant's gate and the Help list of scan
- * 6, read as All Off's; three settings leave them out, `delayRestore`, `remoteAssistant` and `help`.
- * Also carried:
- * the settings, the screen light's time, the tilt sensor, the Remote Assistant and the tour's form,
- * sections 292, 345, 346 and 357, which are the configuration's own; which base slot 9 entry each activity key selects, or that it is
- * empty, section 314; and a device's own timer, a power timer writing one variable, with its place in
- * the table, since what orders the table is not established.
+ * them. Three lists the generated ones call are not built, each belonging to something a configuration of
+ * ours leaves out today: the restore of saved delays, the Assistant's gate and the Help list of scan 6, read
+ * as All Off's, R44 for the help's two and R50 for the Assistant's; three settings leave them out,
+ * `delayRestore`, `remoteAssistant` and `help`. Also carried: the settings, the screen light's time, the tilt
+ * sensor, the Remote Assistant and the tour's form, sections 292, 345, 346 and 357, which are the
+ * configuration's own; which base slot 9 entry each activity key selects, or that it is empty, section 314;
+ * and a device's own timer, a power timer writing one variable, with its place in the table, since what
+ * orders the table is not established.
  *
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  *
  * **The family's catalogue over the shared engine.** The engine, symbols, encoding and putting pieces in a
  * layout, is `wiringparts.ts`, which the Harmony One's catalogue, `families/harmony-one/wiring.ts`, runs on too;
- * this module is the Harmony 600, 650 and 700's catalogue and numbering, asked as `Family.wiring`. It moved
- * here from `src/wiring.ts` with `todo-compile-one.md` 3.3.3.2, unchanged but for where its names come from;
- * the engine's public names, which it used to pass on, the codec's index takes from `wiringparts.ts` itself.
+ * this module is the Harmony 600, 650 and 700's catalogue and numbering, asked as `Family.wiring`. The engine's
+ * public names the codec's index takes from `wiringparts.ts` itself, not through this module.
  */
 import { u16, u24, u8 } from '../../support/bytes.ts';
 import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from '../../container/gspm.ts';
@@ -181,16 +179,16 @@ export interface WiringSettings {
    * a list that clears the settings store's marks, reads every saved delay back into its variable, and
    * erases what no read marked. On every Logitech compile. A configuration without it leaves `start`
    * one call shorter and the configuration does not touch the store at start, so the configuration's
-   * delay wins then, which is `todo-later.md` 3.3.5's reading; the restore itself belongs to that item and
-   * is not built here. An empty restore is not the same: by section 303's reading, not exercised here, it
+   * delay wins then. The restore itself, which lets a delay fixed on the remote override the configuration's,
+   * is not built, R44. An empty restore is not the same: by section 303's reading, not exercised here, it
    * would erase every saved delay at every start.
    */
   delayRestore: boolean;
   /**
    * Whether the configuration carries Help, section 333, which every Logitech compile does. With it,
    * scan 6, read as All Off's, runs a list of Help's that can offer a "Fix it now" wizard instead of
-   * switching off, `todo-later.md` 3.3.3, and the idle entry binds Help's release and hold. Without it,
-   * which is this track's configuration, scan 6 selects the idle entry itself, which is where every path
+   * switching off, and the idle entry binds Help's release and hold. Without it, which is a configuration of
+   * ours today, R44, scan 6 selects the idle entry itself, which is where every path
    * of Help's list that runs none of Help's own lists ends, and the idle entry binds neither.
    */
   help: boolean;
@@ -215,7 +213,7 @@ export interface WiringSpec {
   /**
    * Whether the configuration carries the thirty status screens the event map leads to, which every
    * Logitech compile does and which the firmware never draws from a configuration, section 355. Absent
-   * means they are carried. Without them, `todo-compile-650.md` 11.1.1, the event map's default and every
+   * means they are carried. Without them, as a configuration built from nothing is, the event map's default and every
    * code name the update and learning screens' blank, `NO_STATUS_SCREEN`, which draws nothing and binds
    * no key, so that no code names a mode the configuration does not hold.
    */
@@ -305,7 +303,7 @@ interface Catalogue {
 
 
 /**
- * The lists the generated ones call, `todo-compile-650.md` 10.2.2: a tree of comparisons on the
+ * The lists the generated ones call: a tree of comparisons on the
  * firmware's own variables, whose numbers are the firmware's, and on three of the configuration's, the
  * low battery flag, the tour's mark and, on the Harmony 700, the variable the Assistant's gate tests.
  *
@@ -327,10 +325,9 @@ interface Catalogue {
  *
  * Measured per model over the 22 compiles of sections 356 to 358; the shapes are the same on every
  * compile of a model, the Harmony 600's and 650's identical. Three lists the generated ones call are
- * not built, and the description names them by index: the restore of saved delays, `start.reset`,
- * `todo-later.md` 3.3.5; the Assistant's gate, `assistantGate`, `todo-later.md` 3.3; and the Help
- * list of scan 6, read as All Off's, `allOff`, `todo-later.md` 3.3.3. The configuration this track
- * builds has none of the three, `WiringSettings`.
+ * not built, and the description names them by index: the restore of saved delays, `start.reset`, R44; the
+ * Assistant's gate, `assistantGate`, R50; and the Help list of scan 6, read as All Off's, `allOff`, R44. A
+ * configuration of ours has none of the three today, `WiringSettings`.
  */
 function conditionals(model: WiringModel, settings: WiringSettings, lists: Map<string, WiringInstruction[]>): void {
   const seven = model === 'harmony-700';
@@ -482,7 +479,7 @@ function catalogue(
     settings.remoteAssistant ? { call: 'assistantGate' } : { map: 'locationMap', on: 'location' },
     { map: 'idleMap', on: 'location' }, { write: 'start', value: 0 },
   ]);
-  // Help held five seconds while no activity runs, Help's delay fixing screen, `todo-later.md` 3.3.5.
+  // Help held five seconds while no activity runs, Help's delay fixing screen, R44.
   if (settings.help) lists.set('helpHold', [PUSH_MODE, { enter: 'delayFixing' }]);
 
   // The timers' lists.
@@ -509,7 +506,7 @@ function catalogue(
   addFront('lowBatteryExit', [POP_MODE, { write: 'lowBattery', value: 0 }]);
   // The lead's four start up entry points, then the learned command's screen.
   // `start.reset` is the restore of the delays saved on the remote, section 303, which is carried and
-  // not built: `todo-later.md` 3.3.5. Without it the start list goes straight to the idle entry.
+  // not built, R44. Without it the start list goes straight to the idle entry.
   addFront('start', settings.delayRestore
     ? [{ call: 'boot' }, { call: 'start.reset' }, { select: 'idle' }, { call: 'start.last' }]
     : [{ call: 'boot' }, { select: 'idle' }, { call: 'start.last' }]);
@@ -546,7 +543,7 @@ function catalogue(
       : [{ write: 'menuMarker', value: 0 }, { map: 'locationMap', on: 'location' }],
   });
   // Scan 6, read as All Off's. With Help, a list of Help's that may offer a "Fix it now" wizard before
-  // switching off, carried and not built, `todo-later.md` 3.3.3; without, the Off key map itself, section 335.
+  // switching off, carried and not built, R44; without, the Off key map itself, section 335.
   entry1.set(press(ALL_OFF_SCAN), settings.help ? { call: 'allOff' } : { select: 'idle' });
   entry1.set(0x2d, { op: 0x07, operand: 0xfffa });
   entry1.set(0x10, {
@@ -647,7 +644,7 @@ function generatedSymbols(cat: Catalogue, timerOrder: string[]): Symbols {
 
 /**
  * The symbols a description has to supply for these settings, by kind: every one the catalogue names and
- * does not generate. A builder that numbers a configuration itself, `todo-compile-650.md` 11.1.1, allocates
+ * does not generate. A builder that numbers a configuration itself, `empty.ts`, allocates
  * exactly these; `describeWiring` reads the same ones off a compile.
  */
 export function wiringNeeds(
@@ -723,7 +720,7 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   }
   // The Harmony 700's USB leave handler compares the variable the Assistant's gate compares, and no
   // Harmony 700 compile with the Assistant off has been read, so what Logitech's compiler writes then is
-  // not known. Off is a configuration of ours, `todo-compile-700.md` 1.1: the handler keeps the shape of
+  // not known. Off is a configuration of ours: the handler keeps the shape of
   // Logitech's 700 compiles and compares a variable of ours that nothing writes, so it holds its first
   // value and the handler always maps the location through `usbLeaveMap`. Our choice, section 382; the
   // variable is the configuration's own, past the firmware's eighteen, so the firmware reads nothing into it.
@@ -734,7 +731,7 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   const emptyKeys = ACTIVITY_KEY_SCANS.filter((scan) => spec.activityKeys[scan] === null).length;
   if (!Number.isInteger(spec.activityCount) || spec.activityCount < 0) throw new WiringError(`${spec.activityCount} activities is not a count`);
   // No activity is one Harmony 650 compile's, and on the Harmony 700 and 600 a configuration of ours that
-  // carries the 650's form over, `todo-compile-700.md` 1.1 and `todo-compile-600.md` 1.1, sections 382 and 387.
+  // carries the 650's form over, sections 382 and 387.
   if (spec.activityCount === 0 && emptyKeys !== ACTIVITY_KEY_SCANS.length) throw new WiringError('an activity key selects an entry and there is no activity');
   const cat = catalogue(spec.model, spec.settings, spec.activityKeys, spec.activityCount);
   const order = timerOrder(cat, spec.deviceTimers);
@@ -904,7 +901,7 @@ function wiringShape(layout: ContainerLayout): {
 
 /**
  * The layout with its wiring rebuilt for the activities and activity keys it holds now, from `before`,
- * the description read off it before a composer changed them. `todo-compile-650.md` 11.1.1.5, section 379.
+ * the description read off it before a composer changed them, section 379.
  *
  * Two of the wiring's structures follow the activities: scan 4's front list pushes the "add Activities"
  * screen while there is none and maps the location once there is one, and an empty activity key calls a

@@ -1,5 +1,5 @@
 /**
- * A state's look on a configuration of ours: `todo-compile-650.md` 11.1.1.5, section 377.
+ * A state's look on a configuration of ours, section 377.
  *
  * In the state colours, section 366, a screen of a state draws that state's flat background and queues a
  * corner program whose case 0 paints the corner in the same colour, the case the sending mark is not drawn

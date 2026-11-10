@@ -5,9 +5,8 @@
  * activity composer asks for the shape, `Family.activityStart`; the readers here are the ones every four slot
  * composer reads the start sequence with, `startSequenceOf` and `arch14Starts`.
  *
- * Moved out of `shared/activities.ts` with `todo-compile-one.md` 3.3.3.4, where the shape was an inline test
- * of a trait, `startSequence`, and the readers were four slot facts in a shared module. Nothing in the
- * readers changed; the one test of which family a configuration is in, `startSequenceOf`'s, reads the
+ * The shape and the readers are four slot facts, so they sit in the family rather than behind a test of a
+ * trait in a shared module. The one test of which family a configuration is in, `startSequenceOf`'s, reads the
  * architecture as the family's other modules do rather than asking the registry, which a family never imports.
  */
 import { DEFERRED, STATE_WRITE_BASE } from '../../container/actions.ts';
@@ -63,10 +62,10 @@ export interface StartSequenceVariables {
 
 /**
  * The start variable and the flag of a Harmony 600, 650 or 700 configuration, read off its **Off**
- * key map rather than off an activity, section 329, `todo-compile-650.md` 6.2.4.
+ * key map rather than off an activity, section 329.
  *
- * Until then both were read off the activities' enter lists, `arch14Starts`, which made a
- * configuration with no activity uncomposable: nothing in it said which variable a command prelude
+ * Read off the activities' enter lists, `arch14Starts`, they would leave a configuration with no activity
+ * uncomposable: nothing in it said which variable a command prelude
  * should test. The Off key map is base slot 9's `idle` entry, `handlerSetRoles`, the key map the
  * remote installs when no activity runs, whose enter list maps `CurrentLocation` through base slot 14,
  * section 280; the second condition is what tells it from an activity composed without its menu row
@@ -197,8 +196,8 @@ export function arch14Starts(c: Container): Arch14Starts {
  *
  * What the shared activity composer, `composeActivityFor`, asks this family for once an activity has a
  * screen: whether the screen is one this start can run, the enter list around the activity's own writes,
- * the lists after the select list, and tag 5's own list. `shared/activities.ts` built all of it inline,
- * behind a test of a trait, `startSequence`, until `todo-compile-one.md` 3.3.3.4.
+ * the lists after the select list, and tag 5's own list, so the shared composer builds none of it behind a
+ * test of a trait.
  */
 
 /** A state write of `value` into `variable`, as a list body holds it. */
@@ -251,8 +250,8 @@ export const FOUR_SLOT_START: ActivityStart = {
  * the first activity, or one put on an empty key, changes the shape of the wiring, scan 4's front list and the
  * empty keys' own, so the wiring is described before anything is built and rebuilt at the end, section 379.
  * Only then, so a donor whose wiring is already right for the activity is left byte for byte as it was. The
- * keys it looks at are the family's, `FOUR_SLOT_ACTIVITY_KEY_EDITOR`. `shared/activities.ts` made this choice
- * itself, by a test of the architecture, until `todo-compile-one.md` 3.3.3.4.
+ * keys it looks at are the family's, `FOUR_SLOT_ACTIVITY_KEY_EDITOR`, so the shared composer makes this choice
+ * without a test of the architecture.
  */
 export function fourSlotActivityRewiring(
   c: Container, activityKey: string | undefined,

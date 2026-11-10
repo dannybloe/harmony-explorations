@@ -2,7 +2,7 @@
  * The four slot family's screen layout: the corner layout Logitech's compiler uses on the Harmony 600, 650 and
  * 700, under the names the family's builders use. The figures themselves live once, in the reader's table
  * `CORNER_LAYOUTS` in `cornerlayout.ts`, which reads Logitech's pages with them; these are handles onto that
- * entry and hold nothing of their own. `todo-compile-one.md` 3.3.3.6.
+ * entry and hold nothing of their own.
  */
 import { CORNER_LAYOUTS, cornerCellAt } from '../../inventory/cornerlayout.ts';
 import type { CornerLayout } from '../../inventory/cornerlayout.ts';

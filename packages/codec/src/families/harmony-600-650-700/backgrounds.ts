@@ -1,5 +1,5 @@
 /**
- * The Harmony 650's screen backgrounds as one flat colour per state: `todo-compile-650.md` 9.1.2.
+ * The Harmony 650's screen backgrounds as one flat colour per state, decision 20.
  *
  * Logitech draws the device pages, the device lists, the activity menu and the activities' working screens
  * over five designed pictures, a curved grey or red shape with a cross or a line (section 363). The project
@@ -55,8 +55,8 @@ import {
 } from '../../screens/screen.ts';
 import { contentKey, modeRoles } from '../../screens/screencategories.ts';
 import { buildScreenRecords, describeScreenRecords, screenRecordModes, withScreenRecords } from './screenrecords.ts';
-// The Harmony 650's skins are the family's since `todo-compile-one.md` 3.3.3.5, `families/harmony-600-650-700/skins.ts`,
-// where the font table asks for them too.
+// The Harmony 650's skins are the family's, `families/harmony-600-650-700/skins.ts`, where the font table asks for
+// them too.
 import { DEVICE_MODE_PROGRAM_TAG } from './chrome.ts';
 import { HARMONY_650_SKINS } from './skins.ts';
 import { activityKeyedRecords } from './activityscreen.ts';
@@ -86,28 +86,27 @@ const DEVICE_BACKGROUNDS = new Set(['device page crossed', 'device page of one i
 const STATE_PATCHES = new Set(['corner patch, grey', 'corner patch, red']);
 
 /**
- * The skins our blended letters are built for: the Harmony 650's two, and since `todo-compile-700.md` 1.1 the
- * Harmony 700's 66, whose screens are the 650's raster, faces and bars, section 382. Only a configuration
- * already lettered in our letters is blended, and turning Logitech's letters into ours, the font table, and
- * the state backgrounds stay the Harmony 650's alone, so no Logitech 700 compile passes through this. Its
- * EMEA twin 69 has no compile or unit here and stays out until one is read. The Harmony 600's 71 and 73 since
- * `todo-compile-600.md` 1.2.4, decided on 14 October 2026 once its panel was seen to show a colour as a grey of
- * its own rather than as black or white, section 387.
+ * The skins our blended letters are built for: the Harmony 650's two, and the Harmony 700's 66, whose screens are the
+ * 650's raster, faces and bars, section 382. Only a configuration already lettered in our letters is blended, and
+ * turning Logitech's letters into ours, the font table, and the state backgrounds stay the Harmony 650's alone, so no
+ * Logitech 700 compile passes through this. Its EMEA twin 69 has no compile or unit here and stays out until one is
+ * read. The Harmony 600's 71 and 73 too, decided on 14 October 2026 once its panel was seen to show a colour as a grey
+ * of its own rather than as black or white, section 387.
  */
 export const BLENDED_LETTER_SKINS: ReadonlySet<number> = new Set([...HARMONY_650_SKINS, 66, 71, 73]);
 
 /**
  * The skins a configuration of ours is built for, which `inOurLook` can answer for: the Harmony 650's and 700's,
- * and since `todo-compile-600.md` 1.1 the Harmony 600's 71 and 73. The same skins as the blended letters' since
- * 1.2.4, and kept apart because they were not for a while and need not stay alike.
+ * and the Harmony 600's 71 and 73. The same skins as the blended letters', and kept apart because the two need
+ * not stay alike.
  */
 export const OUR_LOOK_SKINS: ReadonlySet<number> = new Set([...BLENDED_LETTER_SKINS]);
 
 /**
- * The skins a configuration of ours draws in one look for every state, `todo-compile-600.md` 1.2.4: the Harmony
- * 600's, decided on 14 October 2026, since its panel has no colour to tell the states apart by. The idle,
- * device and activity screens then share one background, one corner patch and one corner program, in the
- * idle state's colour, where the other models of ours draw three, decision 20.
+ * The skins a configuration of ours draws in one look for every state: the Harmony 600's, decided on 14 October 2026,
+ * since its panel has no colour to tell the states apart by. The idle, device and activity screens then share one
+ * background, one corner patch and one corner program, in the idle state's colour, where the other models of ours draw
+ * three, decision 20.
  */
 export const ONE_LOOK_SKINS: ReadonlySet<number> = new Set([71, 73]);
 const BACKGROUND_SIZE = 128;
@@ -297,8 +296,8 @@ function cornerOperands(c: Container, mode: number): number[] {
  * result as it reads Logitech's. The idle device list and the activity menu are idle; every other mode the
  * structural readers call a device's or a device list is device mode; and the modes the working screen
  * record enters, one per activity (`activityKeyedRecords`), are activity screens, and so is any other mode
- * queuing their corner program. On the 7.5 file those are the same five modes that draw Logitech's working
- * backgrounds.
+ * queuing their corner program. On the Harmony 650 test setup with every screen record built those are the same five
+ * modes that draw Logitech's working backgrounds.
  */
 export function screenStates(c: Container, layout: ContainerLayout): Map<number, ScreenState> {
   if (c.architecture !== 14 || !HARMONY_650_SKINS.has(layout.skin)) {
@@ -601,7 +600,7 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
           const picture = pictureReference(instruction);
           const b = picture === undefined ? undefined : bitmapAt(c, picture);
           // A patch is a raw fill; the mark the same program draws from 1 to 3 is the encoded kind, Logitech's
-          // and ours alike, `todo-compile-650.md` 9.1.2.2, so its shape tells the two apart and not its bytes.
+          // and ours alike, so its shape tells the two apart and not its bytes.
           if (picture === undefined || b?.stride !== PATCH_WIDTH || b.rows !== PATCH_HEIGHT || b.kind === BITMAP_ENCODED) continue;
           if (!flatIn(picture, colours[state], PATCH_WIDTH, PATCH_HEIGHT)) {
             throw new BackgroundError(`mode ${mode}, a ${state} screen, patches its corner in another colour`);

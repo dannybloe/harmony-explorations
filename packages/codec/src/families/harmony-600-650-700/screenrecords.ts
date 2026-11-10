@@ -1,11 +1,10 @@
 /**
  * The Harmony 600, 650 and 700's three screen records built from a description: the idle device list, the
- * activity menu and Off, `todo-compile-650.md` 7.3, section 356. The four slot family's half of what was one
- * module, `screenrecords.ts`, until `todo-compile-one.md` 3.3.3.2: the machinery every family builds a mode record
- * with, `recordReading`, `recordBuilding`, `withModeRecords` and `assertRebuilt`, stays shared there, and the
- * description, the builder and the check of these three screens are this family's, here. The module's account of
- * what a description carries, what is generated and how the reading is kept honest is in `screenrecords.ts`'
- * header, which describes both halves.
+ * activity menu and Off, section 356. The four slot family's half of the screen records: the machinery every
+ * family builds a mode record with, `recordReading`, `recordBuilding`, `withModeRecords` and `assertRebuilt`, is
+ * shared, in `compose/screenrecords.ts`, and the description, the builder and the check of these three screens
+ * are this family's, here. The account of what a description carries, what is generated and how the reading is
+ * kept honest is in the shared module's header, which describes both halves.
  */
 import { ACTIVITY_MENU_MARKER_VALUE, DEVICE_MENU_MARKER_VALUE, menuMarkerOf } from '../../shared/menus.ts';
 import { SCAN_FOUR_TAG, cornerPrograms, holdsLogitechLook, DEVICE_MODE_PROGRAM_TAG, DEVICES_KEY_TAG } from './chrome.ts';
@@ -417,8 +416,8 @@ export interface BuiltScreenRecords {
 }
 
 /**
- * Build the three screen records from a description, `todo-compile-650.md` 7.3. `c` is read for its fonts
- * and its character map only, which spell the words and place the texts, `todo-compile-650.md` 8.2's.
+ * Build the three screen records from a description. `c` is read for its fonts and its character map only,
+ * which spell the words and place the texts, in Logitech's letters or ours.
  *
  * Every menu page is `menuPageParts`', section 334, and Off's is `fixedLineScreenParts` with
  * `OFF_TITLE`, section 336's start up screen with another title. The rows fill the pages in order, four

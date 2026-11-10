@@ -2,12 +2,10 @@
  * The four slot family's state tables, the Harmony 600, 650 and 700: the facts `buildStateTables` builds base
  * slots 0, 13 and 14 from, `FOUR_SLOT_STATE_TABLES`, and the variables only this family's compiles name, a
  * device's delay variables and the two every activity reads. Measured over the thirteen compiles section 312
- * lists, `todo-compile-650.md` 10.3; moved out of `statetables.ts` with `todo-compile-one.md` 3.3.3.3, which
- * keeps the builder, generic, and takes these as the family's.
+ * lists. The builder is generic, in `assembly/statetables.ts`, and takes these as the family's.
  *
- * The Harmony One's tables differ in four values, `todo-compile-one.md` 2.3: records 13 and 14, a one byte case
- * count, where the width line falls, and a second transition on the minute. Its family states them,
- * `families/harmony-one/statetables.ts`, since chapter 6 of that plan.
+ * The Harmony One's tables differ in four values: records 13 and 14, a one byte case count, where the width
+ * line falls, and a second transition on the minute. Its family states them, `families/harmony-one/statetables.ts`.
  */
 import { firmwareStateVariableMax } from '../../inventory/inventory.ts';
 import { VALUE_MAP_COUNT_WIDTH } from '../../container/valuemap.ts';
@@ -78,8 +76,7 @@ export function deviceDelayVariables(
 /**
  * A delay variable's stated maximum, which bounds nothing, section 301. On every one of them the name ends
  * `_65278`, one more, like every variable's, section 86; wider than either table, which is the compiler's.
- * The device composer's delays name it too, `sends.ts`; it moved here from `statetables.ts` with
- * `todo-compile-one.md` 3.3.3.4, once a send's shape was the family's.
+ * The device composer's delays name it too, through the family's send shape, `sends.ts`.
  */
 export const DELAY_MAX = 65277;
 
@@ -98,8 +95,8 @@ const DEFAULT_DELAY_MAX = 254;
  * to 59 and `F` from 28 to 44. A description that holds these two gets their indices from
  * `buildStateTables`' `indexOf`, which is where a composer building from nothing reads them.
  *
- * The family's start sequence, `start.ts`, checks a configuration's against these; they moved here from
- * `statetables.ts` with `todo-compile-one.md` 3.3.3.4, once the start sequence was the family's.
+ * The family's start sequence, `start.ts`, checks a configuration's against these, which is why they are the
+ * family's and not the generic builder's.
  */
 export function startSequenceVariables(): StateVariableSpec[] {
   return [{ first: 0, max: 1 }, { first: 0, max: 1 }];

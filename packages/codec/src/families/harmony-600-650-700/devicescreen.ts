@@ -394,7 +394,7 @@ export function composeFourSlotDeviceScreen(
   // 14 that every device mode carries, are copied as they are, and the four corners are nothing
   // because a page binds them.
   const lists = c.actionLists() ?? [];
-  // The shape is built, `deviceModeKeyMap`, 6.2.7; under the plain layout which command a key sends is
+  // The shape is built, `deviceModeKeyMap`; under the plain layout which command a key sends is
   // still matched by frame against `keysLike`'s device, or the first row's, entry by entry with the tag.
   const shape = deviceModeKeyMap(c, template.device);
   if (template.keyMode === undefined && compiled === undefined) {

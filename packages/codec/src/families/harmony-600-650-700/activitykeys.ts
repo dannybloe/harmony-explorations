@@ -38,8 +38,8 @@
  * it. The Harmony One's activity keys have not been compared and every function here refuses another
  * architecture rather than guessing that they agree.
  *
- * The four slot family's own since `todo-compile-one.md` 3.3.3.3: a shared composer reaches it through the
- * family's `activityKeyEditor`, `FOUR_SLOT_ACTIVITY_KEY_EDITOR` below, and never by importing it.
+ * The four slot family's own: a shared composer reaches it through the family's `activityKeyEditor`,
+ * `FOUR_SLOT_ACTIVITY_KEY_EDITOR` below, and never by importing it.
  */
 import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, modeRecords, taggedList } from '../../container/sections.ts';
 import type { TaggedList } from '../../container/sections.ts';

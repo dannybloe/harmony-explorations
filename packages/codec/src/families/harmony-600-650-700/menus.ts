@@ -41,8 +41,8 @@ import { FOUR_SLOT_ITEMS, FOUR_SLOT_STORED_ORDER, FOUR_SLOT_LEFT_X, FOUR_SLOT_RI
 
 /**
  * What a composer reads out of an arch 14 configuration before it moves anything. The chrome and the
- * backgrounds are built, `deviceModeChrome`; the fonts are still the first device page's,
- * `todo-compile-650.md` 6.2.12.
+ * backgrounds are built, `deviceModeChrome`; the fonts are still the first device page's, since they are the
+ * configuration's own numbering of its font sets.
  */
 export interface FourSlotTemplate {
   /** The chrome around a page's middle, built: a device page's, or a working screen's since section 336. */
@@ -82,7 +82,7 @@ export function fourSlotTemplate(c: Container, keysLike: string | undefined): Fo
       keyMode: undefined };
   }
 
-  // The fonts, from the first device mode page whose program has the measured shape, 6.2.12.
+  // The fonts, from the first device mode page whose program has the measured shape.
   for (const mode of deviceModes) {
     for (const page of records[mode]?.pages ?? []) {
       const program = screenProgram(c, page.program);
@@ -188,7 +188,7 @@ export function menuLayout(
  * item takes the next corner, one list, or both buttons of the next row, two. What those lists run is
  * the caller's, which is the whole difference between the two menus.
  *
- * **The page is the built one before and after**, section 334, `todo-compile-650.md` 6.2.9: the last page
+ * **The page is the built one before and after**, section 334: the last page
  * has to be the page `menuPageParts` builds from what it holds, or the growth is refused before anything
  * moves, and the grown page has to be the one built from what it holds then. The label goes where the
  * builder places it, and the background is the built one, `fourSlotMenuChrome`: a corner list's crossed
@@ -348,9 +348,8 @@ const NEW_PAGE_POINTED: ReadonlySet<string> = new Set(['title', 'bottom']);
  * A new last page on an arch 14 menu whose last page is full, holding the one item being added, and
  * every page of the menu then counting to the new total: a device list's, section 312, and the
  * activity menu's, section 316. The arch 14 counterpart of the Harmony One's `composeMenuPage`, and
- * **the page is built**, section 334, `todo-compile-650.md` 6.2.9: `menuPageParts` for the menu's kind,
- * which is every page of every menu of the thirteen compiles, `checkFourSlotMenuPages`. Until then the
- * page copied its chrome, the instructions above its title and below its labels, off the menu's own last
+ * **the page is built**, section 334: `menuPageParts` for the menu's kind, which is every page of every menu
+ * of the thirteen compiles, `checkFourSlotMenuPages`, rather than its chrome copied off the menu's own last
  * page.
  *
  * What is built, by kind, `fourSlotMenuChrome`: the background of a page holding one place, the device
@@ -361,7 +360,7 @@ const NEW_PAGE_POINTED: ReadonlySet<string> = new Set(['title', 'bottom']);
  * menu's own counter font or the caller's `counterDefault` where no page of the menu draws one; the item
  * in the first place, top left at x 3 and y 40 or the top row's two buttons with the label centred at
  * y 35; and the six byte page record, the list then the program. The title font is read off the menu's
- * last page, and the label's font is the caller's, both `todo-compile-650.md` 6.2.12.
+ * last page, and the label's font is the caller's, both being the configuration's own numbering of its font sets.
  *
  * **What does not change is as much a measurement as what does.** A menu's own record list is the same
  * on one page and on several, sections 312 and 316, so nothing like the Harmony One's deadened page turn
@@ -436,8 +435,8 @@ export function openFourSlotMenuPage(
   };
 
   // 1 to 5. The pool copy, the page's own list, the entry, the block and the swap, the steps every family that
-  // opens a page shares, `appendModePage`, which held them here until `todo-compile-885.md` 2.1. The copy's list
-  // is written first and the page's own second, so the copy binds the lower row lists, as before. The page is
+  // opens a page shares, `appendModePage`. The copy's list is written first and the page's own second, so the
+  // copy binds the lower row lists. The page is
   // built when the helper asks, from the chrome located in the container as it then is, so no address it embeds
   // is stale.
   const copyBytes = pageList();
@@ -532,19 +531,17 @@ function paginateFourSlot(
 /*
  * ---- An arch 14 menu page, built, section 334 ----
  *
- * `todo-compile-650.md` 6.2.9. Until here a menu that grew took its new page's chrome off its own last
- * page, the instructions above the title and below the labels copied, and a page that grew from one item
- * to two took its background off one of the menu's full pages. Both are built now, the way section 330
- * built a device mode page's: the pictures by content per look, the queued program by the corner patch
- * it draws, the title and the bottom word by the menu's kind, the counter and the labels by the rules
- * sections 285, 312 and 316 measured, and the page record as six bytes. Every page of every menu of the
+ * A grown menu's new page and a page that grows from one item to two are built rather than copied off the
+ * menu's own pages, the way section 330 built a device mode page's: the pictures by content per look, the queued
+ * program by the corner patch it draws, the title and the bottom word by the menu's kind, the counter and the labels
+ * by the rules sections 285, 312 and 316 measured, and the page record as six bytes. Every page of every menu of the
  * thirteen compiles is then the built page, `checkFourSlotMenuPages`, and a grown or opened page is
  * checked against the builder before it is returned.
  *
  * What is still read off the configuration: the **fonts** of the title, the counter and each label, which
- * are the configuration's own numbering of its font sets, `todo-compile-650.md` 6.2.12; which device list
+ * are the configuration's own numbering of its font sets; which device list
  * is the idle one, read off base slot 14 the way the remote reaches it; and the pictures' and the texts'
- * **addresses**, since the bytes are the configuration's until chapter 9 builds them.
+ * **addresses**, since the bytes are already in the configuration, Logitech's or drawn by ours.
  */
 
 /**
@@ -665,7 +662,7 @@ export interface FourSlotMenuChrome {
 }
 
 /**
- * A menu page's chrome for one kind of menu, built, `todo-compile-650.md` 6.2.9:
+ * A menu page's chrome for one kind of menu, built:
  *
  * * **the look is the device mode pages'**, `deviceModeChrome`, so the two bars are the same pictures;
  * * **the background**: a corner device list's is the device mode pages' own, the one item picture on a
@@ -773,7 +770,7 @@ export interface FourSlotMenuLabel {
 /**
  * What a menu page holds, which is what the builder does not decide: its number and its menu's page
  * count, the title and counter fonts, and per place in fill order its label. The fonts are read off the
- * configuration, `todo-compile-650.md` 6.2.12.
+ * configuration, its own numbering of its font sets.
  */
 export interface FourSlotMenuPageContent {
   number: number;

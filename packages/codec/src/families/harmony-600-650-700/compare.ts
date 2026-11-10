@@ -1,8 +1,7 @@
 /**
- * Two configurations of the same setup, compared by what a person sees and hears, `todo-compile-650.md`
- * 5.2: every key and every screen item, in every activity, in device mode and with nothing running.
- * The four slot family's since `todo-compile-one.md` 3.3.3.2, which is the only family it has been run on: the
- * Harmony 600, 650 and 700.
+ * Two configurations of the same setup, compared by what a person sees and hears: every key and every screen
+ * item, in every activity, in device mode and with nothing running. The four slot family's, which is the only
+ * family it has been run on: the Harmony 600, 650 and 700.
  *
  * **Why not compare bytes.** Two compiles of one setup share almost no addresses, list numbers or page
  * numbers, section 154, and ours is laid out by our own composers besides. So each file is first
@@ -19,7 +18,7 @@
  *
  * **What it does not see.** Pauses inside a sequence and the timing of a start, since a send list's
  * `0x7C` quantities are not part of what a binding sends here; the Help and Remote Assistant screens,
- * which 5.2 leaves out; and screen text other than a corner item's label, a page's title included. A
+ * which a configuration of ours leaves out; and screen text other than a corner item's label, a page's title included. A
  * binding that sends nothing, navigation, is compared by its presence and not by where it leads.
  */
 import type { Container } from '../../container/gspm.ts';

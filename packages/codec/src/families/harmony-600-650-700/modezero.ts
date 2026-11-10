@@ -26,10 +26,9 @@
  * three ties at their capacity whose order the rule does not give. The Harmony One's firmware screens bind
  * another keypad, `families/harmony-one/firmwarescreens.ts`' own, so `keyMapEntries` is this family's too.
  *
- * Moved out of `modezero.ts` with `todo-compile-one.md` 3.3.3.2, unchanged: the population, the key map over
- * scans 1 to 54 and that scan range are this family's, and the hash order every family's lists are stored in
- * stayed shared. `screenrecords.ts`, a four slot module still outside the family, takes the scan range through
- * the family's index.
+ * The population, the key map over scans 1 to 54 and that scan range are this family's, and the hash order
+ * every family's lists are stored in is shared, `container/modezero.ts`. `screenrecords.ts` takes the scan
+ * range from here.
  */
 import { POP_MODE, STATE_WRITE_BASE } from '../../container/actions.ts';
 import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from '../../inventory/inventory.ts';

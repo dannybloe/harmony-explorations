@@ -1,8 +1,8 @@
 /**
  * How the four slot family's font sets are lettered in our letters, `withOxaniumFonts`: which of our faces a
  * set of Logitech's becomes, whether sets may share a glyph, and which of the family's remotes the faces were
- * measured on. `fonttable.ts` held all three as tests of the architecture and the skin until
- * `todo-compile-one.md` 3.3.3.5; it measures a set and asks the family, `Family.fonts`.
+ * measured on. `fonttable.ts` measures a set and asks the family, `Family.fonts`, rather than testing the
+ * architecture and the skin itself.
  *
  * **Which of our faces a set gets is read off the set**, by four measurements that tell Logitech's faces
  * apart: its height, whether its glyphs carry a shadow, the stroke, as the median run of ink along a row,
@@ -33,7 +33,7 @@ import type { FaceOrRefusal, SetMeasurement } from '../../drawing/fonttable.ts';
 import type { OxaniumFaceName } from '../../drawing/lettering.ts';
 import { HARMONY_650_SKINS } from './skins.ts';
 
-/** The nine faces measured on the Harmony 650, `todo-compile-650.md` 8.2. `lettering.ts` held this until 3.3.3.5. */
+/** The nine faces measured on the Harmony 650. */
 export const HARMONY_650_FACES: readonly OxaniumFaceName[] = ['F15', 'F14W', 'F14', 'F13', 'F11', 'F10', 'R15', 'R14', 'R13'];
 
 /** The face of ours a four slot set measured so is lettered in, by the table in the header. */

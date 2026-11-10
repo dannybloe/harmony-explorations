@@ -66,8 +66,8 @@ import { OUR_LOOK_SKINS } from './backgrounds.ts';
  * * a row is two instructions, enter the mode and write the marker, with no beep.
  *
  * A menu whose last page is full gets a new page, `openFourSlotMenuPage`, and every page of it then
- * counts to the new total, `paginateFourSlot`, since todo-compile-650 2.3; until then it was refused,
- * because a new page renumbers every page counter of that menu. What is still refused is a tenth page,
+ * counts to the new total, `paginateFourSlot`, which is the work a new page needs, because it renumbers
+ * every page counter of that menu. What is still refused is a tenth page,
  * whose counter would be two digits drawn further left, which nothing here writes. The `0x7F`
  * delay step in front of every arch 14 command is not this function's: `composeDevice` emits it,
  * section 287, with the device's `InterDeviceDelay` variable and its table.
@@ -87,7 +87,7 @@ import { OUR_LOOK_SKINS } from './backgrounds.ts';
  * top row and 75 and 90 in the bottom, on all 880 such labels section 323 counted, which is the label
  * font's line height and also had a copy here.
  *
- * **A label its font cannot hold goes down a size**, `smaller`, `todo-compile-650.md` 8.2.3: the compiler
+ * **A label its font cannot hold goes down a size**, `smaller`: the compiler
  * draws `Antenna`, 60 pixels in the page's font, in another font, section 323, the one such corner label
  * in its compiles, and on a device mode page it walks the sizes down by the same test, section 325. It is
  * the case our letters make common, whose `T` and `t` are wider than Logitech's in the largest size, so
@@ -161,7 +161,7 @@ export const FOUR_SLOT_COUNTER_X: readonly [number, number, number] = [0x6a, 0x7
 /**
  * A corner page's counter places in the letters a configuration carries, `ladderOf`: the chain
  * `pageCounter` puts against the right edge, which is `FOUR_SLOT_COUNTER_X` in Logitech's letters and
- * `107, 113, 119` in ours, `todo-compile-650.md` 8.2.3. Measured on `1/2`, which stands for every one
+ * `107, 113, 119` in ours. Measured on `1/2`, which stands for every one
  * digit counter because every digit of the title's size is one width in both ladders, which
  * `devicemode.test.ts` holds.
  */
@@ -203,20 +203,19 @@ export function sentFrame(c: Container, list: readonly Instruction[] | undefined
 /*
  * ---- A device mode page's chrome and a device mode's key map, built, section 330 ----
  *
- * `todo-compile-650.md` 6.2.6 and 6.2.7. Until then the composer took a device mode page's chrome, its
- * background, the queued program, the two bars and the bottom word, off the first device page of the
- * configuration it extended, the two backgrounds by majority over every device page, and the shape of a
- * new device mode's key map off another device's mode. Each is now built: the instructions from the
+ * A device mode page's chrome, its background, the queued program, the two bars and the bottom word, and the
+ * shape of a new device mode's key map are built rather than taken off a page or a mode the configuration
+ * already has: the instructions from the
  * geometry every device page on the thirteen Logitech compiles shares, the pictures by their content out
  * of the fixed set of section 317, the queued program by a rule over base slot 11, and the key map's
  * tags from section 325's key table in the compiler's hash order. What the configuration holds is then
  * checked against what is built, as sections 319 and 329 did for what they built.
  *
  * What is still read off the configuration and why: the title, counter and label **fonts**, which are
- * the configuration's own numbering of its font sets, `todo-compile-650.md` 6.2.12; the **record** the
+ * the configuration's own numbering of its font sets; the **record** the
  * key under Devices maps through, which is read off the activity menu, since a record's index is the
  * description's order, section 324; and the pictures' and the bottom word's **addresses**, since the
- * bytes are the configuration's until chapter 9 builds them.
+ * bytes are already in the configuration, Logitech's or drawn by ours, `pictures.ts` and `backgrounds.ts`.
  */
 
 /**
@@ -234,7 +233,7 @@ export function sentFrame(c: Container, list: readonly Instruction[] | undefined
  * section 131's pairing carries over to pictures, which nothing here has read, so they are refused.
  *
  * The keys are content hashes and not the pictures; a key names a picture the configuration already
- * carries and nothing here can draw one. That waits for `todo-compile-650.md` chapter 9.
+ * carries, and nothing here draws one: the pictures of ours are drawn by `pictures.ts` and `backgrounds.ts`.
  */
 export interface DevicePageLook {
   name: string;
@@ -248,7 +247,7 @@ export interface DevicePageLook {
   /** The corner patch the queued program draws first, which is what ties that program to this look. */
   cornerPatch: string;
   /**
-   * The menus' own pictures, section 334, `todo-compile-650.md` 6.2.9: the background every page of the
+   * The menus' own pictures, section 334: the background every page of the
    * two row device list draws, whatever it holds; the activity menu's background on a page holding two
    * activities and on one holding one; and the corner patch the program the activity menu queues draws.
    * Measured on the thirteen compiles: the two row list's on all 43 pages of its 13 lists, whether they
@@ -267,7 +266,7 @@ export interface DevicePageLook {
   activitiesSingle: string;
   activitiesPatch: string;
   /**
-   * An activity's own two screens, section 336, `todo-compile-650.md` 6.2.10: the picture every start up
+   * An activity's own two screens, section 336: the picture every start up
    * screen draws, one per look and the same for every activity, 40 of 40 on the thirteen compiles, and
    * the background of a working screen page holding two commands or more, 42 pages of 42. A working page
    * of one command or none draws `activitiesSingle`, the activity menu's page of one activity, 21 of 21,
@@ -355,8 +354,8 @@ export interface DeviceModeChrome extends PageFrame {
    * The pictures' addresses, located by content. The crossed background is always held, since every
    * compile has a device page of several commands. **The one item background need not be**: a compile
    * carries only the pictures its pages draw, and Logitech's compile of the Harmony 650's starting
-   * setup, `h650_start_config`, has no device page of one command and so no such picture,
-   * `todo-compile-650.md` 3.9. Undefined then, and a page that needs it is refused where it is drawn.
+   * setup, `h650_start_config`, has no device page of one command and so no such picture. Undefined then, and a page
+   * that needs it is refused where it is drawn.
    */
   single: number | undefined;
   crossed: number;
@@ -490,7 +489,7 @@ export function holdsLogitechLook(c: Container): boolean {
 }
 
 /**
- * A device mode page's chrome in this configuration, built, `todo-compile-650.md` 6.2.6: the look its
+ * A device mode page's chrome in this configuration, built: the look its
  * skin and its pictures decide, the five pictures located by content, the corner program by
  * `deviceCornerProgram`, and the bottom word spelled in the first font of the title's size, which is the
  * font it is drawn in on every device page here, centred on its line, and pointed at the inline copy
@@ -548,12 +547,10 @@ export function deviceModeChrome(c: Container, colour?: number): DeviceModeChrom
 export const OUR_LOOK = 'state colours';
 
 /**
- * Whether a configuration's pages are drawn in our look: a Harmony 650's or, since `todo-compile-700.md` 2.1,
- * a Harmony 700's, and since `todo-compile-600.md` 1.1 a Harmony 600's, `OUR_LOOK_SKINS`, holding none of
- * Logitech's device page looks whole, of any skin. A
- * Logitech compile whose skin names a look nobody measured still holds its artwork, so it is refused as an
- * unmeasured look rather than read as ours; all seven of Logitech's Harmony 700 compiles in the lab hold one
- * whole and read as not ours, section 382's review.
+ * Whether a configuration's pages are drawn in our look: a Harmony 600's, 650's or 700's, `OUR_LOOK_SKINS`,
+ * holding none of Logitech's device page looks whole, of any skin. A Logitech compile whose skin names a look
+ * nobody measured still holds its artwork, so it is refused as an unmeasured look rather than read as ours; all seven
+ * of Logitech's Harmony 700 compiles in the lab hold one whole and read as not ours, section 382's review.
  */
 export function inOurLook(c: Container): boolean {
   // Once per container and its bytes, `memo.ts`: each chrome reader asks, and a composer reads several
@@ -680,7 +677,7 @@ export function checkPageFrames(c: Container, chrome: PageFrame, modes: readonly
         && [...(word.glyphs ?? [])].join(',') === chrome.backCodes.join(',');
       // And it may point at an earlier copy of the same word that is no page's bottom word: an activity
       // named "Back" draws one on the activity menu, lower in the file, and the text pass points every later
-      // copy at the first, todo-compile-650 11.2.2. The glyphs drawn are the word's either way.
+      // copy at the first. The glyphs drawn are the word's either way.
       const pointsAtWord = chrome.look === OUR_LOOK && word.opcode === SCREEN_TEXT_AT
         && [...(glyphsReferencedBy(c, word) ?? [])].join(',') === chrome.backCodes.join(',');
       if (at !== [chrome.backX, DEVICE_PAGE_BACK_Y].join(',') || !(isHome || pointsHome || ownCopy || pointsAtWord)) {
@@ -772,11 +769,11 @@ export function fourSlotActivityMenu(c: Container): number | undefined {
 export type KeyMapEntry = Pick<TaggedEntry, 'tag' | 'operand' | 'opcode'>;
 
 /**
- * A device mode's own key map before any key is bound, built, `todo-compile-650.md` 6.2.7: **47
- * entries**, a press of every hard key section 325's `HARD_KEYS` lists, of the four corners and of the
- * key under Devices, and the program tag, stored in `compilerTagOrder`'s order. The key under Devices
- * maps the activity counter through the record the activity menu maps it through, the program tag runs
- * the chrome's corner program, and every other entry is bound to nothing until a caller binds a key.
+ * A device mode's own key map before any key is bound, built: **47 entries**, a press of every hard key section 325's
+ * `HARD_KEYS` lists, of the four corners and of the key under Devices, and the program tag, stored in
+ * `compilerTagOrder`'s order. The key under Devices maps the activity counter through the record the activity menu
+ * maps it through, the program tag runs the chrome's corner program, and every other entry is bound to nothing until a
+ * caller binds a key.
  *
  * Then every device mode the configuration holds is checked against it: the same tags in the same
  * order, the same two entries, and every other entry a list or nothing, on all 83 device modes of the

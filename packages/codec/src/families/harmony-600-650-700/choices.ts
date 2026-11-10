@@ -1,7 +1,7 @@
 /**
- * Every choice of ours the four slot family makes, the Harmony 600, 650 and 700, each with the value it
- * had as a constant before `todo-compile-650.md` 10.7.3 as its default. A recipe sets them; nothing in the
- * family's code decides one of these on its own.
+ * Every choice of ours the four slot family makes, the Harmony 600, 650 and 700, each with the value the code
+ * used before it was a choice as its default, so a build that states no choice comes out as it did. A recipe
+ * sets them; nothing in the family's code decides one of these on its own.
  *
  * **What sorted a constant into this file** is that nothing on a remote or in Logitech's compiles fixes
  * it: a colour, a face, a delay a device starts with, which activity key a type of activity takes, what to
@@ -16,10 +16,10 @@
  *   But while a configuration is a Logitech compile patched, the pages the donor brings carry Logitech's
  *   English, and several readers find a page by its words (the placeholder, a menu by its title), so a
  *   chosen language would split one remote's screens between two and blind those readers. They become a
- *   choice when a configuration is built rather than patched, todo 11.1.1.
+ *   choice only where a configuration is built rather than patched, as `empty.ts` builds one.
  *
  * Which of our faces letters each of Logitech's sizes is not a choice: each face's rows are Logitech's,
- * measured in 8.2, and the outline is fitted to them. Its weight is, `faceWeights`, since 10.8.5.
+ * measured off their sets, and the outline is fitted to them. Its weight is, `faceWeights`.
  */
 import type { ActivityKey } from './activitykeys.ts';
 
@@ -41,12 +41,12 @@ export interface FourSlotChoices extends CommonChoices {
    */
   readonly letters: 'logitech' | 'oxanium';
   /**
-   * Our letters blended into the one colour under each text, decision 22, `todo-compile-650.md` 8.2.6
-   * (`withBlendedLetters`). Only our letters can be blended, since only theirs come with grey levels.
+   * Our letters blended into the one colour under each text, decision 22 (`withBlendedLetters`). Only our letters can
+   * be blended, since only theirs come with grey levels.
    */
   readonly blendLetters: boolean;
   /**
-   * The colours our letters are drawn in, `todo-compile-650.md` 10.7.5: any three different colours, since
+   * The colours our letters are drawn in: any three different colours, since
    * a letter is read back by its form and not its ink, and two alike would leave its shadow or its colouring
    * unreadable. The default is decision 20's white over a black shadow, and dark on the bars: Logitech's own
    * grey, `0x2104`, the one ink all 39 of their bar fonts hold across the 13 Harmony 650 compiles, kept
@@ -54,22 +54,22 @@ export interface FourSlotChoices extends CommonChoices {
    */
   readonly letterInks: LetterInks;
   /**
-   * The Oxanium weight each of our nine faces is drawn in, `todo-compile-650.md` 10.8.5: decided by look in
-   * 8.2, SemiBold for the six label faces and Regular for the three regular ones Logitech draws its start up,
-   * Off, Remote Assistant, Help and tour screens in. Any of the seven is read back, since our alphabet holds
-   * every weight and a configuration's size table is built from the weights its letters are in, `ladderOf`.
+   * The Oxanium weight each of our nine faces is drawn in, decided by look: SemiBold for the six label faces and
+   * Regular for the three regular ones Logitech draws its start up, Off, Remote Assistant, Help and tour screens in.
+   * Any of the seven is read back, since our alphabet holds every weight and a configuration's size table is built
+   * from the weights its letters are in, `ladderOf`.
    */
   readonly faceWeights: Readonly<Record<OxaniumFaceName, OxaniumWeight>>;
   /**
    * The six pictures that are no state's background, the start up picture, the corner mark and the four
    * firmware screen pictures: Logitech's, as the donor carries them, or ours, an icon of Material Design
-   * Icons each, `todo-compile-650.md` 9.1.2.2 (`buildOurPictures`). Every assembly measured against a
+   * Icons each (`buildOurPictures`). Every assembly measured against a
    * Logitech compile needs theirs.
    */
   readonly pictures: 'logitech' | 'ours';
   /**
    * Which icon each of our pictures draws, by Material Design Icons' own name, chosen by look beside
-   * Logitech's in 9.1.2.2: a remote for starting an activity, the USB symbol, a battery with an alert, a
+   * Logitech's: a remote for starting an activity, the USB symbol, a battery with an alert, a
    * battery crossed out, two turning arrows for upgrading and learning, and a signal fan for the mark,
    * the one of the candidates still legible at 12 by 10.
    */
@@ -79,7 +79,7 @@ export interface FourSlotChoices extends CommonChoices {
   readonly iconBackground: number;
   /**
    * The backgrounds of the five designed screens: Logitech's pictures, as the donor carries them, or one
-   * flat colour per screen state, decision 20, `todo-compile-650.md` 9.1.2.1 (`withStateBackgrounds`).
+   * flat colour per screen state, decision 20 (`withStateBackgrounds`).
    */
   readonly backgrounds: 'designed' | 'state colours';
   /** The colour of each screen state, as RGB565, when `backgrounds` is `state colours`. */
@@ -87,8 +87,8 @@ export interface FourSlotChoices extends CommonChoices {
   /**
    * The one colour every state is drawn in on a model drawn in one look, `ONE_LOOK_SKINS`, the Harmony 600,
    * in place of `stateColours`: decided on 14 October 2026, grey 2 of sixteen from black to white, off a
-   * preview of `todo-compile-600.md` 1.2.3's test card; not yet seen on the remote. Logitech's own 600 compiles
-   * use the same value among their greys.
+   * preview of a test card of sixteen greys, and seen on the remote afterwards, section 387. Logitech's own 600
+   * compiles use the same value among their greys.
    */
   readonly oneLookColour: number;
   /**
@@ -99,7 +99,7 @@ export interface FourSlotChoices extends CommonChoices {
   /**
    * A corner label wider than its font lets a corner hold: drawn in the next smaller set that spells it
    * and fits, which is what Logitech's compiler does with `Antenna` (section 323) and what our wider
-   * letters make common, `todo-compile-650.md` 8.2.3; or refused, naming the label.
+   * letters make common; or refused, naming the label.
    */
   readonly labelTooWide: 'smaller font' | 'refuse';
   /**
@@ -160,9 +160,11 @@ export const FOUR_SLOT_CHOICES: FourSlotChoices = {
   activityKeys: {
     WatchTV: 'Watch TV', WatchDvd: 'Watch a Movie', ListenToMusic: 'Listen to Music', Custom: undefined,
   },
-  // This track's settings, `todo-compile-650.md`: the screen lit 20 seconds, the 650's default (6.2.13),
-  // the tilt sensor on (4.3.3), and the Remote Assistant, the restore of saved delays, Help and the tour
-  // all left out (4.3.2, 3.13, 7.4, section 360). The boot step is the Harmony 700's alone.
+  // The settings our configurations are built with: the screen lit 20 seconds, the 650's default; the tilt
+  // sensor on, waking the remote when it is picked up, section 346; and the Remote Assistant, the restore of
+  // saved delays, Help and the tour all left out: a composed activity has no help and no assistant, section
+  // 333, and the lists the firmware's wiring calls for them are the ones section 360 leaves. The boot step is the
+  // Harmony 700's alone.
   settings: {
     glowTime: 20,
     tiltSensor: true,
@@ -187,7 +189,7 @@ export class ChoiceError extends Error {}
 
 /** The family's choices with a recipe's over its defaults. */
 /**
- * The defaults of a build from nothing, on a donor of ours, the empty configuration, `todo-compile-650.md` 11:
+ * The defaults of a build from nothing, on a donor of ours, the empty configuration:
  * our letters, the state colours and our pictures, which such a donor already is and the assembly refuses
  * any other for, and our letters blended, decided on 13 October 2026. `FOUR_SLOT_CHOICES` keeps the values
  * the constants had, Logitech's look, because an assembly on one of Logitech's compiles is held to their

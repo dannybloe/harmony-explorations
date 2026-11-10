@@ -1,9 +1,9 @@
 /**
- * The firmware's own screens built whole from a description: `todo-compile-650.md` 7.4, section 357.
+ * The firmware's own screens built whole from a description, section 357.
  *
  * Every arch 14 configuration opens its mode table with the screens the firmware's own events lead to,
  * fourteen on the Harmony 600 and 650 and nineteen on the Harmony 700, `FIRMWARE_SCREENS`: the two "add
- * an Activity" placeholders, which 7.4 calls the setup screens, "USB Connected", the battery screens,
+ * an Activity" placeholders, called the setup screens here, "USB Connected", the battery screens,
  * "Update Successful" and "Upgrade Successful", the three learning screens, and blanks between them.
  * Section 355 read that the firmware enters none of them by number; the configuration's own wiring does,
  * section 347, and `wiring.ts` already builds that. What still came out of a Logitech compile was the
@@ -43,8 +43,8 @@
  *
  * * the wiring's own description, `describeWiring`: the model, the low battery variable, and on the
  *   Harmony 700 the index of `usbLeave`'s first call, which is `cleared`;
- * * the two fonts, the body font and the large one, read once each, `todo-compile-650.md` 8.2's;
- * * every screen's background picture and bottom bar, read off the program's own address fields, 9.1's;
+ * * the two fonts, the body font and the large one, read once each, Logitech's letters or ours;
+ * * every screen's background picture and bottom bar, read off the program's own address fields;
  * * "USB Connected"'s variable and the indices of its lists, base slot 10's numbering;
  * * the texts drawn by reference to a copy outside these screens, which on the 22 compiles is none.
  *
@@ -332,8 +332,8 @@ export function firmwareScreenParts(
 }
 
 /**
- * Build the firmware screens from a description, `todo-compile-650.md` 7.4. `c` is read for its fonts and
- * its character map only, which spell the words and place them, `todo-compile-650.md` 8.2's. The screens
+ * Build the firmware screens from a description. `c` is read for its fonts and its character map only, which
+ * spell the words and place them, in Logitech's letters or ours. The screens
  * are built in `spec.order`, so a text is drawn inline the first time they draw it there and by reference
  * to that copy afterwards, unless `spec.homes` names a copy outside them.
  */

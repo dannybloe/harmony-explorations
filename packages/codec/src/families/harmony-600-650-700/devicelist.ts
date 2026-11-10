@@ -48,8 +48,8 @@ export interface ComposedActivityDeviceList {
 
 /**
  * The devices an activity switches on, as the device modes the device list enters for them, in the order its enter
- * list switches them on: `startSwitchedOn`, the rule both families' activity device lists share since
- * `todo-compile-one.md` 4.3.3, whose docstring holds the measurements, with the activity's base slot 9 entry found
+ * list switches them on: `startSwitchedOn`, the rule both families' activity device lists share, whose docstring
+ * holds the measurements, with the activity's base slot 9 entry found
  * through the four slot start reader.
  */
 function activitySwitchedOn(c: Container, activity: number, starts: Arch14Starts, listed: readonly number[]): number[] {
@@ -122,10 +122,8 @@ export function activityRowListBody(set: number, markerOpcode: number): Uint8Arr
 const DEVICE_LIST_POINTED: ReadonlySet<string> = new Set(['title', 'counter', 'label', 'bottom']);
 
 /**
- * An activity's own device list on a Harmony 600, 650 or 700, built, `todo-compile-650.md` 6.2.11,
- * section 352. Until then `composeActivityDeviceList` moved the idle list's label instructions to their
- * new corners, ran the idle list's row lists and took the word "Activity" off another activity's list;
- * now each part is built:
+ * An activity's own device list on a Harmony 600, 650 or 700, built, section 352. Each part is built rather
+ * than moved or copied off the idle list or another activity's list:
  *
  * * **the rows are the setup's devices**: the devices the idle list holds, the activity's first, in the
  *   order its enter list switches them on, `activitySwitchedOn`, then the rest in the idle list's order,
@@ -142,7 +140,7 @@ const DEVICE_LIST_POINTED: ReadonlySet<string> = new Set(['title', 'counter', 'l
  *
  * **What is read and why**: each device's label, its font and its lines of glyph codes, as the idle list
  * draws it for that device, which is the configuration's own spelling of the device's name in its own
- * fonts, `todo-compile-650.md` 6.2.12 and chapter 8's letters; the title and counter fonts likewise; and
+ * fonts, Logitech's letters or ours; the title and counter fonts likewise; and
  * the idle list itself, which is a mode number, the description's order.
  */
 export function activityDeviceList(c: Container, activity: number): ActivityDeviceList {

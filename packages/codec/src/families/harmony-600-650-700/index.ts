@@ -22,12 +22,9 @@ import { FOUR_SLOT_START, fourSlotActivityRewiring } from './start.ts';
 import { checkWiring } from './wiring.ts';
 import { fourSlotFromRecipe } from './fromrecipe.ts';
 
-// The family's generated texts and firmware screens were passed on here for the four slot assembler in
-// `assemble.ts`; since `todo-compile-one.md` 3.3.3.2 the assembler is the family's own, `assemble.ts` here, and
-// takes them from their modules.
-// The modules that stood outside the family and reached its internals through this index, `screenrecords`,
-// `backgrounds` and `compare`, are the family's own since `todo-compile-one.md` 3.3.3.2, so the index passes
-// nothing on any more: it is the object the registry hands out.
+// The assembler, `assemble.ts`, and the screen records, backgrounds and comparison are the family's own modules
+// and take what they need from its other modules, so the index passes nothing on: it is the object the registry
+// hands out.
 
 export const FOUR_SLOT: Family<FourSlotChoices> = {
   kind: 'compiled',
@@ -43,7 +40,7 @@ export const FOUR_SLOT: Family<FourSlotChoices> = {
   sends: FOUR_SLOT_SENDS,
   activityStart: FOUR_SLOT_START,
   activityRewiring: fourSlotActivityRewiring,
-  // The family's catalogue over the shared engine, `wiring.ts`, since `todo-compile-one.md` 3.3.3.2.
+  // The family's catalogue over the shared engine, `wiring.ts`.
   wiring: { check: checkWiring },
   deviceModeKeys: HARD_KEYS,
   composeDeviceScreen: composeFourSlotDeviceScreen,

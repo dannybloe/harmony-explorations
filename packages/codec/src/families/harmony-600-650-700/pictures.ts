@@ -1,7 +1,6 @@
 /**
- * The Harmony 650's pictures, those drawn by rule built from their description: `todo-compile-650.md`
- * 9.1, section 363. The four slot family's since `todo-compile-one.md` 3.3.3.2; what a picture is drawn from and
- * the bank's own reading and writing stay shared in `pictures.ts`.
+ * The Harmony 650's pictures, those drawn by rule built from their description, section 363. The four slot
+ * family's own; what a picture is drawn from and the bank's own reading and writing are shared, in `pictures.ts`.
  *
  * A Harmony 650 configuration Logitech compiled holds 18 or 19 pictures in its picture bank, every one
  * byte identical wherever it occurs on the 13 Harmony 650 compiles here; which ones a compile holds
@@ -20,18 +19,18 @@
  *   picture; the small mark those programs draw there from 1 to 3; and the four pictures of the firmware screens with a
  *   battery or a USB plug. They are designed images, so their pixels are not written into this
  *   repository and a configuration takes them from a Logitech compile, a donor, unless ours are chosen:
- *   the five backgrounds give way to one flat colour per screen state, `backgrounds.ts`, 9.1.2.1, and the
- *   other six to icons drawn from a font, `buildOurPictures`, 9.1.2.2, section 373, put in by
- *   `withPictures` and read back by `checkOurPictures`. The cross and the line cannot be laid over a plain curved background by rule either:
- *   the crossed background differs from the plain one in 98 pixels off its cross, all within seven pixels
- *   of it and each one colour step off, so Logitech flattened each whole;
+ *   the five backgrounds give way to one flat colour per screen state, `backgrounds.ts`, and the
+ *   other six to icons drawn from a font, `buildOurPictures`, section 373, put in by
+ *   `withPictures` and read back by `checkOurPictures`. The cross and the line cannot be laid over a plain curved
+ *   background by rule either: the crossed background differs from the plain one in 98 pixels off its cross, all
+ *   within seven pixels of it and each one colour step off, so Logitech flattened each whole;
  * * **left out**, two: the black background with a dotted cross and the one with a dotted line, which only
- *   the delay screens Help opens when held draw, and Help is what this track leaves out.
+ *   the delay screens Help opens when held draw, and Help is what a configuration of ours leaves out, R44.
  *
  * The pattern is section 347's: `describePictures` names each picture of a layout by its content,
  * `buildPictures` draws the rule pictures from `HARMONY_650_PICTURES` alone, `withPictures` puts them where
  * the layout's own sat, and `checkPictures` lays the result out and compares it. Where the bank puts each
- * picture is `placer.ts`'s, `todo-compile-650.md` 10.5, and not this module's: a built picture takes the
+ * picture is `placer.ts`'s, section 328, and not this module's: a built picture takes the
  * place of the one it replaces.
  *
  * Arch 14 only, the Harmony 650's colour look of 2026, which the 2026 Harmony 700 compiles share. Read
@@ -111,7 +110,7 @@ export const HARMONY_650_PICTURES: readonly PictureEntry[] = [
 
 /**
  * Where our own picture of each of Logitech's six artwork pictures that is no state's background draws its
- * icon, measured on Logitech's, section 363, `todo-compile-650.md` 9.1.2.2: the four firmware screen
+ * icon, measured on Logitech's, section 363: the four firmware screen
  * pictures fill the square from 32 to 95 each way, and the corner mark is the whole of its 12 by 10. A fact
  * of the screen's layout; the icon in each place is a choice, `OurPictureChoices`.
  *
@@ -132,7 +131,7 @@ export const OUR_PICTURE_PLACES = {
   'Low Battery': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
   'battery blank screen': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
   'upgrade and learn blank screens': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
-  // The Harmony 700's own, `todo-compile-700.md` 1.2: its four charging frames, mode 0 to 3, and the full
+  // The Harmony 700's own: its four charging frames, mode 0 to 3, and the full
   // battery of its battery blank screen, each where Logitech's 700 compiles draw theirs, in the same square.
   'charging 1': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
   'charging 2': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
@@ -246,7 +245,7 @@ export function withPictures(layout: ContainerLayout, described: readonly Descri
     replace.set(piece, bytes);
   }
   // Every piece fresh, so the input layout keeps its own, and a reference into a replaced picture lands on its
-  // replacement: the shared step, `withReplacedPictures`, since `todo-compile-one.md` 5.3 needed it for the Harmony One.
+  // replacement: the shared step, `withReplacedPictures`, which the Harmony One's pictures take too.
   return withReplacedPictures(layout, replace);
 }
 

@@ -1,11 +1,10 @@
 /**
- * Every text a Harmony 600, 650 or 700 configuration draws, generated from its word and its font:
- * `todo-compile-650.md` 8.1, section 358.
+ * Every text a Harmony 600, 650 or 700 configuration draws, generated from its word and its font, section 358.
  *
- * Until here each builder spelled the words it knew and carried the rest. Chapters 6 and 7 build the
- * device pages, the menus, the start up screens, Off and the firmware's own screens, but a configuration
- * composed onto Logitech's starting compile still drew most of its texts as Logitech's bytes, and even
- * the built screens read some of theirs as glyph codes: a menu row's label, an activity's own device
+ * The builders of the device pages, the menus, the start up screens, Off and the firmware's own screens each
+ * spell the words they know and carry the rest, so a configuration composed onto Logitech's starting compile
+ * would still draw most of its texts as Logitech's bytes, and even the built screens read some of theirs as
+ * glyph codes: a menu row's label, an activity's own device
  * list's labels, and every text drawn by reference to a copy outside the built screens, by the copy's
  * address. This module is one pass over a whole configuration that makes three things of every text
  * generated rather than carried:
@@ -13,7 +12,7 @@
  * * **its glyph codes**, spelled from its word in its font, `speller`. A code is the configuration's own
  *   number for a character, so a word is read off a configuration as characters, through the character
  *   map, and spelled again. A text with a code the map does not resolve has no word to state, so it
- *   keeps its codes, `todo-compile-650.md` 8.2's; it is still placed and given its form here.
+ *   keeps its codes; it is still placed and given its form here.
  * * **its place**, by the rule its screen kind uses, from the word's width in its font: a title at 0, 2;
  *   the page counter right aligned in a chain against the right edge; a corner label from x 3 or ending
  *   at 125, at y 40 or 90, two lines from 15 higher; a row label, a bottom word and every line of the
@@ -30,7 +29,7 @@
  *   alone, whatever font the copy is drawn in, and on whole runs: a run equal to the tail of an earlier
  *   one is drawn inline, so a reference never lands inside another text.
  *
- * **What is left out, and why it is not built**, `LeftOutScreen`: the screens this track does not build,
+ * **What is left out, and why it is not built**, `LeftOutScreen`: the screens no builder of ours makes,
  * help and the Remote Assistant with the delay settings screens and the one text programs their two
  * countdowns reach, the
  * welcome tour and the thirty status screens the remote never draws from a configuration. Their texts
@@ -38,7 +37,7 @@
  * rule is the configuration's and not a screen's: a text on a built screen can be the first copy a left
  * out one points at, or the other way round, and a reference must land on whichever is first.
  *
- * **What is still read, `todo-compile-650.md` 8.2's**: the fonts, which font each text is drawn in, and
+ * **What is still read**: the fonts, which font each text is drawn in, and
  * the character map that turns a code into a character and back. A label's lines are read as words, a
  * two line label being two, since how a label is broken is the device composer's rule, section 325, and
  * not this pass's; a start up title is read whole and broken here.
@@ -101,7 +100,7 @@ export type { BuiltDraw, BuiltScreenTexts, ScreenTextsPlace };
  *   idle one and each activity's own, sections 285, 325, 330, 334, 336 and 352.
  * * `two row list`: the device list nothing enters, rows of two buttons, section 326.
  * * `activity menu`: rows of two buttons, its counter where a corner page draws it, section 316.
- * * `left out`: a screen this track does not build, `LeftOutScreen`. Read, not built.
+ * * `left out`: a screen no builder of ours makes, `LeftOutScreen`. Read, not built.
  */
 export type TextScreenKind = 'firmware' | 'fixed line' | 'corner page' | 'two row list' | 'activity menu' | 'left out';
 
@@ -109,12 +108,12 @@ export type TextScreenKind = 'firmware' | 'fixed line' | 'corner page' | 'two ro
  * Why a screen's texts are left as read:
  *
  * * `status screen`: the thirty status screens after the firmware's own, which the Harmony 650 draws none
- *   of from a configuration, section 355, so `todo-compile-650.md` 7.4 does not build them;
+ *   of from a configuration, section 355, so the firmware screens' builder does not build them;
  * * `tour`: the welcome tour, which a configuration may leave out, section 357;
  * * `help`: every other mode, help, the Remote Assistant and the delay settings screens they reach,
- *   which our configuration leaves out, `todo-compile-650.md` 3.13, sections 333 and 345;
+ *   which our configuration leaves out, sections 333 and 345;
  * * `no page`: a program no mode's page draws: one text programs the two delay countdowns those delay
- *   settings screens queue reach, 472 on the 7.5 file.
+ *   settings screens queue reach, 472 on the Harmony 650 test setup with every screen record built.
  */
 export type LeftOutScreen = 'status screen' | 'tour' | 'help' | 'no page';
 
@@ -140,7 +139,7 @@ export interface ScreenTextSpec {
   word: string;
   /**
    * The glyph codes, carried rather than spelled: a left out text's, and a text with a code the character
-   * map does not resolve, whose word cannot be stated in characters, `todo-compile-650.md` 8.2. Such a
+   * map does not resolve, whose word cannot be stated in characters. Such a
    * text is still placed by its kind's rule and drawn in the form the rule gives it.
    */
   codes?: number[];
@@ -470,7 +469,7 @@ function rolesOf(
  * Build every text of a description: broken into its lines where it is a title, spelled in its font,
  * placed by its kind's rule, and drawn inline where it is the first draw of the configuration of its
  * codes and by reference to that one otherwise. `c` is read for its fonts only, and `map` is its
- * character map, both `todo-compile-650.md` 8.2's; `map` is `characterMap(c)` unless given, which the
+ * character map; `map` is `characterMap(c)` unless given, which the
  * blind control does, since a map's alphabet is chosen by the codes the configuration's texts draw.
  * Refuses a word its font cannot spell, a title that does not fit two lines, a role its kind has no
  * place for, and a counter missing a part.

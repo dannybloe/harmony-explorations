@@ -1,5 +1,5 @@
 /**
- * The Harmony 600, 650 and 700 built from a recipe, `Family.fromRecipe`, plan 014 and `todo.md` 7.3.11: the empty
+ * The Harmony 600, 650 and 700 built from a recipe, `Family.fromRecipe`, plan 014: the empty
  * configuration of `empty.ts` when the recipe holds no device and no activity, and otherwise the recipe assembled onto
  * that configuration by `assembleSetup`, the route the Harmony 600 and 700 setups of ours were built by, findings
  * section 377 onwards.

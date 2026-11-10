@@ -291,8 +291,8 @@ export function composeFourSlotActivityRow(
  *
  * **Since section 336 both screens and the four cases are built, `activityScreenChrome`**, where until
  * then the start up screen's picture, font and fixed lines and the working screen's chrome, backgrounds
- * and record were copied off the configuration's own activities. The start up font is still read,
- * `todo-compile-650.md` 6.2.12's.
+ * and record were copied off the configuration's own activities. The start up font is still read, since it is
+ * the configuration's own numbering of its font sets, `startupFont` below.
  *
  * **A name is spelled in the fonts the configuration has**, and each holds only the letters its own
  * texts use. The start up title's font is the one every start up title is drawn in, and the status and
@@ -327,7 +327,7 @@ export const STARTUP_TITLE_SECOND_Y = 19;
 
 /**
  * How much lower a configuration of ours draws a start up title and Off's, both lines: 2 rows, a choice of
- * ours made at the bench, todo-compile-700.md 2.3, and the start up titles judged good there. It was made
+ * ours made at the bench on the Harmony 700, and the start up titles judged good there. It was made
  * against the tops of the "f"s of "Turning system off" looking cut off on the bench Harmony 700, which it did
  * not cure: the "f"'s top stroke falls between two pixel rows in our letters and is drawn a faint grey, the
  * letter itself is whole, section 386. Left as it is until the letters' face changes.
@@ -361,7 +361,7 @@ const WORKING_SCREEN_WORD = 'Devices';
  * value, each selecting that activity's own keypad map, is the binding set's. One, one or more, and
  * one, on 13 of 13, and anything else is refused rather than guessed at.
  *
- * **The key sets are generated from the counter**, section 329, `todo-compile-650.md` 6.2.5, rather than
+ * **The key sets are generated from the counter**, section 329, rather than
  * taken from the activities the start lists hold: the counter's values are 0 to its maximum, one of
  * them, its starting value, is the idle value and every other is an activity, section 273. The
  * activities the start lists hold are checked against that, and so is the counter's name, which is
@@ -447,7 +447,7 @@ export interface ActivityScreenChrome {
   startupPicture: number;
   /**
    * The font a start up screen draws in, font 2 on all thirteen compiles. **Read, not built**: it is the
-   * configuration's numbering of its font sets, `todo-compile-650.md` 6.2.12, and it is read off the
+   * configuration's numbering of its font sets, and it is read off the
    * configuration's own start up screens, all of which have to agree.
    */
   startupFont: number;
@@ -459,14 +459,14 @@ export interface ActivityScreenChrome {
   workingKeyMap: KeyMapEntry[];
   /**
    * The device list the key under Devices opens while no activity runs, which is the list a composed
-   * activity's case opens until it has a list of its own, `composeActivityDeviceList`, 6.2.11.
+   * activity's case opens until it has a list of its own, `composeActivityDeviceList`.
    */
   idleList: number;
 }
 
 /**
  * The font every start up screen of the configuration selects, its program's second instruction.
- * Refused where they disagree or where there is none to read, `todo-compile-650.md` 6.2.12's.
+ * Refused where they disagree or where there is none to read.
  */
 function startupFontOf(c: Container, starts: Arch14Starts): number {
   const records = modeRecords(c) ?? [];
@@ -501,8 +501,7 @@ function startupPictureIn(look: DevicePageLook, pictures: Map<string, number[]>)
 }
 
 /**
- * An activity's start up screen and working screen chrome on a Harmony 600, 650 or 700, built,
- * `todo-compile-650.md` 6.2.10, section 336:
+ * An activity's start up screen and working screen chrome on a Harmony 600, 650 or 700, built, section 336:
  *
  * * **the start up screen** draws its look's `startup` picture at 0, 0, selects the start up font, draws
  *   "Starting" and the name, broken at `STARTUP_TITLE_MAX` and each line centred, and below it the three
@@ -519,10 +518,10 @@ function startupPictureIn(look: DevicePageLook, pictures: Map<string, number[]>)
  *
  * Then every start up screen, every working screen page and every case of the activity keyed records
  * the configuration holds is checked against what is built, `checkActivityScreens`, so a configuration
- * whose own screens disagree is refused rather than extended. What is still read: the start up font,
- * 6.2.12's; the queued program, the Devices key operand and the idle list, each off the activity menu
+ * whose own screens disagree is refused rather than extended. What is still read: the start up font, the
+ * configuration's own numbering of its font sets; the queued program, the Devices key operand and the idle list, each off the activity menu
  * by the routes of sections 330 and 334 rather than off another activity's screen; and the pictures' and
- * texts' addresses, since the bytes are the configuration's until chapter 9 builds them.
+ * texts' addresses, since the bytes are already in the configuration, Logitech's or drawn by ours.
  */
 export function activityScreenChrome(c: Container): ActivityScreenChrome {
   if (c.architecture !== 14) {
