@@ -10,6 +10,7 @@ Harmony and never our bench.
 * [Harmony 600](harmony-600.md)
 * [Harmony 650](harmony-650.md)
 * [Harmony 700](harmony-700.md)
+* [Harmony 785](harmony-785.md)
 * [Harmony 885](harmony-885.md)
 * [Harmony One](harmony-one.md)
 * [Harmony Touch](harmony-touch.md)
@@ -18,7 +19,7 @@ Harmony and never our bench.
 
 ## The units
 
-**Fourteen remotes are on the bench**, and this list is the hardware, not the model families. This said thirteen until a Harmony 515 arrived, eleven until two Harmony 885s arrived, and nine
+**Sixteen remotes are on the bench**, and this list is the hardware, not the model families. This said fourteen until two Harmony 785s arrived, thirteen until a Harmony 515 arrived, eleven until two Harmony 885s arrived, and nine
 until plan 009 step 6.1, two units short: the friend's Harmony One and Harmony 525 of decision 21 had not
 reached it, and before that it said seven, the same count `CLAUDE.md` had corrected for itself.
 
@@ -29,6 +30,7 @@ reached it, and before that it said seven, the same count `CLAUDE.md` had correc
 | the friend's Harmony One, dead display | yes, decision 21; not yet among `write-config.ts`'s targets | nothing | no notes yet |
 | a Harmony 525 | yes, since 5 September 2026 | one block written back unchanged, section 269, and no edit | [harmony-525.md](harmony-525.md) |
 | the friend's Harmony 525 | yes, decision 21; not yet among `write-config.ts`'s targets | nothing | no notes yet |
+| two Harmony 785s | no: not among the units that may be written | nothing; read only, unit A's identity, configuration and whole flash | [harmony-785.md](harmony-785.md) |
 | a Harmony 515, second hand | no: not among the units that may be written | nothing; read only | [harmony-515.md](harmony-515.md) |
 | a Harmony 600 | yes, since 29 September 2026 | a block back unchanged, section 302, then configurations; its saved delay cleared over USB once, section 305 | [harmony-600.md](harmony-600.md) |
 | a Harmony 650, second hand | yes, since 27 September 2026, and it may be reprogrammed as the work needs | the first arch 14 write, section 281, then configurations | [harmony-650.md](harmony-650.md) |

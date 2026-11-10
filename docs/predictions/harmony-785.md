@@ -41,4 +41,17 @@ are observations and not predictions:
 
 ## Outcomes
 
-Not read yet.
+Read the same day, on the first unit, and every prediction that named a value held,
+`tests/harmony_880_885/test_harmony_785_first_read.py`:
+
+* **The version block** was `45 09 49 01 80 2D 08`, so fields 0, 2 to 6 held exactly, and the hardware
+  version, not predicted, is 0.9. **Fields 7 to 11 do not exist**: the block is seven bytes long, as the 885's
+  is, so the row predicting them predicted nothing.
+* **The flash part is the 885's**, `0x49` from manufacturer `0x01`, which the prediction made conditional.
+* **The memory** held as predicted: the identity block at `0x000110`, the configuration at `0x020000` stating
+  architecture 8 and skin 45, base slot 2 as `15360, 0x1E0000, 0x1FE000`, a bootloader below `0x010000` and the
+  application from it.
+
+**What nobody predicted**: the bootloader is a build of its own, version 4.4 with the product string
+`Harmony Remote 3-4.4.2`, where the 720's is 4.2 and the 880's and 885's 4.0; and the application differs from
+the 720's in eight bytes besides the skin.

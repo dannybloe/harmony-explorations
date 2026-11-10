@@ -1707,6 +1707,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // Unit B's colour keys left to right and the transport block's top right key and the one below it, asked by
   // position because the colour keys carry no text.
   h885_b_keys_by_position: '20261105T1300Z-h885-b-keys-by-position.txt',
+  // The first bench Harmony 785, unit A, on its first contact: its configuration read once, and its whole flash,
+  // 0x000000 to 0x1FE000, read twice and identical. Read only; the 785 is not a write target.
+  // `tests/harmony_880_885/test_harmony_785_first_read.py`.
+  h785_a_config: '20261110T1611Z-h785-a-config.bin',
+  h785_a_flash: '20261110T1613Z-h785-a-flash-region.bin',
+  h785_a_flash_2: '20261110T1614Z-h785-a-flash-2-region.bin',
 };
 
 /**
@@ -1857,7 +1863,10 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // The recomposed device's configuration as written to B and read back: h885_composed_2_3 restamped.
     'h885_b_written_2_3', 'h885_b_after_2_3_config',
     // The recomposed device onto unit A's configuration, counted nowhere for the first composition's reason.
-    'h885_composed_2_3'];
+    'h885_composed_2_3',
+    // The first bench Harmony 785's configuration and its whole flash, which holds that configuration again: a bench
+    // configuration joins no corpus total, as the 885s' do not.
+    'h785_a_config', 'h785_a_flash', 'h785_a_flash_2'];
 
 const cache = new Map<string, string[]>();
 

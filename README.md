@@ -31,8 +31,8 @@ why mistakes are corrected in the open rather than quietly.
 
 ## Where we are
 
-These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 700, 885 and Touch, and two
-Harmony 785s are on their way.
+These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 700, 785, 885 and Touch. The
+785s arrived last and have only been read.
 
 * On the Harmony One, 600, 650 and 700 we can read the configuration and account for every byte of it, and
   each of them has run a configuration we built ourselves from scratch, without copying anything from a

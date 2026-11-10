@@ -1,0 +1,193 @@
+"""
+The first Harmony 785 on the bench, unit A, read on first contact. **Measured on a unit.** No remote is opened
+by this file; it reads what the bench session filed in the lab.
+
+## What was done, in order
+
+1. The remote was enumerated, which sends it nothing: product `0xC110`, `bcdDevice` `0x082D`, product string
+   `Harmony Remote 0-4.5.0`.
+2. `docs/predictions/harmony-785.md` was committed, predicting the version block and the memory from the
+   platform and from the Harmony 720's images.
+3. `read-identity.ts --product 0xc110`, then again with `--record h785_a`, which reads the identity block at
+   `0x000110` into the lab's `units/`.
+4. `read-config.ts --label h785-a`: 425953 bytes, no window retried.
+5. `read-region.ts --address 0x000000 --count 0x1FE000 --anywhere`, twice. The reader reads in `0x4000`
+   chunks from zero, so no transfer ends alone on `0x000104` or `0x000105`, and it stops at `0x1FE000`. Both
+   reads finished with no window retried, which the 885s' first whole flash reads did not.
+
+## What the version block said
+
+Seven bytes, `45 09 49 01 80 2D 08`: application 4.5, hardware 0.9, flash `0x49` from manufacturer `0x01`,
+architecture 8 and software type 0, skin 45, platform `0x08`. Every field the prediction named held; the
+hardware version was not predicted, and fields 7 to 11 do not exist on a block of seven. The version block is
+not filed, so this test cannot hold it; the application's own accessor, which the block is copied from, is
+held below instead.
+
+## What the flash settles
+
+**The two reads are byte identical**, 2088960 bytes each. Its parts, each against a source outside it:
+
+* **The application at `0x010000` is the Harmony 720's 4.5 build with ten bytes changed**: the skin at
+  `0x011C04` and `0x01A6CC`, 45 where the 720's says 44, and eight more at `0x01E6B1`, `0x01E6B8`,
+  `0x01E6C7`, `0x01E80C` to `0x01E80E` and `0x01FAD9` to `0x01FADA`. What those eight are is not read here.
+  So the 785 and the 720 share an application build, as the 880 and 885 share theirs, and differ in more than
+  the skin byte, which the 880 and 885 do not.
+* **Its version accessor**, five `RETLW` at `0x011C00`, returns `0x45, 0, 45, 8, 8`: version 4.5, software
+  type 0, skin 45, platform 8, architecture 8, the version block's own fields.
+* **The bottom 64 KiB is a bootloader none of this project's images is**: 20882 bytes differ from the 720's
+  and 18997 from the 880's. Its accessor at `0x00192E` returns `0x44, 3, 45, 0, 8`, version 4.4, software type 3
+  (a bootloader), skin 45, platform 0, and its product string, at `0x006164`, is `Harmony Remote 3-4.4.2`. The
+  720's bootloader is 4.2 and the 880's and 885's 4.0.
+* **The configuration region from `0x020000` holds the configuration read**, byte for byte over its length.
+* **The staging region from `0x1D0000` holds the running application**, its 64 KiB equal to the 64 KiB at
+  `0x010000` but for the byte at offset 2.
+* **The log area from `0x1E0000` holds six bytes that are not `0xFF`**, at `0x1E0000` to `0x1E0004` and
+  `0x1E0007`, and the rest of it is erased.
+* **The identity fields at `0x000120` are the lab's record for unit A.**
+
+## What the configuration states
+
+Every container check passes. Base slot 1 states architecture 8 and skin 45, and base slot 2 is
+`15360, 0x1E0000, 0x1FE000`, as every Harmony 880 and 885 configuration states it. It holds a previous owner's
+three devices and three activities, which are a stranger's equipment and never published.
+
+## Sources checked before the work
+
+The `harmony-885` and `probe-remote` skills for the read hazards and the backup procedure;
+`reference/architectures/harmony-880-885/firmware.md` "The Harmony 720's images" and `usb.md`;
+`reference/usb-protocol/version-block.md` for the accessor's field order.
+
+## Width
+
+One Harmony 785. Whether a second 785 carries the same bootloader is not checked; the second unit on the
+bench is the way to find out.
+"""
+import hashlib
+import os
+import re
+import unittest
+
+import lab
+
+FLASH = ('h785_a_flash', 'h785_a_flash_2')
+FLASH_END = 0x1FE000
+APPLICATION = 0x010000
+REGION = 0x020000
+STAGING = 0x1D0000
+LOG = 0x1E0000
+
+# The Harmony 720's two images, found by file name as tests/harmony_880_885/test_harmony_885_bootloader.py
+# finds them, which says why they are not registered.
+H720_APPLICATION = 'H720-Firmware.bin'
+H720_BOTTOM = 'H720-Safemode.bin'
+H880_BOTTOM = 'H880-safemode.bin'
+
+
+def by_name(*filenames):
+    """The bytes of lab files found by name, all of them or a skip of the whole test."""
+    paths = [lab._find(f) for f in filenames]   # noqa: SLF001, deliberately unregistered
+    missing = [f for f, p in zip(filenames, paths) if not p]
+    if missing:
+        raise unittest.SkipTest('no %s found' % ', '.join(missing))
+    out = []
+    for p in paths:
+        with open(p, 'rb') as fh:
+            out.append(fh.read())
+    return out
+
+
+def unit_record(label):
+    """The lab's identity record for a unit, as bytes, or None when the lab has none."""
+    path = os.path.join(lab.LAB, 'units', f'{label}.txt')
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding='utf-8') as handle:
+        text = ''.join(line.split('#')[0] for line in handle)
+    return bytes.fromhex(re.sub(r'[^0-9a-fA-F]', '', text))
+
+
+def retlw_values(data, at, count=5):
+    """The literals of `count` consecutive RETLW instructions at `at`, refusing anything that is not one."""
+    values = []
+    for k in range(count):
+        literal, opcode = data[at + 2 * k], data[at + 2 * k + 1]
+        if opcode != 0x0C:
+            raise AssertionError('no RETLW at 0x%06X' % (at + 2 * k))
+        values.append(literal)
+    return values
+
+
+class TheWholeFlash(unittest.TestCase):
+    def setUp(self):
+        lab.require(*FLASH)
+        self.flash = lab.load('h785_a_flash')
+
+    def test_the_two_reads_are_identical_and_end_at_the_device_window(self):
+        second = lab.load('h785_a_flash_2')
+        self.assertEqual(len(self.flash), FLASH_END)
+        self.assertEqual(hashlib.sha256(self.flash).digest(), hashlib.sha256(second).digest())
+
+    def test_the_application_is_the_720s_build_with_ten_bytes_changed(self):
+        (image,) = by_name(H720_APPLICATION)
+        self.assertEqual(len(image), 0x10000)
+        differ = [APPLICATION + i for i in range(len(image)) if self.flash[APPLICATION + i] != image[i]]
+        self.assertEqual(differ, [0x011C04, 0x01A6CC, 0x01E6B1, 0x01E6B8, 0x01E6C7,
+                                  0x01E80C, 0x01E80D, 0x01E80E, 0x01FAD9, 0x01FADA])
+        # The first two are the skin: 45 here, 44 in the 720's image.
+        for at in (0x011C04, 0x01A6CC):
+            self.assertEqual((self.flash[at], image[at - APPLICATION]), (45, 44))
+
+    def test_the_applications_version_accessor_says_4_5_type_0_skin_45(self):
+        self.assertEqual(retlw_values(self.flash, 0x011C00), [0x45, 0, 45, 8, 8])
+
+    def test_the_bootloader_is_neither_the_720s_nor_the_880s(self):
+        h720, h880 = by_name(H720_BOTTOM, H880_BOTTOM)
+        for image, expected in ((h720, 20882), (h880, 18997)):
+            self.assertEqual(sum(1 for a in range(len(image)) if self.flash[a] != image[a]), expected)
+
+    def test_the_bootloaders_accessor_says_4_4_type_3_skin_45_and_its_string_agrees(self):
+        self.assertEqual(retlw_values(self.flash, 0x00192E), [0x44, 3, 45, 0, 8])
+        text = 'Harmony Remote 3-4.4.2'.encode('utf-16-le')
+        self.assertEqual(self.flash[0x006164:0x006164 + len(text)], text)
+        self.assertEqual(self.flash[0:0x10000].count(text), 1)
+
+    def test_the_configuration_region_holds_the_configuration_read(self):
+        lab.require('h785_a_config')
+        config = lab.load('h785_a_config')
+        self.assertEqual(len(config), 425953)
+        self.assertEqual(self.flash[REGION:REGION + len(config)], config)
+
+    def test_the_staging_region_holds_the_application_but_for_one_byte(self):
+        application = self.flash[APPLICATION:APPLICATION + 0x10000]
+        staged = self.flash[STAGING:STAGING + 0x10000]
+        self.assertEqual([i for i in range(0x10000) if application[i] != staged[i]], [2])
+
+    def test_the_log_area_holds_six_bytes(self):
+        written = [a for a in range(LOG, FLASH_END) if self.flash[a] != 0xFF]
+        self.assertEqual(written, [0x1E0000, 0x1E0001, 0x1E0002, 0x1E0003, 0x1E0004, 0x1E0007])
+
+    def test_the_identity_fields_are_unit_as(self):
+        record = unit_record('h785_a')
+        if record is None:
+            self.skipTest('the lab holds no record for the unit')
+        self.assertEqual(self.flash[0x120:0x120 + len(record)], record)
+
+
+class TheConfiguration(unittest.TestCase):
+    def setUp(self):
+        lab.require('h785_a_config')
+        self.config = lab.load('h785_a_config')
+
+    def test_base_slots_1_and_2_state_architecture_8_skin_45_and_the_platforms_log_area(self):
+        # The pointer table from 0x0B, { u8 spare; u24 address } per slot, little endian, addresses absolute from 0x020000.
+        def slot(n):
+            entry = self.config[0x0B + 4 * n:0x0B + 4 * n + 4]
+            self.assertEqual(entry[0], 0)
+            return int.from_bytes(entry[1:], 'little') - REGION
+        one, two = slot(1), slot(2)
+        self.assertEqual(list(self.config[one:one + 3]), [8, 8, 45])
+        self.assertEqual(self.config[two:two + 8], bytes.fromhex('003c00001e00e01f'))
+
+
+if __name__ == '__main__':
+    unittest.main()
