@@ -1,5 +1,5 @@
 /**
- * A recipe's own codes, `carriedCatalogue` and `carryCodes`, plan 014 and `todo.md` 7.3.11.1.
+ * A recipe's own codes, `carriedCatalogue` and `carryCodes`, plan 014.
  *
  * **The claim**: a device carried in a recipe builds exactly as the archive's file of it does, so a recipe with its
  * codes needs no archive. Measured first on the two test setups whole, the Harmony One's and the Harmony 650's seven

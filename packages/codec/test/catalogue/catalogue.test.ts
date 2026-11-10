@@ -346,7 +346,7 @@ test('a Harmony 300 device group is indexed by its device type button',
   // that list: the set top box is named first and owns group 1.
   // `devices()` gives one entry per occupied group, and it names each one from the file itself. This said
   // it named none of them, so that the name lived only in the metadata archive and nothing joined the
-  // two, until the power on delay work placed base slot 13 in `ARCH16_SLOT_MAP` (todo-compile-350 1.8),
+  // two, until the power on delay work placed base slot 13 in `ARCH16_SLOT_MAP`,
   // after which the reader found each group's name; this assertion caught the change. The names agree
   // with the placement above, group by group, so the file and the outside lookup now close on each other.
   assert.deepEqual(devices(c).map((one) => [one.group, one.name]),

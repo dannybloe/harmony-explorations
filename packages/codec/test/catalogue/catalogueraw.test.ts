@@ -1,5 +1,5 @@
 /**
- * The raw capture behind the infrared archive, todo-later 1.3 and 1.4, section 305.
+ * The raw capture behind the infrared archive, section 305.
  *
  * Three kinds of claim. The projection, the alignment and the side file's sparseness, on records made up
  * here, which need no lab and are not Logitech's data. The archive's statement that every action list is

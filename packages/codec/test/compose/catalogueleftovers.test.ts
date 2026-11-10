@@ -1,6 +1,6 @@
 /**
  * The infrared families the catalogue composer still refused after section 359 for want of a rhythm or
- * because the family's table block does not take the code, section 361, `todo-process-logitech.md` 2.3.
+ * because the family's table block does not take the code, section 361.
  *
  * **What is claimed, and over what.** Two classes, four family spellings each, over the whole archive.
  *
@@ -23,7 +23,8 @@
  * **What is not claimed.** Anything on a remote; anything about the families no compile here holds,
  * `Entone 56 Bit`, `Galaxis 16 Bit Quad Toggle` and the `Ada 40 Bit`, `AudioAnalogue 14 bit`, `DAM 12 Bit` and
  * `Intellibus 17 Bit ` spellings, which are composed from the definition alone, stated and unverified per decision 15; and the 14 commands of these classes still
- * refused for a conflicting count, todo 2.2.2's.
+ * refused for a conflicting count, a device stating one count and its family another, which no compile here
+ * settles.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -133,7 +134,7 @@ test('a code spelling its family otherwise composes exactly as the same code spe
     }
     // Every distinct code, by spelling and count. `toshiba 32 Bit`'s family states 1, so at 3 the table's
     // block is still the one sent, as it is for any `Toshiba 32 Bit` code; whether a device stating 3 gets it
-    // is cataloguePressRepeats's question, todo 2.2.2.
+    // is cataloguePressRepeats's question.
     assert.deepEqual([...tally].sort(), [
       ['Ada 40 Bit at 1: definition', 79], ['Ada 40 Bit at 3: definition', 79],
       ['AudioAnalogue 14 bit at 1: definition', 35], ['AudioAnalogue 14 bit at 3: definition', 35],

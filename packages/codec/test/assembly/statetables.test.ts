@@ -1,5 +1,5 @@
 /**
- * Base slots 0, 13 and 14 built from a description, `todo-compile-650.md` 10.3, section 324, measured
+ * Base slots 0, 13 and 14 built from a description, section 324, measured
  * against Logitech's own compiles.
  *
  * **The measurement is a round trip through a description that leaves out what the generator owns.**
@@ -577,19 +577,19 @@ test('a built table names its records, and the header follows the widths', () =>
 });
 
 // ---------------------------------------------------------------------------------------------------
-// The Harmony One, `todo-compile-one.md` 6.4: the same builder, with the One family's facts,
+// The Harmony One, section 407: the same builder, with the One family's facts,
 // `ONE_STATE_TABLES`, which the registry hands out for its compiles.
 // ---------------------------------------------------------------------------------------------------
 
-/** The 19 distinct Harmony One compiles, `todo-compile-one.md` 2.2, as `startupassistant.test.ts` lists them. */
+/** The 19 distinct Harmony One compiles, as `startupassistant.test.ts` lists them. */
 const ONE_COMPILES = ONE_FAMILY.full;
 
 const pieceTargets = (table: ContainerPiece): ContainerPiece[] =>
   [...table.refs].sort((a, b) => a.at - b.at).map((ref) => ('to' in ref ? ref.to : undefined)!);
-// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+// The codec's one byte comparison, `sameBytes`, under the name this file has always used.
 const same = sameBytes;
 
-test('todo-compile-one 6.4: base slots 0, 13 and 14 of all 19 Harmony One compiles are rebuilt byte for byte from a description, part by part',
+test('base slots 0, 13 and 14 of all 19 Harmony One compiles are rebuilt byte for byte from a description, part by part',
      skipUnless(...ONE_COMPILES), () => {
   const tally = { whole: 0, clock: 0, firmware: 0, firstWide: 0, own: 0, table: 0, tree: 0, mapTable: 0, maps: 0, minute: 0 };
   let variables = 0;
@@ -633,7 +633,7 @@ test('todo-compile-one 6.4: base slots 0, 13 and 14 of all 19 Harmony One compil
   });
 });
 
-test('todo-compile-one 6.4: the rebuild reads none of the bytes the generator owns: a blinded description rebuilds all 19 Harmony One compiles',
+test('the rebuild reads none of the bytes the generator owns: a blinded description rebuilds all 19 Harmony One compiles',
      skipUnless(...ONE_COMPILES), () => {
   for (const name of ONE_COMPILES) {
     const c = containerOf(name);
@@ -645,7 +645,7 @@ test('todo-compile-one 6.4: the rebuild reads none of the bytes the generator ow
   }
 });
 
-test('todo-compile-one 6.4: the Harmony One\'s firmware block, clock and widths are its own on all 19, and arch 14\'s fail it',
+test('the Harmony One\'s firmware block, clock and widths are its own on all 19, and arch 14\'s fail it',
      skipUnless(...ONE_COMPILES), () => {
   const one = ONE_STATE_TABLES;
   const tally = { firmware: 0, fourteenFirmware: 0, clock: 0, clockWithoutMinute: 0, hourList: 0, minuteNext: 0, firstWide: 0, onlyWide: 0 };
@@ -684,7 +684,7 @@ test('todo-compile-one 6.4: the Harmony One\'s firmware block, clock and widths 
   assert.throws(() => isWideVariable(121, FOUR_SLOT_STATE_TABLES), StateTablesError);
 });
 
-test('todo-compile-one 6.4: a Harmony One description built by the four slot family\'s facts is refused on all 19 for a width they have not measured, a minute that disagrees with its family is refused, and an architecture no family serves has no facts',
+test('a Harmony One description built by the four slot family\'s facts is refused on all 19 for a width they have not measured, a minute that disagrees with its family is refused, and an architecture no family serves has no facts',
      skipUnless(...ONE_COMPILES), () => {
   let refused = 0;
   let minuteRefused = 0;

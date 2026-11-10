@@ -250,7 +250,7 @@ test('diffRanges finds the runs and refuses a length change', () => {
  * is asserted as an exact run list, not as "the timestamp changed": if a save touched anything else,
  * a test that only checked the timestamp would pass.
  */
-// `h885_a_config` since `todo-compile-885.md` 1.5: the bench 885's own configuration, the base every 885 write
+// `h885_a_config`: the bench 885's own configuration, the base every 885 write
 // starts from, so the stamp a write puts on it is held on the file the writes actually go to. The 885 sets
 // its clock from base slot 13 at every start, `tests/harmony_880_885/test_harmony_885_state.py`, so this is what a write's
 // restart reseeds it from.
@@ -374,7 +374,7 @@ test('saving on the 31st stores 30 and leaves the day maximum where it was',
       };
     };
     assert.deepEqual(inRange('2026-08-31T12:00:00'), { day: 30, most: 30, bad: 0 });
-    // The 1st is stored as 0, which is the stamp the old reader refused, todo-compile-650 1.3.1.
+    // The 1st is stored as 0, which is the stamp the old reader refused.
     assert.deepEqual(inRange('2026-10-01T12:00:00'), { day: 0, most: 30, bad: 0 });
     assert.deepEqual(inRange('2026-08-30T12:00:00'), { day: 29, most: 30, bad: 0 });
     // A config an old save of ours left at a maximum of 31 can be saved again, and is put back to 30.

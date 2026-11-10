@@ -371,7 +371,7 @@ test('an activity\'s screens composed from its commands are Logitech\'s page for
   assert.deepEqual(resolved, { plain: { items: 64, resolved: 64 }, customised: { items: 101, resolved: 16 } });
   // Refused: none. The one label wider than a corner's line in the label font, 'Antenna' on the same
   // activity of both copies of one contributed configuration, goes down a size the way the compiler's
-  // does, `todo-compile-650.md` 8.2.3; its pages are Logitech's on the second copy, which is what shows
+  // does; its pages are Logitech's on the second copy, which is what shows
   // the smaller font chosen is the compiler's, and on the first they differ for the gap below.
   assert.deepEqual(refused, []);
   assert.deepEqual(records, { same: 40, differ: 0 });

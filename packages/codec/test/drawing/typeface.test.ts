@@ -1,5 +1,5 @@
 /**
- * Letters rendered in the codec, `todo-compile-650.md` 10.8: the rasteriser's coverage and ink on shapes
+ * Letters rendered in the codec: the rasteriser's coverage and ink on shapes
  * whose answer is known, the nine faces' letters landing on the rows each face states, and the whole of
  * what the renderer draws pinned by a digest, so a change to the rasteriser or to the font is seen and the
  * claim that every machine draws the same bytes is checked on each one the suite runs on.
@@ -22,7 +22,7 @@ import {
   rasterise,
   type PathCommand,
 } from '../../src/build.ts';
-// Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
+// Which faces a family letters in is the family's, so shared code names no remote's faces, `generic.test.ts`.
 import { HARMONY_650_FACES } from '../../src/families/harmony-600-650-700/fonts.ts';
 import { HARMONY_ONE_FACES } from '../../src/families/harmony-one/fonts.ts';
 import '../../src/support/resources.node.ts';

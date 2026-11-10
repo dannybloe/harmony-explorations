@@ -41,8 +41,8 @@ if (mode === 'from-font') {
 
 if (entry !== 'main' && entry !== 'node') throw new Error(`no entry called ${entry}`);
 // The entry first, so on `node` its resources are supplied as before; then `./internal`, which loads anywhere as the
-// main entry does and carries the two readers this file asks that the main entry does not since `todo.md` 7.3.6,
-// `characterMap` and `resource`.
+// main entry does and carries the two readers this file asks that the main entry does not carry, `characterMap` and
+// `resource`.
 const chosen = entry === 'node' ? await import('../../src/node.ts') : await import('../../src/index.ts');
 const codec = { ...(await import('../../src/internal.ts')), ...chosen };
 

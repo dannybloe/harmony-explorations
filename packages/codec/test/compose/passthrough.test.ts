@@ -1,5 +1,5 @@
 /**
- * A pass through device in an activity, `todo-compile-650.md` 3.14: a device the signal passes through
+ * A pass through device in an activity: a device the signal passes through
  * unaltered, an HDMI switch, which MyHarmony saves under `PassThroughActivityRole` with an input and
  * no job.
  *
@@ -15,9 +15,10 @@
  * every comparison the switch takes part in and no other.
  *
  * **Composed onto `h650_panasonic_config` and not onto Logitech's compile itself**, which is where
- * `todo-compile-650.md` 5.1 will compose: `h650_start_config` holds no device page with a single item,
- * so the one item background picture is not in it and `deviceModeChrome` refuses to build an activity
- * screen there, "skin 72 holds 0 device page looks whole". That is 5.1's to settle and not this item's.
+ * the test setup is composed: `h650_start_config` holds no device page with a single item, so the one
+ * item background picture is not in it and `deviceModeChrome` refuses to build an activity screen
+ * there, "skin 72 holds 0 device page looks whole". Composing onto that compile is the test setup's
+ * concern and not this file's.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

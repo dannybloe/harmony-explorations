@@ -1,5 +1,5 @@
 /**
- * One build from a recipe, `buildFromRecipe` on the main entry, plan 014 and `todo.md` 7.3.11.3.
+ * One build from a recipe, `buildFromRecipe` on the main entry, plan 014.
  *
  * **What is held here, with no lab and no archive**: a recipe with no device and no activity gives, for every model a
  * compiled family builds, exactly the empty configuration that family's own builder gives, so the function adds a

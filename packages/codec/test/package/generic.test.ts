@@ -1,27 +1,28 @@
 /**
  * Code outside `src/families/` is generic, plan 007 and the `code-for-a-family` skill: it names no remote. This
  * holds that executably for the shapes a pattern can find, and lists every module that still breaks it as the
- * debt, `todo-compile-one.md` 3.3.
+ * debt, `DEBT` below, which is empty: every such module has moved its remote specific part into a family.
  *
  * Six shapes are counted per module, comments left out: a test of which remote it is, a name belonging to one
  * family, key scan codes, a set of skins or a model named by its string, a family's module imported directly,
  * and a family's name imported through `compose.ts`'s re-exports, `PATTERNS`. **This is a floor and not the
  * audit**: a module can hold one remote's coordinates, fonts or counts under names no pattern knows. The module
- * by module audit, `todo-compile-one.md` 3.3.2, found the rest: five modules remote specific in substance that the
- * patterns here count in part or not at all, `statetables.ts`, `shared/devices.ts`, `shared/setup.ts`, `sequence.ts` and
- * `composecatalogue.ts`, and 3.3.3 moves them all the same; `statetables.ts`' four slot facts are the family's
- * since 3.3.3.3, the builder taking them from `Family.stateTables`.
+ * by module audit found the rest: five modules remote specific in substance that the patterns here count in part or
+ * not at all, `statetables.ts`, `shared/devices.ts`, `shared/setup.ts`, `sequence.ts` and `composecatalogue.ts`, and
+ * their remote specific parts moved all the same; `statetables.ts`' four slot facts are the family's, the builder
+ * taking them from `Family.stateTables`.
  *
  * The counts are asserted exactly, so a module joining the list or a count rising fails, and so does one falling,
  * which is the moment to lower the list and keep the gain. **Never add a module or raise a count to make a commit
  * pass**: move the remote specific part into its family.
  *
- * **Since `todo.md` 7.3.9 the families are read off the directory**, so the import pattern covers every family and
- * not the two it named when it was written: until then a shared module importing the Harmony 300 and 350's, the
- * Harmony 880 and 885's or the Harmony Touch's folder passed. The four entries at the top are exempt from that
- * pattern and from the family's names, since publishing a family's parts is what an entry is for, the `architecture`
- * skill; the names were counted in `build.ts` once 7.3.9 put the Harmony One's whole builds there, and failed. And the last test
- * holds that no family imports another, which the skill's check over a diff was the only thing holding before.
+ * **The families are read off the directory**, so the import pattern covers every family and not only the ones a
+ * list happened to name: when it named the Harmony 600 family's and the Harmony One's alone, a shared module importing
+ * the Harmony 300 and 350's, the Harmony 880 and 885's or the Harmony Touch's folder passed. The four entries at the
+ * top are exempt from that pattern and from the family's names, since publishing a family's parts is what an entry is
+ * for, the `architecture` skill; the names were counted in `build.ts` once the Harmony One's whole builds were put
+ * there, and failed. And the last test holds that no family imports another, which the skill's check over a diff was
+ * the only thing holding before.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -43,7 +44,7 @@ const FAMILY_FOLDERS: readonly string[] = readdirSync(join(SOURCE, 'families'), 
 const ENTRIES: ReadonlySet<string> = new Set(['index.ts', 'build.ts', 'internal.ts', 'node.ts']);
 
 /**
- * The Harmony One family's own names, read off its modules' exports. Until plan 013 step 7.3.2 the family was
+ * The Harmony One family's own names, read off its modules' exports. Until plan 013 the family was
  * `touch` and a prefix pattern caught its names; `one` as a prefix also catches `oneMark` and `oneBlockCopy`,
  * which are ordinary words, so the names are listed from the family itself, those that carry its name.
  */
@@ -67,42 +68,43 @@ const PATTERNS: Readonly<Record<string, RegExp>> = {
   // A set of skins or a model named by its string: which remote, by another name.
   models: /_SKINS\b[^\n]*new (Set|Map)\(\[|(===|!==)\s*'harmony-\d{3}'/g,
   // A family's module imported from outside the families, which reaches its internals past `familyOf`. Every
-  // family's folder since `todo.md` 7.3.9, where it named the Harmony 600 family's and the Harmony One's alone.
+  // family's folder, read off the directory, where it once named the Harmony 600 family's and the Harmony One's alone.
   imports: new RegExp(`from '(\\.\\.?\\/)+families\\/(${FAMILY_FOLDERS.join('|')})\\/`, 'g'),
 };
 
 /**
- * Every module outside `families/` that names a remote, with how often, as of `todo-compile-one.md` 3.3's start.
+ * Every module outside `families/` that names a remote, with how often. The list is empty; the paragraphs below say
+ * where each part it once counted went, so a module's old count can be followed to its family.
  *
- * Since 3.3.3.3 `compose.ts` passes nothing of a family's through, so no module has a `barrel` count left: the
+ * `compose.ts` passes nothing of a family's through, so no module has a `barrel` count left: the
  * three four slot modules still outside the family that took a family's names that way, `backgrounds`,
  * `compare` and `screenrecords`, import them from the family's index instead, which shows as one import
  * each where the barrel counted the names, `screenrecords`' joining the import it had.
  *
- * Since 3.3.3.5 `fonttable.ts` asks the family which face a set becomes, whether sets share a glyph and whether
+ * `fonttable.ts` asks the family which face a set becomes, whether sets share a glyph and whether
  * its faces were measured on the skin, `Family.fonts`, and `backgrounds.ts` takes the Harmony 650's skin set from
  * the family's index, through the import it had, rather than defining it.
  *
- * Since 3.3.3.4 `shared/activities.ts` asks the family whether composing an activity changes its wiring,
+ * `shared/activities.ts` asks the family whether composing an activity changes its wiring,
  * `Family.activityRewiring`, where it tested the architecture, and leaves the list; a send's shape and an
  * activity's start are family members too, `Family.sends` and `Family.activityStart`, which the patterns here
  * counted in no module, since each was a test of a trait rather than of the architecture.
  *
- * Since 3.3.3.2's second run `wiring.ts` is the four slot family's, `families/harmony-600-650-700/wiring.ts`, and so are
+ * `wiring.ts` is the four slot family's, `families/harmony-600-650-700/wiring.ts`, and so are
  * mode 0's list and the keypad's scan range, `families/harmony-600-650-700/modezero.ts`, and the assembly with its skin
  * sets, `families/harmony-600-650-700/assemble.ts` and `skins.ts`; all three leave the list. `modezero.ts` keeps the key
  * list order every family's lists share and `assemble.ts` the renumbering of base slot 10, neither naming a
  * remote, and `screenrecords.ts` takes the wiring's description and the scan range through the family's index,
  * on the import it had, so none of its counts moves.
  *
- * Since 3.3.3.6 the Harmony 600, 650 and 700's corner layout is a reader's table keyed by architecture,
+ * The Harmony 600, 650 and 700's corner layout is a reader's table keyed by architecture,
  * `CORNER_LAYOUTS` in `cornerlayout.ts`, which the four slot family takes under its own names through
  * `families/harmony-600-650-700/geometry.ts`, and the device list reader's two inline tests of the architecture are that table
  * and one more, so `inventory.ts` leaves the list; `compare.ts` reads the layout by the configuration's
  * architecture and keeps only its import of the family's index; `screenrecords.ts` takes the layout from the
  * family's index, on the import it had.
  *
- * And since 3.3.3.2's last run the list is empty: `screenrecords.ts` keeps the machinery every family builds a
+ * And the last moves emptied the list: `screenrecords.ts` keeps the machinery every family builds a
  * mode record with and its three Harmony 600, 650 and 700 screens are that family's `screenrecords.ts`; the screen
  * part encoder both halves spell through is shared, `screenparts.ts`; `backgrounds.ts` and `compare.ts` are the
  * family's whole; `pictures.ts` keeps the drawing every family uses and the Harmony 650's pictures are the family's
@@ -165,8 +167,8 @@ function census(): Record<string, Record<string, number>> {
  * A module's text with the bodies of its per architecture tables left out, `PerArchitecture` in `slots.ts`: a key
  * scan inside one is a reader's table holding a remote's fact, plan 007's sanctioned form, where a scan anywhere
  * else is code knowing one keypad. Only the scans are counted this way; a table indexed with a literal
- * architecture is still the architecture pattern's. Since `todo-compile-one.md` 3.3.3.6, whose corner layout is
- * the first such table holding scans.
+ * architecture is still the architecture pattern's. The four slot family's corner layout, `CORNER_LAYOUTS`, was the
+ * first such table holding scans.
  */
 function withoutArchitectureTables(text: string): string {
   let out = text;
@@ -192,7 +194,7 @@ test('code outside the families names no remote but in the modules of the debt l
 
 test('the census finds each shape it counts, so an empty count is the code\'s and not a blind pattern', () => {
   // The control: one line of each shape, which every pattern has to find once.
-  // The second import is a family the pattern named no folder of before `todo.md` 7.3.9.
+  // The second import is a family the pattern named no folder of while it listed its families by hand.
   const sample = 'if (c.architecture === 14) x = archSlot(12, 9);\nconst y = FOUR_SLOT_ITEMS;\nexport const EXIT_SCAN = 12;\n'
     + "const S_SKINS = new Set([72]);\nimport { a } from '../families/harmony-one/menus.ts';\n"
     + "import { b } from '../families/harmony-880-885/pages.ts';\n";

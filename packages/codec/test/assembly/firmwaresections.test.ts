@@ -1,5 +1,5 @@
 /**
- * The log area and the parameter block built for an architecture, `todo-compile-one.md` 6.4, measured
+ * The log area and the parameter block built for an architecture, section 407, measured
  * against Logitech's own compiles of the Harmony One and of the Harmony 600, 650 and 700.
  *
  * **Nothing here is read off the compile being rebuilt**: the log area is the architecture's and the
@@ -29,19 +29,19 @@ import { ONE_PARAMETERS } from '../../src/families/harmony-one/parameters.ts';
 import { PARAMETER_VALUES, describeWiring } from '../../src/families/harmony-600-650-700/wiring.ts';
 import { sameBytes } from '../../src/support/bytes.ts';
 
-/** The 19 distinct Harmony One compiles, `todo-compile-one.md` 2.2, as `startupassistant.test.ts` lists them. */
+/** The 19 distinct Harmony One compiles, as `startupassistant.test.ts` lists them. */
 const ONE_COMPILES = ONE_FAMILY.full;
 
 /** The thirteen arch 14 compiles section 312 names, as `frame.test.ts` lists them. */
 const ARCH14_COMPILES = ARCH14_FAMILY.full;
 
 const containerOf = (name: string): Container => parse(load(name) as Uint8Array);
-// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+// The codec's one byte comparison, `sameBytes`, under the name this file has always used.
 const same = sameBytes;
 const targets = (table: ContainerPiece): ContainerPiece[] =>
   [...table.refs].sort((a, b) => a.at - b.at).map((ref) => ('to' in ref ? ref.to : undefined)!);
 
-test('todo-compile-one 6.4: the log area and the parameter block of all 19 Harmony One compiles are built byte for byte, part by part',
+test('the log area and the parameter block of all 19 Harmony One compiles are built byte for byte, part by part',
      skipUnless(...ONE_COMPILES), () => {
   const tally = { whole: 0, log: 0, logRefs: 0, table: 0, groups: 0, bandGroup: 0 };
   let bytes = 0;
@@ -71,7 +71,7 @@ test('todo-compile-one 6.4: the log area and the parameter block of all 19 Harmo
   assert.equal(bytes, 19 * (9 + 34 + 151));
 });
 
-test('todo-compile-one 6.4: the Harmony One\'s log area and parameter values are one set on all 19, as read',
+test('the Harmony One\'s log area and parameter values are one set on all 19, as read',
      skipUnless(...ONE_COMPILES), () => {
   let log = 0;
   let values = 0;
@@ -87,7 +87,7 @@ test('todo-compile-one 6.4: the Harmony One\'s log area and parameter values are
   assert.deepEqual({ log, values, band }, { log: 19, values: 19, band: 19 });
 });
 
-test('todo-compile-one 6.4: the same builders give the thirteen arch 14 compiles their log area and their model\'s parameter block',
+test('the same builders give the thirteen arch 14 compiles their log area and their model\'s parameter block',
      skipUnless(...ARCH14_COMPILES), () => {
   let whole = 0;
   for (const name of ARCH14_COMPILES) {
@@ -99,7 +99,7 @@ test('todo-compile-one 6.4: the same builders give the thirteen arch 14 compiles
   assert.equal(whole, 13);
 });
 
-test('todo-compile-one 6.4: the other architecture\'s log area fails every Harmony One compile, and what the firmware would ignore is refused',
+test('the other architecture\'s log area fails every Harmony One compile, and what the firmware would ignore is refused',
      skipUnless(...ONE_COMPILES), () => {
   let differs = 0;
   for (const name of ONE_COMPILES) {

@@ -12,7 +12,7 @@
  * - **The calibration**: ten devices Logitech compiled, composed again from the catalogue alone and
  *   compared with Logitech's transition for transition, with every divergence counted by name, and an
  *   eleventh compared at the plan.
- * - **An activity sets an input**, todo 3.6: the start of a composed activity writes the input value
+ * - **An activity sets an input**: the start of a composed activity writes the input value
  *   between the power writes, in Logitech's order.
  */
 import test from 'node:test';
@@ -552,7 +552,7 @@ test('ten devices Logitech compiled, composed again from the catalogue, agree tr
 
 test('a composed activity puts a composed device on its input, between the power writes, in Logitech\'s order',
      needing(skipUnless('h650_config_region'), skipWithoutIrArchive()), () => {
-  // Todo 3.6 on the Harmony 650's own configuration: an LG OLED65G26LA composed with its inputs, and
+  // On the Harmony 650's own configuration: an LG OLED65G26LA composed with its inputs, and
   // an activity that switches it on and puts it on HDMI 1.
   const root = IR_ARCHIVE!;
   const device = catalogueDevice(root, 'LG', 'OLED65G26LA');
@@ -603,7 +603,7 @@ test('a composed activity puts a composed device on its input, between the power
 });
 
 /**
- * The Harmony One's devices whose inputs are composed again here, `todo-compile-one.md` 1.2: Logitech's
+ * The Harmony One's devices whose inputs are composed again here: Logitech's
  * compiles of the spare Harmony One, the same catalogue entries as `CALIBRATION`'s on the 600 family, which
  * the pin below checks rather than trusts.
  */

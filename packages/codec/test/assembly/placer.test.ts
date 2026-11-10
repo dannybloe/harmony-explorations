@@ -1,6 +1,6 @@
 /**
  * Where Logitech's compiler parks pieces and puts its pictures, decided from the content,
- * `todo-compile-650.md` 10.5 and `docs/findings.md` section 328.
+ * `docs/findings.md` section 328.
  *
  * **The measurement starts from a bag.** `takeApart` gives a compile's layout, `loosen` throws what
  * is parked in front of the tables and the whole picture bank into one bag and shuffles it, and
@@ -335,7 +335,7 @@ test('the placer refuses a piece it has no rule for, and one its rule does not r
 });
 
 // ---------------------------------------------------------------------------------------------------------
-// The Harmony One, `todo-compile-one.md` 6.2 and `docs/findings.md` section 426: the same placer, the same rule.
+// The Harmony One, `docs/findings.md` section 426: the same placer, the same rule.
 
 /**
  * Every Harmony One configuration Logitech compiled that the lab holds, `frame.test.ts`' population: seventeen
@@ -585,7 +585,7 @@ test('distinct Harmony One compiles holding the same pictures never put more tha
 test('the controls bite on the Harmony One: without raw slot 18 the frame refuses the placement, and a piece parked in front of it is refused',
      skipUnless('calibration_one'), () => {
   const logitech = takeApart(containerOf('calibration_one'));
-  // The placer before `todo-compile-one.md` 6.2 dropped the inserted section, and the frame refuses a layout lacking it.
+  // The placer before section 426 dropped the inserted section, and the frame refuses a layout lacking it.
   const { inserted: _dropped, ...without } = loosen(logitech);
   assert.throws(() => layOutContainer(placePieces(without).layout), /raw slot 18 of arch 12 has no table/);
   // A piece parked in front of raw slot 18 has no rule to put it back, so loosening refuses it rather than dropping it.

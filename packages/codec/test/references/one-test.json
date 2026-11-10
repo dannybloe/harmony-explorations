@@ -1,5 +1,5 @@
 {
- "about": "The Harmony 650's test setup, h650-test.json, for the Harmony One: the model the One, skin 54, the one the spare Harmony One reports, and the sequence's keys translated by key name, since a step names a key by the scan code of the model it is for. todo-compile-one.md 1.2.",
+ "about": "The Harmony 650's test setup, h650-test.json, for the Harmony One: the model the One, skin 54, the one the spare Harmony One reports, and the sequence's keys translated by key name, since a step names a key by the scan code of the model it is for.",
  "model": {
   "name": "Harmony One",
   "skin": 54

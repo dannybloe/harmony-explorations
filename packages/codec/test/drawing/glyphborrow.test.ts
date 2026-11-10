@@ -1,19 +1,19 @@
 /**
- * Borrowing the letters unit A's fonts lack from other Harmony 880 and 885 configurations, `todo-compile-885.md` 1.6
- * (decided at the bench) for 2.7, `src/drawing/glyphborrow.ts`.
+ * Borrowing the letters unit A's fonts lack from other Harmony 880 and 885 configurations, decided at the bench so
+ * that several devices of the test setup can be composed at once, `src/drawing/glyphborrow.ts`.
  *
  * **The question.** Of the test setup's names, "LG TV" (L, G), "KPN" (N), "Switch" (w, h) and "Film kijken" (F)
  * cannot be drawn in bench unit A's title font, and "Muziek" (z) not in its two label fonts: a Logitech compile
  * carries a glyph only for what its own text draws. ("Denon", which the lab's `compile-1.6-setup.md` listed for an N,
  * spells on A as it is: its N is lower case.) The decision was to copy the missing glyphs from other configurations of
- * the same remotes, until chapter 8 letters the 885 in our own. The risk is a copy in the wrong face: a glyph is
+ * the same remotes, since the 885 is not yet lettered in our own, R42. The risk is a copy in the wrong face: a glyph is
  * pixels in colours, and a set's header says only its height, so an `F` copied from another face of the same height
  * draws a letter that does not match its word.
  *
  * **Sources checked before the work.** `reference/config-format/screens.md` on the font table, glyph codes and what
  * the firmware reads (the Harmony 880 and 885's text routine, and section 368's on the Harmony 650 and 700); the
  * codec's `font.ts`, `fonttable.ts`, `text.ts` and `shared/spelling.ts`; how the Harmony 650 track borrowed letters
- * within one configuration and then replaced them, `todo-compile-650.md` 6.2.12 and chapter 8. Logitech's client
+ * within one configuration and then replaced them with our own letters, decisions 19 and 20. Logitech's client
  * was not read: the question is what their compiled configurations contain, which the files answer, and nothing in
  * it was needed to read a font set.
  *

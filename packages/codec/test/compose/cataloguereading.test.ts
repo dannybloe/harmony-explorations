@@ -1,6 +1,5 @@
 /**
- * The catalogue composer reads a code at the widths its family's definition states, section 359,
- * `todo-process-logitech.md` 2.1.
+ * The catalogue composer reads a code at the widths its family's definition states, section 359.
  *
  * **What is claimed, and over what.** An infrared command in Logitech's catalogue is a family name and a
  * value written in a notation, `G:Motorola 16 Bit Hex:()(0x...)():3`, and how wide each value is and what
@@ -26,8 +25,9 @@
  * alone, no container in the lab holding a code of it that only the definition reads.
  *
  * **What is not claimed.** Anything on a remote; and anything about the release groups, the counts of 0
- * and the conflicting stated counts that still refuse most of what this section reads, which are
- * `todo-process-logitech.md` 2.2.2 to 2.2.4.
+ * and the conflicting stated counts that still refuse most of what this section reads: the composer
+ * refuses a device mixing two families' counts and a count of 0 for want of a compile that shows
+ * either, part of R10.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -240,7 +240,7 @@ test('a code only the definition reads is built from the definition, never the t
     // So the composer never sends the table's block for such a code: the definition's at the count, or a
     // refusal for a press that sends nothing, `iMonFixed2` at the 0 it states, whose device's count of 0 is
     // refused before this is asked anyway. 1833 of the definition's were refused for naming a release group
-    // until todo-process-logitech 2.5, which puts the release behind the record's third pointer.
+    // until section 365, which puts the release behind the record's third pointer.
     assert.deepEqual([...outcomes].sort(), [
       ['the code sends nothing on a press', 4],
       ['the definition\'s', 2971],

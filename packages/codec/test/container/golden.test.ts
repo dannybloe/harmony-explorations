@@ -141,7 +141,7 @@ const CONTAINERS = [
   'h650_plasma_base',
   // The 650's region after section 309's one byte write, the compare base for the seventh device.
   'h650_seventh_base',
-  // The 650's compare bases after the seventh device, todo-compile-650's bench files, and the file
+  // The 650's compare bases after the seventh device, its bench files, and the file
   // written for section 335's third bench run.
   'h650_combined_base',
   'h650_combined2_base',
@@ -241,8 +241,8 @@ const CONTAINERS = [
   'h700_28_staging_region',
   // 68 samples registered without a vector, which the Python side's coverage test reported and nothing
   // here could: a name missing from both lists is invisible to the comparison below. `tools/golden.py`
-  // carries the same 68 and says how their vectors were written. The bench regions and configurations
-  // of todo-compile-650 first.
+  // carries the same 68 and says how their vectors were written. The Harmony 650's bench regions and
+  // configurations first.
   'h650_clock_base', 'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base',
   'h650_bench_3_9_base', 'h650_options_base', 'h650_options_config', 'h650_bench_4_2_base',
   'h650_sequence_config', 'h650_favourites_config', 'h650_favourites_base',
@@ -253,7 +253,7 @@ const CONTAINERS = [
   'h650_11_2_3_base', 'h650_11_2_4_base', 'h650_11_2_4_look_base',
   'h650_8_2_6_after', 'h650_8_2_6_control', 'h650_test_config_clean', 'h650_milestone_5_1_config',
   'h650_assistant_off_config', 'h650_tilt_off_config',
-  // The bench regions of todo-compile-700 and todo-compile-600.
+  // The bench regions of the Harmony 700 and the Harmony 600.
   'h700_before_empty', 'h700_empty_on', 'h700_before_setup', 'h700_six_on', 'h700_seven_on',
   'h700_bright_on',
   'h600_before_empty', 'h600_empty_on', 'h600_markoff_on', 'h600_grey2_on', 'h600_blended_on',
@@ -269,16 +269,16 @@ const CONTAINERS = [
   'h515_onyiaic_asfound_config',
   // Both copies of its application image, each carrying the safe mode container at 0x8000.
   'h515_application_firmware', 'h515_contributed_application',
-  // The spare Harmony One's bench regions of todo-compile-one.
+  // The spare Harmony One's bench regions.
   'one_spare_track_start', 'one_spare_look_base', 'one_spare_look_written',
   'one_spare_glow_written', 'one_spare_arrows_written', 'one_spare_bottom_written',
   'one_spare_light60_written', 'one_spare_noassistant_written',
   'one_spare_tourfree_base', 'one_spare_tourfree_written', 'one_spare_pictures_written', 'one_spare_options_written',
   'one_spare_lists_written', 'one_spare_devlistfix_written', 'one_spare_pictures2_written', 'one_spare_empty_written',
-  // The two bench Harmony 885s' configurations and regions, each read twice, todo-prepare-885.md 2.1.
+  // The two bench Harmony 885s' configurations and regions, each read twice.
   'h885_a_config', 'h885_a_config_2', 'h885_a_region', 'h885_a_region_2',
   'h885_b_config', 'h885_b_config_2', 'h885_b_region', 'h885_b_region_2',
-  // Their later registrations, todo-compile-885.md: the whole flash reads, the configurations read after each
+  // Their later registrations: the whole flash reads, the configurations read after each
   // write, the files written and our own compositions onto unit A's configuration. `tools/golden.py` says why.
   'h885_a_flash', 'h885_a_flash_2', 'h885_a_after_block_config',
   'h885_b_flash', 'h885_b_flash_2', 'h885_b_after_block_config',
@@ -395,10 +395,10 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 112 with the 650's eight bench compare bases after the seventh device and section 335's third
   // bench configuration, which had been registered without a vector.
   // 180 with the 68 other samples registered without one, listed at the end of `CONTAINERS`.
-  // 188 with the spare Harmony One's eight region reads of todo-compile-one's last writes.
+  // 188 with the spare Harmony One's eight region reads of its last writes.
   // 189 with the Harmony 515 from onyiaic as it came, 191 with both copies of its application image.
-  // 199 with the two bench Harmony 885s' configurations and regions. 215 with their 16 later registrations of
-  // todo-compile-885.md: the whole flash reads, the reads after each write, the files written and our compositions.
+  // 199 with the two bench Harmony 885s' configurations and regions. 215 with their 16 later registrations:
+  // the whole flash reads, the reads after each write, the files written and our compositions.
   assert.equal(present.length, 215, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
@@ -447,7 +447,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 107 with the 650's eight bench compare bases and section 335's third bench configuration.
   // 174 with the 68 registered without a vector: 67 have one, and the friend's Harmony 525 is the one
   // that does not, an arch 9 container like the other Harmony 525 samples here.
-  // 182 with the spare Harmony One's eight region reads of todo-compile-one's last writes, every one with a key table.
+  // 182 with the spare Harmony One's eight region reads of its last writes, every one with a key table.
   // 190 with the two bench Harmony 885s' configurations and regions, every one with a key table.
   // 206 with their 16 later registrations, every one with a key table.
   assert.equal(complete, 206, 'the vectors whose container has a key table at all');
@@ -505,12 +505,12 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 75 with the 650's eight bench compare bases and section 335's third bench configuration, none of
   // which declares one.
   // 136 with the 68 registered without a vector: 61 of them declare none, and none of the 68 is null.
-  // 144 with the spare Harmony One's eight region reads of todo-compile-one's last writes, none declaring one.
+  // 144 with the spare Harmony One's eight region reads of its last writes, none declaring one.
   // 145 with the Harmony 515 from onyiaic, which declares none either, and 147 with the safe mode container
   // in both copies of its application image, which declare none.
   // 151 with the first bench Harmony 885's configuration and region, each read twice, which declare none.
   // 159 with eight of the bench 885s' later registrations: unit A's configuration after its block write, and
-  // every file built on A's configuration by todo-compile-885.md 2.1 and 2.3, composed, written and read back.
+  // every file built on A's configuration, the composed device and its recomposition, composed, written and read back.
   assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 159);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
@@ -553,12 +553,13 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 29 since the compare base for the power off write, section 280, and 30 since the one for the
   // four page activity menu write, section 293.
   // 37 with the 68 registered without a vector, seven of which populate it: the Harmony 650's
-  // favourites configuration and region, its milestone 5.1 base and its assistant off and tilt off
-  // configurations, and the spare Harmony One's track start and look base regions.
+  // favourites configuration and region, its region before our file of the test setup was written, its assistant
+  // off and tilt off configurations, and the spare Harmony One's track start and look base regions.
   // 41 with the second bench Harmony 885's configuration and region, each read twice, which hold two records:
   // the first Harmony 880 or 885 configuration with favourite channels, `tests/harmony_880_885/test_harmony_885_bench_reads.py`.
-  // 45 with B's configuration after its block write and the three files of todo-compile-885.md 1.4, all B's own
-  // configuration, so the records survived B's first whole write. 2.1 replaced it with A's, which carries none.
+  // 45 with B's configuration after its block write and the three files of B's first whole write, all B's own
+  // configuration, so the records survived that write. The compositions after it are built on A's, which carries
+  // none.
   assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 45,
     'the configs that populate base slot 16');
 });
@@ -596,10 +597,10 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // the 650's region before section 309's test device, 103 since its region after it.
   // 112 with the 650's eight bench compare bases and section 335's third bench configuration.
   // 180 with the 68 other samples registered without a vector.
-  // 188 with the spare Harmony One's eight region reads of todo-compile-one's last writes.
+  // 188 with the spare Harmony One's eight region reads of its last writes.
   // 189 with the Harmony 515 from onyiaic as it came, 191 with both copies of its application image.
-  // 199 with the two bench Harmony 885s' configurations and regions. 215 with their 16 later registrations of
-  // todo-compile-885.md: the whole flash reads, the reads after each write, the files written and our compositions.
+  // 199 with the two bench Harmony 885s' configurations and regions. 215 with their 16 later registrations:
+  // the whole flash reads, the reads after each write, the files written and our compositions.
   assert.equal(python.length, 215, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });

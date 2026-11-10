@@ -1,5 +1,5 @@
 /**
- * Our letters blended into the colour they are drawn on, `todo-compile-650.md` 8.2.6.
+ * Our letters blended into the colour they are drawn on.
  *
  * Four claims. The grey levels sit on the one bit letter's own box, so a blended text is placed exactly as a
  * one bit one. A blended pixel is the ink where the letter covers it, skipped where nothing does, and in
@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 
 import { H650_FAMILY, load, skipUnless, slow } from '@harmony/lab';
 import type { Container } from '../../src/index.ts';
-// Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
+// Which faces a family letters in is the family's, so shared code names no remote's faces, `generic.test.ts`.
 import { HARMONY_650_FACES } from '../../src/families/harmony-600-650-700/fonts.ts';
 import { HARMONY_ONE_FACES } from '../../src/families/harmony-one/fonts.ts';
 import { parse, renderVariants } from '../../src/index.ts';
@@ -41,7 +41,7 @@ import { withStateBackgrounds } from '../../src/families/harmony-600-650-700/bac
 import { compareViews, setupView } from '../../src/families/harmony-600-650-700/compare.ts';
 import '../../src/support/resources.node.ts';
 
-/** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
+/** The inks our letters are drawn in, the four slot family's default. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;
 
 const H650 = H650_FAMILY.full;

@@ -63,8 +63,9 @@ test('the table states six hundred and eighty one entries, of which thirty seven
     assert.equal(one.tailExact, undefined, `${one.family} has no measured block`);
     assert.equal(one.heldExact, undefined, one.family);
     // A block and a held block go together: a record needs both pointers, so half of one is no use. **A row
-    // with no block carries the two count free ones instead**, `held` and `opening`, todo-touch 5.3.4, which
-    // a compiled configuration's builder never reads, since it asks for `tail`.
+    // with no block carries the two count free ones instead**, `held` and `opening`, so a Harmony Touch
+    // definition, which never reads a repeat count, can be written for every row; a compiled configuration's
+    // builder never reads them, since it asks for `tail`.
     if (one.tail !== undefined) {
       assert.notEqual(one.held, undefined, one.family);
       assert.equal(one.opening, undefined, one.family);
@@ -75,7 +76,7 @@ test('the table states six hundred and eighty one entries, of which thirty seven
   }
   // 33 of the 644 carry a whole block, being the ones whose definition also states how many times a
   // repetition is sent, and the other 611 carry no whole block, only the two that hold no count, `held` and
-  // `opening`, todo-touch 5.3.4. 18 until section 232 let
+  // `opening`. 18 until section 232 let
   // one repetition send several rhythms, and 22 until section 233 read the release block and the two
   // padding shapes. The repeat count is now the **only** thing standing between a stated row and a
   // whole block.

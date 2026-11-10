@@ -1243,7 +1243,7 @@ test('the firmware owns 0 to 17 on arch 8, 12 and 14, and 0 to 12 on arch 9',
       [[13, 15, 16, 17], [13, 15, 17], [14]]);
     // The rail follows, and an architecture nothing measured gets the widest block. Arch 16 (Harmony 300
     // and 350) is the firmware's reading alone, `tests/firmware/test_firmware_state_block.py` and
-    // `tests/harmony_300_350/test_harmony_350_clock.py`, todo-compile-350 2.5; its configurations are outside this population.
+    // `tests/harmony_300_350/test_harmony_350_clock.py`; its configurations are outside this population.
     assert.deepEqual(FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE, { 8: 17, 9: 12, 12: 17, 14: 17, 16: 17 });
     assert.deepEqual([8, 9, 12, 14, 16, 10, undefined].map(firmwareStateVariableMax), [17, 12, 17, 17, 17, 17, 17]);
   });

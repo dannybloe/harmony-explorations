@@ -1,6 +1,6 @@
 /**
  * How many times a press sends the repeating part of a code whose family's definition states no count:
- * the device's own `timing.pressMinRepeats`, section 348, `todo-process-logitech.md` 2.2.
+ * the device's own `timing.pressMinRepeats`, section 348.
  *
  * **What is claimed, and over what.** On the device groups pinned below, a family stating no count
  * repeats exactly the device's number, 1 or 3, on 45 of the 47 catalogue devices holding one, with two
@@ -331,7 +331,8 @@ test('a family stating no repeat count repeats the device\'s own count on 45 of 
         holdsOne = true;
         if (Number(read) === count) agreeRecords += n;
         else { agrees = false; disagree.push(`${pin.file} ${family} device ${count}, read ${read} x${n}`); }
-        // **The control**: the working idea of `todo-secure-logitech.md` 2.2.2, the stated count or three.
+        // **The control**: the stated count or else three, the default a composer would fall back on without the
+        // device's own count.
         if (Number(read) !== 3) atThreeWrong += n;
       }
       const key = `${pin.manufacturer}/${pin.file}`;
@@ -472,8 +473,8 @@ test('what is still unknown is refused: a count of 0 and a device whose codeset 
       { refusal: 'the device states a repeat count of 0, which no Logitech compile here shows' });
     // A refused count refuses every command it would build, and a code the table composes is not built.
     assert.deepEqual(catalogueCommandBlocks(box[0]!, { refusal: 'why' }, protocols), { refusal: 'why' });
-    // A code naming a release group was refused here until todo-process-logitech 2.5, section 365, which
-    // found Logitech's compiles storing the release behind the record's third pointer. It builds now, once,
+    // A code naming a release group was refused here until section 365, which found Logitech's compiles
+    // storing the release behind the record's third pointer. It builds now, once,
     // held and release, and the release is the definition's finish group alone.
     const finlux = catalogueCommandBlocks('G:Finlux 16 Bit:(Start)(0x7FFB)(Finish):3', { repeats: 3 }, protocols);
     assert.ok(finlux !== undefined && !('refusal' in finlux));
@@ -657,11 +658,11 @@ test('the table\'s families stating no count, built at the device\'s count, are 
     // Before: the Dell's 34 at the table's 1 where it was written at its own 3, the Philips 70FA930's long
     // toggle record at the table's 3 where it was written at its own 1, and the Yamaha DSP-A592's 4 at the
     // table's 3 where it was written at 1. After: only the Yamaha, whose count `cataloguePressRepeats`
-    // refuses, so the table's block stays, todo-process-logitech 2.2.2. The 46 are the Yamaha DVD-S501's
-    // long toggle records at the table's own 3, one microsecond short at the end, a fault of the table's
-    // emitter and not of the count, which section 350 left; since todo-process-logitech 2.5, section 365, a
-    // code of a whole record row is built from the definition where it sends the row's train, and all 46 are
-    // right.
+    // refuses, since the device states one count and another family of its code set another, so the table's
+    // block stays. The 46 are the Yamaha DVD-S501's long toggle records at the table's own 3, one microsecond
+    // short at the end, a fault of the table's emitter and not of the count, which section 350 left; since
+    // section 365 a code of a whole record row is built from the definition where it sends the row's train, and
+    // all 46 are right.
     const counted = new Map<string, number>();
     for (const one of off) counted.set(one, (counted.get(one) ?? 0) + 1);
     assert.deepEqual([...counted].map(([one, n]) => `${one} x${n}`).sort(), [

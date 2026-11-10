@@ -1,7 +1,7 @@
 /**
  * Sequences: what Logitech's compiler made of the only two in the lab, and the composer scored on them.
  *
- * Section 327, todo-compile-650 4.2. Three kinds of claim:
+ * Section 327. Three kinds of claim:
  *
  * - **The Harmony One calibration.** Four compiles of the spare Harmony One's account hold the two
  *   sequences Danny authored, and a capture of their steps from a second account record was taken the
@@ -500,7 +500,7 @@ test('the composer refuses a sequence the action queue cannot hold, at the exact
 
 test('the sequence heard on the Harmony 650: three of the KPN box\'s own sends and two pauses naming TV kijken\'s three devices',
   skipUnless('h650_bench_4_2_base'), () => {
-    // Section 342, todo-compile-650 4.2. Composed again onto what the remote held before the write: KPN 1,
+    // Section 342. Composed again onto what the remote held before the write: KPN 1,
     // 2 s, KPN 2, 20 s, KPN Red, on Red in TV kijken. Each command reuses the send list the activity's own
     // key for it calls, so nothing is created, and each pause is one 0x7C per device of the activity.
     const c = parse(require_('h650_bench_4_2_base'));
@@ -590,10 +590,10 @@ test('Logitech\'s sequence on the Harmony 650 is the composer\'s list, given its
 /** What a list sends, as the setup comparison states it, `compare.ts`. */
 const PLASMA_RADIO = 'activity Plasma kijken | page 1 | scan 34';
 
-test('the Radio sequence composed again as 5.1 composed it now stores what Logitech\'s compile of the test setup stores',
+test('the Radio sequence composed again as our file of the Harmony 650\'s test setup composed it now stores what Logitech\'s compile of the test setup stores',
   skipUnless('h650_start_config', 'h650_test_config_clean', 'h650_milestone_5_1_config'), () => {
-    // Section 349, todo-compile-650 5.2.4. The composer calls of the lab's `work/bench-5-1/step1.ts`, which
-    // built our 5.1 file: the KPN box kept on, then KPN 1, 2 s, KPN 2 for Plasma kijken's screen, with the
+    // Section 349. The composer calls of the lab's `work/bench-5-1/step1.ts`, which built our file of the
+    // test setup: the KPN box kept on, then KPN 1, 2 s, KPN 2 for Plasma kijken's screen, with the
     // records the KPN box's own 1 and 2 keys send in device mode.
     const start = parse(require_('h650_start_config'));
     const c = parse(keepDeviceOn(start, 63).bytes);
@@ -644,7 +644,7 @@ test('the Radio sequence composed again as 5.1 composed it now stores what Logit
     assert.deepEqual(body(parse(composed.bytes), composed.lists[0]!).map((one) => one.opcode),
                      theirBody.map((one) => one.opcode));
 
-    // **The control**: the records as named are what the 5.1 file sends, and they differ from Logitech's,
+    // **The control**: the records as named are what that file of ours sends, and they differ from Logitech's,
     // which is the one record difference `compare.test.ts` pins.
     const named = compose('named');
     const before = listSends(parse(named.bytes), named.lists[0]!);

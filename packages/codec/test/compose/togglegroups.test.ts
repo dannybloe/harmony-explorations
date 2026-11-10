@@ -1,6 +1,6 @@
 /**
  * A toggling code's record carries two pointer groups, and a code naming a release group carries the
- * release behind the record's third pointer: findings section 365, `todo-process-logitech.md` 2.5.
+ * release behind the record's third pointer: findings section 365.
  *
  * **What is claimed, and over what.** Eighteen catalogue devices are composed whole onto the Harmony 650's
  * configuration and compared record for record with the seventeen device groups Logitech compiled for them,

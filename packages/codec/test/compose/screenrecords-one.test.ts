@@ -1,5 +1,5 @@
 /**
- * The record reader and builder on a Harmony One screen, `todo-compile-one.md` 4.4.2: the 40 head screens of
+ * The record reader and builder on a Harmony One screen: the 40 head screens of
  * every One compile read by `recordReading`, put back by `recordOf` and `withModeRecords` from what was read,
  * nothing generated, and the whole file compared byte for byte.
  *
@@ -75,7 +75,7 @@ function rebuild(name: string, tamper?: Tamper): { out: Uint8Array; structure: n
   return { out, structure: r.structure.size, described: r.described.size };
 }
 
-test('todo-compile-one 4.4.2: the 40 head screens of every Harmony One compile are read and put back by the record reader and builder, byte for byte on all nineteen',
+test('the 40 head screens of every Harmony One compile are read and put back by the record reader and builder, byte for byte on all nineteen',
      skipUnless(...ONES), () => {
   for (const name of ONES) {
     const { structure, described } = rebuild(name);
@@ -85,7 +85,7 @@ test('todo-compile-one 4.4.2: the 40 head screens of every Harmony One compile a
   }
 });
 
-test('todo-compile-one 4.4.2: a changed byte in a built chrome, or two modes\' chromes swapped, is refused by the rebuild check',
+test('a changed byte in a built Harmony One chrome, or two modes\' chromes swapped, is refused by the rebuild check',
      skipUnless('harvest_one_two_devices'), () => {
   // The last byte of mode 10's chrome, its end instruction.
   assert.throws(() => rebuild('harvest_one_two_devices', (built) => {

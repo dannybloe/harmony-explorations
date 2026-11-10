@@ -1,6 +1,6 @@
 /**
  * Help and the Remote Assistant on the Harmony 600, 650 and 700, and their absence from a composed
- * activity: todo-compile-650 3.13 and 4.3.2, section 333.
+ * activity: sections 333 and 345.
  *
  * Help is scan 3. What it does is decided by which key map holds the key, and the firmware walks a
  * stack: the page, the mode, then base slot 9 entries the configuration pushed, of which exactly one
@@ -310,7 +310,7 @@ test('section 333: an activity composed on a Harmony 650, 600 and 700 binds no H
 
 test('with MyHarmony\'s Remote Assistant off, Logitech\'s compile drops its six screens and the seven deferred steps leading there, and nothing else changes in count',
   skipUnless('h650_favourites_base', 'h650_assistant_off_config'), async () => {
-    // Section 345, todo-compile-650 4.3.2. The same setup on the Harmony 650's test record, read off the
+    // Section 345. The same setup on the Harmony 650's test record, read off the
     // remote after MyHarmony's sync with the Assistant on, and compiled by Logitech with it off.
     const { activities, characterMap, modeRecords, screenStrings, stateVariables } = await import('../../src/internal.ts');
     const shape = (name: string) => {
@@ -342,7 +342,7 @@ test('with MyHarmony\'s Remote Assistant off, Logitech\'s compile drops its six 
 
 test('with MyHarmony\'s tilt sensor off, timer 0 queues 1F E900 alone and no list sets 3F F101, and the other timers, the parameter block, the screens and the variables do not change',
   skipUnless('h650_assistant_off_config', 'h650_tilt_off_config'), async () => {
-    // Section 346, todo-compile-650 4.3.3. Two Logitech compiles of the same Harmony 650 setup, the
+    // Section 346. Two Logitech compiles of the same Harmony 650 setup, the
     // second with the tilt sensor disabled in MyHarmony's "Remote Backlight Settings".
     const { modeRecords, parameterGroups, stateVariables, timers } = await import('../../src/internal.ts');
     const on = parse(require_('h650_assistant_off_config'));

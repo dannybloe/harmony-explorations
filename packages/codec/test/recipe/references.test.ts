@@ -1,5 +1,5 @@
 /**
- * **Every recipe against its reference**, plan 014 and `todo.md` 7.3.11.6: each recipe in `references/` is built from
+ * **Every recipe against its reference**, plan 014: each recipe in `references/` is built from
  * nothing through `buildFromRecipe` and its fingerprint, `builtDigest`, compared with the one `references.json`
  * recorded, with no lab and no archive. These are the integration tests of the one build: several recipes per remote,
  * a remote with nothing and a full setup, on every remote served but the Harmony 885.

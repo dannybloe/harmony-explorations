@@ -562,7 +562,7 @@ function startPowerWrites(c: Container): Map<string, string[]> {
 
 test('keeping a device on between activities drops its switch off from the starts of the activities without it, and All Off keeps it',
   needing(skipUnless('h650_start_config', 'h650_options_config')), () => {
-    // todo-compile-650 3.10: the same setup compiled by Logitech twice, the second with MyHarmony's
+    // The same setup compiled by Logitech twice, the second with MyHarmony's
     // "keep this device on when switching Activities" set on the Denon and Muziek saved as Custom.
     const before = parse(require_('h650_start_config'));
     const after = parse(require_('h650_options_config'));
@@ -583,7 +583,7 @@ test('keeping a device on between activities drops its switch off from the start
 
 test('keepDeviceOn cuts the Denon\'s switch off out of Logitech\'s starting compile and gives exactly the starts Logitech compiled with the setting on',
   needing(skipUnless('h650_start_config', 'h650_options_config')), () => {
-    // todo-compile-650 5.1.1. The same pair as the test above: applying the setting to the compile made
+    // The same pair as the test above: applying the setting to the compile made
     // without it has to land on the power writes of the compile made with it, activity by activity.
     const before = parse(require_('h650_start_config'));
     const after = parse(require_('h650_options_config'));

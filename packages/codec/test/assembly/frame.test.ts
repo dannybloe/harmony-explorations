@@ -1,5 +1,5 @@
 /**
- * The frame laid out from nothing, `todo-compile-650.md` 10.1, measured against Logitech's own
+ * The frame laid out from nothing, measured against Logitech's own
  * compiles.
  *
  * **The measurement is a round trip through zeroed fields.** `takeApart` drops the header, the
@@ -243,7 +243,7 @@ test('the frame refuses a layout it would get wrong, and an architecture it was 
 
   // Unsupported rather than wrong: arch 9 (Harmony 525) is the same format and nothing here has
   // measured what laying one out takes. This asked the same of arch 12 (Harmony One) until
-  // `todo-compile-one.md` 6.1 made the frame lay that out too.
+  // the frame laid that out too.
   const wrongArch = fresh();
   wrongArch.architecture = 9;
   assert.throws(() => layOutContainer(wrongArch), /only arch 12, arch 14 and arch 16 are laid out, not arch 9/);
@@ -294,7 +294,7 @@ test('the frame refuses a layout it would get wrong, and an architecture it was 
 });
 
 /**
- * Every Harmony One configuration Logitech compiled that the lab holds, `todo-compile-one.md` 6.1:
+ * Every Harmony One configuration Logitech compiled that the lab holds:
  * seventeen names and the three harvest compiles below, nineteen distinct containers, read off the
  * Harmony Ones here and a friend's or handed back by Logitech's service. `phase7_before` and
  * `phase7_after`, section 174, were missing until the review of section 395. `one_config_unprogrammed` and
@@ -309,7 +309,7 @@ const ONE_COMPILES = [
 ] as const;
 
 /**
- * Three more of Logitech's Harmony One compiles, the harvest of `todo-secure-logitech.md`, read by
+ * Three more of Logitech's Harmony One compiles, from the harvest of Logitech's service, read by
  * their path since every harvest compile carries the same file name. A missing one is a failure and
  * not a skip: the test is guarded by the named compiles beside them, as `pressrepeats.test.ts` does.
  */
@@ -442,7 +442,7 @@ test('a Harmony One section that grows moves every address above it, end_addr an
 });
 
 /**
- * The Harmony 300 and 350's frame, `todo-compile-350.md` 5.1.1, step 1 of plan 011: every Logitech compile of the
+ * The Harmony 300 and 350's frame, step 1 of plan 011: every Logitech compile of the
  * family the lab holds, taken apart and laid out again byte for byte.
  *
  * **The seven.** The five registered compiles, three of a Harmony 350 and two of a Harmony 300, and the two

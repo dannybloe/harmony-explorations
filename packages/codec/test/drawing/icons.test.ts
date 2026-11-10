@@ -1,5 +1,5 @@
 /**
- * Our pictures drawn from an icon font, `todo-compile-650.md` 9.1.2.2: Material Design Icons read from the
+ * Our pictures drawn from an icon font: Material Design Icons read from the
  * pinned package and drawn by the rasteriser our letters use, placed by one rule, and encoded as the
  * pictures they replace.
  */
@@ -64,7 +64,7 @@ test('the six pictures are built at the sizes of the pictures they replace and t
   // two bytes; the corner mark draws its ink alone and is encoded.
   for (const [name, bytes] of made) assert.equal(bytes.length, name === 'corner mark' ? 109 : 5 + 128 * 128 * 2, name);
   // Two digests: the six of the Harmony 650's, which the 700's five were added beside without moving a byte
-  // of, and the 700's five, `todo-compile-700.md` 1.2.
+  // of, and the 700's five, its charging frames.
   const SEVEN_HUNDRED = new Set(['charging 1', 'charging 2', 'charging 3', 'charging 4', 'charged']);
   const digestOf = (keep: (name: string) => boolean): string => {
     const digest = createHash('sha256');

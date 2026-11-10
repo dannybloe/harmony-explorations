@@ -1,6 +1,5 @@
 /**
- * Which of a Harmony One configuration's screens anything enters: the configuration's half of section 408,
- * for `todo-compile-one.md` 4.4.1.
+ * Which of a Harmony One configuration's screens anything enters: the configuration's half of section 408.
  *
  * The firmware's half is `tests/firmware/test_status_screens.py`'s `OnTheHarmonyOneOnlyCodeNineIsDrawnFromTheConfiguration`:
  * the 3.4 firmware makes a mode current from an `0x7E` instruction's operand, the mode stack, or the event map,

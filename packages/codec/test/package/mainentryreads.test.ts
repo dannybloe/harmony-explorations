@@ -1,7 +1,7 @@
 /**
- * Reading a configuration through the codec's main entry needs no resource, a fix to `todo.md` 7.3.5.
+ * Reading a configuration through the codec's main entry needs no resource, plan 013 decision 5.
  *
- * **What 7.3.5 checked and what it did not.** `mainentry.test.ts` walks the import graph from `src/index.ts` and
+ * **What the walk of the import graph checks and what it does not.** `mainentry.test.ts` walks the import graph from `src/index.ts` and
  * holds that nothing it reaches imports Node. It never ran a reader. And the readers did not run: `characterMap`
  * tries our own alphabet on every configuration, Logitech's included, and the alphabet was drawn from Oxanium,
  * whose files only the Node entry supplies. So through the main entry `devices`, `activities` and `inventory`

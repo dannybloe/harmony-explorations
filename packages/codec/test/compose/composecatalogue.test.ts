@@ -1,5 +1,5 @@
 /**
- * Several catalogue devices composed into one configuration, todo-compile-650 2.7, section 331.
+ * Several catalogue devices composed into one configuration, section 331.
  *
  * **What is claimed**: composing several devices in one run is composing them one at a time, byte for
  * byte, in the order given; and the result is what Logitech's compiler wrote when the same devices were
@@ -483,7 +483,7 @@ test('a whole composed device draws no corner label in a font its pages use for 
 
 /**
  * The seven devices of plan 006, as the archive names them and as the starting setup's compile names
- * them, todo-compile-650 2.6. `h650_start_config` is Logitech's compile of all seven on the bench 650,
+ * them. `h650_start_config` is Logitech's compile of all seven on the bench 650,
  * synced by MyHarmony and read off the remote; `h650_panasonic_config` is a base whose fonts spell
  * every label a whole device needs.
  */
@@ -578,7 +578,7 @@ test('the test setup\'s seven devices composed whole are infrared records Logite
 
 /**
  * Logitech's compiles for the Harmony One that the lab holds of catalogue devices, each device by the label
- * the compile gives it and its catalogue entry, from the harvest's own manifests. `todo-compile-one.md` 1.2.
+ * the compile gives it and its catalogue entry, from the harvest's own manifests.
  */
 const ONE_POWER = [
   ['harvest_one_two_devices', 'Denon_AVR-X4800H', 'Denon', 'AVR-X4800H'],
@@ -626,7 +626,7 @@ test('on the Harmony One, every record Logitech\'s power transitions send opens 
   // Section 433, extending section 337, which found the harvest compile's power copies opening with 500 ms: every
   // record either transition of the device's power variable sends, through its calls, read by the silence its once
   // block opens with, against the catalogue's `interDeviceDelay` and, as the control, its `interKeyDelay`. A power
-  // step the catalogue composer makes opens with none, which `composesetup.test.ts`' 8.1.3 test asserts for the LG and
+  // step the catalogue composer makes opens with none, which a test in `composesetup.test.ts` asserts for the LG and
   // the Denon.
   const read: Record<string, string> = {};
   let keyDelayAgrees = 0;
@@ -694,7 +694,7 @@ test('a catalogue device composed onto a Harmony One switches on with its power 
 test('a Logitech compile\'s own device gets its inputs composed, each transition sending one command alone sending the device\'s own record for the catalogue\'s code',
      needing(skipWithoutIrArchive(), skipUnless('harvest_one_two_devices')), () => {
   // Logitech's compile of the Denon and the LG for the Harmony One has no activity, so neither device has an
-  // input variable, and the test setup's activities put both on one, `todo-compile-one.md` 1.2.9.
+  // input variable, and the test setup's activities put both on one.
   const base = open('harvest_one_two_devices');
   assert.equal(deviceVariables(base).filter((one) => one.property === 'Input').length, 0);
   const lg = composeDonorDeviceInputs(base, archiveAt(IR_ARCHIVE!), { label: 'LG_OLED65G26LA', manufacturer: 'LG', model: 'OLED65G26LA' })!;
@@ -709,7 +709,7 @@ test('a Logitech compile\'s own device gets its inputs composed, each transition
   assert.equal(denon.input!.values.size, inputPlan(catalogueDriving(IR_ARCHIVE!, 'Denon', 'AVR-X4800H')).input!.values.length);
   // Each transition that sends one command sends the device's own record with the catalogue's code for that
   // command, named here by the other reader of a donor's records, `composeDonorDeviceInfrared`'s mapping by code.
-  // Until `todo-compile-one.md` 8.1.5, section 436, it sent the record at the command's place among the inputs'
+  // Until section 436 it sent the record at the command's place among the inputs'
   // commands, the Denon's CBL/SAT its Pure mode; 0 of the Denon's 19 input values sent the command meant.
   const after = parse(denon.bytes);
   const lists = after.actionLists()!;
@@ -749,7 +749,7 @@ test('a Logitech compile\'s own device gets its inputs composed, each transition
 test('a device of more than six commands composed onto a Harmony One takes a page per six, every page read back with its own rows',
      needing(skipWithoutIrArchive(), skipUnless('one_spare_myharmony')), () => {
   // The mode's entry states a pointer per page, `modeRecords`; with one pointer for several pages the mode
-  // did not read at all, which nothing ran until the test setup's Plasma, `todo-compile-one.md` 1.2.9.
+  // did not read at all, which nothing ran until the test setup's Plasma on the Harmony One.
   const base = open('one_spare_myharmony');
   const pioneer = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Pioneer', 'VSX-90TXV').codeset!)
     .map((one) => one.name).filter((name) => /^[A-Za-z]+$/.test(name)).slice(0, 14);
@@ -814,7 +814,7 @@ test('a catalogue device composed whole onto a Harmony One binds its keys in dev
   let shape = 0;
   for (const [config, label, slug, file] of ONE_POWER) {
     const theirs = open(config);
-    // Composed onto the compile lettered in ours, as `todo-compile-one.md` 1.2 composes, since a compile's own
+    // Composed onto the compile lettered in ours, as the Harmony One's test setup is composed, since a compile's own
     // fonts carry only the letters its texts use and cannot always spell the label.
     const lettered = parse(layOutContainer(withOxaniumFonts(takeApart(theirs), 'own').layout).bytes);
     let composed: Container;

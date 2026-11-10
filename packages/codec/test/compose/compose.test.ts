@@ -299,7 +299,7 @@ for (const host of HOSTS) {
     // assertion being relaxed. **On the arch 14 host the pair opens with the `0x7F` prelude**, as
     // every Harmony 600, 650 and 700 send list does, section 287, and `sendPreludes`, the reader,
     // is what says it has the compiler's shape; this asserted the bare pair there until then, as a
-    // known deviation, todo 1.2.6.
+    // known deviation.
     const lists = after.actionLists();
     const preludes = new Map(sendPreludes(after).map((one) => [one.list, one]));
     composed.lists.forEach((index, k) => {
@@ -450,9 +450,8 @@ test('one_config takes the television onto its screen and every check holds', sk
   });
 
   // Every menu's grown page: the row on scan 50 runs a list of its own entering the mode (one list every menu's row
-  // shared until `todo-compile-one.md` 4.3.3 built the lists whole, section 424, as Logitech's rows each run their
-  // own), the bottom key moved
-  // scan 51 whatever spelling it had, the lead byte declares the three row layout, and the page
+  // shared until the lists were built whole, section 424, as Logitech's rows each run their own), the bottom key
+  // moved to scan 51 whatever spelling it had, the lead byte declares the three row layout, and the page
   // still renders whole in every variant. Menu 233 is why the bottom key is asserted by scan and not
   // by opcode: nine menus bind bare `0x72` and it wraps its own in a beeping action list.
   for (const menu of composed.menus) {
@@ -1130,7 +1129,7 @@ test('a device composed on the Harmony 650 switches on with a power on delay in 
 });
 
 /**
- * Section 309, todo 4.3.4: a device composed with the catalogue's power steps switches with the records
+ * Section 309: a device composed with the catalogue's power steps switches with the records
  * Logitech's compiler writes for them. The known answer is the Harmony 650's own television, the
  * Panasonic TX-P42GT30E, compiled onto the 650's record with its catalogue holds in section 307: power
  * on and off are each held for a second, and the compiler wrote a record of seven frames for each. The
@@ -1260,7 +1259,7 @@ test('a device composed on the Harmony 650 opens every command in the compiler\'
 
 test('the arch 14 screen half opens a page on a full last page and refuses a letter its fonts do not carry',
      skipUnless('h600_config', 'h700_config'), () => {
-  // Until todo-compile-650 2.3 a full last page was refused here, the Harmony 700's two row list
+  // Until section 312 a full last page was refused here, the Harmony 700's two row list
   // holding two devices on each of three pages and every list of the Harmony 600 being full. Now a
   // full list gets a page, so the 700 composes, and what still refuses the 600 is its label font,
   // which carries only the letters its own screens draw: no 'U' for an 'Up'.
@@ -1506,7 +1505,7 @@ test('a page opened on a full arch 14 device list is the page Logitech compiles 
 
 test('the Harmony 650\'s six device configuration takes a seventh device, on a fourth page of its full two row list',
      skipUnless('h650_plasma_base'), () => {
-  // What todo-compile-650 2.3 is for: the 650 as it was before section 309's write, Logitech's own
+  // What a new device list page is for, section 312: the 650 as it was before section 309's write, Logitech's own
   // compile of six devices, whose two row list is three full pages of two and whose five corner lists
   // hold two on their second page.
   const base = parse(require_('h650_plasma_base'));
@@ -1650,7 +1649,7 @@ test('the screen half refuses what it cannot draw or place', skipUnless('one_con
                 'the refusal names the missing character');
 
   // An architecture with no family is refused outright. Arch 14 was refused here too until
-  // section 285 composed its screen, and arch 8 until `todo-compile-885.md` 2.1; their own refusals
+  // section 285 composed its screen, and arch 8 until its family composed one; their own refusals
   // are asserted beside their compositions.
   const h525 = parse(load('h525_config') as Uint8Array);
   assert.throws(() => composeDeviceScreen(h525, 'LG', rows),
@@ -1879,7 +1878,7 @@ const DEVICE_MODE_MARKERS: Readonly<Record<string, number>> = {
 };
 
 /**
- * The same marker on arch 8 (Harmony 880 and 885), read since the follow up to `todo-compile-885.md` 1.7: its rows
+ * The same marker on arch 8 (Harmony 880 and 885): its rows
  * carry no beep either, enter a mode then the mark, and were no rows to the Harmony One's shape until then,
  * `arch8devicelist.test.ts`. The two bench 885s' configurations sit outside this population and both write 26,
  * which that test asserts.
@@ -1974,7 +1973,7 @@ test('the spare Harmony One config gets a third device list page on every menu, 
 
   // Every menu: three pages of three, three and one row, the new page on the new hit page, its row
   // on the top scan running a list of its own entering the mode (a list every menu shared until
-  // `todo-compile-one.md` 4.3.3, section 424), its bottom key bound the way the page before it binds
+  // section 424), its bottom key bound the way the page before it binds
   // its own, and the page drawing whole in every variant of its bottom key.
   const lists = after.actionLists()!;
   for (const menu of composed.menus) {
@@ -2012,9 +2011,9 @@ test('the spare Harmony One config gets a third device list page on every menu, 
     }
   }
 
-  // Section 69's rail, for the nine new pages and the device's own: a pool copy each, agreeing. Since
-  // `todo-compile-one.md` 4.3.3 a list page's copy runs lists of its own with the same instructions, as Logitech's
-  // copies do, section 424, so a list is compared by what it runs.
+  // Section 69's rail, for the nine new pages and the device's own: a pool copy each, agreeing. A list page's
+  // copy runs lists of its own with the same instructions, as Logitech's copies do, section 424, so a list is
+  // compared by what it runs.
   const pages = modePages(after);
   const runs = (one: { opcode: number; operand: number }): unknown =>
     (one.opcode === 0x7f ? lists[one.operand]!.map((item) => [item.opcode, item.operand]) : one.operand);
@@ -2043,7 +2042,7 @@ test('the spare Harmony One config gets a third device list page on every menu, 
 
 test('a menu whose last page holds one row grows to two: the second row on the next scan, the bottom key one scan up',
      skipUnless('one_spare_20260830'), () => {
-  // Refused until `todo-compile-one.md` 1.2.9, on the ground that what a one row page becomes had not been
+  // This was refused once, on the ground that what a one row page becomes had not been
   // measured beside its original. It is measured now, by geometry rather than by a before and after: the
   // menus' hit pages of one, two and three rows are one geometry each and nested on all 19 One compiles, a
   // row a fixed step below the one above it, so the two row page is the one row page with that row added.
@@ -2915,7 +2914,7 @@ test('an arch 14 activity menu puts an activity on both buttons of a row and dra
 
 test('every arch 14 activity opens with its own start up screen and brackets its start with the delay step\'s variable',
      skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
-  // Section 289, and the reason todo 1.4.4's composed activity has to write the variable: every command's
+  // Section 289, and the reason a composed activity has to write the variable: every command's
   // inter device delay step runs under a condition on it, section 287.
   const variables: number[] = [];
   let activities = 0;
@@ -3043,7 +3042,7 @@ test('an activity row composed on a Harmony 650, 600 and 700 takes the bottom ro
 
 test('a compile with no device page of one command takes a composed activity, and still refuses a device page of one',
      skipUnless('h650_start_config'), () => {
-  // todo-compile-650 3.9. Logitech's compile of the Harmony 650's starting setup has no device page
+  // Logitech's compile of the Harmony 650's starting setup has no device page
   // holding one command, so it carries no picture for one: a compile holds only what its pages draw.
   // The activity's own screens never need it, since a working page of one command draws the activity
   // menu's page of one activity, section 336, so the device page chrome reports it missing rather than
@@ -3318,7 +3317,7 @@ test('a page opened on a full arch 14 activity menu is the page Logitech compile
 
 test('two and three activities composed onto the Harmony 650\'s configurations open and fill activity menu pages, and every check holds',
      skipUnless('h650_config_region', 'h650_plasma_base'), () => {
-  // What todo-compile-650 3.12 is for. `h650_config_region` holds three activities, its second page
+  // What a new activity menu page is for, section 316. `h650_config_region` holds three activities, its second page
   // one, so the first composed fills it and the second opens a third page; `h650_plasma_base` holds
   // four on two full pages, so the first opens a third page, the second fills it and the third opens a
   // fourth. Each activity is composed whole, as `compose-activity.ts` composes it: its start up and
@@ -3819,7 +3818,7 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
 
 test('picking a composed activity again on a Harmony 650, 600 and 700 runs the tag 5 list Logitech compiles: its inputs and its working screen, nothing switched',
      skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
-  // Section 313 and todo-compile-650 3.9. Each host's first Logitech activity is rebuilt by the
+  // Section 313. Each host's first Logitech activity is rebuilt by the
   // composer from the device writes of its own tag 1, the same devices, the same values and the same
   // order, so the two tag 5 lists can be compared instruction for instruction. What is normalised away
   // is only what has to differ: the list numbers, and the working screen step, which is each activity's
@@ -4722,7 +4721,7 @@ test('the composed activity read back off the Harmony 650 is a fourth row, on Ko
 /*
  * ---- What the arch 14 device composer builds instead of copying, section 319 ----
  *
- * todo-compile-650 6.2.1 to 6.2.3: the command prelude's operands, the power on delay table's case
+ * The command prelude's operands, the power on delay table's case
  * order and a new device's identifier. Each is asserted against every Logitech compile of a Harmony
  * 600, 650 or 700 the lab holds, `ARCH14_LISTS`, so the generated value is the one their compiler
  * writes rather than one that merely works.
@@ -4930,7 +4929,7 @@ test('on the 650\'s two configurations a composed device holds what copying gave
 /*
  * ---- The start sequence, the activity keyed records and the menu marker, built, section 329 ----
  *
- * todo-compile-650 6.2.4, 6.2.5 and 6.2.8. What the composers took off an existing activity or an
+ * What the composers took off an existing activity or an
  * existing row is now computed, from the Off key map, from the counter and from `statetables.ts`'s
  * records, and what the configuration holds is checked against it. Calibrated on every Logitech
  * compile of a Harmony 600, 650 or 700 the lab holds, `ARCH14_LISTS`, and for the marker on every

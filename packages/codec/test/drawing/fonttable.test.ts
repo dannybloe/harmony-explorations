@@ -1,5 +1,5 @@
 /**
- * The Harmony 650's font table in our own letters, `todo-compile-650.md` 8.2, decisions 19 and 20.
+ * The Harmony 650's font table in our own letters, decisions 19 and 20.
  *
  * Three claims. Our letters are whole: nine faces, each holding every printable ASCII character on its
  * cell, coloured by two rules, and read back by an alphabet in which only `I` and `l` ever share a shape.
@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 
 import { H650_FAMILY, load, ONE_FAMILY, sampled, skipUnless, slow } from '@harmony/lab';
 import type { Container } from '../../src/index.ts';
-// Which faces a family letters in is the family's since `todo-compile-one.md` 3.3.3.5.
+// Which faces a family letters in is the family's, so shared code names no remote's faces, `generic.test.ts`.
 import { HARMONY_650_FACES } from '../../src/families/harmony-600-650-700/fonts.ts';
 import { HARMONY_ONE_FACES } from '../../src/families/harmony-one/fonts.ts';
 import { characterMap } from '../../src/screens/text.ts';
@@ -37,7 +37,7 @@ import { FOUR_SLOT_CHOICES } from '../../src/families/harmony-600-650-700/choice
 import { compareViews, setupView } from '../../src/families/harmony-600-650-700/compare.ts';
 import '../../src/support/resources.node.ts';
 
-/** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
+/** The inks our letters are drawn in, the four slot family's default. */
 const INKS = FOUR_SLOT_CHOICES.letterInks;
 
 const H650 = H650_FAMILY.full;

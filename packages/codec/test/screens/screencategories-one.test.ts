@@ -1,6 +1,6 @@
 /**
- * Which screen bytes of a Harmony One configuration are fixed, dynamic or the setup's. Section 405, for
- * `todo-compile-one.md` 2.1, as section 317 did for the Harmony 650.
+ * Which screen bytes of a Harmony One configuration are fixed, dynamic or the setup's. Section 405, as
+ * section 317 did for the Harmony 650.
  *
  * The population is the sixteen English Harmony One compiles of skin 54, the skin the spare reports and the one
  * decision 23 builds for. Two more English compiles carry skin 59, the European Harmony One, and differ in ten

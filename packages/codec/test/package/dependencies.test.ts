@@ -1,14 +1,14 @@
 /**
- * The codec's source does not depend on `packages/usb`, `todo.md` 7.3.4, plan 013 decision 4.
+ * The codec's source does not depend on `packages/usb`, plan 013 decision 4.
  *
- * Until that step the codec imported the model table and the trailer checksum from `@harmony/usb`, so a
+ * Before that decision the codec imported the model table and the trailer checksum from `@harmony/usb`, so a
  * program that only wanted to parse a configuration pulled in the HID transport and its native module.
  * Both live in `packages/base` now. What keeps it that way is this test, because nothing else would fail:
  * an import of `@harmony/usb` in `src` would typecheck and run as long as the workspace links the package.
  *
  * The scope is `src` on purpose. The codec's scripts and tests still import `@harmony/usb`, its rails and
- * a recorded Touch sync's decoder, which is why the package keeps it as a development dependency; the test
- * kit of 7.3.6 is where the tests' imports move.
+ * a recorded Touch sync's decoder, which is why the package keeps it as a development dependency; what tests
+ * share across packages lives in `@harmony/testkit`.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

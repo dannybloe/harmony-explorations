@@ -1,6 +1,6 @@
 /**
- * Our own deflate, `src/support/deflate.ts`, writes the stream stock zlib 1.2.12 writes at its defaults, `todo-compile-350.md`
- * 5.1.4. The six metadata archives the lab holds are the calibration that matters and `metadatabuild.test.ts` holds
+ * Our own deflate, `src/support/deflate.ts`, writes the stream stock zlib 1.2.12 writes at its defaults, so that the
+ * metadata archive a Harmony 300 or 350 configuration carries can be built from nothing. The six metadata archives the lab holds are the calibration that matters and `metadatabuild.test.ts` holds
  * them; this file holds the format half with no lab, and the calibration against stock zlib itself on inputs nobody
  * chose for being easy.
  *

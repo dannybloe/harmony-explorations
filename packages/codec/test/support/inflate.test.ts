@@ -1,5 +1,5 @@
 /**
- * Our inflate, `inflateRaw` and `inflateZlib` in `deflate.ts`, gives `node:zlib`'s answer, `todo.md` 7.3.5. It replaced
+ * Our inflate, `inflateRaw` and `inflateZlib` in `deflate.ts`, gives `node:zlib`'s answer, plan 013 decision 5. It replaced
  * Node's in the two readers that inflated, a PNG's image data, `readPng`, and the metadata archive a Harmony 300, 350,
  * 890 or 895 configuration carries, `metadata.ts`, so that the codec's main entry loads where there is no Node.
  *

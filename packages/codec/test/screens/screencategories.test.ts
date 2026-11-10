@@ -1,6 +1,5 @@
 /**
- * Which screen bytes of a Harmony 650 configuration are fixed, dynamic or the setup's. Section 317, for
- * `todo-compile-650.md` 7.2.
+ * Which screen bytes of a Harmony 650 configuration are fixed, dynamic or the setup's. Section 317.
  *
  * The population is the four Harmony 650 configurations Logitech compiled that the lab holds: the 650's
  * own read off the remote, the one after a Panasonic television was added through MyHarmony, and two

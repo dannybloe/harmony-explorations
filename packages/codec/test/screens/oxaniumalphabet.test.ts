@@ -1,6 +1,6 @@
 /**
- * Our letters' alphabet as generated data, `src/screens/oxaniumalphabet.ts`, held to the font it was computed from, a fix
- * to `todo.md` 7.3.5.
+ * Our letters' alphabet as generated data, `src/screens/oxaniumalphabet.ts`, held to the font it was computed from, so
+ * that reading a configuration needs no font supplied, `mainentryreads.test.ts`.
  *
  * **Why the copy exists.** 7.3.5 put Oxanium's files behind a resource only the Node entry supplies, and
  * `characterMap` tries our alphabet on every configuration, Logitech's included, so through the main entry

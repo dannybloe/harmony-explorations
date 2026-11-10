@@ -530,7 +530,7 @@ test('thirty three stated families carry a whole block, and the other six hundre
   assert.equal(withBlock.length, 33);
   // A block and a held block go together: one without the other would be a record half writable.
   for (const row of withBlock) assert.notEqual(row.held, undefined, row.family);
-  // **The other 611 carry the two blocks that hold no count**, todo-touch 5.3.4: one repetition and the
+  // **The other 611 carry the two blocks that hold no count**: one repetition and the
   // first transmission at one repetition, which is what a Harmony Touch's definition is written from, since
   // a Touch takes its count from the device. No `tail`, so a compiled configuration's builder still refuses.
   const countFree = stated.filter((one) => one.tail === undefined);

@@ -427,7 +427,7 @@ test('the stored day counts from 0 and the weekday from Sunday, which is how the
 });
 
 test('the 650 stamp a sync wrote on the 1st reads as the 1st', skipUnless('h650_panasonic_config'), () => {
-  // The stamp that exposed the misreading, todo-compile-650 1.3.1, through the whole parser.
+  // The stamp that exposed the misreading, the 1st stored as day 0, through the whole parser.
   assert.equal(parse(require_('h650_panasonic_config')).builtAt, '2026-10-01T14:32:27');
 });
 

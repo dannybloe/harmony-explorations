@@ -264,7 +264,7 @@ const landings = (c: Container): string[] => pointers(c).map((p) => `${p.holder}
  */
 const FILE_FAMILY = FILE_BASED_FAMILY.full;
 
-test('a rebase links every container for another address and back again byte for byte, todo-compile-650 7.1.1',
+test('a rebase links every container for another address and back again byte for byte',
   skipUnless(...SAMPLES, ...MADE, ...FILE_FAMILY), () => {
     for (const name of [...SAMPLES, ...MADE, ...FILE_FAMILY]) {
       const before = parse(load(name)!);

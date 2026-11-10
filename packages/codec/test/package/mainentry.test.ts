@@ -1,5 +1,5 @@
 /**
- * The codec's main entry loads where there is no Node, plan 013 decision 5 and `todo.md` 7.3.5: an Electron renderer
+ * The codec's main entry loads where there is no Node, plan 013 decision 5: an Electron renderer
  * or a browser imports `@harmony/codec` whole. Whatever reads the disk, compresses through Node's zlib, hashes through
  * Node's crypto or names a Node global sits behind the second entry, `@harmony/codec/node`, `src/node.ts`.
  *
@@ -129,8 +129,8 @@ function walk(entry: string, read: (file: string) => string = (file) => readFile
 const described = (uses: readonly Use[]): string => uses.map((one) => `${one.file}: ${one.what}`).join('\n');
 
 test('no module the codec\'s main entry reaches imports a Node module or names a Node global', () => {
-  // And none the two subpaths reach, `./build` and `./internal`, which load anywhere too since `todo.md` 7.3.6
-  // took most of the old barrel off the main entry and put it under them.
+  // And none the two subpaths reach, `./build` and `./internal`, which load anywhere too: most of what the main entry
+  // once carried is under them now, plan 013 decision 6.
   const reached: string[] = [];
   for (const entry of [ENTRY, join(SOURCE, 'build.ts'), join(SOURCE, 'internal.ts')]) {
     const walked = walk(entry);

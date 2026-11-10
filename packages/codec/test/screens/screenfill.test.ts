@@ -1,7 +1,7 @@
 /**
  * Screen opcode 1, a filled rectangle, findings section 425: how the renderer draws it, a closure over Logitech's
  * compiles that the operands are read in the right order, and the Harmony One's black background made one fill per
- * draw, `withPictureFilled` through `withOnePictures`, `todo-compile-one.md` 5.3.4.
+ * draw, `withPictureFilled` through `withOnePictures`.
  *
  * **The closure has two ends that share no field.** Logitech's pickers frame a button with four fills two pixels wide,
  * section 416. Read as `x, y, width, height`, the firmware's order, the four close into a ring whose inside is exactly a
@@ -31,7 +31,7 @@ import '../../src/support/resources.node.ts';
 const SIXTEEN = ONE_SKIN_54_FAMILY.full;
 const ONE = { width: 176, height: 220 };
 
-test('todo-compile-one 5.3.4: a fill draws its colour, high byte first, over its rectangle clipped to the screen, its rows counted to y + height in eight bits',
+test('a fill draws its colour, high byte first, over its rectangle clipped to the screen, its rows counted to y + height in eight bits',
      () => {
   const whole = fillRows(Uint8Array.of(0, 0, 176, 220, 0x07, 0xec), ONE);
   assert.deepEqual([whole.x, whole.y, whole.pixels.length, whole.pixels[0]!.length], [0, 0, 220, 176]);
@@ -102,7 +102,7 @@ function drawnRects(c: Container): Set<string> {
   return out;
 }
 
-test('todo-compile-one 5.3.4: read as x, y, width and height, every picker frame of four fills on the sixteen closes into a ring two pixels round a picture a program draws, and read with width and height swapped none does',
+test('read as x, y, width and height, every picker frame of four fills on the sixteen closes into a ring two pixels round a picture a program draws, and read with width and height swapped none does',
      skipUnless(...SIXTEEN), () => {
   const firmware = (o: Uint8Array): Rect => [o[0]!, o[1]!, o[2]!, o[3]!];
   const swapped = (o: Uint8Array): Rect => [o[0]!, o[1]!, o[3]!, o[2]!];
@@ -126,7 +126,7 @@ test('todo-compile-one 5.3.4: read as x, y, width and height, every picker frame
   assert.deepEqual([rings, control], [144, 0]);
 });
 
-test('todo-compile-one 5.3.4: on each of the sixteen walked, the pair on a step and all sixteen and their draws in the slow tier, the background of ours becomes one fill per draw and leaves the bank, the file 77445 bytes less a byte a draw shorter, and every page draws the same',
+test('on each of the sixteen walked, the pair on a step and all sixteen and their draws in the slow tier, the background of ours becomes one fill per draw and leaves the bank, the file 77445 bytes less a byte a draw shorter, and every page draws the same',
      skipUnless(...sampled(ONE_SKIN_54_FAMILY)), () => {
   const walked = sampled(ONE_SKIN_54_FAMILY);
   const pictureChoices = { ...ONE_CHOICES, backgroundFill: false };
@@ -151,7 +151,7 @@ test('todo-compile-one 5.3.4: on each of the sixteen walked, the pair on a step 
   if (walked.length === SIXTEEN.length) assert.equal(draws, 2907);
 });
 
-test('todo-compile-one 5.3.4: a picture a fill does not draw exactly is refused, one of more than one colour, an encoded one, and one drawn where the fill\'s rows would wrap',
+test('a picture a fill does not draw exactly is refused, one of more than one colour, an encoded one, and one drawn where the fill\'s rows would wrap',
      skipUnless('harvest_one_two_devices'), () => {
   const c = parse(require_('harvest_one_two_devices'));
   const { pictures } = readOnePictures(c);
