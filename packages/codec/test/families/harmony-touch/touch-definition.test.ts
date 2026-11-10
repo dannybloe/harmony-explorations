@@ -1,6 +1,6 @@
 /**
  * A family's definition in the Harmony Touch's shape, written from a row of our own rhythm table, and a key
- * code written into it, `src/families/harmony-touch/definition.ts`, `todo-touch.md` 5.3 part A.
+ * code written into it, `src/families/harmony-touch/definition.ts`.
  *
  * **What is being claimed.** A Touch works a command's durations out from the family's definition each time
  * it sends, `reference/architectures/harmony-touch/devices-and-infrared.md`, and the definitions a sync
@@ -27,7 +27,7 @@
  * here, and nothing writes to one. The renderer is the codec's one reading of a catalogue definition, held
  * against 13 million of the archive's own renderings by `make prontocheck`; the Touch's engine is read in its
  * firmware, `tests/harmony_touch/test_harmony_touch_devices.py`. Where the reference's reading of the engine says something
- * the renderer does not, the test says so below rather than assuming the two agree. **Since `todo-touch.md` 10.1
+ * the renderer does not, the test says so below rather than assuming the two agree. **Since the rhythm table was added
  * the engine's own reading is in the codec too**, `enginePacketOf` in `src/families/harmony-touch/packet.ts`, and
  * `test/families/harmony-touch/touch-rhythm-table.test.ts` holds every written definition through it against the row; this test keeps
  * the archive's renderer, whose closure against Logitech's own definitions is the one below:
@@ -54,7 +54,7 @@
  * * **a code segment**: the engine reads its `Atoms`, the renderer its `Header` and `Trailer`. Ours state the
  *   same durations in both, so the two read one literal.
  *
- * **What a row cannot give, measured rather than guessed**: since `todo-touch.md` 5.3.4 every stated row carries
+ * **What a row cannot give, measured rather than guessed**: since the stated rows were given their repeat counts every stated row carries
  * its repetition, and 577 of the table's 681 rows are written; the rest are refused with a reason each,
  * 96 of them for a width the family's name does not give, and those 96 write at Logitech's widths. Their frames are still checked, with a trailer of the test's own,
  * so the spelling of every frame the table states is held against its row, which is the part of the writer
@@ -144,7 +144,7 @@ function sweep(widths: readonly number[]): bigint[][] {
 /**
  * A row's own block for a code, played by the codec's one block emitter, `pulsesOfBlock`, in the row's own
  * shapes. `blockOfStatedCode` does the same for a row's `tail` and `held` and knows no `opening`, the first
- * transmission a stated row with no repeat count carries since `todo-touch.md` 5.3.4, so the row's shape is
+ * transmission a stated row with no repeat count carries since the stated rows were given their repeat counts, so the row's shape is
  * put together here the way it puts it together.
  */
 function rowBlock(row: StatedProtocol, code: StatedCode, block: StatedProtocol['held']): Pulse[] | undefined {
@@ -192,7 +192,7 @@ test('every row of the rhythm table is written as a definition or refused with a
   assert.strictEqual(written.length, 577);
   // **The width refusals are the name's and not the row's**: every one of the 96 writes at the widths
   // Logitech's definition states, which the archive closure below asserts. `Daewoo 40 Bit` was refused as
-  // out of order until the generator kept `BlockTailItem.ofCopy`, todo-touch 5.3.4: without it, its first
+  // out of order until the generator kept `BlockTailItem.ofCopy`: without it, its first
   // block and its repetition disagreed about where its second segment's padded length starts. The 12 rows
   // that carry a copy's own lead in now all write, and read back, in the three tests below.
   assert.deepStrictEqual(Object.fromEntries(refused), {

@@ -1,5 +1,5 @@
 /**
- * A device taken out of Logitech's compile of the whole test setup and composed back, `todo-compile-350.md` 4.1.3:
+ * A device taken out of Logitech's compile of the whole test setup and composed back:
  * `withoutNoScreenDevice`, then `composeNoScreenDevice`, held against Logitech's own file.
  *
  * **Why a removal.** Logitech's compile of the test setup fills all eight infrared groups of the Harmony 350, so

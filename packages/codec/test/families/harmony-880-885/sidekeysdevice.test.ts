@@ -1,15 +1,15 @@
 /**
- * The first catalogue device composed onto a Harmony 885's configuration, `todo-compile-885.md` 2.1: the Sony
+ * The first catalogue device composed onto a Harmony 885's configuration: the Sony
  * DAV-C540 as `Sony HT`, eight commands, onto bench unit A's own configuration, `h885_a_config`, with the side keys
  * family, `families/harmony-880-885/`.
  *
- * **Why this device.** It is the test setup's own, `todo-compile-885.md` 1.6, so what is learned here carries; its
+ * **Why this device.** It is a device of the 885's test setup, so what is learned here carries; its
  * name and every label asked for are spelled in unit A's fonts, where the setup's other names lack letters A's title
  * font does not hold, `lab/work/legacy-remotes/notes/harmony-885/compile-1.6-setup.md` section 3; and its codes are
  * Sony's SIRC in three lengths, 12 bit for Function, 15 bit for power, volume and mute, 20 bit for play, pause and
  * stop, none of which toggles, so its group, the ninth, flips a toggle bit whose partner, group 0, holds no code of
- * two forms on unit A. Eight commands fill one page exactly, every cell and every row, and leave the device mode
- * of several pages to 2.5.
+ * two forms on unit A. Eight commands fill one page exactly, every cell and every row, and stay clear of a device
+ * mode of several pages, which is not composed for these remotes, requirement R35.
  *
  * **There is no Logitech compile to check against**: their service compiles nothing for the 880 or 885. So the
  * compare base is what every arch 8 configuration the lab holds does, six contributed and the two bench units', and
@@ -23,12 +23,12 @@
  * **What is the device's and what is borrowed.** The device's records, its lists, its power variable, its title,
  * its labels and the page's list are built. The pictures, the fonts, the bars, the queued screen program and the
  * mode's own list of handlers are the configuration's own, borrowed off its device modes and its device list, as
- * the 650 track borrowed until its chapter 6.
+ * the Harmony 650's composers did before they built their screens' parts themselves.
  *
  * **The device list is several copies**, one per activity, one for outside every activity and one that nothing
  * read enters, each listing every device; the census of them is below, and the device goes onto every copy.
  *
- * **Power, `todo-compile-885.md` 2.2 and 2.3.** 2.1 composed the power step the way Logitech's compiles for the
+ * **Power.** The first composition spelled the power step the way Logitech's compiles for the
  * Harmony 650 and 700 spell it, sections 309 and 320: the press with no silence in front, sent at the catalogue's
  * inter key delay, 5 tenths for the Sony. These remotes' compiles spell it otherwise, and the census below is the
  * evidence. **Copies count twice**: `arch8_config_a` to `_d` are one account at four moments, so the 44 power
@@ -57,8 +57,9 @@
  *
  * **The closure is the catalogue against the compile**, independent fields at both ends: the catalogue's codes and
  * holds composed by the codec's own long press and spelling rules, and Logitech's bytes read out of the owners'
- * configurations. Composed onto unit A with each device's own silence passed in (the owners edited their delays,
- * `todo-prepare-885.md` 3.11, so the catalogue's 500 ms would test the edit, not the spelling), the power records
+ * configurations. Composed onto unit A with each device's own silence passed in (the owners' devices open with
+ * silences of their own, not always the catalogue's 500 ms, `reference/infrared/sending.md`, so the catalogue's
+ * would test the owners' edits, not the spelling), the power records
  * of seven of the eight devices are Logitech's word for word, carrier included, 14 transitions, the long press
  * version among them. The eighth, the 32AS500, matches in carrier, length and silence and differs in the code's
  * bits; that the owner's two televisions share their codes is the owner's note, not asserted here. **The control**,
@@ -71,7 +72,7 @@
  * beside the step's, where Logitech's compile has one record and one list, which a device page's key binds too on
  * 39 of the 44 power on transitions (asserted below: the send list the on transition calls is the operand of some
  * mode page's tagged list). And a composed device's other page keys send the 50 ms form with a held block, where
- * Logitech's page keys mostly send the device's silence and no held block, `todo-compile-885.md` 2.9.
+ * Logitech's page keys mostly send the device's silence and no held block, a difference the composer keeps today.
  *
  * **Width.** Arch 8: the Harmony 880 and 885, which run one application; of the eight configurations five are
  * 880s' and three 885s', by the skin byte each states (15 and 17), `arch8devicelist.test.ts`. The Harmony 720 and
@@ -240,7 +241,7 @@ function powerSends(c: Container, variable: number): { from: number; to: number;
 /** The skin byte of a configuration's architecture record, which names the model: 15 an 880, 17 an 885. */
 const skinOf = (c: Container): number => c.blob[c.blobOffsetOf(c.sections[archSlot(8, 1)]!.address)! + 2]!;
 
-test('todo-compile-885 2.2 and 2.3: every record an arch 8 power transition sends is one block opening with its device\'s silence, the same on and off, over 44 variables and 28 distinct devices; only the Panasonic television\'s are seven frames; every on transition ends in a wait; and the send\'s quantity is the device\'s most common once only one, 1 on 60 of 88',
+test('every record an arch 8 power transition sends is one block opening with its device\'s silence, the same on and off, over 44 variables and 28 distinct devices; only the Panasonic television\'s are seven frames; every on transition ends in a wait; and the send\'s quantity is the device\'s most common once only one, 1 on 60 of 88',
   skipUnless(...ARCH8), () => {
     let transitions = 0;
     let withHeld = 0;
@@ -365,7 +366,8 @@ test('todo-compile-885 2.2 and 2.3: every record an arch 8 power transition send
 /**
  * The devices of the owners' sheets that Logitech's catalogue in the archive names, each with the configuration
  * holding it, its name there, its power commands and the silence its codes open with there, in tenths: what the
- * calibration composes with, since the owners' delays are edited, `todo-prepare-885.md` 3.11.
+ * calibration composes with, since the owners' delays are their own and not always the catalogue's,
+ * `reference/infrared/sending.md`.
  */
 const SHEET = [
   ['arch8_config_880', 'Pana_32AS600', 'Panasonic', 'TX-32AS600B', 8, ['PowerOn', 'PowerOff']],
@@ -378,7 +380,7 @@ const SHEET = [
   ['arch8_config_885', 'DVL-909', 'Pioneer', 'DVL-909', 2, ['PowerToggle']],
 ] as const;
 
-test('todo-compile-885 2.2 and 2.3: the catalogue\'s power of the eight sheet devices, composed onto unit A with each device\'s own silence, is Logitech\'s power record word for word on seven, the Panasonic\'s long press version included, and differs in the code alone on the eighth',
+test('the catalogue\'s power of the eight sheet devices, composed onto unit A with each device\'s own silence, is Logitech\'s power record word for word on seven, the Panasonic\'s long press version included, and differs in the code alone on the eighth',
   needing(skipUnless('h885_a_config', 'arch8_config_880', 'arch8_config_885'), skipWithoutIrArchive()), () => {
     const a = open('h885_a_config');
     const same: string[] = [];
@@ -646,7 +648,7 @@ function composeSony(): ReturnType<typeof composeCatalogueDevice> {
   return composeCatalogueDevice(open('h885_a_config'), archiveAt(IR_ARCHIVE!), { ...SONY, commands: [...SONY.commands], labels: [...SONY.labels] });
 }
 
-test('todo-compile-885 2.1: the Sony DAV-C540 composed onto unit A reads back as a ninth device with its codes, its power, its page and a row on a second page of every copy of the device list',
+test('the Sony DAV-C540 composed onto unit A reads back as a ninth device with its codes, its power, its page and a row on a second page of every copy of the device list',
   needing(skipUnless('h885_a_config'), skipWithoutIrArchive()), () => {
     const base = open('h885_a_config');
     const composed = composeSony();
@@ -659,9 +661,9 @@ test('todo-compile-885 2.1: the Sony DAV-C540 composed onto unit A reads back as
     assert.deepEqual(devices(c).filter((one) => one.group !== 8).map((one) => [one.group, one.name, one.mode]),
       devices(base).map((one) => [one.group, one.name, one.mode]), 'the base\'s devices as they were');
 
-    // Its records: the eight commands and the power step, a record of its own. Since 2.2 the step is sent at a
-    // quantity of 1 as every power send of these remotes' compiles but one device's, not at the catalogue's inter
-    // key delay of 5 as the Harmony 650 and 700's are; 2.1 sent it at 5.
+    // Its records: the eight commands and the power step, a record of its own. The step is sent at a quantity
+    // of 1 as every power send of these remotes' compiles but one device's, not at the catalogue's inter key delay
+    // of 5 as the Harmony 650 and 700's are; the first composition sent it at 5.
     const lists = c.actionLists() ?? [];
     assert.equal(irGroups(c)![8]!.addresses.length, 9);
     composed.device.lists.forEach((list, k) => {
@@ -669,7 +671,7 @@ test('todo-compile-885 2.1: the Sony DAV-C540 composed onto unit A reads back as
     });
     const powerSteps = composed.device.powerSteps!;
     assert.deepEqual(lists[powerSteps.off!]!.map((one) => [one.opcode, one.operand]), [[SEND, 0x808], [QUANTITY, 0x801]]);
-    // Since 2.3 the step's record opens with the catalogue's delay between devices, 500 ms, spelled as Logitech
+    // The step's record opens with the catalogue's delay between devices, 500 ms, spelled as Logitech
     // spells it, in front of the press: the ordinary command's record without its 50 ms. One block, no held part.
     const [stepOnce, stepHeld] = recordWords(c, 0x808);
     const [pressOnce] = recordWords(c, 0x800);
@@ -754,14 +756,14 @@ test('todo-compile-885 2.1: the Sony DAV-C540 composed onto unit A reads back as
       [[1, 5, 'Sony HT']]);
   });
 
-test('todo-compile-885 2.1 and 2.3: the composed configuration holds the arch 8 rails of writing-a-config a composed device reaches, the opening silence of both its power records included',
+test('the composed configuration holds the arch 8 rails of writing-a-config a composed device reaches, the opening silence of both its power records included',
   needing(skipUnless('h885_a_config'), skipWithoutIrArchive()), () => {
     const base = open('h885_a_config');
     const c = parse(composeSony().bytes);
 
-    // The opening silence, `writing-a-config` and 2.3: both records the device's power variable sends, on and off,
-    // the only switching codes this family composes yet (inputs are 2.6, activity starts chapter 3), open with the
-    // device's delay between devices, the catalogue's 500 ms. This was the one rail 2.1's composition did not hold:
+    // The opening silence, `writing-a-config`: both records the device's power variable sends, on and off,
+    // the only switching codes this family composes yet (inputs and activity starts are not composed), open with the
+    // device's delay between devices, the catalogue's 500 ms. This was the one rail the first composition did not hold:
     // its power step opened with no silence at all. And the on transition ends in its wait, as all 44 of
     // Logitech's do: a call of the step's list, then the catalogue's 1.5 seconds.
     const power = deviceVariables(c).find((one) => one.device === 'Sony_HT' && one.property === 'Power')!;
@@ -900,17 +902,18 @@ test('todo-compile-885 2.1 and 2.3: the composed configuration holds the arch 8 
   });
 
 /**
- * Rewritten for 2.3: this test said the lab's 2.1 file was this composition, stamped, which stopped being true by
- * design when the power step gained its silence and lost its quantity of 5. The file is still the record of what
- * unit B was given in 2.1, so what is held now is that it spells the power step the way 2.1 did, and that 2.3's file
- * is this composition.
+ * Rewritten when the power step gained its silence: this test said the lab's first composed file,
+ * `h885_composed_2_1`, was this composition, stamped, which stopped being true by design when the power step
+ * gained its silence and lost its quantity of 5. The file is still the record of what unit B was given first, so
+ * what is held now is that it spells the power step the way the first composition did, and that the second file,
+ * `h885_composed_2_3`, is this composition.
  */
-test('todo-compile-885 2.1 and 2.3: the lab\'s 2.1 file spells the power step with no silence and at 5, and the 2.3 file is this composition, stamped, 32 bytes longer for the step\'s sixteen words of silence',
+test('the lab\'s first composed file spells the power step with no silence and at 5, and the second is this composition, stamped, 32 bytes longer for the step\'s sixteen words of silence',
   needing(skipUnless('h885_a_config', 'h885_composed_2_1', 'h885_composed_2_3'), skipWithoutIrArchive()), () => {
     const first = parse(load('h885_composed_2_1') as Uint8Array);
     const [once, held] = recordWords(first, 0x808);
     const [press] = recordWords(first, 0x800);
-    assert.deepEqual([once, held], [press!.split(',').slice(2).join(','), '-'], '2.1: the press without its 50 ms, no silence');
+    assert.deepEqual([once, held], [press!.split(',').slice(2).join(','), '-'], 'the first file: the press without its 50 ms, no silence');
     const variable = deviceVariables(first).find((one) => one.device === 'Sony_HT' && one.property === 'Power')!;
     assert.deepEqual(powerSends(first, variable.index).map((one) => [one.send, one.quantity]), [[0x808, 5], [0x808, 5]]);
 
@@ -921,12 +924,12 @@ test('todo-compile-885 2.1 and 2.3: the lab\'s 2.1 file spells the power step wi
     assert.equal(filed.blob.length - first.blob.length, 32);
   });
 
-test('todo-compile-885 2.1: what the side keys family refuses rather than guesses',
+test('what the side keys family refuses rather than guesses',
   needing(skipUnless('h885_a_config'), skipWithoutIrArchive()), () => {
     const a = open('h885_a_config');
     // A whole device needs the keys a device mode's commands take, which no compile of an 885 has been read for.
     assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), { manufacturer: 'Sony', model: 'DAV-C540', label: 'Sony HT', full: true }),
-      (error: unknown) => error instanceof ComposeError && /todo-compile-885.md 2.5/.test(error.message));
+      (error: unknown) => error instanceof ComposeError && /requirement R33/.test(error.message));
     // Nine commands are a second page of a device mode.
     assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
       ...SONY, commands: [...SONY.commands, 'Eject'], labels: [...SONY.labels, 'Eject'],
@@ -944,22 +947,22 @@ test('todo-compile-885 2.1: what the side keys family refuses rather than guesse
     const once = parse(composeSony().bytes);
     assert.throws(() => composeCatalogueDevice(once, archiveAt(IR_ARCHIVE!), {
       manufacturer: 'Plex', model: 'Plex_Player', label: 'Kodi', commands: ['Play'], labels: ['Play'],
-    }), /room on its last page.*todo-compile-885.md 2.8/);
+    }), /room on its last page.*requirement R10/);
     // Unit B's copies have two pages each, the second with room: the ordinary case of a free cell, refused too.
     if (load('h885_b_config') !== undefined) {
       assert.throws(() => composeCatalogueDevice(open('h885_b_config'), archiveAt(IR_ARCHIVE!), {
         ...SONY, commands: [...SONY.commands], labels: [...SONY.labels],
-      }), /copy at mode 86 has room on its last page.*todo-compile-885.md 2.8/);
+      }), /copy at mode 86 has room on its last page.*requirement R10/);
     }
   });
 
-test('todo-compile-885 2.1: the side keys family\'s send refuses past the 64 state bytes, past group 15, a wait over 100 tenths and a group whose partner toggles, and passes each limit itself',
+test('the side keys family\'s send refuses past the 64 state bytes, past group 15, a wait over 100 tenths and a group whose partner toggles, and passes each limit itself',
   skipUnless('h885_a_config'), () => {
     const a = open('h885_a_config');
     const device = (extra: Partial<ComposeDevice> = {}): ComposeDevice => ({ label: 'Probe', commands: [], ...extra });
     const send = (c: Container, group: number, one: ComposeDevice = device()): unknown => SIDE_KEYS_SENDS.device(c, group, one, undefined);
 
-    // The 64 bytes, `todo-compile-885.md` 4.3: A's header restated with `narrow` raised, one more variable to fit.
+    // The 64 bytes, `reference/config-format/state.md`: A's header restated with `narrow` raised, one more variable to fit.
     // 61 narrow and 1 wide take 63, so the power variable makes 64 and passes; 62 makes 65 and is refused.
     const withNarrow = (narrow: number): Container => {
       const bytes = Uint8Array.from(a.blob);
@@ -985,7 +988,7 @@ test('todo-compile-885 2.1: the side keys family\'s send refuses past the 64 sta
     assert.throws(() => send(a, 10), /group 2 holds 53 toggling codes/);
   });
 
-test('todo-compile-885 2.2 and 2.3: the side keys family spells a power step with the device\'s delay between devices in front and a quantity of 1, 500 ms where none is stated, 50 ms for 0, and refuses past 100 tenths',
+test('the side keys family spells a power step with the device\'s delay between devices in front and a quantity of 1, 500 ms where none is stated, 50 ms for 0, and refuses past 100 tenths',
   () => {
     const step = (extra: Partial<ComposeDevice> = {}) => SIDE_KEYS_SENDS.powerStep!({ label: 'Probe', commands: [], ...extra });
     assert.deepEqual(step(), { leadInUs: 500000, quantity: 1 });

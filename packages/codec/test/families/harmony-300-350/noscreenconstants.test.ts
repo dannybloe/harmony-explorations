@@ -1,6 +1,6 @@
 /**
  * The Harmony 300 and 350's constant sections and lists, built from nothing and held against every compile of the
- * family the lab holds, `todo-compile-350.md` 5.1.3, step 3 of
+ * family the lab holds, step 3 of
  * [plan 011](../../../docs/plans/011-the-350-from-nothing.md). The builders are `families/harmony-300-350/constants.ts`.
  *
  * **The question.** Plan 011 counted 232 bytes per configuration that no generator wrote and that looked the same
@@ -139,7 +139,7 @@ const listBytes = (c: Container, index: number): Uint8Array => {
 };
 const calls = (c: Container, index: number): number[] => opsAt(c, listAt(c, index)).filter((one) => one.opcode === CALL).map((one) => one.operand);
 const sectionAt = (c: Container, slot: number): number => c.blobOffsetOf(c.sections[slot]!.address)!;
-// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+// The codec's one byte comparison, `sameBytes`, under the name this file has always used.
 const same = sameBytes;
 
 /** A piece's bytes with its address fields filled: an absolute address as stated, a piece by where `placed` puts it. */

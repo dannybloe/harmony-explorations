@@ -1,5 +1,5 @@
 /**
- * The compare base of the Harmony 885 compile track, `todo/todo-compile-885.md` 1.7.
+ * The compare base of our Harmony 885 configurations: the configuration every composer for the 885 adds to.
  *
  * **Why a base of our own choosing.** Logitech's service compiles nothing for the 880 or 885, so the
  * 650's route, a Logitech compile of our test setup to check every step against, is not open here. The
@@ -19,8 +19,8 @@
  * and it passed while the fifth device, infrared group 4, was named `Pwr`: a command label off the top
  * of its own mode's third page, taken as a title, on an architecture whose device modes draw no title.
  * The device has no state variable, so base slot 0 names nothing for it, and its name is the label on
- * its device list row, `Cd-speler`, which the reader did not read on arch 8 until the follow up to
- * `todo-compile-885.md` 1.7. The argument and the bytes are `arch8devicelist.test.ts`.
+ * its device list row, `Cd-speler`, which the reader did not read on arch 8 until this test's names were asserted
+ * one by one. The argument and the bytes are `arch8devicelist.test.ts`.
  *
  * **Unit B as the control, for the activities only now.** The same reader on unit B's configuration
  * leaves one of its seven activities unnamed, so "every activity named" is a property of A's file and

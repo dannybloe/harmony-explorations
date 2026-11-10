@@ -2,7 +2,7 @@
  * The Harmony Touch reader, `src/families/harmony-touch/`, over the three recorded syncs: what it reads out of Logitech's
  * documents, and the closures that say it reads them the way the remote does.
  *
- * **The question.** `todo-touch.md` 3.3 asks for a reader of the Touch's configuration in the codec. The
+ * **The question.** The Touch's configuration needs a reader of the Touch's configuration in the codec. The
  * configuration is the JSON documents a sync hands the remote, `reference/architectures/harmony-touch/`,
  * whose three pages `devices-and-infrared.md`, `activities-and-buttons.md` and `favourites-and-settings.md`
  * say field by field what the remote reads. The reader applies those rules; this file holds it against the

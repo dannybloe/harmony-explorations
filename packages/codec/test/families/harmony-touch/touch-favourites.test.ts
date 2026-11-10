@@ -1,6 +1,6 @@
 /**
  * Favourites of ours for a Harmony Touch, a logo of ours drawn as a picture, and what a picture and a favourites
- * document have to be before an answerer hands them to the remote: `todo-touch.md` 8.3,
+ * document have to be before an answerer hands them to the remote:
  * `packages/codec/src/families/harmony-touch/favourites.ts` and the `favourites address` rule of `check.ts`.
  *
  * **The facts these rest on**, `reference/architectures/harmony-touch/favourites-and-settings.md`: the favourites

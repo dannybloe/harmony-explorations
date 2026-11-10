@@ -1,7 +1,6 @@
 /**
  * A whole Harmony Touch setup, every device and every activity, composed from a description onto a set with all of
  * them taken out: `src/families/harmony-touch/setup.ts` and the ordered form of a map in `src/families/harmony-touch/compose.ts`,
- * `todo-touch.md` 8.6.
  *
  * **What has to hold, and why each test is here.**
  *

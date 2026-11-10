@@ -1,5 +1,5 @@
 /**
- * The no screen family's device composer, `todo-compile-350.md` 4.1, held against what Logitech's compiler writes
+ * The no screen family's device composer, held against what Logitech's compiler writes
  * for the same catalogue device on the same model.
  *
  * **The calibration.** The test setup's Panasonic plasma, `Panasonic/TX-P42GT30E`, is composed from the catalogue
@@ -16,7 +16,7 @@
  * **What it settled, in counts.** The composer writes the 51 records Logitech stores for the plasma, every one of
  * them Logitech's word for word: its keys' commands, Internet on the fifth favourite key, Teletext on no key and
  * the ten digits' one block copies, the last eleven with send lists nothing calls, as in Logitech's,
- * `todo-compile-350.md` 4.1.1 and `noscreenrouting.test.ts`. Each of the 51 sends through a list of Logitech's
+ * `noscreenrouting.test.ts`. Each of the 51 sends through a list of Logitech's
  * shape, the timers cancelled, the send and its quantity. The power variable's two transitions are Logitech's, the
  * 50 tenths wait included. The plasma's map binds 39 keys where Logitech's binds 40, every one of the 39 to what
  * Logitech's binds it to; the one it leaves out is Input, which Logitech binds to its TV mode device's InputNext,
@@ -29,7 +29,7 @@
  * not or the other way round. On seven devices the only differences are the favourite key and the volume and mute
  * Logitech sends to the Denon instead of the device's own; the KPN's map binds three of the table's keys, because
  * that account's mode map for it is the one the setup builder saved to put the favourites on, which reads its hard
- * buttons as unassigned, `todo-compile-350.md` 5.1.7 and `noscreenfromnothing.test.ts`. This gave the reason as the
+ * buttons as unassigned.7 and `noscreenfromnothing.test.ts`. This gave the reason as the
  * map being the one the activity ends in, until `noscreenactivity.test.ts` found the activity ending in another KPN
  * box's map, of 33 bindings sending one of its own codes, on two other compiles; and then no reason, until 5.1.7.
  *
@@ -37,7 +37,7 @@
  * split by `powerOnWaits`, is the waits Logitech's compile writes on each of the eight devices, the Knoll's 250
  * tenths as 100, 100 and 50.
  *
- * **A long press device, `todo-compile-350.md` 4.4.** Logitech's compile of the test setup puts a second device on
+ * **A long press device.** Logitech's compile of the test setup puts a second device on
  * every key's long press: the Knoll top left, the Kodi top right, the Switch bottom left and the Sony HT bottom
  * right, on groups 4 to 7. So the same four are composed from the catalogue onto the donor, on the same keys'
  * long presses, after the plasma on the bottom left key's short press, since the donor's bottom left key is free
@@ -49,7 +49,7 @@
  * the donor's TV as `volumeSource` says with no receiver in the donor; the four maps differ from Logitech's by the
  * Input key, which Logitech binds to the LG TV's and the donor's TV mode device has none of, and by volume and
  * mute, the Denon's in Logitech's where the donor has no Denon, and bind every other key both hold to the same
- * thing. The whole equality, with the Denon there, is `todo-compile-350.md` 4.1.3's, `noscreenremove.test.ts`.
+ * thing. The whole equality, with the Denon there, is `noscreenremove.test.ts`.
  *
  * **The order of a key map's tags**, `inCompilerOrder`, is now a simulation of the compiler's hash map rather than
  * a refusal wherever two tags share a slot, since the long press's held tags share slots with the donor's own:
@@ -398,7 +398,7 @@ test('the metadata archive names the composed plasma with Logitech\'s commands i
     assert.equal(plasma.index, before.length);
     // Logitech's states the account's own number for the device, which a composed device has none of; it is given
     // the next number above the donor's highest, so the numbers ascend along the archive as in every Logitech file,
-    // todo-compile-350.md 4.1.4.
+    // The device composer's long press case.
     assert.ok(logitech.deviceId !== undefined);
     assert.equal(Number(plasma.deviceId), Math.max(...before.map((one) => Number(one.deviceId))) + 1);
     const ascending = (c: Container) => metadataArchive(c)!.devices.map((one) => Number(one.deviceId))
@@ -518,7 +518,7 @@ test('the family\'s key tables store 0x85 before 0x2E at 16 buckets and 0x2E bef
   });
 
 // ---------------------------------------------------------------------------------------------------------------
-// A long press device, todo-compile-350.md 4.4.
+// A long press device.
 
 /** The four long press devices of Logitech's compile: the key's place, and its group and map there. */
 const LONG = [

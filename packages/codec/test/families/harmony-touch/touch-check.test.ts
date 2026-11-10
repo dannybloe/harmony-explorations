@@ -18,7 +18,7 @@
  * No lab is needed and none is read, except by the last test, which reads the recorded syncs and skips
  * without them.
  *
- * ## The type name, `missing type`, `todo-touch.md` 6.7.1
+ * ## The type name, `missing type`
  *
  * **The question.** Before a set of ours goes to a Touch the gate has to refuse every set the engine's
  * configuration reader raises on, since a raise inside the load ends the task that loads the configuration
@@ -83,7 +83,7 @@
  * against which the lab note above lists two disagreements, and this check's own list rule. Logitech's client
  * was not consulted: the remote reads these documents and the client hands them over unchanged.
  *
- * ## Every other field the load raises on, and the screens' reads, `todo-touch.md` 6.10
+ * ## Every other field the load raises on, and the screens' reads
  *
  * **The question.** 6.7.1 closed the type name. What was left: an entry that is not an object on a list the
  * reader does not sort by type, any field the load indexes, computes with or passes to a string function
@@ -144,7 +144,7 @@
  * calls `IsTuningDefault` listing only, which the pass and the favourites contradict) and the two `3.1-*.md`
  * notes, silent on most of these raises. Logitech's client was not consulted, for the reason above.
  *
- * ## The screens deaf to the engine until a restart, `todo-touch.md` 6.10.2
+ * ## The screens deaf to the engine until a restart
  *
  * **The question.** 34 rows of `6.10-screens-reads.md` cost "LH": a raise inside a notification from the
  * engine. Decided at the bench: they are refused too, since chapter 8 composes the names, labels and pictures
@@ -620,7 +620,7 @@ test('a malformed document reads without throwing: a device without its record, 
   assert.equal(check(bare)['required field'], 5, 'the three fields the engine requires and the two infrared needs');
   // A command without a name is kept under none, so nothing reaches it, and the buttons naming it find nothing.
   // The remote's reader lowers the name and raises on its absence, `not text`, which the check found nothing
-  // of until `todo-touch.md` 6.10 read it.
+  // of until the screens' reads were measured.
   const nameless = broken((x) => { delete firstDevice(x).Commands[1].Name; });
   const c = readConfiguration(nameless);
   assert.equal(c.devices[0]!.commands.length, 14);
@@ -629,7 +629,7 @@ test('a malformed document reads without throwing: a device without its record, 
   assert.deepEqual(check(nameless), { 'not text': 1, 'action command missing': 4 });
   // A null button is skipped where it stands, and the paths after it still name their own entry. The check
   // finds it as an entry the remote's reader reads a type name off, which raises, `missing type`; it found
-  // nothing here until `todo-touch.md` 6.7.1 read that.
+  // nothing here until the type name's read was measured.
   const button = broken((x) => { x.MapList.ButtonMaps[0].Buttons.splice(1, 0, null); });
   const map = readConfiguration(button).maps[0]!;
   assert.deepEqual(map.buttons.map((b) => b.path), ['ButtonMaps[0].Buttons[0]', 'ButtonMaps[0].Buttons[2]', 'ButtonMaps[0].Buttons[3]']);
@@ -648,7 +648,7 @@ test('an empty sync reads as empty and names all six documents absent', () => {
 });
 
 // ---------------------------------------------------------------------------------------------------
-// The gate before a write, `todo-touch.md` 6.6
+// The gate before a write
 // ---------------------------------------------------------------------------------------------------
 
 /** The gate's verdict on a set, by rule, the shape every assertion below compares whole. */
@@ -714,7 +714,7 @@ test('a document is kept by its last segment for a harmony address, whole for a 
 });
 
 // ---------------------------------------------------------------------------------------------------
-// The type name, `missing type`, `todo-touch.md` 6.7.1; the argument is this file's header
+// The type name, `missing type`; the argument is this file's header
 // ---------------------------------------------------------------------------------------------------
 
 const press = (IRCommandName: string): Json => ({ __type: 'IRPressAction', Order: 0, Duration: null, IRCommandName });
@@ -897,7 +897,7 @@ test('Logitech\'s recorded sets down pass the type rule and the gate, and the wa
 });
 
 // ---------------------------------------------------------------------------------------------------
-// Every other field the load raises on, `checkFields`, `todo-touch.md` 6.10; the argument is this file's header
+// Every other field the load raises on, `checkFields`; the argument is this file's header
 // ---------------------------------------------------------------------------------------------------
 
 const atom = (Type: number, Value: number): Json => ({ Type, Value, MinValue: null, MaxValue: null });
@@ -1091,7 +1091,7 @@ test('the check alone reports the fields too, and the gate tells them with a mis
   assert.deepEqual(readerRaises(all).map((f) => f.rule), ['missing list', 'missing type', 'not a number']);
 });
 
-/** The lab's sets of ours that went to the bench unit, `todo-touch.md` 6.8 and 6.9, as documents. */
+/** The lab's sets of ours that went to the bench unit, as documents. */
 const OUR_SETS = ['touch_own_set', 'touch_changed_set_delay', 'touch_changed_set_delay_back', 'touch_changed_set_label', 'touch_changed_set_label_back'] as const;
 const setDocuments = (fixture: string): SyncDocuments =>
   documentsOfAnswers((JSON.parse(new TextDecoder().decode(lab.require_(fixture))) as { answers: SyncAnswer[] }).answers);
@@ -1110,7 +1110,7 @@ test('Logitech\'s recorded sets down and the five sets of ours a remote committe
 });
 
 // ---------------------------------------------------------------------------------------------------
-// The screens' own reads, `screens raise`, `todo-touch.md` 6.10; the argument is this file's header
+// The screens' own reads, `screens raise`; the argument is this file's header
 // ---------------------------------------------------------------------------------------------------
 
 const USER = 'content://1.0/user;profile/user/1';

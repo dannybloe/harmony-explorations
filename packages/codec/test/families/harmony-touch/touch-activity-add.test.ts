@@ -1,6 +1,6 @@
 /**
  * An activity of ours described by its devices, steps, keys and screen entries, and put into a whole set of a Harmony
- * Touch's documents, `src/families/harmony-touch/compose.ts`, `todo-touch.md` 8.2.
+ * Touch's documents, `src/families/harmony-touch/compose.ts`.
  *
  * **What has to hold, and why each test is here.**
  *

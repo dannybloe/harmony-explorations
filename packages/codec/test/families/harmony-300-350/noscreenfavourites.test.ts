@@ -1,5 +1,5 @@
 /**
- * The no screen family's favourite channels, `todo-compile-350.md` 4.3, held against what Logitech's compiler writes
+ * The no screen family's favourite channels, held against what Logitech's compiler writes
  * for the same channels on the same device.
  *
  * **The calibration is free.** Logitech's service compiled the Harmony 350 test setup twice for the bench unit's
@@ -207,7 +207,7 @@ test('on a KPN of ours the device composer makes the ten digit copies, each Logi
     const ours = parse(out.bytes);
     assert.ok(ours.allChecksPass);
     // A set top box is a type Logitech stores the copies for whether or not a favourite calls them, `DIGIT_COPIES_BY_TYPE`,
-    // so the device composer made them, todo-compile-350.md 4.1.1, and the favourites found them.
+    // so the device composer made them, and the favourites found them.
     assert.equal(device.digitCopies, 10);
     assert.equal(out.copiesAdded, 0);
     assert.equal(out.listsAdded, 0);

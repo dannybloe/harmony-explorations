@@ -1,6 +1,6 @@
 /**
  * Settings of ours and Context composed from a description for a Harmony Touch, and the gate's rule for the Settings
- * values the remote mishandles: `todo-touch.md` 8.4, `packages/codec/src/families/harmony-touch/settings.ts` and the `setting
+ * values the remote mishandles: `packages/codec/src/families/harmony-touch/settings.ts` and the `setting
  * mishandled` rule of `check.ts`.
  *
  * **The facts these rest on**, `reference/architectures/harmony-touch/favourites-and-settings.md`, "Settings",

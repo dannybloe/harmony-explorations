@@ -1,7 +1,6 @@
 /**
  * Devices and activities taken out of a Harmony Touch's documents with everything that names them,
  * `src/families/harmony-touch/remove.ts`, and the two rules of the check that say what a reference left dangling costs,
- * `todo-touch.md` 8.5.
  *
  * **What has to hold, and why each test is here.**
  *

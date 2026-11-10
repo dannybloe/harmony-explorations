@@ -1,6 +1,6 @@
 /**
  * What Logitech's compiler stores for a Harmony 300 or 350 device that no key, list, transition or channel sends,
- * `todo-compile-350.md` 5.1.7: every send list nothing calls, on every current compile of the family the lab holds,
+ * Every send list nothing calls, on every current compile of the family the lab holds,
  * named by the catalogue command whose record it sends, and the rules that account for them.
  *
  * **Why.** Built from nothing, 5.1.6, the test setup was Logitech's second compile by content but for two records of
@@ -44,7 +44,7 @@
  * * **A television's fifth favourite command on the Harmony 300**, Home or else Internet, which the 350 binds on its
  *   fifth favourite key, `FAVOURITE_FIVE`, and the 300's keypad lacks: whole, uncalled, on both Harmony 300 compiles'
  *   televisions with either, 2 of 2. Measured and not built: the device composer refuses a television on a skin
- *   `FAVOURITE_FIVE` has no row for, and no Harmony 300 setup is built here, `todo-compile-300.md`.
+ *   `FAVOURITE_FIVE` has no row for, and no Harmony 300 setup is built here.
  * * **One list no class explains**: another owner's LG 60PV250N-ZA stores a whole OK, uncalled, beside the OK its
  *   OK key sends. Its catalogue entry states no channel tuning, and that compile is of an earlier owner whose
  *   catalogue may have differed, since two of its command names differ from the archive's, `IDENTIFIED`. Left as it

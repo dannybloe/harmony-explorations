@@ -1,6 +1,6 @@
 /**
  * Every family of the rhythm table written into the Harmony Touch's code description, and read back the way the
- * Touch's engine reads it, with no remote. `todo-touch.md` 10.1.
+ * Touch's engine reads it, with no remote.
  *
  * **What is being claimed.** A Touch is given a code as a family's definition and the code's numbers, and works the
  * durations out itself each time it sends, `reference/architectures/harmony-touch/devices-and-infrared.md`, "How a

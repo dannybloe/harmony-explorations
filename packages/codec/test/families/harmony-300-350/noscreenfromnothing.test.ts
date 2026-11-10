@@ -1,5 +1,5 @@
 /**
- * The Harmony 350 test setup built from nothing, `todo-compile-350.md` 5.1.6, step 6 of plan 011: the family's
+ * The Harmony 350 test setup built from nothing, step 6 of plan 011: the family's
  * composers emitting their pieces onto the empty configuration of 5.1.5, so no Logitech container goes in.
  *
  * **What it is.** `buildNoScreenSetup` builds the empty configuration for the setup's skin and runs
@@ -57,7 +57,7 @@
  *     step 4 makes, and so the archive's bytes;
  *   * **the length**, 124170 bytes against 118513, all of it the KPN's extra records, lists and bindings, the
  *     archive's numbers, where things sit, and since 5.4 the four bytes of the entry binding event `0xFF`;
- *   * **the key table's entry for event `0xFF`**, since `todo-compile-350.md` 5.4: ours binds it, to the list the
+ *   * **the key table's entry for event `0xFF`**, now: ours binds it, to the list the
  *     `0x30` entry calls, and Logitech's binds nothing to it, decision 28. Every other entry of the key table is
  *     Logitech's, in Logitech's order.
  *
@@ -94,7 +94,7 @@
  * the KPN's bindings by 35, the test of the account's maps; and our KPN map against the second compile's, in place of
  * the other account's, differs on 31 tags where the other account's differs on 2, the test after it.
  *
- * **Sources checked first**: plan 011 and chapter 5 of `todo-compile-350.md`; the family's composers and their
+ * **Sources checked first**: plan 011; the family's composers and their
  * tests, `noscreensetup.test.ts`, `noscreenactivity.test.ts`, `noscreenempty.test.ts`, `noscreenstatetables.test.ts`
  * and `noscreennumbering.test.ts`; `reference/architectures/harmony-300-350/memory.md`; the lab's
  * `work/setups/h350-test/chapter4-reading.md`. Logitech's client compiles nothing for this family, the service does.
@@ -213,7 +213,7 @@ function stateRequest(c: Container): NoScreenStateDevice[] {
   });
 }
 
-// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+// The codec's one byte comparison, `sameBytes`, under the name this file has always used.
 const same = sameBytes;
 
 test('the whole test setup builds with no Logitech file: every device, Watch TV with its flag and inputs, and the favourites, and passes the writer\'s checks',

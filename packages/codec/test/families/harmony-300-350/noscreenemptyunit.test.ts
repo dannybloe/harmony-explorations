@@ -1,5 +1,5 @@
 /**
- * What the bench Harmony 350 did with the empty configuration built from nothing: `todo-compile-350.md` 5.1.5.
+ * What the bench Harmony 350 did with the empty configuration built from nothing.
  *
  * **The question.** `buildEmptyNoScreenConfiguration` builds a whole configuration with no device and no activity
  * from our generators alone, `packages/codec/test/families/harmony-300-350/noscreenempty.test.ts`. No configuration Logitech compiled for

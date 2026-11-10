@@ -1,6 +1,6 @@
 /**
  * The Harmony 350 test setup composed whole onto a Logitech compile and held against Logitech's compile of it,
- * `todo-compile-350.md` 4.5: `composeNoScreenSetup`, which runs the family's device and favourite composers in the
+ * `composeNoScreenSetup`, which runs the family's device and favourite composers in the
  * order they need, and the file the bench unit is given.
  *
  * **The route, and why this one.** Logitech's service compiled the test setup twice for the bench 350's record, first
@@ -25,10 +25,9 @@
  * 165 lists out, 15, 51, 11, 30 and 58, and composing the five back adds 165, found by construction rather than by
  * reachability, an independent closure; the favourites add the five that make 331.
  *
- * **A correction**: until `todo-compile-350.md` 5.1.6 the start up events were compared as eleven empty strings on
- * both sides, since the helper read each instruction of raw slot 5 as an address, `startUp` in `noscreenparts.ts`.
+ * **A correction**: the start up events were once compared as eleven empty strings on both sides, since the helper read each instruction of raw slot 5 as an address, `startUp` in `noscreenparts.ts`.
  * Spelled out from the slot's bytes they agree, entry 1 selecting the LG TV's map in both, so the claim stands and
- * was not held until then.
+ * was not held until they were.
  *
  * **What differs, and why each is placement or numbering**, asserted in the second test:
  *

@@ -1,5 +1,5 @@
 /**
- * The Harmony 300 and 350's metadata archive built from nothing, `todo-compile-350.md` 5.1.4 and plan 011 step 4: our
+ * The Harmony 300 and 350's metadata archive built from nothing.4 and plan 011 step 4: our
  * own deflate writes Logitech's streams, and the builder writes each compile's whole section given that compile's
  * devices and its two choices.
  *

@@ -1,5 +1,5 @@
 /**
- * The Harmony 300 and 350 configuration with no device and no activity, built from nothing, `todo-compile-350.md`
+ * The Harmony 300 and 350 configuration with no device and no activity, built from nothing,
  * 5.1.5, step 5 of [plan 011](../../../docs/plans/011-the-350-from-nothing.md). The builder is
  * `buildEmptyNoScreenConfiguration` in `families/harmony-300-350/empty.ts`; this is the argument for it.
  *
@@ -15,7 +15,7 @@
  *
  * | section | ours against the smallest compiles |
  * |---|---|
- * | the key table | the four send event entries, spelled out, equal to theirs, and since `todo-compile-350.md` 5.4 the entry binding event `0xFF`, which no compile of theirs holds and which calls the list their `0x30` entry calls; their other entries are the devices' press and release (and on the 300 the activity's key) |
+ * | the key table | the four send event entries, spelled out, equal to theirs, and now the entry binding event `0xFF`, which no compile of theirs holds and which calls the list their `0x30` entry calls; their other entries are the devices' press and release (and on the 300 the activity's key) |
  * | the start up events | the eleven calls spelled out equal to theirs, but for the map select their first event ends with, which is the device's |
  * | the action lists | ours, nineteen, are theirs spelled out, but for that select; their other 57, 35 and 90 send codes, select a device, start a key's timers or write a device's or the activity's variable |
  * | the state records | the clock's seven and the firmware's eleven byte for byte, and the compiler's two byte variable; theirs add one power variable per device and the activity's flag |
@@ -221,7 +221,7 @@ function account(bytes: Uint8Array, skin: number, builtAt: string): { disagreeme
 }
 
 test('the empty Harmony 350 and Harmony 300 configurations pass the writer\'s check, from a skin and a moment alone', () => {
-  // 1105 and 1081 bytes since `todo-compile-350.md` 5.4, four more than 5.1.5 built: the entry binding event 0xFF.
+  // 1105 and 1081 bytes since the entry was added, four more than before: the entry binding event 0xFF.
   for (const [skin, length, groups] of [[104, 1105, 8], [79, 1081, 4]] as const) {
     const built = buildEmptyNoScreenConfiguration({ skin, builtAt: MOMENT });
     assert.equal(built.bytes.length, length, `skin ${skin}: length`);
@@ -265,7 +265,7 @@ test('every byte of the empty configuration is a generator\'s, and a planted byt
   assert.throws(() => assertFileFamilyContainer(built.bytes.subarray(0, built.bytes.length - 4)), /PTYY/);
 });
 
-/** The empty configuration with event `0xFF` bound, `todo-compile-350.md` 5.4, written by `bin/empty-no-screen.ts`. */
+/** The empty configuration with event `0xFF` bound, written by `bin/empty-no-screen.ts`. */
 const EMPTY_54 = 'work/setups/h350-empty/empty-350-5.4.bin';
 
 test('the 5.4 file in the lab is this build from its own stamp, byte for byte, binds event 0xFF and passes the writer\'s check', skipWithoutLab(), () => {

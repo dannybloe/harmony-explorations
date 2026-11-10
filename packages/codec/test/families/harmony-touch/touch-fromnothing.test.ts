@@ -1,5 +1,5 @@
 /**
- * The Harmony Touch's documents built from a setup file with no Logitech document as input, `todo-touch.md` 9.1: the
+ * The Harmony Touch's documents built from a setup file with no Logitech document as input: the
  * setup file read, Settings and Context written from nothing, the four lists composed onto empty ones, and each device's
  * record written from its catalogue entry in the archive and our own rhythm table, `fromnothing.ts` and
  * `archivedevice.ts`.

@@ -1,5 +1,5 @@
 /**
- * Which generator writes each byte of a Harmony 300 or 350 configuration, `todo-compile-350.md` 5.2.1 and 5.2.2, and
+ * Which generator writes each byte of a Harmony 300 or 350 configuration, and
  * the evidence for 5.2.3, plan 011's "The check that proves 5.2". The attribution is `noScreenAttributedBytes` in
  * `families/harmony-300-350/attribution.ts`, over the generic ledger in `attribution.ts`; the list writers it reads every
  * list back through are `families/harmony-300-350/lists.ts`.
@@ -11,7 +11,7 @@
  * found, by its list; a generator's claim dropped returns its bytes as carried; and the file has to lay out again into
  * itself before anything is credited.
  *
- * **Since `todo-compile-350.md` 5.4** our build carries one entry no Logitech compile holds, event `0xFF` bound to
+ * **Now** our build carries one entry no Logitech compile holds, event `0xFF` bound to
  * event `0x30`'s list, decision 28, which the constants are credited with: four bytes more on every build of ours and
  * on the empty configurations, and nothing moved on Logitech's seven, which bind no `0xFF`. 5.2 was checked before
  * the entry went in, 124166 bytes then; `noscreenacknowledging.test.ts` holds the entry and its control.
@@ -77,7 +77,7 @@
  * 2011 Harmony 300's two power on lists, which call its plain sends, 14 bytes. Before `activityList` refused an
  * activity of no steps, the start up's first list read as one too, 10 bytes more contested on every compile.
  *
- * **Sources checked first**: plan 011 and chapter 5 of `todo-compile-350.md`; the two other families' attributions,
+ * **Sources checked first**: plan 011; the two other families' attributions,
  * `attributeBytes` in `families/harmony-600-650-700/assemble.ts` and `oneBuiltBytes` and `oneAttributedBytes` in
  * `families/harmony-one/`, and their tests, `oneempty.test.ts` for the planted controls; `noscreenempty.test.ts`, whose
  * accounting of the empty configuration this generalises; `noscreencensus.test.ts`; `noscreennumbering.test.ts` for
@@ -164,7 +164,7 @@ function listsBy(c: Container, a: NoScreenAttributed): Record<string, number> {
 // ---------------------------------------------------------------------------------------------------------------
 // 5.2.1: Logitech's seven
 
-test('5.2.1: on Logitech\'s seven compiles every byte is a generator\'s but parts no composer of ours writes, and none is unclaimed', needsLab, () => {
+test('on Logitech\'s seven compiles every byte is a generator\'s but parts no composer of ours writes, and none is unclaimed', needsLab, () => {
   const out: Record<string, unknown> = {};
   for (const [label, c] of seven()) {
     const a = noScreenAttributedBytes(c);
@@ -182,7 +182,7 @@ test('5.2.1: on Logitech\'s seven compiles every byte is a generator\'s but part
   });
 });
 
-test('5.2.1: what is left on Logitech\'s compiles is a codeless device\'s empty map and the Harmony 300\'s own shapes, each named', needsLab, () => {
+test('what is left on Logitech\'s compiles is a codeless device\'s empty map and the Harmony 300\'s own shapes, each named', needsLab, () => {
   /** Every list no generator gives back, by its shape: the opcodes, with the band of a `1F` or `07`. */
   const leftLists = (c: Container, a: NoScreenAttributed): Record<string, number> => {
     const out: Record<string, number> = {};
@@ -235,7 +235,7 @@ test('5.2.1: what is left on Logitech\'s compiles is a codeless device\'s empty 
   });
 });
 
-test('5.2.1: the test setup compile\'s lists by writer agree with the census\'s by what reaches them', needsLab, () => {
+test('the test setup compile\'s lists by writer agree with the census\'s by what reaches them', needsLab, () => {
   const c = atPath(SETUP);
   const by = listsBy(c, noScreenAttributedBytes(c));
   assert.deepEqual(by, {
@@ -254,7 +254,7 @@ test('5.2.1: the test setup compile\'s lists by writer agree with the census\'s 
   assert.equal(switching.reduce((n, kind) => n + ((by as Record<string, number>)[kind] ?? 0), 0), census.activity + census.power);
 });
 
-test('5.2.1: a key\'s press starts its timers by numbers in no order of ours, so the press list\'s writer takes both', needsLab, () => {
+test('a key\'s press starts its timers by numbers in no order of ours, so the press list\'s writer takes both', needsLab, () => {
   // Every press list of the Harmony 350 compiles, read by the kind's own reader, as `[pin, timers...]`.
   const press = NO_SCREEN_LIST_KINDS.find((kind) => kind.name === 'key press lists')!;
   const timersOf = (c: Container): number[][] => {
@@ -281,10 +281,10 @@ test('5.2.1: a key\'s press starts its timers by numbers in no order of ours, so
 // ---------------------------------------------------------------------------------------------------------------
 // 5.2.2: our build
 
-test('5.2.2: our build of the test setup from nothing is every byte a generator\'s, none carried and none unclaimed', needsArchive, () => {
+test('our build of the test setup from nothing is every byte a generator\'s, none carried and none unclaimed', needsArchive, () => {
   const c = ours();
   const a = noScreenAttributedBytes(c);
-  // 124170 since `todo-compile-350.md` 5.4, which put the entry binding event 0xFF into the empty configuration, and so
+  // 124170 since the entry binding event 0xFF was added, which put the entry binding event 0xFF into the empty configuration, and so
   // into everything built on it: four bytes in the key table, credited to the constants, two of them the list's number
   // and so description. It was 124166, constants 248 and description 110040, when 5.2 was checked without it.
   assert.equal(a.total, 124170);
@@ -311,7 +311,7 @@ test('5.2.2: our build of the test setup from nothing is every byte a generator\
   });
 });
 
-test('5.2.2: the empty configurations of both models are every byte a generator\'s, the accounting of noscreenempty.test.ts again', () => {
+test('the empty configurations of both models are every byte a generator\'s, the accounting of noscreenempty.test.ts again', () => {
   // Four bytes longer than 5.1.5 built them, 1101 and 1077: the entry binding event 0xFF, 5.4, the constants' too.
   for (const [skin, length] of [[104, 1105], [79, 1081]] as const) {
     const a = noScreenAttributedBytes(buildEmptyNoScreenConfiguration({ skin, builtAt: MOMENT }).container);
@@ -323,7 +323,7 @@ test('5.2.2: the empty configurations of both models are every byte a generator\
   }
 });
 
-test('5.2.2, the control: a byte planted where no generator writes it is named, by its list, and the file still passes the writer\'s check',
+test('the control: a byte planted where no generator writes it is named, by its list, and the file still passes the writer\'s check',
   needsArchive, () => {
     const c = ours();
     const a = noScreenAttributedBytes(c);
@@ -349,7 +349,7 @@ test('5.2.2, the control: a byte planted where no generator writes it is named, 
     assert.equal(b.generated['send lists'], a.generated['send lists'] - 10);
   });
 
-test('5.2.2, the control: a generator\'s claim dropped returns its bytes as carried, every generator in turn', needsArchive, () => {
+test('the control: a generator\'s claim dropped returns its bytes as carried, every generator in turn', needsArchive, () => {
   const c = ours();
   const all = noScreenAttributedBytes(c);
   for (const who of NO_SCREEN_ATTRIBUTIONS) {
@@ -371,7 +371,7 @@ test('5.2.2, the control: a generator\'s claim dropped returns its bytes as carr
   });
 });
 
-test('5.2.2, what it cannot see: a number in a list changed for another that exists is still the same writer\'s', needsArchive, () => {
+test('what it cannot see: a number in a list changed for another that exists is still the same writer\'s', needsArchive, () => {
   // The record a send list sends is description: the attribution knows a send by its shape and that the record exists,
   // not which record a key should send. So a send of the group's next record is still a send, which is why 5.2.3, that
   // nothing but the setup and the catalogue goes in, is a check of its own.
@@ -390,7 +390,7 @@ test('5.2.2, what it cannot see: a number in a list changed for another that exi
 // ---------------------------------------------------------------------------------------------------------------
 // 5.2.3: nothing handed in
 
-test('5.2.3: the build takes no container, and no module of the codec or of the USB library it imports reads the lab', needsArchive, () => {
+test('the build takes no container, and no module of the codec or of the USB library it imports reads the lab', needsArchive, () => {
   // What goes in: the catalogue's path and a request of the setup, its keys and a moment. The request has no field a
   // container could travel in, which the type says and this checks at run time against the keys handed over.
   assert.equal(buildNoScreenSetup.length, 2);

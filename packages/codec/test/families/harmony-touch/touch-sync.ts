@@ -10,8 +10,7 @@
  * compiler here, TS2878, because `rewriteRelativeImportExtensions` cannot rewrite a path that crosses into
  * another project's outputs. So this is an ordinary package import of the test kit,
  * `@harmony/testkit/touch-recording`, which carries the decoder and reads a recording out of the lab by its
- * name, typed from the decoder itself. The kit is a dev dependency of the codec and of no product. Until
- * `todo.md` 7.3.6 `packages/usb` exported the decoder as a test only subpath, and before that this file
+ * name, typed from the decoder itself. The kit is a dev dependency of the codec and of no product. Until `packages/usb` exported the decoder as a test only subpath, and before that this file
  * loaded it at run time by URL and declared four of its signatures by hand, which was a copy that nothing
  * checked.
  *

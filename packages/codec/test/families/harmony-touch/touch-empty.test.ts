@@ -1,6 +1,6 @@
 /**
  * The empty Harmony Touch configuration, no device and no activity, and what its commit leaves of the favourites and
- * the pictures: `src/families/harmony-touch/empty.ts`, `todo-touch.md` 9.2.
+ * the pictures: `src/families/harmony-touch/empty.ts`.
  *
  * **What has to hold, and why each test is here.**
  *

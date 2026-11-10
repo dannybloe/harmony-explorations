@@ -1,5 +1,5 @@
 /**
- * One build from nothing, heard on a Harmony 350 and a Harmony 300: `todo-compile-350.md` 5.3, decision 28.
+ * One build from nothing, heard on a Harmony 350 and a Harmony 300, decision 28.
  *
  * **The question.** The family's build of the test setup from nothing carries firmware event 0xFF bound to the
  * acknowledging list, 5.4, `noscreenacknowledging.test.ts`, so that one file serves both models: the Harmony 300's

@@ -1,7 +1,7 @@
 /**
  * The Harmony 300 and 350's power on delays, read and changed by the readers every other family uses.
  *
- * `todo-compile-350.md` 1.8 wants one delay changed on the bench 350 and heard on the infrared receiver.
+ * The bench test wants one delay changed on the bench 350 and heard on the infrared receiver.
  * Until this file `deviceDelays` returned nothing on this family and `devices` named no device, and the
  * cause was one missing row: base slot 13, the state variable table, was not in `ARCH16_SLOT_MAP`, so
  * `stateRecords` answered undefined and every reader built on a variable's transitions went quiet. The
@@ -39,7 +39,7 @@
  * of the delay for each device its start switches on directly: `{0x7F power list, 0x7C group value}` in
  * the list the key table's tag `0x86` binding calls, eight copies over the five. Seven are of devices
  * `powerOnInstructions` reads and equal their device's value; the eighth is the factory television's, one
- * `0x7C` of 170 where its own transition carries 100 and 70. Until `todo-compile-350.md` 4.6 `setPowerOnDelay`
+ * `0x7C` of 170 where its own transition carries 100 and 70. Until `setPowerOnDelay` was made to keep a transition's own parts, `setPowerOnDelay`
  * changed the device's transition and not that copy, so on a configuration with an activity the activity kept the
  * old delay; on the bench Harmony 300 the activity's was the only copy any key reached, and the transition's none,
  * `docs/test-notes/harmony-300.md`.

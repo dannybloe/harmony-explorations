@@ -1,6 +1,6 @@
 /**
  * A learned code for a Harmony Touch: its raw text, `rawOfLearned` and `readTouchRaw`, and which row of the rhythm
- * table it is, `rhythmOfLearned`. `todo-touch.md` 5.3, part B; `src/families/harmony-touch/learned.ts` holds the why.
+ * table it is, `rhythmOfLearned`. `src/families/harmony-touch/learned.ts` holds the why.
  *
  * ## The raw text
  *

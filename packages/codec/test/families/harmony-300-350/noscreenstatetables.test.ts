@@ -1,6 +1,6 @@
 /**
  * The Harmony 300 and 350's state tables, built from a description and from our own numbering, held against every
- * compile of the family the lab holds, `todo-compile-350.md` 5.1.2, step 2 of
+ * compile of the family the lab holds, step 2 of
  * [plan 011](../../../docs/plans/011-the-350-from-nothing.md). The facts and the allocator are
  * `families/harmony-300-350/statetables.ts`; the builder is the generic `buildStateTables`.
  *
@@ -155,7 +155,7 @@ const thirteen = (): [string, Container][] => [
   ...NAMED.map((name): [string, Container] => [name, parse(require_(name))]),
 ];
 
-// The codec's one byte comparison, `todo.md` 7.3.7, under the name this file has always used.
+// The codec's one byte comparison, `sameBytes`, under the name this file has always used.
 const same = sameBytes;
 
 /** Describe by a family's facts, build, put back and lay out. */

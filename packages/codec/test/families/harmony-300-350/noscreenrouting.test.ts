@@ -1,5 +1,5 @@
 /**
- * Logitech's routing in a Harmony 300 or 350 device's map, `todo-compile-350.md` 4.1.1, and the two facts about
+ * Logitech's routing in a Harmony 300 or 350 device's map, and the two facts about
  * the container the device composer copies besides, 4.1.2 and 4.1.4: each rule `families/harmony-300-350/keys.ts`
  * states, held on every Logitech file of the family the lab holds, with the count both ways.
  *
@@ -472,7 +472,7 @@ test('on every compile of the family the start up\'s entry 1 ends selecting the 
     assert.equal(agree, 7);
   });
 
-// todo-compile-350.md 4.1.2: what the composer writes for a device on the TV key's short press, held as a closure on
+// What the composer writes for a device on the TV key's short press, held as a closure on
 // Logitech's own files, since every one has a device there and none can be composed onto without taking out a device
 // the activity names: the select taken out and put back for the same map is Logitech's file byte for byte. The
 // control is a select of another map, which must differ from Logitech's file in exactly the select's low byte.

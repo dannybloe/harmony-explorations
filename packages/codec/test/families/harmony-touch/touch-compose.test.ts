@@ -1,5 +1,5 @@
 /**
- * A Harmony Touch device written by us, `src/families/harmony-touch/compose.ts`, `todo-touch.md` 5.3.
+ * A Harmony Touch device written by us, `src/families/harmony-touch/compose.ts`.
  *
  * **What is held, and against what.** Three things, each by something that did not write the documents:
  *

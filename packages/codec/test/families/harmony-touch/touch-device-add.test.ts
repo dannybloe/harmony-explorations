@@ -1,6 +1,6 @@
 /**
  * A device of ours described by its family and numbers, and put into a whole set of a Harmony Touch's documents,
- * `src/families/harmony-touch/compose.ts`, `todo-touch.md` 8.1.
+ * `src/families/harmony-touch/compose.ts`.
  *
  * **What has to hold, and why each test is here.**
  *

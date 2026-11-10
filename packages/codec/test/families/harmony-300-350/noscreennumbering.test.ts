@@ -1,6 +1,6 @@
 /**
  * The numbering of the Harmony 300 and 350's lists, key maps, timers and state variables in Logitech's compiles:
- * is there a rule a generator could derive it from, `todo-compile-350.md` 5.1.8, a question left open by
+ * is there a rule a generator could derive it from, a question left open by
  * [plan 011](../../../docs/plans/011-the-350-from-nothing.md). **The answer is no rule found, for all four, and
  * this test pins what was tried and by how much each candidate missed**, so that a rule found later is a
  * measurement against these counts and not a start from nothing. Where a build takes the numbering as an input,

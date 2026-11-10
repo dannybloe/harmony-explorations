@@ -1,7 +1,7 @@
 /**
  * How the no screen family's tests read a configuration part by part rather than offset by offset, shared by
- * `noscreen.test.ts` (a device, `todo-compile-350.md` 4.1 and 4.4) and `noscreenfavourites.test.ts` (the favourite
- * channels, 4.3). Logitech's compiler numbers lists, maps, timers and records in an order no compile shows a rule
+ * `noscreen.test.ts` (a device, on a short or a long press) and `noscreenfavourites.test.ts` (the favourite
+ * channels). Logitech's compiler numbers lists, maps, timers and records in an order no compile shows a rule
  * for, so a record is compared by what it sends and a list by what it does with every list it calls written out.
  */
 import { type Container, devices, irGroups } from '../../../src/index.ts';
@@ -21,8 +21,8 @@ import { mapOfGroup } from '../../../src/build.ts';
  * Each device of each Logitech file of the family by the catalogue entry its command names identify, and how many
  * names differ: the test setup's from its setup file, the rest found by command names, checked in
  * `noscreenrouting.test.ts`. The files by the short names that test's `compiles()` gives them; the further compiles
- * of `noscreenstored.test.ts` name their devices "manufacturer model" and carry their own table. Moved here from
- * `noscreenrouting.test.ts` in `todo-compile-350.md` 5.1.7 so that both tests read one table rather than two.
+ * of `noscreenstored.test.ts` name their devices "manufacturer model" and carry their own table. It lives here
+ * rather than in `noscreenrouting.test.ts` so that both tests read one table rather than two.
  */
 export const IDENTIFIED: Readonly<Record<string, Readonly<Record<string, readonly [string, string, number]>>>> = {
   setup: {
@@ -168,11 +168,11 @@ export const without = <T>(record: Record<string, T>, key: string): Record<strin
  * eleven calls of a list in every configuration of the family. Read from the slot's own bytes, a `u8` count and then
  * three bytes an instruction, `reference/architectures/harmony-300-350/memory.md`.
  *
- * **A correction.** This was a function of `noscreensetup.test.ts` until `todo-compile-350.md` 5.1.6, and it took each
+ * **A correction.** This was once a function of `noscreensetup.test.ts`, and it took each
  * value `pointerArray(5)` returns for an address and spelled out the list it found there. The slot holds
  * instructions, not addresses, so `pointerArray` reads each call as `0x7f0000` and its list number, which no
- * address of the file is: every entry came out empty, on Logitech's compile and on ours alike, and the 4.5
- * comparison of the start up events compared eleven empty strings and passed. Spelled out, the two agree, as that
+ * address of the file is: every entry came out empty, on Logitech's compile and on ours alike, and the whole
+ * setup's comparison of the start up events compared eleven empty strings and passed. Spelled out, the two agree, as that
  * test still asserts; the first test of `noscreenfromnothing.test.ts` holds that none comes out empty.
  */
 export function startUp(c: Container): string[] {
