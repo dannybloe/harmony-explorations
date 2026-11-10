@@ -537,8 +537,9 @@ export interface Configuration {
 /**
  * A list a document may state as null or leave out, as an array. **Anything else that is not an array reads as
  * no list too**, an object or a string among them: the remote's reader walks a JSON object as a list of
- * nothing, and the view does not throw on a value its types say cannot be there, which `todo-touch.md` 6.10
- * found it doing for a device's `Commands` stated as an object.
+ * nothing, and the view does not throw on a value its types say cannot be there, as was found reading a device's
+ * `Commands` stated as an object, `reference/architectures/harmony-touch/answering-a-sync.md`, "What the remote
+ * does not check".
  */
 const list = <T>(x: readonly T[] | null | undefined): readonly T[] => (Array.isArray(x) ? x : []);
 

@@ -1,5 +1,5 @@
 /**
- * A device's own screen on the Harmony 880 and 885, and its row on the device list, `todo-compile-885.md` 2.1:
+ * A device's own screen on the Harmony 880 and 885, and its row on the device list:
  * `Family.composeDeviceScreen` for the side keys family.
  *
  * **What is built**, each part as the configuration's own device modes and device list have it, the census in
@@ -13,10 +13,10 @@
  *    and every key the template binds to a command of its own device bound to nothing instead, a swallow, so that
  *    no key of the new device's mode sends another device's code. **No hard key sends a command of the new
  *    device**: which command Logitech's compiler gives which key on these remotes is not read,
- *    `todo-compile-885.md` 2.5, so the commands are on the screen only.
+ *    so the commands are on the screen only, and a device mode's key map is requirement R33.
  * 2. **One page**, the page builder's one page form, `pages.ts`: the template's background, bars, queued program
  *    and fonts, the device's label as the title, and a row per command in fill order, at most eight. A device of
- *    more than eight commands is refused, since a mode of several pages is 2.5's.
+ *    more than eight commands is refused, since a mode of several pages is not composed, requirement R35.
  * 3. **The page's list** binds each row's key beside the screen to the row's list, a press, in the compiler's tag
  *    order, `compilerTagOrder`, which every device mode page of the eight configurations stores, and its pool copy
  *    is the same bytes, as on every device mode page read: a device page's copy names the same lists.
@@ -36,8 +36,8 @@
  *    2`, in front of its end, and a second page in the one page form with the counter `2 OF 2` holds the new row
  *    in the first cell, `appendModePage`. That is what a ninth device does on unit A's lists of one full page.
  *    A copy with room on its last page is refused, since filling a cell of an existing page is not composed,
- *    `todo-compile-885.md` 2.8, and so is a copy of two pages or more, whose counters a further page restates,
- *    2.4.
+ *    and so is a copy of two pages or more, whose counters a further page restates. Both are part of adding a
+ *    device to any configuration, requirement R10.
  */
 import { Writer } from '../../container/emit.ts';
 import { type Container, parse } from '../../container/gspm.ts';
@@ -146,10 +146,10 @@ export function composeSideKeysDeviceScreen(
   if (rows.length === 0) throw new ComposeError('a device mode needs at least one command on its screen');
   if (rows.length > SIDE_KEYS_PER_PAGE) {
     throw new ComposeError(`${rows.length} commands take more than one page, and a device mode of several pages is `
-      + `not composed for ${SIDE_KEYS_NAME} yet, todo-compile-885.md 2.5`);
+      + `not composed for ${SIDE_KEYS_NAME} yet, requirement R33`);
   }
   if (options.compiled !== undefined) {
-    throw new ComposeError(`the compiler's layout of a device mode is not read for ${SIDE_KEYS_NAME}, todo-compile-885.md 2.5`);
+    throw new ComposeError(`the compiler's layout of a device mode is not read for ${SIDE_KEYS_NAME}, requirement R33`);
   }
   if (options.iconLike !== undefined) throw new ComposeError(`the device list of ${SIDE_KEYS_NAME} draws no icon to copy`);
 
@@ -183,11 +183,11 @@ export function composeSideKeysDeviceScreen(
     // page, which this composes from one page to two and no further.
     if (used < SIDE_KEYS_PER_PAGE) {
       throw new ComposeError(`the device list copy at mode ${menu} has room on its last page, and a row in a free cell `
-        + 'of an existing page is not composed yet, todo-compile-885.md 2.8');
+        + 'of an existing page is not composed yet, requirement R10');
     }
     if (record.pageCount !== 1) {
       throw new ComposeError(`the device list copy at mode ${menu} has ${record.pageCount} full pages, and a further page `
-        + 'restates every counter, which is not composed yet, todo-compile-885.md 2.4');
+        + 'restates every counter, which is not composed yet, requirement R10');
     }
   }
   const rowLabels = copies.map((menu) => sideKeysLabel(c, sideKeysChrome(c, menu).labelFont, label));

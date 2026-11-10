@@ -43,7 +43,7 @@ export interface TouchTypes {
 
 /**
  * The Harmony Touch's family. `withDevice` composes through `composeTouchDeviceOfRow`, the form every device of
- * ours on the bench took, 8.1; `without` is the general removal, 8.5, which takes out everything naming what it
+ * ours on the bench took; `without` is the general removal, `remove.ts`, which takes out everything naming what it
  * removes, where `withoutTouchDevice` and `withoutTouchActivity` refuse a device or an activity something names.
  * `withFavourites` gives the favourites documents keyed by their addresses beside the six, and `check` is the gate
  * the answerer runs before a sync, `refusalsBeforeASync`.

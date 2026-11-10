@@ -9,9 +9,9 @@
  *
  * **The name of the folder is the remote's whole name, and it is not the One family.** Elsewhere in this
  * codec "touch" names the Harmony One's touch panel: its hit map, `touch.ts` in the codec's top level, and its
- * family until plan 013 step 7.3.2 renamed `families/touch/` to `families/one/`. A folder called `touch/` next to
- * `touch.ts` would have read as that file's own, so this one is `harmony-touch/`, after the model, and since
- * `todo.md` 7.3.8 every family's folder is named after its remotes. Nothing here is that family's and nothing here
+ * family until plan 013 renamed `families/touch/` to `families/one/`. A folder called `touch/` next to
+ * `touch.ts` would have read as that file's own, so this one is `harmony-touch/`, after the model, and
+ * every family's folder is now named after its remotes. Nothing here is that family's and nothing here
  * imports it; the barrel exports this folder as one namespace, `harmonyTouch`, so the two vocabularies cannot
  * collide by name either.
  *

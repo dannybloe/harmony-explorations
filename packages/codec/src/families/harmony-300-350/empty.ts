@@ -1,9 +1,10 @@
 /**
- * The Harmony 300 and 350 built from nothing: the configuration with no device and no activity, `todo-compile-350.md`
- * 5.1.5, step 5 of plan 011, the no screen family's half of what `families/harmony-600-650-700/empty.ts` is for the Harmony 650
- * and `families/harmony-one/empty.ts` for the Harmony One.
+ * The Harmony 300 and 350 built from nothing: the configuration with no device and no activity, step 5 of plan
+ * 011, the no screen family's half of what `families/harmony-600-650-700/empty.ts` is for the Harmony 650 and
+ * `families/harmony-one/empty.ts` for the Harmony One.
  *
- * Every other route to a configuration of this family starts from one of Logitech's compiles and edits it, chapter 4.
+ * Every other route to a configuration of this family starts from one of Logitech's compiles and edits it, the
+ * composers of `devices.ts`, `activity.ts` and `favourites.ts`.
  * This one takes no container at all: a skin and a moment, and each section comes from a generator of ours that was
  * measured against Logitech's compiles on its own, the frame laying them out, `layOutContainer`. Nothing here reads a
  * byte of a Logitech file, and the test that holds the result runs with no lab.
@@ -37,7 +38,8 @@
  *   map, so the list stops after the hold list and the empty list, as events 2 to 4's do. Selecting the key table
  *   itself, map 0, was the other candidate, and is not taken: the hold list already pushes map 0 as the table every
  *   lookup falls through to, and what a select of it would add is not read. What the firmware does with a start that
- *   selects nothing is not checked; the bench write of `todo-compile-350.md` 5.1.5 is what says.
+ *   selects nothing was checked once on a unit: written to a Harmony 350, this configuration sent nothing and did
+ *   not hang, `noscreenemptyunit.test.ts`.
  * * **The lists' numbers.** Logitech numbers the start up's four event lists 0 to 3 in all 13 compiles, and so does
  *   this; the hold list, the two empty lists and the send events' lists follow in the order `EMPTY_LIST_NUMBERS`
  *   gives. Lists are called by number and the numbering is description, plan 011, so any order the calls agree with
@@ -49,13 +51,13 @@
  *
  * **What it holds that no Logitech compile does**: the binding of firmware event `0xFF` to the list event `0x30`'s
  * entry calls, `noScreenAcknowledgingEntry`, which makes a Harmony 300 run a Harmony 350's configuration, decision 28,
- * `todo-compile-350.md` 5.4. Until 5.4 this left it out, so that 5.2's attribution held on a build with no entry of
- * ours that Logitech lacks; it is in now so that every configuration of ours built from nothing is one file for both
- * models, this one included. `buildNoScreenSetup` starts from the same configuration without it,
+ * This once left it out, so that the attribution of every byte to a generator, `attribution.ts`, was first shown to
+ * hold on a build with no entry of ours that Logitech lacks; it is in now so that every configuration of ours built
+ * from nothing is one file for both models, this one included. `buildNoScreenSetup` starts from the same configuration without it,
  * `emptyNoScreenForComposing`, and binds it as its last step, which keeps the key table in Logitech's order; no
  * composer adds it. On the empty configuration itself it is never reached:
  * with no device nothing is sent, so neither model raises the event. It costs four bytes, 1105 bytes on a Harmony
- * 350 where 5.1.5 built 1101, and 1081 on a Harmony 300 where it built 1077.
+ * 350 where the build without it was 1101, and 1081 on a Harmony 300 where it was 1077.
  *
  * Both models alike but for the skin and the infrared allocation, decision 28. Read only towards hardware: the result
  * is bytes in memory, and the write is `packages/usb/bin/write-file-config.ts`'s.

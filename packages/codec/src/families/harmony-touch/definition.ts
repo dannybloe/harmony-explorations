@@ -1,6 +1,6 @@
 /**
  * A code family's definition in the shape a Harmony Touch reads, written from a row of our own rhythm table,
- * and a key code written into it. `todo-touch.md` 5.3, part A.
+ * and a key code written into it. A learned code's row is fitted in `learned.ts` and written here the same way.
  *
  * **Why the Touch needs a definition at all.** A Harmony Touch is given no command as durations: it is given
  * each command as the catalogue writes it, a family's name and a number, and the family's definition beside
@@ -19,10 +19,11 @@
  * **A row states that only in its blocks**: `held`, one repetition, and the first transmission, `tail` at
  * the compiler's own repeat count where the definition states one and otherwise `opening`, the same at one
  * repetition. So the definition is read out of the blocks, and a row with no `held` block is refused: it
- * states no trailer and no gap, and a definition made without them would send its frames back to back. Since
- * `todo-touch.md` 5.3.4 every stated row carries `held`, and 8 rows of the table's 681 still carry none, all
- * measured ones: 5 are refused for that, and 3 earlier as whole record shapes; 577 are written, and the 96 refused for a width the family's name does not give write at the
- * widths a caller states, `test/families/harmony-touch/touch-definition.test.ts`.
+ * states no trailer and no gap, and a definition made without them would send its frames back to back. Every
+ * stated row carries `held`, and 8 rows of the table's 681 still carry none, all measured ones: 5 are refused
+ * for that, and 3 earlier as whole record shapes; 577 are written, and the 96 refused for a width the family's
+ * name does not give write at the widths a caller states,
+ * `test/families/harmony-touch/touch-definition.test.ts`.
  *
  * **Reading a block back into segments is the inverse of `blockOfDefinition` in `archiveblock.ts`**, which built
  * those blocks out of Logitech's definitions in the first place, and of `pulsesOfBlock` in `irframe.ts`, which
@@ -271,9 +272,9 @@ function fixedCopyLength(shape: FrameShape, bare: boolean, bits: number): number
  * own extra and in the total, and the blocks measured off Logitech's compiles carry it in the total alone, and
  * the arithmetic here does not need to know which. **A block that ends on a copy carries none**: Logitech's
  * definition states nothing after that frame, and `blockOfDefinition` adds the microsecond to a last pad or a
- * last word only, never to a frame's own last duration. This refused such a block, 13 rows, until
- * `todo-touch.md` 5.3.4 gave the stated rows count free blocks and the refusal turned out to be this file's
- * reading rather than the rows': there is simply nothing to take off.
+ * last word only, never to a frame's own last duration. This refused such a block, 13 rows, until the
+ * stated rows were given count free blocks and the refusal turned out to be this file's reading rather than the
+ * rows': there is simply nothing to take off.
  */
 function emissionsOf(
   block: BlockTail, shapes: readonly FrameShape[], widthAt: (at: number) => number | undefined,
@@ -574,8 +575,8 @@ const SPARE_WORDS: readonly StatedWord[] = [
  * which the Touch stores and never reads, "How many times a press repeats the code": the device's own count
  * is what it sends. It is there so that `blockOfDefinition` gives the row's own first block back.
  *
- * **Any well formed row is taken, not only those of `PROTOCOLS`**: a row fitted to a learned code, part B of
- * `todo-touch.md` 5.3, is written by the same rules, and has to carry what every row of the table carries
+ * **Any well formed row is taken, not only those of `PROTOCOLS`**: a row fitted to a learned code, `learned.ts`,
+ * is written by the same rules, and has to carry what every row of the table carries
  * where it has blocks: `held`, one repetition, and the whole first transmission, `tail` or `opening`, when
  * that differs, both in the stored form, their last duration one microsecond longer than the signal.
  */
@@ -603,7 +604,7 @@ export function definitionOfRow(
 
   // The widths, by the place of a value in a code. One stated width serves every value.
   // The first transmission: the compiler's own where the row has one, else the row's count free one, which
-  // a stated row whose definition states no count carries instead, todo-touch 5.3.4. The start group is what
+  // a stated row whose definition states no count carries instead. The start group is what
   // precedes the repetitions in either, and the count, which a Touch never reads, is however many there are.
   const first = row.tail ?? row.opening;
   const places = 1 + Math.max(0, ...[...row.held.items, ...(first?.items ?? [])]

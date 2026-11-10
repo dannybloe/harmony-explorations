@@ -1,6 +1,6 @@
 /**
  * A whole Harmony Touch setup composed by us from a description, every device and every activity, onto a set of
- * documents with all of them taken out: `todo-touch.md` 8.6.
+ * documents with all of them taken out.
  *
  * **What a setup is, in one paragraph.** A person sets a Touch up by picking each device by its maker and model, which
  * brings the catalogue's record of it, its commands and their codes, its inputs and its power steps; then by changing
@@ -10,8 +10,9 @@
  *
  * **The catalogue here is the recorded documents.** Logitech's service is where a device's record comes from, and the
  * only copy of the bench setup's records is the set the remote holds, so `catalogueOfSet` reads a set's device and
- * protocol lists as a catalogue, keyed by maker and model, the way 8.1 took its own device's definition from our rhythm
- * table. A program with no account takes them from elsewhere; what crosses from the catalogue is the same either way.
+ * protocol lists as a catalogue, keyed by maker and model, the way a device of ours takes its definition from our
+ * rhythm table, `composeTouchDeviceOfRow`. A program with no account takes them from elsewhere; what crosses from the
+ * catalogue is the same either way.
  *
  * **Which fields are carried from the catalogue and which are composed, and why.**
  *
@@ -32,11 +33,11 @@
  *   of the favourites, `favoritesmanager.lua`, takes the pair by the device's id and so still finds them.
  *
  * **The base** is the set with every device, map, activity and definition taken out, `setupBaseOf`: the documents'
- * shells, Context and Settings as they are. **8.5's removal does not reach it and is not changed to**: it refuses
- * taking out every device, every shown activity, the favourites' tuning device and its activity, each because a set
- * that ends like that would mishandle the remote, `remove.ts`. The base is never a set a remote is given; a whole setup
- * is composed onto it and the result goes through the gate like any other. So the base is made by emptying the four
- * lists, and the removal's refusals stay as they are.
+ * shells, Context and Settings as they are. **The general removal, `remove.ts`, does not reach it and is not changed
+ * to**: it refuses taking out every device, every shown activity, the favourites' tuning device and its activity, each
+ * because a set that ends like that would mishandle the remote, `remove.ts`. The base is never a set a remote is given;
+ * a whole setup is composed onto it and the result goes through the gate like any other. So the base is made by
+ * emptying the four lists, and the removal's refusals stay as they are.
  *
  * **Which architectures**: the Harmony Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's templates
  * file it under 18. **Nothing here sends anything.**
@@ -134,11 +135,11 @@ export interface SetupDevice {
   /** The input feature's delay, written over the catalogue's where given. */
   readonly inputDelayMs?: number;
   /**
-   * How a channel number is entered, written over the catalogue's channel tuning where given, `todo-touch.md` 9.1: the
-   * person's choice in Logitech's software, which a set Logitech's service built carries as it was saved and the archive
-   * of the catalogue does not. Each list is the names of the commands pressed once each, in order, absent for none; an
-   * empty name is a press of no command, the form Logitech's client saves "no command" in,
-   * `favourites-and-settings.md` "How a channel is entered".
+   * How a channel number is entered, written over the catalogue's channel tuning where given: the person's choice in
+   * Logitech's software, which a set Logitech's service built carries as it was saved and the archive of the catalogue
+   * does not. Each list is the names of the commands pressed once each, in order, absent for none; an empty name is a
+   * press of no command, the form Logitech's client saves "no command" in, `favourites-and-settings.md` "How a channel
+   * is entered".
    */
   readonly channelTuning?: SetupChannelTuning;
   readonly buttons: readonly SetupButton[];
@@ -302,11 +303,11 @@ export interface SetupIds {
 }
 
 /**
- * **A setup described from documents that hold one**, written once for `todo-touch.md` 8.6 from the set the bench
- * Touch holds, Logitech's documents under tags of ours, and kept as `packages/corpus/touch-setups/8.6-test-setup.json`.
- * What it writes is what the person chose, the fields the header lists as composed, in the documents' own order, with
- * ids of ours numbered from `ids`; nothing of the catalogue's and no value of the account's, so the description holds
- * names, numbers and the shape of each map, and no code, address or key.
+ * **A setup described from documents that hold one**, written once from the set the bench Touch holds, Logitech's
+ * documents under tags of ours, and kept as `packages/corpus/touch-setups/8.6-test-setup.json`. What it writes is what
+ * the person chose, the fields the header lists as composed, in the documents' own order, with ids of ours numbered
+ * from `ids`; nothing of the catalogue's and no value of the account's, so the description holds names, numbers and the
+ * shape of each map, and no code, address or key.
  *
  * **Refuses** what the composer could not compose back the same, so a description that comes out is one the composer
  * takes: a button deleted on the remote (`ButtonState` 4), a button kind, action kind, client action or gesture the

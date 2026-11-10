@@ -1,7 +1,7 @@
 /**
  * A device's one block digit copies and the lists that send them, on the Harmony 300 and 350: what a favourite
  * channel sends, `favourites.ts`, and what Logitech's compiler stores for a device of some types whether or not
- * anything sends them, `devices.ts`, `todo-compile-350.md` 4.1.1. One module for both, since it is one derivation
+ * anything sends them, `devices.ts`. One module for both, since it is one derivation
  * of which record and which list sends a digit, and two copies of it would drift.
  *
  * **A digit a favourite sends is the digit's one block copy**, not the record a digit key sends: in Logitech's
@@ -12,9 +12,8 @@
  * `appendCopyRecord`. Then the one list of the family's send shape that sends it, the timers cancelled, the send
  * and its quantity, is found, or appended with the quantity a command's send carries.
  *
- * This was `digitListsOf` in `favourites.ts` until `todo-compile-350.md` 4.1.1 needed it for a device without
- * favourites, and it moved here unchanged. Since `todo-compile-350.md` 5.1.7 the derivation takes any of the
- * device's commands, `deviceCopyLists`, because Logitech stores one more one block copy beside the digits, the
+ * It began in `favourites.ts` and moved here when the device composer needed it for a device without favourites.
+ * The derivation takes any of the device's commands, `deviceCopyLists`, because Logitech stores one more one block copy beside the digits, the
  * channel tuning's finish, `channelFinish`; the digits stay its first caller, with their own entry.
  */
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
@@ -117,7 +116,7 @@ export function deviceCopyLists(c: Container, archive: CatalogueSource, request:
 /**
  * The command a device's channel tuning finishes a channel number with, the catalogue's `channelTuning.finish`, or
  * nothing where the catalogue states none: the command Logitech stores a one block copy of, with a send list nothing
- * calls, beside the ten digits' copies, `todo-compile-350.md` 5.1.7.
+ * calls, beside the ten digits' copies.
  *
  * **Measured** in Logitech's compiles of the family, `noscreenstored.test.ts`: the two catalogue devices whose entry
  * states a finish, a television whose finish is `OK`, in six compiles, and another whose finish is `Select`, in one,
@@ -135,7 +134,7 @@ export function channelFinish(driving: DeviceDriving, device: string): string | 
   if (finish === undefined || finish.length === 0) return undefined;
   const only = finish[0]!;
   if (finish.length !== 1 || only.kind !== 'send') {
-    throw new ComposeError(`${device}'s channel tuning finishes with ${finish.length} steps, and only a single command sent is measured, todo-compile-350.md 5.1.7`);
+    throw new ComposeError(`${device}'s channel tuning finishes with ${finish.length} steps, and only a single command sent is measured`);
   }
   return only.command;
 }

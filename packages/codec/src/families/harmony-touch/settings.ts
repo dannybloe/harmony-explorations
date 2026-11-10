@@ -1,6 +1,6 @@
 /**
  * A Harmony Touch's **Settings** and **Context** documents composed by us from a description, and what the remote
- * would mishandle in either: `todo-touch.md` 8.4.
+ * would mishandle in either, `favourites-and-settings.md` "Settings" and "Context".
  *
  * **What the two documents are, in one paragraph.** Settings is the remote's own settings, eleven rows each a name
  * and a list of values of which the remote reads the first: the screen's and the keys' brightness, how long the
@@ -18,7 +18,7 @@
  * and every other row, field and value is carried as the remote holds it; a row the remote does not hold is
  * refused rather than added, which is the same rule the remote's screens keep.
  *
- * **What the screens do with each value, read in the lab's firmware copy for this item** (the screens' Lua,
+ * **What the screens do with each value, read in the lab's firmware copy** (the screens' Lua,
  * `juniper/init.lua` and `appscommon/harmony.lua`; the lab's `work/touch-firmware/notes/8.4-preflight.md` has the
  * lines). `getRemoteSettings` reads a number row's first value with `tonumber` and a yes or no row's as `"true"` or
  * not, and gives the firmware's default when that leaves nothing. At the end of a committed sync the screens empty
@@ -49,8 +49,7 @@
  * the seven are the account's and are refused when they differ from what the remote holds: the account's number,
  * which the screens join into the address of every document they read and hand up, and the household's favourites
  * address, which decides which favourites document the remote asks for. A description that equals what the remote
- * holds gives exactly the document it holds, which is what 8.4 delivers: Context written by us with no change of
- * behaviour.
+ * holds gives exactly the document it holds: Context written by us with no change of behaviour.
  *
  * **What the gate refuses beyond the composer**, in `check.ts`, rule `setting mishandled`: the two values above
  * whose cost is more than one screen, a screen brightness whose fade never ends, so the remote never sleeps on

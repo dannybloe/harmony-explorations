@@ -1,10 +1,10 @@
 /**
- * The Harmony 300 and 350's action lists, one writer per kind and its reader beside it, `todo-compile-350.md` 5.2.1.
+ * The Harmony 300 and 350's action lists, one writer per kind and its reader beside it.
  *
- * **Why this module exists.** Until 5.2 every composer of the family wrote its lists inline, a body of
+ * **Why this module exists.** Every composer of the family once wrote its lists inline, a body of
  * `[operand, opcode]` pairs spelled out where it was needed: the device composer its power switch, its resets and
  * its key lists, the activity composer its flips and its gates, the favourite composer its channels, and the send
- * list three times over, in `sends.ts`, `activity.ts` and `digits.ts`. The attribution of 5.2.1 has to say of every
+ * list three times over, in `sends.ts`, `activity.ts` and `digits.ts`. The attribution, `attribution.ts`, has to say of every
  * list of a finished file which generator wrote it, and the only honest way to say so is to read the list's numbers
  * off it, hand them to the generator, and compare what comes back with the file. A second spelling of each shape in
  * the attribution would have been a second copy of every one of them, which is the state `CLAUDE.md` warns precedes
@@ -141,8 +141,8 @@ export function resetList(variable: number, value: number): Instruction[] {
  * **The timers are the caller's numbers, both of them.** Our composer numbers a key's two timers consecutively, and
  * Logitech's compiler does not: the test setup's compile starts timers 14 and 7 in one block, the factory 350's 3 and
  * 2, and the programmed 350's 1 and 0, so a writer taking the first timer and counting on from it was a rule of our
- * numbering written into the shape, and the attribution of `todo-compile-350.md` 5.2.1 found it by failing to give
- * those lists back, `noscreenattribution.test.ts`. The timer numbers are description, `todo-compile-350.md` 5.1.8.
+ * numbering written into the shape, and the attribution found it by failing to give those lists back,
+ * `noscreenattribution.test.ts`. The timer numbers are description, `noscreennumbering.test.ts`.
  */
 export function pressList(pin: number, blocks: readonly (readonly number[])[]): Instruction[] {
   const pinOn = (PIN_BAND << 8) | (pin << 4) | KEY_TIMERS[KEY_TIMERS.length - 1]!.pinState;

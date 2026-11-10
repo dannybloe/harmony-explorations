@@ -1,6 +1,6 @@
 /**
- * Which generator of ours writes each byte of a Harmony 300 or 350 configuration, `todo-compile-350.md` 5.2.1 and
- * plan 011's "The check that proves 5.2": the no screen family's counterpart of the four slot family's
+ * Which generator of ours writes each byte of a Harmony 300 or 350 configuration, plan 011's section "The check
+ * that proves 5.2": the no screen family's counterpart of the four slot family's
  * `attributeBytes` and the One family's `oneAttributedBytes`, over the generic ledger of `attribution.ts`.
  *
  * **What it measures, and what it does not remember.** It takes a finished file and nothing else: no description of
@@ -13,7 +13,7 @@
  * write and names the rest, and on our build it has to find nothing left.
  *
  * **Why by structure and content and never by number.** Logitech's compiler numbers lists, maps, timers and state
- * variables in an order no rule was found for over four setups, `todo-compile-350.md` 5.1.8, so a list's index says
+ * variables in an order no rule was found for over four setups, `noscreennumbering.test.ts`, so a list's index says
  * nothing about which generator wrote it. A list is credited by its shape and its own numbers: its numbers read off
  * it, its writer asked for the list those numbers make, and the two compared. Where a structure names its parts, the
  * start up table its lists and the key table's send event tags theirs, the parts are found by following it.
@@ -37,7 +37,8 @@
  * numbers in every list and map; a send's group and record; a power on delay; a device key's pin; the channel; the
  * skin and the stamp; the archive's ZIP time; the carrier and **every duration word of an infrared block**, which are
  * the catalogue's and which `irBuildBlock` only frames with its terminator. That last is most of a file, and it is
- * why 5.2.3 is a check of its own: an attribution cannot tell a duration taken from the catalogue from one copied out
+ * why a check of its own holds that a build takes no Logitech container, `noscreenattribution.test.ts`: an
+ * attribution cannot tell a duration taken from the catalogue from one copied out
  * of a Logitech file, so what keeps a build honest about them is that no Logitech file goes in. The archive's device
  * names and numbers are description as well, inside the deflate stream where no byte can be pointed at, so only the
  * ZIP time is counted apart there.
@@ -307,7 +308,7 @@ export function noScreenAttributedBytes(c: Container, options: NoScreenAttributi
       const bytes = taggedListBytes([entry]).subarray(1);
       ledger.markRebuilt(tableAt + 1 + ENTRY_LENGTH * k, bytes, 'constants', new Set([1, 2]));
     }
-    // The entry binding event 0xFF, where the key table holds one: ours, `todo-compile-350.md` 5.4, credited only where
+    // The entry binding event 0xFF, where the key table holds one: ours, decision 28, credited only where
     // it is exactly `noScreenAcknowledgingEntry` for the numbers just read, a call of event 0x30's bound list. Logitech's
     // compiles bind no 0xFF, so on them this finds nothing and their calibration is what it was; an 0xFF bound to any
     // other list is left to the key maps' pass, which does not take the tag, and so its four bytes show as carried, in

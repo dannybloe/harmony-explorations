@@ -1,6 +1,6 @@
 /**
  * Where else a Harmony 300 or 350 keeps a device's power on delay, beyond its `Power` variable's switch on list:
- * the copy in Watch TV's list, `todo-compile-350.md` 4.6. `setPowerOnDelay` asks this through
+ * the copy in Watch TV's list. `setPowerOnDelay` asks this through
  * `Family.powerOnDelayCopies` and changes every copy it names along with the device's own, so that a delay edited
  * is the delay heard, whichever key reaches it.
  *

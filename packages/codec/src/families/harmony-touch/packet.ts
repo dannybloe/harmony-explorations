@@ -1,9 +1,10 @@
 /**
  * What a Harmony Touch's engine makes of a definition and a key code: the three sequences of words it puts in the
- * packet for its lamp, read the way the engine reads them. `todo-touch.md` 10.1.
+ * packet for its lamp, read the way the engine reads them,
+ * `reference/architectures/harmony-touch/devices-and-infrared.md`, "The packet".
  *
  * **Why this exists beside the writer.** `definition.ts` writes a definition from a row of our rhythm table and a
- * code into it, and until 10.1 nothing in the codec turned a Touch definition back into durations the way the
+ * code into it, and before this module nothing in the codec turned a Touch definition back into durations the way the
  * remote does. Every comparison went through the archive's renderer, `waveformOfArchiveCommand`, which reads a
  * definition back into a row of our own shape (`rhythmOfDefinition`, `blockOfDefinition`) and plays that, so a
  * definition written from a row and read back by it is a round trip through the same two shapes. This module is the

@@ -1,18 +1,19 @@
 /**
  * The empty Harmony Touch configuration, no device and no activity, and what a sync of it leaves on the remote besides
- * the six documents: `todo-touch.md` 9.2.
+ * the six documents.
  *
- * **What "empty" is, document by document**, read in the lab's copy of the 4.15.330 image for the preparation of 9.2
+ * **What "empty" is, document by document**, read in the lab's copy of the 4.15.330 image
  * (`notes/9.2-preflight.md` there, from `notes/6.10-screens-reads.md` and the screens' and engine's Lua it names):
  *
- * * **`ActivityList`, `DeviceList`, `MapList` and `ProtocolList`: each its list, empty**, the rest of the document as it
- *   stands. That is `setupBaseOf`'s base, which 8.6 composed onto and never delivered; here it is delivered on purpose.
- *   Both programs were built for it: the engine's reader walks each list with `ipairs` and needs no entry, and the
- *   screens have a path for each empty case (the home page falls back to the device list when no activity is listed,
- *   `juniper/activity.lua`; a start with no activity offers a "no activity" notice, `juniper/init.lua`
- *   `loadScreens`, which also runs when the remote leaves USB power after a sync; the favourites page has its own screen for no favourites, `juniper/favoritechannel.lua`;
- *   `setCurrentActivity` in `appscommon/harmony.lua` sets -1 for an empty list; Off with no activity running sends
- *   nothing, and no hard key is sent with neither a device nor an activity current, `juniper/init.lua`).
+ * * **`ActivityList`, `DeviceList`, `MapList` and `ProtocolList`: each its list, empty**, the rest of the document as
+ *   it stands. That is `setupBaseOf`'s base, which the whole setup is composed onto and never delivered as it is; here
+ *   it is delivered on purpose. Both programs were built for it: the engine's reader walks each list with `ipairs` and
+ *   needs no entry, and the screens have a path for each empty case (the home page falls back to the device list when
+ *   no activity is listed, `juniper/activity.lua`; a start with no activity offers a "no activity" notice,
+ *   `juniper/init.lua` `loadScreens`, which also runs when the remote leaves USB power after a sync; the favourites
+ *   page has its own screen for no favourites, `juniper/favoritechannel.lua`; `setCurrentActivity` in
+ *   `appscommon/harmony.lua` sets -1 for an empty list; Off with no activity running sends nothing, and no hard key is
+ *   sent with neither a device nor an activity current, `juniper/init.lua`).
  * * **`Context` has no empty form a remote can use, so it keeps the remote's values.** The screens build the address of
  *   every ActivityList, DeviceList, MapList and Settings read from its `AccountId-` (`getRequest` in
  *   `appscommon/harmony.lua`), the engine addresses every document it hands up by it, and the user's favourites

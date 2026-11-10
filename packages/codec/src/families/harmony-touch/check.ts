@@ -137,8 +137,8 @@ const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'obj
  * object is skipped here, as the view skips it. **On the lists whose entries the reader tells apart by their
  * type name it raises, and `checkTypes` refuses it**: the reader reads the name off the entry itself, which
  * for anything but an object raises. **On the other lists it walks, `checkFields` refuses it**, `entry not an
- * object`. This said such an entry's fate on the remote was not read, until `todo-touch.md` 6.7.1 read it for
- * the first kind of list and 6.10 for the second.
+ * object`. Both readings of the remote are `reference/architectures/harmony-touch/answering-a-sync.md`, "What the
+ * remote does not check".
  */
 function checkLists(documents: SyncDocuments): Finding[] {
   const out: Finding[] = [];
@@ -419,13 +419,14 @@ function endsWithAction(button: Record<string, unknown>, map: Record<string, unk
 }
 
 /**
- * Every other place where the engine's load raises on a field, `todo-touch.md` 6.10, beyond a missing list
- * (`checkLists`) and a type name (`checkTypes`): walked over the documents themselves as those two are, because
- * the view reads leniently, and run beside them in `refusalsBeforeASync`. The reading, one row per place with
- * file and line, is the lab's `work/touch-firmware/notes/6.10-reader-raises.md`, section 1; the argument is the
- * header of `test/families/harmony-touch/touch-check.test.ts`. Every rule is `refused`: each place raises inside `loadAll`, which
- * nothing catches, and the task that loads the configuration ends, `firmware.md` "A configuration that fails to
- * load".
+ * Every other place where the engine's load raises on a field,
+ * `reference/architectures/harmony-touch/answering-a-sync.md`, "What the remote does not check", beyond a missing
+ * list (`checkLists`) and a type name (`checkTypes`): walked over the documents themselves as those two are,
+ * because the view reads leniently, and run beside them in `refusalsBeforeASync`. The reading, one row per place
+ * with file and line, is the lab's `work/touch-firmware/notes/6.10-reader-raises.md`, section 1; the argument is
+ * the header of `test/families/harmony-touch/touch-check.test.ts`. Every rule is `refused`: each place raises
+ * inside `loadAll`, which nothing catches, and the task that loads the configuration ends, `firmware.md` "A
+ * configuration that fails to load".
  *
  * **Six rules, one per kind of raise**, each named for what is wrong with the value:
  *
@@ -718,8 +719,9 @@ export function readerRaises(documents: SyncDocuments): Finding[] {
 
 /**
  * `screens raise`, refused: the places where the remote's **screens**, a Lua program of their own beside the
- * engine, raise on a document the engine's load takes, `todo-touch.md` 6.10. The reading, one row per place, is
- * the lab's `work/touch-firmware/notes/6.10-screens-reads.md`; the screens read the same stored documents with a
+ * engine, raise on a document the engine's load takes, `reference/architectures/harmony-touch/answering-a-sync.md`,
+ * "What the remote does not check". The reading, one row per place, is the lab's
+ * `work/touch-firmware/notes/6.10-screens-reads.md`; the screens read the same stored documents with a
  * JSON decoder of their own whose null is again a userdata with no metatable, and their `string` is slnunicode's
  * table, which takes a string or a number like the engine's.
  *
@@ -734,14 +736,14 @@ export function readerRaises(documents: SyncDocuments): Finding[] {
  *   activity;
  * * a sync that never commits: a raise in the screens' half of a sync, after the engine has loaded the set and
  *   before the screens send the commit. That the sync then waits rather than aborts is inferred;
- * * **the screens deaf to the engine until a restart**, `todo-touch.md` 6.10.2: a raise inside a notification
+ * * **the screens deaf to the engine until a restart**: a raise inside a notification
  *   from the engine, which the screens' socket handling runs with no guard and after which it never polls that
  *   socket again, so no sync, activity, key or firmware notification reaches the screens until the remote
  *   restarts; a later sync then waits on screens that no longer hear it, inferred. The notifications that reach
  *   a document are an activity finishing starting (its pages are built inside it: the activity's command page,
  *   the number pad, the gesture pad when it is the start screen, the first activity tutorial), an activity
  *   starting, the help screen's replies, and a sync's end. The places are the lab note's rows marked LH,
- *   re-read row by row in 6.10.2; a row reached that way only in hub mode, which a Touch synced through a
+ *   each re-read; a row reached that way only in hub mode, which a Touch synced through a
  *   computer is not, is not refused.
  *
  * The rule's name stays `screens raise` for all four: the fault is the same, a raise in the screens, and only
@@ -1180,8 +1182,8 @@ function field(x: unknown, name: string): unknown {
 
 /**
  * **The gate before a write**: every finding that would make the remote's reader raise or turn a value away,
- * over a whole set of documents meant to answer a sync, or none when the set may be written. `todo-touch.md`
- * 6.6; the answerer refuses a set this returns anything for, before it sends the sync request.
+ * over a whole set of documents meant to answer a sync, or none when the set may be written. The answerer refuses a
+ * set this returns anything for, before it sends the sync request.
  *
  * In order, and stopping at the first kind that finds anything, since a set missing a document or a list
  * cannot be read the way the remote reads it:
@@ -1193,8 +1195,8 @@ function field(x: unknown, name: string): unknown {
  * 3. **every place the engine's load raises on**, `readerRaises`: every list the reader walks, every type
  *    name it searches and every other field it computes with, keys by or passes to a string function,
  *    `missing list`, `missing type` and `checkFields`'s rules, together, since all are read off the documents
- *    themselves and all end the load: a set is told every place of any of them at once, `todo-touch.md`
- *    6.7.1 and 6.10
+ *    themselves and all end the load: a set is told every place of any of them at once, `answering-a-sync.md`
+ *    "What the remote does not check"
  * 4. **then the whole check, keeping what is `refused`**: what stops the reader, a required field, and what
  *    the remote turns away. What is only `ignored` is not a refusal: Logitech's own documents carry two kinds
  *    of it, `touch-reader.test.ts`.
@@ -1203,8 +1205,7 @@ function field(x: unknown, name: string): unknown {
  * the documents, so their absence is the answerer's to meet when the remote asks. **One present at an address the
  * remote never asks for is not refused here**: it costs the remote nothing, since it is never delivered, and the
  * gate refuses what costs the remote. It costs the set its purpose, so the builder of a set refuses it,
- * `favouritesAddressFindings` below and `withContent` in `packages/corpus/experiments/touchfavouritesset.ts`, `todo-touch.md`
- * 8.3.
+ * `favouritesAddressFindings` below and `withContent` in `packages/corpus/experiments/touchfavouritesset.ts`.
  */
 export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
   const absent = CONFIGURATION_DOCUMENTS.filter((name) => documents[name] === undefined).map((name): Finding => ({
@@ -1223,11 +1224,11 @@ export function refusalsBeforeASync(documents: SyncDocuments): Finding[] {
 }
 
 /**
- * `setting mishandled`, refused, `todo-touch.md` 8.4: a Settings value the remote's screens take without raising and
- * then mishandle in a way that costs more than one screen, read in the lab's firmware copy, `juniper/init.lua`, for
- * the preparation of 8.4 and argued in `settings.ts`. Each value is read as the screens read it, `tonumber` of the
- * first value of the first row of that name, `luaNumber`; a value that reads as no number takes the firmware's
- * default and is not found here.
+ * `setting mishandled`, refused: a Settings value the remote's screens take without raising and then mishandle in a
+ * way that costs more than one screen, read in the lab's firmware copy, `juniper/init.lua`, and argued in
+ * `settings.ts` and `favourites-and-settings.md` "Settings, field by field". Each value is read as the screens read
+ * it, `tonumber` of the first value of the first row of that name, `luaNumber`; a value that reads as no number takes
+ * the firmware's default and is not found here.
  *
  * * **`ScreenBrightness` whose backlight step is below 1**, a level below 4: the fade before the screen sleeps,
  *   `fadeBrightness`, counts down from `floor(26 * level / 100)` and ends only when the count reaches 0 after a step,
@@ -1270,14 +1271,14 @@ const favouritesKind = (address: string): string =>
   address.startsWith(CONTENT_USER) ? 'ContentUser' : address.startsWith(CONTENT_DEVICE) ? 'ContentDevice' : 'ContentService';
 
 /**
- * `favourites address`, `todo-touch.md` 8.3: each favourites document of a set that sits at no address the set's own
- * documents make the remote ask for. The remote pairs an answer to its request by the address character for
- * character, so a favourites document anywhere else is never delivered and the sync goes through without it, the
- * change it carried silently missing. The user's address is built from the context, the device's from the tuning
- * device's profile address, and the line up's from the service the user's document names first, `readFavourites`;
- * a line up with no user's document beside it cannot be placed and is found for that. **Not part of
- * `refusalsBeforeASync`**, which says why; a set's builder refuses what this finds. The finding names the kind of
- * document and never its address, which carries the account's identifiers.
+ * `favourites address`: each favourites document of a set that sits at no address the set's own documents make the
+ * remote ask for, `favourites-and-settings.md` "Which favourites documents are asked for". The remote pairs an answer
+ * to its request by the address character for character, so a favourites document anywhere else is never delivered
+ * and the sync goes through without it, the change it carried silently missing. The user's address is built from the
+ * context, the device's from the tuning device's profile address, and the line up's from the service the user's
+ * document names first, `readFavourites`; a line up with no user's document beside it cannot be placed and is found
+ * for that. **Not part of `refusalsBeforeASync`**, which says why; a set's builder refuses what this finds. The
+ * finding names the kind of document and never its address, which carries the account's identifiers.
  */
 export function favouritesAddressFindings(documents: SyncDocuments): Finding[] {
   const c = readConfiguration(documents);
@@ -1429,10 +1430,11 @@ function checkCommandAction(
 }
 
 /**
- * `action activity missing`, ignored, `todo-touch.md` 8.5: a button whose action starts an activity the activity list
- * does not hold. The engine stores the id at load without looking it up and answers the start 567, activity not found,
- * `startActivity` in the lab's decompiled `apihandler/activity.lua`; the screens send the press as any other. So the
- * button starts nothing and costs that one key. No document measured holds such an action at all.
+ * `action activity missing`, ignored: a button whose action starts an activity the activity list does not hold,
+ * `activities-and-buttons.md` "Taking out an activity and a device". The engine stores the id at load without looking
+ * it up and answers the start 567, activity not found, `startActivity` in the lab's decompiled
+ * `apihandler/activity.lua`; the screens send the press as any other. So the button starts nothing and costs that one
+ * key. No document measured holds such an action at all.
  */
 function checkActivityAction(
   a: ReadButtonAction, activityIds: ReadonlySet<string>,
@@ -1467,14 +1469,15 @@ function checkActivities(c: Configuration): Finding[] {
         found('action command missing', 'ignored', step.path, 'the step names a command its device does not have, so it sends nothing');
       }
     }
-    // `role device missing`, `todo-touch.md` 8.5: a role naming a device the device list does not hold. The engine
-    // passes over its power and input steps, `startActivity` and `Action:getCommands` in the lab's decompiled engine
-    // testing the device first, and the screens look an activity's devices up by matching the device list against the
-    // roles, `getActivityDevices`, so the device is simply not among them: ignored. **But one place does not test it**:
-    // when any role of the activity states a number for `NextDevicePowerOnDelay`, the start reads the missing device's
-    // id off nothing, `activity.nextDelayActions[device.id]` after the test that logged it missing, and raises inside
-    // the engine's start of that activity. What catches that raise is not read, so it is refused, the safe side: its
-    // cost may be the activity never starting or the engine's task ending.
+    // `role device missing`: a role naming a device the device list does not hold, `activities-and-buttons.md` "Taking
+    // out an activity and a device". The engine passes over its power and input steps, `startActivity` and
+    // `Action:getCommands` in the lab's decompiled engine testing the device first, and the screens look an activity's
+    // devices up by matching the device list against the roles, `getActivityDevices`, so the device is simply not among
+    // them: ignored. **But one place does not test it**: when any role of the activity states a number for
+    // `NextDevicePowerOnDelay`, the start reads the missing device's id off nothing,
+    // `activity.nextDelayActions[device.id]` after the test that logged it missing, and raises inside the engine's
+    // start of that activity. What catches that raise is not read, so it is refused, the safe side: its cost may be the
+    // activity never starting or the engine's task ending.
     const delays = a.roles.some((r) => typeof r.nextDevicePowerOnDelay === 'number');
     for (const r of a.roles) {
       if (r.device !== undefined) continue;

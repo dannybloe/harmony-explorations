@@ -1,7 +1,7 @@
 /**
- * The Harmony 300 and 350 built from a recipe, `Family.fromRecipe`, plan 014 and `todo.md` 7.3.11: the empty
+ * The Harmony 300 and 350 built from a recipe, `Family.fromRecipe`, plan 014: the empty
  * configuration of `empty.ts` when the recipe holds no device and no activity, and otherwise `buildNoScreenSetup`,
- * the route of the Harmony 350's setups of ours from nothing, `todo-compile-350.md` 5.1.6 onwards.
+ * the route every Harmony 350 setup of ours built from nothing takes.
  *
  * **Which device key each device goes on is the recipe's**, `RecipeDevice.key`: these remotes have a key per device
  * and no screen, and nothing in a recipe written for another family says which key, so a device without one is

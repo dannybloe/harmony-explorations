@@ -1,6 +1,6 @@
 /**
  * A Harmony Touch device written by us: its device record, its commands, its own button map and the
- * protocol definitions it uses, composed with no Logitech database behind it. `todo-touch.md` 5.3.
+ * protocol definitions it uses, composed with no Logitech database behind it.
  *
  * **Why the device needs three documents and not one.** A Touch is told about a device in `DeviceList`, the
  * device record and its commands, and sends a command from the family definition `ProtocolList` holds under
@@ -45,22 +45,22 @@
  *
  * **No features are written.** A device with no power feature is one the activities cannot switch on and
  * off, and no input feature means no input to select; device mode needs neither. Composing them is an
- * activity's business and not this item's.
+ * activity's business and not this module's.
  *
- * **A device described by its family and numbers, and put into a whole set**, `todo-touch.md` 8.1:
+ * **A device described by its family and numbers, and put into a whole set**:
  * `composeTouchDeviceOfRow` composes a device every command of which is one number of one family of our rhythm
  * table, `withTouchDevice` adds the three parts to the device, map and protocol lists of a set the remote holds,
  * under identifiers of ours, `OWN_IDS`, and `withoutTouchDevice` takes them out again. Devices and activities of
- * Logitech's are taken out with everything naming them by `remove.ts`, `todo-touch.md` 8.5.
+ * Logitech's are taken out with everything naming them by `remove.ts`.
  *
- * **An activity composed from a description, and put into a whole set**, `todo-touch.md` 8.2: `composeTouchActivity`
+ * **An activity composed from a description, and put into a whole set**: `composeTouchActivity`
  * writes an activity's record and its own map from devices the documents already hold, named as a person names
  * them, `withTouchActivity` adds the two to the activity and map lists, and `withoutTouchActivity` takes them out.
  * The section that opens them says what is written and why.
  *
- * **Nothing here sends anything**: these are documents. This said no write path to a Touch existed, decision
- * 29, which stopped being true when the answerer of `todo-touch.md` 6.6 delivered sets to the bench
- * Touch; the answerer is `packages/corpus/src/touchsync.ts`.
+ * **Nothing here sends anything**: these are documents. This said no write path to a Touch existed, decision 29,
+ * which stopped being true when the answerer delivered sets to the bench Touch; the answerer is
+ * `packages/corpus/src/touchsync.ts`.
  */
 import type {
   Activity, ActivityAction, ActivityList, Button, ButtonActionDocument, ButtonMap, Command, Device, DeviceList,
@@ -280,7 +280,7 @@ export interface LearnedCommandCode {
 
 /**
  * A learned code as a command of ours: a definition and a key code where its rhythm is a row the Touch's
- * definitions can state, and its raw text otherwise. `todo-touch.md` 5.3's two routes for a learned code.
+ * definitions can state, and its raw text otherwise: the two routes for a learned code, `learned.ts`.
  *
  * **The definition route is preferred** because it is the form every command Logitech hands a Touch takes:
  * the remote builds the durations from a family and a number, and a held key repeats the family's own
@@ -342,7 +342,7 @@ export function codeOfRow(
 }
 
 // ---------------------------------------------------------------------------------------------------
-// A device described by its family and numbers, and put into a set of documents. `todo-touch.md` 8.1.
+// A device described by its family and numbers, and put into a set of documents.
 // ---------------------------------------------------------------------------------------------------
 
 /**
@@ -437,13 +437,12 @@ const deviceIdOf = (entry: unknown): string => (isRecord(entry) && isRecord(entr
  * its definitions at the end of `ProtocolList` unless the list already holds that same definition under that
  * id. The other two documents are not touched, and nothing is changed in place: the three come back as copies.
  *
- * **Refuses**, each by what collides and never quoting a document's value: one of the three documents without
- * its list; a device or protocol id that is not one of ours, `OWN_IDS`; a device id already listed, or one whose
- * digits contain another device's id or are contained in one, since the screens search a device's id as a
- * pattern inside another and would find the wrong device (the lab's 6.10 note on the screens' reads, row 200);
- * a map identifier already in `MapList`; a device name another device has, compared without regard to case,
- * since the device list shows devices by name and a person picks one by it; and a protocol id listed with
- * another definition.
+ * **Refuses**, each by what collides and never quoting a document's value: one of the three documents without its
+ * list; a device or protocol id that is not one of ours, `OWN_IDS`; a device id already listed, or one whose digits
+ * contain another device's id or are contained in one, since the screens search a device's id as a pattern inside
+ * another and would find the wrong device (the lab's `work/touch-firmware/notes/6.10-screens-reads.md`, row 200); a
+ * map identifier already in `MapList`; a device name another device has, compared without regard to case, since the
+ * device list shows devices by name and a person picks one by it; and a protocol id listed with another definition.
  */
 export function withTouchDevice(documents: SyncDocuments, composed: ComposedTouchDevice): DeviceDocuments {
   const devices = listIn(documents.DeviceList, 'DevicesWithFeatures');
@@ -487,11 +486,11 @@ export function withTouchDevice(documents: SyncDocuments, composed: ComposedTouc
 }
 
 /**
- * `documents` with a device of ours taken out again: its entry, its own map, and every definition its commands
- * name that no other device's command names. **The exact inverse of `withTouchDevice`** for a device nothing
- * else names, which is all `todo-touch.md` 8.1 needs; the general removal, which also takes the device out of
- * every activity and map naming it, is 8.5's, `withoutTouchDevices` in `remove.ts`. So this refuses a device that is not one of ours, one
- * the device list does not hold, and one that an activity's role or step, or a button or sequence step of
+ * `documents` with a device of ours taken out again: its entry, its own map, and every definition its commands name
+ * that no other device's command names. **The exact inverse of `withTouchDevice`** for a device nothing else names,
+ * which is all a device of ours added to a set needs; the general removal, which also takes the device out of every
+ * activity and map naming it, is `withoutTouchDevices` in `remove.ts`. So this refuses a device that is not one of
+ * ours, one the device list does not hold, and one that an activity's role or step, or a button or sequence step of
  * another map, names: removing it would leave that reference pointing at nothing.
  */
 export function withoutTouchDevice(documents: SyncDocuments, deviceId: Id): DeviceDocuments {
@@ -531,7 +530,7 @@ export function withoutTouchDevice(documents: SyncDocuments, deviceId: Id): Devi
 }
 
 // ---------------------------------------------------------------------------------------------------
-// An activity described by its devices and keys, and put into a set of documents. `todo-touch.md` 8.2.
+// An activity described by its devices and keys, and put into a set of documents.
 // ---------------------------------------------------------------------------------------------------
 
 /**
@@ -571,7 +570,7 @@ export type ActivityRoleKind = (typeof ACTIVITY_ROLE_KINDS)[number];
 /**
  * The start screens an activity of ours may open on. `Commands` is the command list, the screens' fallback for any
  * value whose condition fails, `activities-and-buttons.md`, the table under "An activity: what it is made of".
- * `Favorites` and `Gesturepad` were added for `todo-touch.md` 8.6, the whole test setup, whose Watch TV opens on its
+ * `Favorites` and `Gesturepad` were added for the whole test setup, `setup.ts`, whose Watch TV opens on its
  * favourites and Watch a Blu-ray on its gesture screen: each is written only where what it needs is, the favourites
  * only on the tuning default activity with a channel changing role, the gesture screen only on a map with gestures,
  * `composeTouchActivity`. The others (Numpad, Trackpad, Nowplaying) each need something of the activity this composer
@@ -582,8 +581,8 @@ export const ACTIVITY_START_SCREENS = ['Commands', 'Favorites', 'Gesturepad'] as
 /**
  * **The gestures a map of ours may hold**: the five Logitech's documents put on each activity but the Custom one,
  * `activities-and-buttons.md`, "Gestures". The screens also name held and released gestures, `SwipeUpHold` and the
- * like, and index a table that has no entry for some of them with a long press, the lab's 6.10 note on the screens'
- * reads, row 184; no document measured holds one, so they are refused.
+ * like, and index a table that has no entry for some of them with a long press, the lab's
+ * `work/touch-firmware/notes/6.10-screens-reads.md`, row 184; no document measured holds one, so they are refused.
  */
 export const GESTURE_KEYS = ['SwipeUp', 'SwipeDown', 'SwipeLeft', 'SwipeRight', 'Tap'] as const;
 export type TouchGestureKey = (typeof GESTURE_KEYS)[number];
@@ -629,10 +628,10 @@ export interface OwnActivityCommand {
 }
 
 /**
- * A step added by hand to an activity's start or end: a command, a pause in whole or part seconds, or, since 8.6, a
- * channel tuned through a device. `order` is the step's `ActionOrder`; its place in the list counting from 1 when
- * absent. The engine sorts the steps by it, `orderTableItems`, so only the order matters, and Logitech's client
- * numbers them in a way of its own, Switch Box's start from 4, which a description may keep.
+ * A step added by hand to an activity's start or end: a command, a pause in whole or part seconds, or a channel
+ * tuned through a device. `order` is the step's `ActionOrder`; its place in the list counting from 1 when absent.
+ * The engine sorts the steps by it, `orderTableItems`, so only the order matters, and Logitech's client numbers
+ * them in a way of its own, Switch Box's start from 4, which a description may keep.
  */
 export type OwnActivityStep = (OwnActivityCommand | { readonly delaySeconds: number } | { readonly device: string; readonly channel: string })
   & { readonly order?: number };
@@ -644,7 +643,7 @@ export type OwnActivityStep = (OwnActivityCommand | { readonly delaySeconds: num
 export type OwnPress = OwnActivityCommand | { readonly sequence: string } | { readonly client: TouchClientAction };
 
 /**
- * **A button in the ordered form**, `todo-touch.md` 8.6: a key, a gesture or a screen entry, each in the place the
+ * **A button in the ordered form**: a key, a gesture or a screen entry, each in the place the
  * description gives it, so a map comes out with its buttons in the order Logitech's has them. One of `key`, `gesture`
  * and `entry` names the button; `entry` is the label the screen shows, and `index` its `IndexInMenu`, which the
  * description states, a repeated one included. `group` is the `FunctionGroupType`, 0 when absent.
@@ -695,10 +694,10 @@ export interface OwnActivity {
   readonly leave?: readonly OwnActivityStep[];
   readonly keys?: Readonly<Partial<Record<TouchButtonKey, OwnActivityKey>>>;
   readonly entries?: readonly OwnActivityEntry[];
-  /** Whether the favourite channels belong to this activity, `IsTuningDefault`; false when absent. 8.6. */
+  /** Whether the favourite channels belong to this activity, `IsTuningDefault`; false when absent. */
   readonly tuningDefault?: boolean;
   /**
-   * The map's buttons in the ordered form, in place of `keys` and `entries`, with gestures and sequences, 8.6. The
+   * The map's buttons in the ordered form, in place of `keys` and `entries`, with gestures and sequences. The
    * two forms are not mixed: a description gives one or the other.
    */
   readonly buttons?: readonly OwnButton[];
@@ -723,14 +722,14 @@ export interface ActivityDocuments {
  * **What is written, and why only that.** Of an activity's 26 fields, the ones either program reads,
  * `activities-and-buttons.md`: the id, which the engine and the screens find it by and its map is named from;
  * `Name`; `Type` and `SuggestedDisplay`, from `ACTIVITY_TYPES`; `ActivityGroup`, which the engine indexes and fails
- * without, from `ACTIVITY_GROUPS`; `ActivityOrder`; `StartScreen`; `IsTuningDefault`, false unless the description gives
- * the favourites to the activity, 8.6, and `DefaultChannel` null, as on every activity measured; `ImageKey`, `BaseImageUri` and `Icon` null, so the screens
- * draw the default picture of its type, as for every activity measured; `ActivityDisplayName` and `Alternatives`
- * null, `IsMultiZone` false and `Zones` null; the roles; and the two step lists. Left out, as read by neither
- * program: `AccountId-`, `State`, `IsDefault`, `DateCreated`, `DateModified`, `DefaultStation` and
- * `DefaultStationName`; on a role its `Id-` and its input's `Id-`; on a step its `Id` and `TargetLevel`, which the
- * engine reads only when set and which belongs to a speaker group. A field stated by us is one more the remote can
- * send back to an account, as `composeTouchDevice` argues for a device.
+ * without, from `ACTIVITY_GROUPS`; `ActivityOrder`; `StartScreen`; `IsTuningDefault`, false unless the description
+ * gives the favourites to the activity, and `DefaultChannel` null, as on every activity measured; `ImageKey`,
+ * `BaseImageUri` and `Icon` null, so the screens draw the default picture of its type, as for every activity
+ * measured; `ActivityDisplayName` and `Alternatives` null, `IsMultiZone` false and `Zones` null; the roles; and the
+ * two step lists. Left out, as read by neither program: `AccountId-`, `State`, `IsDefault`, `DateCreated`,
+ * `DateModified`, `DefaultStation` and `DefaultStationName`; on a role its `Id-` and its input's `Id-`; on a step
+ * its `Id` and `TargetLevel`, which the engine reads only when set and which belongs to a speaker group. A field
+ * stated by us is one more the remote can send back to an account, as `composeTouchDevice` argues for a device.
  *
  * **The roles.** Each device's roles are written together, in the description's order, each stating the device's
  * power orders and input, as Logitech's documents do for a device with two roles; the engine takes the first role
@@ -739,10 +738,10 @@ export interface ActivityDocuments {
  * **The map** is `16417Activity` and the id, the identifier the engine finds it by, with its keys and its screen
  * list as `composeTouchDevice` writes a device's: state 0, group 0, a press of event 1, the screen list numbered
  * from 0 in the order given, no gesture and no sequence. An activity of the `Custom` type carries no gestures in
- * the documents measured, and one of another type carries five there; this writes none for any type. **Or, since
- * 8.6, the ordered form**, `buttons` and `sequences`, written by `composeButtons` in the order given, gestures,
- * long and double presses, sequences and the number pad entry among them. A step may be a channel tuned through a
- * device, `ChannelActivityAction`, and may state its own order.
+ * the documents measured, and one of another type carries five there; this writes none for any type. **Or the
+ * ordered form**, `buttons` and `sequences`, written by `composeButtons` in the order given, gestures, long and
+ * double presses, sequences and the number pad entry among them. A step may be a channel tuned through a device,
+ * `ChannelActivityAction`, and may state its own order.
  *
  * **Refuses** what the remote would drop or do otherwise than described: an id not ours; a type with no measured
  * group; a start screen outside `ACTIVITY_START_SCREENS`, the favourites on an activity that does not own them or
@@ -864,7 +863,7 @@ export function composeTouchActivity(a: OwnActivity, documents: SyncDocuments): 
   const buttons: Button[] = [];
   let sequences: Sequence[] = [];
   if (a.buttons !== undefined) {
-    // The ordered form, 8.6: the map's buttons in the description's order, with function ids, gestures and sequences.
+    // The ordered form: the map's buttons in the description's order, with function ids, gestures and sequences.
     const map = composeButtons(a.buttons, a.sequences ?? [], (c) => {
       const found = commandOf(c);
       return { name: found.name, deviceId: stated(found.device), functionId: functionIdOf(found.device.commandsByName.get(found.name.toLowerCase())?.source) };
@@ -956,15 +955,15 @@ export interface ResolvedCommand {
 }
 
 /**
- * A map's buttons and sequences from the ordered form, `todo-touch.md` 8.6, for a device's own map and an activity's
- * alike: `resolve` finds a command as the map's kind finds it and refuses one it cannot. **What each button is
- * written with**, the fields either program reads, `activities-and-buttons.md`: its kind, `HardRemoteButton` for a
- * key, `GestureRemoteButton` for a gesture and `SoftRemoteButton` for an entry; `ButtonKey` for a key and a gesture;
- * `TextOnRemote` and `MenuItem.IndexInMenu` for an entry; `ButtonState` 0; `FunctionGroupType`; and its three actions,
- * null where none is given. A command action states `EventType` 1, 2 or 3 by which of the three it is, `Order` 0, the
- * command and the device, and the command's function id under `FunctionId-` where it states one, since the screens read
- * that key; a sequence action names the sequence's id, a client action its name. A sequence's steps are numbered by
- * `Order` from 1, which the engine sorts them by, a pause's `Duration` in seconds.
+ * A map's buttons and sequences from the ordered form, for a device's own map and an activity's alike: `resolve`
+ * finds a command as the map's kind finds it and refuses one it cannot. **What each button is written with**, the
+ * fields either program reads, `activities-and-buttons.md`: its kind, `HardRemoteButton` for a key,
+ * `GestureRemoteButton` for a gesture and `SoftRemoteButton` for an entry; `ButtonKey` for a key and a gesture;
+ * `TextOnRemote` and `MenuItem.IndexInMenu` for an entry; `ButtonState` 0; `FunctionGroupType`; and its three
+ * actions, null where none is given. A command action states `EventType` 1, 2 or 3 by which of the three it is,
+ * `Order` 0, the command and the device, and the command's function id under `FunctionId-` where it states one,
+ * since the screens read that key; a sequence action names the sequence's id, a client action its name. A
+ * sequence's steps are numbered by `Order` from 1, which the engine sorts them by, a pause's `Duration` in seconds.
  *
  * **Left out, as read by neither program**, the table of `activities-and-buttons.md`, "What a writer must carry": a
  * button's `ButtonId`, `ImageId`, `ButtonImageKey`, `ButtonImagePath` and `MenuItem.MenuName`, and an action's `Id`.
@@ -1118,10 +1117,10 @@ export function withTouchActivity(documents: SyncDocuments, composed: ComposedTo
 
 /**
  * `documents` with an activity of ours taken out again: its entry and its own map. **The exact inverse of
- * `withTouchActivity`** for an activity nothing else names; the general removal is 8.5's, `withoutTouchActivities` in
- * `remove.ts`. So this refuses an activity that is not ours, one the
- * activity list does not hold, the tuning default, whose favourites live in documents of their own, and one that a
- * button of another map starts, by its `ActivityId-`: removing it would leave that button pointing at nothing.
+ * `withTouchActivity`** for an activity nothing else names; the general removal is `withoutTouchActivities` in
+ * `remove.ts`. So this refuses an activity that is not ours, one the activity list does not hold, the tuning
+ * default, whose favourites live in documents of their own, and one that a button of another map starts, by its
+ * `ActivityId-`: removing it would leave that button pointing at nothing.
  */
 export function withoutTouchActivity(documents: SyncDocuments, activityId: Id): ActivityDocuments {
   const id = idText(activityId);

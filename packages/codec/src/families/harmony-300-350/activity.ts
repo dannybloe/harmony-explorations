@@ -1,5 +1,5 @@
 /**
- * The Harmony 300 and 350's one activity, Watch TV, composed onto a configuration, `todo-compile-350.md` 4.2: the
+ * The Harmony 300 and 350's one activity, Watch TV, composed onto a configuration: the
  * no screen family's own composer, since nothing of the screen families' activity carries over. There is no
  * activity record, no activity map, no menu row and no screen; **the activity is one list bound to Watch TV's
  * press**, tag `0x86` in entry 0, the key table every press falls through to,
@@ -42,7 +42,7 @@
  * lists are left unreferenced, as Logitech's compile of the test setup leaves fifty of its own. A device the activity puts on an input and
  * which holds an input variable already is refused, since replacing a variable is a removal step nobody has built;
  * an old input variable the new activity does not write stays, and nothing writes it. **On a configuration with no
- * activity**, the empty one a build from nothing starts from, `todo-compile-350.md` 5.1.6, Watch TV's press is bound
+ * activity**, the empty one a build from nothing starts from, Watch TV's press is bound
  * in the key table and the flag is created, as every input variable already was: `flag.reused` says which happened.
  *
  * **What it rests on**, `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`: the test setup's activity composed onto
@@ -196,8 +196,8 @@ function powerStepOf(c: Container, name: string, group: number): ActivityPowerSt
   return { kind: 'toggle', device: name, send: off.operand, wait };
 }
 
-// The register loaded and a list called, and a flip, are `gateList` and `flipList` in `lists.ts` since
-// `todo-compile-350.md` 5.2.1: the device composer's power switch writes the same two, and the attribution reads both
+// The register loaded and a list called, and a flip, are `gateList` and `flipList` in `lists.ts`, since the device
+// composer's power switch writes the same two, and the attribution reads both
 // back through the same writers.
 
 /**

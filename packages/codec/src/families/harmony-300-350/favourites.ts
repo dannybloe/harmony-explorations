@@ -1,5 +1,5 @@
 /**
- * Favourite channels composed onto a Harmony 350 configuration, `todo-compile-350.md` 4.3: each channel a binding
+ * Favourite channels composed onto a Harmony 350 configuration: each channel a binding
  * of a favourite key in its device's own map, sent either as a number through the number sender or digit by
  * digit, and the number sender's one record with its three digit tables.
  *
@@ -34,7 +34,7 @@
  * compile; a configuration whose number sender holds a record already, since every compile read holds at most
  * one and favourites on a second device are not read; and a device map that binds a favourite key already, since
  * whether a channel replaces what the device's own map holds there, a television's Home or Internet on the fifth
- * favourite key, `todo-compile-350.md` 4.1.1, is read on one compile only, another owner's, whose LG television
+ * favourite key, `keys.ts`, is read on one compile only, another owner's, whose LG television
  * holds a channel there and has a Home command, and one sample is not a rule.
  */
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
@@ -55,8 +55,8 @@ import { deviceDigitLists } from './digits.ts';
 import { FAVOURITE_SCANS } from './keys.ts';
 import { bodyOf, channelDigitsList, channelNumberList, numberSenderBlock } from './lists.ts';
 
-// The band that hands the accumulator to a number sender, `NUMBER_SENDER_BAND`, moved to `lists.ts` with the channel
-// list's writer, `todo-compile-350.md` 5.2.1, and is still named from here.
+// The band that hands the accumulator to a number sender, `NUMBER_SENDER_BAND`, lives in `lists.ts` with the channel
+// list's writer, and is still named from here.
 export { NUMBER_SENDER_BAND } from './lists.ts';
 
 /** The largest number one `7A` load holds, its sixteen bit operand. */
@@ -106,7 +106,7 @@ function routeOf(channel: string): 'number' | 'digits' {
  *
  * The digits a channel sends are the device's one block copies, `deviceDigitLists` in `digits.ts`. Logitech's
  * compile stores those copies for a device of some types whether or not a favourite calls them, and the device
- * composer makes them for the same types, `todo-compile-350.md` 4.1.1, so on a device composed here they are
+ * composer makes them for the same types, `DIGIT_COPIES_BY_TYPE`, so on a device composed here they are
  * usually found rather than made.
  */
 export function composeNoScreenFavourites(

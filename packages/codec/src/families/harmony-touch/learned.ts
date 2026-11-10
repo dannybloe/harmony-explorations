@@ -1,7 +1,7 @@
 /**
  * A learned infrared code in the two forms a Harmony Touch can be given it: as a raw code, the durations
  * written out as text, or as a code family's row and a value, which `definition.ts` turns into a family
- * definition and a key code. `todo-touch.md` 5.3, part B.
+ * definition and a key code.
  *
  * **What a learned code is.** An infrared command is a lamp blinking in a precise rhythm, and learning one is
  * recording that rhythm off the original remote: how fast the lamp flickers, the carrier, and how long it is on

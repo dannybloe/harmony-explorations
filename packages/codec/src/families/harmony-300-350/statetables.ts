@@ -1,7 +1,7 @@
 /**
  * The no screen family's state tables, the Harmony 300 and 350: the facts `buildStateTables` builds base slots 0
  * and 13 from, `NO_SCREEN_STATE_TABLES`, and the allocator that numbers a setup's own variables,
- * `noScreenStateVariables`, `todo-compile-350.md` 5.1.2, step 2 of plan 011.
+ * `noScreenStateVariables`, step 2 of plan 011.
  *
  * **The facts, measured over the 13 compiles of this family the lab holds**, ten for a Harmony 350 and three for a
  * Harmony 300, of two generations of Logitech's compiler, `test/families/harmony-300-350/noscreenstatetables.test.ts`:
@@ -29,7 +29,7 @@
  * their numbers are the list allocator's.
  *
  * **The indices are ours, and that is a choice, not a measurement.** Logitech's compiler numbers these variables
- * in an order no rule is known for, plan 011's 5.1.8: in the test setup's compile they run Sony HT, Knoll, Switch,
+ * in an order no rule is known for, `noscreennumbering.test.ts`: in the test setup's compile they run Sony HT, Knoll, Switch,
  * LG TV, the Denon's input, Plasma, Denon, Kodi, the activity's flag, KPN and the LG TV's input, which is neither
  * the setup's order nor its keys'. Nothing on the remote reads an index but the instructions that name it, so any
  * order the instructions agree with is a working configuration. **Our rule**: from 18, the firmware's block being
@@ -38,8 +38,8 @@
  * `narrow`. It follows the order the family's composers append in, a device's power variable at `narrow` as the
  * device is composed and the activity's inputs before its flag, `composeNoScreenActivity`. **A setup composed device
  * by device onto the configuration of none comes out numbered alike**, byte for byte: the test setup built from
- * nothing, `todo-compile-350.md` 5.1.6, holds exactly the tables this builds for it, `noscreenfromnothing.test.ts`.
- * This said that was not checked until then, since nothing had been composed onto one. A comparison with Logitech's
+ * nothing holds exactly the tables this builds for it, `noscreenfromnothing.test.ts`. This said that was not
+ * checked until such a build existed, since nothing had been composed onto one. A comparison with Logitech's
  * compile is by role, never by number.
  *
  * **What the generator does not reproduce**: the order of the transitions inside a record. Logitech

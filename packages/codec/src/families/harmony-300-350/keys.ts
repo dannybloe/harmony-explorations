@@ -5,7 +5,7 @@
  * module outside `families/` reaches them through the family.
  *
  * **Measured on one compile of one model**, Logitech's compile of the Harmony 350 test setup, the lab's
- * `work/setups/h350-test/compile-Result.EzHex`, `todo-compile-350.md` 3.2, and nowhere else, which is why the
+ * `work/setups/h350-test/compile-Result.EzHex`, and nowhere else, which is why the
  * table below says the Harmony 350 where the family is the Harmony 300's as well: the 300's keypad is smaller
  * and no 300 compile has been fitted. `packages/codec/test/families/harmony-300-350/noscreen.test.ts` holds the fit.
  */
@@ -35,14 +35,15 @@ import type { HardKey } from '../../compose/devicemode.ts';
  *   table gives every device its own.
  *
  * And the KPN's map binds three of the table's keys and nothing else of its own, so it is not a sample of a device's
- * own map. **Why is read since `todo-compile-350.md` 5.1.7**, and it is the account, not a rule: the service compiles
+ * own map. **Why is read**, and it is the account, not a rule: the service compiles
  * a device's keys from its mode map, and that account's KPN mode map is the one the setup builder saved with
  * `SaveButtonMaps` to put the favourites on, which reads its 35 hard buttons as unassigned. The same catalogue KPN on
  * an account nothing saved binds every key this table gives it, and two more, Replay and Advance on the skip keys,
  * which no prefer list here names, `noscreenfromnothing.test.ts`; the one other device of the family's compiles with
- * a Replay, a Sony VCR on a Harmony 300, binds it on no key, so one for and one against, and they are not added. This gave the activity the map ends in as the reason, until
- * 4.2 found another KPN box's map, the activity ending in it too, binding 33 of its own codes,
- * `noscreenactivity.test.ts`; and then no reason, until 5.1.7. **Scan 3, Power, is not here**: a device's power key sends its power step where
+ * a Replay, a Sony VCR on a Harmony 300, binds it on no key, so one for and one against, and they are not added.
+ * This gave the activity the map ends in as the reason, until another KPN box's map, the activity ending in it too,
+ * was found binding 33 of its own codes, `noscreenactivity.test.ts`; and then no reason, until the saved mode map
+ * above was read. **Scan 3, Power, is not here**: a device's power key sends its power step where
  * the catalogue's power is a toggle and switches its power variable where it is not, `devices.ts`.
  *
  * The names are the scan codes' in `reference/remotes/harmony-350/keys.md`. Scan 54, Enter, takes `NumberEnter`
@@ -98,7 +99,7 @@ export const NO_SCREEN_HARD_KEYS: readonly HardKey[] = [
 export const POWER_SCAN = 3;
 
 // ---------------------------------------------------------------------------------------------------------------
-// Logitech's routing in a device's map, `todo-compile-350.md` 4.1.1. Every rule below is a choice Logitech's service
+// Logitech's routing in a device's map. Every rule below is a choice Logitech's service
 // makes and its compiler writes, copied so that a device composed here stores and binds what Logitech's compile of
 // the same setup does. The service states two of them itself: its mode maps of the test setup's eight devices, the
 // lab's `work/myharmony/responses/20261031-h350-setup_GetDeviceModeButtonMaps-all.json`, carry an override on the
@@ -151,7 +152,7 @@ export const STORED_UNBOUND: readonly string[] = ['Teletext'];
 
 /**
  * A command Logitech stores for a television, with a send list nothing calls, where no key of its map binds it and
- * the setup holds another device: the television's `Back`, `todo-compile-350.md` 5.1.7.
+ * the setup holds another device: the television's `Back`.
  *
  * **Measured** over the twelve current compiles of the family, `noscreenstored.test.ts`. Three televisions have a
  * `Back` command no key of their map binds, each having `Exit` for the Exit key and `ChannelPrev` for the previous
@@ -228,7 +229,7 @@ export const DEVICE_KEYS: readonly { readonly place: string; readonly scan: numb
 ];
 
 /**
- * The infrared group a long press device takes is this plus its key's place, `todo-compile-350.md` 4.4: on all
+ * The infrared group a long press device takes is this plus its key's place: on all
  * four keys of Logitech's compile of the Harmony 350 test setup, groups 4 to 7 for the top left to the bottom
  * right, and on the one long press of another owner's Harmony 350 compile that selects a device of its own,
  * `reference/architectures/harmony-300-350/memory.md` "Which infrared group a device takes". The Harmony 300 has
@@ -238,7 +239,7 @@ export const LONG_PRESS_GROUP_BASE = DEVICE_KEYS.length;
 
 /**
  * The scan codes of the keys a favourite channel goes on, in the order the channels are given, per skin: the
- * Harmony 350's, skin 104, `todo-compile-350.md` 4.3. Logitech's compile of the test setup puts the channels 1,
+ * Harmony 350's, skin 104. Logitech's compile of the test setup puts the channels 1,
  * 2, 3, 666 and 07, entered in that order, on scans 8, 9, 11, 34 and 2; the three other Harmony 350 compiles with
  * five favourites, which come from two remotes, hold them on the same five scans, and with the fourth and fifth
  * on 34 and 2 where their channels, 4 and then 666 or 130, read as entered in that order too, though nothing

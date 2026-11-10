@@ -1,5 +1,5 @@
 /**
- * The Harmony 300 and 350's metadata archive built from nothing, `todo-compile-350.md` 5.1.4 and plan 011 step 4: the
+ * The Harmony 300 and 350's metadata archive built from nothing, plan 011 step 4: the
  * section a configuration of this family ends with, raw slot 13, from the setup's devices and two choices.
  *
  * **What is the family's and what is shared.** The text around the devices is this family's: the same 149

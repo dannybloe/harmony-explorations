@@ -1,9 +1,9 @@
 /**
- * A whole setup composed onto a Harmony 300 or 350 configuration, `todo-compile-350.md` 4.5: every device of the
+ * A whole setup composed onto a Harmony 300 or 350 configuration: every device of the
  * setup the configuration lacks, each on its key's short or long press, then the activity where the configuration
  * holds none, and then the favourite channels, by the family's four composers in the order they need. The no screen
  * family's own entry, beside its composers, since the screen families' `composeSetup` builds from a frame and asks
- * members this family refuses. **Built from nothing**, 5.1.6, the same entry runs onto the empty configuration of
+ * members this family refuses. **Built from nothing**, the same entry runs onto the empty configuration of
  * `empty.ts`, `buildNoScreenSetup`, so no Logitech container goes in at all.
  *
  * **What it composes, in order, and why that order.**
@@ -15,7 +15,7 @@
  *    archive lists the devices in, and the composer appends each to the archive as it goes, so on the test setup,
  *    whose short presses come first, nothing is held back and the archive lists the devices as Logitech's does. Each
  *    device's volume and mute come from where `volumeSource` says for the setup's account, Logitech's routing, with
- *    every device's type read off the catalogue. Until 5.1.6 every short press went first and every long press
+ *    every device's type read off the catalogue. This once put every short press first and every long press
  *    after, which is the same order on the test setup and was not the account's on another.
  * 2. **The activity, where the configuration holds none**, `composeNoScreenActivity`: Watch TV unbound in the key
  *    table, as on the empty configuration. Its devices, their inputs and the device it ends in, the `ChannelChanging`
@@ -33,9 +33,9 @@
  * **When the configuration's own activity is kept**, the entry refuses a setup whose activity names a device it
  * composes, since the configuration's activity cannot be that setup's activity then; nor one naming a device the
  * configuration does not hold. Replacing an activity whose devices hold input variables already needs the variable
- * removal step of 4.2.1, which nothing has built, so a donor's activity is never replaced here.
+ * removal step, which nothing has built, so a donor's activity is never replaced here.
  *
- * **Event `0xFF`**, `todo-compile-350.md` 5.4: `buildNoScreenSetup` binds it as its last step, so a setup built from
+ * **Event `0xFF`**: `buildNoScreenSetup` binds it as its last step, so a setup built from
  * nothing serves a Harmony 300 and a Harmony 350 alike, decision 28. `composeNoScreenSetup` onto a Logitech compile
  * does not add it, deliberately: no composer rebuilds the key table from the family's constants, each adds its own
  * entries to what the file holds, so a composition onto a donor keeps the donor's key table, Logitech's own lack of
@@ -44,7 +44,7 @@
  *
  * **Measured** in `noscreensetup.test.ts`: Logitech's first compile of the test setup, with the five devices
  * `withoutNoScreenDevice` can take out taken out, composed back to the whole setup with the five favourite
- * channels, and held part by part against Logitech's second compile. And in `noscreenfromnothing.test.ts`, 5.1.6:
+ * channels, and held part by part against Logitech's second compile. And in `noscreenfromnothing.test.ts`:
  * the whole setup composed onto the empty configuration, the activity and the Denon's inputs ours too, held against
  * the same compile part by part. The Harmony 350 alone, one setup; the Harmony 300 has no long press and no favourite
  * key table, and its devices on short presses alone are not run through here.
@@ -150,7 +150,7 @@ export function composeNoScreenSetup(c: Container, archive: CatalogueSource, req
       if (!names.includes(one.device)) throw new ComposeError(`${activity.name} names ${one.device}, which is no device of the setup`);
       if (ownActivity && missing.includes(one.device)) {
         throw new ComposeError(`${activity.name} names ${one.device}, which is composed here, so the configuration's own activity is not the setup's; `
-          + 'composing the activity over one whose devices hold input variables needs the variable removal step, todo-compile-350.md 4.2.1');
+          + 'composing the activity over one whose devices hold input variables needs a variable removal step, which is not built');
       }
     }
   }
@@ -259,13 +259,13 @@ export interface NoScreenSetupFromNothing extends NoScreenSetupRequest {
 }
 
 /**
- * A whole setup built from nothing, `todo-compile-350.md` 5.1.6, step 6 of plan 011: the empty configuration for the
+ * A whole setup built from nothing, step 6 of plan 011: the empty configuration for the
  * setup's skin, `buildEmptyNoScreenConfiguration`, with every device, the activity and the favourite channels
  * composed onto it by `composeNoScreenSetup`. **Nothing goes in but the setup, its keys, a moment and the infrared
- * catalogue**: no Logitech container, which 5.2.3 checks, `noscreenattribution.test.ts`. The skin is the setup's,
+ * catalogue**: no Logitech container, which `noscreenattribution.test.ts` checks. The skin is the setup's,
  * refused where the setup states none, since the infrared allocation is the model's, `INFRARED_GROUPS_BY_SKIN`.
  *
- * **Then event `0xFF` is bound**, 5.4, decision 28: the entry that makes a Harmony 300 send from groups 4 to 7, so the
+ * **Then event `0xFF` is bound**, decision 28: the entry that makes a Harmony 300 send from groups 4 to 7, so the
  * file serves a Harmony 300 and a Harmony 350 alike. It is put in last, `withAcknowledgingEntry`, onto an empty
  * configuration started without it, `emptyNoScreenForComposing`, which says why last: the key table then stores as
  * Logitech's with the one entry added, as the file the bench Harmony 300 ran did. Restamped by that step; a caller

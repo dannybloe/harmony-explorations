@@ -22,8 +22,8 @@ import { ComposeError } from '../../shared/core.ts';
 import type { ComposeDevice } from '../../shared/devices.ts';
 import { powerOnList, sendList, writerOf } from './lists.ts';
 
-// The waits moved to `lists.ts` with the power on list's writer, `todo-compile-350.md` 5.2.1, so that the writer and
-// the attribution that reads it back share one module; they are still the send's, and named from here as before.
+// The waits live in `lists.ts` with the power on list's writer, so that the writer and the attribution that reads it
+// back share one module; they are still the send's, and named from here.
 export { POWER_ON_WAIT_MAX, powerOnWaits } from './lists.ts';
 
 /**
@@ -54,7 +54,7 @@ const noSequence = (): never => {
 /** A refusal for a shared composer's question this family answers in a composer of its own. */
 const notThis = (what: string) => (): never => {
   throw new ComposeError(`${what} is not how the Harmony 300 and 350 are composed: the activity composes their inputs, `
-    + 'composeNoScreenActivity, todo-compile-350.md 4.2');
+    + 'composeNoScreenActivity');
 };
 
 /** The no screen family's send, `Family.sends`. */
@@ -69,9 +69,9 @@ export const NO_SCREEN_SENDS: SendShape = {
   newSendLists: noSequence,
   sequenceRecords: 'named',
   // A sequence's copies, not the favourite channels': those are the digits' one block copies, which the number
-  // sender calls and `favourites.ts` composes, todo-compile-350.md 4.3. This said the digit copies were sent by
+  // sender calls and `favourites.ts` composes. This said the digit copies were sent by
   // nothing until a compile with favourites showed its number sender calling them; on a device without favourites
   // nothing does.
   oneBlockCopyRefusal: 'a sequence\'s one block copy is not composed for the Harmony 300 and 350, since no sequence '
-    + 'is; the digit copies their favourite channels send are composed with the channels, todo-compile-350.md 4.3',
+    + 'is; the digit copies their favourite channels send are composed with the channels',
 };

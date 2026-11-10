@@ -1,11 +1,11 @@
 /**
  * The Harmony Touch's configuration: the documents it stores, a typed view of them, and what the remote
- * would refuse or ignore in them. `todo-touch.md` 3.3. And a model of what its engine sends for a press, read
- * from those documents, `engine.ts`, here since `todo.md` 7.3.1.
+ * would refuse or ignore in them. And a model of what its engine sends for a press, read from those documents,
+ * `engine.ts`, plan 013 decision 7.
  *
  * Exported from the codec's barrel as one namespace, `harmonyTouch`, which kept it apart from the Harmony One's
- * family while that family's folder was called `touch`, until plan 013 step 7.3.2 renamed it `families/one/`,
- * `families/harmony-one/` since `todo.md` 7.3.8, which moved this folder into `families/` too. And the Touch as
+ * family while that family's folder was called `touch`, until plan 013 renamed it, `families/harmony-one/` now,
+ * and moved this folder into `families/` too. And the Touch as
  * a document family, `family.ts`, plan 013 decision 1, which the registry chooses by model.
  */
 export * from './documents.ts';

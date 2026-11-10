@@ -1,6 +1,6 @@
 /**
  * A Harmony Touch's favourite channels composed by us from a description, a channel logo of ours drawn as a
- * picture, and what a picture has to be before an answerer hands it to the remote: `todo-touch.md` 8.3.
+ * picture, and what a picture has to be before an answerer hands it to the remote, `favourites-and-settings.md`.
  *
  * **What a favourite is, in one paragraph.** A favourite is a station. The favourites screen shows them in the
  * order of one list, the stations of the user's favourites document; the number a tap sends, the name and the

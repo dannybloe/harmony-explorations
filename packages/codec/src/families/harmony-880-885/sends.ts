@@ -8,12 +8,12 @@
  * two bench units', is the pair with both halves naming one group, 3280 of 3280; every one of their 44 power
  * variables switches on through a list of one call, the power command's send list, and one wait of the device's
  * own; and no wait anywhere in them is above 100 tenths, a longer delay being written as several waits of 100,
- * `todo/todo-prepare-885.md` 3.1's reading of the 880 Pro's 32 seconds. All three are asserted in
+ * as the 880 Pro's 32 seconds are, `reference/config-format/actions.md`. All three are asserted in
  * `sidekeysdevice.test.ts`. So one wait of at most 100 is composed and a longer delay is refused, until a device
  * that needs one is composed.
  *
- * **A power step is spelled as these remotes' compiles spell it**, `sideKeysPowerStep` below, `todo-compile-885.md`
- * 2.2 and 2.3: its record opens with the device's delay between devices, the long press version included, and its
+ * **A power step is spelled as these remotes' compiles spell it**, `sideKeysPowerStep` below: its record opens
+ * with the device's delay between devices, the long press version included, and its
  * send carries a quantity of 1. Before that a composed device's power went out with no silence in front, so a
  * device switch could send back to back, and at the catalogue's inter key delay, the Harmony 650 and 700's form.
  *
@@ -23,7 +23,7 @@
  * * the state variables have 64 bytes on the Harmony 880 and 885, `narrow + 2 * wide`, and the firmware checks
  *   nothing, so a device that would take them past 64 is refused, `reference/config-format/state.md`,
  *   `tests/harmony_880_885/test_harmony_885_state.py`. The device composer adds one one byte variable, the power, so the check is
- *   that one more fits. This is the codec's half of `todo-compile-885.md` 4.3, for a composed device only;
+ *   that one more fits. This holds the ceiling for a composed device only, not for a configuration as a whole;
  * * groups 8 and up toggle with groups 0 and up, eight bits for sixteen groups, and the firmware flips a group's
  *   bit at every send to it, toggling or not, `reference/config-format/infrared-records.md`,
  *   `tests/harmony_880_885/test_harmony_885_infrared.py`. So in group 8 or higher a code that alternates two forms is refused,
@@ -34,7 +34,7 @@
  *   byte and the configuration holds at most 15 devices.
  *
  * **What is refused for now**: everything the input composer and the sequence composer ask, since neither has been
- * run on an 885, `todo-compile-885.md` 2.6 and 4.1, and matching a donor's sends, which nothing here needs. A
+ * run on an 885 (requirements R15 and R37), and matching a donor's sends, which nothing here needs. A
  * refusal says so rather than answering with the Harmony One's, which would be the same bytes and unmeasured here.
  * `sequenceRecords` is a value and cannot refuse: it states the Harmony One's answer and is **not measured on
  * these remotes**, and only the sequence composer reads it, after `sendLists`, which refuses first.
@@ -100,7 +100,7 @@ function sideKeysDevice(c: Container, group: number, device: ComposeDevice): Dev
  * The delay between devices a composed device gets where it states none, in tenths: 500 ms, the catalogue's own
  * on every one of the eight devices of the owners' sheets the archive names and on the Sony DAV-C540, and the
  * silence 51 of the 84 device groups of the sixteen arch 8 containers open their switching codes with, copies of
- * six configurations counted each time, `todo-prepare-885.md` 3.11; 20 of the 28 distinct devices with a power
+ * six configurations counted each time, `reference/infrared/sending.md`; 20 of the 28 distinct devices with a power
  * variable in the eight configurations, `sidekeysdevice.test.ts`. Ours: a device composed from the catalogue always states its own.
  */
 export const SIDE_KEYS_INTER_DEVICE_DEFAULT = 5;
@@ -116,7 +116,7 @@ export const SIDE_KEYS_LONGEST_INTER_DEVICE = 100;
 /**
  * The opening silence of a device whose delay between devices is 0, in microseconds: 50 ms, the silence every
  * code with a held block opens with and the whole lead of four of the 84 device groups, 2850 of 2850 and 4 of
- * 84, `todo-prepare-885.md` 3.11. No arch 8 record opens with a mark, 0 of 5792, so a lead of nothing is a shape
+ * 84, `reference/infrared/sending.md`. No arch 8 record opens with a mark, 0 of 5792, so a lead of nothing is a shape
  * Logitech's compiler never wrote. Ours: whether those four devices state 0 is not known.
  */
 export const SIDE_KEYS_SHORTEST_LEAD_US = 50000;
@@ -129,7 +129,7 @@ export const SIDE_KEYS_SHORTEST_LEAD_US = 50000;
 export const SIDE_KEYS_POWER_QUANTITY = 1;
 
 /**
- * How the Harmony 880 and 885 spell a power step, `SendShape.powerStep`, `todo-compile-885.md` 2.2 and 2.3.
+ * How the Harmony 880 and 885 spell a power step, `SendShape.powerStep`.
  *
  * **The silence in front is the device's delay between devices.** Every record a power transition sends in the
  * eight configurations the lab holds of these remotes opens with its device's own silence and has no held block,
@@ -164,9 +164,9 @@ function sideKeysPowerStep(device: ComposeDevice): PowerStepSpelling {
   };
 }
 
-/** A refusal for a shared composer's question nobody has run on this family yet, with the step that will. */
-const notYet = (what: string, step: string) => (): never => {
-  throw new ComposeError(`${what} is not composed for ${SIDE_KEYS_NAME} yet, todo-compile-885.md ${step}`);
+/** A refusal for a shared composer's question nobody has run on this family yet, with the requirement that covers it. */
+const notYet = (what: string, requirement: string) => (): never => {
+  throw new ComposeError(`${what} is not composed for ${SIDE_KEYS_NAME} yet, requirement ${requirement}`);
 };
 
 /** The side keys family's send, `Family.sends`. */
@@ -174,11 +174,11 @@ export const SIDE_KEYS_SENDS: SendShape = {
   listsPerSend: 1,
   device: sideKeysDevice,
   powerStep: sideKeysPowerStep,
-  switchOnList: notYet('a device\'s inputs', '2.6'),
-  sendWriter: notYet('a device\'s inputs', '2.6'),
-  sendLists: notYet('a sequence', '4.1'),
-  newSendLists: notYet('a sequence', '4.1'),
+  switchOnList: notYet('a device\'s inputs', 'R15'),
+  sendWriter: notYet('a device\'s inputs', 'R15'),
+  sendLists: notYet('a sequence', 'R37'),
+  newSendLists: notYet('a sequence', 'R37'),
   // Not measured on these remotes; see the header.
   sequenceRecords: 'named',
-  oneBlockCopyRefusal: `a one block copy is not composed for ${SIDE_KEYS_NAME}: no sequence has been, todo-compile-885.md 4.1`,
+  oneBlockCopyRefusal: `a one block copy is not composed for ${SIDE_KEYS_NAME}: no sequence has been, requirement R37`,
 };

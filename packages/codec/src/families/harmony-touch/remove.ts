@@ -1,13 +1,12 @@
 /**
- * Devices and activities taken out of a Harmony Touch's documents, **with everything that names them**,
- * `todo-touch.md` 8.5. The general removal: where `withoutTouchDevice` and `withoutTouchActivity` in `compose.ts` are
- * the exact inverse of an addition of ours and refuse anything another document names, these take out devices and
- * activities of Logitech's too, the remote's own, and follow every reference to them through the four documents
- * that hold one.
+ * Devices and activities taken out of a Harmony Touch's documents, **with everything that names them**. The general
+ * removal: where `withoutTouchDevice` and `withoutTouchActivity` in `compose.ts` are the exact inverse of an
+ * addition of ours and refuse anything another document names, these take out devices and activities of Logitech's
+ * too, the remote's own, and follow every reference to them through the four documents that hold one.
  *
- * **Where a device or an activity is named, and so what goes.** Measured on the set the bench Touch held for 8.5 and
- * on the recorded full sync, and read in the engine's and the screens' readers, `activities-and-buttons.md` and the
- * lab's 8.5 preflight:
+ * **Where a device or an activity is named, and so what goes.** Measured on the set the bench Touch held and on the
+ * recorded full sync, and read in the engine's and the screens' readers, `activities-and-buttons.md` "Taking out an
+ * activity and a device" and the lab's `work/touch-firmware/notes/8.5-preflight.md`:
  *
  * * **A device** is named by its entry in `DeviceList` (and inside it by its features' `DeviceId-`, its profile key
  *   and profile address, which go with the entry); by its own map in `MapList`, `16417Device` and its id; by every

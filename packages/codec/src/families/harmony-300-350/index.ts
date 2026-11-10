@@ -3,16 +3,16 @@
  * their configuration as a file reached over the file protocol, and allocate their infrared table at the model's
  * maximum. This is the object the registry hands out.
  *
- * **What is real and what refuses.** `todo-compile-350.md` 4.1 composes a device, so what a device needs is
- * built: the key table its map is laid out by, `deviceModeKeys`, and its send, `sends`, whose device half is
- * real; the composer itself is `composeNoScreenDevice` in `devices.ts`, since no member of the interface composes
- * a whole device, and it puts a device on a key's short press or, 4.4, its long press. The favourite channels,
- * 4.3, are `composeNoScreenFavourites` in `favourites.ts`, and the one activity, Watch TV, 4.2, is
- * `composeNoScreenActivity` in `activity.ts`, for the same reason. A whole setup, 4.5, is `composeNoScreenSetup` in
- * `setup.ts`, which runs the device, activity and favourite composers in the order they need, and onto the empty
- * configuration of `empty.ts` it is the setup built from nothing, `buildNoScreenSetup`, 5.1.6. A power on delay's second copy,
- * Watch TV's for a device with one power code, is `powerOnDelayCopies`, `delay.ts`, 4.6. Everything else refuses with a message saying
- * why, as code-for-a-family's fourth question asks, rather than borrowing another family's answer:
+ * **What is real and what refuses.** A device is composed, so what a device needs is built: the key table its
+ * map is laid out by, `deviceModeKeys`, and its send, `sends`, whose device half is real; the composer itself is
+ * `composeNoScreenDevice` in `devices.ts`, since no member of the interface composes a whole device, and it puts a
+ * device on a key's short press or its long press. The favourite channels are `composeNoScreenFavourites` in
+ * `favourites.ts`, and the one activity, Watch TV, is `composeNoScreenActivity` in `activity.ts`, for the same
+ * reason. A whole setup is `composeNoScreenSetup` in `setup.ts`, which runs the device, activity and favourite
+ * composers in the order they need, and onto the empty configuration of `empty.ts` it is the setup built from
+ * nothing, `buildNoScreenSetup`. A power on delay's second copy, Watch TV's for a device with one power code, is
+ * `powerOnDelayCopies`, `delay.ts`. Everything else refuses with a message saying why, as code-for-a-family's
+ * fourth question asks, rather than borrowing another family's answer:
  *
  * * **No screen**, so the screen members refuse for good: a device's screen, an activity's row, menu and screen,
  *   the screen items, the font sets.
@@ -20,9 +20,8 @@
  *   sequence, a menu row and keys of an activity map this family has none of, and the shared input composer's
  *   send, whose inputs send whole records after the input delay where this family's send one block copies after
  *   a tenth; the activity composer builds both its own way.
- * * **Not measured yet**, each with the step that measures it: the wiring the builders check against, chapter 5;
- *   the sequences the send refuses, which no compile of this family holds. The state tables are the family's own
- *   since `todo-compile-350.md` 5.1.2, `statetables.ts`.
+ * * **Not measured yet**: the wiring the builders check against, requirement R4; the sequences the send refuses,
+ *   which no compile of this family holds. The state tables are the family's own, `statetables.ts`.
  *
  * A data member that cannot be stated refuses when it is read, `refusing` below, so a shared composer that asks
  * this family a question it has no answer to stops there with the reason, not with another family's answer.
@@ -70,10 +69,10 @@ export const NO_SCREEN_FAMILY: Family = {
   choices: {},
   deviceModeKeys: NO_SCREEN_HARD_KEYS,
   activityKeyRules: refusing<ActivityKeyRules>(`${NAME} have no activity map, so an activity's keys are its channel device's; the activity is composeNoScreenActivity`),
-  // The facts measured on the family's 13 compiles, `todo-compile-350.md` 5.1.2; the allocator beside them numbers a
+  // The facts measured on the family's 13 compiles, `statetables.ts`; the allocator beside them numbers a
   // setup's own variables, `noScreenStateVariables`.
   stateTables: NO_SCREEN_STATE_TABLES,
-  wiring: { check: refuses(`the wiring is not built for ${NAME} yet, todo-compile-350.md 5.1`) },
+  wiring: { check: refuses(`the wiring is not built for ${NAME} yet, requirement R4`) },
   fonts: {
     faces: [],
     faceOf: () => ({ refusal: `${NO_SCREEN}, so nothing is lettered` }),
@@ -104,7 +103,7 @@ export {
   HOLD_TIME, NO_SCREEN_PARAMETERS, noScreenDigitEntryTable, noScreenLogArea, noScreenParameterBlock, noScreenSendEventEntries,
   noScreenSendEventLists, type NoScreenSendEventNumbers, noScreenStartUpLists, type NoScreenStartUpNumbers, noScreenStartUpTable,
   SEND_EVENT_PINS, type SendEventLists, SENDING_FLAG, START_UP_EVENT_COUNT, START_UP_OWN_EVENTS, startUpGroup,
-  // The entry binding event 0xFF that makes a Harmony 300 send from groups 4 to 7, todo-compile-350.md 5.4.
+  // The entry binding event 0xFF that makes a Harmony 300 send from groups 4 to 7, decision 28.
   ACKNOWLEDGED_AS, noScreenAcknowledgingEntry, UNMASKED_SEND_EVENT,
 } from './constants.ts';
 export {

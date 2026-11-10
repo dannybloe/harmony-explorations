@@ -1,7 +1,7 @@
 /**
  * A page of the Harmony 880 and 885's screen: what it is made of, read off a page of the configuration's own, and
  * a page of ours built from those parts. The device list and a device's own pages are one grammar on these remotes,
- * so one builder serves both, `todo-compile-885.md` 2.1.
+ * so one builder serves both.
  *
  * **The grammar, as every device mode and device list of the eight arch 8 configurations the lab holds draws it**,
  * each count below asserted in `sidekeysdevice.test.ts` unless it says otherwise:
@@ -28,10 +28,11 @@
  * the order the top bar and the items are drawn, which do not overlap; nothing a person sees is expected to differ,
  * and that is not checked on a unit. It was chosen because turning a mode of one page into Logitech's form moves the
  * title and the items out of a program other programs point into by text reference, which a first composer should
- * not have to do; `todo-compile-885.md` 7.1 builds the screens and settles the form.
+ * not have to do. How these remotes draw a screen is not yet written up as a screen family of the codec, and until
+ * it is, which form a builder of the screens should take stays open, requirement R35.
  *
  * **The pictures, the fonts and the queued program are the configuration's own, borrowed off a page it already
- * draws**, as the 650 track's composers borrowed until their own chapter 6: a device page's off one of the
+ * draws**, as the Harmony 650's composers borrowed before they drew their own: a device page's off one of the
  * configuration's device modes, the device list's new page off the list itself. Nothing here draws a picture or a
  * glyph of ours.
  */
@@ -65,7 +66,7 @@ export const SIDE_KEYS_RIGHT_END = 125;
 /**
  * The widest label of one line the compiles draw, 59 pixels: the right column's widest, and the left column's
  * labels end by x 62, which from x 3 is 59 too. A label of ours is held to it rather than cut or wrapped, since
- * the compiler's rule for wrapping a label onto two lines is not read here, `todo-compile-885.md` 2.5.
+ * the compiler's rule for wrapping a label onto two lines is not read here, requirement R35.
  */
 export const SIDE_KEYS_LABEL_WIDTH = 59;
 

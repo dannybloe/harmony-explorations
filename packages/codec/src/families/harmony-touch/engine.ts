@@ -1,6 +1,6 @@
 /**
  * A model of what a Harmony Touch's engine sends, and when, for a person pressing things on it: the
- * prediction half of `todo-touch.md` 7.1's bench tests, written from the documents the remote holds.
+ * prediction half of the bench tests run on the infrared monitor, written from the documents the remote holds.
  *
  * **Why a model and not a table.** What an activity start sends depends on what the engine believes is
  * already on: a device powered in two states gets its power on only when the engine holds it off, a device
@@ -31,13 +31,12 @@
  * is not: how long the lamp takes for a code, which is the code's own length times the device's repeat
  * count, and the engine's own overhead around each send and each sleep, which no document states. The model
  * runs every scenario twice, with the overhead at the bottom and the top of `TIMING`, and a prediction is the
- * band between the two. The band's width is calibrated on the bench runs of `todo-touch.md` 3.2 and 6.9,
+ * band between the two. The band's width is calibrated on bench runs,
  * `packages/bench/test/harmony-touch/touch-full-bench-predicted.test.ts`.
  *
  * **Why it lives in the codec.** It is knowledge about the remote, what its engine sends and when, so it sits
  * beside the documents it reads, plan 013 decision 7, where a preview of what an activity will send can use it as
- * the bench does. It moved here from the bench package, `packages/bench/src/touchengine.ts`, in `todo.md` 7.3.1,
- * unchanged in what it predicts.
+ * the bench does. It moved here from the bench package, unchanged in what it predicts.
  *
  * **What it leaves to the receiver.** A send's `heardMs` is when a receiver has heard the code's first frame, and
  * where one frame ends and the next begins is the receiver's rule, not the remote's. So the engine takes that rule

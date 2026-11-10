@@ -1,7 +1,7 @@
 /**
  * The side keys family, plan 007: the Harmony 880 and 885, architecture 8, whose colour screen of 128 by 160 has
  * eight keys beside it, two columns of four, and whose pages are cells beside those keys. This is the object the
- * registry hands out, since `todo-compile-885.md` 2.1 composed a first device for it.
+ * registry hands out, since a first device can be composed for it.
  *
  * **Which models.** The registry chooses by architecture, and arch 8 holds the Harmony 880, 885 and 880 Pro, and the
  * Harmony 720, whose pages are six cells of 64 by 42. Everything here is measured on the eight arch 8
@@ -12,9 +12,10 @@
  * **What is real and what refuses.** A device is composed: its records and lists through the shared device
  * composer, with this family's send, `sends.ts`, and its screen and its row on every copy of the device list,
  * `composeDeviceScreen`, `devicescreen.ts`, on the page grammar of `pages.ts`. Everything else refuses, saying
- * which step of `todo-compile-885.md` measures it, rather than answering with another family's: activities and
- * their screens and menu, chapter 3; the keys a device's commands take, 2.5; the state tables a builder makes and the wiring it checks,
- * chapter 10; fonts of ours, chapter 8. The traits are stated: a device list row has no beep on these remotes, and
+ * what is not composed, rather than answering with another family's. The requirements those refusals stand for
+ * are activities with their screens and menu, R21 and R22; the keys a device's commands take, R33; the state
+ * tables a builder makes and the wiring it checks, R4; and fonts of ours, R42. The traits are stated: a device
+ * list row has no beep on these remotes, and
  * neither has an item of a device's page, which calls the command's send list itself, on every arch 8
  * configuration read.
  */
@@ -40,9 +41,9 @@ function refusing<T extends object>(why: string): T {
   });
 }
 
-/** A member that is a function and refuses when called, with the step of `todo-compile-885.md` that measures it. */
-const notYet = (what: string, step: string) => (): never => {
-  throw new ComposeError(`${what} is not composed for ${SIDE_KEYS_NAME} yet, todo-compile-885.md ${step}`);
+/** A member that is a function and refuses when called, naming the requirement that would measure it. */
+const notYet = (what: string, requirement: string) => (): never => {
+  throw new ComposeError(`${what} is not composed for ${SIDE_KEYS_NAME} yet, requirement ${requirement}`);
 };
 
 export const SIDE_KEYS: Family = {
@@ -52,33 +53,33 @@ export const SIDE_KEYS: Family = {
   // calls its command's send list with nothing in front, on every arch 8 configuration read.
   traits: { screenItemsBeep: false },
   // No choice of ours yet: a device's power on delay is the catalogue's, and the delay between devices lives in its
-  // power codes' opening silence, the catalogue's too, `SIDE_KEYS_SENDS.powerStep`, todo-compile-885.md 2.3; the
+  // power codes' opening silence, the catalogue's too, `SIDE_KEYS_SENDS.powerStep`; the
   // default for a device that states none is a constant beside it, since nothing but the send asks for it.
   choices: {},
   // A getter rather than a refusing object: the one caller iterates the table, and iterating asks for a symbol,
   // which `refusing` answers as absent, so the refusal would come out as a type error and not as this reason.
   get deviceModeKeys(): readonly HardKey[] {
-    throw new ComposeError(`which command each key takes in a device mode of ${SIDE_KEYS_NAME} is not read, todo-compile-885.md 2.5`);
+    throw new ComposeError(`which command each key takes in a device mode of ${SIDE_KEYS_NAME} is not read, requirement R33`);
   },
-  activityKeyRules: refusing<ActivityKeyRules>(`an activity's keys are not composed for ${SIDE_KEYS_NAME} yet, todo-compile-885.md 3.3`),
-  stateTables: refusing<StateTableFacts>(`the state tables of ${SIDE_KEYS_NAME} are not built yet, todo-compile-885.md 10.3`),
-  wiring: { check: notYet('checking the wiring', '10.2') },
+  activityKeyRules: refusing<ActivityKeyRules>(`an activity's keys are not composed for ${SIDE_KEYS_NAME} yet, requirement R22`),
+  stateTables: refusing<StateTableFacts>(`the state tables of ${SIDE_KEYS_NAME} are not built yet, requirement R4`),
+  wiring: { check: notYet('checking the wiring', 'R4') },
   fonts: {
     faces: [],
-    faceOf: () => ({ refusal: `no face of ours is measured for ${SIDE_KEYS_NAME} yet, todo-compile-885.md 8.2` }),
+    faceOf: () => ({ refusal: `no face of ours is measured for ${SIDE_KEYS_NAME} yet, requirement R42` }),
     sharesGlyphs: false,
-    refusal: () => `no face of ours is measured for ${SIDE_KEYS_NAME} yet, todo-compile-885.md 8.2`,
+    refusal: () => `no face of ours is measured for ${SIDE_KEYS_NAME} yet, requirement R42`,
   } satisfies FamilyFonts,
   sends: SIDE_KEYS_SENDS,
-  activityStart: refusing<ActivityStart>(`an activity's start is not composed for ${SIDE_KEYS_NAME} yet, todo-compile-885.md 3.2`),
-  screenItems: notYet('reading a device page\'s items for an activity', '3.3'),
-  drawsName: notYet('reading a device page\'s items for an activity', '3.3'),
+  activityStart: refusing<ActivityStart>(`an activity's start is not composed for ${SIDE_KEYS_NAME} yet, requirement R21`),
+  screenItems: notYet('reading a device page\'s items for an activity', 'R22'),
+  drawsName: notYet('reading a device page\'s items for an activity', 'R22'),
   composeDeviceScreen: (c, label, rows, options) => composeSideKeysDeviceScreen(c, label, rows, options),
-  activityMenu: notYet('the activity menu', '3.2'),
-  menuMarkerWriter: notYet('the activity menu', '3.2'),
-  composeActivityRow: notYet('an activity\'s row', '3.2'),
-  activityDeviceList: notYet('an activity\'s device list', '3.2'),
-  composeActivityScreen: notYet('an activity\'s screen', '3.4'),
+  activityMenu: notYet('the activity menu', 'R21'),
+  menuMarkerWriter: notYet('the activity menu', 'R21'),
+  composeActivityRow: notYet('an activity\'s row', 'R21'),
+  activityDeviceList: notYet('an activity\'s device list', 'R21'),
+  composeActivityScreen: notYet('an activity\'s screen', 'R21'),
 };
 
 export { composeSideKeysDeviceScreen } from './devicescreen.ts';

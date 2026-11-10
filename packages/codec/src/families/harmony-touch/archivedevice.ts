@@ -1,16 +1,16 @@
 /**
  * A device record in the shape a Harmony Touch reads, written by our code from a catalogue entry of the third party
- * archive of Logitech's device database and from our own rhythm table: `todo-touch.md` 9.1.
+ * archive of Logitech's device database and from our own rhythm table, for a set built from nothing.
  *
- * **Why this exists.** 8.6 composed the whole bench setup from a description, and carried each device's record whole
- * from the set the remote held, Logitech's documents: its commands with their codes, its features and the code
- * definitions under Logitech's protocol ids, `catalogueOfSet` in `setup.ts`. 9.1 builds every document with no Logitech
+ * **Why this exists.** A setup composed from a description that the remote already holds carries each device's record
+ * whole from that set, Logitech's documents: its commands with their codes, its features and the code definitions under
+ * Logitech's protocol ids, `catalogueOfSet` in `setup.ts`. A set built from nothing, `fromnothing.ts`, has no Logitech
  * document as input, so the record has to come from somewhere else. A person picks a device by its maker and model, and
  * what that brings, its commands, its power steps, its inputs, its states and its timing, is exactly what the archive
  * holds per catalogue entry since its schema version 2, every value on the one record checked equal to what Logitech's
  * service answered, `driving.ts`. So this reads the entry through the codec's own readers, `catalogueDevice`,
- * `catalogueCommands` and `catalogueDriving`, handed in as a `CatalogueSource`, and writes the Touch's record from
- * what they give.
+ * `catalogueCommands` and `catalogueDriving`, handed in as a `CatalogueSource`, and writes the Touch's record from what
+ * they give.
  *
  * **What crosses from the archive, and how, decision 15.** Names and numbers only, through our readers: each command's
  * name and the family and numbers of its code, which `statedCode` parses out of the keycode text; the device's maker,

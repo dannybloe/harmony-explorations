@@ -1,6 +1,6 @@
 /**
  * The Harmony 300 and 350's constant sections and lists, built: what every configuration of the family holds
- * whatever its devices, `todo-compile-350.md` 5.1.3 and step 3 of `docs/plans/011-the-350-from-nothing.md`. Each
+ * whatever its devices, step 3 of `docs/plans/011-the-350-from-nothing.md`. Each
  * builder returns the bytes, or a piece the frame places, and nothing here edits a container or reads one.
  *
  * **What is built**, each measured byte for byte on the 13 compiles of the family the lab holds, both models, by
@@ -15,7 +15,7 @@
  *   the four key table entries that bind them;
  * * and one entry that is not measured on Logitech's compiles, since none holds it: event `0xFF` bound to event
  *   `0x30`'s list, `noScreenAcknowledgingEntry`, which makes a Harmony 300 send from infrared groups 4 to 7,
- *   decision 28, and which every configuration built from nothing carries, `todo-compile-350.md` 5.4.
+ *   decision 28, and which every configuration built from nothing carries.
  *
  * **What a configuration supplies is numbers, never bytes.** Lists are called by their index in the action list
  * table, and Logitech's compiler numbers them in an order no rule is known for, plan 011, so the list indices
@@ -256,7 +256,7 @@ export const ACKNOWLEDGED_AS = 0x30;
 
 /**
  * The key table's fifth entry, which makes a Harmony 300 send from infrared groups 4 to 7: event `0xFF` bound to a
- * call of the list event `0x30`'s entry calls, decision 28 and `todo-compile-350.md` 5.4. 4 bytes.
+ * call of the list event `0x30`'s entry calls, decision 28. 4 bytes.
  *
  * **Why it is a family fact and not a 300's.** Without it a Harmony 300 hangs at the first send from group 4, since
  * no list runs the acknowledgement; with it the bench 300 sent from all eight groups, and the bench 350, whose build

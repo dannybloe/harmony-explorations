@@ -1,5 +1,5 @@
 /**
- * A catalogue device composed onto a Harmony 300 or 350 configuration, `todo-compile-350.md` 4.1: its infrared
+ * A catalogue device composed onto a Harmony 300 or 350 configuration: its infrared
  * group at the place of the key it goes on, in a table allocated at the model's maximum; its send lists, its
  * power variable and its name, through the shared device composer; its own key map, the device mode a person
  * meets after pressing its key; the key's bindings that select that map and light the key; and its names in
@@ -16,7 +16,7 @@
  * setup, part by part, since Logitech's compiler numbers lists and maps in an order no compile shows a rule for
  * and reorders them between two compiles of one account.
  *
- * **A long press device**, `todo-compile-350.md` 4.4, is the same device on the key's held event: its group is
+ * **A long press device** is the same device on the key's held event: its group is
  * `LONG_PRESS_GROUP_BASE` plus the key's place, its map, power and names are built as a short press device's are,
  * and the key gains a binding of its held event, `0xC0` and the scan code, to a list that cancels the timers and
  * selects the device's map, beside the release that selects the short press device. The key's press list, which
@@ -25,15 +25,15 @@
  * cancel stopping the first block's timers. Held against the four long press devices of Logitech's compile of the
  * test setup, `packages/codec/test/families/harmony-300-350/noscreen.test.ts`.
  *
- * **Logitech's routing is copied**, `todo-compile-350.md` 4.1.1, the rules and their counts in `keys.ts`: Input
+ * **Logitech's routing is copied**, the rules and their counts in `keys.ts`: Input
  * borrows the TV mode device's binding, volume and mute the device `volumeFrom` names, a television's fifth
  * favourite key holds its Home or Internet, Teletext is stored with a send list and bound to no key, and the ten
  * digits' one block copies are stored for the device types Logitech stores them for, and the power variable gets
  * the two silent writes nothing calls, `POWER_RESETS`. A device on the top left
- * key's short press is the TV mode device, 4.1.2: the start up's select names its map and every other map gains
+ * key's short press is the TV mode device: the start up's select names its map and every other map gains
  * its Input. Held in `noscreen.test.ts` and `noscreenrouting.test.ts`.
  *
- * **What it refuses**, each one something no compile here shows or a later step of the track builds: a short
+ * **What it refuses**, each one something no compile here shows or nothing here builds yet: a short
  * press on a key that already holds a device, a long press on a key with no short press device or with a long
  * press device already, a device whose catalogue states no power steps or whose type no compile shows,
  * `DIGIT_COPIES_BY_TYPE`, a television on a model with no fifth favourite key measured, and a configuration whose
@@ -105,7 +105,7 @@ export interface NoScreenDeviceRequest {
   readonly place: number;
   /**
    * Which press of the key: the short one, selected when the key is let go, or the long one, selected when it is
-   * held, `todo-compile-350.md` 4.4; short when not given. A long press goes on a key that holds a short press
+   * held; short when not given. A long press goes on a key that holds a short press
    * device already.
    */
   readonly press?: 'short' | 'long';
@@ -263,7 +263,7 @@ export function inCompilerOrder(existing: readonly KeyEntry[], added: readonly K
   // is that size's slot order and not the smaller's. A Java `HashMap` never shrinks, so a list that held more tags
   // and lost some keeps the size it grew to: the key table of Logitech's compile of the test setup is stored in 32
   // slots, and with its five devices taken out by `withoutNoScreenDevice` holds eleven tags still in that order,
-  // `noscreensetup.test.ts`, `todo-compile-350.md` 4.5. A list in slot order at the smallest size is read at that
+  // `noscreensetup.test.ts`. A list in slot order at the smallest size is read at that
   // size, as before, so every list this read before reads the same.
   let size = HASH_TABLE_START;
   while (existing.length > size * HASH_LOAD_FACTOR) size *= 2;
@@ -357,7 +357,7 @@ const isSelect = (one: Instruction | undefined): boolean =>
   one?.opcode === SELECT_BINDING_SET && (one.operand & SELECT_BINDING_SET_MASK) === SELECT_BINDING_SET_MASK;
 
 /**
- * The start up event list with its last instruction selecting `map`, `todo-compile-350.md` 4.1.2: in all seven
+ * The start up event list with its last instruction selecting `map`: in all seven
  * compiles of the family read, entry 1's list is the same two calls as entries 2 to 4's and then a select of the
  * map of the device on infrared group 0, so the remote starts in that device's mode. A select already there is
  * restated; with none, as after the device on group 0 is taken out, one is appended to the list.
@@ -418,7 +418,7 @@ export function composeNoScreenDevice(c: Container, archive: CatalogueSource, re
   // A long press device's group is four on from the short press device's, whichever device is on the short press.
   const group = long ? LONG_PRESS_GROUP_BASE + request.place : request.place;
   // The top left key's short press device is the TV mode's, in the service's words: the start up instructions select
-  // its map, `todo-compile-350.md` 4.1.2, and every other device's Input key sends its input command, 4.1.1. A long
+  // its map, and every other device's Input key sends its input command, as Logitech routes it, `keys.ts`. A long
   // press device on the same key is neither, as Logitech's compile of the test setup shows, whose start up selects
   // the LG TV's map with the Knoll on the same key's long press.
   const tvMode = request.place === 0 && !long;
@@ -427,7 +427,7 @@ export function composeNoScreenDevice(c: Container, archive: CatalogueSource, re
   const before = keyMaps(c);
   const onKey = (event: number) => before[0]!.entries.filter((one) => one.tag === (event | key.scan));
   if (!long && before[0]!.entries.some((one) => (one.tag & SCAN_MASK) === key.scan)) {
-    throw new ComposeError(`the ${key.place} key already holds a device; a second one is its long press, todo-compile-350.md 4.4`);
+    throw new ComposeError(`the ${key.place} key already holds a device; a second one is its long press`);
   }
   // The held event is bound only on a key whose release selects a device too, in both compiles read with a long
   // press: what a key with nothing on its short press should do when let go is not answered by any of them, so a
@@ -462,7 +462,7 @@ export function composeNoScreenDevice(c: Container, archive: CatalogueSource, re
       + `so ${request.manufacturer} ${request.model} is not composed; the measured types are ${[...DIGIT_COPIES_BY_TYPE.keys()].join(', ')}`);
   }
 
-  // Logitech's routing, `todo-compile-350.md` 4.1.1, `keys.ts`: which keys the map binds to the device's own
+  // Logitech's routing, `keys.ts`: which keys the map binds to the device's own
   // commands, and which it borrows from another device's map, the same list that map calls.
   const own = new Map(bound);
   const borrowed = new Map<number, number>();
@@ -495,7 +495,7 @@ export function composeNoScreenDevice(c: Container, archive: CatalogueSource, re
     if (command !== undefined) own.set(five.scan, command);
   }
   // And what Logitech stores with a send list and binds to no key of this keypad: Teletext on any device, and a
-  // television's Back where the setup holds another device, `TELEVISION_STORED_UNBOUND`, 5.1.7.
+  // television's Back where the setup holds another device, `TELEVISION_STORED_UNBOUND`.
   const ownNames = new Set(own.values());
   const storedUnbound = [...STORED_UNBOUND,
     ...(type === TELEVISION_TYPE && request.alone !== true ? TELEVISION_STORED_UNBOUND : [])];
@@ -505,7 +505,7 @@ export function composeNoScreenDevice(c: Container, archive: CatalogueSource, re
   const finish = channelFinish(planned.driving, `${request.manufacturer} ${request.model}`);
   if (finish !== undefined && !copies) {
     throw new ComposeError(`${request.manufacturer} ${request.model} finishes a channel with ${finish}, and whether Logitech stores its copy for a `
-      + `device of type ${type}, which stores no digit copies, is in no compile read, todo-compile-350.md 5.1.7`);
+      + `device of type ${type}, which stores no digit copies, is in no compile read`);
   }
   const names = planned.wanted.filter((name) => ownNames.has(name) || unbound.includes(name));
   const commands = names.map((name) => planned.device.commands[planned.wanted.indexOf(name)]!);
@@ -567,9 +567,8 @@ export function composeNoScreenDevice(c: Container, archive: CatalogueSource, re
   const map = mapsNow.length;
 
   // The key's two timers, the pin switched off at 400 ticks and on at 600, after the last timer record. A
-  // configuration with no timer yet, the empty one of `empty.ts` that a build from nothing starts from,
-  // `todo-compile-350.md` 5.1.6, puts them after the last list body instead: in all seven of Logitech's compiles the
-  // timer records follow the lists, plan 011 "the regions of the file come in one order", and every later list goes
+  // configuration with no timer yet, the empty one of `empty.ts` that a build from nothing starts from, puts them
+  // after the last list body instead: in all seven of Logitech's compiles the timer records follow the lists, plan 011 "the regions of the file come in one order", and every later list goes
   // in at the end of the lists, so they stay after them. Where they sit is carried, not read: the table names each.
   const timersNow = timerExtents(current);
   const timerAt = timersNow.length === 0 ? highestEnd(listExtents(current)) : highestEnd(timersNow);
@@ -614,7 +613,7 @@ export function composeNoScreenDevice(c: Container, archive: CatalogueSource, re
   // Entry 0, the key table, gains the bindings.
   current = withMapEntries(current, 0, added);
 
-  // The TV mode device, `todo-compile-350.md` 4.1.2: the start up's select names its map, and every other device's
+  // The TV mode device: the start up's select names its map, and every other device's
   // map gains its Input binding where it has an input command.
   if (tvMode) {
     current = withStartUpSelect(current, map);
@@ -631,7 +630,7 @@ export function composeNoScreenDevice(c: Container, archive: CatalogueSource, re
     digitCopies = made.copiesAdded;
   }
   // And the channel tuning's finish, a one block copy of its own with a send list nothing calls, as Logitech stores it
-  // beside the digits' copies, `channelFinish`, 5.1.7. A device with a finish and no ten digits to copy is in no
+  // beside the digits' copies, `channelFinish`. A device with a finish and no ten digits to copy is in no
   // compile read, so it is refused rather than given the copy alone.
   if (finish !== undefined) {
     if (!digitNames.every((name) => planned.wanted.includes(name))) {

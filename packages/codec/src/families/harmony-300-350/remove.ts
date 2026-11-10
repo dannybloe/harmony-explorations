@@ -1,5 +1,5 @@
 /**
- * A device taken out of a Harmony 300 or 350 configuration, `todo-compile-350.md` 4.1.3: the inverse of
+ * A device taken out of a Harmony 300 or 350 configuration: the inverse of
  * `composeNoScreenDevice`, so that a device can be composed onto a configuration whose eight infrared groups are
  * all in use, and so that a device of Logitech's compile can be taken out and composed back, which is the one way to
  * hold the composer against Logitech's file with every other device of the account there.

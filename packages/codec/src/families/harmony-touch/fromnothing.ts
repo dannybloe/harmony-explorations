@@ -1,20 +1,20 @@
 /**
- * **Every document of a Harmony Touch's configuration built from a setup file, with no Logitech document as input**:
- * `todo-touch.md` 9.1.
+ * **Every document of a Harmony Touch's configuration built from a setup file, with no Logitech document as input.**
  *
- * **What 9.1 changes against 8.6.** 8.6 composed the four documents that name devices and activities from a
- * description, onto a set of Logitech's documents with those four emptied, and carried each device's record whole from
- * that set, `setupBaseOf` and `catalogueOfSet` in `setup.ts`; Context and Settings stayed the remote's. Here nothing is
- * taken from a set: the base is four empty lists written here, each device's record is written from its catalogue entry
- * in the archive and from our rhythm table, `deviceRecordOfArchive`, and Settings and Context are written here from the
- * setup file and from a description of the account. **The composing itself is 8.6's**, `composeTouchSetup`, so the maps,
- * the activities and the person's choices for each device go through the code the bench ran 418 of 418.
+ * **What this changes against `setup.ts`.** There the four documents that name devices and activities are composed from
+ * a description, onto a set of Logitech's documents with those four emptied, and each device's record is carried whole
+ * from that set, `setupBaseOf` and `catalogueOfSet` in `setup.ts`; Context and Settings stay the remote's. Here nothing
+ * is taken from a set: the base is four empty lists written here, each device's record is written from its catalogue
+ * entry in the archive and from our rhythm table, `deviceRecordOfArchive`, and Settings and Context are written here
+ * from the setup file and from a description of the account. **The composing itself is `setup.ts`'s**,
+ * `composeTouchSetup`, so the maps, the activities and the person's choices for each device go through the code the
+ * bench ran 418 of 418.
  *
  * **What a setup file is.** A recipe, `packages/codec/src/recipe/recipe.ts`, in the shape of
- * `packages/corpus/setups/touch-full.json`: the model, each device by its name and its catalogue entry, each activity by
- * its name, type and devices with their inputs and jobs; that shape is what Logitech's service is given to build a
+ * `packages/corpus/setups/touch-full.json`: the model, each device by its name and its catalogue entry, each activity
+ * by its name, type and devices with their inputs and jobs; that shape is what Logitech's service is given to build a
  * setup, and it is not enough here, since the service then fills in the maps, the delays and the rest itself. So the
- * file carries a part of the Touch's own beside it, `touch`, read by `readTouchSetupFile`, holding what 8.6's description
+ * file carries a part of the Touch's own beside it, `touch`, read by `readTouchSetupFile`, holding what a `TouchSetup`
  * holds and the recipe does not, and two things neither holds, each naming our own source:
  *
  * * `protocols`: **the families of our rhythm table the codes are written with**, each under a protocol id of ours. A
@@ -32,7 +32,7 @@
  * Logitech's catalogue or a document of theirs, and both are the account's values, so they are kept in the lab and given
  * here as a `TouchAccount`; no setup file holds one.
  *
- * **Which generator writes each field**, the attribution 9.3 counts:
+ * **Which generator writes each field**, the attribution the comparison below counts:
  *
  * | document | field | written by |
  * |---|---|---|
@@ -56,10 +56,10 @@
  * the asking carries them, and leave the picker while a set of ours is held; a put back of the remote's own Settings
  * lists them again.
  *
- * **What it leaves for 9.3 and 9.4**, each named in the comparison with 8.6's set,
- * `packages/corpus/experiments/touchnothingset.ts`: a command's `FunctionId-`, which the archive does not hold and by which the
- * screens draw an entry's icon; Context's fourteen fields a Touch synced through a computer does not read; and the
- * favourites documents and their pictures, which stay the remote's.
+ * **What it leaves out**, each named in the comparison with the set `setup.ts` composes,
+ * `packages/corpus/experiments/touchnothingset.ts`: a command's `FunctionId-`, which the archive does not hold and by
+ * which the screens draw an entry's icon; Context's fourteen fields a Touch synced through a computer does not read;
+ * and the favourites documents and their pictures, which stay the remote's.
  *
  * **Nothing here is about one remote's family of configurations**: the Harmony Touch reads these documents and nothing
  * else does, so this folder is the Touch's own. Which architectures: the Harmony Touch alone, firmware 4.15.330; its
@@ -92,7 +92,7 @@ export const HARMONY_TOUCH_MODEL = 'Harmony Touch';
 // The setup file
 // ---------------------------------------------------------------------------------------------------
 
-/** One device's part: what 8.6's description holds of a device and a recipe does not. Every number in milliseconds. */
+/** One device's part: what a `TouchSetup` holds of a device and a recipe does not. Every number in milliseconds. */
 export interface TouchPartDevice {
   /** The recipe device it belongs to, by the name the remote shows. */
   readonly device: string;
@@ -108,7 +108,7 @@ export interface TouchPartDevice {
   readonly sequences?: readonly OwnSequence[];
 }
 
-/** One activity's part: what 8.6's description holds of an activity beyond the recipe's devices, inputs and jobs. */
+/** One activity's part: what a `TouchSetup` holds of an activity beyond the recipe's devices, inputs and jobs. */
 export interface TouchPartActivity {
   /** The recipe activity it belongs to, by its name. */
   readonly activity: string;
@@ -209,7 +209,7 @@ export function readTouchSetupFile(json: unknown): TouchSetupFile {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// The setup, in 8.6's form, and the catalogue, from the archive
+// The setup, as a `TouchSetup`, and the catalogue, from the archive
 // ---------------------------------------------------------------------------------------------------
 
 /** A recipe's job, `Display`, as an activity role's kind, `DisplayActivityRole`; a device with none passes through. */
@@ -217,7 +217,7 @@ function rolesOf(roles: readonly string[]): ActivityRoleKind[] {
   return roles.length === 0 ? ['PassThroughActivityRole'] : roles.map((r) => `${r}ActivityRole` as ActivityRoleKind);
 }
 
-/** An activity of the setup in 8.6's form: the recipe's devices, inputs and jobs, and the Touch's part for the rest. */
+/** An activity of the setup as a `TouchSetup` states one: the recipe's devices, inputs and jobs, and the Touch's part for the rest. */
 function activityOf(r: RecipeActivity, p: TouchPartActivity): OwnActivity {
   if (!(ACTIVITY_TYPES as readonly string[]).includes(r.type)) refuse(`the activity "${r.name}" is of the type ${r.type}, which is no type of Logitech's`);
   return {
@@ -259,7 +259,7 @@ export function catalogueOfArchive(file: TouchSetupFile, archive: CatalogueSourc
 }
 
 /**
- * The setup in 8.6's form, `TouchSetup`, for `composeTouchSetup`: each device with the maker and model its catalogue
+ * The setup as a `TouchSetup`, for `composeTouchSetup`: each device with the maker and model its catalogue
  * record states, so the composer finds the record, and the person's choices; each activity from the recipe and the
  * Touch's part. Devices and activities in the recipe's order.
  */
@@ -443,8 +443,8 @@ export interface TouchAccount {
 /**
  * Context written from the account's seven fields alone, in the alphabetical order Logitech's documents keep, through
  * `composeTouchContext`'s checks of each field. **The other fourteen are left out**: a Touch synced through a computer
- * reads none of them, the reading of `todo-touch.md` 8.4 in `settings.ts`; whether the remote takes a Context that lacks
- * them is the prediction 9.4 tests, and the comparison with 8.6's set names each.
+ * reads none of them, the reading in `settings.ts`; the remote took a Context that lacks them on the bench Touch, and
+ * the comparison with the set `setup.ts` composes names each.
  */
 export function contextOfAccount(account: TouchAccount): Context {
   const c = account.context;
