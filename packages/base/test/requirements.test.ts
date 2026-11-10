@@ -36,6 +36,8 @@ function anchorsOf(path: string): Set<string> {
     if (line.startsWith('```')) fenced = !fenced;
     const heading = fenced ? null : /^#{1,6} (.*)$/.exec(line);
     if (heading) found.add(anchor(heading[1]!.replace(/`/g, '')));
+    // An explicit anchor, as every entry of `docs/decisions.md` carries one, `<a id="d18"></a>`.
+    for (const explicit of line.matchAll(/<a id="([a-z0-9_-]+)"><\/a>/g)) found.add(explicit[1]!);
   }
   return found;
 }
@@ -68,10 +70,10 @@ test('the requirements are numbered from 1 with no gap and no repeat, 75 of them
   for (const one of REQUIREMENTS) assert.ok(one.text.length > 0 && one.text.endsWith('.'), `R${one.number}`);
 });
 
-test('the requirements of the last subject are the FHSDK\'s as a whole, and no other is', () => {
+test('the requirements of the last subject are the FHSDK\'s as a whole, and of the others only the report about an unsupported remote', () => {
   const whole = REQUIREMENTS.filter((one) => one.scope === 'whole').map((one) => one.number);
-  assert.deepEqual(whole, [73, 74, 75]);
-  assert.ok(REQUIREMENTS.filter((one) => one.scope === 'whole').every((one) => one.subject === REQUIREMENT_SUBJECTS.at(-1)));
+  assert.deepEqual(whole, [68, 73, 74, 75]);
+  assert.ok(REQUIREMENTS.filter((one) => one.subject === REQUIREMENT_SUBJECTS.at(-1)).every((one) => one.scope === 'whole'));
 });
 
 test('every bench model has a status for every requirement, and a whole one is the same for all', () => {
@@ -90,14 +92,14 @@ test('every bench model has a status for every requirement, and a whole one is t
   assert.equal(requirement(0), undefined);
 });
 
-test('a met names a test, and a bench demonstration where the requirement shows on a remote; an impossible names a reference page', () => {
+test('a met names a test, and a bench demonstration where the requirement shows on a remote; an impossible names a reference page or a decision', () => {
   const faults: string[] = [];
   for (const { label, state, needsBench } of everyState()) {
     if (state.status === 'met') {
       if (state.tests.length === 0) faults.push(`${label}: met with no test`);
       if (needsBench && state.bench.length === 0) faults.push(`${label}: met with no bench demonstration`);
     }
-    if (state.status === 'impossible' && state.reference.length === 0) faults.push(`${label}: impossible with no reference page`);
+    if (state.status === 'impossible' && state.reference.length === 0) faults.push(`${label}: impossible with no reference page or decision`);
     // Evidence only where a status rests on it: an open or unknown one says why and names nothing it would need.
     if (state.status !== 'met' && (state.tests.length > 0 || state.bench.length > 0)) faults.push(`${label}: evidence of a met on a ${state.status}`);
     // A reference page is what an impossible rests on, and what leaves an unknown open; a met rests on its tests.
@@ -116,7 +118,7 @@ test('each kind of evidence is where that kind lives: tests, bench runs or test 
       if (!/^packages\/[^/]+\/test\/.+\.test\.ts$|^docs\/test-notes\/[^/]+\.md(#[a-z0-9_-]+)?$/.test(path)) faults.push(`${label}: ${path} is no bench record`);
     }
     for (const path of state.reference) {
-      if (!/^reference\/.+\.md(#[a-z0-9_-]+)?$/.test(path)) faults.push(`${label}: ${path} is not a reference page`);
+      if (!/^reference\/.+\.md(#[a-z0-9_-]+)?$/.test(path) && !/^docs\/decisions\.md#d\d+$/.test(path)) faults.push(`${label}: ${path} is not a reference page or a decision`);
     }
   }
   assert.deepEqual(faults, []);

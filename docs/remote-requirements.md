@@ -17,11 +17,14 @@ requirement by its number, never at a todo.
   on a bench unit of that model, by a bench test or a passage of the model's test notes in `docs/test-notes/`. A build
   that passes every test and never ran on the remote is open.
 * **open**: the model can plainly do it and the FHSDK does not yet, or does it without that evidence.
-* **impossible**: the model cannot, by its hardware or firmware, and a page of `reference/` says so.
+* **impossible**: the model cannot, by its hardware or firmware, and a page of `reference/` says so; or this project
+  does not do it on that model by a decision, which is then the evidence, as the firmware install is the Harmony 600,
+  650 and 700's alone by decision 18.
 * **unknown**: it is not known whether the model can. It counts as open.
 
 An application offers a feature where it is met; the other statuses are for a developer. The last subject's
-requirements are about the FHSDK as a whole and carry one status for every model.
+requirements, and R68, the report about a remote this project does not support, are about the FHSDK as a whole and
+carry one status for every model.
 
 **This document is generated** from `packages/base/src/requirements.ts`, which holds every requirement, every status,
 the evidence behind each and the sentence that says why; the codec's `capabilitiesOf` returns the same per model with
@@ -33,19 +36,19 @@ the model's properties. Change a status there, in the commit with the test or be
 
 ## Counts
 
-Over the 72 requirements that have a status per model.
+Over the 71 requirements that have a status per model.
 
 | model | met | open | impossible | unknown |
 |---|---|---|---|---|
-| Harmony One | 14 | 52 | 4 | 2 |
-| Harmony 600 | 16 | 50 | 3 | 3 |
-| Harmony 650 | 11 | 55 | 4 | 2 |
-| Harmony 700 | 14 | 51 | 3 | 4 |
-| Harmony 525 | 7 | 51 | 5 | 9 |
-| Harmony 885 | 10 | 55 | 4 | 3 |
-| Harmony 300 | 11 | 37 | 16 | 8 |
-| Harmony 350 | 12 | 39 | 15 | 6 |
-| Harmony Touch | 23 | 41 | 2 | 6 |
+| Harmony One | 13 | 51 | 5 | 2 |
+| Harmony 600 | 16 | 49 | 3 | 3 |
+| Harmony 650 | 11 | 54 | 4 | 2 |
+| Harmony 700 | 14 | 50 | 3 | 4 |
+| Harmony 525 | 7 | 50 | 5 | 9 |
+| Harmony 885 | 10 | 53 | 5 | 3 |
+| Harmony 300 | 7 | 39 | 17 | 8 |
+| Harmony 350 | 12 | 37 | 16 | 6 |
+| Harmony Touch | 23 | 39 | 3 | 6 |
 
 ## The whole configuration
 
@@ -54,7 +57,7 @@ Over the 72 requirements that have a status per model.
 | R1 Read the configuration off the remote, whole and checked. | met | met | met | open | met | met | open | met | open |
 | R2 Understand a configuration: its devices, activities, keys, screens, delays and codes, and what each key will send. | met | met | met | open | met | open | open | open | met |
 | R3 Read a configuration back into a recipe, so a setup can be edited and rebuilt; from our own builds whole, favourites included, through a record of ours carried inside. | open | open | open | open | open | open | open | open | met |
-| R4 Build a whole configuration from a recipe. | met | met | open | met | open | open | met | met | met |
+| R4 Build a whole configuration from a recipe. | met | met | open | met | open | open | open | met | met |
 | R5 Write a configuration to the remote, verified by reading it back, and the remote runs it. | met | met | met | met | open | met | met | met | open |
 | R6 Write the user's own remote: take a remote never seen, record its identity and a full backup, and from then on write to that unit only. | open | open | open | open | open | open | open | open | open |
 | R7 Refuse a configuration that does not fit the model or would be mishandled, and say what is over. | met | met | met | met | open | open | met | met | open |
@@ -75,7 +78,6 @@ Over the 72 requirements that have a status per model.
 * **R4**, Harmony One, met: The test setup recipe builds to the fingerprint of the file written to the spare, which drove its devices as predicted. Tests `packages/codec/test/recipe/references.test.ts`, `packages/codec/test/families/fromrecipe.test.ts`; shown on a unit in `docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it`.
 * **R4**, Harmony 600, met: The empty 600 and the five device setup build from recipes, byte for byte the files the 600 ran. Tests `packages/codec/test/recipe/references.test.ts`, `packages/codec/test/families/harmony-600-650-700/empty.test.ts`; shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
 * **R4**, Harmony 700, met: The seven device test setup, built from its recipe alone, ran on the 700 as the file predicts. Tests `packages/codec/test/recipe/references.test.ts`; shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
-* **R4**, Harmony 300, met: A whole configuration built from a recipe with no Logitech file ran on the unit, every expected code heard; the recipe names the Harmony 350, whose file serves both. Tests `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`, `packages/codec/test/recipe/references.test.ts`; shown on a unit in `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`, `docs/test-notes/harmony-300.md`.
 * **R4**, Harmony 350, met: The recipe build of the test setup is the file the unit ran, every expected code heard. Tests `packages/codec/test/recipe/references.test.ts`, `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`; shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **R4**, Harmony Touch, met: All six documents and a background built from a setup file were committed and every activity played its codes. Tests `packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts`; shown on a unit in `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
 * **R5**, Harmony One, met: The writer erases, writes, reads back and restarts, and the spare started on what was written. Tests `packages/corpus/test/write/write-config-run.test.ts`, `packages/usb/test/write/blockwrite.test.ts`; shown on a unit in `docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it`.
@@ -124,9 +126,9 @@ Over the 72 requirements that have a status per model.
 
 | requirement | One | 600 | 650 | 700 | 525 | 885 | 300 | 350 | Touch |
 |---|---|---|---|---|---|---|---|---|---|
-| R21 Create an activity of a kind with its devices; starting, switching and Off behave as the manuals describe. | met | met | open | met | open | open | met | met | met |
+| R21 Create an activity of a kind with its devices; starting, switching and Off behave as the manuals describe. | met | met | open | met | open | open | open | met | met |
 | R22 Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key. | open | open | open | open | open | open | open | open | open |
-| R23 Set each device's input in an activity, or leave it alone. | met | met | open | open | open | open | met | met | met |
+| R23 Set each device's input in an activity, or leave it alone. | met | met | open | open | open | open | open | met | met |
 | R24 Include a pass through device in an activity. | open | open | open | open | open | open | open | open | met |
 | R25 Rename an activity. | open | open | open | open | open | open | unknown | open | open |
 | R26 Remove an activity. | open | open | open | open | open | open | open | open | met |
@@ -138,12 +140,10 @@ Over the 72 requirements that have a status per model.
 * **R21**, Harmony One, met: Typed activities are built, and on the spare starting, switching and Off sent exactly the codes the file predicted. Tests `packages/codec/test/families/harmony-one/oneactivity.test.ts`, `packages/codec/test/recipe/references.test.ts`; shown on a unit in `docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it`.
 * **R21**, Harmony 600, met: Activities composed for the 600 started, switched and ended with All Off on it, every code as the file predicted. Tests `packages/codec/test/compose/compose.test.ts`; shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
 * **R21**, Harmony 700, met: Four activities of four kinds started, switched and ended with All Off on the 700, every decoded code as the file sends. Tests `packages/codec/test/compose/compose.test.ts`; shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
-* **R21**, Harmony 300, met: Watch TV built from a recipe started and stopped its devices on the unit; with one activity there is nothing to switch to. Tests `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`, `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`; shown on a unit in `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`, `docs/test-notes/harmony-300.md`.
 * **R21**, Harmony 350, met: Watch TV built from a recipe started and stopped its devices on the unit; with one activity there is nothing to switch to. Tests `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`, `packages/codec/test/recipe/references.test.ts`; shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **R21**, Harmony Touch, met: An activity composed by us was listed, started, used, switched to Watch TV and back, and stopped by Off as its record states. Tests `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`; shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
 * **R23**, Harmony One, met: An activity sets each named device's input or leaves it alone, and the LG and Denon went to the inputs asked for. Tests `packages/codec/test/compose/inputs.test.ts`, `packages/codec/test/families/harmony-one/composecompare.test.ts`; shown on a unit in `docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it`.
 * **R23**, Harmony 600, met: Each device's input in an activity, or none, is composed; the 600 sent the LG's HDMI 1 and the Denon's CBL/SAT. Tests `packages/codec/test/compose/inputs.test.ts`; shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
-* **R23**, Harmony 300, met: Watch TV set the receiver's input and left the set top box's alone, heard on the unit. Tests `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`; shown on a unit in `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`, `docs/test-notes/harmony-300.md`.
 * **R23**, Harmony 350, met: The recipe's input for each device in Watch TV is set, others left alone, and the receiver's input was heard. Tests `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`, `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`; shown on a unit in `docs/test-notes/harmony-350.md`.
 * **R23**, Harmony Touch, met: The activity of ours set the television to HDMI 2 and left the player's input alone, heard as composed. Tests `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`; shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
 * **R24**, Harmony Touch, met: The HDMI switch with no job in Switch Box is built as a pass through device and its power and input were heard. Tests `packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts`; shown on a unit in `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
@@ -173,9 +173,9 @@ Over the 72 requirements that have a status per model.
 | R34 Put commands on an activity's screen, labelled and ordered, across pages. | open | open | open | open | open | open | impossible | impossible | met |
 | R35 Put commands on a device's screen pages in device mode. | open | open | met | open | open | open | impossible | impossible | met |
 | R36 A screen button that opens a page of the user's own commands, and a button back. | open | open | open | open | open | open | impossible | impossible | unknown |
-| R37 Make a named sequence with pauses and put it on a key or the screen, within what the remote survives. | met | met | met | met | open | open | open | open | met |
+| R37 Make a named sequence with pauses and put it on a key or the screen, within what the remote survives. | open | met | met | met | open | open | open | open | met |
 | R38 Give a key a second command when held. | impossible | impossible | impossible | impossible | unknown | unknown | open | open | met |
-| R39 Put devices on the device keys, a short and a long press each. | impossible | impossible | impossible | impossible | impossible | impossible | met | met | impossible |
+| R39 Put devices on the device keys, a short and a long press each. | impossible | impossible | impossible | impossible | impossible | impossible | open | met | impossible |
 | R40 Give an activity's touch gestures their commands. | unknown | impossible | impossible | impossible | impossible | impossible | impossible | impossible | open |
 | R41 Show every screen as the remote will draw it, before writing. | open | open | open | open | open | open | impossible | impossible | open |
 | R42 Choose the look of the screens: typeface, inks, colours, icons, background, theme, choices per screen. | open | open | open | open | open | open | impossible | impossible | open |
@@ -193,7 +193,6 @@ Over the 72 requirements that have a status per model.
 * **R35**, Harmony Touch, met: A device of ours showed its eleven screen entries in order and its Power entry sent its own code. Tests `packages/codec/test/families/harmony-touch/touch-device-add.test.ts`, `packages/codec/test/families/harmony-touch/touch-compose.test.ts`; shown on a unit in `packages/bench/test/harmony-touch/touch-device-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
 * **R36**, Harmony 300, impossible: The 300 has no screen to hold a button or a page. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **R36**, Harmony 350, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
-* **R37**, Harmony One, met: A named sequence with a pause goes on an activity's screen within the queue's limit, and was heard on the spare. Tests `packages/codec/test/container/queue.test.ts`, `packages/codec/test/recipe/references.test.ts`; shown on a unit in `docs/test-notes/harmony-one.md#infrared-bench-runs`.
 * **R37**, Harmony 600, met: The Radio sequence, two commands with a 2 second pause, was sent from the 600's screen; an overflowing one is refused. Tests `packages/codec/test/compose/sequence.test.ts`, `packages/codec/test/container/queue.test.ts`; shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
 * **R37**, Harmony 650, met: A sequence with pauses is composed within the action queue, bound to a key, and heard with its pauses. Tests `packages/codec/test/compose/sequence.test.ts`; shown on a unit in `docs/test-notes/harmony-650.md#bench-runs`.
 * **R37**, Harmony 700, met: Radio, the box's 1, a 2 second pause and its 2, on a screen button, was heard on the 700; overflow is refused. Tests `packages/codec/test/compose/sequence.test.ts`, `packages/codec/test/recipe/references.test.ts`; shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
@@ -209,7 +208,6 @@ Over the 72 requirements that have a status per model.
 * **R39**, Harmony 700, impossible: The 700 has no device keys; device mode is a list opened by the centre key below the screen. `reference/remotes/harmony-700/behaviour.md#device-mode-in-and-out`.
 * **R39**, Harmony 525, impossible: The 525 has no device keys; its Devices key opens a list. `reference/remotes/harmony-525/keys.md#every-key-on-the-drawing`.
 * **R39**, Harmony 885, impossible: The 885 has one Device key and a device list, and no device keys. `reference/remotes/harmony-885/keys.md#harmony-885-skin-17`.
-* **R39**, Harmony 300, met: Each device key selected one device short and another long on the unit, groups 4 to 7 included. Tests `packages/codec/test/families/harmony-300-350/noscreen.test.ts`, `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`; shown on a unit in `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`, `docs/test-notes/harmony-300.md`.
 * **R39**, Harmony 350, met: Eight devices on the four device keys, short and long, were each heard selected on the unit. Tests `packages/codec/test/families/harmony-300-350/noscreen.test.ts`, `packages/codec/test/recipe/references.test.ts`; shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **R39**, Harmony Touch, impossible: The Touch has no device keys; its keys and touch zones list none. `reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing`.
 * **R40**, Harmony 600, impossible: The 600 has no touch panel. `reference/remotes/harmony-600/display.md#the-panel`.
@@ -342,11 +340,16 @@ Over the 72 requirements that have a status per model.
 | requirement | One | 600 | 650 | 700 | 525 | 885 | 300 | 350 | Touch |
 |---|---|---|---|---|---|---|---|---|---|
 | R69 Know the firmware state: running, safe mode or bootloader, and whether a newer version exists. | open | open | open | open | open | open | open | open | open |
-| R70 Install Logitech's own unmodified firmware, from a file the user has or from Logitech's update service; the 600, 650 and 700 only, by decision 18. | open | open | open | met | impossible | open | open | open | open |
+| R70 Install Logitech's own unmodified firmware, from a file the user has or from Logitech's update service; the 600, 650 and 700 only, by decision 18. | impossible | open | open | met | impossible | impossible | impossible | impossible | impossible |
 | R71 Bring a stuck remote back. | open | open | open | met | open | open | open | open | met |
 
+* **R70**, Harmony One, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
 * **R70**, Harmony 700, met: Logitech's 2.8 image, from a file, was staged and installed on the unit; fetching it from the update service is in no library. Tests `packages/usb/test/write/firmware.test.ts`; shown on a unit in `docs/test-notes/harmony-700.md#arrival-and-repair`.
 * **R70**, Harmony 525, impossible: Logitech publishes no firmware package for the 525, and decision 18 allows the install on the 600, 650 and 700 only. `reference/remotes/harmony-525/firmware.md#harmony-525-firmware`.
+* **R70**, Harmony 885, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
+* **R70**, Harmony 300, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
+* **R70**, Harmony 350, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
+* **R70**, Harmony Touch, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
 * **R71**, Harmony 700, met: The unit arrived stuck in safe mode and was repaired by asking it to reinstall its staged application. Tests `packages/usb/test/write/firmware.test.ts`; shown on a unit in `docs/test-notes/harmony-700.md#arrival-and-repair`.
 * **R71**, Harmony Touch, met: A sync left running was recovered on the unit by abort and restart, and the remote started normally. Tests `packages/usb/test/touch/touchsession.test.ts`, `tests/harmony_touch/test_harmony_touch_recovery.py`; shown on a unit in `packages/usb/test/touch/touch-first-sync.test.ts`, `docs/test-notes/harmony-touch.md`.
 

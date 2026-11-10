@@ -16,11 +16,15 @@
  *   model's test notes in `docs/test-notes/`. Both halves are named in the evidence, or the status is not met. A
  *   build that passes every test and never ran on the remote is open.
  * * `open`: the model can plainly do it and the FHSDK does not yet, or does it without that evidence.
- * * `impossible`: the model cannot, by its hardware or firmware, and a page of `reference/` says so.
+ * * `impossible`: the model cannot, by its hardware or firmware, and a page of `reference/` says so; or this project
+ *   does not do it on that model by a decision, whose entry in `docs/decisions.md` is then the evidence, as the
+ *   firmware install is the Harmony 600, 650 and 700's alone by decision 18. Either way nothing an application could
+ *   wait for will change it, which is why a bench model's box can be ticked with an impossible standing.
  * * `unknown`: it is not known whether the model can. It counts as open for anything that plans work.
  *
  * An application offers a feature where it is met; the other three are for a developer. The requirements of the
- * last subject are about the FHSDK as a whole rather than any remote, and carry one status for every model.
+ * last subject, and R68, the report about a remote this project does not support, are about the FHSDK as a whole
+ * rather than any bench remote, and carry one status for every model.
  *
  * **Why this is data in the base rather than a document.** The application asks per model, through the codec's
  * `capabilitiesOf`, which also needs the family registry; a document cannot be asked, and a second copy of the
@@ -75,7 +79,8 @@ const TESTED = false;
 const GROUPS: readonly {
   readonly subject: string;
   readonly scope: RequirementScope;
-  readonly requirements: readonly (readonly [number: number, needsBench: boolean, text: string])[];
+  /** Each requirement; a fourth element sets a scope other than its group's. */
+  readonly requirements: readonly (readonly [number: number, needsBench: boolean, text: string, scope?: RequirementScope])[];
 }[] = [
   {
     subject: 'The whole configuration',
@@ -196,7 +201,7 @@ const GROUPS: readonly {
       [65, SHOWN, 'The battery level, and a warning or refusal before a write when it is low.'],
       [66, SHOWN, 'Progress during a read or a write, and the remote showing it is being written.'],
       [67, SHOWN, 'Show live which key is pressed on a connected remote.'],
-      [68, SHOWN, 'A report about a remote this project does not support, which its owner can publish.'],
+      [68, SHOWN, 'A report about a remote this project does not support, which its owner can publish.', 'whole'],
     ],
   },
   {
@@ -231,7 +236,7 @@ export const REQUIREMENT_SUBJECTS: readonly string[] = GROUPS.map((group) => gro
 
 /** Every requirement, in number order, withdrawn ones included. */
 export const REQUIREMENTS: readonly Requirement[] = GROUPS.flatMap((group) =>
-  group.requirements.map(([number, needsBench, text]) => ({ number, subject: group.subject, text, scope: group.scope, needsBench })));
+  group.requirements.map(([number, needsBench, text, scope]) => ({ number, subject: group.subject, text, scope: scope ?? group.scope, needsBench })));
 
 /** The requirement with this number, or undefined for a number never given. */
 export function requirement(number: number): Requirement | undefined {
@@ -309,8 +314,9 @@ export interface RequirementState {
   /** Where it was shown on a bench unit of the model: a bench test, or a passage of `docs/test-notes/`. */
   readonly bench: readonly string[];
   /**
-   * The reference pages a status rests on: for impossible the page that says the model cannot, required; for unknown
-   * the page that leaves the question open, where one does.
+   * The reference pages a status rests on: for impossible the page that says the model cannot, or the entry of
+   * `docs/decisions.md` that rules it out, one of the two required; for unknown the page that leaves the question
+   * open, where one does.
    */
   readonly reference: readonly string[];
   /** In one sentence: what is shown, what is missing, why not, or what is not known. */
@@ -338,7 +344,7 @@ function unknown(why: string, reference: readonly string[] = []): RequirementSta
 }
 
 /**
- * Every bench model's status on every requirement of the models, R1 to R72, judged by reading the model's test notes,
+ * Every bench model's status on every requirement of the models, R1 to R72 but R68, judged by reading the model's test notes,
  * its bench tests and its reference pages for both halves of the evidence. Where a requirement does not depend on
  * the remote, as Pronto Hex does not, every model carries the same answer.
  */
@@ -381,7 +387,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     34: open('Screen commands are placed in order and were heard, but no label of the user\'s own can be given and no run showed several pages.'),
     35: open('A device\'s screen pages are laid out from the catalogue, and a recipe cannot choose or order them.'),
     36: open('Nothing builds a screen button that opens a page of the user\'s own commands.'),
-    37: met(['packages/codec/test/container/queue.test.ts', 'packages/codec/test/recipe/references.test.ts'], ['docs/test-notes/harmony-one.md#infrared-bench-runs'], 'A named sequence with a pause goes on an activity\'s screen within the queue\'s limit, and was heard on the spare.'),
+    37: open('A named sequence was heard on the spare only in a run composed onto Logitech\'s file; no build from a recipe with a sequence has been on the One.'),
     38: impossible(['reference/remotes/harmony-one/keys.md#what-pressing-or-holding-does'], 'The One has no long press; a held key repeats its command.'),
     39: impossible(['reference/remotes/harmony-one/keys.md#every-key-on-the-drawing'], 'The One has no device keys; a device is picked from the list the Devices key opens.'),
     40: unknown('It is not known whether the One\'s touch panel reads any gesture beyond a touch on a rectangle.'),
@@ -412,9 +418,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: open('The One\'s battery reading has not been checked, and nothing warns or refuses a write when it is low.'),
     66: open('A read reports progress, but a write does not, and nothing makes the One show it is being written.'),
     67: impossible(['reference/remotes/harmony-one/behaviour.md#on-the-cable'], 'On the cable the One\'s keypad handler stops, so a key press cannot be watched live.'),
-    68: open('The probe reports on a One configuration file, but no run of it on a remote is recorded.'),
     69: open('The version block shows running or safe mode, but nothing knows whether a newer firmware exists.'),
-    70: open('By decision 18 firmware is installed only on the Harmony 600, 650 and 700, never on the One.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('Nothing in the FHSDK brings a stuck One back; the recovery paths built are other models\'.'),
     72: open('Logitech\'s service serves the One, but its client is tied to test accounts and is on no public entry.'),
   },
@@ -487,7 +492,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: open('The battery read exists but was never sent to a 600, and no low battery warning or refusal is built.'),
     66: open('Read progress is reported, but nothing makes the remote show it is being written.'),
     67: open('A watch address exists for the 600, but no run names a pressed key live; on the cable only matrix columns were read.'),
-    68: open('The probe is tested on the 600\'s configuration file, but no probe run on a 600 unit is recorded.'),
     69: open('Safe mode and the bootloader are not checked on a 600, and Logitech\'s version list is not in the libraries.'),
     70: open('Staging and reinstall exist for this family but were never sent to a 600, and its newer image is not obtainable.'),
     71: open('The reinstall request was never sent to a 600, and its safe mode is not checked.'),
@@ -562,7 +566,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: open('The battery voltage is read on the 650, but there is no level, no threshold and no warning or refusal.'),
     66: open('A read reports progress, but nothing makes the 650 show that it is being written.'),
     67: open('The key watch uses the Harmony 600\'s memory address for every remote of its product id, and the 650\'s is not read.'),
-    68: open('The probe report exists, but no test or test note shows it made for a 650.'),
     69: open('The version is read, but safe mode was never entered on a 650 and nothing knows whether a newer version exists.'),
     70: open('The staging write and reinstall were never sent to a 650, and Logitech\'s update service does not serve it.'),
     71: open('No recovery has been tried on a 650, and it has no staged application to reinstall.'),
@@ -637,7 +640,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: open('The battery voltage read exists in the 700\'s firmware but was never asked of the unit, and no threshold exists.'),
     66: open('Read progress is reported, but nothing makes the remote show that it is being written.'),
     67: open('The key watch takes the 600\'s address for this product id; the 700\'s own address is not chosen.'),
-    68: open('The report is tested on a 700 configuration but never produced from the unit.'),
     69: open('Safe mode was recognised on this unit, but nothing tells whether a newer firmware exists.'),
     70: met(['packages/usb/test/write/firmware.test.ts'], ['docs/test-notes/harmony-700.md#arrival-and-repair'], 'Logitech\'s 2.8 image, from a file, was staged and installed on the unit; fetching it from the update service is in no library.'),
     71: met(['packages/usb/test/write/firmware.test.ts'], ['docs/test-notes/harmony-700.md#arrival-and-repair'], 'The unit arrived stuck in safe mode and was repaired by asking it to reinstall its staged application.'),
@@ -712,7 +714,6 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: unknown('No battery reading over USB is known on the 525, and whether one exists is not settled.', ['reference/remotes/harmony-525/hardware.md#power']),
     66: open('Read progress is tested only on another model\'s sample, and nothing shows a write on the 525\'s screen.'),
     67: unknown('The scan code\'s address is read in the firmware, but no live memory read of a running 525 is known.', ['reference/remotes/harmony-525/keys.md#fifty-keys-and-every-one-is-bound']),
-    68: open('The probe reads a 525 configuration in a test, but has never been run on the unit.'),
     69: open('Safe mode is told apart by the version block measured on the unit, but nothing says whether newer firmware exists.'),
     70: impossible(['reference/remotes/harmony-525/firmware.md#harmony-525-firmware'], 'Logitech publishes no firmware package for the 525, and decision 18 allows the install on the 600, 650 and 700 only.'),
     71: open('The unit left safe mode once, by hand, from a lab script; no library function does it.'),
@@ -787,9 +788,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: unknown('One read takes a hardware measurement, but what it measures is not identified, so a battery level is not known.', ['reference/architectures/harmony-880-885/usb.md#reading-flash']),
     66: open('Read progress exists, but the 885 showed nothing during a write, and nothing makes it show one.'),
     67: met(['packages/usb/test/transport/watch-keys.test.ts', 'tests/harmony_880_885/test_harmony_885_keys.py'], ['docs/test-notes/harmony-885.md#5-november-2026-every-key-pressed-watched-over-usb'], 'The held key and the last key pressed are polled over USB, and every key was mapped that way on a unit.'),
-    68: open('The probe report reads arch 8 configurations in tests but was never run on an 885 unit.'),
     69: open('Nothing tells an 885 in its bootloader from a running one, and no list of firmware versions is held.'),
-    70: open('Decision 18 limits firmware installs to the 600, 650 and 700; nothing installs firmware on an 885.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('Nothing in the libraries brings a stuck 885 back; its recovery has only been read in the firmware.'),
     72: impossible(['reference/remotes/harmony-885/features.md#logitechs-service'], 'Logitech\'s service has the 885\'s skins switched off and refuses its serial, so it serves no 885 account.'),
   },
@@ -798,7 +798,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     1: open('The file was read off the unit twice, identical, but no library read restores the end marker and checks the trailer.'),
     2: open('Devices and power on delays are read from 300 files, but no library reader says what each key sends.'),
     3: open('Nothing reads a configuration of this family back into a recipe.'),
-    4: met(['packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts', 'packages/codec/test/recipe/references.test.ts'], ['packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts', 'docs/test-notes/harmony-300.md'], 'A whole configuration built from a recipe with no Logitech file ran on the unit, every expected code heard; the recipe names the Harmony 350, whose file serves both.'),
+    4: open('The 350\'s build ran on the 300 and every expected code was heard, but a recipe naming the 300 is refused once it holds a television or a long press, so the 300\'s own recipe does not build whole.'),
     5: met(['packages/usb/test/file-protocol/file-family-run.test.ts', 'packages/usb/test/file-protocol/filewrite.test.ts'], ['docs/test-notes/harmony-300.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts'], 'The file write verifies by reading back and restarts, and the unit then ran what was written.'),
     6: open('The writer serves only the two bench units on its own list; a remote never seen cannot be recorded and written.'),
     7: met(['packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts', 'packages/usb/test/file-protocol/filewrite.test.ts'], [], 'A setup past the 300\'s four infrared groups is refused naming the group, and an oversized or broken container is refused.'),
@@ -815,9 +815,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     18: open('Channel digits and the tuning finish follow the catalogue; how a device tunes a number cannot be chosen.'),
     19: open('Nothing adds, fixes or removes one command of a device, or restores its original code, for this family.'),
     20: met(['packages/codec/test/infrared/pronto.test.ts'], [], 'Pronto Hex strings are read and written, and malformed ones are refused.'),
-    21: met(['packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts', 'packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts'], ['packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts', 'docs/test-notes/harmony-300.md'], 'Watch TV built from a recipe started and stopped its devices on the unit; with one activity there is nothing to switch to.'),
+    21: open('Watch TV ran on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.'),
     22: open('Only the channel changing role picks the map Watch TV ends in; other roles map no keys and learned commands are not handled.'),
-    23: met(['packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts'], ['packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts', 'docs/test-notes/harmony-300.md'], 'Watch TV set the receiver\'s input and left the set top box\'s alone, heard on the unit.'),
+    23: open('The inputs were heard on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.'),
     24: open('A device with no role in an activity is neither tested nor run on a 300.'),
     25: unknown('Whether this family\'s configuration stores an activity\'s name at all is not stated; its metadata names devices.'),
     26: open('A configuration with no activity builds, but none was written to a 300.'),
@@ -833,7 +833,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     36: impossible(['reference/remotes/harmony-300/display.md#harmony-300-display'], 'The 300 has no screen to hold a button or a page.'),
     37: open('Nothing composes a named sequence for this family, though its lists can send and wait.'),
     38: open('A held key only selects a second device on the device keys; no other key gets a held command.'),
-    39: met(['packages/codec/test/families/harmony-300-350/noscreen.test.ts', 'packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts'], ['packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts', 'docs/test-notes/harmony-300.md'], 'Each device key selected one device short and another long on the unit, groups 4 to 7 included.'),
+    39: open('The device keys selected a device short and another long on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 is refused once it holds a long press.'),
     40: impossible(['reference/remotes/harmony-300/display.md#harmony-300-display'], 'The 300 has no screen and so no touch gestures.'),
     41: impossible(['reference/remotes/harmony-300/display.md#harmony-300-display'], 'The 300 has no screen to draw.'),
     42: impossible(['reference/remotes/harmony-300/display.md#harmony-300-display'], 'The 300 has no screen, so there is no look to choose.'),
@@ -862,9 +862,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: unknown('A battery file is in the family\'s file table but was never read, so whether it holds a level is not known.'),
     66: open('Neither the read nor the write reports progress, and whether the keys light while writing is not checked.'),
     67: unknown('No way to watch key presses live over this family\'s file protocol is known.'),
-    68: open('The probe reads through the command protocol only, so it gives no report for a file based remote.'),
     69: open('Nothing reports safe mode or the bootloader for this family, nor whether newer firmware exists.'),
-    70: open('Firmware installs are limited to the Harmony 600, 650 and 700 by decision 18, so nothing installs on the 300.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('A battery pull recovered the unit; nothing recovers a stuck 300, whose safe mode image is a different, unread build.'),
     72: open('Logitech\'s service still compiles for the 300, but the client is bound to test accounts and on no public entry.'),
   },
@@ -937,9 +936,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: unknown('The battery file was never read, so whether the 350 reports a level is not known.', ['reference/remotes/harmony-350/usb.md#not-checked']),
     66: open('The writer reports each chunk as it goes; what the remote shows while written is not recorded or offered.'),
     67: unknown('No way to read a key press off a connected 350 is known; its log stays erased.'),
-    68: open('The probe reads remotes over the command protocol only and reports nothing for a file based remote.'),
     69: open('Safe mode shows in the product string and identity file, but nothing reports the state or a newer version.'),
-    70: open('Decision 18 limits firmware installs to the 600, 650 and 700; nothing installs the 350\'s application.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('A failed write was recovered by writing again on the unit; recovering through safe mode is not offered.'),
     72: open('Logitech\'s service serves the 350, but the service client is not on any public entry.'),
   },
@@ -1012,21 +1010,21 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     65: open('The firmware names battery charge readings, but nothing reads them and no write warns on a low battery.'),
     66: open('The answerer logs each request list but gives no progress measure, and what the remote shows meanwhile is not recorded.'),
     67: unknown('Whether a Touch can report key presses live over USB is not known; it is never opened that way.'),
-    68: open('The probe drives only command protocol remotes, so an unknown remote of the Touch\'s file family gets no report.'),
     69: open('The firmware version is read, but its running or recovery state and whether a newer version exists are not.'),
-    70: open('Logitech updates the Touch at a sync, but decision 18 limits the FHSDK\'s firmware installs to the 600, 650 and 700.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: met(['packages/usb/test/touch/touchsession.test.ts', 'tests/harmony_touch/test_harmony_touch_recovery.py'], ['packages/usb/test/touch/touch-first-sync.test.ts', 'docs/test-notes/harmony-touch.md'], 'A sync left running was recovered on the unit by abort and restart, and the remote started normally.'),
     72: open('Logitech\'s service serves the Touch, but the service client is on no public entry, so no import is offered.'),
   },
 };
 
-/** The requirements about the FHSDK as a whole, R73 to R75: one status each, shared by every model. */
+/** The requirements about the FHSDK as a whole, R68 and R73 to R75: one status each, shared by every model. */
 const WHOLE_STATUSES: Readonly<Record<number, RequirementState>> = {
   73: met(['packages/codec/test/catalogue/carried.test.ts', 'packages/lab/test/dependencies.test.ts'], [],
     'A recipe that carries its codes builds with no archive, and the only client of Logitech\'s service is reached by no entry, so nothing an application loads needs a network or an account.'),
   74: met(['packages/codec/test/package/mainentry.test.ts', 'packages/codec/test/package/mainentryreads.test.ts', 'packages/base/test/base.test.ts'], [],
     'The codec\'s three entries and the base load with no Node module, and the main entry reads every family with no resource supplied; the USB half is Node\'s.'),
   75: open('Every package is private and unpublished, and an application links the folder beside it.'),
+  68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the nine bench models is recorded.'),
 };
 
 /**
