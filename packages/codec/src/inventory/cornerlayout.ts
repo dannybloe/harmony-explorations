@@ -12,7 +12,7 @@
  * take the same entry through `families/harmony-600-650-700/geometry.ts`, so that a page they compose is one the compiler
  * could have written, and so that the layout has one home rather than a reader's copy and a builder's.
  *
- * Moved here out of `inventory.ts` by `todo-compile-one.md` 3.3.3.6, where its names said which family it was.
+ * Out of `inventory.ts`, where its names said which family it was.
  */
 import type { PerArchitecture } from '../container/gspm.ts';
 

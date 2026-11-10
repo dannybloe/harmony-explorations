@@ -1,19 +1,19 @@
 /**
  * Our letters: an Oxanium mask made into a glyph of the remote's own kind, and the alphabet that reads one
- * back. `todo-compile-650.md` 8.2, decisions 19 and 20.
+ * back, decisions 19 and 20.
  *
  * A glyph on the Harmony 600, 650 and 700 is rows of pixels, each either a colour or skipped, so the
  * background shows through. Logitech's letters are one ink colour, and on most fonts a drop shadow: the ink
  * again one pixel right and one down, under the ink. That shape is the whole of what is copied from them,
  * and `typeface.ts` draws the letters themselves from Oxanium's outlines, a one bit mask and grey levels per
- * character, `todo-compile-650.md` 10.8. This module only colours a mask in:
+ * character. This module only colours a mask in:
  *
  * * **shadowed**, white ink over a black shadow, decision 20, for every font Logitech draws with a shadow;
  * * **plain**, dark ink and no shadow, for the fonts Logitech draws without one, which are the words on the
  *   top and bottom bars. Their ink is Logitech's own dark grey, `0x2104`, the one ink all 39 of those font
  *   sets hold across the 13 Harmony 650 compiles, kept because the bars stay white.
  *
- * **Or blended into the colour it is drawn on**, 8.2.6: where a text sits on one flat colour, the letter is
+ * **Or blended into the colour it is drawn on**, `blending.ts`: where a text sits on one flat colour, the letter is
  * drawn from Oxanium's grey coverage rather than its mask, every pixel the ink mixed with what lies under
  * it in proportion to how much of the pixel the letter covers. The shadow is soft the same way, the
  * coverage of the pixel one up and one left darkening the background before the ink goes over it. Logitech
@@ -38,8 +38,8 @@ export type Lettering = 'shadowed' | 'plain';
 
 /**
  * The colours our letters are drawn in, as RGB565: the ink of a shadowed letter, the ink of a plain one, and
- * the shadow. Which colours is a choice, the family's, `FourSlotChoices.letterInks`, `todo-compile-650.md`
- * 10.7.5; nothing that reads our letters back depends on them, since `letterForm` and the structure a
+ * the shadow. Which colours is a choice, the family's, `FourSlotChoices.letterInks`;
+ * nothing that reads our letters back depends on them, since `letterForm` and the structure a
  * blended letter keeps read where a letter's ink and shadow are rather than what colour they are.
  */
 export interface LetterInks {
@@ -60,8 +60,8 @@ export const LETTERING_CHARACTERS: readonly string[] = Array.from({ length: 95 }
  * sits on, whether a glyph opens with a blank column, and the width of a space; the Oxanium cut and pixel
  * size whose capitals and x-height land on Logitech's rows, the weight chosen by look, Regular for the
  * three regular faces and SemiBold for the six label faces; and the rows its letters reach, which are the
- * rows the letters drawn with Pillow in 8.2 reached, which the renderer fits the outlines to since that is
- * what Pillow's hinting did, `todo-compile-650.md` 10.8. Tunable, decision 19.
+ * rows the letters first drawn with Pillow reached, which the renderer fits the outlines to since that is
+ * what Pillow's hinting did. Tunable, decision 19.
  */
 export const OXANIUM_FACE_SPECS = {
   F15: { what: 'bold 15, corner labels and menu rows', cell: 15, baseline: 11, lead: 1, weight: 'SemiBold', px: 14, space: 4,
@@ -89,7 +89,7 @@ export const OXANIUM_FACE_SPECS = {
   // letters. Findings section 396.
   // The weights are the ones whose stroke is Logitech's, the median run of ink along a row: Bold draws the
   // bold faces two pixels wide, as Logitech's are, where SemiBold draws them one, which `measureSet` would
-  // read back as a regular face; the 11 pixel face is one pixel in both, and the regular 15 is Regular. Our letters reach the same rows on all five, `todo-compile-one.md` 5.2.
+  // read back as a regular face; the 11 pixel face is one pixel in both, and the regular 15 is Regular. Our letters reach the same rows on all five.
   One16: { what: 'bold 16, the greeting', cell: 16, baseline: 12, lead: 1, weight: 'Bold', px: 14, space: 4,
     rows: { cap: 10, x: 7, ascender: 10, descender: 3 } },
   One15: { what: 'bold 15, menu rows and titles on the Harmony One', cell: 15, baseline: 11, lead: 0, weight: 'Bold', px: 12, space: 3,
@@ -110,20 +110,19 @@ export interface OxaniumFace extends FaceSpec, RenderedFace {}
 /**
  * Every face of ours, whichever family letters in it: what the alphabet reads any configuration of ours by,
  * `text.ts`. Which faces a family letters its sets in, and which of Logitech's sets becomes which, is the
- * family's, `FamilyFonts.faces` and `faceOf`, where `HARMONY_650_FACES` and `HARMONY_ONE_FACES` live since
- * `todo-compile-one.md` 3.3.3.5.
+ * family's, `FamilyFonts.faces` and `faceOf`, where `HARMONY_650_FACES` and `HARMONY_ONE_FACES` live.
  */
 export const LETTERING_FACES = Object.keys(OXANIUM_FACE_SPECS) as OxaniumFaceName[];
 
 /**
  * The cuts of Oxanium this repository carries, lightest first, `fonts/Oxanium/static/`. Which one a face is
- * drawn in is a choice, `FourSlotChoices.faceWeights`, `todo-compile-650.md` 10.8.5; the face's size is
+ * drawn in is a choice, `FourSlotChoices.faceWeights`; the face's size is
  * not, since its rows are Logitech's and the outline is fitted to them.
  */
 export const OXANIUM_WEIGHTS = ['ExtraLight', 'Light', 'Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold'] as const;
 export type OxaniumWeight = (typeof OXANIUM_WEIGHTS)[number];
 
-/** A face's weight where none is chosen: the one decided by look in 8.2, `OXANIUM_FACE_SPECS`. */
+/** A face's weight where none is chosen: the one decided by look, `OXANIUM_FACE_SPECS`. */
 export function defaultWeight(name: OxaniumFaceName): OxaniumWeight {
   return OXANIUM_FACE_SPECS[name].weight;
 }
@@ -139,7 +138,7 @@ const faces = new Map<string, OxaniumFace>();
 /**
  * One of our faces with its letters in a weight, its default unless given, drawn from Oxanium's outlines by
  * `typeface.ts` on first use and kept. They replaced the letters `tools/oxanium_glyphs.py` drew with Pillow
- * once a preview of the two side by side was approved, `todo-compile-650.md` 10.8.
+ * once a preview of the two side by side was approved.
  */
 export function oxaniumFace(name: OxaniumFaceName, weight: OxaniumWeight = defaultWeight(name)): OxaniumFace {
   const key = `${name}/${weight}`;
@@ -247,7 +246,7 @@ export function letterGlyph(
  * letter, more than two colours, or two that do not stand to each other as an ink and its shadow, every
  * pixel of the second one down and one right of the first and no such pixel without it.
  *
- * This is what lets the letters' colours be a choice, `todo-compile-650.md` 10.7.5: a configuration is read
+ * This is what lets the letters' colours be a choice: a configuration is read
  * by the form of its letters, so whichever inks it was lettered in, the same alphabet reads it.
  */
 export function letterForm(

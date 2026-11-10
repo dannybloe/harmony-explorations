@@ -1,6 +1,6 @@
 /**
  * Every byte of a configuration's screen sections, cut into units and given one of three categories:
- * **fixed**, **dynamic** or **setup**. Section 317, for `todo-compile-650.md` 7.2.
+ * **fixed**, **dynamic** or **setup**. Section 317.
  *
  * The question is a generator's. To build a Harmony 650 configuration with nothing copied, which screen
  * bytes are the same whatever the setup, which draw something the remote decides while it runs, and

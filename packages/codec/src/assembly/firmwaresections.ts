@@ -1,16 +1,15 @@
 /**
  * Two sections whose content no configuration chooses, built: base slot 2, the log area, and base slot
- * 15, the parameter block. `todo-compile-650.md` 10.2 built both for the Harmony 600, 650 and 700 inside
- * `wiring.ts`; `todo-compile-one.md` 6.4 moved the building here so that the Harmony One's are built by
- * the same code, plan 007.
+ * 15, the parameter block. Built here rather than in a family's wiring, so that the Harmony 600, 650 and 700's
+ * and the Harmony One's are built by the same code, plan 007.
  *
  * **What differs between architectures is data read in one place**, as the frame's is:
  *
  * * the log area's region is the architecture's, `LOG_AREAS`, the same on every compile of it: on arch 14
  *   (Harmony 600, 650 and 700) sixteen thousand eight byte records from `0x1E0000` to `0x200000` on the
  *   thirteen compiles section 312 lists, on arch 12 (Harmony One) sixteen records from `0x3FFFF0` to
- *   `0x400000` on its 19 distinct compiles, `todo-compile-one.md` 2.2, and on arch 16 (Harmony 300 and 350)
- *   8192 records from `0x070000` to `0x080000` on its 13 compiles, `todo-compile-350.md` 5.1.3,
+ *   `0x400000` on its 19 distinct compiles, and on arch 16 (Harmony 300 and 350)
+ *   8192 records from `0x070000` to `0x080000` on its 13 compiles,
  *   `test/families/harmony-300-350/noscreenconstants.test.ts`. Its capacity is a `u24` on arch 12 and a `u16` on arch 14 and 16, the
  *   readers' own `LOG_AREA_WIDE_ARCHITECTURES`;
  * * the parameter block's group lengths the firmware demands are the readers' `PARAMETER_GROUP_COUNTS`,

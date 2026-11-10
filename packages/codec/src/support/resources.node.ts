@@ -5,8 +5,8 @@
  * the core directly by its path, as the codec's own tests do, imports this module as well when it draws a letter, an
  * icon or a picture.
  *
- * Each is what the module that now asks for it read itself until `todo.md` 7.3.5, the same file and the same call, so
- * nothing drawn or written changes: `typeface.ts` read the fonts, `icons.ts` the icon package, `png.ts` deflated and
+ * Each is what the module that now asks for it once read itself, the same file and the same call, so nothing drawn
+ * or written changed: `typeface.ts` read the fonts, `icons.ts` the icon package, `png.ts` deflated and
  * `harmony-touch/fromnothing.ts` hashed.
  */
 import { createHash } from 'node:crypto';

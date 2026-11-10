@@ -1,6 +1,6 @@
 /**
  * A catalogue device's driving rules read off an archive checkout on disk, beside the reader of one record it feeds,
- * `deviceDriving` in `driving.ts`. Moved out of that module by `todo.md` 7.3.5 so the reader loads where there is no
+ * `deviceDriving` in `driving.ts`. Kept out of that module, plan 013 decision 5, so the reader loads where there is no
  * disk; a builder is handed a `CatalogueSource`, whose `driving` this is on Node, `archiveAt` in `catalogue.node.ts`.
  */
 import { existsSync, readFileSync } from 'node:fs';

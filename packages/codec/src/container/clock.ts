@@ -81,7 +81,7 @@ export function clockLastDayIndex(month: number, yearOffset: number): number {
  * stored day plus one. This read the stored day as the date and the weekday as days since 1 January
  * 2000, which is the same bytes on every date the corpus held, so every date this project reported
  * was one day early and a stamp made on the 1st of a month, a stored 0, was refused outright. That
- * refusal is what exposed it, todo-compile-650 1.3.1.
+ * refusal is what exposed it.
  *
  * Undefined rather than an error for anything that does not fit: a stored day past the firmware's own
  * last index for its month, `clockLastDayIndex`, a date the calendar does not have, or a stored day of

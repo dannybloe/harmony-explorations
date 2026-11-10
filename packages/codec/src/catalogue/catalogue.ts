@@ -22,7 +22,7 @@
  * devices use 54118 of them, one of which serves 3911 devices, so a codeset is a code table rather than
  * a device's property and 35175 of them belong to exactly one device.
  *
- * **The files are read in `catalogue.node.ts`, and parsed here**, since `todo.md` 7.3.5: each reader by path there
+ * **The files are read in `catalogue.node.ts`, and parsed here**, plan 013 decision 5: each reader by path there
  * hands what it read to a parser here, so the catalogue's reading loads where there is no disk, and a builder that
  * needs the catalogue is handed a `CatalogueSource` rather than a path. Every reader there is lazy except `codeIndex`.
  */
@@ -111,7 +111,7 @@ export const DEVICE_TYPE_NAMES: ReadonlyMap<number, string> = new Map([
 
 /**
  * The archive as a builder reads it: the four questions a composer asks of a checkout, handed in rather than read from
- * a path, so the builders load where there is no disk, `todo.md` 7.3.5. `archiveAt` in `catalogue.node.ts` answers
+ * a path, so the builders load where there is no disk, plan 013 decision 5. `archiveAt` in `catalogue.node.ts` answers
  * them from a checkout on disk through the readers there, which is what every builder was handed the path of before;
  * a renderer answers them from wherever it holds the archive. Each answers as the reader it is named after.
  */

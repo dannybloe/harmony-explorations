@@ -2,15 +2,15 @@
  * The composers' public face, plan 007: the shared composers' names callers have always imported from here,
  * now living in `shared/`, and the three composers whose work differs by kind of screen, which choose
  * the family through `families/registry.ts` and nowhere else. **Nothing of a family's own passes through
- * here** since `todo-compile-one.md` 3.3.3.3: a family's modules are reached through the family, and a test
+ * here**: a family's modules are reached through the family, and a test
  * or a script that wants one of them imports it from `families/` itself.
  *
  * **The layout.** `shared/` holds what every family does alike: infrared groups, devices, activities,
  * power, spelling in a configuration's fonts, the menus' common records and the core edits. `families/`
  * holds one module set per family, each folder named after its remotes, `harmony-one/` for the Harmony One
  * and `harmony-600-650-700/` for the 600, 650 and 700 among them, and a family never imports another. The registry is the one place a family is chosen.
- * Today it reads the architecture the container states; when the recipe names its model,
- * `todo-compile-650.md` 10.7.4, it reads the model's definition instead.
+ * A composer here is handed a container, so it chooses by the architecture the container states, `familyOf`; a
+ * build from a recipe, which names its model, chooses by the model, `familyOfModel`.
  */
 import { activityStartOf, choicesOf, familyOf, sendsOf } from '../families/registry.ts';
 import type { DelayDefaults } from '../families/family.ts';
@@ -155,7 +155,7 @@ export function composeActivityScreen(
  * **It fills the last page, and adds one when that page is full**, `composeActivityMenuPage`, since
  * section 293. Until then a full last page was refused, because a new page needs a page counter, a
  * pool copy, a page count and, on a menu of one page, the page turn keys brought back, none of which
- * had been measured on an activity menu; that is `todo.md` 1.2.2.
+ * had been measured on an activity menu.
  */
 export function composeActivityMenuRow(
   c: Container, label: string, set: number, options: ComposeActivityRowOptions = {},

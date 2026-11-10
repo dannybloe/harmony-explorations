@@ -23,7 +23,7 @@
  *
  * Accepts a bare blob or a raw flash dump with the blob somewhere inside it.
  *
- * **Two subjects are modules of their own since `todo.md` 7.3.8**, each re-exported here whole so every name
+ * **Two subjects are modules of their own**, each re-exported here whole so every name
  * keeps its path: `clock.ts`, base slot 3's clock record and the flash base recovered from it, and `slots.ts`,
  * which raw slot each base slot is per architecture.
  */
@@ -138,12 +138,12 @@ export const MINIMUM_HEADER_LENGTH =
  * The trailer checksum lives in `packages/base/src/trailer.ts` and is re-exported here unchanged, so
  * every importer of the codec keeps the names it had.
  *
- * **Moved rather than copied, for the file family's write rail**, `todo-compile-350.md` 1.6. That rail
+ * **Moved rather than copied, for the file family's write rail.** That rail
  * refuses a container whose stored checksum does not recompute, and it has to compute it itself: a rail
  * that asks its caller whether the checksum is right is a rail the caller answers, section 225. So the
  * one copy has to sit where both the codec and `packages/usb` can reach it. It went into
- * `packages/usb` first, which made the codec depend on the transport and its native module, and since
- * `todo.md` 7.3.4 it is in `packages/base`, which both depend on and which depends on nothing. The parse
+ * `packages/usb` first, which made the codec depend on the transport and its native module, and now it
+ * is in `packages/base`, which both depend on and which depends on nothing. The parse
  * below still reads the stored word, and the derivation's argument stays with the function.
  */
 export { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum };

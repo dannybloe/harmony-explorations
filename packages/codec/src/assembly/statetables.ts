@@ -1,21 +1,21 @@
 /**
  * The state variables built from a description: base slot 13's table and records, base slot 14's
- * value maps and base slot 0's name tree, `todo-compile-650.md` 10.3.
+ * value maps and base slot 0's name tree.
  *
  * Section 318's frame lays a container out from pieces, and until this module the pieces of these
  * three slots could only come out of a Logitech compile. Here they are built: a caller describes the
  * configuration's own variables and value maps, and everything the format or the firmware decides is
  * generated rather than carried.
  *
- * **The builder is generic and a family brings what differs**, `todo-compile-one.md` 3.3.3.3: the values
+ * **The builder is generic and a family brings what differs**: the values
  * a family's tables hold that another's do not are its `StateTableFacts`, `Family.stateTables`, and the
  * builder and reader here take them as an argument. The four slot family's, the Harmony 600, 650 and 700's,
  * are measured over the thirteen compiles section 312 lists, `families/harmony-600-650-700/statetables.ts`; the One
- * family's, the Harmony One's, over its 19 distinct compiles since `todo-compile-one.md` 6.4,
+ * family's, the Harmony One's, over its 19 distinct compiles,
  * `families/harmony-one/statetables.ts`, where they differ in records 13 and 14, the width line, a one byte case
  * count and a second transition on the minute. What is written below about the thirteen is that
  * measurement, and the rest of it holds on the One's 19 as well. The no screen family's, the Harmony 300 and
- * 350's, over the 13 compiles of that family the lab holds since `todo-compile-350.md` 5.1.2,
+ * 350's, over the 13 compiles of that family the lab holds,
  * `families/harmony-300-350/statetables.ts`, where the clock carries nothing, there are no value maps and every
  * variable above the firmware's block but the compiler's first is one byte, with maxima up to 18.
  *
@@ -99,7 +99,7 @@ export const NAME_TREE_SLOT = 0;
 /**
  * What a family's state tables hold that another family's do not, which `buildStateTables` and
  * `describeStateTables` take from the family, `Family.stateTables`. The four slot family's are
- * `FOUR_SLOT_STATE_TABLES` and the One family's `ONE_STATE_TABLES`, `todo-compile-one.md` 6.4: the
+ * `FOUR_SLOT_STATE_TABLES` and the One family's `ONE_STATE_TABLES`: the
  * Harmony One's differ in records 13 and 14, a one byte case count, where the width line falls and a second
  * transition on the minute, each a member here, so the builder tests no architecture.
  */
@@ -143,7 +143,7 @@ export interface StateTableFacts {
 /**
  * The variable the compiler emits straight after the firmware's block: index `narrow`, the first two
  * byte index, holding 0 with a maximum of 65277 and no transitions, unnamed, on all thirteen arch 14
- * compiles and on all 19 of the Harmony One's, `todo-compile-one.md` 6.4. On the Harmony One it is the
+ * compiles and on all 19 of the Harmony One's. On the Harmony One it is the
  * clock pickers' variable, the one their tag `0x29` handlers and the `grid` and `column` value maps read,
  * on the sixteen English compiles of skin 54, section 432; what reads it on the Harmony 600, 650 and 700
  * is not read.
@@ -222,7 +222,7 @@ export interface StateTablesSpec {
   hourList?: number;
   /**
    * The base slot 10 list the minute calls on every change, `-2` to `-2`, after its increment of the hour:
-   * on all 19 Harmony One compiles, the clock's screen side, a list calling two short lists, `todo-compile-one.md` 2.2,
+   * on all 19 Harmony One compiles, the clock's screen side, a list calling two short lists,
    * and since both ends are the sentinel it fires on every write of the minute that is not silent;
    * on none of the thirteen arch 14 compiles, whose screens show no clock. Given exactly where the family's
    * `minuteCall` says the minute calls one.
@@ -404,9 +404,8 @@ export function hourListBytes(): Uint8Array {
  * The seven clock records stamped from the moment of building: each field its `first`, its maximum
  * `CLOCK_STATE_MAXIMA`'s and the year's one above it, `edit.ts`' stamping rule for a configuration built
  * from nothing. The same on every family a configuration is built from nothing for, the Harmony 600, 650
- * and 700's and the Harmony One's, since the maxima are the same in every container, section 130; moved
- * here out of `families/harmony-600-650-700/empty.ts` when the Harmony One came to need it, `todo-compile-one.md`
- * 7.1.3, so the two families stamp through one copy.
+ * and 700's and the Harmony One's, since the maxima are the same in every container, section 130; kept
+ * here rather than in a family, so the two families stamp through one copy.
  */
 export function clockSpec(builtAt: string): StateTablesSpec['clock'] {
   const fields = clockRecordFields(builtAt);

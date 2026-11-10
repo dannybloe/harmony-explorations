@@ -33,11 +33,11 @@
  *
  * The archive is deflated with a data descriptor, so the local header's sizes are zero and the
  * compressed length comes from the central directory. `inflateRaw` in `deflate.ts` inflates it, our own
- * since `todo.md` 7.3.5 so that this reader loads where there is no Node, and held to `node:zlib`'s answer
+ * so that this reader loads where there is no Node, and held to `node:zlib`'s answer
  * on every archive here, `inflate.test.ts`; no dependency is added for this, which is deliberate, since a
  * ZIP reader would be a large tree for one file. **Writing one deflates with `deflate.ts`, our own**,
  * since the stream Logitech's compiler writes is stock zlib's at its defaults and Node's zlib writes
- * another, `todo-compile-350.md` 5.1.4.
+ * another.
  */
 import { deflateRaw, inflateRaw } from '../support/deflate.ts';
 import type { Container } from './gspm.ts';
@@ -204,7 +204,7 @@ export function metadataArchive(c: Container): Metadata | undefined {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// Writing one: the ZIP around a text, todo-compile-350.md 5.1.4, and a device's names added, 4.1
+// Writing one: the ZIP around a text, and a device's names added
 
 /** A data descriptor, which the archives here carry after the compressed bytes, and the end of the directory. */
 const DESCRIPTOR = 0x08074b50;
@@ -321,9 +321,9 @@ export function metadataDeviceElement(name: string, index: number, deviceId: num
 
 /**
  * The archive again around new text: one entry with the old archive's time, in the shape `metadataZip` writes,
- * which is every archive's this reader has met, and refused for any other. Since `todo-compile-350.md` 5.1.4 the
- * stream is our own deflate's, which is stock zlib's, so where the text is what Logitech's would be the archive is
- * theirs byte for byte; until then it was this machine's zlib's, and only its inflated text could be compared.
+ * which is every archive's this reader has met, and refused for any other. The stream is
+ * our own deflate's, which is stock zlib's, so where the text is what Logitech's would be the archive is theirs
+ * byte for byte; while it was this machine's zlib's, only its inflated text could be compared.
  */
 function rezipped(old: Uint8Array, xml: string): Uint8Array {
   if (u32(old, 0) !== LOCAL_HEADER || (u16(old, 6) & FLAG_DESCRIPTOR) === 0 || u16(old, 8) !== METHOD_DEFLATE) {
@@ -336,7 +336,7 @@ function rezipped(old: Uint8Array, xml: string): Uint8Array {
  * The `DeviceId` a device composed here is given: one above the highest the archive holds, or this where it holds
  * none. Logitech's is its account's number for the device, and a device composed without an account has none, so
  * this keeps what every Logitech file shows rather than inventing an account: the numbers ascend strictly along the
- * archive, `todo-compile-350.md` 4.1.4.
+ * archive.
  */
 const FIRST_DEVICE_ID = 1;
 
@@ -354,7 +354,7 @@ const FIRST_DEVICE_ID = 1;
  * archive, and `DeviceId` ascends strictly along it; in the one account whose replies are in the lab, the test
  * setup's, `DeviceId` is the account's number for the device, 8 of 8, section 260. A composed device has no account,
  * so it is given the next number above the archive's highest, which keeps the order every file shows,
- * `FIRST_DEVICE_ID`; this omitted `DeviceId` until `todo-compile-350.md` 4.1.4, a file Logitech never produced.
+ * `FIRST_DEVICE_ID`; this once omitted `DeviceId`, a file Logitech never produced.
  *
  * **No reader of either number is known**, which is why the choice is to copy the shape and not a meaning: the
  * Harmony 350's 1.4 firmware never seeks raw slot 13 (its section seeker's fourteen callers ask for slots 3 to 12)
@@ -381,7 +381,7 @@ export function withMetadataDevice(c: Container, entry: MetadataDeviceEntry): Ui
  * The configuration with one device's element taken out of its metadata archive and every later device's `Index`
  * moved down one, so that `Index` stays the position, as it does in every Logitech file and as it did in the one pair
  * of Logitech's compiles of one account with a device taken out, the bench Harmony 350's, where its KPN went from
- * `Index` 1 to 0 and its `DeviceId` stayed, `todo-compile-350.md` 4.1.3.
+ * `Index` 1 to 0 and its `DeviceId` stayed.
  */
 export function withoutMetadataDevice(c: Container, name: string): Uint8Array {
   const metadata = metadataArchive(c);

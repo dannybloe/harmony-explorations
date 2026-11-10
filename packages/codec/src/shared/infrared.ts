@@ -82,7 +82,8 @@ export interface ComposeCommand {
    * Logitech's compiler writes one. `held` does not apply and is refused. **The lead in defaults to none
    * here**, as every long press version of the Harmony 650 and 700 compiles has none, section 309; a
    * `leadInUs` given goes in front of the frames, which is how the Harmony 880 and 885 compiles open one,
-   * with the device's delay between devices, `todo-compile-885.md` 2.2.
+   * with the device's delay between devices, `reference/infrared/sending.md`, "The delay between devices on the
+   * Harmony 880 and 885".
    */
   readonly holdMs?: number;
   /**
@@ -102,8 +103,9 @@ export interface ComposeCommand {
   readonly blocks?: StatedBlocks;
   /**
    * The same command with its toggle bit flipped, which becomes the record's **second pointer group**,
-   * todo-process-logitech 2.5: `read` and `blocks` as above, for the flipped code, composed the same way as
-   * the command itself, so the second group is the first group's derivation applied to other frames.
+   * `reference/config-format/infrared-records.md`: `read` and `blocks` as above, for the flipped code, composed
+   * the same way as the command itself, so the second group is the first group's derivation applied to other
+   * frames.
    *
    * **Why a record carries the code twice.** A toggle family's code holds one bit that must change on every
    * press so an appliance can tell a second press from a held key, and the remote has no arithmetic to
@@ -122,7 +124,7 @@ export interface StatedBlocks {
   /**
    * What the key sends when it comes up, the code's third group: the record's **third** pointer, which the
    * firmware plays at the end whether the key was held or not, section 127. Logitech's compiler puts a
-   * code's release group there, todo-process-logitech 2.5, section 365: the PlayStation 3's `StopSpacer`, a
+   * code's release group there, section 365: the PlayStation 3's `StopSpacer`, a
    * six second silence, on the Harmony One, 650 and 700, and `Microsoft 36 Bit`'s constant release on the
    * contributed Harmony 880 or 885 configurations, the two distinct tails in the lab. Absent for a code
    * naming no release group.
@@ -180,7 +182,7 @@ export const COMPILED_LEAD_IN_US = 50000;
  */
 export function compiledBlockWords(
   pulses: readonly Pulse[], leadInUs = 0,
-  // **A release block is spelt without the carved microsecond**, todo-process-logitech 2.5: every record
+  // **A release block is spelt without the carved microsecond**, section 365: every record
   // tail of every configuration in the lab ends on its gap or a mark, never on the one microsecond word.
   options: { readonly carve?: boolean } = {},
 ): IrPulse[] {
@@ -301,7 +303,7 @@ function irGroupContent(commands: readonly ComposeCommand[]): IrGroupContent {
 
   // Every command's blocks, derived and refused early: composing half a device helps nobody. A record is
   // one pointer group per reading of the code: the code as stated and, where it toggles, the code with its
-  // toggle bit flipped, todo-process-logitech 2.5, both built by the steps below so they cannot drift apart.
+  // toggle bit flipped, both built by the steps below so they cannot drift apart.
   type BuiltGroup = { once: Uint8Array; held?: Uint8Array; release?: Uint8Array };
   const groupOf = (command: ComposeCommand, read: StatedCode, given: StatedBlocks | undefined): BuiltGroup => {
     if (command.holdMs !== undefined) {
@@ -335,7 +337,7 @@ function irGroupContent(commands: readonly ComposeCommand[]): IrGroupContent {
     if (command.held === true && held === undefined) {
       throw new ComposeError(`${read.family} has no measured held block and one was demanded`);
     }
-    // The release goes behind the third pointer, todo-process-logitech 2.5, spelt as any trailing block is.
+    // The release goes behind the third pointer, section 365, spelt as any trailing block is.
     const release = given?.release === undefined || given.release.length === 0 ? undefined : [...given.release];
     return {
       once: irBuildBlock(compiledBlockWords(once, command.leadInUs ?? COMPILED_LEAD_IN_US)),

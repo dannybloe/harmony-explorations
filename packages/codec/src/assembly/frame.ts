@@ -1,13 +1,12 @@
 /**
- * The container's frame, laid out from nothing: `todo-compile-650.md` 10.1.
+ * The container's frame, laid out from nothing.
  *
  * Until this existed a configuration could only be made by editing one Logitech had compiled,
  * because everything that is the container's own arithmetic rather than content came with the file:
  * the cookies, the format word, the section table and every address in it, the end address, the
  * build timestamp and the trailer checksum. This module produces all of those from the content
- * alone, for arch 14 (Harmony 600, 650 and 700), since `todo-compile-one.md` 6.1 for arch 12
- * (Harmony One) and since `todo-compile-350.md` 5.1.1 for arch 16 (Harmony 300 and 350), and it is a
- * **linker**: the content arrives as pieces of bytes whose address fields are symbolic, the frame
+ * alone, for arch 14 (Harmony 600, 650 and 700), arch 12 (Harmony One) and arch 16 (Harmony 300
+ * and 350), and it is a **linker**: the content arrives as pieces of bytes whose address fields are symbolic, the frame
  * decides where every piece goes, and then writes each address field from where its target ended up.
  *
  * **One linker, and what differs per architecture is data**, `FRAME_ARCHITECTURES`. The Harmony One's
@@ -174,7 +173,7 @@ export interface FrameArchitecture {
  *   on that remote, sections 88 and 222, and the base on every One user configuration in the lab. It
  *   inserts two raw slots, `INSERTED_SLOTS`: raw slot 8 is NULL on every One container, and raw slot
  *   18 holds a section on every one, two zero bytes, which the One's firmware seeks twice, section 38.
- * * **Arch 16 (Harmony 300 and 350)**, `todo-compile-350.md` 5.1.1: the file `/cfg/usercfg` sits at
+ * * **Arch 16 (Harmony 300 and 350)**: the file `/cfg/usercfg` sits at
  *   external `0x020000` and every pointer of the seven Logitech compiles the lab holds counts from it.
  *   Fifteen raw slots, section 194, which are not the base twenty with insertions, so the count is
  *   stated and the base slots come from `ARCH16_SLOT_MAP`. The five raw slots that map holds no base
@@ -273,8 +272,8 @@ export type PieceRef =
  * whose count is one or two bytes, of base slot 6, whose count is three, and on the Harmony One of base
  * slot 17, the touch hit map, whose count is one: the same widths on arch 12 (Harmony One) and arch 14
  * (Harmony 600, 650 and 700), read off their compiles. Each entry names its piece's start, or `offsets[k]`
- * bytes into it. Moved here out of `families/harmony-600-650-700/empty.ts` with `todo-compile-one.md` 7.1.3, since
- * both families build a configuration from nothing through it and nothing in it is either's.
+ * bytes into it. Here rather than in a family, since both families build a configuration from nothing through
+ * it and nothing in it is either's.
  */
 export function countedTable(
   countWidth: number, targets: readonly ContainerPiece[], owner: string, offsets: readonly number[] = [],

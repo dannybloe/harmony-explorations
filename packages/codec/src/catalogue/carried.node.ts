@@ -1,5 +1,5 @@
 /**
- * A recipe given its codes out of an archive checkout, plan 014 and `todo.md` 7.3.11.1: every device the recipe names
+ * A recipe given its codes out of an archive checkout, plan 014: every device the recipe names
  * by its catalogue entry gets its definition carried, the archive's record of it and its codeset's commands as a name
  * and a keycode each, and the recipe the protocol definitions those commands are written in. What a recipe carries is
  * read back by `carriedCatalogue`, `carried.ts`, which serves it as the archive would.

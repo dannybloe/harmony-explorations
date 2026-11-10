@@ -1,5 +1,5 @@
 /**
- * Three screens' whole mode records built from a description: `todo-compile-650.md` 7.3, section 356.
+ * Three screens' whole mode records built from a description, section 356.
  *
  * Since sections 334 and 336 the composers build a menu page's inside and a start up screen's, but the
  * record around them, the mode's own key map, its entry, its page records, each page's tagged list, that
@@ -22,14 +22,14 @@
  *
  * * which mode each screen is, which is the description's numbering, section 324;
  * * per row, in the order the menu shows them, the device mode it enters or the base slot 9 entry it
- *   selects, and its label: the font and the lines of glyph codes, `todo-compile-650.md` 8.2's;
+ *   selects, and its label: the font and the lines of glyph codes;
  * * per row, the base slot 10 lists its buttons run on the page and on the copy, which is base slot 10's
  *   numbering, the emission order, and not this item's;
  * * the menu marker variable, the title and counter fonts and Off's font, all the configuration's
  *   numbering;
  * * the operands of each record's own key map: the records the two keys map through and the corner
  *   program queued under the program tag, each an index into a table of somebody else's;
- * * the pictures, by content, `todo-compile-650.md` 9.1's; and the texts drawn by reference, by the
+ * * the pictures, by content; and the texts drawn by reference, by the
  *   address of the copy they name, which is the configuration's own placement.
  *
  * **What is generated**: every tag and its order, every opcode, every count and page count, every
@@ -54,7 +54,7 @@
  * page reaches by a switch or a jump, `RecordReading.program`, which `withModeRecords` places as a record's
  * `extras`: the Harmony One's Options page draws its rows that way.
  *
- * Arch 14, the Harmony 600, 650 and 700, and since `todo-compile-one.md` 4.4.2 arch 12, the Harmony One.
+ * Arch 14, the Harmony 600, 650 and 700, and arch 12, the Harmony One.
  * Read only towards hardware: the result is pieces.
  */
 import { type MenuPart, menuPartsBytes } from './screenparts.ts';

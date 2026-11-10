@@ -1,10 +1,10 @@
 /**
  * Composing an activity: its power transitions, its start and stop sequences and the variables they
  * keep, shared by the Harmony One and the 600, 650 and 700. Plan 007's shared part, cut out of
- * `compose.ts` unchanged. The start sequence's shape is the family's, `Family.activityStart`, and so is what
- * an activity changes in the family's wiring, `Family.activityRewiring`, since `todo-compile-one.md` 3.3.3.4;
- * the four slot family's readers of its start, `startSequenceOf` and `arch14Starts`, moved to
- * that family's `start.ts` with them.
+ * `compose.ts` unchanged. The start sequence's shape is the family's, `Family.activityStart`, and so is
+ * what an activity changes in the family's wiring, `Family.activityRewiring`; the four slot family's
+ * readers of its start, `startSequenceOf` and `arch14Starts`, moved to that family's `start.ts` with
+ * them.
  */
 import { SILENT_WRITE } from '../container/actions.ts';
 import type { ActivityStart, Family, ListBody } from '../families/family.ts';
@@ -333,12 +333,12 @@ export function composeActivityFor(
   const firstList = actionTable.values.length;
   const enterList = firstList;
   const selectList = firstList + 1;
-  // With a screen, the start's shape is the family's, `Family.activityStart`, since `todo-compile-one.md`
-  // 3.3.3.4: what the enter list opens and closes with around the writes below, and the lists after the
-  // select list. On the Harmony One the start up screen, the timers cancelled, the "an activity is
-  // running" list and a deferred call to the list entering the working screen, section 279; on the Harmony
-  // 600, 650 and 700 a start variable held at 1 while it runs, which gates the inter device delay, and a
-  // flag written 1 before the working screen is deferred, whose list enters it itself, section 290.
+  // With a screen, the start's shape is the family's, `Family.activityStart`: what the enter list opens and
+  // closes with around the writes below, and the lists after the select list. On the Harmony One the start up
+  // screen, the timers cancelled, the "an activity is running" list and a deferred call to the list entering
+  // the working screen, section 279; on the Harmony 600, 650 and 700 a start variable held at 1 while it runs,
+  // which gates the inter device delay, and a flag written 1 before the working screen is deferred, whose list
+  // enters it itself, section 290.
   // Without a screen the enter list writes state and nothing else, which is what this function produced
   // until section 279 and what left the remote on the page that started it.
   const screen = activity.screen;
@@ -512,7 +512,7 @@ export function composeActivityFor(
  * ---- An activity's own screen, Harmony One (arch 12) only, section 279 ----
  *
  * An activity has two screens and a composed one had neither: its enter list opened with no mode at
- * all, so the remote stayed on whatever page started it, which is `todo.md` 1.2.4. The first is the
+ * all, so the remote stayed on whatever page started it. The first is the
  * **start up** screen, "Keep the remote pointed at your system", whose record binds every key to
  * nothing; every activity's enter list opens by entering its own, 60 of 60 across the thirteen
  * Harmony One configurations with activities. The second is the **working** screen, blue pads and "Devices" in
@@ -550,7 +550,7 @@ export interface ActivityMaps {
    * The keypad map record, whose case per activity selects its handler set. Undefined on a Harmony 600, 650
    * or 700 configuration with no activity, which has no case to hold, so an empty configuration of ours
    * holds no such record, section 379; the first activity composed there adds none either. The Harmony
-   * One's compile of two devices holds it with no case at all, `todo-compile-one.md` 1.2.11.
+   * One's compile of two devices holds it with no case at all.
    */
   select: number | undefined;
 }
@@ -642,8 +642,8 @@ export function activityKeyedMaps(
  * then the rest in the idle list's order. **One rule for both families**, measured on each: the Harmony 600, 650
  * and 700's lists, 78 of 82, findings section 352, and the Harmony One's on 61 of Logitech's 64 activities, section
  * 424, the other three refused below. The transition route below was added for the Harmony One, where the devices'
- * variables alone fit 44 of the 64; on the 82 four slot activities the two routes give the same answer on all 82. It was the four slot family's own, `devicelist.ts`, until
- * `todo-compile-one.md` 4.3.3 took it for the Harmony One too.
+ * variables alone fit 44 of the 64; on the 82 four slot activities the two routes give the same answer on all 82.
+ * It was the four slot family's own, `devicelist.ts`, until the Harmony One's device lists needed it too.
  *
  * **The enter list's own instructions and the lists it calls, and no deeper**: a real one groups its power writes
  * into a called list on 12 of 13 four slot activities, every Harmony One one calls a list (nine of the 64 also hold a

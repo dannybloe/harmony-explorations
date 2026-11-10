@@ -1,13 +1,13 @@
 /**
- * What every family's wiring builder shares, `todo-compile-one.md` 6.3: the instructions a catalogue is
+ * What every family's wiring builder shares: the instructions a catalogue is
  * written in, the symbols a description supplies, how an instruction, an action list and a tagged list are
  * encoded with them and read back, and how the built pieces go into a laid out container.
  *
  * Split out of `wiring.ts`, where it was written for the Harmony 600, 650 and 700, section 347, when the
  * Harmony One's wiring came to be built by the same code, section 410: a family holds its catalogue, the
  * lists, entries and timers its remotes carry, and this module holds nothing that is true of one remote and
- * not another. The four slot catalogue was `wiring.ts` until `todo-compile-one.md` 3.3.3.2 moved it into its
- * family, `families/harmony-600-650-700/wiring.ts`; the One catalogue is `families/harmony-one/wiring.ts`.
+ * not another. The four slot catalogue is its
+ * family's, `families/harmony-600-650-700/wiring.ts`; the One catalogue is `families/harmony-one/wiring.ts`.
  *
  * **A symbol is either generated or described.** A catalogue names every list, mode, variable, value map,
  * base slot 9 entry, timer and screen program by a name of its own; the family's builder decides which of

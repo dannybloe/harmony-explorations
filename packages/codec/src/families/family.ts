@@ -7,9 +7,8 @@
  *
  * The interface grows with plan 007's pipeline, the layout and serializer steps next. A new family
  * implements every member; the compiler refuses one that does not. `FamilyTraits` carries what differs
- * as data, for the shared composers, and `choices` every choice of ours the family makes, at its default,
- * `todo-compile-650.md` 10.7.3: a composer takes its family's choices in its options and falls back to
- * these.
+ * as data, for the shared composers, and `choices` every choice of ours the family makes, at its default: a
+ * composer takes its family's choices in its options and falls back to these.
  */
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import type { HardKey } from '../compose/devicemode.ts';
@@ -101,11 +100,10 @@ export interface SendList {
 }
 
 /**
- * How a family's commands are sent, `todo-compile-one.md` 3.3.3.4: three lists with a delay prelude on the
- * Harmony 600, 650 and 700, section 287, and the send and its quantity alone on the Harmony One, section 278.
- * One member, asked by every shared composer that builds or matches a send: the device composer, the input
- * composer, the sequence composer and the donor input matcher. Until then each of them tested a trait,
- * `sendPrelude`, and built the shape itself.
+ * How a family's commands are sent: three lists with a delay prelude on the Harmony 600, 650 and 700, section
+ * 287, and the send and its quantity alone on the Harmony One, section 278. One member, asked by every shared
+ * composer that builds or matches a send: the device composer, the input composer, the sequence composer and the
+ * donor input matcher, so none of them tests a trait of its own and builds the shape itself.
  */
 export interface SendShape {
   /** How many lists one send of a composed device's command takes, its own first: 3 or 1. */
@@ -120,7 +118,7 @@ export interface SendShape {
    * shared composer's default, which is the Harmony 650 and 700 compiles' form, section 309 and 320: the ordinary
    * press with no lead in, or the long press version where the catalogue holds the key, sent at the catalogue's
    * inter key delay. Absent keeps that default. The Harmony 880 and 885 open each with the device's delay between
-   * devices and send it at a quantity of 1, `families/harmony-880-885/sends.ts`, `todo-compile-885.md` 2.2 and 2.3.
+   * devices and send it at a quantity of 1, `families/harmony-880-885/sends.ts`.
    * The Harmony One's family states no `powerStep` yet, although its compiles open a power step with the catalogue's
    * `interDeviceDelay` on 8 of 8 catalogue devices, section 433, so a power step composed for a One keeps the
    * default. Asked before anything is built, so it is also where a family refuses a delay it cannot spell.
@@ -156,12 +154,12 @@ export interface SendShape {
 export type ActivityStartScreen = NonNullable<ComposeActivity['screen']>;
 
 /**
- * The shape of an activity's start, `todo-compile-one.md` 3.3.3.4: what the shared activity composer asks once
- * an activity has its screens. Section 290 on the Harmony 600, 650 and 700, a variable held at 1 while the start
+ * The shape of an activity's start: what the shared activity composer asks once an activity has its screens.
+ * Section 290 on the Harmony 600, 650 and 700, a variable held at 1 while the start
  * runs, gating the inter device delay, and a flag written 1 before the working screen is deferred, whose list
  * enters the working screen itself; section 279 on the Harmony One, the timers cancelled, the "an activity is
- * running" list called, and a deferred list that calls the one showing the working screen. Until then the
- * composer tested a trait, `startSequence`, and built both itself.
+ * running" list called, and a deferred list that calls the one showing the working screen. The composer asks this
+ * rather than testing a trait of its own and building both itself.
  */
 export interface ActivityStart {
   /**
@@ -228,10 +226,9 @@ export interface ActivityKeyEditor {
 }
 
 /**
- * How a family's font sets are lettered in our letters, `withOxaniumFonts`, `todo-compile-one.md` 3.3.3.5: the
- * shared font table measures each of Logitech's sets the same way on every family and asks this which face of
- * ours it becomes, whether two sets may point at one glyph, and whether the family's faces were measured on
- * the configuration's skin at all.
+ * How a family's font sets are lettered in our letters, `withOxaniumFonts`: the shared font table measures each
+ * of Logitech's sets the same way on every family and asks this which face of ours it becomes, whether two sets
+ * may point at one glyph, and whether the family's faces were measured on the configuration's skin at all.
  */
 export interface FamilyFonts {
   /** The faces of ours the family's sets are lettered in, `lettering.ts`'s `OXANIUM_FACE_SPECS`, in the family's order. */
@@ -279,8 +276,7 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   readonly activityKeyEditor?: ActivityKeyEditor;
   /**
    * What `buildStateTables` builds this family's base slots 0, 13 and 14 from, and `describeStateTables` reads
-   * them by: the Harmony 600, 650 and 700's, `todo-compile-650.md` 10.3, and the Harmony One's, whose tables
-   * differ in four values, `todo-compile-one.md` 2.3, built since 6.4.
+   * them by: the Harmony 600, 650 and 700's, and the Harmony One's, whose tables differ in four values.
    */
   readonly stateTables: StateTableFacts;
   /**
@@ -316,7 +312,7 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * The copies of a device's inline power on delay that a key reaches besides the `0x7C` in its `Power` variable's
    * switch on list, each as a list and an instruction's place in it, which `setPowerOnDelay` changes along with
    * that one. The Harmony 300 and 350's Watch TV keeps its own copy for a device with one power code,
-   * `families/harmony-300-350/delay.ts`, `todo-compile-350.md` 4.6. Absent where the switch on list is the only copy: the
+   * `families/harmony-300-350/delay.ts`. Absent where the switch on list is the only copy: the
    * Harmony One's activities reach a device's delay through its variable, and the Harmony 600, 650 and 700 keep the
    * delay as a stored setting, `setPowerOnDelayVariable`.
    */
@@ -357,15 +353,14 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   /**
    * The family's look over a setup composed onto a Logitech compile, `composeSetup`, where it has one: the donor
    * lettered in ours before anything is composed, and the rest over the composed file. Absent, the composed
-   * file keeps the donor's look. The Harmony One's, `todo-compile-one.md` 1.2.11.2.7.
+   * file keeps the donor's look. The Harmony One has one.
    */
   readonly composedLook?: {
     letterDonor(c: Container, choices: Choices): { readonly bytes: Uint8Array; readonly faces: readonly SetFace[] };
     /**
      * The faces of a donor of ours, an empty configuration of the family's, which is in our letters already and is
      * not lettered again; undefined for a Logitech compile. Refuses a donor of ours that is blended, since the look's
-     * blending runs once, over the composed file. The Harmony One's, `todo-compile-one.md` 8.1.2. Absent, every donor
-     * is lettered.
+     * blending runs once, over the composed file. The Harmony One has one. Absent, every donor is lettered.
      */
     donorOfOurs?(c: Container, choices: Choices): readonly SetFace[] | undefined;
     /**
@@ -382,14 +377,14 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * look, each part described off the configuration composed so far, built, and put in place of the donor's,
    * so its bytes come out of the builder rather than out of the donor. Refuses with the builder's refusal where
    * a builder refuses the configuration, never falling back to the donor's part; returns the configuration and
-   * the names of the parts built, in the order built. The Harmony One's, `todo-compile-one.md` 3.2.2:
-   * `families/harmony-one/builders.ts`. Absent, every part no composer writes stays the donor's.
+   * the names of the parts built, in the order built. The Harmony One's is `families/harmony-one/builders.ts`. Absent,
+   * every part no composer writes stays the donor's.
    *
-   * `composed` is the devices the composers added, in the order composed, since `todo-compile-one.md` 3.2.2.4:
-   * a part that asks about every device, the Harmony One's power off help, has to be told which devices are new
-   * and what the catalogue states of them, which the configuration does not say.
+   * `composed` is the devices the composers added, in the order composed: a part that asks about every device, the
+   * Harmony One's power off help, has to be told which devices are new and what the catalogue states of them, which
+   * the configuration does not say.
    *
-   * `choices` is the family's, since `todo-compile-one.md` 4.10: what a configuration of ours holds that Logitech's
+   * `choices` is the family's: what a configuration of ours holds that Logitech's
    * do not, the Harmony One's welcome tour and Remote Assistant left out unless chosen, is the builders' to make.
    */
   composedBuilders?(
@@ -398,12 +393,11 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   /**
    * The skins `composeSetup` has been run on for this family, where it composes a setup onto a donor at all; a
    * skin outside it is refused. Absent, the family's setups are not composed that way. The Harmony One's is skin
-   * 54, which the spare Harmony One reports, `todo-compile-one.md` 1.2; it was a set in `shared/setup.ts` until
-   * 3.3.3.2.
+   * 54, which the spare Harmony One reports.
    */
   readonly composedSkins?: ReadonlySet<number>;
   /**
-   * **The configuration a recipe describes, built from nothing**, plan 014, `todo.md` 7.3.11: no compile of Logitech's
+   * **The configuration a recipe describes, built from nothing**, plan 014: no compile of Logitech's
    * goes in, so what comes out is ours byte for byte and the same recipe, sources and stamp give the same bytes. Called
    * by `buildFromRecipe` in `families/fromrecipe.ts`, which chooses the family by the recipe's model; the family reads
    * its own part of the recipe and its choices, and refuses what it does not build. Absent where the family builds
@@ -411,7 +405,7 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    */
   readonly fromRecipe?: (recipe: Recipe, skin: number, sources: RecipeSources) => Uint8Array;
   /**
-   * A recipe's choices over the family's defaults, checked, plan 014 and `todo.md` 7.3.11.2: what `composeSetup`
+   * A recipe's choices over the family's defaults, checked, plan 014: what `composeSetup`
    * composes with when a recipe states choices, so a recipe's look reaches every builder the setup runs. Refuses a
    * choice the family does not make. Absent where the family's setups are not composed by `composeSetup`.
    */
@@ -429,7 +423,7 @@ export interface RecipeSources {
 /** What `composedBuilders` is told of the donor beyond the configuration itself. */
 export interface ComposedBuildersOptions {
   /**
-   * Whether the donor is one of ours, `composedLook.donorOfOurs`, `todo-compile-one.md` 8.1.2: its pictures are ours
+   * Whether the donor is one of ours, `composedLook.donorOfOurs`: its pictures are ours
    * already, so no step turning Logitech's into ours runs.
    */
   readonly donorOfOurs?: boolean;

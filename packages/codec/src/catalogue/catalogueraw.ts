@@ -25,7 +25,7 @@
  * derivation projects each raw list the way the archive does, compares it with the archive's list at
  * the same path, and **attaches a field only where the two agree step for step**. A list where they
  * disagree is named in the device's `unaligned` set and nothing is attached under it, rather than a
- * field landing on the wrong step. That comparison is also item 1.4's measurement, that every list is
+ * field landing on the wrong step. That comparison is also the measurement that every list is
  * in `Order` sequence, section 305.
  *
  * **Adding a field is one entry in `RAW_FIELDS`**: its name, the raw key, what it hangs off, and the
@@ -42,7 +42,7 @@
  * series of independent gzip members of `RAW_BLOCK_LINES` lines each and writes an index of every
  * device's member, so one device costs one seek and one small decompression rather than a 329 MB scan.
  *
- * **The files are read in `catalogueraw.node.ts`**, since `todo.md` 7.3.5: the derived files' state, the single device
+ * **The files are read in `catalogueraw.node.ts`**, plan 013 decision 5: the derived files' state, the single device
  * fetch and `catalogueRules`, which hands the side file's entry to `rawDrivingFields` here. What stays here is pure.
  *
  * Decisions 15 and 11 apply as they do to the archive's readers: this is Logitech's data, it crosses
@@ -166,7 +166,7 @@ export interface DrivingList {
   readonly setType?: number;
 }
 
-/** Which family a path belongs to, for counting: the four item 1.4 is about, and the rest. */
+/** Which family a path belongs to, for counting: the four whose order section 305 measured, and the rest. */
 export type ListFamily = 'device' | 'input' | 'stateList' | 'stateRoute';
 
 export function listFamily(path: string): ListFamily {
@@ -220,7 +220,7 @@ export interface RawList extends DrivingList {
   readonly actions: readonly RawAction[];
   /** The same list projected in the order the service stored it, for the comparison the other way. */
   readonly storedSteps: readonly DriveStep[];
-  /** True where array position differs from `Order`, which is what item 1.4 counts. */
+  /** True where array position differs from `Order`, which is what section 305 counts. */
   readonly storedOutOfOrder: boolean;
 }
 
@@ -317,7 +317,7 @@ export function rawProjection(record: RawDeviceRecord): RawProjection {
   return { lists, inputs, stateValues, duplicated };
 }
 
-/** How one list compared, for item 1.4's counts. */
+/** How one list compared, for section 305's counts. */
 export interface ListComparison {
   readonly path: string;
   readonly family: ListFamily;

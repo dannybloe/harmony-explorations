@@ -45,7 +45,7 @@ const FOLDED_OF = new WeakMap<ReadonlyMap<string, ArchiveProtocol>, Map<string, 
  *
  * **Why the code's spelling is not always a definition's name.** Five spellings in the catalogue's codes
  * name no definition, 222 commands: `Ada 40 Bit` (82), `AudioAnalogue 14 bit` (108), `DAM 12 Bit` (29),
- * `toshiba 32 Bit` (2) and `Intellibus 17 Bit ` with a trailing space (1). Until todo-process-logitech 2.3
+ * `toshiba 32 Bit` (2) and `Intellibus 17 Bit ` with a trailing space (1). Until section 361
  * they found no definition, the first four no rhythm row either, and those four were refused as having no
  * rhythm, section 361.
  *
@@ -217,7 +217,8 @@ export function sameTrain(a: readonly Pulse[], b: readonly Pulse[]): boolean {
  * * **A family stating a count** is the table's: its row carries that count, sections 228 and 348.
  * * **A device whose count is not known**, `cataloguePressRepeats`'s two refusals, keeps the table's
  *   block, which is what it was composed with before this: what the compiler writes on such a device is
- *   `todo-process-logitech.md` 2.2.2 and 2.2.4, and refusing here would take away records the compiles
+ *   not known, since no compile in the lab holds a device stating a count of 0 or another family's count, R10,
+ *   and refusing here would take away records the compiles
  *   show right, the Sony KE-50MR1E's 35 `Sony 15 Bit` ones at 3 among them.
  * * **Both blocks come from the definition**, the held one too, so a record is one source's and not two.
  *   On the Dell 2300MP both are Logitech's own, all 35 records whole, held power step included.
@@ -271,8 +272,8 @@ function blocksAtDeviceCount(
   return {
     once: built.once,
     ...(built.held.length === 0 ? {} : { held: built.held }),
-    // The release behind the record's third pointer, todo-process-logitech 2.5, which until then refused
-    // the command: Logitech's compiles put it there, `StatedBlocks.release` carries the measurement.
+    // The release behind the record's third pointer, section 365; the command was refused before that was
+    // read. Logitech's compiles put it there, `StatedBlocks.release` carries the measurement.
     ...(built.release === undefined || built.release.length === 0 ? {} : { release: built.release }),
   };
 }
@@ -287,7 +288,7 @@ export function namesReleaseGroup(keycode: string): boolean {
  * Whether the definition, at the count the rhythm table's row carries, sends the row's own first block for
  * a code the row composes: the family's stated count, or `TABLE_PRESS_REPEATS`'s for a family stating none.
  * The gate on moving a code naming a release group, or of a whole record row, from the row to the
- * definition, todo-process-logitech 2.5: only the blocks the row lacks may change, so a code whose first
+ * definition, section 365: only the blocks the row lacks may change, so a code whose first
  * block the two disagree about stays the row's. Judged on the code as stated, so its toggled group takes
  * the same route.
  */
@@ -307,8 +308,8 @@ function definitionKeepsTheRow(protocol: ArchiveProtocol, keycode: string, read:
  * Read through `waveformOfArchiveCommand`, the one composition of a definition's readings, so the frames
  * are the ones `make prontocheck` holds against two million of the archive's renderings, sent as the code
  * states them rather than with the toggle cleared. **A command naming a release group gets the release as
- * its own block**, `StatedBlocks.release`, the record's third pointer, todo-process-logitech 2.5; it was
- * refused until then, on the ground that no compile here held one, and two families' compiles do.
+ * its own block**, `StatedBlocks.release`, the record's third pointer, section 365; it was
+ * refused before, on the ground that no compile here held one, and two families' compiles do.
  *
  * `toggleFlipped` gives the same command's blocks with its toggle bit flipped, by the same route: what a
  * record's second pointer group holds, `catalogueToggledCode`.
@@ -328,7 +329,7 @@ export function catalogueCommandBlocks(
   //
   //
   // **And so is a code naming a release group, or of a family whose row is a whole record shape, where the
-  // definition sends the row's own first block**, todo-process-logitech 2.5, section 365. No row holds a
+  // definition sends the row's own first block**, section 365. No row holds a
   // release, and the `quad`, `longToggle` and `sections` rows build no held block, where Logitech's compiles
   // hold both: the release behind the record's third pointer on a `Logitech 24 Bit` code of the Sony
   // PlayStation 3, and a held block on every record but the power steps and copies of the Yamaha DVD-S501,
@@ -354,8 +355,8 @@ export function catalogueCommandBlocks(
   // it, as `tableBlocksAtDeviceCount` does: a family stating its own count is built at that count whatever
   // the device states, its row carrying it, sections 228 and 348; and on a device whose count is not known
   // a family stating none is built at `TABLE_PRESS_REPEATS`'s. Without this a code the table composed would
-  // be refused on such a device. A code the table did not compose takes the device's count as before, so the
-  // refusals of todo-process-logitech 2.2.3 are untouched.
+  // be refused on such a device. A code the table did not compose takes the device's count as before, so what
+  // that route refuses stays refused.
   if (rerouted) {
     const count = own!.pressMinimumRepeats ?? ('refusal' in press ? TABLE_PRESS_REPEATS.get(read.family) : press.repeats);
     if (count !== undefined) return blocksAtDeviceCount(own!, keycode, count, toggleFlipped);
@@ -378,7 +379,7 @@ export function catalogueCommandBlocks(
 
 /**
  * A catalogue code with its toggle bit flipped, as the composer takes it for a record's **second pointer
- * group**, todo-process-logitech 2.5: the flipped reading, and its blocks by the route the code's own took,
+ * group**, section 365: the flipped reading, and its blocks by the route the code's own took,
  * `catalogueCommandBlocks` with `toggleFlipped`, so the table's block where the code's own is the table's.
  * `undefined` for a code whose family's definition states no toggle bit or states one outside its frames.
  *

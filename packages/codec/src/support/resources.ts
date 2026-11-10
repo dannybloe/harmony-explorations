@@ -1,7 +1,7 @@
 /**
  * What the codec needs at run time and does not carry in its own source: two typefaces' files, Node's deflate for a
- * PNG of ours and SHA-256. Supplied by whoever loads the codec, plan 013 decision 5 and `todo.md` 7.3.5, so that the
- * main entry loads where there is no disk and no Node, an Electron renderer or a browser.
+ * PNG of ours and SHA-256. Supplied by whoever loads the codec, plan 013 decision 5, so that the main
+ * entry loads where there is no disk and no Node, an Electron renderer or a browser.
  *
  * **Who supplies them.** The Node entry, `@harmony/codec/node`, supplies all five as it loads, from this package's own
  * copy of Oxanium, the pinned `@mdi/font` package and Node's `zlib` and `crypto`, `resources.node.ts`; so a Node
@@ -10,8 +10,8 @@
  * supplied refuses naming it, `ResourceError`, at the first letter, icon or picture it draws, never at load.
  *
  * **Reading a configuration asks for none of them.** Our letters' alphabet, which `characterMap` tries on every
- * configuration, is generated data, `oxaniumalphabet.ts`, rather than drawn from Oxanium where it is read; until
- * that fix to 7.3.5 every reader that names a device refused through the main entry. `test/package/mainentryreads.test.ts`
+ * configuration, is generated data, `oxaniumalphabet.ts`, rather than drawn from Oxanium where it is read; while
+ * it was drawn, every reader that names a device refused through the main entry. `test/package/mainentryreads.test.ts`
  * reads every family with nothing supplied. What still asks is drawing and encoding: building letters, icons and
  * pictures, the checks that rebuild a built file to attribute it, and a rendered screen written as a PNG.
  *

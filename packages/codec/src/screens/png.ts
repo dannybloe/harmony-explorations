@@ -12,12 +12,12 @@
  *
  * **Two later uses, and still one encoder.** A Harmony Touch is handed its channel logos as PNG files, and the
  * ones Logitech's service delivered in the recorded syncs are eight bits a channel with alpha, colour type 6,
- * so `encodePng` writes that too when asked for four channels, `todo-touch.md` 8.3. And the answerer of a sync
+ * so `encodePng` writes that too when asked for four channels. And the answerer of a sync
  * has to know a picture it is about to hand the remote is one the remote's screens can draw, so `readPng`
  * reads a file back: its header and every chunk checked, and its image data inflated and measured, the reader
  * beside the writer as `CLAUDE.md` asks of every encoding.
  *
- * **The compression is two halves since `todo.md` 7.3.5**, so the module loads where there is no Node. Reading
+ * **The compression is two halves**, so the module loads where there is no Node. Reading
  * inflates with our own `inflateZlib`, beside `deflate.ts`'s writer, since every decoder gives the same bytes;
  * writing deflates with the `deflate` the codec's loader supplies, `resources.ts`, Node's zlib on the Node entry,
  * because that is what every PNG here was written with and a Harmony Touch background of ours is named by the hash

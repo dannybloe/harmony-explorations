@@ -2,7 +2,7 @@
  * Adding a mode, base slot 6, with its pages: the one step every screen composer of every family shares,
  * decision 17, so the order that keeps the container parseable through it is written once. Moved out of
  * the four slot family's `devicescreen.ts`, where it was `appendArch14Mode`, when the Harmony One's
- * activity screens came to be built rather than copied, `todo-compile-one.md` 1.2.11.2.
+ * activity screens came to be built rather than copied.
  *
  * What differs between the families is data the caller passes: the Harmony One's page record opens with a
  * byte naming its hit page, the lead, which the Harmony 600, 650 and 700 have no use for, and the Harmony
@@ -177,7 +177,7 @@ export function appendMode(
  * Add one page at the end of mode `mode`, which exists and has a page already: the order that keeps the container
  * parseable through it, which every family that opens a page on a menu shares. Cut out of the four slot family's
  * `openFourSlotMenuPage`, steps 1 to 5 unchanged, when the side keys family needed the same steps for the Harmony
- * 880 and 885's device list, `todo-compile-885.md` 2.1; what each family builds around it, which list a page binds
+ * 880 and 885's device list; what each family builds around it, which list a page binds
  * and what its program draws, stays the family's.
  *
  * 1. the pool copy, `copy`, right after the copy of the mode's last page, since copies pair with the pages by

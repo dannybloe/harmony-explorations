@@ -266,7 +266,7 @@ export interface Rebased extends Relocated {
 /**
  * Link a container for another flash address without moving a byte of it: every census pointer
  * landing inside the container moves by the difference, `end_addr` moves with them, and the trailer
- * checksum is recomputed last. `todo-compile-650.md` 7.1.1.
+ * checksum is recomputed last.
  *
  * **Why it is needed.** A container states absolute flash addresses, so one built for one place is
  * wrong anywhere else. The Harmony 650's status screen library, the container its firmware package

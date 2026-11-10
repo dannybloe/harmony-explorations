@@ -139,8 +139,8 @@ interface IdleOffRecord {
  *
  * **The case that ends at once** is the Harmony One's all off with nothing to switch off: Logitech's compile
  * `harvest_one_families_1`, whose devices have no power variable, holds it, section 430, and the empty Harmony One
- * is built with it, section 434, so composing a first device onto the empty One finds it here,
- * `todo-compile-one.md` 8.1.1. Read only where no device but the one being joined, `variable`, has a power variable,
+ * is built with it, section 434, so composing a first device onto the empty One finds it here.
+ * Read only where no device but the one being joined, `variable`, has a power variable,
  * since a case that ends with another present would leave that one on; the Harmony 650 family's form with none is
  * the record with no case. Measured on the Harmony One alone, the One family's compiles and its empty
  * configuration; the Harmony 600, 650 and 700 family composes onto its empty configuration through the record with
@@ -267,7 +267,7 @@ export function activityPowerTargets(
  * `keepDeviceOn`'s reading, split out so that a caller can ask whether MyHarmony's "keep this device on
  * when switching Activities" is already in force without cutting anything: an empty answer for a device
  * some activity does not use is the setting in force, section 340. `assembleSetup` asks it of every
- * device a setup names, `todo-compile-650.md` 10.6.
+ * device a setup names.
  */
 export function startsSwitchingOff(c: Container, variable: number): Map<number, Set<string>> {
   const power = deviceVariables(c).find((one) => one.index === variable);

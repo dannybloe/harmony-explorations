@@ -1,10 +1,10 @@
 /**
- * A recipe's devices and activities put onto a donor by the composers, plan 007's shared part: the steps
- * every family takes, whatever builds the rest. `assembleSetup` runs them on a Harmony 600, 650 or 700
- * before its generators, and `composeSetup` runs them on a family no assembly builds whole yet, the Harmony
- * One, `todo-compile-one.md` 1.2, followed since 3.2.2 by the builders that family has for parts the donor
- * carried, `Family.composedBuilders`. Cut out of `assemble.ts` unchanged but for asking the
- * family's choices where it read the four slot family's: the activity keys and the delays.
+ * A recipe's devices and activities put onto a donor by the composers, plan 007's shared part: the steps every
+ * family takes, whatever builds the rest. `assembleSetup` runs them on a Harmony 600, 650 or 700 before its
+ * generators, and `composeSetup` runs them on a family no assembly builds whole yet, the Harmony One, followed
+ * by the builders that family has for parts the donor carried, `Family.composedBuilders`. Cut out of
+ * `assemble.ts` unchanged but for asking the family's choices where it read the four slot family's: the
+ * activity keys and the delays.
  */
 import { type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget } from '../recipe/recipe.ts';
 import { familyOf, sendsOf } from '../families/registry.ts';
@@ -81,7 +81,7 @@ export interface SetupParts {
   readonly choices: CommonChoices;
   /**
    * True gives every device the donor holds the infrared records the catalogue composes for it, in place of the
-   * donor's own, `composeDonorDeviceInfrared`, `todo-compile-one.md` 8.1.3: what `composeSetup` asks, whose
+   * donor's own, `composeDonorDeviceInfrared`: what `composeSetup` asks, whose
    * donor is Logitech's compile and whose result is to carry none of its infrared. The assembly does not ask it,
    * since its pinned results are composed onto Logitech's compiles of the same devices as they are.
    */
@@ -94,7 +94,7 @@ export interface SetupParts {
  * keep on applied to its activities, and the activities it lacks composed. Shared by `assembleSetup` and
  * `composeSetup`, which differ in what runs after: the assembly builds every part a generator exists for,
  * and `composeSetup` keeps the donor's but for the parts its family's builders make, `Family.composedBuilders`,
- * which it tells of the devices composed, `devicesComposed`, since `todo-compile-one.md` 3.2.2.4.
+ * which it tells of the devices composed, `devicesComposed`.
  */
 export function composeSetupParts(
   donor: Container, setup: Recipe, target: RecipeTarget, options: AssembleOptions, parts: SetupParts,
@@ -132,8 +132,8 @@ export function composeSetupParts(
   const labelOf = (name: string): string | undefined =>
     devices(c).find((one) => setupDeviceOf(one.name)?.name === name)?.name;
 
-  // 1b. The donor's devices given the catalogue's infrared records, where the caller asks, `todo-compile-one.md`
-  //     8.1.3: before anything below reads a record, so the donor inputs' matching at 2b finds the composed ones.
+  // 1b. The donor's devices given the catalogue's infrared records, where the caller asks: before anything below
+  //     reads a record, so the donor inputs' matching at 2b finds the composed ones.
   const donorInfrared: DonorInfrared[] = [];
   if (parts.donorInfraredFromCatalogue === true) {
     for (const wanted of setup.devices) {
@@ -449,7 +449,7 @@ export interface ComposedSetup {
    */
   blended: readonly BlendedSet[];
   /**
-   * The donor's devices given the catalogue's infrared records, `todo-compile-one.md` 8.1.3, in the setup's order,
+   * The donor's devices given the catalogue's infrared records, in the setup's order,
    * each donor record with the composed record that took its place and how the two differ.
    */
   donorInfrared: readonly DonorInfrared[];
@@ -457,9 +457,9 @@ export interface ComposedSetup {
 
 /**
  * The setup's devices and activities put onto the donor by the composers, and the parts the family has builders
- * for put in place of the donor's, `Family.composedBuilders`; every other byte the donor's: the first file of
- * `todo-compile-one.md`, a Logitech compile with the test setup composed onto it, for a family no assembly builds
- * whole yet, with its parts built one at a time since 3.2.2. The family is the recipe's model's and its choices
+ * for put in place of the donor's, `Family.composedBuilders`; every other byte the donor's: a Logitech compile
+ * with the test setup composed onto it, for a family no assembly builds whole yet, with its parts built one at a
+ * time. The family is the recipe's model's and its choices
  * are the family's own; a recipe stating choices is refused, since what a choice changes is the generators' work.
  */
 export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedSetup {
@@ -487,7 +487,7 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
   // The family's look, where it has one: the donor lettered first, so every name a composer spells finds its
   // letters, and the rest over the composed file below. A donor of ours, the family's empty configuration, is in our
   // letters already and draws our pictures, so it is not lettered and no step turning Logitech's pictures into ours
-  // runs on it, `todo-compile-one.md` 8.1.2; its faces are its stated table's, which the look's blending letters.
+  // runs on it; its faces are its stated table's, which the look's blending letters.
   const look = target.family.composedLook;
   const ours = look?.donorOfOurs?.(c, choices);
   if (ours !== undefined) note('a donor of ours', `${ours.length} sets of our letters`);
@@ -497,13 +497,13 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
     note('lettered');
   }
   const faces = ours ?? lettered?.faces;
-  // Every device the donor holds is given the catalogue's infrared records, `todo-compile-one.md` 8.1.3, so the
-  // result carries none of Logitech's: the five the donor lacks are composed from the catalogue anyway.
+  // Every device the donor holds is given the catalogue's infrared records, so the result carries none of
+  // Logitech's: the five the donor lacks are composed from the catalogue anyway.
   const parts = composeSetupParts(c, setup, target, options,
     { family: target.family, choices, donorInfraredFromCatalogue: true }, note);
   c = parts.container;
   // The parts the family's builders make, each from a description of the configuration composed so far, in place
-  // of the donor's, `todo-compile-one.md` 3.2.2: before the look, whose blending gives one role of a screen several
+  // of the donor's: before the look, whose blending gives one role of a screen several
   // fonts, which a builder's description refuses. A builder's refusal is the composition's; nothing falls back to
   // the donor's part.
   const builders = target.family.composedBuilders;
@@ -519,10 +519,10 @@ export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedS
     blended = looked.blended;
     note('look');
   }
-  // Placement, `todo-compile-one.md` 6.2: what is parked in front of a table and the picture bank put where the placer
-  // puts them rather than where the donor, a composer or the look left them, as the assembly places its result,
-  // after the look so that the sets its blending adds and the pictures it draws are placed by the same rule. The
-  // placer is the same for every family, section 426. A composer's parked pieces of a kind the placer has no rule
+  // Placement: what is parked in front of a table and the picture bank put where the placer puts them rather than
+  // where the donor, a composer or the look left them, as the assembly places its result, after the look so that
+  // the sets its blending adds and the pictures it draws are placed by the same rule. The placer is the same for
+  // every family, section 426. A composer's parked pieces of a kind the placer has no rule
   // for, a composed device's infrared records and an activity's key map, go into the body first. The order of the
   // font sets is the font table's, so a blended set's index, which `blended` names, is unchanged.
   if (options.place !== false) {

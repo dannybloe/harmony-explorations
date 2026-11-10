@@ -1,5 +1,5 @@
 /**
- * Icons drawn from an icon font, `todo-compile-650.md` 9.1.2.2: Material Design Icons by Pictogrammers,
+ * Icons drawn from an icon font: Material Design Icons by Pictogrammers,
  * Apache 2.0, the npm package `@mdi/font` pinned at 7.4.47, which depends on nothing. Its font is read with
  * opentype.js and its glyphs drawn by `raster.ts`, exactly as our letters are, so an icon is an outline
  * rendered on demand and nothing of a Logitech compile.

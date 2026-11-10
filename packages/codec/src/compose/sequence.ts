@@ -212,14 +212,14 @@ function blockBytes(c: Container, address: number): Uint8Array | undefined {
  * none has two. A named record that already has no held block is sent as it is: it is a copy, or a power
  * step's own record, and nothing here makes a copy of a copy.
  *
- * **A record of two pointer groups gets a copy of two**, todo-process-logitech 2.5: a toggling code's
+ * **A record of two pointer groups gets a copy of two**, section 365: a toggling code's
  * record holds the code as stated and with its toggle bit flipped, and Logitech's copy of one holds each
  * group's first block less its silence, no held block and no tail, in both groups. Measured on the Harmony
  * 700's power hold compiles, 32 copies, and another owner's Harmony 650 configuration, 12; every one of
  * them has a source record in its group whose two groups give its two blocks. A record with a tail, a code
  * naming a release group, is still refused: no compile here shows a copy of one.
  *
- * **The Harmony 350's digit copies are the same rule**, `todo-compile-350.md` 4.3: the ten copies of the KPN's
+ * **The Harmony 350's digit copies are the same rule**: the ten copies of the KPN's
  * digits Logitech's compile of the Harmony 350 test setup holds, which its favourite channels send, are each
  * the catalogue digit's composed first block less its opening silence, no held block and no tail,
  * `packages/codec/test/families/harmony-300-350/noscreen.test.ts`. So the favourite channel composer of the no screen family asks this
@@ -291,7 +291,7 @@ export function oneBlockCopy(
  * **Where the block and the header go is the caller's to say, `recordsAt`**, and below the table by default.
  * The Harmony 300 and 350 keep their section table's own sections right above base slot 5's table, the clock
  * record directly below it, so a hole there would land inside the clock record's extent; their records go
- * where `fillIrGroup` puts a group's, where the group arrays begin, `todo-compile-350.md` 4.3. Below the
+ * where `fillIrGroup` puts a group's, where the group arrays begin. Below the
  * arrays the new entry moves up with them, so the entry is found again by reading the group's array after the
  * hole is made, which is the same place as before wherever the hole is above it.
  */
@@ -470,7 +470,7 @@ export function composeSequence(given: Container, sequence: ComposeSequence): Co
   // The record each command sends, before any list is made, since a copy the group lacks is a record
   // appended to base slot 5 and the lists below are numbered in the container that results.
   // What a send is, and which record a command sends where the caller does not say, is the family's,
-  // `Family.sends`, since `todo-compile-one.md` 3.3.3.4.
+  // `Family.sends`.
   const traits = traitsOf(given);
   const shape = sendsOf(given);
   const mode = sequence.records ?? shape.sequenceRecords;

@@ -1,5 +1,5 @@
 /**
- * One rasteriser for everything we draw from outlines, `todo-compile-650.md` 10.8: a letter from a font's
+ * One rasteriser for everything we draw from outlines: a letter from a font's
  * outlines today, an icon's path or a drawn shape such as the Harmony One's touch button backgrounds when
  * that family is built. It takes a path, straight lines and quadratic and cubic curves in pixel units with
  * y running down, and answers two things per pixel of a canvas:
@@ -10,7 +10,7 @@
  * * **ink**, whether the pixel's centre lies inside the shape by the non-zero rule, which is how a one bit
  *   rendering decides, and what Logitech's letters and ours look like unblended.
  *
- * **No hinting**, where Pillow's FreeType, which drew the letters approved in 8.2, hints. So letters from
+ * **No hinting**, where Pillow's FreeType, which drew the letters first approved, hints. So letters from
  * here differ from those in a few pixels; `typeface.ts` measures by how much.
  *
  * **Byte identical on every machine**: only addition, subtraction, multiplication, division and

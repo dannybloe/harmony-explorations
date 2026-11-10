@@ -3,7 +3,7 @@
  * commands go to the keypad, by the family's own table of hard keys, `Family.deviceModeKeys`, and which go
  * to the screen and in what order. Section 325 read it on the Harmony 600, 650 and 700, section 397 the keys
  * on the Harmony One. How a four slot page sizes, splits and places a label, cuts a title and draws its
- * counter is that family's, `families/harmony-600-650-700/devicemode.ts`, `todo-compile-one.md` 3.3.3.3.
+ * counter is that family's, `families/harmony-600-650-700/devicemode.ts`.
  *
  * **Every rule here is read off the compiler's output and none off its code.** The population is the
  * twenty devices Logitech compiled from its catalogue for the test accounts, in seven of the thirteen
@@ -153,7 +153,7 @@ export function composableKeycode(keycode: string, read: StatedCode | undefined 
  * Which of our faces, in which weights, could have drawn each of a configuration's font sets, as
  * `F14/SemiBold` and so on: every face and weight that draws all of its one bit letters, by their form,
  * `oxaniumAlphabet().drawnIn`; empty for a set none does, Logitech's and a blended copy among them. Read off
- * the letters alone, so a configuration in any weights is known with no memory of how it was built, 10.8.5.
+ * the letters alone, so a configuration in any weights is known with no memory of how it was built.
  *
  * **More than one is the rule, not an accident**: a label face and the regular face of its height, F15 and
  * R15, F13 and R13, are one geometry in two weights, so a set in SemiBold is F15 or R15 in SemiBold alike.

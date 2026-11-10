@@ -1,6 +1,6 @@
 /**
- * A configuration's font table in our own letters: `todo-compile-650.md` 8.2, decisions 19 and 20, built for
- * the Harmony 650 first and for the Harmony One since `todo-compile-one.md` 5.2.
+ * A configuration's font table in our own letters, decisions 19 and 20, built for the
+ * Harmony 650 first and for the Harmony One as well.
  *
  * Base slot 7 is a table of font sets, a set a list of glyphs by code, and a code the configuration's own
  * number for a character, the same in every set (`text.ts`). A configuration gives a code only to a
@@ -20,7 +20,7 @@
  * configuration's family names the face, `Family.fonts`: the four slot family's nine faces by the table in
  * `families/harmony-600-650-700/fonts.ts`, derived on the 13 Harmony 650 compiles, and the One family's five by the
  * one in `families/harmony-one/fonts.ts`, section 396. The faces themselves are `lettering.ts`'s, sized to land on
- * Logitech's rows. This module tested the architecture for it until `todo-compile-one.md` 3.3.3.5.
+ * Logitech's rows. This module names no architecture: what differs is the family's.
  *
  * **How a set is coloured is read off it as well**, `lettering.ts`: a set Logitech draws with a shadow gets
  * white letters over a black one, and a set drawn without one, the words on the white bars, dark letters.
@@ -72,11 +72,11 @@ export interface SetFace {
   face: OxaniumFaceName;
   lettering: Lettering;
   /**
-   * The inks it is lettered in, the family's choice, `todo-compile-650.md` 10.7.5. Absent on a set only
+   * The inks it is lettered in, the family's choice. Absent on a set only
    * measured, `measureSet`, since Logitech's set was not lettered by us.
    */
   inks?: LetterInks;
-  /** The weight it is lettered in, the family's choice per face, `todo-compile-650.md` 10.8.5. Absent as `inks` is. */
+  /** The weight it is lettered in, the family's choice per face. Absent as `inks` is. */
   weight?: OxaniumWeight;
   /**
    * The one colour its letters are smoothed against, RGB565, on a set added by `extra`: every pixel a letter
@@ -89,7 +89,7 @@ export interface SetFace {
 /**
  * A font set added after a configuration's own: a copy of set `like`, in its face, height, lettering and
  * inks, lettered in `weight` and smoothed against `background`, RGB565. What a family asks for when text
- * sits on one known colour, the label on a flat box of ours, `todo-compile-one.md` 1.2.11.2: a letter's
+ * sits on one known colour, the label on a flat box of ours: a letter's
  * smoothed edge carries the colour it was mixed with, so a set is smoothed for one background and no other,
  * and no set of the configuration's own can be, since each is drawn over several.
  */

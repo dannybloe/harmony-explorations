@@ -1,5 +1,5 @@
 /**
- * **A recipe's own codes as a catalogue**, plan 014 and `todo.md` 7.3.11.1: a recipe device may carry its definition,
+ * **A recipe's own codes as a catalogue**, plan 014: a recipe device may carry its definition,
  * the catalogue's record of it and its codeset's commands, and a recipe the protocol definitions those commands are
  * written in, so a build needs no archive. That is what a code learned off a remote needs, which no archive holds, and
  * what lets a test of a whole setup run on a checkout with nothing beside it.

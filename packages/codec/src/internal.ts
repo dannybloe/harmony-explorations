@@ -1,6 +1,6 @@
 /**
- * `@harmony/codec/internal`: the format's parts below the application's view, each module whole, `todo.md`
- * 7.3.6. For this repository's scripts, tests and the libraries built on the codec, `@harmony/corpus` and
+ * `@harmony/codec/internal`: the format's parts below the application's view, each module whole. For
+ * this repository's scripts, tests and the libraries built on the codec, `@harmony/corpus` and
  * `@harmony/probe` among them: the container's pointers, slots and markers, every section's reader, the screen
  * language, the infrared records, the byte accounting and the emitter that reads a container back. The main
  * entry, `index.ts`, is the designed surface and this is not; a name added to one of these modules is here

@@ -1,5 +1,5 @@
 /**
- * Catalogue devices composed into a configuration, one or several in one run, todo-compile-650 2.7.
+ * Catalogue devices composed into a configuration, one or several in one run.
  *
  * **What this is**: the whole of `compose-device.ts`'s composition lifted out of the command line, so
  * that one device and a list of them go through one derivation rather than a bin and a copy of it. A
@@ -31,7 +31,7 @@
  *   for an account, `maxDevices`. Refused before anything is composed, since a ninth device's composition
  *   would succeed and leave a configuration no Logitech account could have produced.
  *
- * **Two of its sections are modules of their own since `todo.md` 7.3.8**, each re-exported here whole so every
+ * **Two of its sections are modules of their own**, each re-exported here whole so every
  * name keeps its path: `donorinfrared.ts`, a donor device's infrared composed from the catalogue, and
  * `cataloguecodes.ts`, a catalogue command's code as the blocks a press sends.
  */
@@ -82,7 +82,7 @@ export interface CatalogueDeviceRequest {
   readonly inputs?: boolean;
   /**
    * The two delays in tenths, which win over the catalogue's: both on the 600 family, the power on delay
-   * alone on the Harmony One, which carries no inter device delay of a device's own, `todo-compile-one.md` 1.2.
+   * alone on the Harmony One, which carries no inter device delay of a device's own.
    */
   readonly powerOnDelay?: number;
   readonly interDeviceDelay?: number;
@@ -129,7 +129,7 @@ export interface ComposedCatalogueDevices {
  * What composing a catalogue device decides before anything is written: the commands and their codes, the
  * power steps, the inputs' own commands, and the device `composeDevice` is handed. `composeCatalogueDevice`
  * composes it, and `composeDonorDeviceInfrared` puts its records in a donor device's place,
- * `todo-compile-one.md` 8.1.3, so the two cannot disagree about what a catalogue device's records are.
+ * so the two cannot disagree about what a catalogue device's records are.
  */
 export interface CatalogueDevicePlan {
   readonly entry: CatalogueDevice;
@@ -150,7 +150,7 @@ export interface CatalogueDevicePlan {
 
 /**
  * Exported for the Harmony 300 and 350's device composer, `families/harmony-300-350/devices.ts`, which stores only the
- * commands its keys bind, `todo-compile-350.md` 4.1, and takes them out of this plan rather than reading the
+ * commands its keys bind, and takes them out of this plan rather than reading the
  * catalogue a second way: the same codes, blocks and power steps as a device composed whole.
  */
 export function catalogueDevicePlan(c: Container, archive: CatalogueSource, request: CatalogueDeviceRequest): CatalogueDevicePlan {
@@ -195,8 +195,8 @@ export function catalogueDevicePlan(c: Container, archive: CatalogueSource, requ
   };
   /**
    * The command as the composer takes it: the code as its definition reads it, section 359, its derived
-   * blocks where it has them, and the code with its toggle bit flipped where it toggles, todo-process-logitech
-   * 2.5, which becomes the record's second pointer group.
+   * blocks where it has them, and the code with its toggle bit flipped where it toggles, section
+   * 365, which becomes the record's second pointer group.
    */
   const withBlocks = <T extends { stated: string }>(one: T): T => {
     const blocks = blocksOf(one.stated);
@@ -233,7 +233,7 @@ export function catalogueDevicePlan(c: Container, archive: CatalogueSource, requ
     // Under `full` every command repeats where its family has a held block and sends once where it
     // has none, the power commands included: Logitech's compile of the Harmony 650's starting setup
     // gives all 20 power commands of its seven devices the held block of their family, as it does every
-    // other command, todo-compile-650 2.6. This withheld it from every command named Power until then,
+    // other command. This once withheld it from every command named Power,
     // on the reasoning that a held toggle must not repeat, which no compile shows.
     if (full) return withBlocks({ stated: keycode });
     // Without `full` the first command is the one sent both ways, and it does not repeat.
@@ -432,7 +432,7 @@ function recordWords(c: Container, address: number): string {
 /**
  * The inputs of a device the configuration already holds, composed onto it: what a Logitech compile with
  * no activities leaves out, since its compiler writes a device's input variables only for an activity
- * that puts the device on an input. `todo-compile-one.md` 1.2.9, the donor's LG and Denon.
+ * that puts the device on an input, as with the Harmony One donor's LG and Denon.
  *
  * `composeDeviceInputs` asks for the device's send list per command it sends. A compile names none of its
  * commands, so each is found by its code: the command composed from the catalogue into a scratch copy, its

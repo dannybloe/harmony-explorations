@@ -1,6 +1,6 @@
 /**
- * `@harmony/codec/build`: the composers and builders, each module whole, `todo.md` 7.3.6. Off the main entry by
- * plan 007, which keeps a composer of one part behind its family and the registry: an application starts a build
+ * `@harmony/codec/build`: the composers and builders, each module whole. Off the main entry by plan
+ * 007, which keeps a composer of one part behind its family and the registry: an application starts a build
  * from the main entry's recipe and registry, and what composes a device, an activity, a screen or a whole
  * container is reached here by this repository's scripts, tests and the libraries built on the codec.
  *
@@ -75,10 +75,10 @@ export {
   selectList, activityList, type ActivityStepWrite, conditionList, type ConditionArm, writesList, channelNumberList, channelDigitsList,
   readChannelDigits, keyTimerRecords, numberSenderBlock, TIMER_RECORD_LENGTH,
 } from './families/harmony-300-350/index.ts';
-// **The whole builds of the two screen families**, on no entry until `todo.md` 7.3.9's walk found them reached by
-// scripts and tests alone, so an application could compose onto a donor but could not build a Harmony 600, 650 or
-// 700 configuration from a setup, nor a Harmony One from nothing, nor the empty Harmony 600 family configuration a
-// setup is composed onto. The family's own entry points and what a caller
+// **The whole builds of the two screen families**, on this entry because a walk of what each entry reaches found
+// them reached by scripts and tests alone: without them an application could compose onto a donor but could not
+// build a Harmony 600, 650 or 700 configuration from a setup, nor a Harmony One from nothing, nor the empty Harmony
+// 600 family configuration a setup is composed onto, `lab/test/dependencies.test.ts`. The family's own entry points and what a caller
 // checks or compares a result with; the attributions, which say which generator wrote each byte, stay with the
 // scripts and tests that read them by path.
 export { assembleSetup, checkAssembled, type Assembled } from './families/harmony-600-650-700/assemble.ts';

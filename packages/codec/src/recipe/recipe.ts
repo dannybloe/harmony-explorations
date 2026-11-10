@@ -1,6 +1,6 @@
 /**
- * The recipe: everything a configuration of ours depends on, as data, plan 007 and `todo-compile-650.md`
- * 10.7.4. The setup files in `packages/corpus/setups/` are recipes, and `docs/recipe.md` is the format's
+ * The recipe: everything a configuration of ours depends on, as data, plan 007. The
+ * setup files in `packages/corpus/setups/` are recipes, and `docs/recipe.md` is the format's
  * preliminary definition, field by field against FreeHarmony's data model.
  *
  * **What it holds**: the model it is for, the devices by their catalogue entries, the activities with
@@ -131,7 +131,7 @@ export interface Recipe {
    */
   readonly choices?: Readonly<Record<string, unknown>>;
   /**
-   * The Harmony Touch's own part, `todo-touch.md` 9.1: what a person chose for each device and activity beyond what a
+   * The Harmony Touch's own part: what a person chose for each device and activity beyond what a
    * recipe states, their ids, delays, keys, screen entries and sequences, the families of our rhythm table their codes
    * are written with, and the remote's settings. A Touch is given documents rather than a compiled file, so nothing
    * builds it from a recipe; `readTouchSetupFile` in `families/harmony-touch/fromnothing.ts` reads and checks this part, and

@@ -1,11 +1,11 @@
 /**
- * Our letters rendered from a typeface's outlines in the codec itself, `todo-compile-650.md` 10.8. Until
- * then `tools/oxanium_glyphs.py` rendered them with Pillow into a generated module; the rules are that
+ * Our letters rendered from a typeface's outlines in the codec itself. Before
+ * this module `tools/oxanium_glyphs.py` rendered them with Pillow into a generated module; the rules are that
  * tool's, rule for rule. What differs is the drawing, `raster.ts`, which does not hint, so against Pillow's
  * letters 414 of the 855 masks came out identical and 33 a column narrower or wider; the faces' stated rows
  * stand in for the vertical half of the hinting. A preview of the two side by side was approved.
  *
- * **A face** is how Logitech draws one of its nine Harmony 650 faces, measured in 8.2: its cell height,
+ * **A face** is how Logitech draws one of its nine Harmony 650 faces, as measured: its cell height,
  * the row its baseline sits on, whether a glyph opens with a blank column, and the width of a space; and
  * the cut and pixel size of the typeface that lands on those rows.
  *
@@ -59,7 +59,7 @@ const fonts = new Map<string, Font>();
 
 /**
  * Oxanium in one cut, this repository's own copy beside the codec, with its licence, parsed once. Its bytes are what
- * the codec's loader supplies, `resources.ts`, which on the Node entry reads that copy, as this did until `todo.md` 7.3.5.
+ * the codec's loader supplies, `resources.ts`, which on the Node entry reads that copy, as this module once did itself.
  */
 export function oxanium(weight: string): Font {
   let font = fonts.get(weight);

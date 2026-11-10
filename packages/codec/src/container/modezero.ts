@@ -24,7 +24,7 @@
  * families: the four slot one's mode 0 list and firmware screens (Harmony 600, 650 and 700), the One
  * family's firmware and fixed screens (Harmony One), and the state tables' value maps.
  *
- * **What moved**, `todo-compile-one.md` 3.3.3.2: mode 0's population, the key map over scans 1 to 54 and
+ * **What is a family's**: mode 0's population, the key map over scans 1 to 54 and
  * that scan range itself, `KEYPAD_FIRST_SCAN` and `KEYPAD_LAST_SCAN`, are the four slot family's,
  * `families/harmony-600-650-700/modezero.ts`, since the Harmony One's keypad is another, `ONE_FIRMWARE_KEYPAD`, and
  * that is where a mode 0 list is generated now.

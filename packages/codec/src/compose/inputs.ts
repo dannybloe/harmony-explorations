@@ -117,7 +117,7 @@ export const FROM_CHANGED = -3;
 /**
  * The architectures the encoding was measured on: the Harmony 600, 650 and 700, section 321, and the
  * Harmony One, whose compiles hold the same variables, values, transitions and waits for the same catalogue
- * devices, with a send of two instructions and no prelude, `Family.sends`, `todo-compile-one.md` 1.2.
+ * devices, with a send of two instructions and no prelude, `Family.sends`.
  */
 const INPUT_ARCHITECTURES: ReadonlySet<number> = new Set([12, 14]);
 /** Delays in the catalogue are milliseconds, the `0x7C` quantity tenths. */
@@ -345,10 +345,10 @@ export interface ComposeInputs {
    * catalogue holds, its records laid out in command order. A device the configuration already held keeps its
    * compiler's order, so `composeDonorDeviceInputs` states the record it matched each command's code to.
    *
-   * **Absent for a donor's device, the inputs sent the wrong commands**, `todo-compile-one.md` 8.1.5, findings
-   * section 436: the record taken was the command's place among the inputs' own commands, so on the Harmony One test
+   * **Absent for a donor's device, the inputs sent the wrong commands**, findings section
+   * 436: the record taken was the command's place among the inputs' own commands, so on the Harmony One test
    * setup composed onto Logitech's compile of two devices the Denon's CBL/SAT sent its Pure mode and the LG's HDMI 1
-   * its picture mode, which the bench run of 1.3 heard and nobody compared with the command meant.
+   * its picture mode, which a bench run of that setup heard and nobody compared with the command meant.
    */
   readonly records?: readonly number[];
   readonly driving: DeviceDriving;
@@ -479,7 +479,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   // the Harmony One it is a bare `0x7C` wait at the end of the on list, and **no Logitech compile of a
   // One read here holds a reset**, 25 power on lists over eleven compiles, so its place there is ours:
   // after the wait, the 600 family's rule, which section 332 found leaves the same value in place either
-  // side of the delay. The bench run of `todo-compile-one.md` 1.3 hears whether the input then goes out.
+  // side of the delay. Whether the input then goes out is the remote's to show, so a bench run is what hears it.
   const switchOn = shape.switchOnList(c, inputs.device);
   if (resetPlan.length > 0 && switchOn === undefined) {
     throw new ComposeError('the catalogue resets a state after a power on, and the device has no power on list');

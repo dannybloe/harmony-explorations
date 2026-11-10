@@ -2,9 +2,8 @@
  * A picture drawn by us, from rows of colour or an icon of Material Design Icons, and a configuration's picture
  * bank read by content and added to: what every family draws its pictures with.
  *
- * Shared since `todo-compile-one.md` 3.3.3.2, which moved the Harmony 650's own pictures, their list, the icons
- * chosen for them and the builder that puts them in a configuration, into the four slot family,
- * `families/harmony-600-650-700/pictures.ts`, section 363; the One family draws the Harmony One's boxes and icons through
+ * Shared, while the Harmony 650's own pictures, their list, the icons chosen for them and the builder that puts
+ * them in a configuration are the four slot family's, `families/harmony-600-650-700/pictures.ts`, section 363; the One family draws the Harmony One's boxes and icons through
  * the same `pictureRows` and `iconOverRows`. Read only towards hardware: the result is pixels or pieces.
  */
 import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContainer, takeApart } from '../assembly/frame.ts';
@@ -40,7 +39,7 @@ export type PictureDrawing =
   | IconDrawing;
 
 /**
- * An icon of Material Design Icons, `icons.ts`, `todo-compile-650.md` 9.1.2.2: its grid square `size`
+ * An icon of Material Design Icons, `icons.ts`: its grid square `size`
  * pixels wide centred at `centre`, in `colour`. Over a `background` it is blended into it by coverage, as
  * our letters are, and every pixel is drawn; with none it is one bit, the colour where it inks and nothing
  * elsewhere, which makes the picture the encoded kind and lets what is under it show.
@@ -188,7 +187,7 @@ function everyPiece(layout: ContainerLayout): ContainerPiece[] {
  *
  * Generic, and every family's: the Harmony 650's rule pictures and ours of its artwork, `families/harmony-600-650-700/pictures.ts`,
  * and the Harmony One's, `families/harmony-one/pictures.ts`, whose black background takes the place of three copies and
- * three photographs, `todo-compile-one.md` 5.3.3.
+ * three photographs.
  */
 export function withReplacedPictures(
   layout: ContainerLayout, replace: ReadonlyMap<ContainerPiece, Uint8Array>,

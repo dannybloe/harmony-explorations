@@ -395,7 +395,7 @@ export function glyphAt(
  * 37 containers on arch 8, 10, 12 and 14 `test/families/harmony-600-650-700/pictures.test.ts` reads comes back byte for byte from its own
  * rows by this rule, so the rail
  * that a glyph cannot be re-encoded from its pixels does not hold for Logitech's glyphs; which letters a
- * font should hold, and where their shapes come from, is `todo-compile-650.md` 8.2 and not this. Arch 9
+ * font should hold, and where their shapes come from, is `drawing/fonttable.ts` and not this. Arch 9
  * (Harmony 525) packs its glyphs two bits a pixel, `packedGlyph`, and has no encoder here.
  */
 export function encodeGlyph(width: number, rows: readonly (readonly (number | undefined)[])[]): Uint8Array {

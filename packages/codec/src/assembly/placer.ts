@@ -1,6 +1,6 @@
 /**
- * Where everything outside the body goes, decided from the pieces: `todo-compile-650.md` 10.5 for the
- * Harmony 600, 650 and 700, and `todo-compile-one.md` 6.2 for the Harmony One.
+ * Where everything outside the body goes, decided from the pieces, for the Harmony
+ * 600, 650 and 700 and for the Harmony One.
  *
  * `frame.ts` lays a container out once it is told where every piece goes. Of its four regions, the
  * key table and the body are given by whoever composed the content, and the tables are given by the
@@ -357,9 +357,9 @@ export function loosen(layout: ContainerLayout,
  * is our choice, as the page lists' order is, section 328, and at the end of the body where it holds none
  * of that kind, section 378. Generic: the configurations this project wrote to the spare Harmony One park
  * the same two kinds the Harmony 650's do, section 395, and this takes both families' alike, section 426.
- * Moved here from the Harmony 600 family's assembly for `todo-compile-one.md` 6.2, which places a setup
- * composed onto a Harmony One compile through it; that module re-exports it for the todo-compile-650 10.5
- * bench file, which takes this step rather than a copy of it.
+ * Here rather than in the Harmony 600 family's assembly, since a setup composed onto a Harmony One compile is
+ * placed through it too; that module re-exports it, so a caller of the family's chain takes this step rather
+ * than a copy of it.
  */
 export function composedIntoBody(layout: ContainerLayout): { layout: ContainerLayout; moved: number } {
   const ruled = new Set<string | undefined>(LOOSE_KINDS);

@@ -1,6 +1,6 @@
 /**
  * The infrared archive's protocol definitions read off a checkout on disk, beside the converter they feed, `archive.ts`.
- * Moved out of that module by `todo.md` 7.3.5 so the converter loads where there is no disk; each reader here is the
+ * Kept out of that module, plan 013 decision 5, so the converter loads where there is no disk; each reader here is the
  * file half of what it was, and hands the parsed rows to the half that stayed: the manifest's check to
  * `archiveManifestOf`, the catalogue by rhythm to `catalogueByRhythmOf`, the generated module to
  * `segmentLengthsModuleOf`.

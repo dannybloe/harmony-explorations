@@ -407,14 +407,14 @@ export type OxaniumAlphabet = LetteredAlphabet & { drawnIn: Readonly<Record<stri
  * back on. A form two characters share carries both, as a seeded alphabet's shape does. The one bit letters
  * are named by form and the blended ones by structure, both made from the masks and the coverage alone, so
  * the alphabet is the same whatever inks a configuration chose; and every weight is in it, so the same
- * whatever weights, `todo-compile-650.md` 10.8.5.
+ * whatever weights.
  *
  * `drawnIn` says which faces draw a form, `F14/SemiBold` and so on, which is how a configuration's sets are
  * known as our faces in their weights, `oxaniumFacesOf`.
  *
- * **Read from the generated module `oxaniumalphabet.ts`, not drawn from the font**, a fix to `todo.md` 7.3.5.
- * That step put Oxanium's files behind a resource only the Node entry supplies, and `characterMap` tries this
- * alphabet on every configuration, Logitech's included, so every reader that names a device refused through the
+ * **Read from the generated module `oxaniumalphabet.ts`, not drawn from the font.** Oxanium's files are a
+ * resource only the Node entry supplies, and `characterMap` tries this alphabet on every configuration,
+ * Logitech's included, so while it was drawn from the font every reader that names a device refused through the
  * main entry: `devices` and `inventory` threw `ResourceError` in FreeHarmony, which imports the main entry alone.
  * The tables are what `oxaniumAlphabetFromFont` computes, written once by `bin/oxaniumalphabet.ts`, and
  * `test/screens/oxaniumalphabet.test.ts` computes them from the font again and holds the module equal to them, so the

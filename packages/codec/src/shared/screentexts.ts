@@ -9,7 +9,7 @@
  * on the codes alone, whatever font draws them, and on whole runs. `shareRuns` is that rule, once.
  *
  * `withScreenTexts` and its types moved here from the four slot family's `screentexts.ts`, unchanged, when the
- * One family's pass needed them too, `todo-compile-one.md` 5.1: writing a text into a program piece, moving
+ * One family's pass needed them too: writing a text into a program piece, moving
  * every address into a piece whose texts changed length and pointing every reference at its home's inline copy
  * is the frame's business and names no screen.
  */

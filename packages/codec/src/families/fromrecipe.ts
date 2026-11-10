@@ -1,5 +1,5 @@
 /**
- * **One build from a recipe, for every remote the libraries serve**, plan 014 and `todo.md` 7.3.11: a recipe goes in,
+ * **One build from a recipe, for every remote the libraries serve**, plan 014: a recipe goes in,
  * the JSON an application hands over with everything a remote is to hold, and what comes out is what is sent to that
  * remote. It sits beside the registry, in `families/`, since choosing a family and naming each kind's result is that
  * folder's work and not a shared module's, `generic.test.ts`. The application does not have to know which family builds for which model, nor the four routes each family
@@ -96,7 +96,7 @@ function modelOf(json: unknown): { readonly name: string; readonly skin?: number
 }
 
 /**
- * **The choices a recipe leaves to its family's defaults**, by name, plan 014 and `todo.md` 7.3.11.2: empty where the
+ * **The choices a recipe leaves to its family's defaults**, by name, plan 014: empty where the
  * recipe states every choice its family makes, which a reference recipe does, so that a default changed later cannot
  * change a reference without its recipe saying so. A family that makes no choice, a document family among them,
  * answers empty.

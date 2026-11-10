@@ -1,6 +1,6 @@
 /**
  * The device half of the plain send, `{0x7D, 0x7C}` naming one device, which two families share: the One family,
- * the Harmony One, section 278, and the side keys family, the Harmony 880 and 885, `todo-compile-885.md` 2.1. A
+ * the Harmony One, section 278, and the side keys family, the Harmony 880 and 885. A
  * device's lists are one such pair per record, and where the device states a power on delay an on list after them:
  * every step of the on action called in order, then one bare `0x7C` wait of the delay in tenths.
  *

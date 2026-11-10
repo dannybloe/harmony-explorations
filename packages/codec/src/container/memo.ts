@@ -8,7 +8,7 @@
  * One family's menus and lists), so a value cached on the object alone could outlive the bytes it was
  * read from and nothing would say so. Here each entry keeps a copy of the blob and is used only while
  * the blob still equals it, which is a comparison of a megabyte four bytes at a time, `sameBytes`, against a
- * reader costing ten milliseconds and more. It was `Buffer.equals` until `todo.md` 7.3.5 took Node out of the core. Any other field a reader uses (`flashBase`, `sections`) is set
+ * reader costing ten milliseconds and more. It was `Buffer.equals` until Node was taken out of the core. Any other field a reader uses (`flashBase`, `sections`) is set
  * once at parse and is `readonly`.
  *
  * **What it is for.** Test files and composers ask the same container the same question many times:

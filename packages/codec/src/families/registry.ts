@@ -53,8 +53,8 @@ export class NoFamilyError extends ComposeError {}
 /**
  * The family of the remotes of an architecture, or undefined for one no family serves yet, for the container route:
  * the compiled families alone, since an architecture a container states is a compiled one. The Harmony 300 and
- * 350's, architecture 16, since `todo-compile-350.md` 4.1, which composes a device for it and refuses the rest; the
- * Harmony 880 and 885's, architecture 8, since `todo-compile-885.md` 2.1, likewise.
+ * 350's family serves architecture 16 and the Harmony 880 and 885's architecture 8, each composing what it states
+ * and refusing the rest.
  */
 export function familyOfArchitecture(architecture: number | undefined): Family | undefined {
   switch (architecture) {

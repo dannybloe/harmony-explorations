@@ -246,7 +246,7 @@ export function irFrame(
  * different hold still differ there, section 343.
  *
  * One derivation for both families' comparisons, the four slot family's `setupView` and the One family's
- * `oneView`, `todo-compile-one.md` 8.1.5: the second needed it per send where the first had it per list.
+ * `oneView`, section 436: the second needed it per send where the first had it per list.
  */
 export function recordSent(c: Container, record: number): { frame: string; stored: string } {
   const frame = irFrame(c, record);

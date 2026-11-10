@@ -1,8 +1,9 @@
 /**
  * The raw capture's derived files read off the lab's disk, beside the projection and alignment they feed,
  * `catalogueraw.ts`, whose docstring says what the capture is, how the side file is laid out and the token rule that
- * applies to everything returned here. Moved out of that module by `todo.md` 7.3.5 so the projection loads where there
- * is no disk; `catalogueRules` reads the files and hands the side file's entry to `rawDrivingFields`, which attaches it.
+ * applies to everything returned here. Kept out of that module, plan 013 decision 5, so the projection loads where
+ * there is no disk; `catalogueRules` reads the files and hands the side file's entry to `rawDrivingFields`, which
+ * attaches it.
  *
  * **TOKEN RULE: never print a raw line or a whole device.** One line can be 130 KB, about 35000 tokens.
  */

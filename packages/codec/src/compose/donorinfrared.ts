@@ -1,5 +1,5 @@
 /**
- * A donor device's infrared composed from the catalogue, `todo-compile-one.md` 8.1.3: a device a configuration
+ * A donor device's infrared composed from the catalogue: a device a configuration
  * already holds given the records the catalogue composes for it in place of its own, every send told the new index
  * of the code it sent, and the bytes of a configuration's infrared the catalogue reproduces, device by device.
  * Part of composing catalogue devices, `composecatalogue.ts`, which re-exports it whole.
@@ -77,7 +77,7 @@ function describeRecord(c: Container, address: number): { header: string; blocks
 /**
  * A device the configuration already holds given the infrared records the catalogue composes for it, in the
  * order and with the codes `composeCatalogueDevice` gives a device composed whole, in place of the records its
- * own group held: what `todo-compile-one.md` 8.1.3 asks of the Harmony One's composed setup, whose donor is
+ * own group held: what the Harmony One's composed setup needs, whose donor is
  * Logitech's compile of two of the test setup's seven devices, so that no infrared byte of the result is the
  * donor's.
  *
@@ -243,8 +243,8 @@ export interface CatalogueInfraredBytes {
  * blocks are word for word one the catalogue composes for that device whole, `composeCatalogueDevice`'s records,
  * counts with its blocks, and the group's own record array counts where every record is the composed one at the
  * same place, which is what a group the composer laid out holds. An attribution for a measurement of what a
- * configuration still carries from a donor, as the One family's `oneBuiltBytes` is for its builders,
- * `todo-compile-one.md` 8.1.3: measured on the result and blind to how it was made, so it says what the catalogue
+ * configuration still carries from a donor, as the One family's `oneBuiltBytes` is for its builders:
+ * measured on the result and blind to how it was made, so it says what the catalogue
  * can write and not what wrote it, and a caller holds it to the path separately.
  */
 export function catalogueInfraredBytes(

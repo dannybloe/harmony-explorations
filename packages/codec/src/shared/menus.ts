@@ -44,7 +44,7 @@ export const DEVICE_MENU_MARKER_VALUE = 1;
 // variable is this marker being unread.
 
 /**
- * The variable every menu row writes last, the menu marker, section 329, `todo-compile-650.md` 6.2.8.
+ * The variable every menu row writes last, the menu marker, section 329.
  *
  * **Which variable it is differs per configuration**, ten different ones over the eighteen of the
  * marker census, sections 239 and 285, and fifteen over the 27 below, so the index is the configuration's own; in one built from nothing it is the
@@ -113,9 +113,9 @@ export interface ComposedScreen {
   /** The device list modes that gained a row, by table index. */
   menus: readonly number[];
   /**
-   * The base slot 10 list the new menu rows run: beep, enter the mode, mark device mode. On the Harmony One since
-   * `todo-compile-one.md` 4.3.3 every row runs a list of its own, as Logitech's do, section 424, and this is the first
-   * list index the rebuilt device lists took.
+   * The base slot 10 list the new menu rows run: beep, enter the mode, mark device mode. On the Harmony One every
+   * row runs a list of its own, as Logitech's do, section 424, and this is the first list index the rebuilt device
+   * lists took.
    */
   rowList: number;
   /** The menus whose last page was full, so a new one row page was added to each, section 240. */
@@ -411,7 +411,7 @@ export interface ComposeScreenOptions {
    * bound to nothing. On the Harmony 600, 650 and 700 `keysLike` is still the mode whose key map's shape
    * is copied, its 47 tags and its two navigation entries, but none of its bindings. On the Harmony One the
    * rows are laid out by the One family's own rules, section 394, and of this only `keys` is read, into
-   * the shape of an existing device mode of as many pages, `todo-compile-one.md` 1.2.10.
+   * the shape of an existing device mode of as many pages.
    */
   compiled?: { title: string; keys: ReadonlyMap<number, number> };
 }
@@ -441,8 +441,8 @@ export function activityMenus(c: Container): { menu: number | undefined; marker:
 }
 
 /**
- * The activity menu found by its rows: the mode whose rows select the most base slot 9 entries,
- * `todo-compile-650.md` 6.2.9. The One family's rule, and the four slot family's before section 375,
+ * The activity menu found by its rows: the mode whose rows select the most base slot 9 entries, section 334.
+ * The One family's rule, and the four slot family's before section 375,
  * kept there as its calibration. A menu with no row is not found.
  */
 export function activityMenuByRows(c: Container): number | undefined {

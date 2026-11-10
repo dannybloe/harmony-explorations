@@ -83,7 +83,7 @@ export interface Device {
  * device list in its eight configurations is enter a mode, then write 1 to the configuration's device mode marker,
  * as on arch 14. Every other architecture is read with the Harmony One's shape, which has it.
  *
- * **Arch 8 was read with the Harmony One's shape until `todo-compile-885.md` 1.7's follow up**, which found no row
+ * **Arch 8 was once read with the Harmony One's shape**, which found no row
  * there, so no device on arch 8 had a mode and no device list label reached `devices`: a group base slot 0 names
  * nothing for fell through to the top row of its own mode, which on arch 8 is mostly a command, so a bench Harmony
  * 885's CD player came back named `Pwr`, and two of the other unit's devices came back unnamed,

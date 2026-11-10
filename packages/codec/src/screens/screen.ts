@@ -571,7 +571,7 @@ export const BITMAP_DIMENSION_LIMIT = 0xff;
  * A picture's whole object, header included, from its pixels: `undefined` is a pixel nothing draws.
  *
  * **The inverse of `bitmapPixels` in `render.ts`**, for the two kinds arch 8, 10, 12 and 14 store, and
- * it is the encoder `todo-compile-650.md` 9.1 needed, section 363. Two choices are the encoder's and
+ * it is the encoder our pictures needed, section 363. Two choices are the encoder's and
  * neither is stated in the stream, so both were measured rather than chosen:
  *
  * * **The kind follows from the pixels.** A picture with a pixel nothing draws can only be the encoded

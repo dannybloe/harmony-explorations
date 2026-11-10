@@ -618,8 +618,8 @@ export function activityNames(c: Container): ActivityName[] {
   }
   if (broken) resolve(drafts);
 
-  // **And a tie the rest of the configuration draws both sides of is broken by the activity's own modes**,
-  // todo-compile-650 11.2.2. One activity named as a device, "LG TV", or as a word of the menus, "Devices",
+  // **And a tie the rest of the configuration draws both sides of is broken by the activity's own modes**.
+  // One activity named as a device, "LG TV", or as a word of the menus, "Devices",
   // is drawn on the device pages or the device lists as well, so the rule above finds both candidates
   // elsewhere and keeps both. What still tells them apart is how many of the modes the activity enters say
   // the candidate: the label is said by its start up screen, inside "Starting LG TV", and by its working

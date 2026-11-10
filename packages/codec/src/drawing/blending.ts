@@ -1,5 +1,5 @@
 /**
- * Our letters blended into the colour they are drawn on: `todo-compile-650.md` 8.2.6.
+ * Our letters blended into the colour they are drawn on.
  *
  * `fonttable.ts` letters every font set in one bit, as Logitech's are: an ink, a shadow, and skipped pixels
  * the background shows through. That is a staircase at every edge, and Logitech's letters hide it by being
@@ -25,11 +25,11 @@
  * character once.
  *
  * **Nothing in it is a remote's**: it reads a rendering, the colour under each text and the faces it is given.
- * Checked again for `todo-compile-one.md` 3.3.3.5, which moved the font table's per family facts into the
- * families: this module had none to move, the weight of a copy being already the caller's, `WeightFor`.
+ * The font table's per family facts are the families' own, `Family.fonts`, and this module holds none of them,
+ * the weight of a copy being the caller's, `WeightFor`.
  * Whether a configuration's letters are blended is its builder's choice, `FourSlotChoices.blendLetters` on the
  * Harmony 600, 650 and 700; this said the step was gated on the Harmony 650 until 16 October 2026, when the
- * Harmony One's configuration came to be blended too, `todo-compile-one.md` 1.2.11.2, and the gate moved to
+ * Harmony One's configuration came to be blended too, and the gate moved to
  * the callers, where the choice already was. The firmware takes a select's operand as one byte, read on the
  * Harmony 650 0.2 and the Harmony One 3.4, so at most 256 sets; a configuration that would need more is refused.
  *
@@ -315,7 +315,7 @@ export function checkBlendedLetters(c: Container, faces: readonly SetFace[], ble
  * colour under its strings, so the selects one role makes on several backgrounds name several sets after it,
  * where they named one before; a screen builder's description refuses that, as it should on a compile of
  * Logitech's, which blends nothing. Pointed back, the configuration reads as it did before the blending, which
- * is what `todo-compile-one.md` 3.2.2's attribution describes the screens off. Only a select some page reaches,
+ * is what the Harmony One's attribution, which says which generator wrote each byte, describes the screens off. Only a select some page reaches,
  * `reachablePrograms`, is pointed back; the blending reads its selects off the same pages' renderings, and one
  * it repointed that this misses stays a copy, which the description then refuses rather than misreads.
  */

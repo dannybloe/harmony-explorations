@@ -2,7 +2,7 @@
  * The bookkeeping every family's attribution of a finished configuration does, whichever generators it asks: a ledger
  * of which generator owns each byte, a byte credited only once its rebuild is the file, the bytes a generator read off
  * the file as its description counted apart, and what is left reported by the region that claims it or as claimed by
- * nothing. `todo-compile-350.md` 5.2.1, written for the Harmony 300 and 350's attribution, `families/harmony-300-350/
+ * nothing. Written for the Harmony 300 and 350's attribution, `families/harmony-300-350/
  * attribution.ts`.
  *
  * **Why it is outside every family.** Nothing here knows a byte of any remote: it takes the generators' names, their

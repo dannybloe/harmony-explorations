@@ -204,7 +204,8 @@ export const FIRMWARE_STATE_VARIABLE_MAX = 12;
  * 138's cut at 12 came from arch 9 (Harmony 525), where its configurations name 13 upward and its own
  * seeder compares the index against the literal 13.
  *
- * Arch 16 (Harmony 300 and 350) owns 0 to 17 as well, read in its 1.4 image in `todo-compile-350.md` 2.5:
+ * Arch 16 (Harmony 300 and 350) owns 0 to 17 as well, read in its 1.4 firmware image,
+ * `reference/architectures/harmony-300-350/memory.md` "The state variables":
  * its alternative fill and the memory check that gates its seeder both start at 18, it stores directly
  * into 0, 3, 4, 5, 11, 13, 16 and 17, and it steps the minute itself, `tests/firmware/test_firmware_state_block.py`
  * and `tests/harmony_300_350/test_harmony_350_clock.py`.

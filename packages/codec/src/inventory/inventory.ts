@@ -11,8 +11,8 @@
  * or a test. The generic role words the generator emits are structure and appear freely, and the
  * tests assert how many variables carry a device identifier rather than which.
  *
- * **One module until `todo.md` 7.3.8, the parts now beside it, each re-exported here whole**, so a caller
- * imports from this module as before and every name it had stays: `statevariables.ts`, the variables the
+ * **Its parts sit beside it, each re-exported here whole**, so a caller imports from this module and every
+ * name keeps its path: `statevariables.ts`, the variables the
  * name tree names; `instructions.ts`, the instruction words the readers recognise; `compilerorder.ts`, the
  * order Logitech's compiler writes cases and tags in; `activities.ts`; `devices.ts`; `keys.ts`, what each
  * key sends and the labels a screen draws for it; and `power.ts`, a device's power and its delays.

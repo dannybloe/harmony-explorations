@@ -299,8 +299,8 @@ export interface ActivityFromRoles {
 
 /**
  * An activity stated the way MyHarmony states it, devices with roles, turned into what the composer
- * takes: the start's writes and the two devices the keypad is built from. `todo-compile-650.md` 3.14,
- * the pass through device.
+ * takes: the start's writes and the two devices the keypad is built from, a pass
+ * through device among them.
  *
  * **Every device listed is switched on and put on its input, whatever its roles**, and that is the
  * whole of what Logitech's compiler does for a pass through device. Measured on the one compile in the

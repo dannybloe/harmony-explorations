@@ -97,7 +97,7 @@ export function bytesOf(text: string): Uint8Array {
 
 /**
  * Bytes as lower case hexadecimal, two digits each, as `Buffer`'s `toString('hex')` spells them, which every caller
- * here used until `todo.md` 7.3.5 took Node out of the codec's core.
+ * here used while the codec's core still loaded Node.
  */
 export function hexOf(bytes: Uint8Array): string {
   let out = '';
@@ -106,15 +106,15 @@ export function hexOf(bytes: Uint8Array): string {
 }
 
 /**
- * Whether two byte arrays hold the same bytes: `@harmony/base`'s one copy, re-exported under its name, since
- * `todo.md` 7.3.7 moved it there for `packages/usb` to reach.
+ * Whether two byte arrays hold the same bytes: `@harmony/base`'s one copy, re-exported under its name; it
+ * sits there so that `packages/usb` reaches the same copy.
  */
 export { sameBytes } from '@harmony/base/bytes';
 
 /**
  * CRC-32, the one PNG's chunks and a ZIP's entries both carry, ISO 3309's polynomial reflected, `0xedb88320`, and the
  * value `zlib`'s `crc32` answers. Computed rather than tabulated: it runs four times per image and once per metadata
- * archive. It was `png.ts`'s own until `todo.md` 7.3.5, when the metadata archive stopped asking Node's zlib.
+ * archive. It was `png.ts`'s own until the metadata archive stopped asking Node's zlib.
  */
 export function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;

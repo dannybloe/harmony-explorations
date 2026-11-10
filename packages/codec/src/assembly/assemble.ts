@@ -1,6 +1,6 @@
 /**
  * Which action lists a configuration names, and dropping the ones nothing names: the renumbering of base
- * slot 10 that `todo-compile-650.md` 10.6's assembly runs as its step 12, `docs/findings.md` sections 362
+ * slot 10 that the Harmony 600, 650 and 700's assembly runs as its step 12, `docs/findings.md` sections 362
  * and 364.
  *
  * `listCallSites` finds every instruction that names an action list, `namedLists` the lists something
@@ -11,14 +11,14 @@
  *
  * **Scope, decision 16**: the holders were enumerated and the renumbering measured on arch 14 (Harmony 600, 650 and 700) compiles,
  * `h650_test_config_clean` among them, sections 360 and 362, and the Harmony 600, 650 and 700's assembly was
- * the first caller. **On the Harmony One since `todo-compile-one.md` 4.10**, section 421: base slots 10 and 8 read
+ * the first caller. **On the Harmony One as well**, section 421: base slots 10 and 8 read
  * through `archSlot`, the census finds 102324 sites over the nineteen One compiles and every list nothing reaches
  * drops out of each with every check passing, and the One family's `withoutTourAndAssistant` is the second
  * caller. On the test setup's donor the 27 three byte runs `lo hi 7F` the walk does not hold sit in no action list,
  * and a drop short of any holder but the leading list is refused;
  * the leading list names only the start list, below every drop.
  *
- * **The assembly itself moved into its family** with `todo-compile-one.md` 3.3.3.2,
+ * **The assembly itself is its family's**,
  * `families/harmony-600-650-700/assemble.ts`: `assembleSetup`, its checks and `attributeBytes` are the Harmony 600,
  * 650 and 700's chain, and this module was its first half.
  */
@@ -88,10 +88,10 @@ export interface InstructionSite {
  * that enters a mode by number, which a renumbering of base slot 6 rewrites, `shared/dropmodes.ts`. An instruction
  * reached twice is one site.
  *
- * **Measured on the Harmony One since `todo-compile-one.md` 4.10**: for `0x7F` it finds 3067 sites on
+ * **Measured on the Harmony One too**: for `0x7F` it finds 3067 sites on
  * `harvest_one_two_devices`, the figure section 413's blind reviewer counted by a walk of its own, where reading
  * raw slots 10 and 8 found 1553. The holders were enumerated on arch 14 (Harmony 600, 650 and 700) compiles,
- * sections 360 and 362, and on the nineteen arch 12 (Harmony One) compiles since 4.10. **Which architectures the
+ * sections 360 and 362, and on the nineteen arch 12 (Harmony One) compiles, section 421. **Which architectures the
  * `archSlot` reading changes**: none on arch 14 (Harmony 600, 650 and 700) and arch 9 (Harmony 525), whose base and
  * raw slots 8 and 10 coincide. Not checked on the others, where it changes what the walk reads: arch 8 (Harmony 880
  * and 885) maps base 8 and 10 to raw 9 and 11, arch 10 (Harmony 890 and 895) has no base slot 8 (the leading list is
@@ -114,7 +114,7 @@ export function instructionSites(c: Container, opcode: number): InstructionSite[
 
   // The two sections read by slot, each through `archSlot`: base slot 10 and base slot 8 are raw slots 11 and 9 on
   // the Harmony One, which inserts a NULL at raw slot 8, so reading raw slots 10 and 8 there walked base slot 9's
-  // handler sets as if they were action lists and the inserted NULL as the leading list, todo-compile-one.md 4.10.
+  // handler sets as if they were action lists and the inserted NULL as the leading list, section 421.
   const rawSlot = (base: number): number | undefined => {
     if (c.architecture === undefined) return undefined;
     try {

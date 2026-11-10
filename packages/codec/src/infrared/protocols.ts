@@ -118,7 +118,7 @@ export interface StatedProtocol {
    * whose duration is the repeat rate the user feels, section 127. Same shape as `tail`. Whether
    * a record carries one at all is the command's own property, so `heldOf` states the population
    * On a stated row it is derived from Logitech's definition rather than measured, and every stated row
-   * carries one since todo-touch 5.3.4, a repetition holding no count.
+   * carries one, a repetition holding no count.
    * this was measured over, and Toshiba's is its ditto frame alone with no copy in it.
    */
   readonly held?: {
@@ -145,7 +145,7 @@ export interface StatedProtocol {
   readonly heldOf?: number;
   /**
    * The first transmission at **one** repetition: what precedes the repetition, then one of it. Written on a
-   * stated row whose definition states no repeat count, where `tail` is not, todo-touch 5.3.4.
+   * stated row whose definition states no repeat count, where `tail` is not.
    *
    * **Why a field of its own and not a `tail` at a count of 1.** A `tail` is the compiler's first block, the
    * repetition sent as many times as the family's count, and a builder of a compiled configuration sends it as
@@ -366,8 +366,8 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   // count: this corpus holds no record of any of these families. 33 of them carry a
   // whole block, being the ones whose definition states how many times a repetition is sent;
   // the rest carry no `tail`, so `blockOfStatedCode` refuses their press, and carry instead the two
-  // blocks that state no count, `held` and `opening`, which a Harmony Touch's definition is written from,
-  // todo-touch 5.3.4. The count is
+  // blocks that state no count, `held` and `opening`, which a Harmony Touch's definition is written from.
+  // The count is
   // never guessed: see blockOfDefinition in src/catalogue/archiveblock.ts.
   { family: '3B Technology 27 Bit', periodNs: 27777, biphase: { mark: 270, space: 250, lead: [{ mark: true, us: 260 }, { mark: false, us: 265 }], setIsMark: true }, held: { items: [{ copy: 'full', at: 1 }, { words: [-32767, -32767, -19902] }] }, opening: { items: [{ copy: 'full' }, { words: [-32767, -32767, -19901] }, { copy: 'full', at: 1 }, { words: [-32767, -32767, -19902] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Abacus 13 Bit', periodNs: 28818, biphase: { mark: 1160, space: 900, lead: [{ mark: true, us: 1180 }], setIsMark: true }, held: { items: [{ copy: 'full' }, { words: [-4500] }, { copy: 'full', at: 1 }, { words: [-4501] }] }, opening: { items: [{ copy: 'full' }, { words: [-4500] }, { copy: 'full', at: 1 }, { words: [-4501] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },

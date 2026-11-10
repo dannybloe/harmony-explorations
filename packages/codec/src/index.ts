@@ -7,7 +7,7 @@
  * readable but wrong listings, and the same reasoning applies here. The Python container parser stays in
  * `src/harmony/` for the reverse engineering tools, and the two are held equal by golden vectors.
  *
- * **Explicit names, grouped by what an application does with them**, `todo.md` 7.3.6 and plan 013 decision 6;
+ * **Explicit names, grouped by what an application does with them**, plan 013 decision 6;
  * `test/package/surface.test.ts` holds the list, so a new public name is a line in that list's diff. Everything else
  * this package offers is under a named subpath, each module whole: `./build` holds the composers and builders,
  * which stay off this entry by plan 007, and `./internal` the format's parts below the application's view, for

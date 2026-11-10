@@ -30,7 +30,7 @@
  * repository, which decision 15 forbids, so the tests skip without a checkout exactly as the corpus
  * tests skip without a lab.
  *
- * **Two modules beside it since `todo.md` 7.3.8.** `archiveblock.ts` derives a whole block from a definition and
+ * **Two modules beside it.** `archiveblock.ts` derives a whole block from a definition and
  * is re-exported here whole, so its names keep their path; `archiveschema.ts` is a definition's own shape as the
  * archive's files state it, which both read and neither re-exports, as none of it was public before.
  */
@@ -1080,7 +1080,7 @@ function toggleMask(protocol: ArchiveProtocol, at: number, of: number, bits: num
 
 /**
  * The same frames with every toggle bit flipped: what the code sends on every second press, and what
- * Logitech's compiler writes into a record's **second pointer group**, todo-process-logitech 2.5.
+ * Logitech's compiler writes into a record's **second pointer group**, section 365.
  *
  * **What a configuration stores for a toggling code.** The remote cannot compute a bit, since the action
  * list language has no arithmetic reaching a duration stream, section 134, so the record carries the code
@@ -1166,7 +1166,7 @@ export type WaveformRefusal =
  * compared. And a rendering appends the release block to the first transmission, where a configuration
  * keeps it behind a pointer of its own: so under `asStored` the release block comes back separately as
  * `release`, and `once` is the record's first block alone. `toggleFlipped` builds the record's second
- * pointer group, todo-process-logitech 2.5: the same blocks with the toggle bit flipped, and the stated
+ * pointer group, section 365: the same blocks with the toggle bit flipped, and the stated
  * frames where no frame carries one.
  */
 export function waveformOfArchiveCommand(

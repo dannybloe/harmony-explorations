@@ -430,7 +430,7 @@ export function blockOfDefinition(
     refs: readonly (readonly SegmentRef[])[], first: boolean, from: number,
     named?: readonly ('start' | 'repeat' | 'finish')[],
     // Whether this block carries the stored microsecond: the first and held blocks do and a release block
-    // does not, todo-process-logitech 2.5.
+    // does not, section 365.
     stored: boolean = storedForm,
   ): BlockTail | BlockRefusal => {
     base = from;
@@ -566,7 +566,7 @@ export function blockOfDefinition(
   // payload count of the **last** group it walked, and the stored form's one extra microsecond lands on
   // the block's last duration.
   //
-  // **And a release block carries no stored microsecond**, todo-process-logitech 2.5, section 365: every
+  // **And a release block carries no stored microsecond**, section 365: every
   // first and held block of every configuration in the lab but the Harmony 525's, whose blocks are of another
   // class, ends in the one microsecond word the compiler carves off its trailing gap, and neither of the
   // lab's two distinct record tails does: the PlayStation 3's `StopSpacer` on the Harmony One, 650 and 700 and

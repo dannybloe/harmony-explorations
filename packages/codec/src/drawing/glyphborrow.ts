@@ -1,6 +1,7 @@
 /**
  * Borrowing the letters a configuration's fonts lack from another configuration of the same remotes,
- * `todo-compile-885.md` 1.6 (decided at the bench) for 2.7, until 8.2 letters the Harmony 880 and 885 in our own.
+ * which is how a setup composed onto a Harmony 880 or 885 compile is lettered while those two are not lettered in our
+ * own, R42.
  *
  * **Why borrowing is needed at all.** A configuration gives a glyph to a character only where its own strings
  * draw it, `reference/config-format/screens.md` "Base slot 7: the font table": a set holds the glyphs its own
@@ -55,7 +56,8 @@
  * serves them this permission belongs with that family's fonts rather than in a table here.
  *
  * **Not a font of ours.** A borrowed glyph is Logitech's, carried from one of their compiles to another of the same
- * remote, and `todo-compile-885.md` chapter 8 replaces it with our letters as `withOxaniumFonts` did on the 650.
+ * remote. The Harmony 880 and 885 still borrow Logitech's letters this way; lettering them in our own, as
+ * `withOxaniumFonts` does on the 650, is open, R42.
  * Read only towards hardware: the result is bytes in memory.
  */
 import { Container, GspmError, parse, TRAILER_CHECKSUM_OFFSET, trailerChecksum } from '../container/gspm.ts';

@@ -1,6 +1,6 @@
 /**
  * A raw deflate stream, RFC 1951, written the way stock zlib writes one at its default level, so that the metadata
- * archive a configuration carries can be built byte for byte, `todo-compile-350.md` 5.1.4 and plan 011 step 4.
+ * archive a configuration carries can be built byte for byte, plan 011 step 4.
  *
  * **Why our own and not `node:zlib`.** Logitech's compiler deflates the archive as stock zlib 1.2.12 does at level 6,
  * memory level 8 and the default strategy: that setting reproduces the six distinct archives of the family's seven
@@ -40,7 +40,7 @@
  * text in the lab is 30775 bytes).
  * Not checked: whether a version of zlib other than 1.2.12 writes the same streams.
  *
- * **And the reader**, at the end of this module since `todo.md` 7.3.5: `inflateRaw` and `inflateZlib`, held to Node's
+ * **And the reader**, at the end of this module: `inflateRaw` and `inflateZlib`, held to Node's
  * zlib by `inflate.test.ts`, so a PNG and a metadata archive are read where there is no Node.
  */
 
@@ -566,7 +566,7 @@ export function deflateRaw(input: Uint8Array): Uint8Array {
 // And the stream read back, RFC 1951 for a raw stream and RFC 1950 for its zlib wrapping
 
 /*
- * **Why the reader is here too, since `todo.md` 7.3.5.** A PNG's image data and a metadata archive's entry were
+ * **Why the reader is here too.** A PNG's image data and a metadata archive's entry were
  * inflated by Node's zlib, which kept the codec's core from loading where there is no Node. Inflating, unlike
  * deflating, has one answer for every stream, so our own reader can be held to Node's exactly: it is, on every PNG and
  * every metadata archive the tests and the lab hold and on streams damaged at random, `inflate.test.ts`. It sits beside

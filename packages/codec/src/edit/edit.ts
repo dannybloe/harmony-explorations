@@ -516,8 +516,8 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
  * **Where a family keeps another copy that a key reaches, this changes it too**, asking `Family.powerOnDelayCopies`.
  * On arch 16 (Harmony 300 and 350) Watch TV switches a device with one power code on by calling that code's list
  * and a `0x7C` of its own, so the delay is written twice; a device with separate codes is switched through its
- * `Power` variable and has the one copy. `packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`. Until `todo-compile-350.md`
- * 4.6 this changed the device's transition only, and on the bench Harmony 300 that was the copy no key reached.
+ * `Power` variable and has the one copy. `packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`.
+ * This once changed the device's transition only, and on the bench Harmony 300 that was the copy no key reached.
  * This said "an unread list" of the 170 until that list was read.
  *
  * **What it will not tell you is whether the delay does anything**, section 236. The quantity holds

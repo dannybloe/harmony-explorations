@@ -1,7 +1,7 @@
 /**
  * Logitech's device catalogue read off an archive checkout on disk, beside the parsers its files feed, `catalogue.ts`,
- * and the one place a builder's `CatalogueSource` is made from a path, `archiveAt`. Moved out of that module by
- * `todo.md` 7.3.5 so the catalogue's reading loads where there is no disk: each reader here finds and reads a file and
+ * and the one place a builder's `CatalogueSource` is made from a path, `archiveAt`. Kept out of that module, plan
+ * 013 decision 5, so the catalogue's reading loads where there is no disk: each reader here finds and reads a file and
  * hands what it parsed to the half that stayed, `manufacturersOfIndex`, `modelsOfIndex`, `deviceOfRecord` and
  * `commandsOfCodeset`.
  *
@@ -104,7 +104,7 @@ const SOURCES = new Map<string, CatalogueSource>();
 
 /**
  * The archive checked out at `root` as a builder reads it, through the readers above: what every composer that needs
- * the catalogue is handed since `todo.md` 7.3.5, where it was handed the path. **The same object for the same path**,
+ * the catalogue is handed, in place of the path. **The same object for the same path**,
  * since `archiveProtocolsByName` keeps the definitions by name per source, as it kept them per path before, and a
  * device composes many.
  */

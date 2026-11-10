@@ -2,8 +2,8 @@
  * The edits every composer makes to a configuration, whatever its family: the refusal class, the
  * restamped trailer, state variables and the name tree, action lists and value maps appended, the next
  * device identifier, and the check that a record is the one a composer generated. Plan 007's shared core,
- * cut out of `compose.ts` unchanged; it patches a container in place, as everything here does until the
- * families serialize from a description (`todo-compile-650.md` 11.1.1).
+ * cut out of `compose.ts` unchanged; it patches a container in place, as every composer does, the empty
+ * configurations our own generators build included.
  */
 import { STATE_WRITE_BASE, stateVariableSite } from '../container/actions.ts';
 import { u16 as u16le, u24 } from '../support/bytes.ts';
@@ -81,7 +81,7 @@ export function restamped(bytes: Uint8Array): Uint8Array {
  * variables, section 331, so a composer adding several devices to one of them meets this bound, and
  * `devicemode.test.ts` meets it on two.
  *
- * **`by` of -1 is the other direction**, for a variable taken out, `todo-compile-350.md` 4.1.3: every variable at
+ * **`by` of -1 is the other direction**, for a variable taken out, as a device removed does: every variable at
  * or above `from` moves down by one, over the same sites, so a removal and an insertion are one enumeration and
  * not two. The caller takes out variable `from - 1` and its name, and has made sure nothing kept still names it,
  * since a site naming it would be left naming whatever moves into its place.

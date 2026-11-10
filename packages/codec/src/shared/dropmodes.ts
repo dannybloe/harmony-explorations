@@ -1,6 +1,6 @@
 /**
  * Taking modes out of a configuration, and pages out of a mode: base slot 6's other direction from `appendMode`,
- * `todo-compile-one.md` 4.10, findings section 421. Generic: it reads and rewrites the container's own structures,
+ * findings section 421. Generic: it reads and rewrites the container's own structures,
  * the mode table, the entries, the tagged lists, their second copies, the screen programs and the pictures they
  * draw, and names no remote.
  *
@@ -413,7 +413,7 @@ export function dropModePages(c: Container, mode: number, keep: number): Contain
 /**
  * The configuration without those of the pictures at `addresses` that nothing names any more, and how many went: a
  * step that pointed a picture's draws at another, as a family's look does when it draws a device page's pads in
- * pictures of its own, takes the pictures it left behind out of the bank with this, `todo-compile-one.md` 5.3.1. A
+ * pictures of its own, takes the pictures it left behind out of the bank with this. A
  * picture something still names stays, so passing every address a step drew before is safe.
  *
  * **Why a cut and not a piece dropped.** Once nothing names a picture, `takeApart` no longer reads it as a piece of

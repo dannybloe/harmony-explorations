@@ -2,7 +2,7 @@
  * A built screen program as parts, before it is spelled as bytes, and the one encoder that spells them: a picture
  * filling the screen, a queued program, a bar, a font, a text inline or by reference, and the end.
  *
- * Shared, since `todo-compile-one.md` 3.3.3.2: every instruction is `screen.ts`' own, the same on every
+ * Shared: every instruction is `screen.ts`' own, the same on every
  * architecture a screen program is read on, and the one place is the picture filling the screen, drawn from the
  * top left corner. The parts are the four slot family's menus' and screens' (the Harmony 600, 650 and 700), and
  * `recordBuilding` in `screenrecords.ts` spells a record's programs through it for any family; it lived in that

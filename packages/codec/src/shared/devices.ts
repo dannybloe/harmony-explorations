@@ -2,8 +2,7 @@
  * Composing a device: its group, its state variables, its power and input lists, and on the Harmony 600,
  * 650 and 700 its delays. Plan 007's shared part, cut out of `compose.ts` unchanged. What a send is and
  * what a device needs for it, the delay prelude with its two delays or the send and its quantity alone, is
- * the family's, `Family.sends`, since `todo-compile-one.md` 3.3.3.4: the four slot family's `sends.ts` holds
- * the delays this module composed until then.
+ * the family's, `Family.sends`: the four slot family's `sends.ts` holds the delays.
  */
 import type { DelayDefaults, SendShape } from '../families/family.ts';
 import { u24 } from '../support/bytes.ts';
@@ -57,7 +56,7 @@ export interface ComposeDevice {
    * The inter device delay in tenths of a second. On arch 14, 0 to 20, which an activity's start, All Off
    * and Help queue in front of each of this device's commands, section 335; default
    * `INTER_DEVICE_DELAY_DEFAULT`. On the Harmony 880 and 885 the silence each power step's record opens
-   * with, `SendShape.powerStep` in the side keys family, `todo-compile-885.md` 2.3; default its
+   * with, `SendShape.powerStep` in the side keys family, `reference/infrared/sending.md`; default its
    * `SIDE_KEYS_INTER_DEVICE_DEFAULT`. The Harmony One's composer reads none.
    */
   readonly interDeviceDelay?: number;
@@ -137,15 +136,15 @@ export interface DeviceRecords {
 /**
  * What a device's group holds and in which order: every command, then each distinct power step as a record of
  * its own. `composeDeviceFor` composes the group from this, and `composeDonorDeviceInfrared` in
- * `composecatalogue.ts` puts the same records in a donor device's place, `todo-compile-one.md` 8.1.3, so the
- * order a composed device's records take is derived once.
+ * `composecatalogue.ts` puts the same records in a donor device's place, so the order a composed device's records
+ * take is derived once.
  *
  * `stepLeadInUs` is the silence in front of every power step's record, held or not, the family's
- * `SendShape.powerStep`: 0, the default, is the Harmony 650 and 700 compiles' power step, section 309; the
- * Harmony 880 and 885 open it with the device's delay between devices, `todo-compile-885.md` 2.3. The two callers
- * in `composecatalogue.ts` that compare records with a Harmony One's donor leave it at 0, as they always did. That
- * the default gives the bytes it gave before is held by `test/compose/devicepower.test.ts`, whose calibration against the
- * Harmony 650 and 700 compiles reproduces the power records, held ones included, on 17 of its 18 test device
+ * `SendShape.powerStep`: 0, the default, is the Harmony 650 and 700 compiles' power step, section 309; the Harmony
+ * 880 and 885 open it with the device's delay between devices, `reference/infrared/sending.md`. The two callers in
+ * `composecatalogue.ts` that compare records with a Harmony One's donor leave it at 0, as they always did. That the
+ * default gives the bytes it gave before is held by `test/compose/devicepower.test.ts`, whose calibration against
+ * the Harmony 650 and 700 compiles reproduces the power records, held ones included, on 17 of its 18 test device
  * instances and passes unchanged since the lead in became the family's.
  */
 export function deviceRecords(device: ComposeDevice, stepLeadInUs = 0): DeviceRecords {
@@ -221,7 +220,7 @@ export function composeDeviceFor(
   }
   // **How a power step is spelled is the family's where its compiles differ**, `SendShape.powerStep`: the
   // Harmony 880 and 885's compiles open every power record with the device's delay between devices and send it at
-  // the device's own quantity, not the inter key delay, `todo-compile-885.md` 2.2 and 2.3. Absent, the Harmony
+  // the device's own quantity, not the inter key delay, `reference/infrared/sending.md`. Absent, the Harmony
   // 650 and 700 compiles' form, no lead in and the inter key delay, sections 309 and 320.
   const spelling = shape.powerStep?.(device);
   const quantity = spelling?.quantity ?? keyDelay;
@@ -243,11 +242,10 @@ export function composeDeviceFor(
   // when an activity's state transition runs it. On arch 14 every real one also opens with a `0x7F`,
   // the delay step, which the four slot family's send emits since section 287.
   //
-  // **What a send is, and what a device needs for it, is the family's**, `Family.sends`, since
-  // `todo-compile-one.md` 3.3.3.4: on the Harmony 600, 650 and 700 the device's two delays, each a variable
-  // and the base slot 14 table that maps it, composed here before any list, sections 287 and 288, and a
-  // delay the device does not state is the family's choice, `CommonChoices.delays`; on the Harmony One
-  // nothing. Each family's `sends.ts` holds its own.
+  // **What a send is, and what a device needs for it, is the family's**, `Family.sends`: on the Harmony 600, 650
+  // and 700 the device's two delays, each a variable and the base slot 14 table that maps it, composed here before
+  // any list, sections 287 and 288, and a delay the device does not state is the family's choice,
+  // `CommonChoices.delays`; on the Harmony One nothing. Each family's `sends.ts` holds its own.
   const deviceSends = shape.device(parse(group.bytes), group.group, device, delayDefaults);
   let current = deviceSends.container;
 
