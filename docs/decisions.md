@@ -953,6 +953,13 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    table in `docs/remote-requirements.md` is generated from that data with a test that the two agree. An application
    offers a feature where it is met and has the other statuses for a developer.
 
+   **A met is proven by a test, refined the same day.** A met typed beside the test that showed it was a link nothing
+   kept true when the test changed, so a test names the requirement it proves, `proves` in `@harmony/testkit/proof`
+   and `tests/proves.py`, and a model's met is derived from those proofs, with a bench record where the requirement
+   shows on a remote; only open, unknown and impossible are written by hand. What an application reads is generated
+   from the proofs, `packages/base/src/proofs.ts`, and so is a checklist per bench remote under `todo/`, listing only
+   what is possible on it.
+
    **Held by** a guard test over the code and the tests, with the mentions that remain as a debt list that only
    goes down, once the sweep that removes them has run; until then this decision and `CLAUDE.md` are the rule for
    everything new.

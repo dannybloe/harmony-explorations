@@ -64,7 +64,9 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # this repin. The digest before them was 3a59f41f.
 # Repinned for decision 33, a new entry: code and tests never name a todo, and open work points at a
 # numbered requirement. The digest before it was ca39582a.
-DECISIONS_DIGEST = "f7ed1e961a62310749195ec116e5a51582e7df73ddba677d14a445423b5b357a"
+# Repinned for a paragraph added in place under decision 33: a met is proven by a test that names its requirement.
+# The digest before it was f7ed1e96.
+DECISIONS_DIGEST = "85c762a7fa0ef2084f7a9cf8082054ee71e8ed7a315c81c11ef33958cde9c0c0"
 
 SECTIONS = 436
 DECISIONS = 33
