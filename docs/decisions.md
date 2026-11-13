@@ -1000,3 +1000,24 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    **Why the risk is accepted.** The unit's configuration region is in the lab, read twice and identical, together
    with both of its stored firmware images, `tests/harmony_5xx/test_harmony_515.py`; and the 525's block write on
    the same platform came back byte for byte.
+
+36. <a id="d36"></a>**A Harmony Elite set, its remote and its hub, is on the bench, to be read in full; nothing
+   may be written to either.** *Taken on 13 November 2026, after each had been identified on first contact.* The set
+   arrived second hand, in an unknown state, and is not yet linked to an account of ours. The units are `elite`, the
+   remote, skin 111, and `hub`, skin 106, recorded in the lab's `units/` from the serial each states, since neither
+   answers to `/sys/guid`.
+
+   **What reading in full means on this generation.** It has no command that reads memory; its firmware is
+   Logitech's published image, held in the lab. What it stores is reached through its request channel, `/sys/hlapi`,
+   where a request is a write of a request line even when the engine's answer changes nothing. So the remote's
+   channel opens for **the two reads the Touch's carries and nothing else**, `TOUCH_READ_ONLY_SKINS` in
+   `packages/usb/src/rails.ts`, a list of its own beside the Touch's, so the sync and the recovery requests stay
+   refused to it whatever the flags. It runs the Touch's image byte for byte, so the names and what the two reads do
+   are the ones read for the Touch, and the rail holds it to that build.
+
+   **The hub's channel stays closed until its own image is read.** Its USB program is a different build, read only
+   as far as its name table, `docs/predictions/harmony-hub.md`: `/sys/hlapi` is registered there, and what the hub's
+   engine answers on it, in the mode a hub runs in, is not read. A remote in the mode this one reports takes its
+   stored documents from its hub, so the setup itself is read off the hub once that is.
+
+   **Why no write.** None was asked for. A write opens as a decision of its own, as every unit's has.

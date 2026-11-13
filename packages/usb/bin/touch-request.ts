@@ -2,9 +2,9 @@
  * Ask a Harmony Touch one of the two reads its request channel carries: the
  * provisioning information, or `getconfighash`, the entity tags of the stored documents.
  *
- *   node packages/usb/bin/touch-request.ts --request provisioning|confighash
+ *   node packages/usb/bin/touch-request.ts --request provisioning|confighash [--unit touch|elite]
  *   HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/usb/bin/touch-request.ts \
- *     --request provisioning|confighash --commit
+ *     --request provisioning|confighash [--unit touch|elite] --commit
  *
  * **Without `--commit` it opens nothing.** It prints the request line, the template its shape comes from,
  * every report the session would send with the remote's handles shown as zero, whether the lab holds the
@@ -50,11 +50,11 @@ import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({
   usage: [
-    'usage: node packages/usb/bin/touch-request.ts --request provisioning|confighash',
+    'usage: node packages/usb/bin/touch-request.ts --request provisioning|confighash [--unit touch|elite]',
     '       HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/usb/bin/touch-request.ts \\',
-    '         --request provisioning|confighash --commit',
+    '         --request provisioning|confighash [--unit touch|elite] --commit',
   ].join('\n'),
-  values: ['request'],
+  values: ['request', 'unit'],
   flags: ['commit'],
 });
 
@@ -64,8 +64,11 @@ const REQUESTS: Readonly<Record<string, string>> = {
   confighash: TOUCH_READ_REQUESTS[1] as string,
 };
 
-/** The lab record the request channel compares against. */
-const UNIT = 'touch';
+/**
+ * The lab records the request channel may compare against: the bench Harmony Touch, and the bench Harmony
+ * Elite, whose channel the rail opens for the reads alone, `TOUCH_READ_ONLY_SKINS`, decision 36.
+ */
+const UNITS = ['touch', 'elite'] as const;
 
 const hex = (report: Uint8Array, length = 24): string =>
   [...report.subarray(0, length)].map((b) => b.toString(16).padStart(2, '0')).join(' ');
@@ -106,11 +109,13 @@ async function main(): Promise<void> {
   const line = which === undefined ? undefined : REQUESTS[which];
   if (line === undefined) fail(`--request takes ${Object.keys(REQUESTS).join(' or ')}`);
   const commit = cli.flag('commit');
-  const record = unitIdentity(UNIT);
+  const unit = cli.value('unit') ?? 'touch';
+  if (!(UNITS as readonly string[]).includes(unit)) fail(`--unit takes ${UNITS.join(' or ')}`);
+  const record = unitIdentity(unit);
 
   console.log(`request: ${line}`);
   console.log(`shape: ${TOUCH_REQUEST_SHAPES[line]?.template ?? '?'}`);
-  console.log(`unit record: ${record === undefined ? `none at ${unitIdentityPath(UNIT)}` : `${record.slice(0, 8)}...`}`);
+  console.log(`unit record: ${record === undefined ? `none at ${unitIdentityPath(unit)}` : `${record.slice(0, 8)}...`}`);
   console.log(`flags: HARMONY_ENABLE_WRITES ${WRITES_ENABLED ? 'set' : 'unset'}, HARMONY_TOUCH_REQUESTS ${TOUCH_REQUEST_DOOR ? 'set' : 'unset'}`);
 
   if (!commit) {
@@ -121,7 +126,7 @@ async function main(): Promise<void> {
   }
 
   if (record === undefined) {
-    fail(`no unit record at ${unitIdentityPath(UNIT)}: read one with read-file-identity.ts --product 0xc12b --record ${UNIT}`);
+    fail(`no unit record at ${unitIdentityPath(unit)}: read one with read-file-identity.ts --product 0xc12b --record ${unit}`);
   }
   if (LAB === undefined) fail('no lab directory, so there is nowhere to keep the answer');
   const transport = await openFileBasedRemote({ productId: TOUCH_PRODUCT_ID });

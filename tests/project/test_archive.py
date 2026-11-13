@@ -70,10 +70,12 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # 85c762a7.
 # Repinned for decision 35, a new entry: the bench Harmony 515 may be written. The digest before it was
 # 2aba24a1.
-DECISIONS_DIGEST = "07ef7f39a4d92e72ec99df7d7cf626ded84efc40f479890249c745965aa987fe"
+# Repinned for decision 36, a new entry: a Harmony Elite set on the bench, read only. The digest before it was
+# 07ef7f39.
+DECISIONS_DIGEST = "b271ef0f8877e9fe90b1ef9617322f584558bafc859f4a069cdcdae1352ad748"
 
 SECTIONS = 436
-DECISIONS = 35
+DECISIONS = 36
 
 
 def anchor_problems(findings, decisions):

@@ -66,8 +66,7 @@ import {
   SYSINFO_FIELDS,
 } from '../src/filepipe.ts';
 import { identifiesAUnit, unitIdentityFromSerial, unitIdentityText } from '../src/identity.ts';
-import { TOUCH_REQUEST_ARCHITECTURES, TOUCH_REQUEST_SKINS } from '../src/rails.ts';
-import { TransportError } from '../src/transport.ts';
+import { TOUCH_REQUEST_ARCHITECTURES } from '../src/rails.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -121,20 +120,15 @@ async function main(): Promise<void> {
     }
 
     if (record !== undefined) {
-      // One more read, of an inert path, through the same guarded transport. A Harmony Touch refuses it
-      // at open, and only that refusal, from a remote whose identity file states a Touch's architecture
-      // and skin, sends the record to the serial; any other failure stands. A Harmony 300 or 350 that
-      // refused would otherwise get a serial record under its label, which the file write rail would then
-      // fail to match: safe, but an error that names nothing, where this names the cause.
-      const statesATouch = TOUCH_REQUEST_ARCHITECTURES.includes(Number.parseInt(fields.get('arch') ?? '', 16))
-        && TOUCH_REQUEST_SKINS.includes(Number.parseInt(fields.get('skin') ?? '', 16));
-      let block: Uint8Array | undefined;
-      try {
-        block = await readFile(transport, '/sys/guid');
-      } catch (error: unknown) {
-        const refusedAtOpen = error instanceof TransportError && /the remote refused command 0x1$/.test(error.message);
-        if (!refusedAtOpen || !statesATouch) throw error;
-      }
+      // One more read, of an inert path, through the same guarded transport, on the Harmony 300 and 350.
+      // **A remote of the Touch's generation is not asked**, the Touch, the Elite and the hub alike: a Touch
+      // refuses `/sys/guid` at open, measured, and the hub's USB program has no such name in its table, where
+      // what an unregistered name does on an open is not read in its image, `docs/predictions/harmony-hub.md`.
+      // So their record is the serial, which is what the Touch's always rested on. Any failure on the 300 and
+      // 350 stands: a serial record under their label would fail the file write rail with an error that names
+      // nothing, where this names the cause.
+      const ofTheTouchsGeneration = TOUCH_REQUEST_ARCHITECTURES.includes(Number.parseInt(fields.get('arch') ?? '', 16));
+      const block: Uint8Array | undefined = ofTheTouchsGeneration ? undefined : await readFile(transport, '/sys/guid');
       let text: string;
       let source: string;
       if (block !== undefined) {

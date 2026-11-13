@@ -390,11 +390,24 @@ describe('the rail, with the flags off', () => {
     assert.throws(() => assertTouchRequestTarget(facts({ serial_number: OTHER_SERIAL })), /not the unit/);
     assert.throws(() => assertTouchRequestTarget(facts({ serial_number: '' })), /cannot be identified/);
     assert.throws(() => assertTouchRequestTarget(facts({ serial_number: undefined })), /no serial_number/);
-    assert.throws(() => assertTouchRequestTarget(facts({ arch: '0x10' })), /Harmony Touch only/);
-    assert.throws(() => assertTouchRequestTarget(facts({ skin: '0x61' })), /Harmony Touch only/);
-    assert.throws(() => assertTouchRequestTarget(facts({ usb_product_id: '0xc129' })), /Harmony Touch only/);
+    assert.throws(() => assertTouchRequestTarget(facts({ arch: '0x10' })), /read for a Harmony Touch, skin 0x63/);
+    assert.throws(() => assertTouchRequestTarget(facts({ skin: '0x61' })), /read for a Harmony Touch, skin 0x63/);
+    assert.throws(() => assertTouchRequestTarget(facts({ usb_product_id: '0xc129' })), /read for a Harmony Touch, skin 0x63/);
     assert.throws(() => assertTouchRequestTarget(facts({ fw_ver: '4.15.250' })), /read on 4\.15\.330 only/);
     assert.throws(() => assertTouchRequestTarget(facts({ link_packet_length: '32' })), /packet length/);
+  });
+
+  it('lets a Harmony Elite, skin 111, take the two reads and refuses it every sync and recovery request', () => {
+    const elite = { ...permission, sysinfo: parseSysInfo(sysinfoText({ skin: '0x6f' })) };
+    for (const line of TOUCH_READ_REQUESTS) assert.equal(assertTouchRequestTarget({ ...elite, line }).tier, 'read', line);
+    for (const line of [...TOUCH_SYNC_REQUESTS, ...TOUCH_RECOVERY_REQUESTS]) {
+      assert.throws(() => assertTouchRequestTarget({ ...elite, line }), /carries the two reads and nothing else/, line);
+      // The control: the same line passes the target checks on the Touch.
+      assert.notEqual(assertTouchRequestTarget({ ...permission, line }).tier, 'read', line);
+    }
+    // Its unit is still checked, and the build: the Elite is held to the build the names were read on.
+    assert.throws(() => assertTouchRequestTarget({ ...elite, sysinfo: parseSysInfo(sysinfoText({ skin: '0x6f', serial_number: OTHER_SERIAL })) }), /not the unit/);
+    assert.throws(() => assertTouchRequestTarget({ ...elite, sysinfo: parseSysInfo(sysinfoText({ skin: '0x6f', fw_ver: '4.15.250' })) }), /read on 4\.15\.330 only/);
   });
 });
 

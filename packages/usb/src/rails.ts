@@ -1856,6 +1856,16 @@ export function touchRequestOfLine(line: string): TouchRequestStart {
  */
 export const TOUCH_REQUEST_ARCHITECTURES: readonly number[] = [17];
 export const TOUCH_REQUEST_SKINS: readonly number[] = [99];
+
+/**
+ * The remotes of the Touch's generation whose request channel carries **the read tier and nothing else**, a list
+ * of its own because it is a path of its own: decision 36 put a Harmony Elite on the bench to be read in full and
+ * permitted no write to it. Skin 111, the remote Logitech sold as the Harmony Elite, which runs the Touch's image
+ * byte for byte, so the names and what the two reads do are the ones read for the Touch, and the build check
+ * below holds it to the same build. A sync request or a recovery request to it is refused, whatever the flags.
+ * The Harmony Hub is not on it: its request channel's answers are not read in its own image.
+ */
+export const TOUCH_READ_ONLY_SKINS: readonly number[] = [111];
 export const TOUCH_PRODUCT_ID = 0xc12b;
 
 /**
@@ -1922,12 +1932,14 @@ export interface TouchRequestPermission {
  */
 export function assertTouchUnit(p: Pick<TouchRequestPermission, 'sysinfo' | 'permittedUnit'>): void {
   const number = (field: string): number => Number.parseInt(p.sysinfo.get(field) ?? '', 16);
-  if (!TOUCH_REQUEST_ARCHITECTURES.includes(number('arch')) || !TOUCH_REQUEST_SKINS.includes(number('skin'))
+  const skin = number('skin');
+  if (!TOUCH_REQUEST_ARCHITECTURES.includes(number('arch'))
+    || !(TOUCH_REQUEST_SKINS.includes(skin) || TOUCH_READ_ONLY_SKINS.includes(skin))
     || number('usb_product_id') !== TOUCH_PRODUCT_ID) {
     throw new RailError(
       `the remote states architecture ${p.sysinfo.get('arch') ?? 'nothing'}, skin ${p.sysinfo.get('skin') ?? 'nothing'} `
         + `and product ${p.sysinfo.get('usb_product_id') ?? 'nothing'}, and the request channel is read for a `
-        + 'Harmony Touch only: architecture 0x11, skin 0x63, product 0xc12b',
+        + 'Harmony Touch, skin 0x63, and its reads for a Harmony Elite, skin 0x6f: architecture 0x11, product 0xc12b',
     );
   }
   const build = p.sysinfo.get('fw_ver');
@@ -1964,7 +1976,17 @@ export function assertTouchRequestTarget(p: TouchRequestPermission): TouchReques
     );
   }
   assertTouchUnit(p);
-  return touchRequestOfLine(p.line);
+  const start = touchRequestOfLine(p.line);
+  // A remote on the read only list takes the reads and the announcement a read's line may carry, and nothing
+  // a sync or a recovery sends.
+  const skin = Number.parseInt(p.sysinfo.get('skin') ?? '', 16);
+  if (TOUCH_READ_ONLY_SKINS.includes(skin) && start.tier !== 'read' && start.tier !== 'announcement') {
+    throw new RailError(
+      `refusing ${start.name} to skin ${p.sysinfo.get('skin')}: a Harmony Elite's request channel carries the `
+        + 'two reads and nothing else, decision 36',
+    );
+  }
+  return start;
 }
 
 /**
