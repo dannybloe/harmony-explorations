@@ -31,4 +31,11 @@ name is opened.
 
 ## Outcomes
 
-Not read yet.
+Read the same day, once, with `read-file-identity.ts --product 0xc12b --raw`: one open, one read and one close of
+`/sys/sysinfo`, 234 bytes, and the remote answered normally. **Every prediction held**: product `0xC12B`,
+`bcdDevice` `0x1111`, `arch` `0x11`, `skin` `0x6F`, `fw_type` `0x00`, `link_packet_length` 64, no `guid` field, and
+`fw_ver` **4.15.330**, the service's current remote image, so this remote was updated while in use as its hub was.
+
+14 fields, the hub's 15 less its Bluetooth address. `feature` reads `Infrared` where the hub's reads
+`Infrared,BluetoothHid`, so the remote has infrared of its own; whether it sends any when paired with its hub is
+not read. `hw_ver` 01.00, `ram_size` 64MB and `status` `normal`, as the hub's. The serial stays in the lab.

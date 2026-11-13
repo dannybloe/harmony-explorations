@@ -33,6 +33,15 @@ test('a remote on the 525 platform is named by the skin in its bcdDevice, not by
   expect(modelName(0xc111, 0x0999)).toBe('Harmony 5xx')
 })
 
+test('the hub is named by its product id, and the Touch generation by the skin in decimal digits', () => {
+  // 0x1106 and 0x1099 as the hub and the Touch reported them on the bench; the Elite and the 950 as the rule gives.
+  expect(modelName(0xc129, 0x1106)).toBe('Harmony Hub')
+  expect(modelName(0xc12b, 0x1099)).toBe('Harmony Touch')
+  expect(modelName(0xc12b, 0x1111)).toBe('Harmony Elite')
+  expect(modelName(0xc12b, 0x1112)).toBe('Harmony 950')
+  expect(modelName(0xc12b, 0x1199)).toBe('Harmony Touch family, skin 199')
+})
+
 const journal = [
   '# write-config.ts --config x.bin --dump h650_base --commit',
   'unit identity 7ad856f5..., which matches the recorded h650',
@@ -146,7 +155,7 @@ test('the 350 writer shows a bar by chunk, and where it stopped says whether any
   expect(fileWriteLine('Harmony 350, unit record h350: writing\nread only: nothing was sent', false)).toBe(undefined)
 })
 
-const usbTouch = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49451\n  "idVendor" = 1133\n'
+const usbTouch = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49451\n  "bcdDevice" = 4249\n  "idVendor" = 1133\n'
 const hidTouch = '+-o IOHIDInterface\n  "Product" = "Harmony Remote"\n  "VendorID" = 1133\n  "ProductID" = 49451\n'
 
 test('two remotes on the cable get a line each, in the order the bus lists them', () => {

@@ -54,6 +54,7 @@ const MODELS: Record<number, string> = {
   0xc121: 'Harmony One',
   0xc122: 'Harmony 600/650/700',
   0xc124: 'Harmony 300/350',
+  0xc129: 'Harmony Hub',
   0xc12b: 'Harmony Touch',
 }
 
@@ -84,10 +85,31 @@ const MOCHA_SKINS: Record<number, string> = {
   68: 'Harmony 510',
 }
 
+// The Harmony Touch's product id is shared by the remotes of its generation, and their bcdDevice carries the
+// skin differently: a leading 1, then the skin in decimal digits, so 0x1099 is skin 99, a Harmony Touch, and
+// the hub's 0x1106 is skin 106 (harmony-explorations reference/remotes/harmony-touch/usb.md and
+// docs/predictions/harmony-hub.md). The names are what Logitech sold each skin as, reference/remotes/README.md.
+const TOUCH = 0xc12b
+const TOUCH_SKINS: Record<number, string> = {
+  99: 'Harmony Touch',
+  100: 'Harmony Ultimate',
+  102: 'Harmony Ultimate One',
+  105: 'Harmony Ultimate Home',
+  108: 'Harmony Ultimate Home',
+  111: 'Harmony Elite',
+  112: 'Harmony 950',
+}
+
+/** The skin a remote of the Touch's generation states in its bcdDevice: the low three digits, read as decimal. */
+export function touchSkin(bcdDevice: number): number {
+  return Number.parseInt((bcdDevice & 0xfff).toString(16), 10)
+}
+
 /** The name to show for a Harmony's product id, and its bcdDevice where the product id is shared. */
 export function modelName(product: number, bcdDevice: number): string {
   if (product === ESPRESSO) return ESPRESSO_SKINS[bcdDevice & 0xff] ?? MODELS[product]!
   if (product === MOCHA) return MOCHA_SKINS[bcdDevice & 0xff] ?? MODELS[product]!
+  if (product === TOUCH) return TOUCH_SKINS[touchSkin(bcdDevice)] ?? `${MODELS[product]!} family, skin ${touchSkin(bcdDevice)}`
   return MODELS[product] ?? `Harmony 0x${product.toString(16)}`
 }
 
@@ -510,7 +532,8 @@ export const register: Register = (on) => {
         // The reader names no unit, so it goes under the one remote that can be read this way when only
         // one is on the cable, and on a line of its own otherwise.
         if (reader.trim() === 'yes') {
-          const readable = remotes.filter((r) => r.product !== 0xc12b && r.product !== 0xc124 && r.product !== 0)
+          // The file based family, the Touch's generation, its hub and the 300 and 350, is not read this way.
+          const readable = remotes.filter((r) => r.product !== 0xc12b && r.product !== 0xc129 && r.product !== 0xc124 && r.product !== 0)
           activities.push({ product: readable.length === 1 ? readable[0]!.product : undefined, text: 'reading flash' })
         }
         await pollTests()
