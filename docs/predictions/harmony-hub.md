@@ -43,4 +43,13 @@ slot alone, and `/tde/enable` and `/bt/dut` have an open handler of their own. N
 
 ## Outcomes
 
-Not read yet.
+Read the same day, once, with `read-file-identity.ts --product 0xc129 --raw`: one open, one read and one close of
+`/sys/sysinfo`, 273 bytes, and the hub answered normally. **Every prediction that named a value held**: `arch`
+`0x11`, `skin` `0x6A`, `usb_vendor_id` `0x046D`, `usb_product_id` `0xC129`, `fw_type` `0x00`, `link_packet_length`
+64, and `fw_ver` **4.15.600**, the service's current hub image, so this hub was updated while it was in use.
+
+What was not predicted: the hub gives 15 fields, where the Touch gives fourteen. `hw_ver` is 01.00, `link_type` `hid` and
+`link_hw` `usb`, as the Touch's. **There is no `guid` field**, so the one row that predicted a field's presence,
+`guid`, was wrong; the serial is there. Four fields the Harmony 300 and 350's firmware does
+not name: `status` `normal`, `ram_size` 64MB, `feature` `Infrared,BluetoothHid`, and a Bluetooth address, which
+with `serial_number` identifies the unit and stays in the lab.

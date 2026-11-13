@@ -1677,8 +1677,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 187 with `work/requirements/`, the candidates for the requirements list, decision 33. 188 with
         # `work/harmony-785/`, the Harmony 785 onboarding's review. 191 with `dumps/richard_hup/`,
         # `dumps/bob deyoung/` and `dumps/atrugiel69/`, three contributed dumps on the Harmony 525's platform. 192 with
-        # `dumps/max schnindler/`, a contributed Harmony 880 Pro.
-        self.assertEqual(len(named), 192, "lab paths the register names")
+        # `dumps/max schnindler/`, a contributed Harmony 880 Pro. 193 with `work/harmony-hub/`, the Harmony Hub's first read.
+        self.assertEqual(len(named), 193, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1797,9 +1797,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 160 with `work/architecture-review/`, the review of the packages, 161 with `work/recipe-references/`,
         # the bench builds rebuilt from recipes, and 162 with `work/requirements/`, decision 33,
         # and 163 with `work/harmony-785/`, and 166 with the three contributed dumps of the Harmony 525's platform.
-        # 167 with `dumps/max schnindler/`, a contributed Harmony 880 Pro.
-        self.assertEqual(len(rows), 167)
-        self.assertEqual(len(dict(rows)), 167, 'a duplicated path would make a query ambiguous')
+        # 167 with `dumps/max schnindler/`, a contributed Harmony 880 Pro, and 168 with `work/harmony-hub/`.
+        self.assertEqual(len(rows), 168)
+        self.assertEqual(len(dict(rows)), 168, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
