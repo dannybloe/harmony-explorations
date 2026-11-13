@@ -283,7 +283,9 @@ So on a Touch this answers 500.
 ### harmony.engine?config
 
 A summary of the whole configuration for an app: the devices, the activities with their roles and the state
-each leaves every device in, the sequences, the content addresses and the locale[^t-touch-api-engine].
+each leaves every device in, the sequences, the content addresses and the locale[^t-touch-api-engine]. This is
+also the request an application sends a hub to read its setup, and the hubs' own image has since been read for
+how it answers, [the configuration the hub serves](../hub/provisioning.md#the-configuration-the-hub-serves).
 
 **Handler**: `processConfig` in `tasks/harmonyengine/apihandler/config.lua`, through `createConfig`.
 

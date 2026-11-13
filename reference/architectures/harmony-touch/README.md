@@ -140,6 +140,14 @@ On a Touch a key with a long press sends nothing on the press: its long action f
 | [answering-a-sync.md](answering-a-sync.md) | answering a Touch's sync in place of Logitech's server: a sync end to end, what the remote checks of an answer, what an answerer refuses, how a sync aborts and commits, the syncs this project ran, the smallest set of documents and what a commit keeps, entity tags, the direct resource put, and which request names act |
 | [api/README.md](api/README.md) | the remote's whole interface as an API: the names its USB program answers and every request its engine registers, each with what it does, its parameters and its answer |
 
+## The hub
+
+The hub of this generation is a small networked Linux computer rather than a handheld, and runs a sibling of
+the remotes' software. Its own image has been read for what is the hub's own rather than the generation's,
+[the hub](hub/README.md): its Linux system and storage, how it is reached over the home network, the native
+program that drives its radios and infrared, how it is provisioned and how a second hand one is re-homed, and
+its role as a smart home controller[^t-touch-hub].
+
 ### The documents a sync delivers, and where each is described
 
 A Touch's configuration is the documents it asks for in a sync, each JSON, and pictures, each a PNG; the six
@@ -194,5 +202,6 @@ answers is a set of paths, [the model's memory page](../../remotes/harmony-touch
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-sync.test.ts)
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_host.py)
+[^t-touch-hub]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_hub_firmware.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^unchecked]: Not checked.

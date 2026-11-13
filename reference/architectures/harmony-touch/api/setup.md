@@ -17,7 +17,10 @@ or on the provisioning mode, the page says which branch a Touch takes, host name
 branches are read but not checked against a unit[^unchecked]. How a request travels from the cable to the
 engine, the shape of every answer, how a name finds its handler, the checks before it, the provisioning
 mode and the kinds are the [API overview](README.md#how-a-request-reaches-its-handler); the branch a Touch
-takes is that of modes 0 and 1, [the provisioning mode](README.md#the-provisioning-mode).
+takes is that of modes 0 and 1, [the provisioning mode](README.md#the-provisioning-mode). The hub branch of
+`provision` and `autoprovisionfromhub`, the hub's modes 2 and 3, the remote's mode 4 taken from a hub, and
+what a second hand hub does when it is re-homed, have since been read in the hubs' own image, [how a hub is
+set up](../hub/provisioning.md).
 
 ## The requests
 

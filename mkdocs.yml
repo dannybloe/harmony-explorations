@@ -309,6 +309,13 @@ nav:
               - Engine: architectures/harmony-touch/api/engine.md
               - Activity engine: architectures/harmony-touch/api/activityengine.md
               - Home control: architectures/harmony-touch/api/automation.md
+          - The hub:
+              - architectures/harmony-touch/hub/README.md
+              - System: architectures/harmony-touch/hub/system.md
+              - Network: architectures/harmony-touch/hub/network.md
+              - Hardware: architectures/harmony-touch/hub/hardware.md
+              - Provisioning: architectures/harmony-touch/hub/provisioning.md
+              - Automation: architectures/harmony-touch/hub/automation.md
   - The formats:
       - The configuration file:
           - config-format/README.md
