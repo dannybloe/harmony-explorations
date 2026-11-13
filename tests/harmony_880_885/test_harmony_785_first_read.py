@@ -27,11 +27,12 @@ held below instead.
 
 **The two reads are byte identical**, 2088960 bytes each. Its parts, each against a source outside it:
 
-* **The application at `0x010000` is the Harmony 720's 4.5 build with ten bytes changed**: the skin at
+* **The application at `0x010000` is the Harmony 720's 4.5 with ten bytes changed**: the skin at
   `0x011C04` and `0x01A6CC`, 45 where the 720's says 44, and eight more at `0x01E6B1`, `0x01E6B8`,
   `0x01E6C7`, `0x01E80C` to `0x01E80E` and `0x01FAD9` to `0x01FADA`. What those eight are is not read here.
-  So the 785 and the 720 share an application build, as the 880 and 885 share theirs, and differ in more than
-  the skin byte, which the 880 and 885 do not.
+  So the 785's application is the 720's 4.5 with ten bytes changed; whether the two come from one source is not
+  shown while eight of the ten are unexplained. The 880's and 885's images differ in the skin bytes alone,
+  `reference/architectures/harmony-880-885/firmware.md`.
 * **Its version accessor**, five `RETLW` at `0x011C00`, returns `0x45, 0, 45, 8, 8`: version 4.5, software
   type 0, skin 45, platform 8, architecture 8, the version block's own fields.
 * **The bottom 64 KiB is a bootloader none of this project's images is**: 20882 bytes differ from the 720's
@@ -76,7 +77,7 @@ and filed nothing, and its error was not kept. A second attempt finished with no
 
 ## Width
 
-Two Harmony 785s, and they carry two bootloader builds, 4.4 and 4.2, over one application build. Which one
+Two Harmony 785s, and they carry two bootloader builds, 4.4 and 4.2, over one application. Which one
 Logitech shipped first, and whether one replaced the other in the field, is not read.
 """
 import hashlib
@@ -85,6 +86,7 @@ import re
 import unittest
 
 import lab
+from proves import proves
 
 FLASH = ('h785_a_flash', 'h785_a_flash_2')
 FLASH_END = 0x1FE000
@@ -140,6 +142,7 @@ class TheWholeFlash(unittest.TestCase):
         self.flash = lab.load('h785_a_flash')
 
     def test_the_two_reads_are_identical_and_end_at_the_device_window(self):
+        proves(58, ['harmony-785'], ['docs/test-notes/harmony-785.md#the-first-unit-h785_a'])
         second = lab.load('h785_a_flash_2')
         self.assertEqual(len(self.flash), FLASH_END)
         self.assertEqual(hashlib.sha256(self.flash).digest(), hashlib.sha256(second).digest())
@@ -169,6 +172,7 @@ class TheWholeFlash(unittest.TestCase):
         self.assertEqual(self.flash[0:0x10000].count(text), 1)
 
     def test_the_configuration_region_holds_the_configuration_read(self):
+        proves(1, ['harmony-785'], ['docs/test-notes/harmony-785.md#the-first-unit-h785_a'])
         lab.require('h785_a_config')
         config = lab.load('h785_a_config')
         self.assertEqual(len(config), 425953)
@@ -212,6 +216,7 @@ class UnitB(unittest.TestCase):
         self.flash = lab.load('h785_b_flash')
 
     def test_the_two_reads_are_identical(self):
+        proves(58, ['harmony-785'], ['docs/test-notes/harmony-785.md#the-second-unit-h785_b'])
         second = lab.load('h785_b_flash_2')
         self.assertEqual(len(self.flash), FLASH_END)
         self.assertEqual(hashlib.sha256(self.flash).digest(), hashlib.sha256(second).digest())
@@ -242,6 +247,7 @@ class UnitB(unittest.TestCase):
         self.assertEqual(sum(1 for i in range(0x10000) if a[i] != self.flash[i]), 20884)
 
     def test_the_configuration_region_holds_the_configuration_read(self):
+        proves(1, ['harmony-785'], ['docs/test-notes/harmony-785.md#the-second-unit-h785_b'])
         lab.require('h785_b_config')
         config = lab.load('h785_b_config')
         self.assertEqual(len(config), 518269)
@@ -255,6 +261,18 @@ class UnitB(unittest.TestCase):
         lab.require('h785_a_flash')
         a = lab.load('h785_a_flash')
         self.assertEqual(a[LOG:LOG + 8], entry)
+
+    def test_base_slots_1_and_2_state_what_unit_as_do(self):
+        proves(1, ['harmony-785'], ['docs/test-notes/harmony-785.md#the-second-unit-h785_b'])
+        lab.require('h785_b_config')
+        config = lab.load('h785_b_config')
+        def slot(n):
+            entry = config[0x0B + 4 * n:0x0B + 4 * n + 4]
+            self.assertEqual(entry[0], 0)
+            return int.from_bytes(entry[1:], 'little') - REGION
+        one, two = slot(1), slot(2)
+        self.assertEqual(list(config[one:one + 3]), [8, 8, 45])
+        self.assertEqual(config[two:two + 8], bytes.fromhex('003c00001e00e01f'))
 
     def test_the_identity_fields_are_unit_bs_and_not_unit_as(self):
         b, a = unit_record('h785_b'), unit_record('h785_a')

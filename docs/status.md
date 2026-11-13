@@ -137,7 +137,7 @@ described on arrival.
 | 2 | 745 | 0 | 0 | none | anything at all |
 | 3 | 748, 768 | 0 | 0 | none | anything at all |
 | 7 | 610, 620, 628, 659, 670, 676, 680, 688 | 0 | 0 | none | anything at all: eight models and no sample |
-| 8 | 880, 885, 880 Pro, 720, 785 | 6<!--fact:corpus_arch8_dumps--> | 16<!--fact:corpus_arch8_configs--> | 880, 885 and 720, application and bootloader; the 880 Pro's is the 880's build with its own skin | a 785, which no sample here covers |
+| 8 | 880, 885, 880 Pro, 720, 785 | 6<!--fact:corpus_arch8_dumps--> | 16<!--fact:corpus_arch8_configs--> | 880, 885 and 720, application and bootloader; the 880 Pro's is the 880's build with its own skin; the 785's read off two bench units, the 720's application and two bootloaders | a 785 configuration in the corpus: the bench 785s' reads are counted in no total |
 | 9 | 510, 515, 520, 525, 550, 555 | 6<!--fact:corpus_arch9_dumps--> | 6<!--fact:corpus_arch9_configs--> | 525, 515 and 555, application and safe mode, three different builds; a 550's image has arrived and is not read yet | a 510 or 520 |
 | 10 | 890, 895, 890 Pro | 2<!--fact:corpus_arch10_dumps--> | 12<!--fact:corpus_arch10_configs--> | **none** | **firmware**, which is the single hardest blocker here |
 | 12 | One | 2<!--fact:corpus_arch12_dumps--> | 2<!--fact:corpus_arch12_configs--> | One 3.4, plus safe mode and both internal pages | nothing: this one is covered |
@@ -185,7 +185,8 @@ take a whole configuration as a file, `/cfg/usercfg`, and each has been given it
 2 November 2026 `todo/done/todo-compile-350.md` chapter 5 is done: one configuration built from nothing, every byte named by
 the generator that wrote it, with firmware event 0xFF bound so it serves both models (decision 28), sent 33 of 33
 expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
-Two Harmony 885s are on the bench as well, read only.
+Two Harmony 885s are on the bench as well, one of which has taken whole configurations, and two Harmony 785s, which may
+be written by decision 34 and have only been read.
 
 **The Harmony Touch is described from its own reading, thirty four syncs of ours have run on it, thirty two committed, twenty of them changing what it does, its first full bench test has run, a device, an activity and favourites with a logo composed by us have each been delivered to it and heard, a Settings of ours has been delivered and seen, an activity and a device of Logitech's have been taken out and the rest heard without them, a whole setup composed by us has run its full bench test, the empty configuration has been delivered, started on and put back, and a configuration built by us from nothing has been delivered, run and put back, the track's finish line.** Its configuration
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both

@@ -82,8 +82,9 @@ test('no model folder is without a drawing, so a drawn model cannot lose its dra
   // drawing added for either shrinks this list, and any other row losing its drawing fails.
   const undrawn = REMOTES.filter((r) => r.drawing === undefined).map((r) => r.folder).sort();
   // The Harmony 885 left this list when its drawing landed, and the Harmony 890 when the 890 Pro's did. This
-  // test said only the Harmony 890 folder was without one until then.
-  assert.deepEqual(undrawn, []);
+  // test said only the Harmony 890 folder was without one until then. The Harmony 785 joined it with its folder,
+  // read off two remotes before anybody drew its face.
+  assert.deepEqual(undrawn, ['harmony-785']);
   for (const r of REMOTES) {
     if (r.drawing !== undefined) assert.ok(MODELS[r.drawing] !== undefined, `${r.folder}: no drawing ${r.drawing}`);
   }

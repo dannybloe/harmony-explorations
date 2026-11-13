@@ -4,8 +4,8 @@ The bench Harmony 785s: what was done to them, in order. The remote runs on the 
 platform, [the reference](../../reference/architectures/harmony-880-885/README.md), and nothing in the reference
 covers the 785 itself yet.
 
-**Two Harmony 785s are on the bench, and neither may be written.** No decision permits them, and the 785 is
-not among the units any write path names. Every step below was a read.
+**Two Harmony 785s are on the bench, and both may be written**, decision 34. This said neither may be
+written<!--superseded--> until that decision. No write path names a 785 yet, so every step below was a read.
 
 ## The first unit, `h785_a`
 

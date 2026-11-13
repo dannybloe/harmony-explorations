@@ -2,7 +2,7 @@
  * `capabilitiesOf`, the one answer an application gets per bench model: its properties and the status of every
  * requirement, decision 33.
  *
- * The properties are asserted whole and exactly for all nine models, so a value that changes, appears or disappears is
+ * The properties are asserted whole and exactly for all ten models, so a value that changes, appears or disappears is
  * a line in this file's diff and gets asked whether it belongs. Each comes from the model table, the model's family, or
  * a reference page the answer names; the last test holds that every page named exists, and that the family and the
  * skins agree with the registry, the other place that turns a model into a family.
@@ -47,6 +47,11 @@ const PROPERTIES: Readonly<Record<string, ModelProperties>> = {
   },
   'harmony-885': {
     architecture: 8, maxDevices: 15, family: { name: 'the Harmony 880 and 885', kind: 'compiled' }, favourites: 16, panel: 'colour',
+    screen: { width: 128, height: 160 }, touch: false, longPress: false, references: [],
+  },
+  // The 885's family by the model table's architecture, and its own limits from the table's row for skin 45.
+  'harmony-785': {
+    architecture: 8, maxDevices: 12, family: { name: 'the Harmony 880 and 885', kind: 'compiled' }, favourites: 24, panel: 'colour',
     screen: { width: 128, height: 160 }, touch: false, longPress: false, references: [],
   },
   // No model record: no architecture, device limit or favourites here, by design.

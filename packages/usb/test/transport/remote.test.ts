@@ -470,6 +470,7 @@ test('two families sit inside the Harmony range and openHarmony refuses both', (
 test('the skin comes out of bcdDevice, and its encoding is per firmware generation', () => {
   proves(62, ['harmony-525'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026']);
   proves(62, ['harmony-885'], ['docs/test-notes/harmony-885.md#the-first-unit-h885_a']);
+  proves(62, ['harmony-785'], ['docs/test-notes/harmony-785.md#the-first-unit-h785_a', 'docs/test-notes/harmony-785.md#the-second-unit-h785_b']);
   // Seven pairs, each an image's bcdDevice against the `<SKIN>` a config of that model states.
   // The Python side asserts the same table from the files themselves, in `tests/usb_protocol/test_usbdesc.py`;
   // this one pins the arithmetic so the two implementations cannot drift.
@@ -483,6 +484,8 @@ test('the skin comes out of bcdDevice, and its encoding is per firmware generati
   // 100. The high byte is the carry, which is why it looked like a constant on nine of the ten.
   assert.equal(skinId(0x080f), 15, 'Harmony 880, protocol 8');
   assert.equal(skinId(0x0811), 17, 'Harmony 885, protocol 8');
+  // Read off the bus from both bench Harmony 785s: protocol 8 and skin 45 in plain binary, the older form.
+  assert.equal(skinId(0x082d), 45, 'Harmony 785, protocol 8');
   assert.equal(skinId(0x0916), 22, 'Harmony 525, protocol 9');
   assert.equal(skinId(0x1054), 54, 'Harmony One, protocol 12');
   assert.equal(skinId(0x1066), 66, 'Harmony 700, protocol 14');

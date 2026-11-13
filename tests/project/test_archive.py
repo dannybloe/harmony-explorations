@@ -66,10 +66,12 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # numbered requirement. The digest before it was ca39582a.
 # Repinned for a paragraph added in place under decision 33: a met is proven by a test that names its requirement.
 # The digest before it was f7ed1e96.
-DECISIONS_DIGEST = "85c762a7fa0ef2084f7a9cf8082054ee71e8ed7a315c81c11ef33958cde9c0c0"
+# Repinned for decision 34, a new entry: the two bench Harmony 785s may be written. The digest before it was
+# 85c762a7.
+DECISIONS_DIGEST = "2aba24a1bdf289303edbd7ff279726e50c098c5ad34773fe48e6b2853628bb73"
 
 SECTIONS = 436
-DECISIONS = 33
+DECISIONS = 34
 
 
 def anchor_problems(findings, decisions):

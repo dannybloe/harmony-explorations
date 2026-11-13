@@ -265,7 +265,7 @@ export function requirement(number: number): Requirement | undefined {
  */
 export type BenchModelKey =
   | 'harmony-one' | 'harmony-600' | 'harmony-650' | 'harmony-700' | 'harmony-525' | 'harmony-885'
-  | 'harmony-300' | 'harmony-350' | 'harmony-touch';
+  | 'harmony-785' | 'harmony-300' | 'harmony-350' | 'harmony-touch';
 
 export interface BenchModel {
   readonly key: BenchModelKey;
@@ -280,14 +280,16 @@ export interface BenchModel {
 }
 
 /**
- * The nine models a unit of which is on the bench, in the order the document's tables list them: the models with a
+ * The ten models a unit of which is on the bench, in the order the document's tables list them: the models with a
  * screen first, then the two without, then the Harmony Touch.
  *
  * **The skins are only those this library can tell apart as this model.** The Harmony One and the 600, 650 and 700
  * each have a European skin beside the American one, the same hardware in another region, `models.ts`. The Harmony
  * 525 is skin 22 alone: skin 18, the 520, is the same row of the comparison table and a different keypad, without
  * the colour keys. The Harmony 885 is skin 17 alone for the same reason, the 880, skin 15, carrying a pair of chevrons
- * where the 885 has the colour keys. The Harmony 300 is skin 79, the European one a unit of which is on the bench;
+ * where the 885 has the colour keys. The Harmony 785 is skin 45 alone: the model table names skin 44, the Harmony 720, its
+ * regional twin, but the 785's face carries keys the 720's does not, `reference/remotes/harmony-785/README.md`. The
+ * Harmony 300 is skin 79, the European one a unit of which is on the bench;
  * skin 78 is its American printing, which the registry does not choose a family for, so it is left out rather than
  * answered with statuses measured on the other printing. The Harmony 350 is skin 104 and the Harmony Touch skin 99,
  * `reference/remotes/harmony-touch/README.md`.
@@ -299,6 +301,7 @@ export const BENCH_MODELS: readonly BenchModel[] = [
   { key: 'harmony-700', name: 'Harmony 700', skins: [66, 69] },
   { key: 'harmony-525', name: 'Harmony 525', skins: [22] },
   { key: 'harmony-885', name: 'Harmony 885', skins: [17] },
+  { key: 'harmony-785', name: 'Harmony 785', skins: [45] },
   { key: 'harmony-300', name: 'Harmony 300', skins: [79] },
   { key: 'harmony-350', name: 'Harmony 350', skins: [104] },
   { key: 'harmony-touch', name: 'Harmony Touch', skins: [99] },
@@ -744,6 +747,77 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     71: open('Nothing in the libraries brings a stuck 885 back; its recovery has only been read in the firmware.'),
     72: impossible(['reference/remotes/harmony-885/features.md#logitechs-service'], 'Logitech\'s service has the 885\'s skins switched off and refuses its serial, so it serves no 885 account.'),
   },
+  // The Harmony 785, on the Harmony 880 and 885's platform with the Harmony 720's application. Both bench units have
+  // only been read, decision 34, so everything that touches a write is open, and what the 885 shows is not assumed.
+  'harmony-785': {
+    2: open('Devices, activities, screens and codes read on the 785 through the 885\'s family, but no view predicts what each key sends there.'),
+    3: open('Nothing turns a compiled 785 configuration back into a recipe.'),
+    4: open('No build from a recipe serves the 785.'),
+    5: open('No write path names a 785; its write end has not been read in its application 4.5.'),
+    6: open('Both bench 785s are recorded with a full backup, but no write path takes a 785 or adopts one never seen.'),
+    7: open('Nothing checks a configuration against the 785\'s own limits before a write.'),
+    8: unknown('Whether anything a person changes on a 785 reaches its configuration is not known.'),
+    9: open('The catalogue browses by manufacturer and model; there is no search by type and no help for typing errors.'),
+    10: open('Nothing composes a catalogue device for the 785.'),
+    11: open('Nothing learns a code on the 785 or builds a device from taught commands.'),
+    12: open('Nothing renames a device in a 785 configuration.'),
+    13: open('Nothing removes a device from a 785 configuration, or settles what used it.'),
+    14: open('Nothing composes a device\'s power for the 785.'),
+    15: open('Nothing composes a device\'s inputs for the 785.'),
+    16: open('Nothing sets or resets a device\'s delays for the 785.'),
+    17: open('Nothing sets a repeat count for the 785.'),
+    18: open('Nothing composes channel entry for a 785 device.'),
+    19: open('Nothing adds, fixes, removes or restores a single command in a 785 configuration.'),
+    21: open('Activities are not composed for the 785.'),
+    22: open('An activity\'s key map is not composed for the 785.'),
+    23: open('Activities and device inputs are not composed for the 785.'),
+    24: open('Activities are not composed for the 785, so no pass through device either.'),
+    25: open('Nothing renames an activity in a 785 configuration.'),
+    26: open('Nothing removes an activity from a 785 configuration.'),
+    27: open('Activities are not composed for the 785, so none gets an icon.'),
+    28: open('The activity menu and an activity\'s device list are not composed for the 785.'),
+    29: unknown('Whether the 785 has keys that start an activity is not read; its face is not drawn.', ['reference/remotes/harmony-785/keys.md#harmony-785-keys']),
+    30: open('An activity\'s start is not composed for the 785, so no steps can be added.'),
+    31: open('An activity\'s key map is not composed for the 785.'),
+    32: open('Which command each key takes in a 785 device mode is not read, and nothing changes one.'),
+    33: open('Device mode maps are not composed for the 785.'),
+    34: open('Activity screens are not composed for the 785.'),
+    35: open('Device screen pages are not composed for the 785.'),
+    36: open('Nothing builds a sub page button for the 785.'),
+    37: open('Sequences are not composed for the 785.'),
+    38: unknown('Whether the 785\'s application honours a binding of a held key is not read.', ['reference/remotes/harmony-785/keys.md#harmony-785-keys']),
+    39: unknown('Whether the 785 has device keys is not read; its face is not drawn.', ['reference/remotes/harmony-785/keys.md#harmony-785-keys']),
+    40: unknown('The model table says the 785\'s screen is not a touch screen, which no 785 has been checked against.', ['reference/remotes/harmony-785/display.md#the-panel']),
+    41: open('No 785 screen was rendered and compared with what a unit draws.'),
+    42: open('Nothing of ours chooses the look of a 785\'s screens.'),
+    43: open('The 785\'s face is not drawn, and none of its keys has a measured scan code.'),
+    44: open('Nothing composes the remote\'s help for the 785.'),
+    45: open('The bench units\' configurations hold favourites, but nothing composes a favourite for the 785.'),
+    46: open('Nothing composes a favourite, or its icon, for the 785.'),
+    47: open('The 785\'s settings are neither read nor changed by anything yet.'),
+    48: open('Nothing sets the 785\'s backlight timing or brightness.'),
+    49: open('Nothing sets the 785\'s tilt sensing.'),
+    50: open('Nothing composes or switches the 785\'s assistants.'),
+    51: open('Nothing composes help for the 785, so neither Smart nor Full can be chosen.'),
+    52: open('The 785\'s clock has not been read, and nothing sets how it is shown.'),
+    53: open('Nothing builds a slideshow for the 785.'),
+    54: open('Nothing sends the 785 the learning request.'),
+    55: open('Nothing puts a learned code into a 785 device.'),
+    56: open('Nothing keeps a learned code in a 785 configuration.'),
+    57: open('No test identifies a device from a few taught commands.'),
+    59: open('Both units\' whole flash is in the lab, but no write path puts a backup back on a 785.'),
+    60: open('Nothing moves a setup to another model or copies devices and activities between setups, adapted to limits.'),
+    61: open('No empty configuration is built for the 785.'),
+    63: open('The two units\' identity blocks are recorded and differ, but no write rail checks a 785 against its record yet.'),
+    64: open('The version block was read on both units, but no test holds what a 785 reports.'),
+    65: unknown('One read takes a hardware measurement on the 885, but what it measures is not identified, and it was not read on a 785.', ['reference/architectures/harmony-880-885/usb.md#reading-flash']),
+    66: open('Read progress is shown, but nothing makes a 785 show it is being written.'),
+    67: open('The key page reads the held key on the 885; it has not been tried on a 785.'),
+    69: open('Nothing tells a 785 in its bootloader from a running one, and the two units carry different bootloader builds.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
+    71: open('Nothing in the libraries brings a stuck 785 back.'),
+    72: unknown('Whether Logitech\'s service still serves the 785\'s skin is not checked.'),
+  },
   // The Harmony 300.
   'harmony-300': {
     1: open('The file was read off the unit twice, identical, but no library read restores the end marker and checks the trailer.'),
@@ -932,7 +1006,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
  */
 const WHOLE_STATUSES: Readonly<Record<number, RequirementState>> = {
   75: open('Every package is private and unpublished, and an application links the folder beside it.'),
-  68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the nine bench models is recorded.'),
+  68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the ten bench models is recorded.'),
 };
 
 /**

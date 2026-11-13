@@ -73,6 +73,24 @@ export const PROOFS: readonly Proof[] = [
     bench: ["docs/test-notes/harmony-600.md#the-bench-600s-memory-as-read"],
   },
   {
+    requirement: 1, models: ["harmony-785"],
+    test: "tests/harmony_880_885/test_harmony_785_first_read.py",
+    title: "TheWholeFlash.test_the_configuration_region_holds_the_configuration_read",
+    bench: ["docs/test-notes/harmony-785.md#the-first-unit-h785_a"],
+  },
+  {
+    requirement: 1, models: ["harmony-785"],
+    test: "tests/harmony_880_885/test_harmony_785_first_read.py",
+    title: "UnitB.test_base_slots_1_and_2_state_what_unit_as_do",
+    bench: ["docs/test-notes/harmony-785.md#the-second-unit-h785_b"],
+  },
+  {
+    requirement: 1, models: ["harmony-785"],
+    test: "tests/harmony_880_885/test_harmony_785_first_read.py",
+    title: "UnitB.test_the_configuration_region_holds_the_configuration_read",
+    bench: ["docs/test-notes/harmony-785.md#the-second-unit-h785_b"],
+  },
+  {
     requirement: 1, models: ["harmony-885"],
     test: "tests/harmony_880_885/test_harmony_885_bench_reads.py",
     title: "TheConfigurationReads.test_each_units_two_reads_are_identical_and_568020_and_637127_bytes_long",
@@ -643,6 +661,18 @@ export const PROOFS: readonly Proof[] = [
     bench: ["docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit"],
   },
   {
+    requirement: 58, models: ["harmony-785"],
+    test: "tests/harmony_880_885/test_harmony_785_first_read.py",
+    title: "TheWholeFlash.test_the_two_reads_are_identical_and_end_at_the_device_window",
+    bench: ["docs/test-notes/harmony-785.md#the-first-unit-h785_a"],
+  },
+  {
+    requirement: 58, models: ["harmony-785"],
+    test: "tests/harmony_880_885/test_harmony_785_first_read.py",
+    title: "UnitB.test_the_two_reads_are_identical",
+    bench: ["docs/test-notes/harmony-785.md#the-second-unit-h785_b"],
+  },
+  {
     requirement: 58, models: ["harmony-885"],
     test: "tests/harmony_880_885/test_harmony_885_flash_backup.py",
     title: "TheWholeFlashBackup.test_the_two_reads_are_identical_and_end_at_the_device_window",
@@ -767,6 +797,12 @@ export const PROOFS: readonly Proof[] = [
     test: "packages/usb/test/transport/remote.test.ts",
     title: "the skin comes out of bcdDevice, and its encoding is per firmware generation",
     bench: ["docs/test-notes/harmony-525.md#the-first-session-8-august-2026"],
+  },
+  {
+    requirement: 62, models: ["harmony-785"],
+    test: "packages/usb/test/transport/remote.test.ts",
+    title: "the skin comes out of bcdDevice, and its encoding is per firmware generation",
+    bench: ["docs/test-notes/harmony-785.md#the-first-unit-h785_a", "docs/test-notes/harmony-785.md#the-second-unit-h785_b"],
   },
   {
     requirement: 62, models: ["harmony-885"],

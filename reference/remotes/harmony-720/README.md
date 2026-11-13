@@ -26,8 +26,9 @@ version block.[^t-885-boot]
 
 **The Harmony 785, skin 45, is not this folder's.** A community comparison table pairs the 720 with the 785
 as one remote under two regional names[^x-forum-table], but the two faces differ: the 785's manual names
-teletext keys and the 720's does not, as the 885 differs from the 880.[^t-printing-720] Nothing of a 785 is
-known beyond its name and that page.[^unchecked]
+teletext keys and the 720's does not, as the 885 differs from the 880.[^t-printing-720] The 785 has a folder
+of its own, [the Harmony 785](../harmony-785/README.md), whose application is this model's 4.5 with ten bytes changed.
+This said nothing of a 785 was known beyond its name<!--superseded--> until a 785's firmware was read.[^t-785-first-read]
 
 ## Key numbers
 
@@ -59,7 +60,7 @@ known beyond its name and that page.[^unchecked]
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_bootloader.py)
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
-[^unchecked]: Not checked.
+[^t-785-first-read]: Measured on a unit. [The test](../../../tests/harmony_880_885/test_harmony_785_first_read.py)
 [^s129]: Measured in configurations. [Section 129](../../../docs/findings.md#s129)
 [^t-885-screens-corpus]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_screens.py)
 [^t-720-keys]: Measured in configurations. [The test](../../../tests/firmware/test_silhouettes.py)

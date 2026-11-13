@@ -42,9 +42,9 @@ class TheHelperChecksItsArguments(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'no path'):
             helper.proves(1, ['harmony-one'], [None])
 
-    def test_the_keys_are_the_nine_bench_models(self):
-        self.assertEqual(len(helper.BENCH_MODEL_KEYS), 9)
-        self.assertEqual(len(set(helper.BENCH_MODEL_KEYS)), 9)
+    def test_the_keys_are_the_ten_bench_models(self):
+        self.assertEqual(len(helper.BENCH_MODEL_KEYS), 10)
+        self.assertEqual(len(set(helper.BENCH_MODEL_KEYS)), 10)
 
 
 if __name__ == "__main__":

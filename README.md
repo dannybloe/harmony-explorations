@@ -31,8 +31,7 @@ why mistakes are corrected in the open rather than quietly.
 
 ## Where we are
 
-These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 700, 785, 885 and Touch. The
-785s arrived last and have only been read.
+These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 700, 785, 885 and Touch.
 
 * On the Harmony One, 600, 650 and 700 we can read the configuration and account for every byte of it, and
   each of them has run a configuration we built ourselves from scratch, without copying anything from a
@@ -48,8 +47,10 @@ These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 7
   puts its configuration together itself. We answer those requests in Logitech's place, and a complete
   setup we built from scratch, devices, activities, codes and a background picture, nothing copied from a
   Logitech document, has run on it and sent the right codes.
-* The Harmony 885 we read but have not written. The 880, 890 and 895 we know from configurations other
-  people sent in.
+* The Harmony 885 we read completely and have written configurations to, its own and one with a device we
+  added. The 880, 890 and 895 we know from configurations other people sent in.
+* The Harmony 785 runs on the 885's platform with the Harmony 720's firmware. We have read two of them
+  completely and written nothing yet: the last steps of a write have to be checked in their firmware first.
 
 ## Sending us your configuration
 

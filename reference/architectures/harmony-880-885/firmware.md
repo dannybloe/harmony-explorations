@@ -289,7 +289,8 @@ No Logitech package of this firmware is known; the images were read off remotes 
 
 * Any firmware version but 4.4 and boot 4.0, beyond the Harmony 720's routines compared
   [above](#the-harmony-720s-images).[^unchecked]
-* The Harmony 785's and 882's firmware, and the Harmony 720's beyond those routines.[^unchecked]
+* The Harmony 882's firmware, the Harmony 720's beyond those routines, and the Harmony 785's beyond what
+  [its firmware page](../../remotes/harmony-785/firmware.md) compares with the 720's.[^unchecked]
 * Whether a bare send from a transition transmits, and the length of the infrared queue's tick, so whether a
   `0x7C` unit is a tenth of a second here.[^unchecked]
 * How a recovery through the bootloader goes on a unit; what the built in configuration offers beyond its

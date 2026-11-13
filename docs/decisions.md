@@ -963,3 +963,24 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    **Held by** a guard test over the code and the tests, with the mentions that remain as a debt list that only
    goes down, once the sweep that removes them has run; until then this decision and `CLAUDE.md` are the rule for
    everything new.
+
+34. <a id="d34"></a>**The two bench Harmony 785s may be written to.** *Taken on 13 November 2026, after both had been
+   read whole on first contact.* Both `h785_a` and `h785_b` are permitted write targets. Nothing was written to
+   either when this was taken. **Permission is not a write path**, as decision 30 says for the 885: no write
+   path names a 785 yet, and each opens as its own step with its own demonstration, one block written back
+   unchanged before a real write, as every unit has taken.
+
+   **What has to be read before the first write**, because the 885's write rests on builds the 785s do not run.
+   The 785s run the Harmony 720's application 4.5, where the 885's write end, its cache drop and its restart, and
+   the staged install status were read in application 4.4, and the configuration writer refuses a commit on any
+   other build. And their bootloaders differ from each other and from the 885's: unit A's is a 4.4 build no
+   image here held before it was read, unit B's the 720's 4.2 with the skin set to 45, where the 885's
+   refusal of an erase or a write below `0x010000` without its unlock was read in its 4.0. So the start check
+   with its fall back to the built in configuration, the write end and the install status are read in
+   application 4.5, and the refusal below the application in both bootloaders, before anything is erased.
+
+   **Why the risk is accepted.** The platform is the 885's, on which two units have taken whole configurations;
+   the 720's start check has already been compared with the 885's, `reference/architectures/harmony-880-885/
+   firmware.md`; and each unit's whole flash is in the lab, read twice and identical,
+   `tests/harmony_880_885/test_harmony_785_first_read.py`. Base slot 2 is kept as every configuration states it
+   and the log append is emitted only on purpose, for the reason decision 30 gives.

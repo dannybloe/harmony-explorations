@@ -59,7 +59,7 @@ Logitech sold, and which of them its software stopped serving, is
 | 40 | Harmony 890 Pro |  | 10 | colour | no | 15 | 16 | 6 | yes | yes | yes | 4.9.0 | [harmony-890](harmony-890/README.md) |
 | 41 | Harmony 550 | Harmony 555 | 9 | monochrome | no | 15 | none |  | yes | yes | yes | 3.0 |  |
 | 44 | Harmony 720 | Harmony 785 | 8 | colour | no | 12 | 24 |  | yes | yes | no | 4.4.2 | [harmony-720](harmony-720/README.md) |
-| 45 | Harmony 785 | Harmony 720 | 8 | colour | no | 12 | 24 |  | yes | yes | no | 4.4.2 |  |
+| 45 | Harmony 785 | Harmony 720 | 8 | colour | no | 12 | 24 |  | yes | yes | no | 4.4.2 | [harmony-785](harmony-785/README.md) |
 | 48 | Harmony 555 | Harmony 550 | 9 | monochrome | no | 15 | none |  | yes | yes | yes | 3.0 |  |
 | 50 | Harmony 670 |  | 7 | monochrome | no | 15 | none |  | yes | yes | yes | 4.1.0 |  |
 | 54 | Harmony One | Harmony One EMEA | 12 | colour | yes | 15 | 24 |  | yes | yes | no | 3.4.0 | [harmony-one](harmony-one/README.md) |

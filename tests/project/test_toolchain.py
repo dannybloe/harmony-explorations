@@ -1671,8 +1671,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # and 182 with `reads/20261102T1524Z-touch-reverse-sync/`, the reverse sync recorded after it.
         # 183 with `work/legacy-remotes/`, the legacy remotes track, plan 012, and 184 with `work/webhid/`, the
         # browser key read. 185 with `work/architecture-review/`, the review of the packages.
-        # 187 with `work/requirements/`, the candidates for the requirements list, decision 33.
-        self.assertEqual(len(named), 187, "lab paths the register names")
+        # 187 with `work/requirements/`, the candidates for the requirements list, decision 33. 188 with
+        # `work/harmony-785/`, the Harmony 785 onboarding's review.
+        self.assertEqual(len(named), 188, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1789,9 +1790,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # and 156 with the full setup's sync, and 157 with the reverse sync after it.
         # 158 with `work/legacy-remotes/`, plan 012, and 159 with `work/webhid/`, the browser key read.
         # 160 with `work/architecture-review/`, the review of the packages, 161 with `work/recipe-references/`,
-        # the bench builds rebuilt from recipes, and 162 with `work/requirements/`, decision 33.
-        self.assertEqual(len(rows), 162)
-        self.assertEqual(len(dict(rows)), 162, 'a duplicated path would make a query ambiguous')
+        # the bench builds rebuilt from recipes, and 162 with `work/requirements/`, decision 33,
+        # and 163 with `work/harmony-785/`.
+        self.assertEqual(len(rows), 163)
+        self.assertEqual(len(dict(rows)), 163, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

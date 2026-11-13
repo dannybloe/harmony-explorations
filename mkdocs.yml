@@ -196,6 +196,17 @@ nav:
           - Firmware: remotes/harmony-720/firmware.md
           - USB: remotes/harmony-720/usb.md
           - Other: remotes/harmony-720/misc.md
+      - Harmony 785:
+          - remotes/harmony-785/README.md
+          - Keys: remotes/harmony-785/keys.md
+          - Display: remotes/harmony-785/display.md
+          - Features: remotes/harmony-785/features.md
+          - Behaviour: remotes/harmony-785/behaviour.md
+          - Hardware: remotes/harmony-785/hardware.md
+          - Memory: remotes/harmony-785/memory.md
+          - Firmware: remotes/harmony-785/firmware.md
+          - USB: remotes/harmony-785/usb.md
+          - Other: remotes/harmony-785/misc.md
       - Harmony 880, 885 and 880 Pro:
           - remotes/harmony-885/README.md
           - Keys: remotes/harmony-885/keys.md

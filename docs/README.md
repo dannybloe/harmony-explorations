@@ -1123,7 +1123,7 @@ make remote-reference
 make requirements  read every test's proofs and check what they and the statuses written in
                    packages/base/src/requirements.ts generate: packages/base/src/proofs.ts,
                    docs/remote-requirements.md but its introduction, docs/remote-requirements-evidence.md
-                   and the nine bench checklists in todo/; requirements-write rewrites them. No lab,
+                   and the ten bench checklists in todo/; requirements-write rewrites them. No lab,
                    no network, no remote
 make page          drive the bench page in the Chrome already installed, which is what checks the
                    page rather than the routes. Gated on HARMONY_PAGE_TESTS=1 and skips with no
