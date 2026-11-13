@@ -44,6 +44,8 @@ the other two colour keys was not checked, until the 880's drawing.[^t-printing-
 keys at the ends of the band, and `MUTE`, a down triangle, an up triangle and `PREV` on the four keys at its
 foot where the 885 has its colour keys, with `HARMONY 880 PRO` above the screen. Its key table holds the 885's
 55 press codes, and it has a drawing of its own, [keys.md](keys.md#harmony-880-pro-skin-39).[^t-printing-880pro][^t-880pro-keys]
+Pressed on a unit, every key but Glow raises the code of the 885 key in its place, the six printed otherwise
+among them.[^t-880pro-keys-u]
 
 ## Key numbers
 
@@ -79,6 +81,7 @@ foot where the 885 has its colour keys, with `HARMONY 880 PRO` above the screen.
 [^t-printing-880]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^t-printing-880pro]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^t-880pro-keys]: Measured in configurations. [The test](../../../tests/firmware/test_silhouettes.py)
+[^t-880pro-keys-u]: Measured on a unit. [The test](../../../tests/harmony_880_885/test_harmony_880pro_keys.py)
 [^s182]: Measured in configurations. [Section 182](../../../docs/findings.md#s182)
 [^s207]: Stated by Logitech, in their client. [Section 207](../../../docs/findings.md#s207)
 [^s116]: Read in the firmware. [Section 116](../../../docs/findings.md#s116)

@@ -97,6 +97,10 @@ export const SCAN_SOURCES = {
   // `ESTABLISHED_880` in `tests/harmony_880_885/test_harmony_880_keys.py`.
   't-880-keys-c': "from the command Logitech's compiles for this model bind on that code, named for the key in "
     + 'configurations from two contributors',
+  // A contributed Harmony 880 Pro's keys, read by its owner with the key page: each key asked by name and
+  // confirmed in a second pass, `MEASURED` in `tests/harmony_880_885/test_harmony_880pro_keys.py`.
+  't-880pro-keys-u': "read by the key page on a contributor's unit, each key asked by name and confirmed in a "
+    + 'second pass',
 } as const;
 export type ScanSource = keyof typeof SCAN_SOURCES;
 

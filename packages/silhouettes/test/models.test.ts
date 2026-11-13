@@ -190,11 +190,24 @@ const EXPECTED: Readonly<Record<string, {
   /**
    * The 885's 55 shapes with six keys printed otherwise, `h880pro.ts`, read off the 880 Pro's product
    * photograph and checked against its manual, and its one configuration's key table holds exactly the 885's
-   * 55 press codes. One configuration is not the two contributors the 880's rule asks for, so no code.
+   * 55 press codes. One configuration is not the two contributors the 880's rule asks for, so no code came
+   * from it; 54 came from a contributor's unit read with the key page, every key but Glow, which the page never
+   * asks for.
    */
   h880pro: {
     buttons: 55,
-    scans: {},
+    scans: { 't-880pro-keys-u': 54 },
+    decided: {
+      1: 'Activities', 2: 'AllOff', 3: 'Help', 5: 'ScreenLeft1', 6: 'ScreenLeft2', 7: 'ScreenLeft3', 8: 'ScreenLeft4',
+      10: 'Device', 11: 'Sound', 12: 'ScreenPrev', 13: 'VolumeUp', 14: 'DirectionLeft', 15: 'VolumeDown',
+      16: 'DirectionUp', 17: 'Menu', 18: 'Exit', 19: 'DownArrow', 20: 'VolumeMute', 21: 'Stop', 22: 'Record',
+      23: 'Rewind', 24: 'SkipBack', 25: 'Number1', 26: 'Number4', 27: 'Number8', 29: 'Number7', 31: 'Clear',
+      32: 'Number0', 33: 'Select', 34: 'DirectionDown', 35: 'DirectionRight', 36: 'ChannelDown', 37: 'ChannelUp',
+      38: 'Media', 40: 'Picture', 43: 'ScreenNext', 44: 'ScreenRight4', 45: 'ScreenRight1', 46: 'ScreenRight2',
+      48: 'ScreenRight3', 50: 'Guide', 51: 'Info', 52: 'PrevChannel', 53: 'SkipForward', 54: 'FastForward',
+      55: 'Pause', 56: 'Play', 57: 'Number2', 58: 'Number3', 59: 'Number6', 60: 'UpArrow', 61: 'Number5',
+      62: 'Number9', 63: 'Enter',
+    },
     why: "the Harmony 885's drawing with the 880 Pro's printing, as its own product photograph shows, and the "
       + "885's 55 press codes in its one configuration's key table",
   },

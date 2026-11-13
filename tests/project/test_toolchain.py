@@ -396,8 +396,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `_serial.py` and `_favourites_untagged.py`. 106 with `tests/harmony_880_885/test_harmony_880_keys.py`.
         # 107 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with
         # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
-        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main. 111 with `tests/project/test_proves.py`, 112 with the first Harmony 785's read.
-        self.assertEqual(len(files), 112, 'the Python test files')
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main. 111 with `tests/project/test_proves.py`, 112 with the first Harmony 785's read, 113 with
+        # `tests/harmony_880_885/test_harmony_880pro_keys.py`.
+        self.assertEqual(len(files), 113, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -463,8 +464,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`, which carries one. 108 with
         # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main, which carries one. 109 with
         # `tests/project/test_proves.py`, which carries one. 110 with
-        # `tests/harmony_880_885/test_harmony_785_first_read.py`, which carries one.
-        self.assertEqual(with_block, 110,
+        # `tests/harmony_880_885/test_harmony_785_first_read.py`, which carries one. 111 with
+        # `tests/harmony_880_885/test_harmony_880pro_keys.py`, which carries one.
+        self.assertEqual(with_block, 111,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -970,8 +972,9 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # `_serial.py` and `_favourites_untagged.py`. 106 with `tests/harmony_880_885/test_harmony_880_keys.py`.
         # 107 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with
         # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
-        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main. 111 with `tests/project/test_proves.py`, 112 with the first Harmony 785's read.
-        self.assertEqual(len(scanned), 112, 'Python test files, which moves when one is added')
+        # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main. 111 with `tests/project/test_proves.py`, 112 with the first Harmony 785's read, 113 with
+        # `tests/harmony_880_885/test_harmony_880pro_keys.py`.
+        self.assertEqual(len(scanned), 113, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

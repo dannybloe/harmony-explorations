@@ -906,16 +906,23 @@ class _TheProPrinting(_SilhouetteConventions):
     NAMEPLATE = None
     EXPECTED_BUTTONS = 55
 
-    def test_no_key_claims_a_code_or_a_candidate(self):
+    #: The codes the face carries: the 880 Pro's own, measured on a unit, and none on the 890 Pro.
+    CODES = {}
+
+    def test_a_key_carries_a_code_only_where_this_model_s_unit_raised_it_and_no_candidates(self):
         """
-        The 880's keys carry a code only where configurations from two contributors name it,
-        `tests/harmony_880_885/test_harmony_880_keys.py`. One 880 Pro configuration is known and none of an 890 Pro, so no
-        key carries a code or a candidate list, not even where the 885's key in the same place was pressed.
+        Configurations name no code here: the 880's rule asks for two contributors' configurations, and one
+        880 Pro configuration is known and none of an 890 Pro. What carries a code is a key read on a unit of
+        the model itself, the 880 Pro's 54, `tests/harmony_880_885/test_harmony_880pro_keys.py`; the 890 Pro is
+        another architecture, so the 880 Pro's codes are not carried to it. No key carries a candidate list.
+        This said no key carries a code at all, until a contributed 880 Pro was read with the key page.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
+        carried = {element.get('data-name'): int(element.get('data-scan'))
+                   for element in buttons.values() if element.get('data-scan') is not None}
+        self.assertEqual(carried, self.CODES)
         for ident, element in buttons.items():
             with self.subTest(button=ident):
-                self.assertIsNone(element.get('data-scan'))
                 self.assertIsNone(element.get('data-scan-candidates'))
 
     def test_the_band_prints_sound_and_picture_at_its_ends_and_four_keys_at_its_foot(self):
@@ -954,6 +961,11 @@ class TestTheHarmony880ProSilhouette(_TheProPrinting, unittest.TestCase):
     NAME = 'h880pro.svg'
     NAMEPLATE = 'Harmony 880 Pro'
 
+    @property
+    def CODES(self):
+        from harmony_880_885.test_harmony_880pro_keys import MEASURED
+        return MEASURED
+
     def test_its_key_table_holds_exactly_the_885_s_55_press_codes(self):
         """
         The count's closure: the one 880 Pro configuration's key table, `H880-Pro.EZHex`, holds as press codes
@@ -977,14 +989,17 @@ class TestTheHarmony890ProSilhouette(_TheProPrinting, unittest.TestCase):
         """
         A statement made holding both remotes: the 880 Pro and the 890 Pro are exactly the same face apart from
         the model name above the screen. So the 890 Pro's file, with its own id and model name written as the
-        880 Pro's, is the 880 Pro's file byte for byte: every shape, word, mark and seam the same. The control
-        is that the files do differ before that, and only on lines that carry the id or the name.
+        880 Pro's, is the 880 Pro's file byte for byte once the 880 Pro's measured codes are set aside, the
+        `data-scan` attributes and the count of them in the description: every shape, word, mark and seam the
+        same. The control is that the files do differ before that, and only on lines that carry the id, the
+        name or a code.
         """
         mine, theirs = _text(self.NAME), _text('h880pro.svg')
         self.assertNotEqual(mine, theirs)
         as_880 = mine.replace('h890pro', 'h880pro').replace('Harmony 890 Pro', 'Harmony 880 Pro')
-        self.assertEqual(as_880, theirs)
-        differing = [a for a, b in zip(mine.split('\n'), theirs.split('\n')) if a != b]
+        uncoded = re.sub(r' data-scan="\d+"', '', theirs).replace('of which 54 carry', 'of which 0 carry')
+        self.assertEqual(as_880, uncoded)
+        differing = [a for a, b in zip(mine.split('\n'), uncoded.split('\n')) if a != b]
         self.assertTrue(differing)
         for line in differing:
             with self.subTest(line=line[:80]):

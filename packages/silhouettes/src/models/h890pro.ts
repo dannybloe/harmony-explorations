@@ -20,16 +20,24 @@
  *
  * It is architecture 10, the radio frequency family, and the raster is that architecture's, the same 128 by 160
  * as arch 8's, `SCREEN_SIZES` in `packages/codec`. No key carries a code: no configuration of an 890 Pro is
- * known, and the key reader page does not read this architecture.
+ * known, and the key reader page does not read this architecture. The 880 Pro's codes were measured on an 880
+ * Pro, so they are taken off every key here rather than carried to another architecture.
  */
 import { FRAME_885 } from './h885.ts';
 import { H880PRO } from './h880pro.ts';
-import type { Model } from '../types.ts';
+import type { Key, Model } from '../types.ts';
 
 const { face, word } = FRAME_885;
 
+/** A key of the 880 Pro's face without the code an 880 Pro raised. */
+function unmeasured(key: Key): Key {
+  const { scan: _scan, scanFrom: _scanFrom, ...kept } = key;
+  return kept;
+}
+
 export const H890PRO: Model = {
   ...H880PRO,
+  keys: H880PRO.keys.map(unmeasured),
   id: 'h890pro',
   label: 'Harmony 890 Pro',
   skins: [40],

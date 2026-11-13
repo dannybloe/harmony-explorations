@@ -1573,6 +1573,9 @@ IMAGES = {
     # Unit B's colour keys left to right and the transport block's top right key and the one below it,
     # asked by position because the colour keys carry no text.
     'h885_b_keys_by_position': '20261105T1300Z-h885-b-keys-by-position.txt',
+    # A contributed Harmony 880 Pro's keys, read with the key page by the contributor. A path, since the bare
+    # name is a generic one. tests/harmony_880_885/test_harmony_880pro_keys.py.
+    'h880pro_contributed_keys': 'dumps/max schnindler/keydump.txt',
     # The first bench Harmony 785, unit A: its configuration read once and its whole flash read twice, identical.
     # tests/harmony_880_885/test_harmony_785_first_read.py.
     'h785_a_config': '20261110T1611Z-h785-a-config.bin',

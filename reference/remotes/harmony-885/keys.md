@@ -196,72 +196,79 @@ reading of a low resolution photograph: the key prints `PICTURE`, as the 890 Pro
 legibly, and the word is drawn where that one is read.[^t-printing-880pro] The band keeps all five of the 885's parting lines, so the four keys at
 its foot are four keys and not two.[^t-printing-880pro]
 
-**Its key table holds exactly the 885's 55 press codes**, in its one configuration.[^t-880pro-keys] **No key
-carries a code**: the rule that names the 880's keys asks for two contributors' configurations, and one 880
-Pro configuration is known. In it 24 commands are named on a code, 23 of them on the code the same key raises
-on an 885, and Mute is named on 20, the 885's Red, which is the key the 880 Pro prints `MUTE`; one
-configuration is not enough to put that on the drawing.[^t-880-keys-c]
+**Its key table holds exactly the 885's 55 press codes**, in its one configuration.[^t-880pro-keys] In that
+configuration 24 commands are named on a code, 23 of them on the code the same key raises on an 885, and Mute is
+named on 20, the 885's Red, which is the key the 880 Pro prints `MUTE`.[^t-880-keys-c] One configuration was not
+enough to put a code on the drawing.
+
+**Every key but Glow raises the code of the 885 key in its place**, read on an 880 Pro unit: 54 keys, each
+asked for by name and confirmed in a second pass.[^t-880pro-keys-u] So a key raises the code of where it
+sits, whatever it is printed with: `SOUND` and `PICTURE` raise the 885's `MUTE` and `PREV` codes, 11 and 40, and
+the four keys at the foot of the band raise the codes of the 885's colour keys, `MUTE` on 20 as the
+configuration had it.[^t-880pro-keys-u] Glow's code was not read: the key page never asks for Glow,
+since pressing it while an 885's keys were read dropped the connection.[^unchecked] This said no key carries a code<!--superseded--> until that
+reading.
 
 <!-- generated:keys-h880pro -->
-55 keys on the drawing `h880pro`, 47 on the keypad and 8 that the screen speaks for. None carries a scan code.
+55 keys on the drawing `h880pro`, 47 on the keypad and 8 that the screen speaks for. 54 carry a scan code: 54 read by the key page on a contributor's unit, each key asked by name and confirmed in a second pass[^t-880pro-keys-u].
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|
-| `Activities` | keypad | printed | not measured |  | ACTIVITIES |
-| `AllOff` | keypad | printed | not measured |  | OFF |
-| `ChannelDown` | keypad | printed | not measured |  |  |
-| `ChannelUp` | keypad | printed | not measured |  |  |
-| `Clear` | keypad | printed | not measured |  | CLEAR |
-| `Device` | keypad | printed | not measured |  | DEVICE |
-| `DirectionDown` | keypad | printed | not measured |  |  |
-| `DirectionLeft` | keypad | printed | not measured |  |  |
-| `DirectionRight` | keypad | printed | not measured |  |  |
-| `DirectionUp` | keypad | printed | not measured |  |  |
-| `DownArrow` | keypad | printed | not measured |  |  |
-| `Enter` | keypad | printed | not measured |  | E, ENTER |
-| `Exit` | keypad | printed | not measured |  | EXIT |
-| `FastForward` | keypad | printed | not measured |  | FWD |
+| `Activities` | keypad | printed | 1 (0x01)[^t-880pro-keys-u] |  | ACTIVITIES |
+| `AllOff` | keypad | printed | 2 (0x02)[^t-880pro-keys-u] |  | OFF |
+| `Help` | keypad | printed | 3 (0x03)[^t-880pro-keys-u] |  | HELP |
+| `Device` | keypad | printed | 10 (0x0A)[^t-880pro-keys-u] |  | DEVICE |
+| `Sound` | keypad | printed | 11 (0x0B)[^t-880pro-keys-u] |  | SOUND |
+| `ScreenPrev` | keypad | printed | 12 (0x0C)[^t-880pro-keys-u] |  |  |
+| `VolumeUp` | keypad | printed | 13 (0x0D)[^t-880pro-keys-u] |  |  |
+| `DirectionLeft` | keypad | printed | 14 (0x0E)[^t-880pro-keys-u] |  |  |
+| `VolumeDown` | keypad | printed | 15 (0x0F)[^t-880pro-keys-u] |  |  |
+| `DirectionUp` | keypad | printed | 16 (0x10)[^t-880pro-keys-u] |  |  |
+| `Menu` | keypad | printed | 17 (0x11)[^t-880pro-keys-u] |  | MENU |
+| `Exit` | keypad | printed | 18 (0x12)[^t-880pro-keys-u] |  | EXIT |
+| `DownArrow` | keypad | printed | 19 (0x13)[^t-880pro-keys-u] |  |  |
+| `VolumeMute` | keypad | printed | 20 (0x14)[^t-880pro-keys-u] |  | MUTE |
+| `Stop` | keypad | printed | 21 (0x15)[^t-880pro-keys-u] |  | STOP |
+| `Record` | keypad | printed | 22 (0x16)[^t-880pro-keys-u] |  | REC |
+| `Rewind` | keypad | printed | 23 (0x17)[^t-880pro-keys-u] |  | REW |
+| `SkipBack` | keypad | printed | 24 (0x18)[^t-880pro-keys-u] |  | REPLAY |
+| `Number1` | keypad | printed | 25 (0x19)[^t-880pro-keys-u] |  | 1 |
+| `Number4` | keypad | printed | 26 (0x1A)[^t-880pro-keys-u] |  | 4, ghi |
+| `Number8` | keypad | printed | 27 (0x1B)[^t-880pro-keys-u] |  | 8, tuv |
+| `Number7` | keypad | printed | 29 (0x1D)[^t-880pro-keys-u] |  | 7, pqrs |
+| `Clear` | keypad | printed | 31 (0x1F)[^t-880pro-keys-u] |  | CLEAR |
+| `Number0` | keypad | printed | 32 (0x20)[^t-880pro-keys-u] |  | 0 |
+| `Select` | keypad | printed | 33 (0x21)[^t-880pro-keys-u] |  | OK |
+| `DirectionDown` | keypad | printed | 34 (0x22)[^t-880pro-keys-u] |  |  |
+| `DirectionRight` | keypad | printed | 35 (0x23)[^t-880pro-keys-u] |  |  |
+| `ChannelDown` | keypad | printed | 36 (0x24)[^t-880pro-keys-u] |  |  |
+| `ChannelUp` | keypad | printed | 37 (0x25)[^t-880pro-keys-u] |  |  |
+| `Media` | keypad | printed | 38 (0x26)[^t-880pro-keys-u] |  | MEDIA |
+| `Picture` | keypad | printed | 40 (0x28)[^t-880pro-keys-u] |  | PICTURE |
+| `ScreenNext` | keypad | printed | 43 (0x2B)[^t-880pro-keys-u] |  |  |
+| `Guide` | keypad | printed | 50 (0x32)[^t-880pro-keys-u] |  | GUIDE |
+| `Info` | keypad | printed | 51 (0x33)[^t-880pro-keys-u] |  | INFO |
+| `PrevChannel` | keypad | printed | 52 (0x34)[^t-880pro-keys-u] |  | PREV |
+| `SkipForward` | keypad | printed | 53 (0x35)[^t-880pro-keys-u] |  | SKIP |
+| `FastForward` | keypad | printed | 54 (0x36)[^t-880pro-keys-u] |  | FWD |
+| `Pause` | keypad | printed | 55 (0x37)[^t-880pro-keys-u] |  | PAUSE |
+| `Play` | keypad | printed | 56 (0x38)[^t-880pro-keys-u] |  | PLAY |
+| `Number2` | keypad | printed | 57 (0x39)[^t-880pro-keys-u] |  | 2, abc |
+| `Number3` | keypad | printed | 58 (0x3A)[^t-880pro-keys-u] |  | 3, def |
+| `Number6` | keypad | printed | 59 (0x3B)[^t-880pro-keys-u] |  | 6, mno |
+| `UpArrow` | keypad | printed | 60 (0x3C)[^t-880pro-keys-u] |  |  |
+| `Number5` | keypad | printed | 61 (0x3D)[^t-880pro-keys-u] |  | 5, jkl |
+| `Number9` | keypad | printed | 62 (0x3E)[^t-880pro-keys-u] |  | 9, wxyz |
+| `Enter` | keypad | printed | 63 (0x3F)[^t-880pro-keys-u] |  | E, ENTER |
 | `Glow` | keypad | printed | not measured |  | GLOW |
-| `Guide` | keypad | printed | not measured |  | GUIDE |
-| `Help` | keypad | printed | not measured |  | HELP |
-| `Info` | keypad | printed | not measured |  | INFO |
-| `Media` | keypad | printed | not measured |  | MEDIA |
-| `Menu` | keypad | printed | not measured |  | MENU |
-| `Number0` | keypad | printed | not measured |  | 0 |
-| `Number1` | keypad | printed | not measured |  | 1 |
-| `Number2` | keypad | printed | not measured |  | 2, abc |
-| `Number3` | keypad | printed | not measured |  | 3, def |
-| `Number4` | keypad | printed | not measured |  | 4, ghi |
-| `Number5` | keypad | printed | not measured |  | 5, jkl |
-| `Number6` | keypad | printed | not measured |  | 6, mno |
-| `Number7` | keypad | printed | not measured |  | 7, pqrs |
-| `Number8` | keypad | printed | not measured |  | 8, tuv |
-| `Number9` | keypad | printed | not measured |  | 9, wxyz |
-| `Pause` | keypad | printed | not measured |  | PAUSE |
-| `Picture` | keypad | printed | not measured |  | PICTURE |
-| `Play` | keypad | printed | not measured |  | PLAY |
-| `PrevChannel` | keypad | printed | not measured |  | PREV |
-| `Record` | keypad | printed | not measured |  | REC |
-| `Rewind` | keypad | printed | not measured |  | REW |
-| `ScreenNext` | keypad | printed | not measured |  |  |
-| `ScreenPrev` | keypad | printed | not measured |  |  |
-| `Select` | keypad | printed | not measured |  | OK |
-| `SkipBack` | keypad | printed | not measured |  | REPLAY |
-| `SkipForward` | keypad | printed | not measured |  | SKIP |
-| `Sound` | keypad | printed | not measured |  | SOUND |
-| `Stop` | keypad | printed | not measured |  | STOP |
-| `UpArrow` | keypad | printed | not measured |  |  |
-| `VolumeDown` | keypad | printed | not measured |  |  |
-| `VolumeMute` | keypad | printed | not measured |  | MUTE |
-| `VolumeUp` | keypad | printed | not measured |  |  |
-| `ScreenLeft1` | screen | printed | not measured | 1 |  |
-| `ScreenLeft2` | screen | printed | not measured | 3 |  |
-| `ScreenLeft3` | screen | printed | not measured | 5 |  |
-| `ScreenLeft4` | screen | printed | not measured | 7 |  |
-| `ScreenRight1` | screen | printed | not measured | 2 |  |
-| `ScreenRight2` | screen | printed | not measured | 4 |  |
-| `ScreenRight3` | screen | printed | not measured | 6 |  |
-| `ScreenRight4` | screen | printed | not measured | 8 |  |
+| `ScreenLeft1` | screen | printed | 5 (0x05)[^t-880pro-keys-u] | 1 |  |
+| `ScreenLeft2` | screen | printed | 6 (0x06)[^t-880pro-keys-u] | 3 |  |
+| `ScreenLeft3` | screen | printed | 7 (0x07)[^t-880pro-keys-u] | 5 |  |
+| `ScreenLeft4` | screen | printed | 8 (0x08)[^t-880pro-keys-u] | 7 |  |
+| `ScreenRight4` | screen | printed | 44 (0x2C)[^t-880pro-keys-u] | 8 |  |
+| `ScreenRight1` | screen | printed | 45 (0x2D)[^t-880pro-keys-u] | 2 |  |
+| `ScreenRight2` | screen | printed | 46 (0x2E)[^t-880pro-keys-u] | 4 |  |
+| `ScreenRight3` | screen | printed | 48 (0x30)[^t-880pro-keys-u] | 6 |  |
 
 Generated from `packages/silhouettes/src/models/h880pro.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
@@ -427,6 +434,7 @@ remote as read is not checked.[^unchecked]
   known.[^unchecked]
 * The exact printed text of each key, and how long the hold delay lasts in seconds.[^unchecked]
 * The Harmony 785's keys and where it keeps the key held.[^unchecked]
+* The 880 Pro's Glow key's code, and the 880 Pro's keys on a second unit.[^unchecked]
 
 [^s144]: Read in the firmware. [Section 144](../../../docs/findings.md#s144)
 [^s144b]: Measured in configurations. [Section 144](../../../docs/findings.md#s144)
@@ -442,3 +450,4 @@ remote as read is not checked.[^unchecked]
 [^t-880-keys-c]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_880_keys.py)
 [^t-printing-880pro]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^t-880pro-keys]: Measured in configurations. [The test](../../../tests/firmware/test_silhouettes.py)
+[^t-880pro-keys-u]: Measured on a unit. [The test](../../../tests/harmony_880_885/test_harmony_880pro_keys.py)

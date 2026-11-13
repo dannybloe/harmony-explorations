@@ -172,8 +172,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 1059 with the Harmony 885 track's 13, merged from its branch: unit A's whole flash twice and its
   // configuration after the first block write, unit B's three of 1.8, its four of 1.4, 2.1's composed file and
   // B's two of 2.1. 1060 with 2.3's composed file, 1061 with B's region before 2.3's write, 1064 with 2.3's file as written, read back and the clock, 1067 with the first Harmony 785's configuration and whole flash twice, 1070 with the second's, 1072 with the
-  // Harmony 515's configuration region read twice.
-  assert.equal(Object.keys(pythonImages()).length, 1072, 'every fixture tests/lab.py names');
+  // Harmony 515's configuration region read twice, 1073 with a contributed Harmony 880 Pro's key dump.
+  assert.equal(Object.keys(pythonImages()).length, 1073, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

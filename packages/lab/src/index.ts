@@ -1710,6 +1710,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // Unit B's colour keys left to right and the transport block's top right key and the one below it, asked by
   // position because the colour keys carry no text.
   h885_b_keys_by_position: '20261105T1300Z-h885-b-keys-by-position.txt',
+  // A contributed Harmony 880 Pro's keys, read with the key page by the contributor: each key asked by name and
+  // confirmed in a second pass. A path, since the bare name is a generic one. `tests/harmony_880_885/test_harmony_880pro_keys.py`.
+  h880pro_contributed_keys: 'dumps/max schnindler/keydump.txt',
   // The first bench Harmony 785, unit A, on its first contact: its configuration read once, and its whole flash,
   // 0x000000 to 0x1FE000, read twice and identical. Read only; the 785 is not a write target.
   // `tests/harmony_880_885/test_harmony_785_first_read.py`.

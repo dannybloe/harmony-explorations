@@ -89,12 +89,14 @@ test('every key of each drawing is on the page once, with the code and candidate
   assert.equal(drawing('h880').keys.filter((k) => k.scan !== undefined).length, 29);
   assert.deepEqual(drawing('h880').keys.filter((k) => k.candidates.length > 0).map((k) => [k.name, k.candidates]),
     [['UpArrow', [20, 52]], ['DownArrow', [20, 52]]]);
-  // The 880 Pro's 55 and the 720's 49 carry neither a code nor a candidate: one configuration of each is
-  // known, and the 880's rule asks for two contributors.
-  for (const [id, count] of [['h880pro', 55], ['h720', 49]] as const) {
-    assert.equal(drawing(id).keys.length, count, id);
-    assert.deepEqual(drawing(id).keys.filter((k) => k.scan !== undefined || k.candidates.length > 0), [], id);
-  }
+  // The 880 Pro's 55 carry a code on every key but Glow, read on a unit of the model with this page, and no
+  // candidate. The 720's 49 carry neither: one configuration is known, and the 880's rule asks for two
+  // contributors.
+  assert.equal(drawing('h880pro').keys.length, 55);
+  assert.deepEqual(drawing('h880pro').keys.filter((k) => k.scan === undefined).map((k) => k.name), ['Glow']);
+  assert.deepEqual(drawing('h880pro').keys.filter((k) => k.candidates.length > 0), []);
+  assert.equal(drawing('h720').keys.length, 49);
+  assert.deepEqual(drawing('h720').keys.filter((k) => k.scan !== undefined || k.candidates.length > 0), [], 'h720');
 });
 
 test('the 885 is asked for top to bottom, each row left to right, all but Glow', () => {

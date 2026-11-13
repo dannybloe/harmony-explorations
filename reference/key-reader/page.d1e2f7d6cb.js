@@ -4,7 +4,7 @@ import { PressTracker } from './presses.ceb2e74879.js';
 import { Learning, Naming, Tester, checkOf, learnedMap, learningLog, misfitWords, neverAnswered, sweepOf } from './session.e3dd163a74.js';
 import { Face } from './face.8cf6d8fa5c.js';
 import { STOPPED_ANSWERING, Visit } from './visit.06aa8e7658.js';
-import { DRAWINGS } from './drawings.39d71d6c7e.js';
+import { DRAWINGS } from './drawings.d1ac7801af.js';
 import { WATCH_BY_SKIN } from './keys.6fbf5b8101.js';
 const POLL_MS = 25;
 function element(id) {

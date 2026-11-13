@@ -926,3 +926,4 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `Two Harmony 785s are on the bench, and neither may be written` | `docs/decisions.md` | both bench Harmony 785s may be written since decision 34; no write path names one yet |
 | `Nothing of a 785 is known beyond its name` | `tests/harmony_880_885/test_harmony_785_first_read.py` | two Harmony 785s were read whole; the 785 has its own reference folder, `reference/remotes/harmony-785/` |
 | `so it is read only until that` | `docs/decisions.md` | the bench Harmony 515 may be written since decision 35; no write path names one yet |
+| `configuration is not enough to put that on the drawing` | `tests/harmony_880_885/test_harmony_880pro_keys.py` | 54 of the Harmony 880 Pro's keys carry codes, read on a unit with the key page; Glow alone carries none |

@@ -28,11 +28,13 @@
  * `UpArrow` for the two triangles, as on the 880. The two edge keys are `Sound` and `Picture`, the manual's
  * words, since no other model has a key for either. All `printed`, chosen by the marking.
  *
- * **No key carries a code.** One configuration of an 880 Pro is known, compiled by Logitech for one
- * contributor, and `tests/harmony_880_885/test_harmony_880_keys.py` asks for devices of two contributors before it names a
- * key's code; that file reports what the one compile says, Mute on 20 where the 880 and 885 have it on 11,
- * which is the code of the 885's Red key, the position this face prints `MUTE` in. Nothing else narrows a key
- * to a set either, so no key carries candidates. The key page's learning mode is how these get codes.
+ * **54 keys carry a code, measured on a contributor's unit**, `MEASURED` in
+ * `tests/harmony_880_885/test_harmony_880pro_keys.py`: the key page asked for each key by name on an 880 Pro and
+ * confirmed every one in a second pass. Each is the code the bench 885 raised for the key in the same place, the
+ * six printed otherwise among them, so the 885's codes are not carried over here: the table below is the 880
+ * Pro's own reading, and the test holds it against the 885's. **Glow carries none**, since the page never asks
+ * for it. This said no key carries a code<!--superseded-->, while one configuration was all that was known of
+ * the model and it named Mute on 20, which the unit confirms.
  *
  * **How the photograph's readings reach this frame.** Its first and last case rows, 3 and 887, go onto the
  * 885's 3 and 805, and its case centre line, fitted through every row, 129.84 + 0.00633 y, onto the 885's face
@@ -85,7 +87,27 @@ function printing(key: Key): Key {
   }
 }
 
-const KEYS: readonly Key[] = H885.keys.map(printing);
+/** Every key's scan code as the contributor's unit raised it, under this drawing's names; Glow was never asked. */
+const CODES: Readonly<Record<string, number>> = {
+  Activities: 1, AllOff: 2, Help: 3,
+  ScreenLeft1: 5, ScreenLeft2: 6, ScreenLeft3: 7, ScreenLeft4: 8,
+  Device: 10, Sound: 11, ScreenPrev: 12, VolumeUp: 13, DirectionLeft: 14, VolumeDown: 15, DirectionUp: 16,
+  Menu: 17, Exit: 18, DownArrow: 19, VolumeMute: 20, Stop: 21, Record: 22, Rewind: 23, SkipBack: 24,
+  Number1: 25, Number4: 26, Number8: 27, Number7: 29, Clear: 31, Number0: 32,
+  Select: 33, DirectionDown: 34, DirectionRight: 35, ChannelDown: 36, ChannelUp: 37, Media: 38,
+  Picture: 40, ScreenNext: 43,
+  ScreenRight4: 44, ScreenRight1: 45, ScreenRight2: 46, ScreenRight3: 48,
+  Guide: 50, Info: 51, PrevChannel: 52, SkipForward: 53, FastForward: 54, Pause: 55, Play: 56,
+  Number2: 57, Number3: 58, Number6: 59, UpArrow: 60, Number5: 61, Number9: 62, Enter: 63,
+};
+
+/** A key with its measured code, or with none where the unit was not asked for it. */
+function measured(key: Key): Key {
+  const scan = CODES[key.name];
+  return scan === undefined ? key : { ...key, scan, scanFrom: 't-880pro-keys-u' };
+}
+
+const KEYS: readonly Key[] = H885.keys.map(printing).map(measured);
 
 /** The 885's band under the four new names; the moulding, its eight segments and its five seams are the 885's. */
 const BAND_KEYS: Readonly<Record<string, string>> = {
