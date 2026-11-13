@@ -139,6 +139,7 @@ On a Touch a key with a long press sends nothing on the press: its long action f
 | [favourites-and-settings.md](favourites-and-settings.md) | the Context and Settings documents, the favourite channels and the pictures, field by field, and what each composed by a program did |
 | [answering-a-sync.md](answering-a-sync.md) | answering a Touch's sync in place of Logitech's server: a sync end to end, what the remote checks of an answer, what an answerer refuses, how a sync aborts and commits, the syncs this project ran, the smallest set of documents and what a commit keeps, entity tags, the direct resource put, and which request names act |
 | [api/README.md](api/README.md) | the remote's whole interface as an API: the names its USB program answers and every request its engine registers, each with what it does, its parameters and its answer |
+| [remote-and-hub.md](remote-and-hub.md) | how a hub paired remote of this generation, the Elite among them, drives its hub: the numbered radio tunnel, what the remote hands to the hub and what it keeps, taking its setup from the hub, its own screen engine, and the hardware a hub has not |
 
 ## The hub
 

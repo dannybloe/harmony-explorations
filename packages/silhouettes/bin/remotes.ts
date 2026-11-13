@@ -271,7 +271,7 @@ export const ARCHITECTURES: readonly ArchitectureFolder[] = [
   // as an API, one page per group of requests, indexed by its own README.
   {
     folder: 'harmony-touch', architecture: 17,
-    files: ['README.md', 'activities-and-buttons.md', 'answering-a-sync.md', 'api', 'devices-and-infrared.md', 'favourites-and-settings.md', 'firmware.md', 'usb.md'],
+    files: ['README.md', 'activities-and-buttons.md', 'answering-a-sync.md', 'api', 'devices-and-infrared.md', 'favourites-and-settings.md', 'firmware.md', 'hub', 'remote-and-hub.md', 'usb.md'],
     blocks: ['skins'],
   },
 ];

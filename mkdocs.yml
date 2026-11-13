@@ -299,6 +299,7 @@ nav:
           - Activities and buttons: architectures/harmony-touch/activities-and-buttons.md
           - Favourites and settings: architectures/harmony-touch/favourites-and-settings.md
           - Answering a sync: architectures/harmony-touch/answering-a-sync.md
+          - Remote and hub: architectures/harmony-touch/remote-and-hub.md
           - The API:
               - architectures/harmony-touch/api/README.md
               - Names: architectures/harmony-touch/api/names.md
