@@ -31,6 +31,25 @@ What the flash holds, `tests/harmony_880_885/test_harmony_785_first_read.py`:
 * a copy of the running application in the staging region from `0x1D0000`;
 * six written bytes at the start of the log area, the rest erased.
 
-## The second unit
+## The second unit, `h785_b`
 
-Not read yet. Whether it carries the same bootloader is the first thing it answers.
+Recorded in the lab as `units/h785_b.txt` on 13 November 2026, on its first contact, after unit A had been
+unplugged. Every step was a read.
+
+1. **`GET_VERSION`**: `45 08 49 01 80 2D 08`, A's block but for the hardware version, 0.8.
+2. **The identity block** read with `read-identity.ts --record h785_b`, and compared with A's record before
+   anything else: it differs, so the remote on the cable was not A.
+3. **The configuration**, `read-config.ts --label h785-b`: 518269 bytes, no window retried. A previous owner's
+   setup, which stays in the lab.
+4. **The whole flash**, twice. The first read finished with no window retried. **The second stopped after its
+   retries and filed nothing**; the remote answered its version normally afterwards, and the error itself was
+   lost, because the command's output was cut short. Run again with the whole output kept in the lab, it
+   finished with no window retried, and the two reads are identical.
+
+What the flash holds, in the same test:
+
+* the same application as A;
+* **a different bootloader from A's**: the Harmony 720's 4.2 build with the skin set to 45, product string
+  `Harmony Remote 3-4.2.4`;
+* the configuration from `0x020000` and the application's copy in the staging region, as on A;
+* 118 identical entries at the start of the log area, where A has one.

@@ -1575,6 +1575,10 @@ IMAGES = {
     'h785_a_config': '20261110T1611Z-h785-a-config.bin',
     'h785_a_flash': '20261110T1613Z-h785-a-flash-region.bin',
     'h785_a_flash_2': '20261110T1614Z-h785-a-flash-2-region.bin',
+    # The second bench Harmony 785, unit B: its configuration once and its whole flash twice, identical.
+    'h785_b_config': '20261113T0836Z-h785-b-config.bin',
+    'h785_b_flash': '20261113T0837Z-h785-b-flash-region.bin',
+    'h785_b_flash_2': '20261113T0840Z-h785-b-flash-2-region.bin',
 }
 
 _cache = {}
@@ -1769,7 +1773,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h885_b_after_2_1_region', 'h885_composed_2_3',
                       'h885_b_written_2_3', 'h885_b_after_2_3_config',
                       # The first bench Harmony 785's configuration and its whole flash, counted nowhere.
-                      'h785_a_config', 'h785_a_flash', 'h785_a_flash_2')
+                      'h785_a_config', 'h785_a_flash', 'h785_a_flash_2',
+                      'h785_b_config', 'h785_b_flash', 'h785_b_flash_2')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

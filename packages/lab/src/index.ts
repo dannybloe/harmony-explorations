@@ -1713,6 +1713,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h785_a_config: '20261110T1611Z-h785-a-config.bin',
   h785_a_flash: '20261110T1613Z-h785-a-flash-region.bin',
   h785_a_flash_2: '20261110T1614Z-h785-a-flash-2-region.bin',
+  // The second bench Harmony 785, unit B, the same reads: its configuration once and its whole flash twice, identical.
+  // A first attempt at the second flash read stopped after its retries and filed nothing.
+  h785_b_config: '20261113T0836Z-h785-b-config.bin',
+  h785_b_flash: '20261113T0837Z-h785-b-flash-region.bin',
+  h785_b_flash_2: '20261113T0840Z-h785-b-flash-2-region.bin',
 };
 
 /**
@@ -1866,7 +1871,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h885_composed_2_3',
     // The first bench Harmony 785's configuration and its whole flash, which holds that configuration again: a bench
     // configuration joins no corpus total, as the 885s' do not.
-    'h785_a_config', 'h785_a_flash', 'h785_a_flash_2'];
+    'h785_a_config', 'h785_a_flash', 'h785_a_flash_2', 'h785_b_config', 'h785_b_flash', 'h785_b_flash_2'];
 
 const cache = new Map<string, string[]>();
 

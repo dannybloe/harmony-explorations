@@ -57,10 +57,27 @@ The `harmony-885` and `probe-remote` skills for the read hazards and the backup 
 `reference/architectures/harmony-880-885/firmware.md` "The Harmony 720's images" and `usb.md`;
 `reference/usb-protocol/version-block.md` for the accessor's field order.
 
+## The second unit, B
+
+The same reads on the second bench 785. Its version block was `45 08 49 01 80 2D 08`, A's but for the hardware
+version, 0.8; its identity block is not A's. The configuration read took 518269 bytes with no window retried,
+and the whole flash read twice is byte identical; a first attempt at the second read stopped after its retries
+and filed nothing, and its error was not kept. A second attempt finished with no window retried.
+
+* **Its application is A's**, the same 64 KiB at `0x010000`, and its staging region holds it but for offset 2,
+  as on A.
+* **Its bootloader is not A's: it is the Harmony 720's 4.2 build with the skin set to 45** in its two places,
+  the version accessor's literal at `0x0019CE` and the USB descriptor's `bcdDevice` at `0x0063E6`. The other 34
+  bytes it differs from the 720's image in are the identity fields from `0x000120` and the two bytes after the
+  calibration word, `0x000162` and `0x000163`, the same positions an 885's backup differs from its published
+  bootloader in. Its product string is `Harmony Remote 3-4.2.4`.
+* **Its log area holds 118 entries of eight bytes, all the same**, `02 00 00 00 00 FF FF 05`, where A's holds
+  one, and that one is the same entry. What an entry means is not read here.
+
 ## Width
 
-One Harmony 785. Whether a second 785 carries the same bootloader is not checked; the second unit on the
-bench is the way to find out.
+Two Harmony 785s, and they carry two bootloader builds, 4.4 and 4.2, over one application build. Which one
+Logitech shipped first, and whether one replaced the other in the field, is not read.
 """
 import hashlib
 import os
@@ -187,6 +204,64 @@ class TheConfiguration(unittest.TestCase):
         one, two = slot(1), slot(2)
         self.assertEqual(list(self.config[one:one + 3]), [8, 8, 45])
         self.assertEqual(self.config[two:two + 8], bytes.fromhex('003c00001e00e01f'))
+
+
+class UnitB(unittest.TestCase):
+    def setUp(self):
+        lab.require('h785_b_flash', 'h785_b_flash_2')
+        self.flash = lab.load('h785_b_flash')
+
+    def test_the_two_reads_are_identical(self):
+        second = lab.load('h785_b_flash_2')
+        self.assertEqual(len(self.flash), FLASH_END)
+        self.assertEqual(hashlib.sha256(self.flash).digest(), hashlib.sha256(second).digest())
+
+    def test_the_application_is_unit_as(self):
+        lab.require('h785_a_flash')
+        a = lab.load('h785_a_flash')
+        self.assertEqual(self.flash[APPLICATION:APPLICATION + 0x10000], a[APPLICATION:APPLICATION + 0x10000])
+        staged = self.flash[STAGING:STAGING + 0x10000]
+        self.assertEqual([i for i in range(0x10000) if self.flash[APPLICATION + i] != staged[i]], [2])
+
+    def test_the_bootloader_is_the_720s_with_the_skin_set_to_45(self):
+        (image,) = by_name(H720_BOTTOM)
+        differ = [a for a in range(len(image)) if self.flash[a] != image[a]]
+        self.assertEqual(len(differ), 36)
+        self.assertEqual(set(differ) - set(range(0x120, 0x140)) - {0x162, 0x163}, {0x0019CE, 0x0063E6})
+        for at in (0x0019CE, 0x0063E6):
+            self.assertEqual((self.flash[at], image[at]), (45, 44))
+        self.assertEqual(retlw_values(self.flash, 0x0019CA), [0x42, 3, 45, 0, 8])
+        # The device descriptor's vendor, product and bcdDevice around the second byte.
+        self.assertEqual(self.flash[0x0063E2:0x0063EA], bytes.fromhex('6d0410c12d080404'))
+        text = 'Harmony Remote 3-4.2.4'.encode('utf-16-le')
+        self.assertEqual(self.flash[0x0063AE:0x0063AE + len(text)], text)
+
+    def test_the_bootloader_is_not_unit_as(self):
+        lab.require('h785_a_flash')
+        a = lab.load('h785_a_flash')
+        self.assertEqual(sum(1 for i in range(0x10000) if a[i] != self.flash[i]), 20884)
+
+    def test_the_configuration_region_holds_the_configuration_read(self):
+        lab.require('h785_b_config')
+        config = lab.load('h785_b_config')
+        self.assertEqual(len(config), 518269)
+        self.assertEqual(self.flash[REGION:REGION + len(config)], config)
+
+    def test_the_log_area_holds_118_identical_entries_and_as_holds_one_of_them(self):
+        log = self.flash[LOG:FLASH_END]
+        entry = bytes.fromhex('0200000000ffff05')
+        self.assertEqual(log[:118 * 8], entry * 118)
+        self.assertEqual(set(log[118 * 8:]), {0xFF})
+        lab.require('h785_a_flash')
+        a = lab.load('h785_a_flash')
+        self.assertEqual(a[LOG:LOG + 8], entry)
+
+    def test_the_identity_fields_are_unit_bs_and_not_unit_as(self):
+        b, a = unit_record('h785_b'), unit_record('h785_a')
+        if a is None or b is None:
+            self.skipTest('the lab holds no records for the units')
+        self.assertEqual(self.flash[0x120:0x120 + len(b)], b)
+        self.assertEqual(self.flash.find(a), -1)
 
 
 if __name__ == '__main__':

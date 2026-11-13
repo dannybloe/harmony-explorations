@@ -55,3 +55,7 @@ Read the same day, on the first unit, and every prediction that named a value he
 **What nobody predicted**: the bootloader is a build of its own, version 4.4 with the product string
 `Harmony Remote 3-4.4.2`, where the 720's is 4.2 and the 880's and 885's 4.0; and the application differs from
 the 720's in eight bytes besides the skin.
+
+**The second unit**, read on 13 November 2026, matched the same predictions, with hardware version 0.8, and
+carries a different bootloader from the first: the Harmony 720's 4.2 with the skin set to 45. So the bootloader is not
+a property of the model, and a prediction of it from one unit would have been wrong for the other.
