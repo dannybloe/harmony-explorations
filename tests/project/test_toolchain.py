@@ -397,8 +397,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 107 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with
         # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
         # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main. 111 with `tests/project/test_proves.py`, 112 with the first Harmony 785's read, 113 with
-        # `tests/harmony_880_885/test_harmony_880pro_keys.py`.
-        self.assertEqual(len(files), 113, 'the Python test files')
+        # `tests/harmony_880_885/test_harmony_880pro_keys.py`. 114 with `tests/harmony_touch/test_harmony_hub_firmware.py`, the hubs' image read.
+        self.assertEqual(len(files), 114, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -465,8 +465,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main, which carries one. 109 with
         # `tests/project/test_proves.py`, which carries one. 110 with
         # `tests/harmony_880_885/test_harmony_785_first_read.py`, which carries one. 111 with
-        # `tests/harmony_880_885/test_harmony_880pro_keys.py`, which carries one.
-        self.assertEqual(with_block, 111,
+        # `tests/harmony_880_885/test_harmony_880pro_keys.py`, which carries one. 112 with
+        # `tests/harmony_touch/test_harmony_hub_firmware.py`, which carries one.
+        self.assertEqual(with_block, 112,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -973,8 +974,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         # 107 with `tests/harmony_880_885/test_harmony_885_flash_backup.py`. 108 with
         # `tests/harmony_880_885/test_harmony_885_first_config_write.py`. 109 with `tests/harmony_880_885/test_harmony_885_borrowed_letters.py`. 110 with
         # `tests/harmony_touch/test_harmony_touch_empty_screens.py`, merged from main. 111 with `tests/project/test_proves.py`, 112 with the first Harmony 785's read, 113 with
-        # `tests/harmony_880_885/test_harmony_880pro_keys.py`.
-        self.assertEqual(len(scanned), 113, 'Python test files, which moves when one is added')
+        # `tests/harmony_880_885/test_harmony_880pro_keys.py`. 114 with `tests/harmony_touch/test_harmony_hub_firmware.py`, the hubs' image read.
+        self.assertEqual(len(scanned), 114, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1678,7 +1679,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/harmony-785/`, the Harmony 785 onboarding's review. 191 with `dumps/richard_hup/`,
         # `dumps/bob deyoung/` and `dumps/atrugiel69/`, three contributed dumps on the Harmony 525's platform. 192 with
         # `dumps/max schnindler/`, a contributed Harmony 880 Pro. 193 with `work/harmony-hub/`, the Harmony Hub's first read.
-        self.assertEqual(len(named), 193, "lab paths the register names")
+        # 194 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled.
+        self.assertEqual(len(named), 194, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1797,9 +1799,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 160 with `work/architecture-review/`, the review of the packages, 161 with `work/recipe-references/`,
         # the bench builds rebuilt from recipes, and 162 with `work/requirements/`, decision 33,
         # and 163 with `work/harmony-785/`, and 166 with the three contributed dumps of the Harmony 525's platform.
-        # 167 with `dumps/max schnindler/`, a contributed Harmony 880 Pro, and 168 with `work/harmony-hub/`.
-        self.assertEqual(len(rows), 168)
-        self.assertEqual(len(dict(rows)), 168, 'a duplicated path would make a query ambiguous')
+        # 167 with `dumps/max schnindler/`, a contributed Harmony 880 Pro, and 168 with `work/harmony-hub/`,
+        # and 169 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled.
+        self.assertEqual(len(rows), 169)
+        self.assertEqual(len(dict(rows)), 169, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
