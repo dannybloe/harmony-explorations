@@ -31,6 +31,8 @@ const PHOTO: Readonly<Record<string, string>> = {
   h885: '885-full.jpg',
   // The 885's drawing with its own band and nameplate, checked against the 880's own photograph.
   h880: '880-full.jpg',
+  // The 720's drawing with a row of colour keys, whose row and moved blocks were read off the 785's photograph.
+  h785: '785-full.jpg',
   one: 'one-full.jpg',
   touch: 'touch-full.jpg',
 };

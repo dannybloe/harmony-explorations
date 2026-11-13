@@ -411,7 +411,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 525**, impossible: None of the 525's fifty keys is an activity key; activities start from a list opened by the Activities key. `reference/remotes/harmony-525/keys.md#every-key-on-the-drawing`.
 * **Harmony 515**, impossible: The 515 has the 525's face, and none of its keys is an activity key. `reference/remotes/harmony-515/keys.md#every-key-on-the-drawing`.
 * **Harmony 885**, impossible: The 885's 55 keys have one Activities key and no activity keys; activities start from its menu. `reference/remotes/harmony-885/keys.md#harmony-885-skin-17`.
-* **Harmony 785**, unknown: Whether the 785 has keys that start an activity is not read; its face is not drawn. `reference/remotes/harmony-785/keys.md#harmony-785-keys`.
+* **Harmony 785**, unknown: The face is drawn, but whether any of the 785's keys starts an activity is not read. `reference/remotes/harmony-785/keys.md#harmony-785-keys`.
 * **Harmony 300**, impossible: The 300 holds one activity, started by its Watch TV key, so there is nothing to choose. `reference/how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity`.
 * **Harmony 350**, impossible: The 350 holds one activity, always started by its Watch TV key. `reference/how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity`.
 * **Harmony Touch**, impossible: The Touch has no activity keys; its 27 keypad keys and two touch zones include none. `reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing`.
@@ -553,7 +553,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 525**, impossible: The 525 has no device keys; its Devices key opens a list. `reference/remotes/harmony-525/keys.md#every-key-on-the-drawing`.
 * **Harmony 515**, impossible: The 515 has the 525's face, with no device keys; its Devices key opens a list. `reference/remotes/harmony-515/keys.md#every-key-on-the-drawing`.
 * **Harmony 885**, impossible: The 885 has one Device key and a device list, and no device keys. `reference/remotes/harmony-885/keys.md#harmony-885-skin-17`.
-* **Harmony 785**, unknown: Whether the 785 has device keys is not read; its face is not drawn. `reference/remotes/harmony-785/keys.md#harmony-785-keys`.
+* **Harmony 785**, unknown: The face is drawn, but whether any of the 785's keys picks a device is not read. `reference/remotes/harmony-785/keys.md#harmony-785-keys`.
 * **Harmony 300**, open: The device keys selected a device short and another long on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 is refused once it holds a long press.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreen.test.ts`, "a long press device takes group 4 plus its key's place on all four keys, the group Logitech's compile gives the same device"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony Touch**, impossible: The Touch has no device keys; its keys and touch zones list none. `reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing`.
@@ -609,7 +609,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 525**, open: The face is drawn with fifty keys, but no key's scan code is known.
 * **Harmony 515**, open: The face is drawn, the 525's, but no key's scan code has been measured on a 515.
 * **Harmony 885**, proven by `packages/silhouettes/test/models.test.ts`, "a name identifies one key, and every key has one"; `tests/firmware/test_silhouettes.py`, "TestTheHarmony885Silhouette.test_every_key_carries_the_code_the_units_raised_for_it".
-* **Harmony 785**, open: The 785's face is not drawn, and none of its keys has a measured scan code.
+* **Harmony 785**, open: The 785's face is drawn with 53 keys, but no key's scan code has been measured on a 785.
 * **Harmony 300**, open: The European drawing ties 49 of 55 keys on the unit; six keys and the whole US printing are not measured.
 * **Harmony 350**, open: The face is drawn and 53 of 55 keys carry a scan code; DVR and Live are not tied to one.
 * **Harmony Touch**, proven by `packages/silhouettes/test/models.test.ts`, "a name identifies one key, and every key has one"; `packages/silhouettes/test/svg.test.ts`, "a key is addressable by name, kind, provenance and code".

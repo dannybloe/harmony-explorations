@@ -224,8 +224,8 @@ export const REMOTES: readonly RemoteFolder[] = [
   // that the 720 does not have, so it is not this drawing's skin and has a folder of its own below.
   { folder: 'harmony-720', skins: [44], drawing: 'h720', architecture: 8 },
   // Skin 45, the Harmony 785, read off two remotes: the 720's application build, but a face with keys the 720's has not,
-  // so a folder of its own, and not drawn yet.
-  { folder: 'harmony-785', skins: [45], architecture: 8 },
+  // so a folder of its own, and a drawing of its own, `h785.ts`: the 720's face with a row of colour keys.
+  { folder: 'harmony-785', skins: [45], drawing: 'h785', architecture: 8 },
 ];
 
 /** The five files of a full architecture folder, and the same with the page on what Logitech's compiler writes. */

@@ -201,6 +201,9 @@ test('a detail level leaves out what it says it leaves out', () => {
       // each, two chevrons, two plus and two minus marks, four pad triangles, the transport block's 15 parts
       // and 0's space mark.
       h720: { text: 43, marks: 42, keys: 49 },
+      // The 720's 43 words with its own nameplate, and the 720's 42 marks and a coloured face on each of the four
+      // colour keys, one part each.
+      h785: { text: 43, marks: 46, keys: 53 },
       one: { text: 34, marks: 32, keys: 44 },
       // Off, Exit, Menu, OK, Vol, Ch, DVR, Guide, Info and the Logitech nameplate; eleven symbols drawn
       // in 17 parts, rewind, fast forward, pause, mute and back being two each.

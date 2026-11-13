@@ -142,6 +142,16 @@ export const ICONS: Readonly<Record<string, Icon>> = {
    */
   dot: { parts: [{ d: 'M -0.5 0 A 0.5 0.5 0 1 0 0.5 0 A 0.5 0.5 0 1 0 -0.5 0 Z', mode: 'fill', accent: true }] },
 
+  /**
+   * A whole key face in colour, which is what a Harmony 785's four colour keys are: the key is moulded in
+   * its colour, edge to edge, with nothing printed on it, where a Harmony 600 prints a bar on a light key.
+   * A rounded rectangle 1.8 by 0.84, the proportion of the coloured face inside the key's rim on the 785's
+   * product photograph and the picture in its manual, 30 by 14 of the 720's photograph's pixels. Accented
+   * for the same reason the bar is, and drawn as a mark so the key's own fill stays the interface's.
+   */
+  face: { parts: [{ d: 'M -0.7 -0.42 H 0.7 A 0.2 0.2 0 0 1 0.9 -0.22 V 0.22 A 0.2 0.2 0 0 1 0.7 0.42 H -0.7 '
+    + 'A 0.2 0.2 0 0 1 -0.9 0.22 V -0.22 A 0.2 0.2 0 0 1 -0.7 -0.42 Z', mode: 'fill', accent: true }] },
+
   chevronUp: { parts: [{ d: 'M -0.8 0.35 L 0 -0.4 L 0.8 0.35', mode: 'stroke' }] },
   chevronDown: { parts: [{ d: 'M -0.8 -0.4 L 0 0.35 L 0.8 -0.4', mode: 'stroke' }] },
   triangleUp: { parts: [{ d: 'M -0.8 0.85 L 0.8 0.85 L 0 -0.85 Z', mode: 'fill' }] },

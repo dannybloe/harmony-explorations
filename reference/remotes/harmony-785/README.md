@@ -40,7 +40,7 @@ teletext keys the 720's does not, so the faces differ and the 720 has a folder o
 
 | file | what it holds |
 |---|---|
-| [keys.md](keys.md) | nothing measured yet; the face is not drawn |
+| [keys.md](keys.md) | the 53 keys on the drawing and the key table |
 | [display.md](display.md) | the screen |
 | [features.md](features.md) | the device limit |
 | [behaviour.md](behaviour.md) | nothing measured yet |

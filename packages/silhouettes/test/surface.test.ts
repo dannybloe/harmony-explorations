@@ -16,7 +16,7 @@ const MANIFEST = new URL('../package.json', import.meta.url);
 
 /** The main entry's names that exist at run time. */
 const VALUES = [
-  'CASE_HEIGHT', 'DEFAULTS', 'DETAIL', 'H300', 'H300EU', 'H350', 'H515', 'H525', 'H600', 'H650', 'H700', 'H720',
+  'CASE_HEIGHT', 'DEFAULTS', 'DETAIL', 'H300', 'H300EU', 'H350', 'H515', 'H525', 'H600', 'H650', 'H700', 'H720', 'H785',
   'H880', 'H880PRO', 'H885', 'H890PRO', 'ICONS', 'LAYERS', 'MODELS', 'ONE', 'SCAN_SOURCES', 'TOUCH', 'elementId',
   'extentOf', 'keyOf', 'keyOfScan', 'pathBounds', 'pathPolygon', 'pointInPath', 'toSvg',
 ];

@@ -121,7 +121,8 @@ a real write, as on every unit. Load the `harmony-785` skill first.
 
 - [ ] Read the write end in the 720's application 4.5: the cache drop, the restart and the staged install status address.
 - [ ] Read the bootloaders' refusal of an erase or a write below `0x010000`, in the 720's 4.2 and in the 4.4 build.
-- [ ] Draw the 785's face from the unit, each key's scan code read with the key page (R43, R67).
+- [x] Draw the 785's face: the 720's with the four colour keys, from the manual and the photograph.
+- [ ] Each key's scan code read with the key page, and which colour key raises which code (R43, R67).
 
 ### 2. The first writes
 

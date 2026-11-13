@@ -32,6 +32,7 @@ import { H600 } from './models/h600.ts';
 import { H650 } from './models/h650.ts';
 import { H700 } from './models/h700.ts';
 import { H720 } from './models/h720.ts';
+import { H785 } from './models/h785.ts';
 import { H880 } from './models/h880.ts';
 import { H880PRO } from './models/h880pro.ts';
 import { H885 } from './models/h885.ts';
@@ -42,11 +43,11 @@ import type { Key, Model } from './types.ts';
 
 /** Every model that is drawn. A model absent from here has not been measured yet. */
 export const MODELS: Readonly<Record<string, Model>> = {
-  h300: H300, h300eu: H300EU, h350: H350, h515: H515, h525: H525, h600: H600, h650: H650, h700: H700, h720: H720, h880: H880,
-  h880pro: H880PRO, h885: H885, h890pro: H890PRO, one: ONE, touch: TOUCH,
+  h300: H300, h300eu: H300EU, h350: H350, h515: H515, h525: H525, h600: H600, h650: H650, h700: H700, h720: H720,
+  h785: H785, h880: H880, h880pro: H880PRO, h885: H885, h890pro: H890PRO, one: ONE, touch: TOUCH,
 };
 
-export { H300, H300EU, H350, H515, H525, H600, H650, H700, H720, H880, H880PRO, H885, H890PRO, ONE, TOUCH };
+export { H300, H300EU, H350, H515, H525, H600, H650, H700, H720, H785, H880, H880PRO, H885, H890PRO, ONE, TOUCH };
 
 /**
  * The key a name refers to on this model.

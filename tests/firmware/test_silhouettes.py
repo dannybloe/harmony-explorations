@@ -45,7 +45,7 @@ KEYS_PAGE = {
     'h515.svg': 'harmony-515', 'h525.svg': 'harmony-525',
     'h600.svg': 'harmony-600', 'h650.svg': 'harmony-650', 'h700.svg': 'harmony-700', 'h885.svg': 'harmony-885',
     'h880.svg': ('harmony-885', 'keys-h880'), 'h880pro.svg': ('harmony-885', 'keys-h880pro'),
-    'h890pro.svg': 'harmony-890', 'h720.svg': 'harmony-720',
+    'h890pro.svg': 'harmony-890', 'h720.svg': 'harmony-720', 'h785.svg': 'harmony-785',
     'one.svg': 'harmony-one', 'touch.svg': 'harmony-touch',
 }
 
@@ -1008,7 +1008,8 @@ class TestTheHarmony720Silhouette(_SilhouetteConventions, unittest.TestCase):
 
     **The 785, skin 45, is not this drawing's**, though a community table pairs it with the 720 as one remote:
     the 785's manual, `Docs/785 manual.pdf`, page 13, names teletext buttons, which the 720's does not, so its
-    face is another, as the 885's is beside the 880's.
+    face is another, as the 885's is beside the 880's. It has its own drawing, the 720's face with a row of
+    colour keys, and its own class below.
     """
 
     NAME = 'h720.svg'
@@ -1073,6 +1074,188 @@ class TestTheHarmony720Silhouette(_SilhouetteConventions, unittest.TestCase):
         self.assertIn('measured off a product photograph', _text(self.NAME))
 
 
+def _key_box(button):
+    """
+    The box of a key's own outline, `(x0, y0, x1, y1)`, read off the `path.key` of its group.
+
+    The outlines here are written with absolute `M`, `H`, `V`, `L`, `A` and `Z` only, so the box is the
+    extent of the points those commands reach; a rounded rectangle's arcs end on its sides, so their end
+    points are enough. Anything else in the path is refused rather than skipped, since a box read past a
+    command it did not understand would be wrong without saying so.
+    """
+    (path,) = [e for e in button.iter() if e.get('class') == 'key']
+    tokens = re.findall(r'[A-Za-z]|-?[\d.]+', path.get('d'))
+    xs, ys, i, x, y = [], [], 0, 0.0, 0.0
+    while i < len(tokens):
+        op = tokens[i]
+        i += 1
+        if op in 'ML':
+            x, y = float(tokens[i]), float(tokens[i + 1])
+            i += 2
+        elif op == 'H':
+            x = float(tokens[i])
+            i += 1
+        elif op == 'V':
+            y = float(tokens[i])
+            i += 1
+        elif op == 'A':
+            x, y = float(tokens[i + 5]), float(tokens[i + 6])
+            i += 7
+        elif op == 'Z':
+            continue
+        else:
+            raise ValueError('a key outline with a %s command' % op)
+        xs.append(x)
+        ys.append(y)
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+class TestTheHarmony785Silhouette(_SilhouetteConventions, unittest.TestCase):
+    """
+    The Harmony 785, skin 45, `packages/silhouettes/src/models/h785.ts`: the Harmony 720's drawing with a row of
+    four colour keys between the transport block and the digits.
+
+    **What the drawing rests on.** A person holding both a Harmony 720 and a Harmony 785 states that the two
+    faces differ in the colour keys alone, a row of them between the digits and the transport keys. The 785's
+    own sources show the same and are what the row is measured on: its product photograph in the lab,
+    `reference/forum-images/785-full.jpg`, and the picture on page 13 of `Docs/785 manual.pdf`, its page 9,
+    whose legend names the four the teletext buttons. That picture is raster, the same product shot at about
+    two and a half times the photograph's size, so there is no vector drawing of the 785 to take. On both,
+    each colour key has the outline and the column of the transport key above it and sits one transport
+    pitch below the Rec row, Red, Green, Yellow and Blue from the left, the whole key moulded in its colour.
+
+    **What the row costs the rest of the face.** The 720 leaves 24 pixels of its photograph between the Rec
+    row's words and the digits, where the 785 has about 45, so the two blocks are not where the 720's are:
+    registered on the bottom edge of the silver U above them, both 785 sources put the transport block 7 of
+    the 720 photograph's pixels higher and the digits 16 lower, and the drawing moves the two blocks by that
+    and nothing else. `test_every_key_but_the_two_blocks_and_the_colour_row_is_the_720_s` holds the rest to
+    the 720's drawing byte for byte, so a change to the 720's face reaches the 785's and nothing else drifts.
+
+    **Two printed words differ**: the 785 prints `Vol` and `Ch` with no full stop, plainly so in the manual's
+    picture, where the 720 prints `Vol.` and `Ch.`; and the nameplate reads `Harmony 785`.
+
+    **The count's closure** is the configurations: the key tables of both bench remotes' configurations hold
+    the same 53 press codes, the Harmony 720's 49 and four more, 12, 26, 28 and 63, which is the 720's 49 keys
+    and the four colour keys. They do not say which colour key raises which of the four: no Harmony 785 has
+    been pressed, and the 885's codes say nothing of this wiring, as the 720's class says of the 720's.
+    """
+
+    NAME = 'h785.svg'
+    # The 720's 49 and the four colour keys; the 53 press codes of both 785 configurations, below.
+    EXPECTED_BUTTONS = 53
+    # The four press codes the 785's key tables hold beyond the 720's.
+    MORE_THAN_THE_720 = [12, 26, 28, 63]
+    # The colour keys, left to right, each with the transport key above it.
+    COLOUR_UNDER = {'k-red': 'k-record', 'k-green': 'k-rewind', 'k-yellow': 'k-fast-forward', 'k-blue': 'k-pause'}
+    # How far the two blocks moved, in drawing units, measured off the 785's sources: 7 and 16 of the 720
+    # photograph's pixels, which are 1000 / 991.95 units each.
+    TRANSPORT_DY = -7 * 1000 / 991.95
+    DIGITS_DY = 16 * 1000 / 991.95
+    TRANSPORT = ('k-stop', 'k-skip-back', 'k-skip-forward', 'k-play',
+                 'k-record', 'k-rewind', 'k-fast-forward', 'k-pause')
+    DIGITS = tuple('k-number%d' % n for n in range(10)) + ('k-clear', 'k-enter')
+
+    def test_no_key_claims_a_code_or_a_candidate(self):
+        """No Harmony 785 has been pressed, and its two configurations do not say which key raises which code."""
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident, element in buttons.items():
+            with self.subTest(button=ident):
+                self.assertIsNone(element.get('data-scan'))
+                self.assertIsNone(element.get('data-scan-candidates'))
+
+    def test_both_configurations_hold_the_720_s_49_press_codes_and_four_more(self):
+        """
+        The count's closure, from a source other than the photographs: both bench remotes' configurations hold
+        the same 53 press codes, exactly the 720's one configuration's 49 and 12, 26, 28 and 63.
+        """
+        import lab
+        from harmony import gspm
+        lab.require('h785_a_config', 'h785_b_config')
+        tables = []
+        for name in ('h785_a_config', 'h785_b_config'):
+            config = gspm.parse(lab.load(name))
+            tables.append(sorted({k.event_code & gspm.SCAN_MASK for k in config.keys
+                                  if k.event_type == gspm.EVENT_PRESS}))
+        self.assertEqual(tables[0], tables[1])
+        self.assertEqual(len(tables[0]), self.EXPECTED_BUTTONS)
+        self.assertEqual(tables[0], sorted(TestTheHarmony720Silhouette.PRESS_CODES + self.MORE_THAN_THE_720))
+
+    def test_the_colour_keys_run_red_green_yellow_blue_each_under_its_transport_key(self):
+        """
+        Each colour key has the outline of the transport key above it, its column and its height, sits one
+        transport pitch below it and above the first row of digits, and states its own colour.
+        """
+        text = _text(self.NAME)
+        buttons = _buttons(_tree(self.NAME).getroot())
+        order = sorted(self.COLOUR_UNDER, key=lambda one: _centre_x(buttons[one]))
+        self.assertEqual(order, ['k-red', 'k-green', 'k-yellow', 'k-blue'])
+        stop = _key_box(buttons['k-stop'])
+        pitch = _key_box(buttons['k-record'])[1] - stop[1]
+        first_digit = _key_box(buttons['k-number1'])[1]
+        for colour, above in self.COLOUR_UNDER.items():
+            with self.subTest(key=colour):
+                mine, theirs = _key_box(buttons[colour]), _key_box(buttons[above])
+                self.assertAlmostEqual(mine[0], theirs[0], places=3)
+                self.assertAlmostEqual(mine[2], theirs[2], places=3)
+                self.assertAlmostEqual(mine[3] - mine[1], theirs[3] - theirs[1], places=3)
+                self.assertAlmostEqual(mine[1] - theirs[1], pitch, places=3)
+                self.assertLess(mine[3], first_digit)
+        for _, colour in PALETTE.values():
+            self.assertIn(f'--accent: {colour}', text)
+
+    def test_every_key_but_the_two_blocks_and_the_colour_row_is_the_720_s(self):
+        """
+        The person's statement as a test: the 785's keys are the 720's and the four colour keys, every key
+        above the transport block drawn exactly as on the 720, and each of the two blocks the 720's moved by
+        one distance for the whole block.
+        """
+        self.assertIn(b'clip-h785-', _text(self.NAME).encode())
+        mine = _buttons(_tree(self.NAME).getroot())
+        theirs = _buttons(_tree(TestTheHarmony720Silhouette.NAME).getroot())
+        self.assertEqual(sorted(mine), sorted([*theirs, *self.COLOUR_UNDER]))
+        for ident, element in theirs.items():
+            with self.subTest(button=ident):
+                if ident in self.TRANSPORT or ident in self.DIGITS:
+                    dy = self.TRANSPORT_DY if ident in self.TRANSPORT else self.DIGITS_DY
+                    a, b = _key_box(mine[ident]), _key_box(element)
+                    for got, want in zip(a, (b[0], b[1] + dy, b[2], b[3] + dy)):
+                        self.assertAlmostEqual(got, want, delta=0.002)
+                else:
+                    # A segment's clip region carries its drawing's id, so the two pages cannot share one,
+                    # `clipId` in `packages/silhouettes/src/svg.ts`; that id is the one difference allowed.
+                    self.assertEqual(ET.tostring(mine[ident]).replace(b'clip-h785-', b'clip-h720-'),
+                                     ET.tostring(element))
+
+    def test_the_six_keys_beside_the_screen_are_the_screen_s_and_read_in_rows(self):
+        """Three a side, as on the 720."""
+        buttons = _buttons(_tree(self.NAME).getroot())
+        screen = {e.get('data-name'): int(e.get('data-zone'))
+                  for e in buttons.values() if e.get('data-kind') == 'screen'}
+        self.assertEqual(screen, {
+            'ScreenLeft1': 1, 'ScreenRight1': 2, 'ScreenLeft2': 3, 'ScreenRight2': 4,
+            'ScreenLeft3': 5, 'ScreenRight3': 6,
+        })
+
+    def test_the_screen_carries_arch_8_s_raster_and_is_not_a_touch_surface(self):
+        root = _tree(self.NAME).getroot()
+        screen = [e for e in root.iter() if e.get('id') == 'screen']
+        self.assertEqual(len(screen), 1)
+        self.assertEqual(screen[0].get('data-pixels'), '128x160')
+        self.assertEqual(screen[0].get('data-touch'), 'false')
+
+    def test_the_nameplate_is_the_785_s_and_vol_and_ch_carry_no_full_stop(self):
+        text = _text(self.NAME)
+        self.assertIn('>Harmony 785<', text)
+        self.assertNotIn('>Harmony 720<', text)
+        for printed, not_printed in (('>Vol<', '>Vol.<'), ('>Ch<', '>Ch.<')):
+            with self.subTest(word=printed):
+                self.assertIn(printed, text)
+                self.assertNotIn(not_printed, text)
+
+    def test_it_says_it_was_measured_off_a_photograph(self):
+        self.assertIn('measured off a product photograph', _text(self.NAME))
+
+
 class TestTheSilhouetteDirectory(unittest.TestCase):
     """What is drawn and what is not, so the gap is a statement rather than an oversight."""
 
@@ -1088,6 +1271,7 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
         'h650.svg': TestTheHarmony650Silhouette,
         'h700.svg': TestTheHarmony700Silhouette,
         'h720.svg': TestTheHarmony720Silhouette,
+        'h785.svg': TestTheHarmony785Silhouette,
         'h880.svg': TestTheHarmony880Silhouette,
         'h880pro.svg': TestTheHarmony880ProSilhouette,
         'h885.svg': TestTheHarmony885Silhouette,

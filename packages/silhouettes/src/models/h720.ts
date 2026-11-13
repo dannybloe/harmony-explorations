@@ -327,56 +327,79 @@ const KEYS: readonly Key[] = [
     icon: 'triangleLeft', ...mark(face(559.8) - 33.5, 559.8, 7.5) },
   { name: 'Select', src: 'printed', kind: keypad, shape: level(OK.half, 0, OK.top, OK.bottom, OK.r, 0), angle: 0,
     labels: [word('OK', face(559), 559, 'normal')] },
-  // The transport block: a mark on each key and its word printed under it, both drawn at the mean of their
-  // pair, 81 and 27 pixels from the centre line for the marks and 80.75 and 27 for the words (80.3 and 81.7,
-  // 25.8 and 28.2 read for the marks). The marks are 7, 12, 12 and 8 pixels across their longer side on the
-  // top row, and 7, 10, 10 and 7 on the second; the words' rows are 702.25 and 735.
-  { name: 'Stop', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.outer, -1, R1), angle: 0, icon: 'stop',
-    ...mark(face(686.5) - 81, 686.5, 7), labels: [word('Stop', face(702.25) - 80.75, 702.25, 'tiny')] },
-  { name: 'SkipBack', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.inner, -1, R1), angle: 0, icon: 'skipBack',
-    ...mark(face(687) - 27, 687, 12), labels: [word('Replay', face(702.25) - 27, 702.25, 'tiny')] },
-  { name: 'SkipForward', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.inner, 1, R1), angle: 0,
-    icon: 'skipForward', ...mark(face(687) + 27, 687, 12),
-    labels: [word('Skip', face(702.25) + 27, 702.25, 'tiny')] },
-  { name: 'Play', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.outer, 1, R1), angle: 0, icon: 'play',
-    ...mark(face(687) + 81, 687, 8), labels: [word('Play', face(702.25) + 80.75, 702.25, 'tiny')] },
-  { name: 'Record', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.outer, -1, R2), angle: 0, icon: 'record',
-    ...mark(face(720.5) - 81, 720.5, 7), labels: [word('Rec', face(735) - 80.75, 735, 'tiny')] },
-  { name: 'Rewind', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.inner, -1, R2), angle: 0, icon: 'rewind',
-    ...mark(face(720.5) - 27, 720.5, 10), labels: [word('Rew', face(735) - 27, 735, 'tiny')] },
-  { name: 'FastForward', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.inner, 1, R2), angle: 0, icon: 'forward',
-    ...mark(face(720.5) + 27, 720.5, 10), labels: [word('Fwd', face(735) + 27, 735, 'tiny')] },
-  { name: 'Pause', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.outer, 1, R2), angle: 0, icon: 'pause',
-    ...mark(face(720.5) + 81, 720.5, 7), labels: [word('Pause', face(735) + 80.75, 735, 'tiny')] },
-  // The digits: the numeral and its letters where each is printed, the numeral about 10 pixels left of its
-  // key's centre and the letters after it.
-  { name: 'Number1', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, -1, N1), angle: 0,
-    labels: [word('1', 49, 768.25, 'normal')] },
-  { name: 'Number2', src: 'printed', kind: keypad, shape: dMid(N1), angle: 0,
-    labels: [word('2', 112.5, 768.25, 'normal'), word('abc', 130, 768, 'small')] },
-  { name: 'Number3', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, 1, N1), angle: 0,
-    labels: [word('3', 174.5, 768.25, 'normal'), word('def', 188, 768, 'small')] },
-  { name: 'Number4', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, -1, N2), angle: 0,
-    labels: [word('4', 49.5, 801.75, 'normal'), word('ghi', 62.5, 802, 'small')] },
-  { name: 'Number5', src: 'printed', kind: keypad, shape: dMid(N2), angle: 0,
-    labels: [word('5', 112.5, 801.75, 'normal'), word('jkl', 133.5, 802, 'small')] },
-  { name: 'Number6', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, 1, N2), angle: 0,
-    labels: [word('6', 174.5, 801.75, 'normal'), word('mno', 190, 802, 'small')] },
-  { name: 'Number7', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, -1, N3), angle: 0,
-    labels: [word('7', 49.5, 835, 'normal'), word('pqrs', 65.5, 836, 'small')] },
-  { name: 'Number8', src: 'printed', kind: keypad, shape: dMid(N3), angle: 0,
-    labels: [word('8', 112.5, 835, 'normal'), word('tuv', 131.5, 835, 'small')] },
-  { name: 'Number9', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, 1, N3), angle: 0,
-    labels: [word('9', 174.5, 835, 'normal'), word('wxyz', 191.5, 836, 'small')] },
-  // `*` and `clear`, `#` and `enter`, all at the letters' size, which is what they are printed at.
-  { name: 'Clear', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, -1, N4), angle: 0,
-    labels: [word('*', 51, 868.5, 'small'), word('clear', 66.5, 868, 'small')] },
-  // The space mark after the 0 is 11 pixels across.
-  { name: 'Number0', src: 'printed', kind: keypad, shape: dMid(N4), angle: 0, icon: 'space', ...mark(132.5, 869, 11),
-    labels: [word('0', 113, 868.5, 'normal')] },
-  { name: 'Enter', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, 1, N4), angle: 0,
-    labels: [word('#', 175.5, 869, 'small'), word('enter', 192, 868.5, 'small')] },
+  // The transport block and the digits follow, built by `transportKeys` and `digitKeys` below at the rows
+  // this photograph puts them, so the Harmony 785's drawing can take the same keys at its own rows.
+  ...transportKeys(0),
+  ...digitKeys(0),
 ];
+
+/**
+ * The transport block's eight keys, `dy` pixels of this photograph below where it shows them; the 720's own
+ * drawing takes them at 0. Every row, mark and word moves together, so a block moved stays the block read.
+ */
+function transportKeys(dy: number): Key[] {
+  const at = (y: number): number => y + dy;
+  const row = (r: readonly [number, number]): readonly [number, number] => [r[0] + dy, r[1] + dy];
+  return [
+    // The transport block: a mark on each key and its word printed under it, both drawn at the mean of their
+    // pair, 81 and 27 pixels from the centre line for the marks and 80.75 and 27 for the words (80.3 and 81.7,
+    // 25.8 and 28.2 read for the marks). The marks are 7, 12, 12 and 8 pixels across their longer side on the
+    // top row, and 7, 10, 10 and 7 on the second; the words' rows are 702.25 and 735.
+    { name: 'Stop', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.outer, -1, row(R1)), angle: 0, icon: 'stop',
+      ...mark(face(at(686.5)) - 81, at(686.5), 7), labels: [word('Stop', face(at(702.25)) - 80.75, at(702.25), 'tiny')] },
+    { name: 'SkipBack', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.inner, -1, row(R1)), angle: 0, icon: 'skipBack',
+      ...mark(face(at(687)) - 27, at(687), 12), labels: [word('Replay', face(at(702.25)) - 27, at(702.25), 'tiny')] },
+    { name: 'SkipForward', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.inner, 1, row(R1)), angle: 0,
+      icon: 'skipForward', ...mark(face(at(687)) + 27, at(687), 12),
+      labels: [word('Skip', face(at(702.25)) + 27, at(702.25), 'tiny')] },
+    { name: 'Play', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.outer, 1, row(R1)), angle: 0, icon: 'play',
+      ...mark(face(at(687)) + 81, at(687), 8), labels: [word('Play', face(at(702.25)) + 80.75, at(702.25), 'tiny')] },
+    { name: 'Record', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.outer, -1, row(R2)), angle: 0, icon: 'record',
+      ...mark(face(at(720.5)) - 81, at(720.5), 7), labels: [word('Rec', face(at(735)) - 80.75, at(735), 'tiny')] },
+    { name: 'Rewind', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.inner, -1, row(R2)), angle: 0, icon: 'rewind',
+      ...mark(face(at(720.5)) - 27, at(720.5), 10), labels: [word('Rew', face(at(735)) - 27, at(735), 'tiny')] },
+    { name: 'FastForward', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.inner, 1, row(R2)), angle: 0, icon: 'forward',
+      ...mark(face(at(720.5)) + 27, at(720.5), 10), labels: [word('Fwd', face(at(735)) + 27, at(735), 'tiny')] },
+    { name: 'Pause', src: 'printed', kind: keypad, shape: tKey(TRANSPORT.outer, 1, row(R2)), angle: 0, icon: 'pause',
+      ...mark(face(at(720.5)) + 81, at(720.5), 7), labels: [word('Pause', face(at(735)) + 80.75, at(735), 'tiny')] },
+  ];
+}
+
+/** The twelve digit keys, `dy` pixels of this photograph below where it shows them, as `transportKeys`. */
+function digitKeys(dy: number): Key[] {
+  const at = (y: number): number => y + dy;
+  const row = (r: readonly [number, number]): readonly [number, number] => [r[0] + dy, r[1] + dy];
+  return [
+    // The digits: the numeral and its letters where each is printed, the numeral about 10 pixels left of its
+    // key's centre and the letters after it.
+    { name: 'Number1', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, -1, row(N1)), angle: 0,
+      labels: [word('1', 49, at(768.25), 'normal')] },
+    { name: 'Number2', src: 'printed', kind: keypad, shape: dMid(row(N1)), angle: 0,
+      labels: [word('2', 112.5, at(768.25), 'normal'), word('abc', 130, at(768), 'small')] },
+    { name: 'Number3', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, 1, row(N1)), angle: 0,
+      labels: [word('3', 174.5, at(768.25), 'normal'), word('def', 188, at(768), 'small')] },
+    { name: 'Number4', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, -1, row(N2)), angle: 0,
+      labels: [word('4', 49.5, at(801.75), 'normal'), word('ghi', 62.5, at(802), 'small')] },
+    { name: 'Number5', src: 'printed', kind: keypad, shape: dMid(row(N2)), angle: 0,
+      labels: [word('5', 112.5, at(801.75), 'normal'), word('jkl', 133.5, at(802), 'small')] },
+    { name: 'Number6', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, 1, row(N2)), angle: 0,
+      labels: [word('6', 174.5, at(801.75), 'normal'), word('mno', 190, at(802), 'small')] },
+    { name: 'Number7', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, -1, row(N3)), angle: 0,
+      labels: [word('7', 49.5, at(835), 'normal'), word('pqrs', 65.5, at(836), 'small')] },
+    { name: 'Number8', src: 'printed', kind: keypad, shape: dMid(row(N3)), angle: 0,
+      labels: [word('8', 112.5, at(835), 'normal'), word('tuv', 131.5, at(835), 'small')] },
+    { name: 'Number9', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, 1, row(N3)), angle: 0,
+      labels: [word('9', 174.5, at(835), 'normal'), word('wxyz', 191.5, at(836), 'small')] },
+    // `*` and `clear`, `#` and `enter`, all at the letters' size, which is what they are printed at.
+    { name: 'Clear', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, -1, row(N4)), angle: 0,
+      labels: [word('*', 51, at(868.5), 'small'), word('clear', 66.5, at(868), 'small')] },
+    // The space mark after the 0 is 11 pixels across.
+    { name: 'Number0', src: 'printed', kind: keypad, shape: dMid(row(N4)), angle: 0, icon: 'space', ...mark(132.5, at(869), 11),
+      labels: [word('0', 113, at(868.5), 'normal')] },
+    { name: 'Enter', src: 'printed', kind: keypad, shape: dKey(DIGITS.outer, 1, row(N4)), angle: 0,
+      labels: [word('#', 175.5, at(869), 'small'), word('enter', 192, at(868.5), 'small')] },
+  ];
+}
 
 const REGIONS: readonly Region[] = [
   { id: 'rail-left', form: 'seam', path: outline(RAIL, 30).path },
@@ -437,3 +460,10 @@ export const H720: Model = {
   // `Harmony 720`, in italics on the product, centred at (121, 157), 64 pixels across.
   nameplate: word('Harmony 720', 121, 157, 'small'),
 };
+
+/**
+ * What the Harmony 785's drawing takes from this one, `h785.ts`: the 785's face is this face with a row of
+ * colour keys between the transport block and the digits, so it moves the two blocks by building them at its
+ * own rows and draws its colour keys as transport keys, in this photograph's pixels and with these helpers.
+ */
+export const FRAME_720 = { face, mark, word, tKey, TRANSPORT, transportKeys, digitKeys } as const;

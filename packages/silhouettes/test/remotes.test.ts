@@ -69,6 +69,7 @@ test('a model folder and its drawings serve the same skins, and every drawing is
   assert.deepEqual(MODELS.h880pro!.skins, [39], 'the Harmony 880 Pro, a printing of the 885\'s shapes, serves skin 39');
   assert.deepEqual(MODELS.h890pro!.skins, [40], 'the Harmony 890 Pro serves skin 40');
   assert.deepEqual(MODELS.h720!.skins, [44], 'the Harmony 720 serves skin 44 and not the 785\'s 45, whose face has teletext keys');
+  assert.deepEqual(MODELS.h785!.skins, [45], 'and the Harmony 785 has a drawing of its own');
   // Every drawing is some folder's drawing or printing, so a printing cannot be drawn and described nowhere.
   const described = REMOTES.flatMap((r) => [...(r.drawing === undefined ? [] : [r.drawing]), ...(r.printings ?? [])]);
   assert.deepEqual(Object.keys(MODELS).filter((id) => !described.includes(id)), []);
@@ -83,8 +84,8 @@ test('no model folder is without a drawing, so a drawn model cannot lose its dra
   const undrawn = REMOTES.filter((r) => r.drawing === undefined).map((r) => r.folder).sort();
   // The Harmony 885 left this list when its drawing landed, and the Harmony 890 when the 890 Pro's did. This
   // test said only the Harmony 890 folder was without one until then. The Harmony 785 joined it with its folder,
-  // read off two remotes before anybody drew its face.
-  assert.deepEqual(undrawn, ['harmony-785']);
+  // read off two remotes before anybody drew its face, and left it when `h785.ts` landed.
+  assert.deepEqual(undrawn, []);
   for (const r of REMOTES) {
     if (r.drawing !== undefined) assert.ok(MODELS[r.drawing] !== undefined, `${r.folder}: no drawing ${r.drawing}`);
   }
