@@ -12,6 +12,16 @@ firmware and more to the hub, keeps its own infrared blaster, and takes its whol
 provisioned in mode 4. Its screens are drawn by a separate process, `luadraws`, which the hub has not, and its
 hardware adds haptics, a battery, a backlight and an accelerometer that a hub also has not.
 
+**The smart home capability model.** A hub paired remote draws screens a standalone remote has no use for, for
+lights, blinds and the rest, and this test anchors how they work. The screen reads two sources kept apart: the
+structure, which devices there are and what each can do, is read on the remote out of the synced automation
+configuration (`AutomationConfig`, through `getResource`), where each device carries a kind and a table of
+`capabilities` that choose the controls (a `dimUpDown` capability is what turns a lamp's switch into a
+brightness control); and the live state is a request tunnelled to the hub (`harmony.automation?getstate` and
+`?setstate` over the `ltcp` transport, the hot.1 link). The whole side is gated on the remote being a hub
+surface, `isSurfaceMode`, which is mode 4 and `PairStatus` together, so a standalone remote shows none of it.
+The strings are quoted verbatim in the ASCII Lua of the named screen files under `opt/luadraws`.
+
 **How the image is read.** The remotes' squashfs uses zlib blocks, which mainline `unsquashfs` reads, so this
 test reads named files out of it with `SquashfsReader`, the reader `test_harmony_touch_image` already uses, and
 asserts the strings the page rests on, in the files the page names. The hubs' image is read separately, in LZMA
@@ -56,6 +66,27 @@ LUADRAWS = (
     'opt/luadraws/juniper/alllights.lua',
     'opt/luadraws/juniper/activity.lua',
 )
+# The smart-home capability model, in the remote's screen source (ASCII Lua under opt/luadraws). Two data
+# sources kept apart: the live state is a request tunnelled to the hub, the structure is read from the synced
+# configuration, and the per-device capability table chooses the controls.
+AUTOMATION = (
+    b'harmony.automation?getstate',     # the remote asks the hub for the live state of the devices on screen
+    b'harmony.automation?setstate',     # a tap writes the new state back to the hub
+    b'ltcp',                            # the transport for both: the hot.1 tunnel to the hub
+)
+CAPABILITY = (
+    b'AutomationConfig',                # the synced resource that carries the smart-home structure
+    b'getResource',                     # the structure is read from the synced resource cache, not per screen
+    b'capabilities',                    # the per-device capability table
+    b'dimUpDown',                       # a dim capability turns a lamp's on/off switch into a brightness control
+    b'gateways',                        # the bridges the hub found; none means no rows
+)
+# The smart-home side is shown only on a remote provisioned from a hub (mode 4) and paired; a standalone remote
+# shows none of it. In network/networkswitch.lua.
+GATE = (
+    b'isSurfaceMode',                   # the one gate on every smart-home row, group and screen
+    b'PairStatus',                      # with mode 4, the second half of the gate
+)
 
 
 @unittest.skipUnless(image.UNSQUASHFS, 'unsquashfs is not installed')
@@ -93,6 +124,24 @@ class TheHubPairedRemote(unittest.TestCase):
         for path in LUADRAWS:
             with self.subTest(path=path):
                 self.assertIn(path, names)
+
+    def test_the_smart_home_screens_read_the_hub_for_live_state(self):
+        ha = self.reader.cat('opt/luadraws/juniper/hainterface.lua')
+        for needle in AUTOMATION:
+            with self.subTest(needle=needle):
+                self.assertIn(needle, ha)
+
+    def test_the_controls_are_chosen_by_each_device_capabilities(self):
+        dev = self.reader.cat('opt/luadraws/juniper/homeautomationdevices.lua')
+        for needle in CAPABILITY:
+            with self.subTest(needle=needle):
+                self.assertIn(needle, dev)
+
+    def test_the_smart_home_side_is_gated_on_hub_provisioning(self):
+        ns = self.reader.cat('opt/luadraws/network/networkswitch.lua')
+        for needle in GATE:
+            with self.subTest(needle=needle):
+                self.assertIn(needle, ns)
 
 
 if __name__ == '__main__':

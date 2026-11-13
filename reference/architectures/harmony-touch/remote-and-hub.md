@@ -51,7 +51,53 @@ screen[^t-remote-hub]. It is a separate process from the engine, started at boot
 talks to the engine over the same local request channel the rest of the system uses: it draws the screens and
 sends the user's taps back to the engine as requests. Its screens include the ones a standalone infrared
 remote has no use for, the smart home control screens for lights, blinds and speakers, alongside the activity
-and device screens[^t-remote-hub]. How a drawn screen becomes pixels was not traced[^unchecked].
+and device screens; how those smart home screens know what to show is the capability model below. How a drawn
+screen becomes pixels was not traced[^unchecked].
+
+## The smart home screens, and the capability model
+
+A smart home screen, the one for the lights or the blinds, is drawn from two sources at once, and keeping them
+apart is the whole of how it works. What devices there are, what kind each is and what each can do comes from
+the configuration the remote synced from the hub; what each device is doing at this moment, whether a light is
+on and how bright, comes from a live request to the hub for its current state[^t-remote-hub].
+
+The structure is one of the synced configuration documents, the automation configuration, filled by the hub
+from what [its smart home side](hub/automation.md) found on the network and read on the remote out of the
+synced resources rather than fetched again for each screen[^t-remote-hub]. It lists the bridges the hub found,
+the devices behind them, the groups and the scenes, and for each device a kind and a table of
+capabilities[^t-remote-hub]. The kind is lamp, plug, lock, blind, thermostat, water heater or a kind of
+sensor. The capabilities are what choose the controls the screen draws: a lamp that can be dimmed is given a
+brightness control and a colour one, a lamp that cannot is treated as a plug and given an on and off switch and
+nothing more, and a sensor's capability names what it senses, presence or temperature or smoke and the
+rest[^t-remote-hub]. So one screen program draws a different set of controls for each device, from what that
+device itself declares, and which bridge or maker a device came from is not built into the drawing.
+
+The live values are a request the remote tunnels to the hub, and a tap writes the new value back the same way:
+the remote asks the hub for the state of the devices on the screen, and when the user moves a slider or presses
+a switch it sends the hub the new state for that one device, keyed by the device's kind, a light's brightness
+and colour, a lock's locked flag, a blind's position[^t-remote-hub]. If the radio link to the hub has dropped,
+the request comes back refused and the remote tells the user the hub cannot be reached[^t-remote-hub].
+
+The smart home devices are not a menu of their own. They are merged into the one device list, alongside the
+infrared and networked devices, and a tap on a row is routed by the device's kind to the screen that kind
+uses[^t-remote-hub]. The whole smart home side is shown only on a remote that took its setup from a hub,
+[provisioned in full hub mode](hub/provisioning.md#being-provisioned-and-the-modes): a standalone remote is
+never in that state and shows none of it, and a category the hub found no bridge for simply draws no
+rows[^t-remote-hub].
+
+End to end, then: the hub discovers a device through its own plug in and records it in the automation
+configuration with a kind and its capabilities; that document syncs to the remote with the rest of the
+configuration; the remote reads the synced structure to decide which rows and which controls to draw, and asks
+the hub for the live values to fill them; and a tap sends the new state back through the hub[^t-remote-hub].
+The remote holds no plug in and no device driver of its own. It is a renderer over the hub's automation
+configuration and the hub's live state, driven by what each device declares it can do. One qualification: the
+remote does carry a few fixed bounds for the controls it draws, the per maker temperature limits for a
+thermostat and the range of a light's colour control among them, so the bounds are the remote's while the
+choice of control is the device's[^t-remote-hub].
+
+The configuration does not only flow from the hub to the remote. When the user reorders the commands on a
+device, the remote writes the changed ordering back to the hub as a configuration document of its own, so the
+remote is an editor of that document and not only a reader of it[^t-remote-hub].
 
 ## The remote's own hardware
 
