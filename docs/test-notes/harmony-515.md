@@ -7,9 +7,9 @@ our unit only.
 ## The unit
 
 A second hand Harmony 515, received from onyiaic on 3 November 2026, the first of that model on the bench.
-Nothing more is known about where it has been, and more has been asked for. **It is not a write target**:
-the units `CLAUDE.md`'s "Never write to a remote" names do not include it, so it is read only until that
-is decided. Its identity block is recorded in the lab, `units/h515.txt`, which is what any rail would
+Nothing more is known about where it has been, and more has been asked for. **It may be written**, decision
+35. This said it was not a write target<!--superseded--> until that decision. No write path names a 515 yet, so
+everything below was a read. Its identity block is recorded in the lab, `units/h515.txt`, which is what any rail would
 compare against.
 
 ## The first session, 3 November 2026
@@ -28,3 +28,13 @@ Read only throughout: enumeration, `GET_VERSION`, the identity block and `READ_F
 in `bcdDevice`, as it already did for the Harmony 880 family. `read-config.ts` still prints "Harmony 525"
 for the same reason: the read profile is per product id, and its model field names the first model it
 was measured on rather than the one attached.
+
+## The second session, 13 November 2026
+
+Read only. The configuration region, the five 64 KiB blocks from `0x820000` to `0x870000`, read twice with
+`read-region.ts`, 327680 bytes each with no window retried, and the two identical. **They begin with the
+configuration read on 3 November, byte for byte, and everything after its 117443 bytes is erased**, so nothing
+changed on the unit between the two sessions. Filed as `h515_region` and `h515_region_2`,
+`tests/harmony_5xx/test_harmony_515.py`. With the two firmware images of the first session this is the external
+flash below the log area; the processor's internal flash and its EEPROM, which the Harmony 525's backup also took,
+were not read, since no library script reads them.

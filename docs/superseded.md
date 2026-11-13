@@ -925,3 +925,4 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `gives a power code no lead` | `packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts` | a power step composed for the Harmony 880 and 885 opens with the device's delay between devices and is sent at 1, `SendShape.powerStep`; a Harmony One's still gets no lead |
 | `Two Harmony 785s are on the bench, and neither may be written` | `docs/decisions.md` | both bench Harmony 785s may be written since decision 34; no write path names one yet |
 | `Nothing of a 785 is known beyond its name` | `tests/harmony_880_885/test_harmony_785_first_read.py` | two Harmony 785s were read whole; the 785 has its own reference folder, `reference/remotes/harmony-785/` |
+| `so it is read only until that` | `docs/decisions.md` | the bench Harmony 515 may be written since decision 35; no write path names one yet |

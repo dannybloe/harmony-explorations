@@ -31,7 +31,7 @@ reached it, and before that it said seven, the same count `CLAUDE.md` had correc
 | a Harmony 525 | yes, since 5 September 2026 | one block written back unchanged, section 269, and no edit | [harmony-525.md](harmony-525.md) |
 | the friend's Harmony 525 | yes, decision 21; not yet among `write-config.ts`'s targets | nothing | no notes yet |
 | two Harmony 785s | yes, since 13 November 2026, decision 34; no write path names a 785 yet | nothing; read only, each unit's identity, configuration and whole flash | [harmony-785.md](harmony-785.md) |
-| a Harmony 515, second hand | no: not among the units that may be written | nothing; read only | [harmony-515.md](harmony-515.md) |
+| a Harmony 515, second hand | yes, since 13 November 2026, decision 35; no write path names a 515 yet | nothing; read only | [harmony-515.md](harmony-515.md) |
 | a Harmony 600 | yes, since 29 September 2026 | a block back unchanged, section 302, then configurations; its saved delay cleared over USB once, section 305 | [harmony-600.md](harmony-600.md) |
 | a Harmony 650, second hand | yes, since 27 September 2026, and it may be reprogrammed as the work needs | the first arch 14 write, section 281, then configurations | [harmony-650.md](harmony-650.md) |
 | a Harmony 700 | yes, since 29 September 2026 | repaired out of safe mode by a reinstall request, section 295; firmware staged from 2.5 to 2.8, section 297; then configurations, sections 300 onwards | [harmony-700.md](harmony-700.md) |

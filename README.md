@@ -37,8 +37,8 @@ These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 7
   each of them has run a configuration we built ourselves from scratch, without copying anything from a
   Logitech file.
 * The Harmony 525 can be read completely, and we have written its own configuration back to it. Logitech
-  no longer builds configurations for this model at all. The Harmony 515 runs on the same platform; we read
-  it and have not written it yet.
+  no longer builds configurations for this model at all. The Harmony 515 runs on the same platform with
+  firmware of its own; we have read its configuration and firmware and not written it yet.
 * The Harmony 300 and 350 use a different protocol, and we can read and write them both. We account for
   every byte of their configuration, and one configuration we built from scratch runs on both: the two are
   one remote as far as a configuration is concerned, once one small addition keeps the 300 from hanging.

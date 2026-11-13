@@ -984,3 +984,19 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    firmware.md`; and each unit's whole flash is in the lab, read twice and identical,
    `tests/harmony_880_885/test_harmony_785_first_read.py`. Base slot 2 is kept as every configuration states it
    and the log append is emitted only on purpose, for the reason decision 30 gives.
+
+35. <a id="d35"></a>**The bench Harmony 515 may be written to.** *Taken on 13 November 2026, with the 785s'
+   decision.* `h515` is a permitted write target; nothing was written to it when this was taken. **Permission is not
+   a write path**, decisions 30 and 34: no write path names a 515 yet, and each opens as its own step, one block of
+   its configuration region written back unchanged before a real write, as the Harmony 525's first write was.
+
+   **What has to be read before the first write.** The 515 runs on the Harmony 525's platform with an application
+   of its own, 3.4, where the 525's one write was made under 3.0. The platform's hazards are the 525's, all of them
+   in the `harmony-525` skill: an erase bounded only by the flash part, with the application one 64 KiB block below
+   the configuration and the safe mode image below that, and safe mode destroying the application. So the block
+   rehearsal's addresses and the 525's write rails are checked against the 515's own memory before they are
+   applied, and safe mode is never entered.
+
+   **Why the risk is accepted.** The unit's configuration region is in the lab, read twice and identical, together
+   with both of its stored firmware images, `tests/harmony_5xx/test_harmony_515.py`; and the 525's block write on
+   the same platform came back byte for byte.

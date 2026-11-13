@@ -57,6 +57,14 @@ byte. **What decides the skin a safe mode container names is not established**: 
 the lower skin of their regional pair in the remotes index, so "the remote's own model" and "the
 lower of the pair" both fit, and a 510 or 520 container would separate them.
 
+## The configuration region, read on 13 November 2026
+
+The five 64 KiB blocks from `0x820000` to `0x870000`, the region the platform keeps its configuration in, read
+twice through `read-region.ts` with no window retried and identical. **They begin with the configuration read
+on 3 November, byte for byte, and every byte after its 117443 is erased**, so nothing was changed on the unit in
+between and no remains of an earlier configuration lie behind it. With the two firmware images above, that is
+the external flash below the log area, which is what a restore of this unit's configuration needs.
+
 ## What this does not settle
 
 The 515's face, keys, screen, flash size beyond the identity `FF:12`, and its configuration beyond the
@@ -83,6 +91,7 @@ that the safe mode container names its own model "as the Harmony One's does".
 import unittest
 
 import lab
+from proves import proves
 from harmony import gspm, usbdesc
 
 # Read off the unit, not out of any file: these are the hardware half of the closure.
@@ -105,10 +114,12 @@ def slot_bytes(data: bytes, slot: int) -> bytes:
 class TheFirmwareAndTheConfigurationBothStateSkin67(unittest.TestCase):
 
     def test_the_measured_descriptor_reads_as_skin_67_under_the_plain_rule(self):
+        proves(62, ['harmony-515'], ['docs/test-notes/harmony-515.md#the-first-session-3-november-2026'])
         self.assertEqual(MEASURED_BCD_DEVICE >> 8, 9, 'the protocol, in the high byte')
         self.assertEqual(usbdesc.skin_id(MEASURED_BCD_DEVICE), SKIN)
 
     def test_the_version_fields_state_the_same_skin_and_firmware_3_4(self):
+        proves(64, ['harmony-515'], ['docs/test-notes/harmony-515.md#the-first-session-3-november-2026'])
         fields = MEASURED_VERSION_FIELDS
         self.assertEqual((fields[0] >> 4, fields[0] & 0xF), (3, 4), 'firmware 3.4')
         self.assertEqual((fields[1] >> 4, fields[1] & 0xF), (1, 0), 'hardware 1.0')
@@ -169,6 +180,29 @@ class TheUnitRunsTheContributedFirmware(unittest.TestCase):
         self.assertEqual(container.built_at.year, 2008)
         self.assertEqual(slot_bytes(image, 1), bytes([9, 9, SKIN, 0x0C, 0, 0, 0]))
         self.assertEqual(slot_bytes(lab.load('h525_external_firmware'), 1), bytes([9, 9, 18]))
+
+
+
+class TheConfigurationRegion(unittest.TestCase):
+
+    def setUp(self):
+        lab.require('h515_region', 'h515_region_2', 'h515_onyiaic_asfound_config')
+        self.region = lab.load('h515_region')
+
+    def test_the_two_reads_are_identical_and_five_blocks_long(self):
+        proves(58, ['harmony-515'], ['docs/test-notes/harmony-515.md#the-second-session-13-november-2026'])
+        self.assertEqual(len(self.region), 5 * 0x10000)
+        self.assertEqual(self.region, lab.load('h515_region_2'))
+
+    def test_it_holds_the_configuration_read_earlier_whole_and_nothing_after_it(self):
+        proves(1, ['harmony-515'], ['docs/test-notes/harmony-515.md#the-first-session-3-november-2026', 'docs/test-notes/harmony-515.md#the-second-session-13-november-2026'])
+        config = lab.load('h515_onyiaic_asfound_config')
+        self.assertEqual(len(config), 117443)
+        self.assertEqual(self.region[:len(config)], config)
+        self.assertEqual(set(self.region[len(config):]), {0xFF})
+        # The container parses with its own checks, and states the unit's architecture and skin.
+        container = gspm.parse(config)
+        self.assertEqual((container.architecture, container.version_word & 0xFF), (9, SKIN))
 
 
 if __name__ == '__main__':

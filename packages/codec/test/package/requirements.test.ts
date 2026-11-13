@@ -25,7 +25,7 @@ import {
 
 const committed = (path: string): string => readFileSync(join(ROOT, path), 'utf8');
 
-test('every committed file is what the sources generate: the proofs, both documents and the ten checklists', () => {
+test('every committed file is what the sources generate: the proofs, both documents and the eleven checklists', () => {
   assert.deepEqual(run(false), []);
   // Exactly these files, so one added or dropped shows in this diff.
   assert.deepEqual([...generatedFiles(PROOFS).keys()], [

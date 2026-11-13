@@ -1367,6 +1367,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h515_safemode_firmware: '20261103T1517Z-h515-fw-safemode-region.bin',
   h515_contributed_application: 'H515-Firmware.bin',
   h515_contributed_safemode: 'H515-Safemode.bin',
+  // The same unit's configuration region, 0x820000 to 0x870000, read twice and identical, 13 November 2026.
+  h515_region: '20261113T0925Z-h515-region-region.bin',
+  h515_region_2: '20261113T0925Z-h515-region-2-region.bin',
   // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
   one_spare_before_sync: 'one-spare-before-sync-config.bin',
   one_spare_after_sync: 'one-spare-after-sync-config.bin',
@@ -1850,6 +1853,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // The Harmony 515 from onyiaic, out for the same reason, and the two copies of its application
     // image, whose safe mode container at 0x8000 parses.
     'h515_onyiaic_asfound_config', 'h515_application_firmware', 'h515_contributed_application',
+    // Its configuration region, which holds the as found configuration again.
+    'h515_region', 'h515_region_2',
     // The two bench Harmony 885s' configurations and regions, out of the corpus wide totals: each unit's is
     // counted nowhere yet, and whether a bench configuration joins the corpus is a decision of its own.
     'h885_a_config', 'h885_a_config_2', 'h885_a_region', 'h885_a_region_2',

@@ -1297,6 +1297,9 @@ IMAGES = {
     'h515_safemode_firmware': '20261103T1517Z-h515-fw-safemode-region.bin',
     'h515_contributed_application': 'H515-Firmware.bin',
     'h515_contributed_safemode': 'H515-Safemode.bin',
+    # The same unit's configuration region, 0x820000 to 0x870000, read twice and identical.
+    'h515_region': '20261113T0925Z-h515-region-region.bin',
+    'h515_region_2': '20261113T0925Z-h515-region-2-region.bin',
     # The spare Harmony One either side of a sync, 7 August 2026. The change was decided and
     # written down before it was made, which no other pair here can say, and the second half was
     # compiled by the live service rather than found. findings.md section 58.
@@ -1757,6 +1760,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # its application image, whose safe mode container at 0x8000 parses.
                       'h515_onyiaic_asfound_config',
                       'h515_application_firmware', 'h515_contributed_application',
+                      # Its configuration region, which holds the as found configuration again.
+                      'h515_region', 'h515_region_2',
                       # The two bench Harmony 885s' configurations and regions, out of the corpus
                       # wide totals: each unit's is counted nowhere yet, and whether a bench
                       # configuration joins the corpus is a decision of its own, as for the 650's.

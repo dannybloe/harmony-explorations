@@ -264,7 +264,7 @@ export function requirement(number: number): Requirement | undefined {
  * `reference/remotes/`, so a key also finds the model's facts.
  */
 export type BenchModelKey =
-  | 'harmony-one' | 'harmony-600' | 'harmony-650' | 'harmony-700' | 'harmony-525' | 'harmony-885'
+  | 'harmony-one' | 'harmony-600' | 'harmony-650' | 'harmony-700' | 'harmony-525' | 'harmony-515' | 'harmony-885'
   | 'harmony-785' | 'harmony-300' | 'harmony-350' | 'harmony-touch';
 
 export interface BenchModel {
@@ -280,13 +280,14 @@ export interface BenchModel {
 }
 
 /**
- * The ten models a unit of which is on the bench, in the order the document's tables list them: the models with a
+ * The eleven models a unit of which is on the bench, in the order the document's tables list them: the models with a
  * screen first, then the two without, then the Harmony Touch.
  *
  * **The skins are only those this library can tell apart as this model.** The Harmony One and the 600, 650 and 700
  * each have a European skin beside the American one, the same hardware in another region, `models.ts`. The Harmony
  * 525 is skin 22 alone: skin 18, the 520, is the same row of the comparison table and a different keypad, without
- * the colour keys. The Harmony 885 is skin 17 alone for the same reason, the 880, skin 15, carrying a pair of chevrons
+ * the colour keys. The Harmony 515 is skin 67 alone: skin 68, the 510, is its regional twin by the model
+ * table, and whether the 510's face is the 515's is not checked. The Harmony 885 is skin 17 alone for the same reason, the 880, skin 15, carrying a pair of chevrons
  * where the 885 has the colour keys. The Harmony 785 is skin 45 alone: the model table names skin 44, the Harmony 720, its
  * regional twin, but the 785's face carries keys the 720's does not, `reference/remotes/harmony-785/README.md`. The
  * Harmony 300 is skin 79, the European one a unit of which is on the bench;
@@ -300,6 +301,7 @@ export const BENCH_MODELS: readonly BenchModel[] = [
   { key: 'harmony-650', name: 'Harmony 650', skins: [72, 74] },
   { key: 'harmony-700', name: 'Harmony 700', skins: [66, 69] },
   { key: 'harmony-525', name: 'Harmony 525', skins: [22] },
+  { key: 'harmony-515', name: 'Harmony 515', skins: [67] },
   { key: 'harmony-885', name: 'Harmony 885', skins: [17] },
   { key: 'harmony-785', name: 'Harmony 785', skins: [45] },
   { key: 'harmony-300', name: 'Harmony 300', skins: [79] },
@@ -683,6 +685,76 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     71: open('The unit left safe mode once, by hand, from a lab script; no library function does it.'),
     72: impossible(['reference/remotes/harmony-525/features.md#logitechs-service-has-the-product-switched-off'], 'Logitech\'s service has the 525 switched off and compiles nothing for it.'),
   },
+  // The Harmony 515, on the Harmony 525's platform with an application of its own, 3.4. Its bench unit has only been
+  // read, decision 35, so everything that touches a write is open, and what the 525 shows is not assumed.
+  'harmony-515': {
+    2: open('Devices, activities and screens are read in 515 configurations through the 525\'s readers, but no view predicts what each key sends.'),
+    3: open('Nothing turns a compiled configuration back into a recipe, and nothing builds for the 515.'),
+    4: open('No codec family serves the 515, so nothing builds a configuration for it from a recipe.'),
+    5: open('No write path names the 515; its write end has not been read in its application 3.4.'),
+    6: open('The bench unit\'s identity and configuration region are recorded, but no write path takes a 515 or adopts one never seen.'),
+    7: open('Nothing checks a configuration against the 515\'s own limits before a write, and its device limit is the forum table\'s.'),
+    8: open('Nothing compares a 515\'s configuration with the one last written.'),
+    9: open('The catalogue can be browsed by manufacturer and model, but no search helps with typing errors.'),
+    10: open('Nothing composes a catalogue device for the 515.'),
+    11: open('Nothing composes a learned device for the 515, and learning on it has not been done.'),
+    12: open('No edit or build renames a device in a 515 configuration.'),
+    13: open('Nothing removes a device from a 515 configuration or settles its activities.'),
+    14: open('No part of device power is composed for the 515, since no family serves it.'),
+    15: open('Nothing composes a device\'s inputs for the 515.'),
+    16: open('Nothing sets or resets a device\'s delays for the 515.'),
+    17: open('Nothing composes a repeat count for a 515 device.'),
+    18: open('Nothing composes channel tuning for a 515 device.'),
+    19: open('Nothing adds, fixes or restores a device command in a 515 configuration.'),
+    21: open('Nothing composes an activity for the 515.'),
+    22: open('No activity key map from device roles is built for the 515.'),
+    23: open('No activity input setting is built for the 515.'),
+    24: open('Nothing builds activities for the 515, so no pass through device either.'),
+    25: open('Nothing renames an activity in a 515 configuration.'),
+    26: open('Nothing removes an activity from a 515 configuration.'),
+    27: unknown('No page says whether a 515 activity can carry an icon on its monochrome screen.'),
+    28: open('Nothing builds the 515\'s activity menu.'),
+    29: impossible(['reference/remotes/harmony-515/keys.md#every-key-on-the-drawing'], 'The 515 has the 525\'s face, and none of its keys is an activity key.'),
+    30: open('Nothing builds an activity\'s start or end steps for the 515.'),
+    31: open('Nothing changes an activity key binding in a 515 configuration.'),
+    32: open('Nothing changes a device mode map in a 515 configuration.'),
+    33: open('No device mode map is composed from the catalogue for the 515.'),
+    34: open('Nothing composes an activity\'s screen pages for the 515.'),
+    35: open('Nothing composes a device\'s screen pages for the 515.'),
+    36: open('Nothing builds soft key pages for the 515.'),
+    37: open('Nothing composes a sequence for the 515.'),
+    38: unknown('What a held key does on a 515 is not checked.', ['reference/remotes/harmony-515/keys.md#not-checked']),
+    39: impossible(['reference/remotes/harmony-515/keys.md#every-key-on-the-drawing'], 'The 515 has the 525\'s face, with no device keys; its Devices key opens a list.'),
+    40: unknown('The model table says the 515\'s screen is not a touch screen, which no 515 has been checked against.', ['reference/remotes/harmony-515/display.md#the-panel']),
+    41: open('No 515 screen was rendered and compared with the unit, and nothing is built to write.'),
+    42: open('Nothing builds 515 screens, so no typeface, picture or theme can be chosen.'),
+    43: open('The face is drawn, the 525\'s, but no key\'s scan code has been measured on a 515.'),
+    44: open('Nothing builds the remote\'s help for the 515.'),
+    45: unknown('Whether the 515 has favourite channels at all is not checked.'),
+    46: unknown('Favourites themselves are not known on the 515, so a favourite with an icon is not known either.'),
+    47: open('Nothing reads or changes a 515\'s settings.'),
+    48: open('Nothing composes the 515\'s backlight timing; brightness is not known.'),
+    49: unknown('Whether the 515 wakes on motion, and whether that can be switched off, is not checked.'),
+    50: open('Nothing composes the 515\'s Remote Assistant switch.'),
+    51: open('Nothing composes Smart or Full help for the 515.'),
+    52: unknown('Whether the 515 shows a clock is not checked, and no read of its running clock is known.'),
+    53: unknown('No page says whether the 96 by 64 monochrome 515 could show a slideshow.'),
+    54: open('Nothing sends the 515 the learning request, and learning on a 515 is not checked.'),
+    55: open('Nothing puts a learned code into a 515 device.'),
+    56: open('Nothing keeps a learned code in a 515 configuration.'),
+    57: open('No test identifies a device from a few taught commands.'),
+    59: open('The configuration region is in the lab, but no write path puts a backup back on a 515.'),
+    60: open('Nothing reads a 515 setup into a recipe or builds one for it.'),
+    61: open('Nothing builds an empty configuration for the 515.'),
+    63: open('The unit\'s identity is recorded in the lab, but no write rail checks a 515 against its record yet.'),
+    65: unknown('No battery reading over USB is known on this platform, and whether one exists is not settled.', ['reference/remotes/harmony-525/hardware.md#power']),
+    66: open('Read progress is shown, but nothing makes a 515 show it is being written.'),
+    67: unknown('No live memory read of a running 515 is known.'),
+    69: open('Nothing tells a 515 in safe mode from a running one by its own measurement, and safe mode must not be entered to find out.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
+    71: open('Nothing in the libraries brings a stuck 515 back.'),
+    72: unknown('Whether Logitech\'s service still serves the 515\'s skin is not checked.'),
+  },
   // The Harmony 885.
   'harmony-885': {
     2: open('Devices, activities, screens and codes are read on the 885, but no view predicts what each key sends there.'),
@@ -1006,7 +1078,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
  */
 const WHOLE_STATUSES: Readonly<Record<number, RequirementState>> = {
   75: open('Every package is private and unpublished, and an application links the folder beside it.'),
-  68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the ten bench models is recorded.'),
+  68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the eleven bench models is recorded.'),
 };
 
 /**

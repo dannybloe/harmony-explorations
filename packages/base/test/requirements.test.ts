@@ -161,8 +161,8 @@ test('a sentence of the data carries no em or en dash, which nothing published h
 
 test('the bench models are found by key and by every skin they report, and each skin by one model alone', () => {
   assert.deepEqual(BENCH_MODELS.map((model) => model.key), [
-    'harmony-one', 'harmony-600', 'harmony-650', 'harmony-700', 'harmony-525', 'harmony-885', 'harmony-785', 'harmony-300',
-    'harmony-350', 'harmony-touch',
+    'harmony-one', 'harmony-600', 'harmony-650', 'harmony-700', 'harmony-525', 'harmony-515', 'harmony-885', 'harmony-785',
+    'harmony-300', 'harmony-350', 'harmony-touch',
   ]);
   const skins = BENCH_MODELS.flatMap((model) => model.skins);
   assert.equal(new Set(skins).size, skins.length, 'no skin is two models');

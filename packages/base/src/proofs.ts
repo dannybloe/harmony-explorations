@@ -67,6 +67,12 @@ export const PROOFS: readonly Proof[] = [
     bench: ["docs/test-notes/harmony-350.md#what-has-been-read-off-it"],
   },
   {
+    requirement: 1, models: ["harmony-515"],
+    test: "tests/harmony_5xx/test_harmony_515.py",
+    title: "TheConfigurationRegion.test_it_holds_the_configuration_read_earlier_whole_and_nothing_after_it",
+    bench: ["docs/test-notes/harmony-515.md#the-first-session-3-november-2026", "docs/test-notes/harmony-515.md#the-second-session-13-november-2026"],
+  },
+  {
     requirement: 1, models: ["harmony-600"],
     test: "tests/harmony_600_650_700/test_arch14_write_target.py",
     title: "TheHarmony600sFirstBlockWentBackUnchanged.test_the_block_written_was_configuration_and_its_container_is_h600_config",
@@ -649,6 +655,12 @@ export const PROOFS: readonly Proof[] = [
     bench: ["docs/test-notes/harmony-350.md#what-has-been-read-off-it"],
   },
   {
+    requirement: 58, models: ["harmony-515"],
+    test: "tests/harmony_5xx/test_harmony_515.py",
+    title: "TheConfigurationRegion.test_the_two_reads_are_identical_and_five_blocks_long",
+    bench: ["docs/test-notes/harmony-515.md#the-second-session-13-november-2026"],
+  },
+  {
     requirement: 58, models: ["harmony-525"],
     test: "tests/harmony_5xx/test_harmony_525_region.py",
     title: "TheRegionIsFiveBlocksAndAllFiveAreInHand.test_the_five_blocks_span_the_region_the_rails_state",
@@ -817,6 +829,12 @@ export const PROOFS: readonly Proof[] = [
     bench: ["docs/test-notes/harmony-300.md#the-unit"],
   },
   {
+    requirement: 62, models: ["harmony-515"],
+    test: "tests/harmony_5xx/test_harmony_515.py",
+    title: "TheFirmwareAndTheConfigurationBothStateSkin67.test_the_measured_descriptor_reads_as_skin_67_under_the_plain_rule",
+    bench: ["docs/test-notes/harmony-515.md#the-first-session-3-november-2026"],
+  },
+  {
     requirement: 62, models: ["harmony-885"],
     test: "tests/usb_protocol/test_usbdesc.py",
     title: "TestBcdDeviceCarriesTheSkin.test_the_two_words_measured_off_the_bus",
@@ -965,6 +983,12 @@ export const PROOFS: readonly Proof[] = [
     test: "packages/usb/test/transport/remote.test.ts",
     title: "a version block is twelve bytes",
     bench: ["docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups"],
+  },
+  {
+    requirement: 64, models: ["harmony-515"],
+    test: "tests/harmony_5xx/test_harmony_515.py",
+    title: "TheFirmwareAndTheConfigurationBothStateSkin67.test_the_version_fields_state_the_same_skin_and_firmware_3_4",
+    bench: ["docs/test-notes/harmony-515.md#the-first-session-3-november-2026"],
   },
   {
     requirement: 64, models: ["harmony-885"],

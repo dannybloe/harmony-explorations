@@ -55,6 +55,7 @@ Over the 71 requirements that have a status per model. Possible is every one but
 | Harmony 650 | 11 | 54 | 2 | 4 | 11 of 67 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
 | Harmony 700 | 14 | 50 | 4 | 3 | 14 of 68 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
 | Harmony 525 | 7 | 50 | 9 | 5 | 7 of 66 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
+| Harmony 515 | 5 | 52 | 11 | 3 | 5 of 68 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
 | Harmony 885 | 10 | 53 | 3 | 5 | 10 of 66 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
 | Harmony 785 | 4 | 59 | 7 | 1 | 4 of 70 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
 | Harmony 300 | 7 | 39 | 8 | 17 | 7 of 54 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
