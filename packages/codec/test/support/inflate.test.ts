@@ -155,7 +155,8 @@ test('every PNG file in the lab inflates to node:zlib\'s bytes', skipWithoutLab(
   }
   // Two of the files are not one whole PNG, so there is no image data to compare.
   // Two more on 9 November 2026: the Harmony Touch's background and its twin, rebuilt into `work/recipe-references/`.
-  assert.deepEqual({ files: pngs.length, whole }, { files: 4356, whole: 4354 });
+  // 21 more with the Harmony 785's drawing checks in `work/silhouettes/h785/`, each a whole PNG.
+  assert.deepEqual({ files: pngs.length, whole }, { files: 4377, whole: 4375 });
 });
 
 const u16 = (bytes: Uint8Array, at: number): number => bytes[at]! | (bytes[at + 1]! << 8);

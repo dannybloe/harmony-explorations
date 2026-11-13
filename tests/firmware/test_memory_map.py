@@ -761,6 +761,14 @@ _PUBLISHABLE_BYTE_RUNS = {
     # The Harmony 885's GET_VERSION reply, in its test notes. A model's state and not a unit's: both
     # bench 885s answered it byte for byte, and the architecture's `usb.md` publishes it too.
     '44 21 49 01 80 11 08',
+    # The two bench Harmony 785s' GET_VERSION replies, in their test notes and the 785's prediction: application
+    # 4.5, hardware 0.9 on one unit and 0.8 on the other, the flash part, architecture 8 and skin 45. A model's
+    # build and a board revision, with no serial in them, like the 885's reply above.
+    '45 09 49 01 80 2D 08',
+    '45 08 49 01 80 2D 08',
+    # The one log entry the 785's memory page quotes, the same eight bytes on both bench units, once on one and
+    # 118 times on the other, so it identifies neither.
+    '02 00 00 00 00 FF FF 05',
 }
 
 #: What an account id looks like, the same shape `.githooks/pre-commit` refuses in staged content.

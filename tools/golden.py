@@ -302,6 +302,11 @@ CONTAINERS = (
     'h885_b_written_1_4', 'h885_b_after_1_4_config', 'h885_b_after_1_4_region',
     'h885_composed_2_1', 'h885_composed_2_3', 'h885_b_written_2_1', 'h885_b_after_2_1_config',
     'h885_b_after_2_1_region', 'h885_b_written_2_3', 'h885_b_after_2_3_config',
+    # The two bench Harmony 785s, each unit's configuration and its whole flash read twice, and the bench
+    # Harmony 515's configuration region read twice. All parse, so each gets a vector; excluded from the corpus
+    # wide totals as the 885s' reads are.
+    'h785_a_config', 'h785_a_flash', 'h785_a_flash_2', 'h785_b_config', 'h785_b_flash', 'h785_b_flash_2',
+    'h515_region', 'h515_region_2',
 )
 
 
