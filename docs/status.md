@@ -126,8 +126,8 @@ holds the table's shape.*
 
 ## What the corpus holds
 
-26<!--fact:corpus_dumps--> dumps from 12<!--fact:corpus_contributors--> contributors, carrying
-47<!--fact:corpus_configs--> configs across 5<!--fact:corpus_architectures--> architectures, plus the
+27<!--fact:corpus_dumps--> dumps from 12<!--fact:corpus_contributors--> contributors, carrying
+48<!--fact:corpus_configs--> configs across 5<!--fact:corpus_architectures--> architectures, plus the
 firmware images and bootloaders the table lists per architecture. `make corpus` inventories it and, importantly, reports which
 dumps nobody has described: a dump whose contributor has moved on is far harder to label later than one
 described on arrival.
@@ -137,7 +137,7 @@ described on arrival.
 | 2 | 745 | 0 | 0 | none | anything at all |
 | 3 | 748, 768 | 0 | 0 | none | anything at all |
 | 7 | 610, 620, 628, 659, 670, 676, 680, 688 | 0 | 0 | none | anything at all: eight models and no sample |
-| 8 | 880, 885, 880 Pro, 720, 785 | 6<!--fact:corpus_arch8_dumps--> | 16<!--fact:corpus_arch8_configs--> | 880, 885 and 720, application and bootloader; the 880 Pro's is the 880's build with its own skin; the 785's read off two bench units, the 720's application and two bootloaders | a 785 configuration in the corpus: the bench 785s' reads are counted in no total |
+| 8 | 880, 885, 880 Pro, 720, 785 | 7<!--fact:corpus_arch8_dumps--> | 17<!--fact:corpus_arch8_configs--> | 880, 885 and 720, application and bootloader; the 880 Pro's is the 880's build with its own skin; the 785's read off two bench units, the 720's application and two bootloaders | a 785 configuration in the corpus: the bench 785s' reads are counted in no total |
 | 9 | 510, 515, 520, 525, 550, 555 | 6<!--fact:corpus_arch9_dumps--> | 6<!--fact:corpus_arch9_configs--> | 525, 515 and 555, application and safe mode, three different builds; a 550's image has arrived and is not read yet | a 510 or 520 |
 | 10 | 890, 895, 890 Pro | 2<!--fact:corpus_arch10_dumps--> | 12<!--fact:corpus_arch10_configs--> | **none** | **firmware**, which is the single hardest blocker here |
 | 12 | One | 2<!--fact:corpus_arch12_dumps--> | 2<!--fact:corpus_arch12_configs--> | One 3.4, plus safe mode and both internal pages | nothing: this one is covered |
