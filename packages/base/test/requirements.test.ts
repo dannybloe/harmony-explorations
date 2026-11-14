@@ -167,7 +167,7 @@ test('a sentence of the data carries no em or en dash, which nothing published h
 test('the bench models are found by key and by every skin they report, and each skin by one model alone', () => {
   assert.deepEqual(BENCH_MODELS.map((model) => model.key), [
     'harmony-one', 'harmony-600', 'harmony-650', 'harmony-700', 'harmony-525', 'harmony-515', 'harmony-885', 'harmony-785',
-    'harmony-300', 'harmony-350', 'harmony-touch',
+    'harmony-300', 'harmony-350', 'harmony-touch', 'harmony-elite', 'harmony-hub',
   ]);
   const skins = BENCH_MODELS.flatMap((model) => model.skins);
   assert.equal(new Set(skins).size, skins.length, 'no skin is two models');
@@ -180,7 +180,8 @@ test('the bench models are found by key and by every skin they report, and each 
 
 test('a skin the model table holds is that model there, or its European twin', () => {
   // The model table is the other list of skins to models; the two may not disagree about a bench model. The 300, 350
-  // and Touch have no record there, by design, and the codec's registry holds their skins, its own test.
+  // and Touch have no record there, by design, and the codec's registry holds their skins, its own test. The Elite and
+  // the hub have none either and no family yet, so nothing but the bench list holds their skins.
   for (const model of BENCH_MODELS) {
     for (const skin of model.skins) {
       const record = MODELS_BY_SKIN[skin];
@@ -188,7 +189,7 @@ test('a skin the model table holds is that model there, or its European twin', (
       assert.ok([model.name, `${model.name} EMEA`].includes(`Harmony ${record.name}`), `skin ${skin} is the Harmony ${record.name}`);
     }
   }
-  assert.deepEqual(BENCH_MODELS.flatMap((model) => model.skins).filter((skin) => MODELS_BY_SKIN[skin] === undefined), [79, 104, 99]);
+  assert.deepEqual(BENCH_MODELS.flatMap((model) => model.skins).filter((skin) => MODELS_BY_SKIN[skin] === undefined), [79, 104, 99, 111, 106]);
 });
 
 // ---------------------------------------------------------------------------------------------------

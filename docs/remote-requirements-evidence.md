@@ -19,6 +19,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The file was read off the unit twice, identical, but no library read restores the end marker and checks the trailer.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "opens, reassembles the data packets, stops at the terminator and closes"; `packages/usb/test/file-protocol/filewrite.test.ts`, "accepts all five configurations read off the family, once the end marker is on". Shown on a unit in `docs/test-notes/harmony-350.md#what-has-been-read-off-it`.
 * **Harmony Touch**, open: No route reads the Touch's stored documents back; the firmware's put and request route is read but has never been sent.
+* **Harmony Elite**, open: Its identity file and the two reads its request channel allows were answered; the stored set is its hub's and is not read off either.
+* **Harmony Hub**, open: Only its identity file is read; its setup is to be read over the local network, which is planned and not built, and its request channel is closed by decision 36.
 
 ### R2 Understand a configuration: its devices, activities, keys, screens, delays and codes, and what each key will send.
 
@@ -33,6 +35,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Devices and power on delays are read from 300 files, but no library reader says what each key sends.
 * **Harmony 350**, open: The public readers name devices and read 13 of 14 delays; Watch TV and what each key sends are read only through internals.
 * **Harmony Touch**, proven by `packages/bench/test/harmony-touch/touch-full-bench-predicted.test.ts`, "the model names every code the five earlier runs heard, in order, and every pause of a start lies in its band"; `packages/codec/test/families/harmony-touch/touch-reader.test.ts`, "the full sync reads whole: every command finds its protocol, every map its owner, every action its command".
+* **Harmony Elite**, open: No setup of an Elite has been read; the reader of the Touch's documents is the same kind and is untried on one.
+* **Harmony Hub**, open: A hub's setup is the same kind of documents the Harmony Touch is given, by its image; none has been read off a hub.
 
 ### R3 Read a configuration back into a recipe, so a setup can be edited and rebuilt; from our own builds whole, favourites included, through a record of ours carried inside.
 
@@ -47,6 +51,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Nothing reads a configuration of this family back into a recipe.
 * **Harmony 350**, open: Nothing reads a 350 configuration back into a recipe, and no record of ours is carried inside.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-setup.test.ts`, "describing Logitech's own documents and composing the description gives the same remote: every device, activity, map, favourite and finding, compared by name".
+* **Harmony Elite**, open: Nothing reads a setup back into a recipe on this generation.
+* **Harmony Hub**, open: Nothing reads a setup back into a recipe on this generation.
 
 ### R4 Build a whole configuration from a recipe.
 
@@ -61,6 +67,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The 350's build ran on the 300 and every expected code was heard, but a recipe naming the 300 is refused once it holds a television or a long press, so the 300's own recipe does not build whole.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`, "the whole test setup builds with no Logitech file: every device, Watch TV with its flag and inputs, and the favourites, and passes the writer's checks"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts`, "with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone". Shown on a unit in `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: No family builds for skin 111; the Touch's document family builds the same kind of documents and is not offered for it.
+* **Harmony Hub**, open: No family builds for a hub; the Touch's document family builds the same kind of documents and is not offered for it.
 
 ### R5 Write a configuration to the remote, verified by reading it back, and the remote runs it.
 
@@ -75,6 +83,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, proven by `packages/usb/test/file-protocol/file-family-run.test.ts`, "writes, verifies and reboots, and arms the caller's interrupt after the reads and before anything that writes"; `packages/usb/test/file-protocol/filewrite.test.ts`, "writes, checks, closes, reads back identical and reboots, in the client's order". Shown on a unit in `docs/test-notes/harmony-300.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/file-family-run.test.ts`, "writes, verifies and reboots, and arms the caller's interrupt after the reads and before anything that writes"; `packages/usb/test/file-protocol/filewrite.test.ts`, "writes, checks, closes, reads back identical and reboots, in the client's order". Shown on a unit in `docs/test-notes/harmony-350.md`.
 * **Harmony Touch**, open: answerTouchSync delivers and the remote commits and runs it, but no library step verifies afterwards; the hash check is a script's.
+* **Harmony Elite**, open: Nothing is written to the bench set, decision 36, and a hub paired remote takes its setup from its hub rather than over its cable.
+* **Harmony Hub**, open: Nothing is written to the bench hub, decision 36, and no write path names one.
 
 ### R6 Write the user's own remote: take a remote never seen, record its identity and a full backup, and from then on write to that unit only.
 
@@ -89,6 +99,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The writer serves only the two bench units on its own list; a remote never seen cannot be recorded and written.
 * **Harmony 350**, open: The writer's unit list holds the bench units only; a remote never seen cannot be recorded and written.
 * **Harmony Touch**, open: The answerer syncs only the one bench unit named in its own list; a stranger's Touch cannot be recorded and written.
+* **Harmony Elite**, open: No write path names an Elite, the bench's or a stranger's.
+* **Harmony Hub**, open: No write path names a hub, the bench's or a stranger's.
 
 ### R7 Refuse a configuration that does not fit the model or would be mishandled, and say what is over.
 
@@ -103,6 +115,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, proven by `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`, "the test setup cannot be built for the Harmony 300's own skin, so the Harmony 350 build, with event 0xFF bound, is the file for both"; `packages/usb/test/file-protocol/filewrite.test.ts`, "refuses a container longer than the file, since the firmware would write it into the log".
 * **Harmony 350**, proven by `packages/codec/test/families/fromrecipe.test.ts`, "what an application is refused, each naming what is wrong"; `packages/codec/test/families/harmony-300-350/noscreensetup.test.ts`, "the setup composer refuses a key that disagrees with the configuration, a device with no key, and an activity naming a composed device"; `packages/usb/test/file-protocol/filewrite.test.ts`, "refuses a container longer than the file, since the firmware would write it into the log".
 * **Harmony Touch**, open: The gate refuses sets the remote would mishandle and names each, but nothing refuses more than the 15 devices Logitech states.
+* **Harmony Elite**, open: Nothing knows an Elite's limits, so nothing refuses a setup that does not fit one.
+* **Harmony Hub**, open: Nothing knows a hub's limits, so nothing refuses a setup that does not fit one.
 
 ### R8 Detect changes made on the remote since the app last wrote it, the help's own delay fixes among them, and keep or discard them.
 
@@ -117,6 +131,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, unknown: Whether a Harmony 300 ever changes its own configuration is not known; it has no help to fix delays.
 * **Harmony 350**, open: The writer refuses a file it did not write, shown on the unit; keeping or discarding that change is not offered.
 * **Harmony Touch**, open: The hand over keeps what the remote hands up and stops on a clash, but offers no keep or discard choice.
+* **Harmony Elite**, open: Nothing compares what an Elite holds with what was last written, since nothing is written.
+* **Harmony Hub**, open: Nothing compares what a hub holds with what was last written, since nothing is written.
 
 ## Devices and codes
 
@@ -133,6 +149,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The catalogue lists manufacturers and models, but offers no help for typing errors.
 * **Harmony 350**, open: The catalogue can be browsed by manufacturer and model, but nothing helps with typing errors.
 * **Harmony Touch**, open: The catalogue can be listed by manufacturer and model, but nothing helps with typing errors.
+* **Harmony Elite**, open: The catalogue can be listed by manufacturer and model, but nothing helps with typing errors.
+* **Harmony Hub**, open: The catalogue can be listed by manufacturer and model, but nothing helps with typing errors.
 
 ### R10 Add a device from the catalogue with its commands, power and inputs, choosing the code set version where a device has several.
 
@@ -147,6 +165,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Catalogue devices with power and inputs were built and heard on the unit, but no code set version can be chosen.
 * **Harmony 350**, open: Catalogue devices compose and were heard on the unit; choosing among a device's code set versions is not offered.
 * **Harmony Touch**, open: Devices are built from catalogue entries and heard, but the builder takes the entry's one code set and offers no version choice.
+* **Harmony Elite**, open: Nothing composes a device for an Elite; its devices are documents its hub holds.
+* **Harmony Hub**, open: Nothing composes a device for a hub.
 
 ### R11 Add a device the catalogue does not know, from its type and commands taught from its original remote, its definition saying it was learned.
 
@@ -161,6 +181,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, unknown: Whether the 300 can learn is not known, and nothing composes a learned device for this family.
 * **Harmony 350**, open: Nothing builds a device from commands taught from its original remote on this family.
 * **Harmony Touch**, open: A learned code becomes a definition in tests, but no device of taught commands has been composed and sent on the unit.
+* **Harmony Elite**, open: Nothing composes a device of taught commands for an Elite.
+* **Harmony Hub**, open: Nothing composes a device of taught commands for a hub.
 
 ### R12 Rename a device.
 
@@ -175,6 +197,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Device names go into the file from the recipe, but no renamed device was written to a 300 and read back.
 * **Harmony 350**, open: A device's name lives only in the file's metadata the remote never shows; no test or run renames one.
 * **Harmony Touch**, open: No library step renames a device, and no renamed device has been delivered to the unit.
+* **Harmony Elite**, open: No library step renames a device, and nothing is written to the bench set.
+* **Harmony Hub**, open: No library step renames a device, and nothing is written to the bench hub.
 
 ### R13 Remove a device, and say and settle what happens to the activities and favourites that used it.
 
@@ -189,6 +213,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Removing a device is tested on Logitech's compiles only, never run on a 300, and favourites using it are not settled.
 * **Harmony 350**, open: Removal refuses devices that Watch TV or favourites use, and nothing settles them; no removal ran on the unit alone.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-removal.test.ts`, "taking out an activity and a device takes out everything naming them and changes nothing else". Shown on a unit in `packages/bench/test/harmony-touch/touch-removal-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing removes a device from an Elite's setup.
+* **Harmony Hub**, open: Nothing removes a device from a hub's setup.
 
 ### R14 Set how a device is powered: one key or two, none, always on, kept on between activities, extra commands to power up, a power code that must be held.
 
@@ -203,6 +229,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Power comes from the catalogue; one or two keys, none, always on, extra commands and a held power code cannot be set.
 * **Harmony 350**, open: Toggle and separate on and off codes were heard; no power, always on, extra power steps and a held power code are not offered.
 * **Harmony Touch**, open: Kept on and a held power code compose, but always on, no power, one or two keys and extra power commands are not set or shown.
+* **Harmony Elite**, open: Nothing sets how a device is powered in an Elite's setup.
+* **Harmony Hub**, open: Nothing sets how a device is powered in a hub's setup.
 
 ### R15 Set how a device changes inputs and which inputs it has.
 
@@ -217,6 +245,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Inputs come from the catalogue only; how a device changes input cannot be set, and a stepping input is refused.
 * **Harmony 350**, open: Direct inputs work; an input that steps or mixes codes and states is refused.
 * **Harmony Touch**, open: A device's inputs and how it changes them come only from its catalogue entry; nothing lets them be set.
+* **Harmony Elite**, open: Nothing sets a device's inputs in an Elite's setup.
+* **Harmony Hub**, open: Nothing sets a device's inputs in a hub's setup.
 
 ### R16 Set a device's delays, and put them back to their defaults.
 
@@ -231,6 +261,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The power on delay was set and heard on the unit, but no other delay is settable and nothing restores defaults.
 * **Harmony 350**, open: The power on delay was changed and heard on the unit; other delays and a return to defaults are not offered.
 * **Harmony Touch**, open: Delays a setup states are composed and their pauses heard in band, but putting them back to defaults is not shown.
+* **Harmony Elite**, open: Nothing sets a device's delays in an Elite's setup.
+* **Harmony Hub**, open: Nothing sets a device's delays in a hub's setup.
 
 ### R17 Set how many times a device's commands repeat.
 
@@ -245,6 +277,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Nothing sets how many times a device's commands repeat.
 * **Harmony 350**, open: The repeat count follows the catalogue and cannot be set; nothing about it was checked on a remote.
 * **Harmony Touch**, open: A repeat count is composed, but six taps sent four or five frames where three were predicted, unexplained.
+* **Harmony Elite**, open: Nothing sets how often a device's commands repeat in an Elite's setup.
+* **Harmony Hub**, open: Nothing sets how often a device's commands repeat in a hub's setup.
 
 ### R18 Set how a device tunes a channel number.
 
@@ -259,6 +293,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Channel digits and the tuning finish follow the catalogue; how a device tunes a number cannot be chosen.
 * **Harmony 350**, open: Channel tuning comes from the catalogue entry as it is; nothing lets it be set.
 * **Harmony Touch**, open: A channel tuning setting composes, but no composed tuning was heard; the favourites heard ran on Logitech's carried tuning.
+* **Harmony Elite**, open: Nothing sets how a device tunes a channel in an Elite's setup.
+* **Harmony Hub**, open: Nothing sets how a device tunes a channel in a hub's setup.
 
 ### R19 Add, fix and remove a device's command, and put a fixed one back to its original code.
 
@@ -273,6 +309,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Nothing adds, fixes or removes one command of a device, or restores its original code, for this family.
 * **Harmony 350**, open: Nothing adds, fixes or removes a single command of a device on this family.
 * **Harmony Touch**, open: No library step adds, fixes or removes one command of a device, or restores a fixed one.
+* **Harmony Elite**, open: No library step adds, fixes or removes one command of a device.
+* **Harmony Hub**, open: No library step adds, fixes or removes one command of a device.
 
 ### R20 Export and import codes as Pronto Hex.
 
@@ -287,6 +325,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
 * **Harmony 350**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
 * **Harmony Touch**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
+* **Harmony Elite**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
+* **Harmony Hub**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
 
 ## Activities
 
@@ -303,6 +343,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Watch TV ran on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`, "the composed Watch TV is Logitech's step for step, the LG's and the Denon's power, the flag, the inputs on the way on and the KPN's map, and the KPN's toggle is the donor's"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing composes an activity for an Elite, and none of ours has run on one.
+* **Harmony Hub**, open: Nothing composes an activity for a hub, and none of ours has run on one.
 
 ### R22 Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key.
 
@@ -317,6 +359,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Only the channel changing role picks the map Watch TV ends in; other roles map no keys and learned commands are not handled.
 * **Harmony 350**, open: Roles choose Watch TV's final device map and volume source; a learned command landing on its usual key is not offered.
 * **Harmony Touch**, open: The Touch's maps are stated key by key; nothing maps an activity's keys from its devices' jobs.
+* **Harmony Elite**, open: Nothing maps an activity's keys from its devices' jobs, and the Elite's keys are not read.
+* **Harmony Hub**, open: Nothing maps an activity's keys from its devices' jobs for the remotes a hub serves.
 
 ### R23 Set each device's input in an activity, or leave it alone.
 
@@ -331,6 +375,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The inputs were heard on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`, "the input variables are Logitech's: the Denon's nineteen values each send Logitech's record for that input, and the LG's has one value and sends nothing"; `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`, "the whole test setup builds with no Logitech file: every device, Watch TV with its flag and inputs, and the favourites, and passes the writer's checks". Shown on a unit in `docs/test-notes/harmony-350.md`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing sets a device's input in an activity of an Elite's setup.
+* **Harmony Hub**, open: Nothing sets a device's input in an activity of a hub's setup.
 
 ### R24 Include a pass through device in an activity.
 
@@ -345,6 +391,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: A device with no role in an activity is neither tested nor run on a 300.
 * **Harmony 350**, open: No test or run includes a device with no role in Watch TV.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts`, "with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone". Shown on a unit in `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing includes a pass through device in an activity of an Elite's setup.
+* **Harmony Hub**, open: Nothing includes a pass through device in an activity of a hub's setup.
 
 ### R25 Rename an activity.
 
@@ -359,6 +407,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, unknown: Whether this family's configuration stores an activity's name at all is not stated; its metadata names devices.
 * **Harmony 350**, open: The activity's name is stored nowhere the 350 shows; nothing renames it and no run shows one.
 * **Harmony Touch**, open: A rename was shown on the unit only through an experiment's hand edit; no library function renames an activity.
+* **Harmony Elite**, open: No library function renames an activity.
+* **Harmony Hub**, open: No library function renames an activity.
 
 ### R26 Remove an activity.
 
@@ -373,6 +423,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: A configuration with no activity builds, but none was written to a 300.
 * **Harmony 350**, open: A setup with devices and no Watch TV was never built in a test or run on the unit.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-removal.test.ts`, "taking out an activity and a device takes out everything naming them and changes nothing else". Shown on a unit in `packages/bench/test/harmony-touch/touch-removal-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing removes an activity from an Elite's setup.
+* **Harmony Hub**, open: Nothing removes an activity from a hub's setup.
 
 ### R27 Give an activity an icon.
 
@@ -387,6 +439,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen, so an activity icon has nowhere to show. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to show an icon on. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, open: The composer writes an activity with no picture of its own, so it shows its type's default picture.
+* **Harmony Elite**, open: Nothing gives an activity of an Elite's setup an icon.
+* **Harmony Hub**, open: Nothing gives an activity of a hub's setup an icon.
 
 ### R28 Order the activity menu and an activity's device list.
 
@@ -401,6 +455,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: With no screen and one activity there is no activity menu or device list to order. `reference/how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity`.
 * **Harmony 350**, impossible: With one activity and no screen there is no activity menu or device list to order. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, open: Places are composed and renumbered after a removal, but reordering the activity list or an activity's devices was never shown.
+* **Harmony Elite**, open: Nothing orders the activities or an activity's devices in an Elite's setup.
+* **Harmony Hub**, open: Nothing orders the activities or an activity's devices in a hub's setup.
 
 ### R29 Choose which activities the activity keys start.
 
@@ -415,6 +471,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 holds one activity, started by its Watch TV key, so there is nothing to choose. `reference/how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity`.
 * **Harmony 350**, impossible: The 350 holds one activity, always started by its Watch TV key. `reference/how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity`.
 * **Harmony Touch**, impossible: The Touch has no activity keys; its 27 keypad keys and two touch zones include none. `reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing`.
+* **Harmony Elite**, unknown: The Elite's keys are not read, so whether it has activity keys to choose activities for is not known here.
+* **Harmony Hub**, unknown: A hub has no keys of its own; whether its setup states which activities a paired remote's activity keys start is not read.
 
 ### R30 Add steps to an activity's start and end: commands, pauses, a sequence.
 
@@ -429,6 +487,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The activity composer takes devices and a channel device only; it adds no extra start or end steps.
 * **Harmony 350**, open: Watch TV's steps are the devices' power and inputs only; extra commands, pauses or a sequence are not offered.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing adds steps to an activity's start or end in an Elite's setup.
+* **Harmony Hub**, open: Nothing adds steps to an activity's start or end in a hub's setup.
 
 ## Keys and screens
 
@@ -445,6 +505,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Watch TV ends in the channel device's map; nothing gives the activity a key map of its own.
 * **Harmony 350**, open: Watch TV ends in one device's map and the recipe cannot change what a key does there.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding"; `packages/codec/test/families/harmony-touch/touch-setup.test.ts`, "a whole setup composes and reads back: devices from their catalogue record with what the person chose, maps in the ordered form, an activity with the favourites, a channel step and a sequence". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing changes what a key does in an activity on an Elite; its keys are not read.
+* **Harmony Hub**, unknown: A hub has no keys of its own; how its setup carries the key maps of a remote paired to it is not read.
 
 ### R32 Change what a key does for a device in device mode, any device's command included, such as the receiver's volume in TV mode.
 
@@ -459,6 +521,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: A device mode remap ran on the unit, made by a lab script; no library function changes one key's binding.
 * **Harmony 350**, open: A device's map comes from the family's table and the recipe cannot override a key.
 * **Harmony Touch**, open: A device's own keys are composed and heard, but a device map can bind only that device's commands, never another's.
+* **Harmony Elite**, open: Nothing changes what a key does in device mode on an Elite; its keys are not read.
+* **Harmony Hub**, unknown: A hub has no keys of its own; how its setup carries a paired remote's device mode maps is not read.
 
 ### R33 Give a device its device mode map from the catalogue, every key and screen page, as Logitech's software would.
 
@@ -473,6 +537,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Maps follow the 350's key table; Logitech binds Teletext to a key on the 300, and no 300 map was checked whole.
 * **Harmony 350**, open: Device maps match Logitech's and were heard, except Replay and Advance on the set top box.
 * **Harmony Touch**, open: keysByName binds keys by exact command name only; nothing lays out a device mode map and screen as Logitech's software would.
+* **Harmony Elite**, open: Nothing lays out a device mode map for an Elite.
+* **Harmony Hub**, unknown: A hub has no keys of its own; whether a device mode map is laid out in its setup for a paired remote is not read.
 
 ### R34 Put commands on an activity's screen, labelled and ordered, across pages.
 
@@ -487,6 +553,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing puts commands on an activity's screen in an Elite's setup.
+* **Harmony Hub**, unknown: A hub has no screen; whether its setup carries the screen pages a paired remote shows for an activity is not read. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R35 Put commands on a device's screen pages in device mode.
 
@@ -501,6 +569,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen, so device mode has no screen pages. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-compose.test.ts`, "the codec's reader finds the device's map, every command its code and every key and entry its command, and the check finds nothing"; `packages/codec/test/families/harmony-touch/touch-device-add.test.ts`, "a device of a row and numbers composes and reads back: one definition, every command its key code, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-device-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing puts commands on a device's screen pages in an Elite's setup.
+* **Harmony Hub**, unknown: A hub has no screen; whether its setup carries the screen pages a paired remote shows for a device is not read. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R36 A screen button that opens a page of the user's own commands, and a button back.
 
@@ -515,6 +585,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen to hold a button or a page. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, unknown: Whether a Touch screen entry can open a page of the user's own commands and come back is not known.
+* **Harmony Elite**, unknown: Whether a screen entry on this generation can open a page of the user's own commands and come back is not known.
+* **Harmony Hub**, unknown: Whether a screen entry on this generation can open a page of the user's own commands and come back is not known.
 
 ### R37 Make a named sequence with pauses and put it on a key or the screen, within what the remote survives.
 
@@ -529,6 +601,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Nothing composes a named sequence for this family, though its lists can send and wait.
 * **Harmony 350**, open: Nothing composes a named sequence for this family; the limits it would survive were not measured.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-setup.test.ts`, "a whole setup composes and reads back: devices from their catalogue record with what the person chose, maps in the ordered form, an activity with the favourites, a channel step and a sequence". Shown on a unit in `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing composes a sequence for an Elite.
+* **Harmony Hub**, open: Nothing composes a sequence for a hub.
 
 ### R38 Give a key a second command when held.
 
@@ -543,6 +617,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: A held key only selects a second device on the device keys; no other key gets a held command.
 * **Harmony 350**, open: Only device keys get a long press, choosing a second device; a held command on any other key is not offered.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-compose.test.ts`, "the list counts from the first index Logitech's device lists count from, and a press and a long press are their event numbers"; `packages/codec/test/families/harmony-touch/touch-setup.test.ts`, "a whole setup composes and reads back: devices from their catalogue record with what the person chose, maps in the ordered form, an activity with the favourites, a channel step and a sequence". Shown on a unit in `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Logitech's records give skin 111 a long press, but nothing composes a held command for an Elite.
+* **Harmony Hub**, unknown: A hub has no keys of its own; whether its setup carries a held command for a paired remote's key is not read.
 
 ### R39 Put devices on the device keys, a short and a long press each.
 
@@ -557,6 +633,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The device keys selected a device short and another long on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 is refused once it holds a long press.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreen.test.ts`, "a long press device takes group 4 plus its key's place on all four keys, the group Logitech's compile gives the same device"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony Touch**, impossible: The Touch has no device keys; its keys and touch zones list none. `reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing`.
+* **Harmony Elite**, unknown: The Elite's keys are not read, so whether it has device keys is not known here.
+* **Harmony Hub**, unknown: A hub has no keys of its own; whether a paired remote has device keys its setup fills is not read.
 
 ### R40 Give an activity's touch gestures their commands.
 
@@ -571,6 +649,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen and so no touch gestures. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen, so no touch gestures. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, open: Gestures are composed in a whole setup, but no gesture has been performed on the unit and heard.
+* **Harmony Elite**, open: Nothing composes touch gestures for an Elite, and none has been performed on one.
+* **Harmony Hub**, unknown: A hub has no touch panel; whether its setup carries the gestures of a paired remote is not read.
 
 ### R41 Show every screen as the remote will draw it, before writing.
 
@@ -585,6 +665,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen to draw. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to draw. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, open: Nothing renders the Touch's screens; the remote draws them from the documents.
+* **Harmony Elite**, open: Nothing renders this generation's screens; the remote draws them from the documents.
+* **Harmony Hub**, impossible: A hub has no screen and no program that draws one, so there is nothing of its own to show before a write. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R42 Choose the look of the screens: typeface, inks, colours, icons, background, theme, choices per screen.
 
@@ -599,6 +681,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen, so there is no look to choose. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, open: Only our background picture is drawn and shown; typeface, inks, icons and theme are not offered.
+* **Harmony Elite**, open: Nothing chooses the look of an Elite's screens.
+* **Harmony Hub**, impossible: A hub has no screen, so it has no look to choose. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R43 Draw the remote's face and know which key is which.
 
@@ -613,6 +697,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The European drawing ties 49 of 55 keys on the unit; six keys and the whole US printing are not measured.
 * **Harmony 350**, open: The face is drawn and 53 of 55 keys carry a scan code; DVR and Live are not tied to one.
 * **Harmony Touch**, proven by `packages/silhouettes/test/models.test.ts`, "a name identifies one key, and every key has one"; `packages/silhouettes/test/svg.test.ts`, "a key is addressable by name, kind, provenance and code".
+* **Harmony Elite**, open: No drawing of the Elite's face exists, and its keys are not read.
+* **Harmony Hub**, open: No drawing of the hub exists.
 
 ### R44 Give every activity the remote's own help, the advanced help and its delay fixing included.
 
@@ -627,6 +713,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no Help key and no screen, so the remote's help cannot run. `reference/remotes/harmony-300/keys.md#european-printing-skin-79`.
 * **Harmony 350**, impossible: The 350 has no Help key and no screen to ask its questions on. `reference/remotes/harmony-350/keys.md#every-key-on-the-drawing`.
 * **Harmony Touch**, open: The Touch has help on its screen, but nothing builds or checks it for activities of ours.
+* **Harmony Elite**, open: Nothing builds or checks the remote's own help for an Elite.
+* **Harmony Hub**, impossible: The remote's own help is shown on a screen, and a hub has none. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ## Favourites
 
@@ -643,6 +731,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The composer refuses the 300's favourite order; a 350 build sent one channel from the European Teletext key.
 * **Harmony 350**, open: Five channels kept as text were heard in order; removing one was never tested, and names cannot show.
 * **Harmony Touch**, open: Adding and reordering were shown, but no favourite can be removed or named by the composer.
+* **Harmony Elite**, open: Nothing composes favourite channels for an Elite.
+* **Harmony Hub**, open: Nothing composes favourite channels for a hub.
 
 ### R46 A favourite with an icon.
 
@@ -657,6 +747,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen to show a favourite's icon. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to show a favourite's icon. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-favourites.test.ts`, "the 8.3 favourites change the user's document alone: the channel added from the line up first, the five reversed, a logo at its station's address". Shown on a unit in `packages/bench/test/harmony-touch/touch-favourites-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing composes a favourite with an icon for an Elite.
+* **Harmony Hub**, open: Nothing composes a favourite with an icon for a hub.
 
 ## Settings
 
@@ -673,6 +765,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, unknown: Logitech lists no settings for the 300, and whether the remote has any is not checked.
 * **Harmony 350**, unknown: Logitech lists no settings for the 350; whether its firmware holds any a person would change is not known. `reference/remotes/harmony-350/features.md#what-logitechs-service-states`.
 * **Harmony Touch**, open: Two settings were changed on the unit; reading settings off it, the touch sound, the tutorial and defaults are not done.
+* **Harmony Elite**, open: Nothing reads or changes an Elite's settings.
+* **Harmony Hub**, open: Nothing reads or changes a hub's settings.
 
 ### R48 How long the screen stays lit, and its brightness.
 
@@ -687,6 +781,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen to light or dim. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to light. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-settings.test.ts`, "composing Settings changes exactly the first value of each row named, and carries every other row and field". Shown on a unit in `packages/corpus/test/touch/touch-settings-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing sets how long an Elite's screen stays lit or its brightness.
+* **Harmony Hub**, impossible: A hub has no screen to light. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R49 The motion sensor on or off.
 
@@ -701,6 +797,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, unknown: Whether the 300 has a motion sensor is not stated anywhere.
 * **Harmony 350**, unknown: No page says whether the 350 has a motion sensor. `reference/remotes/harmony-350/hardware.md#not-checked`.
 * **Harmony Touch**, unknown: Whether a Touch carries the accelerometer is not checked, and the bench unit's settings offer no tilt entry.
+* **Harmony Elite**, unknown: The generation's remotes carry an accelerometer by their native program; whether an Elite's settings switch it is not known. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-hardware`.
+* **Harmony Hub**, impossible: The accelerometer is the remote's hardware, which a hub has not. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-hardware`.
 
 ### R50 The Remote Assistant and the "Starting Activity" message on or off.
 
@@ -715,6 +813,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: Both are screen messages, and the 300 has no screen. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to show the message on. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, unknown: Whether a Touch has a Remote Assistant or a Starting Activity message to switch is not known.
+* **Harmony Elite**, unknown: Whether an Elite has a Remote Assistant or a Starting Activity message to switch is not known.
+* **Harmony Hub**, unknown: Whether a hub's setup switches a Remote Assistant or a Starting Activity message for the remotes it serves is not known.
 
 ### R51 The kind of help, Smart or Full.
 
@@ -729,6 +829,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no Help key and no screen, so there is no kind of help to pick. `reference/remotes/harmony-300/keys.md#european-printing-skin-79`.
 * **Harmony 350**, impossible: The 350 has no Help key and no screen, so there is no kind of help to choose. `reference/remotes/harmony-350/keys.md#every-key-on-the-drawing`.
 * **Harmony Touch**, unknown: An activity field marks guided or manual help, but whether that is Smart or Full help is not known.
+* **Harmony Elite**, unknown: Whether an Elite offers Smart and Full help is not known.
+* **Harmony Hub**, unknown: Whether a hub's setup states Smart or Full help for the remotes it serves is not known.
 
 ### R52 The clock: the right time, how it is shown, and read back.
 
@@ -743,6 +845,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: Nothing on a 300 can show a clock, and its firmware never moves the hour. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, unknown: Its clock never moves the hour or date and nothing shows it; whether it can be set or read back is not known. `reference/architectures/harmony-300-350/memory.md#the-state-variables`.
 * **Harmony Touch**, open: The remote keeps time from every sync, but the answerer sends no clock write and the 12 or 24 hour form is untried.
+* **Harmony Elite**, open: A hub paired remote asks its hub for the time; nothing here reads or sets either clock.
+* **Harmony Hub**, open: A hub keeps the time its remotes ask it for; nothing here reads or sets it.
 
 ### R53 A slideshow of the user's pictures.
 
@@ -757,6 +861,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: The 300 has no screen for pictures. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, unknown: Whether a Touch offers a slideshow of the user's pictures is not known.
+* **Harmony Elite**, unknown: Whether an Elite offers a slideshow of the user's pictures is not known.
+* **Harmony Hub**, impossible: A hub has no screen to show pictures on. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ## Learning
 
@@ -773,6 +879,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, unknown: Whether the 300 learns is not checked; its file table names an infrared capture stream that was never opened.
 * **Harmony 350**, unknown: Whether the 350 has a learning receiver is not checked, though its firmware names an infrared capture file. `reference/remotes/harmony-350/hardware.md#not-checked`.
 * **Harmony Touch**, open: The Touch learns through its infrared window by the manual, but nothing here sends a learning request to it.
+* **Harmony Elite**, unknown: Whether an Elite learns a code through a window of its own or through its hub is not read, and nothing sends a learning request.
+* **Harmony Hub**, open: The hub's native program has a command that captures a code, by its image; nothing sends it.
 
 ### R55 Use a learned code in a device, on any key or screen button, input commands included.
 
@@ -787,6 +895,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Nothing puts a learned code into a configuration of this family.
 * **Harmony 350**, open: Nothing puts a learned code into a device of this family.
 * **Harmony Touch**, open: A learned code composes into a device in tests, but none has been sent from the unit.
+* **Harmony Elite**, open: A learned code composes into a device in tests on other models; nothing composes one for an Elite.
+* **Harmony Hub**, open: A learned code composes into a device in tests on other models; nothing composes one for a hub.
 
 ### R56 Recognise a learned code as a known kind and keep it compactly, or as captured when it is not.
 
@@ -801,6 +911,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 300 configuration.
 * **Harmony 350**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 350 configuration.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-learned.test.ts`, "at four per cent of jitter 876 of 1679 codes come back as their row and value, 8 wrong and 681 raw".
+* **Harmony Elite**, open: A captured code is recognised by the library, but no test does so for this model.
+* **Harmony Hub**, open: A captured code is recognised by the library, but no test does so for this model.
 
 ### R57 Identify a device the catalogue does not recognise from a few taught commands.
 
@@ -815,6 +927,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
 * **Harmony 350**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
 * **Harmony Touch**, open: identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.
+* **Harmony Elite**, open: identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.
+* **Harmony Hub**, open: identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.
 
 ## Backup and restore
 
@@ -831,6 +945,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "opens, reassembles the data packets, stops at the terminator and closes". Shown on a unit in `docs/test-notes/harmony-300.md`.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "opens, reassembles the data packets, stops at the terminator and closes"; `packages/usb/test/file-protocol/filewrite.test.ts`, "accepts all five configurations read off the family, once the end marker is on". Shown on a unit in `docs/test-notes/harmony-350.md#what-has-been-read-off-it`.
 * **Harmony Touch**, open: The stored documents cannot be read off the remote, so a backup comes only from a recorded Logitech sync.
+* **Harmony Elite**, open: The set an Elite shows is stored on its hub, and nothing reads it off either, so there is no backup.
+* **Harmony Hub**, open: Nothing reads a hub's stored set, so there is no backup of one.
 
 ### R59 Put a backup back on the same remote.
 
@@ -845,6 +961,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, proven by `packages/usb/test/file-protocol/file-family-run.test.ts`, "writes, verifies and reboots, and arms the caller's interrupt after the reads and before anything that writes". Shown on a unit in `docs/test-notes/harmony-300.md`.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/filewrite.test.ts`, "passes when the remote holds the backup, as read or whole". Shown on a unit in `docs/test-notes/harmony-350.md`.
 * **Harmony Touch**, proven by `packages/corpus/test/touch/touch-answer.test.ts`, "with both flags runs the sync to proxy://Finished and closes the Touch"; `packages/corpus/test/touch/touch-sync.test.ts`, "answers the six 200 with the document and its tag, the favourites 304 so the remote keeps its own, and the tagged pictures 304". Shown on a unit in `packages/usb/test/touch/touch-own-set-sync.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: There is no backup of an Elite to put back, and nothing is written to the bench set.
+* **Harmony Hub**, open: There is no backup of a hub to put back, and nothing is written to the bench hub.
 
 ### R60 Move a setup to another remote or model, or copy devices and activities from one setup into another, adapted to the target's limits.
 
@@ -859,6 +977,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The 350's build ran unchanged on the 300, but nothing adapts a setup to another model or copies devices between setups.
 * **Harmony 350**, open: Nothing moves another remote's setup onto a 350 adapted to its limits.
 * **Harmony Touch**, open: Nothing moves a Touch setup to another remote or model, or copies devices between setups adapted to limits.
+* **Harmony Elite**, open: Nothing moves a setup to or from an Elite.
+* **Harmony Hub**, open: Nothing moves a setup to or from a hub.
 
 ### R61 Clear a remote's setup so it starts fresh, by writing an empty configuration, never through the firmware's own reset.
 
@@ -873,6 +993,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: The empty configuration builds for the 300 and passes the writer's check, but was never written to a 300.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreenempty.test.ts`, "the empty Harmony 350 and Harmony 300 configurations pass the writer's check, from a skin and a moment alone". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-empty.test.ts`, "the empty set is the six documents, the four lists emptied and every other field kept, Context and Settings as they stand". Shown on a unit in `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: Nothing clears an Elite's setup; nothing is written to the bench set.
+* **Harmony Hub**, open: Nothing clears a hub's setup; nothing is written to the bench hub.
 
 ## Status and identity
 
@@ -889,6 +1011,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, proven by `packages/usb/test/transport/remote.test.ts`, "two families sit inside the Harmony range and openHarmony refuses both". Shown on a unit in `docs/test-notes/harmony-300.md#the-unit`.
 * **Harmony 350**, open: Enumeration finds it unopened and reads skin 104, but no model record names skin 104 a Harmony 350.
 * **Harmony Touch**, open: A Touch is listed as file based without being claimed, but its model is not named: skin 99 has no record.
+* **Harmony Elite**, open: An Elite enumerates under the Harmony Touch's product number and is listed as file based without being claimed; nothing names it apart from a Touch short of reading its identity file.
+* **Harmony Hub**, open: A hub on a cable is listed as file based without being claimed; a hub on the network is not looked for.
 
 ### R63 Tell one unit from another, and say when the wrong one is connected.
 
@@ -903,6 +1027,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Units are told apart by their identity file and the unit matched its record, but a wrong unit was refused only on a fake.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/file-family-run.test.ts`, "refuses a remote stating another skin, another unit, and a configuration the caller holds no copy of, on the reads alone"; `packages/usb/test/file-protocol/filewrite.test.ts`, "refuses a different unit, and a unit whose GUIDs are filler". Shown on a unit in `docs/test-notes/harmony-350.md`.
 * **Harmony Touch**, open: The unit is recorded and matched on the cable, but refusing a wrong unit is shown only in tests.
+* **Harmony Elite**, open: The unit is recorded by the serial its identity file states and checked before its two reads; refusing a wrong unit is not shown on one.
+* **Harmony Hub**, open: The unit is recorded by the serial its identity file states; refusing a wrong unit is not shown on one.
 
 ### R64 The firmware version and hardware details.
 
@@ -917,6 +1043,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "parses a name and a value per line". Shown on a unit in `docs/test-notes/harmony-300.md#its-three-firmware-images-read-and-compared-with-the-350s`.
 * **Harmony 350**, open: The identity text is read and parsed, but no firmware version beyond the product string's has been read off the unit.
 * **Harmony Touch**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "parses a name and a value per line". Shown on a unit in `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: The identity file was read on the unit, firmware 4.15.330 and skin 111, but no test proves the read for this model.
+* **Harmony Hub**, open: The identity file was read on the unit, firmware 4.15.600 and skin 106, but no test proves the read for this model.
 
 ### R65 The battery level, and a warning or refusal before a write when it is low.
 
@@ -931,6 +1059,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, unknown: A battery file is in the family's file table but was never read, so whether it holds a level is not known.
 * **Harmony 350**, unknown: The battery file was never read, so whether the 350 reports a level is not known. `reference/remotes/harmony-350/usb.md#not-checked`.
 * **Harmony Touch**, open: The firmware names battery charge readings, but nothing reads them and no write warns on a low battery.
+* **Harmony Elite**, open: The firmware names battery charge readings, but nothing reads them.
+* **Harmony Hub**, impossible: The battery is the remote's hardware, which a hub has not. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-hardware`.
 
 ### R66 Progress during a read or a write, and the remote showing it is being written.
 
@@ -945,6 +1075,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Neither the read nor the write reports progress, and whether the keys light while writing is not checked.
 * **Harmony 350**, open: The writer reports each chunk as it goes; what the remote shows while written is not recorded or offered.
 * **Harmony Touch**, open: The answerer logs each request list but gives no progress measure, and what the remote shows meanwhile is not recorded.
+* **Harmony Elite**, open: Nothing is read or written at length on an Elite, so nothing reports progress.
+* **Harmony Hub**, open: Nothing is read or written at length on a hub, so nothing reports progress.
 
 ### R67 Show live which key is pressed on a connected remote.
 
@@ -959,10 +1091,12 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, unknown: No way to watch key presses live over this family's file protocol is known.
 * **Harmony 350**, unknown: No way to read a key press off a connected 350 is known; its log stays erased.
 * **Harmony Touch**, unknown: Whether a Touch can report key presses live over USB is not known; it is never opened that way.
+* **Harmony Elite**, unknown: Whether a remote of this generation can report key presses live over USB is not known; it is never opened that way.
+* **Harmony Hub**, unknown: A hub has no keys of its own; whether it reports the key presses of a remote paired to it is not known.
 
 ### R68 A report about a remote this project does not support, which its owner can publish.
 
-* **Every remote**, open: The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the eleven bench models is recorded.
+* **Every remote**, open: The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the thirteen bench models is recorded.
 
 ## Firmware
 
@@ -979,6 +1113,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Nothing reports safe mode or the bootloader for this family, nor whether newer firmware exists.
 * **Harmony 350**, open: Safe mode shows in the product string and identity file, but nothing reports the state or a newer version.
 * **Harmony Touch**, open: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
+* **Harmony Elite**, open: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
+* **Harmony Hub**, open: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
 
 ### R70 Install Logitech's own unmodified firmware, from a file the user has or from Logitech's update service; the 600, 650 and 700 only, by decision 18.
 
@@ -993,6 +1129,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
 * **Harmony 350**, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
 * **Harmony Touch**, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
+* **Harmony Elite**, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
+* **Harmony Hub**, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
 
 ### R71 Bring a stuck remote back.
 
@@ -1007,6 +1145,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: A battery pull recovered the unit; nothing recovers a stuck 300, whose safe mode image is a different, unread build.
 * **Harmony 350**, open: A failed write was recovered by writing again on the unit; recovering through safe mode is not offered.
 * **Harmony Touch**, proven by `packages/usb/test/touch/touchsession.test.ts`, "sends each recovery request in the provisioning read's shape with the flag, one line each"; `tests/harmony_touch/test_harmony_touch_recovery.py`, "TheCableStillReachesTheEngine.test_the_abort_cleans_the_store_before_it_reloads". Shown on a unit in `packages/usb/test/touch/touch-first-sync.test.ts`, `docs/test-notes/harmony-touch.md`.
+* **Harmony Elite**, open: The recovery requests are refused to an Elite by its rail, and nothing else brings one back.
+* **Harmony Hub**, open: Nothing brings a stuck hub back, and its own recovery is not read.
 
 ## Logitech's service
 
@@ -1023,6 +1163,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Logitech's service still compiles for the 300, but the client is bound to test accounts and on no public entry.
 * **Harmony 350**, open: Logitech's service serves the 350, but the service client is not on any public entry.
 * **Harmony Touch**, open: Logitech's service serves the Touch, but the service client is on no public entry, so no import is offered.
+* **Harmony Elite**, open: The service client is on no public entry, so no import is offered; whether Logitech's service still sets an Elite up is not checked.
+* **Harmony Hub**, open: The service client is on no public entry, so no import is offered.
 
 ## The FHSDK as a whole
 
@@ -1083,6 +1225,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
 * **Harmony 350**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
 * **Harmony Touch**, open: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
+* **Harmony Elite**, open: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
+* **Harmony Hub**, open: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
 
 ## The hub
 
@@ -1099,6 +1243,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite is its hub's remote, not a hub, and reaches the network through it. `docs/decisions.md#d40`.
+* **Harmony Hub**, open: The listeners and the discovery a hub answers on are read in its image; nothing here looks for a hub or connects to one.
 
 ### R85 Set the Wi-Fi network a hub joins, with no service of Logitech's.
 
@@ -1113,6 +1259,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite is its hub's remote, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony Hub**, open: The command that sets the Wi-Fi network and what it drives are read in the hub's image; nothing sends it, and nothing is written to the bench hub.
 
 ### R86 Take over a hub somebody else set up, so it is the user's own and holds nothing of its previous owner.
 
@@ -1127,6 +1275,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite is its hub's remote and takes its setup from the hub it is paired to. `docs/decisions.md#d40`.
+* **Harmony Hub**, open: What a hub clears when it is set up for another account is read in its image; nothing here does it.
 
 ### R87 Through a hub, start and stop an activity, send one command of a device, and read which activity is on.
 
@@ -1141,6 +1291,8 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite is its hub's remote and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony Hub**, open: Nothing asks a hub to start an activity, send a command or say which activity is on.
 
 ### R88 Read the smart home devices a hub found, with their kind and what each can do, and leave them intact when a setup is written.
 
@@ -1155,3 +1307,5 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite shows the smart home devices its hub found and finds none itself. `docs/decisions.md#d40`.
+* **Harmony Hub**, open: The document the smart home devices are kept in is read in the remotes' image; none has been read off a hub.

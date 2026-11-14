@@ -17,11 +17,11 @@ whether the number is a requirement is judged there too, over every proof at onc
 `module.proves(...)`, is not read as a proof, which is how this helper's own test passes it wrong arguments.
 """
 
-#: The bench models' keys, the names of their folders under `reference/remotes/`, in the order
+#: The bench models' keys, the names of their folders under `reference/remotes/` where they have one, in the order
 #: `packages/base/src/requirements.ts` lists them. Held to that list by the generator's test.
 BENCH_MODEL_KEYS = (
     'harmony-one', 'harmony-600', 'harmony-650', 'harmony-700', 'harmony-525', 'harmony-515', 'harmony-885',
-    'harmony-785', 'harmony-300', 'harmony-350', 'harmony-touch',
+    'harmony-785', 'harmony-300', 'harmony-350', 'harmony-touch', 'harmony-elite', 'harmony-hub',
 )
 
 

@@ -68,7 +68,7 @@ help:
 	@echo "remote-reference  check the generated blocks of reference/remotes and reference/architectures"
 	@echo "remote-reference-write  rewrite those blocks from the code"
 	@echo "requirements  check the proofs in the tests, the requirements documents and the bench checklists agree"
-	@echo "requirements-write  regenerate the proofs module, both requirements documents and the nine checklists"
+	@echo "requirements-write  regenerate the proofs module, both requirements documents and the bench checklists"
 	@echo "site         build the reference website into site/, strict; SITE_STRICT=false builds past a warning"
 	@echo "site-offline the same website for browsing from disk: open site/index.html, no server needed"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"

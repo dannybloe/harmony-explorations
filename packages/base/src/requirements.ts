@@ -298,7 +298,7 @@ export function requirement(number: number): Requirement | undefined {
  */
 export type BenchModelKey =
   | 'harmony-one' | 'harmony-600' | 'harmony-650' | 'harmony-700' | 'harmony-525' | 'harmony-515' | 'harmony-885'
-  | 'harmony-785' | 'harmony-300' | 'harmony-350' | 'harmony-touch';
+  | 'harmony-785' | 'harmony-300' | 'harmony-350' | 'harmony-touch' | 'harmony-elite' | 'harmony-hub';
 
 export interface BenchModel {
   readonly key: BenchModelKey;
@@ -313,8 +313,9 @@ export interface BenchModel {
 }
 
 /**
- * The eleven models a unit of which is on the bench, in the order the document's tables list them: the models with a
- * screen first, then the two without, then the Harmony Touch.
+ * The thirteen models a unit of which is on the bench, in the order the document's tables list them: the models with a
+ * screen first, then the two without, then the Harmony Touch and the two of its generation that work as a set, the
+ * Harmony Elite and the Harmony Hub, decision 40.
  *
  * **The skins are only those this library can tell apart as this model.** The Harmony One and the 600, 650 and 700
  * each have a European skin beside the American one, the same hardware in another region, `models.ts`. The Harmony
@@ -326,7 +327,12 @@ export interface BenchModel {
  * Harmony 300 is skin 79, the European one a unit of which is on the bench;
  * skin 78 is its American printing, which the registry does not choose a family for, so it is left out rather than
  * answered with statuses measured on the other printing. The Harmony 350 is skin 104 and the Harmony Touch skin 99,
- * `reference/remotes/harmony-touch/README.md`.
+ * `reference/remotes/harmony-touch/README.md`. The Harmony Elite is skin 111, Logitech's `HarmonyElitePlus`, the
+ * remote sold with a hub; skin 112, their `HarmonyElite`, is the same name sold alone as the Harmony 950 and is
+ * left out, no unit of it being on the bench. The Harmony Hub is skin 106 alone: skin 97, the other hub, is not on
+ * the bench. `reference/remotes/README.md` has the names. **Neither has a folder under `reference/remotes/` yet**:
+ * what is known of both is the platform's, `reference/architectures/harmony-touch/`, with the hub's pages under
+ * `hub/`, and their model pages wait for the bench.
  */
 export const BENCH_MODELS: readonly BenchModel[] = [
   { key: 'harmony-one', name: 'Harmony One', skins: [54, 59] },
@@ -340,6 +346,8 @@ export const BENCH_MODELS: readonly BenchModel[] = [
   { key: 'harmony-300', name: 'Harmony 300', skins: [79] },
   { key: 'harmony-350', name: 'Harmony 350', skins: [104] },
   { key: 'harmony-touch', name: 'Harmony Touch', skins: [99] },
+  { key: 'harmony-elite', name: 'Harmony Elite', skins: [111] },
+  { key: 'harmony-hub', name: 'Harmony Hub', skins: [106] },
 ];
 
 /** The bench model a key or a reported skin names, or undefined where it names none. */
@@ -1170,6 +1178,169 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
+  // The Harmony Elite, the remote of the set: skin 111, on the Harmony Touch's image, provisioned from its hub. Nothing
+  // is written to it, decision 36, and no family builds for it, so nothing here is proven but what a test proves for
+  // every model; what is written is what its two reads, the platform's reference and its test notes leave open.
+  'harmony-elite': {
+    1: open('Its identity file and the two reads its request channel allows were answered; the stored set is its hub\'s and is not read off either.'),
+    2: open('No setup of an Elite has been read; the reader of the Touch\'s documents is the same kind and is untried on one.'),
+    3: open('Nothing reads a setup back into a recipe on this generation.'),
+    4: open('No family builds for skin 111; the Touch\'s document family builds the same kind of documents and is not offered for it.'),
+    5: open('Nothing is written to the bench set, decision 36, and a hub paired remote takes its setup from its hub rather than over its cable.'),
+    6: open('No write path names an Elite, the bench\'s or a stranger\'s.'),
+    7: open('Nothing knows an Elite\'s limits, so nothing refuses a setup that does not fit one.'),
+    8: open('Nothing compares what an Elite holds with what was last written, since nothing is written.'),
+    9: open('The catalogue can be listed by manufacturer and model, but nothing helps with typing errors.'),
+    10: open('Nothing composes a device for an Elite; its devices are documents its hub holds.'),
+    11: open('Nothing composes a device of taught commands for an Elite.'),
+    12: open('No library step renames a device, and nothing is written to the bench set.'),
+    13: open('Nothing removes a device from an Elite\'s setup.'),
+    14: open('Nothing sets how a device is powered in an Elite\'s setup.'),
+    15: open('Nothing sets a device\'s inputs in an Elite\'s setup.'),
+    16: open('Nothing sets a device\'s delays in an Elite\'s setup.'),
+    17: open('Nothing sets how often a device\'s commands repeat in an Elite\'s setup.'),
+    18: open('Nothing sets how a device tunes a channel in an Elite\'s setup.'),
+    19: open('No library step adds, fixes or removes one command of a device.'),
+    21: open('Nothing composes an activity for an Elite, and none of ours has run on one.'),
+    22: open('Nothing maps an activity\'s keys from its devices\' jobs, and the Elite\'s keys are not read.'),
+    23: open('Nothing sets a device\'s input in an activity of an Elite\'s setup.'),
+    24: open('Nothing includes a pass through device in an activity of an Elite\'s setup.'),
+    25: open('No library function renames an activity.'),
+    26: open('Nothing removes an activity from an Elite\'s setup.'),
+    27: open('Nothing gives an activity of an Elite\'s setup an icon.'),
+    28: open('Nothing orders the activities or an activity\'s devices in an Elite\'s setup.'),
+    29: unknown('The Elite\'s keys are not read, so whether it has activity keys to choose activities for is not known here.'),
+    30: open('Nothing adds steps to an activity\'s start or end in an Elite\'s setup.'),
+    31: open('Nothing changes what a key does in an activity on an Elite; its keys are not read.'),
+    32: open('Nothing changes what a key does in device mode on an Elite; its keys are not read.'),
+    33: open('Nothing lays out a device mode map for an Elite.'),
+    34: open('Nothing puts commands on an activity\'s screen in an Elite\'s setup.'),
+    35: open('Nothing puts commands on a device\'s screen pages in an Elite\'s setup.'),
+    36: unknown('Whether a screen entry on this generation can open a page of the user\'s own commands and come back is not known.'),
+    37: open('Nothing composes a sequence for an Elite.'),
+    38: open('Logitech\'s records give skin 111 a long press, but nothing composes a held command for an Elite.'),
+    39: unknown('The Elite\'s keys are not read, so whether it has device keys is not known here.'),
+    40: open('Nothing composes touch gestures for an Elite, and none has been performed on one.'),
+    41: open('Nothing renders this generation\'s screens; the remote draws them from the documents.'),
+    42: open('Nothing chooses the look of an Elite\'s screens.'),
+    43: open('No drawing of the Elite\'s face exists, and its keys are not read.'),
+    44: open('Nothing builds or checks the remote\'s own help for an Elite.'),
+    45: open('Nothing composes favourite channels for an Elite.'),
+    46: open('Nothing composes a favourite with an icon for an Elite.'),
+    47: open('Nothing reads or changes an Elite\'s settings.'),
+    48: open('Nothing sets how long an Elite\'s screen stays lit or its brightness.'),
+    49: unknown('The generation\'s remotes carry an accelerometer by their native program; whether an Elite\'s settings switch it is not known.', ['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-hardware']),
+    50: unknown('Whether an Elite has a Remote Assistant or a Starting Activity message to switch is not known.'),
+    51: unknown('Whether an Elite offers Smart and Full help is not known.'),
+    52: open('A hub paired remote asks its hub for the time; nothing here reads or sets either clock.'),
+    53: unknown('Whether an Elite offers a slideshow of the user\'s pictures is not known.'),
+    54: unknown('Whether an Elite learns a code through a window of its own or through its hub is not read, and nothing sends a learning request.'),
+    55: open('A learned code composes into a device in tests on other models; nothing composes one for an Elite.'),
+    56: open('A captured code is recognised by the library, but no test does so for this model.'),
+    57: open('identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.'),
+    58: open('The set an Elite shows is stored on its hub, and nothing reads it off either, so there is no backup.'),
+    59: open('There is no backup of an Elite to put back, and nothing is written to the bench set.'),
+    60: open('Nothing moves a setup to or from an Elite.'),
+    61: open('Nothing clears an Elite\'s setup; nothing is written to the bench set.'),
+    62: open('An Elite enumerates under the Harmony Touch\'s product number and is listed as file based without being claimed; nothing names it apart from a Touch short of reading its identity file.'),
+    63: open('The unit is recorded by the serial its identity file states and checked before its two reads; refusing a wrong unit is not shown on one.'),
+    64: open('The identity file was read on the unit, firmware 4.15.330 and skin 111, but no test proves the read for this model.'),
+    65: open('The firmware names battery charge readings, but nothing reads them.'),
+    66: open('Nothing is read or written at length on an Elite, so nothing reports progress.'),
+    67: unknown('Whether a remote of this generation can report key presses live over USB is not known; it is never opened that way.'),
+    69: open('The firmware version is read, but its running or recovery state and whether a newer version exists are not.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
+    71: open('The recovery requests are refused to an Elite by its rail, and nothing else brings one back.'),
+    72: open('The service client is on no public entry, so no import is offered; whether Logitech\'s service still sets an Elite up is not checked.'),
+    83: open('Nothing turns the documents of a setup made with Logitech\'s software into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: the Elite is its hub\'s remote, not a hub, and reaches the network through it.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: the Elite is its hub\'s remote, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: the Elite is its hub\'s remote and takes its setup from the hub it is paired to.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: the Elite is its hub\'s remote and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: the Elite shows the smart home devices its hub found and finds none itself.'),
+  },
+  // The Harmony Hub, skin 106: a remote without keys or a screen, reached over the cable for its identity file alone so
+  // far. Its request channel is closed, decision 36, and its setup is to be read over the network, plan 016. What its
+  // image says it can do is in the platform's hub pages; nothing is proven on the unit, only what a test proves for
+  // every model.
+  'harmony-hub': {
+    1: open('Only its identity file is read; its setup is to be read over the local network, which is planned and not built, and its request channel is closed by decision 36.'),
+    2: open('A hub\'s setup is the same kind of documents the Harmony Touch is given, by its image; none has been read off a hub.'),
+    3: open('Nothing reads a setup back into a recipe on this generation.'),
+    4: open('No family builds for a hub; the Touch\'s document family builds the same kind of documents and is not offered for it.'),
+    5: open('Nothing is written to the bench hub, decision 36, and no write path names one.'),
+    6: open('No write path names a hub, the bench\'s or a stranger\'s.'),
+    7: open('Nothing knows a hub\'s limits, so nothing refuses a setup that does not fit one.'),
+    8: open('Nothing compares what a hub holds with what was last written, since nothing is written.'),
+    9: open('The catalogue can be listed by manufacturer and model, but nothing helps with typing errors.'),
+    10: open('Nothing composes a device for a hub.'),
+    11: open('Nothing composes a device of taught commands for a hub.'),
+    12: open('No library step renames a device, and nothing is written to the bench hub.'),
+    13: open('Nothing removes a device from a hub\'s setup.'),
+    14: open('Nothing sets how a device is powered in a hub\'s setup.'),
+    15: open('Nothing sets a device\'s inputs in a hub\'s setup.'),
+    16: open('Nothing sets a device\'s delays in a hub\'s setup.'),
+    17: open('Nothing sets how often a device\'s commands repeat in a hub\'s setup.'),
+    18: open('Nothing sets how a device tunes a channel in a hub\'s setup.'),
+    19: open('No library step adds, fixes or removes one command of a device.'),
+    21: open('Nothing composes an activity for a hub, and none of ours has run on one.'),
+    22: open('Nothing maps an activity\'s keys from its devices\' jobs for the remotes a hub serves.'),
+    23: open('Nothing sets a device\'s input in an activity of a hub\'s setup.'),
+    24: open('Nothing includes a pass through device in an activity of a hub\'s setup.'),
+    25: open('No library function renames an activity.'),
+    26: open('Nothing removes an activity from a hub\'s setup.'),
+    27: open('Nothing gives an activity of a hub\'s setup an icon.'),
+    28: open('Nothing orders the activities or an activity\'s devices in a hub\'s setup.'),
+    29: unknown('A hub has no keys of its own; whether its setup states which activities a paired remote\'s activity keys start is not read.'),
+    30: open('Nothing adds steps to an activity\'s start or end in a hub\'s setup.'),
+    31: unknown('A hub has no keys of its own; how its setup carries the key maps of a remote paired to it is not read.'),
+    32: unknown('A hub has no keys of its own; how its setup carries a paired remote\'s device mode maps is not read.'),
+    33: unknown('A hub has no keys of its own; whether a device mode map is laid out in its setup for a paired remote is not read.'),
+    34: unknown('A hub has no screen; whether its setup carries the screen pages a paired remote shows for an activity is not read.', ['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine']),
+    35: unknown('A hub has no screen; whether its setup carries the screen pages a paired remote shows for a device is not read.', ['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine']),
+    36: unknown('Whether a screen entry on this generation can open a page of the user\'s own commands and come back is not known.'),
+    37: open('Nothing composes a sequence for a hub.'),
+    38: unknown('A hub has no keys of its own; whether its setup carries a held command for a paired remote\'s key is not read.'),
+    39: unknown('A hub has no keys of its own; whether a paired remote has device keys its setup fills is not read.'),
+    40: unknown('A hub has no touch panel; whether its setup carries the gestures of a paired remote is not read.'),
+    41: impossible(['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine'], 'A hub has no screen and no program that draws one, so there is nothing of its own to show before a write.'),
+    42: impossible(['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine'], 'A hub has no screen, so it has no look to choose.'),
+    43: open('No drawing of the hub exists.'),
+    44: impossible(['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine'], 'The remote\'s own help is shown on a screen, and a hub has none.'),
+    45: open('Nothing composes favourite channels for a hub.'),
+    46: open('Nothing composes a favourite with an icon for a hub.'),
+    47: open('Nothing reads or changes a hub\'s settings.'),
+    48: impossible(['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine'], 'A hub has no screen to light.'),
+    49: impossible(['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-hardware'], 'The accelerometer is the remote\'s hardware, which a hub has not.'),
+    50: unknown('Whether a hub\'s setup switches a Remote Assistant or a Starting Activity message for the remotes it serves is not known.'),
+    51: unknown('Whether a hub\'s setup states Smart or Full help for the remotes it serves is not known.'),
+    52: open('A hub keeps the time its remotes ask it for; nothing here reads or sets it.'),
+    53: impossible(['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine'], 'A hub has no screen to show pictures on.'),
+    54: open('The hub\'s native program has a command that captures a code, by its image; nothing sends it.'),
+    55: open('A learned code composes into a device in tests on other models; nothing composes one for a hub.'),
+    56: open('A captured code is recognised by the library, but no test does so for this model.'),
+    57: open('identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.'),
+    58: open('Nothing reads a hub\'s stored set, so there is no backup of one.'),
+    59: open('There is no backup of a hub to put back, and nothing is written to the bench hub.'),
+    60: open('Nothing moves a setup to or from a hub.'),
+    61: open('Nothing clears a hub\'s setup; nothing is written to the bench hub.'),
+    62: open('A hub on a cable is listed as file based without being claimed; a hub on the network is not looked for.'),
+    63: open('The unit is recorded by the serial its identity file states; refusing a wrong unit is not shown on one.'),
+    64: open('The identity file was read on the unit, firmware 4.15.600 and skin 106, but no test proves the read for this model.'),
+    65: impossible(['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-hardware'], 'The battery is the remote\'s hardware, which a hub has not.'),
+    66: open('Nothing is read or written at length on a hub, so nothing reports progress.'),
+    67: unknown('A hub has no keys of its own; whether it reports the key presses of a remote paired to it is not known.'),
+    69: open('The firmware version is read, but its running or recovery state and whether a newer version exists are not.'),
+    70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
+    71: open('Nothing brings a stuck hub back, and its own recovery is not read.'),
+    72: open('The service client is on no public entry, so no import is offered.'),
+    83: open('Nothing turns the documents of a setup made with Logitech\'s software into a recipe; a setup is entered again.'),
+    84: open('The listeners and the discovery a hub answers on are read in its image; nothing here looks for a hub or connects to one.'),
+    85: open('The command that sets the Wi-Fi network and what it drives are read in the hub\'s image; nothing sends it, and nothing is written to the bench hub.'),
+    86: open('What a hub clears when it is set up for another account is read in its image; nothing here does it.'),
+    87: open('Nothing asks a hub to start an activity, send a command or say which activity is on.'),
+    88: open('The document the smart home devices are kept in is read in the remotes\' image; none has been read off a hub.'),
+  },
 };
 
 /**
@@ -1185,7 +1356,7 @@ const WHOLE_STATUSES: Readonly<Record<number, RequirementState>> = {
   80: open('A pretend Harmony Touch exists in the test kit, which no application may depend on; no pretend remote is offered.'),
   81: open('The archive is read from a checkout on disk, through a source a builder is handed; no source reads it over the network or keeps a cache.'),
   82: open('The catalogue is asked from the archive alone; nothing searches Logitech\'s service beside it or says per result where it came from.'),
-  68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the eleven bench models is recorded.'),
+  68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the thirteen bench models is recorded.'),
 };
 
 /**

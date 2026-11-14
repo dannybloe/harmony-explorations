@@ -2,7 +2,7 @@
  * `capabilitiesOf`, the one answer an application gets per bench model: its properties and the status of every
  * requirement, decision 33.
  *
- * The properties are asserted whole and exactly for all eleven models, so a value that changes, appears or disappears is
+ * The properties are asserted whole and exactly for all thirteen models, so a value that changes, appears or disappears is
  * a line in this file's diff and gets asked whether it belongs. Each comes from the model table, the model's family, or
  * a reference page the answer names; the last test holds that every page named exists, and that the family and the
  * skins agree with the registry, the other place that turns a model into a family.
@@ -72,6 +72,10 @@ const PROPERTIES: Readonly<Record<string, ModelProperties>> = {
     family: { name: 'the Harmony Touch', kind: 'document' }, favourites: 50, screen: { width: 240, height: 320 }, touch: true,
     longPress: true, references: ['reference/remotes/harmony-touch/display.md'],
   },
+  // The set of decision 40: no model record and no family for either, so only what Logitech's product records say of
+  // a long press is answered, yes for the Elite's skin and no for the hub's.
+  'harmony-elite': { longPress: true, references: [] },
+  'harmony-hub': { longPress: false, references: [] },
 };
 
 test('every bench model\'s properties are exactly these', () => {

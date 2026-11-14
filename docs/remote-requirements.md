@@ -62,6 +62,8 @@ Over the 77 requirements that have a status per model. Possible is every one but
 | Harmony 300 | 7 | 40 | 8 | 22 | 7 of 55 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
 | Harmony 350 | 12 | 38 | 6 | 21 | 12 of 56 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
 | Harmony Touch | 23 | 40 | 6 | 8 | 23 of 69 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
+| Harmony Elite | 1 | 61 | 9 | 6 | 1 of 71 | [todo-harmony-elite.md](../todo/todo-harmony-elite.md) |
+| Harmony Hub | 1 | 55 | 13 | 8 | 1 of 69 | [todo-harmony-hub.md](../todo/todo-harmony-hub.md) |
 
 The 11 requirements of the FHSDK as a whole carry one status each, for every remote: R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 open, R81 open, R82 open.
 
