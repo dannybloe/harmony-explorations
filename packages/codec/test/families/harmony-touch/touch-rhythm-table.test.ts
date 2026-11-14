@@ -69,7 +69,7 @@ import assert from 'node:assert';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
-import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, skipUnlessIrArchiveRelease } from '@harmony/lab';
 import {
   frameSlots, keyCodeOfStatedCode, roundedPeriodOfCarrier, segmentRefs, statedCodeOfDefinition, withStatedWidths,
   withToggleCleared, type ArchiveKeyCode, type ArchiveProtocol,
@@ -541,7 +541,7 @@ function archiveCodes(): Map<string, Set<string>> {
   return archiveCodesRead = out;
 }
 
-test('every refused family is held by the Touch\'s description: Logitech\'s definition of it makes a packet for every code of 103 families, and all but 27 malformed codes of the 104th', { ...skipWithoutIrArchive() }, () => {
+test('every refused family is held by the Touch\'s description: Logitech\'s definition of it makes a packet for every code of 103 families, and all but 27 malformed codes of the 104th', { ...skipUnlessIrArchiveRelease() }, () => {
   const theirs = new Map(archiveProtocols(IR_ARCHIVE!).map((p) => [p.name, p]));
   const codes = archiveCodes();
   const refused = RESULTS.filter((r) => r.refusal !== undefined);
@@ -586,7 +586,7 @@ test('every refused family is held by the Touch\'s description: Logitech\'s defi
  * groups name other segments than the definition's own default is a structure the row's blocks do not state, and is
  * counted apart.
  */
-test('Logitech\'s definitions read as the engine reads them send the 29 measured rows\' blocks on 89367 of the 93422 catalogue codes, and every other code is named', { ...skipWithoutIrArchive() }, () => {
+test('Logitech\'s definitions read as the engine reads them send the 29 measured rows\' blocks on 89367 of the 93422 catalogue codes, and every other code is named', { ...skipUnlessIrArchiveRelease() }, () => {
   const theirs = new Map(archiveProtocols(IR_ARCHIVE!).map((p) => [p.name, p]));
   const codes = archiveCodes();
   const measured = RESULTS.filter((r) => r.writtenAt === 'name' && evidenceOf(r.row) === 'measured');

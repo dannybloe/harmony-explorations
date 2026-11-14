@@ -71,7 +71,8 @@ that the USB transport stays replaceable beneath the protocol.
 * **A recipe carries its devices' definitions**, plan 014: the catalogue's record of a device, every command of its
   codeset and the protocol definitions they are written in, served before the archive is asked. Made for learned
   codes, it is also what keeps a setup editable offline.
-* **The archive's layout fits a read per device.** Its top index is one file of 300 KiB naming 7889 manufacturers;
+* **The archive's layout fits a read per device.** At its release of 2 September 2026, the one these numbers and
+  the 276236 above are of, its top index is one file of 300 KiB naming 7889 manufacturers;
   each manufacturer's folder has an index of its own; a device is a file of a few hundred bytes that names a
   codeset kept elsewhere. A builder is already handed a source rather than a path, so a network source is a second
   one beside the disk's.

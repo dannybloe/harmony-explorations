@@ -16,7 +16,7 @@ import assert from 'node:assert';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
-import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, skipUnlessIrArchiveRelease, skipWithoutIrArchive } from '@harmony/lab';
 import {
   bitsPerDigit, blockOfDefinition, frameDigitBases, frameSlots, frameWidths, keyCodeOfStatedCode, rhythmOfDefinition,
   waveformOfArchiveCommand, withStatedWidths, withToggleCleared,
@@ -118,7 +118,7 @@ function compare(
 }
 
 test('our waveforms reproduce Logitech\'s own renderings over a slice of the catalogue',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipUnlessIrArchiveRelease() }, () => {
     // A bounded slice, so this stays a test and not a research run: the first 300 code sets in path
     // order, which is stable because the archive is a checkout at a commit and the walk is sorted.
     const root = IR_ARCHIVE!;

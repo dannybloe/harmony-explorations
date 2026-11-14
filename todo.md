@@ -91,6 +91,7 @@ R9 to R11, R20, R72, R81, R82, decision 41. A device is stored as a definition w
 - [ ] 6.3 The archive over the network: its index fetched, one device and its codeset at a time, kept in a local cache, behind the same source a builder is handed (R81)
 - [ ] 6.4 One search over every source, with help for typing errors, each result saying where it came from (R9, R82)
 - [ ] 6.5 The client of Logitech's service offered to an application under a named subpath, within decision 11's rules; the import itself is chapter 13 (R72)
+- [ ] 6.6 The measurements over the whole archive moved to its release of 10 November 2026: the raw side file aligned again, the nine tests bound to the release of 2 September measured again and repinned, and the totals the reference quotes brought along; and which release an application's network source reads, a fixed one or the newest
 
 ## 7. Features
 

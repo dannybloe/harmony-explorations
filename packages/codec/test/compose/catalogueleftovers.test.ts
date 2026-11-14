@@ -31,7 +31,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipUnlessIrArchiveRelease, skipWithoutIrArchive, slow } from '@harmony/lab';
 import {
   type ArchiveProtocol,
   catalogueDevice,
@@ -79,7 +79,7 @@ function archiveCommands(): { keycode: string; protocol: string }[] {
 const familyOf = (keycode: string): string => /^G:([^:]+):/.exec(keycode)![1]!;
 
 test('five family spellings in the catalogue\'s codes name no definition, 222 commands, and the folded spelling finds the one the command\'s own protocol field names on every command',
-  needing(skipWithoutIrArchive()), () => {
+  needing(skipUnlessIrArchiveRelease()), () => {
     const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const unnamed = new Map<string, number>();
     let agree = 0;

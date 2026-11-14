@@ -34,7 +34,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab, slow } from '@harmony/lab';
+import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipUnlessIrArchiveRelease, skipWithoutIrArchive, skipWithoutLab, slow } from '@harmony/lab';
 import {
   catalogueCommands,
   catalogueDevice,
@@ -130,7 +130,7 @@ function renderedKeycodes(): Set<string> {
 }
 
 test('the codes a family\'s name cannot read are 52658 commands of 156 families, and the definition reads all but 172, none of them an infrared code the catalogue renders',
-  slow(needing(skipWithoutIrArchive())), () => {
+  slow(needing(skipUnlessIrArchiveRelease())), () => {
     const rendered = renderedKeycodes();
     const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const families = new Set<string>();
@@ -161,7 +161,7 @@ test('the codes a family\'s name cannot read are 52658 commands of 156 families,
   });
 
 test('on a code both readings read, the table\'s block is the same under both on all but 224 codes, where the name\'s is the definition at no count and the definition\'s is the definition at the family\'s own',
-  needing(skipWithoutIrArchive()), () => {
+  needing(skipUnlessIrArchiveRelease()), () => {
     const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     let both = 0;
     let same = 0;
@@ -203,7 +203,7 @@ test('on a code both readings read, the table\'s block is the same under both on
   });
 
 test('a code only the definition reads is built from the definition, never the table\'s block, which sends fewer frames than such a code states on 78',
-  needing(skipWithoutIrArchive()), () => {
+  needing(skipUnlessIrArchiveRelease()), () => {
     const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
     const taken = new Map<string, number>();
     const short = new Map<string, number>();

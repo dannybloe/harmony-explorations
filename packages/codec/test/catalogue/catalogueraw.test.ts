@@ -18,7 +18,7 @@ import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
 import test from 'node:test';
-import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { IR_ARCHIVE, imagePath, needing, skipUnless, skipUnlessIrArchiveRelease, skipWithoutIrArchive, slow } from '@harmony/lab';
 import { deviceDriving } from '../../src/catalogue/driving.ts';
 import {
   RAW_BLOCKS_FILE, RAW_DERIVED_DIRECTORY, RAW_FIELDS, RAW_FIELDS_FILE, RAW_FIELDS_FORMAT, RAW_INDEX_FILE,
@@ -234,7 +234,7 @@ test('one device is fetched out of the capture without a scan', needing(skipWith
 });
 
 test('the one door answers from both sources: the Sony\'s Netflix numbered 1 and online, and recording steps marked',
-  needing(skipWithoutIrArchive(), skipWithoutDerived()), () => {
+  needing(skipUnlessIrArchiveRelease(), skipWithoutDerived()), () => {
     // Section 321: the Sony KDL-32W705B has Netflix at InputOrder 1 and last in the archive's array.
     const sony = catalogueRules(IR_ARCHIVE!, 'Sony', 'KDL-32W705B', { raw: RAW_DIRECTORY! });
     assert.equal(sony.globalDeviceId, 260473);
@@ -261,7 +261,7 @@ test('the one door answers from both sources: the Sony\'s Netflix numbered 1 and
   });
 
 test('InputOrder is not a unique numbering: two of the Denon AVR-1912\'s inputs share one',
-  needing(skipWithoutIrArchive(), skipWithoutDerived()), () => {
+  needing(skipUnlessIrArchiveRelease(), skipWithoutDerived()), () => {
     const denon = catalogueRules(IR_ARCHIVE!, 'Denon', 'AVR-1912', { raw: RAW_DIRECTORY! });
     const numbers = denon.raw!.inputs.map((one) => one['inputOrder']);
     const names = denon.archive.inputs!.list!.map((one) => one.name);

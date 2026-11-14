@@ -27,7 +27,7 @@ import { parse, payloadOf } from '../../src/index.ts';
 import { irGroups } from '../../src/infrared/ir.ts';
 import { devices, keyCodes } from '../../src/inventory/inventory.ts';
 import { metadataArchive } from '../../src/container/metadata.ts';
-import { archiveProtocols } from '../../src/catalogue/archive.node.ts';
+import { archiveManifest, archiveProtocols } from '../../src/catalogue/archive.node.ts';
 import { CONTAINERS as CATALOGUE_CORPUS } from '../../bin/corpus.ts';
 import { CALIBRATION_DRAWINGS, NAMED_BY_LOGITECH, drawnScans } from '../../bin/drawings.ts';
 import { irHeaderPointers, irBlockWords, irCarrier } from '../../src/infrared/ir.ts';
@@ -75,14 +75,20 @@ function namesOf(codeset: string): Map<string, string> {
 test('the catalogue states its manufacturers and its device count agrees with the manifest',
   needing(skipWithoutIrArchive()), () => {
   const all = catalogueManufacturers(IR_ARCHIVE!);
-  assert.equal(all.length, 7889);
+  // Held to what the archive states about itself, its manifest, and never to a number of ours: the archive is a
+  // living repository and a newer release has more manufacturers and devices in it. This asserted 7889 and 276236,
+  // the release of 2 September 2026's, until a pull to the next release failed it.
+  const counts = archiveManifest(IR_ARCHIVE!).counts;
+  assert.equal(all.length, counts['manufacturers']);
   // The per manufacturer counts sum to the manifest's own device total, which is the check that the
   // index is the whole index rather than a page of it.
-  assert.equal(all.reduce((n, one) => n + one.devices, 0), 276236);
-  // Two manufacturers whose display name and directory name differ, since that difference is the reason
-  // a slug exists at all and a caller that used the display name as a path would work until it did not.
+  assert.equal(all.reduce((n, one) => n + one.devices, 0), counts['devices']);
+  // A manufacturer's count in the top index is the length of its own index, checked on the largest one this
+  // project uses, and its slug is its name where the name is one word.
   const sony = all.find((one) => one.name === 'Sony')!;
-  assert.deepEqual([sony.slug, sony.devices], ['Sony', 20006]);
+  assert.deepEqual([sony.slug, sony.devices], ['Sony', catalogueModels(IR_ARCHIVE!, 'Sony').length]);
+  // A manufacturer whose display name and directory name differ, since that difference is the reason a slug
+  // exists at all and a caller that used the display name as a path would work until it did not.
   const one = all.find((manufacturer) => manufacturer.name === '3B Technology')!;
   assert.equal(one.slug, '3B_Technology');
 });
@@ -92,7 +98,8 @@ test('a device names its codeset, and the codeset names commands our own reader 
   // The whole per device path, end to end, on a television this project has a configuration for: the
   // manufacturer index, then the model index, then the device, then its commands.
   const models = catalogueModels(IR_ARCHIVE!, 'Sony');
-  assert.equal(models.length, 20006);
+  // As many models as the top index says Sony has; how many that is belongs to the release checked out.
+  assert.equal(models.length, catalogueManufacturers(IR_ARCHIVE!).find((one) => one.name === 'Sony')!.devices);
   const wanted = models.find((one) => one.model === 'KDL-32W705B')!;
   assert.equal(wanted.file, 'KDL-32W705B.json');
   const device = catalogueDevice(IR_ARCHIVE!, 'Sony', wanted.file);
@@ -389,7 +396,7 @@ test('the archive states two fields as null and the reader does not pass either 
       if (one.model === null) nameless.push({ maker: maker.slug, file: one.file, id: one.globalDeviceId });
     }
   }
-  assert.equal(rows, 276236, 'the manufacturer indexes do not cover the archive');
+  assert.equal(rows, archiveManifest(IR_ARCHIVE!).counts['devices'], 'the manufacturer indexes do not cover the archive');
   assert.equal(nameless.length, 3, 'a device with no model name appeared or went away');
   // Named by their own ids, which is what the archive itself falls back to for the file name, so a
   // caller wanting something to display has that rather than needing the reader to invent one.

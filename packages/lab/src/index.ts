@@ -2189,6 +2189,47 @@ export function skipWithoutIrArchive(): { skip: string | false } {
 }
 
 /**
+ * The release of the archive that is checked out: the date its own manifest states it was generated on, or undefined
+ * where there is no archive or no manifest to read.
+ *
+ * **Why a test needs it.** The archive is a third party's living repository, and a pull moves the checkout to a
+ * newer release with more devices in it. A test of our readers holds at any release. A measurement over the whole
+ * archive, how many of its codes a table reproduces, how many commands name no definition, is a statement about one
+ * release, and held against whatever is checked out it failed the day the archive grew: eleven tests, on the pull
+ * from the release of 2 September 2026 to that of 10 November. Such a test names its release, below.
+ */
+export function irArchiveRelease(): string | undefined {
+  const manifest = irArchivePath('manifest.json');
+  if (manifest === undefined) return undefined;
+  try {
+    const generated = (JSON.parse(readFileSync(manifest, 'utf8')) as { generated?: unknown }).generated;
+    return typeof generated === 'string' ? generated : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The release most of this repository's measurements over the whole archive were taken at. */
+export const IR_ARCHIVE_MEASURED_RELEASE = '2026-09-02';
+
+/**
+ * The `node:test` skip option for a test that states a measurement over the whole archive: it runs when the checkout
+ * is the release the measurement was taken at and is skipped, saying so, at any other, since its numbers are that
+ * release's and say nothing about another. Skipped, never passed: a measurement that was not made is not a green
+ * test. Moving a measurement to a newer release is a step of its own: measure again, repin, and name the new release.
+ */
+export function skipUnlessIrArchiveRelease(release: string = IR_ARCHIVE_MEASURED_RELEASE): { skip: string | false } {
+  const without = skipWithoutIrArchive();
+  if (without.skip !== false) return without;
+  const checkedOut = irArchiveRelease();
+  if (checkedOut === release) return { skip: false };
+  return {
+    skip: `measured over the infrared archive's release of ${release}; the checkout is `
+      + `${checkedOut ?? 'a release that states no date'}, so this measurement is not made here`,
+  };
+}
+
+/**
  * Both skip reasons at once, so a test needing the lab **and** the archive skips when either is absent.
  *
  * **Spreading the option objects does not work, and this exists because that was tried.**
