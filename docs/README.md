@@ -348,9 +348,12 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 toolkit.ts, the namespace `recipe` on the main entry: the changes,
                                 the questions and the check an application works a setup through,
                                 decision 37, with the device search's contract beside it in
-                                src/catalogue/search.ts. Neither is built: each function refuses
-                                by name, `NotBuiltError` in src/support/contract.ts, with the
-                                requirement it waits on, decision 38. Our letters are drawn from the typeface in fonts/
+                                src/catalogue/search.ts. Of the toolkit a fresh and an opened
+                                document, adding a device and an activity, a key's choice, the
+                                two lists and the check are built; every other function, and the
+                                whole search, refuses by name, `NotBuiltError` in
+                                src/support/contract.ts, with the requirement it waits on,
+                                decision 38. Our letters are drawn from the typeface in fonts/
                                 (Oxanium, with its OFL.txt) by src/drawing/typeface.ts on src/drawing/raster.ts, the
                                 one rasteriser for outlines, with opentype.js reading the font;
                                 src/drawing/icons.ts draws icons of Material Design Icons (@mdi/font) on
