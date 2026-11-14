@@ -21,7 +21,9 @@ function specifiers(source: string): string[] {
   const found: string[] = [];
   for (const line of source.split('\n')) {
     if (/^\s*(\*|\/\/)/.test(line)) continue;
-    const match = /^\s*(?:import|export)\b.*\bfrom\s+['"]([^'"]+)['"]/.exec(line) ?? /\bimport\(\s*['"]([^'"]+)['"]/.exec(line);
+    // A statement on one line, or the last line of one spread over several, `} from '...'`: without the second
+    // form an import written over several lines would go unseen, which is how a type export of the index once did.
+    const match = /^\s*(?:(?:import|export)\b.*\b|\}\s*)from\s+['"]([^'"]+)['"]/.exec(line) ?? /\bimport\(\s*['"]([^'"]+)['"]/.exec(line);
     if (match) found.push(match[1]!);
   }
   return found;
