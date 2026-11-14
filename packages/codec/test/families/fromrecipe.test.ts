@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import '../../src/support/resources.node.ts';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, skipWithoutIrArchiveSample } from '@harmony/lab';
 import { archiveAt, buildFromRecipe, unstatedChoices } from '../../src/node.ts';
 import { buildTouchDocuments, ourBackground, readTouchSetupFile } from '../../src/families/harmony-touch/fromnothing.ts';
 import { buildEmptyFourSlotConfiguration, buildEmptyNoScreenConfiguration, buildEmptyOneConfiguration, fourSlotChoices } from '../../src/build.ts';
@@ -98,9 +98,9 @@ const JOHN_DOE = {
   tuning: { DeviceProfileUri: 'https://example.invalid/john-doe/favourites', ContentProfileKey: 1 },
 } as const;
 
-test('the Harmony Touch through the one build: its family\'s six documents and our background, with a made up account', skipWithoutIrArchive(), () => {
+test('the Harmony Touch through the one build: its family\'s six documents and our background, with a made up account', skipWithoutIrArchiveSample(), () => {
   const json = JSON.parse(readFileSync(new URL('../../../corpus/setups/touch-test.json', import.meta.url), 'utf8')) as unknown;
-  const archive = archiveAt(IR_ARCHIVE!);
+  const archive = archiveAt(IR_ARCHIVE_SAMPLE!);
   const built = buildFromRecipe(json, { builtAt: BUILT_AT, archive, account: JOHN_DOE as never });
   assert.equal(built.kind, 'documents');
   if (built.kind !== 'documents') return;

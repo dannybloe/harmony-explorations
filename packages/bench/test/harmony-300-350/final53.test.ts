@@ -38,7 +38,7 @@ import { fileURLToPath } from 'node:url';
 
 import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
 import { irBlockWords, irHeaderPointers, taggedList } from '@harmony/codec/internal';
-import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../../src/irsession.ts';
@@ -182,10 +182,10 @@ test('every step but the KPN\'s fuller map sends what Logitech\'s second compile
   });
 
 test('every expectation in both files is what the monitor will name the code the file sends, the same in both',
-  needing(skipWithoutLab(), skipWithoutIrArchive()), () => {
+  needing(skipWithoutLab(), skipWithoutIrArchiveSample()), () => {
     const { c: ours, blob } = container(OURS);
     assert.ok(BENCH_CONFIGS.includes(OURS), 'the file is on the bench\'s list, so the monitor names its codes');
-    const book = new CodeBook((name) => (name === OURS ? blob : undefined), [OURS], IR_ARCHIVE);
+    const book = new CodeBook((name) => (name === OURS ? blob : undefined), [OURS], IR_ARCHIVE_SAMPLE);
     book.nameFromCatalogue(BENCH_CODESETS);
     const names = new Map(devices(ours).map((d) => [d.group, d.name]));
     const expectation = (send: Send): Expectation => {

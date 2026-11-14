@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { IR_ARCHIVE } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE } from '@harmony/lab';
 
 import { ServiceRefusal, assertCallAllowed } from '../../src/myharmony.ts';
 import { activityRoles, customPayload, keepOnPayload, saveActivityPayload, type Setup } from '../../src/setup.ts';
@@ -49,10 +49,10 @@ test('the payload names the account twice and carries the activity\'s type, name
 });
 
 test('the starting setup: seven devices, four activities, and every input named as the catalogue names it',
-  { skip: IR_ARCHIVE === undefined ? 'no archive checkout' : false }, () => {
+  { skip: IR_ARCHIVE_SAMPLE === undefined ? 'no archive checkout' : false }, () => {
     assert.deepEqual([START.devices.length, START.activities.length], [7, 4]);
     const catalogue = new Map(START.devices.map((one) => {
-      const path = join(IR_ARCHIVE!, 'devices', `${one.device}.json`);
+      const path = join(IR_ARCHIVE_SAMPLE!, 'devices', `${one.device}.json`);
       assert.ok(existsSync(path), one.device);
       const entry = JSON.parse(readFileSync(path, 'utf8')) as { inputs?: { list?: { name: string }[] } };
       return [one.name, new Set((entry.inputs?.list ?? []).map((input) => input.name))];

@@ -53,7 +53,7 @@ import { fileURLToPath } from 'node:url';
 
 import { parse, type Container } from '@harmony/codec/node';
 import { bytes, taggedList } from '@harmony/codec/internal';
-import { FILE_BASED_FAMILY, IR_ARCHIVE, load, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { FILE_BASED_FAMILY, IR_ARCHIVE_SAMPLE, load, needing, skipUnless, skipWithoutIrArchiveSample } from '@harmony/lab';
 
 import { BENCH_CODESETS, CodeBook } from '../../src/irmonitor.ts';
 
@@ -178,7 +178,7 @@ function census(): Map<number, Map<string, number>> {
   const out = new Map<number, Map<string, number>>();
   // One book for all five, as the bench builds one for every remote on it: the catalogue's index is
   // the slow part and is built once, and names are still identified per configuration and device.
-  const book = new CodeBook(load, CONFIGS, IR_ARCHIVE);
+  const book = new CodeBook(load, CONFIGS, IR_ARCHIVE_SAMPLE);
   book.nameFromCatalogue(BENCH_CODESETS);
   for (const name of CONFIGS) {
     const c = parse(load(name)!);
@@ -230,7 +230,7 @@ test('every code and candidate set the Harmony 350 drawing carries is this table
 });
 
 test('what every device map press sends, named as the monitor names it, over the five configurations',
-  needing(skipUnless(...CONFIGS), skipWithoutIrArchive()), () => {
+  needing(skipUnless(...CONFIGS), skipWithoutIrArchiveSample()), () => {
     const counts = census();
     const flat = Object.fromEntries([...counts.entries()].sort((a, b) => a[0] - b[0])
       .map(([scan, names]) => [scan, Object.fromEntries([...names.entries()].sort())]));

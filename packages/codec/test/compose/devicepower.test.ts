@@ -14,10 +14,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, needing, require_, skipUnless, skipWithoutIrArchiveSample, slow } from '@harmony/lab';
 import { activities } from '../../src/index.ts';
 import {
   ACTION_LIST_INDEX_OPCODE as CALL_LIST,
@@ -41,13 +38,7 @@ import {
   payloadOf,
   archiveAt,
 } from '../../src/node.ts';
-import {
-  DEVICE_QUANTITY_DEFAULT,
-  deviceVariables,
-  irBlockWords,
-  irHeaderPointers,
-  stateRecords,
-} from '../../src/internal.ts';
+import { DEVICE_QUANTITY_DEFAULT, deviceVariables, irBlockWords, irHeaderPointers, stateRecords } from '../../src/internal.ts';
 import { catalogueDevicePower, composeCatalogueDevice, composeDevice } from '../../src/build.ts';
 import { FOUR_SLOT_CHOICES } from '../../src/families/harmony-600-650-700/choices.ts';
 
@@ -164,7 +155,7 @@ function powerOf(c: Container, variable: number): { on: Action; off: Action } {
 }
 
 test('a device composed from the catalogue switches with the records and the wiring Logitech compiles for it, on 17 of the 18 test device instances',
-  needing(skipWithoutIrArchive(), skipUnless('h650_config_region', ...FIXTURES)), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless('h650_config_region', ...FIXTURES)), () => {
     const pristine = parse(require_('h650_config_region'));
     const compiles = new Map(FIXTURES.map((name) => [name, parse(payloadOf(require_(name)))]));
     const seen: string[] = [];
@@ -181,10 +172,10 @@ test('a device composed from the catalogue switches with the records and the wir
     // inter device delay of 5 and a power on delay of 15, and every action one step.
     const before = { amount: 0, interDevice: 0, powerOnDelay: 0, several: 0 };
     for (const one of ROWS) {
-      const driving = catalogueDriving(IR_ARCHIVE!, one.slug, one.file);
+      const driving = catalogueDriving(IR_ARCHIVE_SAMPLE!, one.slug, one.file);
       const codes = new Map<string, string>();
-      const device = catalogueDevice(IR_ARCHIVE!, one.slug, one.file);
-      for (const command of catalogueCommands(IR_ARCHIVE!, device.codeset!)) {
+      const device = catalogueDevice(IR_ARCHIVE_SAMPLE!, one.slug, one.file);
+      for (const command of catalogueCommands(IR_ARCHIVE_SAMPLE!, device.codeset!)) {
         if (!codes.has(command.name)) codes.set(command.name, command.keycode);
       }
       const power = catalogueDevicePower(driving, (name) => codes.get(name));
@@ -264,7 +255,7 @@ test('a device composed from the catalogue switches with the records and the wir
  * compared with the rest.
  */
 test('the states a power on resets are composed as Logitech compiles them, silent and in order, on all 14 reset lists of the 9 instances that have one',
-  slow(needing(skipWithoutIrArchive(), skipUnless('h650_config_region', ...FIXTURES))), () => {
+  slow(needing(skipWithoutIrArchiveSample(), skipUnless('h650_config_region', ...FIXTURES))), () => {
     const pristine = parse(require_('h650_config_region'));
     /** The calls after the power on delay, read as `<property>=<value>` with `silent ` in front where flagged. */
     const resetsOf = (c: Container, label: string): string[] => {
@@ -289,16 +280,16 @@ test('the states a power on resets are composed as Logitech compiles them, silen
     const undeclared: string[] = [];
     let lists = 0;
     for (const one of ROWS) {
-      const driving = catalogueDriving(IR_ARCHIVE!, one.slug, one.file);
+      const driving = catalogueDriving(IR_ARCHIVE_SAMPLE!, one.slug, one.file);
       const theirs = resetsOf(parse(payloadOf(require_(one.fixture))), one.name);
       const key = `${one.fixture} ${one.name}`;
       let composed;
       try {
         // One screen command, the first power step under a short label, since the screen is not what this compares.
-        const codes = new Map(catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, one.slug, one.file).codeset!)
+        const codes = new Map(catalogueCommands(IR_ARCHIVE_SAMPLE!, catalogueDevice(IR_ARCHIVE_SAMPLE!, one.slug, one.file).codeset!)
           .map((command) => [command.name, command.keycode]));
         const first = catalogueDevicePower(driving, (name) => codes.get(name)).onCommands[0]!;
-        composed = composeCatalogueDevice(pristine, archiveAt(IR_ARCHIVE!), {
+        composed = composeCatalogueDevice(pristine, archiveAt(IR_ARCHIVE_SAMPLE!), {
           manufacturer: one.slug, model: one.file, label: 'Test', commands: [first], labels: ['On'], inputs: true,
         });
       } catch (error) {
@@ -351,7 +342,7 @@ test('the states a power on resets are composed as Logitech compiles them, silen
  * ordinary commands 1 and its power steps the inter key delay, and does not compose digits or inputs yet.
  */
 test('a send list Logitech compiled for a test device carries 1, the inter key delay or the input delay, and nothing else',
-  needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless(...FIXTURES)), () => {
     const seen: string[] = [];
     for (const one of ROWS) {
       const c = parse(payloadOf(require_(one.fixture)));
@@ -360,7 +351,7 @@ test('a send list Logitech compiled for a test device carries 1, the inter key d
       const off = stateRecords(c)![variable.index]!.values.find((each) => each.from === 1 && each.to === 0)!;
       const group = groupOf(c, off.operand);
       assert.ok(group !== undefined, `${one.name} has a power off that sends`);
-      const timing = catalogueDriving(IR_ARCHIVE!, one.slug, one.file).timing;
+      const timing = catalogueDriving(IR_ARCHIVE_SAMPLE!, one.slug, one.file).timing;
       const meaning = new Map([[timing.inputDelay / 100, 'input'], [timing.interKeyDelay / 100, 'key'], [1, 'press']]);
       const count = new Map<string, number>();
       for (const body of c.actionLists()!) {
@@ -481,68 +472,6 @@ test('a power action of several steps is a list calling each step in order, on t
         assert.equal(on, device.powerSteps!.on, `${host}: with no delay list, on runs the on action`);
       }
     }
-  });
-
-/**
- * How much of the catalogue the mapping takes, over every record of the archive, and every refusal by
- * its reason. Exact counts, so a reader change or an archive change moves them in the diff.
- */
-test('the mapping takes the power of 235572 of the archive\'s 276236 devices, and every refusal is counted by its reason',
-  slow(skipWithoutIrArchive()), () => {
-    const outcomes = new Map<string, number>();
-    let several = 0;
-    let held = 0;
-    // The commonest shape among the devices refused for a wait: discrete, a power on with no wait in
-    // it and a power off with one. A compile of one of these is the next calibration this needs.
-    let waitInOffOnly = 0;
-    const root = join(IR_ARCHIVE!, 'devices');
-    // Folders only: Finder leaves a .DS_Store beside them, which is not a device.
-    for (const slug of readdirSync(root, { withFileTypes: true }).filter((one) => one.isDirectory()).map((one) => one.name)) {
-      for (const file of readdirSync(join(root, slug))) {
-        if (file === 'index.json') continue;
-        const driving = deviceDriving(JSON.parse(readFileSync(join(root, slug, file), 'utf8')));
-        let outcome = 'accepted';
-        try {
-          // Any code will do: the mapping passes it through, and this counts shapes, not codes.
-          const power = catalogueDevicePower(driving, () => 'G:X:(0x1)():3');
-          if (power.powerOn.length > 1 || power.powerOff.length > 1) several += 1;
-          if ([...power.powerOn, ...power.powerOff].some((step) => step.holdMs !== undefined)) held += 1;
-        } catch (error) {
-          assert.ok(error instanceof ComposeError, String(error));
-          outcome = error.message.replace(/\d+ ms/, 'N ms').replace(/power (on|off|toggle) action holds/, 'action holds')
-            .replace(/, .*/, '');
-          const power = driving.power;
-          const waits = (steps: readonly { kind: string }[] | undefined) => steps?.some((step) => step.kind === 'wait') === true;
-          if (outcome === 'the catalogue\'s action holds a wait' && power?.type === 'discrete'
-            && !waits(power.on) && waits(power.off)) waitInOffOnly += 1;
-        }
-        outcomes.set(outcome, (outcomes.get(outcome) ?? 0) + 1);
-      }
-    }
-    assert.deepEqual(Object.fromEntries(outcomes), {
-      'accepted': 235572,
-      // No power action at all, 35716 between them, which no compile here shows composed.
-      'the catalogue states the power as absent': 35409,
-      'the catalogue states the power as unknown': 304,
-      'the catalogue states the power as none': 3,
-      // An action this does not know how to compose, for want of a compile holding one. Of the 2993
-      // refused for a wait, the commonest shape is asserted below as waitInOffOnly.
-      'the catalogue\'s action holds a wait': 2993,
-      'the catalogue\'s action holds a state': 66,
-      'the catalogue\'s action holds a press held for an unstated time': 5,
-      'the catalogue\'s power on is followed by a send': 89,
-      'the catalogue\'s power on is followed by a wait': 2,
-      // Statements that are incomplete or ambiguous.
-      'a toggle device with no toggle action': 1321,
-      'a discrete device with no power on action': 302,
-      'a discrete device with no power off action': 17,
-      'a toggle device that also states a power on or off action': 32,
-      // Delays a configuration cannot state, counted where nothing above refused the device first.
-      'the catalogue\'s power on delay of N ms is not a whole number of tenths of a second': 118,
-      'the catalogue\'s inter device delay of N ms is not a whole number of tenths of a second': 3,
-    });
-    assert.equal([...outcomes.values()].reduce((sum, n) => sum + n, 0), 276236);
-    assert.deepEqual({ several, held, waitInOffOnly }, { several: 2868, held: 2938, waitInOffOnly: 1655 });
   });
 
 /** Every power write an activity's start makes, one call deep and the next, by variable name. */

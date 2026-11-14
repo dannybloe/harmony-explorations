@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -75,6 +75,8 @@ help:
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
 	@echo "catalogue-raw  update the infrared archive and its raw capture, and derive what the archive drops"
+	@echo "archive-sample  check the lab's sample of the infrared archive, which the tests read, against its list"
+	@echo "archive-measure  run the measurements over the whole infrared archive, which the tests do not"
 	@echo "prontocheck  our waveforms against the archive's renderings of two million commands"
 	@echo "composecensus  which archive commands the catalogue composer writes, and why it refuses the rest"
 	@echo "devices      which devices a config drives, and what each one is called"
@@ -332,6 +334,24 @@ catalogue:
 # `make all`. CATALOGUE_RAW_ARGS=--force rebuilds, --no-pull leaves the checkout alone, --offline both.
 catalogue-raw:
 	@node packages/codec/bin/catalogue-raw.ts $(CATALOGUE_RAW_ARGS)
+
+# The tests never read the archive's checkout, which is a third party's living repository: they read a
+# sample of it in the lab, the few hundred files they need copied once and held to the list of paths and
+# checksums in `packages/lab/ir-archive-sample.sha256`. This checks the lab's copy against that list.
+# ARCHIVE_SAMPLE_ARGS=--take copies what the list names out of the checkout, a new line in the list
+# included, and refuses a checkout at another release than the list was pinned at; `--take --repin` moves
+# the whole sample to the checkout's release, after which the tests that hold its contents are run again.
+# Needs the lab, and the checkout only to take; no network.
+archive-sample:
+	@node packages/codec/bin/archive-sample.ts $(ARCHIVE_SAMPLE_ARGS)
+
+# The measurements over the whole archive: how many of its codes a table reproduces, how many commands
+# name no definition, the raw capture against every device. They are statements about one release of the
+# archive, so each is bound to the release it was taken at and skipped at any other, and they stand in
+# `*.measure.ts` files beside the tests, which the suite's pattern does not match. Run on request, the
+# slow ones included; needs the archive checkout and the lab, minutes of a full pass, never in `make all`.
+archive-measure:
+	@HARMONY_SLOW_TESTS=1 node --test 'packages/*/test/**/*.measure.ts'
 
 # Build a code from a protocol name and a number out of Logitech's catalogue and ask their own analyser to
 # read it back, which is the closed loop the infrared side of this project wanted: `analyze` sends a

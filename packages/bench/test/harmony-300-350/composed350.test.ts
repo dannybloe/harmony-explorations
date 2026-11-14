@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
 import { irBlockWords, irHeaderPointers } from '@harmony/codec/internal';
-import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../../src/irsession.ts';
@@ -141,13 +141,13 @@ test('the composed file sends, step for step, the codes Logitech\'s second compi
 });
 
 test('every expectation in the bench test is what the monitor, loading Logitech\'s compile, will name the code the composed file sends',
-  needing(skipWithoutLab(), skipWithoutIrArchive()), () => {
+  needing(skipWithoutLab(), skipWithoutIrArchiveSample()), () => {
     const ours = container(COMPOSED).c;
     const { c: theirs, blob } = container(COMPILE);
     // The compile is on the bench's list and the composed file is not: its codes are the compile's, below.
     assert.ok(BENCH_CONFIGS.includes(COMPILE));
     assert.ok(!BENCH_CONFIGS.includes(COMPOSED));
-    const book = new CodeBook((name) => (name === COMPILE ? blob : undefined), [COMPILE], IR_ARCHIVE);
+    const book = new CodeBook((name) => (name === COMPILE ? blob : undefined), [COMPILE], IR_ARCHIVE_SAMPLE);
     book.nameFromCatalogue(BENCH_CODESETS);
     const names = new Map(devices(theirs).map((one) => [one.group, one.name]));
     // Each composed code as the compile's code of the same bytes in the same group; there is exactly one.

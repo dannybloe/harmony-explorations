@@ -18,7 +18,7 @@ import { join } from 'node:path';
 
 import type { Pulse } from '@harmony/codec/node';
 
-import { IR_ARCHIVE, LAB, needing, require_, skipWithoutIrArchive, skipWithoutLab, slow } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipWithoutIrArchiveSample, skipWithoutLab, slow } from '@harmony/lab';
 
 import {
   BENCH_CODESETS, CodeBook, frameNumber, knownCodeset, framesOfTrain, IrMonitor, parseListenLine, REPEAT_WINDOW_US, sameFrame, withinTolerance,
@@ -263,7 +263,7 @@ test('the monitor keeps what it heard for a page that opens later', () => {
  * slow tier, since the pass is the cost the table exists to avoid.
  */
 test('the bench codeset table is what the whole archive pass identifies for every bench device',
-  slow(needing(skipWithoutLab(), skipWithoutIrArchive())), () => {
+  slow(needing(skipWithoutLab(), skipWithoutIrArchiveSample())), () => {
     const names = [
       'work/setups/h350-test/compile-Result.EzHex', 'work/setups/h350-test/from-nothing-5.4.bin',
       'work/setups/h350-test/from-nothing-5.1.6.bin', 'h350_config', 'h350_programmed_config',
@@ -272,7 +272,7 @@ test('the bench codeset table is what the whole archive pass identifies for ever
     const load = (name: string): Uint8Array => (name.startsWith('work/')
       ? new Uint8Array(readFileSync(join(LAB!, name)))
       : require_(name));
-    const book = new CodeBook(load, names, IR_ARCHIVE);
+    const book = new CodeBook(load, names, IR_ARCHIVE_SAMPLE);
     assert.deepEqual(book.configs, names, 'every configuration loads');
     book.nameFromCatalogue();
     // Every device the pass named, named by the table alike, and nothing the table states left over.

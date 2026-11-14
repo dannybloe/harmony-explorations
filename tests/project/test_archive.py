@@ -76,10 +76,12 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # first, numbered versions, the hub and the Elite as bench remotes, and the catalogue a device at a time; and for one
 # sentence added to decision 4, saying that decision 39 sets when the path dependency ends. The digest before it was
 # b271ef0f.
-DECISIONS_DIGEST = "d67bf1ce2c75250e75a8c1d425aceb3d253979964d0bfacc79c23302323cd660"
+# Repinned for decision 42, a new entry: no test reads the infrared archive's checkout, tests read a sample of it in
+# the lab, and a measurement over the whole archive is not a test. The digest before it was d67bf1ce.
+DECISIONS_DIGEST = "5504e207a7a3497bb20c48255e1284a780e93e159612d3612b4191b0abdc5101"
 
 SECTIONS = 436
-DECISIONS = 41
+DECISIONS = 42
 
 
 def anchor_problems(findings, decisions):

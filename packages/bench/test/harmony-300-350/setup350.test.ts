@@ -131,7 +131,7 @@ import {
   stateRecords,
   taggedList,
 } from '@harmony/codec/internal';
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook, REPEAT_WINDOW_US } from '../../src/irmonitor.ts';
 import { PRESS, RELEASE, Remote, type Action, type Instruction, type Key, type Send } from './filemodel.ts';
@@ -432,10 +432,10 @@ test('the power on delays the bench test\'s description states are the file\'s',
 });
 
 test('every expectation in the bench test is what the monitor will name the code the file sends',
-  needing(skipWithoutLab(), skipWithoutIrArchive()), () => {
+  needing(skipWithoutLab(), skipWithoutIrArchiveSample()), () => {
     const { c, blob } = container();
     const names = new Map(devices(c).map((one) => [one.group, one.name]));
-    const book = new CodeBook((name) => (name === BENCH_FILE ? blob : undefined), [BENCH_FILE], IR_ARCHIVE);
+    const book = new CodeBook((name) => (name === BENCH_FILE ? blob : undefined), [BENCH_FILE], IR_ARCHIVE_SAMPLE);
     book.nameFromCatalogue(BENCH_CODESETS);
     const commandOf = (send: Send): string | undefined => book.storedName(BENCH_FILE, send.group, send.code)?.command;
     // A name the catalogue gives two codes of one device does not say which was heard, so such a code is
@@ -502,7 +502,7 @@ function rematched(name: RunName): readonly RunFileStep[] {
   if (BOOK === undefined) {
     // Built once: naming the codes from the catalogue is a pass over the whole archive.
     const { blob } = container();
-    BOOK = new CodeBook((one) => (one === BENCH_FILE ? blob : undefined), [BENCH_FILE], IR_ARCHIVE);
+    BOOK = new CodeBook((one) => (one === BENCH_FILE ? blob : undefined), [BENCH_FILE], IR_ARCHIVE_SAMPLE);
     BOOK.nameFromCatalogue(BENCH_CODESETS);
   }
   const book = BOOK;
@@ -652,7 +652,7 @@ function failures(verdicts: readonly (readonly Verdict[])[]): string[] {
   return verdicts.flatMap((one, at) => one.filter((v) => !v.ok).map((v) => `${at + 1} ${v.expected} ${v.detail}`));
 }
 
-const NEEDS_RUNS = needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless(...RUNS));
+const NEEDS_RUNS = needing(skipWithoutLab(), skipWithoutIrArchiveSample(), skipUnless(...RUNS));
 
 test('both runs are the bench test as it stands, and the first run\'s monitor never named the compile, failing seven steps',
   needing(skipUnless(...RUNS)), () => {

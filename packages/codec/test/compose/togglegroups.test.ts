@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, slow } from '@harmony/lab';
 import { type Container, devices, irGroups, parse, payloadOf } from '../../src/index.ts';
 import {
   archiveProtocolsByName,
@@ -108,7 +108,7 @@ const join3 = (blocks: readonly string[]) => blocks.join('|');
 const swapped = (blocks: readonly string[]) => (blocks.length === 6 ? [...blocks.slice(3), ...blocks.slice(0, 3)] : blocks);
 
 test('a toggling code\'s record is two groups, the code as stated and then flipped, and the composer\'s records are Logitech\'s on 774 of 797, 623 of its 639 two group records among them',
-  slow(needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config', ...FIXTURES))), () => {
+  slow(needing(skipWithoutIrArchiveSample(), skipUnless('h650_panasonic_config', ...FIXTURES))), () => {
     const base = open('h650_panasonic_config');
     const results: string[] = [];
     let all = 0; let whole = 0; let firstOnly = 0; let swap = 0; let two = 0;
@@ -116,7 +116,7 @@ test('a toggling code\'s record is two groups, the code as stated and then flipp
     const missed: string[] = [];
     let pairedCodes = 0;
     for (const [fixture, group, manufacturer, model] of CASES) {
-      const composed = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), [{ manufacturer, model, label: 'Test', full: true }],
+      const composed = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE_SAMPLE!), [{ manufacturer, model, label: 'Test', full: true }],
         { maxDevices: 99 });
       assert.deepEqual(composed.devices[0]!.leftOut, [], `${model}: every catalogue command composes`);
       const c = parse(composed.bytes);
@@ -201,8 +201,8 @@ test('a toggling code\'s record is two groups, the code as stated and then flipp
   });
 
 test('a code naming a release group carries its release behind the third pointer, spelt with no carved or stored microsecond, as the PlayStation 3\'s is',
-  needing(skipWithoutIrArchive(), skipUnless('h650_config_region')), () => {
-    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
+  needing(skipWithoutIrArchiveSample(), skipUnless('h650_config_region')), () => {
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE_SAMPLE!));
     const keycode = 'G:Logitech 24 Bit:()(0x2D11EE)(StopSpacer):3';
     assert.equal(namesReleaseGroup(keycode), true);
     const built = catalogueCommandBlocks(keycode, { repeats: 1 }, protocols);
@@ -221,8 +221,8 @@ test('a code naming a release group carries its release behind the third pointer
   });
 
 test('the toggled code differs from the stated one in its toggle bit alone, and a code whose family states none has no second group',
-  needing(skipWithoutIrArchive()), () => {
-    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
+  needing(skipWithoutIrArchiveSample()), () => {
+    const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE_SAMPLE!));
     const rc5 = protocols.get('Philips RC5 13 Bit Toggle')!;
     const frames = statedCodeOfDefinition(rc5, 'G:Philips RC5 13 Bit Toggle:()(0x10C6)():3')!.frames;
     const flipped = withToggleFlipped(rc5, frames)!;

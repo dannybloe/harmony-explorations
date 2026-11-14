@@ -727,6 +727,12 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     # that none of them names the lab; the count is the repository's size and moves with every new module.
     ('packages/codec/test/families/harmony-300-350/noscreenattribution.test.ts', 'files.length', '>', 100):
         'a guard that the source walk found files, not a measured population',
+    # Not corpus totals either: the same guard on a walk of the test sources, and the check that the population
+    # the walk's first assertion ranges over is not empty; both are the repository's size and move with every test.
+    ('packages/lab/test/irarchivesample.test.ts', 'tests.length', '>', 100):
+        'a guard that the source walk found files, not a measured population',
+    ('packages/lab/test/irarchivesample.test.ts', 'naming(tests, SAMPLE).length', '>', 40):
+        'a guard that tests do read the sample, which grows with every such test',
     # Per item: the claim is that the thing is not empty, and its size is a property of the config.
     ('packages/bench/test/instrument/bench.test.ts', 'activity.devices.length', '>=', 1): 'per activity',
     ('packages/bench/test/instrument/bench.test.ts', 'key.sends', '>=', 1): 'per key',
@@ -1682,8 +1688,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/harmony-785/`, the Harmony 785 onboarding's review. 191 with `dumps/richard_hup/`,
         # `dumps/bob deyoung/` and `dumps/atrugiel69/`, three contributed dumps on the Harmony 525's platform. 192 with
         # `dumps/max schnindler/`, a contributed Harmony 880 Pro. 193 with `work/harmony-hub/`, the Harmony Hub's first read.
-        # 194 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled.
-        self.assertEqual(len(named), 194, "lab paths the register names")
+        # 194 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled. 195 with
+        # `reference/ir-archive-sample/`, the files of the infrared archive the tests read, decision 42.
+        self.assertEqual(len(named), 195, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1803,9 +1810,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # the bench builds rebuilt from recipes, and 162 with `work/requirements/`, decision 33,
         # and 163 with `work/harmony-785/`, and 166 with the three contributed dumps of the Harmony 525's platform.
         # 167 with `dumps/max schnindler/`, a contributed Harmony 880 Pro, and 168 with `work/harmony-hub/`,
-        # and 169 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled.
-        self.assertEqual(len(rows), 169)
-        self.assertEqual(len(dict(rows)), 169, 'a duplicated path would make a query ambiguous')
+        # and 169 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled,
+        # and 170 with `reference/ir-archive-sample/`, the infrared archive's sample, decision 42.
+        self.assertEqual(len(rows), 170)
+        self.assertEqual(len(dict(rows)), 170, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

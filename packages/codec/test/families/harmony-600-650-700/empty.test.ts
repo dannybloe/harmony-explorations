@@ -42,7 +42,7 @@ import { bitmapReference } from '../../../src/screens/screen.ts';
 
 import { activities, activityNames, deviceListRows } from '../../../src/inventory/inventory.ts';
 import { activityKeys } from '../../../src/families/harmony-600-650-700/activitykeys.ts';
-import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, require_, skipUnless, skipWithoutIrArchiveSample, slow } from '@harmony/lab';
 import { parse, readRecipe } from '../../../src/index.ts';
 import { archSlot, screenStrings } from '../../../src/internal.ts';
 import { readFileSync } from 'node:fs';
@@ -360,12 +360,12 @@ test('section 376: the first device onto the empty configuration is switched off
   }
 });
 
-test('section 377: the first catalogue device onto the empty configuration draws its pages in the device colour and our fonts, and the idle device list gains its row', skipWithoutIrArchive(), () => {
+test('section 377: the first catalogue device onto the empty configuration draws its pages in the device colour and our fonts, and the idle device list gains its row', skipWithoutIrArchiveSample(), () => {
   const empty = buildEmpty().container;
   const device = FOUR_SLOT_CHOICES.stateColours.device;
   // An empty configuration holds the idle look alone: its menus are its only screens.
   assert.equal(stateLookOf(empty, device), undefined);
-  const out = composeCatalogueDevices(empty, archiveAt(IR_ARCHIVE!), [{ manufacturer: 'LG', model: 'OLED65G26LA', label: 'TV', full: true, inputs: true }],
+  const out = composeCatalogueDevices(empty, archiveAt(IR_ARCHIVE_SAMPLE!), [{ manufacturer: 'LG', model: 'OLED65G26LA', label: 'TV', full: true, inputs: true }],
     { maxDevices: 8, delays: FOUR_SLOT_CHOICES.delays });
   const c = parse(out.bytes);
   assert.ok(c.allChecksPass);
@@ -388,10 +388,10 @@ test('section 377: the first catalogue device onto the empty configuration draws
   assert.equal(bitmapReference(page[0]!), stateLookOf(c, FOUR_SLOT_CHOICES.stateColours.idle)?.background);
 });
 
-test('section 378: the assembly takes the empty configuration as its donor, runs none of the steps that turn Logitech\'s look into ours, and carries only the composed device', skipWithoutIrArchive(), () => {
+test('section 378: the assembly takes the empty configuration as its donor, runs none of the steps that turn Logitech\'s look into ours, and carries only the composed device', skipWithoutIrArchiveSample(), () => {
   const recipe = { model: { name: 'Harmony 650', skin: 72 }, devices: [{ name: 'TV', device: 'LG/OLED65G26LA' }], activities: [],
     choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false } } as Recipe;
-  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: archiveAt(IR_ARCHIVE!) });
+  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) });
   const steps = out.steps.map((one) => one.step);
   assert.ok(steps.includes('a donor of ours'));
   for (const skipped of ['our letters', 'state colours', 'our pictures']) assert.ok(!steps.includes(skipped), skipped);
@@ -405,10 +405,10 @@ test('section 378: the assembly takes the empty configuration as its donor, runs
     'slot-6-entry', 'slot-6-mode', 'slot-6-page-list', 'slot-6-page-list-copy',
   ]);
   // A blended donor holds more sets than the description, and blending runs once, last.
-  assert.throws(() => assembleSetup(recipe, { donor: buildEmpty(true).bytes, archive: archiveAt(IR_ARCHIVE!) }), /is blended or not one of ours/);
+  assert.throws(() => assembleSetup(recipe, { donor: buildEmpty(true).bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) }), /is blended or not one of ours/);
 });
 
-test('a build on the empty configuration takes our look as its defaults, smoothed letters included, where one on Logitech\'s compiles keeps theirs', skipWithoutIrArchive(), () => {
+test('a build on the empty configuration takes our look as its defaults, smoothed letters included, where one on Logitech\'s compiles keeps theirs', skipWithoutIrArchiveSample(), () => {
   assert.deepEqual([OUR_FOUR_SLOT_CHOICES.letters, OUR_FOUR_SLOT_CHOICES.backgrounds, OUR_FOUR_SLOT_CHOICES.pictures, OUR_FOUR_SLOT_CHOICES.blendLetters],
     ['oxanium', 'state colours', 'ours', true]);
   assert.deepEqual([FOUR_SLOT_CHOICES.letters, FOUR_SLOT_CHOICES.backgrounds, FOUR_SLOT_CHOICES.pictures, FOUR_SLOT_CHOICES.blendLetters],
@@ -420,15 +420,15 @@ test('a build on the empty configuration takes our look as its defaults, smoothe
   // A recipe stating no choice: on the empty configuration it is assembled and blended, where before the
   // assembly refused it for asking a donor of ours for Logitech's look.
   const recipe = { model: { name: 'Harmony 650', skin: 72 }, devices: [{ name: 'TV', device: 'LG/OLED65G26LA' }], activities: [] } as unknown as Recipe;
-  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: archiveAt(IR_ARCHIVE!) });
+  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) });
   assert.ok(out.steps.some((one) => one.step === 'blended letters'));
   assert.ok((out.blended?.length ?? 0) > 0);
   // And smoothing stays a choice a recipe can turn off.
-  const plain = assembleSetup({ ...recipe, choices: { blendLetters: false } } as Recipe, { donor: buildEmpty().bytes, archive: archiveAt(IR_ARCHIVE!) });
+  const plain = assembleSetup({ ...recipe, choices: { blendLetters: false } } as Recipe, { donor: buildEmpty().bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) });
   assert.ok(!plain.steps.some((one) => one.step === 'blended letters'));
 });
 
-test('section 379: the first activity goes onto the empty configuration through the assembly, on the Watch TV key or on none, and its wiring, its name and its looks read back', skipWithoutIrArchive(), () => {
+test('section 379: the first activity goes onto the empty configuration through the assembly, on the Watch TV key or on none, and its wiring, its name and its looks read back', skipWithoutIrArchiveSample(), () => {
   const recipe = (type: string): Recipe => ({
     model: { name: 'Harmony 650', skin: 72 },
     devices: [{ name: 'LG TV', device: 'LG/OLED65G26LA' }, { name: 'Denon', device: 'Denon/AVR-X4800H' }],
@@ -438,7 +438,7 @@ test('section 379: the first activity goes onto the empty configuration through 
   } as Recipe);
   const donor = buildEmpty().bytes;
   for (const [type, key] of [['WatchTV', 'Watch TV'], ['Custom', undefined]] as const) {
-    const out = assembleSetup(recipe(type), { donor, archive: archiveAt(IR_ARCHIVE!) });
+    const out = assembleSetup(recipe(type), { donor, archive: archiveAt(IR_ARCHIVE_SAMPLE!) });
     const c = out.container;
     // Read back by its name, which on a menu of one activity only the tie break finds.
     const found = activities(c);
@@ -457,7 +457,7 @@ test('section 379: the first activity goes onto the empty configuration through 
   }
 });
 
-test('one activity named as a device or as a word of the menus composes and reads back by its name, at its label on the activity menu', skipWithoutIrArchive(), () => {
+test('one activity named as a device or as a word of the menus composes and reads back by its name, at its label on the activity menu', skipWithoutIrArchiveSample(), () => {
   const donor = buildEmpty().bytes;
   for (const name of ['LG TV', 'Denon', 'Devices', 'Activities', 'Back']) {
     const recipe = {
@@ -467,7 +467,7 @@ test('one activity named as a device or as a word of the menus composes and read
         { device: 'LG TV', input: 'HDMI 1', roles: ['Display'] }, { device: 'Denon', input: 'CBL/SAT', roles: ['Volume'] }] }],
       choices: { blendLetters: false },
     } as Recipe;
-    const c = assembleSetup(recipe, { donor, archive: archiveAt(IR_ARCHIVE!) }).container;
+    const c = assembleSetup(recipe, { donor, archive: archiveAt(IR_ARCHIVE_SAMPLE!) }).container;
     const found = activityNames(c);
     assert.deepEqual(found.map((one) => one.name), [name], name);
     // The menu's label, on its first row, and not the title "Activities" at the top or the footer "Devices" below.
@@ -475,11 +475,11 @@ test('one activity named as a device or as a word of the menus composes and read
   }
 });
 
-test('section 380: the whole test setup assembles on the empty configuration, with no Logitech file as input, every device list page by page in the order taken from Logitech\'s compile of the same setup, and nothing carried but what the composers make', skipWithoutIrArchive(), () => {
+test('section 380: the whole test setup assembles on the empty configuration, with no Logitech file as input, every device list page by page in the order taken from Logitech\'s compile of the same setup, and nothing carried but what the composers make', skipWithoutIrArchiveSample(), () => {
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   const recipe = { ...setup, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false } } as Recipe;
   // The two inputs: a configuration our generators built from nothing, and the catalogue.
-  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: archiveAt(IR_ARCHIVE!) });
+  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) });
   const c = out.container;
   // None of Logitech's device page looks held whole; that every picture byte is a rule's or ours is the
   // attribution's, below, where no picture kind is carried.
@@ -523,11 +523,11 @@ function drawnDeviceLists(c: Container): string[][][] {
       .filter((text) => !['Devices', 'Activities', 'Activity', '1', '2', '/'].includes(text))));
 }
 
-test('the whole test setup assembles on the Harmony 700\'s empty configuration in our look, and the setup comparison finds nothing different from the Harmony 650\'s in 627 slots, nor in the activity keys and the six drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
+test('the whole test setup assembles on the Harmony 700\'s empty configuration in our look, and the setup comparison finds nothing different from the Harmony 650\'s in 627 slots, nor in the activity keys and the six drawn device lists, smoothed letters or not', slow(skipWithoutIrArchiveSample()), () => {
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   const on = (skin: number, name: string, blendLetters: boolean) => assembleSetup({
     ...setup, model: { name, skin }, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters },
-  } as Recipe, { donor: buildEmpty(false, skin).bytes, archive: archiveAt(IR_ARCHIVE!) }).container;
+  } as Recipe, { donor: buildEmpty(false, skin).bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) }).container;
   const seven = on(66, 'Harmony 700', false);
   const six = on(72, 'Harmony 650', false);
   assert.ok(seven.allChecksPass);
@@ -565,14 +565,14 @@ test('Logitech\'s seven Harmony 700 compiles do not read as our look, and the as
     /on a donor of ours alone, an empty configuration, and this donor is Logitech's/);
 });
 
-test('decision 20 on a build from nothing: the state colours are a choice, written over the defaults the composers draw in, read back off the file\'s own pages, and nothing a person does changes', slow(skipWithoutIrArchive()), () => {
+test('decision 20 on a build from nothing: the state colours are a choice, written over the defaults the composers draw in, read back off the file\'s own pages, and nothing a person does changes', slow(skipWithoutIrArchiveSample()), () => {
   const setup = readRecipe(JSON.parse(readFileSync(new URL('../../../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
   // The 650's bench test colours, for a colourblind tester on a dim panel.
   const bright = { device: rgbTo565(255, 0, 0), activity: rgbTo565(0, 96, 255), idle: rgbTo565(255, 140, 0) };
   const on = (stateColours?: typeof bright) => assembleSetup({
     ...setup, model: { name: 'Harmony 700', skin: 66 },
     choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: true, ...(stateColours ? { stateColours } : {}) },
-  } as Recipe, { donor: buildEmpty(false, 66).bytes, archive: archiveAt(IR_ARCHIVE!) }).container;
+  } as Recipe, { donor: buildEmpty(false, 66).bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) }).container;
   const plain = on();
   const coloured = on(bright);
   assert.ok(coloured.allChecksPass);
@@ -628,12 +628,12 @@ test('the Harmony 600 built from nothing, skins 73 and 71, rebuilds by every che
   assert.deepEqual([...h600.subarray(runs[1]![0], runs[1]![1] + 1)], [1, 0, 3, 0, 5]);
 });
 
-test('the Harmony 600 draws every state in one look, so its first device\'s pages take the idle look and add none, and a recolouring takes one colour', skipWithoutIrArchive(), () => {
+test('the Harmony 600 draws every state in one look, so its first device\'s pages take the idle look and add none, and a recolouring takes one colour', skipWithoutIrArchiveSample(), () => {
   const empty = buildEmpty(false, 71).container;
   const idle = FOUR_SLOT_CHOICES.stateColours.idle;
   // Before any page of theirs, the device and activity states read as the idle one.
   assert.deepEqual(ourStateColours(empty), { idle, device: idle, activity: idle });
-  const out = composeCatalogueDevices(empty, archiveAt(IR_ARCHIVE!), [{ manufacturer: 'LG', model: 'OLED65G26LA', label: 'TV', full: true, inputs: true }],
+  const out = composeCatalogueDevices(empty, archiveAt(IR_ARCHIVE_SAMPLE!), [{ manufacturer: 'LG', model: 'OLED65G26LA', label: 'TV', full: true, inputs: true }],
     { maxDevices: 5, delays: FOUR_SLOT_CHOICES.delays });
   const c = parse(out.bytes);
   assert.ok(c.allChecksPass);
@@ -688,7 +688,7 @@ function fiveDeviceSetup(): Recipe {
   } as Recipe;
 }
 
-test('the five device test setup assembles on the Harmony 600\'s empty configuration with every page in its one grey, smaller than the 650\'s by exactly its two further looks, and the setup comparison finds nothing different from the 650\'s in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not', slow(skipWithoutIrArchive()), () => {
+test('the five device test setup assembles on the Harmony 600\'s empty configuration with every page in its one grey, smaller than the 650\'s by exactly its two further looks, and the setup comparison finds nothing different from the 650\'s in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not', slow(skipWithoutIrArchiveSample()), () => {
   proves(2, ['harmony-600']);
   proves(4, ['harmony-600'], ['docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit']);
   const setup = fiveDeviceSetup();
@@ -697,7 +697,7 @@ test('the five device test setup assembles on the Harmony 600\'s empty configura
   } as Recipe, { donor: buildEmptyConfiguration({
     skin, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, blendLetters: false,
     look: { ...LOOK, idleColour: colour },
-  }).bytes, archive: archiveAt(IR_ARCHIVE!) }).container;
+  }).bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) }).container;
   const one = FOUR_SLOT_CHOICES.oneLookColour;
   // Decision 23: a file of ours states the model number the remote reports, 71 on the bench 600.
   const h600 = on(71, 'Harmony 600', one);
@@ -752,11 +752,11 @@ test('the five device test setup assembles on the Harmony 600\'s empty configura
   assert.ok(differing[1]! > h600.blob.length - 16, `${differing} of ${h600.blob.length}`);
   assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600', skin: 71 },
     choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false, stateColours: { device: rgbTo565(255, 0, 0) } } } as Recipe,
-  { donor: buildEmpty(false, 71).bytes, archive: archiveAt(IR_ARCHIVE!) }), /one look, so its colour is oneLookColour/);
+  { donor: buildEmpty(false, 71).bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) }), /one look, so its colour is oneLookColour/);
   // Smoothed letters, the 600's default, change nothing the view compares.
   const blended = assembleSetup({ ...setup, model: { name: 'Harmony 600', skin: 71 } } as Recipe, {
     donor: buildEmptyConfiguration({ skin: 71, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings,
-      blendLetters: false, look: { ...LOOK, idleColour: one } }).bytes, archive: archiveAt(IR_ARCHIVE!) }).container;
+      blendLetters: false, look: { ...LOOK, idleColour: one } }).bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!) }).container;
   assert.ok(blended.blob.length > h600.blob.length, 'blended');
   assert.deepEqual(compareViews(view, setupView(blended), { menuOrder: true }), []);
 });
@@ -768,6 +768,6 @@ test('Logitech\'s two Harmony 600 compiles do not read as our look, the assembly
   // Logitech's compile states 73, so the recipe names 73 too and the refusal is the donor's and not the number's.
   assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600 EMEA', skin: 73 } } as Recipe, { donor: require_('h600_config') }),
     /on a donor of ours alone, an empty configuration, and this donor is Logitech's/);
-  assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600', skin: 71 } } as Recipe, { donor: buildEmpty(false, 71).bytes, archive: archiveAt(IR_ARCHIVE ?? '') }),
+  assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 600', skin: 71 } } as Recipe, { donor: buildEmpty(false, 71).bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE ?? '') }),
     /this model holds 5/);
 });

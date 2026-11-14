@@ -417,9 +417,14 @@ packages/testkit/               TS: what the tests of several packages share, to
                                 packages/codec/bin/requirements.ts reads the calls off the sources
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
-                                separate locator on purpose: both make their tests skip when
-                                absent and the rules about what may be copied out of each are
-                                opposite. And src/cli.ts, `@harmony/lab/cli`, the one reader of a
+                                separate locator on purpose: the rules about what may be copied
+                                out of each are opposite. The checkout is for scripts and for the
+                                measurements over the whole archive, `*.measure.ts` beside the
+                                tests, `make archive-measure`; **tests read the lab's sample of
+                                it**, decision 42, `IR_ARCHIVE_SAMPLE`, a fixed copy of the files
+                                they need whose list and checksums are ir-archive-sample.sha256
+                                here, taken by packages/codec/bin/archive-sample.ts, `make
+                                archive-sample`. And src/cli.ts, `@harmony/lab/cli`, the one reader of a
                                 script's command line, todo/done/todo-sequence.md 7.3.7: every script under
                                 packages/<name>/bin reads its options through it, so each answers
                                 --help with its usage and exits 0 before doing anything, and an
@@ -1070,6 +1075,14 @@ make catalogue-raw pull the archive checkout, fetch its newest raw release when 
                    of the fields the archive drops, into the lab. About four minutes when it derives.
                    **Never print a raw line or a whole device**: one line is up to 35000 tokens.
                    Not in `make all`. CATALOGUE_RAW_ARGS=--force, --no-pull, --offline
+make archive-sample  check the lab's sample of the infrared archive, the files the tests read in place
+                   of the checkout, against its list of paths and checksums, decision 42.
+                   ARCHIVE_SAMPLE_ARGS=--take copies what the list names out of the checkout and refuses
+                   a checkout at another release; --take --repin moves the sample to that release.
+                   Needs the lab, and the checkout only to take
+make archive-measure  the measurements over the whole archive, the `*.measure.ts` files beside the
+                   tests, each bound to the release it was taken at. Needs the checkout and the lab,
+                   minutes of a full pass, never in `make all` and never run by the tests
 make protocols     what rhythm each protocol family uses, measured off the corpus against the family
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network

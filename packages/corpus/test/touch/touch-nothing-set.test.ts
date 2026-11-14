@@ -107,7 +107,7 @@ const same = (a: unknown, b: unknown, what: string): void => assert.ok(isDeepStr
 
 /** The set of a setup file, as the script builds it. */
 function built(file: unknown = setupFile()): TouchSet {
-  const set = withNothing({ file, archive: lab.IR_ARCHIVE!, account: account() });
+  const set = withNothing({ file, archive: lab.IR_ARCHIVE_SAMPLE!, account: account() });
   if ('refusals' in set) throw new Error(set.refusals.join('; '));
   return set.set;
 }
@@ -320,7 +320,7 @@ const EXPECTED_COMPARISON = [
   '  different 4: Protocols[].PressMinimumRepeats, a definition of ours from the rhythm table',
 ];
 
-const needed = lab.needing(lab.skipWithoutIrArchive(), lab.skipUnless(SETUP, HELD, ACCOUNT)).skip;
+const needed = lab.needing(lab.skipWithoutIrArchiveSample(), lab.skipUnless(SETUP, HELD, ACCOUNT)).skip;
 
 describe('the 9.1 set from nothing, its comparison with 8.6\'s set and its put back', { skip: needed }, () => {
   it('the account file is the account described from the set the bench Touch holds, and the setup file holds none of it', () => {
@@ -479,7 +479,7 @@ const SIX: readonly string[] = NOTHING_DOCUMENTS;
 /** The characters of the write answering the picture list of our run, asserted exactly. */
 const PICTURE_WRITE = 5288;
 
-describe('on the fake remote, the 9.1 run and its put back', { skip: lab.needing(lab.skipWithoutIrArchive(), lab.skipUnless(SETUP, HELD, ACCOUNT, HAND_OVER_LIST, ...CLOSING_LISTS)).skip }, () => {
+describe('on the fake remote, the 9.1 run and its put back', { skip: lab.needing(lab.skipWithoutIrArchiveSample(), lab.skipUnless(SETUP, HELD, ACCOUNT, HAND_OVER_LIST, ...CLOSING_LISTS)).skip }, () => {
   let sets: ReturnType<typeof chain> | undefined;
   const chained = () => (sets ??= chain());
 

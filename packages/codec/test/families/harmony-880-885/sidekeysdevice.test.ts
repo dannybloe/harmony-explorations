@@ -81,7 +81,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ARCH8_FAMILY, IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { ARCH8_FAMILY, IR_ARCHIVE_SAMPLE, load, needing, require_, skipUnless, skipWithoutIrArchiveSample } from '@harmony/lab';
 import { u24 } from '../../../src/support/bytes.ts';
 import { gridCellAt } from '../../../src/inventory/cornerlayout.ts';
 import {
@@ -381,7 +381,7 @@ const SHEET = [
 ] as const;
 
 test('the catalogue\'s power of the eight sheet devices, composed onto unit A with each device\'s own silence, is Logitech\'s power record word for word on seven, the Panasonic\'s long press version included, and differs in the code alone on the eighth',
-  needing(skipUnless('h885_a_config', 'arch8_config_880', 'arch8_config_885'), skipWithoutIrArchive()), () => {
+  needing(skipUnless('h885_a_config', 'arch8_config_880', 'arch8_config_885'), skipWithoutIrArchiveSample()), () => {
     const a = open('h885_a_config');
     const same: string[] = [];
     const differ: string[] = [];
@@ -396,7 +396,7 @@ test('the catalogue\'s power of the eight sheet devices, composed onto unit A wi
       const theirs = new Map(theirSends.map((one) => [`${one.from}${one.to}`,
         [irCarrier(c, irGroups(c)![one.send >> 8]!.addresses[one.send & 0xff]!)?.periodNs, ...recordWords(c, one.send)]]));
       // The label and pad words are A's own letters; what is compared is the records.
-      const composed = parse(composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
+      const composed = parse(composeCatalogueDevice(a, archiveAt(IR_ARCHIVE_SAMPLE!), {
         manufacturer, model, label: 'Sony HT', commands: [...commands], labels: ['Power', 'Mute'].slice(0, commands.length),
         interDeviceDelay: lead,
       }).bytes);
@@ -435,11 +435,11 @@ test('the catalogue\'s power of the eight sheet devices, composed onto unit A wi
     assert.deepEqual(theirQuantities.filter((one) => !one.endsWith(' 1')),
       ['Pana_32AS500 0', 'Pana_32AS500 0', 'DMP-BD60 0', 'DMP-BD60 0']);
     assert.equal(theirQuantities.length, 16);
-    assert.deepEqual(SHEET.map(([, , manufacturer, model]) => catalogueDriving(IR_ARCHIVE!, manufacturer, model).timing.interKeyDelay),
+    assert.deepEqual(SHEET.map(([, , manufacturer, model]) => catalogueDriving(IR_ARCHIVE_SAMPLE!, manufacturer, model).timing.interKeyDelay),
       [100, 100, 100, 500, 100, 100, 100, 500]);
     // The one device whose catalogue entry holds the power key, for a second each way: the seven frame records.
     const held = SHEET.flatMap(([, device, manufacturer, model]) => {
-      const power = catalogueDriving(IR_ARCHIVE!, manufacturer, model).power!;
+      const power = catalogueDriving(IR_ARCHIVE_SAMPLE!, manufacturer, model).power!;
       return [...(power.on ?? []), ...(power.off ?? []), ...(power.toggle ?? [])]
         .flatMap((step) => (step.kind === 'send' && step.holdMs !== undefined ? [`${device} ${step.command} ${step.holdMs}`] : []));
     });
@@ -645,11 +645,11 @@ test('an arch 8 configuration holds one copy of its device list per activity, en
 
 /** The Sony composed onto unit A, unstamped, as the composer returns it. */
 function composeSony(): ReturnType<typeof composeCatalogueDevice> {
-  return composeCatalogueDevice(open('h885_a_config'), archiveAt(IR_ARCHIVE!), { ...SONY, commands: [...SONY.commands], labels: [...SONY.labels] });
+  return composeCatalogueDevice(open('h885_a_config'), archiveAt(IR_ARCHIVE_SAMPLE!), { ...SONY, commands: [...SONY.commands], labels: [...SONY.labels] });
 }
 
 test('the Sony DAV-C540 composed onto unit A reads back as a ninth device with its codes, its power, its page and a row on a second page of every copy of the device list',
-  needing(skipUnless('h885_a_config'), skipWithoutIrArchive()), () => {
+  needing(skipUnless('h885_a_config'), skipWithoutIrArchiveSample()), () => {
     const base = open('h885_a_config');
     const composed = composeSony();
     const c = parse(composed.bytes);
@@ -757,7 +757,7 @@ test('the Sony DAV-C540 composed onto unit A reads back as a ninth device with i
   });
 
 test('the composed configuration holds the arch 8 rails of writing-a-config a composed device reaches, the opening silence of both its power records included',
-  needing(skipUnless('h885_a_config'), skipWithoutIrArchive()), () => {
+  needing(skipUnless('h885_a_config'), skipWithoutIrArchiveSample()), () => {
     const base = open('h885_a_config');
     const c = parse(composeSony().bytes);
 
@@ -909,7 +909,7 @@ test('the composed configuration holds the arch 8 rails of writing-a-config a co
  * `h885_composed_2_3`, is this composition.
  */
 test('the lab\'s first composed file spells the power step with no silence and at 5, and the second is this composition, stamped, 32 bytes longer for the step\'s sixteen words of silence',
-  needing(skipUnless('h885_a_config', 'h885_composed_2_1', 'h885_composed_2_3'), skipWithoutIrArchive()), () => {
+  needing(skipUnless('h885_a_config', 'h885_composed_2_1', 'h885_composed_2_3'), skipWithoutIrArchiveSample()), () => {
     const first = parse(load('h885_composed_2_1') as Uint8Array);
     const [once, held] = recordWords(first, 0x808);
     const [press] = recordWords(first, 0x800);
@@ -925,32 +925,32 @@ test('the lab\'s first composed file spells the power step with no silence and a
   });
 
 test('what the side keys family refuses rather than guesses',
-  needing(skipUnless('h885_a_config'), skipWithoutIrArchive()), () => {
+  needing(skipUnless('h885_a_config'), skipWithoutIrArchiveSample()), () => {
     const a = open('h885_a_config');
     // A whole device needs the keys a device mode's commands take, which no compile of an 885 has been read for.
-    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), { manufacturer: 'Sony', model: 'DAV-C540', label: 'Sony HT', full: true }),
+    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer: 'Sony', model: 'DAV-C540', label: 'Sony HT', full: true }),
       (error: unknown) => error instanceof ComposeError && /requirement R33/.test(error.message));
     // Nine commands are a second page of a device mode.
-    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
+    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE_SAMPLE!), {
       ...SONY, commands: [...SONY.commands, 'Eject'], labels: [...SONY.labels, 'Eject'],
     }), /more than one page/);
     // A label wider than a cell, rather than cut.
-    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
+    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE_SAMPLE!), {
       ...SONY, commands: ['PowerToggle'], labels: ['Power the receiver'],
     }), /a cell holds 59/);
     // A toggling code in group 8, which shares its toggle bit with group 0. The Thomson 14MG115's codes toggle,
     // `togglegroups.test.ts`.
-    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE!), {
+    assert.throws(() => composeCatalogueDevice(a, archiveAt(IR_ARCHIVE_SAMPLE!), {
       manufacturer: 'Thomson', model: '14MG115', label: 'Thomson', commands: ['PowerToggle'], labels: ['Power'],
     }), /toggle bit with group 0/);
     // A second device on the lists' new pages fills a cell of an existing page, which is a step of its own.
     const once = parse(composeSony().bytes);
-    assert.throws(() => composeCatalogueDevice(once, archiveAt(IR_ARCHIVE!), {
+    assert.throws(() => composeCatalogueDevice(once, archiveAt(IR_ARCHIVE_SAMPLE!), {
       manufacturer: 'Plex', model: 'Plex_Player', label: 'Kodi', commands: ['Play'], labels: ['Play'],
     }), /room on its last page.*requirement R10/);
     // Unit B's copies have two pages each, the second with room: the ordinary case of a free cell, refused too.
     if (load('h885_b_config') !== undefined) {
-      assert.throws(() => composeCatalogueDevice(open('h885_b_config'), archiveAt(IR_ARCHIVE!), {
+      assert.throws(() => composeCatalogueDevice(open('h885_b_config'), archiveAt(IR_ARCHIVE_SAMPLE!), {
         ...SONY, commands: [...SONY.commands], labels: [...SONY.labels],
       }), /copy at mode 86 has room on its last page.*requirement R10/);
     }

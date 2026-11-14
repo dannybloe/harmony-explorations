@@ -60,7 +60,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
-import { IR_ARCHIVE, LAB, load, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, load, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import {
   catalogueDevice,
@@ -85,7 +85,7 @@ import { SILENT_WRITE } from '../../../src/container/actions.ts';
 import { withoutStartUpSelect, withStartUpSelect } from '../../../src/families/harmony-300-350/devices.ts';
 import { IDENTIFIED, onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
 
-const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
+const needs = needing(skipWithoutLab(), skipWithoutIrArchiveSample());
 
 /**
  * One deflated or stored entry of a ZIP by name, through its central directory: the other owner's Harmony 350
@@ -151,7 +151,7 @@ function accountOf(file: string, c: Container): Device[] {
   return metadataArchive(c)!.devices.map((one) => {
     const label = one.name.replaceAll(' ', '_');
     const found = IDENTIFIED[file]![one.name];
-    const type = found === undefined ? undefined : catalogueDevice(IR_ARCHIVE!, found[0], found[1]).deviceType;
+    const type = found === undefined ? undefined : catalogueDevice(IR_ARCHIVE_SAMPLE!, found[0], found[1]).deviceType;
     return { name: one.name, label, group: groups.get(label), type, commands: one.commands.map((command) => command.name) };
   });
 }
@@ -203,8 +203,8 @@ test('every device of the family\'s compiles is the catalogue entry its command 
       for (const one of metadataArchive(c)!.devices) {
         const found = IDENTIFIED[file]![one.name];
         if (found === undefined) continue;
-        const entry = catalogueDevice(IR_ARCHIVE!, found[0], found[1]);
-        const theirs = new Set(catalogueCommands(IR_ARCHIVE!, entry.codeset!).map((command) => command.name));
+        const entry = catalogueDevice(IR_ARCHIVE_SAMPLE!, found[0], found[1]);
+        const theirs = new Set(catalogueCommands(IR_ARCHIVE_SAMPLE!, entry.codeset!).map((command) => command.name));
         const ours = new Set(one.commands.map((command) => command.name));
         differing[`${file} ${one.name}`] = [...theirs].filter((name) => !ours.has(name)).length + [...ours].filter((name) => !theirs.has(name)).length;
         assert.equal(differing[`${file} ${one.name}`], found[2], `${file} ${one.name}`);
@@ -225,7 +225,7 @@ test('the service\'s mode maps of the test setup route Input to the TV mode and 
     const setup = JSON.parse(readFileSync(new URL('../../../../corpus/setups/h350-test.json', import.meta.url), 'utf8')) as { devices: { name: string }[] };
     const ids = [83962903, 83962904, 83962905, 83962906, 83962907, 83962908, 83962909, 83962910];
     const nameOf = new Map(ids.map((id, k) => [id, setup.devices[k]!.name]));
-    const types: AccountDevice[] = setup.devices.map((one) => ({ name: one.name, deviceType: catalogueDevice(IR_ARCHIVE!, ...IDENTIFIED['setup']![one.name]!.slice(0, 2) as [string, string]).deviceType }));
+    const types: AccountDevice[] = setup.devices.map((one) => ({ name: one.name, deviceType: catalogueDevice(IR_ARCHIVE_SAMPLE!, ...IDENTIFIED['setup']![one.name]!.slice(0, 2) as [string, string]).deviceType }));
     const overrides: Record<string, string> = {};
     for (const one of reply.GetDeviceModeButtonMapsResult) {
       const name = nameOf.get(one.Key.Value)!;
@@ -354,7 +354,7 @@ test('on every compile of the family, ten one block digit copies are stored for 
         // catalogue digit's code, the digits composed from the catalogue entry the device is identified as. A record
         // a digit key sends opens on a silence or has a held block, so it is not counted.
         const found = IDENTIFIED[file]![one.name]!;
-        const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer: found[0], model: found[1], label: 'X', full: true });
+        const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer: found[0], model: found[1], label: 'X', full: true });
         const digits = Array.from({ length: 10 }, (_, d) => String(d)).filter((d) => plan.wanted.includes(d));
         const scratch = digits.length === 0 ? undefined : parse(composeIrGroup(c, digits.map((d) => plan.device.commands[plan.wanted.indexOf(d)]!)).bytes);
         const codes = new Set(scratch === undefined ? [] : irGroups(scratch)!.at(-1)!.addresses.map((address) => onceWithoutLeadIn(scratch, address).code));
@@ -396,7 +396,7 @@ test('Teletext is stored with a send list nothing calls for every device with th
         const found = IDENTIFIED[file]![one.name];
         let teletext = '?';
         if (found !== undefined) {
-          const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer: found[0], model: found[1], label: 'X', full: true });
+          const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer: found[0], model: found[1], label: 'X', full: true });
           const scratch = parse(composeIrGroup(c, [plan.device.commands[plan.wanted.indexOf('Teletext')]!]).bytes);
           const key = recordKey(scratch, irGroups(scratch)!.at(-1)!.addresses[0]!);
           teletext = idle.some((address) => recordKey(c, address) === key) ? 'idle' : 'not idle';

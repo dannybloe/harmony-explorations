@@ -383,8 +383,8 @@ PINS = {
 NODE_PROBE = r'''
 import { readFileSync, existsSync } from 'node:fs';
 const [codecDir, labDir, pinsPath, ...rest] = process.argv.slice(1);
-const { IR_ARCHIVE } = await import(labDir + '/index.ts');
-if (IR_ARCHIVE === undefined || !existsSync(IR_ARCHIVE)) { console.log(JSON.stringify({ skip: 'no infrared archive' })); process.exit(0); }
+const { IR_ARCHIVE_SAMPLE } = await import(labDir + '/index.ts');
+if (IR_ARCHIVE_SAMPLE === undefined || !existsSync(IR_ARCHIVE_SAMPLE)) { console.log(JSON.stringify({ skip: 'no sample of the infrared archive in the lab' })); process.exit(0); }
 // Reading a character map can draw our own letters to recognise them, from the font files the codec's Node
 // resources supply.
 await import(codecDir + '/support/resources.node.ts');
@@ -399,7 +399,7 @@ const tables = new Map();
 const namesOf = (name) => {
   if (!tables.has(name)) {
     const t = new Map();
-    for (const command of catalogueCommands(IR_ARCHIVE, `codesets/${name.slice(0, 2)}/${name}.json`)) {
+    for (const command of catalogueCommands(IR_ARCHIVE_SAMPLE, `codesets/${name.slice(0, 2)}/${name}.json`)) {
       for (const v of command.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
         const k = codeKey(v[1]);
         t.set(k, [...new Set([...(t.get(k) ?? []), command.name])]);

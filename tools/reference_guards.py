@@ -38,6 +38,7 @@ test file be checked for names as well.
 import argparse
 import collections
 import hashlib
+import json
 import os
 import re
 import subprocess
@@ -214,12 +215,13 @@ def person_names(root=ROOT):
 
 
 def catalogue_checkout(root=ROOT):
-    """Where `packages/lab` finds the copy of Logitech's device database, or None.
+    """Where `packages/lab` finds the lab's sample of Logitech's device database, or None.
 
     Asked of `packages/lab` itself, through node, rather than located a second time here, so the two
-    languages cannot disagree about where the checkout is.
+    languages cannot disagree about where it is. The sample, never the checkout it was taken from: nothing
+    a test runs reads the checkout, which is a third party's and moves with every pull.
     """
-    script = ("const m = await import(%r); process.stdout.write(m.IR_ARCHIVE ?? '')"
+    script = ("const m = await import(%r); process.stdout.write(m.IR_ARCHIVE_SAMPLE ?? '')"
               % os.path.join(root, 'packages', 'lab', 'src', 'index.ts'))
     try:
         out = subprocess.run(['node', '--input-type=module', '-e', script], cwd=root,
@@ -230,15 +232,24 @@ def catalogue_checkout(root=ROOT):
     return path if path and os.path.isdir(path) else None
 
 
-def catalogue_authors(checkout):
-    """The copy's author: its commit authors and the owner its origin names, read from the checkout."""
-    if checkout is None:
+def catalogue_authors(sample):
+    """The copy's author: the checkout's commit authors and the owner its origin names.
+
+    Read from the note the sample carries, `_sample.json`, which the script that takes the sample writes
+    from the checkout's own history, so the names are never written in this repository.
+    """
+    if sample is None:
         return None
-    people = _git_lines(['log', '--format=%an%n%ae'], checkout)
-    for url in _git_lines(['remote', 'get-url', 'origin'], checkout):
-        owner = re.search(r'github\.com[:/]([^/]+)/', url)
-        if owner:
-            people.append(owner.group(1))
+    note = os.path.join(sample, '_sample.json')
+    try:
+        with open(note, encoding='utf-8') as handle:
+            recorded = json.load(handle).get('people') or []
+    except (OSError, ValueError):
+        return None
+    people = []
+    for one in recorded:
+        owner = re.search(r'github\.com[:/]([^/]+)/', one)
+        people.append(owner.group(1) if owner else one)
     return name_tokens(people)
 
 

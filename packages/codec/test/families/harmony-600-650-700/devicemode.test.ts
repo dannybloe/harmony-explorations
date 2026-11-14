@@ -26,7 +26,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ARCH14_FAMILY, H650_FAMILY, IR_ARCHIVE, needing, require_, sampled, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { ARCH14_FAMILY, H650_FAMILY, IR_ARCHIVE_SAMPLE, needing, require_, sampled, skipUnless, skipWithoutIrArchiveSample, slow } from '@harmony/lab';
 import {
   type Container,
   catalogueCommands,
@@ -205,9 +205,9 @@ function open(name: string): Container {
 
 /** A device's catalogue commands, first of each name, in catalogue order. */
 function commandsOf(one: Cal): { name: string; keycode: string }[] {
-  const codeset = one.codeset ?? catalogueDevice(IR_ARCHIVE!, one.slug, one.file).codeset!;
+  const codeset = one.codeset ?? catalogueDevice(IR_ARCHIVE_SAMPLE!, one.slug, one.file).codeset!;
   const seen = new Set<string>();
-  return catalogueCommands(IR_ARCHIVE!, codeset).filter((command) => {
+  return catalogueCommands(IR_ARCHIVE_SAMPLE!, codeset).filter((command) => {
     if (seen.has(command.name)) return false;
     seen.add(command.name);
     return true;
@@ -615,7 +615,7 @@ test('section 325: the size table is every glyph width the thirteen arch 14 conf
 // 1. The rules
 
 test('section 325: the compiler\'s device mode rules against twenty catalogue devices it compiled',
-  needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless(...FIXTURES)), () => {
     const s = score();
     let lines = 0;
     const unsized: string[] = [];
@@ -656,7 +656,7 @@ const HELD_OUT: readonly Cal[] = [
 ];
 
 test('section 325: the rules against a device they were not fitted to, in two compiles',
-  needing(skipWithoutIrArchive(), skipUnless('h650_power_hold_compile', 'h650_config_region')), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless('h650_power_hold_compile', 'h650_config_region')), () => {
     const s = score();
     for (const f of HELD_OUT.map(find)) {
       compare(s, `${f.one.fixture} ${f.one.label}`, f.read,
@@ -701,7 +701,7 @@ function composeWhole(f: Found, order: 'compiler' | 'catalogue'):
 const CONTROL: readonly string[] = ['Sony_TV', 'Panasonic_TV', 'Sony_KE-50MR1E'];
 
 test('section 325: a catalogue device composed whole reads back as the compiler\'s device mode',
-  slow(needing(skipWithoutIrArchive(), skipUnless(...FIXTURES))), () => {
+  slow(needing(skipWithoutIrArchiveSample(), skipUnless(...FIXTURES))), () => {
     proves(33, ['harmony-700'], ['docs/test-notes/harmony-700.md#the-configurations-run-on-it']);
     const s = score();
     const control = score();
@@ -813,7 +813,7 @@ const SEVERAL: readonly { compile: string; refused?: { message: string; keep: nu
 ];
 
 test('section 331: several catalogue devices composed in one run each read back as the same device composed alone, and Logitech\'s differ only where named',
-  slow(needing(skipWithoutIrArchive(), skipUnless(...SEVERAL.map((one) => one.compile)))), () => {
+  slow(needing(skipWithoutIrArchiveSample(), skipUnless(...SEVERAL.map((one) => one.compile)))), () => {
     // Against the same device composed alone into the same compile, against Logitech's, and the control.
     const alike = score();
     const logitech = score();
@@ -827,16 +827,16 @@ test('section 331: several catalogue devices composed in one run each read back 
         full: true,
       }));
       if (refused !== undefined) {
-        assert.throws(() => composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), requests), { message: refused.message }, compile);
+        assert.throws(() => composeCatalogueDevices(base, archiveAt(IR_ARCHIVE_SAMPLE!), requests), { message: refused.message }, compile);
         requests.splice(refused.keep);
         found.splice(refused.keep);
         if (found.length < 2) continue;
       }
-      const together = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE!), requests);
+      const together = composeCatalogueDevices(base, archiveAt(IR_ARCHIVE_SAMPLE!), requests);
       const all = parse(together.bytes);
       found.forEach((f, k) => {
         const where = `${compile} ${f.one.label}`;
-        const alone = composeCatalogueDevice(base, archiveAt(IR_ARCHIVE!), requests[k]!);
+        const alone = composeCatalogueDevice(base, archiveAt(IR_ARCHIVE_SAMPLE!), requests[k]!);
         const one = parse(alone.bytes);
         const mine = readMode(one, alone.screen.mode, namer(one, f.commands));
         // One namer for the composed container, since naming builds every catalogue command's block.

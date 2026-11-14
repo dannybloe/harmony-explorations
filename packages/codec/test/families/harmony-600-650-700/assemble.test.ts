@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { ARCH14_22_FAMILY, IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { ARCH14_22_FAMILY, IR_ARCHIVE_SAMPLE, needing, require_, skipUnless, skipWithoutIrArchiveSample, slow } from '@harmony/lab';
 import type { CatalogueSource, Container, Recipe, RecipeScreenItem } from '../../../src/index.ts';
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
 import { screenProgram } from '../../../src/screens/screen.ts';
@@ -61,7 +61,7 @@ const TWENTY_TWO = ARCH14_22_FAMILY.full;
 
 const containerOf = (name: string): Container => parse(new Uint8Array(require_(name)));
 /** What composing needs beside the donor: the catalogue's archive. The device count is the recipe's model's. */
-const composing = (): { archive: CatalogueSource } => ({ archive: archiveAt(IR_ARCHIVE!) });
+const composing = (): { archive: CatalogueSource } => ({ archive: archiveAt(IR_ARCHIVE_SAMPLE!) });
 /** A setup file, read as a recipe, which checks its shape. */
 const setupOf = (file: string): Recipe =>
   readRecipe(JSON.parse(readFileSync(new URL(`../../../../corpus/setups/${file}`, import.meta.url), 'utf8')));
@@ -393,7 +393,7 @@ const PLASMA_KIJKEN_SCREEN: readonly RecipeScreenItem[] = [
 ];
 
 test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the 6.2.13 file put through the same assembly but for its build stamp and where its new case programs sit, and lays 147798 bytes as content',
-     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_7_1_base', 'h650_test_config_clean')), () => {
+     needing(skipWithoutIrArchiveSample(), skipUnless('h650_start_config', 'h650_7_1_base', 'h650_test_config_clean')), () => {
   // The setup file states the screen.
   assert.deepEqual(setupOf('h650-test.json').activities.find((one) => one.name === 'Plasma kijken')?.screen, PLASMA_KIJKEN_SCREEN);
   const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config'), ...composing() });
@@ -442,7 +442,7 @@ test('on Logitech\'s starting compile the test setup\'s fifth activity is compos
 });
 
 test('with no screen stated, the composed activity\'s screen is empty: the menu\'s order aside, its four items are what a person misses',
-     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+     needing(skipWithoutIrArchiveSample(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
   const out = assembleSetup(withoutScreens(setupOf('h650-test.json')), { donor: require_('h650_start_config'), ...composing() });
   const missing = compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false });
   assert.deepEqual(missing.map((one) => [one.key, one.kind, one.b?.label]).sort(), [
@@ -458,7 +458,7 @@ test('with no screen stated, the composed activity\'s screen is empty: the menu\
 });
 
 test('in our letters the test setup assembles on Logitech\'s starting compile with every label in its page\'s font, and Teletext, too wide for it in ours, a size down',
-     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+     needing(skipWithoutIrArchiveSample(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
   const out = assembled({ ...setupOf('h650-test.json'), choices: { letters: 'oxanium' } }, 'h650_start_config', composing());
   assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
   assert.ok(out.container.allChecksPass);
@@ -488,7 +488,7 @@ test('in our letters the test setup assembles on Logitech\'s starting compile wi
 });
 
 test('the four slot family\'s choices reach the assembly: state colours and blended letters as its last two steps, a label too wide refused when that is chosen, and blending refused without our letters',
-     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+     needing(skipWithoutIrArchiveSample(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
   // Blending needs grey levels, which only our letters have: refused before anything is built.
@@ -507,7 +507,7 @@ test('the four slot family\'s choices reach the assembly: state colours and blen
 });
 
 test('the letters\' colours are a choice, and letters in other inks are read back as ours, by every reader that reads letters',
-     slow(needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean'))), () => {
+     slow(needing(skipWithoutIrArchiveSample(), skipUnless('h650_start_config', 'h650_test_config_clean'))), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
   // Yellow letters on a red shadow and blue ones on the bars: three inks no compile of Logitech's letters in.
@@ -545,7 +545,7 @@ test('the letters\' colours are a choice, and letters in other inks are read bac
 });
 
 test('the weight each face is drawn in is a choice, and a configuration in other weights is read and measured in them with no memory of the build',
-     slow(needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean'))), () => {
+     slow(needing(skipWithoutIrArchiveSample(), skipUnless('h650_start_config', 'h650_test_config_clean'))), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
   // Bolder labels, lighter regular screens: every face moved from the weight decided in 8.2.
@@ -584,7 +584,7 @@ test('the weight each face is drawn in is a choice, and a configuration in other
 });
 
 test('our pictures replace the six that are no state\'s background, after the checks and the colours, the setup and every text unchanged',
-     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+     needing(skipWithoutIrArchiveSample(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
   const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
   const look = { letters: 'oxanium', backgrounds: 'state colours', blendLetters: true } as const;
@@ -609,7 +609,7 @@ test('our pictures replace the six that are no state\'s background, after the ch
 });
 
 test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer meets its two row device list, whose page draws no title, its fonts lack letters, and an activity finds no start up screen to take its font from',
-     needing(skipWithoutIrArchive(), skipUnless('harvest_650_two_devices')), () => {
+     needing(skipWithoutIrArchiveSample(), skipUnless('harvest_650_two_devices')), () => {
   const smallest = require_('harvest_650_two_devices');
   // Its two devices are the setup's LG television and Denon receiver under the names Logitech gives them.
   assert.deepEqual(devices(parse(smallest)).map((one) => one.name), ['LG_OLED65G26LA', 'Denon_AVR-X4800H']);
@@ -677,7 +677,7 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
 });
 
 test('a device the donor lacks is composed from the catalogue with an activity on it, and every check passes',
-     needing(skipWithoutIrArchive(), skipUnless('h650_start_config')), () => {
+     needing(skipWithoutIrArchiveSample(), skipUnless('h650_start_config')), () => {
   const start = setupOf('h650-start.json');
   const setup: Recipe = {
     model: start.model,

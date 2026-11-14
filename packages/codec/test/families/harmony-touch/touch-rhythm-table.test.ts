@@ -66,21 +66,12 @@
  * file it under 18. No other remote reads a definition.
  */
 import assert from 'node:assert';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import test from 'node:test';
-import { IR_ARCHIVE, skipUnlessIrArchiveRelease } from '@harmony/lab';
-import {
-  frameSlots, keyCodeOfStatedCode, roundedPeriodOfCarrier, segmentRefs, statedCodeOfDefinition, withStatedWidths,
-  withToggleCleared, type ArchiveKeyCode, type ArchiveProtocol,
-} from '../../../src/catalogue/archive.ts';
-import { archiveProtocols } from '../../../src/catalogue/archive.node.ts';
+import { roundedPeriodOfCarrier, segmentRefs, type ArchiveProtocol } from '../../../src/catalogue/archive.ts';
 import { mergedIntervals, pulsesOfBlock, type BlockTail, type FrameShape, type Pulse } from '../../../src/infrared/irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from '../../../src/infrared/protocols.ts';
 import { biphaseOf, cellsOf, timingsOf, type StatedCode, type StatedItem } from '../../../src/infrared/stated.ts';
-import {
-  carrierOfPeriod, definitionOfRow, isDefinitionRefusal, keyCodeText, storedMicrosecondOf,
-} from '../../../src/families/harmony-touch/definition.ts';
+import { carrierOfPeriod, definitionOfRow, isDefinitionRefusal, keyCodeText, storedMicrosecondOf } from '../../../src/families/harmony-touch/definition.ts';
 import type { IrProtocol } from '../../../src/families/harmony-touch/documents.ts';
 import { engineKeyCodeGroups, enginePacketOf, engineSegmentId, engineWordsOf, type TouchPacket } from '../../../src/families/harmony-touch/packet.ts';
 
@@ -516,111 +507,4 @@ test('by shape and evidence: which rows are written and alike, and which shapes 
   ]);
   const writtenUncovered = RESULTS.filter((r) => r.writtenAt !== undefined && !played.has(`${shapeOf(r.row)}${r.row.also === undefined ? '' : ', several rhythms'}`));
   assert.deepStrictEqual(countBy(writtenUncovered, (r) => r.writtenAt!), { name: 146, stated: 93 });
-});
-
-// ---------------------------------------------------------------------------------------------------
-// Against Logitech's own definitions, which needs the archive
-// ---------------------------------------------------------------------------------------------------
-
-/** Every distinct key code the archive's codesets state, by family, read once for the tests below. */
-let archiveCodesRead: Map<string, Set<string>> | undefined;
-function archiveCodes(): Map<string, Set<string>> {
-  if (archiveCodesRead !== undefined) return archiveCodesRead;
-  const out = new Map<string, Set<string>>();
-  const directory = join(IR_ARCHIVE!, 'codesets');
-  for (const bucket of readdirSync(directory)) {
-    for (const file of readdirSync(join(directory, bucket))) {
-      const text = readFileSync(join(directory, bucket, file), 'utf8');
-      for (const match of text.matchAll(/"keycode":\s*"(G:([^:"]+):[^"]*)"/g)) {
-        let set = out.get(match[2]!);
-        if (set === undefined) out.set(match[2]!, set = new Set());
-        set.add(match[1]!);
-      }
-    }
-  }
-  return archiveCodesRead = out;
-}
-
-test('every refused family is held by the Touch\'s description: Logitech\'s definition of it makes a packet for every code of 103 families, and all but 27 malformed codes of the 104th', { ...skipUnlessIrArchiveRelease() }, () => {
-  const theirs = new Map(archiveProtocols(IR_ARCHIVE!).map((p) => [p.name, p]));
-  const codes = archiveCodes();
-  const refused = RESULTS.filter((r) => r.refusal !== undefined);
-  const outcome: Record<string, number> = {};
-  const whole: string[] = [];
-  for (const r of refused) {
-    const p = theirs.get(r.row.family)!;
-    let made = 0;
-    const all = [...(codes.get(r.row.family) ?? [])];
-    for (const keyCode of all) {
-      const packet = enginePacketOf(p.definition as unknown as IrProtocol, keyCode);
-      const k = 'refusal' in packet ? packet.refusal : 'a packet';
-      outcome[k] = (outcome[k] ?? 0) + 1;
-      if (!('refusal' in packet)) made += 1;
-    }
-    if (all.length > 0 && made === all.length) whole.push(r.row.family);
-  }
-  assert.strictEqual(refused.length, 104);
-  assert.strictEqual(whole.length, 103);
-  // `Galaxis 16 Bit Quad Toggle`: 27 of its catalogue codes carry a second `0x` inside a value, which the engine
-  // cannot read as a digit; its other 1480 make a packet.
-  assert.deepStrictEqual(refused.map((r) => r.row.family).filter((f) => !whole.includes(f)), ['Galaxis 16 Bit Quad Toggle']);
-  assert.deepStrictEqual(outcome, { 'a packet': 8919, 'a digit that is not hexadecimal': 27 });
-  // How many of the catalogue's codes the refusals keep from a Touch, by reason, against those of the rows written.
-  const held = (rs: readonly RowResult[]) => rs.reduce((n, r) => n + (codes.get(r.row.family)?.size ?? 0), 0);
-  assert.strictEqual(held(RESULTS.filter((r) => r.refusal === undefined)), 142931);
-  const byReason: Record<string, number> = {};
-  for (const r of refused) byReason[r.refusal!] = (byReason[r.refusal!] ?? 0) + (codes.get(r.row.family)?.size ?? 0);
-  assert.deepStrictEqual(byReason, {
-    'the family\'s name states no width for its values and none was given': 1720,
-    'a width that is not a whole number of cells': 2175,
-    'the row states its frame and not its repetition, so no trailer and no gap': 1441,
-    'a whole record shape, which no segment of a definition states': 3610,
-  });
-});
-
-/**
- * **The calibration of the Touch's end.** Logitech's definition of each measured row written, read through
- * `enginePacketOf` at toggle state 0 and played at the compiler's repeat count, the one our definition states, against
- * that row's blocks, which were measured off configurations Logitech's compiler built from the same definitions. The
- * row's side clears the toggle bit, `withToggleCleared`, which is what the engine's first send does. A code whose
- * groups name other segments than the definition's own default is a structure the row's blocks do not state, and is
- * counted apart.
- */
-test('Logitech\'s definitions read as the engine reads them send the 29 measured rows\' blocks on 89367 of the 93422 catalogue codes, and every other code is named', { ...skipUnlessIrArchiveRelease() }, () => {
-  const theirs = new Map(archiveProtocols(IR_ARCHIVE!).map((p) => [p.name, p]));
-  const codes = archiveCodes();
-  const measured = RESULTS.filter((r) => r.writtenAt === 'name' && evidenceOf(r.row) === 'measured');
-  assert.strictEqual(measured.length, 29);
-  const outcome: Record<string, number> = {};
-  const differing = new Set<string>();
-  const names = (k: ArchiveKeyCode | null | undefined) => JSON.stringify(
-    [k?.Start, k?.Repeat, k?.Finish].map((list) => (list ?? []).map((ref) => ref.SegmentName)));
-  for (const r of measured) {
-    const p = theirs.get(r.row.family)!;
-    const repeats = (definitionOfRow(r.row, 1) as IrProtocol).PressMinimumRepeats ?? 1;
-    for (const keyCode of codes.get(r.row.family) ?? []) {
-      const note = (k: string) => { outcome[k] = (outcome[k] ?? 0) + 1; };
-      const code = statedCodeOfDefinition(p, keyCode);
-      if (code === undefined) { note('our reader declines the code'); continue; }
-      if (names(keyCodeOfStatedCode(p, code)) !== names(p.definition.KeyCode)) { note('other segments than the default'); continue; }
-      const packet = enginePacketOf(p.definition as unknown as IrProtocol, keyCode);
-      if ('refusal' in packet) { note(`no packet: ${packet.refusal}`); continue; }
-      const frames = withToggleCleared(p, withStatedWidths(p, code.frames, frameSlots(keyCode)));
-      const press = rowSignal(r.row, frames, (r.row.tail ?? r.row.opening)!);
-      const held = rowSignal(r.row, frames, r.row.held!);
-      if (press === undefined || held === undefined) { note('the row\'s renderer declines'); continue; }
-      const touchPress = pressOf(packet, repeats);
-      const touchHeld = mergedIntervals([...packet.repeat]);
-      if (packet.finish.length === 0 && same(touchPress, mergedIntervals(press)) && same(touchHeld, mergedIntervals(held))) note('alike');
-      else if (packet.finish.length === 0 && same(touchPress, spelledAsTheEngine(press)) && same(touchHeld, spelledAsTheEngine(held))) note('alike under the engine\'s spelling');
-      else { note('different'); differing.add(r.row.family); }
-    }
-  }
-  assert.deepStrictEqual(outcome, {
-    alike: 89367, different: 3634, 'other segments than the default': 417, 'our reader declines the code': 4,
-  });
-  // **The one family that differs is the row's and not the reader's**, as in `test/families/harmony-touch/touch-definition.test.ts`:
-  // `MemorexO1 32 Bit` was measured off three codes of the corpus with a constant 35100 microsecond silence after the
-  // frame, and Logitech's definition pads the frame to 107600 instead.
-  assert.deepStrictEqual([...differing], ['MemorexO1 32 Bit']);
 });

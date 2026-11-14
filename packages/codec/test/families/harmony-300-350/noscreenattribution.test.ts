@@ -97,7 +97,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { assertFileFamilyContainer } from '@harmony/usb/rails';
 import {
-  FILE_BASED_FAMILY, IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+  FILE_BASED_FAMILY, IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab,
 } from '@harmony/lab';
 
 import { type Container, ComposeError, parse, type Recipe } from '../../../src/index.ts';
@@ -119,7 +119,7 @@ const SETUP = 'work/setups/h350-test/compile-Result.EzHex';
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
 
 const needsLab = needing(skipWithoutLab(), skipUnless(...FIVE));
-const needsArchive = needing(skipWithoutIrArchive());
+const needsArchive = needing(skipWithoutIrArchiveSample());
 
 const RECIPE = JSON.parse(readFileSync(new URL('../../../../corpus/setups/h350-test.json', import.meta.url), 'utf8')) as Recipe;
 /** Where Logitech's service put each device, as `noscreenfromnothing.test.ts` states it. */
@@ -144,7 +144,7 @@ function seven(): [string, Container][] {
 
 /** Our build of the test setup from nothing, the setup file, Logitech's keys, a moment and the catalogue alone. */
 function ours(): Container {
-  return parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes);
+  return parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE_SAMPLE!), { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes);
 }
 
 const sum = (record: Readonly<Record<string, number>>): number => Object.values(record).reduce((a, b) => a + b, 0);
@@ -396,7 +396,7 @@ test('the build takes no container, and no module of the codec or of the USB lib
   assert.equal(buildNoScreenSetup.length, 2);
   const request = Object.freeze({ recipe: RECIPE, keys: KEYS, builtAt: MOMENT });
   assert.deepEqual(Object.keys(request).sort(), ['builtAt', 'keys', 'recipe']);
-  assert.doesNotThrow(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE!), request));
+  assert.doesNotThrow(() => buildNoScreenSetup(archiveAt(IR_ARCHIVE_SAMPLE!), request));
   // And no module that build can reach names the lab: neither the lab locator's package nor its variable appears in the
   // source of the codec or of the USB library, the one package the codec depends on that could carry a file in.
   const sources = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((one) =>

@@ -53,7 +53,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, skipWithoutIrArchiveSample } from '@harmony/lab';
 
 import { checkConfiguration, findingsByRule, refusalsBeforeASync } from '../../../src/families/harmony-touch/check.ts';
 import { ComposeRefusal } from '../../../src/families/harmony-touch/compose.ts';
@@ -200,13 +200,13 @@ test('the four lists a setup is composed onto are each one empty list and nothin
 
 const ENTRIES = ['LG/OLED65G36LA', 'Denon/AVC-X4800H', 'Sony/BDP-S6500', 'Plex/Plex_Player', 'KPN/TV6000COK', 'Microsoft/XBox_360_Elite', 'Ligawo/3090063'];
 
-test('with the archive: each device\'s record, its commands, the families it sends under our ids and its features; 373 commands in all', skipWithoutIrArchive(), () => {
+test('with the archive: each device\'s record, its commands, the families it sends under our ids and its features; 373 commands in all', skipWithoutIrArchiveSample(), () => {
   const f = file();
   assert.deepEqual(f.devices.map((d) => d.device), ENTRIES);
   const kinds = (r: DeviceWithFeatures) => (r.DeviceFeatures as Json[]).map((x) => `${String(x.__type).split(':')[0]}${x.Inputs?.length ? ` ${x.Inputs.length}` : ''}${x.StateValues ? ` ${x.StateValues.length}` : ''}`);
   const written = f.devices.map((r) => {
     const p = f.touch.devices.find((x) => x.device === r.name)!;
-    const w = deviceRecordOfArchive(archiveAt(IR_ARCHIVE!), { entry: r.device, id: p.id, protocolIds: f.touch.protocols });
+    const w = deviceRecordOfArchive(archiveAt(IR_ARCHIVE_SAMPLE!), { entry: r.device, id: p.id, protocolIds: f.touch.protocols });
     assert.equal(w.record.Device['Id-'], p.id);
     for (const d of w.protocols) assert.equal(d['Id-'], f.touch.protocols[d.Name as string], `${r.name} ${String(d.Name)}`);
     return [r.name, w.record.Commands?.length ?? 0, w.protocols.map((d) => d.Name).join(' and '), kinds(w.record)];
@@ -223,10 +223,10 @@ test('with the archive: each device\'s record, its commands, the families it sen
   assert.equal(written.reduce((n, w) => n + (w[1] as number), 0), 373);
 });
 
-test('with the archive: the refusals of a family with no id of ours, an id not ours, a shared id and an entry the archive does not hold, beside the control', skipWithoutIrArchive(), () => {
+test('with the archive: the refusals of a family with no id of ours, an id not ours, a shared id and an entry the archive does not hold, beside the control', skipWithoutIrArchiveSample(), () => {
   const f = file();
   const ids = f.touch.protocols;
-  const r = (entry: string, id: number, protocolIds: Record<string, number>) => refusalOf(() => deviceRecordOfArchive(archiveAt(IR_ARCHIVE!), { entry, id, protocolIds }));
+  const r = (entry: string, id: number, protocolIds: Record<string, number>) => refusalOf(() => deviceRecordOfArchive(archiveAt(IR_ARCHIVE_SAMPLE!), { entry, id, protocolIds }));
   const { 'Sony 20 Bit': _, ...withoutSony } = ids;
   assert.match(r('Sony/BDP-S6500', 900000103, withoutSony) ?? '', /of the family Sony 20 Bit, which the setup names no protocol id for/);
   assert.match(r('Sony/BDP-S6500', 12, ids) ?? '', /device id 12 is not one of ours/);
@@ -235,10 +235,10 @@ test('with the archive: the refusals of a family with no id of ours, an id not o
   assert.equal(r('Sony/BDP-S6500', 900000103, ids), undefined);
 });
 
-test('with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone', skipWithoutIrArchive(), () => {
+test('with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone', skipWithoutIrArchiveSample(), () => {
   proves(4, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   proves(24, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
-  const docs: SyncDocuments = buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE!), account: ACCOUNT });
+  const docs: SyncDocuments = buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE_SAMPLE!), account: ACCOUNT });
   assert.deepEqual(Object.keys(docs), ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList']);
   const read = readConfiguration(docs);
   assert.deepEqual([read.activities.length, read.devices.length, read.maps.length, read.protocols.length], [5, 7, 12, 5]);
@@ -248,5 +248,5 @@ test('with the archive: the six documents from nothing read back as the bench se
   assert.deepEqual(devices.filter((d) => d.Device.DeviceProfileUri !== undefined).map((d) => [d.Device.Name, d.Device.DeviceProfileUri, d.Device.ContentProfileKey]),
     [['LG TV', ACCOUNT.tuning!.DeviceProfileUri, ACCOUNT.tuning!.ContentProfileKey]]);
   // The control: an account with no favourites is refused, since the favourites activity's device needs them.
-  assert.match(refusalOf(() => buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE!), account: { context: ACCOUNT.context } })) ?? '', /the account states no favourites address and key/);
+  assert.match(refusalOf(() => buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE_SAMPLE!), account: { context: ACCOUNT.context } })) ?? '', /the account states no favourites address and key/);
 });

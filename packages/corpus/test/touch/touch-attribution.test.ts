@@ -70,7 +70,7 @@ const SETUP_FILE = fileURLToPath(new URL('../../setups/touch-test.json', import.
 const json = (fixture: string): unknown => JSON.parse(new TextDecoder().decode(lab.require_(fixture)));
 const inputs = (): NothingInputs => ({
   file: JSON.parse(readFileSync(SETUP_FILE, 'utf8')),
-  archive: lab.IR_ARCHIVE!,
+  archive: lab.IR_ARCHIVE_SAMPLE!,
   account: (json(ACCOUNT) as { account: TouchAccountFile }).account,
 });
 const documentsOf = (set: TouchSet): harmonyTouch.SyncDocuments => harmonyTouch.documentsOfAnswers(set.answers as unknown as harmonyTouch.SyncAnswer[]);
@@ -114,21 +114,23 @@ function readsDuring(build: () => void): string[] {
   return reads;
 }
 
-const needed = lab.needing(lab.skipWithoutIrArchive(), lab.skipUnless(SETUP, ACCOUNT, BUILT)).skip;
+const needed = lab.needing(lab.skipWithoutIrArchiveSample(), lab.skipUnless(SETUP, ACCOUNT, BUILT)).skip;
 
 describe('9.3: every field of the set from nothing credited to a generator, none carried', { skip: needed }, () => {
-  it('the build reads no file but the archive\'s: 56 calls on 15 files, the manifest and each device\'s entry and code set, none in the lab', () => {
+  it('the build reads no file but the archive\'s: 56 calls on 15 files, the manifest and each device\'s entry and code set, none elsewhere in the lab', () => {
     const given = inputs();
     let built: ReturnType<typeof withNothing> | undefined;
     const reads = readsDuring(() => {
       built = withNothing(given);
     });
     assert.ok(built !== undefined && 'set' in built);
-    const archive = realpathSync(lab.IR_ARCHIVE!) + sep;
+    const archive = realpathSync(lab.IR_ARCHIVE_SAMPLE!) + sep;
     const outside = reads.filter((p) => !realpathSync(p).startsWith(archive));
     assert.equal(outside.length, 0, 'a file outside the archive was read');
     assert.deepEqual([reads.length, new Set(reads).size], [56, 15]);
-    assert.equal(reads.filter((p) => realpathSync(p).startsWith(realpathSync(lab.LAB!) + sep)).length, 0);
+    // The archive read here is its sample, which the lab keeps; nothing else of the lab is read, no document of
+    // Logitech's among it.
+    assert.equal(reads.filter((p) => realpathSync(p).startsWith(realpathSync(lab.LAB!) + sep) && !realpathSync(p).startsWith(archive)).length, 0);
     // The manifest, and per device of the seven its catalogue entry and its code set.
     const files = [...new Set(reads.map((p) => realpathSync(p).slice(archive.length).split(sep)[0]!))];
     assert.deepEqual(['manifest.json', 'devices', 'codesets'].map((top) => [...new Set(reads)].filter((p) => realpathSync(p).slice(archive.length).split(sep)[0] === top).length), [1, 7, 7]);

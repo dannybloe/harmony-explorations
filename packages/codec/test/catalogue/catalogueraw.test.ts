@@ -12,19 +12,27 @@
  * One line is up to 130 KB.
  */
 import assert from 'node:assert/strict';
-import { createReadStream, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { createInterface } from 'node:readline';
-import { createGunzip } from 'node:zlib';
 import test from 'node:test';
-import { IR_ARCHIVE, imagePath, needing, skipUnless, skipUnlessIrArchiveRelease, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { imagePath, needing, slow } from '@harmony/lab';
 import { deviceDriving } from '../../src/catalogue/driving.ts';
 import {
-  RAW_BLOCKS_FILE, RAW_DERIVED_DIRECTORY, RAW_FIELDS, RAW_FIELDS_FILE, RAW_FIELDS_FORMAT, RAW_INDEX_FILE,
-  RAW_MANIFEST_FILE, RAW_SUMS_FILE, type RawDeviceRecord, alignDevice, rawFieldsEntry, rawProjection,
+  RAW_BLOCKS_FILE,
+  RAW_DERIVED_DIRECTORY,
+  RAW_FIELDS,
+  RAW_FIELDS_FILE,
+  RAW_FIELDS_FORMAT,
+  RAW_INDEX_FILE,
+  RAW_MANIFEST_FILE,
+  RAW_SUMS_FILE,
+  type RawDeviceRecord,
+  alignDevice,
+  rawFieldsEntry,
+  rawProjection,
 } from '../../src/catalogue/catalogueraw.ts';
-import { catalogueRules, rawCaptureDevice, rawDerivedState } from '../../src/catalogue/catalogueraw.node.ts';
+import { rawCaptureDevice, rawDerivedState } from '../../src/catalogue/catalogueraw.node.ts';
 
 /** The timing block every archive record carries, made up. */
 const TIMING = {
@@ -140,51 +148,6 @@ test('derived files are absent without a manifest and stale when SHA256SUMS stat
   }
 });
 
-/**
- * Item 1.4. The archive's README says every action list was sorted on `Order`, the per input and per
- * state ones included; section 305 had compared the power, input switching and channel entry lists only.
- * Measured both ways over the whole capture: every list equals the raw one sorted on `Order`, and of the
- * ones stored out of order not one equals it as stored. The counts are exact, so a capture that changes
- * fails here by name. The 1 unaligned path is a state Panasonic's TX-W32D3DPL states twice with
- * different `next` lists, where the archive kept the first; the projection refuses it rather than pick.
- */
-test('every per input and per state action list in the archive is in the service\'s Order sequence, and none in stored order',
-  slow(needing(skipWithoutIrArchive(), skipUnless('ir_archive_raw_features'))), async () => {
-    const where = new Map<number, string>();
-    const root = join(IR_ARCHIVE!, 'devices');
-    // Folders only: Finder leaves a .DS_Store beside them, which is not a device.
-    for (const slug of readdirSync(root, { withFileTypes: true }).filter((one) => one.isDirectory()).map((one) => one.name)) {
-      for (const row of JSON.parse(readFileSync(join(root, slug, 'index.json'), 'utf8')) as { f: string; id: number }[]) {
-        where.set(row.id, join(root, slug, row.f));
-      }
-    }
-    const counts: Record<string, [number, number, number, number]> = {};
-    const unaligned: string[] = [];
-    const lines = createInterface({ input: createReadStream(imagePath('ir_archive_raw_features')!).pipe(createGunzip()), crlfDelay: Infinity });
-    for await (const line of lines) {
-      const raw = JSON.parse(line) as RawDeviceRecord;
-      const file = where.get(raw.id);
-      assert.ok(file !== undefined, `device ${raw.id} is in the capture and not in the archive`);
-      const alignment = alignDevice(rawProjection(raw), deviceDriving(JSON.parse(readFileSync(file, 'utf8'))));
-      unaligned.push(...alignment.unaligned.map((path) => `${raw.id} ${path}`));
-      for (const one of alignment.compared) {
-        // Compared, stored out of order, equal sorted, and equal as stored where stored out of order.
-        const family = counts[one.family] ??= [0, 0, 0, 0];
-        family[0] += 1;
-        if (one.storedOutOfOrder) family[1] += 1;
-        if (one.matchesSorted) family[2] += 1;
-        if (one.storedOutOfOrder && one.matchesStored) family[3] += 1;
-      }
-    }
-    assert.deepEqual(counts, {
-      device: [477079, 3884, 477079, 0],
-      input: [680091, 55744, 680091, 0],
-      stateRoute: [82622, 5282, 82622, 0],
-      stateList: [29326, 68, 29326, 0],
-    });
-    assert.deepEqual(unaligned, ['110096 states["AV4Input"]']);
-  });
-
 const featuresPath = imagePath('ir_archive_raw_features');
 const RAW_DIRECTORY = featuresPath === undefined ? undefined : dirname(featuresPath);
 
@@ -232,38 +195,3 @@ test('one device is fetched out of the capture without a scan', needing(skipWith
   assert.ok(cold < 250, `cold lookup took ${cold.toFixed(0)} ms`);
   assert.ok(warm < 100, `warm lookup took ${warm.toFixed(0)} ms`);
 });
-
-test('the one door answers from both sources: the Sony\'s Netflix numbered 1 and online, and recording steps marked',
-  needing(skipUnlessIrArchiveRelease(), skipWithoutDerived()), () => {
-    // Section 321: the Sony KDL-32W705B has Netflix at InputOrder 1 and last in the archive's array.
-    const sony = catalogueRules(IR_ARCHIVE!, 'Sony', 'KDL-32W705B', { raw: RAW_DIRECTORY! });
-    assert.equal(sony.globalDeviceId, 260473);
-    const names = sony.archive.inputs!.list!.map((one) => one.name);
-    assert.equal(names.at(-1), 'Netflix');
-    assert.deepEqual(sony.raw!.inputs.at(-1), { inputOrder: 1, online: true });
-    assert.deepEqual(sony.raw!.inputs.filter((one) => one['online'] === true).length, 1);
-    assert.ok(sony.sources.raw !== undefined && sony.sources.archive.generated === sony.sources.raw.archiveGenerated);
-    // The archive alone, when no raw directory is given: the same rules and no raw half.
-    const archiveOnly = catalogueRules(IR_ARCHIVE!, 'Sony', 'KDL-32W705B');
-    assert.equal(archiveOnly.raw, undefined);
-    assert.deepEqual(archiveOnly.archive, sony.archive);
-    // Two of section 321's devices whose compiles each hold one silent input transition the archive could
-    // not explain: the raw capture marks exactly one input state step of each as only recording.
-    const recordingInputSteps = (slug: string, file: string): string[] =>
-      [...catalogueRules(IR_ARCHIVE!, slug, file, { raw: RAW_DIRECTORY! }).raw!.steps]
-        .filter(([path, fields]) => path.startsWith('inputs.list[') && fields['devActionType'] === 1).map(([path]) => path);
-    assert.deepEqual(recordingInputSteps('Panasonic', 'TX-29AK40F'), ['inputs.list[0].commands[1]']);
-    assert.deepEqual(recordingInputSteps('Thomson', '25DT60H'), ['inputs.list[2].commands[0]']);
-    // And every state step of the LG sends, which its exact compile of section 321 agrees with.
-    const lg = catalogueRules(IR_ARCHIVE!, 'LG', 'OLED65G26LA', { raw: RAW_DIRECTORY! });
-    assert.equal(lg.raw!.steps.size, 13);
-    assert.ok([...lg.raw!.steps.values()].every((fields) => fields['devActionType'] === 2));
-  });
-
-test('InputOrder is not a unique numbering: two of the Denon AVR-1912\'s inputs share one',
-  needing(skipUnlessIrArchiveRelease(), skipWithoutDerived()), () => {
-    const denon = catalogueRules(IR_ARCHIVE!, 'Denon', 'AVR-1912', { raw: RAW_DIRECTORY! });
-    const numbers = denon.raw!.inputs.map((one) => one['inputOrder']);
-    const names = denon.archive.inputs!.list!.map((one) => one.name);
-    assert.deepEqual([names[9], numbers[9], names[10], numbers[10]], ['CD', 11, 'QuickSelect 1', 11]);
-  });

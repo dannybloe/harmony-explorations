@@ -23,7 +23,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, ONE_FAMILY, ONE_SKIN_54_FAMILY, require_, sampled, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, ONE_FAMILY, ONE_SKIN_54_FAMILY, require_, sampled, skipUnless, skipWithoutIrArchiveSample, slow } from '@harmony/lab';
 import { type Container, parse, readRecipe } from '../../../src/index.ts';
 import { type ComposedSetup, composeSetup, takeApart } from '../../../src/build.ts';
 import { archSlot, modeRecords, taggedList, touchPages } from '../../../src/internal.ts';
@@ -69,7 +69,7 @@ const empty = (): ReturnType<typeof buildEmptyOneConfiguration> => {
 /** The composition, once for every test here. */
 let composedOnce: ComposedSetup | undefined;
 const composed = (): ComposedSetup => {
-  composedOnce ??= composeSetup(recipe(), { donor: empty().bytes, archive: archiveAt(IR_ARCHIVE!), builtAt: BUILT_AT });
+  composedOnce ??= composeSetup(recipe(), { donor: empty().bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!), builtAt: BUILT_AT });
   return composedOnce;
 };
 
@@ -79,7 +79,7 @@ const written = (): Uint8Array => {
   if (writtenOnce !== undefined) return writtenOnce;
   const out = composed();
   const built = oneBuiltBytes(out.container, out.blended).owners;
-  const infrared = catalogueInfraredBytes(out.container, archiveAt(IR_ARCHIVE!), catalogueDevices(out.container, recipe())).owners;
+  const infrared = catalogueInfraredBytes(out.container, archiveAt(IR_ARCHIVE_SAMPLE!), catalogueDevices(out.container, recipe())).owners;
   writtenOnce = built.map((one, k) => (one !== 0 || infrared[k] !== 0 ? 1 : 0));
   return writtenOnce;
 };
@@ -118,8 +118,8 @@ const COUNTED = 15;
 /** The device lists of the nineteen compiles, measured. */
 const DEVICE_LISTS = 102;
 
-const NEEDS = { skip: skipWithoutIrArchive().skip };
-const NEEDS_DONOR = { skip: skipUnless('harvest_one_two_devices').skip || skipWithoutIrArchive().skip };
+const NEEDS = { skip: skipWithoutIrArchiveSample().skip };
+const NEEDS_DONOR = { skip: skipUnless('harvest_one_two_devices').skip || skipWithoutIrArchiveSample().skip };
 
 // ---------------------------------------------------------------------------------------------------------
 // The composition.

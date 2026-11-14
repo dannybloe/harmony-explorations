@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url';
 
 import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
 import { irBlockWords, irHeaderPointers } from '@harmony/codec/internal';
-import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../../src/irsession.ts';
@@ -178,13 +178,13 @@ test('the file built from nothing sends, step for step, the codes Logitech\'s se
   });
 
 test('every expectation in the from nothing bench test is what the monitor will name the code the file sends',
-  needing(skipWithoutLab(), skipWithoutIrArchive()), () => {
+  needing(skipWithoutLab(), skipWithoutIrArchiveSample()), () => {
     const { c: ours, blob: ourBlob } = container(OURS);
     const { c: theirs, blob } = container(COMPILE);
     // Both files are on the bench's list: the compile names every code it stores, ours the two it does not.
     assert.ok(BENCH_CONFIGS.includes(COMPILE));
     assert.ok(BENCH_CONFIGS.includes(OURS));
-    const book = new CodeBook((name) => (name === COMPILE ? blob : name === OURS ? ourBlob : undefined), [COMPILE, OURS], IR_ARCHIVE);
+    const book = new CodeBook((name) => (name === COMPILE ? blob : name === OURS ? ourBlob : undefined), [COMPILE, OURS], IR_ARCHIVE_SAMPLE);
     book.nameFromCatalogue(BENCH_CODESETS);
     // A code as the compile's code of the same bytes in the same group, where it stores one; there is at most one.
     const inCompile = (send: Send): Send | undefined => {

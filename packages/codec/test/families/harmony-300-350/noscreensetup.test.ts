@@ -66,7 +66,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { assertFileFamilyContainer } from '@harmony/usb/rails';
-import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import { ComposeError, type Container, metadataArchive, parse, type Recipe } from '../../../src/index.ts';
 import { composeNoScreenSetup, type ComposedNoScreenSetup, devicePlaces, withoutNoScreenDevice } from '../../../src/build.ts';
@@ -75,7 +75,7 @@ import { allLists, maps, records, senders, startUp, timerRecords, transitions } 
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
 import { proves } from '@harmony/testkit/proof';
 
-const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
+const needs = needing(skipWithoutLab(), skipWithoutIrArchiveSample());
 
 const FIRST = 'work/setups/h350-test/first-compile/compile-Result.EzHex';
 const SECOND = 'work/setups/h350-test/compile-Result.EzHex';
@@ -118,7 +118,7 @@ function composed() {
     dropped.push(removed.lists.length);
     donor = parse(removed.bytes);
   }
-  const out = composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: KEYS });
+  const out = composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { recipe: RECIPE, keys: KEYS });
   memo = { first, donor, dropped, out, ours: parse(out.bytes), theirs: labFile(SECOND) };
   return memo;
 }
@@ -217,13 +217,13 @@ test('the setup composer refuses a key that disagrees with the configuration, a 
   needs, () => {
     proves(7, ['harmony-350']);
     const { donor } = composed();
-    assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: { ...KEYS, 'LG TV': { place: 1, press: 'short' }, Plasma: { place: 0, press: 'short' } } }),
+    assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { recipe: RECIPE, keys: { ...KEYS, 'LG TV': { place: 1, press: 'short' }, Plasma: { place: 0, press: 'short' } } }),
       (error: unknown) => error instanceof ComposeError && /holds LG TV on group 0, and the keys put it on group 1/.test(error.message));
     const { Knoll: _, ...noKnoll } = KEYS;
-    assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: noKnoll }), /give Knoll no place/);
-    assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: { ...KEYS, Knoll: { place: 1, press: 'long' } } }),
+    assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { recipe: RECIPE, keys: noKnoll }), /give Knoll no place/);
+    assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { recipe: RECIPE, keys: { ...KEYS, Knoll: { place: 1, press: 'long' } } }),
       /Knoll and Kodi are both on group 5|Kodi and Knoll are both on group 5/);
     const activity = RECIPE.activities[0]!;
     const naming = { ...RECIPE, activities: [{ ...activity, devices: [...activity.devices, { device: 'Plasma', roles: [] }] }] };
-    assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE!), { recipe: naming, keys: KEYS }), /names Plasma, which is composed here/);
+    assert.throws(() => composeNoScreenSetup(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { recipe: naming, keys: KEYS }), /names Plasma, which is composed here/);
   });

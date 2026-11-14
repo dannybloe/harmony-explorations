@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
-  FILE_BASED_FAMILY, imagePath, IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+  FILE_BASED_FAMILY, imagePath, IR_ARCHIVE_SAMPLE, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab,
 } from '@harmony/lab';
 import { catalogueDriving } from '../../src/catalogue/driving.node.ts';
 import { parse } from '../../src/container/gspm.ts';
@@ -1908,8 +1908,8 @@ const frameSignature = (shape: readonly number[], marks = false) => {
   return shape.map((us, i) => (i % 2 === 0 ? (marks ? `m${markOf(us)}` : 'm') : String(classOf(us)))).join('');
 };
 const catalogueFrameSignature = (slug: string, file: string, command: string, marks = false) => {
-  const device = JSON.parse(readFileSync(join(IR_ARCHIVE!, 'devices', slug, `${file}.json`), 'utf8')) as { codeset: string };
-  const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE!, device.codeset), 'utf8')) as {
+  const device = JSON.parse(readFileSync(join(IR_ARCHIVE_SAMPLE!, 'devices', slug, `${file}.json`), 'utf8')) as { codeset: string };
+  const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE_SAMPLE!, device.codeset), 'utf8')) as {
     commands: { name: string; pronto: string }[];
   }).commands;
   const words = codes.find((one) => one.name === command)!.pronto.split(' ').map((w) => parseInt(w, 16));
@@ -1949,7 +1949,7 @@ const catalogueFrameSignature = (slug: string, file: string, command: string, ma
  * it holds as many frames as that press.
  */
 test('on section 306\'s compiles every held power record above its minimum ends inside the hold, and the one hold shorter than a press sends a press',
-  needing(skipWithoutIrArchive(), skipUnless('h700_power_hold_compile', 'h650_power_hold_compile')), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless('h700_power_hold_compile', 'h650_power_hold_compile')), () => {
     type Held = { fixture: string; group: number; record: number; slug: string; file: string; power: 'on' | 'off' | 'toggle' };
     const HELD: Held[] = [
       { fixture: 'h700_power_hold_compile', group: 6, record: 39, slug: 'Panasonic', file: 'TX-P42GT30E', power: 'on' },
@@ -1970,7 +1970,7 @@ test('on section 306\'s compiles every held power record above its minimum ends 
     let partedFromWholeCopies = 0;
     let partedFromStarts = 0;
     for (const held of HELD) {
-      const driving = catalogueDriving(IR_ARCHIVE!, held.slug, held.file);
+      const driving = catalogueDriving(IR_ARCHIVE_SAMPLE!, held.slug, held.file);
       const step = driving.power![held.power]!.find((one) => one.kind === 'send' && one.holdMs !== undefined);
       assert.ok(step && step.kind === 'send', `${held.file} states a held power press`);
       const holdUs = step.holdMs! * 1000;
@@ -2044,7 +2044,7 @@ test('on section 306\'s compiles every held power record above its minimum ends 
       ['h650_power_hold_compile', 6, 'Knoll', 'HDP-1100', [4, 6]],
     ] as const) {
       const c = load(fixture);
-      const minimum = catalogueDriving(IR_ARCHIVE!, slug, file).timing.pressMinRepeats;
+      const minimum = catalogueDriving(IR_ARCHIVE_SAMPLE!, slug, file).timing.pressMinRepeats;
       const found = irGroups(c)![group]!.addresses.flatMap((_, index) => {
         const [once, again] = blocks(c, group, index);
         return !again && heldFramesOf(irBlockWords(c, once!)!).length > minimum ? [index] : [];
@@ -2159,7 +2159,7 @@ test('the Panasonic switches on from four power frames and not from three, and t
  * codes are sent shorter than that. The test below holds the rule; this one keeps the two groups as seen.
  */
 test('on section 307\'s compiles a held power press counts the frames that start inside the hold in five families and those that end inside it for the Panasonic power codes',
-  needing(skipWithoutIrArchive(), skipUnless('h700_power_hold_compile_2', 'h650_power_hold_compile_2', 'h700_power_hold_compile_3')), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless('h700_power_hold_compile_2', 'h650_power_hold_compile_2', 'h700_power_hold_compile_3')), () => {
     type Row = { fixture: string; group: number; slug: string; file: string; power: 'on' | 'off' | 'toggle'; family: string; reading: 'start' | 'end' };
     const ROWS: Row[] = [
       { fixture: 'h700_power_hold_compile_2', group: 1, slug: 'Pioneer', file: 'DEH-P47DH', power: 'toggle', family: 'Pioneer 32 Bit', reading: 'start' },
@@ -2180,11 +2180,11 @@ test('on section 307\'s compiles a held power press counts the frames that start
     const load = (name: string) => containers.get(name) ?? containers.set(name, parse(payloadOf(require_(name)))).get(name)!;
     const seen: string[] = [];
     for (const row of ROWS) {
-      const driving = catalogueDriving(IR_ARCHIVE!, row.slug, row.file);
+      const driving = catalogueDriving(IR_ARCHIVE_SAMPLE!, row.slug, row.file);
       const step = driving.power![row.power]!.find((one) => one.kind === 'send' && one.holdMs !== undefined);
       assert.ok(step && step.kind === 'send', `${row.file} ${row.power} states a held press`);
-      const device = JSON.parse(readFileSync(join(IR_ARCHIVE!, 'devices', row.slug, `${row.file}.json`), 'utf8')) as { codeset: string };
-      const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE!, device.codeset), 'utf8')) as { commands: { name: string; protocol: string }[] }).commands;
+      const device = JSON.parse(readFileSync(join(IR_ARCHIVE_SAMPLE!, 'devices', row.slug, `${row.file}.json`), 'utf8')) as { codeset: string };
+      const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE_SAMPLE!, device.codeset), 'utf8')) as { commands: { name: string; protocol: string }[] }).commands;
       assert.equal(codes.find((one) => one.name === step.command)!.protocol, row.family, `${row.file} ${step.command}`);
       const want = catalogueFrameSignature(row.slug, row.file, step.command);
       const c = load(row.fixture);
@@ -2234,7 +2234,7 @@ test('on section 307\'s compiles a held power press counts the frames that start
  * longer of the two cells the same arithmetic gets 12 and 18 of 27, and without the lead in 25.
  */
 test('every held power record of the test devices in sections 306 to 308 holds as many frames as start inside the hold on the lengths Logitech\'s definitions state',
-  needing(skipWithoutIrArchive(), skipUnless('h700_power_hold_compile', 'h650_power_hold_compile', 'h700_power_hold_compile_2',
+  needing(skipWithoutIrArchiveSample(), skipUnless('h700_power_hold_compile', 'h650_power_hold_compile', 'h700_power_hold_compile_2',
     'h650_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4')), () => {
     type Atom = { Value: number };
     type Segment = { Name: string; TotalLength?: number | null; Header?: Atom[] | null; Trailer?: Atom[] | null;
@@ -2246,7 +2246,7 @@ test('every held power record of the test devices in sections 306 to 308 holds a
 
     const sum = (atoms?: Atom[] | null) => (atoms ?? []).reduce((total, one) => total + one.Value, 0);
     const statedFrames = (family: string, holdMs: number, bit: Bit, lead = true) => {
-      const file = join(IR_ARCHIVE!, 'protocols', `${family.replaceAll(' ', '_')}.json`);
+      const file = join(IR_ARCHIVE_SAMPLE!, 'protocols', `${family.replaceAll(' ', '_')}.json`);
       const definition = (JSON.parse(readFileSync(file, 'utf8')) as { definition: Definition }).definition;
       const named = new Map([...definition.IRSegments, ...(definition.CodeSegments ?? [])].map((one) => [one.Name, one]));
       const lengthOf = (segment: Segment) => {
@@ -2305,11 +2305,11 @@ test('every held power record of the test devices in sections 306 to 308 holds a
     const refused: string[] = [];
     let rebuilt = 0;
     for (const one of ROWS) {
-      const driving = catalogueDriving(IR_ARCHIVE!, one.slug, one.file);
+      const driving = catalogueDriving(IR_ARCHIVE_SAMPLE!, one.slug, one.file);
       const step = driving.power![one.power]!.find((each) => each.kind === 'send' && each.holdMs !== undefined);
       assert.ok(step && step.kind === 'send', `${one.file} ${one.power} states a held press`);
-      const device = JSON.parse(readFileSync(join(IR_ARCHIVE!, 'devices', one.slug, `${one.file}.json`), 'utf8')) as { codeset: string };
-      const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE!, device.codeset), 'utf8')) as {
+      const device = JSON.parse(readFileSync(join(IR_ARCHIVE_SAMPLE!, 'devices', one.slug, `${one.file}.json`), 'utf8')) as { codeset: string };
+      const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE_SAMPLE!, device.codeset), 'utf8')) as {
         commands: { name: string; protocol: string; keycode: string }[];
       }).commands;
       const command = codes.find((each) => each.name === step.command)!;

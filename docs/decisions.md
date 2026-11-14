@@ -1104,3 +1104,22 @@ remote and 2 in the second, which is what section 117 measured as a generator er
 
    **A user's documents are the user's.** The FHSDK and an application create, read, change and delete them and do
    nothing else with them. What this repository publishes is ruled elsewhere and is a different matter.
+
+42. <a id="d42"></a>**No test reads the infrared archive's checkout. Tests read a sample of it in the lab, and a
+   measurement over the whole archive is not a test.** *Taken on 14 November 2026.* The archive of
+   [decision 15](#d15) is a third party's living repository: a pull moves the checkout to a newer release, and
+   eleven tests that held one release's totals failed on such a pull. A test that needs a file of the archive
+   takes it from a copy of ours instead, taken once and kept as it was copied: the devices, codesets,
+   manufacturers' indexes and protocol definitions the tests use, in the archive's own layout, in the lab, since
+   the files are Logitech's and decision 15 lets none of them into this repository. What this repository holds is
+   the list, every path with the SHA-256 it was copied at, `packages/lab/ir-archive-sample.sha256`, and a test
+   holds the lab's copy to it. A test that needs one more file gets it by a line in the list and
+   `make archive-sample ARCHIVE_SAMPLE_ARGS=--take`; the sample moves to a newer release only on purpose, whole.
+
+   **A count over the whole archive is a measurement**, a statement about one release of somebody else's
+   repository and not about this project's code: how many of its codes a table reproduces, how many commands name
+   no definition. Those stand in `*.measure.ts` files beside the tests, are run by `make archive-measure` and
+   never by the suite, and name the release they were taken at where their numbers move with it. Where a test
+   searched the whole archive for an example, the search is done once, when the sample is taken, and the example
+   is listed. The checkout stays what the scripts over the whole archive read, and what an application's own
+   source of the catalogue is, [decision 41](#d41).

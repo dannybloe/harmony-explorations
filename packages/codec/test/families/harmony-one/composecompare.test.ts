@@ -20,7 +20,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive, slow } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, require_, skipUnless, skipWithoutIrArchiveSample, slow } from '@harmony/lab';
 import { type Container, parse, readRecipe } from '../../../src/index.ts';
 import { type ComposedSetup, composeSetup } from '../../../src/build.ts';
 import { SEND_INFRARED, devices } from '../../../src/inventory/inventory.ts';
@@ -43,19 +43,19 @@ const recipe = () => readRecipe(JSON.parse(readFileSync(new URL('../../../../cor
 /** The stamp both compositions are built at, the composed setup tests'. */
 const BUILT_AT = '2026-10-15T12:00:00';
 
-const NEEDS = { skip: skipUnless('harvest_one_two_devices').skip || skipWithoutIrArchive().skip };
+const NEEDS = { skip: skipUnless('harvest_one_two_devices').skip || skipWithoutIrArchiveSample().skip };
 
 let onLogitechOnce: ComposedSetup | undefined;
 /** The setup composed onto Logitech's compile of two devices, section 433's path. */
 const onLogitech = (): ComposedSetup => {
-  onLogitechOnce ??= composeSetup(recipe(), { donor: require_('harvest_one_two_devices'), archive: archiveAt(IR_ARCHIVE!), builtAt: BUILT_AT });
+  onLogitechOnce ??= composeSetup(recipe(), { donor: require_('harvest_one_two_devices'), archive: archiveAt(IR_ARCHIVE_SAMPLE!), builtAt: BUILT_AT });
   return onLogitechOnce;
 };
 let onEmptyOnce: ComposedSetup | undefined;
 /** The setup composed onto our empty One, unblended as a donor of ours is, section 435's path. */
 const onEmpty = (): ComposedSetup => {
   onEmptyOnce ??= composeSetup(recipe(), {
-    donor: buildEmptyOneConfiguration({ skin: 54, builtAt: BUILT_AT, blend: false }).bytes, archive: archiveAt(IR_ARCHIVE!), builtAt: BUILT_AT,
+    donor: buildEmptyOneConfiguration({ skin: 54, builtAt: BUILT_AT, blend: false }).bytes, archive: archiveAt(IR_ARCHIVE_SAMPLE!), builtAt: BUILT_AT,
   });
   return onEmptyOnce;
 };
@@ -74,7 +74,7 @@ function namesOf(c: Container): OneViewOptions {
     const held = devices(c).find((d) => d.name !== undefined && (d.name.replaceAll('_', ' ') === one.name || d.name === one.device.replace('/', '_')));
     assert.ok(held?.name !== undefined && held.group !== undefined, one.name);
     deviceNames.set(held.group, one.name);
-    const mapped = composeDonorDeviceInfrared(c, archiveAt(IR_ARCHIVE!), { label: held.name, manufacturer, model }).mapped;
+    const mapped = composeDonorDeviceInfrared(c, archiveAt(IR_ARCHIVE_SAMPLE!), { label: held.name, manufacturer, model }).mapped;
     const names: string[] = [];
     for (const record of mapped) names[record.from] = record.name;
     commandNames.set(held.group, names);

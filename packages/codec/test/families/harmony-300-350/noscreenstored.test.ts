@@ -74,7 +74,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import {
   catalogueCommands,
@@ -103,7 +103,7 @@ import { TELEVISION_STORED_UNBOUND } from '../../../src/families/harmony-300-350
 import { IDENTIFIED, onceWithoutLeadIn, recordKey } from './noscreenparts.ts';
 
 const FIXTURES = ['h350_programmed_config', 'h350_three_devices_config', 'h350_config', 'h300_programmed_config'];
-const needs = needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless(...FIXTURES));
+const needs = needing(skipWithoutLab(), skipWithoutIrArchiveSample(), skipUnless(...FIXTURES));
 
 /**
  * The further compiles by their path in the lab, each device by its metadata archive name, which on these is the
@@ -228,7 +228,7 @@ function read(): DeviceRead[] {
       const group = groupOf.get(one.name.replaceAll(' ', '_'));
       if (id === undefined || group === undefined) continue;
       const [manufacturer, model] = id;
-      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer, model, label: one.name.replaceAll(' ', '_'), full: true });
+      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer, model, label: one.name.replaceAll(' ', '_'), full: true });
       const scratch = parse(composeIrGroup(c, plan.device.commands).bytes);
       const built = irGroups(scratch)!.at(-1)!.addresses;
       const keys = built.map((address) => recordKey(scratch, address));
@@ -253,7 +253,7 @@ function read(): DeviceRead[] {
       out.push({
         compile: compile.name, model: compile.model, device: one.name, type, wanted: plan.wanted,
         onKeys: new Set(deviceModeLayout(plan.wanted, NO_SCREEN_HARD_KEYS).keys.values()),
-        finish: channelFinish(catalogueDriving(IR_ARCHIVE!, manufacturer, model), one.name), accountSize: account.length,
+        finish: channelFinish(catalogueDriving(IR_ARCHIVE_SAMPLE!, manufacturer, model), one.name), accountSize: account.length,
         uncalled, records: addresses.map(name),
       });
     }
@@ -282,7 +282,7 @@ test('the further compiles\' devices are the catalogue entries their names say, 
     const c = atPath(path);
     for (const one of metadataArchive(c)!.devices) {
       const [m, d] = ids[one.name]!;
-      const theirs = new Set(catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, m, d).codeset!).map((x) => x.name));
+      const theirs = new Set(catalogueCommands(IR_ARCHIVE_SAMPLE!, catalogueDevice(IR_ARCHIVE_SAMPLE!, m, d).codeset!).map((x) => x.name));
       const ours = new Set(one.commands.map((x) => x.name));
       assert.equal([...theirs].filter((x) => !ours.has(x)).length + [...ours].filter((x) => !theirs.has(x)).length, 0, `${path} ${one.name}`);
       checked += 1;
@@ -383,12 +383,12 @@ function lgSetup(withDenon: boolean): Recipe {
 }
 
 test('composed, a television stores the finish copy and, beside another device, its Back, each with a send list nothing calls',
-  needing(skipWithoutIrArchive()), () => {
+  needing(skipWithoutIrArchiveSample()), () => {
     const uncalledOf = (recipe: Recipe, keys: Record<string, { place: number; press: 'short' }>) => {
-      const c = parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes);
+      const c = parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE_SAMPLE!), { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes);
       const called = calledLists(c);
       const lg = devices(c).find((one) => one.name === 'LG_TV')!.group!;
-      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE!), { manufacturer: 'LG', model: 'OLED65G26LA', label: 'LG_TV', full: true });
+      const plan = catalogueDevicePlan(c, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer: 'LG', model: 'OLED65G26LA', label: 'LG_TV', full: true });
       const scratch = parse(composeIrGroup(c, plan.device.commands).bytes);
       const built = irGroups(scratch)!.at(-1)!.addresses;
       const out: string[] = [];

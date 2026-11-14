@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, skipWithoutIrArchiveSample } from '@harmony/lab';
 import '../../src/support/resources.node.ts';
 import { carriedCatalogue } from '../../src/catalogue/carried.ts';
 import { archiveAt, buildFromRecipe, carryCodes, readRecipe, type Built } from '../../src/node.ts';
@@ -34,10 +34,10 @@ const bytes = (built: Built): Uint8Array => {
   return (built as { bytes: Uint8Array }).bytes;
 };
 
-test('a recipe with its codes carried builds as the archive does, byte for byte, with no archive', skipWithoutIrArchive(), () => {
+test('a recipe with its codes carried builds as the archive does, byte for byte, with no archive', skipWithoutIrArchiveSample(), () => {
   proves(73, 'every');
-  const carried = carryCodes(SMALL, IR_ARCHIVE!);
-  const fromArchive = bytes(buildFromRecipe(SMALL, { builtAt: BUILT_AT, archive: archiveAt(IR_ARCHIVE!) }));
+  const carried = carryCodes(SMALL, IR_ARCHIVE_SAMPLE!);
+  const fromArchive = bytes(buildFromRecipe(SMALL, { builtAt: BUILT_AT, archive: archiveAt(IR_ARCHIVE_SAMPLE!) }));
   const fromRecipe = bytes(buildFromRecipe(carried, { builtAt: BUILT_AT }));
   assert.deepEqual(fromRecipe, fromArchive);
   // The control: one code changed in the carried copy changes the build, so the build read the carried codes.

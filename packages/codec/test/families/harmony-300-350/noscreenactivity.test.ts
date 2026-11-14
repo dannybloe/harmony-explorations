@@ -61,7 +61,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import {
   catalogueDriving,
@@ -88,7 +88,7 @@ const ACTIVITY = {
   channel: 'KPN',
 };
 
-const needsAll = needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless('h350_three_devices_config'));
+const needsAll = needing(skipWithoutLab(), skipWithoutIrArchiveSample(), skipUnless('h350_three_devices_config'));
 
 function labFile(path: string): Container {
   const at = join(LAB!, path);
@@ -180,9 +180,9 @@ let memo: {
 function composed() {
   if (memo !== undefined) return memo;
   const donor = parse(require_('h350_three_devices_config'));
-  let c = parse(composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE!), { ...LG, name: 'LG TV', place: 2 }).bytes);
-  c = parse(composeNoScreenDevice(c, archiveAt(IR_ARCHIVE!), { ...DENON, name: 'Denon', place: 2, press: 'long' }).bytes);
-  const out = composeNoScreenActivity(c, archiveAt(IR_ARCHIVE!), ACTIVITY);
+  let c = parse(composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { ...LG, name: 'LG TV', place: 2 }).bytes);
+  c = parse(composeNoScreenDevice(c, archiveAt(IR_ARCHIVE_SAMPLE!), { ...DENON, name: 'Denon', place: 2, press: 'long' }).bytes);
+  const out = composeNoScreenActivity(c, archiveAt(IR_ARCHIVE_SAMPLE!), ACTIVITY);
   memo = { theirs: labFile(COMPILE), donor, before: c, ours: parse(out.bytes), out };
   return memo;
 }
@@ -264,7 +264,7 @@ test('the input variables are Logitech\'s: the Denon\'s nineteen values each sen
   assert.deepEqual(stateVariables(theirs).filter((one) => /_Input_/.test(one.name)).map((one) => one.name).sort(),
     ['Denon_Input_19', 'LG_TV_Input_1']);
   const others = [['Panasonic', 'TX-P42GT30E'], ['Ligawo', '3090063'], ['Sony', 'DAV-C540'], ['Knoll', 'HDP-1100']] as const;
-  assert.equal(others.filter(([m, model]) => inputPlan(catalogueDriving(IR_ARCHIVE!, m, model)).input !== undefined).length, 4);
+  assert.equal(others.filter(([m, model]) => inputPlan(catalogueDriving(IR_ARCHIVE_SAMPLE!, m, model)).input !== undefined).length, 4);
   // No other input variable is new: the donor's KPN keeps its own, which nothing writes now.
   assert.deepEqual(stateVariables(ours).filter((one) => /_Input_/.test(one.name)).map((one) => one.name).sort(),
     ['Denon_Input_19', 'KPN_Input_2', 'LG_TV_Input_1']);
@@ -306,7 +306,7 @@ test('the composer adds the 29 lists and 19 records Logitech\'s activity owns', 
 });
 
 test('one input is written by the gate\'s arm itself, not by a list, as four of Logitech\'s compiles with one input hold it',
-  needing(skipWithoutLab(), skipWithoutIrArchive(),
+  needing(skipWithoutLab(), skipWithoutIrArchiveSample(),
     skipUnless('h350_programmed_config', 'h350_three_devices_config', 'h350_config', 'h350_issue37_config', 'h300_programmed_config')), () => {
   const { before, donor } = composed();
   // Logitech's: every gate whose arm writes one input holds the write itself, four compiles; the test setup's two
@@ -321,7 +321,7 @@ test('one input is written by the gate\'s arm itself, not by a list, as four of 
   const gate = (c: Container, list: number) => spell(c, body(c, list).at(-2)!);
   assert.equal(gate(donor, watchTv(donor)), '(register := 1 (compare ActivityPowerState_2 op 0 KPN_Input_2 := 0))');
   // The test setup's activity with the Denon's input alone: the same shape on the Denon's variable.
-  const out = composeNoScreenActivity(before, archiveAt(IR_ARCHIVE!), {
+  const out = composeNoScreenActivity(before, archiveAt(IR_ARCHIVE_SAMPLE!), {
     devices: [{ name: 'LG TV' }, { name: 'KPN' }, { name: 'Denon', input: 'CBL/SAT', ...DENON }], channel: 'KPN',
   });
   const ours = parse(out.bytes);
@@ -343,7 +343,7 @@ const SAMPLES: { name: string; channel: string; load: () => Container; mapRule: 
 ];
 
 test('on seven compiles of two models, the same devices composed again give Logitech\'s power steps in Logitech\'s order and its flag, and on six its channel device\'s map',
-  needing(skipWithoutLab(), skipWithoutIrArchive(),
+  needing(skipWithoutLab(), skipWithoutIrArchiveSample(),
     skipUnless('h350_programmed_config', 'h350_three_devices_config', 'h350_config', 'h350_issue37_config', 'h300_programmed_config')),
   () => {
     let compared = 0;
@@ -353,7 +353,7 @@ test('on seven compiles of two models, the same devices composed again give Logi
       const theirs = body(c, watchTv(c));
       // The devices, by their setup names, out of order: the composer orders them.
       const names = activityDevices(c).map((name) => metadataArchive(c)!.devices.find((d) => d.name.replaceAll(' ', '_') === name)!.name);
-      const out = composeNoScreenActivity(c, archiveAt(IR_ARCHIVE!), { devices: [...names].reverse().map((name) => ({ name })), channel: sample.channel });
+      const out = composeNoScreenActivity(c, archiveAt(IR_ARCHIVE_SAMPLE!), { devices: [...names].reverse().map((name) => ({ name })), channel: sample.channel });
       const ours = parse(out.bytes);
       const mine = body(ours, out.list);
       assert.equal(mine.length, theirs.length, sample.name);
@@ -451,21 +451,21 @@ test('what no compile shows is refused: an input that steps, an input on a devic
   const { ours } = composed();
   const donor = parse(require_('h350_three_devices_config'));
   // The KPN of the donor holds an input variable already.
-  assert.throws(() => composeNoScreenActivity(donor, archiveAt(IR_ARCHIVE!), {
+  assert.throws(() => composeNoScreenActivity(donor, archiveAt(IR_ARCHIVE_SAMPLE!), {
     devices: [{ name: 'KPN', input: 'x', manufacturer: 'KPN', model: 'TV6000COK' }], channel: 'KPN',
   }), /holds an input variable already/);
-  assert.throws(() => composeNoScreenActivity(donor, archiveAt(IR_ARCHIVE!), { devices: [{ name: 'TV' }], channel: 'KPN' }), /not one of its devices/);
-  assert.throws(() => composeNoScreenActivity(donor, archiveAt(IR_ARCHIVE!), { devices: [{ name: 'Nobody' }], channel: 'Nobody' }), /no device called/);
+  assert.throws(() => composeNoScreenActivity(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { devices: [{ name: 'TV' }], channel: 'KPN' }), /not one of its devices/);
+  assert.throws(() => composeNoScreenActivity(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { devices: [{ name: 'Nobody' }], channel: 'Nobody' }), /no device called/);
   // The Sony DAV-C540 steps through its inputs with one Function code; no compile of this family has one.
-  const sony = parse(composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE!), { manufacturer: 'Sony', model: 'DAV-C540', name: 'Sony', place: 2 }).bytes);
-  assert.throws(() => composeNoScreenActivity(sony, archiveAt(IR_ARCHIVE!), {
+  const sony = parse(composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer: 'Sony', model: 'DAV-C540', name: 'Sony', place: 2 }).bytes);
+  assert.throws(() => composeNoScreenActivity(sony, archiveAt(IR_ARCHIVE_SAMPLE!), {
     devices: [{ name: 'Sony', input: 'DVD', manufacturer: 'Sony', model: 'DAV-C540' }], channel: 'Sony',
   }), /step or mix codes and states/);
   // An input on a device whose key delay is not a tenth: the Ligawo switch's is half a second.
-  const ligawo = parse(composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE!), { manufacturer: 'Ligawo', model: '3090063', name: 'Switch', place: 2 }).bytes);
-  assert.throws(() => composeNoScreenActivity(ligawo, archiveAt(IR_ARCHIVE!), {
+  const ligawo = parse(composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer: 'Ligawo', model: '3090063', name: 'Switch', place: 2 }).bytes);
+  assert.throws(() => composeNoScreenActivity(ligawo, archiveAt(IR_ARCHIVE_SAMPLE!), {
     devices: [{ name: 'Switch', input: 'Input 1', manufacturer: 'Ligawo', model: '3090063' }], channel: 'Switch',
   }), /key delay is 500 ms/);
   // Composing again over a composed activity's inputs is the replacement nobody has built.
-  assert.throws(() => composeNoScreenActivity(ours, archiveAt(IR_ARCHIVE!), ACTIVITY), /holds an input variable already/);
+  assert.throws(() => composeNoScreenActivity(ours, archiveAt(IR_ARCHIVE_SAMPLE!), ACTIVITY), /holds an input variable already/);
 });

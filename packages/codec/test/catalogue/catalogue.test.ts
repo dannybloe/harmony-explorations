@@ -12,11 +12,11 @@
  * is the only source says so in the assertion's comment.
  */
 import assert from 'node:assert';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, load, needing, require_, skipUnless, skipWithoutIrArchiveSample } from '@harmony/lab';
 import {
   codeKey, identifyCodeset, DEVICE_TYPE_NAMES,
 } from '../../src/catalogue/catalogue.ts';
@@ -63,7 +63,7 @@ const PINNED: Readonly<Record<string, Readonly<Record<number, readonly [string, 
 /** The command name per code number, out of one codeset. */
 function namesOf(codeset: string): Map<string, string> {
   const out = new Map<string, string>();
-  for (const command of catalogueCommands(IR_ARCHIVE!, codeset)) {
+  for (const command of catalogueCommands(IR_ARCHIVE_SAMPLE!, codeset)) {
     for (const value of command.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
       const key = codeKey(value[1]!);
       if (!out.has(key)) out.set(key, command.name);
@@ -73,12 +73,12 @@ function namesOf(codeset: string): Map<string, string> {
 }
 
 test('the catalogue states its manufacturers and its device count agrees with the manifest',
-  needing(skipWithoutIrArchive()), () => {
-  const all = catalogueManufacturers(IR_ARCHIVE!);
+  needing(skipWithoutIrArchiveSample()), () => {
+  const all = catalogueManufacturers(IR_ARCHIVE_SAMPLE!);
   // Held to what the archive states about itself, its manifest, and never to a number of ours: the archive is a
   // living repository and a newer release has more manufacturers and devices in it. This asserted 7889 and 276236,
   // the release of 2 September 2026's, until a pull to the next release failed it.
-  const counts = archiveManifest(IR_ARCHIVE!).counts;
+  const counts = archiveManifest(IR_ARCHIVE_SAMPLE!).counts;
   assert.equal(all.length, counts['manufacturers']);
   // The per manufacturer counts sum to the manifest's own device total, which is the check that the
   // index is the whole index rather than a page of it.
@@ -86,7 +86,7 @@ test('the catalogue states its manufacturers and its device count agrees with th
   // A manufacturer's count in the top index is the length of its own index, checked on the largest one this
   // project uses, and its slug is its name where the name is one word.
   const sony = all.find((one) => one.name === 'Sony')!;
-  assert.deepEqual([sony.slug, sony.devices], ['Sony', catalogueModels(IR_ARCHIVE!, 'Sony').length]);
+  assert.deepEqual([sony.slug, sony.devices], ['Sony', catalogueModels(IR_ARCHIVE_SAMPLE!, 'Sony').length]);
   // A manufacturer whose display name and directory name differ, since that difference is the reason a slug
   // exists at all and a caller that used the display name as a path would work until it did not.
   const one = all.find((manufacturer) => manufacturer.name === '3B Technology')!;
@@ -94,18 +94,18 @@ test('the catalogue states its manufacturers and its device count agrees with th
 });
 
 test('a device names its codeset, and the codeset names commands our own reader parses',
-  needing(skipWithoutIrArchive()), () => {
+  needing(skipWithoutIrArchiveSample()), () => {
   // The whole per device path, end to end, on a television this project has a configuration for: the
   // manufacturer index, then the model index, then the device, then its commands.
-  const models = catalogueModels(IR_ARCHIVE!, 'Sony');
+  const models = catalogueModels(IR_ARCHIVE_SAMPLE!, 'Sony');
   // As many models as the top index says Sony has; how many that is belongs to the release checked out.
-  assert.equal(models.length, catalogueManufacturers(IR_ARCHIVE!).find((one) => one.name === 'Sony')!.devices);
+  assert.equal(models.length, catalogueManufacturers(IR_ARCHIVE_SAMPLE!).find((one) => one.name === 'Sony')!.devices);
   const wanted = models.find((one) => one.model === 'KDL-32W705B')!;
   assert.equal(wanted.file, 'KDL-32W705B.json');
-  const device = catalogueDevice(IR_ARCHIVE!, 'Sony', wanted.file);
+  const device = catalogueDevice(IR_ARCHIVE_SAMPLE!, 'Sony', wanted.file);
   assert.deepEqual([device.manufacturer, device.model, device.deviceType, device.globalDeviceId],
                    ['Sony', 'KDL-32W705B', 1, 260473]);
-  const commands = catalogueCommands(IR_ARCHIVE!, device.codeset!);
+  const commands = catalogueCommands(IR_ARCHIVE_SAMPLE!, device.codeset!);
   assert.equal(commands.length, 73);
   // **The keycode needs no adapter**, which is the claim that makes the archive a drop in for the live
   // device fetch: `statedCode` was written against what their service returns and parses this unchanged.
@@ -117,12 +117,12 @@ test('a device names its codeset, and the codeset names commands our own reader 
   assert.deepEqual([read.frames[0]!.bits, read.frames[0]!.value], [12, 0x490n]);
   // The rendered waveform is left out unless asked for, since it is most of the file's bytes.
   assert.equal(volume.pronto, undefined);
-  assert.ok(catalogueCommands(IR_ARCHIVE!, device.codeset!, { pronto: true })
+  assert.ok(catalogueCommands(IR_ARCHIVE_SAMPLE!, device.codeset!, { pronto: true })
     .find((command) => command.name === 'VolumeUp')!.pronto!.startsWith('0000 '));
 });
 
 test('the archive holds every code our own configurations\' devices send, bar one',
-  needing(skipWithoutIrArchive(), skipUnless('calibration_one', 'calibration_h600')), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless('calibration_one', 'calibration_h600')), () => {
   // **The measurement the archive had to pass before being believed**, and the strongest form available:
   // a configuration numbers its codes, so decoding a device group's records gives a set of numbers that
   // nothing in the archive has ever seen, and the codeset the identification picked has to hold them.
@@ -155,7 +155,7 @@ test('the archive holds every code our own configurations\' devices send, bar on
 });
 
 test('every button of the calibration configurations gets a command name',
-  needing(skipWithoutIrArchive(), skipUnless('calibration_one', 'calibration_h600')), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless('calibration_one', 'calibration_h600')), () => {
   // **The gap this closes.** A configuration says a key sends record 7 of group 2 and nothing else: the
   // command has no name anywhere in the file. Until now the only naming came from Logitech's button map
   // service through two test accounts. The archive names them locally and does not expire.
@@ -188,7 +188,7 @@ test('every button of the calibration configurations gets a command name',
 });
 
 test('the archive names commands where our button map names keys, and the difference is not an error',
-  needing(skipWithoutIrArchive(), skipUnless('calibration_one', 'calibration_h600')), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless('calibration_one', 'calibration_h600')), () => {
   // **Two tables built by routes with nothing in common, and they are answering different questions.**
   // The drawings in `packages/silhouettes` say which **physical key** a scan code is, read out of
   // Logitech's button map service through the account that generated these configurations, section 133,
@@ -310,7 +310,7 @@ test('a numeric device type is named from Logitech\'s own reply, and it is not o
  * there is nothing to look up; `metadata.test.ts` names it from the favourite channels instead.
  */
 test('a Harmony 300 device group is indexed by its device type button',
-  needing(skipWithoutIrArchive(), skipUnless('h300_programmed_config')), () => {
+  needing(skipWithoutIrArchiveSample(), skipUnless('h300_programmed_config')), () => {
   const c = parse(payloadOf(load('h300_programmed_config')!));
   /** The button each index is, in the order they sit on the remote, and what Danny put on it. */
   const assigned: readonly (readonly [number, string, string, string])[] = [
@@ -325,10 +325,10 @@ test('a Harmony 300 device group is indexed by its device type button',
   let checked = 0;
   for (const [at, button, maker, model] of assigned) {
     // What Logitech says that appliance sends, from its own catalogue entry.
-    const hit = catalogueModels(IR_ARCHIVE!, maker).find((one) => one.model === model)!;
-    const device = catalogueDevice(IR_ARCHIVE!, maker, hit.file);
+    const hit = catalogueModels(IR_ARCHIVE_SAMPLE!, maker).find((one) => one.model === model)!;
+    const device = catalogueDevice(IR_ARCHIVE_SAMPLE!, maker, hit.file);
     const theirs = new Set<string>();
-    for (const command of catalogueCommands(IR_ARCHIVE!, device.codeset!)) {
+    for (const command of catalogueCommands(IR_ARCHIVE_SAMPLE!, device.codeset!)) {
       for (const value of command.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
         theirs.add(codeKey(value[1]!));
       }
@@ -385,18 +385,26 @@ test('a Harmony 300 device group is indexed by its device type button',
  * elsewhere behave the way their callers already assume, and `model` says it can be null.
  */
 test('the archive states two fields as null and the reader does not pass either through',
-  needing(skipWithoutIrArchive()), () => {
-  // The nameless three, over every index in the archive. Under a second, so it is counted rather
-  // than asserted on the three names, which would pass if a fourth appeared.
+  needing(skipWithoutIrArchiveSample()), () => {
+  // The nameless three, over every manufacturer's index the sample holds, the three manufacturers' own among them.
+  // Counted rather than asserted on the three names, which would pass if a fourth appeared. That they are the only
+  // three of the whole archive is a measurement over it, `catalogue.measure.ts`.
   let rows = 0;
+  const held = catalogueManufacturers(IR_ARCHIVE_SAMPLE!)
+    .filter((maker) => existsSync(join(IR_ARCHIVE_SAMPLE!, 'devices', maker.slug, 'index.json')));
   const nameless: { maker: string; file: string; id: number }[] = [];
-  for (const maker of catalogueManufacturers(IR_ARCHIVE!)) {
-    for (const one of catalogueModels(IR_ARCHIVE!, maker.slug)) {
+  for (const maker of held) {
+    const models = catalogueModels(IR_ARCHIVE_SAMPLE!, maker.slug);
+    // An index is whole or absent: its rows are the count the top index states for the manufacturer.
+    assert.equal(models.length, maker.devices, maker.slug);
+    for (const one of models) {
       rows += 1;
       if (one.model === null) nameless.push({ maker: maker.slug, file: one.file, id: one.globalDeviceId });
     }
   }
-  assert.equal(rows, archiveManifest(IR_ARCHIVE!).counts['devices'], 'the manufacturer indexes do not cover the archive');
+  assert.deepEqual(held.map((maker) => maker.slug).sort(), ['Gemini', 'KPN', 'Panasonic', 'Sony', 'Thomson']);
+  // Exact, since the sample is a fixed copy: 22, 29, 15142, 20109 and 2215 rows in that order.
+  assert.equal(rows, 37517, 'the rows of the five indexes the sample holds');
   assert.equal(nameless.length, 3, 'a device with no model name appeared or went away');
   // Named by their own ids, which is what the archive itself falls back to for the file name, so a
   // caller wanting something to display has that rather than needing the reader to invent one.
@@ -408,7 +416,7 @@ test('the archive states two fields as null and the reader does not pass either 
   // And the device file agrees with its index row, which is the half that would break a caller that
   // went straight to the device: model null, and codeset **absent** rather than null.
   const sony = nameless.find((one) => one.maker === 'Sony')!;
-  const device = catalogueDevice(IR_ARCHIVE!, 'Sony', sony.file);
+  const device = catalogueDevice(IR_ARCHIVE_SAMPLE!, 'Sony', sony.file);
   assert.equal(device.model, null, 'the device file states a model name');
   assert.equal(device.manufacturer, 'Sony');
   assert.equal(device.globalDeviceId, sony.id);
@@ -419,8 +427,8 @@ test('the archive states two fields as null and the reader does not pass either 
 
   // **The control, because absence has to be distinguishable from a reader that drops the field.**
   // A device that does state a codeset still carries it.
-  const withCodes = catalogueDevice(IR_ARCHIVE!, 'Sony',
-    catalogueModels(IR_ARCHIVE!, 'Sony').find((one) => one.model === 'KDL-32W705B')!.file);
+  const withCodes = catalogueDevice(IR_ARCHIVE_SAMPLE!, 'Sony',
+    catalogueModels(IR_ARCHIVE_SAMPLE!, 'Sony').find((one) => one.model === 'KDL-32W705B')!.file);
   assert.equal(Object.hasOwn(withCodes, 'codeset'), true, 'the reader drops every codeset');
   assert.equal(typeof withCodes.codeset, 'string');
 });
@@ -447,10 +455,10 @@ test('the archive states two fields as null and the reader does not pass either 
  * 20.
  */
 test('the biphase records of a set top box name commands in Logitech\'s own catalogue',
-  needing(skipWithoutIrArchive(),
+  needing(skipWithoutIrArchiveSample(),
     skipUnless('one_config', 'h600_config', 'h350_programmed_config', 'h300_programmed_config')), () => {
   // Logitech's stated width for the family, read out of their definition.
-  const family = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Kreatel IP 22 Bit')!;
+  const family = archiveProtocols(IR_ARCHIVE_SAMPLE!).find((one) => one.name === 'Kreatel IP 22 Bit')!;
   const widths = new Set(Object.values(family.keycodeFields ?? {}).map((one) => one.bits));
   assert.deepEqual([...widths], [22], 'their definition no longer states one width for this family');
   const width = 22;
@@ -459,10 +467,10 @@ test('the biphase records of a set top box name commands in Logitech\'s own cata
   assert.equal(periodNs, 17761, 'the carrier moved, so the record filter below is wrong');
 
   // Every number their catalogue holds for the box, with the command it names.
-  const model = catalogueModels(IR_ARCHIVE!, 'KPN').find((one) => one.model === 'VIP1853')!;
-  const device = catalogueDevice(IR_ARCHIVE!, 'KPN', model.file);
+  const model = catalogueModels(IR_ARCHIVE_SAMPLE!, 'KPN').find((one) => one.model === 'VIP1853')!;
+  const device = catalogueDevice(IR_ARCHIVE_SAMPLE!, 'KPN', model.file);
   const theirs = new Map<string, string>();
-  for (const command of catalogueCommands(IR_ARCHIVE!, device.codeset!)) {
+  for (const command of catalogueCommands(IR_ARCHIVE_SAMPLE!, device.codeset!)) {
     for (const value of command.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
       const key = codeKey(value[1]!);
       if (!theirs.has(key)) theirs.set(key, command.name);
@@ -537,8 +545,8 @@ test('the biphase records of a set top box name commands in Logitech\'s own cata
  * outcome of that is 13 falling and 38 rising.
  */
 test('the catalogue pass counts only the groups its reader can read',
-  needing(skipWithoutIrArchive(), skipUnless(...CATALOGUE_CORPUS)), () => {
-  const index = codeIndex(IR_ARCHIVE!);
+  needing(skipWithoutIrArchiveSample(), skipUnless(...CATALOGUE_CORPUS)), () => {
+  const index = codeIndex(IR_ARCHIVE_SAMPLE!);
   let occupied = 0;
   let withNumbers = 0;
   let identified = 0;

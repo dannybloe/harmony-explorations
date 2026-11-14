@@ -16,16 +16,22 @@ import assert from 'node:assert';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
-import { IR_ARCHIVE, skipUnlessIrArchiveRelease, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, skipWithoutIrArchiveSample } from '@harmony/lab';
 import {
-  bitsPerDigit, blockOfDefinition, frameDigitBases, frameSlots, frameWidths, keyCodeOfStatedCode, rhythmOfDefinition,
-  waveformOfArchiveCommand, withStatedWidths, withToggleCleared,
+  bitsPerDigit,
+  blockOfDefinition,
+  frameDigitBases,
+  frameSlots,
+  frameWidths,
+  keyCodeOfStatedCode,
+  rhythmOfDefinition,
+  waveformOfArchiveCommand,
+  withStatedWidths,
+  withToggleCleared,
 } from '../../src/catalogue/archive.ts';
 import { archiveProtocols } from '../../src/catalogue/archive.node.ts';
 import { pulsesOfBlock } from '../../src/infrared/irframe.ts';
-import {
-  PRONTO_CLOCK, prontoCarrier, prontoPairs, prontoUnits, readPronto, writePronto,
-} from '../../src/infrared/pronto.ts';
+import { PRONTO_CLOCK, prontoCarrier, prontoPairs, prontoUnits, readPronto, writePronto } from '../../src/infrared/pronto.ts';
 import { statedCode } from '../../src/infrared/stated.ts';
 import { proves } from '@harmony/testkit/proof';
 
@@ -117,63 +123,14 @@ function compare(
   };
 }
 
-test('our waveforms reproduce Logitech\'s own renderings over a slice of the catalogue',
-  { ...skipUnlessIrArchiveRelease() }, () => {
-    // A bounded slice, so this stays a test and not a research run: the first 300 code sets in path
-    // order, which is stable because the archive is a checkout at a commit and the walk is sorted.
-    const root = IR_ARCHIVE!;
-    // Read once. Reading the 684 definitions per command took this test to three and a half minutes,
-    // which is the quadratic trap this repository has hit twice before in a loop over a corpus.
-    const byName = new Map(archiveProtocols(root).map((one) => [one.name, one]));
-    let compared = 0;
-    let agreed = 0;
-    let heldCompared = 0;
-    let heldAgreed = 0;
-    const families = new Set<string>();
-    let sets = 0;
-    outer: for (const bucket of readdirSync(join(root, 'codesets')).sort()) {
-      for (const file of readdirSync(join(root, 'codesets', bucket)).sort()) {
-        sets += 1;
-        if (sets > 300) break outer;
-        const parsed = JSON.parse(readFileSync(join(root, 'codesets', bucket, file), 'utf8')) as {
-          commands?: { keycode: string; protocol: string; pronto?: string }[];
-        };
-        for (const command of parsed.commands ?? []) {
-          if (command.pronto === undefined) continue;
-          const both = compare(byName, command.protocol, command.keycode, command.pronto);
-          if (both === undefined) continue;
-          families.add(command.protocol);
-          compared += 1;
-          if (both.ours.length === both.theirs.length
-            && both.ours.every((v, at) => v === both.theirs[at])) agreed += 1;
-          if (both.theirsHeld.length > 0) {
-            heldCompared += 1;
-            if (both.oursHeld.length === both.theirsHeld.length
-              && both.oursHeld.every((v, at) => v === both.theirsHeld[at])) heldAgreed += 1;
-          }
-        }
-      }
-    }
-    // Exact, per the house rule, and the slice has to be big enough to be a check: a few thousand
-    // commands over dozens of families, both sections, with nothing outstanding in it. The counts rose
-    // from 10532 over 46 families when this stopped building the waveform itself and called the
-    // library's own composition, section 232, since its own copy was two readings behind, and again to
-    // 11445 over 58 when section 233 read the last of the refusals.
-    assert.equal(compared, 11445);
-    assert.equal(agreed, 11445);
-    assert.equal(heldCompared, 6741);
-    assert.equal(heldAgreed, 6741);
-    assert.equal(families.size, 58);
-  });
-
 test('clearing the toggle bit is what makes a toggle family agree, and it is checked on one',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
     // **The slice above does not reach this**, measured: removing the toggle clearing leaves it passing,
     // because none of its 10532 commands is of a toggle family with the bit set. So the condition gets
     // its own control, and the command is **found** in the archive rather than written down here: a
     // Pronto string is one of the renderings decision 15 keeps out of this repository, so a fixture of
     // one would be his data committed here.
-    const root = IR_ARCHIVE!;
+    const root = IR_ARCHIVE_SAMPLE!;
     const byName = new Map(archiveProtocols(root).map((one) => [one.name, one]));
     const family = 'Thomson 12 Bit Toggle';
     const protocol = byName.get(family)!;
@@ -220,12 +177,12 @@ test('clearing the toggle bit is what makes a toggle family agree, and it is che
   });
 
 test('the cell\'s own order is what makes seven of seven families agree, and stripping it breaks them',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
     // **The capability that replaced two refusals**, section 230. Logitech states a cell as (space, mark)
     // on 37 families where our table stores (mark, space), and for 30 of them the wire is the same
     // either way. On seven it is not, and this is both halves of that: they agree now, and they disagree
     // with the flag stripped, which is what the refusals were protecting against.
-    const root = IR_ARCHIVE!;
+    const root = IR_ARCHIVE_SAMPLE!;
     const byName = new Map(archiveProtocols(root).map((one) => [one.name, one]));
     // Named as a set rather than counted: an eighth appearing means a definition took this shape, and
     // one dropping out means the reader stopped seeing it.
@@ -295,13 +252,13 @@ test('the cell\'s own order is what makes seven of seven families agree, and str
   });
 
 test('a repetition can send several rhythms, and one of them alone emits a fraction of the command',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
     // **The capability that replaced the largest refusal there was**, section 232: 84694 commands over 29
     // families whose press cycle names two infrared segments stating different rhythms. `Classe 16 Bit
     // Toggle` is RC6's shape and the clearest case: four mode bits at a 442 microsecond half cell, then
     // **one** bit at 880, then sixteen data bits back at 442. Our table held one rhythm per family, so a
     // block of it could only carry a third of the command.
-    const root = IR_ARCHIVE!;
+    const root = IR_ARCHIVE_SAMPLE!;
     const byName = new Map(archiveProtocols(root).map((one) => [one.name, one]));
     // Named as a set rather than counted, and it is the number of **rhythms** rather than of segments: a
     // dual family states two frames of one shape and that is still one rhythm. A family appearing here
@@ -382,8 +339,8 @@ test('a repetition can send several rhythms, and one of them alone emits a fract
   });
 
 test('the three conditions the comparison honours each change the answer',
-  { ...skipWithoutIrArchive() }, () => {
-    const root = IR_ARCHIVE!;
+  { ...skipWithoutIrArchiveSample() }, () => {
+    const root = IR_ARCHIVE_SAMPLE!;
     // **A toggle bit is state and not identity**, and the archive renders every one at zero. This is a
     // `Philips RC5 13 Bit Toggle` command whose own keycode carries the bit set, so clearing it is what
     // makes the comparison possible at all.
@@ -429,11 +386,11 @@ test('the three conditions the comparison honours each change the answer',
   });
 
 test('the stored form and the signal differ by one microsecond, and it is the compiler\'s',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
     // The one microsecond Logitech's compiler adds to a block's last duration is not in the waveform
     // the archive's renderer produces. Before that was separated, every padded family disagreed on its last
     // word and nothing else, which read as our arithmetic being wrong.
-    const root = IR_ARCHIVE!;
+    const root = IR_ARCHIVE_SAMPLE!;
     const nec = archiveProtocols(root).find((one) => one.name === 'Toshiba 32 Bit')!;
     const stored = blockOfDefinition(nec, 1);
     const signal = blockOfDefinition(nec, 1, { storedForm: false });
@@ -447,11 +404,11 @@ test('the stored form and the signal differ by one microsecond, and it is the co
   });
 
 test('a value\'s base is per field, and one base for the family sends another number',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
     // **Section 233.** `Grundig 7 Bit Quad` writes one plain bit and then seven quaternary digits, so
     // the base a keycode's digits are read in belongs to the field and not to the family. Read whole in
     // hexadecimal, `0000010` is 16 where the appliance is told 4.
-    const grundig = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Grundig 7 Bit Quad')!;
+    const grundig = archiveProtocols(IR_ARCHIVE_SAMPLE!).find((one) => one.name === 'Grundig 7 Bit Quad')!;
     const keycode = 'G:Grundig 7 Bit Quad:()(0x0_1x0000010)():3';
     const slots = frameSlots(keycode);
     assert.deepEqual(frameDigitBases(grundig, slots), [1, 2]);
@@ -466,13 +423,13 @@ test('a value\'s base is per field, and one base for the family sends another nu
     assert.deepEqual(wrong.frames.map((one) => one.value), [0n, 16n]);
   });
 
-test('a stated zero length interval keeps its side of the carrier', { ...skipWithoutIrArchive() }, () => {
+test('a stated zero length interval keeps its side of the carrier', { ...skipWithoutIrArchiveSample() }, () => {
   // **Section 233.** Nine of Logitech's families state an interval of length zero, and six of the
   // fifteen occurrences are spaces, so a zero cannot be read as one polarity. A signed duration has no
   // sign at zero, so a zero **mark** is carried as one microsecond and a zero **space** stays zero:
   // both then behave alike, contributing nothing to a merge and flooring to one unit where they stand
   // alone. Their renderer answers both cases and this is the pair.
-  const root = IR_ARCHIVE!;
+  const root = IR_ARCHIVE_SAMPLE!;
   const pulse = archiveProtocols(root).find((one) => one.name === 'QE Pulse Test 1')!;
   const pulseRhythm = rhythmOfDefinition(pulse);
   assert.ok(!('refusal' in pulseRhythm) && pulseRhythm.cells !== undefined);
@@ -494,11 +451,11 @@ test('a stated zero length interval keeps its side of the carrier', { ...skipWit
 });
 
 test('a press cycle has three blocks and a Pronto string has two sections',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
     // **Section 233.** A keycode may name a third group, sent when the key comes up, and 60 families do.
     // A configuration's record has a pointer for it; the archive's renderer has only two sections and puts
     // it at the end of the first, which is how it was read.
-    const root = IR_ARCHIVE!;
+    const root = IR_ARCHIVE_SAMPLE!;
     const pace = archiveProtocols(root).find((one) => one.name === 'Pace 16 Bit Quad')!;
     const keycode = 'G:Pace 16 Bit Quad:()(0x0202300002123312)(1x0202300022123312):3';
     const slots = frameSlots(keycode);
@@ -538,11 +495,11 @@ test('a Pronto word wider than the format is read and reported', () => {
   assert.equal(readPronto('0000 0068 0002 0000 0060 0018 0030 1234567'), undefined);
 });
 
-test('a value\'s width comes from the segment its own index names', { ...skipWithoutIrArchive() }, () => {
+test('a value\'s width comes from the segment its own index names', { ...skipWithoutIrArchiveSample() }, () => {
   // **Section 233.** A keycode writes each value as `<index>x<digits>` and that index is a segment id.
   // `Imon Multi Bit Hex` holds ten segments of seven, eight, nine and ten digits and its codes pick one
   // per group, so the width belongs to the segment the code names rather than to the field's position.
-  const imon = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Imon Multi Bit Hex')!;
+  const imon = archiveProtocols(IR_ARCHIVE_SAMPLE!).find((one) => one.name === 'Imon Multi Bit Hex')!;
   const keycode = 'G:Imon Multi Bit Hex:(4x05494011)(4x05494011)(5x054A0011):3';
   const slots = frameSlots(keycode);
   assert.deepEqual(slots.map((one) => one.index), [4, 4, 5]);
@@ -555,7 +512,7 @@ test('a value\'s width comes from the segment its own index names', { ...skipWit
   // **And a cell family's digit count wins where it is wider than the stated width**, which is the
   // other half of the same resolution. `Galaxis 16 Bit Quad Toggle` states seven digits for its third
   // field and one command writes eight, and a digit there is a whole cell, so the eighth is sent.
-  const galaxis = archiveProtocols(IR_ARCHIVE!)
+  const galaxis = archiveProtocols(IR_ARCHIVE_SAMPLE!)
     .find((one) => one.name === 'Galaxis 16 Bit Quad Toggle')!;
   const wide = 'G:Galaxis 16 Bit Quad Toggle:()(0x02012100_1x0_2x02121031)():3';
   assert.deepEqual(frameWidths(galaxis, frameSlots(wide)), [16, 1, 16]);
@@ -567,12 +524,12 @@ test('a value\'s width comes from the segment its own index names', { ...skipWit
 });
 
 test('a value too wide for its stated field is cut to it, not refused',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
     // **Section 233.** `Microsoft 30 Bit` writes values needing 31 bits on 70 of its commands and
     // `Philips RC6` needs 7 where its field states 6. The archive's renderer masks both to the stated
     // width, so a value that overflows a **definition's** width is their statement rather than our
     // misreading, and only a width taken from the family's **name** is checked against the value.
-    const microsoft = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Microsoft 30 Bit')!;
+    const microsoft = archiveProtocols(IR_ARCHIVE_SAMPLE!).find((one) => one.name === 'Microsoft 30 Bit')!;
     const keycode = 'G:Microsoft 30 Bit:()(0x45487BE3)():3';
     const slots = frameSlots(keycode);
     const widths = frameWidths(microsoft, slots)!;

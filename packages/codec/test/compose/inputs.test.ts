@@ -17,7 +17,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ARCH14_FAMILY, IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { ARCH14_FAMILY, IR_ARCHIVE_SAMPLE, needing, require_, skipUnless, skipWithoutIrArchiveSample } from '@harmony/lab';
 import {
   ComposeError,
   catalogueCommands,
@@ -462,8 +462,8 @@ function compare(ours: ReturnType<typeof canonical>, theirs: ReturnType<typeof c
 
 test('ten devices Logitech compiled, composed again from the catalogue, agree transition for transition but for the divergences named, and an eleventh at the plan',
      needing(skipUnless(...new Set(CALIBRATION.map(([config]) => config)), 'h650_power_hold_compile_2'),
-             skipWithoutIrArchive()), () => {
-  const root = IR_ARCHIVE!;
+             skipWithoutIrArchiveSample()), () => {
+  const root = IR_ARCHIVE_SAMPLE!;
   const host = open('h650_config_region');
   const results: Record<string, Record<string, string>> = {};
   const pinned: Record<string, string> = {};
@@ -553,10 +553,10 @@ test('ten devices Logitech compiled, composed again from the catalogue, agree tr
 });
 
 test('a composed activity puts a composed device on its input, between the power writes, in Logitech\'s order',
-     needing(skipUnless('h650_config_region'), skipWithoutIrArchive()), () => {
+     needing(skipUnless('h650_config_region'), skipWithoutIrArchiveSample()), () => {
   // On the Harmony 650's own configuration: an LG OLED65G26LA composed with its inputs, and
   // an activity that switches it on and puts it on HDMI 1.
-  const root = IR_ARCHIVE!;
+  const root = IR_ARCHIVE_SAMPLE!;
   const device = catalogueDevice(root, 'LG', 'OLED65G26LA');
   const driving = catalogueDriving(root, 'LG', 'OLED65G26LA');
   const commands = catalogueCommands(root, device.codeset!);
@@ -617,12 +617,12 @@ const ONE_CALIBRATION = [
 
 test('on the Harmony One, three devices Logitech compiled, composed again from the catalogue, agree transition for transition but for the connected app',
      needing(skipUnless(...new Set(ONE_CALIBRATION.map(([config]) => config)), 'harvest_one_two_devices'),
-             skipWithoutIrArchive()), () => {
+             skipWithoutIrArchiveSample()), () => {
   proves(23, ['harmony-one'], ['docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it']);
   // The same route as the 600 family's calibration above, on a Harmony One host: the One's send is the
   // send and its quantity with no prelude, `Family.sends`, and everything an input does is
   // the 600 family's, which is what this measures rather than assumes.
-  const root = IR_ARCHIVE!;
+  const root = IR_ARCHIVE_SAMPLE!;
   const host = open('harvest_one_two_devices');
   const results: Record<string, Record<string, string>> = {};
   const pinned: Record<string, string> = {};

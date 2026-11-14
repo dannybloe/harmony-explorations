@@ -16,7 +16,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, skipWithoutIrArchiveSample } from '@harmony/lab';
 import {
   ARCHIVE_SCHEMA_VERSION, ArchiveError, blockOfDefinition, familiesOfRhythm, periodOfCarrier, rhythmKey,
   rhythmOfDefinition, type BlockRefusal, type ConversionRefusal,
@@ -76,11 +76,11 @@ test('the carrier is the truncated reciprocal, not the rounded one', () => {
   assert.notEqual(periodOfCarrier(38000), Math.round(1e9 / 38000));
 });
 
-test('every protocol definition in the archive reads or says why not', { ...skipWithoutIrArchive() },
+test('every protocol definition in the archive reads or says why not', { ...skipWithoutIrArchiveSample() },
   () => {
-    const manifest = archiveManifest(IR_ARCHIVE!);
+    const manifest = archiveManifest(IR_ARCHIVE_SAMPLE!);
     assert.equal(manifest.schemaVersion, ARCHIVE_SCHEMA_VERSION);
-    const all = archiveProtocols(IR_ARCHIVE!);
+    const all = archiveProtocols(IR_ARCHIVE_SAMPLE!);
     // Exact, per the house rule, and it is the archive's own count: 685 files, of which `index.json` is
     // the archive's index of the other 684 and not a definition. Counting it is what made an early
     // reading here report 685 families.
@@ -154,8 +154,8 @@ test('every protocol definition in the archive reads or says why not', { ...skip
   });
 
 test('our own measurements agree with Logitech\'s definitions, thirty four of thirty five',
-  { ...skipWithoutIrArchive() }, () => {
-    const catalogue = catalogueByRhythm(IR_ARCHIVE!);
+  { ...skipWithoutIrArchiveSample() }, () => {
+    const catalogue = catalogueByRhythm(IR_ARCHIVE_SAMPLE!);
     const agreed: string[] = [];
     const absent: string[] = [];
     const disagreed: string[] = [];
@@ -188,13 +188,13 @@ test('our own measurements agree with Logitech\'s definitions, thirty four of th
   });
 
 test('Logitech\'s catalogue names the four rhythms their analyser named wrongly',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
     // **The measurement behind the rename of 31 August 2026.** Every corpus measured entry in the table
     // took its family from Logitech's analyser, section 160 retired that as evidence for a rhythm, and
     // all three of the entries so named were wrong. Their catalogue states the rhythm, so the rhythm
     // identifies the family, and each of these four is unambiguous: exactly one catalogue family holds
     // it.
-    const catalogue = catalogueByRhythm(IR_ARCHIVE!);
+    const catalogue = catalogueByRhythm(IR_ARCHIVE_SAMPLE!);
     for (const [family, heardAs] of [['Toshiba 32 Bit', 'MemorexO1 32 Bit'],
                                      ['Roku 32 Bit 1', 'MemorexO1 32 Bit'],
                                      ['Sharp 48 Bit 2', 'SharpO1 48 Bit'],
@@ -211,7 +211,7 @@ test('Logitech\'s catalogue names the four rhythms their analyser named wrongly'
     // what makes this a mis-attribution rather than a vocabulary difference. Their `SharpO1 48 Bit` is a
     // 38.2 kHz protocol and neither row named that was at 38.2 kHz; their `MemorexO1 32 Bit` is the
     // textbook NEC rhythm and the entry under that name held Toshiba's.
-    const all = archiveProtocols(IR_ARCHIVE!);
+    const all = archiveProtocols(IR_ARCHIVE_SAMPLE!);
     const sharpO1 = all.find((one) => one.name === 'SharpO1 48 Bit');
     assert.equal(sharpO1?.carrierHz, 38200);
     assert.equal(periodOfCarrier(38200), 26178);
@@ -239,8 +239,8 @@ test('Logitech\'s catalogue names the four rhythms their analyser named wrongly'
   });
 
 test('a rhythm can be ambiguous in the catalogue, and the width is what narrows it',
-  { ...skipWithoutIrArchive() }, () => {
-    const catalogue = catalogueByRhythm(IR_ARCHIVE!);
+  { ...skipWithoutIrArchiveSample() }, () => {
+    const catalogue = catalogueByRhythm(IR_ARCHIVE_SAMPLE!);
     assert.equal(catalogue.size, 629);
     // A cell table family keys on its cells and nothing else, so its key can never collide with a two
     // symbol family's, section 231. 206 of the keys are of that kind, against 222 such families read.
@@ -355,7 +355,7 @@ const wireOf = (pulses: readonly Pulse[]): string => {
 };
 
 test('Logitech\'s definitions rebuild every block we measured, twenty nine of twenty nine',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
   // **This is the reason to believe a derived block at all**, and it is the same shape of check as the
   // rhythm calibration above: 29 of the table's rows carry a block measured off Logitech's own
   // compiler, byte for byte, over 3000-odd records between them. Their definitions state a block's
@@ -365,7 +365,7 @@ test('Logitech\'s definitions rebuild every block we measured, twenty nine of tw
   // It reproduces all 29 to the microsecond, including the one microsecond their compiler adds to a
   // block's final duration. 28 of them on any code value; `MemorexO1 32 Bit` only on a value of the
   // popcount its own records carry, for the reason its own test below sets out.
-  const archive = new Map(archiveProtocols(IR_ARCHIVE!).map((one) => [one.name, one]));
+  const archive = new Map(archiveProtocols(IR_ARCHIVE_SAMPLE!).map((one) => [one.name, one]));
   const agreed: string[] = [];
   const disagreed: string[] = [];
   for (const row of MEASURED) {
@@ -411,7 +411,7 @@ test('Logitech\'s definitions rebuild every block we measured, twenty nine of tw
 });
 
 test('a padded gap can look like a literal one, and MemorexO1 32 Bit is where that bit',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
   // **The one family the calibration above could not match on an arbitrary value, and it is our
   // measurement that is the looser statement rather than theirs.** Their definition pads every copy out
   // to a constant 107600 microseconds, so the gap after the frame depends on how long the frame ran and
@@ -430,7 +430,7 @@ test('a padded gap can look like a literal one, and MemorexO1 32 Bit is where th
   //
   // 35100 is 107600 less the frame at twenty set bits, and the stored 35101 is that plus the one
   // microsecond their compiler adds to a block's last duration. So the two statements agree exactly.
-  const definition = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'MemorexO1 32 Bit')!;
+  const definition = archiveProtocols(IR_ARCHIVE_SAMPLE!).find((one) => one.name === 'MemorexO1 32 Bit')!;
   const row = MEASURED.find((one) => one.family === 'MemorexO1 32 Bit')!;
   const shape = shapeOf(row)!;
   const twenty = (1n << 20n) - 1n;
@@ -461,7 +461,7 @@ test('a padded gap can look like a literal one, and MemorexO1 32 Bit is where th
 });
 
 test('the repeat count is stated for five of the blocks we measured, and right on all five',
-  { ...skipWithoutIrArchive() }, () => {
+  { ...skipWithoutIrArchiveSample() }, () => {
   // **The half of a block that is not derivable, and this is the whole evidence about it.** A block is
   // one repetition's shape and how many repetitions go out. The shape is stated in full. The count is
   // `pressMinimumRepeats`, which is stated on 39 of the archive's 684 definitions and null on 645, and
@@ -474,7 +474,7 @@ test('the repeat count is stated for five of the blocks we measured, and right o
   // unstated gets no block. Section 348 found where the count comes from: the device, which the catalogue
   // composer now uses for such a family. The table stays without a block for it, since a block here
   // would fix one device's count for every device.
-  const archive = archiveProtocols(IR_ARCHIVE!);
+  const archive = archiveProtocols(IR_ARCHIVE_SAMPLE!);
   assert.equal(archive.length, 684);
   assert.equal(archive.filter((one) => one.pressMinimumRepeats !== null).length, 39);
   assert.equal(archive.filter((one) => one.definition.HoldMinimumRepeats !== null).length, 0);
@@ -607,13 +607,13 @@ test('thirty three stated families carry a whole block, and the other six hundre
      ['Pace 18 Bit Quad Toggle', 4], ['PaceO1 16 Bit Quad', 4], ['Zenith 11 Bit Quad', 4]]);
 });
 
-test('every definition derives a block or says why not', { ...skipWithoutIrArchive() }, () => {
+test('every definition derives a block or says why not', { ...skipWithoutIrArchiveSample() }, () => {
   // The companion to the rhythm reading's refusal census, and for the same reason: one "could not"
   // bucket hides which reading to write next. Counted with the repeat count each definition states, or
   // with three where it states none, since this measures the **shape** and not the count.
   const refusals = new Map<BlockRefusal, number>();
   let derived = 0;
-  for (const protocol of archiveProtocols(IR_ARCHIVE!)) {
+  for (const protocol of archiveProtocols(IR_ARCHIVE_SAMPLE!)) {
     const built = blockOfDefinition(protocol, protocol.pressMinimumRepeats ?? 3);
     if ('refusal' in built) refusals.set(built.refusal, (refusals.get(built.refusal) ?? 0) + 1);
     else derived += 1;
@@ -627,7 +627,7 @@ test('every definition derives a block or says why not', { ...skipWithoutIrArchi
   // rather than counted in aggregate, because a block of several shapes is the case a `shape`-free
   // reader emits a third of.
   const perBlock = new Map<number, number>();
-  for (const protocol of archiveProtocols(IR_ARCHIVE!)) {
+  for (const protocol of archiveProtocols(IR_ARCHIVE_SAMPLE!)) {
     const built = blockOfDefinition(protocol, protocol.pressMinimumRepeats ?? 3);
     if ('refusal' in built) continue;
     perBlock.set(built.also.length, (perBlock.get(built.also.length) ?? 0) + 1);
@@ -653,10 +653,10 @@ test('every definition derives a block or says why not', { ...skipWithoutIrArchi
   assert.equal(derived + [...refusals.values()].reduce((n, one) => n + one, 0), 684);
 });
 
-test('the generated segment length table is what the archive states, so a held press is counted against Logitech\'s figures and not a stale copy', skipWithoutIrArchive(), () => {
+test('the generated segment length table is what the archive states, so a held press is counted against Logitech\'s figures and not a stale copy', skipWithoutIrArchiveSample(), () => {
   // `src/infrared/segmentlengths.ts` is generated by `make segmentlengths` and read by `longPressFramesOfStatedCode`,
   // section 308. A hand edit or an archive update without a regeneration would count a held power press
   // against lengths nobody stated, and the count would still look plausible.
   const have = readFileSync(join(import.meta.dirname, '..', '..', 'src', 'infrared', 'segmentlengths.ts'), 'utf8');
-  assert.equal(have, segmentLengthsModule(IR_ARCHIVE!));
+  assert.equal(have, segmentLengthsModule(IR_ARCHIVE_SAMPLE!));
 });

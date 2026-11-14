@@ -23,7 +23,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, needing, require_, skipUnless, skipWithoutIrArchiveSample } from '@harmony/lab';
 import { activities, ComposeError, type Container, devices, irGroups, parse } from '../../src/index.ts';
 import {
   ACTION_LIST_INDEX_OPCODE,
@@ -179,11 +179,11 @@ test('Logitech\'s compile switches a pass through device on and to its input, li
 });
 
 test('a pass through device composed from its roles and its input\'s name is started, put on that input and listed as Logitech\'s compile does, and the control without it is not',
-     needing(skipWithoutIrArchive(), skipUnless(BASE, START)), () => {
+     needing(skipWithoutIrArchiveSample(), skipUnless(BASE, START)), () => {
   const theirs = parse(require_(START));
   const kodi = seen(theirs, activities(theirs).find((one) => one.name === 'Kodi kijken')!.activity);
   // The three devices of the activity from the catalogue, under labels of ours, and Logitech's names for them.
-  const result = composeCatalogueDevices(parse(require_(BASE)), archiveAt(IR_ARCHIVE!), [
+  const result = composeCatalogueDevices(parse(require_(BASE)), archiveAt(IR_ARCHIVE_SAMPLE!), [
     { manufacturer: 'LG', model: 'OLED65G26LA', label: 'LG', full: true, inputs: true },
     { manufacturer: 'Plex', model: 'Plex_Player', label: 'Plex', full: true, inputs: true },
     { manufacturer: 'Ligawo', model: '3090063', label: 'Switch', full: true, inputs: true },

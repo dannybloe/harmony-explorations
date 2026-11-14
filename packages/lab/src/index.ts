@@ -2230,6 +2230,60 @@ export function skipUnlessIrArchiveRelease(release: string = IR_ARCHIVE_MEASURED
 }
 
 /**
+ * The sample of the infrared archive, which is **what a test reads, never the checkout**.
+ *
+ * The archive is a third party's living repository: a pull moves it to a newer release, and it is not ours to hold a
+ * test against. So the files of it that tests need, some ninety devices and their codesets, a few manufacturers'
+ * indexes and the protocol definitions, are copied once into the lab, in the archive's own layout, and stay as they
+ * were copied. A reader takes the sample's path where it would take a checkout's and cannot tell the two apart, but
+ * that the sample holds only what is listed; a test that reaches for a file outside it fails on that file's name,
+ * which is the cue to list it and take the sample again.
+ *
+ * **In the lab, because the files are Logitech's**: decision 15 lets durations and names cross into this repository
+ * and never a file of the archive's own, so the copy is private like everything else the lab holds, and a test that
+ * reads it skips without the lab. **What this repository holds is the list**, `ir-archive-sample.sha256` beside this
+ * package's manifest: every path of the sample with the SHA-256 it was copied at, checksums being what may be
+ * published. `packages/codec/bin/archive-sample.ts` copies the listed files out of a checkout and refuses one that
+ * no longer matches its checksum, so taking the sample at a newer release is a deliberate step, and
+ * `test/irarchivesample.test.ts` holds the lab's copy to the list.
+ *
+ * The checkout itself, `IR_ARCHIVE` above, is for the scripts that work over the whole archive and for the
+ * measurements over it, which are bound to a release and run on request, outside the tests.
+ */
+export const IR_ARCHIVE_SAMPLE_FOLDER = 'reference/ir-archive-sample';
+
+/** The list of the sample's files, each with its SHA-256: the one part of the sample this repository holds. */
+export const IR_ARCHIVE_SAMPLE_LIST = join(REPO_ROOT, 'packages', 'lab', 'ir-archive-sample.sha256');
+
+/** The one file in the sample that is ours: when it was taken, from which release, and the checkout's authors. */
+export const IR_ARCHIVE_SAMPLE_NOTE = '_sample.json';
+
+/** Where the sample would be in a lab at `lab`, whether or not it is there. */
+export function irArchiveSampleIn(lab: string): string {
+  return join(lab, ...IR_ARCHIVE_SAMPLE_FOLDER.split('/'));
+}
+
+/** The sample's folder in the lab, or undefined without a lab or without a sample in it. */
+export const IR_ARCHIVE_SAMPLE: string | undefined = (() => {
+  if (LAB === undefined) return undefined;
+  const folder = irArchiveSampleIn(LAB);
+  return existsSync(join(folder, 'manifest.json')) ? folder : undefined;
+})();
+
+// The sample's list and the check of a folder against it, offered here by name like everything else of the package.
+export { formatSampleList, isSamplePath, parseSampleList, sampleFaults, sha256OfFile, type SampleEntry } from './irarchivesample.ts';
+
+/** The `node:test` skip option for a test that reads the archive's sample, mirroring `skipWithoutLab`. */
+export function skipWithoutIrArchiveSample(): { skip: string | false } {
+  if (IR_ARCHIVE_SAMPLE !== undefined) return { skip: false };
+  return {
+    skip: LAB === undefined
+      ? 'no lab, and the infrared archive\'s sample is kept there'
+      : `no sample of the infrared archive in the lab; take one with make archive-sample ARCHIVE_SAMPLE_ARGS=--take`,
+  };
+}
+
+/**
  * Both skip reasons at once, so a test needing the lab **and** the archive skips when either is absent.
  *
  * **Spreading the option objects does not work, and this exists because that was tried.**

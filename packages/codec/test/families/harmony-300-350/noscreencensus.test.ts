@@ -64,7 +64,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { deflateRawSync } from 'node:zlib';
 import {
-  FILE_BASED_FAMILY, IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+  FILE_BASED_FAMILY, IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab,
 } from '@harmony/lab';
 
 import { type Container, ComposeError, metadataArchive, parse, type Recipe } from '../../../src/index.ts';
@@ -130,7 +130,7 @@ const lab = (path: string): Container => {
 const SEVEN = FILE_BASED_FAMILY.full;
 
 const needsLab = needing(skipWithoutLab(), skipUnless(...SEVEN));
-const needsComposer = needing(skipWithoutLab(), skipWithoutIrArchive(), skipUnless('h350_three_devices_config'));
+const needsComposer = needing(skipWithoutLab(), skipWithoutIrArchiveSample(), skipUnless('h350_three_devices_config'));
 
 /** Every compile the census counts constants over: the test setup's two compiles and the five registered files. */
 function seven(): [string, Container][] {
@@ -587,7 +587,7 @@ test('the family\'s own members refuse the wiring and an activity\'s start', () 
 
 test('the device composer emits lists of the roles the census credits it with, and no others', needsComposer, () => {
   const donor = parse(require_('h350_three_devices_config'));
-  const out = composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE!), { manufacturer: 'Panasonic', model: 'TX-P42GT30E', name: 'Plasma', place: 2 });
+  const out = composeNoScreenDevice(donor, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer: 'Panasonic', model: 'TX-P42GT30E', name: 'Plasma', place: 2 });
   const tally = (c: Container): Map<string, number> => {
     const m = new Map<string, number>();
     listRoles(c).forEach((role) => m.set(role, (m.get(role) ?? 0) + 1));
@@ -603,7 +603,7 @@ test('the device composer emits lists of the roles the census credits it with, a
 });
 
 test('built from nothing, the test setup holds every category of Logitech\'s compile and no other, each from a generator of ours',
-  needing(skipWithoutLab(), skipWithoutIrArchive()), () => {
+  needing(skipWithoutLab(), skipWithoutIrArchiveSample()), () => {
     // The probe the composers' `builds` rests on: no Logitech container goes in, so every category the
     // census finds in the result came from a generator of ours, and every category Logitech's compile holds is found.
     const recipe = JSON.parse(readFileSync(new URL('../../../../corpus/setups/h350-test.json', import.meta.url), 'utf8')) as Recipe;
@@ -612,7 +612,7 @@ test('built from nothing, the test setup holds every category of Logitech\'s com
       Kodi: { place: 1, press: 'long' }, Denon: { place: 2, press: 'short' }, Switch: { place: 2, press: 'long' },
       KPN: { place: 3, press: 'short' }, 'Sony HT': { place: 3, press: 'long' },
     } as const;
-    const ours = census(parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes));
+    const ours = census(parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE_SAMPLE!), { recipe, keys, builtAt: '2026-11-01T12:00:00' }).bytes));
     const theirs = census(lab(COMPILE));
     assert.deepEqual([...ours.keys()].sort(), [...theirs.keys()].sort());
     assert.equal(ours.has('unnamed'), false);

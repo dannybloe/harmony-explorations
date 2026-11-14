@@ -53,7 +53,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  FILE_BASED_FAMILY, IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab,
+  FILE_BASED_FAMILY, IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab,
 } from '@harmony/lab';
 
 import { ComposeError, type Container, parse, type Recipe } from '../../../src/index.ts';
@@ -94,9 +94,9 @@ const EVENT_FF = 0xff;
 const EVENT_30 = 0x30;
 const EVENT_2D = 0x2d;
 
-const needsArchive = needing(skipWithoutIrArchive());
+const needsArchive = needing(skipWithoutIrArchiveSample());
 const needsLab = needing(skipWithoutLab(), skipUnless(...FIVE));
-const needsBoth = needing(skipWithoutLab(), skipWithoutIrArchive());
+const needsBoth = needing(skipWithoutLab(), skipWithoutIrArchiveSample());
 
 function labFile(path: string): Container {
   const at = join(LAB!, path);
@@ -129,7 +129,7 @@ function acknowledges(c: Container): true | string {
 
 /** Our build of the test setup from nothing, once. */
 let memo: Container | undefined;
-const setup = (): Container => (memo ??= parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes));
+const setup = (): Container => (memo ??= parse(buildNoScreenSetup(archiveAt(IR_ARCHIVE_SAMPLE!), { recipe: RECIPE, keys: KEYS, builtAt: MOMENT }).bytes));
 
 test('the entry is tag 0xFF calling the list the 0x30 entry calls, whatever the numbers, and only 0x30\'s numbers move it', () => {
   assert.equal(UNMASKED_SEND_EVENT, EVENT_FF);
@@ -177,7 +177,7 @@ test('on the test setup the key table is Logitech\'s binding for binding and in 
     assert.deepEqual(tags(ours).slice(at - 1, at + 2), [EVENT_2D, EVENT_FF, EVENT_30]);
     // The control, and the reason the setup builder adds it last: the same setup composed onto the empty configuration
     // that holds the entry from the start stores the table in another order, 0xC1 ahead of 0x2E and 0x85.
-    const early = parse(composeNoScreenSetup(buildEmptyNoScreenConfiguration({ skin: 104, builtAt: MOMENT }).container, archiveAt(IR_ARCHIVE!),
+    const early = parse(composeNoScreenSetup(buildEmptyNoScreenConfiguration({ skin: 104, builtAt: MOMENT }).container, archiveAt(IR_ARCHIVE_SAMPLE!),
       { recipe: RECIPE, keys: KEYS }).bytes);
     assert.equal(acknowledges(early), true);
     const earlyTags = tags(early).filter((tag) => tag !== EVENT_FF);
@@ -214,7 +214,7 @@ test('a composition onto a Logitech compile keeps its key table without 0xFF, an
   // Logitech's first compile holds every device of the setup, so composing the setup onto it composes the favourites
   // alone, a composition onto a donor: the key table stays the donor's, with no 0xFF.
   const first = labFile(FIRST);
-  const onto = parse(composeNoScreenSetup(first, archiveAt(IR_ARCHIVE!), { recipe: RECIPE, keys: KEYS }).bytes);
+  const onto = parse(composeNoScreenSetup(first, archiveAt(IR_ARCHIVE_SAMPLE!), { recipe: RECIPE, keys: KEYS }).bytes);
   const tags = (c: Container) => taggedList(c, c.pointerArray(6)![0]!)!.entries.map((one) => one.tag);
   assert.equal(tags(onto).includes(EVENT_FF), false);
   assert.deepEqual(tags(onto), tags(first));

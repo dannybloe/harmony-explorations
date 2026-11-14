@@ -55,7 +55,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { IR_ARCHIVE, LAB, needing, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
 
 import { ComposeError, type Container, devices, irGroups, metadataArchive, parse } from '../../../src/index.ts';
 import {
@@ -70,7 +70,7 @@ import { mapOfGroup } from '../../../src/families/harmony-300-350/devices.ts';
 import { allLists, maps, records, timerRecords, transitions, without } from './noscreenparts.ts';
 import { archiveAt } from '../../../src/catalogue/catalogue.node.ts';
 
-const needs = needing(skipWithoutLab(), skipWithoutIrArchive());
+const needs = needing(skipWithoutLab(), skipWithoutIrArchiveSample());
 
 /** Logitech's two compiles of the test setup, by their paths in the lab. */
 const COMPILES = {
@@ -116,8 +116,8 @@ function round(file: keyof typeof COMPILES, one: (typeof LONG)[number]): Case {
   const theirs = compile(COMPILES[file]);
   const removed = withoutNoScreenDevice(theirs, one.name);
   const without = parse(removed.bytes);
-  const deviceType = catalogueDevicePlan(without, archiveAt(IR_ARCHIVE!), { manufacturer: one.manufacturer, model: one.model, label: 'X', full: true }).entry.deviceType;
-  const out = composeNoScreenDevice(without, archiveAt(IR_ARCHIVE!), {
+  const deviceType = catalogueDevicePlan(without, archiveAt(IR_ARCHIVE_SAMPLE!), { manufacturer: one.manufacturer, model: one.model, label: 'X', full: true }).entry.deviceType;
+  const out = composeNoScreenDevice(without, archiveAt(IR_ARCHIVE_SAMPLE!), {
     ...one, press: 'long', volumeFrom: volumeSource({ name: one.name, deviceType }, SETUP_ACCOUNT),
   });
   const made = { theirs, removed, without, out, ours: parse(out.bytes) };

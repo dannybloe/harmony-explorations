@@ -112,7 +112,7 @@ const allCommands = (): Command[] => deviceList().DevicesWithFeatures.flatMap((d
 
 /** The catalogue's protocol files, each with its family name, its definition and Logitech's id. */
 function catalogue(): { name: string; definition: unknown; logitechProtocolId: number | null }[] {
-  const directory = lab.irArchivePath('protocols')!;
+  const directory = join(lab.IR_ARCHIVE_SAMPLE!, 'protocols');
   return readdirSync(directory)
     .filter((f) => f.endsWith('.json') && f !== 'index.json')
     .sort()
@@ -192,7 +192,7 @@ test('rounding and truncating the carrier period differ on the two 38 kHz famili
   assert.deepEqual(differ.map((p) => p.CarrierFrequency), [38000, 38000]);
 });
 
-test('each protocol a Touch is given is Logitech\'s catalogue definition, unchanged, under the catalogue\'s own id', lab.needing(lab.skipUnless(FULL), lab.skipWithoutIrArchive()), () => {
+test('each protocol a Touch is given is Logitech\'s catalogue definition, unchanged, under the catalogue\'s own id', lab.needing(lab.skipUnless(FULL), lab.skipWithoutIrArchiveSample()), () => {
   const byName = new Map(catalogue().map((c) => [c.name, c]));
   const given = protocolList().Protocols;
   let equal = 0;
@@ -214,7 +214,7 @@ test('each protocol a Touch is given is Logitech\'s catalogue definition, unchan
   assert.notDeepEqual(changed, byName.get(changed.Name)!.definition);
 });
 
-test('every code segment in the catalogue states its header and trailer inside its atoms and carries no payload', lab.skipWithoutIrArchive(), () => {
+test('every code segment in the catalogue states its header and trailer inside its atoms and carries no payload', lab.skipWithoutIrArchiveSample(), () => {
   const same = (a: Atom[], b: Atom[]) => a.length === b.length && a.every((x, i) => x.Type === b[i]!.Type && x.Value === b[i]!.Value);
   let segments = 0;
   let inside = 0;

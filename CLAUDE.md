@@ -277,8 +277,10 @@ harmony/
                             layout is load bearing rather than a convention
   logitech-harmony-ir-archive/  a third party's checkout of Logitech's infrared database, public and
                             cloned rather than vendored, decision 15. `packages/lab` finds it here and
-                            `HARMONY_IR_ARCHIVE` overrides; without it the rhythm table's tests skip
-                            and `make protocols --write` refuses, since it is what names a family
+                            `HARMONY_IR_ARCHIVE` overrides. **No test reads it**, decision 42: it moves
+                            with every pull, so tests read the lab's sample of it and the scripts and
+                            `make archive-measure` read the checkout; without it `make protocols
+                            --write` refuses, since it is what names a family
   lab/                      private, never in **this** git. It has a local repository of its
                             own since 24 August 2026, with no remote and a pre-push hook that
                             refuses, because a capture there was overwritten with no history
@@ -288,6 +290,8 @@ harmony/
     firmware/derived/         binaries decoded out of them
     ghidra/                   Ghidra projects
     software/                 Logitech's own PC software, see reference/logitech/clients.md
+    reference/ir-archive-sample/  the files of the infrared archive the tests read, copied once and
+                              held to `packages/lab/ir-archive-sample.sha256`, decision 42
     work/                     scratch
 ```
 
