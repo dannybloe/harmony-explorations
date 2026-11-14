@@ -5,7 +5,8 @@
  * **One call for an application.** `capabilitiesOf` takes the model's key, `harmony-650`, or a skin a connected
  * remote reported, and answers with everything an interface needs to decide what to offer: a feature is offered
  * where its requirement is met on that model; the other statuses, open, impossible and unknown, are for a developer,
- * each with the sentence that says why. The requirements and their statuses are data in the base,
+ * each with the sentence that says why. An open one also says whose work is missing, `state.waitsOn`: the FHSDK's
+ * for every model, the family's, the model's own, or only a run on a unit. The requirements and their statuses are data in the base,
  * `@harmony/base/requirements`, which has no import at all; this module joins them to what only the codec knows, the
  * family that builds for the model and the screen it draws on, so it sits beside the registry it asks.
  *
@@ -33,7 +34,7 @@ import { FAVOURITES_LIMIT } from './harmony-touch/favourites.ts';
 import { chooseByModel, familyKind, NoFamilyError, type AnyFamily } from './registry.ts';
 
 // The requirement types an application meets in an answer, so it needs no second import to name them.
-export type { BenchModelKey, Proof, Requirement, RequirementState, RequirementStatus } from '@harmony/base/requirements';
+export type { BenchModelKey, Proof, Requirement, RequirementState, RequirementStatus, RequirementWait } from '@harmony/base/requirements';
 
 /** What a model is, as far as the libraries hold it. A field left out is a value nothing here states. */
 export interface ModelProperties {

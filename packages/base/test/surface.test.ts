@@ -18,7 +18,7 @@ const MANIFEST = new URL('../package.json', import.meta.url);
 /** The main entry's names that exist at run time. */
 const VALUES = [
   'ARCH_8_PRODUCT', 'BENCH_MODELS', 'MODELS_BY_SKIN', 'MODELS_WITHOUT_A_SKIN', 'OUT_OF_TRANSPORT_REACH', 'REQUIREMENTS',
-  'REQUIREMENT_STATUS_NAMES', 'REQUIREMENT_SUBJECTS', 'SKINS_WITHOUT_A_MODEL_RECORD', 'SKINS_WITH_A_LONG_PRESS',
+  'REQUIREMENT_STATUS_NAMES', 'REQUIREMENT_SUBJECTS', 'REQUIREMENT_WAIT_NAMES', 'SKINS_WITHOUT_A_MODEL_RECORD', 'SKINS_WITH_A_LONG_PRESS',
   'TRAILER_CHECKSUM_OFFSET', 'TRAILER_CHECKSUM_SEED', 'WATCH', 'WATCH_BY_SKIN', 'architectureHasTouch', 'benchModel',
   'hasLongPress', 'modelForSkin', 'requirement', 'requirementState', 'sameBytes', 'trailerChecksum',
 ];
@@ -26,7 +26,7 @@ const VALUES = [
 /** The main entry's types and interfaces, which only the source shows. */
 const TYPES = [
   'BenchModel', 'BenchModelKey', 'Model', 'MotionSensor', 'Panel', 'Proof', 'Requirement', 'RequirementScope', 'RequirementState',
-  'RequirementStatus', 'Watch',
+  'RequirementStatus', 'RequirementWait', 'Watch',
 ];
 
 /** Every subpath `package.json` exports, `.` the main entry. */

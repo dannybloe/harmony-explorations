@@ -7,7 +7,8 @@
  * one is a line in this file's diff. **Every status is complete**: each bench model has exactly one status per
  * requirement of the models, and a requirement of the FHSDK as a whole has one shared status. **Every status carries
  * its evidence**: met names a test and, where the requirement shows on a remote, a bench demonstration; impossible
- * names a reference page; and every path names a file that exists, a test-notes passage by a heading that exists.
+ * names a reference page; an open one says whose work is missing; and every path names a file that exists, a
+ * test-notes passage by a heading that exists.
  * **The proofs are sound**, the calls of `proves` the tests carry, read into `src/proofs.ts`: every requirement on
  * every bench model is proven or has a written status, never both; a proof names a requirement and bench models that
  * exist, every model for a requirement of the FHSDK as a whole; a proof of a requirement that shows on a remote names
@@ -25,9 +26,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as proof from '@harmony/testkit/proof';
 import {
-  BENCH_MODELS, benchModel, PROOFS, proofsFor, REQUIREMENT_STATUS_NAMES, REQUIREMENT_SUBJECTS, REQUIREMENTS, requirement,
-  requirementState, writtenStatus,
-  type BenchModelKey, type Proof, type RequirementState,
+  BENCH_MODELS, benchModel, PROOFS, proofsFor, REQUIREMENT_STATUS_NAMES, REQUIREMENT_SUBJECTS, REQUIREMENT_WAIT_NAMES,
+  REQUIREMENTS, requirement, requirementState, writtenStatus,
+  type BenchModelKey, type Proof, type RequirementState, type RequirementWait,
 } from '../src/requirements.ts';
 import { MODELS_BY_SKIN } from '../src/models.ts';
 
@@ -80,9 +81,17 @@ test('the requirements are numbered from 1 with no gap and no repeat, 88 of them
   for (const one of REQUIREMENTS) assert.ok(one.text.length > 0 && one.text.endsWith('.'), `R${one.number}`);
 });
 
-test('two subjects are the FHSDK\'s as a whole, and of the others only the report about an unsupported remote', () => {
+test('two subjects are the FHSDK\'s as a whole, and of the others the seven that work on a recipe or the catalogue alone', () => {
   const whole = REQUIREMENTS.filter((one) => one.scope === 'whole').map((one) => one.number);
-  assert.deepEqual(whole, [68, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82]);
+  // Finding a device, renaming a device and an activity, Pronto Hex, identifying a device from taught codes, moving
+  // a setup and the report about an unsupported remote reach no remote; then the two subjects, R73 to R82.
+  assert.deepEqual(whole, [9, 12, 20, 25, 57, 60, 68, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82]);
+  // None of them shows on a remote, so a test proves one whole, but for the report, which is made on a remote.
+  assert.deepEqual(REQUIREMENTS.filter((one) => one.scope === 'whole' && one.needsBench).map((one) => one.number), [68]);
+  // Removing a device or an activity stays a model's: the Harmony Touch has both proven on a unit.
+  assert.deepEqual([13, 26].map((number) => requirement(number)!.scope), ['model', 'model']);
+  assert.equal(requirementState('harmony-touch', 13).status, 'met');
+  assert.equal(requirementState('harmony-touch', 26).status, 'met');
   // The two subjects every requirement of which is about the FHSDK and no remote: how it is built and delivered, and
   // the outside an application builds against. The hub's own requirements, the last subject, are a model's.
   const wholeSubjects = REQUIREMENT_SUBJECTS.filter((subject) =>
@@ -127,6 +136,60 @@ test('a met names a test, and a bench demonstration where the requirement shows 
     if ((state.status === 'met' || state.status === 'open') && state.reference.length > 0) faults.push(`${label}: a reference page on a ${state.status}`);
   }
   assert.deepEqual(faults, []);
+});
+
+/** What is wrong with what one status says it waits on, as faults; a function so the control below can plant one. */
+function waitFaults(label: string, state: RequirementState, needsBench: boolean, whole: boolean): string[] {
+  const faults: string[] = [];
+  const waits = state.waitsOn;
+  if (state.status !== 'open') return waits.length === 0 ? [] : [`${label}: ${state.status}, and waiting on something`];
+  if (waits.length === 0) faults.push(`${label}: open and waiting on nothing`);
+  // Each owner once, in the order of the names, so two statuses that wait on the same compare equal.
+  const ordered = REQUIREMENT_WAIT_NAMES.filter((wait) => waits.includes(wait));
+  if (waits.length !== ordered.length || waits.some((wait, i) => wait !== ordered[i])) faults.push(`${label}: its owners are not each once, in order`);
+  // Whatever else is missing has no run on a unit either, so the run is named only when it is all that is missing,
+  // and only where the requirement shows on a remote at all.
+  if (waits.includes('bench') && waits.length > 1) faults.push(`${label}: a run on a unit named beside other work`);
+  if (waits.includes('bench') && !needsBench) faults.push(`${label}: waits on a run on a unit, and a test shows it whole`);
+  // A requirement of the FHSDK as a whole has no family and no model in it.
+  if (whole && (waits.length !== 1 || waits[0] !== 'shared')) faults.push(`${label}: the FHSDK's as a whole, and waiting on more than the FHSDK`);
+  return faults;
+}
+
+test('every open status says whose work is missing, a run on a unit only alone, and no other status waits on anything', () => {
+  const faults: string[] = [];
+  const counts = new Map<RequirementWait, number>(REQUIREMENT_WAIT_NAMES.map((wait) => [wait, 0]));
+  for (const one of REQUIREMENTS) {
+    for (const model of one.scope === 'whole' ? [BENCH_MODELS[0]!] : BENCH_MODELS) {
+      const state = requirementState(model.key, one.number);
+      const label = `R${one.number} on the ${one.scope === 'whole' ? 'FHSDK as a whole' : model.name}`;
+      faults.push(...waitFaults(label, state, one.needsBench, one.scope === 'whole'));
+      for (const wait of state.waitsOn) counts.set(wait, counts.get(wait)! + 1);
+    }
+  }
+  assert.deepEqual(faults, []);
+  // Every owner is used, so none of the four is a name nothing carries.
+  for (const wait of REQUIREMENT_WAIT_NAMES) assert.ok(counts.get(wait)! > 0, wait);
+  // A model no family serves cannot wait on the FHSDK alone for anything a family builds: the Harmony 515's build
+  // from a recipe waits on a family, and its taking over as the user's own on its write path as well as the FHSDK.
+  assert.deepEqual(requirementState('harmony-515', 4).waitsOn, ['family']);
+  assert.deepEqual(requirementState('harmony-515', 6).waitsOn, ['shared', 'model']);
+  // And the same requirement on a model whose family builds waits on the FHSDK alone.
+  assert.deepEqual(requirementState('harmony-650', 6).waitsOn, ['shared']);
+});
+
+test('the control: an open status waiting on nothing, a run beside other work, owners out of order and a whole one with a family are each found', () => {
+  const open = (waitsOn: readonly RequirementWait[]): RequirementState =>
+    ({ status: 'open', tests: [], bench: [], proofs: [], reference: [], why: 'planted', waitsOn });
+  assert.match(waitFaults('x', open([]), true, false)[0]!, /waiting on nothing/);
+  assert.match(waitFaults('x', open(['family', 'bench']), true, false)[0]!, /beside other work/);
+  assert.match(waitFaults('x', open(['bench']), false, false)[0]!, /a test shows it whole/);
+  assert.match(waitFaults('x', open(['family', 'shared']), true, false)[0]!, /in order/);
+  assert.match(waitFaults('x', open(['shared', 'shared']), true, false)[0]!, /each once/);
+  assert.match(waitFaults('x', open(['shared', 'family']), false, true)[0]!, /more than the FHSDK/);
+  assert.match(waitFaults('x', { ...open(['shared']), status: 'unknown' }, true, false)[0]!, /unknown, and waiting on something/);
+  assert.deepEqual(waitFaults('x', open(['shared', 'model']), true, false), []);
+  assert.deepEqual(waitFaults('x', open(['bench']), true, false), []);
 });
 
 test('each kind of evidence is where that kind lives: tests, bench runs or test notes, and the reference', () => {

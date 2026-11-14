@@ -150,18 +150,29 @@ test('the Python helper names the same bench models as the base, in the same ord
 /** A bench model by key, for the checklist tests. */
 const model = (key: string): BenchModel => BENCH_MODELS.find((one) => one.key === key)!;
 
-test('a checklist ticks what is proven, marks what is unknown, leaves out the impossible and the FHSDK\'s own', () => {
+test('a checklist ticks what is proven, says what an open one waits on, marks what is unknown, leaves out the impossible and the FHSDK\'s own', () => {
   const text = checklist(model('harmony-one'), PROOFS, undefined);
   const lines = text.split('\n');
   // R1 is proven on the One, R3 open, R40 unknown, R29 impossible: the One has no activity keys.
   assert.ok(lines.includes('- [x] R1 Read the configuration off the remote, whole and checked.'));
-  assert.ok(lines.some((line) => line.startsWith('- [ ] R3 ')));
+  // An open one says whose work is missing: R3 waits on the FHSDK alone, R10 on the FHSDK and the One's family, and
+  // R41, whose screens render, only on a run on a unit.
+  assert.ok(lines.some((line) => line.startsWith('- [ ] R3 ') && line.endsWith(' (waits on the FHSDK)')));
+  assert.ok(lines.some((line) => line.startsWith('- [ ] R10 ') && line.endsWith(' (waits on the FHSDK and its family)')));
+  assert.ok(lines.some((line) => line.startsWith('- [ ] R41 ') && line.endsWith(' (waits on a run on a unit)')));
+  // The open ones are counted by owner before the list, each once, so the three add up to the open boxes.
+  const counts = /^Open: (\d+), of which (\d+) its own or its family's work, (\d+) the FHSDK's work alone and (\d+) a run on a unit alone\.$/.exec(lines.find((line) => line.startsWith('Open: '))!);
+  assert.ok(counts, 'the count line');
+  const [open, own, shared, run] = counts.slice(1).map(Number);
+  assert.equal(open, lines.filter((line) => line.startsWith('- [ ] ') && line.includes(' (waits on ')).length);
+  assert.equal(own! + shared! + run!, open);
   assert.ok(lines.some((line) => line.startsWith('- [ ] R40 ') && line.endsWith(' (find out first)')));
   assert.ok(!lines.some((line) => line.startsWith('- [x] R29 ') || line.startsWith('- [ ] R29 ')));
-  // The requirements of the FHSDK as a whole, and R68, are no remote's.
-  for (const number of [68, 73, 74, 75]) assert.ok(!lines.some((line) => / R(\d+) /.exec(line)?.[1] === String(number)), `R${number}`);
+  // The requirements of the FHSDK as a whole are no remote's: the two subjects, R68, and those that work on a recipe
+  // or the catalogue alone, renaming among them.
+  for (const number of [9, 12, 20, 25, 57, 60, 68, 73, 74, 75]) assert.ok(!lines.some((line) => / R(\d+) /.exec(line)?.[1] === String(number)), `R${number}`);
   // Every box is one line under a subject.
-  assert.equal(lines.filter((line) => line.startsWith('- [x] ')).length, 13);
+  assert.equal(lines.filter((line) => line.startsWith('- [x] ')).length, 12);
 });
 
 test('a checklist keeps its header and the remote\'s own work as written, and refuses a file without its markers', () => {
@@ -179,12 +190,16 @@ test('a checklist keeps its header and the remote\'s own work as written, and re
   assert.equal(committed(checklistPath(model('harmony-650'))), checklist(model('harmony-650'), PROOFS, committed(checklistPath(model('harmony-650')))));
 });
 
-test('the short document is the introduction, one table and the requirements; the evidence is its own document', () => {
+test('the short document is the introduction, two tables and the requirements; the evidence is its own document', () => {
   const text = readFileSync(DOCUMENT, 'utf8');
   const headings = text.split('\n').filter((line) => /^##? /.test(line));
-  assert.deepEqual(headings, ['# The FHSDK\'s requirements, per remote', '## Where each remote stands', '## The requirements']);
+  assert.deepEqual(headings, ['# The FHSDK\'s requirements, per remote', '## Where each remote stands', '## What the open ones wait on', '## The requirements']);
   // A row per remote: proven, open, unknown, impossible, and proven of possible, as the data counts them.
-  assert.ok(text.includes('| Harmony 650 | 11 | 55 | 2 | 9 | 11 of 68 |'));
+  assert.ok(text.includes('| Harmony 650 | 10 | 50 | 2 | 9 | 10 of 62 |'));
+  // And a row per remote of whose work its open ones are: its own or its family's, the FHSDK's alone, a run alone.
+  assert.ok(text.includes('| Harmony 650 | 50 | 23 | 18 | 9 |'));
+  // The Harmony 515, which no family serves, waits on the FHSDK alone for one requirement only.
+  assert.ok(text.includes('| Harmony 515 | 48 | 47 | 1 | 0 |'));
   // The evidence document names the tests that prove a met, by file and title.
   const evidence = evidenceDocument(PROOFS);
   const one = PROOFS.find((proof) => proof.requirement === 1 && proof.models !== 'every' && proof.models.includes('harmony-650'))!;
@@ -196,7 +211,7 @@ test('the control: a document whose generated part was edited by hand differs, a
   const document = readFileSync(DOCUMENT, 'utf8');
   const introduction = introductionOf(document);
   assert.ok(introduction.length > 0, 'the introduction is found');
-  const edited = document.replace('| Harmony 650 | 11 |', '| Harmony 650 | 12 |');
+  const edited = document.replace('| Harmony 650 | 10 |', '| Harmony 650 | 12 |');
   assert.notEqual(edited, document, 'the document holds the row to edit');
   assert.notEqual(requirementsDocument(introductionOf(edited), PROOFS), edited);
   assert.equal(requirementsDocument(introductionOf(edited), PROOFS), document);

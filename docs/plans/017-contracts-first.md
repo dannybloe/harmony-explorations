@@ -106,6 +106,26 @@ blocks above do not: read over the network, plan 016; drive it, which is at once
 with no service of Logitech's; take over a second hand hub; write a setup of our own. Each step that sends the hub
 anything but a read opens behind a rail and a decision of its own.
 
+## Refined the same day: which requirements are a remote's
+
+Reading the checklists against decision 37 showed that the requirements had been judged as if a configuration were
+changed in place. "Rename an activity" stood open on twelve remotes, each with a reason such as "no run shows an
+existing activity renamed", where an application renames in a recipe and hands the whole recipe over. Three changes,
+none of them a new decision:
+
+1. **Six requirements became the FHSDK's as a whole**, one status for every model and on no remote's checklist:
+   finding a device, R9; renaming a device and an activity, R12 and R25; Pronto Hex, R20, which was already proven for
+   every model; identifying a device from taught codes, R57; moving a setup between models, R60. Renaming and moving
+   no longer ask for a run on a unit, since a test shows a function on a recipe whole. Removing a device or an
+   activity, R13 and R26, is the same kind of ability and stayed a model's, because the Harmony Touch has both proven
+   on a unit and a requirement of the whole is proven for every model or for none.
+2. **Every open status says whose work is missing**: the FHSDK's for every model alike, the model's family's, the
+   model's own, or only a run on a unit. It is read off the reason as written. The requirements document counts each
+   remote's open requirements by it and a checklist says it per box, so a remote's own work can be told from what the
+   chapters of `todo.md` do once for all of them.
+3. **The requirements that touch got their line written down**, in the requirements document's introduction: R7 and
+   R78, R66 and R79, R9 and R82, and R12, R13, R25 and R26 beside R76.
+
 ## What this does not decide
 
 How FreeHarmony itself is set up, which is the application's own plan. Which functions the toolkit has, name by

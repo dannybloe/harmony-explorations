@@ -45,7 +45,10 @@ export {
   requirement,
   REQUIREMENT_STATUS_NAMES,
   REQUIREMENT_SUBJECTS,
+  REQUIREMENT_WAIT_NAMES,
   REQUIREMENTS,
   requirementState,
 } from './requirements.ts';
-export type { BenchModel, BenchModelKey, Proof, Requirement, RequirementScope, RequirementState, RequirementStatus } from './requirements.ts';
+export type {
+  BenchModel, BenchModelKey, Proof, Requirement, RequirementScope, RequirementState, RequirementStatus, RequirementWait,
+} from './requirements.ts';

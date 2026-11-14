@@ -49,7 +49,7 @@ const TYPES = [
   'ModelProperties', 'PngHeader',
   'PowerOnDelay', 'ProntoCode', 'Proof', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
   'RecipeDevice', 'RecipeDeviceKey', 'RecipeFavourites', 'RecipeModel', 'RecipeScreenItem', 'RecipeSequenceStep', 'RecipeTarget',
-  'RenderedPage', 'Requirement', 'RequirementAnswer', 'RequirementState', 'RequirementStatus', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
+  'RenderedPage', 'Requirement', 'RequirementAnswer', 'RequirementState', 'RequirementStatus', 'RequirementWait', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
 ];
 
 /** The Harmony Touch's view, `harmonyTouch` on the main entry: the names that exist at run time. */

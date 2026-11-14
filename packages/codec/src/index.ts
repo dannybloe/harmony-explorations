@@ -128,6 +128,7 @@ export type { DocumentFamily, DocumentTypes } from './families/document.ts';
 export { capabilitiesOf } from './families/capabilities.ts';
 export type {
   BenchModelKey, ModelCapabilities, ModelProperties, Proof, Requirement, RequirementAnswer, RequirementState, RequirementStatus,
+  RequirementWait,
 } from './families/capabilities.ts';
 export { ComposeError } from './shared/core.ts';
 

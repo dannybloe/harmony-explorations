@@ -11,64 +11,64 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony One**, proven by `packages/corpus/test/read/read.test.ts`, "an undamaged read passes both closures". Shown on a unit in `docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups`.
 * **Harmony 600**, proven by `packages/corpus/test/read/read.test.ts`, "a config whose end marker is missing is not filed"; `tests/harmony_600_650_700/test_arch14_write_target.py`, "TheHarmony600sFirstBlockWentBackUnchanged.test_the_block_written_was_configuration_and_its_container_is_h600_config". Shown on a unit in `docs/test-notes/harmony-600.md#the-bench-600s-memory-as-read`.
 * **Harmony 650**, proven by `packages/corpus/test/read/read.test.ts`, "a config whose trailer checksum does not recompute is not filed". Shown on a unit in `docs/test-notes/harmony-650.md#memory-as-read`.
-* **Harmony 700**, open: readConfig is tested on the family's samples, but the 700 unit was only ever read as raw regions, never through it.
+* **Harmony 700**, open, waiting on a run on a unit: readConfig is tested on the family's samples, but the 700 unit was only ever read as raw regions, never through it.
 * **Harmony 525**, proven by `packages/corpus/test/read/read.test.ts`, "the 525 reads at 0x820000 and its container counts from 0x020000". Shown on a unit in `docs/test-notes/harmony-525.md#the-first-session-8-august-2026`.
 * **Harmony 515**, proven by `tests/harmony_5xx/test_harmony_515.py`, "TheConfigurationRegion.test_it_holds_the_configuration_read_earlier_whole_and_nothing_after_it". Shown on a unit in `docs/test-notes/harmony-515.md#the-first-session-3-november-2026`, `docs/test-notes/harmony-515.md#the-second-session-13-november-2026`.
 * **Harmony 885**, proven by `packages/corpus/test/read/read.test.ts`, "every arch 8 configuration in the lab gets its exact length from the 880 and 885 profile"; `tests/harmony_880_885/test_harmony_885_bench_reads.py`, "TheConfigurationReads.test_each_units_two_reads_are_identical_and_568020_and_637127_bytes_long". Shown on a unit in `docs/test-notes/harmony-885.md#5-november-2026-each-units-configuration-and-region-and-unit-as-clock`.
 * **Harmony 785**, proven by `tests/harmony_880_885/test_harmony_785_first_read.py`, "TheWholeFlash.test_the_configuration_region_holds_the_configuration_read"; `tests/harmony_880_885/test_harmony_785_first_read.py`, "UnitB.test_base_slots_1_and_2_state_what_unit_as_do"; `tests/harmony_880_885/test_harmony_785_first_read.py`, "UnitB.test_the_configuration_region_holds_the_configuration_read". Shown on a unit in `docs/test-notes/harmony-785.md#the-first-unit-h785_a`, `docs/test-notes/harmony-785.md#the-second-unit-h785_b`.
-* **Harmony 300**, open: The file was read off the unit twice, identical, but no library read restores the end marker and checks the trailer.
+* **Harmony 300**, open, waiting on its family: The file was read off the unit twice, identical, but no library read restores the end marker and checks the trailer.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "opens, reassembles the data packets, stops at the terminator and closes"; `packages/usb/test/file-protocol/filewrite.test.ts`, "accepts all five configurations read off the family, once the end marker is on". Shown on a unit in `docs/test-notes/harmony-350.md#what-has-been-read-off-it`.
-* **Harmony Touch**, open: No route reads the Touch's stored documents back; the firmware's put and request route is read but has never been sent.
-* **Harmony Elite**, open: Its identity file and the two reads its request channel allows were answered; the stored set is its hub's and is not read off either.
-* **Harmony Hub**, open: Only its identity file is read; its setup is to be read over the local network, which is planned and not built, and its request channel is closed by decision 36.
+* **Harmony Touch**, open, waiting on the remote itself: No route reads the Touch's stored documents back; the firmware's put and request route is read but has never been sent.
+* **Harmony Elite**, open, waiting on the remote itself: Its identity file and the two reads its request channel allows were answered; the stored set is its hub's and is not read off either.
+* **Harmony Hub**, open, waiting on the remote itself: Only its identity file is read; its setup is to be read over the local network, which is planned and not built, and its request channel is closed by decision 36.
 
 ### R2 Understand a configuration: its devices, activities, keys, screens, delays and codes, and what each key will send.
 
 * **Harmony One**, proven by `packages/codec/test/families/harmony-one/composecompare.test.ts`, "each view runs exactly the lists listsReached counts and holds every mode, timer, value map and state variable, so nothing either file can run goes uncompared"; `packages/codec/test/inventory/inventory.test.ts`, "the composed inventory says the same as the readers it composes".
 * **Harmony 600**, proven by `packages/codec/test/families/harmony-600-650-700/empty.test.ts`, "the five device test setup assembles on the Harmony 600's empty configuration with every page in its one grey, smaller than the 650's by exactly its two further looks, and the setup comparison finds nothing different from the 650's in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not"; `packages/codec/test/inventory/inventory.test.ts`, "the composed inventory says the same as the readers it composes".
 * **Harmony 650**, proven by `packages/codec/test/families/harmony-600-650-700/compare.test.ts`, "a file compared with itself differs nowhere, and the view reaches every part of the 650 test setup"; `packages/codec/test/inventory/inventory.test.ts`, "the composed inventory says the same as the readers it composes".
-* **Harmony 700**, open: The reader handles the 700's compiles, but deviceModeMaps still picks a help screen for their A/V switch, pinned as a fault.
+* **Harmony 700**, open, waiting on its family: The reader handles the 700's compiles, but deviceModeMaps still picks a help screen for their A/V switch, pinned as a fault.
 * **Harmony 525**, proven by `packages/codec/test/inventory/inventory.test.ts`, "the composed inventory says the same as the readers it composes".
-* **Harmony 515**, open: Devices, activities and screens are read in 515 configurations through the 525's readers, but no view predicts what each key sends.
-* **Harmony 885**, open: Devices, activities, screens and codes are read on the 885, but no view predicts what each key sends there.
-* **Harmony 785**, open: Devices, activities, screens and codes read on the 785 through the 885's family, but no view predicts what each key sends there.
-* **Harmony 300**, open: Devices and power on delays are read from 300 files, but no library reader says what each key sends.
-* **Harmony 350**, open: The public readers name devices and read 13 of 14 delays; Watch TV and what each key sends are read only through internals.
+* **Harmony 515**, open, waiting on its family: Devices, activities and screens are read in 515 configurations through the 525's readers, but no view predicts what each key sends.
+* **Harmony 885**, open, waiting on its family: Devices, activities, screens and codes are read on the 885, but no view predicts what each key sends there.
+* **Harmony 785**, open, waiting on its family: Devices, activities, screens and codes read on the 785 through the 885's family, but no view predicts what each key sends there.
+* **Harmony 300**, open, waiting on its family: Devices and power on delays are read from 300 files, but no library reader says what each key sends.
+* **Harmony 350**, open, waiting on its family: The public readers name devices and read 13 of 14 delays; Watch TV and what each key sends are read only through internals.
 * **Harmony Touch**, proven by `packages/bench/test/harmony-touch/touch-full-bench-predicted.test.ts`, "the model names every code the five earlier runs heard, in order, and every pause of a start lies in its band"; `packages/codec/test/families/harmony-touch/touch-reader.test.ts`, "the full sync reads whole: every command finds its protocol, every map its owner, every action its command".
-* **Harmony Elite**, open: No setup of an Elite has been read; the reader of the Touch's documents is the same kind and is untried on one.
-* **Harmony Hub**, open: A hub's setup is the same kind of documents the Harmony Touch is given, by its image; none has been read off a hub.
+* **Harmony Elite**, open, waiting on the remote itself: No setup of an Elite has been read; the reader of the Touch's documents is the same kind and is untried on one.
+* **Harmony Hub**, open, waiting on the remote itself: A hub's setup is the same kind of documents the Harmony Touch is given, by its image; none has been read off a hub.
 
 ### R3 Read a configuration back into a recipe, so a setup can be edited and rebuilt; from our own builds whole, favourites included, through a record of ours carried inside.
 
-* **Harmony One**, open: Nothing turns a One configuration back into a recipe, and no record of ours is carried inside one yet.
-* **Harmony 600**, open: Nothing turns a compiled configuration back into a recipe, and the record of ours carried inside a configuration is not built.
-* **Harmony 650**, open: Nothing reads a compiled 650 configuration back into a recipe, and the record of ours carried inside is not built.
-* **Harmony 700**, open: Nothing turns a compiled configuration back into a recipe, and no record of ours is carried inside one.
-* **Harmony 525**, open: Nothing turns a compiled configuration back into a recipe, and nothing builds for the 525 that could carry a record of ours.
-* **Harmony 515**, open: Nothing turns a compiled configuration back into a recipe, and nothing builds for the 515.
-* **Harmony 885**, open: Nothing turns a compiled 885 configuration back into a recipe.
-* **Harmony 785**, open: Nothing turns a compiled 785 configuration back into a recipe.
-* **Harmony 300**, open: Nothing reads a configuration of this family back into a recipe.
-* **Harmony 350**, open: Nothing reads a 350 configuration back into a recipe, and no record of ours is carried inside.
+* **Harmony One**, open, waiting on the FHSDK: Nothing turns a One configuration back into a recipe, and no record of ours is carried inside one yet.
+* **Harmony 600**, open, waiting on the FHSDK: Nothing turns a compiled configuration back into a recipe, and the record of ours carried inside a configuration is not built.
+* **Harmony 650**, open, waiting on the FHSDK: Nothing reads a compiled 650 configuration back into a recipe, and the record of ours carried inside is not built.
+* **Harmony 700**, open, waiting on the FHSDK: Nothing turns a compiled configuration back into a recipe, and no record of ours is carried inside one.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing turns a compiled configuration back into a recipe, and nothing builds for the 525 that could carry a record of ours.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing turns a compiled configuration back into a recipe, and nothing builds for the 515.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing turns a compiled 885 configuration back into a recipe.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing turns a compiled 785 configuration back into a recipe.
+* **Harmony 300**, open, waiting on the FHSDK: Nothing reads a configuration of this family back into a recipe.
+* **Harmony 350**, open, waiting on the FHSDK: Nothing reads a 350 configuration back into a recipe, and no record of ours is carried inside.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-setup.test.ts`, "describing Logitech's own documents and composing the description gives the same remote: every device, activity, map, favourite and finding, compared by name".
-* **Harmony Elite**, open: Nothing reads a setup back into a recipe on this generation.
-* **Harmony Hub**, open: Nothing reads a setup back into a recipe on this generation.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing reads a setup back into a recipe on this generation.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing reads a setup back into a recipe on this generation.
 
 ### R4 Build a whole configuration from a recipe.
 
 * **Harmony One**, proven by `packages/codec/test/families/fromrecipe.test.ts`, "a recipe's choices reach the Harmony One, and a reference recipe can say it states them all"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it`.
 * **Harmony 600**, proven by `packages/codec/test/families/harmony-600-650-700/empty.test.ts`, "the five device test setup assembles on the Harmony 600's empty configuration with every page in its one grey, smaller than the 650's by exactly its two further looks, and the setup comparison finds nothing different from the 650's in 515 slots, nor in the activity keys and the drawn device lists, smoothed letters or not"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
-* **Harmony 650**, open: The 650 test setup builds to its fingerprint, but no test note records a recipe build running, and the build the remote ran differs.
+* **Harmony 650**, open, waiting on a run on a unit: The 650 test setup builds to its fingerprint, but no test note records a recipe build running, and the build the remote ran differs.
 * **Harmony 700**, proven by `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
-* **Harmony 525**, open: No codec family serves the 525, so nothing builds a configuration for it from a recipe.
-* **Harmony 515**, open: No codec family serves the 515, so nothing builds a configuration for it from a recipe.
-* **Harmony 885**, open: No build from a recipe serves the 885; a device can only be composed onto an existing configuration.
-* **Harmony 785**, open: No build from a recipe serves the 785.
-* **Harmony 300**, open: The 350's build ran on the 300 and every expected code was heard, but a recipe naming the 300 is refused once it holds a television or a long press, so the 300's own recipe does not build whole.
+* **Harmony 525**, open, waiting on its family: No codec family serves the 525, so nothing builds a configuration for it from a recipe.
+* **Harmony 515**, open, waiting on its family: No codec family serves the 515, so nothing builds a configuration for it from a recipe.
+* **Harmony 885**, open, waiting on its family: No build from a recipe serves the 885; a device can only be composed onto an existing configuration.
+* **Harmony 785**, open, waiting on its family: No build from a recipe serves the 785.
+* **Harmony 300**, open, waiting on its family: The 350's build ran on the 300 and every expected code was heard, but a recipe naming the 300 is refused once it holds a television or a long press, so the 300's own recipe does not build whole.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`, "the whole test setup builds with no Logitech file: every device, Watch TV with its flag and inputs, and the favourites, and passes the writer's checks"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts`, "with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone". Shown on a unit in `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: No family builds for skin 111; the Touch's document family builds the same kind of documents and is not offered for it.
-* **Harmony Hub**, open: No family builds for a hub; the Touch's document family builds the same kind of documents and is not offered for it.
+* **Harmony Elite**, open, waiting on its family: No family builds for skin 111; the Touch's document family builds the same kind of documents and is not offered for it.
+* **Harmony Hub**, open, waiting on its family: No family builds for a hub; the Touch's document family builds the same kind of documents and is not offered for it.
 
 ### R5 Write a configuration to the remote, verified by reading it back, and the remote runs it.
 
@@ -76,31 +76,31 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 600**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "a Harmony 650: the arch 14 drop, each block written and read back, the restart, and no install status read"; `tests/harmony_600_650_700/test_arch14_write_target.py`, "TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore.test_both_writes_ran_the_whole_sequence". Shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
 * **Harmony 650**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "a Harmony 650: the arch 14 drop, each block written and read back, the restart, and no install status read". Shown on a unit in `docs/test-notes/harmony-650.md#what-has-been-sent-to-this-unit`.
 * **Harmony 700**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "a Harmony 650: the arch 14 drop, each block written and read back, the restart, and no install status read"; `tests/harmony_600_650_700/test_arch14_write_target.py`, "TheHarmony700sDelayWriteWasHeardAndWentBack.test_both_writes_ran_the_whole_sequence_and_the_stopped_one_ended_after_an_erase". Shown on a unit in `docs/test-notes/harmony-700.md#what-was-sent-to-the-unit`.
-* **Harmony 525**, open: Only one block of the unit's own bytes was written back; the whole configuration writer refuses a 525.
-* **Harmony 515**, open: No write path names the 515; its write end has not been read in its application 3.4.
+* **Harmony 525**, open, waiting on the remote itself: Only one block of the unit's own bytes was written back; the whole configuration writer refuses a 525.
+* **Harmony 515**, open, waiting on the remote itself: No write path names the 515; its write end has not been read in its application 3.4.
 * **Harmony 885**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "a Harmony 885: the status read before the first erase and before the restart, the drop and the restart its own"; `tests/harmony_880_885/test_harmony_885_first_config_write.py`, "TheConfigurationWrittenToB.test_what_the_remote_holds_afterwards_is_the_file". Shown on a unit in `docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted`.
-* **Harmony 785**, open: No write path names a 785; its write end has not been read in its application 4.5.
+* **Harmony 785**, open, waiting on the remote itself: No write path names a 785; its write end has not been read in its application 4.5.
 * **Harmony 300**, proven by `packages/usb/test/file-protocol/file-family-run.test.ts`, "writes, verifies and reboots, and arms the caller's interrupt after the reads and before anything that writes"; `packages/usb/test/file-protocol/filewrite.test.ts`, "writes, checks, closes, reads back identical and reboots, in the client's order". Shown on a unit in `docs/test-notes/harmony-300.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/file-family-run.test.ts`, "writes, verifies and reboots, and arms the caller's interrupt after the reads and before anything that writes"; `packages/usb/test/file-protocol/filewrite.test.ts`, "writes, checks, closes, reads back identical and reboots, in the client's order". Shown on a unit in `docs/test-notes/harmony-350.md`.
-* **Harmony Touch**, open: answerTouchSync delivers and the remote commits and runs it, but no library step verifies afterwards; the hash check is a script's.
-* **Harmony Elite**, open: Nothing is written to the bench set, decision 36, and a hub paired remote takes its setup from its hub rather than over its cable.
-* **Harmony Hub**, open: Nothing is written to the bench hub, decision 36, and no write path names one.
+* **Harmony Touch**, open, waiting on its family: answerTouchSync delivers and the remote commits and runs it, but no library step verifies afterwards; the hash check is a script's.
+* **Harmony Elite**, open, waiting on the remote itself: Nothing is written to the bench set, decision 36, and a hub paired remote takes its setup from its hub rather than over its cable.
+* **Harmony Hub**, open, waiting on the remote itself: Nothing is written to the bench hub, decision 36, and no write path names one.
 
 ### R6 Write the user's own remote: take a remote never seen, record its identity and a full backup, and from then on write to that unit only.
 
-* **Harmony One**, open: The writer permits only the bench units on its list; a One never seen cannot be recorded and made a write target.
-* **Harmony 600**, open: Every write path permits only the bench units' records; taking up a remote never seen as a write target is not built.
-* **Harmony 650**, open: Writes go only to units on the bench's fixed list; a stranger's 650 cannot be recorded and made a write target.
-* **Harmony 700**, open: Writes are permitted only to the bench units the library lists; a remote never seen cannot be taken on.
-* **Harmony 525**, open: Writes are limited to the bench unit's record, and nothing takes in an unseen 525 as a write target.
-* **Harmony 515**, open: The bench unit's identity and configuration region are recorded, but no write path takes a 515 or adopts one never seen.
-* **Harmony 885**, open: The writer's unit list holds only the two bench 885s; nothing records and adopts a remote never seen.
-* **Harmony 785**, open: Both bench 785s are recorded with a full backup, but no write path takes a 785 or adopts one never seen.
-* **Harmony 300**, open: The writer serves only the two bench units on its own list; a remote never seen cannot be recorded and written.
-* **Harmony 350**, open: The writer's unit list holds the bench units only; a remote never seen cannot be recorded and written.
-* **Harmony Touch**, open: The answerer syncs only the one bench unit named in its own list; a stranger's Touch cannot be recorded and written.
-* **Harmony Elite**, open: No write path names an Elite, the bench's or a stranger's.
-* **Harmony Hub**, open: No write path names a hub, the bench's or a stranger's.
+* **Harmony One**, open, waiting on the FHSDK: The writer permits only the bench units on its list; a One never seen cannot be recorded and made a write target.
+* **Harmony 600**, open, waiting on the FHSDK: Every write path permits only the bench units' records; taking up a remote never seen as a write target is not built.
+* **Harmony 650**, open, waiting on the FHSDK: Writes go only to units on the bench's fixed list; a stranger's 650 cannot be recorded and made a write target.
+* **Harmony 700**, open, waiting on the FHSDK: Writes are permitted only to the bench units the library lists; a remote never seen cannot be taken on.
+* **Harmony 525**, open, waiting on the FHSDK and the remote itself: Writes are limited to the bench unit's record, and nothing takes in an unseen 525 as a write target.
+* **Harmony 515**, open, waiting on the FHSDK and the remote itself: The bench unit's identity and configuration region are recorded, but no write path takes a 515 or adopts one never seen.
+* **Harmony 885**, open, waiting on the FHSDK: The writer's unit list holds only the two bench 885s; nothing records and adopts a remote never seen.
+* **Harmony 785**, open, waiting on the FHSDK and the remote itself: Both bench 785s are recorded with a full backup, but no write path takes a 785 or adopts one never seen.
+* **Harmony 300**, open, waiting on the FHSDK: The writer serves only the two bench units on its own list; a remote never seen cannot be recorded and written.
+* **Harmony 350**, open, waiting on the FHSDK: The writer's unit list holds the bench units only; a remote never seen cannot be recorded and written.
+* **Harmony Touch**, open, waiting on the FHSDK: The answerer syncs only the one bench unit named in its own list; a stranger's Touch cannot be recorded and written.
+* **Harmony Elite**, open, waiting on the FHSDK and the remote itself: No write path names an Elite, the bench's or a stranger's.
+* **Harmony Hub**, open, waiting on the FHSDK and the remote itself: No write path names a hub, the bench's or a stranger's.
 
 ### R7 Refuse a configuration that does not fit the model or would be mishandled, and say what is over.
 
@@ -108,225 +108,189 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 600**, proven by `packages/codec/test/container/queue.test.ts`, "the rail refuses a container whose lists overflow, and says which one"; `packages/codec/test/families/harmony-600-650-700/empty.test.ts`, "Logitech's two Harmony 600 compiles do not read as our look, the assembly refuses one as a donor, and the seven device setup is refused at the 600's five"; `packages/corpus/test/read/compatibility.test.ts`, "the wrong remote is refused for every config in the corpus".
 * **Harmony 650**, proven by `packages/codec/test/compose/composecatalogue.test.ts`, "several devices are refused past the model's device count, under a label already taken, and as an empty list"; `packages/codec/test/compose/sequence.test.ts`, "the composer refuses a sequence the action queue cannot hold, at the exact boundary"; `packages/corpus/test/read/compatibility.test.ts`, "the wrong remote is refused for every config in the corpus".
 * **Harmony 700**, proven by `packages/codec/test/compose/composecatalogue.test.ts`, "several devices are refused past the model's device count, under a label already taken, and as an empty list"; `packages/codec/test/container/queue.test.ts`, "the rail refuses a container whose lists overflow, and says which one"; `packages/usb/test/transport/compatible.test.ts`, "the calibration case: a wrong remote is refused, and on the fields that differ".
-* **Harmony 525**, open: A wrong remote's configuration and an overflowing sequence are refused, but nothing refuses too many devices, and the 525's limit is unknown.
-* **Harmony 515**, open: Nothing checks a configuration against the 515's own limits before a write, and its device limit is the forum table's.
-* **Harmony 885**, open: The model check and the queue rail cover the 885; nothing checks a whole configuration's 64 state bytes or log area before writing.
-* **Harmony 785**, open: Nothing checks a configuration against the 785's own limits before a write.
+* **Harmony 525**, open, waiting on its family and the remote itself: A wrong remote's configuration and an overflowing sequence are refused, but nothing refuses too many devices, and the 525's limit is unknown.
+* **Harmony 515**, open, waiting on its family and the remote itself: Nothing checks a configuration against the 515's own limits before a write, and its device limit is the forum table's.
+* **Harmony 885**, open, waiting on its family: The model check and the queue rail cover the 885; nothing checks a whole configuration's 64 state bytes or log area before writing.
+* **Harmony 785**, open, waiting on its family: Nothing checks a configuration against the 785's own limits before a write.
 * **Harmony 300**, proven by `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`, "the test setup cannot be built for the Harmony 300's own skin, so the Harmony 350 build, with event 0xFF bound, is the file for both"; `packages/usb/test/file-protocol/filewrite.test.ts`, "refuses a container longer than the file, since the firmware would write it into the log".
 * **Harmony 350**, proven by `packages/codec/test/families/fromrecipe.test.ts`, "what an application is refused, each naming what is wrong"; `packages/codec/test/families/harmony-300-350/noscreensetup.test.ts`, "the setup composer refuses a key that disagrees with the configuration, a device with no key, and an activity naming a composed device"; `packages/usb/test/file-protocol/filewrite.test.ts`, "refuses a container longer than the file, since the firmware would write it into the log".
-* **Harmony Touch**, open: The gate refuses sets the remote would mishandle and names each, but nothing refuses more than the 15 devices Logitech states.
-* **Harmony Elite**, open: Nothing knows an Elite's limits, so nothing refuses a setup that does not fit one.
-* **Harmony Hub**, open: Nothing knows a hub's limits, so nothing refuses a setup that does not fit one.
+* **Harmony Touch**, open, waiting on its family: The gate refuses sets the remote would mishandle and names each, but nothing refuses more than the 15 devices Logitech states.
+* **Harmony Elite**, open, waiting on its family and the remote itself: Nothing knows an Elite's limits, so nothing refuses a setup that does not fit one.
+* **Harmony Hub**, open, waiting on its family and the remote itself: Nothing knows a hub's limits, so nothing refuses a setup that does not fit one.
 
 ### R8 Detect changes made on the remote since the app last wrote it, the help's own delay fixes among them, and keep or discard them.
 
-* **Harmony One**, open: Nothing reads back what was changed on the One itself, such as its Options settings, so no change is detected or kept.
-* **Harmony 600**, open: Saved delays are read and cleared on the 600, but nothing compares with the last write or keeps them in a new build.
-* **Harmony 650**, open: The settings store has never been read on a 650, and nothing offers keeping or discarding changes made on the remote.
-* **Harmony 700**, open: The settings store reader exists, but the store read was never sent to a 700 and nothing detects changes.
-* **Harmony 525**, open: Nothing compares a 525's configuration with the one last written, and no configuration of ours has been written to it.
-* **Harmony 515**, open: Nothing compares a 515's configuration with the one last written.
+* **Harmony One**, open, waiting on the FHSDK and its family: Nothing reads back what was changed on the One itself, such as its Options settings, so no change is detected or kept.
+* **Harmony 600**, open, waiting on the FHSDK: Saved delays are read and cleared on the 600, but nothing compares with the last write or keeps them in a new build.
+* **Harmony 650**, open, waiting on the FHSDK: The settings store has never been read on a 650, and nothing offers keeping or discarding changes made on the remote.
+* **Harmony 700**, open, waiting on the FHSDK: The settings store reader exists, but the store read was never sent to a 700 and nothing detects changes.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing compares a 525's configuration with the one last written, and no configuration of ours has been written to it.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing compares a 515's configuration with the one last written.
 * **Harmony 885**, unknown: The 885 has no settings store, and whether anything a person changes on it reaches its configuration is not known. `reference/remotes/harmony-885/memory.md#harmony-885-memory`.
 * **Harmony 785**, unknown: Whether anything a person changes on a 785 reaches its configuration is not known.
 * **Harmony 300**, unknown: Whether a Harmony 300 ever changes its own configuration is not known; it has no help to fix delays.
-* **Harmony 350**, open: The writer refuses a file it did not write, shown on the unit; keeping or discarding that change is not offered.
-* **Harmony Touch**, open: The hand over keeps what the remote hands up and stops on a clash, but offers no keep or discard choice.
-* **Harmony Elite**, open: Nothing compares what an Elite holds with what was last written, since nothing is written.
-* **Harmony Hub**, open: Nothing compares what a hub holds with what was last written, since nothing is written.
+* **Harmony 350**, open, waiting on the FHSDK: The writer refuses a file it did not write, shown on the unit; keeping or discarding that change is not offered.
+* **Harmony Touch**, open, waiting on the FHSDK: The hand over keeps what the remote hands up and stops on a clash, but offers no keep or discard choice.
+* **Harmony Elite**, open, waiting on the FHSDK and the remote itself: Nothing compares what an Elite holds with what was last written, since nothing is written.
+* **Harmony Hub**, open, waiting on the FHSDK and the remote itself: Nothing compares what a hub holds with what was last written, since nothing is written.
 
 ## Devices and codes
 
 ### R9 Find a device in the catalogue by manufacturer, model number and type, with help for typing errors.
 
-* **Harmony One**, open: The catalogue lists manufacturers and models, but there is no search by type and no help for typing errors.
-* **Harmony 600**, open: The catalogue lists manufacturers and models, but offers no help for typing errors.
-* **Harmony 650**, open: The catalogue lists manufacturers and their models, but there is no search by type and no help with typing errors.
-* **Harmony 700**, open: The catalogue lists manufacturers, models and types, but nothing helps with a misspelt search.
-* **Harmony 525**, open: The catalogue can be browsed by manufacturer and model, but no search helps with typing errors.
-* **Harmony 515**, open: The catalogue can be browsed by manufacturer and model, but no search helps with typing errors.
-* **Harmony 885**, open: The catalogue browses by manufacturer and model; there is no search by type and no help for typing errors.
-* **Harmony 785**, open: The catalogue browses by manufacturer and model; there is no search by type and no help for typing errors.
-* **Harmony 300**, open: The catalogue lists manufacturers and models, but offers no help for typing errors.
-* **Harmony 350**, open: The catalogue can be browsed by manufacturer and model, but nothing helps with typing errors.
-* **Harmony Touch**, open: The catalogue can be listed by manufacturer and model, but nothing helps with typing errors.
-* **Harmony Elite**, open: The catalogue can be listed by manufacturer and model, but nothing helps with typing errors.
-* **Harmony Hub**, open: The catalogue can be listed by manufacturer and model, but nothing helps with typing errors.
+* **Every remote**, open, waiting on the FHSDK: The catalogue lists manufacturers and each one's models; nothing searches across them by type or helps with a typing error.
 
 ### R10 Add a device from the catalogue with its commands, power and inputs, choosing the code set version where a device has several.
 
-* **Harmony One**, open: Catalogue devices compose and were heard, but no code set version can be chosen and inputs chosen through a menu are refused.
-* **Harmony 600**, open: Catalogue devices with commands, power and inputs ran on the 600; choosing a code set version is not offered.
-* **Harmony 650**, open: Catalogue devices compose and ran on the 650, but nothing lets the user choose between a device's code sets.
-* **Harmony 700**, open: Catalogue devices with commands, power and inputs ran on the 700; choosing among a device's code set versions is not offered.
-* **Harmony 525**, open: Nothing composes a catalogue device for the 525.
-* **Harmony 515**, open: Nothing composes a catalogue device for the 515.
-* **Harmony 885**, open: One catalogue device of eight commands was composed and shown; its inputs and a full device are refused.
-* **Harmony 785**, open: Nothing composes a catalogue device for the 785.
-* **Harmony 300**, open: Catalogue devices with power and inputs were built and heard on the unit, but no code set version can be chosen.
-* **Harmony 350**, open: Catalogue devices compose and were heard on the unit; choosing among a device's code set versions is not offered.
-* **Harmony Touch**, open: Devices are built from catalogue entries and heard, but the builder takes the entry's one code set and offers no version choice.
-* **Harmony Elite**, open: Nothing composes a device for an Elite; its devices are documents its hub holds.
-* **Harmony Hub**, open: Nothing composes a device for a hub.
+* **Harmony One**, open, waiting on the FHSDK and its family: Catalogue devices compose and were heard, but no code set version can be chosen and inputs chosen through a menu are refused.
+* **Harmony 600**, open, waiting on the FHSDK: Catalogue devices with commands, power and inputs ran on the 600; choosing a code set version is not offered.
+* **Harmony 650**, open, waiting on the FHSDK: Catalogue devices compose and ran on the 650, but nothing lets the user choose between a device's code sets.
+* **Harmony 700**, open, waiting on the FHSDK: Catalogue devices with commands, power and inputs ran on the 700; choosing among a device's code set versions is not offered.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing composes a catalogue device for the 525.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing composes a catalogue device for the 515.
+* **Harmony 885**, open, waiting on the FHSDK and its family: One catalogue device of eight commands was composed and shown; its inputs and a full device are refused.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing composes a catalogue device for the 785.
+* **Harmony 300**, open, waiting on the FHSDK: Catalogue devices with power and inputs were built and heard on the unit, but no code set version can be chosen.
+* **Harmony 350**, open, waiting on the FHSDK: Catalogue devices compose and were heard on the unit; choosing among a device's code set versions is not offered.
+* **Harmony Touch**, open, waiting on the FHSDK: Devices are built from catalogue entries and heard, but the builder takes the entry's one code set and offers no version choice.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing composes a device for an Elite; its devices are documents its hub holds.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing composes a device for a hub.
 
 ### R11 Add a device the catalogue does not know, from its type and commands taught from its original remote, its definition saying it was learned.
 
-* **Harmony One**, open: Nothing learns on a One, so a device the catalogue lacks cannot be built from taught commands.
-* **Harmony 600**, open: Learning is not built for this family, so a device taught from its original remote cannot be made.
-* **Harmony 650**, open: Teaching commands from an original remote needs learning, and nothing in the FHSDK learns through a 650.
-* **Harmony 700**, open: Learning is not offered on this model, so a device taught from its original remote cannot be built.
-* **Harmony 525**, open: Nothing composes a learned device for the 525, and learning on it has not been done.
-* **Harmony 515**, open: Nothing composes a learned device for the 515, and learning on it has not been done.
-* **Harmony 885**, open: Nothing learns a code on the 885 or builds a device from taught commands.
-* **Harmony 785**, open: Nothing learns a code on the 785 or builds a device from taught commands.
+* **Harmony One**, open, waiting on its family: Nothing learns on a One, so a device the catalogue lacks cannot be built from taught commands.
+* **Harmony 600**, open, waiting on its family: Learning is not built for this family, so a device taught from its original remote cannot be made.
+* **Harmony 650**, open, waiting on its family: Teaching commands from an original remote needs learning, and nothing in the FHSDK learns through a 650.
+* **Harmony 700**, open, waiting on its family: Learning is not offered on this model, so a device taught from its original remote cannot be built.
+* **Harmony 525**, open, waiting on its family: Nothing composes a learned device for the 525, and learning on it has not been done.
+* **Harmony 515**, open, waiting on its family: Nothing composes a learned device for the 515, and learning on it has not been done.
+* **Harmony 885**, open, waiting on its family: Nothing learns a code on the 885 or builds a device from taught commands.
+* **Harmony 785**, open, waiting on its family: Nothing learns a code on the 785 or builds a device from taught commands.
 * **Harmony 300**, unknown: Whether the 300 can learn is not known, and nothing composes a learned device for this family.
-* **Harmony 350**, open: Nothing builds a device from commands taught from its original remote on this family.
-* **Harmony Touch**, open: A learned code becomes a definition in tests, but no device of taught commands has been composed and sent on the unit.
-* **Harmony Elite**, open: Nothing composes a device of taught commands for an Elite.
-* **Harmony Hub**, open: Nothing composes a device of taught commands for a hub.
+* **Harmony 350**, open, waiting on its family: Nothing builds a device from commands taught from its original remote on this family.
+* **Harmony Touch**, open, waiting on a run on a unit: A learned code becomes a definition in tests, but no device of taught commands has been composed and sent on the unit.
+* **Harmony Elite**, open, waiting on its family: Nothing composes a device of taught commands for an Elite.
+* **Harmony Hub**, open, waiting on its family: Nothing composes a device of taught commands for a hub.
 
 ### R12 Rename a device.
 
-* **Harmony One**, open: A device's name is set only when a recipe is built; no test or run shows an existing device renamed.
-* **Harmony 600**, open: A device's name comes from the recipe, but no run on the 600 changed a name and showed the new one.
-* **Harmony 650**, open: A recipe names each device, but no test renames one and no rename has been shown on the 650.
-* **Harmony 700**, open: Device names come from the recipe, but no record says the 700's device list labels were checked on the unit.
-* **Harmony 525**, open: No edit or build renames a device in a 525 configuration.
-* **Harmony 515**, open: No edit or build renames a device in a 515 configuration.
-* **Harmony 885**, open: Nothing renames a device in an 885 configuration.
-* **Harmony 785**, open: Nothing renames a device in a 785 configuration.
-* **Harmony 300**, open: Device names go into the file from the recipe, but no renamed device was written to a 300 and read back.
-* **Harmony 350**, open: A device's name lives only in the file's metadata the remote never shows; no test or run renames one.
-* **Harmony Touch**, open: No library step renames a device, and no renamed device has been delivered to the unit.
-* **Harmony Elite**, open: No library step renames a device, and nothing is written to the bench set.
-* **Harmony Hub**, open: No library step renames a device, and nothing is written to the bench hub.
+* **Every remote**, open, waiting on the FHSDK: A recipe states each device's name; no function renames a device in a recipe, which R76 asks for.
 
 ### R13 Remove a device, and say and settle what happens to the activities and favourites that used it.
 
-* **Harmony One**, open: Nothing removes a device or settles the activities and favourites that used it.
-* **Harmony 600**, open: Nothing removes a device and settles the activities and favourites that used it.
-* **Harmony 650**, open: Nothing removes a device and reports or settles the activities and favourites that used it.
-* **Harmony 700**, open: A device goes only by rebuilding without it; nothing says or settles what happens to activities and favourites that used it.
-* **Harmony 525**, open: Nothing removes a device from a 525 configuration or settles its activities.
-* **Harmony 515**, open: Nothing removes a device from a 515 configuration or settles its activities.
-* **Harmony 885**, open: Nothing removes a device from an 885 configuration, or settles what used it.
-* **Harmony 785**, open: Nothing removes a device from a 785 configuration, or settles what used it.
-* **Harmony 300**, open: Removing a device is tested on Logitech's compiles only, never run on a 300, and favourites using it are not settled.
-* **Harmony 350**, open: Removal refuses devices that Watch TV or favourites use, and nothing settles them; no removal ran on the unit alone.
+* **Harmony One**, open, waiting on the FHSDK: Nothing removes a device or settles the activities and favourites that used it.
+* **Harmony 600**, open, waiting on the FHSDK: Nothing removes a device and settles the activities and favourites that used it.
+* **Harmony 650**, open, waiting on the FHSDK: Nothing removes a device and reports or settles the activities and favourites that used it.
+* **Harmony 700**, open, waiting on the FHSDK: A device goes only by rebuilding without it; nothing says or settles what happens to activities and favourites that used it.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing removes a device from a 525 configuration or settles its activities.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing removes a device from a 515 configuration or settles its activities.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing removes a device from an 885 configuration, or settles what used it.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing removes a device from a 785 configuration, or settles what used it.
+* **Harmony 300**, open, waiting on the FHSDK: Removing a device is tested on Logitech's compiles only, never run on a 300, and favourites using it are not settled.
+* **Harmony 350**, open, waiting on the FHSDK: Removal refuses devices that Watch TV or favourites use, and nothing settles them; no removal ran on the unit alone.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-removal.test.ts`, "taking out an activity and a device takes out everything naming them and changes nothing else". Shown on a unit in `packages/bench/test/harmony-touch/touch-removal-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing removes a device from an Elite's setup.
-* **Harmony Hub**, open: Nothing removes a device from a hub's setup.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing removes a device from an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing removes a device from a hub's setup.
 
 ### R14 Set how a device is powered: one key or two, none, always on, kept on between activities, extra commands to power up, a power code that must be held.
 
-* **Harmony One**, open: Catalogue power composes, but a power code that must be held is not composed or tested for the One.
-* **Harmony 600**, open: Keeping a device on ran on the 600; no power, always on, extra power steps and a held power code are not offered.
-* **Harmony 650**, open: The held power code ran on the 650; keep on, always on and no power have no test note, and no power is not offered.
-* **Harmony 700**, open: One key, two keys, kept on and a held power code ran on the 700; no power and always on were not shown.
-* **Harmony 525**, open: No part of device power is composed for the 525, since no family serves it.
-* **Harmony 515**, open: No part of device power is composed for the 515, since no family serves it.
-* **Harmony 885**, open: The catalogue's power, long press version included, is composed and heard; none, always on, kept on and extra commands are not.
-* **Harmony 785**, open: Nothing composes a device's power for the 785.
-* **Harmony 300**, open: Power comes from the catalogue; one or two keys, none, always on, extra commands and a held power code cannot be set.
-* **Harmony 350**, open: Toggle and separate on and off codes were heard; no power, always on, extra power steps and a held power code are not offered.
-* **Harmony Touch**, open: Kept on and a held power code compose, but always on, no power, one or two keys and extra power commands are not set or shown.
-* **Harmony Elite**, open: Nothing sets how a device is powered in an Elite's setup.
-* **Harmony Hub**, open: Nothing sets how a device is powered in a hub's setup.
+* **Harmony One**, open, waiting on the FHSDK and its family: Catalogue power composes, but a power code that must be held is not composed or tested for the One.
+* **Harmony 600**, open, waiting on the FHSDK: Keeping a device on ran on the 600; no power, always on, extra power steps and a held power code are not offered.
+* **Harmony 650**, open, waiting on the FHSDK: The held power code ran on the 650; keep on, always on and no power have no test note, and no power is not offered.
+* **Harmony 700**, open, waiting on the FHSDK: One key, two keys, kept on and a held power code ran on the 700; no power and always on were not shown.
+* **Harmony 525**, open, waiting on the FHSDK and its family: No part of device power is composed for the 525, since no family serves it.
+* **Harmony 515**, open, waiting on the FHSDK and its family: No part of device power is composed for the 515, since no family serves it.
+* **Harmony 885**, open, waiting on the FHSDK and its family: The catalogue's power, long press version included, is composed and heard; none, always on, kept on and extra commands are not.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing composes a device's power for the 785.
+* **Harmony 300**, open, waiting on the FHSDK: Power comes from the catalogue; one or two keys, none, always on, extra commands and a held power code cannot be set.
+* **Harmony 350**, open, waiting on the FHSDK: Toggle and separate on and off codes were heard; no power, always on, extra power steps and a held power code are not offered.
+* **Harmony Touch**, open, waiting on the FHSDK: Kept on and a held power code compose, but always on, no power, one or two keys and extra power commands are not set or shown.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing sets how a device is powered in an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing sets how a device is powered in a hub's setup.
 
 ### R15 Set how a device changes inputs and which inputs it has.
 
-* **Harmony One**, open: Direct inputs come from the catalogue; how a device changes inputs cannot be set, and inputs through a menu are refused.
-* **Harmony 600**, open: Direct inputs ran on the 600; inputs chosen through a menu are refused, and a recipe cannot state a device's inputs.
-* **Harmony 650**, open: Direct and stepped inputs compose, inputs chosen through a menu are refused, and no test note shows an input on the 650.
-* **Harmony 700**, open: Direct and stepped inputs ran on the 700, but inputs chosen through a menu are refused by the composer.
-* **Harmony 525**, open: Nothing composes a device's inputs for the 525.
-* **Harmony 515**, open: Nothing composes a device's inputs for the 515.
-* **Harmony 885**, open: A composed device's inputs are refused on the 885.
-* **Harmony 785**, open: Nothing composes a device's inputs for the 785.
-* **Harmony 300**, open: Inputs come from the catalogue only; how a device changes input cannot be set, and a stepping input is refused.
-* **Harmony 350**, open: Direct inputs work; an input that steps or mixes codes and states is refused.
-* **Harmony Touch**, open: A device's inputs and how it changes them come only from its catalogue entry; nothing lets them be set.
-* **Harmony Elite**, open: Nothing sets a device's inputs in an Elite's setup.
-* **Harmony Hub**, open: Nothing sets a device's inputs in a hub's setup.
+* **Harmony One**, open, waiting on the FHSDK and its family: Direct inputs come from the catalogue; how a device changes inputs cannot be set, and inputs through a menu are refused.
+* **Harmony 600**, open, waiting on the FHSDK and its family: Direct inputs ran on the 600; inputs chosen through a menu are refused, and a recipe cannot state a device's inputs.
+* **Harmony 650**, open, waiting on the FHSDK and its family: Direct and stepped inputs compose, inputs chosen through a menu are refused, and no test note shows an input on the 650.
+* **Harmony 700**, open, waiting on the FHSDK and its family: Direct and stepped inputs ran on the 700, but inputs chosen through a menu are refused by the composer.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing composes a device's inputs for the 525.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing composes a device's inputs for the 515.
+* **Harmony 885**, open, waiting on the FHSDK and its family: A composed device's inputs are refused on the 885.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing composes a device's inputs for the 785.
+* **Harmony 300**, open, waiting on the FHSDK and its family: Inputs come from the catalogue only; how a device changes input cannot be set, and a stepping input is refused.
+* **Harmony 350**, open, waiting on the FHSDK and its family: Direct inputs work; an input that steps or mixes codes and states is refused.
+* **Harmony Touch**, open, waiting on the FHSDK: A device's inputs and how it changes them come only from its catalogue entry; nothing lets them be set.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing sets a device's inputs in an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing sets a device's inputs in a hub's setup.
 
 ### R16 Set a device's delays, and put them back to their defaults.
 
-* **Harmony One**, open: A power on delay was edited and written to the spare; other delays and a return to defaults are not offered.
-* **Harmony 600**, open: A power on delay edit was heard on the 600; per device inter device and input delays, and a return to defaults, are not offered.
-* **Harmony 650**, open: A power on delay edit ran on the 650, but nothing sets one device's delay between devices or restores defaults.
-* **Harmony 700**, open: One power on delay was raised and put back, both heard; other delays and a return to defaults are not offered.
-* **Harmony 525**, open: Power on delays are read in 525 configurations, but nothing sets or resets them for this model.
-* **Harmony 515**, open: Nothing sets or resets a device's delays for the 515.
-* **Harmony 885**, open: The catalogue's delays are composed, but nothing sets or resets them, and the silence was not observed on a unit.
-* **Harmony 785**, open: Nothing sets or resets a device's delays for the 785.
-* **Harmony 300**, open: The power on delay was set and heard on the unit, but no other delay is settable and nothing restores defaults.
-* **Harmony 350**, open: The power on delay was changed and heard on the unit; other delays and a return to defaults are not offered.
-* **Harmony Touch**, open: Delays a setup states are composed and their pauses heard in band, but putting them back to defaults is not shown.
-* **Harmony Elite**, open: Nothing sets a device's delays in an Elite's setup.
-* **Harmony Hub**, open: Nothing sets a device's delays in a hub's setup.
+* **Harmony One**, open, waiting on the FHSDK: A power on delay was edited and written to the spare; other delays and a return to defaults are not offered.
+* **Harmony 600**, open, waiting on the FHSDK: A power on delay edit was heard on the 600; per device inter device and input delays, and a return to defaults, are not offered.
+* **Harmony 650**, open, waiting on the FHSDK: A power on delay edit ran on the 650, but nothing sets one device's delay between devices or restores defaults.
+* **Harmony 700**, open, waiting on the FHSDK: One power on delay was raised and put back, both heard; other delays and a return to defaults are not offered.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Power on delays are read in 525 configurations, but nothing sets or resets them for this model.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing sets or resets a device's delays for the 515.
+* **Harmony 885**, open, waiting on the FHSDK: The catalogue's delays are composed, but nothing sets or resets them, and the silence was not observed on a unit.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing sets or resets a device's delays for the 785.
+* **Harmony 300**, open, waiting on the FHSDK: The power on delay was set and heard on the unit, but no other delay is settable and nothing restores defaults.
+* **Harmony 350**, open, waiting on the FHSDK: The power on delay was changed and heard on the unit; other delays and a return to defaults are not offered.
+* **Harmony Touch**, open, waiting on a run on a unit: Delays a setup states are composed and their pauses heard in band, but putting them back to defaults is not shown.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing sets a device's delays in an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing sets a device's delays in a hub's setup.
 
 ### R17 Set how many times a device's commands repeat.
 
-* **Harmony One**, open: Repeats follow the catalogue's count; nothing lets a repeat count be set.
-* **Harmony 600**, open: Repeat counts are composed from the catalogue; nothing lets an application set them.
-* **Harmony 650**, open: A device's repeat count is taken from the catalogue, and nothing lets an application set it.
-* **Harmony 700**, open: Repeats are composed from the catalogue; nothing lets an application set them.
-* **Harmony 525**, open: Nothing composes a repeat count for a 525 device.
-* **Harmony 515**, open: Nothing composes a repeat count for a 515 device.
-* **Harmony 885**, open: A composed device's sends go at a fixed quantity of 1; nothing lets it be set.
-* **Harmony 785**, open: Nothing sets a repeat count for the 785.
-* **Harmony 300**, open: Nothing sets how many times a device's commands repeat.
-* **Harmony 350**, open: The repeat count follows the catalogue and cannot be set; nothing about it was checked on a remote.
-* **Harmony Touch**, open: A repeat count is composed, but six taps sent four or five frames where three were predicted, unexplained.
-* **Harmony Elite**, open: Nothing sets how often a device's commands repeat in an Elite's setup.
-* **Harmony Hub**, open: Nothing sets how often a device's commands repeat in a hub's setup.
+* **Harmony One**, open, waiting on the FHSDK: Repeats follow the catalogue's count; nothing lets a repeat count be set.
+* **Harmony 600**, open, waiting on the FHSDK: Repeat counts are composed from the catalogue; nothing lets an application set them.
+* **Harmony 650**, open, waiting on the FHSDK: A device's repeat count is taken from the catalogue, and nothing lets an application set it.
+* **Harmony 700**, open, waiting on the FHSDK: Repeats are composed from the catalogue; nothing lets an application set them.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing composes a repeat count for a 525 device.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing composes a repeat count for a 515 device.
+* **Harmony 885**, open, waiting on the FHSDK: A composed device's sends go at a fixed quantity of 1; nothing lets it be set.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing sets a repeat count for the 785.
+* **Harmony 300**, open, waiting on the FHSDK: Nothing sets how many times a device's commands repeat.
+* **Harmony 350**, open, waiting on the FHSDK: The repeat count follows the catalogue and cannot be set; nothing about it was checked on a remote.
+* **Harmony Touch**, open, waiting on the remote itself: A repeat count is composed, but six taps sent four or five frames where three were predicted, unexplained.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing sets how often a device's commands repeat in an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing sets how often a device's commands repeat in a hub's setup.
 
 ### R18 Set how a device tunes a channel number.
 
-* **Harmony One**, open: Nothing sets how a device tunes a channel number.
-* **Harmony 600**, open: Channel tuning comes from the catalogue entry; nothing lets an application set it.
-* **Harmony 650**, open: Channel tuning is composed for the Harmony 300, 350 and Touch, not for the 650's family.
-* **Harmony 700**, open: Channel tuning is taken from the catalogue record; nothing lets an application set it.
-* **Harmony 525**, open: Nothing composes channel tuning for a 525 device.
-* **Harmony 515**, open: Nothing composes channel tuning for a 515 device.
-* **Harmony 885**, open: Nothing composes channel entry for an 885 device.
-* **Harmony 785**, open: Nothing composes channel entry for a 785 device.
-* **Harmony 300**, open: Channel digits and the tuning finish follow the catalogue; how a device tunes a number cannot be chosen.
-* **Harmony 350**, open: Channel tuning comes from the catalogue entry as it is; nothing lets it be set.
-* **Harmony Touch**, open: A channel tuning setting composes, but no composed tuning was heard; the favourites heard ran on Logitech's carried tuning.
-* **Harmony Elite**, open: Nothing sets how a device tunes a channel in an Elite's setup.
-* **Harmony Hub**, open: Nothing sets how a device tunes a channel in a hub's setup.
+* **Harmony One**, open, waiting on the FHSDK and its family: Nothing sets how a device tunes a channel number.
+* **Harmony 600**, open, waiting on the FHSDK and its family: Channel tuning comes from the catalogue entry; nothing lets an application set it.
+* **Harmony 650**, open, waiting on the FHSDK and its family: Channel tuning is composed for the Harmony 300, 350 and Touch, not for the 650's family.
+* **Harmony 700**, open, waiting on the FHSDK and its family: Channel tuning is taken from the catalogue record; nothing lets an application set it.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing composes channel tuning for a 525 device.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing composes channel tuning for a 515 device.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing composes channel entry for an 885 device.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing composes channel entry for a 785 device.
+* **Harmony 300**, open, waiting on the FHSDK: Channel digits and the tuning finish follow the catalogue; how a device tunes a number cannot be chosen.
+* **Harmony 350**, open, waiting on the FHSDK: Channel tuning comes from the catalogue entry as it is; nothing lets it be set.
+* **Harmony Touch**, open, waiting on a run on a unit: A channel tuning setting composes, but no composed tuning was heard; the favourites heard ran on Logitech's carried tuning.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing sets how a device tunes a channel in an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing sets how a device tunes a channel in a hub's setup.
 
 ### R19 Add, fix and remove a device's command, and put a fixed one back to its original code.
 
-* **Harmony One**, open: Nothing adds, fixes or removes one command of a device, or puts back its original code.
-* **Harmony 600**, open: Nothing adds, fixes or removes one command of a device, or puts a fixed one back.
-* **Harmony 650**, open: Commands can be chosen when composing a device, but nothing fixes a command's code or puts the original back.
-* **Harmony 700**, open: Nothing adds, fixes, removes or restores a single command of a device.
-* **Harmony 525**, open: Nothing adds, fixes or restores a device command in a 525 configuration.
-* **Harmony 515**, open: Nothing adds, fixes or restores a device command in a 515 configuration.
-* **Harmony 885**, open: Nothing adds, fixes, removes or restores a single command in an 885 configuration.
-* **Harmony 785**, open: Nothing adds, fixes, removes or restores a single command in a 785 configuration.
-* **Harmony 300**, open: Nothing adds, fixes or removes one command of a device, or restores its original code, for this family.
-* **Harmony 350**, open: Nothing adds, fixes or removes a single command of a device on this family.
-* **Harmony Touch**, open: No library step adds, fixes or removes one command of a device, or restores a fixed one.
-* **Harmony Elite**, open: No library step adds, fixes or removes one command of a device.
-* **Harmony Hub**, open: No library step adds, fixes or removes one command of a device.
+* **Harmony One**, open, waiting on the FHSDK: Nothing adds, fixes or removes one command of a device, or puts back its original code.
+* **Harmony 600**, open, waiting on the FHSDK: Nothing adds, fixes or removes one command of a device, or puts a fixed one back.
+* **Harmony 650**, open, waiting on the FHSDK: Commands can be chosen when composing a device, but nothing fixes a command's code or puts the original back.
+* **Harmony 700**, open, waiting on the FHSDK: Nothing adds, fixes, removes or restores a single command of a device.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing adds, fixes or restores a device command in a 525 configuration.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing adds, fixes or restores a device command in a 515 configuration.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing adds, fixes, removes or restores a single command in an 885 configuration.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing adds, fixes, removes or restores a single command in a 785 configuration.
+* **Harmony 300**, open, waiting on the FHSDK: Nothing adds, fixes or removes one command of a device, or restores its original code, for this family.
+* **Harmony 350**, open, waiting on the FHSDK: Nothing adds, fixes or removes a single command of a device on this family.
+* **Harmony Touch**, open, waiting on the FHSDK: No library step adds, fixes or removes one command of a device, or restores a fixed one.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: No library step adds, fixes or removes one command of a device.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: No library step adds, fixes or removes one command of a device.
 
 ### R20 Export and import codes as Pronto Hex.
 
-* **Harmony One**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 600**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 650**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 700**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 525**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 515**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 885**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 785**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 300**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony 350**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony Touch**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony Elite**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
-* **Harmony Hub**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
+* **Every remote**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
 
 ## Activities
 
@@ -334,135 +298,123 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 * **Harmony One**, proven by `packages/codec/test/families/harmony-one/oneactivity.test.ts`, "an activity our builder composes onto each Logitech One compile walked, the pair on a step and all nineteen and their tally in the slow tier, takes a case in the four records every activity of theirs has one in, the unread copy of the Devices record among them, and base slot 11's table then names its cases as their compiler names every case, the case programs' builder rebuilding the file with the table it generates"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it`.
 * **Harmony 600**, proven by `packages/codec/test/compose/compose.test.ts`, "an activity composed on a Harmony 650, 600 and 700 opens on a start up screen of its own and ends on a working screen of its own". Shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
-* **Harmony 650**, open: Composed activities started and All Off ran on the 650, but its test notes record no switching between activities.
+* **Harmony 650**, open, waiting on a run on a unit: Composed activities started and All Off ran on the 650, but its test notes record no switching between activities.
 * **Harmony 700**, proven by `packages/codec/test/compose/compose.test.ts`, "an activity composed on a Harmony 650, 600 and 700 opens on a start up screen of its own and ends on a working screen of its own". Shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
-* **Harmony 525**, open: Nothing composes an activity for the 525.
-* **Harmony 515**, open: Nothing composes an activity for the 515.
-* **Harmony 885**, open: Activities are not composed for the 885; the family refuses an activity's start, menu row and screen.
-* **Harmony 785**, open: Activities are not composed for the 785.
-* **Harmony 300**, open: Watch TV ran on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.
+* **Harmony 525**, open, waiting on its family: Nothing composes an activity for the 525.
+* **Harmony 515**, open, waiting on its family: Nothing composes an activity for the 515.
+* **Harmony 885**, open, waiting on its family: Activities are not composed for the 885; the family refuses an activity's start, menu row and screen.
+* **Harmony 785**, open, waiting on its family: Activities are not composed for the 785.
+* **Harmony 300**, open, waiting on its family: Watch TV ran on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`, "the composed Watch TV is Logitech's step for step, the LG's and the Denon's power, the flag, the inputs on the way on and the KPN's map, and the KPN's toggle is the donor's"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing composes an activity for an Elite, and none of ours has run on one.
-* **Harmony Hub**, open: Nothing composes an activity for a hub, and none of ours has run on one.
+* **Harmony Elite**, open, waiting on its family: Nothing composes an activity for an Elite, and none of ours has run on one.
+* **Harmony Hub**, open, waiting on its family: Nothing composes an activity for a hub, and none of ours has run on one.
 
 ### R22 Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key.
 
-* **Harmony One**, open: Keys are mapped from roles and the Denon's volume was heard; the learned command part does not exist for the One.
-* **Harmony 600**, open: Keys mapped from roles ran on the 600; a learned command landing on its usual key is not built, since learning is not.
-* **Harmony 650**, open: The key map built from roles ran on the 650, but the learned command half needs learning, which does not exist.
-* **Harmony 700**, open: Keys from roles ran on the 700, volume to the receiver and channels to the box; learned commands cannot exist to land.
-* **Harmony 525**, open: No activity key map from device roles is built for the 525.
-* **Harmony 515**, open: No activity key map from device roles is built for the 515.
-* **Harmony 885**, open: An activity's key map from roles is refused for the 885.
-* **Harmony 785**, open: An activity's key map is not composed for the 785.
-* **Harmony 300**, open: Only the channel changing role picks the map Watch TV ends in; other roles map no keys and learned commands are not handled.
-* **Harmony 350**, open: Roles choose Watch TV's final device map and volume source; a learned command landing on its usual key is not offered.
-* **Harmony Touch**, open: The Touch's maps are stated key by key; nothing maps an activity's keys from its devices' jobs.
-* **Harmony Elite**, open: Nothing maps an activity's keys from its devices' jobs, and the Elite's keys are not read.
-* **Harmony Hub**, open: Nothing maps an activity's keys from its devices' jobs for the remotes a hub serves.
+* **Harmony One**, open, waiting on its family: Keys are mapped from roles and the Denon's volume was heard; the learned command part does not exist for the One.
+* **Harmony 600**, open, waiting on its family: Keys mapped from roles ran on the 600; a learned command landing on its usual key is not built, since learning is not.
+* **Harmony 650**, open, waiting on its family: The key map built from roles ran on the 650, but the learned command half needs learning, which does not exist.
+* **Harmony 700**, open, waiting on its family: Keys from roles ran on the 700, volume to the receiver and channels to the box; learned commands cannot exist to land.
+* **Harmony 525**, open, waiting on its family: No activity key map from device roles is built for the 525.
+* **Harmony 515**, open, waiting on its family: No activity key map from device roles is built for the 515.
+* **Harmony 885**, open, waiting on its family: An activity's key map from roles is refused for the 885.
+* **Harmony 785**, open, waiting on its family: An activity's key map is not composed for the 785.
+* **Harmony 300**, open, waiting on its family: Only the channel changing role picks the map Watch TV ends in; other roles map no keys and learned commands are not handled.
+* **Harmony 350**, open, waiting on its family: Roles choose Watch TV's final device map and volume source; a learned command landing on its usual key is not offered.
+* **Harmony Touch**, open, waiting on its family: The Touch's maps are stated key by key; nothing maps an activity's keys from its devices' jobs.
+* **Harmony Elite**, open, waiting on its family and the remote itself: Nothing maps an activity's keys from its devices' jobs, and the Elite's keys are not read.
+* **Harmony Hub**, open, waiting on its family: Nothing maps an activity's keys from its devices' jobs for the remotes a hub serves.
 
 ### R23 Set each device's input in an activity, or leave it alone.
 
 * **Harmony One**, proven by `packages/codec/test/compose/inputs.test.ts`, "on the Harmony One, three devices Logitech compiled, composed again from the catalogue, agree transition for transition but for the connected app"; `packages/codec/test/families/harmony-one/composecompare.test.ts`, "the donor's Denon and LG put on an input send the input meant, and the two compositions agree on every entry of those two devices' input variables". Shown on a unit in `docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it`.
 * **Harmony 600**, proven by `packages/codec/test/compose/inputs.test.ts`, "an arch 14 activity starts its devices, then sets their inputs in the order they were switched on, before switching any off". Shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
-* **Harmony 650**, open: An activity's device inputs compose, but no test note shows one being set on the 650.
-* **Harmony 700**, open: Inputs set per activity ran on the 700; no device with inputs was left alone in any activity run.
-* **Harmony 525**, open: No activity input setting is built for the 525.
-* **Harmony 515**, open: No activity input setting is built for the 515.
-* **Harmony 885**, open: Activities and device inputs are not composed for the 885.
-* **Harmony 785**, open: Activities and device inputs are not composed for the 785.
-* **Harmony 300**, open: The inputs were heard on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.
+* **Harmony 650**, open, waiting on a run on a unit: An activity's device inputs compose, but no test note shows one being set on the 650.
+* **Harmony 700**, open, waiting on a run on a unit: Inputs set per activity ran on the 700; no device with inputs was left alone in any activity run.
+* **Harmony 525**, open, waiting on its family: No activity input setting is built for the 525.
+* **Harmony 515**, open, waiting on its family: No activity input setting is built for the 515.
+* **Harmony 885**, open, waiting on its family: Activities and device inputs are not composed for the 885.
+* **Harmony 785**, open, waiting on its family: Activities and device inputs are not composed for the 785.
+* **Harmony 300**, open, waiting on its family: The inputs were heard on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 that holds a television is refused.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts`, "the input variables are Logitech's: the Denon's nineteen values each send Logitech's record for that input, and the LG's has one value and sends nothing"; `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts`, "the whole test setup builds with no Logitech file: every device, Watch TV with its flag and inputs, and the favourites, and passes the writer's checks". Shown on a unit in `docs/test-notes/harmony-350.md`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing sets a device's input in an activity of an Elite's setup.
-* **Harmony Hub**, open: Nothing sets a device's input in an activity of a hub's setup.
+* **Harmony Elite**, open, waiting on its family: Nothing sets a device's input in an activity of an Elite's setup.
+* **Harmony Hub**, open, waiting on its family: Nothing sets a device's input in an activity of a hub's setup.
 
 ### R24 Include a pass through device in an activity.
 
-* **Harmony One**, open: The pass through test covers the Harmony 650 only, and no One test note records the switch being driven.
-* **Harmony 600**, open: A pass through device ran on the 600 only in a six device build, made by raising the library's refused limit.
-* **Harmony 650**, open: A pass through device composes as Logitech's does, but the test notes do not record it on the 650.
-* **Harmony 700**, open: The one activity with a pass through device was built but never started on the 700.
-* **Harmony 525**, open: The 525 manual offers a passthrough device, and nothing builds activities for it.
-* **Harmony 515**, open: Nothing builds activities for the 515, so no pass through device either.
-* **Harmony 885**, open: Activities are not composed for the 885, so no pass through device either.
-* **Harmony 785**, open: Activities are not composed for the 785, so no pass through device either.
-* **Harmony 300**, open: A device with no role in an activity is neither tested nor run on a 300.
-* **Harmony 350**, open: No test or run includes a device with no role in Watch TV.
+* **Harmony One**, open, waiting on its family: The pass through test covers the Harmony 650 only, and no One test note records the switch being driven.
+* **Harmony 600**, open, waiting on a run on a unit: A pass through device ran on the 600 only in a six device build, made by raising the library's refused limit.
+* **Harmony 650**, open, waiting on a run on a unit: A pass through device composes as Logitech's does, but the test notes do not record it on the 650.
+* **Harmony 700**, open, waiting on a run on a unit: The one activity with a pass through device was built but never started on the 700.
+* **Harmony 525**, open, waiting on its family: The 525 manual offers a passthrough device, and nothing builds activities for it.
+* **Harmony 515**, open, waiting on its family: Nothing builds activities for the 515, so no pass through device either.
+* **Harmony 885**, open, waiting on its family: Activities are not composed for the 885, so no pass through device either.
+* **Harmony 785**, open, waiting on its family: Activities are not composed for the 785, so no pass through device either.
+* **Harmony 300**, open, waiting on its family: A device with no role in an activity is neither tested nor run on a 300.
+* **Harmony 350**, open, waiting on its family: No test or run includes a device with no role in Watch TV.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts`, "with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone". Shown on a unit in `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing includes a pass through device in an activity of an Elite's setup.
-* **Harmony Hub**, open: Nothing includes a pass through device in an activity of a hub's setup.
+* **Harmony Elite**, open, waiting on its family: Nothing includes a pass through device in an activity of an Elite's setup.
+* **Harmony Hub**, open, waiting on its family: Nothing includes a pass through device in an activity of a hub's setup.
 
 ### R25 Rename an activity.
 
-* **Harmony One**, open: An activity's name is set only when a recipe is built; no test or run shows an existing activity renamed.
-* **Harmony 600**, open: An activity's name comes from the recipe, but no run on the 600 changed a name and showed the new one.
-* **Harmony 650**, open: An activity's name comes from the recipe, but no test renames one and no rename is shown on the 650.
-* **Harmony 700**, open: Activity names come from the recipe; renaming is a rebuild, and no rename was run on the 700.
-* **Harmony 525**, open: Nothing renames an activity in a 525 configuration.
-* **Harmony 515**, open: Nothing renames an activity in a 515 configuration.
-* **Harmony 885**, open: Nothing renames an activity in an 885 configuration.
-* **Harmony 785**, open: Nothing renames an activity in a 785 configuration.
-* **Harmony 300**, unknown: Whether this family's configuration stores an activity's name at all is not stated; its metadata names devices.
-* **Harmony 350**, open: The activity's name is stored nowhere the 350 shows; nothing renames it and no run shows one.
-* **Harmony Touch**, open: A rename was shown on the unit only through an experiment's hand edit; no library function renames an activity.
-* **Harmony Elite**, open: No library function renames an activity.
-* **Harmony Hub**, open: No library function renames an activity.
+* **Every remote**, open, waiting on the FHSDK: A recipe states each activity's name; no function renames an activity in a recipe, which R76 asks for.
 
 ### R26 Remove an activity.
 
-* **Harmony One**, open: Nothing removes an activity from a configuration; only building a recipe without it would leave it out.
-* **Harmony 600**, open: Nothing removes an activity from an existing setup, and no run on the 600 dropped one.
-* **Harmony 650**, open: Nothing removes an activity; a rebuild without it is not tested as a removal and not shown on the 650.
-* **Harmony 700**, open: A setup lacking one activity ran on the 700, but removal is only a rebuild from a smaller recipe, untested as such.
-* **Harmony 525**, open: Nothing removes an activity from a 525 configuration.
-* **Harmony 515**, open: Nothing removes an activity from a 515 configuration.
-* **Harmony 885**, open: Nothing removes an activity from an 885 configuration.
-* **Harmony 785**, open: Nothing removes an activity from a 785 configuration.
-* **Harmony 300**, open: A configuration with no activity builds, but none was written to a 300.
-* **Harmony 350**, open: A setup with devices and no Watch TV was never built in a test or run on the unit.
+* **Harmony One**, open, waiting on the FHSDK: Nothing removes an activity from a configuration; only building a recipe without it would leave it out.
+* **Harmony 600**, open, waiting on the FHSDK: Nothing removes an activity from an existing setup, and no run on the 600 dropped one.
+* **Harmony 650**, open, waiting on the FHSDK: Nothing removes an activity; a rebuild without it is not tested as a removal and not shown on the 650.
+* **Harmony 700**, open, waiting on the FHSDK: A setup lacking one activity ran on the 700, but removal is only a rebuild from a smaller recipe, untested as such.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing removes an activity from a 525 configuration.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing removes an activity from a 515 configuration.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing removes an activity from an 885 configuration.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing removes an activity from a 785 configuration.
+* **Harmony 300**, open, waiting on the FHSDK: A configuration with no activity builds, but none was written to a 300.
+* **Harmony 350**, open, waiting on the FHSDK and its family: A setup with devices and no Watch TV was never built in a test or run on the unit.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-removal.test.ts`, "taking out an activity and a device takes out everything naming them and changes nothing else". Shown on a unit in `packages/bench/test/harmony-touch/touch-removal-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing removes an activity from an Elite's setup.
-* **Harmony Hub**, open: Nothing removes an activity from a hub's setup.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing removes an activity from an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing removes an activity from a hub's setup.
 
 ### R27 Give an activity an icon.
 
-* **Harmony One**, open: Icons are chosen per activity type in the look choices, never for one activity.
+* **Harmony One**, open, waiting on the FHSDK: Icons are chosen per activity type in the look choices, never for one activity.
 * **Harmony 600**, unknown: No reference page says whether the 600's monochrome screen can show an activity icon.
 * **Harmony 650**, impossible: The 650 draws no device or activity icons. `reference/remotes/harmony-650/display.md#what-the-screen-does-not-show`.
 * **Harmony 700**, unknown: No page says whether a 700's activity menu can show an icon per activity.
 * **Harmony 525**, unknown: No page says whether a 525 activity can carry an icon on its monochrome screen.
 * **Harmony 515**, unknown: No page says whether a 515 activity can carry an icon on its monochrome screen.
-* **Harmony 885**, open: Activities are not composed for the 885, so none gets an icon.
-* **Harmony 785**, open: Activities are not composed for the 785, so none gets an icon.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Activities are not composed for the 885, so none gets an icon.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Activities are not composed for the 785, so none gets an icon.
 * **Harmony 300**, impossible: The 300 has no screen, so an activity icon has nowhere to show. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to show an icon on. `reference/remotes/harmony-350/display.md#harmony-350-display`.
-* **Harmony Touch**, open: The composer writes an activity with no picture of its own, so it shows its type's default picture.
-* **Harmony Elite**, open: Nothing gives an activity of an Elite's setup an icon.
-* **Harmony Hub**, open: Nothing gives an activity of a hub's setup an icon.
+* **Harmony Touch**, open, waiting on its family: The composer writes an activity with no picture of its own, so it shows its type's default picture.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing gives an activity of an Elite's setup an icon.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing gives an activity of a hub's setup an icon.
 
 ### R28 Order the activity menu and an activity's device list.
 
-* **Harmony One**, open: The menu follows the recipe's order, but an activity's device list always puts its started devices first and cannot be ordered.
-* **Harmony 600**, open: The menu follows the recipe's order, but no 600 run records the order shown, nor an activity's device list order.
-* **Harmony 650**, open: The menu follows the recipe's order, an activity's device list order is not offered, and neither has a test note.
-* **Harmony 700**, open: The menu follows the recipe's order on the 700; an activity's device list order is fixed by the build, not chosen.
-* **Harmony 525**, open: The 525 manual lets activities be reordered, and nothing builds the 525's activity menu.
-* **Harmony 515**, open: Nothing builds the 515's activity menu.
-* **Harmony 885**, open: The activity menu and an activity's device list are not composed for the 885.
-* **Harmony 785**, open: The activity menu and an activity's device list are not composed for the 785.
+* **Harmony One**, open, waiting on its family: The menu follows the recipe's order, but an activity's device list always puts its started devices first and cannot be ordered.
+* **Harmony 600**, open, waiting on its family: The menu follows the recipe's order, but no 600 run records the order shown, nor an activity's device list order.
+* **Harmony 650**, open, waiting on its family: The menu follows the recipe's order, an activity's device list order is not offered, and neither has a test note.
+* **Harmony 700**, open, waiting on its family: The menu follows the recipe's order on the 700; an activity's device list order is fixed by the build, not chosen.
+* **Harmony 525**, open, waiting on its family: The 525 manual lets activities be reordered, and nothing builds the 525's activity menu.
+* **Harmony 515**, open, waiting on its family: Nothing builds the 515's activity menu.
+* **Harmony 885**, open, waiting on its family: The activity menu and an activity's device list are not composed for the 885.
+* **Harmony 785**, open, waiting on its family: The activity menu and an activity's device list are not composed for the 785.
 * **Harmony 300**, impossible: With no screen and one activity there is no activity menu or device list to order. `reference/how-a-harmony-works.md#a-remote-with-no-screen-holds-exactly-one-activity`.
 * **Harmony 350**, impossible: With one activity and no screen there is no activity menu or device list to order. `reference/remotes/harmony-350/display.md#harmony-350-display`.
-* **Harmony Touch**, open: Places are composed and renumbered after a removal, but reordering the activity list or an activity's devices was never shown.
-* **Harmony Elite**, open: Nothing orders the activities or an activity's devices in an Elite's setup.
-* **Harmony Hub**, open: Nothing orders the activities or an activity's devices in a hub's setup.
+* **Harmony Touch**, open, waiting on a run on a unit: Places are composed and renumbered after a removal, but reordering the activity list or an activity's devices was never shown.
+* **Harmony Elite**, open, waiting on its family: Nothing orders the activities or an activity's devices in an Elite's setup.
+* **Harmony Hub**, open, waiting on its family: Nothing orders the activities or an activity's devices in a hub's setup.
 
 ### R29 Choose which activities the activity keys start.
 
 * **Harmony One**, impossible: The One has one Activities key that opens the list and no keys that start an activity. `reference/remotes/harmony-one/keys.md#every-key-on-the-drawing`.
 * **Harmony 600**, proven by `packages/codec/test/families/harmony-600-650-700/activitykeys.test.ts`, "a composed activity goes on the key it is given, and on no key without one". Shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
-* **Harmony 650**, open: Activity keys can be set and emptied, but a recipe chooses only by type and no test note shows it.
+* **Harmony 650**, open, waiting on the FHSDK: Activity keys can be set and emptied, but a recipe chooses only by type and no test note shows it.
 * **Harmony 700**, proven by `packages/codec/test/families/harmony-600-650-700/activitykeys.test.ts`, "a composed activity goes on the key it is given, and on no key without one". Shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
 * **Harmony 525**, impossible: None of the 525's fifty keys is an activity key; activities start from a list opened by the Activities key. `reference/remotes/harmony-525/keys.md#every-key-on-the-drawing`.
 * **Harmony 515**, impossible: The 515 has the 525's face, and none of its keys is an activity key. `reference/remotes/harmony-515/keys.md#every-key-on-the-drawing`.
@@ -476,112 +428,112 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R30 Add steps to an activity's start and end: commands, pauses, a sequence.
 
-* **Harmony One**, open: Nothing adds commands, pauses or a sequence to an activity's start or end.
-* **Harmony 600**, open: Extra commands, pauses or a sequence at an activity's start or end are not offered.
-* **Harmony 650**, open: Nothing adds commands, pauses or a sequence to an activity's start or end.
-* **Harmony 700**, open: Starts and ends are composed from the devices; adding commands, pauses or a sequence to them is not offered.
-* **Harmony 525**, open: Nothing builds an activity's start or end steps for the 525.
-* **Harmony 515**, open: Nothing builds an activity's start or end steps for the 515.
-* **Harmony 885**, open: An activity's start is not composed for the 885, so no steps can be added.
-* **Harmony 785**, open: An activity's start is not composed for the 785, so no steps can be added.
-* **Harmony 300**, open: The activity composer takes devices and a channel device only; it adds no extra start or end steps.
-* **Harmony 350**, open: Watch TV's steps are the devices' power and inputs only; extra commands, pauses or a sequence are not offered.
+* **Harmony One**, open, waiting on the FHSDK: Nothing adds commands, pauses or a sequence to an activity's start or end.
+* **Harmony 600**, open, waiting on the FHSDK: Extra commands, pauses or a sequence at an activity's start or end are not offered.
+* **Harmony 650**, open, waiting on the FHSDK: Nothing adds commands, pauses or a sequence to an activity's start or end.
+* **Harmony 700**, open, waiting on the FHSDK: Starts and ends are composed from the devices; adding commands, pauses or a sequence to them is not offered.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing builds an activity's start or end steps for the 525.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing builds an activity's start or end steps for the 515.
+* **Harmony 885**, open, waiting on the FHSDK and its family: An activity's start is not composed for the 885, so no steps can be added.
+* **Harmony 785**, open, waiting on the FHSDK and its family: An activity's start is not composed for the 785, so no steps can be added.
+* **Harmony 300**, open, waiting on the FHSDK: The activity composer takes devices and a channel device only; it adds no extra start or end steps.
+* **Harmony 350**, open, waiting on the FHSDK: Watch TV's steps are the devices' power and inputs only; extra commands, pauses or a sequence are not offered.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing adds steps to an activity's start or end in an Elite's setup.
-* **Harmony Hub**, open: Nothing adds steps to an activity's start or end in a hub's setup.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing adds steps to an activity's start or end in an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing adds steps to an activity's start or end in a hub's setup.
 
 ## Keys and screens
 
 ### R31 Change what a key does in an activity: any command of its devices, a sequence, or nothing.
 
-* **Harmony One**, open: A recipe cannot bind a key in an activity; the keypad comes only from the devices' roles.
-* **Harmony 600**, open: A recipe cannot state a key binding in an activity; the keypad comes from roles only.
-* **Harmony 650**, open: A recipe states no keypad binding for an activity; an edit can only repoint a key the activity already binds.
-* **Harmony 700**, open: A recipe cannot override what a key does in an activity on this family.
-* **Harmony 525**, open: Nothing changes an activity key binding in a 525 configuration.
-* **Harmony 515**, open: Nothing changes an activity key binding in a 515 configuration.
-* **Harmony 885**, open: An activity's key map is not composed for the 885.
-* **Harmony 785**, open: An activity's key map is not composed for the 785.
-* **Harmony 300**, open: Watch TV ends in the channel device's map; nothing gives the activity a key map of its own.
-* **Harmony 350**, open: Watch TV ends in one device's map and the recipe cannot change what a key does there.
+* **Harmony One**, open, waiting on the FHSDK: A recipe cannot bind a key in an activity; the keypad comes only from the devices' roles.
+* **Harmony 600**, open, waiting on the FHSDK: A recipe cannot state a key binding in an activity; the keypad comes from roles only.
+* **Harmony 650**, open, waiting on the FHSDK: A recipe states no keypad binding for an activity; an edit can only repoint a key the activity already binds.
+* **Harmony 700**, open, waiting on the FHSDK: A recipe cannot override what a key does in an activity on this family.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing changes an activity key binding in a 525 configuration.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing changes an activity key binding in a 515 configuration.
+* **Harmony 885**, open, waiting on the FHSDK and its family: An activity's key map is not composed for the 885.
+* **Harmony 785**, open, waiting on the FHSDK and its family: An activity's key map is not composed for the 785.
+* **Harmony 300**, open, waiting on the FHSDK: Watch TV ends in the channel device's map; nothing gives the activity a key map of its own.
+* **Harmony 350**, open, waiting on the FHSDK: Watch TV ends in one device's map and the recipe cannot change what a key does there.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding"; `packages/codec/test/families/harmony-touch/touch-setup.test.ts`, "a whole setup composes and reads back: devices from their catalogue record with what the person chose, maps in the ordered form, an activity with the favourites, a channel step and a sequence". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing changes what a key does in an activity on an Elite; its keys are not read.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing changes what a key does in an activity on an Elite; its keys are not read.
 * **Harmony Hub**, unknown: A hub has no keys of its own; how its setup carries the key maps of a remote paired to it is not read.
 
 ### R32 Change what a key does for a device in device mode, any device's command included, such as the receiver's volume in TV mode.
 
-* **Harmony One**, open: A recipe cannot bind a key in device mode; the map comes only from the catalogue.
-* **Harmony 600**, open: Device mode's map comes from the catalogue only; a recipe cannot change what a key sends there.
-* **Harmony 650**, open: Nothing changes what a key sends in a device's own map.
-* **Harmony 700**, open: A recipe cannot change a key or a screen button in device mode on this family.
-* **Harmony 525**, open: Device mode maps are read on the 525, but nothing changes one.
-* **Harmony 515**, open: Nothing changes a device mode map in a 515 configuration.
-* **Harmony 885**, open: Which command each key takes in an 885 device mode is not read, and nothing changes one.
-* **Harmony 785**, open: Which command each key takes in a 785 device mode is not read, and nothing changes one.
-* **Harmony 300**, open: A device mode remap ran on the unit, made by a lab script; no library function changes one key's binding.
-* **Harmony 350**, open: A device's map comes from the family's table and the recipe cannot override a key.
-* **Harmony Touch**, open: A device's own keys are composed and heard, but a device map can bind only that device's commands, never another's.
-* **Harmony Elite**, open: Nothing changes what a key does in device mode on an Elite; its keys are not read.
+* **Harmony One**, open, waiting on the FHSDK: A recipe cannot bind a key in device mode; the map comes only from the catalogue.
+* **Harmony 600**, open, waiting on the FHSDK: Device mode's map comes from the catalogue only; a recipe cannot change what a key sends there.
+* **Harmony 650**, open, waiting on the FHSDK: Nothing changes what a key sends in a device's own map.
+* **Harmony 700**, open, waiting on the FHSDK: A recipe cannot change a key or a screen button in device mode on this family.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Device mode maps are read on the 525, but nothing changes one.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing changes a device mode map in a 515 configuration.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Which command each key takes in an 885 device mode is not read, and nothing changes one.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Which command each key takes in a 785 device mode is not read, and nothing changes one.
+* **Harmony 300**, open, waiting on the FHSDK: A device mode remap ran on the unit, made by a lab script; no library function changes one key's binding.
+* **Harmony 350**, open, waiting on the FHSDK: A device's map comes from the family's table and the recipe cannot override a key.
+* **Harmony Touch**, open, waiting on its family: A device's own keys are composed and heard, but a device map can bind only that device's commands, never another's.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing changes what a key does in device mode on an Elite; its keys are not read.
 * **Harmony Hub**, unknown: A hub has no keys of its own; how its setup carries a paired remote's device mode maps is not read.
 
 ### R33 Give a device its device mode map from the catalogue, every key and screen page, as Logitech's software would.
 
-* **Harmony One**, open: Device mode maps compose as Logitech's and a page command was heard, but no keypad key in device mode was pressed at the bench.
-* **Harmony 600**, open: Device pages were visited on the 600, but its device mode keypad was not exercised, and the rules differ from Logitech's on some devices.
-* **Harmony 650**, open: Device mode maps compose and composed pages sent on the 650, but no test note shows every key and page.
+* **Harmony One**, open, waiting on a run on a unit: Device mode maps compose as Logitech's and a page command was heard, but no keypad key in device mode was pressed at the bench.
+* **Harmony 600**, open, waiting on its family: Device pages were visited on the 600, but its device mode keypad was not exercised, and the rules differ from Logitech's on some devices.
+* **Harmony 650**, open, waiting on a run on a unit: Device mode maps compose and composed pages sent on the 650, but no test note shows every key and page.
 * **Harmony 700**, proven by `packages/codec/test/families/harmony-600-650-700/devicemode.test.ts`, "section 325: a catalogue device composed whole reads back as the compiler's device mode". Shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
-* **Harmony 525**, open: No device mode map is composed from the catalogue for the 525.
-* **Harmony 515**, open: No device mode map is composed from the catalogue for the 515.
-* **Harmony 885**, open: A full device mode map from the catalogue is refused for the 885; only one labelled screen page is composed.
-* **Harmony 785**, open: Device mode maps are not composed for the 785.
-* **Harmony 300**, open: Maps follow the 350's key table; Logitech binds Teletext to a key on the 300, and no 300 map was checked whole.
-* **Harmony 350**, open: Device maps match Logitech's and were heard, except Replay and Advance on the set top box.
-* **Harmony Touch**, open: keysByName binds keys by exact command name only; nothing lays out a device mode map and screen as Logitech's software would.
-* **Harmony Elite**, open: Nothing lays out a device mode map for an Elite.
+* **Harmony 525**, open, waiting on its family: No device mode map is composed from the catalogue for the 525.
+* **Harmony 515**, open, waiting on its family: No device mode map is composed from the catalogue for the 515.
+* **Harmony 885**, open, waiting on its family: A full device mode map from the catalogue is refused for the 885; only one labelled screen page is composed.
+* **Harmony 785**, open, waiting on its family: Device mode maps are not composed for the 785.
+* **Harmony 300**, open, waiting on its family: Maps follow the 350's key table; Logitech binds Teletext to a key on the 300, and no 300 map was checked whole.
+* **Harmony 350**, open, waiting on its family: Device maps match Logitech's and were heard, except Replay and Advance on the set top box.
+* **Harmony Touch**, open, waiting on its family: keysByName binds keys by exact command name only; nothing lays out a device mode map and screen as Logitech's software would.
+* **Harmony Elite**, open, waiting on its family: Nothing lays out a device mode map for an Elite.
 * **Harmony Hub**, unknown: A hub has no keys of its own; whether a device mode map is laid out in its setup for a paired remote is not read.
 
 ### R34 Put commands on an activity's screen, labelled and ordered, across pages.
 
-* **Harmony One**, open: Screen commands are placed in order and were heard, but no label of the user's own can be given and no run showed several pages.
-* **Harmony 600**, open: Screen commands ran on the 600, but no activity there held more than one page, so paging is not shown.
-* **Harmony 650**, open: An activity's screen items come from the recipe, but no test note shows a composed activity screen on the 650.
-* **Harmony 700**, open: Labelled, ordered activity screen items ran on the 700, but never more than one page of them.
-* **Harmony 525**, open: Nothing composes an activity's screen pages for the 525.
-* **Harmony 515**, open: Nothing composes an activity's screen pages for the 515.
-* **Harmony 885**, open: Activity screens are not composed for the 885.
-* **Harmony 785**, open: Activity screens are not composed for the 785.
+* **Harmony One**, open, waiting on its family: Screen commands are placed in order and were heard, but no label of the user's own can be given and no run showed several pages.
+* **Harmony 600**, open, waiting on a run on a unit: Screen commands ran on the 600, but no activity there held more than one page, so paging is not shown.
+* **Harmony 650**, open, waiting on a run on a unit: An activity's screen items come from the recipe, but no test note shows a composed activity screen on the 650.
+* **Harmony 700**, open, waiting on a run on a unit: Labelled, ordered activity screen items ran on the 700, but never more than one page of them.
+* **Harmony 525**, open, waiting on its family: Nothing composes an activity's screen pages for the 525.
+* **Harmony 515**, open, waiting on its family: Nothing composes an activity's screen pages for the 515.
+* **Harmony 885**, open, waiting on its family: Activity screens are not composed for the 885.
+* **Harmony 785**, open, waiting on its family: Activity screens are not composed for the 785.
 * **Harmony 300**, impossible: The 300 has no screen. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing puts commands on an activity's screen in an Elite's setup.
+* **Harmony Elite**, open, waiting on its family: Nothing puts commands on an activity's screen in an Elite's setup.
 * **Harmony Hub**, unknown: A hub has no screen; whether its setup carries the screen pages a paired remote shows for an activity is not read. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R35 Put commands on a device's screen pages in device mode.
 
-* **Harmony One**, open: A device's screen pages are laid out from the catalogue, and a recipe cannot choose or order them.
-* **Harmony 600**, open: Device pages come from the catalogue only; choosing their commands is not offered.
+* **Harmony One**, open, waiting on the FHSDK: A device's screen pages are laid out from the catalogue, and a recipe cannot choose or order them.
+* **Harmony 600**, open, waiting on the FHSDK: Device pages come from the catalogue only; choosing their commands is not offered.
 * **Harmony 650**, proven by `packages/codec/test/compose/composecatalogue.test.ts`, "a whole composed device draws no corner label in a font its pages use for the title, the counter or the bottom bar". Shown on a unit in `docs/test-notes/harmony-650.md#bench-runs`.
-* **Harmony 700**, open: Device mode pages follow the catalogue; a recipe cannot choose their commands.
-* **Harmony 525**, open: Nothing composes a device's screen pages for the 525.
-* **Harmony 515**, open: Nothing composes a device's screen pages for the 515.
-* **Harmony 885**, open: One device page of up to eight commands is composed and was seen; a second page is refused.
-* **Harmony 785**, open: Device screen pages are not composed for the 785.
+* **Harmony 700**, open, waiting on the FHSDK: Device mode pages follow the catalogue; a recipe cannot choose their commands.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing composes a device's screen pages for the 525.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing composes a device's screen pages for the 515.
+* **Harmony 885**, open, waiting on the FHSDK and its family: One device page of up to eight commands is composed and was seen; a second page is refused.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Device screen pages are not composed for the 785.
 * **Harmony 300**, impossible: The 300 has no screen, so device mode has no screen pages. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-compose.test.ts`, "the codec's reader finds the device's map, every command its code and every key and entry its command, and the check finds nothing"; `packages/codec/test/families/harmony-touch/touch-device-add.test.ts`, "a device of a row and numbers composes and reads back: one definition, every command its key code, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-device-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing puts commands on a device's screen pages in an Elite's setup.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing puts commands on a device's screen pages in an Elite's setup.
 * **Harmony Hub**, unknown: A hub has no screen; whether its setup carries the screen pages a paired remote shows for a device is not read. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R36 A screen button that opens a page of the user's own commands, and a button back.
 
-* **Harmony One**, open: Nothing builds a screen button that opens a page of the user's own commands.
-* **Harmony 600**, open: A screen button opening a page of the user's own commands is not built.
-* **Harmony 650**, open: No screen button that opens a page of the user's own commands is built.
-* **Harmony 700**, open: Nothing builds a screen button that opens a page of the user's own commands.
-* **Harmony 525**, open: The 525 pages by soft key bindings, and nothing builds such pages for it.
-* **Harmony 515**, open: Nothing builds soft key pages for the 515.
-* **Harmony 885**, open: Nothing builds a sub page button for the 885.
-* **Harmony 785**, open: Nothing builds a sub page button for the 785.
+* **Harmony One**, open, waiting on the FHSDK: Nothing builds a screen button that opens a page of the user's own commands.
+* **Harmony 600**, open, waiting on the FHSDK: A screen button opening a page of the user's own commands is not built.
+* **Harmony 650**, open, waiting on the FHSDK: No screen button that opens a page of the user's own commands is built.
+* **Harmony 700**, open, waiting on the FHSDK: Nothing builds a screen button that opens a page of the user's own commands.
+* **Harmony 525**, open, waiting on the FHSDK and its family: The 525 pages by soft key bindings, and nothing builds such pages for it.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing builds soft key pages for the 515.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing builds a sub page button for the 885.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing builds a sub page button for the 785.
 * **Harmony 300**, impossible: The 300 has no screen to hold a button or a page. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, unknown: Whether a Touch screen entry can open a page of the user's own commands and come back is not known.
@@ -590,19 +542,19 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R37 Make a named sequence with pauses and put it on a key or the screen, within what the remote survives.
 
-* **Harmony One**, open: A named sequence was heard on the spare only in a run composed onto Logitech's file; no build from a recipe with a sequence has been on the One.
+* **Harmony One**, open, waiting on a run on a unit: A named sequence was heard on the spare only in a run composed onto Logitech's file; no build from a recipe with a sequence has been on the One.
 * **Harmony 600**, proven by `packages/codec/test/compose/sequence.test.ts`, "the Radio sequence composed again as our file of the Harmony 650's test setup composed it now stores what Logitech's compile of the test setup stores"; `packages/codec/test/container/queue.test.ts`, "a list that fits is accepted and one that does not is refused". Shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
 * **Harmony 650**, proven by `packages/codec/test/compose/sequence.test.ts`, "the sequence heard on the Harmony 650: three of the KPN box's own sends and two pauses naming TV kijken's three devices". Shown on a unit in `docs/test-notes/harmony-650.md#bench-runs`.
 * **Harmony 700**, proven by `packages/codec/test/compose/sequence.test.ts`, "the Radio sequence composed again as our file of the Harmony 650's test setup composed it now stores what Logitech's compile of the test setup stores"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
-* **Harmony 525**, open: The queue limit is read in the 525's firmware, but nothing composes a sequence for it.
-* **Harmony 515**, open: Nothing composes a sequence for the 515.
-* **Harmony 885**, open: Sequences are not composed for the 885.
-* **Harmony 785**, open: Sequences are not composed for the 785.
-* **Harmony 300**, open: Nothing composes a named sequence for this family, though its lists can send and wait.
-* **Harmony 350**, open: Nothing composes a named sequence for this family; the limits it would survive were not measured.
+* **Harmony 525**, open, waiting on its family: The queue limit is read in the 525's firmware, but nothing composes a sequence for it.
+* **Harmony 515**, open, waiting on its family: Nothing composes a sequence for the 515.
+* **Harmony 885**, open, waiting on its family: Sequences are not composed for the 885.
+* **Harmony 785**, open, waiting on its family: Sequences are not composed for the 785.
+* **Harmony 300**, open, waiting on its family: Nothing composes a named sequence for this family, though its lists can send and wait.
+* **Harmony 350**, open, waiting on its family and the remote itself: Nothing composes a named sequence for this family; the limits it would survive were not measured.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-setup.test.ts`, "a whole setup composes and reads back: devices from their catalogue record with what the person chose, maps in the ordered form, an activity with the favourites, a channel step and a sequence". Shown on a unit in `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing composes a sequence for an Elite.
-* **Harmony Hub**, open: Nothing composes a sequence for a hub.
+* **Harmony Elite**, open, waiting on its family: Nothing composes a sequence for an Elite.
+* **Harmony Hub**, open, waiting on its family: Nothing composes a sequence for a hub.
 
 ### R38 Give a key a second command when held.
 
@@ -614,10 +566,10 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 515**, unknown: What a held key does on a 515 is not checked. `reference/remotes/harmony-515/keys.md#not-checked`.
 * **Harmony 885**, unknown: The firmware raises a hold event once, but whether it honours a binding of it is not checked. `reference/remotes/harmony-885/keys.md#a-press-a-hold-and-a-release`.
 * **Harmony 785**, unknown: Whether the 785's application honours a binding of a held key is not read. `reference/remotes/harmony-785/keys.md#harmony-785-keys`.
-* **Harmony 300**, open: A held key only selects a second device on the device keys; no other key gets a held command.
-* **Harmony 350**, open: Only device keys get a long press, choosing a second device; a held command on any other key is not offered.
+* **Harmony 300**, open, waiting on its family: A held key only selects a second device on the device keys; no other key gets a held command.
+* **Harmony 350**, open, waiting on its family: Only device keys get a long press, choosing a second device; a held command on any other key is not offered.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-compose.test.ts`, "the list counts from the first index Logitech's device lists count from, and a press and a long press are their event numbers"; `packages/codec/test/families/harmony-touch/touch-setup.test.ts`, "a whole setup composes and reads back: devices from their catalogue record with what the person chose, maps in the ordered form, an activity with the favourites, a channel step and a sequence". Shown on a unit in `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Logitech's records give skin 111 a long press, but nothing composes a held command for an Elite.
+* **Harmony Elite**, open, waiting on its family: Logitech's records give skin 111 a long press, but nothing composes a held command for an Elite.
 * **Harmony Hub**, unknown: A hub has no keys of its own; whether its setup carries a held command for a paired remote's key is not read.
 
 ### R39 Put devices on the device keys, a short and a long press each.
@@ -630,7 +582,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 515**, impossible: The 515 has the 525's face, with no device keys; its Devices key opens a list. `reference/remotes/harmony-515/keys.md#every-key-on-the-drawing`.
 * **Harmony 885**, impossible: The 885 has one Device key and a device list, and no device keys. `reference/remotes/harmony-885/keys.md#harmony-885-skin-17`.
 * **Harmony 785**, unknown: The face is drawn, but whether any of the 785's keys picks a device is not read. `reference/remotes/harmony-785/keys.md#harmony-785-keys`.
-* **Harmony 300**, open: The device keys selected a device short and another long on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 is refused once it holds a long press.
+* **Harmony 300**, open, waiting on its family: The device keys selected a device short and another long on the 300 from a recipe naming the Harmony 350; a recipe naming the 300 is refused once it holds a long press.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreen.test.ts`, "a long press device takes group 4 plus its key's place on all four keys, the group Logitech's compile gives the same device"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 * **Harmony Touch**, impossible: The Touch has no device keys; its keys and touch zones list none. `reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing`.
 * **Harmony Elite**, unknown: The Elite's keys are not read, so whether it has device keys is not known here.
@@ -648,152 +600,152 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, unknown: The model table says the 785's screen is not a touch screen, which no 785 has been checked against. `reference/remotes/harmony-785/display.md#the-panel`.
 * **Harmony 300**, impossible: The 300 has no screen and so no touch gestures. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen, so no touch gestures. `reference/remotes/harmony-350/display.md#harmony-350-display`.
-* **Harmony Touch**, open: Gestures are composed in a whole setup, but no gesture has been performed on the unit and heard.
-* **Harmony Elite**, open: Nothing composes touch gestures for an Elite, and none has been performed on one.
+* **Harmony Touch**, open, waiting on a run on a unit: Gestures are composed in a whole setup, but no gesture has been performed on the unit and heard.
+* **Harmony Elite**, open, waiting on its family: Nothing composes touch gestures for an Elite, and none has been performed on one.
 * **Harmony Hub**, unknown: A hub has no touch panel; whether its setup carries the gestures of a paired remote is not read.
 
 ### R41 Show every screen as the remote will draw it, before writing.
 
-* **Harmony One**, open: One screens render, but no test note compares a rendered screen with what the spare drew.
-* **Harmony 600**, open: Pages render as stored, but what the monochrome panel makes of each colour is not measured.
-* **Harmony 650**, open: Every screen renders, but no test note compares a render with what the 650 drew.
-* **Harmony 700**, open: The renderer draws the 700's pages, but no run compares a preview with what the remote drew.
-* **Harmony 525**, open: Every page of a 525 configuration renders, but no rendering was compared with the unit, and nothing is built to write.
-* **Harmony 515**, open: No 515 screen was rendered and compared with the unit, and nothing is built to write.
-* **Harmony 885**, open: 885 pages render, but no rendered screen was compared with what a unit draws.
-* **Harmony 785**, open: No 785 screen was rendered and compared with what a unit draws.
+* **Harmony One**, open, waiting on a run on a unit: One screens render, but no test note compares a rendered screen with what the spare drew.
+* **Harmony 600**, open, waiting on the remote itself: Pages render as stored, but what the monochrome panel makes of each colour is not measured.
+* **Harmony 650**, open, waiting on a run on a unit: Every screen renders, but no test note compares a render with what the 650 drew.
+* **Harmony 700**, open, waiting on a run on a unit: The renderer draws the 700's pages, but no run compares a preview with what the remote drew.
+* **Harmony 525**, open, waiting on its family: Every page of a 525 configuration renders, but no rendering was compared with the unit, and nothing is built to write.
+* **Harmony 515**, open, waiting on its family: No 515 screen was rendered and compared with the unit, and nothing is built to write.
+* **Harmony 885**, open, waiting on a run on a unit: 885 pages render, but no rendered screen was compared with what a unit draws.
+* **Harmony 785**, open, waiting on its family: No 785 screen was rendered and compared with what a unit draws.
 * **Harmony 300**, impossible: The 300 has no screen to draw. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to draw. `reference/remotes/harmony-350/display.md#harmony-350-display`.
-* **Harmony Touch**, open: Nothing renders the Touch's screens; the remote draws them from the documents.
-* **Harmony Elite**, open: Nothing renders this generation's screens; the remote draws them from the documents.
+* **Harmony Touch**, open, waiting on its family: Nothing renders the Touch's screens; the remote draws them from the documents.
+* **Harmony Elite**, open, waiting on its family: Nothing renders this generation's screens; the remote draws them from the documents.
 * **Harmony Hub**, impossible: A hub has no screen and no program that draws one, so there is nothing of its own to show before a write. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R42 Choose the look of the screens: typeface, inks, colours, icons, background, theme, choices per screen.
 
-* **Harmony One**, open: Letters, inks, box colours and icons are choices; a background picture of the user's own and a theme are not.
-* **Harmony 600**, open: Letters, blending and the one grey were seen on the 600; state colours are refused and other looks were never written to it.
-* **Harmony 650**, open: Our letters ran on the 650, but colours, icons and backgrounds have no test note, and nothing is chosen per screen.
-* **Harmony 700**, open: Our letters, icons and chosen state colours ran on the 700; designed backgrounds and Logitech's letters are refused on it.
-* **Harmony 525**, open: Nothing builds 525 screens, so no typeface, picture or theme can be chosen.
-* **Harmony 515**, open: Nothing builds 515 screens, so no typeface, picture or theme can be chosen.
-* **Harmony 885**, open: The 885's fonts and pictures are borrowed from its configuration; nothing of ours chooses its look.
-* **Harmony 785**, open: Nothing of ours chooses the look of a 785's screens.
+* **Harmony One**, open, waiting on its family: Letters, inks, box colours and icons are choices; a background picture of the user's own and a theme are not.
+* **Harmony 600**, open, waiting on its family: Letters, blending and the one grey were seen on the 600; state colours are refused and other looks were never written to it.
+* **Harmony 650**, open, waiting on its family: Our letters ran on the 650, but colours, icons and backgrounds have no test note, and nothing is chosen per screen.
+* **Harmony 700**, open, waiting on its family: Our letters, icons and chosen state colours ran on the 700; designed backgrounds and Logitech's letters are refused on it.
+* **Harmony 525**, open, waiting on its family: Nothing builds 525 screens, so no typeface, picture or theme can be chosen.
+* **Harmony 515**, open, waiting on its family: Nothing builds 515 screens, so no typeface, picture or theme can be chosen.
+* **Harmony 885**, open, waiting on its family: The 885's fonts and pictures are borrowed from its configuration; nothing of ours chooses its look.
+* **Harmony 785**, open, waiting on its family: Nothing of ours chooses the look of a 785's screens.
 * **Harmony 300**, impossible: The 300 has no screen, so there is no look to choose. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
-* **Harmony Touch**, open: Only our background picture is drawn and shown; typeface, inks, icons and theme are not offered.
-* **Harmony Elite**, open: Nothing chooses the look of an Elite's screens.
+* **Harmony Touch**, open, waiting on its family: Only our background picture is drawn and shown; typeface, inks, icons and theme are not offered.
+* **Harmony Elite**, open, waiting on its family: Nothing chooses the look of an Elite's screens.
 * **Harmony Hub**, impossible: A hub has no screen, so it has no look to choose. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R43 Draw the remote's face and know which key is which.
 
-* **Harmony One**, open: The One is drawn with every key named, but six keys, among them Activities, Help and Off, have no measured scan code.
+* **Harmony One**, open, waiting on the remote itself: The One is drawn with every key named, but six keys, among them Activities, Help and Off, have no measured scan code.
 * **Harmony 600**, proven by `packages/silhouettes/test/models.test.ts`, "a name identifies one key, and every key has one"; `tests/harmony_600_650_700/test_keypad.py`, "TestTheHarmony600Keypad.test_the_census_matches_the_config_read_off_the_same_unit".
-* **Harmony 650**, open: The face is drawn, but 13 keys have no scan code and the rest are the 600's, never measured on a 650.
-* **Harmony 700**, open: The face is drawn, but 13 keys carry no scan code and the rest are the 600's, unmeasured on a 700.
-* **Harmony 525**, open: The face is drawn with fifty keys, but no key's scan code is known.
-* **Harmony 515**, open: The face is drawn, the 525's, but no key's scan code has been measured on a 515.
+* **Harmony 650**, open, waiting on the remote itself: The face is drawn, but 13 keys have no scan code and the rest are the 600's, never measured on a 650.
+* **Harmony 700**, open, waiting on the remote itself: The face is drawn, but 13 keys carry no scan code and the rest are the 600's, unmeasured on a 700.
+* **Harmony 525**, open, waiting on the remote itself: The face is drawn with fifty keys, but no key's scan code is known.
+* **Harmony 515**, open, waiting on the remote itself: The face is drawn, the 525's, but no key's scan code has been measured on a 515.
 * **Harmony 885**, proven by `packages/silhouettes/test/models.test.ts`, "a name identifies one key, and every key has one"; `tests/firmware/test_silhouettes.py`, "TestTheHarmony885Silhouette.test_every_key_carries_the_code_the_units_raised_for_it".
-* **Harmony 785**, open: The 785's face is drawn with 53 keys, but no key's scan code has been measured on a 785.
-* **Harmony 300**, open: The European drawing ties 49 of 55 keys on the unit; six keys and the whole US printing are not measured.
-* **Harmony 350**, open: The face is drawn and 53 of 55 keys carry a scan code; DVR and Live are not tied to one.
+* **Harmony 785**, open, waiting on the remote itself: The 785's face is drawn with 53 keys, but no key's scan code has been measured on a 785.
+* **Harmony 300**, open, waiting on the remote itself: The European drawing ties 49 of 55 keys on the unit; six keys and the whole US printing are not measured.
+* **Harmony 350**, open, waiting on the remote itself: The face is drawn and 53 of 55 keys carry a scan code; DVR and Live are not tied to one.
 * **Harmony Touch**, proven by `packages/silhouettes/test/models.test.ts`, "a name identifies one key, and every key has one"; `packages/silhouettes/test/svg.test.ts`, "a key is addressable by name, kind, provenance and code".
-* **Harmony Elite**, open: No drawing of the Elite's face exists, and its keys are not read.
-* **Harmony Hub**, open: No drawing of the hub exists.
+* **Harmony Elite**, open, waiting on the remote itself: No drawing of the Elite's face exists, and its keys are not read.
+* **Harmony Hub**, open, waiting on the remote itself: No drawing of the hub exists.
 
 ### R44 Give every activity the remote's own help, the advanced help and its delay fixing included.
 
-* **Harmony One**, open: Only the power off help with nothing running is built; an activity's help and the advanced help with delay fixing are not.
-* **Harmony 600**, open: Help is left out of every build of this family; advanced help and its delay fixing are not built.
-* **Harmony 650**, open: Help, advanced help and delay fixing are not built; a composed 650 configuration carries no Help.
-* **Harmony 700**, open: Nothing builds help; activities composed on the 700 bind no Help key.
-* **Harmony 525**, open: The 525 has on remote help by its manual, and nothing builds it.
-* **Harmony 515**, open: Nothing builds the remote's help for the 515.
-* **Harmony 885**, open: The 885 has on remote help by its manual; none is composed for it.
-* **Harmony 785**, open: Nothing composes the remote's help for the 785.
+* **Harmony One**, open, waiting on its family: Only the power off help with nothing running is built; an activity's help and the advanced help with delay fixing are not.
+* **Harmony 600**, open, waiting on its family: Help is left out of every build of this family; advanced help and its delay fixing are not built.
+* **Harmony 650**, open, waiting on its family: Help, advanced help and delay fixing are not built; a composed 650 configuration carries no Help.
+* **Harmony 700**, open, waiting on its family: Nothing builds help; activities composed on the 700 bind no Help key.
+* **Harmony 525**, open, waiting on its family: The 525 has on remote help by its manual, and nothing builds it.
+* **Harmony 515**, open, waiting on its family: Nothing builds the remote's help for the 515.
+* **Harmony 885**, open, waiting on its family: The 885 has on remote help by its manual; none is composed for it.
+* **Harmony 785**, open, waiting on its family: Nothing composes the remote's help for the 785.
 * **Harmony 300**, impossible: The 300 has no Help key and no screen, so the remote's help cannot run. `reference/remotes/harmony-300/keys.md#european-printing-skin-79`.
 * **Harmony 350**, impossible: The 350 has no Help key and no screen to ask its questions on. `reference/remotes/harmony-350/keys.md#every-key-on-the-drawing`.
-* **Harmony Touch**, open: The Touch has help on its screen, but nothing builds or checks it for activities of ours.
-* **Harmony Elite**, open: Nothing builds or checks the remote's own help for an Elite.
+* **Harmony Touch**, open, waiting on its family: The Touch has help on its screen, but nothing builds or checks it for activities of ours.
+* **Harmony Elite**, open, waiting on its family: Nothing builds or checks the remote's own help for an Elite.
 * **Harmony Hub**, impossible: The remote's own help is shown on a screen, and a hub has none. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ## Favourites
 
 ### R45 Favourite channels: the number kept as text, a name, on keys or screen pages, ordered and removed.
 
-* **Harmony One**, open: Nothing of ours writes a favourite channel for the One, and the builders refuse a recipe that states one.
-* **Harmony 600**, open: Every composer refuses favourites; the 600 shows them on Watch TV's screen by its manual.
-* **Harmony 650**, open: Every composer refuses favourite channels; only Logitech's service compiles them for a 650.
-* **Harmony 700**, open: Favourites reach a 700 only through Logitech's service; every composer here refuses a recipe that states any.
+* **Harmony One**, open, waiting on its family: Nothing of ours writes a favourite channel for the One, and the builders refuse a recipe that states one.
+* **Harmony 600**, open, waiting on its family: Every composer refuses favourites; the 600 shows them on Watch TV's screen by its manual.
+* **Harmony 650**, open, waiting on its family: Every composer refuses favourite channels; only Logitech's service compiles them for a 650.
+* **Harmony 700**, open, waiting on its family: Favourites reach a 700 only through Logitech's service; every composer here refuses a recipe that states any.
 * **Harmony 525**, unknown: Whether the 525 has favourite channels at all is not checked; its manual describes none. `reference/remotes/harmony-525/features.md#favourite-channels`.
 * **Harmony 515**, unknown: Whether the 515 has favourite channels at all is not checked.
-* **Harmony 885**, open: Unit B's own configuration holds favourites, but nothing composes a favourite for the 885.
-* **Harmony 785**, open: The bench units' configurations hold favourites, but nothing composes a favourite for the 785.
-* **Harmony 300**, open: The composer refuses the 300's favourite order; a 350 build sent one channel from the European Teletext key.
-* **Harmony 350**, open: Five channels kept as text were heard in order; removing one was never tested, and names cannot show.
-* **Harmony Touch**, open: Adding and reordering were shown, but no favourite can be removed or named by the composer.
-* **Harmony Elite**, open: Nothing composes favourite channels for an Elite.
-* **Harmony Hub**, open: Nothing composes favourite channels for a hub.
+* **Harmony 885**, open, waiting on its family: Unit B's own configuration holds favourites, but nothing composes a favourite for the 885.
+* **Harmony 785**, open, waiting on its family: The bench units' configurations hold favourites, but nothing composes a favourite for the 785.
+* **Harmony 300**, open, waiting on its family: The composer refuses the 300's favourite order; a 350 build sent one channel from the European Teletext key.
+* **Harmony 350**, open, waiting on its family: Five channels kept as text were heard in order; removing one was never tested, and names cannot show.
+* **Harmony Touch**, open, waiting on its family: Adding and reordering were shown, but no favourite can be removed or named by the composer.
+* **Harmony Elite**, open, waiting on its family: Nothing composes favourite channels for an Elite.
+* **Harmony Hub**, open, waiting on its family: Nothing composes favourite channels for a hub.
 
 ### R46 A favourite with an icon.
 
-* **Harmony One**, open: No favourite channel is built for the One, so none can carry an icon.
-* **Harmony 600**, open: No favourite is built for the 600, so no favourite icon either.
-* **Harmony 650**, open: The manual shows a favourite beside its number or icon, and nothing of ours builds a favourite or its icon.
+* **Harmony One**, open, waiting on its family: No favourite channel is built for the One, so none can carry an icon.
+* **Harmony 600**, open, waiting on its family: No favourite is built for the 600, so no favourite icon either.
+* **Harmony 650**, open, waiting on its family: The manual shows a favourite beside its number or icon, and nothing of ours builds a favourite or its icon.
 * **Harmony 700**, unknown: No page says a 700 draws a favourite's icon; the service lists an image scaling capability only. `reference/remotes/harmony-700/features.md#what-logitechs-service-states`.
 * **Harmony 525**, unknown: Favourites themselves are not known on the 525, so a favourite with an icon is not known either. `reference/remotes/harmony-525/features.md#favourite-channels`.
 * **Harmony 515**, unknown: Favourites themselves are not known on the 515, so a favourite with an icon is not known either.
-* **Harmony 885**, open: Nothing composes a favourite, or its icon, for the 885.
-* **Harmony 785**, open: Nothing composes a favourite, or its icon, for the 785.
+* **Harmony 885**, open, waiting on its family: Nothing composes a favourite, or its icon, for the 885.
+* **Harmony 785**, open, waiting on its family: Nothing composes a favourite, or its icon, for the 785.
 * **Harmony 300**, impossible: The 300 has no screen to show a favourite's icon. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to show a favourite's icon. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-favourites.test.ts`, "the 8.3 favourites change the user's document alone: the channel added from the line up first, the five reversed, a logo at its station's address". Shown on a unit in `packages/bench/test/harmony-touch/touch-favourites-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing composes a favourite with an icon for an Elite.
-* **Harmony Hub**, open: Nothing composes a favourite with an icon for a hub.
+* **Harmony Elite**, open, waiting on its family: Nothing composes a favourite with an icon for an Elite.
+* **Harmony Hub**, open, waiting on its family: Nothing composes a favourite with an icon for a hub.
 
 ## Settings
 
 ### R47 Read and change the remote's own settings as far as the model offers them, the touch sound and the tutorial after the first write among them, and put them back to defaults.
 
-* **Harmony One**, open: Screen light, start assistant and tour are build choices; nothing reads the remote's settings, sets screen sounds or restores defaults.
-* **Harmony 600**, open: Settings are not read back, and the tutorial choice was never shown on the 600; it has no touch sound.
-* **Harmony 650**, open: Settings are only build choices, never read back or reset; the 650 has no touch sound.
-* **Harmony 700**, open: Settings are written as build choices; nothing reads them back, and the tutorial and defaults are not offered.
-* **Harmony 525**, open: The manual offers settings such as backlight timing and help, and nothing reads or changes a 525's settings.
-* **Harmony 515**, open: Nothing reads or changes a 515's settings.
-* **Harmony 885**, open: The 885's settings are neither read nor changed by anything yet.
-* **Harmony 785**, open: The 785's settings are neither read nor changed by anything yet.
+* **Harmony One**, open, waiting on its family: Screen light, start assistant and tour are build choices; nothing reads the remote's settings, sets screen sounds or restores defaults.
+* **Harmony 600**, open, waiting on its family: Settings are not read back, and the tutorial choice was never shown on the 600; it has no touch sound.
+* **Harmony 650**, open, waiting on its family: Settings are only build choices, never read back or reset; the 650 has no touch sound.
+* **Harmony 700**, open, waiting on its family: Settings are written as build choices; nothing reads them back, and the tutorial and defaults are not offered.
+* **Harmony 525**, open, waiting on its family: The manual offers settings such as backlight timing and help, and nothing reads or changes a 525's settings.
+* **Harmony 515**, open, waiting on its family: Nothing reads or changes a 515's settings.
+* **Harmony 885**, open, waiting on its family: The 885's settings are neither read nor changed by anything yet.
+* **Harmony 785**, open, waiting on its family: The 785's settings are neither read nor changed by anything yet.
 * **Harmony 300**, unknown: Logitech lists no settings for the 300, and whether the remote has any is not checked.
 * **Harmony 350**, unknown: Logitech lists no settings for the 350; whether its firmware holds any a person would change is not known. `reference/remotes/harmony-350/features.md#what-logitechs-service-states`.
-* **Harmony Touch**, open: Two settings were changed on the unit; reading settings off it, the touch sound, the tutorial and defaults are not done.
-* **Harmony Elite**, open: Nothing reads or changes an Elite's settings.
-* **Harmony Hub**, open: Nothing reads or changes a hub's settings.
+* **Harmony Touch**, open, waiting on its family: Two settings were changed on the unit; reading settings off it, the touch sound, the tutorial and defaults are not done.
+* **Harmony Elite**, open, waiting on its family: Nothing reads or changes an Elite's settings.
+* **Harmony Hub**, open, waiting on its family: Nothing reads or changes a hub's settings.
 
 ### R48 How long the screen stays lit, and its brightness.
 
-* **Harmony One**, open: How long the screen stays lit is a choice and was timed on the spare; brightness cannot be set.
-* **Harmony 600**, open: The stated 20 s screen light was seen on the 600; no other value was written, and a brightness setting is not known.
-* **Harmony 650**, open: The lit time is a build choice with no test note of ours, and no brightness setting is known.
-* **Harmony 700**, open: The screen went dark at the 20 second default; no other timeout ran, and a brightness setting is not known.
-* **Harmony 525**, open: The manual sets backlight timing and nothing composes it for the 525; brightness is not stated.
-* **Harmony 515**, open: Nothing composes the 515's backlight timing; brightness is not known.
-* **Harmony 885**, open: The 885's manual offers a backlight timing; nothing sets it, and brightness is not known.
-* **Harmony 785**, open: Nothing sets the 785's backlight timing or brightness.
+* **Harmony One**, open, waiting on its family: How long the screen stays lit is a choice and was timed on the spare; brightness cannot be set.
+* **Harmony 600**, open, waiting on the remote itself: The stated 20 s screen light was seen on the 600; no other value was written, and a brightness setting is not known.
+* **Harmony 650**, open, waiting on the remote itself: The lit time is a build choice with no test note of ours, and no brightness setting is known.
+* **Harmony 700**, open, waiting on the remote itself: The screen went dark at the 20 second default; no other timeout ran, and a brightness setting is not known.
+* **Harmony 525**, open, waiting on its family and the remote itself: The manual sets backlight timing and nothing composes it for the 525; brightness is not stated.
+* **Harmony 515**, open, waiting on its family and the remote itself: Nothing composes the 515's backlight timing; brightness is not known.
+* **Harmony 885**, open, waiting on its family and the remote itself: The 885's manual offers a backlight timing; nothing sets it, and brightness is not known.
+* **Harmony 785**, open, waiting on its family: Nothing sets the 785's backlight timing or brightness.
 * **Harmony 300**, impossible: The 300 has no screen to light or dim. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to light. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-settings.test.ts`, "composing Settings changes exactly the first value of each row named, and carries every other row and field". Shown on a unit in `packages/corpus/test/touch/touch-settings-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing sets how long an Elite's screen stays lit or its brightness.
+* **Harmony Elite**, open, waiting on its family: Nothing sets how long an Elite's screen stays lit or its brightness.
 * **Harmony Hub**, impossible: A hub has no screen to light. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ### R49 The motion sensor on or off.
 
 * **Harmony One**, unknown: The One lights when picked up, but whether that sensing can be switched off is not known.
-* **Harmony 600**, open: The tilt sensor is a build choice, but no build with it off ran on the 600.
-* **Harmony 650**, open: The tilt sensor is a build choice, but no test note shows our setting acting on the 650.
-* **Harmony 700**, open: The tilt sensor choice exists, but no 700 build with it off was made or run.
+* **Harmony 600**, open, waiting on a run on a unit: The tilt sensor is a build choice, but no build with it off ran on the 600.
+* **Harmony 650**, open, waiting on a run on a unit: The tilt sensor is a build choice, but no test note shows our setting acting on the 650.
+* **Harmony 700**, open, waiting on a run on a unit: The tilt sensor choice exists, but no 700 build with it off was made or run.
 * **Harmony 525**, unknown: Motion wakes it from Deep Sleep, and whether that can be switched off is not stated. `reference/remotes/harmony-525/hardware.md#light-motion-and-infrared`.
 * **Harmony 515**, unknown: Whether the 515 wakes on motion, and whether that can be switched off, is not checked.
-* **Harmony 885**, open: The 885's manual offers a tilt sensor switch; nothing sets it.
-* **Harmony 785**, open: Nothing sets the 785's tilt sensing.
+* **Harmony 885**, open, waiting on its family: The 885's manual offers a tilt sensor switch; nothing sets it.
+* **Harmony 785**, open, waiting on its family: Nothing sets the 785's tilt sensing.
 * **Harmony 300**, unknown: Whether the 300 has a motion sensor is not stated anywhere.
 * **Harmony 350**, unknown: No page says whether the 350 has a motion sensor. `reference/remotes/harmony-350/hardware.md#not-checked`.
 * **Harmony Touch**, unknown: Whether a Touch carries the accelerometer is not checked, and the bench unit's settings offer no tilt entry.
@@ -802,14 +754,14 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R50 The Remote Assistant and the "Starting Activity" message on or off.
 
-* **Harmony One**, open: The assistant at start can be left out, but the assistant after an activity starts and the Starting screen cannot be switched.
-* **Harmony 600**, open: The Remote Assistant is left out of every build; switching it on, or a start message, is not offered.
-* **Harmony 650**, open: The Remote Assistant is a build choice with no test note on the 650; a switch for the start message is not known.
-* **Harmony 700**, open: The 700 is built with the Assistant off, unobserved on the unit; on, and the starting message, are not built.
-* **Harmony 525**, open: The manual offers the Remote Assistant switch on the 525, and nothing composes it.
-* **Harmony 515**, open: Nothing composes the 515's Remote Assistant switch.
-* **Harmony 885**, open: The 885's manual offers both; nothing composes or switches either.
-* **Harmony 785**, open: Nothing composes or switches the 785's assistants.
+* **Harmony One**, open, waiting on its family: The assistant at start can be left out, but the assistant after an activity starts and the Starting screen cannot be switched.
+* **Harmony 600**, open, waiting on its family: The Remote Assistant is left out of every build; switching it on, or a start message, is not offered.
+* **Harmony 650**, open, waiting on the remote itself: The Remote Assistant is a build choice with no test note on the 650; a switch for the start message is not known.
+* **Harmony 700**, open, waiting on its family: The 700 is built with the Assistant off, unobserved on the unit; on, and the starting message, are not built.
+* **Harmony 525**, open, waiting on its family: The manual offers the Remote Assistant switch on the 525, and nothing composes it.
+* **Harmony 515**, open, waiting on its family: Nothing composes the 515's Remote Assistant switch.
+* **Harmony 885**, open, waiting on its family: The 885's manual offers both; nothing composes or switches either.
+* **Harmony 785**, open, waiting on its family: Nothing composes or switches the 785's assistants.
 * **Harmony 300**, impossible: Both are screen messages, and the 300 has no screen. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen to show the message on. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, unknown: Whether a Touch has a Remote Assistant or a Starting Activity message to switch is not known.
@@ -818,14 +770,14 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R51 The kind of help, Smart or Full.
 
-* **Harmony One**, open: Nothing chooses between Smart and Full help on the One.
+* **Harmony One**, open, waiting on its family: Nothing chooses between Smart and Full help on the One.
 * **Harmony 600**, unknown: No reference page says whether the 600 offers Smart or Full help.
 * **Harmony 650**, unknown: No page says whether a 650 can have Smart or Full help; MyHarmony offers it only three settings.
 * **Harmony 700**, unknown: No page says whether a 700 offers a choice between Smart and Full help.
-* **Harmony 525**, open: The manual offers Smart or Full help on the 525, and nothing composes it.
-* **Harmony 515**, open: Nothing composes Smart or Full help for the 515.
-* **Harmony 885**, open: The 885's manual offers Smart and Full help; nothing composes help for it.
-* **Harmony 785**, open: Nothing composes help for the 785, so neither Smart nor Full can be chosen.
+* **Harmony 525**, open, waiting on its family: The manual offers Smart or Full help on the 525, and nothing composes it.
+* **Harmony 515**, open, waiting on its family: Nothing composes Smart or Full help for the 515.
+* **Harmony 885**, open, waiting on its family: The 885's manual offers Smart and Full help; nothing composes help for it.
+* **Harmony 785**, open, waiting on its family: Nothing composes help for the 785, so neither Smart nor Full can be chosen.
 * **Harmony 300**, impossible: The 300 has no Help key and no screen, so there is no kind of help to pick. `reference/remotes/harmony-300/keys.md#european-printing-skin-79`.
 * **Harmony 350**, impossible: The 350 has no Help key and no screen, so there is no kind of help to choose. `reference/remotes/harmony-350/keys.md#every-key-on-the-drawing`.
 * **Harmony Touch**, unknown: An activity field marks guided or manual help, but whether that is Smart or Full help is not known.
@@ -834,30 +786,30 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R52 The clock: the right time, how it is shown, and read back.
 
-* **Harmony One**, open: A write stamps the time and the clock reads over USB, but its format is no choice and the time after a write is unchecked.
-* **Harmony 600**, open: The 600 shows no clock; its clock is read only as raw memory, and setting it over USB is deliberately not built.
-* **Harmony 650**, open: A write sets the clock, as seen in memory; the 650 cannot show it, and nothing reads it back as a time.
-* **Harmony 700**, open: The 700 shows no clock; its clock was read once over USB, but nothing sets it or reads it as a time.
+* **Harmony One**, open, waiting on its family: A write stamps the time and the clock reads over USB, but its format is no choice and the time after a write is unchecked.
+* **Harmony 600**, open, waiting on its family: The 600 shows no clock; its clock is read only as raw memory, and setting it over USB is deliberately not built.
+* **Harmony 650**, open, waiting on its family: A write sets the clock, as seen in memory; the 650 cannot show it, and nothing reads it back as a time.
+* **Harmony 700**, open, waiting on its family: The 700 shows no clock; its clock was read once over USB, but nothing sets it or reads it as a time.
 * **Harmony 525**, unknown: Whether the screen shows a clock is not checked, and no read of the running clock is known. `reference/remotes/harmony-525/behaviour.md#the-clock`.
 * **Harmony 515**, unknown: Whether the 515 shows a clock is not checked, and no read of its running clock is known.
-* **Harmony 885**, open: The stamp sets the clock at the restart and a memory read reads it back; how the clock is shown is not set.
-* **Harmony 785**, open: The 785's clock has not been read, and nothing sets how it is shown.
+* **Harmony 885**, open, waiting on its family: The stamp sets the clock at the restart and a memory read reads it back; how the clock is shown is not set.
+* **Harmony 785**, open, waiting on its family and the remote itself: The 785's clock has not been read, and nothing sets how it is shown.
 * **Harmony 300**, impossible: Nothing on a 300 can show a clock, and its firmware never moves the hour. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, unknown: Its clock never moves the hour or date and nothing shows it; whether it can be set or read back is not known. `reference/architectures/harmony-300-350/memory.md#the-state-variables`.
-* **Harmony Touch**, open: The remote keeps time from every sync, but the answerer sends no clock write and the 12 or 24 hour form is untried.
-* **Harmony Elite**, open: A hub paired remote asks its hub for the time; nothing here reads or sets either clock.
-* **Harmony Hub**, open: A hub keeps the time its remotes ask it for; nothing here reads or sets it.
+* **Harmony Touch**, open, waiting on its family: The remote keeps time from every sync, but the answerer sends no clock write and the 12 or 24 hour form is untried.
+* **Harmony Elite**, open, waiting on the remote itself: A hub paired remote asks its hub for the time; nothing here reads or sets either clock.
+* **Harmony Hub**, open, waiting on the remote itself: A hub keeps the time its remotes ask it for; nothing here reads or sets it.
 
 ### R53 A slideshow of the user's pictures.
 
-* **Harmony One**, open: Nothing builds a slideshow of the user's pictures for the One.
+* **Harmony One**, open, waiting on its family: Nothing builds a slideshow of the user's pictures for the One.
 * **Harmony 600**, unknown: No reference page says whether the 600 can show a slideshow.
 * **Harmony 650**, unknown: No page says whether a 650 can show a slideshow; only the Harmony One's is described.
 * **Harmony 700**, unknown: No page says whether a 700 can show a slideshow; only the Harmony One's page describes one.
 * **Harmony 525**, unknown: No page says whether the 96 by 64 monochrome 525 could show a slideshow.
 * **Harmony 515**, unknown: No page says whether the 96 by 64 monochrome 515 could show a slideshow.
-* **Harmony 885**, open: The 885's manual offers a slideshow; nothing builds one.
-* **Harmony 785**, open: Nothing builds a slideshow for the 785.
+* **Harmony 885**, open, waiting on its family: The 885's manual offers a slideshow; nothing builds one.
+* **Harmony 785**, open, waiting on its family: Nothing builds a slideshow for the 785.
 * **Harmony 300**, impossible: The 300 has no screen for pictures. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen. `reference/remotes/harmony-350/display.md#harmony-350-display`.
 * **Harmony Touch**, unknown: Whether a Touch offers a slideshow of the user's pictures is not known.
@@ -868,67 +820,55 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R54 Learn an infrared command from the original remote through the Harmony's own receiver.
 
-* **Harmony One**, open: Nothing sends the learning commands to a One.
-* **Harmony 600**, open: The 600 learns by its manual, but nothing in the FHSDK sends the learning command.
-* **Harmony 650**, open: The manual says the 650 learns up to 200 kHz, and nothing in the FHSDK drives its receiver.
-* **Harmony 700**, open: The manual gives the 700 learning, but nothing here sends the learning commands.
-* **Harmony 525**, open: The firmware implements the capture, but nothing sends it, and learning on a 525 is not checked.
-* **Harmony 515**, open: Nothing sends the 515 the learning request, and learning on a 515 is not checked.
-* **Harmony 885**, open: The 885 has a learning sensor; nothing sends it the learning request.
-* **Harmony 785**, open: Nothing sends the 785 the learning request.
+* **Harmony One**, open, waiting on its family: Nothing sends the learning commands to a One.
+* **Harmony 600**, open, waiting on its family: The 600 learns by its manual, but nothing in the FHSDK sends the learning command.
+* **Harmony 650**, open, waiting on its family: The manual says the 650 learns up to 200 kHz, and nothing in the FHSDK drives its receiver.
+* **Harmony 700**, open, waiting on its family: The manual gives the 700 learning, but nothing here sends the learning commands.
+* **Harmony 525**, open, waiting on its family: The firmware implements the capture, but nothing sends it, and learning on a 525 is not checked.
+* **Harmony 515**, open, waiting on its family: Nothing sends the 515 the learning request, and learning on a 515 is not checked.
+* **Harmony 885**, open, waiting on its family: The 885 has a learning sensor; nothing sends it the learning request.
+* **Harmony 785**, open, waiting on its family: Nothing sends the 785 the learning request.
 * **Harmony 300**, unknown: Whether the 300 learns is not checked; its file table names an infrared capture stream that was never opened.
 * **Harmony 350**, unknown: Whether the 350 has a learning receiver is not checked, though its firmware names an infrared capture file. `reference/remotes/harmony-350/hardware.md#not-checked`.
-* **Harmony Touch**, open: The Touch learns through its infrared window by the manual, but nothing here sends a learning request to it.
+* **Harmony Touch**, open, waiting on its family: The Touch learns through its infrared window by the manual, but nothing here sends a learning request to it.
 * **Harmony Elite**, unknown: Whether an Elite learns a code through a window of its own or through its hub is not read, and nothing sends a learning request.
-* **Harmony Hub**, open: The hub's native program has a command that captures a code, by its image; nothing sends it.
+* **Harmony Hub**, open, waiting on its family: The hub's native program has a command that captures a code, by its image; nothing sends it.
 
 ### R55 Use a learned code in a device, on any key or screen button, input commands included.
 
-* **Harmony One**, open: How a learned code is stored in a One configuration is not known, so none can be used.
-* **Harmony 600**, open: How a learned code is stored on this family is not read, so none can be used.
-* **Harmony 650**, open: How a compiled remote stores a learned code is not read, so nothing puts one into a 650 device.
-* **Harmony 700**, open: How a learned code is stored in this family's configuration is not known, so none can be used.
-* **Harmony 525**, open: Nothing puts a learned code into a 525 device.
-* **Harmony 515**, open: Nothing puts a learned code into a 515 device.
-* **Harmony 885**, open: Nothing puts a learned code into an 885 device.
-* **Harmony 785**, open: Nothing puts a learned code into a 785 device.
-* **Harmony 300**, open: Nothing puts a learned code into a configuration of this family.
-* **Harmony 350**, open: Nothing puts a learned code into a device of this family.
-* **Harmony Touch**, open: A learned code composes into a device in tests, but none has been sent from the unit.
-* **Harmony Elite**, open: A learned code composes into a device in tests on other models; nothing composes one for an Elite.
-* **Harmony Hub**, open: A learned code composes into a device in tests on other models; nothing composes one for a hub.
+* **Harmony One**, open, waiting on its family: How a learned code is stored in a One configuration is not known, so none can be used.
+* **Harmony 600**, open, waiting on its family: How a learned code is stored on this family is not read, so none can be used.
+* **Harmony 650**, open, waiting on its family: How a compiled remote stores a learned code is not read, so nothing puts one into a 650 device.
+* **Harmony 700**, open, waiting on its family: How a learned code is stored in this family's configuration is not known, so none can be used.
+* **Harmony 525**, open, waiting on its family: Nothing puts a learned code into a 525 device.
+* **Harmony 515**, open, waiting on its family: Nothing puts a learned code into a 515 device.
+* **Harmony 885**, open, waiting on its family: Nothing puts a learned code into an 885 device.
+* **Harmony 785**, open, waiting on its family: Nothing puts a learned code into a 785 device.
+* **Harmony 300**, open, waiting on its family: Nothing puts a learned code into a configuration of this family.
+* **Harmony 350**, open, waiting on its family: Nothing puts a learned code into a device of this family.
+* **Harmony Touch**, open, waiting on a run on a unit: A learned code composes into a device in tests, but none has been sent from the unit.
+* **Harmony Elite**, open, waiting on its family: A learned code composes into a device in tests on other models; nothing composes one for an Elite.
+* **Harmony Hub**, open, waiting on its family: A learned code composes into a device in tests on other models; nothing composes one for a hub.
 
 ### R56 Recognise a learned code as a known kind and keep it compactly, or as captured when it is not.
 
-* **Harmony One**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a Harmony One configuration.
-* **Harmony 600**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 600 configuration.
-* **Harmony 650**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 650 configuration.
-* **Harmony 700**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 700 configuration.
-* **Harmony 525**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 525 configuration.
-* **Harmony 515**, open: Nothing keeps a learned code in a 515 configuration.
-* **Harmony 885**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in an 885 configuration.
-* **Harmony 785**, open: Nothing keeps a learned code in a 785 configuration.
-* **Harmony 300**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 300 configuration.
-* **Harmony 350**, open: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 350 configuration.
+* **Harmony One**, open, waiting on its family: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a Harmony One configuration.
+* **Harmony 600**, open, waiting on its family: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 600 configuration.
+* **Harmony 650**, open, waiting on its family: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 650 configuration.
+* **Harmony 700**, open, waiting on its family: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 700 configuration.
+* **Harmony 525**, open, waiting on its family: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 525 configuration.
+* **Harmony 515**, open, waiting on its family: Nothing keeps a learned code in a 515 configuration.
+* **Harmony 885**, open, waiting on its family: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in an 885 configuration.
+* **Harmony 785**, open, waiting on its family: Nothing keeps a learned code in a 785 configuration.
+* **Harmony 300**, open, waiting on its family: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 300 configuration.
+* **Harmony 350**, open, waiting on its family: A learned code is recognised by the Harmony Touch's reader; nothing keeps one in a 350 configuration.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-learned.test.ts`, "at four per cent of jitter 876 of 1679 codes come back as their row and value, 8 wrong and 681 raw".
-* **Harmony Elite**, open: A captured code is recognised by the library, but no test does so for this model.
-* **Harmony Hub**, open: A captured code is recognised by the library, but no test does so for this model.
+* **Harmony Elite**, open, waiting on its family: A captured code is recognised by the library, but no test does so for this model.
+* **Harmony Hub**, open, waiting on its family: A captured code is recognised by the library, but no test does so for this model.
 
 ### R57 Identify a device the catalogue does not recognise from a few taught commands.
 
-* **Harmony One**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
-* **Harmony 600**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
-* **Harmony 650**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
-* **Harmony 700**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
-* **Harmony 525**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
-* **Harmony 515**, open: No test identifies a device from a few taught commands.
-* **Harmony 885**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
-* **Harmony 785**, open: No test identifies a device from a few taught commands.
-* **Harmony 300**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
-* **Harmony 350**, open: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
-* **Harmony Touch**, open: identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.
-* **Harmony Elite**, open: identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.
-* **Harmony Hub**, open: identifyCodeset ranks codes against the catalogue, but no test identifies a device from taught captures end to end.
+* **Every remote**, open, waiting on the FHSDK: Code numbers are ranked against the catalogue's codesets, but no test identifies a device from a few taught commands.
 
 ## Backup and restore
 
@@ -944,75 +884,63 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, proven by `tests/harmony_880_885/test_harmony_785_first_read.py`, "TheWholeFlash.test_the_two_reads_are_identical_and_end_at_the_device_window"; `tests/harmony_880_885/test_harmony_785_first_read.py`, "UnitB.test_the_two_reads_are_identical". Shown on a unit in `docs/test-notes/harmony-785.md#the-first-unit-h785_a`, `docs/test-notes/harmony-785.md#the-second-unit-h785_b`.
 * **Harmony 300**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "opens, reassembles the data packets, stops at the terminator and closes". Shown on a unit in `docs/test-notes/harmony-300.md`.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "opens, reassembles the data packets, stops at the terminator and closes"; `packages/usb/test/file-protocol/filewrite.test.ts`, "accepts all five configurations read off the family, once the end marker is on". Shown on a unit in `docs/test-notes/harmony-350.md#what-has-been-read-off-it`.
-* **Harmony Touch**, open: The stored documents cannot be read off the remote, so a backup comes only from a recorded Logitech sync.
-* **Harmony Elite**, open: The set an Elite shows is stored on its hub, and nothing reads it off either, so there is no backup.
-* **Harmony Hub**, open: Nothing reads a hub's stored set, so there is no backup of one.
+* **Harmony Touch**, open, waiting on the remote itself: The stored documents cannot be read off the remote, so a backup comes only from a recorded Logitech sync.
+* **Harmony Elite**, open, waiting on the remote itself: The set an Elite shows is stored on its hub, and nothing reads it off either, so there is no backup.
+* **Harmony Hub**, open, waiting on the remote itself: Nothing reads a hub's stored set, so there is no backup of one.
 
 ### R59 Put a backup back on the same remote.
 
-* **Harmony One**, open: A whole backup has never been put back on a One; only one block of its own was written back unchanged.
+* **Harmony One**, open, waiting on a run on a unit: A whole backup has never been put back on a One; only one block of its own was written back unchanged.
 * **Harmony 600**, proven by `tests/harmony_600_650_700/test_arch14_write_target.py`, "TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore.test_the_raise_moved_the_delay_and_the_trailer_and_the_revert_put_the_region_back". Shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
 * **Harmony 650**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "a Harmony 650: the arch 14 drop, each block written and read back, the restart, and no install status read". Shown on a unit in `docs/test-notes/harmony-650.md#what-has-been-sent-to-this-unit`.
 * **Harmony 700**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "a Harmony 650: the arch 14 drop, each block written and read back, the restart, and no install status read". Shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
-* **Harmony 525**, open: One block was put back through a script; nothing restores a whole backup to a 525.
-* **Harmony 515**, open: The configuration region is in the lab, but no write path puts a backup back on a 515.
+* **Harmony 525**, open, waiting on the remote itself: One block was put back through a script; nothing restores a whole backup to a 525.
+* **Harmony 515**, open, waiting on the remote itself: The configuration region is in the lab, but no write path puts a backup back on a 515.
 * **Harmony 885**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "a Harmony 885: the status read before the first erase and before the restart, the drop and the restart its own"; `tests/harmony_880_885/test_harmony_885_first_config_write.py`, "TheConfigurationWrittenToB.test_what_the_remote_holds_afterwards_is_the_file". Shown on a unit in `docs/test-notes/harmony-885.md#7-november-2026-the-first-whole-configuration-unit-bs-own-restarted`.
-* **Harmony 785**, open: Both units' whole flash is in the lab, but no write path puts a backup back on a 785.
+* **Harmony 785**, open, waiting on the remote itself: Both units' whole flash is in the lab, but no write path puts a backup back on a 785.
 * **Harmony 300**, proven by `packages/usb/test/file-protocol/file-family-run.test.ts`, "writes, verifies and reboots, and arms the caller's interrupt after the reads and before anything that writes". Shown on a unit in `docs/test-notes/harmony-300.md`.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/filewrite.test.ts`, "passes when the remote holds the backup, as read or whole". Shown on a unit in `docs/test-notes/harmony-350.md`.
 * **Harmony Touch**, proven by `packages/corpus/test/touch/touch-answer.test.ts`, "with both flags runs the sync to proxy://Finished and closes the Touch"; `packages/corpus/test/touch/touch-sync.test.ts`, "answers the six 200 with the document and its tag, the favourites 304 so the remote keeps its own, and the tagged pictures 304". Shown on a unit in `packages/usb/test/touch/touch-own-set-sync.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: There is no backup of an Elite to put back, and nothing is written to the bench set.
-* **Harmony Hub**, open: There is no backup of a hub to put back, and nothing is written to the bench hub.
+* **Harmony Elite**, open, waiting on the remote itself: There is no backup of an Elite to put back, and nothing is written to the bench set.
+* **Harmony Hub**, open, waiting on the remote itself: There is no backup of a hub to put back, and nothing is written to the bench hub.
 
 ### R60 Move a setup to another remote or model, or copy devices and activities from one setup into another, adapted to the target's limits.
 
-* **Harmony One**, open: Nothing adapts a setup to another model or copies devices and activities from one setup into another.
-* **Harmony 600**, open: A setup past the 600's limits is refused, not adapted; the five device setup was cut by hand.
-* **Harmony 650**, open: Nothing moves a setup to another remote, or copies devices and activities from one setup into another.
-* **Harmony 700**, open: The 650's test setup was rebuilt for the 700 and ran; copying parts between setups and fitting to limits are not offered.
-* **Harmony 525**, open: Nothing reads a 525 setup into a recipe or builds one for it.
-* **Harmony 515**, open: Nothing reads a 515 setup into a recipe or builds one for it.
-* **Harmony 885**, open: Nothing moves a setup to another model or copies devices and activities between setups, adapted to limits.
-* **Harmony 785**, open: Nothing moves a setup to another model or copies devices and activities between setups, adapted to limits.
-* **Harmony 300**, open: The 350's build ran unchanged on the 300, but nothing adapts a setup to another model or copies devices between setups.
-* **Harmony 350**, open: Nothing moves another remote's setup onto a 350 adapted to its limits.
-* **Harmony Touch**, open: Nothing moves a Touch setup to another remote or model, or copies devices between setups adapted to limits.
-* **Harmony Elite**, open: Nothing moves a setup to or from an Elite.
-* **Harmony Hub**, open: Nothing moves a setup to or from a hub.
+* **Every remote**, open, waiting on the FHSDK: Nothing adapts a setup to another model's limits, or copies devices and activities from one setup into another.
 
 ### R61 Clear a remote's setup so it starts fresh, by writing an empty configuration, never through the firmware's own reset.
 
 * **Harmony One**, proven by `packages/codec/test/families/fromrecipe.test.ts`, "an empty recipe gives each compiled family's own empty configuration, byte for byte"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-one.md#the-empty-configuration-and-the-setup-on-it`.
 * **Harmony 600**, proven by `packages/codec/test/families/harmony-600-650-700/empty.test.ts`, "the Harmony 600 built from nothing, skins 73 and 71, rebuilds by every checker with every byte attributed, and differs from the Harmony 650's only in its skin, its settings block and the checksum"; `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-600.md#what-has-been-sent-to-this-unit`.
-* **Harmony 650**, open: The empty 650 builds to its fingerprint, but no test note records it running, and the build written differs.
+* **Harmony 650**, open, waiting on a run on a unit: The empty 650 builds to its fingerprint, but no test note records it running, and the build written differs.
 * **Harmony 700**, proven by `packages/codec/test/recipe/references.test.ts`, "the references a remote ran are its bench files byte for byte, stamped as their writes stamped them". Shown on a unit in `docs/test-notes/harmony-700.md#the-configurations-run-on-it`.
-* **Harmony 525**, open: Nothing builds an empty configuration for the 525.
-* **Harmony 515**, open: Nothing builds an empty configuration for the 515.
-* **Harmony 885**, open: No empty configuration is built for the 885.
-* **Harmony 785**, open: No empty configuration is built for the 785.
-* **Harmony 300**, open: The empty configuration builds for the 300 and passes the writer's check, but was never written to a 300.
+* **Harmony 525**, open, waiting on its family: Nothing builds an empty configuration for the 525.
+* **Harmony 515**, open, waiting on its family: Nothing builds an empty configuration for the 515.
+* **Harmony 885**, open, waiting on its family: No empty configuration is built for the 885.
+* **Harmony 785**, open, waiting on its family: No empty configuration is built for the 785.
+* **Harmony 300**, open, waiting on a run on a unit: The empty configuration builds for the 300 and passes the writer's check, but was never written to a 300.
 * **Harmony 350**, proven by `packages/codec/test/families/harmony-300-350/noscreenempty.test.ts`, "the empty Harmony 350 and Harmony 300 configurations pass the writer's check, from a skin and a moment alone". Shown on a unit in `docs/test-notes/harmony-350.md`, `packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts`.
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-empty.test.ts`, "the empty set is the six documents, the four lists emptied and every other field kept, Context and Settings as they stand". Shown on a unit in `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: Nothing clears an Elite's setup; nothing is written to the bench set.
-* **Harmony Hub**, open: Nothing clears a hub's setup; nothing is written to the bench hub.
+* **Harmony Elite**, open, waiting on its family: Nothing clears an Elite's setup; nothing is written to the bench set.
+* **Harmony Hub**, open, waiting on its family: Nothing clears a hub's setup; nothing is written to the bench hub.
 
 ## Status and identity
 
 ### R62 Find the attached remotes and their models without claiming them.
 
 * **Harmony One**, proven by `packages/usb/test/transport/hardware.test.ts`, "an attached Harmony is recognised by vendor and product range"; `packages/usb/test/transport/remote.test.ts`, "device matching is the Logitech vendor and the Harmony product range". Shown on a unit in `docs/test-notes/harmony-one.md#telling-the-two-ones-apart`.
-* **Harmony 600**, open: Listing and the model from the release number are tested, but the 600's enumeration was recorded with the system's tools, not the FHSDK.
-* **Harmony 650**, open: Listing finds product 0xC122 but names it a Harmony 600 or 700; telling a 650 apart needs its skin.
-* **Harmony 700**, open: The 600, 650 and 700 share one product id, and the 700's descriptor word naming its skin was never checked on the unit.
+* **Harmony 600**, open, waiting on a run on a unit: Listing and the model from the release number are tested, but the 600's enumeration was recorded with the system's tools, not the FHSDK.
+* **Harmony 650**, open, waiting on its family: Listing finds product 0xC122 but names it a Harmony 600 or 700; telling a 650 apart needs its skin.
+* **Harmony 700**, open, waiting on the remote itself: The 600, 650 and 700 share one product id, and the 700's descriptor word naming its skin was never checked on the unit.
 * **Harmony 525**, proven by `packages/base/test/models.test.ts`, "the six confirmed skins name the models they were confirmed as"; `packages/usb/test/transport/remote.test.ts`, "the skin comes out of bcdDevice, and its encoding is per firmware generation". Shown on a unit in `docs/test-notes/harmony-525.md#the-first-session-8-august-2026`.
 * **Harmony 515**, proven by `tests/harmony_5xx/test_harmony_515.py`, "TheFirmwareAndTheConfigurationBothStateSkin67.test_the_measured_descriptor_reads_as_skin_67_under_the_plain_rule". Shown on a unit in `docs/test-notes/harmony-515.md#the-first-session-3-november-2026`.
 * **Harmony 885**, proven by `packages/usb/test/transport/remote.test.ts`, "the skin comes out of bcdDevice, and its encoding is per firmware generation"; `tests/usb_protocol/test_usbdesc.py`, "TestBcdDeviceCarriesTheSkin.test_the_two_words_measured_off_the_bus". Shown on a unit in `docs/test-notes/harmony-885.md#the-first-unit-h885_a`.
 * **Harmony 785**, proven by `packages/usb/test/transport/remote.test.ts`, "the skin comes out of bcdDevice, and its encoding is per firmware generation". Shown on a unit in `docs/test-notes/harmony-785.md#the-first-unit-h785_a`, `docs/test-notes/harmony-785.md#the-second-unit-h785_b`.
 * **Harmony 300**, proven by `packages/usb/test/transport/remote.test.ts`, "two families sit inside the Harmony range and openHarmony refuses both". Shown on a unit in `docs/test-notes/harmony-300.md#the-unit`.
-* **Harmony 350**, open: Enumeration finds it unopened and reads skin 104, but no model record names skin 104 a Harmony 350.
-* **Harmony Touch**, open: A Touch is listed as file based without being claimed, but its model is not named: skin 99 has no record.
-* **Harmony Elite**, open: An Elite enumerates under the Harmony Touch's product number and is listed as file based without being claimed; nothing names it apart from a Touch short of reading its identity file.
-* **Harmony Hub**, open: A hub on a cable is listed as file based without being claimed; a hub on the network is not looked for.
+* **Harmony 350**, open, waiting on the remote itself: Enumeration finds it unopened and reads skin 104, but no model record names skin 104 a Harmony 350.
+* **Harmony Touch**, open, waiting on the remote itself: A Touch is listed as file based without being claimed, but its model is not named: skin 99 has no record.
+* **Harmony Elite**, open, waiting on the remote itself: An Elite enumerates under the Harmony Touch's product number and is listed as file based without being claimed; nothing names it apart from a Touch short of reading its identity file.
+* **Harmony Hub**, open, waiting on the remote itself: A hub on a cable is listed as file based without being claimed; a hub on the network is not looked for.
 
 ### R63 Tell one unit from another, and say when the wrong one is connected.
 
@@ -1021,73 +949,73 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 650**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "refuses another unit on the cable at its identity block, before any block is read"; `packages/usb/test/transport/identity.test.ts`, "the discriminator is the two GUIDs and nothing else". Shown on a unit in `docs/test-notes/harmony-650.md#the-unit`.
 * **Harmony 700**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "refuses another unit on the cable at its identity block, before any block is read"; `packages/usb/test/transport/identity.test.ts`, "the discriminator is the two GUIDs and nothing else"; `tests/harmony_600_650_700/test_arch14_write_target.py`, "TheHarmony700sFirstBlockWentBackUnchanged.test_the_run_erased_checked_both_neighbours_and_read_the_block_back". Shown on a unit in `docs/test-notes/harmony-700.md#what-was-sent-to-the-unit`.
 * **Harmony 525**, proven by `packages/usb/test/transport/identity.test.ts`, "the identity block is in a different kind of memory on the Harmony 525". Shown on a unit in `docs/test-notes/harmony-525.md#what-has-been-done-over-usb-in-sum`.
-* **Harmony 515**, open: The unit's identity is recorded in the lab, but no write rail checks a 515 against its record yet.
+* **Harmony 515**, open, waiting on the remote itself: The unit's identity is recorded in the lab, but no write rail checks a 515 against its record yet.
 * **Harmony 885**, proven by `packages/corpus/test/write/write-config-run.test.ts`, "refuses another unit on the cable at its identity block, before any block is read"; `packages/usb/test/transport/identity.test.ts`, "the discriminator is the two GUIDs and nothing else". Shown on a unit in `docs/test-notes/harmony-885.md#7-november-2026-unit-as-whole-flash-and-the-first-write-to-a-harmony-885`.
-* **Harmony 785**, open: The two units' identity blocks are recorded and differ, but no write rail checks a 785 against its record yet.
-* **Harmony 300**, open: Units are told apart by their identity file and the unit matched its record, but a wrong unit was refused only on a fake.
+* **Harmony 785**, open, waiting on the remote itself: The two units' identity blocks are recorded and differ, but no write rail checks a 785 against its record yet.
+* **Harmony 300**, open, waiting on a run on a unit: Units are told apart by their identity file and the unit matched its record, but a wrong unit was refused only on a fake.
 * **Harmony 350**, proven by `packages/usb/test/file-protocol/file-family-run.test.ts`, "refuses a remote stating another skin, another unit, and a configuration the caller holds no copy of, on the reads alone"; `packages/usb/test/file-protocol/filewrite.test.ts`, "refuses a different unit, and a unit whose GUIDs are filler". Shown on a unit in `docs/test-notes/harmony-350.md`.
-* **Harmony Touch**, open: The unit is recorded and matched on the cable, but refusing a wrong unit is shown only in tests.
-* **Harmony Elite**, open: The unit is recorded by the serial its identity file states and checked before its two reads; refusing a wrong unit is not shown on one.
-* **Harmony Hub**, open: The unit is recorded by the serial its identity file states; refusing a wrong unit is not shown on one.
+* **Harmony Touch**, open, waiting on a run on a unit: The unit is recorded and matched on the cable, but refusing a wrong unit is shown only in tests.
+* **Harmony Elite**, open, waiting on a run on a unit: The unit is recorded by the serial its identity file states and checked before its two reads; refusing a wrong unit is not shown on one.
+* **Harmony Hub**, open, waiting on a run on a unit: The unit is recorded by the serial its identity file states; refusing a wrong unit is not shown on one.
 
 ### R64 The firmware version and hardware details.
 
 * **Harmony One**, proven by `packages/usb/test/transport/hardware.test.ts`, "the version block is twelve bytes and the flash id in it matches concordance"; `packages/usb/test/transport/remote.test.ts`, "a version block is twelve bytes". Shown on a unit in `docs/test-notes/harmony-one.md#every-bench-remote-checked-against-its-own-backups`.
 * **Harmony 600**, proven by `packages/bench/test/instrument/bench.test.ts`, "the version block is named where a name has been earned and numbered where it has not"; `packages/usb/test/transport/protocol.test.ts`, "the whole block reads back as the three bench remotes reported it". Shown on a unit in `docs/test-notes/harmony-600.md#measured-against-two-bench-remotes`.
 * **Harmony 650**, proven by `packages/usb/test/transport/protocol.test.ts`, "the whole block reads back as the three bench remotes reported it"; `packages/usb/test/transport/remote.test.ts`, "a version block is twelve bytes". Shown on a unit in `docs/test-notes/harmony-650.md#the-unit`.
-* **Harmony 700**, open: Firmware, flash, architecture and skin were read off the unit; the hardware version a 700 reports is not recorded.
+* **Harmony 700**, open, waiting on the remote itself: Firmware, flash, architecture and skin were read off the unit; the hardware version a 700 reports is not recorded.
 * **Harmony 525**, proven by `packages/usb/test/transport/protocol.test.ts`, "a Harmony 525 answers 0x27 and seven fields, which used to decode as anonymous data"; `packages/usb/test/transport/remote.test.ts`, "a version block is twelve bytes". Shown on a unit in `docs/test-notes/harmony-525.md#the-first-session-8-august-2026`.
 * **Harmony 515**, proven by `tests/harmony_5xx/test_harmony_515.py`, "TheFirmwareAndTheConfigurationBothStateSkin67.test_the_version_fields_state_the_same_skin_and_firmware_3_4". Shown on a unit in `docs/test-notes/harmony-515.md#the-first-session-3-november-2026`.
 * **Harmony 885**, proven by `tests/harmony_880_885/test_arch8_usb.py`, "TestTheRemoteAnswersWhatTheImagePredicts.test_the_four_predicted_fields_are_the_accessors_constants". Shown on a unit in `docs/test-notes/harmony-885.md#the-first-unit-h885_a`.
-* **Harmony 785**, open: The version block was read on both units, but no test holds what a 785 reports.
+* **Harmony 785**, open, waiting on the remote itself: The version block was read on both units, but no test holds what a 785 reports.
 * **Harmony 300**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "parses a name and a value per line". Shown on a unit in `docs/test-notes/harmony-300.md#its-three-firmware-images-read-and-compared-with-the-350s`.
-* **Harmony 350**, open: The identity text is read and parsed, but no firmware version beyond the product string's has been read off the unit.
+* **Harmony 350**, open, waiting on the remote itself: The identity text is read and parsed, but no firmware version beyond the product string's has been read off the unit.
 * **Harmony Touch**, proven by `packages/usb/test/file-protocol/filepipe.test.ts`, "parses a name and a value per line". Shown on a unit in `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: The identity file was read on the unit, firmware 4.15.330 and skin 111, but no test proves the read for this model.
-* **Harmony Hub**, open: The identity file was read on the unit, firmware 4.15.600 and skin 106, but no test proves the read for this model.
+* **Harmony Elite**, open, waiting on the remote itself: The identity file was read on the unit, firmware 4.15.330 and skin 111, but no test proves the read for this model.
+* **Harmony Hub**, open, waiting on the remote itself: The identity file was read on the unit, firmware 4.15.600 and skin 106, but no test proves the read for this model.
 
 ### R65 The battery level, and a warning or refusal before a write when it is low.
 
-* **Harmony One**, open: The One's battery reading has not been checked, and nothing warns or refuses a write when it is low.
-* **Harmony 600**, open: The battery read exists but was never sent to a 600, and no low battery warning or refusal is built.
-* **Harmony 650**, open: The battery voltage is read on the 650, but there is no level, no threshold and no warning or refusal.
-* **Harmony 700**, open: The battery voltage read exists in the 700's firmware but was never asked of the unit, and no threshold exists.
+* **Harmony One**, open, waiting on the FHSDK and the remote itself: The One's battery reading has not been checked, and nothing warns or refuses a write when it is low.
+* **Harmony 600**, open, waiting on the FHSDK and the remote itself: The battery read exists but was never sent to a 600, and no low battery warning or refusal is built.
+* **Harmony 650**, open, waiting on the FHSDK: The battery voltage is read on the 650, but there is no level, no threshold and no warning or refusal.
+* **Harmony 700**, open, waiting on the FHSDK and the remote itself: The battery voltage read exists in the 700's firmware but was never asked of the unit, and no threshold exists.
 * **Harmony 525**, unknown: No battery reading over USB is known on the 525, and whether one exists is not settled. `reference/remotes/harmony-525/hardware.md#power`.
 * **Harmony 515**, unknown: No battery reading over USB is known on this platform, and whether one exists is not settled. `reference/remotes/harmony-525/hardware.md#power`.
 * **Harmony 885**, unknown: One read takes a hardware measurement, but what it measures is not identified, so a battery level is not known. `reference/architectures/harmony-880-885/usb.md#reading-flash`.
 * **Harmony 785**, unknown: One read takes a hardware measurement on the 885, but what it measures is not identified, and it was not read on a 785. `reference/architectures/harmony-880-885/usb.md#reading-flash`.
 * **Harmony 300**, unknown: A battery file is in the family's file table but was never read, so whether it holds a level is not known.
 * **Harmony 350**, unknown: The battery file was never read, so whether the 350 reports a level is not known. `reference/remotes/harmony-350/usb.md#not-checked`.
-* **Harmony Touch**, open: The firmware names battery charge readings, but nothing reads them and no write warns on a low battery.
-* **Harmony Elite**, open: The firmware names battery charge readings, but nothing reads them.
+* **Harmony Touch**, open, waiting on the FHSDK and its family: The firmware names battery charge readings, but nothing reads them and no write warns on a low battery.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: The firmware names battery charge readings, but nothing reads them.
 * **Harmony Hub**, impossible: The battery is the remote's hardware, which a hub has not. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-hardware`.
 
 ### R66 Progress during a read or a write, and the remote showing it is being written.
 
-* **Harmony One**, open: A read reports progress, but a write does not, and nothing makes the One show it is being written.
-* **Harmony 600**, open: Read progress is reported, but nothing makes the remote show it is being written.
-* **Harmony 650**, open: A read reports progress, but nothing makes the 650 show that it is being written.
-* **Harmony 700**, open: Read progress is reported, but nothing makes the remote show that it is being written.
-* **Harmony 525**, open: Read progress is tested only on another model's sample, and nothing shows a write on the 525's screen.
-* **Harmony 515**, open: Read progress is shown, but nothing makes a 515 show it is being written.
-* **Harmony 885**, open: Read progress exists, but the 885 showed nothing during a write, and nothing makes it show one.
-* **Harmony 785**, open: Read progress is shown, but nothing makes a 785 show it is being written.
-* **Harmony 300**, open: Neither the read nor the write reports progress, and whether the keys light while writing is not checked.
-* **Harmony 350**, open: The writer reports each chunk as it goes; what the remote shows while written is not recorded or offered.
-* **Harmony Touch**, open: The answerer logs each request list but gives no progress measure, and what the remote shows meanwhile is not recorded.
-* **Harmony Elite**, open: Nothing is read or written at length on an Elite, so nothing reports progress.
-* **Harmony Hub**, open: Nothing is read or written at length on a hub, so nothing reports progress.
+* **Harmony One**, open, waiting on the FHSDK and its family: A read reports progress, but a write does not, and nothing makes the One show it is being written.
+* **Harmony 600**, open, waiting on its family: Read progress is reported, but nothing makes the remote show it is being written.
+* **Harmony 650**, open, waiting on its family: A read reports progress, but nothing makes the 650 show that it is being written.
+* **Harmony 700**, open, waiting on its family: Read progress is reported, but nothing makes the remote show that it is being written.
+* **Harmony 525**, open, waiting on its family: Read progress is tested only on another model's sample, and nothing shows a write on the 525's screen.
+* **Harmony 515**, open, waiting on its family: Read progress is shown, but nothing makes a 515 show it is being written.
+* **Harmony 885**, open, waiting on its family and the remote itself: Read progress exists, but the 885 showed nothing during a write, and nothing makes it show one.
+* **Harmony 785**, open, waiting on its family: Read progress is shown, but nothing makes a 785 show it is being written.
+* **Harmony 300**, open, waiting on its family and the remote itself: Neither the read nor the write reports progress, and whether the keys light while writing is not checked.
+* **Harmony 350**, open, waiting on the remote itself: The writer reports each chunk as it goes; what the remote shows while written is not recorded or offered.
+* **Harmony Touch**, open, waiting on its family and the remote itself: The answerer logs each request list but gives no progress measure, and what the remote shows meanwhile is not recorded.
+* **Harmony Elite**, open, waiting on the remote itself: Nothing is read or written at length on an Elite, so nothing reports progress.
+* **Harmony Hub**, open, waiting on the remote itself: Nothing is read or written at length on a hub, so nothing reports progress.
 
 ### R67 Show live which key is pressed on a connected remote.
 
 * **Harmony One**, impossible: On the cable the One's keypad handler stops, so a key press cannot be watched live. `reference/remotes/harmony-one/behaviour.md#on-the-cable`.
-* **Harmony 600**, open: A watch address exists for the 600, but no run names a pressed key live; on the cable only matrix columns were read.
-* **Harmony 650**, open: The key watch uses the Harmony 600's memory address for every remote of its product id, and the 650's is not read.
-* **Harmony 700**, open: The key watch takes the 600's address for this product id; the 700's own address is not chosen.
+* **Harmony 600**, open, waiting on a run on a unit: A watch address exists for the 600, but no run names a pressed key live; on the cable only matrix columns were read.
+* **Harmony 650**, open, waiting on the remote itself: The key watch uses the Harmony 600's memory address for every remote of its product id, and the 650's is not read.
+* **Harmony 700**, open, waiting on the remote itself: The key watch takes the 600's address for this product id; the 700's own address is not chosen.
 * **Harmony 525**, unknown: The scan code's address is read in the firmware, but no live memory read of a running 525 is known. `reference/remotes/harmony-525/keys.md#fifty-keys-and-every-one-is-bound`.
 * **Harmony 515**, unknown: No live memory read of a running 515 is known.
 * **Harmony 885**, proven by `packages/usb/test/transport/watch-keys.test.ts`, "an 880, an 885 and an 880 Pro watch the held key at 0x295 and the last pressed at 0x3a1"; `tests/harmony_880_885/test_harmony_885_keys.py`, "TheBenchLogs.test_every_named_key_raised_its_measured_code_on_unit_a". Shown on a unit in `docs/test-notes/harmony-885.md#5-november-2026-every-key-pressed-watched-over-usb`.
-* **Harmony 785**, open: The key page reads the held key on the 885; it has not been tried on a 785.
+* **Harmony 785**, open, waiting on a run on a unit: The key page reads the held key on the 885; it has not been tried on a 785.
 * **Harmony 300**, unknown: No way to watch key presses live over this family's file protocol is known.
 * **Harmony 350**, unknown: No way to read a key press off a connected 350 is known; its log stays erased.
 * **Harmony Touch**, unknown: Whether a Touch can report key presses live over USB is not known; it is never opened that way.
@@ -1096,31 +1024,31 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R68 A report about a remote this project does not support, which its owner can publish.
 
-* **Every remote**, open: The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the thirteen bench models is recorded.
+* **Every remote**, open, waiting on the FHSDK: The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the thirteen bench models is recorded.
 
 ## Firmware
 
 ### R69 Know the firmware state: running, safe mode or bootloader, and whether a newer version exists.
 
-* **Harmony One**, open: The version block shows running or safe mode, but nothing knows whether a newer firmware exists.
-* **Harmony 600**, open: Safe mode and the bootloader are not checked on a 600, and Logitech's version list is not in the libraries.
-* **Harmony 650**, open: The version is read, but safe mode was never entered on a 650 and nothing knows whether a newer version exists.
-* **Harmony 700**, open: Safe mode was recognised on this unit, but nothing tells whether a newer firmware exists.
-* **Harmony 525**, open: Safe mode is told apart by the version block measured on the unit, but nothing says whether newer firmware exists.
-* **Harmony 515**, open: Nothing tells a 515 in safe mode from a running one by its own measurement, and safe mode must not be entered to find out.
-* **Harmony 885**, open: Nothing tells an 885 in its bootloader from a running one, and no list of firmware versions is held.
-* **Harmony 785**, open: Nothing tells a 785 in its bootloader from a running one, and the two units carry different bootloader builds.
-* **Harmony 300**, open: Nothing reports safe mode or the bootloader for this family, nor whether newer firmware exists.
-* **Harmony 350**, open: Safe mode shows in the product string and identity file, but nothing reports the state or a newer version.
-* **Harmony Touch**, open: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
-* **Harmony Elite**, open: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
-* **Harmony Hub**, open: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
+* **Harmony One**, open, waiting on the FHSDK: The version block shows running or safe mode, but nothing knows whether a newer firmware exists.
+* **Harmony 600**, open, waiting on the FHSDK and the remote itself: Safe mode and the bootloader are not checked on a 600, and Logitech's version list is not in the libraries.
+* **Harmony 650**, open, waiting on the FHSDK and the remote itself: The version is read, but safe mode was never entered on a 650 and nothing knows whether a newer version exists.
+* **Harmony 700**, open, waiting on the FHSDK: Safe mode was recognised on this unit, but nothing tells whether a newer firmware exists.
+* **Harmony 525**, open, waiting on the FHSDK: Safe mode is told apart by the version block measured on the unit, but nothing says whether newer firmware exists.
+* **Harmony 515**, open, waiting on the FHSDK and the remote itself: Nothing tells a 515 in safe mode from a running one by its own measurement, and safe mode must not be entered to find out.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing tells an 885 in its bootloader from a running one, and no list of firmware versions is held.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing tells a 785 in its bootloader from a running one, and the two units carry different bootloader builds.
+* **Harmony 300**, open, waiting on the FHSDK and its family: Nothing reports safe mode or the bootloader for this family, nor whether newer firmware exists.
+* **Harmony 350**, open, waiting on the FHSDK and its family: Safe mode shows in the product string and identity file, but nothing reports the state or a newer version.
+* **Harmony Touch**, open, waiting on the FHSDK and its family: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: The firmware version is read, but its running or recovery state and whether a newer version exists are not.
 
 ### R70 Install Logitech's own unmodified firmware, from a file the user has or from Logitech's update service; the 600, 650 and 700 only, by decision 18.
 
 * **Harmony One**, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
-* **Harmony 600**, open: Staging and reinstall exist for this family but were never sent to a 600, and its newer image is not obtainable.
-* **Harmony 650**, open: The staging write and reinstall were never sent to a 650, and Logitech's update service does not serve it.
+* **Harmony 600**, open, waiting on the remote itself: Staging and reinstall exist for this family but were never sent to a 600, and its newer image is not obtainable.
+* **Harmony 650**, open, waiting on the remote itself: The staging write and reinstall were never sent to a 650, and Logitech's update service does not serve it.
 * **Harmony 700**, proven by `packages/usb/test/write/firmware.test.ts`, "after staging and installing 2.8, the application is the 2.8 image and nothing else in internal flash or the staging region changed". Shown on a unit in `docs/test-notes/harmony-700.md#arrival-and-repair`.
 * **Harmony 525**, impossible: Logitech publishes no firmware package for the 525, and decision 18 allows the install on the 600, 650 and 700 only. `reference/remotes/harmony-525/firmware.md#harmony-525-firmware`.
 * **Harmony 515**, impossible: Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here. `docs/decisions.md#d18`.
@@ -1134,37 +1062,37 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R71 Bring a stuck remote back.
 
-* **Harmony One**, open: Nothing in the FHSDK brings a stuck One back; the recovery paths built are other models'.
-* **Harmony 600**, open: The reinstall request was never sent to a 600, and its safe mode is not checked.
-* **Harmony 650**, open: No recovery has been tried on a 650, and it has no staged application to reinstall.
+* **Harmony One**, open, waiting on its family: Nothing in the FHSDK brings a stuck One back; the recovery paths built are other models'.
+* **Harmony 600**, open, waiting on the remote itself: The reinstall request was never sent to a 600, and its safe mode is not checked.
+* **Harmony 650**, open, waiting on the remote itself: No recovery has been tried on a 650, and it has no staged application to reinstall.
 * **Harmony 700**, proven by `packages/usb/test/write/firmware.test.ts`, "after the reinstall the application is the staged image, and only the damaged page changed". Shown on a unit in `docs/test-notes/harmony-700.md#arrival-and-repair`.
-* **Harmony 525**, open: The unit left safe mode once, by hand, from a lab script; no library function does it.
-* **Harmony 515**, open: Nothing in the libraries brings a stuck 515 back.
-* **Harmony 885**, open: Nothing in the libraries brings a stuck 885 back; its recovery has only been read in the firmware.
-* **Harmony 785**, open: Nothing in the libraries brings a stuck 785 back.
-* **Harmony 300**, open: A battery pull recovered the unit; nothing recovers a stuck 300, whose safe mode image is a different, unread build.
-* **Harmony 350**, open: A failed write was recovered by writing again on the unit; recovering through safe mode is not offered.
+* **Harmony 525**, open, waiting on its family: The unit left safe mode once, by hand, from a lab script; no library function does it.
+* **Harmony 515**, open, waiting on its family: Nothing in the libraries brings a stuck 515 back.
+* **Harmony 885**, open, waiting on its family: Nothing in the libraries brings a stuck 885 back; its recovery has only been read in the firmware.
+* **Harmony 785**, open, waiting on its family: Nothing in the libraries brings a stuck 785 back.
+* **Harmony 300**, open, waiting on its family and the remote itself: A battery pull recovered the unit; nothing recovers a stuck 300, whose safe mode image is a different, unread build.
+* **Harmony 350**, open, waiting on its family: A failed write was recovered by writing again on the unit; recovering through safe mode is not offered.
 * **Harmony Touch**, proven by `packages/usb/test/touch/touchsession.test.ts`, "sends each recovery request in the provisioning read's shape with the flag, one line each"; `tests/harmony_touch/test_harmony_touch_recovery.py`, "TheCableStillReachesTheEngine.test_the_abort_cleans_the_store_before_it_reloads". Shown on a unit in `packages/usb/test/touch/touch-first-sync.test.ts`, `docs/test-notes/harmony-touch.md`.
-* **Harmony Elite**, open: The recovery requests are refused to an Elite by its rail, and nothing else brings one back.
-* **Harmony Hub**, open: Nothing brings a stuck hub back, and its own recovery is not read.
+* **Harmony Elite**, open, waiting on the remote itself: The recovery requests are refused to an Elite by its rail, and nothing else brings one back.
+* **Harmony Hub**, open, waiting on its family and the remote itself: Nothing brings a stuck hub back, and its own recovery is not read.
 
 ## Logitech's service
 
 ### R72 Import devices and activities from the user's own Logitech account, if they ask and give their own credentials; the app works the same without it.
 
-* **Harmony One**, open: Logitech's service serves the One, but its client is tied to test accounts and is on no public entry.
-* **Harmony 600**, open: Logitech's service serves the 600, but the FHSDK's account client is on no public entry.
-* **Harmony 650**, open: Logitech's service still serves the 650, but our client is tied to the test accounts and is on no public entry.
-* **Harmony 700**, open: Logitech's service still answers for the 700, but its client is bound to test accounts and on no public entry.
+* **Harmony One**, open, waiting on the FHSDK: Logitech's service serves the One, but its client is tied to test accounts and is on no public entry.
+* **Harmony 600**, open, waiting on the FHSDK: Logitech's service serves the 600, but the FHSDK's account client is on no public entry.
+* **Harmony 650**, open, waiting on the FHSDK: Logitech's service still serves the 650, but our client is tied to the test accounts and is on no public entry.
+* **Harmony 700**, open, waiting on the FHSDK: Logitech's service still answers for the 700, but its client is bound to test accounts and on no public entry.
 * **Harmony 525**, impossible: Logitech's service has the 525 switched off and compiles nothing for it. `reference/remotes/harmony-525/features.md#logitechs-service-has-the-product-switched-off`.
 * **Harmony 515**, unknown: Whether Logitech's service still serves the 515's skin is not checked.
 * **Harmony 885**, impossible: Logitech's service has the 885's skins switched off and refuses its serial, so it serves no 885 account. `reference/remotes/harmony-885/features.md#logitechs-service`.
 * **Harmony 785**, unknown: Whether Logitech's service still serves the 785's skin is not checked.
-* **Harmony 300**, open: Logitech's service still compiles for the 300, but the client is bound to test accounts and on no public entry.
-* **Harmony 350**, open: Logitech's service serves the 350, but the service client is not on any public entry.
-* **Harmony Touch**, open: Logitech's service serves the Touch, but the service client is on no public entry, so no import is offered.
-* **Harmony Elite**, open: The service client is on no public entry, so no import is offered; whether Logitech's service still sets an Elite up is not checked.
-* **Harmony Hub**, open: The service client is on no public entry, so no import is offered.
+* **Harmony 300**, open, waiting on the FHSDK: Logitech's service still compiles for the 300, but the client is bound to test accounts and on no public entry.
+* **Harmony 350**, open, waiting on the FHSDK: Logitech's service serves the 350, but the service client is not on any public entry.
+* **Harmony Touch**, open, waiting on the FHSDK: Logitech's service serves the Touch, but the service client is on no public entry, so no import is offered.
+* **Harmony Elite**, open, waiting on the FHSDK and the remote itself: The service client is on no public entry, so no import is offered; whether Logitech's service still sets an Elite up is not checked.
+* **Harmony Hub**, open, waiting on the FHSDK: The service client is on no public entry, so no import is offered.
 
 ## The FHSDK as a whole
 
@@ -1178,55 +1106,55 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R75 An app depends on published packages, not on a checkout beside it.
 
-* **Every remote**, open: Every package is private and unpublished, and an application links the folder beside it.
+* **Every remote**, open, waiting on the FHSDK: Every package is private and unpublished, and an application links the folder beside it.
 
 ## What an application builds on
 
 ### R76 Change a recipe through functions that each return a new one and keep it consistent: add, change and remove a device, an activity, a key, a screen item, a sequence and a favourite, with no knowledge of how a recipe is laid out.
 
-* **Every remote**, open: The recipe's types and the reader that checks one are public, but no function changes a recipe.
+* **Every remote**, open, waiting on the FHSDK: The recipe's types and the reader that checks one are public, but no function changes a recipe.
 
 ### R77 Ask a recipe what it holds: what a key does, which devices an activity uses, what is not yet filled in.
 
-* **Every remote**, open: The model a recipe is for and the choices it leaves unstated can be asked; what a key does and which devices an activity uses cannot, short of building.
+* **Every remote**, open, waiting on the FHSDK: The model a recipe is for and the choices it leaves unstated can be asked; what a key does and which devices an activity uses cannot, short of building.
 
 ### R78 Check a recipe without building it, and get every problem as a list, each naming the place it concerns.
 
-* **Every remote**, open: The reader and the builders refuse a recipe at the first problem they meet; nothing returns every problem as a list without building.
+* **Every remote**, open, waiting on the FHSDK: The reader and the builders refuse a recipe at the first problem they meet; nothing returns every problem as a list without building.
 
 ### R79 Write a recipe to a remote through one function for every model, which reports its phases, its progress, what the user must do or leave and its outcome as events, and stops only where it is safe.
 
-* **Every remote**, open: Writing is three functions, one per kind of remote, each reporting lines for a journal; no one function chooses among them or reports events.
+* **Every remote**, open, waiting on the FHSDK: Writing is three functions, one per kind of remote, each reporting lines for a journal; no one function chooses among them or reports events.
 
 ### R80 A pretend remote an application reads and writes with nothing attached, its progress and its failures included.
 
-* **Every remote**, open: A pretend Harmony Touch exists in the test kit, which no application may depend on; no pretend remote is offered.
+* **Every remote**, open, waiting on the FHSDK: A pretend Harmony Touch exists in the test kit, which no application may depend on; no pretend remote is offered.
 
 ### R81 Read the catalogue over the network a device at a time, from its index, kept in a local cache; the whole archive on disk is the other source.
 
-* **Every remote**, open: The archive is read from a checkout on disk, through a source a builder is handed; no source reads it over the network or keeps a cache.
+* **Every remote**, open, waiting on the FHSDK: The archive is read from a checkout on disk, through a source a builder is handed; no source reads it over the network or keeps a cache.
 
 ### R82 Find a device across every source at once, the archive and Logitech's service, each result saying where it came from.
 
-* **Every remote**, open: The catalogue is asked from the archive alone; nothing searches Logitech's service beside it or says per result where it came from.
+* **Every remote**, open, waiting on the FHSDK: The catalogue is asked from the archive alone; nothing searches Logitech's service beside it or says per result where it came from.
 
 ## An existing setup
 
 ### R83 Take over a configuration Logitech's software built as a recipe that rebuilds to the same behaviour, so an existing setup is not entered again.
 
-* **Harmony One**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 600**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 650**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 700**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 525**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 515**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 885**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 785**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 300**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony 350**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
-* **Harmony Touch**, open: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
-* **Harmony Elite**, open: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
-* **Harmony Hub**, open: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
+* **Harmony One**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 600**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 650**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 700**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 525**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 515**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 885**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 785**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 300**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 350**, open, waiting on the FHSDK: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony Touch**, open, waiting on the FHSDK: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
+* **Harmony Elite**, open, waiting on the FHSDK: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
+* **Harmony Hub**, open, waiting on the FHSDK: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
 
 ## The hub
 
@@ -1244,7 +1172,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
 * **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite is its hub's remote, not a hub, and reaches the network through it. `docs/decisions.md#d40`.
-* **Harmony Hub**, open: The listeners and the discovery a hub answers on are read in its image; nothing here looks for a hub or connects to one.
+* **Harmony Hub**, open, waiting on the remote itself: The listeners and the discovery a hub answers on are read in its image; nothing here looks for a hub or connects to one.
 
 ### R85 Set the Wi-Fi network a hub joins, with no service of Logitech's.
 
@@ -1260,7 +1188,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
 * **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite is its hub's remote, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
-* **Harmony Hub**, open: The command that sets the Wi-Fi network and what it drives are read in the hub's image; nothing sends it, and nothing is written to the bench hub.
+* **Harmony Hub**, open, waiting on the remote itself: The command that sets the Wi-Fi network and what it drives are read in the hub's image; nothing sends it, and nothing is written to the bench hub.
 
 ### R86 Take over a hub somebody else set up, so it is the user's own and holds nothing of its previous owner.
 
@@ -1276,7 +1204,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
 * **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite is its hub's remote and takes its setup from the hub it is paired to. `docs/decisions.md#d40`.
-* **Harmony Hub**, open: What a hub clears when it is set up for another account is read in its image; nothing here does it.
+* **Harmony Hub**, open, waiting on the remote itself: What a hub clears when it is set up for another account is read in its image; nothing here does it.
 
 ### R87 Through a hub, start and stop an activity, send one command of a device, and read which activity is on.
 
@@ -1292,7 +1220,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
 * **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite is its hub's remote and is driven by its keys. `docs/decisions.md#d40`.
-* **Harmony Hub**, open: Nothing asks a hub to start an activity, send a command or say which activity is on.
+* **Harmony Hub**, open, waiting on the remote itself: Nothing asks a hub to start an activity, send a command or say which activity is on.
 
 ### R88 Read the smart home devices a hub found, with their kind and what each can do, and leave them intact when a setup is written.
 
@@ -1308,4 +1236,4 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
 * **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
 * **Harmony Elite**, impossible: A hub's own ability by decision 40: the Elite shows the smart home devices its hub found and finds none itself. `docs/decisions.md#d40`.
-* **Harmony Hub**, open: The document the smart home devices are kept in is read in the remotes' image; none has been read off a hub.
+* **Harmony Hub**, open, waiting on the remote itself: The document the smart home devices are kept in is read in the remotes' image; none has been read off a hub.

@@ -19,11 +19,13 @@
  * * `packages/base/src/proofs.ts`, the proofs as data, which an application reads at run time through the base,
  *   since it cannot read test sources. A met is derived from it, so it is the reason this script exists.
  * * `docs/remote-requirements.md`, short: its introduction, kept as written between the `introduction` markers; one
- *   table of where each remote stands; the requirements by subject, number and sentence only.
+ *   table of where each remote stands and one of whose work its open requirements wait on; the requirements by
+ *   subject, number and sentence only.
  * * `docs/remote-requirements-evidence.md`, whole: every status on every model with what it rests on, the proofs'
  *   tests by file and title for a met, the reason for the rest.
  * * a checklist per bench remote in the `todo/` folder, named after the model's key: the requirements possible on
- *   that remote by subject, a box each, ticked where proven, between the `checklist` markers. What stands before and
+ *   that remote by subject, a box each, ticked where proven, an open one saying what it waits on, between the
+ *   `checklist` markers. What stands before and
  *   after the markers, the header and the remote's own work, is kept as written; a checklist that does not exist yet
  *   is written with a header and an empty part for that work.
  *
@@ -38,7 +40,7 @@ import ts from 'typescript';
 import { commandLine } from '@harmony/lab/cli';
 import {
   BENCH_MODELS, REQUIREMENT_SUBJECTS, REQUIREMENTS, requirementStateFrom,
-  type BenchModel, type Proof, type Requirement, type RequirementState, type RequirementStatus,
+  type BenchModel, type Proof, type Requirement, type RequirementState, type RequirementStatus, type RequirementWait,
 } from '@harmony/base/requirements';
 
 /** The repository's root, which every path below and in the proofs is relative to. */
@@ -361,6 +363,25 @@ const perModel = (): Requirement[] => REQUIREMENTS.filter((one) => one.scope ===
 /** A list of repository paths as code spans. */
 const paths = (list: readonly string[]): string => list.map((path) => `\`${path}\``).join(', ');
 
+/** What the documents call each owner of missing work, as the end of "waits on ...". */
+const WAIT_SAID: Readonly<Record<RequirementWait, string>> = {
+  shared: 'the FHSDK', family: 'its family', model: 'the remote itself', bench: 'a run on a unit',
+};
+
+/** What an open status waits on, in words: "the FHSDK and its family". */
+const waitsSaid = (state: RequirementState): string => state.waitsOn.map((wait) => WAIT_SAID[wait]).join(' and ');
+
+/**
+ * The three kinds of open a remote's list is counted in, each open status in exactly one: work of the remote's own
+ * or its family's, whatever else it waits on; work the FHSDK does once for every remote and nothing else; and a
+ * run on a unit alone.
+ */
+const OWNERS: readonly { readonly said: string; readonly has: (state: RequirementState) => boolean }[] = [
+  { said: 'its own or its family\'s work', has: (state) => state.waitsOn.includes('family') || state.waitsOn.includes('model') },
+  { said: 'the FHSDK\'s work alone', has: (state) => state.waitsOn.length === 1 && state.waitsOn[0] === 'shared' },
+  { said: 'a run on a unit alone', has: (state) => state.waitsOn.length === 1 && state.waitsOn[0] === 'bench' },
+];
+
 /** A sentence ends with a full stop, whatever the data's `why` ended with. */
 const sentence = (why: string): string => (why.endsWith('.') ? why : `${why}.`);
 
@@ -387,6 +408,18 @@ export function requirementsDocument(introduction: string, proofs: readonly Proo
     out.push(`| ${model.name} | ${COUNTED.map(of).join(' | ')} | ${of('met')} of ${possible} | ${link} |`);
   }
   out.push('');
+
+  out.push('## What the open ones wait on', '');
+  out.push('Each remote\'s open requirements by whose work is missing, every one counted once: those that need work on the '
+    + 'remote itself or in its family, whatever else they wait on; those that wait only on something the FHSDK does once for '
+    + 'every remote; and those where everything is built and tested and only a run on a unit of the model is missing.', '');
+  out.push(`| remote | open | ${OWNERS.map((owner) => owner.said).join(' | ')} |`);
+  out.push(`|---|---|${OWNERS.map(() => '---').join('|')}|`);
+  for (const model of BENCH_MODELS) {
+    const open = counted.map((one) => state(model, one.number)).filter((one) => one.status === 'open');
+    out.push(`| ${model.name} | ${open.length} | ${OWNERS.map((owner) => open.filter(owner.has).length).join(' | ')} |`);
+  }
+  out.push('');
   const whole = REQUIREMENTS.filter((one) => one.scope === 'whole' && one.withdrawn !== true);
   const wholeSaid = whole.map((one) => `R${one.number} ${SAID[state(BENCH_MODELS[0]!, one.number).status]}`);
   out.push(`The ${whole.length} requirements of the FHSDK as a whole carry one status each, for every remote: ${wholeSaid.join(', ')}.`, '');
@@ -410,7 +443,8 @@ function evidenceOf(state: RequirementState): string {
     return `proven by ${tests.join('; ')}.${bench}`;
   }
   const reference = state.reference.length === 0 ? '' : ` ${paths(state.reference)}.`;
-  return `${SAID[state.status]}: ${sentence(state.why)}${reference}`;
+  const waits = state.status === 'open' ? `, waiting on ${waitsSaid(state)}` : '';
+  return `${SAID[state.status]}${waits}: ${sentence(state.why)}${reference}`;
 }
 
 /** The evidence document, generated whole. */
@@ -448,6 +482,8 @@ function checklistHeader(model: BenchModel): string {
     `Every requirement possible on the ${model.name}, by subject, ticked where a test proves it. The list is generated by`,
     '`make requirements-write` from the requirements data and the proofs in the tests, so a box changes with a test and',
     'never by hand; an impossible requirement is left out, and one marked "find out first" is not known to be possible.',
+    'An open one says in brackets whose work is missing: the FHSDK, done once for every remote; its family; the remote',
+    'itself; or only a run on a unit.',
     'What each requirement means is [the requirements](../docs/remote-requirements.md), and what a box rests on',
     '[the evidence](../docs/remote-requirements-evidence.md).',
   ].join('\n');
@@ -466,16 +502,21 @@ function checklistTail(model: BenchModel): string {
 function checklistItems(model: BenchModel, proofs: readonly Proof[]): string {
   const state = statesFrom(proofs);
   const out: string[] = [];
+  // Whose work the open ones are, counted before the list, so a reader sees how much of it is this remote's.
+  const open = perModel().map((one) => state(model, one.number)).filter((one) => one.status === 'open');
+  const counts = OWNERS.map((owner) => `${open.filter(owner.has).length} ${owner.said}`);
+  out.push(`Open: ${open.length}, of which ${counts[0]}, ${counts[1]} and ${counts[2]}.`, '');
   for (const subject of REQUIREMENT_SUBJECTS) {
     // A requirement of the FHSDK as a whole is no remote's, and a withdrawn one is nobody's.
     const listed = perModel().filter((one) => one.subject === subject)
-      .map((one) => ({ one, status: state(model, one.number).status }))
-      .filter(({ status }) => status !== 'impossible');
+      .map((one) => ({ one, at: state(model, one.number) }))
+      .filter(({ at }) => at.status !== 'impossible');
     if (listed.length === 0) continue;
     out.push(`## ${subject}`, '');
-    for (const { one, status } of listed) {
-      const box = status === 'met' ? '[x]' : '[ ]';
-      out.push(`- ${box} R${one.number} ${one.text}${status === 'unknown' ? ' (find out first)' : ''}`);
+    for (const { one, at } of listed) {
+      const box = at.status === 'met' ? '[x]' : '[ ]';
+      const note = at.status === 'unknown' ? ' (find out first)' : at.status === 'open' ? ` (waits on ${waitsSaid(at)})` : '';
+      out.push(`- ${box} R${one.number} ${one.text}${note}`);
     }
     out.push('');
   }

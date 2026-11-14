@@ -16,16 +16,46 @@ requirement by its number, never at a todo.
 * **met**, which the tables call proven: in the FHSDK, shown by a test in this repository, and, for anything that
   shows on a remote, shown working on a bench unit of that model, by a bench test or a passage of the model's test
   notes in `docs/test-notes/`. A build that passes every test and never ran on the remote is open.
-* **open**: the model can plainly do it and the FHSDK does not yet, or does it without that evidence.
+* **open**: the model can plainly do it and the FHSDK does not yet, or does it without that evidence. An open status
+  says whose work is missing, below.
 * **impossible**: the model cannot, by its hardware or firmware, and a page of `reference/` says so; or this project
   does not do it on that model by a decision, which is then the evidence, as the firmware install is the Harmony 600,
   650 and 700's alone by decision 18.
 * **unknown**: it is not known whether the model can. It counts as open.
 
-An application offers a feature where it is met; the other statuses are for a developer. The requirements of two
-subjects, the FHSDK as a whole and what an application builds on, and R68, the report about a remote this project
-does not support, are about the FHSDK rather than any remote and carry one status for every model. The hub's own
+An application offers a feature where it is met; the other statuses are for a developer. The hub's own
 requirements, R84 to R88, are impossible on every model that is not a hub, by [decision 40](decisions.md#d40).
+
+**Which requirements are a remote's, and which are the FHSDK's as a whole.** An application never changes a
+configuration in place. It changes a recipe, the document of one remote, hands the whole recipe over, and the FHSDK
+builds and writes it in one go. So an ability that only changes what a recipe says, or only asks the catalogue, is the
+same for every model and has one status for all of them; what is a model's is what its family builds from the recipe
+and what the remote then does. The requirements of two subjects are the FHSDK's as a whole, how it is delivered and
+what an application builds on, and so are seven listed under other subjects: finding a device, R9; renaming a device
+or an activity, R12 and R25; Pronto Hex, R20; identifying a device from taught codes, R57; moving a setup between
+models, R60; and the report about a remote this project does not support, R68. They are on no remote's checklist.
+Removing a device or an activity, R13 and R26, is the same kind of ability and stays a model's only because the
+Harmony Touch has it proven on a unit, on the documents it is given; everywhere else it waits on the shared function.
+
+**What an open status waits on.** Open covers work of four different owners, and each open status names its own:
+
+* **the FHSDK**: something missing for every model alike, a thing a recipe cannot state or a function nobody has.
+  It is done once, in `todo.md`'s chapters, and no remote's own work brings it closer.
+* **its family**: the reader, the builder or the protocol of the model's family, or the absence of a family.
+* **the remote itself**: a fact to find out on this model, its write path, its record, a behaviour not explained.
+* **a run on a unit**, named only when it stands alone: everything is built and tested, and the model's bench unit
+  has not shown it.
+
+A status names every owner its written reason names, so most open requirements of a model no family serves wait on
+both the FHSDK and a family. It is read off the reason as written and judged no further: it says where work is known
+to be missing, not that nothing else will turn up once that is done. The second table below counts each remote's open
+requirements by it, and a checklist says it per box.
+
+**Where two requirements touch, the line is this.** R7 is a model's own limits, what its builder and its writer
+refuse; R78 is the form a check takes for an application, every problem as a list without building. R66 is what a
+model's read and write report and what the remote itself shows meanwhile; R79 is the one function that carries that to
+an application as events. R9 is the search in the catalogue; R82 is the same question asked of every source at once.
+R12, R25, R13 and R26 are abilities an application has; R76 is the functions it has them through.
 
 **A met is proven by the test, never written down.** A test that shows a requirement says so itself, with a line
 inside it naming the requirement, the models it proves it for and, where the requirement shows on a remote, the bench
@@ -36,8 +66,8 @@ each with its reason, in `packages/base/src/requirements.ts`; a requirement on a
 both. An application reads statuses at run time and cannot read test sources, so the proofs are generated into
 `packages/base/src/proofs.ts`, which the codec's `capabilitiesOf` answers from together with the model's properties.
 
-**This document is generated**, but for this introduction: one table of where each remote stands, and the
-requirements by subject. What each status rests on, the proving tests by file and title and the reasons for the rest,
+**This document is generated**, but for this introduction: one table of where each remote stands, one of what its
+open requirements wait on, and the requirements by subject. What each status rests on, the proving tests by file and title and the reasons for the rest,
 is [the evidence](remote-requirements-evidence.md), and each bench remote's requirements as a checklist are its file in
 `todo/`, both generated too. After a proof is added to a test or a status changed, run `make requirements-write`;
 `make requirements` fails while any of these files, or the proofs module, differs from what the sources give.
@@ -47,25 +77,45 @@ is [the evidence](remote-requirements-evidence.md), and each bench remote's requ
 
 ## Where each remote stands
 
-Over the 77 requirements that have a status per model. Possible is every one but the impossible ones; the evidence behind each status is [the evidence](remote-requirements-evidence.md), and each remote's list of them its checklist.
+Over the 71 requirements that have a status per model. Possible is every one but the impossible ones; the evidence behind each status is [the evidence](remote-requirements-evidence.md), and each remote's list of them its checklist.
 
 | remote | proven | open | unknown | impossible | proven of possible | checklist |
 |---|---|---|---|---|---|---|
-| Harmony One | 13 | 52 | 2 | 10 | 13 of 67 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
-| Harmony 600 | 16 | 50 | 3 | 8 | 16 of 69 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
-| Harmony 650 | 11 | 55 | 2 | 9 | 11 of 68 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
-| Harmony 700 | 14 | 51 | 4 | 8 | 14 of 69 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
-| Harmony 525 | 7 | 51 | 9 | 10 | 7 of 67 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
-| Harmony 515 | 5 | 53 | 11 | 8 | 5 of 69 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
-| Harmony 885 | 10 | 54 | 3 | 10 | 10 of 67 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
-| Harmony 785 | 4 | 60 | 7 | 6 | 4 of 71 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
-| Harmony 300 | 7 | 40 | 8 | 22 | 7 of 55 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
-| Harmony 350 | 12 | 38 | 6 | 21 | 12 of 56 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
-| Harmony Touch | 23 | 40 | 6 | 8 | 23 of 69 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
-| Harmony Elite | 1 | 61 | 9 | 6 | 1 of 71 | [todo-harmony-elite.md](../todo/todo-harmony-elite.md) |
-| Harmony Hub | 1 | 55 | 13 | 8 | 1 of 69 | [todo-harmony-hub.md](../todo/todo-harmony-hub.md) |
+| Harmony One | 12 | 47 | 2 | 10 | 12 of 61 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
+| Harmony 600 | 15 | 45 | 3 | 8 | 15 of 63 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
+| Harmony 650 | 10 | 50 | 2 | 9 | 10 of 62 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
+| Harmony 700 | 13 | 46 | 4 | 8 | 13 of 63 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
+| Harmony 525 | 6 | 46 | 9 | 10 | 6 of 61 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
+| Harmony 515 | 4 | 48 | 11 | 8 | 4 of 63 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
+| Harmony 885 | 9 | 49 | 3 | 10 | 9 of 61 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
+| Harmony 785 | 3 | 55 | 7 | 6 | 3 of 65 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
+| Harmony 300 | 6 | 36 | 7 | 22 | 6 of 49 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
+| Harmony 350 | 11 | 33 | 6 | 21 | 11 of 50 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
+| Harmony Touch | 22 | 35 | 6 | 8 | 22 of 63 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
+| Harmony Elite | 0 | 56 | 9 | 6 | 0 of 65 | [todo-harmony-elite.md](../todo/todo-harmony-elite.md) |
+| Harmony Hub | 0 | 50 | 13 | 8 | 0 of 63 | [todo-harmony-hub.md](../todo/todo-harmony-hub.md) |
 
-The 11 requirements of the FHSDK as a whole carry one status each, for every remote: R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 open, R81 open, R82 open.
+## What the open ones wait on
+
+Each remote's open requirements by whose work is missing, every one counted once: those that need work on the remote itself or in its family, whatever else they wait on; those that wait only on something the FHSDK does once for every remote; and those where everything is built and tested and only a run on a unit of the model is missing.
+
+| remote | open | its own or its family's work | the FHSDK's work alone | a run on a unit alone |
+|---|---|---|---|---|
+| Harmony One | 47 | 27 | 16 | 4 |
+| Harmony 600 | 45 | 23 | 17 | 5 |
+| Harmony 650 | 50 | 23 | 18 | 9 |
+| Harmony 700 | 46 | 22 | 18 | 6 |
+| Harmony 525 | 46 | 44 | 2 | 0 |
+| Harmony 515 | 48 | 47 | 1 | 0 |
+| Harmony 885 | 49 | 44 | 4 | 1 |
+| Harmony 785 | 55 | 53 | 1 | 1 |
+| Harmony 300 | 36 | 19 | 15 | 2 |
+| Harmony 350 | 33 | 18 | 15 | 0 |
+| Harmony Touch | 35 | 20 | 8 | 7 |
+| Harmony Elite | 56 | 54 | 1 | 1 |
+| Harmony Hub | 50 | 47 | 2 | 1 |
+
+The 17 requirements of the FHSDK as a whole carry one status each, for every remote: R9 open, R12 open, R20 proven, R25 open, R57 open, R60 open, R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 open, R81 open, R82 open.
 
 ## The requirements
 
