@@ -42,8 +42,8 @@ const NOT_BUILT: Record<string, number> = {
 
 /** The functions of the toolkit that are built, each held by a test of its own below. */
 const BUILT = [
-  'activities', 'addActivity', 'addDevice', 'check', 'commands', 'create', 'devices', 'inputs', 'move', 'open', 'remove',
-  'setActivity', 'setDevice', 'setKey', 'unfilled', 'uses',
+  'activities', 'addActivity', 'addDevice', 'check', 'commands', 'create', 'devices', 'inputs', 'keyNames', 'move', 'open',
+  'remove', 'setActivity', 'setDevice', 'setKey', 'unfilled', 'uses',
 ];
 
 /** What a call threw, or undefined where it returned. A promise that rejects counts as a throw. */
@@ -232,7 +232,7 @@ test('a document that did not come through create or open is refused by name, si
     () => recipe.check(unopened), () => recipe.devices(unopened), () => recipe.activities(unopened), () => recipe.unfilled(unopened),
     () => recipe.addDevice(unopened, { name: 'Receiver', device: carried('Made/AVR') }),
     () => recipe.addActivity(unopened, { name: 'Listen', type: 'ListenToMusic', devices: [] }),
-    () => recipe.setKey(unopened, { owner: { device: 'd1' }, scan: 3 }, 'default'),
+    () => recipe.setKey(unopened, { owner: { device: 'd1' }, key: 'VolumeUp' }, 'default'),
   ]) {
     assert.throws(call, /device Television has no id: a document comes through recipe.open or recipe.create/);
   }
@@ -304,54 +304,82 @@ test('an activity is refused with a device the document does not hold or names t
 
 test('a key\'s choice is stated in its owner\'s map, replaced by the next, and given back by default, which leaves the document as it was', () => {
   const document = small();
-  const key = { owner: { activity: 'a1' }, scan: 3 } as const;
+  const key = { owner: { activity: 'a1' }, key: 'VolumeUp' } as const;
   const chosen = recipe.setKey(document, key, { device: 'd1', command: 'VolumeUp' }).document;
   // The activity's map and nothing else: the choice names the device as the recipe does, by its name.
-  assert.deepEqual(chosen.activities[0]!.keys, [{ scan: 3, action: { device: 'Television', command: 'VolumeUp' } }]);
+  assert.deepEqual(chosen.activities[0]!.keys, [{ key: 'VolumeUp', action: { device: 'Television', command: 'VolumeUp' } }]);
   assert.deepEqual(chosen.devices, document.devices);
   assert.deepEqual(readRecipe(JSON.parse(JSON.stringify(chosen))), chosen);
   // A second choice for the same key replaces the first, and one for another key stands beside it.
   const again = recipe.setKey(chosen, key, { nothing: true }).document;
-  assert.deepEqual(again.activities[0]!.keys, [{ scan: 3, action: { nothing: true } }]);
-  const both = recipe.setKey(again, { owner: { activity: 'a1' }, scan: 4 }, { device: 'd2', command: 'VolumeDown' }).document;
-  assert.deepEqual(both.activities[0]!.keys!.map((one) => one.scan), [3, 4]);
+  assert.deepEqual(again.activities[0]!.keys, [{ key: 'VolumeUp', action: { nothing: true } }]);
+  const both = recipe.setKey(again, { owner: { activity: 'a1' }, key: 'VolumeDown' }, { device: 'd2', command: 'VolumeDown' }).document;
+  assert.deepEqual(both.activities[0]!.keys!.map((one) => one.key), ['VolumeUp', 'VolumeDown']);
   // Given back one at a time, the document is the one before any choice, with no empty field left behind.
-  const back = recipe.setKey(recipe.setKey(both, key, 'default').document, { owner: { activity: 'a1' }, scan: 4 }, 'default').document;
+  const back = recipe.setKey(recipe.setKey(both, key, 'default').document, { owner: { activity: 'a1' }, key: 'VolumeDown' }, 'default').document;
   assert.deepEqual(back, document);
   // A device's own map takes a command of another device: the receiver's volume on the television's volume key.
-  const mode = recipe.setKey(document, { owner: { device: 'd1' }, scan: 3 }, { device: 'd2', command: 'VolumeUp' }).document;
-  assert.deepEqual(mode.devices[0]!.keys, [{ scan: 3, action: { device: 'Receiver', command: 'VolumeUp' } }]);
+  const mode = recipe.setKey(document, { owner: { device: 'd1' }, key: 'VolumeUp' }, { device: 'd2', command: 'VolumeUp' }).document;
+  assert.deepEqual(mode.devices[0]!.keys, [{ key: 'VolumeUp', action: { device: 'Receiver', command: 'VolumeUp' } }]);
   assert.deepEqual(mode.activities, document.activities);
 });
 
 test('a key\'s choice is refused for an owner, a device or a command the document does not hold, and a held press and a sequence refuse as not built', () => {
   const document = small();
-  const key = { owner: { activity: 'a1' }, scan: 3 } as const;
+  const key = { owner: { activity: 'a1' }, key: 'VolumeUp' } as const;
   const place = { kind: 'key', ...key };
-  assert.deepEqual(refused(() => recipe.setKey(document, { owner: { activity: 'a9' }, scan: 3 }, { nothing: true })), ['unknown', { kind: 'activity', activity: 'a9' }]);
-  assert.deepEqual(refused(() => recipe.setKey(document, { owner: { device: 'd9' }, scan: 3 }, { nothing: true })), ['unknown', { kind: 'device', device: 'd9' }]);
+  assert.deepEqual(refused(() => recipe.setKey(document, { owner: { activity: 'a9' }, key: 'VolumeUp' }, { nothing: true })), ['unknown', { kind: 'activity', activity: 'a9' }]);
+  assert.deepEqual(refused(() => recipe.setKey(document, { owner: { device: 'd9' }, key: 'VolumeUp' }, { nothing: true })), ['unknown', { kind: 'device', device: 'd9' }]);
   assert.deepEqual(refused(() => recipe.setKey(document, key, { device: 'd9', command: 'VolumeUp' })), ['unknown', { kind: 'device', device: 'd9' }]);
   assert.deepEqual(refused(() => recipe.setKey(document, key, { device: 'd1', command: 'Dance' })), ['unknown', { kind: 'command', device: 'd1', command: 'Dance' }]);
-  assert.deepEqual(refused(() => recipe.setKey(document, { ...key, scan: -1 }, { nothing: true })), ['invalid', { ...place, scan: -1 }]);
+  assert.deepEqual(refused(() => recipe.setKey(document, { ...key, key: '' }, { nothing: true })), ['invalid', { ...place, key: '' }]);
   assert.throws(() => recipe.setKey(document, { ...key, press: 'held' }, { nothing: true }),
     (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for a held press' && error.requirement === 38);
   assert.throws(() => recipe.setKey(document, key, { sequence: 's1' }),
     (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for a sequence' && error.requirement === 37);
-  // A key the model's maps do not bind: the Harmony One's Activities key, scan 34, which no map binds.
-  assert.deepEqual(refused(() => recipe.setKey(document, { ...key, scan: 34 }, { nothing: true })), ['unknown', { ...place, scan: 34 }]);
+  // A key the model's maps do not bind: the Harmony One's Activities key, which its drawing names and no map binds.
+  assert.deepEqual(refused(() => recipe.setKey(document, { ...key, key: 'Activities' }, { nothing: true })), ['unknown', { ...place, key: 'Activities' }]);
   // A model whose builder takes no key's choice yet refuses by name, with the requirement of the map asked for,
   // and gives a choice it holds back all the same.
-  const other = recipe.open({ ...least(), devices: [{ name: 'Television', device: 'Sony/KDL-32W705B', keys: [{ scan: 3, action: { nothing: true } }] }] });
-  assert.throws(() => recipe.setKey(other, { owner: { device: 'd1' }, scan: 3 }, { nothing: true }),
+  const other = recipe.open({ ...least(), devices: [{ name: 'Television', device: 'Sony/KDL-32W705B', keys: [{ key: 'VolumeUp', action: { nothing: true } }] }] });
+  assert.throws(() => recipe.setKey(other, { owner: { device: 'd1' }, key: 'VolumeUp' }, { nothing: true }),
     (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for the Harmony 650' && error.requirement === 32);
-  assert.throws(() => recipe.setKey(other, { owner: { activity: 'a1' }, scan: 3 }, { nothing: true }),
+  assert.throws(() => recipe.setKey(other, { owner: { activity: 'a1' }, key: 'VolumeUp' }, { nothing: true }),
     (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for the Harmony 650' && error.requirement === 31);
-  assert.equal('keys' in recipe.setKey(other, { owner: { device: 'd1' }, scan: 3 }, 'default').document.devices[0]!, false);
+  assert.equal('keys' in recipe.setKey(other, { owner: { device: 'd1' }, key: 'VolumeUp' }, 'default').document.devices[0]!, false);
   // A device that carries no definition takes any command's name, since nothing here can say otherwise: the
   // build, which is given a catalogue, is where that one is refused.
   const bare = recipe.open({ ...least(), model: ONE });
-  assert.deepEqual(recipe.setKey(bare, { owner: { device: 'd1' }, scan: 3 }, { device: 'd1', command: 'Dance' }).document.devices[0]!.keys,
-    [{ scan: 3, action: { device: 'Television', command: 'Dance' } }]);
+  assert.deepEqual(recipe.setKey(bare, { owner: { device: 'd1' }, key: 'VolumeUp' }, { device: 'd1', command: 'Dance' }).document.devices[0]!.keys,
+    [{ key: 'VolumeUp', action: { device: 'Television', command: 'Dance' } }]);
+});
+
+test('the keys a document\'s model lets a person choose are its family\'s words, 37 on the Harmony One and each one setKey takes, and a model whose family builds none refuses by name', () => {
+  const document = small();
+  const names = recipe.keyNames(document);
+  // Every keypad key a Harmony One map binds, by Logitech's word, in the family's order, which is by scan.
+  assert.equal(names.length, 37);
+  assert.equal(new Set(names).size, 37);
+  assert.deepEqual([names[0], names[12], names[36]], ['Number4', 'Enter', 'Menu']);
+  // Each one is a key setKey takes, in an activity's map and in a device's own, and none is a number.
+  for (const name of names) {
+    assert.deepEqual(recipe.setKey(document, { owner: { activity: 'a1' }, key: name }, { nothing: true }).document.activities[0]!.keys, [{ key: name, action: { nothing: true } }]);
+    assert.deepEqual(recipe.setKey(document, { owner: { device: 'd1' }, key: name }, { nothing: true }).document.devices[0]!.keys, [{ key: name, action: { nothing: true } }]);
+  }
+  // The control: the three keys the drawing names that no map binds are not offered, and setKey refuses each.
+  for (const name of ['Activities', 'Help', 'Off']) {
+    assert.equal(names.includes(name), false);
+    assert.deepEqual(refused(() => recipe.setKey(document, { owner: { activity: 'a1' }, key: name }, { nothing: true })), ['unknown', { kind: 'key', owner: { activity: 'a1' }, key: name }]);
+  }
+  // The answer is the caller's copy: changing it changes no later answer.
+  names.pop();
+  assert.equal(recipe.keyNames(document).length, 37);
+  // A model whose family builds no key's choice yet refuses by name, rather than answering that it has no keys; a
+  // model no family serves is refused as a model nothing builds for.
+  assert.throws(() => recipe.keyNames(recipe.open(least())),
+    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.keyNames for the Harmony 650' && error.requirement === 31);
+  assert.throws(() => recipe.keyNames(readRecipe({ ...least(), model: { name: 'Harmony 525' } })),
+    (error: unknown) => error instanceof RecipeError && /no family serves/.test(error.message));
 });
 
 test('the check lists every problem with its place and code, and a document without the fault lists none', () => {
@@ -375,33 +403,34 @@ test('the check lists every problem with its place and code, and a document with
   // A key given a command its device does not have, a device that is not there, a held press and a sequence.
   assert.deepEqual(codes(damaged((json) => {
     json.activities[0]!['keys'] = [
-      { scan: 3, action: { device: 'Television', command: 'Dance' } },
-      { scan: 4, action: { device: 'Amplifier', command: 'VolumeUp' } },
-      { scan: 9, press: 'held', action: { nothing: true } },
-      { scan: 5, action: { sequence: 'Movie night' } },
+      { key: 'VolumeUp', action: { device: 'Television', command: 'Dance' } },
+      { key: 'VolumeDown', action: { device: 'Amplifier', command: 'VolumeUp' } },
+      { key: 'VolumeMute', press: 'held', action: { nothing: true } },
+      { key: 'Rewind', action: { sequence: 'Movie night' } },
     ];
   })), [
-    ['error', 'unknown-command', { kind: 'key', owner: { activity: 'a1' }, scan: 3 }],
-    ['error', 'unknown-device', { kind: 'key', owner: { activity: 'a1' }, scan: 4 }],
-    ['error', 'not-on-this-model', { kind: 'key', owner: { activity: 'a1' }, scan: 9, press: 'held' }],
-    ['error', 'not-on-this-model', { kind: 'key', owner: { activity: 'a1' }, scan: 5 }],
+    ['error', 'unknown-command', { kind: 'key', owner: { activity: 'a1' }, key: 'VolumeUp' }],
+    ['error', 'unknown-device', { kind: 'key', owner: { activity: 'a1' }, key: 'VolumeDown' }],
+    ['error', 'not-on-this-model', { kind: 'key', owner: { activity: 'a1' }, key: 'VolumeMute', press: 'held' }],
+    ['error', 'not-on-this-model', { kind: 'key', owner: { activity: 'a1' }, key: 'Rewind' }],
   ]);
   // The same in a device's own map.
-  assert.deepEqual(codes(damaged((json) => { json.devices[1]!['keys'] = [{ scan: 3, action: { device: 'Television', command: 'Dance' } }]; })),
-    [['error', 'unknown-command', { kind: 'key', owner: { device: 'd2' }, scan: 3 }]]);
-  // A key the model's maps do not bind, the Harmony One's Activities key, in either map.
-  assert.deepEqual(codes(damaged((json) => { json.devices[0]!['keys'] = [{ scan: 34, action: { nothing: true } }]; json.activities[0]!['keys'] = [{ scan: 41, action: { nothing: true } }]; })), [
-    ['error', 'unknown-key', { kind: 'key', owner: { device: 'd1' }, scan: 34 }],
-    ['error', 'unknown-key', { kind: 'key', owner: { activity: 'a1' }, scan: 41 }],
+  assert.deepEqual(codes(damaged((json) => { json.devices[1]!['keys'] = [{ key: 'VolumeUp', action: { device: 'Television', command: 'Dance' } }]; })),
+    [['error', 'unknown-command', { kind: 'key', owner: { device: 'd2' }, key: 'VolumeUp' }]]);
+  // A key the model's maps do not bind: the Harmony One's Activities key in a device's own map, and in an activity's
+  // a word the Harmony One has no key of at all, the Harmony Touch's Favorites.
+  assert.deepEqual(codes(damaged((json) => { json.devices[0]!['keys'] = [{ key: 'Activities', action: { nothing: true } }]; json.activities[0]!['keys'] = [{ key: 'Favorites', action: { nothing: true } }]; })), [
+    ['error', 'unknown-key', { kind: 'key', owner: { device: 'd1' }, key: 'Activities' }],
+    ['error', 'unknown-key', { kind: 'key', owner: { activity: 'a1' }, key: 'Favorites' }],
   ]);
   // A key's choice on a model whose builder takes none yet: the same file for a Harmony 650, and its control,
   // the same file without the choice, which lists nothing.
   const onA650 = (keys: boolean): [string, string, unknown][] => codes(recipe.open({
     model: { name: 'Harmony 650' },
-    devices: [{ name: 'Television', device: 'Made/TV', definition: carried('Made/TV').definition, ...(keys ? { keys: [{ scan: 3, action: { nothing: true } }] } : {}) }],
+    devices: [{ name: 'Television', device: 'Made/TV', definition: carried('Made/TV').definition, ...(keys ? { keys: [{ key: 'VolumeUp', action: { nothing: true } }] } : {}) }],
     activities: [],
   }));
-  assert.deepEqual(onA650(true), [['error', 'not-on-this-model', { kind: 'key', owner: { device: 'd1' }, scan: 3 }]]);
+  assert.deepEqual(onA650(true), [['error', 'not-on-this-model', { kind: 'key', owner: { device: 'd1' }, key: 'VolumeUp' }]]);
   assert.deepEqual(onA650(false), []);
   // Two devices and two activities under one name: the later one of each is the problem.
   assert.deepEqual(codes(damaged((json) => { json.devices[1]!['name'] = 'Television'; (json.activities[0]!['devices'] as Json[])[1]!['device'] = 'Television'; json.activities[0]!['devices'] = [(json.activities[0]!['devices'] as Json[])[0]]; })),
@@ -450,7 +479,7 @@ function everywhere(): ReturnType<typeof recipe.open> {
     model: ONE,
     devices: [
       { name: 'Television', device: 'Made/TV', poweredOnBetweenActivities: true, key: { place: 0 } },
-      { name: 'Receiver', device: 'Made/AVR', keys: [{ scan: 3, action: { device: 'Television', command: 'VolumeUp' } }] },
+      { name: 'Receiver', device: 'Made/AVR', keys: [{ key: 'VolumeUp', action: { device: 'Television', command: 'VolumeUp' } }] },
     ],
     activities: [
       {
@@ -463,8 +492,8 @@ function everywhere(): ReturnType<typeof recipe.open> {
           { sequence: 'Alone', steps: [{ device: 'Television', scan: 3 }, { pause: 5 }] },
         ],
         keys: [
-          { scan: 3, action: { device: 'Television', command: 'VolumeUp' } },
-          { scan: 4, action: { device: 'Receiver', command: 'VolumeDown' } },
+          { key: 'VolumeUp', action: { device: 'Television', command: 'VolumeUp' } },
+          { key: 'VolumeDown', action: { device: 'Receiver', command: 'VolumeDown' } },
         ],
       },
       { name: 'Listen', type: 'ListenToMusic', devices: [{ device: 'Receiver', roles: ['Volume'] }] },
@@ -558,12 +587,12 @@ test('what uses a device is every place that names it, and removing it settles e
   const document = everywhere();
   const places = recipe.uses(document, { device: 'd1' });
   assert.deepEqual(places, [
-    { kind: 'key', owner: { device: 'd2' }, scan: 3 },
+    { kind: 'key', owner: { device: 'd2' }, key: 'VolumeUp' },
     { kind: 'activity-device', activity: 'a1', device: 'd1' },
     { kind: 'screen-item', owner: { activity: 'a1' }, item: 0 },
     { kind: 'screen-item', owner: { activity: 'a1' }, item: 2 },
     { kind: 'screen-item', owner: { activity: 'a1' }, item: 3 },
-    { kind: 'key', owner: { activity: 'a1' }, scan: 3 },
+    { kind: 'key', owner: { activity: 'a1' }, key: 'VolumeUp' },
     { kind: 'favourite', device: 'd1', favourite: 0 },
   ]);
   const change = recipe.remove(document, { device: 'd1' });
@@ -578,7 +607,7 @@ test('what uses a device is every place that names it, and removing it settles e
     id: 'a1', name: 'Watch TV', type: 'WatchTV', devices: [{ device: 'Receiver', roles: ['Volume'] }],
     // The sequence with a step of the receiver's keeps it and its pause; the one left with a pause alone is gone.
     screen: [{ device: 'Receiver', command: 'Dolby' }, { sequence: 'Both', steps: [{ pause: 5 }, { device: 'Receiver', scan: 4 }] }],
-    keys: [{ scan: 4, action: { device: 'Receiver', command: 'VolumeDown' } }],
+    keys: [{ key: 'VolumeDown', action: { device: 'Receiver', command: 'VolumeDown' } }],
   });
   assert.deepEqual(change.document.activities[1], document.activities[1]);
   assert.equal('favourites' in change.document, false);
@@ -664,7 +693,7 @@ test('a document that carries a remote\'s own documents\' part is changed by not
     ['addActivity', () => recipe.addActivity(document, { name: 'Listen', type: 'ListenToMusic', devices: [] })],
     ['setDevice', () => recipe.setDevice(document, 'd1', { name: 'Screen' })],
     ['setActivity', () => recipe.setActivity(document, 'a1', { name: 'Films' })],
-    ['setKey', () => recipe.setKey(document, { owner: { device: 'd1' }, scan: 3 }, { nothing: true })],
+    ['setKey', () => recipe.setKey(document, { owner: { device: 'd1' }, key: 'VolumeUp' }, { nothing: true })],
     ['remove', () => recipe.remove(document, { device: 'd1' })],
     ['move', () => recipe.move(document, { device: 'd1' }, 0)],
   ];

@@ -1,7 +1,9 @@
 /**
  * **A recipe's key choices built on the Harmony One**, requirements R31 and R32: a key an activity's map or a device
  * mode's map is given otherwise in the recipe, `RecipeKey`, sends the command it names, or nothing, and every other key
- * of every map is what the build without the choice gives.
+ * of every map is what the build without the choice gives. The recipe names each key by Logitech's word for it,
+ * `VolumeUp`, `Info`, `VolumeMute`, and the family turns the word into its scan, `ONE_KEYPAD_KEYS` in
+ * `families/harmony-one/recipekeys.ts`; the readers report scans, so what a build bound is read back by scan.
  *
  * **The claims, and why each is believed.**
  *
@@ -29,13 +31,23 @@
  * 6. **The choice is the only byte that moves.** Each chosen key replaces a key already bound, so the builds are the
  *    same length and differ in the chosen entries' bytes and the trailer checksum alone: the look, the screens and
  *    every builder after the composers come out the same, which the key reading alone could not show.
- * 7. **What is not built refuses by name**: a held press, a sequence, a scan no map binds, a device the recipe does not
+ * 7. **What is not built refuses by name**: a held press, a sequence, a word no map binds, a device the recipe does not
  *    hold, a command the definition does not have; and a recipe stating keys for a family that builds none, the Harmony
  *    600, 650 and 700, the 300 and 350 and the Harmony Touch, both through the one build and through the family's own
  *    route, so that no route builds the file without the choice.
  * 8. **A recipe with no key choices builds what it built before**: the references' fingerprints,
  *    `test/recipe/references.test.ts`, are unchanged, and the build here without choices is checked against
  *    `one-test`'s recorded fingerprint too.
+ * 9. **Naming a key by its word builds what naming it by its scan built.** Until the recipe named keys by word, a
+ *    choice named its key by scan code, 3 for VolumeUp, 10 for Info and 9 for VolumeMute. The two builds with choices
+ *    here were built from those scan documents by the code before the change, at the same moment, and their
+ *    fingerprints recorded below; the same choices by word build to the same fingerprints, so the translation from
+ *    a word to its scan inside the family moved no byte. The bench's own document, synced to the spare Harmony One
+ *    by scan, is rebuilt by word in `packages/bench/test/harmony-one/one-key-choices-runs.test.ts` and equals the
+ *    remote's bytes, a second sample of the same claim.
+ * 10. **The family's words are 37, one per keypad scan a map binds**, `ONE_KEYPAD_SCANS`, each scan once; a word not
+ *    in it has no scan. That they are the drawing's words for the same scans is held on the drawing's side,
+ *    `packages/silhouettes/test/recipekeys.test.ts`, since the codec does not depend on the drawing's package.
  *
  * **Controls.** The comparison finds no difference between a build and itself, and it rejects a wrong expectation: the
  * differences of the build with choices are not those of a key one scan off. The byte check rejects the build with
@@ -58,6 +70,7 @@ import { handlerSets, modeRecords, taggedList, diffRanges } from '../../../src/i
 import { TRAILER_CHECKSUM_OFFSET } from '../../../src/container/gspm.ts';
 import { composeSetup, AssemblyError } from '../../../src/build.ts';
 import { buildEmptyOneConfiguration } from '../../../src/families/harmony-one/empty.ts';
+import { ONE_KEYPAD_SCANS, ONE_RECIPE_KEYS } from '../../../src/families/harmony-one/recipekeys.ts';
 import { carriedCatalogue } from '../../../src/catalogue/carried.ts';
 import { chooseByModel } from '../../../src/families/registry.ts';
 import { readTouchSetupFile } from '../../../src/families/harmony-touch/fromnothing.ts';
@@ -156,15 +169,15 @@ const built = () => {
   builds ??= {
     base: configuration(recipeJson('one-test')),
     chosen: configuration(withKeys({
-      devices: { 'LG TV': [{ scan: 3, action: { device: 'Denon', command: 'VolumeUp' } }] },
+      devices: { 'LG TV': [{ key: 'VolumeUp', action: { device: 'Denon', command: 'VolumeUp' } }] },
       activities: {
-        'TV kijken': [{ scan: 10, action: { device: 'LG TV', command: 'Info' } }],
-        Muziek: [{ scan: 10, action: { device: 'Denon', command: 'Info' } }],
+        'TV kijken': [{ key: 'Info', action: { device: 'LG TV', command: 'Info' } }],
+        Muziek: [{ key: 'Info', action: { device: 'Denon', command: 'Info' } }],
       },
     })),
     nothing: configuration(withKeys({
-      devices: { Denon: [{ scan: 9, action: { nothing: true } }] },
-      activities: { 'TV kijken': [{ scan: 9, press: 'short', action: { nothing: true } }] },
+      devices: { Denon: [{ key: 'VolumeMute', action: { nothing: true } }] },
+      activities: { 'TV kijken': [{ key: 'VolumeMute', press: 'short', action: { nothing: true } }] },
     })),
   };
   return builds;
@@ -173,6 +186,40 @@ const built = () => {
 test('without key choices the test setup builds to the fingerprint its reference recorded', slow(), () => {
   const { base } = built();
   assert.equal(builtDigest({ kind: 'configuration', model: 'Harmony One', skin: 54, bytes: base.blob }), ONE_TEST_SHA256);
+});
+
+/**
+ * The fingerprints of the two builds with choices, as the code before the recipe named keys by word built them from
+ * the same choices named by scan (3, 10 and 9), at `BUILT_AT`: measured once, before the change, and recorded here.
+ */
+const BY_SCAN_SHA256 = {
+  chosen: 'f582e99220d2c33b5cd33553d76688fb6377a498e2872f035db564d0bb8dc77b',
+  nothing: '0918cc90915e75e706f6fead7f66eb8eff43999bc8e08bd71429d8c6efd6ca34',
+};
+const digestOf = (c: Container): string => builtDigest({ kind: 'configuration', model: 'Harmony One', skin: 54, bytes: c.blob });
+
+test('the choices named by word build to the fingerprints the same choices named by scan built to', slow(), () => {
+  const { base, chosen, nothing } = built();
+  assert.equal(digestOf(chosen), BY_SCAN_SHA256.chosen);
+  assert.equal(digestOf(nothing), BY_SCAN_SHA256.nothing);
+  // The control: the three builds are three files, so a fingerprint here tells a choice from no choice.
+  assert.equal(new Set([digestOf(base), digestOf(chosen), digestOf(nothing)]).size, 3);
+});
+
+test('the Harmony One offers 37 keys by word, one for each keypad scan its maps bind and each scan once, and a word not among them has no scan', () => {
+  const { keys } = ONE_RECIPE_KEYS;
+  assert.equal(keys.length, 37);
+  assert.equal(new Set(keys).size, 37);
+  const scans = keys.map((key) => ONE_RECIPE_KEYS.scanOf(key));
+  assert.deepEqual([...scans].sort((a, b) => (a as number) - (b as number)), [...ONE_KEYPAD_SCANS].sort((a, b) => a - b));
+  assert.equal(ONE_KEYPAD_SCANS.size, 37);
+  // The control for that comparison: the words without Enter's give 36 scans, which it rejects.
+  const withoutEnter = scans.filter((scan) => scan !== 13).sort((a, b) => (a as number) - (b as number));
+  assert.notDeepEqual(withoutEnter, [...ONE_KEYPAD_SCANS].sort((a, b) => a - b));
+  // The words the drawing and the reference give the keys this file's builds choose, by the scans the readers report.
+  assert.deepEqual(['VolumeUp', 'Info', 'VolumeMute', 'Enter'].map((key) => ONE_RECIPE_KEYS.scanOf(key)), [3, 10, 9, 13]);
+  // The control: the keys the drawing names that no map binds, a touch key and a number have no scan.
+  for (const key of ['Activities', 'Help', 'Off', 'ScreenNext', 'Favorites', '3']) assert.equal(ONE_RECIPE_KEYS.scanOf(key), undefined, key);
 });
 
 test('three keys chosen, two activity keys and the television\'s volume up in device mode, are the only keys of every map that change, each sending the command named', slow(), () => {
@@ -236,42 +283,44 @@ const refusedOnTheOne = (chosen: Parameters<typeof withKeys>[0], message: RegExp
 };
 
 test('a held press, a sequence, a scan no map binds, an unknown device and an unknown command are each refused by name', () => {
-  refusedOnTheOne({ activities: { 'TV kijken': [{ scan: 10, press: 'held', action: { device: 'KPN', command: 'Info' } }] } },
-    /^the activity TV kijken's key on scan 10, held: a held press is not built yet$/);
-  refusedOnTheOne({ activities: { Muziek: [{ scan: 10, action: { sequence: 'Sleep' } }] } },
-    /^the activity Muziek's key on scan 10 runs the sequence Sleep, and a sequence on a key is not built yet$/);
-  // Scan 34 is no key of the keypad's maps, and 48 is a pad on the screen.
-  refusedOnTheOne({ devices: { KPN: [{ scan: 34, action: { nothing: true } }] } }, /^the device KPN's key on scan 34: scan 34 is no key the Harmony One's maps bind$/);
-  refusedOnTheOne({ activities: { 'TV kijken': [{ scan: 48, action: { nothing: true } }] } }, /^the activity TV kijken's key on scan 48: scan 48 is no key/);
-  refusedOnTheOne({ devices: { 'LG TV': [{ scan: 3, action: { device: 'Yamaha', command: 'VolumeUp' } }] } },
-    /^the device LG TV's key on scan 3 sends a command of Yamaha, which is no device of the recipe$/);
-  refusedOnTheOne({ devices: { 'LG TV': [{ scan: 3, action: { device: 'Denon', command: 'VolumeUpLouder' } }] } },
-    /^the device LG TV's key on scan 3 sends VolumeUpLouder, which Denon's definition does not have$/);
+  refusedOnTheOne({ activities: { 'TV kijken': [{ key: 'Info', press: 'held', action: { device: 'KPN', command: 'Info' } }] } },
+    /^the activity TV kijken's Info key, held: a held press is not built yet$/);
+  refusedOnTheOne({ activities: { Muziek: [{ key: 'Info', action: { sequence: 'Sleep' } }] } },
+    /^the activity Muziek's Info key runs the sequence Sleep, and a sequence on a key is not built yet$/);
+  // The Activities key is on the keypad and no map binds it; ScreenNext is the page strip beside the screen; and
+  // Favorites is a word of the Harmony Touch's that the Harmony One has no key of.
+  refusedOnTheOne({ devices: { KPN: [{ key: 'Activities', action: { nothing: true } }] } }, /^the device KPN's Activities key: Activities is no key the Harmony One's maps bind$/);
+  refusedOnTheOne({ activities: { 'TV kijken': [{ key: 'ScreenNext', action: { nothing: true } }] } }, /^the activity TV kijken's ScreenNext key: ScreenNext is no key/);
+  refusedOnTheOne({ activities: { 'TV kijken': [{ key: 'Favorites', action: { nothing: true } }] } }, /^the activity TV kijken's Favorites key: Favorites is no key/);
+  refusedOnTheOne({ devices: { 'LG TV': [{ key: 'VolumeUp', action: { device: 'Yamaha', command: 'VolumeUp' } }] } },
+    /^the device LG TV's VolumeUp key sends a command of Yamaha, which is no device of the recipe$/);
+  refusedOnTheOne({ devices: { 'LG TV': [{ key: 'VolumeUp', action: { device: 'Denon', command: 'VolumeUpLouder' } }] } },
+    /^the device LG TV's VolumeUp key sends VolumeUpLouder, which Denon's definition does not have$/);
   // The one build refuses the same, as a refusal of the composition.
-  assert.throws(() => buildFromRecipe(withKeys({ activities: { Muziek: [{ scan: 10, action: { sequence: 'Sleep' } }] } }), { builtAt: BUILT_AT }),
+  assert.throws(() => buildFromRecipe(withKeys({ activities: { Muziek: [{ key: 'Info', action: { sequence: 'Sleep' } }] } }), { builtAt: BUILT_AT }),
     /a sequence on a key is not built yet/);
 });
 
 test('control: the refusal check fails where the refusal names another thing than expected', () => {
   // A held press refused, and expected to be refused as a sequence: the check has to reject it.
-  assert.throws(() => refusedOnTheOne({ activities: { 'TV kijken': [{ scan: 10, press: 'held', action: { nothing: true } }] } },
+  assert.throws(() => refusedOnTheOne({ activities: { 'TV kijken': [{ key: 'Info', press: 'held', action: { nothing: true } }] } },
     /a sequence on a key is not built yet/), (error: unknown) => error instanceof assert.AssertionError);
 });
 
 test('control: the refusal check fails on a recipe whose choice is one the build makes', slow(), () => {
-  assert.throws(() => refusedOnTheOne({ activities: { 'TV kijken': [{ scan: 10, action: { nothing: true } }] } }, /./),
+  assert.throws(() => refusedOnTheOne({ activities: { 'TV kijken': [{ key: 'Info', action: { nothing: true } }] } }, /./),
     (error: unknown) => error instanceof assert.AssertionError);
 });
 
 test('every family that builds no key choice refuses a recipe stating one, through the one build and through its own route', () => {
-  const key = [{ scan: 3, action: { nothing: true } }];
+  const key = [{ key: 'VolumeUp', action: { nothing: true } }];
   for (const name of ['h600-five', 'h650-test', 'h700-test-bright', 'h350-test', 'touch-test']) {
     const json = recipeJson(name);
     const first = (json.devices as Json[])[0] as Json;
     first.keys = key;
     assert.throws(() => buildFromRecipe(json, { builtAt: BUILT_AT, account: {} as never }),
       (error: unknown) => error instanceof RecipeError
-        && error.message === `nothing here builds a key a recipe chooses for ${name === 'touch-test' ? `the ${json.model.name}` : chooseByModel(json.model).family.name} yet, and the recipe chooses the device ${first.name}'s key on scan 3`,
+        && error.message === `nothing here builds a key a recipe chooses for ${name === 'touch-test' ? `the ${json.model.name}` : chooseByModel(json.model).family.name} yet, and the recipe chooses the device ${first.name}'s VolumeUp key`,
       name);
   }
   // The family's own route, which a script may take without the one build.
@@ -287,9 +336,9 @@ test('every family that builds no key choice refuses a recipe stating one, throu
 test('the Harmony 600 family\'s own route refuses a recipe stating keys at the shared composer', () => {
   const recipe = readRecipe(withKeys({ devices: {} }, 'h600-five'));
   const first = recipe.devices[0]!;
-  const keyed = { ...recipe, devices: [{ ...first, keys: [{ scan: 3, action: { nothing: true as const } }] }, ...recipe.devices.slice(1)] };
+  const keyed = { ...recipe, devices: [{ ...first, keys: [{ key: 'VolumeUp', action: { nothing: true as const } }] }, ...recipe.devices.slice(1)] };
   const four = chooseByModel(keyed.model);
   assert.throws(() => four.family.kind === 'compiled' && four.family.fromRecipe?.(keyed, four.skin, { builtAt: BUILT_AT, archive: carriedCatalogue(keyed) as never }),
     (error: unknown) => error instanceof AssemblyError
-      && error.message === `nothing here builds a key a recipe chooses for the Harmony 600, 650 and 700 yet, and the recipe chooses the device ${first.name}'s key on scan 3`);
+      && error.message === `nothing here builds a key a recipe chooses for the Harmony 600, 650 and 700 yet, and the recipe chooses the device ${first.name}'s VolumeUp key`);
 });

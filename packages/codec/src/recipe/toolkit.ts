@@ -28,8 +28,9 @@
  * remote would do anyway" is never copied into the document, where it would go stale.
  *
  * **What is built and what refuses.** A fresh document and opening one; a device and an activity added, renamed,
- * changed, moved and removed, with everything that named them settled; a key's choice; the lists, a device's
- * commands and inputs, what uses something, and the check. Every other function refuses by name, `NotBuiltError`,
+ * changed, moved and removed, with everything that named them settled; a key's choice, and the keys a model lets a
+ * person choose, by Logitech's word for each; the lists, a device's commands and inputs, what uses something, and
+ * the check. Every other function refuses by name, `NotBuiltError`,
  * with the requirement it waits on, and so does a member of a built one that nothing reads yet, a device's power or
  * an activity's icon; `test/recipe/toolkit.test.ts` holds the list of those still refusing, which is the measure of
  * what is left.
@@ -76,14 +77,15 @@ export type SequenceId = string;
 export type Owner = { readonly activity: ActivityId } | { readonly device: DeviceId };
 
 /**
- * One key of an owner. `scan` is the key's scan code on the model, the number its drawing carries as `data-scan`
- * and the builders bind by, so an application reads it off the key a person clicked; the drawing's name for the key
- * is for showing. `press` tells a key's second command, sent when it is held, from its first, R38; absent is the
- * short press.
+ * One key of an owner. `key` is Logitech's word for the key, `VolumeMute`, `Info`, `Number0`: the name the model's
+ * drawing carries as `data-name`, so an application reads it off the key a person clicked, and the same key on every
+ * model that has it. Which words a document's model takes is `keyNames`'s answer; the number a family's firmware
+ * knows the key by is the family's and never the document's, `RecipeKey`. `press` tells a key's second command, sent
+ * when it is held, from its first, R38; absent is the short press.
  */
 export interface KeyPlace {
   readonly owner: Owner;
-  readonly scan: number;
+  readonly key: string;
   readonly press?: 'short' | 'held';
 }
 
@@ -98,7 +100,7 @@ export type Place =
   | { readonly kind: 'activity'; readonly activity: ActivityId }
   | { readonly kind: 'activity-device'; readonly activity: ActivityId; readonly device: DeviceId }
   | { readonly kind: 'step'; readonly activity: ActivityId; readonly when: 'start' | 'end'; readonly step: number }
-  | { readonly kind: 'key'; readonly owner: Owner; readonly scan: number; readonly press?: 'short' | 'held' }
+  | { readonly kind: 'key'; readonly owner: Owner; readonly key: string; readonly press?: 'short' | 'held' }
   | { readonly kind: 'screen-item'; readonly owner: Owner; readonly item: number }
   | { readonly kind: 'sequence'; readonly sequence: SequenceId }
   | { readonly kind: 'favourite'; readonly device: DeviceId; readonly favourite: number }
@@ -363,15 +365,15 @@ function limitsOf(model: RecipeModel): { readonly maxDevices: number | undefined
 }
 
 /**
- * The keys a document of the model may choose otherwise, by scan code, as its family's builder states them,
- * `Family.recipeKeys`; undefined where the family builds no key's choice yet, which is every family but the Harmony
- * One's. One source for the change and the check, so neither takes a key the build then refuses. Refused as
- * `limitsOf` refuses, for a model no family serves.
+ * The keys a document of the model may choose otherwise, by Logitech's word for each, in the family's order, as its
+ * family's builder states them, `Family.recipeKeys`; undefined where the family builds no key's choice yet, which is
+ * every family but the Harmony One's. One source for the change, the check and the question, so none of them takes a
+ * key the build then refuses. Refused as `limitsOf` refuses, for a model no family serves.
  */
-function keyScansOf(model: RecipeModel): ReadonlySet<number> | undefined {
+function keyNamesOf(model: RecipeModel): readonly string[] | undefined {
   try {
     const { family } = chooseByModel(model);
-    return family.kind === 'compiled' ? family.recipeKeys?.scans : undefined;
+    return family.kind === 'compiled' ? family.recipeKeys?.keys : undefined;
   } catch (error) {
     if (error instanceof NoFamilyError) throw new RecipeError(error.message);
     throw error;
@@ -481,7 +483,7 @@ interface Mention {
   readonly place: Place;
   /** A key's choice, a part in an activity, an item of a screen, a step of a sequence on a screen, the favourites. */
   readonly kind: 'key' | 'part' | 'screen' | 'step' | 'favourites';
-  /** In words, for an effect's sentence: `activity Watch TV's key 3`. */
+  /** In words, for an effect's sentence: `activity Watch TV's VolumeUp key`. */
   readonly where: string;
 }
 
@@ -494,7 +496,7 @@ function mentionsOf(document: Recipe, device: RecipeDevice): Mention[] {
   const keysOf = (owner: Owner, keys: readonly RecipeKey[] | undefined, what: string): void => {
     for (const key of keys ?? []) {
       if ('device' in key.action && key.action.device === device.name) {
-        found.push({ place: { kind: 'key', owner, scan: key.scan, ...(key.press === undefined ? {} : { press: key.press }) }, kind: 'key', where: `${what}'s key ${key.scan}` });
+        found.push({ place: { kind: 'key', owner, key: key.key, ...(key.press === undefined ? {} : { press: key.press }) }, kind: 'key', where: `${what}'s ${key.key} key` });
       }
     }
   };
@@ -784,20 +786,22 @@ export function setSequence(document: Recipe, sequence: SequenceId, changes: Par
  */
 export function setKey(document: Recipe, key: KeyPlace, action: KeyAction | 'default'): Change {
   changeable(document, 'recipe.setKey');
-  const place: Place = { kind: 'key', owner: key.owner, scan: key.scan, ...(key.press === undefined ? {} : { press: key.press }) };
+  const place: Place = { kind: 'key', owner: key.owner, key: key.key, ...(key.press === undefined ? {} : { press: key.press }) };
   // A key's second command and a sequence on a key are in the contract and not built: said by name, so that an
   // application meets the same refusal here as from a function that is not built at all.
   if (key.press === 'held') return notBuilt('recipe.setKey for a held press', 38);
   if (action !== 'default' && 'sequence' in action) return notBuilt('recipe.setKey for a sequence', 37);
-  if (!Number.isInteger(key.scan) || key.scan < 0) throw new ChangeRefused('invalid', place, `${String(key.scan)} is no key's scan code`);
+  // A word and never a number: a scan code is one family's, and a document naming one would point at another key
+  // once moved to another model.
+  if (typeof key.key !== 'string' || key.key === '') throw new ChangeRefused('invalid', place, `${String(key.key)} is no key's name`);
   let stated: RecipeKeyAction | undefined;
   if (action !== 'default') {
     // The keys are the model's: a model whose builder takes no key's choice yet says so by name, as a function not
     // built does, and a key the model's maps do not bind is refused here and not at the build. Giving a choice back
     // is asked neither, so a document that holds one can always be put right.
-    const scans = keyScansOf(document.model);
-    if (scans === undefined) return notBuilt(`recipe.setKey for the ${document.model.name}`, 'device' in key.owner ? 32 : 31);
-    if (!scans.has(key.scan)) throw new ChangeRefused('unknown', place, `a ${document.model.name}'s maps bind no key of scan ${key.scan}`);
+    const names = keyNamesOf(document.model);
+    if (names === undefined) return notBuilt(`recipe.setKey for the ${document.model.name}`, 'device' in key.owner ? 32 : 31);
+    if (!names.includes(key.key)) throw new ChangeRefused('unknown', place, `a ${document.model.name}'s maps bind no key named ${key.key}`);
     if ('nothing' in action) {
       stated = { nothing: true };
     } else {
@@ -813,8 +817,8 @@ export function setKey(document: Recipe, key: KeyPlace, action: KeyAction | 'def
   }
   /** The owner's choices with this key's replaced, or taken out for the default; no choice left is no field at all. */
   const chosen = (keys: readonly RecipeKey[] | undefined): readonly RecipeKey[] | undefined => {
-    const others = (keys ?? []).filter((one) => !(one.scan === key.scan && (one.press ?? 'short') === 'short'));
-    const next = stated === undefined ? others : [...others, { scan: key.scan, action: stated }];
+    const others = (keys ?? []).filter((one) => !(one.key === key.key && (one.press ?? 'short') === 'short'));
+    const next = stated === undefined ? others : [...others, { key: key.key, action: stated }];
     return next.length === 0 ? undefined : next;
   };
   if ('device' in key.owner) {
@@ -1008,6 +1012,22 @@ export function inputs(document: Recipe, device: DeviceId): string[] {
   return [...(inputNames(one) ?? [])];
 }
 
+/**
+ * The keys a document's model lets a person choose what they do, by Logitech's word for each, in the order its family
+ * gives them, R31 and R32: the words `setKey` takes and `check` holds a document's choices to. The same keys in an
+ * activity's map and in a device's own, since both are maps of the same keypad. Refused by name, as a function not
+ * built, for a model whose family builds no key's choice yet, which is every model but the Harmony One, rather than
+ * answering an empty list that would say the model has no keys; and as `RecipeError` for a model no family serves.
+ *
+ * A word here is the name the model's drawing carries for the key, `data-name`, so an application colours and finds
+ * the key on the drawing by it.
+ */
+export function keyNames(document: Recipe): string[] {
+  const names = keyNamesOf(document.model);
+  if (names === undefined) return notBuilt(`recipe.keyNames for the ${document.model.name}`, 31);
+  return [...names];
+}
+
 /** What one key does. */
 export function key(document: Recipe, place: KeyPlace): KeyAnswer {
   void document; void place;
@@ -1094,26 +1114,26 @@ export function check(document: Recipe): Problem[] {
   }
 
   // The keys the model's builder takes a choice for; none where the model is one nothing builds, said above.
-  const scans = limits === undefined ? undefined : keyScansOf(document.model);
+  const names = limits === undefined ? undefined : keyNamesOf(document.model);
 
   /** The problems of one owner's key choices: a key, a device or a command that is not there, and what is not built. */
   const checkKeys = (owner: Owner, keys: readonly RecipeKey[] | undefined, what: string): void => {
     for (const key of keys ?? []) {
-      const place: Place = { kind: 'key', owner, scan: key.scan, ...(key.press === undefined ? {} : { press: key.press }) };
-      if (limits !== undefined && scans === undefined) {
-        say('error', 'not-on-this-model', place, `${what} chooses what key ${key.scan} does, which nothing builds for a ${document.model.name} yet`);
-      } else if (scans?.has(key.scan) === false) {
-        say('error', 'unknown-key', place, `${what} chooses what key ${key.scan} does, and a ${document.model.name}'s maps bind no such key`);
+      const place: Place = { kind: 'key', owner, key: key.key, ...(key.press === undefined ? {} : { press: key.press }) };
+      if (limits !== undefined && names === undefined) {
+        say('error', 'not-on-this-model', place, `${what} chooses what the ${key.key} key does, which nothing builds for a ${document.model.name} yet`);
+      } else if (names?.includes(key.key) === false) {
+        say('error', 'unknown-key', place, `${what} chooses what the ${key.key} key does, and a ${document.model.name}'s maps bind no key of that name`);
       }
-      if (key.press === 'held') say('error', 'not-on-this-model', place, `${what} gives key ${key.scan} a second command when held, which nothing builds yet`);
+      if (key.press === 'held') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a second command when held, which nothing builds yet`);
       if ('sequence' in key.action) {
-        say('error', 'not-on-this-model', place, `${what} puts a sequence on key ${key.scan}, which nothing builds yet`);
+        say('error', 'not-on-this-model', place, `${what} puts a sequence on the ${key.key} key, which nothing builds yet`);
       } else if ('device' in key.action) {
         const device = byName.get(key.action.device);
         if (device === undefined) {
-          say('error', 'unknown-device', place, `${what} gives key ${key.scan} a command of ${key.action.device}, which is no device of the document`);
+          say('error', 'unknown-device', place, `${what} gives the ${key.key} key a command of ${key.action.device}, which is no device of the document`);
         } else if (commandNames(device)?.has(key.action.command) === false) {
-          say('error', 'unknown-command', place, `${what} gives key ${key.scan} ${device.name}'s ${key.action.command}, which ${device.name} does not have`);
+          say('error', 'unknown-command', place, `${what} gives the ${key.key} key ${device.name}'s ${key.action.command}, which ${device.name} does not have`);
         }
       }
     }

@@ -350,8 +350,10 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 decision 37, with the device search's contract beside it in
                                 src/catalogue/search.ts. Of the toolkit a fresh and an opened
                                 document, a device and an activity added, changed, moved and
-                                removed, a key's choice, which the Harmony One's build takes up
-                                and every other model's refuses, the lists, a device's commands and
+                                removed, a key's choice, the key named by Logitech's word for it
+                                and never by a scan, which the Harmony One's build takes up and
+                                every other model's refuses, keyNames, the words a model's family
+                                offers, the lists, a device's commands and
                                 inputs, what uses something and the check are built; every other
                                 function, and the
                                 search's source over the network, refuses by name, `NotBuiltError`
@@ -593,7 +595,10 @@ packages/probe/                 TS: the contribution probe, a report with shape 
 packages/silhouettes/           TS: each model's front face as a measured geometry table and the SVG
                                 generated from it, reference/silhouettes/. The main entry is the
                                 models, the key lookups and the drawing, test/surface.test.ts;
-                                `./internal` the shapes and path transforms a table is written with
+                                `./internal` the shapes and path transforms a table is written with.
+                                test/recipekeys.test.ts holds the words a family offers a recipe for
+                                its keys to the drawing's words for the same scans, on this side
+                                because the codec does not depend on this package
 packages/keyreader/             TS: the key reader page's sources, built into reference/key-reader/.
                                 Its own package rather than a page of packages/bench, which is a
                                 local server instrument, or of packages/usb, whose tsconfig would

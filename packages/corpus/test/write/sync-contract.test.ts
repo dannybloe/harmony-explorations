@@ -129,7 +129,7 @@ test('a document for another model, one the check refuses and one nothing builds
   assert.deepEqual(wrong.words, ['identify', '= refused']);
   assert.match(wrong.outcome.message!, /Harmony 650.*Harmony One/);
   // A key given a second command when held is an error of the check, which nothing builds yet.
-  const held = recipe.open({ model: ONE, devices: [{ name: 'Television', device: 'Made/TV', keys: [{ scan: 3, press: 'held', action: { nothing: true } }] }], activities: [] });
+  const held = recipe.open({ model: ONE, devices: [{ name: 'Television', device: 'Made/TV', keys: [{ key: 'VolumeUp', press: 'held', action: { nothing: true } }] }], activities: [] });
   assert.equal(recipe.check(held).filter((one) => one.severity === 'error').length, 1);
   const checked = await run(held, remote);
   assert.deepEqual(checked.words, ['identify', 'check', '= refused']);

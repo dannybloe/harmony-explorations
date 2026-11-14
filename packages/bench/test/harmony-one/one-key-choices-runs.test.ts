@@ -3,7 +3,8 @@
  * the spare Harmony One through `syncDocument`, and the keys were pressed in front of the infrared receiver.
  *
  * **What was run.** The document is the bench test setup, seven devices and five activities, opened through the
- * recipe toolkit and given four choices with `recipe.setKey`, each a key addressed by its scan code:
+ * recipe toolkit and given four choices with `recipe.setKey`, each a key addressed by its scan code, as the toolkit took
+ * one then:
  *
  * 1. in the activity TV kijken, Info (scan 10) sends the Denon's Info, where the setup gives it the KPN box's;
  * 2. in the activity TV kijken, Mute (scan 9) does nothing, where the setup gives it the Denon's Mute;
@@ -80,6 +81,13 @@
  * **Which architectures**: the Harmony One on firmware 3.4, one unit, one run. Every other family's builder
  * refuses a recipe that states a key, which `onerecipekeys.test.ts` holds, so nothing here is about them.
  *
+ * **The document on file names its keys by number, as documents did when it was synced.** A recipe names a key by
+ * Logitech's word for it since, `VolumeUp` where it said 3, and the file is the record of what was synced, so it is not
+ * rewritten: this file reads it as written, asserts its four choices by scan as raw JSON, and turns each scan into the
+ * Harmony One family's word for it, through the family's own table, before it is read as a recipe and rebuilt. The
+ * rebuild equalling the remote's bytes is then also the evidence that a key named by word builds what the same key
+ * named by scan built.
+ *
  * The reads are a remote's configuration: this file asserts equalities, counts and shapes and prints none of it.
  */
 import { test } from 'node:test';
@@ -87,7 +95,9 @@ import assert from 'node:assert/strict';
 
 // The Node entry, for what the core asks its loader for.
 import '@harmony/codec/node';
-import { activities, buildFromRecipe, deviceModeMaps, devices, keyCodes, parse, readRecipe, type Container } from '@harmony/codec';
+import {
+  activities, buildFromRecipe, chooseByModel, deviceModeMaps, devices, keyCodes, parse, readRecipe, type Container, type Recipe,
+} from '@harmony/codec';
 import { activityStartSteps } from '@harmony/codec/internal';
 import * as lab from '@harmony/lab';
 
@@ -110,6 +120,30 @@ const PRESS = 2;
 
 const text = (name: string): string => new TextDecoder().decode(lab.require_(name));
 const run = (): Run => JSON.parse(text(RUN)) as Run;
+
+type Json = Record<string, any>;
+/** The document as the lab holds it, keys by scan, unread. */
+const documentOnFile = (): Json => JSON.parse(text(DOCUMENT)) as Json;
+/**
+ * The document on file with each key's scan turned into the word the model's family gives that scan, and read as a
+ * recipe. The family's own table answers, `recipeKeys`, which offers words and the scan of each, so the word is the
+ * one whose scan is the number on file; a scan the family has no word for stops the test rather than being guessed.
+ */
+const documentByWord = (): Recipe => {
+  const json = structuredClone(documentOnFile());
+  const { family } = chooseByModel(json.model);
+  assert.ok(family.kind === 'compiled' && family.recipeKeys !== undefined, 'the model\'s family builds key choices');
+  const builder = family.recipeKeys;
+  const wordOf = (scan: number): string => {
+    const words = builder.keys.filter((key) => builder.scanOf(key) === scan);
+    assert.equal(words.length, 1, `one word for scan ${scan}`);
+    return words[0]!;
+  };
+  for (const owner of [...json.devices, ...json.activities] as Json[]) {
+    if (owner.keys !== undefined) owner.keys = (owner.keys as Json[]).map(({ scan, ...rest }) => ({ key: wordOf(scan as number), ...rest }));
+  }
+  return readRecipe(json);
+};
 
 /** A code as `group.code`, the infrared group being the device's place in the configuration. */
 type Code = string;
@@ -169,19 +203,34 @@ const book = (): CodeBook => new CodeBook((name) => lab.load(name), [WRITTEN]);
 const heard = (codes: CodeBook, press: RunPress): Code[] =>
   [...new Set(codes.match(press.frame.pulses).filter((one) => one.opening).map((one) => `${one.group}.${one.code}`))].sort();
 
-test('the document states four key choices, two that send a command of the Denon and two that do nothing', lab.skipUnless(DOCUMENT), () => {
-  const document = readRecipe(JSON.parse(text(DOCUMENT)));
-  assert.deepEqual([document.model.name, document.devices.length, document.activities.length], ['Harmony One', 7, 5]);
-  const chosen = [
-    ...document.devices.flatMap((one) => (one.keys ?? []).map((key) => ({ device: one.name, ...key }))),
-    ...document.activities.flatMap((one) => (one.keys ?? []).map((key) => ({ activity: one.name, ...key }))),
+test('the document states four key choices by scan, two that send a command of the Denon and two that do nothing, and by word they are VolumeUp, VolumeMute, Info and VolumeMute', lab.skipUnless(DOCUMENT), () => {
+  // As written: the keys by their scan codes, which is no longer a recipe's field, so the JSON is read as it stands.
+  const raw = documentOnFile();
+  assert.deepEqual([raw.model.name, raw.devices.length, raw.activities.length], ['Harmony One', 7, 5]);
+  const onFile = [
+    ...(raw.devices as Json[]).flatMap((one) => ((one.keys ?? []) as Json[]).map((key) => ({ device: one.name, ...key }))),
+    ...(raw.activities as Json[]).flatMap((one) => ((one.keys ?? []) as Json[]).map((key) => ({ activity: one.name, ...key }))),
   ];
-  assert.deepEqual(chosen, [
+  assert.deepEqual(onFile, [
     { device: 'LG TV', scan: VOLUME_UP, action: { device: 'Denon', command: 'VolumeUp' } },
     { device: 'Denon', scan: MUTE, action: { nothing: true } },
     { activity: 'TV kijken', scan: INFO, action: { device: 'Denon', command: 'Info' } },
     { activity: 'TV kijken', scan: MUTE, action: { nothing: true } },
   ]);
+  // As a recipe reads it once each scan is the family's word, and nothing else of the document changed.
+  const document = documentByWord();
+  const chosen = [
+    ...document.devices.flatMap((one) => (one.keys ?? []).map((key) => ({ device: one.name, ...key }))),
+    ...document.activities.flatMap((one) => (one.keys ?? []).map((key) => ({ activity: one.name, ...key }))),
+  ];
+  assert.deepEqual(chosen, [
+    { device: 'LG TV', key: 'VolumeUp', action: { device: 'Denon', command: 'VolumeUp' } },
+    { device: 'Denon', key: 'VolumeMute', action: { nothing: true } },
+    { activity: 'TV kijken', key: 'Info', action: { device: 'Denon', command: 'Info' } },
+    { activity: 'TV kijken', key: 'VolumeMute', action: { nothing: true } },
+  ]);
+  // The control: the file as written is no recipe now, refused at its first key's scan rather than read as some key.
+  assert.throws(() => readRecipe(documentOnFile()), /key 1 has a field scan no recipe has/);
 });
 
 /** The moment the sync built the document at, as its journal in the lab states it beside the size of the build. */
@@ -189,7 +238,8 @@ const BUILT_AT = '2026-11-14T16:09:25';
 
 test('the document built at the moment the sync\'s journal states is what the remote held after it, byte for byte, and built a second later it is not',
   lab.needing(lab.skipUnless(DOCUMENT, WRITTEN), lab.slow()), () => {
-    const document = readRecipe(JSON.parse(text(DOCUMENT)));
+    // The document by word: its keys' scans on file turned into the family's words, as the test above holds.
+    const document = documentByWord();
     const after = lab.require_(WRITTEN);
     const differing = (builtAt: string): number => {
       const built = buildFromRecipe(document, { builtAt });

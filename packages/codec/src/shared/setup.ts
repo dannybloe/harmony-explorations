@@ -300,7 +300,7 @@ export function composeSetupParts(
     const builder = parts.family.recipeKeys as NonNullable<Family['recipeKeys']>;
     try {
       const group = groupOfDevice(c, labelOf(one.name), one.name);
-      c = parse(builder.bindDeviceModeKey(c, group, one.key.scan, listOfChoice(one, c)));
+      c = parse(builder.bindDeviceModeKey(c, group, one.key.key, listOfChoice(one, c)));
     } catch (error) {
       if (error instanceof ComposeError) throw new AssemblyError(`${one.where}: ${error.message}`);
       throw error;
@@ -321,7 +321,7 @@ export function composeSetupParts(
 /**
  * The keys a recipe chooses otherwise, checked before anything is composed, step 1a of `composeSetupParts`: refused by
  * name where the family builds none, `Family.recipeKeys`, and where a choice is one no builder makes yet, a held press
- * or a sequence on a key; where the key is none the family's maps bind; where the command is of a device the recipe
+ * or a sequence on a key; where the key is named by a word the family's maps bind no key of; where the command is of a device the recipe
  * does not hold, of a device the donor holds, whose commands nothing here names, or one the device's definition does
  * not have; and where the activity is the donor's, which is not composed here and so takes no choice.
  */
@@ -337,7 +337,7 @@ function checkStatedKeys(
     const { key, where } = one;
     if (key.press === 'held') throw new AssemblyError(`${where}: a held press is not built yet`);
     if ('sequence' in key.action) throw new AssemblyError(`${where} runs the sequence ${key.action.sequence}, and a sequence on a key is not built yet`);
-    if (!builder.scans.has(key.scan)) throw new AssemblyError(`${where}: scan ${key.scan} is no key ${family.name}'s maps bind`);
+    if (!builder.keys.includes(key.key)) throw new AssemblyError(`${where}: ${key.key} is no key ${family.name}'s maps bind`);
     if (one.owner === 'activity' && donorActivities.includes(one.name)) {
       throw new AssemblyError(`${where}: ${one.name} is the donor's activity, which is not composed here`);
     }
@@ -469,13 +469,17 @@ function composeSetupActivity(
   // and runs the chosen list or, chosen to do nothing, is swallowed there, and one the roles left out is added after
   // the rest.
   // Resolved on the configuration the activity is composed onto, where every device is composed already.
+  // A choice names its key by Logitech's word, and the keypad map is bound by scan, so the family that builds the
+  // choice turns the one into the other; a word it has no scan for was refused before anything was composed.
   const onScreen = parse(screen.bytes);
   const choices = new Map<number, number | undefined>();
   for (const one of statedKeys(setup).filter((each) => each.owner === 'activity' && each.name === activity.name)) {
-    if (screenKeys.some((other) => other.scan === one.key.scan)) {
+    const scan = parts.family.recipeKeys?.scanOf(one.key.key);
+    if (scan === undefined) throw new AssemblyError(`${one.where}: ${parts.family.name} binds no key of that name`);
+    if (screenKeys.some((other) => other.scan === scan)) {
       throw new AssemblyError(`${one.where}: the activity's screens bind that key themselves`);
     }
-    choices.set(one.key.scan, listOfChoice(one, onScreen));
+    choices.set(scan, listOfChoice(one, onScreen));
   }
   const allKeys = [
     ...derived.map((one) => (choices.has(one.scan) ? { scan: one.scan, list: choices.get(one.scan) } : one)),

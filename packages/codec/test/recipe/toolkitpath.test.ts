@@ -28,7 +28,11 @@ import {
   readRecipe, recipe,
 } from '../../src/node.ts';
 
-/** The Harmony One's keys used here, by the scan codes its key table and its drawing give them. */
+/**
+ * The Harmony One's keys used here, by the scan codes its drawing gives them, which is how the readers report a key.
+ * The document names a key by its word instead, as an application does, and the family turns the word into the scan:
+ * so a key chosen by word and read back by the drawing's scan is two routes meeting on one key.
+ */
 const VOLUME_UP = 3;
 const VOLUME_DOWN = 4;
 const MUTE = 9;
@@ -54,11 +58,13 @@ test('a device found, fetched and added, an activity made, two keys chosen, the 
       name: 'Watch TV', type: 'WatchTV',
       devices: [{ device: 'd1', roles: ['Display', 'ChannelChanging'] }, { device: 'd2', roles: ['Volume'] }],
     }).document;
-    // The commands a key is chosen from are the document's own to list.
+    // The keys a choice is made for are the model's to list, by word, and the commands the document's own.
+    const keys = recipe.keyNames(document);
+    assert.ok(keys.includes('VolumeUp') && keys.includes('Info'));
     const receiverCommands = recipe.commands(document, 'd2').map((one) => one.name);
     assert.ok(receiverCommands.includes('VolumeUp') && receiverCommands.includes('Mute'));
-    document = recipe.setKey(document, { owner: { device: 'd1' }, scan: VOLUME_UP }, { device: 'd2', command: 'VolumeUp' }).document;
-    document = recipe.setKey(document, { owner: { activity: 'a1' }, scan: INFO }, { device: 'd2', command: 'Mute' }).document;
+    document = recipe.setKey(document, { owner: { device: 'd1' }, key: 'VolumeUp' }, { device: 'd2', command: 'VolumeUp' }).document;
+    document = recipe.setKey(document, { owner: { activity: 'a1' }, key: 'Info' }, { device: 'd2', command: 'Mute' }).document;
     assert.deepEqual(recipe.check(document), []);
     // It is a recipe as it stands: written to disk and read back, it is the same document.
     assert.deepEqual(readRecipe(JSON.parse(JSON.stringify(document))), document);

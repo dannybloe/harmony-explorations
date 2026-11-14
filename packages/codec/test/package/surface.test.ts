@@ -80,7 +80,7 @@ const TOUCH_TYPES = [
 /** The document toolkit, `recipe` on the main entry: the names that exist at run time. */
 const RECIPE_VALUES = [
   'ChangeRefused', 'PROBLEM_CODES', 'activities', 'addActivity', 'addDevice', 'addSequence', 'check', 'commands',
-  'create', 'devices', 'favourites', 'inputs', 'key', 'keys', 'move', 'open', 'remove', 'screen', 'sequences',
+  'create', 'devices', 'favourites', 'inputs', 'key', 'keyNames', 'keys', 'move', 'open', 'remove', 'screen', 'sequences',
   'setActivity', 'setDevice', 'setDeviceCommand', 'setFavourites', 'setKey', 'setLook', 'setScreen', 'setSequence',
   'setSetting', 'unfilled', 'uses',
 ];

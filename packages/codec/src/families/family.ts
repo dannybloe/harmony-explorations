@@ -228,22 +228,30 @@ export interface ActivityKeyEditor {
 /**
  * What a family needs to build a recipe's key choices, `Family.recipeKeys`, requirements R31 and R32. The shared
  * composer, `composeSetupParts`, resolves each choice to a list of the configuration's, puts an activity's into the
- * keypad map it composes, and asks this for the rest, which is the family's: the keys there are, and how a device
- * mode's own map, already composed, takes another binding.
+ * keypad map it composes, and asks this for the rest, which is the family's: the keys there are, the number each is
+ * bound by, and how a device mode's own map, already composed, takes another binding.
+ *
+ * **A recipe names a key by Logitech's word for it, and the family turns the word into its own number**, `RecipeKey`:
+ * the words are the same key on every model that has it, where a scan code is one family's firmware's. So the words
+ * are what the family offers, and the scan is answered only to the shared composer, which binds an activity's keypad
+ * map by scan as every map of a compiled configuration is bound; the toolkit and an application see words alone.
  */
 export interface RecipeKeyBuilder {
   /**
-   * The scan codes a recipe may choose a key by: the keypad's keys a device mode's map and an activity's map bind on
-   * this family's remotes. A scan outside it is refused, since a key the keypad does not have, or one a screen
-   * binds, would build an entry nothing presses or one that takes a screen's key away.
+   * The keys a recipe may choose, by Logitech's word for each, in the family's order: the keypad's keys a device
+   * mode's map and an activity's map bind on this family's remotes. A word outside it is refused, since a key the
+   * keypad does not have, or one a screen binds, would build an entry nothing presses or one that takes a screen's
+   * key away.
    */
-  readonly scans: ReadonlySet<number>;
+  readonly keys: readonly string[];
+  /** The scan code the key of that word reports on this family's remotes, or undefined for a word not in `keys`. */
+  scanOf(key: string): number | undefined;
   /**
-   * The configuration with device mode's own map for the device of `group` binding the press of `scan` to `list`, or
-   * to nothing where `list` is undefined; its bytes. Refuses a device with no device mode and a key its map does not
-   * state.
+   * The configuration with device mode's own map for the device of `group` binding the press of the key named `key`
+   * to `list`, or to nothing where `list` is undefined; its bytes. Refuses a word not in `keys`, a device with no
+   * device mode and a key its map does not state.
    */
-  bindDeviceModeKey(c: Container, group: number, scan: number, list: number | undefined): Uint8Array;
+  bindDeviceModeKey(c: Container, group: number, key: string, list: number | undefined): Uint8Array;
 }
 
 /**
@@ -296,8 +304,8 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    */
   readonly activityKeyEditor?: ActivityKeyEditor;
   /**
-   * The keys a recipe chooses otherwise, `RecipeKey`, built for this family, requirements R31 and R32: which scans a
-   * recipe may name and how a device mode's own map is rebound. Absent where the family builds none yet, and then a
+   * The keys a recipe chooses otherwise, `RecipeKey`, built for this family, requirements R31 and R32: which keys a
+   * recipe may name, by Logitech's word for each, and how a device mode's own map is rebound. Absent where the family builds none yet, and then a
    * recipe stating a key is refused rather than built without it, since an ignored choice gives a file the remote
    * accepts and a key that does something else. The Harmony One has it, `families/harmony-one/recipekeys.ts`.
    */

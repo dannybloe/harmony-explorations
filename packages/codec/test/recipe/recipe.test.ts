@@ -98,6 +98,26 @@ test('a recipe\'s shape is checked before anything is built: an unknown field, a
   refuses(withScreen([{ device: 'KPN' }]), /screen item 1 has no command/);
 });
 
+test('a key a recipe chooses is named by a word: a number, the scan code a document of the format before named it by, is refused, as is a key stated twice', () => {
+  const start = raw('h650-start.json');
+  const devices = start.devices as Record<string, unknown>[];
+  const withKeys = (keys: unknown) => ({ ...start, devices: [{ ...devices[0], keys }, ...devices.slice(1)] });
+  const refuses = (keys: unknown, pattern: RegExp) => assert.throws(() => readRecipe(withKeys(keys)),
+    (error: unknown) => error instanceof RecipeError && pattern.test(error.message));
+  // The word reads, the press too, and each is kept as given; whether the model has the key is the build's to say.
+  assert.deepEqual(readRecipe(withKeys([{ key: 'VolumeMute', action: { nothing: true } }, { key: 'Info', press: 'held', action: { nothing: true } }]))
+    .devices[0]!.keys, [{ key: 'VolumeMute', action: { nothing: true } }, { key: 'Info', press: 'held', action: { nothing: true } }]);
+  // A key by its scan code, as a document named one before the key was named by its word: the field is not one a
+  // recipe has, so it is refused rather than read as some key of the model.
+  refuses([{ scan: 9, action: { nothing: true } }], /device 1's key 1 has a field scan no recipe has/);
+  refuses([{ key: 9, action: { nothing: true } }], /device 1's key 1 names no key by its name/);
+  refuses([{ key: '', action: { nothing: true } }], /device 1's key 1 names no key by its name/);
+  refuses([{ action: { nothing: true } }], /device 1's key 1 has no key/);
+  // One key and press is one statement; the same word held is another.
+  refuses([{ key: 'Info', action: { nothing: true } }, { key: 'Info', action: { nothing: true } }], /device 1 states one key twice/);
+  assert.equal(readRecipe(withKeys([{ key: 'Info', action: { nothing: true } }, { key: 'Info', press: 'held', action: { nothing: true } }])).devices[0]!.keys!.length, 2);
+});
+
 test('favourite channels are read as text per device, and a number, an unknown device or a device named twice is refused', () => {
   const h350 = raw('h350-test.json');
   assert.deepEqual(readRecipe(h350).favourites, [{ device: 'KPN', channels: ['1', '2', '3', '666', '07'] }]);

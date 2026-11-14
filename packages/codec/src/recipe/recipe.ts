@@ -80,13 +80,21 @@ export interface RecipeDefinition {
 
 /**
  * A person's choice for one key, over what the builders derive for it, `RecipeDevice.keys` for a device's own map in
- * device mode and `RecipeActivity.keys` for an activity's: the key by its scan code, as a sequence's step names one,
- * the press, short unless given, and what it does instead: a command of any device of the recipe, by the device's
- * name and the command's, a sequence of the same owner's screen by its name, or nothing at all. A key not listed
- * keeps what the builders give it, so a recipe never copies a default.
+ * device mode and `RecipeActivity.keys` for an activity's: the key by Logitech's word for it, the press, short unless
+ * given, and what it does instead: a command of any device of the recipe, by the device's name and the command's, a
+ * sequence of the same owner's screen by its name, or nothing at all. A key not listed keeps what the builders give
+ * it, so a recipe never copies a default.
+ *
+ * **The key is named by its word, `VolumeMute`, `Info`, `Number0`, never by a number.** The words are Logitech's,
+ * the ones every model's drawing carries, `packages/silhouettes` and `reference/silhouettes/`, and they are the same
+ * key on every model that has it, where a scan code is a number inside one family's firmware: Mute is scan 9 on a
+ * Harmony One and another number on a Harmony 650, and a Harmony Touch has no scan codes at all. So a document moved
+ * to another model still means the same keys, and only the family that builds for the model turns a word into its
+ * own number, `Family.recipeKeys`. Which words a model takes is the family's to say, and the toolkit asks it,
+ * `recipe.keyNames`; this module only reads that a key has a name.
  */
 export interface RecipeKey {
-  readonly scan: number;
+  readonly key: string;
   readonly press?: 'short' | 'held';
   readonly action: RecipeKeyAction;
 }
@@ -101,7 +109,7 @@ export interface StatedKey {
   /** The device's or the activity's name in the recipe. */
   readonly name: string;
   readonly key: RecipeKey;
-  /** Where it is, for a refusal: "the device LG TV's key on scan 3". */
+  /** Where it is, for a refusal: "the device LG TV's VolumeUp key". */
   readonly where: string;
 }
 
@@ -111,7 +119,7 @@ export interface StatedKey {
  */
 export function statedKeys(recipe: Recipe): StatedKey[] {
   const place = (owner: StatedKey['owner'], name: string, key: RecipeKey): StatedKey => ({
-    owner, name, key, where: `the ${owner} ${name}'s key on scan ${key.scan}${key.press === 'held' ? ', held' : ''}`,
+    owner, name, key, where: `the ${owner} ${name}'s ${key.key} key${key.press === 'held' ? ', held' : ''}`,
   });
   return [
     ...recipe.devices.flatMap((one) => (one.keys ?? []).map((key) => place('device', one.name, key))),
@@ -294,12 +302,19 @@ function screenItem(value: unknown, what: string): RecipeScreenItem {
   return { device: text(one.device, `${what}'s device`), command: text(one.command, `${what}'s command`) };
 }
 
-/** The keys a person chose otherwise, `RecipeKey`: each key and press once, each action one of the three. */
+/**
+ * The keys a person chose otherwise, `RecipeKey`: each key named by a word, each key and press once, each action one
+ * of the three. Whether the model has a key of that name is not this reader's to say, since the reader knows no
+ * model's keys: the build asks the model's family and refuses a word it does not take, and the toolkit's check lists
+ * it, `unknown-key`.
+ */
 function keysOf(value: unknown, what: string): RecipeKey[] {
   const keys = list(value, `${what}'s keys`).map((one, k): RecipeKey => {
     const at = `${what}'s key ${k + 1}`;
-    const key = fields(one, at, ['scan', 'action'], ['press']);
-    if (!Number.isInteger(key.scan) || (key.scan as number) < 0) throw new RecipeError(`${at} names no key`);
+    const key = fields(one, at, ['key', 'action'], ['press']);
+    // A word and never a number: a number is a scan code, which is one family's and means another key on another
+    // model, so a document naming one would point at the wrong key once moved. Refused by the field's own reading.
+    if (typeof key.key !== 'string' || key.key === '') throw new RecipeError(`${at} names no key by its name`);
     if (key.press !== undefined && key.press !== 'short' && key.press !== 'held') throw new RecipeError(`${at} is pressed neither short nor held`);
     const a = object(key.action, `${at}'s action`);
     let action: RecipeKeyAction;
@@ -314,10 +329,10 @@ function keysOf(value: unknown, what: string): RecipeKey[] {
       fields(a, `${at}'s action`, ['device', 'command']);
       action = { device: text(a.device, `${at}'s device`), command: text(a.command, `${at}'s command`) };
     }
-    return { scan: key.scan as number, ...(key.press === undefined ? {} : { press: key.press as 'short' | 'held' }), action };
+    return { key: key.key, ...(key.press === undefined ? {} : { press: key.press as 'short' | 'held' }), action };
   });
   // One key and press states one thing: stated twice, which of the two a builder took would be its own order.
-  const places = keys.map((one) => `${one.scan}/${one.press ?? 'short'}`);
+  const places = keys.map((one) => `${one.key}/${one.press ?? 'short'}`);
   if (new Set(places).size !== places.length) throw new RecipeError(`${what} states one key twice`);
   return keys;
 }
