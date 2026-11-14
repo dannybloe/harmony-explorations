@@ -158,8 +158,9 @@ for a bench tool and not for FreeHarmony.
 
 **FreeHarmony consumes the packages as the folder next door**, through a `link:` dependency under
 pnpm (`file:` fails there, because Node refuses to strip types for any file inside `node_modules`).
-There is deliberately no git dependency, and publishing waits for a FreeHarmony decision about
-bundling. FreeHarmony's `test/boundary.test.ts` is the probe that keeps this honest.
+There is deliberately no git dependency. **That ends at the first numbered release**, decision 39: from then on
+FreeHarmony takes the FHSDK by version through its `package.json` and never as the folder next door, so the two move
+independently; how a version is published is `todo.md` chapter 3's first question. FreeHarmony's `test/boundary.test.ts` is the probe that keeps this honest.
 
 **A hand maintained copy in FreeHarmony is the one route that is refused**: two copies of a
 derivation are two copies until one of them moves, and across a repository boundary no test can see

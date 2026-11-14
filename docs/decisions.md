@@ -96,7 +96,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
    version.* The endpoint is **published packages**, on the answer to the only question that
    changes anything: somebody who does not have this repository has to be able to build the
    application. Until the API stops moving, FreeHarmony declares a **path dependency on the sibling
-   checkout**, which is measured working today where the git route cannot work at all. What publishing
+   checkout**, which is measured working today where the git route cannot work at all. **When that ends is set by
+   [decision 39](#d39)**: at the first numbered release, directly after the contracts and their skeleton. What publishing
    needs, an `exports` map and possibly a build, waits on a FreeHarmony decision: a bundler compiles
    these sources itself and wants no `dist`, an unbundled Electron main process wants one.
 
@@ -1021,3 +1022,83 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    stored documents from its hub, so the setup itself is read off the hub once that is.
 
    **Why no write.** None was asked for. A write opens as a decision of its own, as every unit's has.
+
+37. <a id="d37"></a>**The application's document is plain data of the FHSDK, with functions beside it; no
+   classes.** *Taken on 14 November 2026, [plan 017](plans/017-contracts-first.md).* The document an application
+   holds for one remote is the recipe, the same value `buildFromRecipe` takes, so an application builds no model of
+   its own and translates nothing when it writes. What it gets beside the types is a toolkit of functions: ones that
+   change a document and return a new one, keeping the whole consistent, so that removing a device also takes it out
+   of every activity, key and sequence that used it; ones that answer what a document holds; and a check that returns
+   every problem as a list an application can show at the field it concerns, without building. An application needs
+   no knowledge of how a recipe is laid out.
+
+   **Why data and functions rather than objects with methods.** The document goes to disk, crosses the boundary
+   between an application's two processes, and sits in an undo history, and plain data does all three as it is,
+   where an object loses its methods on the way and has to be taken apart and put together at each crossing. An
+   interface that redraws when it is handed a new value needs nothing more than a function that returns one. An
+   object with methods that each return a new object would serve too; it was weighed and not chosen.
+
+   **What follows from it.** The recipe has to hold everything that belongs to a setup, since whatever it lacks an
+   application will keep in a model of its own, and the translation this decision removes comes back. What an
+   application keeps about a remote that is not the setup, which unit it is and where its backup lies, sits around
+   the document and not inside it.
+
+38. <a id="d38"></a>**The FHSDK's contracts come first, and FreeHarmony is built against them while the inside is
+   filled in.** *Taken on 14 November 2026, [plan 017](plans/017-contracts-first.md), and it reverses an
+   arrangement of 8 November 2026*, under which FreeHarmony stayed apart until the libraries were a complete base and
+   was then to be opened up in one pass. The outside of the FHSDK for everything an application does, the document
+   toolkit, finding a device, a sync that reports what it is doing, is written down as types and functions and held
+   by the surface tests of [decision 31](#d31) before every remote has every ability. **A contract is proven by a
+   walking skeleton that really works**, one path from finding a device to a remote running the setup, on two
+   remotes, one of each kind of family: the spare Harmony One and the Harmony Touch. A contract shown on one kind
+   alone may not fit the other. A pretend remote lets an application run a read and a sync, with their progress and
+   their failures, with nothing attached.
+
+   **Why the reversal is safe now.** The reason for keeping FreeHarmony apart was that it stood on ground that
+   moved. A fixed outside with a test on it, a skeleton that shows it works and a version number on every release,
+   [decision 39](#d39), take that reason away. An ability a model does not have yet is already an answer: the
+   capability API says per model what is proven, an application offers that and gains the rest as it lands.
+
+   **The one condition.** FreeHarmony reaches the main entries and the named subpaths and nothing inside them.
+
+   **The everyday Harmony One takes no part.** Everything is tried on the spare, which may be wiped and rebuilt as
+   the work needs; nothing in this changes which units may be written.
+
+39. <a id="d39"></a>**The FHSDK is released in numbered versions, and FreeHarmony takes it through its
+   `package.json`, never as the folder next door.** *Taken on 14 November 2026, [plan
+   017](plans/017-contracts-first.md); it replaces the `link:` dependency [decision 4](#d4) and "The two
+   repositories" describe, from the first release on.* While FreeHarmony reads the sibling folder, every commit
+   here is in the application at once, a half finished change included, and two tracks that move at the same time
+   are in each other's way. With versions FreeHarmony stays on one until it chooses the next, the FHSDK moves
+   freely, and a change of a contract shows in the number. Something FreeHarmony needs that the FHSDK lacks, or the
+   other way round, is an ordinary change to the outside. Requirement R75 states the ability; this moves its work to
+   directly after the skeleton. How a version is published is that work's first question.
+
+40. <a id="d40"></a>**The Harmony Hub and the Harmony Elite are supported as every bench remote is, and the FHSDK
+   drives a hub a little.** *Taken on 14 November 2026, [plan 017](plans/017-contracts-first.md).* Each gets a row
+   in the requirements and a checklist, the Elite as a remote and the hub as one too: it is sold on its own, and for
+   these lists it is a remote without keys that has more, reached over the network, joining a Wi-Fi network,
+   changing hands and knowing the smart home devices it found. Those are requirements of their own, R84 to R88.
+
+   **Driving, in a small part.** Every other remote is set up by the FHSDK and tried by its keys. A hub has none, so
+   the FHSDK also asks it to start and stop an activity, to send one command of a device, and for the activity that
+   is on. Without that a setup on a hub cannot be tried, and with it a bench test runs against the infrared monitor
+   with no hand on a key. Driving lamps, locks and thermostats live is a controller, another product than a
+   configuration tool, and is left out.
+
+   **What this does not open.** [Decision 36](#d36) stands: nothing is written to the bench set. Writing a setup,
+   setting the Wi-Fi network, taking a hub over and sending it a command are each a request that is not a read, and
+   each opens behind a rail and a decision of its own, in the order every unit has taken.
+
+41. <a id="d41"></a>**The FHSDK asks the catalogue and Logitech's service, not the application, and the catalogue
+   reaches a user a device at a time.** *Taken on 14 November 2026, [plan 017](plans/017-contracts-first.md).* An
+   application asks for a device by manufacturer and model and is handed candidates; it never sees an infrared
+   code. The archive of [decision 15](#d15) is read over the network from its own index, one device at a time, and
+   kept in a local cache; the whole archive on disk stays as the other source, for whoever wants all of it. A
+   document carries the definitions of its devices, which a recipe can since plan 014, so a setup stays editable
+   when neither the archive nor Logitech's service answers. Each definition keeps saying where it came from,
+   [decision 11](#d11). Logitech's service stays what it was: optional, with the user's own credentials, the user
+   seeing what is fetched.
+
+   **A user's documents are the user's.** The FHSDK and an application create, read, change and delete them and do
+   nothing else with them. What this repository publishes is ruled elsewhere and is a different matter.

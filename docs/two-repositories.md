@@ -36,7 +36,8 @@ been decided.
 Decided on 12 August 2026 on one question: somebody who does not have this repository has
 to be able to build the application. That makes publishing the endpoint. It does not make it work
 today, so until the API stops moving FreeHarmony declares a path dependency on the sibling checkout,
-which is what the lab layout already puts there. MIT flows into GPLv3 without trouble; nothing flows
+which is what the lab layout already puts there. **That ends at the first numbered release**, decision 39 in
+`docs/decisions.md`: from then on FreeHarmony takes the packages by version through its `package.json`. MIT flows into GPLv3 without trouble; nothing flows
 back.
 
 **There is deliberately no git dependency, and that is a correction.** This paragraph said FreeHarmony
