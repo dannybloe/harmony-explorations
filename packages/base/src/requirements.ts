@@ -23,9 +23,9 @@
  *   wait for will change it, which is why a bench model's box can be ticked with an impossible standing.
  * * `unknown`: it is not known whether the model can. It counts as open for anything that plans work.
  *
- * An application offers a feature where it is met; the other three are for a developer. The requirements of the
- * last subject, and R68, the report about a remote this project does not support, are about the FHSDK as a whole
- * rather than any bench remote, and carry one status for every model.
+ * An application offers a feature where it is met; the other three are for a developer. The requirements of two
+ * subjects, the FHSDK as a whole and what an application builds on, and R68, the report about a remote this project
+ * does not support, are about the FHSDK rather than any bench remote, and carry one status for every model.
  *
  * **Why this is data in the base rather than a document.** The application asks per model, through the codec's
  * `capabilitiesOf`, which also needs the family registry; a document cannot be asked, and a second copy of the
@@ -241,6 +241,39 @@ const GROUPS: readonly {
       [75, TESTED, 'An app depends on published packages, not on a checkout beside it.'],
     ],
   },
+  {
+    // Plan 017 and decisions 37, 38 and 41: the outside an application builds against, one status for every model.
+    subject: 'What an application builds on',
+    scope: 'whole',
+    requirements: [
+      [76, TESTED, 'Change a recipe through functions that each return a new one and keep it consistent: add, change and remove a device, an activity, a key, a screen item, a sequence and a favourite, with no knowledge of how a recipe is laid out.'],
+      [77, TESTED, 'Ask a recipe what it holds: what a key does, which devices an activity uses, what is not yet filled in.'],
+      [78, TESTED, 'Check a recipe without building it, and get every problem as a list, each naming the place it concerns.'],
+      [79, TESTED, 'Write a recipe to a remote through one function for every model, which reports its phases, its progress, what the user must do or leave and its outcome as events, and stops only where it is safe.'],
+      [80, TESTED, 'A pretend remote an application reads and writes with nothing attached, its progress and its failures included.'],
+      [81, TESTED, 'Read the catalogue over the network a device at a time, from its index, kept in a local cache; the whole archive on disk is the other source.'],
+      [82, TESTED, 'Find a device across every source at once, the archive and Logitech\'s service, each result saying where it came from.'],
+    ],
+  },
+  {
+    subject: 'An existing setup',
+    scope: 'model',
+    requirements: [
+      [83, SHOWN, 'Take over a configuration Logitech\'s software built as a recipe that rebuilds to the same behaviour, so an existing setup is not entered again.'],
+    ],
+  },
+  {
+    // Decision 40: a hub's own abilities. On a model that is not a hub they stand as impossible by that decision.
+    subject: 'The hub',
+    scope: 'model',
+    requirements: [
+      [84, SHOWN, 'Find a hub on the local network and reach it there, with no account and no service of Logitech\'s.'],
+      [85, SHOWN, 'Set the Wi-Fi network a hub joins, with no service of Logitech\'s.'],
+      [86, SHOWN, 'Take over a hub somebody else set up, so it is the user\'s own and holds nothing of its previous owner.'],
+      [87, SHOWN, 'Through a hub, start and stop an activity, send one command of a device, and read which activity is on.'],
+      [88, SHOWN, 'Read the smart home devices a hub found, with their kind and what each can do, and leave them intact when a setup is written.'],
+    ],
+  },
 ];
 
 /** The subjects, in the order the requirements are numbered and the document lists them. */
@@ -370,7 +403,8 @@ function unknown(why: string, reference: readonly string[] = []): RequirementSta
 }
 
 /**
- * Every bench model's written status on the requirements of the models, R1 to R72 but R68, that no proof makes met:
+ * Every bench model's written status on the requirements of the models, R1 to R72 but R68 and R83 to R88, that no
+ * proof makes met:
  * open, impossible or unknown, each with its reason, judged by reading the model's test notes, its bench tests and its
  * reference pages. A requirement a proof names for the model has no entry here, and one with neither is a fault,
  * `test/requirements.test.ts`: every requirement on every model is proven or written, never both.
@@ -436,6 +470,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('Nothing in the FHSDK brings a stuck One back; the recovery paths built are other models\'.'),
     72: open('Logitech\'s service serves the One, but its client is tied to test accounts and is on no public entry.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 600.
   'harmony-600': {
@@ -494,6 +534,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: open('Staging and reinstall exist for this family but were never sent to a 600, and its newer image is not obtainable.'),
     71: open('The reinstall request was never sent to a 600, and its safe mode is not checked.'),
     72: open('Logitech\'s service serves the 600, but the FHSDK\'s account client is on no public entry.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 650.
   'harmony-650': {
@@ -557,6 +603,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: open('The staging write and reinstall were never sent to a 650, and Logitech\'s update service does not serve it.'),
     71: open('No recovery has been tried on a 650, and it has no staged application to reinstall.'),
     72: open('Logitech\'s service still serves the 650, but our client is tied to the test accounts and is on no public entry.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 700.
   'harmony-700': {
@@ -617,6 +669,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     67: open('The key watch takes the 600\'s address for this product id; the 700\'s own address is not chosen.'),
     69: open('Safe mode was recognised on this unit, but nothing tells whether a newer firmware exists.'),
     72: open('Logitech\'s service still answers for the 700, but its client is bound to test accounts and on no public entry.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 525.
   'harmony-525': {
@@ -684,6 +742,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: impossible(['reference/remotes/harmony-525/firmware.md#harmony-525-firmware'], 'Logitech publishes no firmware package for the 525, and decision 18 allows the install on the 600, 650 and 700 only.'),
     71: open('The unit left safe mode once, by hand, from a lab script; no library function does it.'),
     72: impossible(['reference/remotes/harmony-525/features.md#logitechs-service-has-the-product-switched-off'], 'Logitech\'s service has the 525 switched off and compiles nothing for it.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 515, on the Harmony 525's platform with an application of its own, 3.4. Its bench unit has only been
   // read, decision 35, so everything that touches a write is open, and what the 525 shows is not assumed.
@@ -754,6 +818,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('Nothing in the libraries brings a stuck 515 back.'),
     72: unknown('Whether Logitech\'s service still serves the 515\'s skin is not checked.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 885.
   'harmony-885': {
@@ -818,6 +888,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('Nothing in the libraries brings a stuck 885 back; its recovery has only been read in the firmware.'),
     72: impossible(['reference/remotes/harmony-885/features.md#logitechs-service'], 'Logitech\'s service has the 885\'s skins switched off and refuses its serial, so it serves no 885 account.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 785, on the Harmony 880 and 885's platform with the Harmony 720's application. Both bench units have
   // only been read, decision 34, so everything that touches a write is open, and what the 885 shows is not assumed.
@@ -889,6 +965,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('Nothing in the libraries brings a stuck 785 back.'),
     72: unknown('Whether Logitech\'s service still serves the 785\'s skin is not checked.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 300.
   'harmony-300': {
@@ -956,6 +1038,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('A battery pull recovered the unit; nothing recovers a stuck 300, whose safe mode image is a different, unread build.'),
     72: open('Logitech\'s service still compiles for the 300, but the client is bound to test accounts and on no public entry.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony 350.
   'harmony-350': {
@@ -1018,6 +1106,12 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     71: open('A failed write was recovered by writing again on the unit; recovering through safe mode is not offered.'),
     72: open('Logitech\'s service serves the 350, but the service client is not on any public entry.'),
+    83: open('Nothing turns a configuration Logitech\'s software built into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
   // The Harmony Touch.
   'harmony-touch': {
@@ -1069,15 +1163,28 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     69: open('The firmware version is read, but its running or recovery state and whether a newer version exists are not.'),
     70: impossible(['docs/decisions.md#d18'], 'Decision 18 allows the firmware install on the Harmony 600, 650 and 700 alone, so the FHSDK never installs firmware here.'),
     72: open('Logitech\'s service serves the Touch, but the service client is on no public entry, so no import is offered.'),
+    83: open('Nothing turns the documents of a setup made with Logitech\'s software into a recipe; a setup is entered again.'),
+    84: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable.'),
+    85: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it.'),
+    86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
+    87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
+    88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
   },
 };
 
 /**
- * The written statuses of the requirements about the FHSDK as a whole, R68 and R73 to R75, one each and shared by
+ * The written statuses of the requirements about the FHSDK as a whole, R68 and R73 to R82, one each and shared by
  * every model, for those no proof makes met. R73 and R74 are proven, so they are not here.
  */
 const WHOLE_STATUSES: Readonly<Record<number, RequirementState>> = {
   75: open('Every package is private and unpublished, and an application links the folder beside it.'),
+  76: open('The recipe\'s types and the reader that checks one are public, but no function changes a recipe.'),
+  77: open('The model a recipe is for and the choices it leaves unstated can be asked; what a key does and which devices an activity uses cannot, short of building.'),
+  78: open('The reader and the builders refuse a recipe at the first problem they meet; nothing returns every problem as a list without building.'),
+  79: open('Writing is three functions, one per kind of remote, each reporting lines for a journal; no one function chooses among them or reports events.'),
+  80: open('A pretend Harmony Touch exists in the test kit, which no application may depend on; no pretend remote is offered.'),
+  81: open('The archive is read from a checkout on disk, through a source a builder is handed; no source reads it over the network or keeps a cache.'),
+  82: open('The catalogue is asked from the archive alone; nothing searches Logitech\'s service beside it or says per result where it came from.'),
   68: open('The probe builds a publishable report from a configuration and from a remote on the cable, but no run of it on a remote outside the eleven bench models is recorded.'),
 };
 

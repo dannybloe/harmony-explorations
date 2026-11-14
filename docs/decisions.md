@@ -1078,7 +1078,9 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    drives a hub a little.** *Taken on 14 November 2026, [plan 017](plans/017-contracts-first.md).* Each gets a row
    in the requirements and a checklist, the Elite as a remote and the hub as one too: it is sold on its own, and for
    these lists it is a remote without keys that has more, reached over the network, joining a Wi-Fi network,
-   changing hands and knowing the smart home devices it found. Those are requirements of their own, R84 to R88.
+   changing hands and knowing the smart home devices it found. Those are requirements of their own, R84 to R88. **They
+   are a hub's alone**: on every bench model that is not a hub this project does none of them, and each stands there
+   as impossible by this decision, the FHSDK reaching such a remote over its cable and by its keys.
 
    **Driving, in a small part.** Every other remote is set up by the FHSDK and tried by its keys. A hub has none, so
    the FHSDK also asks it to start and stop an activity, to send one command of a device, and for the activity that

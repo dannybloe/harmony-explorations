@@ -1037,3 +1037,121 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 ### R75 An app depends on published packages, not on a checkout beside it.
 
 * **Every remote**, open: Every package is private and unpublished, and an application links the folder beside it.
+
+## What an application builds on
+
+### R76 Change a recipe through functions that each return a new one and keep it consistent: add, change and remove a device, an activity, a key, a screen item, a sequence and a favourite, with no knowledge of how a recipe is laid out.
+
+* **Every remote**, open: The recipe's types and the reader that checks one are public, but no function changes a recipe.
+
+### R77 Ask a recipe what it holds: what a key does, which devices an activity uses, what is not yet filled in.
+
+* **Every remote**, open: The model a recipe is for and the choices it leaves unstated can be asked; what a key does and which devices an activity uses cannot, short of building.
+
+### R78 Check a recipe without building it, and get every problem as a list, each naming the place it concerns.
+
+* **Every remote**, open: The reader and the builders refuse a recipe at the first problem they meet; nothing returns every problem as a list without building.
+
+### R79 Write a recipe to a remote through one function for every model, which reports its phases, its progress, what the user must do or leave and its outcome as events, and stops only where it is safe.
+
+* **Every remote**, open: Writing is three functions, one per kind of remote, each reporting lines for a journal; no one function chooses among them or reports events.
+
+### R80 A pretend remote an application reads and writes with nothing attached, its progress and its failures included.
+
+* **Every remote**, open: A pretend Harmony Touch exists in the test kit, which no application may depend on; no pretend remote is offered.
+
+### R81 Read the catalogue over the network a device at a time, from its index, kept in a local cache; the whole archive on disk is the other source.
+
+* **Every remote**, open: The archive is read from a checkout on disk, through a source a builder is handed; no source reads it over the network or keeps a cache.
+
+### R82 Find a device across every source at once, the archive and Logitech's service, each result saying where it came from.
+
+* **Every remote**, open: The catalogue is asked from the archive alone; nothing searches Logitech's service beside it or says per result where it came from.
+
+## An existing setup
+
+### R83 Take over a configuration Logitech's software built as a recipe that rebuilds to the same behaviour, so an existing setup is not entered again.
+
+* **Harmony One**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 600**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 650**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 700**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 525**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 515**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 885**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 785**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 300**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony 350**, open: Nothing turns a configuration Logitech's software built into a recipe; a setup is entered again.
+* **Harmony Touch**, open: Nothing turns the documents of a setup made with Logitech's software into a recipe; a setup is entered again.
+
+## The hub
+
+### R84 Find a hub on the local network and reach it there, with no account and no service of Logitech's.
+
+* **Harmony One**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 600**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 650**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 700**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 525**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 515**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 885**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 785**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+* **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK reaches it over its cable. `docs/decisions.md#d40`.
+
+### R85 Set the Wi-Fi network a hub joins, with no service of Logitech's.
+
+* **Harmony One**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 600**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 650**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 700**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 525**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 515**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 885**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 785**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+* **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub, and the FHSDK sets no network for it. `docs/decisions.md#d40`.
+
+### R86 Take over a hub somebody else set up, so it is the user's own and holds nothing of its previous owner.
+
+* **Harmony One**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 600**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 650**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 700**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 525**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 515**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 885**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 785**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+* **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub; writing a remote of one's own is R6. `docs/decisions.md#d40`.
+
+### R87 Through a hub, start and stop an activity, send one command of a device, and read which activity is on.
+
+* **Harmony One**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 600**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 650**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 700**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 525**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 515**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 885**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 785**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+* **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub and is driven by its keys. `docs/decisions.md#d40`.
+
+### R88 Read the smart home devices a hub found, with their kind and what each can do, and leave them intact when a setup is written.
+
+* **Harmony One**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 600**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 650**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 700**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 525**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 515**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 885**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 785**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 300**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony 350**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.
+* **Harmony Touch**, impossible: A hub's own ability by decision 40: this model is not a hub and finds no smart home devices. `docs/decisions.md#d40`.

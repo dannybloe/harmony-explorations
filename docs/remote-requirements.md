@@ -3,7 +3,7 @@
 <!-- introduction -->
 What the FHSDK must be able to do for an application such as FreeHarmony, and how far each bench model has it.
 [Decision 33](decisions.md#d33) is the rule this rests on, and [plan 015](plans/015-requirements-and-capabilities.md)
-how it was decided.
+how it was decided; R76 to R88 came with [plan 017](plans/017-contracts-first.md).
 
 **A requirement** is one ability an application gets from the FHSDK, stated as what the application can do for its
 user: read a configuration off the remote, add a device from the catalogue, learn a code. It is not an implementation
@@ -22,9 +22,10 @@ requirement by its number, never at a todo.
   650 and 700's alone by decision 18.
 * **unknown**: it is not known whether the model can. It counts as open.
 
-An application offers a feature where it is met; the other statuses are for a developer. The last subject's
-requirements, and R68, the report about a remote this project does not support, are about the FHSDK as a whole and
-carry one status for every model.
+An application offers a feature where it is met; the other statuses are for a developer. The requirements of two
+subjects, the FHSDK as a whole and what an application builds on, and R68, the report about a remote this project
+does not support, are about the FHSDK rather than any remote and carry one status for every model. The hub's own
+requirements, R84 to R88, are impossible on every model that is not a hub, by [decision 40](decisions.md#d40).
 
 **A met is proven by the test, never written down.** A test that shows a requirement says so itself, with a line
 inside it naming the requirement, the models it proves it for and, where the requirement shows on a remote, the bench
@@ -46,23 +47,23 @@ is [the evidence](remote-requirements-evidence.md), and each bench remote's requ
 
 ## Where each remote stands
 
-Over the 71 requirements that have a status per model. Possible is every one but the impossible ones; the evidence behind each status is [the evidence](remote-requirements-evidence.md), and each remote's list of them its checklist.
+Over the 77 requirements that have a status per model. Possible is every one but the impossible ones; the evidence behind each status is [the evidence](remote-requirements-evidence.md), and each remote's list of them its checklist.
 
 | remote | proven | open | unknown | impossible | proven of possible | checklist |
 |---|---|---|---|---|---|---|
-| Harmony One | 13 | 51 | 2 | 5 | 13 of 66 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
-| Harmony 600 | 16 | 49 | 3 | 3 | 16 of 68 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
-| Harmony 650 | 11 | 54 | 2 | 4 | 11 of 67 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
-| Harmony 700 | 14 | 50 | 4 | 3 | 14 of 68 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
-| Harmony 525 | 7 | 50 | 9 | 5 | 7 of 66 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
-| Harmony 515 | 5 | 52 | 11 | 3 | 5 of 68 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
-| Harmony 885 | 10 | 53 | 3 | 5 | 10 of 66 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
-| Harmony 785 | 4 | 59 | 7 | 1 | 4 of 70 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
-| Harmony 300 | 7 | 39 | 8 | 17 | 7 of 54 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
-| Harmony 350 | 12 | 37 | 6 | 16 | 12 of 55 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
-| Harmony Touch | 23 | 39 | 6 | 3 | 23 of 68 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
+| Harmony One | 13 | 52 | 2 | 10 | 13 of 67 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
+| Harmony 600 | 16 | 50 | 3 | 8 | 16 of 69 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
+| Harmony 650 | 11 | 55 | 2 | 9 | 11 of 68 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
+| Harmony 700 | 14 | 51 | 4 | 8 | 14 of 69 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
+| Harmony 525 | 7 | 51 | 9 | 10 | 7 of 67 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
+| Harmony 515 | 5 | 53 | 11 | 8 | 5 of 69 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
+| Harmony 885 | 10 | 54 | 3 | 10 | 10 of 67 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
+| Harmony 785 | 4 | 60 | 7 | 6 | 4 of 71 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
+| Harmony 300 | 7 | 40 | 8 | 22 | 7 of 55 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
+| Harmony 350 | 12 | 38 | 6 | 21 | 12 of 56 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
+| Harmony Touch | 23 | 40 | 6 | 8 | 23 of 69 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
 
-The 4 requirements of the FHSDK as a whole carry one status each, for every remote: R68 open, R73 proven, R74 proven, R75 open.
+The 11 requirements of the FHSDK as a whole carry one status each, for every remote: R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 open, R81 open, R82 open.
 
 ## The requirements
 
@@ -176,3 +177,25 @@ The 4 requirements of the FHSDK as a whole carry one status each, for every remo
 * **R73** Everything works offline, with no account.
 * **R74** Reading and building run in a browser or an app window, the USB half in the app's main process.
 * **R75** An app depends on published packages, not on a checkout beside it.
+
+### What an application builds on
+
+* **R76** Change a recipe through functions that each return a new one and keep it consistent: add, change and remove a device, an activity, a key, a screen item, a sequence and a favourite, with no knowledge of how a recipe is laid out.
+* **R77** Ask a recipe what it holds: what a key does, which devices an activity uses, what is not yet filled in.
+* **R78** Check a recipe without building it, and get every problem as a list, each naming the place it concerns.
+* **R79** Write a recipe to a remote through one function for every model, which reports its phases, its progress, what the user must do or leave and its outcome as events, and stops only where it is safe.
+* **R80** A pretend remote an application reads and writes with nothing attached, its progress and its failures included.
+* **R81** Read the catalogue over the network a device at a time, from its index, kept in a local cache; the whole archive on disk is the other source.
+* **R82** Find a device across every source at once, the archive and Logitech's service, each result saying where it came from.
+
+### An existing setup
+
+* **R83** Take over a configuration Logitech's software built as a recipe that rebuilds to the same behaviour, so an existing setup is not entered again.
+
+### The hub
+
+* **R84** Find a hub on the local network and reach it there, with no account and no service of Logitech's.
+* **R85** Set the Wi-Fi network a hub joins, with no service of Logitech's.
+* **R86** Take over a hub somebody else set up, so it is the user's own and holds nothing of its previous owner.
+* **R87** Through a hub, start and stop an activity, send one command of a device, and read which activity is on.
+* **R88** Read the smart home devices a hub found, with their kind and what each can do, and leave them intact when a setup is written.

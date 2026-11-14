@@ -69,21 +69,26 @@ function everyState(): { label: string; state: RequirementState; needsBench: boo
   })));
 }
 
-test('the requirements are numbered from 1 with no gap and no repeat, 75 of them under twelve subjects', () => {
+test('the requirements are numbered from 1 with no gap and no repeat, 88 of them under fifteen subjects', () => {
   // Exact, so a requirement added or taken out shows in this diff; a dropped one stays, withdrawn.
-  assert.equal(REQUIREMENTS.length, 75);
-  assert.deepEqual(REQUIREMENTS.map((one) => one.number), Array.from({ length: 75 }, (_, i) => i + 1));
-  assert.equal(REQUIREMENT_SUBJECTS.length, 12);
+  assert.equal(REQUIREMENTS.length, 88);
+  assert.deepEqual(REQUIREMENTS.map((one) => one.number), Array.from({ length: 88 }, (_, i) => i + 1));
+  assert.equal(REQUIREMENT_SUBJECTS.length, 15);
   // The subjects follow each other in number order: a subject's requirements are one run.
   const runs = REQUIREMENTS.map((one) => one.subject).filter((subject, i, all) => subject !== all[i - 1]);
   assert.deepEqual(runs, REQUIREMENT_SUBJECTS);
   for (const one of REQUIREMENTS) assert.ok(one.text.length > 0 && one.text.endsWith('.'), `R${one.number}`);
 });
 
-test('the requirements of the last subject are the FHSDK\'s as a whole, and of the others only the report about an unsupported remote', () => {
+test('two subjects are the FHSDK\'s as a whole, and of the others only the report about an unsupported remote', () => {
   const whole = REQUIREMENTS.filter((one) => one.scope === 'whole').map((one) => one.number);
-  assert.deepEqual(whole, [68, 73, 74, 75]);
-  assert.ok(REQUIREMENTS.filter((one) => one.subject === REQUIREMENT_SUBJECTS.at(-1)).every((one) => one.scope === 'whole'));
+  assert.deepEqual(whole, [68, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82]);
+  // The two subjects every requirement of which is about the FHSDK and no remote: how it is built and delivered, and
+  // the outside an application builds against. The hub's own requirements, the last subject, are a model's.
+  const wholeSubjects = REQUIREMENT_SUBJECTS.filter((subject) =>
+    REQUIREMENTS.filter((one) => one.subject === subject).every((one) => one.scope === 'whole'));
+  assert.deepEqual(wholeSubjects, ['The FHSDK as a whole', 'What an application builds on']);
+  assert.ok(REQUIREMENTS.filter((one) => one.subject === 'The hub').every((one) => one.scope === 'model'));
 });
 
 test('every bench model has a status for every requirement, and a whole one is the same for all', () => {
@@ -98,7 +103,7 @@ test('every bench model has a status for every requirement, and a whole one is t
     const states = BENCH_MODELS.map((model) => requirementState(model.key, one.number));
     assert.ok(states.every((state) => state === states[0]), `R${one.number} is one status`);
   }
-  assert.throws(() => requirementState('harmony-one', 76), /no requirement R76/);
+  assert.throws(() => requirementState('harmony-one', 89), /no requirement R89/);
   assert.equal(requirement(0), undefined);
 });
 
@@ -287,13 +292,13 @@ test('the control: a requirement both proven and written, and one neither, are e
 
 test('the control: a proof naming no requirement, no bench model, a model twice or some models for a whole requirement is found', () => {
   const faults = namingFaults([
-    planted({ requirement: 76 }),
+    planted({ requirement: 89 }),
     planted({ models: ['harmony-520'] }),
     planted({ models: ['harmony-one', 'harmony-one'] }),
     planted({ requirement: 73, models: ['harmony-one'] }),
   ]);
   assert.equal(faults.length, 4, faults.join('\n'));
-  assert.match(faults[0]!, /no requirement R76/);
+  assert.match(faults[0]!, /no requirement R89/);
   assert.match(faults[1]!, /harmony-520 is no bench model/);
   assert.match(faults[2]!, /a model named twice/);
   assert.match(faults[3]!, /R73 is the FHSDK's as a whole/);
@@ -347,7 +352,7 @@ test('the helper checks its own arguments and nothing else: a requirement, bench
   assert.doesNotThrow(() => proof.proves(20, 'every'));
   // A path that does not exist passes here: the helper does not look at the disk, the checks above do.
   assert.doesNotThrow(() => proof.proves(1, ['harmony-650'], ['docs/test-notes/no-such.md']));
-  assert.throws(() => proof.proves(76, 'every'), /no requirement R76/);
+  assert.throws(() => proof.proves(89, 'every'), /no requirement R89/);
   assert.throws(() => proof.proves(1.5, 'every'), /no requirement/);
   assert.throws(() => proof.proves(1, []), /names no model/);
   assert.throws(() => proof.proves(1, ['harmony-520' as BenchModelKey]), /harmony-520, which is no bench model/);

@@ -184,7 +184,7 @@ test('the short document is the introduction, one table and the requirements; th
   const headings = text.split('\n').filter((line) => /^##? /.test(line));
   assert.deepEqual(headings, ['# The FHSDK\'s requirements, per remote', '## Where each remote stands', '## The requirements']);
   // A row per remote: proven, open, unknown, impossible, and proven of possible, as the data counts them.
-  assert.ok(text.includes('| Harmony 650 | 11 | 54 | 2 | 4 | 11 of 67 |'));
+  assert.ok(text.includes('| Harmony 650 | 11 | 55 | 2 | 9 | 11 of 68 |'));
   // The evidence document names the tests that prove a met, by file and title.
   const evidence = evidenceDocument(PROOFS);
   const one = PROOFS.find((proof) => proof.requirement === 1 && proof.models !== 'every' && proof.models.includes('harmony-650'))!;

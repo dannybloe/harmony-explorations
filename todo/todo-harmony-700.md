@@ -107,6 +107,10 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 ## Logitech's service
 
 - [ ] R72 Import devices and activities from the user's own Logitech account, if they ask and give their own credentials; the app works the same without it.
+
+## An existing setup
+
+- [ ] R83 Take over a configuration Logitech's software built as a recipe that rebuilds to the same behaviour, so an existing setup is not entered again.
 <!-- /checklist -->
 
 ## The remote's own work

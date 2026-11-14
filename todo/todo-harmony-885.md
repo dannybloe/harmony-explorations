@@ -102,6 +102,10 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 
 - [ ] R69 Know the firmware state: running, safe mode or bootloader, and whether a newer version exists.
 - [ ] R71 Bring a stuck remote back.
+
+## An existing setup
+
+- [ ] R83 Take over a configuration Logitech's software built as a recipe that rebuilds to the same behaviour, so an existing setup is not entered again.
 <!-- /checklist -->
 
 ## The remote's own work
