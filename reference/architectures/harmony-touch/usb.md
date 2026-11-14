@@ -4,7 +4,7 @@ A remote of this generation is talked to over USB by **opening a named file**, r
 handle and closing it, rather than by asking for bytes at an address[^s198]. Its configuration does not
 travel that way as a file at all: the remote fetches what it needs through the computer, which only carries
 the requests[^s203]. The protocol itself is [the file protocol](../../usb-protocol/file-protocol.md); this page
-is what this generation does with it. What this library does with a Touch, and the two files it has read,
+is what this generation does with it. What this library does with a Touch, and the files it has read,
 is [the Touch's usb.md](../../remotes/harmony-touch/usb.md).
 
 ## Two protocols, chosen by the architecture number

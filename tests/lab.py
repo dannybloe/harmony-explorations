@@ -157,6 +157,8 @@ IMAGES = {
     # then the first sync answered by this project and the recovery after it, read by
     # `packages/usb/test/touch/touch-first-sync.test.ts`. Named here to keep the two tables identical.
     'touch_confighash_read': 'reads/20261105T0930Z-touch-confighash/answer.txt',
+    # The first read of the bench Touch's power source, read by `packages/usb/test/touch/touch-power-read.test.ts`.
+    'touch_power_source_read': 'reads/20261114T2049Z-touch-powerstate/powerstate.bin',
     'touch_first_sync_confighash_before': 'reads/20261105T1051Z-touch-confighash/answer.txt',
     'touch_first_sync_handover_list': 'reads/20261105T1051Z-touch-sync-unchanged/003-request-list-answer.txt',
     'touch_first_sync_handover_answers': 'reads/20261105T1051Z-touch-sync-unchanged/004-answers-request.txt',

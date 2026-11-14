@@ -28,7 +28,7 @@
  *    the smallest set the reference describes passes it, which is the control.
  * 3a. **The power source**: a source but `usb`, the four other sources the driver names and an unexpected text, is
  *    refused before anything at all is written to the remote, not even the provisioning read, and names no
- *    recovery; the line naming the source read is reported in every run; `usb` goes on, the control.
+ *    recovery; the line naming the source read is reported in each of these runs; `usb` goes on, the control.
  * 4. **The provisioning**: a remote not provisioned, or provisioned in a hub's mode, is refused after the
  *    provisioning read alone.
  * 5. **The hand over**: what the remote hands up is in the lab before the write that answers it, and is
@@ -660,7 +660,7 @@ describe('the script', () => {
     for (const run of [both, away, noAccount, noAddresses]) assert.doesNotMatch(run.out, /unit record:/);
   });
 
-  it('refuses with the cable check when no Touch is found, by the library\'s words, and the script uses them', () => {
+  it('the words for no Touch found carry the cable check, and the script refuses with them', () => {
     assert.match(TOUCH_NOT_FOUND, /^no Harmony Touch is attached\. /);
     assert.ok(TOUCH_NOT_FOUND.includes('A cable that carries power and no data charges the remote without the computer seeing it, so check that the cable carries data.'));
     const source = readFileSync(new URL('../../bin/touch-sync.ts', import.meta.url), 'utf8');

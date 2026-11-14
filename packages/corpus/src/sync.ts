@@ -691,7 +691,7 @@ const STARTED = SYNC_LINES.find((form) => form.test('sync: started'))!;
  * source but `usb` as a commit would, since a dry run exists to say up front whether a commit would go through; it
  * sends nothing that acts and needs no flag, which is `bin/touch-sync.ts --document` without `--commit`. A commit then
  * checks the flags, makes the keeper's folder, keeps the set, and hands it to `answerTouchSync`, which opens the
- * remote, reads its power source and refuses on any but `usb`, compares its serial with the record, reads its
+ * remote, reads its power source, compares its serial with the record, refuses on any source but `usb`, reads its
  * provisioning, and only then acts: `hand-over` from its line saying so, `write` from its line saying the sync
  * started.
  *

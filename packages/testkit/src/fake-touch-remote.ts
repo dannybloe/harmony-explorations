@@ -67,8 +67,8 @@ export interface FakeTouchRemoteOptions {
   readonly listener?: boolean;
   /**
    * The text `/tde/powerstate` serves when opened for reading: `usb` and a newline when absent, the one source a
-   * Touch's screens take part in a sync on, with the newline a kernel file's value usually ends in (what a unit's
-   * file ends in is not measured, which is why the reader trims). Any text, so a test can state another of the five
+   * Touch's screens take part in a sync on, with the line feed a unit's file ended in when it was read,
+   * `packages/usb/test/touch/touch-power-read.test.ts`, which is why the reader trims. Any text, so a test can state another of the five
    * sources or something no driver names.
    */
   readonly powerstate?: string;

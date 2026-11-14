@@ -838,18 +838,23 @@ the last key pressed; which screen it showed, its USB screen or Charging, is not
 hand over and the sync. Nothing was heard on the infrared monitor. The unit was left on this set, for a run of
 the 7.1 tests on it, and not put back.
 
-## The power source, read before a sync: not yet run on this unit
+## The power source, read before a sync
 
-**Nothing in this section has happened on the unit yet.** The library may open `/tde/powerstate` for reading on a
-Touch, and every sync reads it first and refuses on any source but `usb`, `readTouchPowerSource` and
-`touchPowerRefusal`; that the open is a plain read rests on the firmware alone,
-`tests/harmony_touch/test_harmony_touch_api_names.py` `ThePowerSourceIsAPlainRead`. The first read on this unit
-is to be recorded here when it is made: the text the file gave, its exact bytes and line ending, the screen the
-remote showed, and the port and cable it was on.
+The library may open `/tde/powerstate` for reading on a Touch, and every sync the answerer runs reads it first and refuses on any
+source but `usb`, `readTouchPowerSource` and `touchPowerRefusal`; that the open is a plain read was read in the
+firmware first, `tests/harmony_touch/test_harmony_touch_api_names.py` `ThePowerSourceIsAPlainRead`. **The first read
+on this unit was made on 14 November 2026**, after the sync through `syncDocument` above, the remote attached
+through a hub, with no flag set. Predicted before the read: the text `usb`, since that sync had committed.
 
 | what | result |
 |---|---|
-| the first read of `/tde/powerstate` on this unit | not run |
+| the read, through `readTouchPowerSource` | `usb` |
+| the file's bytes, read once more with `readFile` | four: `usb` and one line feed, kept in the lab's `reads/20261114T2049Z-touch-powerstate/` |
+| a dry run of `touch-sync.ts --document` directly after | built its set, printed `sync: power source, usb`, ended as a dry run with the remote as before; its journal is beside the document in the lab's `work/sync-skeleton/` |
+| the screen the remote showed | not looked at: nobody was at the bench |
+
+`packages/usb/test/touch/touch-power-read.test.ts` holds the bytes. **Not read on this unit**: any other source, a
+charger, the cradle, or a port that gives `usb_charge`.
 
 ## Not done
 
@@ -857,5 +862,5 @@ remote showed, and the port and cable it was on.
   seen and written down. Checks 1, 8 and 9 of 3.2 above ran on the infrared monitor, and 6.9 timed a sequence's
   delay on it, so the line is gone from this list.
 * Nobody has recorded looking at its clock.
-* Its power source, `/tde/powerstate`, has never been read on it, above.
+* Its power source has been read on one port and one source only, `usb`, above.
 * The request and response command `0x08` has never been sent to it, by us or, in any of the recorded syncs, by Logitech's client.

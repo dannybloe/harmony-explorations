@@ -402,6 +402,13 @@ CALLS_OPEN, CALLS_OPEN_BY_GENERATE, CALLS_CLOSE, CALLS_READ_BY_SLOT_5, CALLS_LEN
     0x123E4, 0x1244C, 0x114D8, 0x119C4, 0x119E4, 0x11D90)
 #: How many names share the plain file backed open, close and length functions.
 PLAIN_FILE_NAMES = 19
+#: The socket handler's call of its opener for command 1, that opener, and the radio handler with its own opener.
+#: The radio's opener is written with a leading zero because its plain spelling opens with the digits of a flash
+#: write address that `TheWriteReviewWithholdListIsComplete` sweeps for, which this file does not state.
+SOCKET_CALLS_OPENER, SOCKET_OPENER, RADIO_HANDLER, RADIO_OPENER, RADIO_CALLS_OPENER = (
+    0xD2F0, 0x12044, 0x1A7C8, 0x01A4C0, 0x1ADE8)
+#: The program's code, from its first routine to its read only data, for a scan of every call.
+CODE = (0xAC00, RODATA[0])
 
 
 def ldr_str(word):
@@ -452,7 +459,7 @@ EQ, LT, AL = 0x0, 0xB, 0xE
 
 
 class ThePowerSourceIsAPlainRead(TheNativeProgram):
-    """**Opening `/tde/powerstate` for reading reads the power controller's file and changes nothing**, so the library
+    """**Opening `/tde/powerstate` for reading reads the power controller's file and writes nothing to it**, so the library
     may open it on a Harmony Touch, and the slot table of the names page had its read and close the wrong way round.
 
     **Why it was read.** A Touch's screens take part in a sync only on the power source its software calls `usb`,
@@ -484,6 +491,14 @@ class ThePowerSourceIsAPlainRead(TheNativeProgram):
        buffer the open filled. Slot 2 (entry + 20) is called for a write. The length function itself is two
        instructions, a load of handle + 8 and a return: **the length the open kept**, which closes the reading from
        the other end. The close function frees that buffer unless the mode is 2.
+    5. **Two entry points over the same slots.** The letter walk of point 3 is in the opener the socket handler calls for command 1, the file
+       protocol's open, and no other direct call in the program reaches that opener. It takes a request of two or three typed
+       parameters, the first two of them strings, which is the shape of an open on the cable: a path, a mode and
+       an optional size. The radio's handler, whose routines name `src/libhal/rf/libhal_hot_handler.c` and
+       `libhal_hot_decode_open_handler`, reaches an opener of its own, which stores a word out of its request as the
+       mode, compares no letter, and calls slot 0 itself. So the letters are the socket's route, and over the radio
+       the mode is whatever number the request carries. **Not read**: which program hands the cable's requests to
+       that socket, the tie being the request's shape; and what a hub sends as the mode over the radio.
 
     **The correction.** The names page and this file's header listed slot 1 as the read and slot 3 as the close.
     By the calls above slot 1 is the close and slot 3 the length of what a read returns; there is no read slot,
@@ -494,8 +509,8 @@ class ThePowerSourceIsAPlainRead(TheNativeProgram):
     special case, a symbolic link made when the backing path equals one constant, is the secure shell name's and not
     this one's. **Not read**: the kernel driver's routine behind the `powersource` file, so whether a read does
     anything inside the driver is not known from the image; the remote's own screens watch the same file,
-    `TheScreensTakePartOnlyOnUSBPower`. **What a unit answers is not measured**, nor whether the file's text ends in
-    a newline.
+    `TheScreensTakePartOnlyOnUSBPower`. **What a unit answers is measured for `usb` alone**, that name and a line feed,
+    `packages/usb/test/touch/touch-power-read.test.ts`.
 
     **Scope.** One build, production 4.15.330, of the Harmony Touch, host name `juniper`; the instruction addresses
     are that build's, held by the program's SHA-256, and the class skips on another. Whether a Harmony 300 or 350 has
@@ -600,7 +615,7 @@ class ThePowerSourceIsAPlainRead(TheNativeProgram):
         stores = {ldr_str(w)[4] for _, w in code if ldr_str(w) and not ldr_str(w)[1] and ldr_str(w)[3] == 4}
         self.assertTrue({8, 12} <= stores)
 
-    def test_the_length_is_what_the_open_read_and_the_close_frees_unless_mode_two(self):
+    def test_the_length_is_what_the_open_read_and_the_close_loads_the_buffer_and_tests_for_mode_two(self):
         handlers = self.handlers()
         self.assertEqual([w for _, w in self.instructions(handlers[3], 2)], [0xE5900008, 0xE12FFF1E],
                          'ldr r0, [r0, #8]; bx lr')
@@ -659,6 +674,40 @@ class ThePowerSourceIsAPlainRead(TheNativeProgram):
         loads_slot_and_calls(CALLS_WRITE, 2)
         # The control: the slots are distinct offsets, so a load of one is not a load of another.
         self.assertEqual(len({SLOTS_AT + 4 * s for s in (0, 1, 2, 3, 4, 5)}), 6)
+
+    def test_the_letter_walk_is_the_socket_handlers_opener_and_the_radio_has_an_opener_of_its_own(self):
+        word = self.elf.word
+        # The socket handler compares the command with 1, the file protocol's open, and calls the opener; no other
+        # call in the program reaches it.
+        self.assertEqual(cmp_immediate(word(SOCKET_CALLS_OPENER - 0x10)), (3, 1))
+        self.assertEqual(branch(word(SOCKET_CALLS_OPENER), SOCKET_CALLS_OPENER), (AL, True, SOCKET_OPENER))
+        callers = [va for va in range(CODE[0], CODE[1], 4)
+                   if branch(word(va), va) == (AL, True, SOCKET_OPENER)]
+        self.assertEqual(callers, [SOCKET_CALLS_OPENER])
+        # It takes two or three parameters, `sub r2, r3, #2; cmp r2, #1; bhi`, and tests the first two for type 4.
+        self.assertEqual([word(SOCKET_OPENER + at) for at in (0x2C, 0x30)], [0xE2432002, 0xE3520001])
+        self.assertEqual(branch(word(SOCKET_OPENER + 0x34), SOCKET_OPENER + 0x34)[0], 0x8, 'bhi')
+        self.assertEqual([cmp_immediate(word(SOCKET_OPENER + at)) for at in (0x40, 0x54)], [(7, 4), (6, 4)])
+        # The mode letter walk is inside that opener, and its three letters are compared nowhere in the radio's.
+        letters = {ord('R'), ord('W'), ord('C')}
+        socket = self.routine(SOCKET_OPENER, limit=1500)
+        radio = self.routine(RADIO_OPENER, limit=1500)
+        self.assertIn(MODE_WALK, [va for va, _ in socket])
+        compared = lambda routine: {c[1] for c in (cmp_immediate(w) for _, w in routine) if c} & letters
+        self.assertEqual(compared(socket), letters)
+        self.assertEqual(compared(radio), set())
+        # The radio's handler and opener name their source, and the socket's opener does not.
+        self.assertIn('src/libhal/rf/libhal_hot_handler.c', gotoff_strings(self.elf, RADIO_HANDLER, limit=1500))
+        self.assertIn('libhal_hot_decode_open_handler', gotoff_strings(self.elf, RADIO_OPENER, limit=1500))
+        self.assertNotIn('libhal_hot_decode_open_handler', gotoff_strings(self.elf, SOCKET_OPENER, limit=1500))
+        self.assertEqual(branch(word(RADIO_CALLS_OPENER), RADIO_CALLS_OPENER), (AL, True, RADIO_OPENER))
+        # The radio's opener stores a word loaded out of its request as the mode, at the record offset the letter walk
+        # ORs into, and loads slot 0 and calls it.
+        self.assertEqual(ldr_str(word(0x1A6D4)), (AL, True, 2, 2, 0))
+        self.assertEqual(ldr_str(word(0x1A6EC)), (AL, False, 2, 5, 0x24))
+        self.assertEqual(ldr_str(word(MODE_WALK + 0x70)), (AL, False, 12, 7, 0x24), 'the walk stores R at the same offset')
+        self.assertEqual(ldr_str(word(0x1A6C4)), (AL, True, 6, 1, SLOTS_AT))
+        self.assertEqual(blx_register(word(0x1A6FC)), 6)
 
 
 if __name__ == '__main__':

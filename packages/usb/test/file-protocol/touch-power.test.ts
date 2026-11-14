@@ -20,8 +20,8 @@
  *
  * Why the open is a plain read is read in the Touch's native program, build 4.15.330,
  * `tests/harmony_touch/test_harmony_touch_api_names.py` and `reference/architectures/harmony-touch/api/names.md`.
- * **What is not claimed**: anything about a unit. What a Touch's file holds on each source, and whether its text
- * ends in a newline, is not measured; the pretend Touch answers as a test tells it.
+ * **What is not claimed**: anything about a unit. What a unit's file gave is `test/touch/touch-power-read.test.ts`;
+ * the pretend Touch answers as a test tells it.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';

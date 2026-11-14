@@ -534,7 +534,7 @@ class TheScreensTakePartOnlyOnUSBPower(TheImage):
     provisioning answer (`setup/apihandler/account.lua` `getProvisionInfo`) holds none, and `/sys/sysinfo` is
     built once when the native program starts, `test_harmony_touch_api_names.py`. The one name that reads the
     power source is the factory test's `/tde/powerstate`, backed by the same `powersource` file the watcher
-    filters on, and its open for reading reads that file and changes nothing, `ThePowerSourceIsAPlainRead` in
+    filters on, and its open for reading reads that file and writes nothing to it, `ThePowerSourceIsAPlainRead` in
     `test_harmony_touch_api_names.py`. So the library opens that one name for reading on a Touch, and the answerer
     reads it before a sync and refuses on any source but `usb`, before anything that acts is sent,
     `packages/corpus/src/touchsync.ts`. This said the name was outside every route the project opens and that the

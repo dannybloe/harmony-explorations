@@ -50,8 +50,9 @@
  *
  * **With `--commit`, the two flags and the unit record it opens the Touch** through `openFileBasedRemote`,
  * by way of `answerTouchSync` in `src/touchsync.ts`, on `@harmony/corpus/write`,
- * reads the remote's power source and refuses on any but `usb`, opens a session, which reads the identity file and
- * refuses any unit but the lab's `units/touch.txt`, and runs the answerer, keeping every request, every answer and what the remote hands up in a new folder of the
+ * reads the remote's power source, opens a session, which reads the identity file and refuses any unit but the
+ * lab's `units/touch.txt`, and runs the answerer, which refuses on any power source but `usb` before anything that
+ * acts, keeping every request, every answer and what the remote hands up in a new folder of the
  * lab's `reads/`. **It refuses with `HARMONY_TOUCH_RECOVERY` set**: a session driving a sync has no reason to
  * hold the recovery door, `TOUCH_RECOVERY_DOOR` in `rails.ts`, and the recovery steps are a person's, one per
  * run of `packages/usb/bin/touch-recover.ts`. The session announces each write of answers with the whole
@@ -172,7 +173,7 @@ function printPlan(record: string | undefined): void {
   console.log(`line forms: ${SYNC_LINES.length}, listed in this script's header`);
   console.log(`recovery: ${RECOVERY}`);
   console.log('USB power: a commit reads the remote\'s power source first and refuses unless it is usb, the one source '
-    + 'its screens take part in a sync on, which a computer\'s USB port gives and where it shows its USB screen; '
+    + 'its screens take part in a sync on, where it shows its USB screen; '
     + 'leave the cable alone until the run ends');
 }
 

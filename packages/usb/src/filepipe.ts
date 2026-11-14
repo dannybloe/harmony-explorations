@@ -533,15 +533,16 @@ export const TOUCH_POWER_PATH = '/tde/powerstate';
  *   an answer to the engine's own request, neither of which an open reaches.
  * * The open routine takes its write branch, `fopen` with `w+`, only when the handle's mode equals 2. Every other
  *   open stats the backing file, the power controller's `powersource` file, opens it with `r`, reads it whole into a
- *   buffer and closes it again, writing nothing. The request handler builds the mode from the open's mode letters,
- *   `R` giving 1, `W` 2 and `C` 4, so an open with `R` alone is never mode 2. The mode here is fixed to `R` by the
+ *   buffer and closes it again, writing nothing. The socket handler's opener, whose request has the shape of an
+ *   open on the cable, builds the mode from the open's mode letters, `R` giving 1, `W` 2 and `C` 4, so an open with
+ *   `R` alone is never mode 2; which program hands the cable's requests to that socket is not read. The mode here is fixed to `R` by the
  *   read route, `openFileForReading`, and checked off the bytes by the guard, `opensForReading`.
  * * The close frees that buffer, and the length slot returns how many bytes the open read.
  *
  * **What is not read**: the kernel driver's routine behind the `powersource` file, so whether reading it does
- * anything inside the driver is not known from the image. The remote's own screens watch the same file to decide
- * whether they take part in a sync, `reference/architectures/harmony-touch/answering-a-sync.md`,
- * so reading it is something the remote does to itself all the time.
+ * anything inside the driver is not known from the image. The remote's own screens watch the power controller's
+ * file of that name to decide whether they take part in a sync,
+ * `reference/architectures/harmony-touch/answering-a-sync.md`.
  *
  * **The write stays refused on every route.** Its write slot stores what is written into the power controller's
  * file, so a write is never wanted: the read route refuses any mode but `R`, the file write route opens
@@ -590,8 +591,8 @@ export const TOUCH_POWER_READ_ON: readonly string[] = ['4.15.330'];
 
 /**
  * Read which power source a Harmony Touch is on, through the read only route: ping, open `/tde/powerstate` for
- * reading, read, close, as `readFile` does, and the text trimmed of white space, since whether the file's text ends
- * in a newline on a unit is not measured.
+ * reading, read, close, as `readFile` does, and the text trimmed of white space, since a unit's file holds the
+ * source's name and a line feed, `test/touch/touch-power-read.test.ts`.
  *
  * **Refuses before anything is sent** unless `transport` is a guarded transport opened on the Touch's product id,
  * `openFileBasedRemote` with that id, since the name is a Touch's and nothing is read about it on another model;
@@ -1099,7 +1100,7 @@ export function guardFileProtocol(inner: Transport, productId?: number): Transpo
  * **The whole mode string is returned as one entry under the believed framing**, a byte that is not a letter
  * included, so `opensForReading` passes the one mode `R` and nothing longer, `RR` included. This read the first letter
  * alone<!--superseded--> while the sentence above said exactly `R`, so `RW` or `RC` passed as a read. On a Harmony
- * Touch the request handler ORs one bit per letter, `R` 1, `W` 2 and `C` 4, so `RW` is not the write mode its
+ * Touch the socket handler's opener ORs one bit per letter, `R` 1, `W` 2 and `C` 4, so `RW` is not the write mode its
  * plain read names test for, 2 alone, and the open stayed a read there,
  * `reference/architectures/harmony-touch/api/names.md`; on the Harmony 300 and 350 how a mode is parsed is not read,
  * which is why the guard holds the exact mode rather than leaning on that.

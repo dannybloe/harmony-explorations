@@ -136,6 +136,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // `harmony.engine?getconfighash`'s answer, the stored documents' entity tags joined, read by
   // `packages/usb/test/touch/touch-confighash.test.ts`. The tags identify the test account's documents.
   touch_confighash_read: 'reads/20261105T0930Z-touch-confighash/answer.txt',
+  // The first read of the bench Touch's power source, `/tde/powerstate`, through the read only route: the file's
+  // bytes as they came, read by `packages/usb/test/touch/touch-power-read.test.ts`.
+  touch_power_source_read: 'reads/20261114T2049Z-touch-powerstate/powerstate.bin',
   // The first sync answered by this project, `--unchanged`, so 304 for every document, and the recovery after its
   // refusal, read by `packages/usb/test/touch/touch-first-sync.test.ts`. The run's folder keeps every request and
   // answer; these are the ones the test reads: the config hash before, the hand over's list and our answer to

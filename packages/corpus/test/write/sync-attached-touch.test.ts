@@ -14,7 +14,7 @@
  * * **Nothing opens without everything a commit needs, and a dry run reads the identity file and the power source alone**: without the two
  *   flags a commit is refused with the remote as it was, having made no folder and kept nothing, and a dry run ends
  *   after the build with no flag needed, as `bin/touch-sync.ts --document` without `--commit` does, having opened
- *   the remote once, read `/tde/powerstate` for reading and closed it, and opened nothing else.
+ *   the remote once, read the identity file and `/tde/powerstate` and closed it, and opened nothing else.
  * * **A power source but `usb` is refused with the remote as it was**, in a dry run and in a commit alike, naming
  *   what the remote reported: the commit's transport opened `/tde/powerstate` and `/sys/sysinfo` for reading and
  *   never `/sys/hlapi`, by the pretend Touch's own record, so no request was sent, and no event that acts was given.
@@ -116,8 +116,8 @@ test('a power source but usb is refused with the remote as it was, in a dry run 
   ];
   for (const [served, said] of cases) {
     const message = `the remote reports its power source as ${said}, and a Harmony Touch takes part in a sync only on USB power `
-      + 'from a computer\'s port, the source its software calls usb, when it shows its USB screen: connect it to a computer\'s '
-      + 'USB port and sync again';
+      + 'from a computer\'s port, the source its software calls usb, when it shows its USB screen: connect it to a USB port '
+      + 'of the computer on which it shows that screen, and sync again';
     const dry = await runTouchSync({ powerstate: served });
     assert.deepEqual(dry.outcome, { result: 'refused', remote: 'as-before', message }, served);
     assert.deepEqual(dry.words, ['identify', 'check', 'build', '= refused'], served);

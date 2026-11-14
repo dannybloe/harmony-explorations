@@ -339,12 +339,13 @@ uses names the source**: the engine names no power source, its provisioning answ
 file is built once when the remote starts[^t-touch-host]. **The factory test name `/tde/powerstate` does**, backed
 by the power controller's `powersource` file, the file the screens watch, and opening it for reading is a plain
 read that changes nothing, [the names](api/names.md#tdepowerstate-the-power-source-a-plain-read)[^t-touch-power-read].
-So a host reads the source over the cable before a sync and refuses on any but `usb`, before anything that acts is
+So a host can read the source over the cable before a sync and refuse on any but `usb`, before anything that acts is
 sent. This said a host cannot ask which source the remote is on<!--superseded-->, which holds for the request
 channel and not for the cable, until that name's open was read. What a person sees is the screen: on `usb` the
 remote shows its USB screen, and in the dock or on a mains adapter its Charging screen,
 [display](../../remotes/harmony-touch/display.md#charging-and-the-battery). Which source a given computer port gives
-is not checked, and what a unit's file holds on each source is not measured[^unchecked].
+is not checked[^unchecked]; a unit on `usb` answered that name and a line feed,
+[the names](api/names.md#tdepowerstate-the-power-source-a-plain-read)[^t-touch-power-unit].
 
 The commit happens before the answerer sees `proxy://Finished`:
 the remote's own screens decide the fetching is done and the engine swaps the new set in, and only then is
@@ -688,7 +689,8 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
   chunk early on a unit[^unchecked].
 * How Logitech's service answers a tag it did not issue, when a remote returns to it[^unchecked].
 * Which power source a computer's port gives a remote, and so on which ports a sync can commit; the remote's own
-  answer to `/tde/powerstate` on each port is what would say so, and no unit's answer is recorded yet[^unchecked].
+  answer to `/tde/powerstate` on each port is what would say so, and one answer is measured, `usb` on one
+  port[^unchecked].
 * Whether the read back route of [proxy](api/proxy.md#can-a-stored-document-be-read-back) hands a committed
   document back on a unit, and what its engine reload does in between[^unchecked].
 
@@ -697,6 +699,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/harmony_touch/test_harmony_touch_recovery.py)
 [^t-touch-answers]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-host.test.ts)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
+[^t-touch-power-unit]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-power-read.test.ts)
 [^t-touch-power-read]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
 [^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
 [^t-touch-api-engine]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_engine.py)

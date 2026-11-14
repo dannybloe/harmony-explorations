@@ -208,7 +208,7 @@ export function touchPowerRefusal(source: TouchPowerSource): string | undefined 
   if (source === SYNC_POWER_SOURCE) return undefined;
   return `the remote reports its power source as ${describePowerSource(source)}, and a Harmony Touch takes part in a sync `
     + 'only on USB power from a computer\'s port, the source its software calls usb, when it shows its USB screen: '
-    + 'connect it to a computer\'s USB port and sync again';
+    + 'connect it to a USB port of the computer on which it shows that screen, and sync again';
 }
 
 /**

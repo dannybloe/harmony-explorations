@@ -174,8 +174,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // B's two of 2.1. 1060 with 2.3's composed file, 1061 with B's region before 2.3's write, 1064 with 2.3's file as written, read back and the clock, 1067 with the first Harmony 785's configuration and whole flash twice, 1070 with the second's, 1072 with the
   // Harmony 515's configuration region read twice, 1073 with a contributed Harmony 880 Pro's key dump, 1075 with the
   // spare Harmony One's region before a document was first synced to it and after, 1078 with that document, the
-  // bench run on it and the monitor's log.
-  assert.equal(Object.keys(pythonImages()).length, 1078, 'every fixture tests/lab.py names');
+  // bench run on it and the monitor's log, 1079 with the bench Touch's power source as first read.
+  assert.equal(Object.keys(pythonImages()).length, 1079, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
