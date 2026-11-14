@@ -510,7 +510,9 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 `CONFIG_WRITE_MODELS` and the units it may write in
                                 `CONFIG_WRITE_UNITS`, refused before anything opens when a label is
                                 not among them; bin/write-config.ts keeps the command line, each
-                                unit's region reads and the journal. It is the write
+                                unit's region reads and the journal, and with `--document`
+                                syncs a document through `syncDocument`, the bench's front of
+                                the sync an application calls. It is the write
                                 path's first caller outside that package, which is why the blind
                                 review's withhold list gained a row for it. It also holds the
                                 contract of the sync an application calls, `syncDocument` and a

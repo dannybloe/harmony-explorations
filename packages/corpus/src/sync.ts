@@ -133,7 +133,12 @@ export type SyncRemote = AttachedRemote | PretendRemote;
 export interface SyncRequest {
   readonly document: Recipe;
   readonly remote: SyncRemote;
-  /** What a build reads beyond the document: the catalogue for a device whose definition it does not carry. */
+  /**
+   * What a build reads beyond the document: the catalogue for a device whose definition it does not carry, and the
+   * moment it is built at, which every stamp in the configuration is taken from. **A sync run again after one
+   * that failed part way is given the same moment**: the remote then holds a part of that build, and the write
+   * recognises a block it left unfinished only against the same bytes.
+   */
   readonly sources: BuildSources;
   /** False runs everything up to the first write and sends nothing that changes the remote. */
   readonly commit: boolean;
@@ -413,7 +418,7 @@ async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promi
     return refused(said(error));
   }
   if (built.kind !== 'configuration') return refused(`the ${document.model.name} is given documents, which this path does not write`);
-  journal(`sync: built a configuration of ${built.bytes.length} bytes for skin ${built.skin}`);
+  journal(`sync: built a configuration of ${built.bytes.length} bytes for skin ${built.skin}, stamped ${request.sources.builtAt}`);
 
   // What the write reports, turned into phases and progress. `began` and `verified` are what a failure is judged by.
   let began = false;
@@ -491,7 +496,7 @@ async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promi
     }
     return end({
       result: 'failed', remote: 'needs-recovery',
-      message: `the write stopped part way: ${said(error)}. Leave the remote on its cable with its batteries in and run the same sync again, which finishes the blocks it left`,
+      message: `the write stopped part way: ${said(error)}. Leave the remote on its cable with its batteries in and run the same sync again, built at the same moment, which finishes the blocks it left`,
     });
   }
 }

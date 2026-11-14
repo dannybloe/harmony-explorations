@@ -18,7 +18,8 @@
  * * **A screen that fails stops nothing**: with an observer that throws on every event the remote is written all
  *   the same.
  * * **A write that fails part way is finished by the same sync run again.** The first run ends `failed` with the
- *   remote needing recovery and no restart sent; the second recognises the block it left and ends `written`.
+ *   remote needing recovery and no restart sent; the second, built at the same moment, recognises the block it
+ *   left and ends `written`, and one built at another moment is refused.
  *
  * **What is not claimed.** Anything about a remote: the stand in keeps flash as an array and asserts the real
  * rails, `fake-classic-remote.ts`, and what a Harmony One does with a document's configuration is the bench's to
@@ -136,7 +137,7 @@ test('a write that fails part way ends failed with no restart sent, and the same
   // The first flash write of the block fails: the block is erased and holds nothing of the file.
   const run = withFlags({ commit: true, failWrite: 1 });
   assert.deepEqual([run.outcome.result, run.outcome.remote], ['failed', 'needs-recovery']);
-  assert.match(run.outcome.message!, /the cable was pulled.*run the same sync again/);
+  assert.match(run.outcome.message!, /the cable was pulled.*run the same sync again, built at the same moment/);
   assert.equal(run.words.includes('! safe-to-unplug'), false);
   assert.equal(run.words.includes('restart'), false);
   // The second run: written, and the one restart of the two runs is its own, the last thing sent.
@@ -144,6 +145,16 @@ test('a write that fails part way ends failed with no restart sent, and the same
   assert.equal(run.holdsTheBuild, true);
   assert.deepEqual(changes(run).filter((call) => call === 'resetDevice'), ['resetDevice']);
   assert.equal(changes(run).at(-1), 'resetDevice');
+  // The reason the second run is built at the first one's moment, on a write that fails at its twelfth flash
+  // write, by when the block holds bytes of the build's stamp: built at the same moment the second run finishes
+  // it; built seven seconds later its stamps differ, the block is no longer its own unfinished write, and the
+  // write refuses to erase what it does not know. A block that was erased and not yet written, the first run
+  // above, is finished at any moment, since erased flash holds nothing to lose.
+  const same = withFlags({ commit: true, failWrite: 12 });
+  assert.deepEqual([same.outcome.result, same.again?.outcome.result, same.holdsTheBuild], ['failed', 'written', true]);
+  const later = withFlags({ commit: true, failWrite: 12, againAtAnotherMoment: true });
+  assert.deepEqual([later.outcome.result, later.again?.outcome.result, later.holdsTheBuild], ['failed', 'refused', false]);
+  assert.equal(changes(later).includes('resetDevice'), false);
 });
 
 test('a remote that already holds the document\'s configuration is nothing to write', async () => {

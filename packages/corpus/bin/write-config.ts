@@ -8,6 +8,15 @@
  *   ... --commit --drop-only      section 250's isolating control: the drop and nothing else
  *   ... --commit --restart-only   section 282: the restart and nothing else
  *   ... --as-is                   write the file's own stamp, for putting a compile back unchanged
+ *   ... --document <file> --dump <lab region read> [--commit]   sync a document, as an application does
+ *
+ * **`--document` is the sync an application calls, on the bench**: the document is a recipe as the toolkit keeps
+ * one; it is checked, built and written by `syncDocument` on `@harmony/corpus/write`, which hands the configuration
+ * to the same `writeConfiguration` the rest of this script calls. The events a screen would show are printed
+ * beside the account; the journal goes beside the document, and so does the configuration built, kept before the
+ * remote is opened. A run after one that stopped past its erase builds at the moment that run built at, read from
+ * its journal, since the remote then holds a part of that build and the write recognises only its own bytes. The
+ * controls are the configuration write's and are refused with a document.
  *
  * **Every write stamps the configuration at the moment of writing**: the build
  * timestamp and the clock records, since a restart puts the remote's clock back to that stamp
@@ -77,8 +86,10 @@ import { basename, dirname, join } from 'node:path';
 import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import { HarmonyRemote, RailError, RemoteError, listHarmony, openHarmony } from '@harmony/usb';
 import { failureLine } from '@harmony/usb/write';
+import { localTimestamp, recipe } from '@harmony/codec/node';
 import {
   ConfigWriteRefusal,
+  syncDocument,
   writeConfiguration,
   type ConfigWriteUnit,
   type ConfigWriteUnitLabel,
@@ -95,8 +106,9 @@ const cli = commandLine({
     "       ... --commit --drop-only       section 250's isolating control: the drop and nothing else",
     '       ... --commit --restart-only    section 282: the restart and nothing else',
     "       ... --as-is                    write the file's own stamp, for putting a compile back unchanged",
+    '       ... --document <file> --dump <lab region read> [--commit]   sync a document, as an application does',
   ].join('\n'),
-  values: ['config', 'dump'],
+  values: ['config', 'document', 'dump'],
   flags: ['commit', 'no-restart', 'no-invalidate', 'drop-only', 'restart-only', 'as-is'],
 });
 
@@ -373,6 +385,10 @@ async function main(): Promise<void> {
     process.exit(130);
   });
 
+  if (cli.value('document') !== undefined) {
+    await syncTheDocument(cli.value('document') as string);
+    return;
+  }
   const configPath = cli.value('config') ?? fail('--config is the container to put on the remote');
   journalPath = `${configPath}.write-${new Date().toISOString().replace(/[:.]/g, '')}.log`;
   appendFileSync(journalPath, `# ${cli.argv.slice(1).join(' ')}\n`);
@@ -480,6 +496,75 @@ async function main(): Promise<void> {
     onPastTheErase: (value) => { pastTheErase = value; },
     warn: (line) => { process.stderr.write(`${line}\n`); },
   });
+}
+
+/**
+ * `--document`: sync a document to the one remote attached, through `syncDocument`, the function an application
+ * calls. The bench's part is the same as for a configuration: the lab's names for the units and their region
+ * reads, the unit records, the journal file and printing. Ends the process with 1 unless the sync ended written,
+ * as a dry run or with nothing to write.
+ */
+async function syncTheDocument(documentPath: string): Promise<void> {
+  for (const flag of ['no-restart', 'no-invalidate', 'drop-only', 'restart-only', 'as-is'] as const) {
+    if (cli.flag(flag)) fail(`--${flag} is a control of the configuration write and is not offered with --document`);
+  }
+  if (cli.value('config') !== undefined) fail('--config and --document are two ways to say what is written; give one');
+  const dumpName = cli.value('dump')
+    ?? fail("--dump names the lab region read holding this unit's current content");
+  if (!ALL_DUMPS.has(dumpName)) {
+    fail(`${dumpName} is not one of a permitted unit's own region reads (${[...ALL_DUMPS].join(', ')})`);
+  }
+  const dumpPath = imagePath(dumpName);
+  if (dumpPath === undefined) fail(`no lab image called ${dumpName}`);
+
+  // A run that stopped past its erase left a part of its build on the remote: this one builds at that moment.
+  const journals = readdirSync(dirname(documentPath))
+    .filter((name) => name.startsWith(`${basename(documentPath)}.sync-`) && name.endsWith('.log'))
+    .map((name) => join(dirname(documentPath), name))
+    .sort();
+  const previous = journals.at(-1) === undefined ? undefined : readFileSync(journals.at(-1) as string, 'utf8');
+  const resumed = previous !== undefined && stoppedAfterErase(previous)
+    ? /stamped (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)$/m.exec(previous)?.[1] : undefined;
+  const builtAt = resumed ?? localTimestamp(new Date());
+
+  journalPath = `${documentPath}.sync-${new Date().toISOString().replace(/[:.]/g, '')}.log`;
+  appendFileSync(journalPath, `# ${cli.argv.slice(1).join(' ')}\n`);
+  if (resumed !== undefined) say(`${basename(journals.at(-1) as string)} erased flash and never read the configuration back, so this is its rerun, built at ${resumed} as that run was\n`);
+
+  const document = recipe.open(JSON.parse(readFileSync(documentPath, 'utf8')));
+  const attached = await listHarmony();
+  if (attached.length === 0) fail('no remote is attached');
+  if (attached.length > 1) fail(`${attached.length} remotes are attached; this writes, so it refuses to guess`);
+
+  const outcome = await syncDocument({
+    document,
+    remote: {
+      kind: 'attached',
+      found: attached[0] as (typeof attached)[number],
+      keeper: {
+        units: UNITS,
+        records: { text: unitIdentity, where: unitIdentityPath },
+        region: { name: dumpName, bytes: new Uint8Array(readFileSync(dumpPath)) },
+        // Beside the document, before the remote is opened, so the lab holds what went onto it.
+        keep: (bytes) => writeFileSync(`${documentPath}.built.bin`, bytes),
+      },
+    },
+    sources: { builtAt },
+    commit: cli.flag('commit'),
+    // What a screen would show, printed beside the account and marked, and kept out of the journal, which is
+    // the account's alone.
+    onEvent: (event) => {
+      if (event.kind === 'phase') process.stdout.write(`  [event] phase ${event.phase}\n`);
+      else if (event.kind === 'progress') process.stdout.write(`  [event] ${event.phase} ${event.done} of ${event.total}\n`);
+      else if (event.kind === 'attention') process.stdout.write(`  [event] ${event.attention}: ${event.message}\n`);
+      else process.stdout.write(`  [event] ended ${event.outcome.result}, the remote ${event.outcome.remote}\n`);
+    },
+    journal: (line) => say(`${line}\n`),
+  });
+  if (!['written', 'dry-run', 'nothing-to-write'].includes(outcome.result)) {
+    process.stderr.write(`${outcome.result}: ${outcome.message ?? ''}\n`);
+    process.exit(1);
+  }
 }
 
 main().catch((error: unknown) => {

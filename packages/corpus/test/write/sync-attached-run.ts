@@ -47,6 +47,8 @@ export interface SyncScenario {
   readonly observerThrows?: boolean;
   /** Fail the nth flash write of the first sync, counted from 1, and then run the same sync again. */
   readonly failWrite?: number;
+  /** Build the second sync at another moment than the first, where there is a second. */
+  readonly againAtAnotherMoment?: boolean;
 }
 
 export interface SyncRun {
@@ -104,7 +106,7 @@ export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
   const stop = new AbortController();
   if (scenario.stopAt === 'start') stop.abort();
 
-  const once = async (): Promise<{ words: string[]; outcome: SyncOutcome }> => {
+  const once = async (builtAt: string = BUILT_AT): Promise<{ words: string[]; outcome: SyncOutcome }> => {
     const events: SyncEvent[] = [];
     const outcome = await syncDocument({
       document,
@@ -125,7 +127,7 @@ export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
           },
         },
       },
-      sources: { builtAt: BUILT_AT },
+      sources: { builtAt },
       commit: scenario.commit ?? false,
       onEvent: (event) => {
         events.push(event);
@@ -139,7 +141,7 @@ export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
   };
 
   const first = await once();
-  const again = scenario.failWrite === undefined ? undefined : await once();
+  const again = scenario.failWrite === undefined ? undefined : await once(scenario.againAtAnotherMoment === true ? '2026-11-14T10:00:07' : BUILT_AT);
   return {
     ...first,
     ...(again === undefined ? {} : { again }),
