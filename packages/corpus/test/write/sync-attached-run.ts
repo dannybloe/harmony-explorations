@@ -114,6 +114,7 @@ export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
         kind: 'attached',
         found,
         keeper: {
+          kind: 'compiled',
           units: [{ label: scenario.label ?? 'one_spare', regions: new Set(['held']) }],
           records: { text: () => unitIdentityText(identityFor(1)), where: (label) => `units/${label}.txt` },
           region: { name: 'held', bytes: region },

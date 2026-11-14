@@ -5,8 +5,9 @@
  *   node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder>
  *   HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 \
  *     node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> --commit
+ *   node packages/corpus/bin/touch-sync.ts --document <lab file> --account <lab file> [--archive <checkout>] [--commit]
  *
- * **Two modes.**
+ * **Three modes.**
  *
  * * `--unchanged`: every document and picture answered 304 against the tag the remote sent; a picture it sent
  *   no tag for answered 404, which aborts nothing, and a document it sent no tag for refused, since the
@@ -24,6 +25,21 @@
  *   sync request**, since the set's copy would revert the change made on the remote. The folder has to be
  *   inside the lab. `touch-own-set.ts` builds one of the remote's own documents, and the other `touch-*-set.ts`
  *   scripts build the changed ones.
+ * * `--document <lab file> --account <lab file>`: **the sync an application calls, on the bench**, as
+ *   `write-config.ts --document` is for the Harmony One. The document is a recipe as the toolkit keeps one; it is
+ *   checked, built, made into a set at the account's addresses and answered by `syncDocument` on
+ *   `@harmony/corpus/write`, which hands the set to the same `answerTouchSync` the other two modes call. The account is
+ *   the lab file `touch-nothing-set.ts --describe-account` writes: Context's seven fields, the tuning device's
+ *   favourites address and key, and the six documents' addresses, which the build and the set take and which never
+ *   enter the repository, so **the document has to be inside the lab too**: what is kept beside it, the journal and
+ *   the set built, carries the account's values. The archive is `--archive`, `HARMONY_IR_ARCHIVE` or the checkout
+ *   beside this repository, and a recipe that carries every device's definition builds without one. The events a
+ *   screen would show are printed beside the account of the run; the journal goes beside the document, and so does
+ *   the set built, `<document>.built-set.json`, kept before the remote is opened. **No rerun rule applies**, unlike
+ *   the Harmony One's: a Touch's documents take no stamp from the moment of the build and their tags are digests of
+ *   their content, so the same document and account build the same set at any moment, and what a stopped run leaves
+ *   is the recovery's to clear, below, not a part of a build to finish. Without `--commit` it enumerates the attached
+ *   Touch and opens nothing, which is a dry run of the sync: the build, the set and the gate.
  *
  * **Without `--commit` it opens nothing.** It prints the mode, and for a set the gate's verdict, which a commit
  * would meet first, the answers by kind and how many tags are stated; whether the lab holds the unit record and
@@ -86,15 +102,17 @@
  * other, which the remote committed, `packages/usb/test/touch/touch-own-set-sync.test.ts`.
  * This said nothing in the script had been run against a remote<!--superseded--> until a preflight read the runs.
  */
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { appendFileSync, existsSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { basename, join, resolve, sep } from 'node:path';
 
-import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
-import { openFileBasedRemote, unitIdentityFromText } from '@harmony/usb';
+import { archiveAt, localTimestamp, recipe } from '@harmony/codec/node';
+import { IR_ARCHIVE, LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { listFileBasedRemotes, openFileBasedRemote, unitIdentityFromText } from '@harmony/usb';
 import { TOUCH_PRODUCT_ID, TOUCH_RECOVERY_DOOR, TOUCH_REQUEST_DOOR, WRITES_ENABLED } from '@harmony/usb/rails';
 
+import type { TouchAccountFile } from '../experiments/touchnothingset.ts';
 import { RECOVERY, SYNC_LINES, prepareSet, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
-import { TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed } from '../src/write.ts';
+import { TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed, syncDocument } from '../src/write.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -102,8 +120,9 @@ const cli = commandLine({
     'usage: node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder>',
     '       HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 \\',
     '         node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> --commit',
+    '       node packages/corpus/bin/touch-sync.ts --document <lab file> --account <lab file> [--archive <checkout>] [--commit]',
   ].join('\n'),
-  values: ['set'],
+  values: ['set', 'document', 'account', 'archive'],
   flags: ['unchanged', 'commit'],
 });
 
@@ -130,10 +149,128 @@ function readSet(folder: string): TouchSet {
 /** What kind of address a key is, for the plan: a document by name, else its scheme. */
 const kindOfKey = (key: string): string => (key.includes(':') ? key.split(':')[0] as string : key);
 
+/** A path inside the lab, resolved through its links, or a refusal; the rule `touch-nothing-set.ts` keeps. */
+function insideTheLab(path: string, what: string): string {
+  if (LAB === undefined) fail('there is no lab directory');
+  const real = existsSync(resolve(path)) ? realpathSync(resolve(path)) : fail(`${what} ${resolve(path)} does not exist`);
+  const lab = realpathSync(LAB);
+  if (!real.startsWith(lab + sep)) fail(`${what} ${real} is not inside the lab, ${lab}`);
+  return real;
+}
+
+/** The plan every mode prints: the unit record, the flags, the power source and the recovery order. */
+function printPlan(record: string | undefined): void {
+  console.log(`unit record: ${record === undefined ? `none at ${unitIdentityPath(UNIT)}` : `${record.slice(0, 8)}...`}`);
+  console.log(`flags: HARMONY_ENABLE_WRITES ${WRITES_ENABLED ? 'set' : 'unset'}, HARMONY_TOUCH_REQUESTS `
+    + `${TOUCH_REQUEST_DOOR ? 'set' : 'unset'}, HARMONY_TOUCH_RECOVERY ${TOUCH_RECOVERY_DOOR ? 'set, which a commit refuses' : 'unset'}`);
+  console.log('steps: the provisioning read; the remote\'s changes handed up and kept in the lab; the sync; every '
+    + 'request list answered until proxy://Finished or proxy://Abort; each write of answers announced with the whole line\'s length');
+  console.log(`line forms: ${SYNC_LINES.length}, listed in this script's header`);
+  console.log(`recovery: ${RECOVERY}`);
+  console.log('USB power: nothing a session can ask tells whether the remote is on USB power, and on any other power '
+    + 'source its screens ignore the sync and nothing commits; check that it shows its USB screen, not Charging, '
+    + 'and leave the cable alone until the run ends');
+}
+
+/**
+ * `--document`: sync a document to the one Harmony Touch attached through `syncDocument`, the function an application
+ * calls. The bench's part: the lab's account file and unit record, the journal and the set kept beside the document,
+ * the run's folder in the lab's `reads/`, and printing. Everything that can be refused without the remote is refused
+ * before the bus is enumerated. Ends the process with 1 unless the sync ended written or as a dry run.
+ */
+async function syncTheDocument(documentFile: string): Promise<void> {
+  const commit = cli.flag('commit');
+  if (LAB === undefined) fail('there is no lab directory, and the document, the account and the run are kept in it');
+  const lab = LAB;
+  // Inside the lab, since the journal and the set kept beside the document carry the account's values.
+  const documentPath = insideTheLab(documentFile, 'the document');
+  const accountFile = insideTheLab(cli.value('account') ?? fail('--document needs --account <lab file>, the account\'s description'), 'the account file');
+  const account = (JSON.parse(readFileSync(accountFile, 'utf8')) as { account?: TouchAccountFile }).account;
+  if (account === undefined || typeof account.addresses !== 'object' || account.addresses === null) {
+    fail(`${accountFile} holds no account with the documents' addresses: write one with touch-nothing-set.ts --describe-account`);
+  }
+  const document = recipe.open(JSON.parse(readFileSync(documentPath, 'utf8')));
+  const archivePath = cli.value('archive') ?? IR_ARCHIVE;
+  const record = unitIdentity(UNIT);
+  if (commit && record === undefined) {
+    fail(`no unit record at ${unitIdentityPath(UNIT)}: read one with read-file-identity.ts --product 0xc12b --record ${UNIT}`);
+  }
+
+  // Enumerated, never opened: the sync reads the model off the release word before anything is opened.
+  const touches = (await listFileBasedRemotes()).filter((found) => found.productId === TOUCH_PRODUCT_ID);
+  if (touches.length === 0) fail('no Harmony Touch is attached');
+  if (touches.length > 1) fail(`${touches.length} remotes of the Touch's product id are attached; this writes, so it refuses to guess`);
+
+  const journalPath = `${documentPath}.sync-${new Date().toISOString().replace(/[:.]/g, '')}.log`;
+  const say = (line: string): void => {
+    console.log(line);
+    appendFileSync(journalPath, `${line}\n`);
+  };
+  appendFileSync(journalPath, `# ${cli.argv.slice(1).join(' ')}\n`);
+  console.log(`mode: sync ${basename(documentPath)} through syncDocument, answered from the set it builds`);
+  printPlan(record);
+  const setPath = `${documentPath}.built-set.json`;
+  let folder: string | undefined;
+
+  const outcome = await syncDocument({
+    document,
+    remote: {
+      kind: 'attached',
+      found: touches[0] as (typeof touches)[number],
+      keeper: {
+        kind: 'document',
+        label: UNIT,
+        // A dry run opens nothing and compares nothing, so it needs no record and is handed none; a commit without one
+        // was refused above, and the session refuses an empty record besides.
+        permittedUnit: record === undefined ? new Uint8Array(0) : unitIdentityFromText(record),
+        addresses: account.addresses,
+        // Made at a commit, never by a dry run.
+        folder: () => {
+          folder = newReadFolder(lab, 'touch-sync-document');
+          return folder;
+        },
+        // Beside the document, before the remote is opened, so the lab holds what was being given to it.
+        keep: (set) => {
+          writeFileSync(setPath, `${JSON.stringify(set, null, 1)}\n`);
+          say(`kept the set built, ${set.answers.length} answers, in ${basename(setPath)}`);
+        },
+      },
+    },
+    sources: {
+      builtAt: localTimestamp(new Date()),
+      account,
+      ...(archivePath === undefined ? {} : { archive: archiveAt(archivePath) }),
+    },
+    commit,
+    // What a screen would show, printed beside the account and marked, and kept out of the journal, which is the
+    // account's alone.
+    onEvent: (event) => {
+      if (event.kind === 'phase') console.log(`  [event] phase ${event.phase}`);
+      else if (event.kind === 'progress') console.log(`  [event] ${event.phase} ${event.done} of ${event.total}`);
+      else if (event.kind === 'attention') console.log(`  [event] ${event.attention}: ${event.message}`);
+      else console.log(`  [event] ended ${event.outcome.result}, the remote ${event.outcome.remote}`);
+    },
+    journal: say,
+  });
+  if (folder !== undefined) console.log(`\nkept in ${folder}`);
+  console.log(`journal: ${journalPath}`);
+  if (!['written', 'dry-run'].includes(outcome.result)) {
+    console.error(`${outcome.result}: ${outcome.message ?? ''}`);
+    process.exit(1);
+  }
+}
+
 async function main(): Promise<void> {
   const unchanged = cli.flag('unchanged');
   const setFolder = cli.value('set');
-  if (unchanged === (setFolder !== undefined)) fail('one of --unchanged or --set <lab folder>, not both and not neither');
+  const documentFile = cli.value('document');
+  if ([unchanged, setFolder !== undefined, documentFile !== undefined].filter(Boolean).length !== 1) {
+    fail('one of --unchanged, --set <lab folder> or --document <lab file>, not two and not none');
+  }
+  if (documentFile !== undefined) {
+    await syncTheDocument(documentFile);
+    return;
+  }
   const commit = cli.flag('commit');
 
   let mode: TouchSyncMode;
@@ -161,16 +298,7 @@ async function main(): Promise<void> {
   }
 
   const record = unitIdentity(UNIT);
-  console.log(`unit record: ${record === undefined ? `none at ${unitIdentityPath(UNIT)}` : `${record.slice(0, 8)}...`}`);
-  console.log(`flags: HARMONY_ENABLE_WRITES ${WRITES_ENABLED ? 'set' : 'unset'}, HARMONY_TOUCH_REQUESTS `
-    + `${TOUCH_REQUEST_DOOR ? 'set' : 'unset'}, HARMONY_TOUCH_RECOVERY ${TOUCH_RECOVERY_DOOR ? 'set, which a commit refuses' : 'unset'}`);
-  console.log('steps: the provisioning read; the remote\'s changes handed up and kept in the lab; the sync; every '
-    + 'request list answered until proxy://Finished or proxy://Abort; each write of answers announced with the whole line\'s length');
-  console.log(`line forms: ${SYNC_LINES.length}, listed in this script's header`);
-  console.log(`recovery: ${RECOVERY}`);
-  console.log('USB power: nothing a session can ask tells whether the remote is on USB power, and on any other power '
-    + 'source its screens ignore the sync and nothing commits; check that it shows its USB screen, not Charging, '
-    + 'and leave the cable alone until the run ends');
+  printPlan(record);
 
   if (!commit) {
     console.log('\ndry run: nothing was opened. --commit needs the unit record, HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1.');

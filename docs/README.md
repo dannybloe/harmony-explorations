@@ -522,7 +522,12 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 pretended, and so is a sync to an attached Harmony One, 600, 650
                                 or 700, which hands the built configuration to
                                 `writeConfiguration` with the keeper's records of the unit and
-                                turns its steps into events, adding nothing to the write path; a
+                                turns its steps into events, adding nothing to the write path, and
+                                a sync to an attached Harmony Touch, which makes the set its
+                                documents are delivered as at the keeper's addresses, `touchSetOf`
+                                in `src/touchsync.ts`, hands it to `answerTouchSync` and turns its
+                                lines into events, again adding nothing; the keeper is a union by
+                                the kind of family, `CompiledKeeper` or `DocumentKeeper`, and a
                                 sync to an attached remote of any other model refuses by name; and the
                                 Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync
                                 down through the request session, for the same kind of reason: it
@@ -1281,6 +1286,7 @@ node packages/usb/bin/touch-recover.ts --step abort|delete|reboot [--backup <lab
                        also needs `--backup`, a lab folder holding a file, checked before anything
                        else. Keeps the answer in the lab's `reads/`. Unrun on a remote.
 node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commit]
+node packages/corpus/bin/touch-sync.ts --document <lab file> --account <lab file> [--archive <checkout>] [--commit]
                        drive a Harmony Touch's sync down end to end through the answerer,
                        `todo/done/todo-touch.md` 6.6: the provisioning read, the remote's own changes handed
                        up and kept in the lab first, the sync, and every request list answered until
@@ -1309,6 +1315,11 @@ node packages/corpus/bin/touch-sync.ts --unchanged | --set <lab folder> [--commi
                        `packages/corpus/test/touch/touch-settings-runs.test.ts`,
                        `packages/bench/test/harmony-touch/touch-removal-runs.test.ts`, `touch-setup-runs.test.ts`,
                        `touch-empty-runs.test.ts` and `touch-from-nothing-runs.test.ts`.
+                       `--document` syncs a recipe in the lab through `syncDocument`, the sync an
+                       application calls, as `write-config.ts --document` does for the Harmony One: built
+                       with the account's description from the lab, made into a set at its addresses,
+                       the journal and the set built kept beside the document, the run in `reads/`;
+                       without `--commit` it enumerates the Touch and opens nothing. Unrun on a remote.
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo/done/todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model

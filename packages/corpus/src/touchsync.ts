@@ -334,6 +334,62 @@ export function prepareSet(set: TouchSet): { readonly set: PreparedSet } | { rea
   return { set: { entries, tags: { stated, ours: set.answers.length - stated } } };
 }
 
+/** What a build of a Harmony Touch's document gives, `buildFromRecipe`'s `documents` result: the documents and our pictures. */
+export interface BuiltTouchDocuments {
+  readonly documents: harmonyTouch.SyncDocuments;
+  readonly pictures: readonly harmonyTouch.OwnPicture[];
+}
+
+/**
+ * **The set a build is delivered as**: the six configuration documents, each at the address `addresses` names for it,
+ * in the order the remote asks for them; a favourites document the build holds at its own address, which is its key,
+ * `documentKeyOf`; and each picture of ours at the address the build gives it; every answer under `ourTag`, a digest
+ * of its body, so the same build gives the same tags whoever makes the set, and a remote that already holds a document
+ * is answered 304 for it. Then the gate, `prepareSet`, so a set this gives is one the answerer takes.
+ *
+ * **Why the addresses are an argument and not part of the build.** They name the account and the remote by number,
+ * `harmony://` and the numbers the remote asks by; the documents carry none of them, so the codec's build neither needs
+ * nor holds them, and a set is matched by the document's name in them, `keyOf`. They are the account's, read off a set
+ * the remote held and kept with the remote's other records, never in a document or in this repository.
+ *
+ * **One derivation.** The set built from nothing on the bench, `withNothing` in `experiments/touchnothingset.ts`, is
+ * this function given what that experiment builds, so the bench's set and the one an application syncs are made by the
+ * same code. Refuses, each a sentence naming a document or the gate's finding and never quoting a value: an address
+ * missing for one of the six or naming another document, a document of the build that is neither one of the six nor a
+ * favourites document, and whatever the gate refuses.
+ */
+export function touchSetOf(
+  built: BuiltTouchDocuments,
+  addresses: Readonly<Record<string, string>>,
+): { readonly set: TouchSet } | { readonly refusals: readonly string[] } {
+  const six: readonly string[] = harmonyTouch.CONFIGURATION_DOCUMENTS;
+  const answers: SetAnswer[] = [];
+  for (const d of six) {
+    // Own keys only: a record of addresses read from a file is plain JSON, and a name like `constructor` must not
+    // find an inherited member.
+    const uri = Object.hasOwn(addresses, d) ? addresses[d] : undefined;
+    if (typeof uri !== 'string' || keyOf(uri) !== d) return { refusals: [`the account names no address of ${d}`] };
+    const body = { 'body-type': 'application/json' as const, resource: built.documents[d] };
+    answers.push({ uri, ...body, etag: ourTag(body) });
+  }
+  for (const key of Object.keys(built.documents)) {
+    if (six.includes(key)) continue;
+    // A favourites document is kept under its whole address, so the key is the address the remote asks it at; any
+    // other key is a document no sync asks for at an address known here, and is refused rather than dropped.
+    if (!key.startsWith('content://')) return { refusals: ['the build holds a document that is neither one of the six nor a favourites document, which no sync asks for at an address known here'] };
+    const body = { 'body-type': 'application/json' as const, resource: built.documents[key] };
+    answers.push({ uri: key, ...body, etag: ourTag(body) });
+  }
+  for (const picture of built.pictures) {
+    const body = { 'body-type': 'image/png' as const, resource: Buffer.from(picture.png).toString('base64') };
+    answers.push({ uri: picture.uri, ...body, etag: ourTag(body) });
+  }
+  const set: TouchSet = { answers };
+  const gate = prepareSet(set);
+  if ('refusals' in gate) return { refusals: gate.refusals };
+  return { set };
+}
+
 // ---------------------------------------------------------------------------------------------------
 // Answering one request
 // ---------------------------------------------------------------------------------------------------
@@ -532,6 +588,16 @@ export function resultOf(text: string): Record<string, unknown> | undefined {
   return isObject(result) ? result as Record<string, unknown> : undefined;
 }
 
+/**
+ * Why a run cannot be kept in `folder`, or undefined: it has to be new or empty, so a run never writes over another's.
+ * `syncTouch` throws with these words before anything is sent, and `syncDocument` asks first, so a person is told by a
+ * refusal rather than a throw.
+ */
+export function touchFolderRefusal(folder: string): string | undefined {
+  return existsSync(folder) && readdirSync(folder).length > 0
+    ? `the lab folder ${folder} already holds files, and a run never writes over another's` : undefined;
+}
+
 /** A name for a file of the folder: a number in order and what it is, with nothing of an address in it. */
 const fileName = (n: number, what: string): string => `${String(n).padStart(3, '0')}-${what}`;
 
@@ -547,9 +613,8 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
   const maxEmpty = options.maxEmptyLists ?? 300;
   const maxHandOuts = options.maxHandOuts ?? MAX_HAND_OUTS;
 
-  if (existsSync(folder) && readdirSync(folder).length > 0) {
-    throw new Error(`the lab folder ${folder} already holds files, and a run never writes over another's`);
-  }
+  const taken = touchFolderRefusal(folder);
+  if (taken !== undefined) throw new Error(taken);
   mkdirSync(join(folder, 'handed-up'), { recursive: true });
   const report = (line: string): void => {
     appendFileSync(join(folder, 'log.txt'), `${line}\n`);
@@ -842,6 +907,18 @@ export function assertTouchSyncAllowed(): void {
  */
 export const TOUCH_SYNC_UNITS = ['touch'] as const;
 
+/**
+ * Throws unless `label` is one of `TOUCH_SYNC_UNITS`. `answerTouchSync` asks it before it opens anything, and
+ * `syncDocument` asks it before it builds, so a dry run is refused for a unit a commit would be refused for; one
+ * statement of the check and its words, which `touch-answer.test.ts` reads.
+ */
+export function assertTouchSyncUnit(label: string): void {
+  if (!(TOUCH_SYNC_UNITS as readonly string[]).includes(label)) {
+    throw new RailError(`${label} is not a Harmony Touch this may sync: the units are the library's, `
+      + `${TOUCH_SYNC_UNITS.join(', ')}, decision 29. Refusing before anything is opened.`);
+  }
+}
+
 /** What `answerTouchSync` needs: what `syncTouch` takes but the session, which it opens itself. */
 export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session'> {
   /** The label of the unit's record; refused unless it is one of `TOUCH_SYNC_UNITS`. */
@@ -868,10 +945,7 @@ export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session'> {
 export async function answerTouchSync(run: TouchSyncRun): Promise<TouchSyncOutcome> {
   assertTouchSyncAllowed();
   const { open, permittedUnit, log, label, ...options } = run;
-  if (!(TOUCH_SYNC_UNITS as readonly string[]).includes(label)) {
-    throw new RailError(`${label} is not a Harmony Touch this may sync: the units are the library's, `
-      + `${TOUCH_SYNC_UNITS.join(', ')}, decision 29. Refusing before anything is opened.`);
-  }
+  assertTouchSyncUnit(label);
   const transport = await open();
   try {
     const session = await openTouchRequestSession(transport, { permittedUnit, ...(log === undefined ? {} : { log }) });

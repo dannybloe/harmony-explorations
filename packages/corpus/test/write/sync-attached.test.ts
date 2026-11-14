@@ -164,7 +164,7 @@ test('a remote that already holds the document\'s configuration is nothing to wr
 });
 
 test('a sync to an attached remote of a model with a write path of its own refuses by name, before anything is read but the document\'s model', async () => {
-  for (const name of ['Harmony 350', 'Harmony Touch']) {
+  for (const name of ['Harmony 350']) {
     const untouched = new Proxy({}, {
       get: (_, member) => {
         if (member === 'remote') return { kind: 'attached' };
@@ -178,13 +178,16 @@ test('a sync to an attached remote of a model with a write path of its own refus
       return true;
     });
   }
-  // The control that the model is what decides: the same request for a Harmony One is read further.
-  const one = new Proxy({}, {
-    get: (_, member) => {
-      if (member === 'remote') return { kind: 'attached' };
-      if (member === 'document') return recipe.create({ name: 'Harmony One', skin: 54 });
-      throw new Error(`the request's ${String(member)} was read`);
-    },
-  }) as SyncRequest;
-  await assert.rejects(() => syncDocument(one), /the request's journal was read/);
+  // The control that the model is what decides: the same request for a Harmony One, and for a Harmony Touch, whose
+  // sync is built since, `sync-attached-touch.test.ts`, is read further.
+  for (const model of [{ name: 'Harmony One', skin: 54 }, { name: 'Harmony Touch', skin: 99 }]) {
+    const further = new Proxy({}, {
+      get: (_, member) => {
+        if (member === 'remote') return { kind: 'attached' };
+        if (member === 'document') return recipe.create(model);
+        throw new Error(`the request's ${String(member)} was read`);
+      },
+    }) as SyncRequest;
+    await assert.rejects(() => syncDocument(further), /the request's journal was read/, model.name);
+  }
 });

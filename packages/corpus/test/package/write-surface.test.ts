@@ -24,8 +24,8 @@ const WRITE_VALUES = [
 
 /** The write subpath: the types and interfaces, which only the source shows. */
 const WRITE_TYPES = [
-  'AttachedRemote', 'ConfigWrite', 'ConfigWriteModel', 'ConfigWriteModelName', 'ConfigWriteResult', 'ConfigWriteStamp',
-  'ConfigWriteStep', 'ConfigWriteUnit', 'ConfigWriteUnitLabel', 'PretendOptions', 'PretendRemote', 'RemoteKeeper', 'SetAnswer', 'SyncAttention', 'SyncEvent',
+  'AttachedRemote', 'CompiledKeeper', 'ConfigWrite', 'ConfigWriteModel', 'ConfigWriteModelName', 'ConfigWriteResult', 'ConfigWriteStamp',
+  'ConfigWriteStep', 'ConfigWriteUnit', 'ConfigWriteUnitLabel', 'DocumentKeeper', 'PretendOptions', 'PretendRemote', 'RemoteKeeper', 'SetAnswer', 'SyncAttention', 'SyncEvent',
   'SyncOutcome', 'SyncPhase', 'SyncRemote', 'SyncRequest', 'TouchSet', 'TouchSyncMode', 'TouchSyncOutcome', 'TouchSyncRun', 'UnitRecords',
 ];
 

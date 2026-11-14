@@ -602,6 +602,33 @@ describe('the script', () => {
     assert.equal(script([], lab).status, 1);
   });
 
+  it('--document refuses another mode beside it, a document outside the lab, and a missing or address-less account, before the bus is enumerated', () => {
+    // A document inside the lab, so the refusals below are each the one named and not the document's place; it is never
+    // built, since every case is refused first, and the bus is never enumerated.
+    const document = join(lab, 'document.json');
+    writeFileSync(document, JSON.stringify({ model: { name: 'Harmony Touch', skin: 99 }, devices: [], activities: [] }));
+    const outsideDocument = join(outside, 'document.json');
+    writeFileSync(outsideDocument, '{}');
+    const bare = join(lab, 'account-bare.json');
+    writeFileSync(bare, JSON.stringify({ account: { context: {} } }));
+
+    const both = script(['--document', document, '--unchanged'], lab);
+    assert.equal(both.status, 1);
+    assert.match(both.out, /one of --unchanged, --set <lab folder> or --document <lab file>, not two and not none/);
+    const away = script(['--document', outsideDocument, '--account', bare], lab);
+    assert.equal(away.status, 1);
+    assert.match(away.out, /the document .* is not inside the lab/);
+    const noAccount = script(['--document', document], lab);
+    assert.equal(noAccount.status, 1);
+    assert.match(noAccount.out, /--document needs --account <lab file>, the account's description/);
+    // The control for the place: the same account with the document inside the lab gets past it and stops at the account.
+    const noAddresses = script(['--document', document, '--account', bare], lab);
+    assert.equal(noAddresses.status, 1);
+    assert.match(noAddresses.out, /holds no account with the documents' addresses/);
+    // Nothing was printed of a plan, so nothing got as far as the sync.
+    for (const run of [both, away, noAccount, noAddresses]) assert.doesNotMatch(run.out, /unit record:/);
+  });
+
   it('refuses a commit without the two flags, and with the recovery flag set', () => {
     const none = script(['--unchanged', '--commit'], lab);
     assert.equal(none.status, 1);

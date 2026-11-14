@@ -546,6 +546,7 @@ async function syncTheDocument(documentPath: string): Promise<void> {
       kind: 'attached',
       found: attached[0] as (typeof attached)[number],
       keeper: {
+        kind: 'compiled',
         units: UNITS,
         records: { text: unitIdentity, where: unitIdentityPath },
         region: { name: dumpName, bytes: new Uint8Array(readFileSync(dumpPath)) },

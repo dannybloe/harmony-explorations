@@ -2060,7 +2060,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 37 with the archived sequence, the old root todo kept whole with its mention of the block rehearsal.
         # 40 with the sync of a document to an attached remote, the library function's second caller, and its
         # runner and test, which drive it against the fake remote.
-        self.assertEqual(len(must), 40, 'the withhold list should resolve to 40 paths, got %s'
+        # 42 with the sync of a document to an attached Harmony Touch: its runner and test, which drive the Touch's
+        # answerer end to end against the pretend Touch with the request flags set.
+        self.assertEqual(len(must), 42, 'the withhold list should resolve to 42 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):

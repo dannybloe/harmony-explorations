@@ -44,7 +44,7 @@ import { harmonyTouch } from '@harmony/codec/build';
 import { mergedIntervals } from '@harmony/codec/internal';
 
 import { compareSetup, type ComparisonRules, type DocumentComparison, type Pair } from './touchsetupset.ts';
-import { keyOf, ourTag, prepareSet, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
+import { keyOf, prepareSet, touchSetOf, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
 import { archiveAt } from '@harmony/codec/node';
 
 /** The six documents a from-nothing set delivers, in the order the remote asks for them. */
@@ -92,38 +92,31 @@ export function describeTouchAccount(set: TouchSet): { readonly account: TouchAc
 
 /**
  * The set of a setup file: the six documents `buildTouchDocuments` writes from the file, the archive at `archive` and the
- * account, each at the address the account names and under `ourTag`, in the order the remote asks for them; or why not,
- * the codec's refusal or the answerer's gate.
+ * account, each at the address the account names and under `ourTag`, in the order the remote asks for them, and the
+ * background and its twin the family draws for every set; or why not, the codec's refusal or the answerer's gate.
+ *
+ * **The set is made by `touchSetOf` in `src/touchsync.ts`**, the function a sync of a document makes its set with, so
+ * the set the bench delivered and the one an application syncs come from one derivation. What stays here is the
+ * experiment's own part: a setup file and an archive path rather than a recipe and its sources.
  */
 export function withNothing(options: {
   readonly file: unknown;
   readonly archive: string;
   readonly account: TouchAccountFile;
 }): { readonly set: TouchSet } | { readonly refusals: readonly string[] } {
-  let documents: harmonyTouch.SyncDocuments;
+  let built: { documents: harmonyTouch.SyncDocuments; pictures: readonly harmonyTouch.OwnPicture[] };
   try {
-    documents = harmonyTouch.buildTouchDocuments(harmonyTouch.readTouchSetupFile(options.file), { archive: archiveAt(options.archive), account: options.account });
+    const setup = harmonyTouch.readTouchSetupFile(options.file);
+    built = {
+      documents: harmonyTouch.buildTouchDocuments(setup, { archive: archiveAt(options.archive), account: options.account }),
+      // The background and its twin, at the addresses our Settings makes the screens build, as the family gives them.
+      pictures: harmonyTouch.HARMONY_TOUCH_FAMILY.buildPictures(setup),
+    };
   } catch (e) {
     if (e instanceof harmonyTouch.ComposeRefusal || e instanceof RecipeError) return { refusals: [e.message] };
     throw e;
   }
-  const answers: SetAnswer[] = [];
-  for (const d of NOTHING_DOCUMENTS) {
-    const uri = options.account.addresses[d];
-    if (typeof uri !== 'string' || keyOf(uri) !== d) return { refusals: [`the account names no address of ${d}`] };
-    const body = { 'body-type': 'application/json' as const, resource: documents[d] };
-    answers.push({ uri, ...body, etag: ourTag(body) });
-  }
-  // The background and its twin, at the addresses our Settings makes the screens build, each under a digest too.
-  const background = harmonyTouch.ourBackground();
-  for (const [uri, png] of [[background.addresses.picture, background.picture], [background.addresses.twin, background.twin]] as const) {
-    const body = { 'body-type': 'image/png' as const, resource: Buffer.from(png).toString('base64') };
-    answers.push({ uri, ...body, etag: ourTag(body) });
-  }
-  const set: TouchSet = { answers };
-  const gate = prepareSet(set);
-  if ('refusals' in gate) return { refusals: gate.refusals };
-  return { set };
+  return touchSetOf(built, options.account.addresses);
 }
 
 /**
