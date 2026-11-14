@@ -838,10 +838,24 @@ the last key pressed; which screen it showed, its USB screen or Charging, is not
 hand over and the sync. Nothing was heard on the infrared monitor. The unit was left on this set, for a run of
 the 7.1 tests on it, and not put back.
 
+## The power source, read before a sync: not yet run on this unit
+
+**Nothing in this section has happened on the unit yet.** The library may open `/tde/powerstate` for reading on a
+Touch, and every sync reads it first and refuses on any source but `usb`, `readTouchPowerSource` and
+`touchPowerRefusal`; that the open is a plain read rests on the firmware alone,
+`tests/harmony_touch/test_harmony_touch_api_names.py` `ThePowerSourceIsAPlainRead`. The first read on this unit
+is to be recorded here when it is made: the text the file gave, its exact bytes and line ending, the screen the
+remote showed, and the port and cable it was on.
+
+| what | result |
+|---|---|
+| the first read of `/tde/powerstate` on this unit | not run |
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been
   seen and written down. Checks 1, 8 and 9 of 3.2 above ran on the infrared monitor, and 6.9 timed a sequence's
   delay on it, so the line is gone from this list.
 * Nobody has recorded looking at its clock.
+* Its power source, `/tde/powerstate`, has never been read on it, above.
 * The request and response command `0x08` has never been sent to it, by us or, in any of the recorded syncs, by Logitech's client.

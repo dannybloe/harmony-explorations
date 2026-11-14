@@ -51,6 +51,7 @@ import {
   TOUCH_REQUEST_DOOR,
   TOUCH_REQUEST_PATH,
   TOUCH_ANNOUNCEMENT_TEXT,
+  TOUCH_PRODUCT_ID,
   WRITES_ENABLED,
   touchArgumentsAfter,
   touchRequestOfLineStart,
@@ -513,6 +514,115 @@ export const INERT_PATHS: readonly string[] = [
   '/cfg/log',
 ];
 
+/** The name a Harmony Touch reports its power source through, `INERT_PATHS_OF_PRODUCT`. */
+export const TOUCH_POWER_PATH = '/tde/powerstate';
+
+/**
+ * The paths one product may open for reading beside `INERT_PATHS`, keyed by its USB product id. **The second list
+ * exists because `INERT_PATHS` is one list for the whole file based family**, and a name read on one model is not
+ * known on another: `/tde/powerstate` is a Harmony Touch's name, and whether a Harmony 300 or 350 has it, or what an
+ * open of it does there, is not read. So the allowance holds for the Touch's product id alone, which the remotes
+ * sold as the Harmony Ultimate and the Harmony Elite share, running the Touch's image. A transport whose product the
+ * guard was not told gets no allowance from this list at all.
+ *
+ * **Why opening `/tde/powerstate` for reading is a plain read**, read in the Touch's native program, build 4.15.330,
+ * `reference/architectures/harmony-touch/api/names.md`:
+ *
+ * * Its entry fills the open, close and length slots with the same three functions as every plain file backed read
+ *   name, `/proc`, `/tde/vbat` and `/tde/vdc` among them, nineteen names in all; its other two slots are a write and
+ *   an answer to the engine's own request, neither of which an open reaches.
+ * * The open routine takes its write branch, `fopen` with `w+`, only when the handle's mode equals 2. Every other
+ *   open stats the backing file, the power controller's `powersource` file, opens it with `r`, reads it whole into a
+ *   buffer and closes it again, writing nothing. The request handler builds the mode from the open's mode letters,
+ *   `R` giving 1, `W` 2 and `C` 4, so an open with `R` alone is never mode 2. The mode here is fixed to `R` by the
+ *   read route, `openFileForReading`, and checked off the bytes by the guard, `opensForReading`.
+ * * The close frees that buffer, and the length slot returns how many bytes the open read.
+ *
+ * **What is not read**: the kernel driver's routine behind the `powersource` file, so whether reading it does
+ * anything inside the driver is not known from the image. The remote's own screens watch the same file to decide
+ * whether they take part in a sync, `reference/architectures/harmony-touch/answering-a-sync.md`,
+ * so reading it is something the remote does to itself all the time.
+ *
+ * **The write stays refused on every route.** Its write slot stores what is written into the power controller's
+ * file, so a write is never wanted: the read route refuses any mode but `R`, the file write route opens
+ * `FILE_WRITE_PATHS` alone and the request route `/sys/hlapi` alone, whatever their flags.
+ */
+export const INERT_PATHS_OF_PRODUCT: ReadonlyMap<number, readonly string[]> = new Map([
+  [TOUCH_PRODUCT_ID, [TOUCH_POWER_PATH]],
+]);
+
+/** Whether `path` is on the inert list of the product a guarded transport was opened on, `INERT_PATHS_OF_PRODUCT`. */
+function inertForProduct(productId: number | undefined, path: string): boolean {
+  return productId !== undefined && (INERT_PATHS_OF_PRODUCT.get(productId) ?? []).includes(path);
+}
+
+/**
+ * The product each guarded transport was opened on, kept beside the transport rather than on it, as `authorise.ts`
+ * keeps an authorisation, so a caller holding the transport cannot change what the guard believes it is.
+ */
+const productOfGuard = new WeakMap<Transport, number>();
+
+/** The product id `guardFileProtocol` was told for this transport, or undefined for one it was not told, or not guarded. */
+export function guardedProduct(transport: Transport): number | undefined {
+  return productOfGuard.get(transport);
+}
+
+/**
+ * The five power sources a Harmony Touch's power controller driver names, in the order it names them: the battery,
+ * the cradle, a wall adapter, a computer's USB port, and a USB charger. Read in the firmware,
+ * `tests/harmony_touch/test_harmony_touch_keys.py`. The remote's screens take part in a sync on `usb` alone,
+ * `reference/architectures/harmony-touch/answering-a-sync.md`.
+ */
+export const TOUCH_POWER_SOURCES = ['battery', 'cradle', 'wall_adapter', 'usb', 'usb_charge'] as const;
+
+/**
+ * What `/tde/powerstate` reported: one of the five names the driver knows, or whatever other text the remote sent,
+ * carried as it came. Typed so that a comparison with a known name is checked and an unexpected text still fits.
+ */
+export type TouchPowerSource = (typeof TOUCH_POWER_SOURCES)[number] | (string & {});
+
+/**
+ * The firmware builds in which opening `/tde/powerstate` for reading is read to be a plain read: the production
+ * build 4.15.330, the one `reference/architectures/harmony-touch/api/names.md` reads. A remote on another build is
+ * refused by `readTouchPowerSource` before the name is opened.
+ */
+export const TOUCH_POWER_READ_ON: readonly string[] = ['4.15.330'];
+
+/**
+ * Read which power source a Harmony Touch is on, through the read only route: ping, open `/tde/powerstate` for
+ * reading, read, close, as `readFile` does, and the text trimmed of white space, since whether the file's text ends
+ * in a newline on a unit is not measured.
+ *
+ * **Refuses before anything is sent** unless `transport` is a guarded transport opened on the Touch's product id,
+ * `openFileBasedRemote` with that id, since the name is a Touch's and nothing is read about it on another model;
+ * the guard refuses the open on any other product besides, `INERT_PATHS_OF_PRODUCT`, so this is the convenient half
+ * of two rails, as `openFileForReading` is beside the mode check.
+ *
+ * **And refuses on a firmware build the name's handlers are not read in**, `TOUCH_POWER_READ_ON`: the identity file,
+ * which is on the family's inert list, is read first and its build compared, and the name is opened only on a build
+ * that is listed. What a name does is a fact about a build, which is why the request channel holds the same check,
+ * `TOUCH_REQUEST_READ_ON`. The product id cannot carry this: every remote that runs the Touch's image shares it,
+ * on whatever build it is.
+ */
+export async function readTouchPowerSource(transport: Transport): Promise<TouchPowerSource> {
+  const product = guardedProduct(transport);
+  if (product !== TOUCH_PRODUCT_ID) {
+    throw new TransportError(
+      `refusing to read ${TOUCH_POWER_PATH}: it is a Harmony Touch's name, and this transport was `
+        + (product === undefined ? 'not opened on a known product' : `opened on product 0x${product.toString(16)}`),
+    );
+  }
+  const build = (await readSysInfo(transport)).get('fw_ver');
+  if (build === undefined || !TOUCH_POWER_READ_ON.includes(build)) {
+    throw new TransportError(
+      `refusing to read ${TOUCH_POWER_PATH}: the remote runs firmware ${build ?? 'unknown'}, and what opening that `
+        + `name does is read on ${TOUCH_POWER_READ_ON.join(', ')} only`,
+    );
+  }
+  const bytes = await readFile(transport, TOUCH_POWER_PATH);
+  return Buffer.from(bytes).toString('latin1').trim();
+}
+
 /** Whether the named door for opening a path outside `INERT_PATHS` is open. */
 export const PATH_EXPERIMENT_ALLOWED = process.env['HARMONY_FILE_PATH_EXPERIMENT'] === '1';
 
@@ -839,8 +949,12 @@ export function carryTouchLine(report: Uint8Array, phase: TouchRoutePhase, carry
  * `HARMONY_FILE_WRITE` are both set. A report that fails any of the three falls through to the read
  * checks below, which refuse every write as they always have. The returned object still offers
  * `write`, `read` and `close` and nothing else, which a test enumerates.
+ *
+ * **`productId` is the product the transport was opened on**, which `openFileBasedRemote` passes from what it
+ * enumerated. It widens one thing only, the paths one product may open for reading, `INERT_PATHS_OF_PRODUCT`, and
+ * narrows nothing: a transport guarded without it opens `INERT_PATHS` and no more.
  */
-export function guardFileProtocol(inner: Transport): Transport {
+export function guardFileProtocol(inner: Transport, productId?: number): Transport {
   // Where the Touch's request channel stands on this transport, `onTheTouchRequestRoute`. Kept in this
   // closure and not on the returned object, for the reason the authorisation is kept in `authorise.ts`.
   let phase: TouchRoutePhase = 'idle';
@@ -943,7 +1057,7 @@ export function guardFileProtocol(inner: Transport): Transport {
         if (path === undefined) {
           throw new TransportError('refusing an open whose path cannot be read off the request');
         }
-        if (!INERT_PATHS.includes(path) && !PATH_EXPERIMENT_ALLOWED) {
+        if (!INERT_PATHS.includes(path) && !inertForProduct(productId, path) && !PATH_EXPERIMENT_ALLOWED) {
           throw new TransportError(
             `refusing to open ${path}: on this protocol a path can be an action, and this one is ` +
               "not on the inert list. A Touch's /tde/haptic/diagnostic and /tde/haptic/calibrate act " +
@@ -971,6 +1085,7 @@ export function guardFileProtocol(inner: Transport): Transport {
       return inner.close();
     },
   };
+  if (productId !== undefined) productOfGuard.set(guarded, productId);
   return guarded;
 }
 
@@ -980,6 +1095,14 @@ export function guardFileProtocol(inner: Transport): Transport {
  * The mode is the second string parameter, so this walks the first string to its terminator and
  * checks what follows is exactly `R` and a NUL. A mode of `W` with a size after it is the write
  * form, and anything this cannot parse is treated as not a read, which is the safe direction.
+ *
+ * **The whole mode string is returned as one entry under the believed framing**, a byte that is not a letter
+ * included, so `opensForReading` passes the one mode `R` and nothing longer, `RR` included. This read the first letter
+ * alone<!--superseded--> while the sentence above said exactly `R`, so `RW` or `RC` passed as a read. On a Harmony
+ * Touch the request handler ORs one bit per letter, `R` 1, `W` 2 and `C` 4, so `RW` is not the write mode its
+ * plain read names test for, 2 alone, and the open stayed a read there,
+ * `reference/architectures/harmony-touch/api/names.md`; on the Harmony 300 and 350 how a mode is parsed is not read,
+ * which is why the guard holds the exact mode rather than leaning on that.
  */
 export function modeLetters(report: Uint8Array): string[] {
   const letters: string[] = [];
@@ -989,10 +1112,16 @@ export function modeLetters(report: Uint8Array): string[] {
   };
 
   // The framing: a string is `0x80`, characters, NUL. So walk the path's terminator and the mode's
-  // own prefix, and the letter is the byte after it.
+  // own prefix, and the mode is every byte after it up to its own NUL, returned whole as one entry.
   let at = 5;
   while (at < report.length && report[at] !== 0) at += 1;
-  letterAt(at + 2);
+  if (report[at + 1] === STRING_PREFIX) {
+    let mode = '';
+    for (let m = at + 2; m < report.length && report[m] !== 0; m += 1) mode += String.fromCharCode(report[m] as number);
+    if (mode !== '') letters.push(mode);
+  } else {
+    letterAt(at + 2);
+  }
 
   // And the two refuted framings are still read, because a guard must refuse a write under any
   // reading a remote might take, not only under the one believed today.
@@ -1062,7 +1191,7 @@ export async function openFileBasedRemote(
     throw new TransportError('that device is not in the file based family');
   }
   const hid = await import('node-hid');
-  return guardFileProtocol(transportOverFileDevice(new hid.HID(found.path)));
+  return guardFileProtocol(transportOverFileDevice(new hid.HID(found.path)), found.productId);
 }
 
 /** Local copy of the node-hid wrapper's shape, so this file does not depend on its internals. */

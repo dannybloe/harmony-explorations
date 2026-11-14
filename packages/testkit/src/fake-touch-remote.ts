@@ -6,7 +6,9 @@
  *   after it, the done packet included, and replies `0xFE` after a done packet and `0x80` with the last
  *   data packet's sequence number otherwise; a read replies with its own header, the data packets and the
  *   terminator. What `/sys/hlapi` answers on reading is whatever `answer` makes of the last line written
- *   into it. `/sys/sysinfo` serves the identity file given, and every other path is refused at open.
+ *   into it. `/sys/sysinfo` serves the identity file given, `/tde/powerstate` opened for reading serves the power
+ *   source, `usb` and a newline unless `powerstate` states another text, and every other path is refused at open.
+ *   Every open is kept in `opened`, path and mode, refused ones included, so a test can say what was never opened.
  * * **Replaying**: from the first open of `/sys/hlapi` on, every report that arrives is compared with the
  *   next one a recorded sync sent, and the recorded replies are served once a command's reports are all
  *   in. The first difference is kept in `mismatch` and refused, so a test can say where the bytes parted.
@@ -63,6 +65,13 @@ export interface FakeTouchRemoteOptions {
   readonly replay?: readonly Command[];
   /** Model the remote's cable listener over the chunks written into `/sys/hlapi`, into `acted`. */
   readonly listener?: boolean;
+  /**
+   * The text `/tde/powerstate` serves when opened for reading: `usb` and a newline when absent, the one source a
+   * Touch's screens take part in a sync on, with the newline a kernel file's value usually ends in (what a unit's
+   * file ends in is not measured, which is why the reader trims). Any text, so a test can state another of the five
+   * sources or something no driver names.
+   */
+  readonly powerstate?: string;
 }
 
 export class FakeTouchRemote implements Transport {
@@ -76,6 +85,8 @@ export class FakeTouchRemote implements Transport {
   replayed = 0;
   /** With `listener`: every line the remote's cable listener acted on, in order. */
   readonly acted: string[] = [];
+  /** Every open that arrived when answering, as the path, a space and the mode, refused ones included, in order. */
+  readonly opened: string[] = [];
 
   /** The listener's announced number, and what it holds towards it. */
   private announced: number | undefined;
@@ -149,8 +160,10 @@ export class FakeTouchRemote implements Transport {
       case FILE_OPEN: {
         const path = requestedPath(report) ?? '';
         const mode = strings(report)[1] ?? '';
+        this.opened.push(`${path} ${mode}`);
         let content: Uint8Array;
         if (path === '/sys/sysinfo' && mode === 'R') content = Buffer.from(this.options.sysinfo, 'ascii');
+        else if (path === '/tde/powerstate' && mode === 'R') content = Buffer.from(this.options.powerstate ?? 'usb\n', 'latin1');
         else if (path === '/sys/hlapi' && mode === 'W') content = new Uint8Array(0);
         else if (path === '/sys/hlapi' && mode === 'R') {
           const line = this.lines.at(-1) ?? '';

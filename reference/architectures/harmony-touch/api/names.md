@@ -33,19 +33,27 @@ The native program registers its names from one static table of **54 entries of 
 holds, in order, a path or a dotted prefix, an engine name, an optional backing file, and then **eleven
 handler slots**[^t-touch-api-names]. A slot that is filled gives the function that runs one kind of access;
 a slot that is empty means that access falls through to nothing. The first four slots are the ordinary file
-operations and the rest are for names that do more than read or write a file:
+operations and the rest are for names that do more than read or write a file. Which slot is which is read from
+the calls the request handler makes, the open, the close, the write and a read each loading its own
+slot[^t-touch-power-read]:
 
 | slot | what it is | shown by |
 |---|---|---|
-| 0 | open | stats the backing file and opens it |
-| 1 | read | returns the backing file's contents |
+| 0 | open | stats the backing file and, opened for reading, reads it whole into a buffer and closes the file again; opened for writing alone, opens the file with `w+` and keeps it open |
+| 1 | close | frees the buffer the open filled, or closes the file the open left open for writing, and releases the handle |
 | 2 | write | writes to the backing file, or acts |
-| 3 | close | releases the handle |
+| 3 | length | how many bytes the open read, which a read then returns from the buffer |
 | 4, 8, 9 | the generate family: open, generate an answer, close | the names that build their answer rather than read a file, `/sys/sysinfo`, `/sys/logread`, `/rf/deviceinfo` and `/data/resource`; a name can instead fill slot 4 alone with a handler of its own that acts on an open for reading |
-| 5, 6, 7, 10 | per name operations | the infrared, radio and firmware names, each its own meaning |
+| 5, 6, 7, 10 | per name operations | the infrared, radio and firmware names, each its own meaning; slot 5, where filled, answers a read in place of slot 3's length |
+
+**This table said slot 1 is the read and slot 3 the close<!--superseded-->**, which had the two the wrong way
+round: the request handler calls slot 1 to close a handle and takes what slot 3 returns as the length of a read,
+and there is no slot that reads, a read being answered from the buffer the open filled[^t-touch-power-read]. The
+four had been listed in the usual order of file operations, and which slot the handler calls for which access had
+not been read.
 
 **A name's kind follows from which slots it fills, and when it acts follows from which slot acts.** A name
-with an open and a read slot and no write slot is a **read**; one that also has a write slot that stores what
+with an open and no write slot is a **read**; one that also has a write slot that stores what
 is written is a **change**; one whose write slot acts on the remote beyond its stored data, a restart or a
 reset, is an **action**. **Four action names act on a bare write**, filling slot 2 and nothing else:
 `/sys/reboot`, `/sys/factoryreset`, `/tde/shipmode` and `/tde/fb`. **Two act on an open for reading**,
@@ -99,7 +107,7 @@ the kernel or cache file the name reads or writes through, where it has one.
 | `/proc` | `sys.proc` | a process information file | read | |
 | `/sys/factoryreset` | `sys.factoryreset` | arms or clears a factory reset when written | action | |
 | `/tde/flag` | `tde.flag` | the manufacturing test flag | change | `/etc/tdeflag` |
-| `/tde/powerstate` | `tde.powerstate` | the power source | change | `/sys/bus/i2c/devices/1-0048/tps6507x-juniper/powersource` |
+| `/tde/powerstate` | `tde.powerstate` | the power source: `battery`, `cradle`, `wall_adapter`, `usb` or `usb_charge`; an open for reading reads it and changes nothing | change | `/sys/bus/i2c/devices/1-0048/tps6507x-juniper/powersource` |
 | `/tde/vbat` | `tde.vbat` | the battery voltage | read | `/sys/bus/i2c/devices/1-0048/tps6507x-juniper/vbat` |
 | `/tde/vdc` | `tde.vdc` | the charger voltage | read | `/sys/bus/i2c/devices/1-0048/tps6507x-juniper/vdc` |
 | `/tde/vsys` | `tde.vsys` | the system voltage | read | `/sys/bus/i2c/devices/1-0048/tps6507x-juniper/vsys` |
@@ -126,10 +134,13 @@ the kernel or cache file the name reads or writes through, where it has one.
 
 ## The file families, read in one place
 
-**The kernel backed names** (`/tde/vbat` through `/tde/fgauge/all`, `/proc`, `/sys/dropbear`) share one set
-of four handlers, open, read, write and close, which open the backing file, pass its bytes through and close
-it[^t-touch-api-names]. A name with only open, read and close is read only; one that also has write, such as
-`/tde/keyled` or `/tde/backlight`, writes the value straight to the kernel file. They exist for the factory
+**The kernel backed names** (`/proc`, `/sys/dropbear` and every `/tde/` name with a backing file, nineteen in all)
+share one open, one close and one length, and those that can be written one write: the open reads the backing
+file whole into a buffer, a read returns it, and the close frees it[^t-touch-power-read]. A name with only the
+open, close and length is read only; one that also has the write, such as `/tde/keyled` or `/tde/backlight`,
+writes the value straight to the kernel file, the open then keeping the file open for it when the handle is opened
+for writing alone. This said the four handlers were open, read, write and close<!--superseded-->, the slot table's
+error above. They exist for the factory
 test and expose the hardware sensors; none of them touches the configuration. **`/sys/dropbear`'s backing
 file is the secure shell daemon's own program binary**, `/usr/sbin/dropbearmulti`, so a write to this name
 writes into that program file rather than sending the daemon a control message.
@@ -180,6 +191,27 @@ back is the engine's resource put followed by `proxy.request`,
 paths and behind the named door `HARMONY_FILE_PATH_EXPERIMENT` all the same,
 [the Touch's usb.md](../../../remotes/harmony-touch/usb.md), since the door stands in front of every path that
 is not already known to be inert.
+
+### `/tde/powerstate`, the power source, a plain read
+
+The factory test name that reports which power source the remote is on, backed by the power controller's
+`powersource` file, whose driver names five: `battery`, `cradle`, `wall_adapter`, `usb` and `usb_charge`. The
+remote's own screens watch the same file and take part in a sync only on `usb`,
+[answering a sync](../answering-a-sync.md#how-a-sync-aborts-and-how-an-answerer-learns-of-it)[^t-touch-host].
+
+**Opening it for reading reads the file and changes nothing.** Its open, close and length are the plain file
+backed ones the other kernel backed names share. The open takes its writing branch, `fopen` with `w+`, only when
+the handle's mode is exactly 2, and the request handler builds the mode from the open's letters, `R` giving 1, `W`
+2 and `C` 4, so an open with the mode `R` alone stats the file, opens it with `r`, reads it whole into a buffer and
+closes it again[^t-touch-power-read]. Its write slot stores what is written into the power controller's file, and
+its last slot answers the engine's own request by its engine name, `tde.powerstate`; an open over the cable reaches
+neither. What the kernel driver does when its file is read is not read in the image, and what a unit's file holds,
+and whether it ends in a newline, is not measured[^unchecked].
+
+**So the library opens it for reading on a Touch**, the one name it opens beyond the family's inert list, and on
+the Touch's product id alone, since whether a Harmony 300 or 350 has the name is not read, and on this build
+alone, since what a name does is a fact about a build; and it never opens it for writing, whatever the flags. A sync reads it first and refuses on any source but `usb`, before anything that
+acts is sent, [answering a sync](../answering-a-sync.md#how-a-sync-aborts-and-how-an-answerer-learns-of-it).
 
 ### The names that act: on a write, and on an open
 
@@ -247,7 +279,11 @@ library takes. Whether the write verifies or bounds the package is not read, onl
 * Whether `/etc` is writable on a production unit, and so whether `/tde/enable` can turn the file requests'
   test mode on there[^unchecked].
 * Whether the hubs' sibling image registers the same names; only the remotes' image is read[^unchecked].
+* What the power controller's driver does when its `powersource` file is read, and what the file holds on a unit
+  for each source, its line ending included[^unchecked].
 
 [^t-touch-api-names]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_names.py)
 [^unchecked]: Not checked.
+[^t-touch-power-read]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_api_names.py)
+[^t-touch-host]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_host.py)
 [^t-touch-recovery]: Read in the firmware. [The test](../../../../tests/harmony_touch/test_harmony_touch_recovery.py)

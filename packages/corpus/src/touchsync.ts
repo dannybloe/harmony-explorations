@@ -29,10 +29,12 @@
  *    check with no finding that is `refused`, every answer has the envelope `setRefusals` asks for, and all
  *    six configuration documents are present, `refusalsBeforeASync`. A set that fails is refused here, with
  *    nothing sent, so no recovery is needed.
- * 2. **The provisioning read**, `PROVISIONING`, refused unless the remote is provisioned in mode 0 or 1, the
+ * 2. **The power source**, read before the session was opened and handed in, refused unless it is `usb`, with
+ *    nothing that acts sent, so no recovery is needed either; the header's paragraph on USB power says why.
+ * 3. **The provisioning read**, `PROVISIONING`, refused unless the remote is provisioned in mode 0 or 1, the
  *    two modes a Touch syncs through a computer in, `api/setup.md` "`setup.account?provision`". A read: nothing
  *    is changed by it.
- * 3. **The remote's own changes handed up**, `HAND_OVER`, and every list that asks answered: a `put` is kept in
+ * 4. **The remote's own changes handed up**, `HAND_OVER`, and every list that asks answered: a `put` is kept in
  *    the lab folder **before** its answer is written, then answered 200 with the same document and a tag of
  *    ours, as Logitech's client wrote the service's echo back; the hand over ends at `proxy://Finished`. From
  *    this request on the remote has been acted on, so every refusal after it names the recovery and what an
@@ -41,7 +43,7 @@
  *    remote. The change is by then kept in the lab and committed on the remote, and no
  *    sync is marked running. A favourites document is handed up to another address than the one a sync asks
  *    for it at, so it clashes by its kind, `favouritesClash`.
- * 4. **The sync started**, `SYNC`, and every list answered from the set until `proxy://Finished` or
+ * 5. **The sync started**, `SYNC`, and every list answered from the set until `proxy://Finished` or
  *    `proxy://Abort`, answered as Logitech's client answers both, a status of 200 and nothing else.
  *
  * **How an entry is answered**, `answerOf`:
@@ -106,10 +108,13 @@
  * `reference/architectures/harmony-touch/firmware.md` "A sync that stops halfway". The order is the preflight's,
  * the lab's `work/touch-firmware/notes/6.7-preflight.md`, section 5.
  *
- * **The remote's screens take part only while it is powered over USB**, and nothing a session can ask says
- * which power source it is on: `answering-a-sync.md` "How a sync aborts, and how an answerer learns of it".
- * On any other the screens ignore the hand over's and the sync's broadcasts, never send the commit, and this
- * answerer reads empty lists until its bound and refuses. The script says so in its dry run.
+ * **The remote's screens take part only while it is powered over USB**, from the source its software calls `usb`:
+ * on any other the screens ignore the hand over's and the sync's broadcasts, never send the commit, and an answerer
+ * reads empty lists until its bound, `answering-a-sync.md` "How a sync aborts, and how an answerer learns of it". No
+ * request on the session's channel names the source, but the remote's factory test name `/tde/powerstate` does, and
+ * opening it for reading is a plain read, `readTouchPowerSource` in `@harmony/usb`. So `answerTouchSync` reads it
+ * through the read only route before the session is opened, and `syncTouch` refuses before anything acts unless it
+ * is exactly `usb`, `touchPowerRefusal`, saying what the remote reported and what a person does about it.
  *
  * **Everything goes to the lab folder the caller names**: every request line and every answer, one file
  * each, a log of the lines above, and what the remote handed up, under `handed-up/`, written before the
@@ -117,7 +122,8 @@
  *
  * **`answerTouchSync` is the whole run an application calls**, on `@harmony/corpus/write`:
  * the two flags and the recovery flag checked before anything is opened, `assertTouchSyncAllowed`, the Touch
- * opened by the caller's `open`, the session with its unit check, `syncTouch`, and the transport closed. It was
+ * opened by the caller's `open`, its power source read, the session with its unit check, `syncTouch`, and the
+ * transport closed. It was
  * once the script's `--commit`; `bin/touch-sync.ts` keeps its command line, the lab and the printing.
  *
  * **`unchanged` drove three of the first four syncs on the bench unit**, and a set the other, the
@@ -130,7 +136,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } fro
 import { join } from 'node:path';
 
 import { harmonyTouch } from '@harmony/codec/build';
-import type { Transport } from '@harmony/usb';
+import { readTouchPowerSource, TOUCH_POWER_SOURCES, type TouchPowerSource, type Transport } from '@harmony/usb';
 import {
   RailError,
   TOUCH_READ_REQUESTS,
@@ -175,6 +181,43 @@ export const MAX_HAND_OUTS = 3;
 
 /** The two modes a Touch syncs through a computer in, `api/setup.md` "`setup.account?provision`". */
 const SYNCING_MODES: readonly number[] = [0, 1];
+
+// ---------------------------------------------------------------------------------------------------
+// The power source, and the remote not found
+// ---------------------------------------------------------------------------------------------------
+
+/** The one power source a Touch's screens take part in a sync on, one of `TOUCH_POWER_SOURCES`. */
+export const SYNC_POWER_SOURCE = 'usb';
+
+/**
+ * The source as a line says it: one of the five the driver names as it is, and any other text quoted and cut short,
+ * since it came off the remote and could be anything.
+ */
+export function describePowerSource(source: TouchPowerSource): string {
+  if ((TOUCH_POWER_SOURCES as readonly string[]).includes(source)) return source;
+  if (source === '') return 'nothing, an empty answer';
+  return `an unexpected text, ${JSON.stringify(source.length > 40 ? `${source.slice(0, 40)}...` : source)}`;
+}
+
+/**
+ * Why a sync is refused on this power source, or undefined on `usb`: what the remote reported and what a person does,
+ * in words they can act on. `syncTouch` refuses with it before anything acts, and `syncDocument` asks it in a dry
+ * run, so a dry run says up front whether a commit would go through.
+ */
+export function touchPowerRefusal(source: TouchPowerSource): string | undefined {
+  if (source === SYNC_POWER_SOURCE) return undefined;
+  return `the remote reports its power source as ${describePowerSource(source)}, and a Harmony Touch takes part in a sync `
+    + 'only on USB power from a computer\'s port, the source its software calls usb, when it shows its USB screen: '
+    + 'connect it to a computer\'s USB port and sync again';
+}
+
+/**
+ * What a person reads when no Harmony Touch is found on the bus: the plain fact, and the one check a person can make,
+ * since a cable that carries power alone charges the remote while the computer never sees it. `bin/touch-sync.ts`
+ * refuses with it; `syncDocument` is handed a remote already found and has no such refusal of its own.
+ */
+export const TOUCH_NOT_FOUND = 'no Harmony Touch is attached. A cable that carries power and no data charges the remote '
+  + 'without the computer seeing it, so check that the cable carries data.';
 
 // ---------------------------------------------------------------------------------------------------
 // The set
@@ -506,6 +549,7 @@ function describe(uri: string): string {
 export const SYNC_LINES: readonly RegExp[] = [
   /^sync: gate passed, \d+ answers, \d+ tags stated and \d+ ours$/,
   /^sync: unchanged, every document the remote hands up is written back to it with a tag of ours and committed, so that change never reaches Logitech's account; every document asked for is then answered 304 against its own tag, and every favourites document 304 so the remote keeps its own copy$/,
+  /^sync: power source, .+$/,
   /^sync: provisioned, mode \d+$/,
   /^sync: handing over the remote's changes$/,
   /^sync: hand over, request list \d+, \d+ answered$/,
@@ -524,6 +568,11 @@ export interface TouchSyncOptions {
   /** A session opened on the Touch, `openTouchRequestSession`; its rail and its unit check are its own. */
   readonly session: TouchRequestSession;
   readonly mode: TouchSyncMode;
+  /**
+   * The text `/tde/powerstate` gave, read through the read only route before the session was opened,
+   * `readTouchPowerSource`; `answerTouchSync` reads it itself. The run refuses before anything acts unless it is `usb`.
+   */
+  readonly powerSource: TouchPowerSource;
   /** The lab folder every request, answer and handed up document is kept in; new or empty. */
   readonly folder: string;
   /** Each line of `SYNC_LINES` as it happens. */
@@ -816,8 +865,14 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
   }
   const mode = prepared === undefined ? { kind: 'unchanged' as const } : { kind: 'set' as const, set: prepared };
 
+  // 2. The power source, read before the session opened: on any but `usb` the screens never commit, so the run is
+  // refused here, before the provisioning read and so before anything that acts, the header.
+  report(`sync: power source, ${describePowerSource(options.powerSource)}`);
+  const unpowered = touchPowerRefusal(options.powerSource);
+  if (unpowered !== undefined) return end({ ending: 'refused', reason: unpowered });
+
   try {
-    // 2. The provisioning read.
+    // 3. The provisioning read.
     const provisioning = await ask(PROVISIONING, 'provisioning');
     if (statusOf(provisioning) !== '200') throw new Refusal(`the provisioning read answered status ${statusOf(provisioning) ?? 'none'}`);
     const info = resultOf(provisioning);
@@ -830,7 +885,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     }
     report(`sync: provisioned, mode ${modeNumber}`);
 
-    // 3. The remote's own changes, handed up and kept before anything else.
+    // 4. The remote's own changes, handed up and kept before anything else.
     acted = true;
     stage = 'hand over';
     report('sync: handing over the remote\'s changes');
@@ -860,7 +915,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
       }
     }
 
-    // 4. The sync.
+    // 5. The sync.
     const started = await ask(SYNC, 'sync');
     const status = statusOf(started);
     if (status === '202') throw new Refusal('the remote answered the sync request 202, a sync is already marked running');
@@ -919,8 +974,8 @@ export function assertTouchSyncUnit(label: string): void {
   }
 }
 
-/** What `answerTouchSync` needs: what `syncTouch` takes but the session, which it opens itself. */
-export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session'> {
+/** What `answerTouchSync` needs: what `syncTouch` takes but the session and the power source, which it opens and reads itself. */
+export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session' | 'powerSource'> {
   /** The label of the unit's record; refused unless it is one of `TOUCH_SYNC_UNITS`. */
   readonly label: string;
   /** That record: the identity the session compares the Touch on the cable with. */
@@ -935,12 +990,15 @@ export interface TouchSyncRun extends Omit<TouchSyncOptions, 'session'> {
  * Answer one sync of a Harmony Touch, from the flags to the closed transport: the library half of
  * `bin/touch-sync.ts`'s `--commit`.
  *
- * In order: `assertTouchSyncAllowed` and the label against `TOUCH_SYNC_UNITS`, before anything is opened; `open`; a
- * session, which reads the identity file and refuses any unit but `permittedUnit`, `openTouchRequestSession`;
- * `syncTouch`, which runs the gate before anything is sent and answers the sync as this file's header lists; and
- * the transport closed, whatever happened. Resolves with the outcome, as `syncTouch` does; throws only when the
- * flags or the label refuse, the open or the session fails, or the folder cannot be used, each before anything that acts on the
- * remote is sent.
+ * In order: `assertTouchSyncAllowed` and the label against `TOUCH_SYNC_UNITS`, before anything is opened; `open`; the
+ * power source read through the read only route, `readTouchPowerSource`, which reads the identity file for the
+ * build, refuses a build the name is not read in, and opens `/tde/powerstate` for reading
+ * and closes it again; a session, which reads the identity file and refuses any unit but `permittedUnit`,
+ * `openTouchRequestSession`; `syncTouch`, which runs the gate, refuses a power source but `usb` and answers the sync
+ * as this file's header lists; and the transport closed, whatever happened. Resolves with the outcome, as `syncTouch`
+ * does, a power source but `usb` among the refusals before anything acts; throws only when the flags or the label
+ * refuse, the open, the power read or the session fails, or the folder cannot be used, each before anything that acts
+ * on the remote is sent.
  */
 export async function answerTouchSync(run: TouchSyncRun): Promise<TouchSyncOutcome> {
   assertTouchSyncAllowed();
@@ -948,8 +1006,10 @@ export async function answerTouchSync(run: TouchSyncRun): Promise<TouchSyncOutco
   assertTouchSyncUnit(label);
   const transport = await open();
   try {
+    // A read, ping, open for reading, read and close, before the session opens `/sys/hlapi` for anything.
+    const powerSource = await readTouchPowerSource(transport);
     const session = await openTouchRequestSession(transport, { permittedUnit, ...(log === undefined ? {} : { log }) });
-    return await syncTouch({ ...options, session });
+    return await syncTouch({ ...options, session, powerSource });
   } finally {
     await transport.close();
   }

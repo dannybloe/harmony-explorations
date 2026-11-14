@@ -68,8 +68,9 @@ handing back the answers, until the remote says it is done. Every step is one re
 sync answered without that write was committed[^t-touch-sync][^t-touch-second-sync]. The committed syncs of this
 project went through four to nine request lists, eight in most, nine with a device of ours added or taken out and
 four with the empty configuration[^t-touch-second-sync][^t-touch-device-of-ours][^t-touch-empty]. **The screens take
-part only while the remote is powered over USB**, so on any other power source nothing commits,
-[how a sync aborts](#how-a-sync-aborts-and-how-an-answerer-learns-of-it)[^t-touch-host].
+part only while the remote is powered over USB**, so on any other power source nothing commits; a host can read
+the source before it starts and refuse,
+[how a sync aborts](#how-a-sync-aborts-and-how-an-answerer-learns-of-it)[^t-touch-host][^t-touch-power-read].
 
 ## The remote cannot tell one answerer from another
 
@@ -333,12 +334,17 @@ screens send the abort on a unit, and how soon, is not checked[^unchecked].
 answering the hand over's outcome, following the sync, and asking for the content that ends in the commit,
 each return at once while the remote is on any power source but the one named `usb`, `usb_charge` included,
 and a change of power source during a sync fails it[^t-touch-host]. So on any other source the commit is never
-sent, nothing commits, and an answerer reads empty lists until it gives up. **A host cannot ask which source the
-remote is on**: the engine names no power source, its provisioning answer holds none, and the identity file is
-built once when the remote starts; the one name that reads the power controller belongs to the factory
-test[^t-touch-host][^t-touch-api-names]. What a person sees is the screen: on `usb` the remote shows its USB
-screen, and in the dock or on a mains adapter its Charging screen, [display](../../remotes/harmony-touch/display.md#charging-and-the-battery).
-Which source a given computer port gives is not checked[^unchecked].
+sent, nothing commits, and an answerer reads empty lists until it gives up. **No request on the channel a sync
+uses names the source**: the engine names no power source, its provisioning answer holds none, and the identity
+file is built once when the remote starts[^t-touch-host]. **The factory test name `/tde/powerstate` does**, backed
+by the power controller's `powersource` file, the file the screens watch, and opening it for reading is a plain
+read that changes nothing, [the names](api/names.md#tdepowerstate-the-power-source-a-plain-read)[^t-touch-power-read].
+So a host reads the source over the cable before a sync and refuses on any but `usb`, before anything that acts is
+sent. This said a host cannot ask which source the remote is on<!--superseded-->, which holds for the request
+channel and not for the cable, until that name's open was read. What a person sees is the screen: on `usb` the
+remote shows its USB screen, and in the dock or on a mains adapter its Charging screen,
+[display](../../remotes/harmony-touch/display.md#charging-and-the-battery). Which source a given computer port gives
+is not checked, and what a unit's file holds on each source is not measured[^unchecked].
 
 The commit happens before the answerer sees `proxy://Finished`:
 the remote's own screens decide the fetching is done and the engine swaps the new set in, and only then is
@@ -681,7 +687,8 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 * Whether a write of answers whose last chunk is no longer than the announcement's shortfall is acted on one
   chunk early on a unit[^unchecked].
 * How Logitech's service answers a tag it did not issue, when a remote returns to it[^unchecked].
-* Which power source a computer's port gives a remote, and so on which ports a sync can commit[^unchecked].
+* Which power source a computer's port gives a remote, and so on which ports a sync can commit; the remote's own
+  answer to `/tde/powerstate` on each port is what would say so, and no unit's answer is recorded yet[^unchecked].
 * Whether the read back route of [proxy](api/proxy.md#can-a-stored-document-be-read-back) hands a committed
   document back on a unit, and what its engine reload does in between[^unchecked].
 
@@ -690,6 +697,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/harmony_touch/test_harmony_touch_recovery.py)
 [^t-touch-answers]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-host.test.ts)
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
+[^t-touch-power-read]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
 [^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
 [^t-touch-api-engine]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_engine.py)
 [^t-touch-tag-shape]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-own-set.test.ts)

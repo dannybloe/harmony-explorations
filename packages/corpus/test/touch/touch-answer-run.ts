@@ -16,6 +16,7 @@ import { join } from 'node:path';
 
 import { unitIdentityFromSerial } from '@harmony/usb';
 import { guardFileProtocol } from '@harmony/usb/internal';
+import { TOUCH_PRODUCT_ID } from '@harmony/usb/rails';
 import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
 
 import { HAND_OVER, PROVISIONING, READ_LIST, SYNC, WRITE_ANSWERS } from '../../src/touchsync.ts';
@@ -27,6 +28,8 @@ export interface AnswerScenario {
   readonly recordSerial?: string;
   /** The label the caller names; `touch`, the library's one Touch, when absent. */
   readonly label?: string;
+  /** The text the pretend Touch's `/tde/powerstate` serves; its own default, `usb` and a newline, when absent. */
+  readonly powerstate?: string;
 }
 
 export interface AnswerRun {
@@ -36,6 +39,8 @@ export interface AnswerRun {
   readonly closed: boolean;
   /** Every line written into `/sys/hlapi`, by its request's name. */
   readonly written: string[];
+  /** Every open the pretend Touch was sent, path and mode, in order, by its own record. */
+  readonly openedPaths: string[];
   readonly log: string[];
   readonly reports: string[];
 }
@@ -47,6 +52,7 @@ const FINISHED = OK(READ_LIST, JSON.stringify({ requests: [{ verb: 'POST', uri: 
 export async function runAnswer(scenario: AnswerScenario): Promise<AnswerRun> {
   const remote = new FakeTouchRemote({
     sysinfo: sysinfoText(),
+    ...(scenario.powerstate === undefined ? {} : { powerstate: scenario.powerstate }),
     answer: (line: string): string => {
       if (line === PROVISIONING) return OK(PROVISIONING, { accountId: '1', activeRemoteId: 2, mode: 0, se: true });
       if (line === HAND_OVER) return OK(HAND_OVER);
@@ -73,7 +79,7 @@ export async function runAnswer(scenario: AnswerScenario): Promise<AnswerRun> {
       permittedUnit: unitIdentityFromSerial(scenario.recordSerial ?? SERIAL),
       open: async () => {
         opened = true;
-        return guardFileProtocol(remote);
+        return guardFileProtocol(remote, TOUCH_PRODUCT_ID);
       },
       log: (line) => log.push(line),
       report: (line) => reports.push(line),
@@ -93,6 +99,7 @@ export async function runAnswer(scenario: AnswerScenario): Promise<AnswerRun> {
     opened,
     closed,
     written: remote.lines.map((line) => line.split('&')[0]!),
+    openedPaths: remote.opened,
     log,
     reports,
   };

@@ -4,7 +4,9 @@
  * **What this holds**: the run around the answerer that was `bin/touch-sync.ts`'s `--commit` before the answerer moved into the library. The
  * two flags, and the recovery flag that refuses, are checked before the Touch is opened; the session's unit check
  * refuses another Touch before any request is written; a run that finishes has closed the transport, and so has
- * one that was refused. The words of the two flag refusals are the script's, which `touch-sync.test.ts` reads
+ * one that was refused. **The power source is read first**, through the read only route before the session opens,
+ * and a source but `usb` is refused before `/sys/hlapi` is opened, by the pretend Touch's own record of what was
+ * opened, with the run's lines naming the source read. The words of the two flag refusals are the script's, which `touch-sync.test.ts` reads
  * off the script, so this holds the function to them as well.
  *
  * **Every run but the first is in a process of its own** with the flags it names, `touch-answer-run.ts`, the
@@ -62,6 +64,24 @@ describe('answering a sync as a library function', () => {
     assert.ok(run.log.includes('the unit matches its record'), 'the session checked the unit');
     assert.equal(run.reports.at(-1), 'sync: finished');
     assert.ok(run.written.length > 0, 'the control for the refusals: this run did write into /sys/hlapi');
+    // The power source read first, before the identity file and /sys/hlapi, and reported.
+    assert.deepEqual(run.openedPaths.slice(0, 4), ['/sys/sysinfo R', '/tde/powerstate R', '/sys/sysinfo R', '/sys/hlapi W']);
+    assert.ok(run.reports.includes('sync: power source, usb'));
+  });
+
+  it('refuses a power source but usb before /sys/hlapi is opened, as a refusal before acting, and closes the Touch', () => {
+    const cases: [string, string][] = [['usb_charge\n', 'usb_charge'], ['battery', 'battery'], ['wall_adapter\n', 'wall_adapter'], ['?', 'an unexpected text, "?"']];
+    for (const [served, said] of cases) {
+      const run = withFlags(BOTH, { powerstate: served });
+      assert.equal(run.error, undefined, run.error?.message);
+      assert.deepEqual([run.outcome?.ending, run.outcome?.acted, run.outcome?.recovery], ['refused', false, undefined], served);
+      assert.match(run.outcome?.reason ?? '', new RegExp(`^the remote reports its power source as ${said.replace(/[?"]/g, '\\$&')}, and a Harmony Touch takes part in a sync only on USB power from a computer's port`), served);
+      assert.ok(run.opened && run.closed, served);
+      // Never /sys/hlapi, by the pretend Touch's own record, so no request was sent.
+      assert.deepEqual(run.openedPaths, ['/sys/sysinfo R', '/tde/powerstate R', '/sys/sysinfo R'], served);
+      assert.deepEqual(run.written, [], served);
+      assert.deepEqual(run.reports.slice(-2), [`sync: power source, ${said}`, `sync: refused, ${run.outcome?.reason}`], served);
+    }
   });
 
   it('refuses a label outside the library\'s list with both flags set, before the Touch is opened', () => {

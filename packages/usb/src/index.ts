@@ -55,8 +55,12 @@ export {
   UnitIdentityError,
 } from './identity.ts';
 
-// The Harmony 300 and 350, which `openHarmony` refuses: their own protocol, read paths only.
-export { openFileBasedRemote, parseSysInfo, readFile, readSysInfo } from './filepipe.ts';
+// The Harmony 300 and 350, which `openHarmony` refuses: their own protocol, read paths only. And the Harmony Touch on
+// the same protocol, whose power source is read before a sync, since its screens take part only on USB power.
+export {
+  openFileBasedRemote, parseSysInfo, readFile, readSysInfo, readTouchPowerSource, TOUCH_POWER_SOURCES,
+} from './filepipe.ts';
+export type { TouchPowerSource } from './filepipe.ts';
 
 // The delays a remote saved in its settings store, which win over a configuration's at start.
 export { delaySlots, latestSettings } from './settings.ts';

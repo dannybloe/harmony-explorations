@@ -76,6 +76,7 @@ user configuration commented out[^s198].
 |---|---|
 | **`openHarmony` refuses it**, by product id, and `make remotes` lists it separately | [^s193] |
 | **`openFileBasedRemote` opens it read only**: a bare ping, an open for reading, a read and a close, and only for the paths on `INERT_PATHS`. Two of those twelve answer on a Touch, `/sys/sysinfo` and `/rf/deviceinfo`; the other ten are refused at open | [^s200], [^s201] |
+| **and one name of the Touch's own beside them, its power source, `/tde/powerstate`**, opened for reading on the Touch's product id alone and never for writing, `INERT_PATHS_OF_PRODUCT` in `packages/usb/src/filepipe.ts` and `readTouchPowerSource` beside it: its open for reading reads the power controller's file and changes nothing, [the names](../../architectures/harmony-touch/api/names.md#tdepowerstate-the-power-source-a-plain-read). A sync reads it first and refuses unless the remote is on `usb`, the one source its screens take part in a sync on. What a unit answers is not measured | [^t-touch-power-read], [^unchecked] |
 | any other path needs `HARMONY_FILE_PATH_EXPERIMENT=1`, because a path can be an action, except eight that are never opened whatever the flags, `NEVER_OPENED_PATHS` in `packages/usb/src/filepipe.ts`: the four names that act on a write, the two that act on an open and the two that take firmware, [the names](../../architectures/harmony-touch/api/names.md#the-names-that-act-on-a-write-and-on-an-open) | [^s200], [^t-touch-api-names] |
 | **requests to its software go through a rail of their own**: `openTouchRequestSession` in `packages/usb/src/touchsession.ts` writes request lines into `/sys/hlapi` behind `assertTouchRequestAllowed` in `packages/usb/src/rails.ts`, with `HARMONY_ENABLE_WRITES=1` and `HARMONY_TOUCH_REQUESTS=1`. It opens `/sys/hlapi` and nothing else for writing, refuses any unit but the one it is meant for, told apart by its serial as above, and carries two reads, the provisioning information and `getconfighash`, and the four requests of a sync, [answering a sync](../../architectures/harmony-touch/answering-a-sync.md#which-request-names-act); and behind `HARMONY_TOUCH_RECOVERY=1` as well, three recovery requests, the abort of a sync, the delete of every stored document and the restart, [recovery](../../architectures/harmony-touch/firmware.md#recovery); the transport refuses every other request name off the bytes of the line it is about to send, and a recovery name without that flag | [^d29] |
 | **no configuration is written as a file**: the file write path is the Harmony 300 and 350's, and it refuses a remote whose identity file states any architecture but 16, which a Touch's does not; no request and response command is implemented | [^s198] |
@@ -83,7 +84,9 @@ user configuration commented out[^s198].
 > The last row said no write list in `packages/usb/src/rails.ts` names this model<!--superseded-->, until the
 > request channel's rail was added there.
 
-**So there is nothing left to read on a Touch without the named door**[^s201]. What the remote asks for during
+**So beyond those three there is nothing left to read on a Touch without the named door**[^s201]. This said
+there was nothing left to read without it<!--superseded--> with two files read, until the power source's open was read
+in the firmware. What the remote asks for during
 a sync goes through `/sys/hlapi`, which is not on `INERT_PATHS`, so the library reaches it only through the
 request rail above, writing a request line and reading its answer[^d29]; that rail has answered thirty four
 syncs on one unit, [answering a sync](../../architectures/harmony-touch/answering-a-sync.md)[^t-touch-from-nothing].
@@ -108,6 +111,7 @@ to learn its size, and has never read it"<!--superseded-->, until the rail's fir
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-sync-both-ways.test.ts)
 [^unchecked]: Not checked.
 [^t-touch-api-names]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
+[^t-touch-power-read]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
 [^t-touch-serial]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_serial.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^t-touch-session]: Measured on a unit. [The test](../../../packages/usb/test/touch/touchsession.test.ts)

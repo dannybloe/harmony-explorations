@@ -18,8 +18,11 @@ segments. The program is ARM and stripped, so nothing here depends on a symbol.
 **What was read, and what this file asserts.** The program registers its names from one static table at
 `0x37940`, 54 entries of 56 bytes, each a path or a dotted prefix, an engine name, an optional backing file
 and eleven handler slots (note 1.4 said five; eleven is what the entries use). A slot holds the function for
-one kind of access: 0 open, 1 read, 2 write, 3 close, and 4, 8 and 9 the open, generate and close of the
-names that build their answer. The table is parsed here and set against the page:
+one kind of access: 0 open, 1 close, 2 write, 3 the length of what a read returns, and 4, 8 and 9 the open,
+generate and close of the names that build their answer. This said 1 read and 3 close<!--superseded--> until the
+request handler's own calls were read, `ThePowerSourceIsAPlainRead` below: the four were listed in the usual order
+of file operations and no test read which slot the handler calls for which access. The table is parsed here and
+set against the page:
 
 1. **The names.** Asserted: the page's table names, keyed by path or by engine name where there is no path,
    equal the table's, both ways, so a name added to the firmware or the page fails the test; and each row's
@@ -82,6 +85,7 @@ behaviour is a Harmony Touch's, host name `juniper`; the hubs run a sibling imag
 **Standing.** Read in the firmware. Nothing in this file quotes Logitech's code: it asserts names, numbers
 and counts.
 """
+import hashlib
 import os
 import re
 import shutil
@@ -387,6 +391,274 @@ class TheRegistration(TheNativeProgram):
         needle = struct.pack('<I', 0xE3540035)               # cmp r4, #53
         self.assertEqual(code.count(needle), 1, 'one loop counts to 53')
         self.assertEqual(code.count(b'/etc/tdeflag\x00'), 1, 'the test flag file is named once')
+
+
+#: The native program's SHA-256, production build 4.15.330's. The request handler's addresses below are this
+#: build's, so the class that reads them skips on any other program rather than decoding the wrong instructions.
+HAL_SHA256 = '81c92aed6bc15a09c40a7d9f4fa40020ccf15f9cd673b49b63734459a39c1134'
+#: Where the request handler of build 4.15.330 walks an open's mode letters, and where it loads each slot it calls.
+MODE_WALK = 0x122F4
+CALLS_OPEN, CALLS_OPEN_BY_GENERATE, CALLS_CLOSE, CALLS_READ_BY_SLOT_5, CALLS_LENGTH, CALLS_WRITE = (
+    0x123E4, 0x1244C, 0x114D8, 0x119C4, 0x119E4, 0x11D90)
+#: How many names share the plain file backed open, close and length functions.
+PLAIN_FILE_NAMES = 19
+
+
+def ldr_str(word):
+    """(cond, load, rd, rn, offset) of an ARM `ldr` or `str` of a word with an immediate offset and no write back,
+    or None for any other instruction."""
+    if (word & 0x0E400000) != 0x04000000 or not word & (1 << 24) or word & (1 << 21):
+        return None
+    offset = word & 0xFFF
+    return (word >> 28, bool(word & (1 << 20)), (word >> 12) & 0xF, (word >> 16) & 0xF,
+            offset if word & (1 << 23) else -offset)
+
+
+def branch(word, va):
+    """(cond, link, target) of an ARM `b` or `bl`, or None."""
+    if (word & 0x0E000000) != 0x0A000000 or word >> 28 == 0xF:
+        return None
+    imm = word & 0xFFFFFF
+    imm = imm - 0x1000000 if imm & 0x800000 else imm
+    return word >> 28, bool(word & (1 << 24)), (va + 8 + 4 * imm) & 0xFFFFFFFF
+
+
+def blx_register(word):
+    """The register of an unconditional `blx rm`, or None."""
+    return word & 0xF if (word & 0xFFFFFFF0) == 0xE12FFF30 else None
+
+
+def rotated(word):
+    rotate, imm = (word >> 8) & 0xF, word & 0xFF
+    return ((imm >> (2 * rotate)) | (imm << (32 - 2 * rotate))) & 0xFFFFFFFF if rotate else imm
+
+
+def cmp_immediate(word):
+    """(rn, value) of an unconditional `cmp rn, #imm`, or None."""
+    return ((word >> 16) & 0xF, rotated(word)) if (word & 0xFFF0F000) == 0xE3500000 else None
+
+
+def orr_immediate(word):
+    """(rd, rn, value) of an unconditional `orr rd, rn, #imm`, or None."""
+    return ((word >> 12) & 0xF, (word >> 16) & 0xF, rotated(word)) if (word & 0xFFE00000) == 0xE3800000 else None
+
+
+def add_register(word):
+    """(rd, rn, rm) of an unconditional `add rd, rn, rm` with no shift, or None."""
+    return ((word >> 12) & 0xF, (word >> 16) & 0xF, word & 0xF) if (word & 0xFFE00FF0) == 0xE0800000 else None
+
+
+EQ, LT, AL = 0x0, 0xB, 0xE
+
+
+class ThePowerSourceIsAPlainRead(TheNativeProgram):
+    """**Opening `/tde/powerstate` for reading reads the power controller's file and changes nothing**, so the library
+    may open it on a Harmony Touch, and the slot table of the names page had its read and close the wrong way round.
+
+    **Why it was read.** A Touch's screens take part in a sync only on the power source its software calls `usb`,
+    `TheScreensTakePartOnlyOnUSBPower` in `test_harmony_touch_host.py`, and nothing on the request channel names the
+    source. The factory test name `/tde/powerstate` does, backed by the power controller's `powersource` file. Before
+    a sync may read it, an open of it for reading had to be shown to be a plain read, since on this model some names
+    act on an open, `TheActingNamesActOnAWriteOrAnOpen` above.
+
+    **What was traced**, in the native program of build 4.15.330, by decoding its ARM instructions:
+
+    1. **The entry.** `/tde/powerstate` fills slots 0, 1, 2, 3 and 8. Slots 0, 1 and 3 hold the same three functions
+       as nineteen names, every plain file backed name among them, `/proc`, `/tde/vbat` and `/tde/vdc` included; slot 2
+       is the write five other change names share (an `fwrite` into the file the open left open), and slot 8 its own
+       answer to the engine's request by its engine name. An open over the cable reaches neither of those two.
+    2. **The open routine** (slot 0) keeps the handle in `r4` and loads the handle's mode at handle + 4; `cmp` with 2
+       and a `beq` lead to the one load of the mode string `w+`, which is passed with the backing file to `fopen` and
+       the file kept open for the write slot. No other branch of the routine reaches that block. Every other mode
+       stats the file and, for a regular file, passes `r` to the same `fopen`, reads the file whole into a buffer it
+       keeps at handle + 12, keeping the length read at handle + 8, and closes the file; a directory is listed instead.
+       The routine names exactly two mode strings, `r` and `w+`. So an open whose mode is not 2 writes nothing.
+    3. **The mode** is built by the request handler from the open's mode letters into one field: `R` ORs 1, `W` ORs
+       2, `C` ORs 4. An open with the mode `R` alone is mode 1, never 2; the library's read route sends `R` alone and
+       its guard checks the mode off the bytes.
+    4. **Which slot is which, by the request handler's own calls.** It loads slot 0 (entry + 12) and calls it with the
+       handle and the path: the open; where slot 0 is empty it calls slot 4 instead, the generate family's open, and
+       only when the mode has bit 1, `R`. It loads slot 1 (entry + 16), calls it with the handle and then clears the
+       handle record's first word: the close. To answer a read it calls slot 5 (entry + 32) where one is filled, else
+       slot 3 (entry + 24), and takes what slot 3 returns as a length, refusing a negative one; the data are the
+       buffer the open filled. Slot 2 (entry + 20) is called for a write. The length function itself is two
+       instructions, a load of handle + 8 and a return: **the length the open kept**, which closes the reading from
+       the other end. The close function frees that buffer unless the mode is 2.
+
+    **The correction.** The names page and this file's header listed slot 1 as the read and slot 3 as the close.
+    By the calls above slot 1 is the close and slot 3 the length of what a read returns; there is no read slot,
+    the read being served from the open's buffer. The four had been listed in the usual order of file operations,
+    and no test had read which slot the request handler calls for which access.
+
+    **Negative results.** No branch but the one after `cmp` with 2 reaches the `w+` load; the close function's
+    special case, a symbolic link made when the backing path equals one constant, is the secure shell name's and not
+    this one's. **Not read**: the kernel driver's routine behind the `powersource` file, so whether a read does
+    anything inside the driver is not known from the image; the remote's own screens watch the same file,
+    `TheScreensTakePartOnlyOnUSBPower`. **What a unit answers is not measured**, nor whether the file's text ends in
+    a newline.
+
+    **Scope.** One build, production 4.15.330, of the Harmony Touch, host name `juniper`; the instruction addresses
+    are that build's, held by the program's SHA-256, and the class skips on another. Whether a Harmony 300 or 350 has
+    the name is not read, which is why the library's allowance is keyed on the Touch's product id.
+
+    **Sources checked first.** `reference/architectures/harmony-touch/api/names.md`, `answering-a-sync.md`,
+    `test_harmony_touch_host.py`, `test_harmony_touch_keys.py` for the five source names the driver knows, and this
+    project's own brief of the reading in the lab, whose addresses were each decoded again here. Logitech's clients
+    were not consulted: what the remote does with an open is its firmware's alone.
+
+    **Controls**, each a string replacement reversed with a hash check: the expected count of sharing names as 18,
+    the mode compared as 1 instead of 2, the letter `W`'s bit as 4, and slot 1's offset as slot 3's, each failed the
+    test it aimed at."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if hashlib.sha256(cls.elf.data).hexdigest() != HAL_SHA256:
+            raise unittest.SkipTest('the native program is not build 4.15.330\'s, whose addresses this class reads')
+
+    def instructions(self, start, count):
+        return [(va, self.elf.word(va)) for va in range(start, start + 4 * count, 4)]
+
+    def routine(self, start, limit=600):
+        """The routine's instructions from `start` to its literal pool, found as `gotoff_strings` finds it."""
+        out, va, pool = [], start, start + 4 * limit
+        while va < pool:
+            word = self.elf.word(va)
+            if (word & 0xFF7F0000) == 0xE51F0000:
+                imm = word & 0xFFF
+                pool = min(pool, va + 8 + (imm if word & 0x00800000 else -imm))
+            out.append((va, word))
+            va += 4
+        return out
+
+    def literal_strings(self, start):
+        """Each `ldr rd, [pc, #imm]` of the routine whose literal resolves to a read only string, as (va, rd, text)."""
+        found = []
+        for va, word in self.routine(start):
+            if (word & 0xFF7F0000) == 0xE51F0000:
+                imm = word & 0xFFF
+                literal = va + 8 + (imm if word & 0x00800000 else -imm)
+                target = (GOT + signed(self.elf.word(literal))) & 0xFFFFFFFF
+                if RODATA[0] <= target < RODATA[1]:
+                    text = c_string(self.elf, target)
+                    if text is not None:
+                        found.append((va, (word >> 12) & 0xF, text))
+        return found
+
+    def handlers(self):
+        entry = self.entry('/tde/powerstate')
+        return entry['handlers']
+
+    def test_it_shares_the_plain_file_names_open_close_and_length(self):
+        entry = self.entry('/tde/powerstate')
+        self.assertEqual(entry['slots'], (0, 1, 2, 3, 8))
+        self.assertEqual(entry['backing'], '/sys/bus/i2c/devices/1-0048/tps6507x-juniper/powersource')
+        trio = tuple(entry['handlers'][s] for s in (0, 1, 3))
+        sharing = {key(e) for e in self.entries
+                   if all(s in e['handlers'] for s in (0, 1, 3)) and tuple(e['handlers'][s] for s in (0, 1, 3)) == trio}
+        self.assertEqual(len(sharing), PLAIN_FILE_NAMES)
+        self.assertTrue({'/proc', '/tde/vbat', '/tde/vdc', '/tde/powerstate'} <= sharing)
+        # Each of them a read or a change by the handler reading, never an action.
+        self.assertEqual({KIND[n] for n in sharing}, {'read', 'change'})
+        # The control: a generate name's open is another function, so sharing the trio means something.
+        self.assertNotEqual(self.entry('/sys/sysinfo')['handlers'][4], trio[0])
+
+    def test_the_open_names_r_and_w_plus_and_takes_w_plus_only_on_mode_two(self):
+        start = self.handlers()[0]
+        code = self.routine(start)
+        loads = self.literal_strings(start)
+        modes = {text for _, _, text in loads if text and set(text) <= set('rwab+')}
+        self.assertEqual(modes, {'r', 'w+'})
+        # Each mode string goes in r1 to the first call after its load, and both calls are to one function.
+        targets = []
+        for va, rd, text in loads:
+            if text not in modes:
+                continue
+            after = [(v, w) for v, w in code if v > va][:6]
+            self.assertTrue(any(add_register(w) and add_register(w)[0] == 1 and add_register(w)[2] == rd for _, w in after),
+                            text + ' is placed in r1')
+            call = next(branch(w, v) for v, w in after if branch(w, v) and branch(w, v)[1])
+            targets.append(call[2])
+        self.assertEqual(len(targets), 2)
+        self.assertEqual(len(set(targets)), 1, 'one function, fopen, takes both')
+        # The handle is r4, and its mode at handle + 4 is compared with 2 before anything else is decided.
+        head = code[:12]
+        self.assertIn(0xE1A04000, [w for _, w in head], 'mov r4, r0: the handle kept in r4')
+        mode_load = next(i for i, (_, w) in enumerate(head) if ldr_str(w) and ldr_str(w)[1] and ldr_str(w)[3] == 4
+                         and ldr_str(w)[4] == 4)
+        mode_reg = ldr_str(head[mode_load][1])[2]
+        compare = next(i for i, (_, w) in enumerate(head) if cmp_immediate(w) == (mode_reg, 2))
+        jump = next(branch(w, v) for v, w in head[compare + 1:] if branch(w, v))
+        self.assertEqual(jump[0], EQ)
+        # The w+ load is the block that beq reaches, and nothing else in the routine branches into it.
+        w_plus = next(va for va, _, text in loads if text == 'w+')
+        self.assertTrue(jump[2] <= w_plus <= jump[2] + 8)
+        into = [(v, branch(w, v)) for v, w in code if branch(w, v) and jump[2] <= branch(w, v)[2] <= w_plus]
+        self.assertEqual(len(into), 1, 'one branch reaches the w+ block')
+        # The r path keeps the length read at handle + 8 and the buffer at handle + 12, which the close and the
+        # length read back.
+        stores = {ldr_str(w)[4] for _, w in code if ldr_str(w) and not ldr_str(w)[1] and ldr_str(w)[3] == 4}
+        self.assertTrue({8, 12} <= stores)
+
+    def test_the_length_is_what_the_open_read_and_the_close_frees_unless_mode_two(self):
+        handlers = self.handlers()
+        self.assertEqual([w for _, w in self.instructions(handlers[3], 2)], [0xE5900008, 0xE12FFF1E],
+                         'ldr r0, [r0, #8]; bx lr')
+        close = self.routine(handlers[1])
+        loads = [ldr_str(w) for _, w in close if ldr_str(w) and ldr_str(w)[1] and ldr_str(w)[3] == 4]
+        self.assertIn(12, [l[4] for l in loads], 'the close loads the buffer the open kept')
+        mode = next(i for i, (_, w) in enumerate(close) if ldr_str(w) and ldr_str(w)[1] and ldr_str(w)[3] == 4
+                    and ldr_str(w)[4] == 4)
+        self.assertEqual(cmp_immediate(close[mode + 1][1]), (ldr_str(close[mode][1])[2], 2))
+        self.assertEqual(branch(close[mode + 2][1], close[mode + 2][0])[0], EQ)
+
+    def test_the_request_handler_ors_one_bit_per_mode_letter(self):
+        code = self.instructions(MODE_WALK, 30)
+        bits, fields = {}, set()
+        for letter in 'RWC':
+            at = next(i for i, (_, w) in enumerate(code) if cmp_immediate(w) and cmp_immediate(w)[1] == ord(letter))
+            va, word = code[at + 1]
+            cond, _, target = branch(word, va)
+            # R and W branch to their block on a match; C falls through to its own when it matches.
+            start = target if cond == EQ else code[at + 2][0]
+            block = self.instructions(start, 4)
+            orr = next(orr_immediate(w) for _, w in block if orr_immediate(w))
+            bits[letter] = orr[2]
+            loaded = next(ldr_str(w) for _, w in block if ldr_str(w) and ldr_str(w)[1])
+            stored = next(ldr_str(w) for _, w in block if ldr_str(w) and not ldr_str(w)[1])
+            fields.add((loaded[3], loaded[4]))
+            fields.add((stored[3], stored[4]))
+        self.assertEqual(bits, {'R': 1, 'W': 2, 'C': 4})
+        self.assertEqual(len(fields), 1, 'all three letters build one field')
+
+    def test_the_request_handler_calls_slot_zero_to_open_one_to_close_three_for_the_length_and_two_to_write(self):
+        def loads_slot_and_calls(va, slot):
+            load = ldr_str(self.elf.word(va))
+            self.assertIsNotNone(load, hex(va))
+            self.assertTrue(load[1], 'a load')
+            self.assertEqual(load[4], SLOTS_AT + 4 * slot, 'slot %d' % slot)
+            following = self.instructions(va + 4, 8)
+            self.assertIn(load[2], [blx_register(w) for _, w in following], 'and calls it')
+            return following
+        loads_slot_and_calls(CALLS_OPEN, 0)
+        # Where slot 0 is empty, slot 4, the generate open, and only when the mode has bit 1, R.
+        generate = loads_slot_and_calls(CALLS_OPEN_BY_GENERATE, 4)
+        self.assertIn(0xE3100001, [w for _, w in generate], 'tst r0, #1')
+        # The close: slot 1 called, and the handle record's first word cleared after it.
+        after_close = loads_slot_and_calls(CALLS_CLOSE, 1)
+        called = next(i for i, (_, w) in enumerate(after_close) if blx_register(w) is not None)
+        clear = next(branch(w, v)[2] for v, w in after_close[called:] if branch(w, v) and branch(w, v)[0] == EQ)
+        self.assertEqual([w for _, w in self.instructions(clear, 2)], [0xE3A0C000, 0xE585C000],
+                         'mov r12, #0; str r12, [r5]')
+        # A read: slot 5 if filled, else slot 3, whose return is a length refused when negative.
+        loads_slot_and_calls(CALLS_READ_BY_SLOT_5, 5)
+        after_length = loads_slot_and_calls(CALLS_LENGTH, 3)
+        call = next(i for i, (_, w) in enumerate(after_length) if blx_register(w) is not None)
+        self.assertEqual(after_length[call + 1][1] & 0xFFFF0FFF, 0xE2500000, 'subs rX, r0, #0')
+        self.assertEqual(branch(after_length[call + 2][1], after_length[call + 2][0])[0], LT)
+        loads_slot_and_calls(CALLS_WRITE, 2)
+        # The control: the slots are distinct offsets, so a load of one is not a load of another.
+        self.assertEqual(len({SLOTS_AT + 4 * s for s in (0, 1, 2, 3, 4, 5)}), 6)
 
 
 if __name__ == '__main__':

@@ -11,9 +11,13 @@
  *   check, build, the warning not to unplug, the hand over, the write, the word that it may be unplugged, and no
  *   progress. The hand over and the write are entered on the answerer's own lines saying so, which are forms of its
  *   list, `SYNC_LINES`, and follow them in the journal.
- * * **Nothing opens without everything a commit needs, and a dry run opens nothing**: without the two flags a commit
- *   is refused with the remote as it was, having made no folder and kept nothing, and a dry run ends after the build
- *   with no flag needed, as `bin/touch-sync.ts` without `--commit` does.
+ * * **Nothing opens without everything a commit needs, and a dry run reads the identity file and the power source alone**: without the two
+ *   flags a commit is refused with the remote as it was, having made no folder and kept nothing, and a dry run ends
+ *   after the build with no flag needed, as `bin/touch-sync.ts --document` without `--commit` does, having opened
+ *   the remote once, read `/tde/powerstate` for reading and closed it, and opened nothing else.
+ * * **A power source but `usb` is refused with the remote as it was**, in a dry run and in a commit alike, naming
+ *   what the remote reported: the commit's transport opened `/tde/powerstate` and `/sys/sysinfo` for reading and
+ *   never `/sys/hlapi`, by the pretend Touch's own record, so no request was sent, and no event that acts was given.
  * * **What does not fit is refused by name before anything is opened**: a Touch's document on a remote that
  *   enumerates as a Harmony One, a Harmony One's document on a Touch, a keeper of the other kind on either, a unit
  *   the library does not list, an address the keeper lacks, and a folder that already holds a run.
@@ -86,7 +90,7 @@ test('a committed sync is answered by the answerer alone, the set the keeper kep
   for (const line of ['sync: handing over the remote\'s changes', 'sync: started']) assert.ok(SYNC_LINES.some((form) => form.test(line)), line);
 });
 
-test('without the request flags a commit is refused with nothing made, kept or opened, and a dry run opens nothing and needs no flag', async () => {
+test('without the request flags a commit is refused with nothing made, kept or opened, and a dry run reads the identity file and the power source alone and needs no flag', async () => {
   // This process has neither flag.
   assert.equal(process.env['HARMONY_TOUCH_REQUESTS'], undefined);
   const refused = await runTouchSync({ commit: true });
@@ -99,8 +103,40 @@ test('without the request flags a commit is refused with nothing made, kept or o
     result: 'dry-run', remote: 'as-before', message: 'everything before the remote is acted on was done, and the set holds 6 documents and 2 pictures',
   });
   assert.deepEqual(dry.words, ['identify', 'check', 'build', '= dry-run']);
-  assert.deepEqual([dry.kept.length, dry.folders, dry.opened, dry.written.length], [0, 0, 0, 0]);
+  // Opened once for the one read, and closed; nothing kept, no folder, no request line.
+  assert.deepEqual([dry.kept.length, dry.folders, dry.opened, dry.closed, dry.written.length], [0, 0, 1, true, 0]);
+  assert.deepEqual(dry.openedPaths, ['/sys/sysinfo R', '/tde/powerstate R']);
   assert.ok(dry.journal.includes('sync: built 6 documents and 2 pictures, a set of 8 answers the gate passes'), dry.journal.join('\n'));
+  assert.ok(dry.journal.includes('sync: power source, usb'), dry.journal.join('\n'));
+});
+
+test('a power source but usb is refused with the remote as it was, in a dry run and a commit, before /sys/hlapi is opened', async () => {
+  const cases: [string, string][] = [
+    ['usb_charge\n', 'usb_charge'], ['battery\n', 'battery'], ['cradle', 'cradle'], ['no such source\n', 'an unexpected text, "no such source"'],
+  ];
+  for (const [served, said] of cases) {
+    const message = `the remote reports its power source as ${said}, and a Harmony Touch takes part in a sync only on USB power `
+      + 'from a computer\'s port, the source its software calls usb, when it shows its USB screen: connect it to a computer\'s '
+      + 'USB port and sync again';
+    const dry = await runTouchSync({ powerstate: served });
+    assert.deepEqual(dry.outcome, { result: 'refused', remote: 'as-before', message }, served);
+    assert.deepEqual(dry.words, ['identify', 'check', 'build', '= refused'], served);
+    assert.deepEqual([dry.opened, dry.closed, dry.openedPaths], [1, true, ['/sys/sysinfo R', '/tde/powerstate R']], served);
+    assert.ok(dry.journal.includes(`sync: power source, ${said}`), served);
+
+    const commit = withFlags({ commit: true, powerstate: served });
+    assert.deepEqual(commit.outcome, { result: 'refused', remote: 'as-before', message }, served);
+    assert.deepEqual(commit.words, ['identify', 'check', 'build', '= refused'], served);
+    // By the pretend Touch's own record: the power source and the identity read, and never /sys/hlapi, so no request
+    // line was written; the transport was closed.
+    assert.deepEqual(commit.openedPaths, ['/sys/sysinfo R', '/tde/powerstate R', '/sys/sysinfo R'], served);
+    assert.deepEqual([commit.written, commit.answers.length, commit.closed], [[], 0, true], served);
+    assert.ok(commit.journal.includes(`sync: power source, ${said}`), served);
+  }
+  // The control: the same commit on usb is written, its first open the power source and /sys/hlapi opened after it.
+  const usb = withFlags({ commit: true });
+  assert.deepEqual(usb.outcome, { result: 'written', remote: 'new-configuration' });
+  assert.deepEqual(usb.openedPaths.slice(0, 4), ['/sys/sysinfo R', '/tde/powerstate R', '/sys/sysinfo R', '/sys/hlapi W']);
 });
 
 test('a document for another model, a keeper of the other kind, an unlisted unit, a missing address and a taken folder are refused by name before anything is opened', () => {

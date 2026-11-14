@@ -50,15 +50,16 @@ import {
 } from '@harmony/codec/node';
 import { harmonyTouch } from '@harmony/codec/build';
 import {
-  HarmonyRemote, openFileBasedRemote, openHarmony, RailError, skinId, type FoundRemote, type Transport,
+  HarmonyRemote, openFileBasedRemote, openHarmony, RailError, readTouchPowerSource, skinId, type FoundRemote,
+  type Transport,
 } from '@harmony/usb';
 import {
   CONFIG_WRITE_MODELS, ConfigWriteRefusal, ConfigWriteStopped, writeConfiguration,
   type ConfigWriteStep, type ConfigWriteUnit, type UnitRecords,
 } from './writeconfig.ts';
 import {
-  SYNC_LINES, answerTouchSync, assertTouchSyncAllowed, assertTouchSyncUnit, touchFolderRefusal, touchSetOf,
-  type TouchSet, type TouchSyncOutcome,
+  SYNC_LINES, answerTouchSync, assertTouchSyncAllowed, assertTouchSyncUnit, describePowerSource, touchFolderRefusal,
+  touchPowerRefusal, touchSetOf, type TouchSet, type TouchSyncOutcome,
 } from './touchsync.ts';
 
 /**
@@ -110,7 +111,7 @@ export type SyncEvent =
  * **For a Harmony Touch**: `written` when the remote finished, which it does only after it has committed what it was
  * answered, so it holds the new set (nothing is read back: the answerer has no read back, and the remote's own commit
  * is the check); `refused` with the remote `as-before` for every refusal before the first request that acts on it,
- * the gate and the provisioning read among them; `failed` with the remote `needs-recovery` for a refusal after it,
+ * the gate, a power source but `usb` and the provisioning read among them; `failed` with the remote `needs-recovery` for a refusal after it,
  * the message carrying the recovery order and what an abort would cost there; and `failed` with the remote
  * `as-before` when the remote itself aborted, since an abort deletes what it had gathered and reloads the set it
  * held. **`nothing-to-write` is never a Touch's outcome**: what the remote holds can be told only by asking it, a
@@ -685,19 +686,23 @@ const STARTED = SYNC_LINES.find((form) => form.test('sync: started'))!;
  * **The order**, each refusal before anything is opened ending `refused` with the remote as it was: the model the
  * remote enumerates as, by its skin, against the document's, and the keeper's kind, its unit against the library's
  * list, `identify`; the document's check, `check`; the build, which needs the account, and the set made from it at
- * the keeper's addresses with the gate over it, `build`. A dry run ends there, having opened nothing and needing no
- * flag, which is `bin/touch-sync.ts` without `--commit`. A commit then checks the flags, makes the keeper's folder,
- * keeps the set, and hands it to `answerTouchSync`, which opens the remote, compares its serial with the record, reads
- * its provisioning, and only then acts: `hand-over` from its line saying so, `write` from its line saying the sync
+ * the keeper's addresses with the gate over it, `build`. **A dry run then reads the remote's power source and
+ * ends**: it opens the remote, reads the identity file and `/tde/powerstate` through the read only route, closes it, and refuses on any
+ * source but `usb` as a commit would, since a dry run exists to say up front whether a commit would go through; it
+ * sends nothing that acts and needs no flag, which is `bin/touch-sync.ts --document` without `--commit`. A commit then
+ * checks the flags, makes the keeper's folder, keeps the set, and hands it to `answerTouchSync`, which opens the
+ * remote, reads its power source and refuses on any but `usb`, compares its serial with the record, reads its
+ * provisioning, and only then acts: `hand-over` from its line saying so, `write` from its line saying the sync
  * started.
  *
  * **A stop is honoured up to the moment the remote is opened, and never after.** The first request that acts is the
- * hand over, and between the open and it there are only reads, the identity file, the gate run again and the
- * provisioning read, at which a stop could in principle still be honoured; but the answerer takes no stop and is not
+ * hand over, and between the open and it there are only reads, the power source, the identity file, the gate run
+ * again and the provisioning read, at which a stop could in principle still be honoured; but the answerer takes no stop and is not
  * changed here, so once it is called the sync runs to its end. That is the last check before `answerTouchSync`.
  *
  * **What the outcome says**, `SyncOutcome`'s header: `written` once the remote committed and finished; a refusal
- * before the remote was acted on `refused` and `as-before`; one after it `failed` and `needs-recovery`, with the
+ * before the remote was acted on `refused` and `as-before`, a power source but `usb` among them, in a dry run and a
+ * commit alike; one after it `failed` and `needs-recovery`, with the
  * recovery order and the abort's cost in the message, since those are what a person does next; and the remote's own
  * abort `failed` and `as-before`. A throw out of `answerTouchSync` is always before anything acts, its header says so:
  * a rail's refusal is `refused`, anything else, the open or the session failing, `failed`, and either `as-before`.
@@ -786,7 +791,29 @@ async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): 
   journal(`sync: built ${Object.keys(built.documents).length} documents and ${built.pictures.length} pictures, `
     + `a set of ${set.answers.length} answers the gate passes`);
 
+  /** Open the Touch: the keeper's way, a test's stand in, or the one found, through the file protocol's guard. */
+  const openTouch = keeper.open ?? (() => openFileBasedRemote({
+    productId: remote.found.productId, ...(remote.found.path === undefined ? {} : { path: remote.found.path }),
+  }));
+
   if (!request.commit) {
+    // The power source, the one thing a dry run reads off the remote: a read, closed again before the dry run ends.
+    if (asked()) return stopped('the remote was opened');
+    let source: string;
+    try {
+      const transport = await openTouch();
+      try {
+        source = await readTouchPowerSource(transport);
+      } finally {
+        await transport.close();
+      }
+    } catch (error) {
+      // Nothing that acts was sent: the open or the read failed, or the guard refused it.
+      return end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
+    }
+    journal(`sync: power source, ${describePowerSource(source)}`);
+    const unpowered = touchPowerRefusal(source);
+    if (unpowered !== undefined) return refused(unpowered);
     return end({ result: 'dry-run', remote: 'as-before', message: documentsDryRun(Object.keys(built.documents).length, built.pictures.length) });
   }
 
@@ -824,9 +851,7 @@ async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): 
       folder,
       label: keeper.label,
       permittedUnit: keeper.permittedUnit,
-      open: keeper.open ?? (() => openFileBasedRemote({
-        productId: remote.found.productId, ...(remote.found.path === undefined ? {} : { path: remote.found.path }),
-      })),
+      open: openTouch,
       log: journal,
       report,
     });

@@ -75,6 +75,8 @@ export interface TouchScenario {
   readonly stopAt?: 'start' | 'build' | 'hand-over';
   /** The observer throws on every event. */
   readonly observerThrows?: boolean;
+  /** The text the pretend Touch's `/tde/powerstate` serves; its own default, `usb` and a newline, when absent. */
+  readonly powerstate?: string;
 }
 
 export interface TouchRun {
@@ -92,6 +94,8 @@ export interface TouchRun {
   readonly folders: number;
   readonly opened: number;
   readonly closed: boolean;
+  /** Every open the pretend Touch was sent, path and mode, in order, by its own record. */
+  readonly openedPaths: string[];
 }
 
 const OK = (mime: string, result: unknown = null): string =>
@@ -124,6 +128,7 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
   let started = false;
   const remote = new FakeTouchRemote({
     sysinfo: sysinfoText(),
+    ...(scenario.powerstate === undefined ? {} : { powerstate: scenario.powerstate }),
     answer: (line: string): string => {
       if (line.startsWith('Content-Length: ')) return GATHERING;
       if (line === PROVISIONING) return OK(PROVISIONING, scenario.provisioning ?? { accountId: '1', activeRemoteId: 2, mode: 0, se: true });
@@ -174,7 +179,7 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
       keep: (set) => { kept.push(set); },
       open: async () => {
         opened += 1;
-        return guardFileProtocol(remote);
+        return guardFileProtocol(remote, TOUCH_PRODUCT);
       },
     };
   const found: FoundRemote = {
@@ -208,7 +213,7 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
   const written = remote.lines.filter((line) => !line.startsWith('Content-Length: ')).map((line) => line.split('&')[0]!);
   const answers = remote.lines.filter((line) => line.startsWith(WRITE_ANSWERS))
     .flatMap((line) => (JSON.parse(decodeURIComponent(line.split('&responses=')[1]!)) as { responses: TouchRun['answers'] }).responses);
-  return { words: words(events), outcome, journal, written, answers, kept, folders, opened, closed };
+  return { words: words(events), outcome, journal, written, answers, kept, folders, opened, closed, openedPaths: remote.opened };
 }
 
 async function main(): Promise<void> {

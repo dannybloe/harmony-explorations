@@ -25,6 +25,7 @@ import { join } from 'node:path';
 
 import { unitIdentityFromSerial } from '@harmony/usb';
 import { guardFileProtocol } from '@harmony/usb/internal';
+import { TOUCH_PRODUCT_ID } from '@harmony/usb/rails';
 import { openTouchRequestSession } from '@harmony/usb/touchsession';
 import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
 import { answersWritten, commands, records, sessions, text } from '@harmony/testkit/touch-recording';
@@ -60,6 +61,8 @@ export interface Scenario {
    * naming the write in `mime`, when absent.
    */
   readonly writeReply?: 'gathering';
+  /** The power source `answerTouchSync` would have read off the remote and handed in; `usb` when absent. */
+  readonly powerSource?: string;
 }
 
 const OK = (mime: string, result: unknown = null): string =>
@@ -158,8 +161,10 @@ async function main(): Promise<void> {
   });
 
   const reports: string[] = [];
-  const session = await openTouchRequestSession(guardFileProtocol(remote), { permittedUnit: unitIdentityFromSerial(SERIAL) });
-  const outcome = await syncTouch({ session, mode: scenario.mode, folder, report: (l) => reports.push(l), pollMs: 0, maxEmptyLists: 5 });
+  const session = await openTouchRequestSession(guardFileProtocol(remote, TOUCH_PRODUCT_ID), { permittedUnit: unitIdentityFromSerial(SERIAL) });
+  const outcome = await syncTouch({
+    session, mode: scenario.mode, folder, powerSource: scenario.powerSource ?? 'usb', report: (l) => reports.push(l), pollMs: 0, maxEmptyLists: 5,
+  });
 
   const lines = remote.lines.map((line) => {
     if (line.startsWith(WRITE_ANSWERS)) {
@@ -174,7 +179,7 @@ async function main(): Promise<void> {
   const files = readdirSync(folder).sort();
   const handedUp = readdirSync(join(folder, 'handed-up')).sort();
   rmSync(join(folder, '..'), { recursive: true, force: true });
-  process.stdout.write(JSON.stringify({ outcome, reports, lines, announced, keptAtWrite, files, handedUp }));
+  process.stdout.write(JSON.stringify({ outcome, reports, lines, announced, keptAtWrite, files, handedUp, opened: remote.opened }));
 }
 
 if (import.meta.main) {

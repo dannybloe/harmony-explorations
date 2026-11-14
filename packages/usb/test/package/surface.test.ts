@@ -23,18 +23,18 @@ const MANIFEST = new URL('../../package.json', import.meta.url);
 /** The main entry: the names that exist at run time. */
 const VALUES = [
   'COMPARABLE_FIELDS', 'CompatibilityError', 'HarmonyRemote', 'LOGITECH_VENDOR', 'ProtocolError', 'RailError',
-  'RemoteError', 'TransportError', 'UnitIdentityError', 'VERSION_FIELD_NAMES', 'architectureFromVersion',
+  'RemoteError', 'TOUCH_POWER_SOURCES', 'TransportError', 'UnitIdentityError', 'VERSION_FIELD_NAMES', 'architectureFromVersion',
   'compareIntendedVersion', 'compareIntendedVersionAgainstBlock', 'delaySlots', 'identifiesAUnit',
   'isFileBasedRemote', 'isHarmony', 'isMicrochipBootloader', 'isTunnelledRemote', 'latestSettings',
   'listFileBasedRemotes', 'listHarmony', 'listMicrochipBootloaders', 'listTunnelledRemotes', 'openFileBasedRemote',
-  'openHarmony', 'parseSysInfo', 'readFile', 'readSysInfo', 'readVersion', 'sameUnit', 'skinId',
+  'openHarmony', 'parseSysInfo', 'readFile', 'readSysInfo', 'readTouchPowerSource', 'readVersion', 'sameUnit', 'skinId',
   'unitIdentityFromSerial', 'unitIdentityFromText', 'unitIdentityText',
 ];
 
 /** The main entry: the types and interfaces, which only the source shows. */
 const TYPES = [
   'Compatibility', 'CompatibilityField', 'DelaySlot', 'FieldVerdict', 'FoundRemote', 'RemoteOptions',
-  'RemoteSelector', 'StatedVersion', 'Transport', 'VersionReading',
+  'RemoteSelector', 'StatedVersion', 'TouchPowerSource', 'Transport', 'VersionReading',
 ];
 
 /**

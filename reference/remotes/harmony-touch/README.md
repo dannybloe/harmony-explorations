@@ -8,7 +8,10 @@ it[^s203]. How evidence is marked is in [the reference's README](../../README.md
 
 **This library reaches it by two narrow routes and no other.** `openHarmony` refuses it, because it speaks
 the file protocol rather than the command protocol[^s193]. A read only file transport has opened two files on
-it, its identity and a radio query, and nothing else answers without the named door[^s201]. Requests to its
+it, its identity and a radio query, and nothing else answers without the named door[^s201], but for one name of
+its own the transport may open for reading, its power source, which a sync reads first and refuses on unless the
+remote is on USB power from a computer's port, [usb.md](usb.md#what-this-library-does-with-a-touch); that name's
+open is a plain read by its firmware, and what a unit answers is not measured[^t-touch-power-read][^unchecked]. Requests to its
 software go through a rail of their own, which answers a sync in place of Logitech's server: thirty four syncs
 of this project have run on one unit and thirty two were committed, [answering a
 sync](../../architectures/harmony-touch/answering-a-sync.md)[^d29][^t-touch-from-nothing]. Its configuration
@@ -72,7 +75,7 @@ checked**[^unchecked].
 | [behaviour.md](behaviour.md) | device mode, Off, switching activities, commands on the screen, syncing back, a factory reset |
 | [memory.md](memory.md) | the paths that open, and where the configuration is kept instead of a file |
 | [firmware.md](firmware.md) | the version it reports, its image, the paths that reset and reboot it, a sync stopped halfway |
-| [usb.md](usb.md) | product id, telling one unit from another, the file protocol as far as it was used, the two files read, what happens on the cable, the rails |
+| [usb.md](usb.md) | product id, telling one unit from another, the file protocol as far as it was used, the two files read and the power source, what happens on the cable, the rails |
 | [misc.md](misc.md) | everything else |
 
 ## Not checked
@@ -90,6 +93,7 @@ checked**[^unchecked].
 [^s197]: Stated by Logitech, in their client. [Section 197](../../../docs/findings.md#s197)
 [^s195]: Measured on a unit. [Section 195](../../../docs/findings.md#s195)
 [^unchecked]: Not checked.
+[^t-touch-power-read]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-sync.test.ts)
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-sync-both-ways.test.ts)
 [^s198]: Stated by Logitech, in their client. [Section 198](../../../docs/findings.md#s198)

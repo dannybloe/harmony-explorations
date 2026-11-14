@@ -517,8 +517,8 @@ class AChangeOnTheRemoteErasesItsTagAndKeepsTheFile(TheImage):
 
 class TheScreensTakePartOnlyOnUSBPower(TheImage):
     """**A Touch's screens ignore a sync unless the remote is powered over USB**, and nothing a host can ask
-    on the request channel says which power source it is on. Read in the same preflight, before the first sync
-    this project drives.
+    on the request channel says which power source it is on; the factory test name `/tde/powerstate` does, by a
+    plain read over the cable. Read in the same preflight, before the first sync this project drives.
 
     **What was read, in the screens' source** (`appscommon/harmony.lua`). The three callbacks a sync needs from
     the screens return at once while `usbDisconnected` is set: `syncCallback` (the sync's progress, and on a
@@ -533,9 +533,13 @@ class TheScreensTakePartOnlyOnUSBPower(TheImage):
     **What a host can ask.** The engine names no power source in any of its 172 compiled files, and the
     provisioning answer (`setup/apihandler/account.lua` `getProvisionInfo`) holds none, and `/sys/sysinfo` is
     built once when the native program starts, `test_harmony_touch_api_names.py`. The one name that reads the
-    power source is the factory test's `/tde/powerstate`, outside every route this project opens. So the
-    answerer cannot refuse a commit on the power source, and its script says so instead,
-    `packages/corpus/bin/touch-sync.ts`.
+    power source is the factory test's `/tde/powerstate`, backed by the same `powersource` file the watcher
+    filters on, and its open for reading reads that file and changes nothing, `ThePowerSourceIsAPlainRead` in
+    `test_harmony_touch_api_names.py`. So the library opens that one name for reading on a Touch, and the answerer
+    reads it before a sync and refuses on any source but `usb`, before anything that acts is sent,
+    `packages/corpus/src/touchsync.ts`. This said the name was outside every route the project opens and that the
+    answerer could not refuse a commit on the power source<!--superseded-->, until that open was read; the two
+    assertions below, that the engine names no power source and that the screens watch the file, still hold.
 
     **Not checked**: which power source a given computer port gives, and what the screens show for
     `usb_charge`. The bench saw a Touch show Charging rather than its USB screen on one port, which by

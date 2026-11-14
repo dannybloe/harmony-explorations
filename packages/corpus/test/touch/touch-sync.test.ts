@@ -26,6 +26,9 @@
  * 3. **The gate**: a set missing each top level list the engine's reader walks, or a document, is refused
  *    before anything at all is written to the remote, not even the provisioning read, and names no recovery;
  *    the smallest set the reference describes passes it, which is the control.
+ * 3a. **The power source**: a source but `usb`, the four other sources the driver names and an unexpected text, is
+ *    refused before anything at all is written to the remote, not even the provisioning read, and names no
+ *    recovery; the line naming the source read is reported in every run; `usb` goes on, the control.
  * 4. **The provisioning**: a remote not provisioned, or provisioned in a hub's mode, is refused after the
  *    provisioning read alone.
  * 5. **The hand over**: what the remote hands up is in the lab before the write that answers it, and is
@@ -51,9 +54,11 @@
  *    and what an abort would cost where the run stopped: the handed up document's tag inside the hand over,
  *    and no tag after it, since the hand over committed.
  * 8. **The script**, in the paths that open nothing: the dry run of each mode, which says what `--unchanged`
- *    writes, the order of recovery and that nothing on the rail tells whether the remote is on USB power; a
+ *    writes, the order of recovery and that a commit reads the power source and refuses unless it is `usb`; a
  *    set outside the lab, a set the gate refuses, a commit without the two flags, and a commit with the
- *    recovery flag. The commit itself is never run by a test.
+ *    recovery flag; and the words it refuses with when no Touch is found, which name the check a person can make
+ *    on the cable, held as the library's constant and the script's use of it, since a test never enumerates the bus.
+ *    The commit itself is never run by a test.
  *
  * **Sources checked first.** `reference/architectures/harmony-touch/answering-a-sync.md`, `api/proxy.md` and
  * `api/setup.md`; `packages/usb/src/touchsession.ts` and its tests; the recordings through
@@ -70,7 +75,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
@@ -78,7 +83,7 @@ import { fileURLToPath } from 'node:url';
 
 import { skipUnless } from '@harmony/lab';
 
-import { RECOVERY, SYNC_LINES, keptCopyTag, ourTag, setTag, type RemoteRequest, type SetAnswer, type TouchSyncOutcome } from '../../src/touchsync.ts';
+import { RECOVERY, SYNC_LINES, TOUCH_NOT_FOUND, keptCopyTag, ourTag, setTag, type RemoteRequest, type SetAnswer, type TouchSyncOutcome } from '../../src/touchsync.ts';
 import { recordedSyncAnswers, refusedByTheEngine, type Scenario } from './touch-sync-run.ts';
 import { proves } from '@harmony/testkit/proof';
 
@@ -99,6 +104,8 @@ interface Run {
   readonly keptAtWrite: number[];
   readonly files: string[];
   readonly handedUp: string[];
+  /** Every open the pretend Touch was sent, path and mode, by its own record. */
+  readonly opened: string[];
 }
 
 /** Every line any run reported, for the check that each has a form. */
@@ -311,6 +318,30 @@ describe('the gate before the first write', () => {
       assert.equal(r.outcome.ending, 'refused', change);
       assert.deepEqual(r.lines, [], change);
     }
+  });
+});
+
+describe('the power source', () => {
+  it('refuses a source but usb before anything is written to the remote, naming the source and no recovery', () => {
+    const cases: [string, string][] = [['usb_charge', 'usb_charge'], ['battery', 'battery'], ['cradle', 'cradle'], ['wall_adapter', 'wall_adapter'], ['', 'nothing, an empty answer'], ['usb2', 'an unexpected text, "usb2"']];
+    for (const [source, said] of cases) {
+      const r = run({ mode: { kind: 'unchanged' }, powerSource: source, sync: [getSix(), [FINISHED]] });
+      assert.equal(r.outcome.ending, 'refused', source);
+      assert.equal(r.outcome.acted, false, source);
+      assert.equal(r.outcome.recovery, undefined, source);
+      assert.ok(r.outcome.reason!.startsWith(`the remote reports its power source as ${said}, and a Harmony Touch takes part in a sync only on USB power`), r.outcome.reason);
+      // Nothing written into /sys/hlapi, and by the pretend Touch's own record /sys/hlapi never opened.
+      assert.deepEqual(r.lines, [], source);
+      assert.ok(!r.opened.some((o) => o.startsWith('/sys/hlapi ')), source);
+      assert.ok(r.reports.includes(`sync: power source, ${said}`), source);
+    }
+  });
+
+  it('goes on on usb, reporting the source before the provisioning read, the control', () => {
+    const r = run({ mode: { kind: 'unchanged' }, sync: [getSix(), [FINISHED]] });
+    assert.equal(r.outcome.ending, 'finished', r.outcome.reason);
+    assert.ok(r.opened.includes('/sys/hlapi W'));
+    assert.deepEqual(r.reports.slice(1, 3), ['sync: power source, usb', 'sync: provisioned, mode 0']);
   });
 });
 
@@ -584,7 +615,7 @@ describe('the script', () => {
     assert.match(unchanged.out, /mode: unchanged/);
     assert.match(unchanged.out, /written back to it with a tag of ours and committed, so that change never reaches Logitech's account/);
     assert.ok(unchanged.out.includes(`recovery: ${RECOVERY}`), 'the order of recovery');
-    assert.match(unchanged.out, /USB power: nothing a session can ask tells/);
+    assert.match(unchanged.out, /USB power: a commit reads the remote's power source first and refuses unless it is usb/);
     assert.match(unchanged.out, /dry run: nothing was opened/);
     const set = script(['--set', good], lab);
     assert.equal(set.status, 0, set.out);
@@ -627,6 +658,15 @@ describe('the script', () => {
     assert.match(noAddresses.out, /holds no account with the documents' addresses/);
     // Nothing was printed of a plan, so nothing got as far as the sync.
     for (const run of [both, away, noAccount, noAddresses]) assert.doesNotMatch(run.out, /unit record:/);
+  });
+
+  it('refuses with the cable check when no Touch is found, by the library\'s words, and the script uses them', () => {
+    assert.match(TOUCH_NOT_FOUND, /^no Harmony Touch is attached\. /);
+    assert.ok(TOUCH_NOT_FOUND.includes('A cable that carries power and no data charges the remote without the computer seeing it, so check that the cable carries data.'));
+    const source = readFileSync(new URL('../../bin/touch-sync.ts', import.meta.url), 'utf8');
+    assert.match(source, /^ {2}if \(touches\.length === 0\) fail\(TOUCH_NOT_FOUND\);$/m);
+    // The control: the bare words it refused with before are nowhere left in the script as a refusal.
+    assert.doesNotMatch(source, /fail\('no Harmony Touch is attached'\)/);
   });
 
   it('refuses a commit without the two flags, and with the recovery flag set', () => {

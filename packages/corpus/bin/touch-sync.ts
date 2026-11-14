@@ -38,17 +38,20 @@
  *   the set built, `<document>.built-set.json`, kept before the remote is opened. **No rerun rule applies**, unlike
  *   the Harmony One's: a Touch's documents take no stamp from the moment of the build and their tags are digests of
  *   their content, so the same document and account build the same set at any moment, and what a stopped run leaves
- *   is the recovery's to clear, below, not a part of a build to finish. Without `--commit` it enumerates the attached
- *   Touch and opens nothing, which is a dry run of the sync: the build, the set and the gate.
+ *   is the recovery's to clear, below, not a part of a build to finish. Without `--commit` it is a dry run of the
+ *   sync: the build, the set and the gate, and then **one read off the attached Touch**, its power source, through
+ *   the read only route, refused on any source but `usb` as a commit would be, `syncDocument`.
+ *   **A remote not found** is refused with the check a person can make, `TOUCH_NOT_FOUND`: a cable that carries
+ *   power and no data charges the remote while the computer never sees it.
  *
- * **Without `--commit` it opens nothing.** It prints the mode, and for a set the gate's verdict, which a commit
+ * **Without `--commit`, `--unchanged` and `--set` open nothing.** They print the mode, and for a set the gate's verdict, which a commit
  * would meet first, the answers by kind and how many tags are stated; whether the lab holds the unit record and
  * which flags are set; the steps a commit takes; and the line forms below.
  *
  * **With `--commit`, the two flags and the unit record it opens the Touch** through `openFileBasedRemote`,
  * by way of `answerTouchSync` in `src/touchsync.ts`, on `@harmony/corpus/write`,
- * opens a session, which reads the identity file and refuses any unit but the lab's `units/touch.txt`, and
- * runs the answerer, keeping every request, every answer and what the remote hands up in a new folder of the
+ * reads the remote's power source and refuses on any but `usb`, opens a session, which reads the identity file and
+ * refuses any unit but the lab's `units/touch.txt`, and runs the answerer, keeping every request, every answer and what the remote hands up in a new folder of the
  * lab's `reads/`. **It refuses with `HARMONY_TOUCH_RECOVERY` set**: a session driving a sync has no reason to
  * hold the recovery door, `TOUCH_RECOVERY_DOOR` in `rails.ts`, and the recovery steps are a person's, one per
  * run of `packages/usb/bin/touch-recover.ts`. The session announces each write of answers with the whole
@@ -61,14 +64,14 @@
  * is the handed up document's tag. `RECOVERY` in `src/touchsync.ts`, and `recovering-a-remote`'s Harmony
  * Touch section.
  *
- * **The remote has to be powered over USB, and nothing here can tell whether it is.** Its screens ignore
- * the hand over's and the sync's messages on any power source but the one named `usb`, so on a port where it
- * shows Charging nothing commits and the run ends in a refusal after its empty lists. Neither read on the rail
- * says which source it is on: `/sys/sysinfo` is built once when the remote starts, and the provisioning read
- * names no power source; the name that reads the power controller is a factory test name the rail never
- * opens. `reference/architectures/harmony-touch/answering-a-sync.md` "How a sync aborts, and how an answerer
- * learns of it". So the person at the bench checks that the remote shows its USB screen before `--commit`,
- * and the dry run says so.
+ * **The remote has to be powered over USB, and a commit reads whether it is.** Its screens ignore the hand
+ * over's and the sync's messages on any power source but the one named `usb`, so on any other nothing would
+ * commit. Neither read on the request channel says which source it is on, but the power controller's own file
+ * does, through the factory test name `/tde/powerstate`, which opening for reading only reads,
+ * `reference/architectures/harmony-touch/api/names.md`. So `answerTouchSync` reads it through the read only route
+ * before the session opens and refuses on anything but `usb`, before anything that acts is sent, saying what the
+ * remote reported. The dry runs of `--unchanged` and `--set` open nothing and so read nothing; the plan they print
+ * says what a commit checks.
  *
  * **Why this script is in `packages/corpus` and not beside `touch-recover.ts` in `packages/usb`**: the
  * answerer calls the codec's reader and check itself, and `packages/usb` cannot import the codec, which
@@ -81,6 +84,7 @@
  *   sync: unchanged, every document the remote hands up is written back to it with a tag of ours and
  *     committed, so that change never reaches Logitech's account; every document asked for is then answered
  *     304 against its own tag, and every favourites document 304 so the remote keeps its own copy
+ *   sync: power source, <usb, another of the five sources, or the unexpected text quoted>
  *   sync: provisioned, mode <n>
  *   sync: handing over the remote's changes
  *   sync: hand over, request list <n>, <n> answered
@@ -111,7 +115,7 @@ import { listFileBasedRemotes, openFileBasedRemote, unitIdentityFromText } from 
 import { TOUCH_PRODUCT_ID, TOUCH_RECOVERY_DOOR, TOUCH_REQUEST_DOOR, WRITES_ENABLED } from '@harmony/usb/rails';
 
 import type { TouchAccountFile } from '../experiments/touchnothingset.ts';
-import { RECOVERY, SYNC_LINES, prepareSet, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
+import { RECOVERY, SYNC_LINES, TOUCH_NOT_FOUND, prepareSet, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
 import { TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed, syncDocument } from '../src/write.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
@@ -163,13 +167,13 @@ function printPlan(record: string | undefined): void {
   console.log(`unit record: ${record === undefined ? `none at ${unitIdentityPath(UNIT)}` : `${record.slice(0, 8)}...`}`);
   console.log(`flags: HARMONY_ENABLE_WRITES ${WRITES_ENABLED ? 'set' : 'unset'}, HARMONY_TOUCH_REQUESTS `
     + `${TOUCH_REQUEST_DOOR ? 'set' : 'unset'}, HARMONY_TOUCH_RECOVERY ${TOUCH_RECOVERY_DOOR ? 'set, which a commit refuses' : 'unset'}`);
-  console.log('steps: the provisioning read; the remote\'s changes handed up and kept in the lab; the sync; every '
+  console.log('steps: the power source read, refused unless usb; the provisioning read; the remote\'s changes handed up and kept in the lab; the sync; every '
     + 'request list answered until proxy://Finished or proxy://Abort; each write of answers announced with the whole line\'s length');
   console.log(`line forms: ${SYNC_LINES.length}, listed in this script's header`);
   console.log(`recovery: ${RECOVERY}`);
-  console.log('USB power: nothing a session can ask tells whether the remote is on USB power, and on any other power '
-    + 'source its screens ignore the sync and nothing commits; check that it shows its USB screen, not Charging, '
-    + 'and leave the cable alone until the run ends');
+  console.log('USB power: a commit reads the remote\'s power source first and refuses unless it is usb, the one source '
+    + 'its screens take part in a sync on, which a computer\'s USB port gives and where it shows its USB screen; '
+    + 'leave the cable alone until the run ends');
 }
 
 /**
@@ -196,9 +200,10 @@ async function syncTheDocument(documentFile: string): Promise<void> {
     fail(`no unit record at ${unitIdentityPath(UNIT)}: read one with read-file-identity.ts --product 0xc12b --record ${UNIT}`);
   }
 
-  // Enumerated, never opened: the sync reads the model off the release word before anything is opened.
+  // Enumerated, not opened: the sync reads the model off the release word before anything is opened, and opens the
+  // Touch only for its power source in a dry run and for the run itself in a commit.
   const touches = (await listFileBasedRemotes()).filter((found) => found.productId === TOUCH_PRODUCT_ID);
-  if (touches.length === 0) fail('no Harmony Touch is attached');
+  if (touches.length === 0) fail(TOUCH_NOT_FOUND);
   if (touches.length > 1) fail(`${touches.length} remotes of the Touch's product id are attached; this writes, so it refuses to guess`);
 
   const journalPath = `${documentPath}.sync-${new Date().toISOString().replace(/[:.]/g, '')}.log`;
@@ -220,8 +225,9 @@ async function syncTheDocument(documentFile: string): Promise<void> {
       keeper: {
         kind: 'document',
         label: UNIT,
-        // A dry run opens nothing and compares nothing, so it needs no record and is handed none; a commit without one
-        // was refused above, and the session refuses an empty record besides.
+        // A dry run reads the identity file, for the build, and the power source, and compares nothing, so it
+        // needs no record and is handed none; a commit without one was refused above, and the session refuses
+        // an empty record besides.
         permittedUnit: record === undefined ? new Uint8Array(0) : unitIdentityFromText(record),
         addresses: account.addresses,
         // Made at a commit, never by a dry run.

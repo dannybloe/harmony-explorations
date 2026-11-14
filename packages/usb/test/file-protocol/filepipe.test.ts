@@ -399,6 +399,19 @@ describe('reading a file', () => {
     // A report it cannot parse counts as not a read, which is the safe direction.
     assert.equal(opensForReading(new Uint8Array(FILE_REPORT_BYTES)), false);
   });
+
+  it('passes the mode R alone, and no longer mode that starts with it', () => {
+    const withMode = (mode: string): Uint8Array => encodeFileRequest(FILE_OPEN, [
+      { kind: 'string', value: '/sys/sysinfo' },
+      { kind: 'string', value: mode },
+    ]);
+    for (const mode of ['RW', 'RC', 'RR', 'R+', 'R ', '']) {
+      assert.equal(opensForReading(withMode(mode)), false, JSON.stringify(mode));
+    }
+    // The control: the same report with the mode R is a read.
+    assert.equal(opensForReading(withMode('R')), true);
+    assert.deepEqual(modeLetters(withMode('RW')), ['RW']);
+  });
 });
 
 describe('the identity file is text, and the firmware states its field names', () => {
