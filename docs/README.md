@@ -349,8 +349,10 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 the questions and the check an application works a setup through,
                                 decision 37, with the device search's contract beside it in
                                 src/catalogue/search.ts. Of the toolkit a fresh and an opened
-                                document, adding a device and an activity, a key's choice, the
-                                two lists and the check are built; every other function, and the
+                                document, a device and an activity added, changed, moved and
+                                removed, a key's choice, the lists, a device's commands and
+                                inputs, what uses something and the check are built; every other
+                                function, and the
                                 search's source over the network, refuses by name, `NotBuiltError`
                                 in src/support/contract.ts, with the requirement it waits on,
                                 decision 38. The search over the sources handed in, the fetch

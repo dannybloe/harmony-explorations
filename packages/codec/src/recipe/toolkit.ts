@@ -27,18 +27,27 @@
  * only where a person chose otherwise, and every such setter takes `'default'` to put the choice back, so "what the
  * remote would do anyway" is never copied into the document, where it would go stale.
  *
- * **What is built and what refuses.** A fresh document, opening one, adding a device and an activity, a key's
- * choice, the two lists and the check are built. Every other function refuses by name, `NotBuiltError`, with the
- * requirement it waits on, and `test/recipe/toolkit.test.ts` holds the list of those still refusing, which is the
- * measure of what is left.
+ * **What is built and what refuses.** A fresh document and opening one; a device and an activity added, renamed,
+ * changed, moved and removed, with everything that named them settled; a key's choice; the lists, a device's
+ * commands and inputs, what uses something, and the check. Every other function refuses by name, `NotBuiltError`,
+ * with the requirement it waits on, and so does a member of a built one that nothing reads yet, a device's power or
+ * an activity's icon; `test/recipe/toolkit.test.ts` holds the list of those still refusing, which is the measure of
+ * what is left.
+ *
+ * **A document that carries the part of a remote given documents is changed by nothing here yet.** That part names
+ * the devices and activities itself, by name and in a form this module does not read, so a rename or a removal here
+ * would leave it naming what is gone. Every change refuses such a document by name until the toolkit reads that
+ * part; the questions and the check answer for it as for any other.
  *
  * **A document comes through `create` or `open`.** Every other function addresses things by id, so it refuses a
  * recipe in which a device or an activity has none, naming it, rather than guess an address for it.
  */
 import type { DeviceChannelTuning, DeviceInputs, DevicePower, DeviceTiming } from '../catalogue/driving.ts';
+import type { ArchiveProtocol } from '../catalogue/archive.ts';
 import type { CarriedDevice } from '../catalogue/search.ts';
 import { deviceDriving } from '../catalogue/driving.ts';
 import { ACTIVITY_ROLE_NAMES, type ActivityRoleName } from '../compose/activityroles.ts';
+import { catalogueProtocol } from '../compose/cataloguecodes.ts';
 import { capabilitiesOf } from '../families/capabilities.ts';
 import { chooseByModel, NoFamilyError } from '../families/registry.ts';
 import type { Pulse } from '../infrared/irframe.ts';
@@ -46,7 +55,7 @@ import { notBuilt } from '../support/contract.ts';
 import {
   readRecipe, RECIPE_VERSION, RecipeError,
   type Recipe, type RecipeActivity, type RecipeDevice, type RecipeDeviceKey, type RecipeKey, type RecipeKeyAction,
-  type RecipeModel,
+  type RecipeModel, type RecipeScreenItem,
 } from './recipe.ts';
 
 // ---------------------------------------------------------------------------------------------------
@@ -418,6 +427,112 @@ function inputNames(device: RecipeDevice): ReadonlySet<string> | undefined {
   }
 }
 
+/**
+ * Refuse a change to a document that carries the part of a remote given documents, `Recipe.touch`: that part names
+ * devices and activities itself, and no change here follows it yet. Said as a function not built, with the
+ * requirement of the toolkit's changes, so an application meets one kind of "not yet".
+ */
+function changeable(document: Recipe, contract: string): void {
+  opened(document);
+  if (document.touch !== undefined) notBuilt(`${contract} for a document of a remote given documents`, 76);
+}
+
+/**
+ * An activity's devices as the recipe states them, from the ids a caller gave: each a device of the document, named
+ * once, with jobs an activity has. An input is not judged here: whether a device has it is the check's to say, so
+ * an activity can be put together before every choice is made.
+ */
+function chosenDevices(document: Recipe, activity: string, choices: readonly ActivityDeviceChoice[]): RecipeActivity['devices'] {
+  const seen = new Set<DeviceId>();
+  return choices.map((choice) => {
+    const device = deviceOf(document, choice.device);
+    if (seen.has(choice.device)) {
+      throw new ChangeRefused('invalid', { kind: 'device', device: choice.device }, `activity ${activity} names ${device.name} twice`);
+    }
+    seen.add(choice.device);
+    for (const role of choice.roles) {
+      if (!(ACTIVITY_ROLE_NAMES as readonly string[]).includes(role)) {
+        throw new ChangeRefused('invalid', { kind: 'device', device: choice.device }, `activity ${activity} gives ${device.name} a job ${String(role)} no activity has`);
+      }
+    }
+    // The recipe names a device by its name underneath, which is why a rename has to follow every reference.
+    return { device: device.name, ...(choice.input === undefined ? {} : { input: choice.input }), roles: [...choice.roles] };
+  });
+}
+
+/** One place a device is named, and what kind of mention it is, which is what a removal does about it. */
+interface Mention {
+  readonly place: Place;
+  /** A key's choice, a part in an activity, an item of a screen, a step of a sequence on a screen, the favourites. */
+  readonly kind: 'key' | 'part' | 'screen' | 'step' | 'favourites';
+  /** In words, for an effect's sentence: `activity Watch TV's key 3`. */
+  readonly where: string;
+}
+
+/**
+ * Everywhere a document names a device, other than the device itself: the one walk both `uses` and `remove` take,
+ * so that what a removal says it will touch and what it touches cannot differ.
+ */
+function mentionsOf(document: Recipe, device: RecipeDevice): Mention[] {
+  const found: Mention[] = [];
+  const keysOf = (owner: Owner, keys: readonly RecipeKey[] | undefined, what: string): void => {
+    for (const key of keys ?? []) {
+      if ('device' in key.action && key.action.device === device.name) {
+        found.push({ place: { kind: 'key', owner, scan: key.scan, ...(key.press === undefined ? {} : { press: key.press }) }, kind: 'key', where: `${what}'s key ${key.scan}` });
+      }
+    }
+  };
+  for (const other of document.devices) {
+    if (other.id !== device.id) keysOf({ device: other.id! }, other.keys, `${other.name}'s own map`);
+  }
+  for (const activity of document.activities) {
+    const owner: Owner = { activity: activity.id! };
+    if (activity.devices.some((used) => used.device === device.name)) {
+      found.push({ place: { kind: 'activity-device', activity: activity.id!, device: device.id! }, kind: 'part', where: `activity ${activity.name}` });
+    }
+    (activity.screen ?? []).forEach((item, at) => {
+      if ('sequence' in item) {
+        if (item.steps.some((step) => 'device' in step && step.device === device.name)) {
+          found.push({ place: { kind: 'screen-item', owner, item: at }, kind: 'step', where: `activity ${activity.name}'s sequence ${item.sequence}` });
+        }
+      } else if (item.device === device.name) {
+        found.push({ place: { kind: 'screen-item', owner, item: at }, kind: 'screen', where: `activity ${activity.name}'s screen` });
+      }
+    });
+    keysOf(owner, activity.keys, `activity ${activity.name}`);
+  }
+  const channels = (document.favourites ?? []).find((one) => one.device === device.name)?.channels.length;
+  if (channels !== undefined) {
+    found.push({ place: { kind: 'favourite', device: device.id!, favourite: 0 }, kind: 'favourites', where: `${channels} favourite ${channels === 1 ? 'channel' : 'channels'}` });
+  }
+  return found;
+}
+
+/**
+ * The names of the document's protocol definitions a device's carried commands are written in, by the one reading
+ * of which definition a command's code names, `catalogueProtocol`. None for a device that carries no definition.
+ */
+function protocolsOf(document: Recipe, device: RecipeDevice): Set<string> {
+  const held = new Map((document.protocols ?? []).map((one) => [String(one['name']), one as unknown as ArchiveProtocol]));
+  const names = new Set<string>();
+  for (const command of device.definition?.commands ?? []) {
+    const found = catalogueProtocol(command.keycode, held);
+    if (found !== undefined) names.add(found.name);
+  }
+  return names;
+}
+
+/** A list with the item at one position put at another, both counted from 0, or the refusal naming the position. */
+function moved<T>(list: readonly T[], from: number, to: number, place: Place, what: string): T[] {
+  if (!Number.isInteger(to) || to < 0 || to >= list.length) {
+    throw new ChangeRefused('invalid', place, `${what} cannot go to position ${String(to)}: there are ${list.length}`);
+  }
+  const next = [...list];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item!);
+  return next;
+}
+
 /** The document with one device replaced, by id. */
 function withDevice(document: Recipe, device: RecipeDevice): Recipe {
   return { ...document, devices: document.devices.map((one) => (one.id === device.id ? device : one)) };
@@ -481,7 +596,7 @@ export function open(json: unknown): Recipe {
  * lists devices by name, and so does the recipe underneath.
  */
 export function addDevice(document: Recipe, device: NewDevice): Change {
-  opened(document);
+  changeable(document, 'recipe.addDevice');
   const name = named(device.name, 'the device');
   if (document.devices.some((one) => one.name === name)) {
     throw new ChangeRefused('invalid', { kind: 'document' }, `the document already holds a device named ${name}`);
@@ -513,10 +628,61 @@ export function addDevice(document: Recipe, device: NewDevice): Change {
   };
 }
 
-/** Change a device: its name, how it is powered, its inputs, its timing, its channel tuning, its device key. */
+/**
+ * Change a device: its name, R12, whether it stays on between activities, and its device key. A new name follows
+ * the device everywhere the document names it, an activity's devices, a key's choice, a screen's items, a
+ * sequence's steps and the favourites, since underneath the recipe names a device by its name; that is the
+ * toolkit keeping the whole consistent and not an effect to report. Its power, inputs, timing and channel tuning
+ * are in the contract and read by no builder yet: each refuses by name.
+ */
 export function setDevice(document: Recipe, device: DeviceId, changes: DeviceChanges): Change {
-  void document; void device; void changes;
-  return notBuilt('recipe.setDevice', 12);
+  changeable(document, 'recipe.setDevice');
+  const now = deviceOf(document, device);
+  if (changes.power !== undefined) return notBuilt('recipe.setDevice for its power', 14);
+  if (changes.inputs !== undefined) return notBuilt('recipe.setDevice for its inputs', 15);
+  if (changes.timing !== undefined) return notBuilt('recipe.setDevice for its timing', 16);
+  if (changes.channelTuning !== undefined) return notBuilt('recipe.setDevice for its channel tuning', 18);
+  const place: Place = { kind: 'device', device };
+  let name = now.name;
+  if (changes.name !== undefined) {
+    name = named(changes.name, 'the device');
+    if (document.devices.some((one) => one.id !== device && one.name === name)) {
+      throw new ChangeRefused('invalid', place, `the document already holds a device named ${name}`);
+    }
+  }
+  if (changes.deviceKey !== undefined && changes.deviceKey !== 'none'
+    && (!Number.isInteger(changes.deviceKey.place) || changes.deviceKey.place < 0)) {
+    throw new ChangeRefused('invalid', place, `${name}'s device key is at no place`);
+  }
+  // Rebuilt member by member in the recipe's own order, so a field given back to its default leaves nothing behind.
+  const { name: _name, poweredOnBetweenActivities: keptOn, key: deviceKey, ...rest } = now;
+  const kept = changes.keptOnBetweenActivities ?? keptOn === true;
+  const key = changes.deviceKey === undefined ? deviceKey : changes.deviceKey === 'none' ? undefined : changes.deviceKey;
+  const changed: RecipeDevice = { ...rest, name, ...(kept ? { poweredOnBetweenActivities: true } : {}), ...(key === undefined ? {} : { key }) };
+  let next = withDevice(document, changed);
+  if (name !== now.name) {
+    // Every mention of the old name becomes the new one. A key's choice may name the device from any map.
+    const renamed = (keys: readonly RecipeKey[] | undefined): readonly RecipeKey[] | undefined => keys?.map((one) =>
+      ('device' in one.action && one.action.device === now.name ? { ...one, action: { ...one.action, device: name } } : one));
+    next = {
+      ...next,
+      devices: next.devices.map((one) => (one.keys === undefined ? one : { ...one, keys: renamed(one.keys)! })),
+      activities: next.activities.map((activity) => ({
+        ...activity,
+        devices: activity.devices.map((used) => (used.device === now.name ? { ...used, device: name } : used)),
+        ...(activity.screen === undefined ? {} : {
+          screen: activity.screen.map((item) => ('sequence' in item
+            ? { ...item, steps: item.steps.map((step) => ('device' in step && step.device === now.name ? { ...step, device: name } : step)) }
+            : item.device === now.name ? { ...item, device: name } : item)),
+        }),
+        ...(activity.keys === undefined ? {} : { keys: renamed(activity.keys)! }),
+      })),
+      ...(next.favourites === undefined ? {} : {
+        favourites: next.favourites.map((one) => (one.device === now.name ? { ...one, device: name } : one)),
+      }),
+    };
+  }
+  return { document: next, effects: [] };
 }
 
 /**
@@ -537,7 +703,7 @@ export function setDeviceCommand(
  * a device has it is the check's to say, so an activity can be put together before every choice is made.
  */
 export function addActivity(document: Recipe, activity: NewActivity): Change {
-  opened(document);
+  changeable(document, 'recipe.addActivity');
   const name = named(activity.name, 'the activity');
   if (document.activities.some((one) => one.name === name)) {
     throw new ChangeRefused('invalid', { kind: 'document' }, `the document already holds an activity named ${name}`);
@@ -549,29 +715,39 @@ export function addActivity(document: Recipe, activity: NewActivity): Change {
   if (maxActivities !== undefined && document.activities.length >= maxActivities) {
     throw new ChangeRefused('over-limit', { kind: 'document' }, `a ${document.model.name} holds ${maxActivities} ${maxActivities === 1 ? 'activity' : 'activities'}, and the document holds that many`);
   }
-  const seen = new Set<DeviceId>();
-  const devices = activity.devices.map((choice) => {
-    const device = deviceOf(document, choice.device);
-    if (seen.has(choice.device)) {
-      throw new ChangeRefused('invalid', { kind: 'device', device: choice.device }, `activity ${name} names ${device.name} twice`);
-    }
-    seen.add(choice.device);
-    for (const role of choice.roles) {
-      if (!(ACTIVITY_ROLE_NAMES as readonly string[]).includes(role)) {
-        throw new ChangeRefused('invalid', { kind: 'device', device: choice.device }, `activity ${name} gives ${device.name} a job ${String(role)} no activity has`);
-      }
-    }
-    // The recipe names a device by its name underneath, which is why a rename has to follow every reference.
-    return { device: device.name, ...(choice.input === undefined ? {} : { input: choice.input }), roles: [...choice.roles] };
-  });
+  const devices = chosenDevices(document, name, activity.devices);
   const added: RecipeActivity = { id: nextId('a', document.activities.map((one) => one.id)), name, type: activity.type, devices };
   return { document: { ...document, activities: [...document.activities, added] }, effects: [] };
 }
 
-/** Change an activity: its name, its devices and their jobs and inputs, its icon, its extra steps, its activity key. */
+/**
+ * Change an activity: its name, R25, its kind, and its devices with their jobs and inputs, whole and in the order
+ * given, R22 to R24 and R28. Its icon, its extra steps and its activity key are in the contract and read by no
+ * builder yet: each refuses by name.
+ */
 export function setActivity(document: Recipe, activity: ActivityId, changes: ActivityChanges): Change {
-  void document; void activity; void changes;
-  return notBuilt('recipe.setActivity', 25);
+  changeable(document, 'recipe.setActivity');
+  const now = activityOf(document, activity);
+  if (changes.icon !== undefined) return notBuilt('recipe.setActivity for its icon', 27);
+  if (changes.start !== undefined || changes.end !== undefined) return notBuilt('recipe.setActivity for its extra steps', 30);
+  if (changes.activityKey !== undefined) return notBuilt('recipe.setActivity for its activity key', 29);
+  const place: Place = { kind: 'activity', activity };
+  let name = now.name;
+  if (changes.name !== undefined) {
+    name = named(changes.name, 'the activity');
+    if (document.activities.some((one) => one.id !== activity && one.name === name)) {
+      throw new ChangeRefused('invalid', place, `the document already holds an activity named ${name}`);
+    }
+  }
+  if (changes.type !== undefined && (typeof changes.type !== 'string' || changes.type === '')) {
+    throw new ChangeRefused('invalid', place, `activity ${name} states no kind`);
+  }
+  const changed: RecipeActivity = {
+    ...now, name,
+    ...(changes.type === undefined ? {} : { type: changes.type }),
+    ...(changes.devices === undefined ? {} : { devices: chosenDevices(document, name, changes.devices) }),
+  };
+  return { document: withActivity(document, changed), effects: [] };
 }
 
 /** Add a sequence, R37. It sends nothing until it is put on a key or a screen. */
@@ -591,7 +767,7 @@ export function setSequence(document: Recipe, sequence: SequenceId, changes: Par
  * command, R38. `'default'` gives the key back to what the builders derive for it.
  */
 export function setKey(document: Recipe, key: KeyPlace, action: KeyAction | 'default'): Change {
-  opened(document);
+  changeable(document, 'recipe.setKey');
   const place: Place = { kind: 'key', owner: key.owner, scan: key.scan, ...(key.press === undefined ? {} : { press: key.press }) };
   // A key's second command and a sequence on a key are in the contract and not built: said by name, so that an
   // application meets the same refusal here as from a function that is not built at all.
@@ -656,16 +832,91 @@ export function setSetting(document: Recipe, setting: string, value: number | bo
   return notBuilt('recipe.setSetting', 47);
 }
 
-/** Remove a device, R13, an activity, R26, or a sequence, and settle everything that used it, each as an effect. */
+/**
+ * Remove a device, R13, or an activity, R26, and settle everything that used it, each as an effect. A device
+ * leaves the activities that used it, which stay, with their other devices or with none; a key's choice that sent
+ * one of its commands goes back to the key's default; an item of a screen that showed one of its commands goes, a
+ * sequence loses the steps that sent them and goes with its last step; and its favourite channels go with it.
+ * The protocol definitions its commands were written in go too, unless a device that stays is written in them;
+ * one the document held for no device of its own is left alone.
+ * Nothing names an activity, so removing one has no effect beyond itself. A sequence of its own is not built.
+ */
 export function remove(document: Recipe, what: Removable): Change {
-  void document; void what;
-  return notBuilt('recipe.remove', 13);
+  changeable(document, 'recipe.remove');
+  if ('sequence' in what) return notBuilt('recipe.remove for a sequence', 37);
+  if ('activity' in what) {
+    const gone = activityOf(document, what.activity);
+    return { document: { ...document, activities: document.activities.filter((one) => one.id !== gone.id) }, effects: [] };
+  }
+  const gone = deviceOf(document, what.device);
+  const effects: Effect[] = mentionsOf(document, gone).map((one): Effect => {
+    switch (one.kind) {
+      case 'part': return { place: one.place, effect: 'changed', message: `${one.where} no longer uses ${gone.name}` };
+      case 'key': return { place: one.place, effect: 'removed', message: `${one.where} sent a command of ${gone.name} and goes back to its default` };
+      case 'screen': return { place: one.place, effect: 'removed', message: `${one.where} showed a command of ${gone.name}, which is taken off it` };
+      case 'step': return { place: one.place, effect: 'changed', message: `${one.where} loses the steps that sent a command of ${gone.name}` };
+      default: return { place: one.place, effect: 'removed', message: `${gone.name}'s ${one.where} go with it` };
+    }
+  });
+  /** An owner's choices without the ones that sent the gone device's commands; none left is no field. */
+  const without = (keys: readonly RecipeKey[] | undefined): readonly RecipeKey[] | undefined => {
+    const left = (keys ?? []).filter((one) => !('device' in one.action && one.action.device === gone.name));
+    return left.length === 0 ? undefined : left;
+  };
+  const devices = document.devices.filter((one) => one.id !== gone.id).map((one): RecipeDevice => {
+    const { keys, ...rest } = one;
+    const left = without(keys);
+    return { ...rest, ...(left === undefined ? {} : { keys: left }) };
+  });
+  const activities = document.activities.map((activity): RecipeActivity => {
+    const { keys, screen, ...rest } = activity;
+    const left = without(keys);
+    const items = screen?.flatMap((item): RecipeScreenItem[] => {
+      if (!('sequence' in item)) return item.device === gone.name ? [] : [item];
+      const steps = item.steps.filter((step) => !('device' in step && step.device === gone.name));
+      // A sequence has at least one step that sends something: one left with pauses alone, or with none, goes.
+      return steps.some((step) => 'device' in step) ? [{ ...item, steps }] : [];
+    });
+    return {
+      ...rest,
+      devices: activity.devices.filter((used) => used.device !== gone.name),
+      ...(items === undefined ? {} : { screen: items }),
+      ...(left === undefined ? {} : { keys: left }),
+    };
+  });
+  const { favourites, protocols, ...rest } = document;
+  const kept = favourites?.filter((one) => one.device !== gone.name);
+  const theirs = protocolsOf(document, gone);
+  const needed = new Set(devices.flatMap((one) => [...protocolsOf(document, one)]));
+  const written = protocols?.filter((one) => !theirs.has(String(one['name'])) || needed.has(String(one['name'])));
+  return {
+    document: {
+      ...rest, devices, activities,
+      ...(kept === undefined || kept.length === 0 ? {} : { favourites: kept }),
+      ...(written === undefined || written.length === 0 ? {} : { protocols: written }),
+    },
+    effects,
+  };
 }
 
 /** Put a device, an activity or an activity's device at another position, counted from 0, R28. */
 export function move(document: Recipe, what: Movable, to: number): Change {
-  void document; void what; void to;
-  return notBuilt('recipe.move', 28);
+  changeable(document, 'recipe.move');
+  if ('activity' in what) {
+    const activity = activityOf(document, what.activity);
+    if ('device' in what) {
+      const device = deviceOf(document, what.device);
+      const from = activity.devices.findIndex((used) => used.device === device.name);
+      const place: Place = { kind: 'activity-device', activity: what.activity, device: what.device };
+      if (from < 0) throw new ChangeRefused('unknown', place, `activity ${activity.name} does not use ${device.name}`);
+      return { document: withActivity(document, { ...activity, devices: moved(activity.devices, from, to, place, device.name) }), effects: [] };
+    }
+    const from = document.activities.findIndex((one) => one.id === activity.id);
+    return { document: { ...document, activities: moved(document.activities, from, to, { kind: 'activity', activity: what.activity }, `activity ${activity.name}`) }, effects: [] };
+  }
+  const device = deviceOf(document, what.device);
+  const from = document.devices.findIndex((one) => one.id === device.id);
+  return { document: { ...document, devices: moved(document.devices, from, to, { kind: 'device', device: what.device }, device.name) }, effects: [] };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -710,16 +961,29 @@ export function sequences(document: Recipe): SequenceSummary[] {
   return notBuilt('recipe.sequences', 77);
 }
 
-/** A device's commands, by name. */
+/**
+ * A device's commands, by name, in its definition's own order. Refused, as a `RecipeError`, for a device that
+ * carries no definition: its commands are in a catalogue and not in the document, and an empty list would say it
+ * has none.
+ */
 export function commands(document: Recipe, device: DeviceId): CommandSummary[] {
-  void document; void device;
-  return notBuilt('recipe.commands', 77);
+  opened(document);
+  const one = deviceOf(document, device);
+  if (one.definition === undefined) throw new RecipeError(`${one.name} carries no definition, so its commands are not in the document`);
+  // No definition marks a command as changed or learned yet, R19 and R11.
+  return one.definition.commands.map((command) => ({ name: command.name, changed: false, learned: false }));
 }
 
-/** The inputs a device can be switched to, by the names an activity chooses one by. */
+/**
+ * The inputs a device can be switched to, by the names an activity chooses one by; none for a device that states
+ * no list of them, which is one that can only step through its inputs. Refused as `commands` is for a device that
+ * carries no definition.
+ */
 export function inputs(document: Recipe, device: DeviceId): string[] {
-  void document; void device;
-  return notBuilt('recipe.inputs', 77);
+  opened(document);
+  const one = deviceOf(document, device);
+  if (one.definition === undefined) throw new RecipeError(`${one.name} carries no definition, so its inputs are not in the document`);
+  return [...(inputNames(one) ?? [])];
 }
 
 /** What one key does. */
@@ -746,10 +1010,18 @@ export function favourites(document: Recipe, device: DeviceId): Favourite[] {
   return notBuilt('recipe.favourites', 77);
 }
 
-/** Everything that names a device, an activity or a sequence: what removing it would touch. */
+/**
+ * Everything that names a device or an activity: what removing it would touch, the same places `remove` reports as
+ * effects. Nothing names an activity, so its list is empty. A sequence of its own is not built.
+ */
 export function uses(document: Recipe, what: Removable): Place[] {
-  void document; void what;
-  return notBuilt('recipe.uses', 77);
+  opened(document);
+  if ('sequence' in what) return notBuilt('recipe.uses for a sequence', 37);
+  if ('activity' in what) {
+    activityOf(document, what.activity);
+    return [];
+  }
+  return mentionsOf(document, deviceOf(document, what.device)).map((one) => one.place);
 }
 
 /** What is not yet filled in, R77: the places of the problems `check` codes `unfinished`. */
