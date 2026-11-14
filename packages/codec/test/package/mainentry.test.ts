@@ -185,7 +185,7 @@ test('a source file that uses Node is named *.node.ts or is the Node entry, so t
   // And the Node half is what the step moved there, so a new one is a decision someone sees.
   assert.deepEqual(using, [
     'catalogue/archive.node.ts', 'catalogue/carried.node.ts', 'catalogue/catalogue.node.ts', 'catalogue/catalogueraw.node.ts',
-    'catalogue/driving.node.ts',
+    'catalogue/driving.node.ts', 'catalogue/search.node.ts',
     'support/resources.node.ts',
   ]);
 });

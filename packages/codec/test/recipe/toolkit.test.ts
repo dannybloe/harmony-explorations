@@ -74,12 +74,13 @@ test('every function of the document toolkit is on the main entry and refuses by
   }
 });
 
-test('the device search refuses by name: the search, the fetch, and the two archive sources', async () => {
-  assertNotBuilt(await refusal(() => findDevices([], {})), 'findDevices', 82);
-  assertNotBuilt(await refusal(() => fetchDevice([], { source: 'archive', entry: 'a/b', manufacturer: 'a', model: 'b', match: 1 })), 'fetchDevice', 10);
+test('of the device search, the archive over the network refuses by name; the search, the fetch and the disk\'s source are built', async () => {
   const cache = { get: async () => undefined, set: async () => undefined };
   assertNotBuilt(await refusal(() => networkArchiveSource({ fetch: async () => new Uint8Array(), cache })), 'networkArchiveSource', 81);
-  assertNotBuilt(await refusal(() => archiveSourceAt('/nowhere')), 'archiveSourceAt', 9);
+  // Built, and held by `test/catalogue/search.test.ts`: none of the three refuses as a function that is not built.
+  assert.deepEqual(await findDevices([], {}), { found: [], failed: [] });
+  assert.ok(!((await refusal(() => fetchDevice([], { source: 'archive', entry: 'a/b', manufacturer: 'a', model: 'b', match: 1 }))) instanceof NotBuiltError));
+  assert.equal(archiveSourceAt('/nowhere').name, 'archive');
 });
 
 test('the control: a function that answers, and one that refuses some other way, are both seen', async () => {
