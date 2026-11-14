@@ -517,7 +517,11 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 pretend remote in `src/sync.ts`, one function for every model that
                                 reports as events: the pretend remote and a sync to one are
                                 built, the document checked and built for real and the cable
-                                pretended, and a sync to an attached remote refuses by name; and the
+                                pretended, and so is a sync to an attached Harmony One, 600, 650
+                                or 700, which hands the built configuration to
+                                `writeConfiguration` with the keeper's records of the unit and
+                                turns its steps into events, adding nothing to the write path; a
+                                sync to an attached remote of any other model refuses by name; and the
                                 Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync
                                 down through the request session, for the same kind of reason: it
                                 calls the codec's reader and check of a Touch's documents itself

@@ -7,8 +7,8 @@
  * write and the word that it is safe after the last, and one outcome, last, which is also what the call resolves
  * with. That the document is checked and built for real on the way, so a document the check or the build refuses
  * ends as `refused` with the remote as it was. That a dry run, a stop and a failure asked for in each phase end as
- * the outcome their place in the sync leaves, and that the journal, which is required, tells the same story. And
- * that a sync to an attached remote still refuses by name, `NotBuiltError`, before it opens anything.
+ * the outcome their place in the sync leaves, and that the journal, which is required, tells the same story. A
+ * sync to an attached remote is `sync-attached.test.ts`'s.
  *
  * **What is not claimed.** That the pretend remote's phases are any real remote's: they are a shape to build a
  * screen against, and each real path reports the phases it has. Nor that the request, the events or the outcome
@@ -17,9 +17,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { NotBuiltError, recipe, type Recipe } from '@harmony/codec/node';
+import { recipe, type Recipe } from '@harmony/codec/node';
 import {
-  pretendRemote, syncDocument, type PretendRemote, type SyncEvent, type SyncOutcome, type SyncPhase, type SyncRequest,
+  pretendRemote, syncDocument, type PretendRemote, type SyncEvent, type SyncOutcome, type SyncPhase,
 } from '../../src/write.ts';
 
 const ONE = { name: 'Harmony One', skin: 54 };
@@ -178,19 +178,4 @@ test('a pretend remote takes its time where it is given one, and one put togethe
   assert.throws(() => pretendRemote({ model: ONE, stepMs: -1 }), RangeError);
   const made = { kind: 'pretend', model: ONE, holds: () => undefined } as PretendRemote;
   await assert.rejects(() => run(recipe.create(ONE), made), TypeError);
-});
-
-test('a sync to an attached remote refuses by name with its requirement, before it reads anything but which remote it is given', async () => {
-  // A request whose every other member throws when read: a refusal that came after reading one would fail here.
-  const untouched = new Proxy({}, {
-    get: (_, member) => {
-      if (member === 'remote') return { kind: 'attached', found: new Proxy({}, { get: () => { throw new Error('the remote found was read'); } }) };
-      throw new Error(`the request's ${String(member)} was read`);
-    },
-  }) as SyncRequest;
-  await assert.rejects(() => syncDocument(untouched), (error: unknown) => {
-    assert.ok(error instanceof NotBuiltError);
-    assert.deepEqual([error.contract, error.requirement], ['syncDocument for an attached remote', 79]);
-    return true;
-  });
 });

@@ -18,13 +18,16 @@
  */
 
 // Writing a configuration to a remote of the compiled families: the Harmony One, 600, 650, 700 and 885.
-export { CONFIG_WRITE_MODELS, CONFIG_WRITE_UNITS, ConfigWriteRefusal, writeConfiguration } from './writeconfig.ts';
+export {
+  CONFIG_WRITE_MODELS, CONFIG_WRITE_UNITS, ConfigWriteRefusal, ConfigWriteStopped, writeConfiguration,
+} from './writeconfig.ts';
 export type {
   ConfigWrite,
   ConfigWriteModel,
   ConfigWriteModelName,
   ConfigWriteResult,
   ConfigWriteStamp,
+  ConfigWriteStep,
   ConfigWriteUnit,
   ConfigWriteUnitLabel,
   UnitRecords,
@@ -37,9 +40,10 @@ export {
 export type { SetAnswer, TouchSet, TouchSyncMode, TouchSyncOutcome, TouchSyncRun } from './touchsync.ts';
 
 // **Syncing a document**, the contract an application writes a remote through, decision 38: one function for every
-// model, reporting as events, and a pretend remote to run it against. The pretend remote and a sync to one are
-// built; a sync to an attached remote refuses by name.
+// model, reporting as events, and a pretend remote to run it against. Built to a pretend remote and to an attached
+// Harmony One, 600, 650 or 700, over `writeConfiguration`; to an attached remote of any other model it refuses by name.
 export { pretendRemote, syncDocument } from './sync.ts';
 export type {
-  PretendOptions, PretendRemote, SyncAttention, SyncEvent, SyncOutcome, SyncPhase, SyncRemote, SyncRequest,
+  AttachedRemote, PretendOptions, PretendRemote, RemoteKeeper, SyncAttention, SyncEvent, SyncOutcome, SyncPhase,
+  SyncRemote, SyncRequest,
 } from './sync.ts';

@@ -88,6 +88,25 @@ import { StampError, stampForWrite } from './stamp.ts';
 export class ConfigWriteRefusal extends Error {}
 
 /**
+ * The refusal of a run that was asked to stop, `ConfigWrite.stop`: thrown at the one point a stop is honoured,
+ * after every read and before the first command that changes the remote, so it always means nothing was written.
+ * A refusal like any other for a caller that does not ask which.
+ */
+export class ConfigWriteStopped extends ConfigWriteRefusal {}
+
+/**
+ * Where a run is, for a caller that shows it, `ConfigWrite.onStep`: the unit recognised, each block read and
+ * compared before anything is erased, each block written and read back, the whole configuration read back, and
+ * the restart. `writing` with `done` 0 is the moment before the first command that changes the remote.
+ */
+export type ConfigWriteStep =
+  | { readonly step: 'identified'; readonly unit: string }
+  | { readonly step: 'comparing'; readonly done: number; readonly total: number }
+  | { readonly step: 'writing'; readonly done: number; readonly total: number }
+  | { readonly step: 'verifying' }
+  | { readonly step: 'restarting' };
+
+/**
  * What a model's write end needs, which is the firmware's and not the caller's to say.
  *
  * Moved here from `write-config.ts`'s table of units, where each fact sat on every unit of its model, by
@@ -263,6 +282,19 @@ export interface ConfigWrite {
   readonly say: (line: string) => void;
   /** True the instant before the first erase goes out, false once its block is verified, as `writeBlock` sets it. */
   readonly onPastTheErase?: (value: boolean) => void;
+  /**
+   * Where the run is, for a caller that shows it. **Never the account**, which is `say`'s and is required, and
+   * **never able to stop a write**: whatever this throws is dropped, since a screen that fails between an erase
+   * and its write must not be what leaves a remote without a configuration.
+   */
+  readonly onStep?: (step: ConfigWriteStep) => void;
+  /**
+   * Ask the run to stop. Honoured at one point only: after every read and compare, before the first command that
+   * changes the remote, where the run ends with `ConfigWriteStopped` and nothing written. Asked later it is not
+   * honoured, because between an erase and its write a block is blank and between two blocks the remote holds a
+   * part of each configuration.
+   */
+  readonly stop?: AbortSignal;
   /** A line that is not part of the account: a close that failed before any restart was sent. */
   readonly warn?: (line: string) => void;
 }
@@ -305,6 +337,14 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
   const invalidate = request.invalidate;
   const restart = request.restart;
   const onPastTheErase = request.onPastTheErase ?? ((): void => undefined);
+  /** Tell the caller where the run is; what its callback throws is dropped, `ConfigWrite.onStep`. */
+  const step = (at: ConfigWriteStep): void => {
+    try {
+      request.onStep?.(at);
+    } catch {
+      // A caller's screen is never what stops a write.
+    }
+  };
 
   // Keyed by what the device says, never by an argument, for the reason `rehearse-block.ts` gives. Several
   // units per architecture, and the 600 and the 650 enumerate identically, so the region read names which
@@ -447,6 +487,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     assertUnitIsPermitted({ identityBlock, permittedUnit: permitted });
     say(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which `
       + `matches the recorded ${unit.label}`);
+    step({ step: 'identified', unit: unit.name });
 
     const base = CONFIG_REGION_BASE[architecture];
     const blockSize = ERASE_BLOCK_SIZE[architecture];
@@ -644,9 +685,12 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     // second block that turns out not to match the dump would be discovered with the first already
     // rewritten, which is the one state this sequence must not create.
     let interrupted = 0;
+    let compared = 0;
     for (const plan of plans) {
       say(`reading 0x${plan.block.toString(16)} off the remote to compare`);
       const live = await readBlock(plan.block);
+      compared += 1;
+      step({ step: 'comparing', done: compared, total: plans.length });
       const differs = firstDifference(live, plan.intended);
       // **A block an earlier run erased and did not finish writing is known content too**, which the
       // failure message promised and this compare did not deliver until 3 September 2026:
@@ -707,6 +751,11 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     }
 
     assertFirstWriteAllowed();
+    // The one point a stop is honoured: every read and compare is done and nothing has changed the remote.
+    if (request.stop?.aborted === true) {
+      say('stopped as asked, before the first command that changes the remote: nothing was written');
+      throw new ConfigWriteStopped('stopped before anything was written');
+    }
     // Saved before the first command that changes the remote, so that whatever happens next the caller
     // holds the bytes the remote is being given, and a rerun can find them. The account says so.
     if (stamped) {
@@ -767,6 +816,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     // flag wherever it is, and only an erase at exactly `0x030000` then updates a setting in the
     // remote's settings store. This writes only the blocks that differ, in ascending order, so a run
     // that leaves the first block alone spends the flag on another block and never touches the store.
+    step({ step: 'writing', done: 0, total: plans.length });
     if (invalidate) {
       say('dropping the cached region descriptors, so nothing references the config while it '
         + 'changes, and so the remote re-checks what we write');
@@ -795,6 +845,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
         + 'The remote is expected to keep its old verdict, check nothing, and show no screen');
     }
 
+    let written = 0;
     for (const plan of plans) {
       await writeBlock({
         remote,
@@ -809,12 +860,15 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
         coversBlock: (address) => address >= base && address - base + blockSize <= dump.length,
         sourceName: dumpName,
       });
+      written += 1;
+      step({ step: 'writing', done: written, total: plans.length });
     }
 
     // **The check the per block read backs cannot make.** Each block verified the range it wrote;
     // this reads the whole container off the remote and compares it with the file, so a block that
     // was never written, or written in the wrong order, or a run of the config that fell between two
     // blocks, all show up here and nowhere else.
+    step({ step: 'verifying' });
     await containerMatchesTheFile();
 
     // **Step 7, and it is the last thing this does on purpose.** concordance ends a config
@@ -829,6 +883,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
       // **Immediately before the restart, on the 885s**: the configuration is written and verified by now,
       // so a refusal here leaves it in place and withholds only the command that would install firmware.
       await installStatusIsClear('before the restart');
+      step({ step: 'restarting' });
       say('restarting the remote, which is what a battery pull was doing by hand');
       await remote.resetDevice(permission);
       resetSent = true;

@@ -23,13 +23,23 @@
  * caller's, `packages/usb/src/rails.ts`. Writing a user's own remote is R6, a decision of its own before it is built.
  *
  * **Built**: the pretend remote, and a sync to one, which checks and builds the document for real and only
- * pretends the cable. A sync to an attached remote is not: it refuses by name, `NotBuiltError`, with the
- * requirement it waits on, before anything is opened.
+ * pretends the cable; and a sync to an attached remote of a model whose configuration is written into flash, the
+ * Harmony One, 600, 650 and 700, through `writeConfiguration` and nothing else. A sync to an attached remote of any
+ * other model refuses by name, `NotBuiltError`, with the requirement it waits on, before anything is opened.
+ *
+ * **What an attached sync adds to the write path is nothing.** It checks and builds the document, hands the
+ * configuration to `writeConfiguration` with the caller's records of the unit, and turns what that reports into
+ * events. Which unit is on the cable, whether it may be written, every compare before an erase and every read back
+ * after a write are that function's and the rails' under it, asserted where they always were.
  */
 import {
-  buildFromRecipe, NotBuiltError, recipe, type BuildSources, type Built, type Recipe, type RecipeModel,
+  buildFromRecipe, NotBuiltError, recipe, recipeTarget, type BuildSources, type Built, type Recipe, type RecipeModel,
 } from '@harmony/codec/node';
-import type { FoundRemote } from '@harmony/usb';
+import { HarmonyRemote, openHarmony, RailError, skinId, type FoundRemote } from '@harmony/usb';
+import {
+  CONFIG_WRITE_MODELS, ConfigWriteRefusal, ConfigWriteStopped, writeConfiguration,
+  type ConfigWriteStep, type ConfigWriteUnit, type UnitRecords,
+} from './writeconfig.ts';
 
 /** What a sync is doing, in the order it does it; a model's sync leaves out the phases it has no use for. */
 export type SyncPhase =
@@ -82,10 +92,42 @@ export interface SyncOutcome {
 }
 
 /**
- * The remote a sync writes: one found on the cable, `listHarmony`, or a pretend one. Which unit an attached remote
- * is, is read off the remote during `identify`; a caller cannot state it.
+ * What a sync to an attached remote needs that only whoever keeps the remote holds: the records that say which
+ * unit it is, and the read of what it held, which is both the backup and what every block is compared with before
+ * it is erased. On the bench these are the lab's; in an application they are kept with the user's own data.
+ * **None of it is a permission**: which units may be written is the library's list, `CONFIG_WRITE_UNITS`.
  */
-export type SyncRemote = { readonly kind: 'attached'; readonly found: FoundRemote } | PretendRemote;
+export interface RemoteKeeper {
+  /** The units this caller keeps records of, each with the names of its region reads. */
+  readonly units: readonly ConfigWriteUnit[];
+  /** Each unit's recorded identity, which the remote on the cable has to match by its own identity block. */
+  readonly records: UnitRecords;
+  /**
+   * The read of the unit's configuration region as it is now, whole blocks from the region's base: its name, one of
+   * the unit's `regions`, and its bytes. A write is refused where the remote does not hold exactly this.
+   */
+  readonly region: { readonly name: string; readonly bytes: Uint8Array };
+  /**
+   * Keep the configuration that is about to be written, called once before a committed write with the bytes built,
+   * so that whatever happens next the caller holds what the remote was being given.
+   */
+  readonly keep: (configuration: Uint8Array) => void;
+  /** Open the remote; absent, the one found is opened through the guarded transport. A test hands in a stand in. */
+  readonly open?: () => Promise<{ readonly remote: HarmonyRemote; readonly productId: number }>;
+}
+
+/** A remote found on the cable, `listHarmony`, with what its keeper holds for it. */
+export interface AttachedRemote {
+  readonly kind: 'attached';
+  readonly found: FoundRemote;
+  readonly keeper: RemoteKeeper;
+}
+
+/**
+ * The remote a sync writes: one found on the cable or a pretend one. Which unit an attached remote is, is read off
+ * the remote itself; a caller cannot state it.
+ */
+export type SyncRemote = AttachedRemote | PretendRemote;
 
 /** What a sync is given. */
 export interface SyncRequest {
@@ -256,16 +298,16 @@ async function syncPretend(request: SyncRequest, remote: PretendRemote): Promise
       }
       // The last moment a stop is honoured, and the first at which the cable must stay in.
       if (request.stop?.aborted === true) return end({ result: 'stopped', remote: 'as-before', message: 'stopped before the write, with nothing written' });
-      onEvent({ kind: 'attention', attention: 'do-not-unplug', message: 'Leave the remote on its cable until the sync says it is done.' });
+      onEvent({ kind: 'attention', attention: 'do-not-unplug', message: ATTENTION['do-not-unplug'] });
       writing = true;
     }
     if (phase === 'restart') {
-      onEvent({ kind: 'attention', attention: 'restarting', message: 'The remote restarts and is away from the cable for a moment.' });
+      onEvent({ kind: 'attention', attention: 'restarting', message: ATTENTION['restarting'] });
     }
     const failed = enter(phase, !writing);
     if (failed !== undefined) {
       if (phase === 'restart') {
-        onEvent({ kind: 'attention', attention: 'restart-by-hand', message: 'Take the batteries out of the remote and put them back.' });
+        onEvent({ kind: 'attention', attention: 'restart-by-hand', message: ATTENTION['restart-by-hand'] });
       }
       return end(failed);
     }
@@ -284,18 +326,188 @@ async function syncPretend(request: SyncRequest, remote: PretendRemote): Promise
   }
   // A dry run whose build has no write phase cannot be: every build is written. Reached with the write done.
   state.holds = document;
-  onEvent({ kind: 'attention', attention: 'safe-to-unplug', message: 'The remote can be unplugged.' });
+  onEvent({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
   return end({ result: 'written', remote: 'new-configuration' });
+}
+
+/** The words a person is told, once, for the pretend remote and an attached one alike. */
+const ATTENTION = {
+  'do-not-unplug': 'Leave the remote on its cable until the sync says it is done.',
+  restarting: 'The remote restarts and is away from the cable for a moment.',
+  'safe-to-unplug': 'The remote can be unplugged.',
+  'restart-by-hand': 'Take the batteries out of the remote and put them back.',
+} as const satisfies Readonly<Record<SyncAttention, string>>;
+
+/**
+ * A sync to an attached remote whose configuration is written into flash: the document checked and built, and the
+ * configuration written by `writeConfiguration`, whose steps become the events.
+ *
+ * **Which phase a failure is in decides what the remote is left as**, and that is tracked by the steps the write
+ * itself reports: before its first command that changes the remote, the remote is as it was; from there until the
+ * whole configuration has read back, it holds a part of each, and the same sync run again is the way out, since
+ * the write recognises its own interrupted blocks; after that it holds the new configuration and only the restart
+ * is owed.
+ */
+async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promise<SyncOutcome> {
+  const { document, journal } = request;
+  // An observer never stops a sync: a screen that throws between an erase and its write must not be what leaves a
+  // remote without a configuration, so what it throws is dropped, as the write path drops its own observer's.
+  const emit = (event: SyncEvent): void => {
+    try {
+      request.onEvent(event);
+    } catch {
+      // Dropped on purpose.
+    }
+  };
+  const end = (outcome: SyncOutcome): SyncOutcome => {
+    journal(`sync: ${outcome.result}, the remote ${outcome.remote}${outcome.message === undefined ? '' : `: ${outcome.message}`}`);
+    emit({ kind: 'outcome', outcome });
+    return outcome;
+  };
+  const refused = (message: string): SyncOutcome => end({ result: 'refused', remote: 'as-before', message });
+  const stopped = (before: string): SyncOutcome => end({ result: 'stopped', remote: 'as-before', message: `stopped before ${before}, with nothing written` });
+  const said = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+  /** Whether a stop has been asked, read afresh each time since it can be asked at any moment. */
+  const asked = (): boolean => request.stop?.aborted === true;
+  let phase: SyncPhase = 'identify';
+  const enter = (next: SyncPhase): void => {
+    phase = next;
+    journal(`sync: ${next}`);
+    emit({ kind: 'phase', phase: next });
+  };
+
+  // Which model is on the cable, as far as its enumeration says: the skin a remote reports without being opened.
+  // Which unit it is, is read off the remote by the write, after every check that needs no remote has passed.
+  if (asked()) return stopped('identify');
+  enter('identify');
+  let skin: number;
+  try {
+    skin = recipeTarget(document).skin;
+  } catch (error) {
+    return refused(said(error));
+  }
+  const attached = remote.found.release === undefined ? undefined : skinId(remote.found.release);
+  if (attached !== skin) {
+    return refused(`the document is for a ${document.model.name}, skin ${skin}, and the remote on the cable reports ${attached === undefined ? 'no skin' : `skin ${attached}`}`);
+  }
+
+  if (asked()) return stopped('check');
+  enter('check');
+  let errors: ReturnType<typeof recipe.check>;
+  try {
+    errors = recipe.check(document).filter((one) => one.severity === 'error');
+  } catch (error) {
+    return refused(said(error));
+  }
+  if (errors.length > 0) {
+    const more = errors.length - 1;
+    return refused(`${errors[0]!.message}${more === 0 ? '' : `, and ${more} more ${more === 1 ? 'problem' : 'problems'} the check lists`}`);
+  }
+
+  if (asked()) return stopped('build');
+  enter('build');
+  let built: Built;
+  try {
+    built = buildFromRecipe(document, request.sources);
+  } catch (error) {
+    return refused(said(error));
+  }
+  if (built.kind !== 'configuration') return refused(`the ${document.model.name} is given documents, which this path does not write`);
+  journal(`sync: built a configuration of ${built.bytes.length} bytes for skin ${built.skin}`);
+
+  // What the write reports, turned into phases and progress. `began` and `verified` are what a failure is judged by.
+  let began = false;
+  let verified = false;
+  const onStep = (at: ConfigWriteStep): void => {
+    if (at.step === 'identified') {
+      journal(`sync: the remote on the cable is ${at.unit}`);
+    } else if (at.step === 'comparing') {
+      if (phase !== 'backup') enter('backup');
+      emit({ kind: 'progress', phase: 'backup', done: at.done, total: at.total });
+    } else if (at.step === 'writing') {
+      if (at.done === 0) {
+        began = true;
+        emit({ kind: 'attention', attention: 'do-not-unplug', message: ATTENTION['do-not-unplug'] });
+        enter('write');
+      } else {
+        emit({ kind: 'progress', phase: 'write', done: at.done, total: at.total });
+      }
+    } else if (at.step === 'verifying') {
+      enter('verify');
+    } else {
+      verified = true;
+      emit({ kind: 'attention', attention: 'restarting', message: ATTENTION.restarting });
+      enter('restart');
+    }
+  };
+
+  if (asked()) return stopped('the remote was opened');
+  const keeper = remote.keeper;
+  // What the remote is given is kept first, before a committed write opens anything.
+  if (request.commit) keeper.keep(built.bytes);
+  try {
+    const result = await writeConfiguration({
+      config: { name: `the configuration built for ${document.model.name}`, bytes: built.bytes },
+      region: keeper.region,
+      units: keeper.units,
+      records: keeper.records,
+      // The build stamped it, `BuildSources.builtAt`, and the same document built again at the same moment is the
+      // same bytes, so a run after a stop writes what this one was writing.
+      stamp: { kind: 'as-is' },
+      commit: request.commit,
+      invalidate: true,
+      restart: true,
+      open: keeper.open ?? (async () => ({
+        remote: new HarmonyRemote(await openHarmony({
+          productId: remote.found.productId, ...(remote.found.path === undefined ? {} : { path: remote.found.path }),
+        })),
+        productId: remote.found.productId,
+      })),
+      // Never called, since nothing is stamped here; what is written was kept above.
+      saveStamped: keeper.keep,
+      say: journal,
+      onStep,
+      ...(request.stop === undefined ? {} : { stop: request.stop }),
+    });
+    if (result.outcome === 'nothing to write') return end({ result: 'nothing-to-write', remote: 'as-before', message: 'the remote already holds this configuration' });
+    if (result.outcome === 'dry run') {
+      return end({
+        result: 'dry-run', remote: 'as-before',
+        message: `everything up to the write was done, and ${result.blocks.length} ${result.blocks.length === 1 ? 'block' : 'blocks'} would be written`,
+      });
+    }
+    emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
+    return end({ result: 'written', remote: 'new-configuration' });
+  } catch (error) {
+    if (error instanceof ConfigWriteStopped) return stopped('the write');
+    if (!began) {
+      // Nothing that changes the remote was sent: a refusal of the write or of a rail, or a read that failed.
+      const result = error instanceof ConfigWriteRefusal || error instanceof RailError ? 'refused' : 'failed';
+      return end({ result, remote: 'as-before', message: said(error) });
+    }
+    if (verified) {
+      emit({ kind: 'attention', attention: 'restart-by-hand', message: ATTENTION['restart-by-hand'] });
+      return end({ result: 'failed', remote: 'new-configuration', message: `the configuration is written and read back, and the restart failed: ${said(error)}` });
+    }
+    return end({
+      result: 'failed', remote: 'needs-recovery',
+      message: `the write stopped part way: ${said(error)}. Leave the remote on its cable with its batteries in and run the same sync again, which finishes the blocks it left`,
+    });
+  }
 }
 
 /**
  * Sync a document to a remote, R79: checked, built, written by the model's own write path and read back, reported
  * as events. Resolves with the outcome, which is also the last event; a document or a remote that is refused is an
- * outcome and not a throw. To a pretend remote it is built; to an attached one it refuses by name before anything
- * is opened.
+ * outcome and not a throw. Built to a pretend remote, and to an attached remote of a model whose configuration is
+ * written into flash; to an attached remote of any other model it refuses by name before anything is opened.
  */
 export async function syncDocument(request: SyncRequest): Promise<SyncOutcome> {
   const remote = request.remote;
   if (remote.kind === 'pretend') return syncPretend(request, remote);
-  throw new NotBuiltError('syncDocument for an attached remote', 79);
+  const model = request.document.model.name;
+  // The models `writeConfiguration` writes and a document builds for. The Harmony 885 is written by it and built
+  // from no document yet, which its build says; the Harmony 300, 350 and Touch are written by paths of their own.
+  if (!Object.hasOwn(CONFIG_WRITE_MODELS, model)) throw new NotBuiltError(`syncDocument for an attached ${model}`, 79);
+  return syncAttached(request, remote);
 }

@@ -2056,7 +2056,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 36 with the configuration write's library function, which took the script's
         # sequence, and its fake remote, runner and test, which drive it and name the flash write rail.
         # 37 with the archived sequence, the old root todo kept whole with its mention of the block rehearsal.
-        self.assertEqual(len(must), 37, 'the withhold list should resolve to 37 paths, got %s'
+        # 40 with the sync of a document to an attached remote, the library function's second caller, and its
+        # runner and test, which drive it against the fake remote.
+        self.assertEqual(len(must), 40, 'the withhold list should resolve to 40 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -2185,7 +2187,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # function, which states the sequence `write-config.ts` stated, and the three test files that drive it
         # against a fake remote asserting the flash write rail. All four went on the withhold list in the same
         # commit; the list was re-read.
-        self.assertEqual(len(stating), 49,
+        # 51 with the attached sync's runner and test, `packages/corpus/test/write/sync-attached-run.ts` and
+        # `sync-attached.test.ts`, which name the fake remote's flash write to fail one and to hold the order
+        # of what a sync sends. Both went on the withhold list in the same commit, with the sync itself; the
+        # list was re-read.
+        self.assertEqual(len(stating), 51,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 
