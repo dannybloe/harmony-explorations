@@ -184,6 +184,10 @@ const SPARE_DUMPS = new Set([
   'one_spare_devlistfix_written',
   'one_spare_pictures2_written',
   'one_spare_empty_written',
+  // Before the first sync of a document, `--document`: what the spare held on 14 November 2026.
+  'one_spare_sync_base',
+  // And after that sync, the compare base for whatever comes next.
+  'one_spare_sync_written',
 ]);
 
 /**

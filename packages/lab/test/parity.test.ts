@@ -172,8 +172,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 1059 with the Harmony 885 track's 13, merged from its branch: unit A's whole flash twice and its
   // configuration after the first block write, unit B's three of 1.8, its four of 1.4, 2.1's composed file and
   // B's two of 2.1. 1060 with 2.3's composed file, 1061 with B's region before 2.3's write, 1064 with 2.3's file as written, read back and the clock, 1067 with the first Harmony 785's configuration and whole flash twice, 1070 with the second's, 1072 with the
-  // Harmony 515's configuration region read twice, 1073 with a contributed Harmony 880 Pro's key dump.
-  assert.equal(Object.keys(pythonImages()).length, 1073, 'every fixture tests/lab.py names');
+  // Harmony 515's configuration region read twice, 1073 with a contributed Harmony 880 Pro's key dump, 1075 with the
+  // spare Harmony One's region before a document was first synced to it and after.
+  assert.equal(Object.keys(pythonImages()).length, 1075, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -267,7 +268,8 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // configuration as the first whole write put it, read back and in its region. 162 with the first composed file, unit A's
   // configuration plus one catalogue device, whose container is counted under `h885_a_config`.
   // 164 with B's configuration as the first composed file wrote it and read it back. 165 with the next composed file, 166 with B's region before its write, 168 with that file as written and read back, 171 with the first Harmony 785's configuration and whole flash twice, 174 with the second's, 176 with the
-  // Harmony 515's configuration region read twice.
-  assert.equal(names.length, 176, 'each one a container already counted, that container plus a known '
+  // Harmony 515's configuration region read twice, 178 with the spare Harmony One's region before a document was
+  // first synced to it and after.
+  assert.equal(names.length, 178, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

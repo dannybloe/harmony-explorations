@@ -1,0 +1,103 @@
+{
+  "name": "Spare Harmony One, four keys chosen in a document",
+  "summary": "Four keys a document chose otherwise, and the keys beside them that nobody chose",
+  "description": "One sync of lab/work/sync-skeleton/one-skeleton.json to the spare Harmony One through syncDocument: the test setup of seven devices and five activities, with four keys chosen otherwise through the document toolkit, requirements R31 and R32. Read in the built file before the run: of every key of every map exactly four differ from the same document without its choices, and 357 are the same. In TV kijken, Info sends the Denon's Info where the roles gave it the KPN's, and Mute sends nothing where it sent the Denon's Mute. In the LG TV's own map, device mode's, Volume up sends the Denon's VolumeUp where it sent the LG's, and Volume down beside it still sends the LG's VolumeDown. In the Denon's own map, Mute sends nothing, and Volume up still sends the Denon's VolumeUp. Three things are read in built files only and this run is what checks them on a remote: that a key chosen to do nothing in an activity sends nothing, the entry being one that matches the key and runs nothing; that a device's own map sends another device's command; and that the remote takes a configuration written by a sync of a document at all. The start of TV kijken is the setup's own and was heard before, one-setup-on-empty.json; what Off sends is recorded and not predicted here.",
+  "steps": [
+    {
+      "instruction": "Screen: TV kijken, and wait until the remote is done",
+      "expect": [
+        {
+          "device": [
+            "LG TV",
+            "LG_TV",
+            "LG",
+            "TV"
+          ],
+          "command": "PowerOn"
+        },
+        {
+          "device": "KPN",
+          "command": "PowerToggle"
+        },
+        {
+          "device": "Denon",
+          "command": "PowerOn"
+        },
+        {
+          "device": [
+            "LG TV",
+            "LG_TV",
+            "LG",
+            "TV"
+          ],
+          "command": "InputHdmi1"
+        },
+        {
+          "device": "Denon",
+          "command": "InputCbl/Sat"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Info",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "Info"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Mute",
+      "expect": []
+    },
+    {
+      "instruction": "Button: Volume Up",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Below the screen, right: Devices → Screen: LG TV → Button: Volume Up",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Volume Down",
+      "expect": [
+        {
+          "device": [
+            "LG TV",
+            "LG_TV",
+            "LG",
+            "TV"
+          ],
+          "command": "VolumeDown"
+        }
+      ]
+    },
+    {
+      "instruction": "Below the screen, left: Current Activity → Below the screen, right: Devices → Screen: Denon → Button: Mute",
+      "expect": []
+    },
+    {
+      "instruction": "Button: Volume Up",
+      "expect": [
+        {
+          "device": "Denon",
+          "command": "VolumeUp"
+        }
+      ]
+    },
+    {
+      "instruction": "Button: Off, and wait until the remote is done"
+    }
+  ]
+}
