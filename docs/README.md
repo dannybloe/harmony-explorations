@@ -514,7 +514,9 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 review's withhold list gained a row for it. It also holds the
                                 contract of the sync an application calls, `syncDocument` and a
                                 pretend remote in `src/sync.ts`, one function for every model that
-                                reports as events, not built and refusing by name, and the
+                                reports as events: the pretend remote and a sync to one are
+                                built, the document checked and built for real and the cable
+                                pretended, and a sync to an attached remote refuses by name; and the
                                 Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync
                                 down through the request session, for the same kind of reason: it
                                 calls the codec's reader and check of a Touch's documents itself
