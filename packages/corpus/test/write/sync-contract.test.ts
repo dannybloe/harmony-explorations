@@ -55,19 +55,21 @@ test('a sync to a pretend Harmony One runs its seven phases in order with progre
   assert.deepEqual(shape(words), [
     'identify', 'check', 'build', 'backup', '! do-not-unplug', 'write', 'verify', '! restarting', 'restart', '! safe-to-unplug', '= written',
   ]);
-  // Progress in the three phases that have any: the same total in each, counted from 1 to it with none left out.
-  const totals = new Set<number>();
+  // Progress in the three phases that have any: counted from 1 to the total with none left out, and the total is
+  // the empty Harmony One configuration's eight blocks of flash in each.
   for (const phase of ['backup', 'write', 'verify'] as const) {
     const progress = events.flatMap((event) => (event.kind === 'progress' && event.phase === phase ? [event] : []));
-    assert.ok(progress.length > 1, `${phase} reported ${progress.length} steps`);
+    assert.equal(progress.length, 8, phase);
     assert.deepEqual(progress.map((one) => one.done), progress.map((_, k) => k + 1));
-    assert.deepEqual(new Set(progress.map((one) => one.total)), new Set([progress.length]));
-    totals.add(progress.length);
+    assert.deepEqual(new Set(progress.map((one) => one.total)), new Set([8]));
   }
-  assert.equal(totals.size, 1);
   // The outcome is the last event and the one the call resolved with, and every warning says what to do.
   assert.deepEqual(events.at(-1), { kind: 'outcome', outcome });
-  for (const event of events) if (event.kind === 'attention') assert.ok(event.message.length > 10);
+  assert.deepEqual(events.flatMap((event) => (event.kind === 'attention' ? [event.message] : [])), [
+    'Leave the remote on its cable until the sync says it is done.',
+    'The remote restarts and is away from the cable for a moment.',
+    'The remote can be unplugged.',
+  ]);
   // The journal names every phase in order and ends with how it ended.
   assert.deepEqual(lines.filter((line) => /: (identify|check|build|backup|write|verify|restart)$/.test(line)).map((line) => line.split(': ')[1]),
     ['identify', 'check', 'build', 'backup', 'write', 'verify', 'restart']);
@@ -114,9 +116,14 @@ test('a document for another model, one the check refuses and one nothing builds
 });
 
 test('a failure asked for in each phase ends as that phase leaves the remote, once, and the sync after it runs through', async () => {
-  const left: Record<SyncPhase, [SyncOutcome['result'], SyncOutcome['remote']]> = {
-    identify: ['failed', 'as-before'], check: ['refused', 'as-before'], build: ['refused', 'as-before'], backup: ['failed', 'as-before'],
-    write: ['failed', 'needs-recovery'], verify: ['failed', 'needs-recovery'], restart: ['failed', 'new-configuration'],
+  const left: Record<SyncPhase, [SyncOutcome['result'], SyncOutcome['remote'], string]> = {
+    identify: ['failed', 'as-before', 'the remote did not answer when it was asked which remote it is'],
+    check: ['refused', 'as-before', 'the document was refused by its check'],
+    build: ['refused', 'as-before', 'the document could not be built'],
+    backup: ['failed', 'as-before', 'reading what the remote holds stopped part way, before anything was written'],
+    write: ['failed', 'needs-recovery', 'the write stopped part way, so the remote holds a part of each configuration'],
+    verify: ['failed', 'needs-recovery', 'what the remote holds does not read back as what was written'],
+    restart: ['failed', 'new-configuration', 'the remote holds the new configuration and did not restart by itself'],
   };
   // On a Harmony 350, whose build is the quickest and whose pretend sync has the same seven phases.
   const small = { name: 'Harmony 350' };
@@ -124,8 +131,7 @@ test('a failure asked for in each phase ends as that phase leaves the remote, on
   for (const phase of Object.keys(left) as SyncPhase[]) {
     const remote = pretendRemote({ model: small, failIn: phase });
     const { words, outcome } = await run(document, remote);
-    assert.deepEqual([outcome.result, outcome.remote], left[phase], phase);
-    assert.ok(outcome.message !== undefined && outcome.message.length > 10, phase);
+    assert.deepEqual([outcome.result, outcome.remote, outcome.message], left[phase], phase);
     // It ends in the phase it failed in: that phase is the last one entered.
     assert.equal(shape(words).filter((word) => !/^[!=]/.test(word)).at(-1), phase);
     // Only a failed restart asks for one by hand, and no failure says the remote may be unplugged.

@@ -733,6 +733,10 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
         'a guard that the source walk found files, not a measured population',
     ('packages/lab/test/irarchivesample.test.ts', 'naming(tests, SAMPLE).length', '>', 40):
         'a guard that tests do read the sample, which grows with every such test',
+    # Not a total at all: a clock. Three steps of five milliseconds each cannot take less, and how much more they
+    # take is the machine's.
+    ('packages/corpus/test/write/sync-contract.test.ts', 'performance.now() - started', '>=', 15):
+        'elapsed time, which has a least value and no exact one',
     # Per item: the claim is that the thing is not empty, and its size is a property of the config.
     ('packages/bench/test/instrument/bench.test.ts', 'activity.devices.length', '>=', 1): 'per activity',
     ('packages/bench/test/instrument/bench.test.ts', 'key.sends', '>=', 1): 'per key',
