@@ -72,10 +72,14 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # 2aba24a1.
 # Repinned for decision 36, a new entry: a Harmony Elite set on the bench, read only. The digest before it was
 # 07ef7f39.
-DECISIONS_DIGEST = "b271ef0f8877e9fe90b1ef9617322f584558bafc859f4a069cdcdae1352ad748"
+# Repinned for decisions 37 to 41, new entries, plan 017: the application's document as plain data, the contracts
+# first, numbered versions, the hub and the Elite as bench remotes, and the catalogue a device at a time; and for one
+# sentence added to decision 4, saying that decision 39 sets when the path dependency ends. The digest before it was
+# b271ef0f.
+DECISIONS_DIGEST = "d67bf1ce2c75250e75a8c1d425aceb3d253979964d0bfacc79c23302323cd660"
 
 SECTIONS = 436
-DECISIONS = 36
+DECISIONS = 41
 
 
 def anchor_problems(findings, decisions):
