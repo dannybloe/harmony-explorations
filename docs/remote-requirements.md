@@ -81,7 +81,7 @@ Over the 71 requirements that have a status per model. Possible is every one but
 
 | remote | proven | open | unknown | impossible | proven of possible | checklist |
 |---|---|---|---|---|---|---|
-| Harmony One | 12 | 47 | 2 | 10 | 12 of 61 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
+| Harmony One | 13 | 46 | 2 | 10 | 13 of 61 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
 | Harmony 600 | 15 | 45 | 3 | 8 | 15 of 63 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
 | Harmony 650 | 10 | 50 | 2 | 9 | 10 of 62 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
 | Harmony 700 | 13 | 46 | 4 | 8 | 13 of 63 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
@@ -101,7 +101,7 @@ Each remote's open requirements by whose work is missing, every one counted once
 
 | remote | open | its own or its family's work | the FHSDK's work alone | a run on a unit alone |
 |---|---|---|---|---|
-| Harmony One | 47 | 27 | 16 | 4 |
+| Harmony One | 46 | 27 | 15 | 4 |
 | Harmony 600 | 45 | 23 | 17 | 5 |
 | Harmony 650 | 50 | 23 | 18 | 9 |
 | Harmony 700 | 46 | 22 | 18 | 6 |

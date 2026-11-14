@@ -275,6 +275,7 @@ const CONTAINERS = [
   'one_spare_light60_written', 'one_spare_noassistant_written',
   'one_spare_tourfree_base', 'one_spare_tourfree_written', 'one_spare_pictures_written', 'one_spare_options_written',
   'one_spare_lists_written', 'one_spare_devlistfix_written', 'one_spare_pictures2_written', 'one_spare_empty_written',
+  'one_spare_sync_base', 'one_spare_sync_written',
   // The two bench Harmony 885s' configurations and regions, each read twice.
   'h885_a_config', 'h885_a_config_2', 'h885_a_region', 'h885_a_region_2',
   'h885_b_config', 'h885_b_config_2', 'h885_b_region', 'h885_b_region_2',
@@ -403,8 +404,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 189 with the Harmony 515 from onyiaic as it came, 191 with both copies of its application image.
   // 199 with the two bench Harmony 885s' configurations and regions. 215 with their 16 later registrations:
   // the whole flash reads, the reads after each write, the files written and our compositions.
-  // 223 with the two Harmony 785s' six reads and the Harmony 515's two region reads.
-  assert.equal(present.length, 223, 'every vector, which is what `make golden` compares');
+  // 223 with the two Harmony 785s' six reads and the Harmony 515's two region reads, 225 with the spare Harmony
+  // One's region before a document was synced to it and after.
+  assert.equal(present.length, 225, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -456,8 +458,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 190 with the two bench Harmony 885s' configurations and regions, every one with a key table.
   // 206 with their 16 later registrations, every one with a key table.
   // 212 with the two Harmony 785s' six reads, every one with a key table; the Harmony 515's two region reads
-  // have none, arch 9 containers like the Harmony 525's.
-  assert.equal(complete, 212, 'the vectors whose container has a key table at all');
+  // have none, arch 9 containers like the Harmony 525's. 214 with the spare Harmony One's region before a
+  // document was synced to it and after, both with a key table.
+  assert.equal(complete, 214, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -520,7 +523,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // every file built on A's configuration, the composed device and its recomposition, composed, written and read back.
   // 166 with seven of the two Harmony 785s' and the Harmony 515's eight reads: unit B's configuration, the four
   // whole flash reads, which parse as the built in configuration below the user's, and the 515's two regions.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 166);
+  // 168 with the spare Harmony One's region before a document was synced to it and after, which declare none.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 168);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -611,8 +615,9 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 189 with the Harmony 515 from onyiaic as it came, 191 with both copies of its application image.
   // 199 with the two bench Harmony 885s' configurations and regions. 215 with their 16 later registrations:
   // the whole flash reads, the reads after each write, the files written and our compositions.
-  // 223 with the two Harmony 785s' six reads and the Harmony 515's two region reads.
-  assert.equal(python.length, 223, 'the golden vectors, which is what `make golden` prints');
+  // 223 with the two Harmony 785s' six reads and the Harmony 515's two region reads, 225 with the spare Harmony
+  // One's region before a document was synced to it and after.
+  assert.equal(python.length, 225, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

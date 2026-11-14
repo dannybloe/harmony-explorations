@@ -85,6 +85,13 @@ procedure on top of those.
    screen, that screen latches until the batteries come out on this model, and the `recovering-a-remote`
    skill is the next read. Both are in `reference/remotes/harmony-one/behaviour.md`, "After a write".
 
+**A document instead of a file**: `--document <recipe document>` in place of `--config <file>` checks and
+builds the document and writes it through `syncDocument`, with the same `--dump`, the same two flags and the
+same dry run without `--commit`; the built configuration and a journal land beside the document. A rerun after
+a write that stopped after its first erase is built at that run's moment, which the script takes from that
+run's journal. Its first run on the spare is `docs/test-notes/harmony-one.md`, "Four keys chosen in a
+document".
+
 When a write stops part way, rerun it with exactly the same arguments, and do not unplug the remote or
 take its battery out first.
 
@@ -100,7 +107,7 @@ The shape, the rules and the Flirc's firmware requirement are the `harmony-650` 
 things differ on a One: a screen command is touched rather than pressed, so an instruction names the row
 on the screen, and a screen command goes out after a click and usually after the device's delay between
 devices, so a monitor sees it later than the same command on a key, findings section 337. The One's
-runs are the four `one-*.json` in `packages/bench/irtests/done/`, listed in
+runs are the five `one-*.json` in `packages/bench/irtests/done/`, listed in
 `docs/test-notes/harmony-one.md`; this said `one-spare-activities.json` was the only one until
 `todo/done/todo-reference.md` 6.2.
 

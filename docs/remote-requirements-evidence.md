@@ -446,7 +446,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R31 Change what a key does in an activity: any command of its devices, a sequence, or nothing.
 
-* **Harmony One**, open, waiting on the FHSDK: A recipe cannot bind a key in an activity; the keypad comes only from the devices' roles.
+* **Harmony One**, open, waiting on the FHSDK: A sequence on a key is refused; a recipe gives an activity's key a command of one of its devices or nothing, built and heard on the spare.
 * **Harmony 600**, open, waiting on the FHSDK: A recipe cannot state a key binding in an activity; the keypad comes from roles only.
 * **Harmony 650**, open, waiting on the FHSDK: A recipe states no keypad binding for an activity; an edit can only repoint a key the activity already binds.
 * **Harmony 700**, open, waiting on the FHSDK: A recipe cannot override what a key does in an activity on this family.
@@ -462,7 +462,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R32 Change what a key does for a device in device mode, any device's command included, such as the receiver's volume in TV mode.
 
-* **Harmony One**, open, waiting on the FHSDK: A recipe cannot bind a key in device mode; the map comes only from the catalogue.
+* **Harmony One**, proven by `packages/codec/test/families/harmony-one/onerecipekeys.test.ts`, "three keys chosen, two activity keys and the television's volume up in device mode, are the only keys of every map that change, each sending the command named". Shown on a unit in `packages/bench/test/harmony-one/one-key-choices-runs.test.ts`, `docs/test-notes/harmony-one.md#four-keys-chosen-in-a-document`.
 * **Harmony 600**, open, waiting on the FHSDK: Device mode's map comes from the catalogue only; a recipe cannot change what a key sends there.
 * **Harmony 650**, open, waiting on the FHSDK: Nothing changes what a key sends in a device's own map.
 * **Harmony 700**, open, waiting on the FHSDK: A recipe cannot change a key or a screen button in device mode on this family.

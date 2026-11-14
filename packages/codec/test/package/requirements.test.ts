@@ -172,7 +172,7 @@ test('a checklist ticks what is proven, says what an open one waits on, marks wh
   // or the catalogue alone, renaming among them.
   for (const number of [9, 12, 20, 25, 57, 60, 68, 73, 74, 75]) assert.ok(!lines.some((line) => / R(\d+) /.exec(line)?.[1] === String(number)), `R${number}`);
   // Every box is one line under a subject.
-  assert.equal(lines.filter((line) => line.startsWith('- [x] ')).length, 12);
+  assert.equal(lines.filter((line) => line.startsWith('- [x] ')).length, 13);
 });
 
 test('a checklist keeps its header and the remote\'s own work as written, and refuses a file without its markers', () => {

@@ -53,7 +53,7 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
 [Plan 017](docs/plans/017-contracts-first.md), decision 38. R76 to R80. The outside an application builds on, fixed and shown working before the inside is complete; after it and chapter 3, FreeHarmony may be built.
 
 - [x] 2.1 The contracts written down: the functions of the document toolkit, the device search and the sync with its events, as types on the entries and held by the surface tests, each refusing by name where nothing is behind it yet
-- [ ] 2.2 The skeleton on the spare Harmony One: find a device in the catalogue, put it in a document, change what a key does in an activity and in device mode (R31, R32), check it, build it and sync it with events, through the contracts alone, and heard on the infrared monitor
+- [x] 2.2 The skeleton on the spare Harmony One: find a device in the catalogue, put it in a document, change what a key does in an activity and in device mode (R31, R32), check it, build it and sync it with events, through the contracts alone, and heard on the infrared monitor
 - [ ] 2.3 The same path on the Harmony Touch, the other kind of family, and whatever of the contracts does not fit it changed before anything is released
 - [ ] 2.4 A pretend remote an application reads and syncs against with nothing attached, its progress and its failures included (R80)
 - [ ] 2.5 What an application asks of the FHSDK that no contract covers, gone through against the requirements once the skeleton stands

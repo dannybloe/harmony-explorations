@@ -1511,6 +1511,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   one_spare_sync_base: '20261114T1507Z-one-spare-sync-base-region.bin',
   // And after it: the test setup with four keys chosen in a document, written by `syncDocument`.
   one_spare_sync_written: '20261114T1512Z-one-spare-sync-written-region.bin',
+  // The document that sync wrote, the bench run on it and the monitor's log of that session.
+  one_key_choices_document: 'work/sync-skeleton/one-skeleton.json',
+  one_key_choices_run: 'reads/20261114T151545Z-ir-test-spare-harmony-one-four-keys-chosen-in-a-document.json',
+  one_key_choices_monitor: 'reads/20261114T1513Z-ir-monitor.jsonl',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',

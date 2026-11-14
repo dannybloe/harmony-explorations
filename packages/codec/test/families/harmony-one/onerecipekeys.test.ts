@@ -49,6 +49,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { slow } from '@harmony/lab';
+import { proves } from '@harmony/testkit/proof';
 import '../../../src/support/resources.node.ts';
 import {
   activities, buildFromRecipe, builtDigest, type Container, deviceModeMaps, devices, keyCodes, parse, readRecipe, RecipeError,
@@ -190,6 +191,8 @@ test('three keys chosen, two activity keys and the television\'s volume up in de
   for (const [key, codes] of Object.entries(expected)) assert.ok(codes !== undefined && codes !== before.get(key), `${key} changes`);
   assert.deepEqual(differences(before, after), expected);
   assert.equal(Object.keys(differences(before, after)).length, 3);
+  // A device's own map sending another device's command, as built here and as heard on a unit.
+  proves(32, ['harmony-one'], ['packages/bench/test/harmony-one/one-key-choices-runs.test.ts', 'docs/test-notes/harmony-one.md#four-keys-chosen-in-a-document']);
 });
 
 test('a key chosen to do nothing is swallowed in an activity\'s map and in device mode\'s, and no other key changes', slow(), () => {

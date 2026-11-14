@@ -290,7 +290,41 @@ Never in this repository. Checksums are in `docs/checksums.md`: Logitech's 3.4 p
 safe mode configuration, and the internal `0xFE` page, read off two units and byte identical, so any One on
 3.4 reproduces it.
 
+### Four keys chosen in a document
+
+**A document written to the spare by the sync.** A document, the bench test setup opened through the recipe
+toolkit and given four key choices, went to the spare through `syncDocument`, by `write-config.ts --document`,
+a dry run first and then the write. The spare held a build of the same setup with no key chosen, read into
+the lab first as the compare base, `one_spare_sync_base`. A first try at that read stopped with no reply to
+its first command, the symptom of "The first command dropped after idling" above; it was seen in the session
+and no file records it, and the read filed is the second try. The sync built the configuration, wrote the
+three blocks that differed, `0x40000`, `0x70000` and `0x110000`, read the whole configuration back identical
+and restarted the remote; its journal reports no read retried. The region read after it,
+`one_spare_sync_written`, differs from the base in 22 bytes, and is the document's build at the journal's
+moment byte for byte.
+
+**The run**, `packages/bench/irtests/done/one-key-choices.json`, nine steps on the infrared monitor, the Flirc
+on firmware 4.10.7. A first run was stopped after its first step, the activity's start, and started again;
+the second is the one judged. In the activity TV kijken, Info sent the Denon's Info and Mute sent nothing; in
+the LG TV's device mode, Volume Up sent the Denon's VolumeUp and Volume Down the LG TV's own; in the Denon's
+device mode, Mute sent nothing; Volume Up sent the Denon's VolumeUp in the activity and in the Denon's device
+mode, where nobody had chosen otherwise. The person at the bench reported that the Mute key sent no infrared
+code. The monitor's log holds no line in either silent step. `packages/bench/test/harmony-one/one-key-choices-runs.test.ts` holds all of it, with the configuration
+the spare held before as its control.
+
+**Two of the bench's verdicts in that run say "heard 0 of 1", both in the activity's start, and both are the
+test definition's.** It expected the Denon's PowerOn by name, and the bench's book has no command name for
+that code under the device name Denon; and it expected the LG TV's input before the Denon's, where the remote
+sent the Denon's fourth, where the configuration's start lists it, and the LG TV's fifth, 10441 ms after the
+LG TV's power code. The definition is kept as it ran. The configuration's start lists four sends more, for
+the four devices the activity does not use, and none was heard; no cause was looked for.
+
+Off was left without an expectation and sent a power code of the LG TV, one of the Denon and one of the KPN
+box, in that order.
+
 ### Infrared bench runs
+
+`packages/bench/irtests/done/one-key-choices.json` is the run of the section above.
 
 `packages/bench/irtests/done/one-spare-activities.json` records what four activities and Off send on the spare
 One, with no prediction attached. The others in the same folder carry one: `one-1-3-composed-setup.json`,

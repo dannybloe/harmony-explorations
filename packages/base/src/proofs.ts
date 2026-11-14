@@ -457,6 +457,12 @@ export const PROOFS: readonly Proof[] = [
     bench: ["packages/bench/test/harmony-touch/touch-activity-runs.test.ts", "packages/bench/test/harmony-touch/touch-setup-runs.test.ts", "docs/test-notes/harmony-touch.md"],
   },
   {
+    requirement: 32, models: ["harmony-one"],
+    test: "packages/codec/test/families/harmony-one/onerecipekeys.test.ts",
+    title: "three keys chosen, two activity keys and the television's volume up in device mode, are the only keys of every map that change, each sending the command named",
+    bench: ["packages/bench/test/harmony-one/one-key-choices-runs.test.ts", "docs/test-notes/harmony-one.md#four-keys-chosen-in-a-document"],
+  },
+  {
     requirement: 33, models: ["harmony-700"],
     test: "packages/codec/test/families/harmony-600-650-700/devicemode.test.ts",
     title: "section 325: a catalogue device composed whole reads back as the compiler's device mode",

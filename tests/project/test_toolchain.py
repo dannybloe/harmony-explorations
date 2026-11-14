@@ -1693,8 +1693,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `dumps/bob deyoung/` and `dumps/atrugiel69/`, three contributed dumps on the Harmony 525's platform. 192 with
         # `dumps/max schnindler/`, a contributed Harmony 880 Pro. 193 with `work/harmony-hub/`, the Harmony Hub's first read.
         # 194 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled. 195 with
-        # `reference/ir-archive-sample/`, the files of the infrared archive the tests read, decision 42.
-        self.assertEqual(len(named), 195, "lab paths the register names")
+        # `reference/ir-archive-sample/`, the files of the infrared archive the tests read, decision 42. 196 with
+        # `work/sync-skeleton/`, the document synced to the spare Harmony One.
+        self.assertEqual(len(named), 196, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1815,9 +1816,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # and 163 with `work/harmony-785/`, and 166 with the three contributed dumps of the Harmony 525's platform.
         # 167 with `dumps/max schnindler/`, a contributed Harmony 880 Pro, and 168 with `work/harmony-hub/`,
         # and 169 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled,
-        # and 170 with `reference/ir-archive-sample/`, the infrared archive's sample, decision 42.
-        self.assertEqual(len(rows), 170)
-        self.assertEqual(len(dict(rows)), 170, 'a duplicated path would make a query ambiguous')
+        # and 170 with `reference/ir-archive-sample/`, the infrared archive's sample, decision 42,
+        # and 171 with `work/sync-skeleton/`, the document synced to the spare Harmony One.
+        self.assertEqual(len(rows), 171)
+        self.assertEqual(len(dict(rows)), 171, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

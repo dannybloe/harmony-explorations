@@ -9,7 +9,7 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 [the evidence](../docs/remote-requirements-evidence.md).
 
 <!-- checklist -->
-Open: 47, of which 27 its own or its family's work, 16 the FHSDK's work alone and 4 a run on a unit alone.
+Open: 46, of which 27 its own or its family's work, 15 the FHSDK's work alone and 4 a run on a unit alone.
 
 ## The whole configuration
 
@@ -48,7 +48,7 @@ Open: 47, of which 27 its own or its family's work, 16 the FHSDK's work alone an
 ## Keys and screens
 
 - [ ] R31 Change what a key does in an activity: any command of its devices, a sequence, or nothing. (waits on the FHSDK)
-- [ ] R32 Change what a key does for a device in device mode, any device's command included, such as the receiver's volume in TV mode. (waits on the FHSDK)
+- [x] R32 Change what a key does for a device in device mode, any device's command included, such as the receiver's volume in TV mode.
 - [ ] R33 Give a device its device mode map from the catalogue, every key and screen page, as Logitech's software would. (waits on a run on a unit)
 - [ ] R34 Put commands on an activity's screen, labelled and ordered, across pages. (waits on its family)
 - [ ] R35 Put commands on a device's screen pages in device mode. (waits on the FHSDK)

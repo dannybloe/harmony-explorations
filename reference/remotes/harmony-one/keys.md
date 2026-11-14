@@ -69,6 +69,14 @@ Generated from `packages/silhouettes/src/models/one.ts` by `make remote-referenc
 * **A held touch repeats like a held key**[^s337], which corrects an earlier reading that it did
   not[^s127]; [behaviour.md](behaviour.md).
 * **No long press**: Logitech's service declares none for this model[^t-long-press].
+* **A key does what its map binds it to, in an activity's map and in a device's own.** Bound to another
+  command of a device of the activity, an activity's key sent that command; bound to another device's command, a
+  key of a device's own map sent that other device's command; and bound to the entry that matches a key and runs
+  nothing, `00 00 00`, a key sent nothing, in an activity's map and in a device's own. That is four keys, in one
+  activity's map and two devices' own, each pressed short; one key beside them in each of the three maps was
+  heard sending what it did before[^t-one-key-choices]. The entry is
+  [modes and keys](../../config-format/modes-and-keys.md)'s. A held key, a key around the screen, a key bound to
+  a sequence and an activity's key bound to a device outside the activity were not part of that[^unchecked].
 * **Off held while the battery goes in enters safe mode**, announced in about five seconds[^s190];
   [firmware.md](firmware.md).
 
@@ -149,6 +157,7 @@ on the screen is [display.md](display.md#where-a-touch-lands-the-hit-map).
 [^s127b]: Measured on a unit. [Section 127](../../../docs/findings.md#s127)
 [^s337]: Read in the firmware. [Section 337](../../../docs/findings.md#s337)
 [^t-long-press]: Stated by Logitech, by their service. [The test](../../../packages/base/test/models.test.ts)
+[^t-one-key-choices]: Measured on a unit. [The test](../../../packages/bench/test/harmony-one/one-key-choices-runs.test.ts)
 [^s190]: Measured on a unit. [Section 190](../../../docs/findings.md#s190)
 [^s275]: Measured in configurations. [Section 275](../../../docs/findings.md#s275)
 [^s401]: Measured in configurations. [Section 401](../../../docs/findings.md#s401)
