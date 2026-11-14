@@ -95,6 +95,30 @@ export type RecipeKeyAction =
   | { readonly sequence: string }
   | { readonly nothing: true };
 
+/** One key a recipe chooses otherwise, and whose map it is in: a device's own, device mode's, or an activity's. */
+export interface StatedKey {
+  readonly owner: 'device' | 'activity';
+  /** The device's or the activity's name in the recipe. */
+  readonly name: string;
+  readonly key: RecipeKey;
+  /** Where it is, for a refusal: "the device LG TV's key on scan 3". */
+  readonly where: string;
+}
+
+/**
+ * Every key a recipe chooses otherwise, devices' first and then activities', each in the recipe's order. What a
+ * builder that does not build them asks, so that it refuses a recipe stating one rather than building without it.
+ */
+export function statedKeys(recipe: Recipe): StatedKey[] {
+  const place = (owner: StatedKey['owner'], name: string, key: RecipeKey): StatedKey => ({
+    owner, name, key, where: `the ${owner} ${name}'s key on scan ${key.scan}${key.press === 'held' ? ', held' : ''}`,
+  });
+  return [
+    ...recipe.devices.flatMap((one) => (one.keys ?? []).map((key) => place('device', one.name, key))),
+    ...recipe.activities.flatMap((one) => (one.keys ?? []).map((key) => place('activity', one.name, key))),
+  ];
+}
+
 /** A device key, `RecipeDevice.key`. */
 export interface RecipeDeviceKey {
   readonly place: number;

@@ -350,7 +350,8 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 decision 37, with the device search's contract beside it in
                                 src/catalogue/search.ts. Of the toolkit a fresh and an opened
                                 document, a device and an activity added, changed, moved and
-                                removed, a key's choice, the lists, a device's commands and
+                                removed, a key's choice, which the Harmony One's build takes up
+                                and every other model's refuses, the lists, a device's commands and
                                 inputs, what uses something and the check are built; every other
                                 function, and the
                                 search's source over the network, refuses by name, `NotBuiltError`

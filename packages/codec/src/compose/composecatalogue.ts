@@ -315,12 +315,7 @@ export function composeCatalogueDevice(
   // press: the reason a long press version exists is that the press is not enough for this device.
   // **Logitech's device mode does not**: it sends the plain press and none of the power transition's
   // records, on all thirteen devices section 331 compared. Kept as a choice of ours and named there.
-  const padList = (k: number): number => {
-    const name = wanted[k] as string;
-    if (power?.onCommands.includes(name) && device.powerSteps?.on !== undefined) return device.powerSteps.on;
-    if (power?.offCommands.includes(name) && device.powerSteps?.off !== undefined) return device.powerSteps.off;
-    return device.lists[k] as number;
-  };
+  const padList = (k: number): number => commandList(wanted[k] as string, k, power, device);
   const listOfName = (name: string): number | undefined => {
     const k = wanted.indexOf(name);
     return k < 0 ? undefined : padList(k);
@@ -355,6 +350,28 @@ export function composeCatalogueDevice(
     ...(joined === undefined ? {} : { joined }),
     screen,
   };
+}
+
+/**
+ * The list a composed command's pad and key run: the power action where the command is one of the catalogue's power
+ * commands and the device has one, and the command's own list otherwise, `k` being its place among the commands
+ * composed, which is its list's among the device's, `composeDevice`. One rule for the device's own map and screen,
+ * and for whatever else names the command, `composedCommandList`.
+ */
+function commandList(name: string, k: number, power: CataloguePower | undefined, device: ComposedDevice): number {
+  if (power?.onCommands.includes(name) && device.powerSteps?.on !== undefined) return device.powerSteps.on;
+  if (power?.offCommands.includes(name) && device.powerSteps?.off !== undefined) return device.powerSteps.off;
+  return device.lists[k] as number;
+}
+
+/**
+ * The list a key runs to send the catalogue command `name` of a device composed here, by the same rule its own device
+ * mode binds it by, `commandList`; undefined where the composition holds no command of that name. The list is numbered
+ * as the device was composed, so a caller that composed more since checks it still sends this device's codes.
+ */
+export function composedCommandList(composed: ComposedCatalogueDevice, name: string): number | undefined {
+  const k = composed.commandNames.indexOf(name);
+  return k < 0 ? undefined : commandList(name, k, composed.power, composed.device);
 }
 
 /** Options for several devices at once. */

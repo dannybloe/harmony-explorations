@@ -363,6 +363,22 @@ function limitsOf(model: RecipeModel): { readonly maxDevices: number | undefined
 }
 
 /**
+ * The keys a document of the model may choose otherwise, by scan code, as its family's builder states them,
+ * `Family.recipeKeys`; undefined where the family builds no key's choice yet, which is every family but the Harmony
+ * One's. One source for the change and the check, so neither takes a key the build then refuses. Refused as
+ * `limitsOf` refuses, for a model no family serves.
+ */
+function keyScansOf(model: RecipeModel): ReadonlySet<number> | undefined {
+  try {
+    const { family } = chooseByModel(model);
+    return family.kind === 'compiled' ? family.recipeKeys?.scans : undefined;
+  } catch (error) {
+    if (error instanceof NoFamilyError) throw new RecipeError(error.message);
+    throw error;
+  }
+}
+
+/**
  * The next id of a kind: its letter and one more than the highest number an id of that kind carries. Counted from
  * the document and nothing else, so the same change on the same document gives the same id, which is what lets a
  * test and an undo stack compare documents. An id is never taken from a name: a name changes.
@@ -776,6 +792,12 @@ export function setKey(document: Recipe, key: KeyPlace, action: KeyAction | 'def
   if (!Number.isInteger(key.scan) || key.scan < 0) throw new ChangeRefused('invalid', place, `${String(key.scan)} is no key's scan code`);
   let stated: RecipeKeyAction | undefined;
   if (action !== 'default') {
+    // The keys are the model's: a model whose builder takes no key's choice yet says so by name, as a function not
+    // built does, and a key the model's maps do not bind is refused here and not at the build. Giving a choice back
+    // is asked neither, so a document that holds one can always be put right.
+    const scans = keyScansOf(document.model);
+    if (scans === undefined) return notBuilt(`recipe.setKey for the ${document.model.name}`, 'device' in key.owner ? 32 : 31);
+    if (!scans.has(key.scan)) throw new ChangeRefused('unknown', place, `a ${document.model.name}'s maps bind no key of scan ${key.scan}`);
     if ('nothing' in action) {
       stated = { nothing: true };
     } else {
@@ -1071,10 +1093,18 @@ export function check(document: Recipe): Problem[] {
     }
   }
 
-  /** The problems of one owner's key choices: a device or a command that is not there, and what is not built. */
+  // The keys the model's builder takes a choice for; none where the model is one nothing builds, said above.
+  const scans = limits === undefined ? undefined : keyScansOf(document.model);
+
+  /** The problems of one owner's key choices: a key, a device or a command that is not there, and what is not built. */
   const checkKeys = (owner: Owner, keys: readonly RecipeKey[] | undefined, what: string): void => {
     for (const key of keys ?? []) {
       const place: Place = { kind: 'key', owner, scan: key.scan, ...(key.press === undefined ? {} : { press: key.press }) };
+      if (limits !== undefined && scans === undefined) {
+        say('error', 'not-on-this-model', place, `${what} chooses what key ${key.scan} does, which nothing builds for a ${document.model.name} yet`);
+      } else if (scans?.has(key.scan) === false) {
+        say('error', 'unknown-key', place, `${what} chooses what key ${key.scan} does, and a ${document.model.name}'s maps bind no such key`);
+      }
       if (key.press === 'held') say('error', 'not-on-this-model', place, `${what} gives key ${key.scan} a second command when held, which nothing builds yet`);
       if ('sequence' in key.action) {
         say('error', 'not-on-this-model', place, `${what} puts a sequence on key ${key.scan}, which nothing builds yet`);

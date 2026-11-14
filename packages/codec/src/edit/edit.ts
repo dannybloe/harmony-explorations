@@ -740,6 +740,41 @@ export function setPageListEntry(
   return out;
 }
 
+/**
+ * The entry of one mode record's **own** tagged list whose tag is `tag`, given another instruction: the map a mode
+ * holds for every page, device mode's keypad map among them, `reference/config-format/modes-and-keys.md`. A same
+ * length edit, since a tagged list's entry keeps its width, `taggedListExtent`, whatever instruction it holds.
+ *
+ * Unlike a page's list, the record's own list has no second copy, so one write is the whole edit and a `0x7F`, a
+ * base slot 10 list, is allowed. The entry is found by its tag and must be there once: an entry added would grow
+ * the list, which is a relocation and not this, and a tag the list states twice has an unreachable second entry,
+ * which a writer leaves alone rather than choosing between. `opcode` and `operand` both 0 is the swallow, the key
+ * matched and nothing run.
+ */
+export function setModeListEntry(
+  c: Container, mode: number, tag: number, entry: Pick<TaggedEntry, 'operand' | 'opcode'>,
+): Edit[] {
+  const record = (modeRecords(c) ?? [])[mode];
+  if (record === undefined) throw new EditError(`no mode ${mode}`);
+  // The same truncation rule as `setPageListEntry`: the bytes are assembled with `Uint8Array.from`.
+  for (const [name, value, max] of [['tag', tag, 0xff], ['operand', entry.operand, 0xffff], ['opcode', entry.opcode, 0xff]] as const) {
+    if (!Number.isInteger(value) || value < 0 || value > max) throw new EditError(`${name} ${value} is not in 0 to ${max}, and a write here truncates`);
+  }
+  const list = taggedList(c, record.start);
+  if (list === undefined) throw new EditError(`mode ${mode}'s own list does not read`);
+  const found = list.entries.flatMap((one, index) => (one.tag === tag ? [index] : []));
+  if (found.length !== 1) {
+    throw new EditError(`mode ${mode}'s own list states tag 0x${tag.toString(16)} ${found.length} times, and an edit in place needs it once`);
+  }
+  const index = found[0] as number;
+  const existing = list.entries[index] as TaggedEntry;
+  const stride = list.wide ? 5 : 4;
+  const at = list.start + (list.wide ? 2 : 1) + stride * index;
+  const bytes = list.wide ? [existing.flags as number, tag] : [tag];
+  bytes.push(entry.operand & 0xff, (entry.operand >>> 8) & 0xff, entry.opcode);
+  return [{ start: at, bytes: Uint8Array.from(bytes), owner: `mode ${mode} list ${index}` }];
+}
+
 
 /** Where a configuration's introduction tour starts and how it ends, as `introductionTour` found it. */
 export interface IntroductionTour {

@@ -226,6 +226,27 @@ export interface ActivityKeyEditor {
 }
 
 /**
+ * What a family needs to build a recipe's key choices, `Family.recipeKeys`, requirements R31 and R32. The shared
+ * composer, `composeSetupParts`, resolves each choice to a list of the configuration's, puts an activity's into the
+ * keypad map it composes, and asks this for the rest, which is the family's: the keys there are, and how a device
+ * mode's own map, already composed, takes another binding.
+ */
+export interface RecipeKeyBuilder {
+  /**
+   * The scan codes a recipe may choose a key by: the keypad's keys a device mode's map and an activity's map bind on
+   * this family's remotes. A scan outside it is refused, since a key the keypad does not have, or one a screen
+   * binds, would build an entry nothing presses or one that takes a screen's key away.
+   */
+  readonly scans: ReadonlySet<number>;
+  /**
+   * The configuration with device mode's own map for the device of `group` binding the press of `scan` to `list`, or
+   * to nothing where `list` is undefined; its bytes. Refuses a device with no device mode and a key its map does not
+   * state.
+   */
+  bindDeviceModeKey(c: Container, group: number, scan: number, list: number | undefined): Uint8Array;
+}
+
+/**
  * How a family's font sets are lettered in our letters, `withOxaniumFonts`: the shared font table measures each
  * of Logitech's sets the same way on every family and asks this which face of ours it becomes, whether two sets
  * may point at one glyph, and whether the family's faces were measured on the configuration's skin at all.
@@ -274,6 +295,13 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * 314. Absent on the Harmony One, which has none, so a composer asked to put an activity on one refuses.
    */
   readonly activityKeyEditor?: ActivityKeyEditor;
+  /**
+   * The keys a recipe chooses otherwise, `RecipeKey`, built for this family, requirements R31 and R32: which scans a
+   * recipe may name and how a device mode's own map is rebound. Absent where the family builds none yet, and then a
+   * recipe stating a key is refused rather than built without it, since an ignored choice gives a file the remote
+   * accepts and a key that does something else. The Harmony One has it, `families/harmony-one/recipekeys.ts`.
+   */
+  readonly recipeKeys?: RecipeKeyBuilder;
   /**
    * What `buildStateTables` builds this family's base slots 0, 13 and 14 from, and `describeStateTables` reads
    * them by: the Harmony 600, 650 and 700's, and the Harmony One's, whose tables differ in four values.

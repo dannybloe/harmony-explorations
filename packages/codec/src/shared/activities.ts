@@ -62,8 +62,13 @@ export interface ComposeActivity {
    */
   readonly label: string;
   readonly targets: readonly ComposeActivityTarget[];
-  /** The activity's keypad map: a scan code and the base slot 10 list its press runs. */
-  readonly keys?: readonly { readonly scan: number; readonly list: number }[];
+  /**
+   * The activity's keypad map: a scan code and the base slot 10 list its press runs, in the order written. A key with
+   * no list is swallowed: an entry of opcode and operand 0, which matches the key and runs nothing, so no map below
+   * the activity's sees it, `reference/config-format/modes-and-keys.md`; a key a recipe chooses to do nothing, R31,
+   * where a key left out of the map falls through to the maps below instead.
+   */
+  readonly keys?: readonly { readonly scan: number; readonly list: number | undefined }[];
   /**
    * What tag 2, the leave handler, runs. Omitted emits the **null instruction**, opcode 0 with
    * operand 0, which is what 21 of the corpus's 50 activities carry, all on arch 8 and arch 9.
@@ -298,7 +303,7 @@ export function composeActivityFor(
   const named: [string, number | undefined][] = [
     ['the leave handler', activity.leaveList],
     ['the resume handler', activity.resumeList],
-    ...(activity.keys ?? []).map((key): [string, number] => [`the key on scan ${key.scan}`, key.list]),
+    ...(activity.keys ?? []).map((key): [string, number | undefined] => [`the key on scan ${key.scan}`, key.list]),
   ];
   for (const [what, index] of named) {
     if (index === undefined) continue;
@@ -415,8 +420,8 @@ export function composeActivityFor(
     bound.add(key.scan);
     entries.push({
       tag: (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | key.scan,
-      operand: key.list,
-      opcode: ACTION_LIST_INDEX_OPCODE,
+      operand: key.list ?? 0,
+      opcode: key.list === undefined ? 0 : ACTION_LIST_INDEX_OPCODE,
     });
   }
   if (entries.length > 0xff) throw new ComposeError('a narrow tagged list states its count in a byte');

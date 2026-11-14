@@ -10,7 +10,7 @@ import {
 import type { TouchArea } from '../container/tables.ts';
 import { irGroups } from '../infrared/ir.ts';
 import { characterMap, type ScreenString, screenStrings } from '../screens/text.ts';
-import { type InfraredCode, infraredCodesPerList } from './devices.ts';
+import { devices, type InfraredCode, infraredCodesPerList } from './devices.ts';
 import { KEY_EVENT_SHIFT, SCAN_CODE_MASK } from './instructions.ts';
 import { panelPoint, touchPageOf } from './touch.ts';
 
@@ -129,6 +129,13 @@ export interface DeviceModeMap {
  *
  * A device with no infrared codes is absent, because a map that sends nothing cannot be found this
  * way; the Harmony 600 configuration has one such device.
+ *
+ * **Where that pick finds no mode, the device list's is taken**: the mode the device list's row for the device
+ * enters, `devices`, which is read off the row and the pages it reaches and never off a keypad map. A map of ours can
+ * send another device's command, R32's receiver volume in the television's device mode, and then the pick fails on
+ * the television, whose largest mode sends two devices, and on the receiver where the television's mode is the
+ * larger. The pick finds a mode for every group of the corpus that has codes, as above, so this reads none of
+ * Logitech's configurations otherwise; `test/families/harmony-one/onerecipekeys.test.ts` holds the case it is for.
  */
 export function deviceModeMaps(c: Container): DeviceModeMap[] {
   const codes = infraredCodesPerList(c);
@@ -166,6 +173,15 @@ export function deviceModeMaps(c: Container): DeviceModeMap[] {
     return { mode, keypad, screen, groups: groupsOf([...keypad, ...screen]) };
   });
 
+  // The device list's mode per group, read only where the pick fails, since it decodes the list's rows.
+  let listed: Map<number, number> | undefined;
+  const listedMode = (group: number): (typeof surveyed)[number] | undefined => {
+    listed ??= new Map(devices(c).flatMap((one) => (one.group === undefined || one.mode === undefined ? [] : [[one.group, one.mode] as const])));
+    const mode = listed.get(group);
+    const one = mode === undefined ? undefined : surveyed[mode];
+    return one !== undefined && one.keypad.length > 0 && one.groups.has(group) ? one : undefined;
+  };
+
   const out: DeviceModeMap[] = [];
   for (const group of irGroups(c)?.map((_, index) => index) ?? []) {
     // Only the modes that carry a keypad map are candidates. A screen only mode addressing this
@@ -175,9 +191,9 @@ export function deviceModeMaps(c: Container): DeviceModeMap[] {
     const size = (one: (typeof surveyed)[number]): number => one.keypad.length + one.screen.length;
     const largest = Math.max(...mine.map(size));
     const top = mine.filter((one) => size(one) === largest);
-    if (top.length !== 1) continue;
-    const found = top[0] as (typeof surveyed)[number];
-    if (found.groups.size !== 1) continue;
+    const picked = top.length === 1 && (top[0] as (typeof surveyed)[number]).groups.size === 1 ? top[0] : undefined;
+    const found = picked ?? listedMode(group);
+    if (found === undefined) continue;
     out.push({
       group,
       mode: found.mode,

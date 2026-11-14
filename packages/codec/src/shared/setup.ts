@@ -6,7 +6,9 @@
  * `assemble.ts` unchanged but for asking the family's choices where it read the four slot family's: the
  * activity keys and the delays.
  */
-import { type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget } from '../recipe/recipe.ts';
+import {
+  type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget, type StatedKey, statedKeys,
+} from '../recipe/recipe.ts';
 import { familyOf, sendsOf } from '../families/registry.ts';
 import { saveEdits } from '../edit/edit.ts';
 import { coverage } from '../container/coverage.ts';
@@ -19,7 +21,9 @@ import type { CommonChoices, ComposedDeviceNote, Family } from '../families/fami
 import { parse, type Container } from '../container/gspm.ts';
 import { layOutContainer, takeApart } from '../assembly/frame.ts';
 import { composedIntoBody, loosen, placePieces } from '../assembly/placer.ts';
-import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from '../inventory/inventory.ts';
+import {
+  activities, devices, deviceVariables, infraredCodesPerList, SEND_INFRARED, DEVICE_QUANTITY,
+} from '../inventory/inventory.ts';
 import {
   ComposeError, type ComposeRow, composeActivity, composeActivityMenuRow, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
@@ -29,7 +33,7 @@ import {
 } from '../compose/activityroles.ts';
 import {
   composeCatalogueDevices, composeDonorDeviceInfrared, composeDonorDeviceInputs, type ComposedCatalogueDevice,
-  type ComposedDonorInfrared,
+  type ComposedDonorInfrared, composedCommandList,
 } from '../compose/composecatalogue.ts';
 import { inputPlan, inputTarget, type ComposedInputs } from '../compose/inputs.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
@@ -131,6 +135,12 @@ export function composeSetupParts(
   /** The donor's or a composed device's label for a setup device, once it is in the container. */
   const labelOf = (name: string): string | undefined =>
     devices(c).find((one) => setupDeviceOf(one.name)?.name === name)?.name;
+
+  // 1a. The keys the recipe chooses otherwise, R31 and R32, checked before anything is composed: a family that builds
+  //     none refuses them, as does every choice no builder makes yet, rather than building a file whose key does
+  //     something else than the recipe says. What each command's list is can only be said once its device is composed.
+  const chosen = statedKeys(setup);
+  if (chosen.length > 0) checkStatedKeys(chosen, setup, parts.family, options.archive, labelOf, activities(c).map((one) => spoken(one.name)));
 
   // 1b. The donor's devices given the catalogue's infrared records, where the caller asks: before anything below
   //     reads a record, so the donor inputs' matching at 2b finds the composed ones.
@@ -239,13 +249,38 @@ export function composeSetupParts(
   }
   if (keptOn.length > 0) note('kept on', keptOn.join(', '));
 
+  /**
+   * The list a chosen key runs, or undefined for a key chosen to do nothing: the composed command's list, by the rule its
+   * own device mode binds it by, `composedCommandList`, checked against `at` to still send that device's codes and no
+   * other's, since it was numbered when its device was composed.
+   */
+  const listOfChoice = (one: StatedKey, at: Container): number | undefined => {
+    const { action } = one.key;
+    if ('nothing' in action) return undefined;
+    if (!('device' in action)) throw new AssemblyError(`${one.where} runs a sequence, which no key is built to yet`);
+    const composedDevice = composedDevices.get(action.device);
+    if (composedDevice === undefined) throw new AssemblyError(`${one.where} sends a command of ${action.device}, which is not composed here`);
+    const list = composedCommandList(composedDevice, action.command);
+    if (list === undefined) {
+      throw new AssemblyError(composedDevice.leftOut.includes(action.command)
+        ? `${one.where} sends ${action.command} of ${action.device}, whose code does not compose`
+        : `${one.where} sends ${action.command}, which ${action.device} was not composed with`);
+    }
+    const group = groupOfDevice(at, labelOf(action.device), action.device);
+    const sent = infraredCodesPerList(at).get(list) ?? [];
+    if (sent.length === 0 || sent.some((code) => code.group !== group)) {
+      throw new AssemblyError(`${one.where}: list ${list}, ${action.device}'s ${action.command}, no longer sends ${action.device}'s codes alone`);
+    }
+    return list;
+  };
+
   // 4. The setup's activities the donor lacks, in the setup's order: the start and the keypad from the
   //    roles, section 323, the inputs by their names, the working screen from the recipe, its
   //    sequences first, the menu row and the activity's own device list, `compose-activity.ts`'s route.
   for (const activity of setup.activities) {
     if (activities(c).some((one) => spoken(one.name) === activity.name)) continue;
     try {
-      c = composeSetupActivity(c, setup, activity, options, parts, labelOf, powerOf, composedDevices, donorInputs);
+      c = composeSetupActivity(c, setup, activity, options, parts, labelOf, powerOf, composedDevices, donorInputs, listOfChoice);
     } catch (error) {
       if (error instanceof ComposeError || error instanceof AssemblyError) {
         throw new AssemblyError(`composing ${activity.name}: ${error.message}`);
@@ -255,6 +290,23 @@ export function composeSetupParts(
     composed.activities.push(activity.name);
     note('activity composed', activity.name);
   }
+
+  // 5. Device mode's keys the recipe chooses otherwise, R32, after every activity: an activity's keypad map is built
+  //    from its devices' own maps, section 323, and a device's map and an activity's are two maps authored apart, so a
+  //    device's choice is no activity's; and after every device, since a device mode may send another device's command,
+  //    the receiver's volume in the television's. The family rebinds the composed map, `RecipeKeyBuilder`.
+  const deviceKeys = chosen.filter((one) => one.owner === 'device');
+  for (const one of deviceKeys) {
+    const builder = parts.family.recipeKeys as NonNullable<Family['recipeKeys']>;
+    try {
+      const group = groupOfDevice(c, labelOf(one.name), one.name);
+      c = parse(builder.bindDeviceModeKey(c, group, one.key.scan, listOfChoice(one, c)));
+    } catch (error) {
+      if (error instanceof ComposeError) throw new AssemblyError(`${one.where}: ${error.message}`);
+      throw error;
+    }
+  }
+  if (deviceKeys.length > 0) note('device mode keys chosen', deviceKeys.map((one) => one.where).join(', '));
   // The devices composed, as a builder on the composed path is told of them: each one's label read back off the
   // finished configuration, and the power type the catalogue stated, which the configuration does not say.
   const devicesComposed = composed.devices.map((name): ComposedDeviceNote => {
@@ -264,6 +316,42 @@ export function composeSetupParts(
     return { name, label, ...(power === undefined ? {} : { power }) };
   });
   return { container: c, composed, keptOn, devicesComposed, donorInfrared };
+}
+
+/**
+ * The keys a recipe chooses otherwise, checked before anything is composed, step 1a of `composeSetupParts`: refused by
+ * name where the family builds none, `Family.recipeKeys`, and where a choice is one no builder makes yet, a held press
+ * or a sequence on a key; where the key is none the family's maps bind; where the command is of a device the recipe
+ * does not hold, of a device the donor holds, whose commands nothing here names, or one the device's definition does
+ * not have; and where the activity is the donor's, which is not composed here and so takes no choice.
+ */
+function checkStatedKeys(
+  chosen: readonly StatedKey[], setup: Recipe, family: Family<any>, archive: CatalogueSource | undefined,
+  labelOf: (name: string) => string | undefined, donorActivities: readonly string[],
+): void {
+  const builder = family.recipeKeys;
+  if (builder === undefined) {
+    throw new AssemblyError(`nothing here builds a key a recipe chooses for ${family.name} yet, and the recipe chooses ${(chosen[0] as StatedKey).where}`);
+  }
+  for (const one of chosen) {
+    const { key, where } = one;
+    if (key.press === 'held') throw new AssemblyError(`${where}: a held press is not built yet`);
+    if ('sequence' in key.action) throw new AssemblyError(`${where} runs the sequence ${key.action.sequence}, and a sequence on a key is not built yet`);
+    if (!builder.scans.has(key.scan)) throw new AssemblyError(`${where}: scan ${key.scan} is no key ${family.name}'s maps bind`);
+    if (one.owner === 'activity' && donorActivities.includes(one.name)) {
+      throw new AssemblyError(`${where}: ${one.name} is the donor's activity, which is not composed here`);
+    }
+    if (!('device' in key.action)) continue;
+    const { device, command } = key.action;
+    const wanted = setup.devices.find((each) => each.name === device);
+    if (wanted === undefined) throw new AssemblyError(`${where} sends a command of ${device}, which is no device of the recipe`);
+    if (labelOf(device) !== undefined) throw new AssemblyError(`${where} sends a command of ${device}, the donor's device, whose commands nothing here names`);
+    if (archive === undefined) throw new AssemblyError(`${where} sends a command of ${device}, and naming its commands needs the catalogue's archive`);
+    const [slug, file] = wanted.device.split('/');
+    const codeset = archive.device(slug ?? '', file ?? '').codeset;
+    const names = codeset === undefined || codeset === null ? [] : archive.commands(codeset).map((each) => each.name);
+    if (!names.includes(command)) throw new AssemblyError(`${where} sends ${command}, which ${device}'s definition does not have`);
+  }
 }
 
 /** The group of the device a setup names, through its label in the container. */
@@ -286,6 +374,7 @@ function composeSetupActivity(
   c: Container, setup: Recipe, activity: RecipeActivity, options: AssembleOptions, parts: SetupParts,
   labelOf: (name: string) => string | undefined, powerOf: (name: string) => number | undefined,
   composedDevices: ReadonlyMap<string, ComposedCatalogueDevice>, donorInputs: ReadonlyMap<string, ComposedInputs>,
+  listOfChoice: (one: StatedKey, at: Container) => number | undefined,
 ): Container {
   // A family whose remotes have activity keys knows which a type takes; the Harmony One has none.
   if (parts.choices.activityKeys !== undefined && !(activity.type in parts.choices.activityKeys)) {
@@ -375,8 +464,24 @@ function composeSetupActivity(
   const key = parts.choices.activityKeys?.[activity.type];
   // The keys the screens need bound, which take the place of a role's on the same key.
   const screenKeys = screen.keys ?? [];
-  const allKeys = [...keys.filter((one) => !screenKeys.some((other) => other.scan === one.scan)), ...screenKeys];
-  const built = composeActivity(parse(screen.bytes), {
+  const derived = [...keys.filter((one) => !screenKeys.some((other) => other.scan === one.scan)), ...screenKeys];
+  // The keys the recipe chooses otherwise, R31, over the derived ones: a key bound already keeps its place in the map
+  // and runs the chosen list or, chosen to do nothing, is swallowed there, and one the roles left out is added after
+  // the rest.
+  // Resolved on the configuration the activity is composed onto, where every device is composed already.
+  const onScreen = parse(screen.bytes);
+  const choices = new Map<number, number | undefined>();
+  for (const one of statedKeys(setup).filter((each) => each.owner === 'activity' && each.name === activity.name)) {
+    if (screenKeys.some((other) => other.scan === one.key.scan)) {
+      throw new AssemblyError(`${one.where}: the activity's screens bind that key themselves`);
+    }
+    choices.set(one.key.scan, listOfChoice(one, onScreen));
+  }
+  const allKeys = [
+    ...derived.map((one) => (choices.has(one.scan) ? { scan: one.scan, list: choices.get(one.scan) } : one)),
+    ...[...choices].flatMap(([scan, list]) => (derived.some((one) => one.scan === scan) ? [] : [{ scan, list }])),
+  ];
+  const built = composeActivity(onScreen, {
     label: activity.name, targets, keys: allKeys,
     screen: {
       startupMode: screen.startupMode, workingMode: screen.mode, activity: screen.activity, activeList: screen.activeList,

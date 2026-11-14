@@ -337,9 +337,19 @@ test('a key\'s choice is refused for an owner, a device or a command the documen
     (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for a held press' && error.requirement === 38);
   assert.throws(() => recipe.setKey(document, key, { sequence: 's1' }),
     (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for a sequence' && error.requirement === 37);
+  // A key the model's maps do not bind: the Harmony One's Activities key, scan 34, which no map binds.
+  assert.deepEqual(refused(() => recipe.setKey(document, { ...key, scan: 34 }, { nothing: true })), ['unknown', { ...place, scan: 34 }]);
+  // A model whose builder takes no key's choice yet refuses by name, with the requirement of the map asked for,
+  // and gives a choice it holds back all the same.
+  const other = recipe.open({ ...least(), devices: [{ name: 'Television', device: 'Sony/KDL-32W705B', keys: [{ scan: 3, action: { nothing: true } }] }] });
+  assert.throws(() => recipe.setKey(other, { owner: { device: 'd1' }, scan: 3 }, { nothing: true }),
+    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for the Harmony 650' && error.requirement === 32);
+  assert.throws(() => recipe.setKey(other, { owner: { activity: 'a1' }, scan: 3 }, { nothing: true }),
+    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for the Harmony 650' && error.requirement === 31);
+  assert.equal('keys' in recipe.setKey(other, { owner: { device: 'd1' }, scan: 3 }, 'default').document.devices[0]!, false);
   // A device that carries no definition takes any command's name, since nothing here can say otherwise: the
   // build, which is given a catalogue, is where that one is refused.
-  const bare = recipe.open(least());
+  const bare = recipe.open({ ...least(), model: ONE });
   assert.deepEqual(recipe.setKey(bare, { owner: { device: 'd1' }, scan: 3 }, { device: 'd1', command: 'Dance' }).document.devices[0]!.keys,
     [{ scan: 3, action: { device: 'Television', command: 'Dance' } }]);
 });
@@ -379,6 +389,20 @@ test('the check lists every problem with its place and code, and a document with
   // The same in a device's own map.
   assert.deepEqual(codes(damaged((json) => { json.devices[1]!['keys'] = [{ scan: 3, action: { device: 'Television', command: 'Dance' } }]; })),
     [['error', 'unknown-command', { kind: 'key', owner: { device: 'd2' }, scan: 3 }]]);
+  // A key the model's maps do not bind, the Harmony One's Activities key, in either map.
+  assert.deepEqual(codes(damaged((json) => { json.devices[0]!['keys'] = [{ scan: 34, action: { nothing: true } }]; json.activities[0]!['keys'] = [{ scan: 41, action: { nothing: true } }]; })), [
+    ['error', 'unknown-key', { kind: 'key', owner: { device: 'd1' }, scan: 34 }],
+    ['error', 'unknown-key', { kind: 'key', owner: { activity: 'a1' }, scan: 41 }],
+  ]);
+  // A key's choice on a model whose builder takes none yet: the same file for a Harmony 650, and its control,
+  // the same file without the choice, which lists nothing.
+  const onA650 = (keys: boolean): [string, string, unknown][] => codes(recipe.open({
+    model: { name: 'Harmony 650' },
+    devices: [{ name: 'Television', device: 'Made/TV', definition: carried('Made/TV').definition, ...(keys ? { keys: [{ scan: 3, action: { nothing: true } }] } : {}) }],
+    activities: [],
+  }));
+  assert.deepEqual(onA650(true), [['error', 'not-on-this-model', { kind: 'key', owner: { device: 'd1' }, scan: 3 }]]);
+  assert.deepEqual(onA650(false), []);
   // Two devices and two activities under one name: the later one of each is the problem.
   assert.deepEqual(codes(damaged((json) => { json.devices[1]!['name'] = 'Television'; (json.activities[0]!['devices'] as Json[])[1]!['device'] = 'Television'; json.activities[0]!['devices'] = [(json.activities[0]!['devices'] as Json[])[0]]; })),
     [['error', 'name-taken', { kind: 'device', device: 'd2' }]]);

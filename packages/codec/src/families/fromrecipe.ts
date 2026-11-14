@@ -20,7 +20,7 @@
  */
 import { carriedCatalogue } from '../catalogue/carried.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
-import { readRecipe, RecipeError } from '../recipe/recipe.ts';
+import { readRecipe, RecipeError, statedKeys } from '../recipe/recipe.ts';
 import { resource } from '../support/resources.ts';
 import type { SyncDocuments } from './harmony-touch/documents.ts';
 import type { OwnPicture } from './harmony-touch/favourites.ts';
@@ -66,6 +66,13 @@ export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
   const { family, skin } = choice;
   if (family.kind === 'compiled' && family.fromRecipe === undefined) throw new RecipeError(`nothing here builds ${family.name} from a recipe yet`);
   const recipe = readRecipe(json);
+  // A key the recipe chooses otherwise, R31 and R32, is built by a family that states how, `Family.recipeKeys`, and
+  // refused by every other before anything is built: a file built without the choice is one the remote accepts and
+  // whose key does something else. The Harmony Touch's keys are its own part's, which its family reads.
+  const chosen = statedKeys(recipe)[0];
+  if (chosen !== undefined && (family.kind === 'document' || family.recipeKeys === undefined)) {
+    throw new RecipeError(`nothing here builds a key a recipe chooses for ${family.kind === 'document' ? `the ${model.name}` : family.name} yet, and the recipe chooses ${chosen.where}`);
+  }
   // The devices the recipe carries, over the archive given, `catalogue/carried.ts`.
   const archive = carriedCatalogue(recipe, sources.archive);
   if (family.kind === 'document') {

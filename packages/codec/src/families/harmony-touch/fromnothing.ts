@@ -67,7 +67,7 @@
  */
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
 import { encodePng } from '../../screens/png.ts';
-import { readRecipe, type Recipe, type RecipeActivity } from '../../recipe/recipe.ts';
+import { readRecipe, type Recipe, type RecipeActivity, statedKeys } from '../../recipe/recipe.ts';
 import { resource } from '../../support/resources.ts';
 import { deviceRecordOfArchive } from './archivedevice.ts';
 import {
@@ -151,6 +151,10 @@ export function readTouchSetupFile(json: unknown): TouchSetupFile {
   const recipe = readRecipe(json);
   if (recipe.model.name !== HARMONY_TOUCH_MODEL) refuse(`the setup file is for the ${recipe.model.name}, not the ${HARMONY_TOUCH_MODEL}`);
   if (recipe.favourites !== undefined) refuse('the setup file states favourite channels, which nothing here composes: the favourites documents stay the remote\'s');
+  // The recipe's key choices, R31 and R32, are not what a Touch's buttons are built from, its own part is; refused
+  // rather than left unread, since a file built without them has keys doing something else than the recipe says.
+  const chosen = statedKeys(recipe)[0];
+  if (chosen !== undefined) refuse(`the setup file chooses ${chosen.where}, and a Harmony Touch's keys are built from its own part`);
   const t = recipe.touch;
   if (t === undefined) refuse('the setup file has no Touch\'s part, `touch`');
   const part = t as Json;

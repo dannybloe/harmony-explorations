@@ -20,6 +20,7 @@ import { withOneActivityMenuRow } from './activitymenu.ts';
 import { withOneActivityDeviceList } from './devicelists.ts';
 import { oneMenuMarkerWriter } from './menus.ts';
 import { oneFromRecipe } from './fromrecipe.ts';
+import { ONE_RECIPE_KEYS } from './recipekeys.ts';
 
 export const ONE: Family<OneChoices> = {
   kind: 'compiled',
@@ -30,6 +31,8 @@ export const ONE: Family<OneChoices> = {
   drawsName: oneDrawsName,
   activityKeyRules: ONE_ACTIVITY_KEYS,
   deviceModeKeys: ONE_HARD_KEYS,
+  // A recipe's key choices, R31 and R32: an activity's through the shared composer, device mode's rebound in place.
+  recipeKeys: ONE_RECIPE_KEYS,
   stateTables: ONE_STATE_TABLES,
   fonts: ONE_FONTS,
   sends: ONE_SENDS,

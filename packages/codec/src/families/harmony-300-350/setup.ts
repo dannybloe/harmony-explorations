@@ -52,7 +52,7 @@
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
 import { type Container, parse } from '../../container/gspm.ts';
 import { devices } from '../../inventory/inventory.ts';
-import type { Recipe } from '../../recipe/recipe.ts';
+import { type Recipe, statedKeys } from '../../recipe/recipe.ts';
 import { ComposeError, nameOfLabel } from '../../shared/core.ts';
 import { type ComposedNoScreenActivity, composeNoScreenActivity, type NoScreenActivityDevice, WATCH_TV_SCAN } from './activity.ts';
 import { composeNoScreenDevice, keyMaps, PRESS } from './devices.ts';
@@ -114,6 +114,10 @@ function entryOf(device: string): { manufacturer: string; model: string } {
 /** Compose a whole setup onto a Harmony 350 configuration. Restamped, by the last composer that ran. */
 export function composeNoScreenSetup(c: Container, archive: CatalogueSource, request: NoScreenSetupRequest): ComposedNoScreenSetup {
   const { recipe, keys } = request;
+  // A key the recipe chooses otherwise, R31 and R32, is not built on these remotes yet, and a file built without it
+  // would leave the key doing what the builders give it, so the recipe is refused rather than built.
+  const chosen = statedKeys(recipe)[0];
+  if (chosen !== undefined) throw new ComposeError(`the Harmony 300 and 350 build no key a recipe chooses yet, and the recipe chooses ${chosen.where}`);
   const skin = (c.versionWord ?? -1) & 0xff;
   if (recipe.model.skin !== undefined && recipe.model.skin !== skin) {
     throw new ComposeError(`the setup is for skin ${recipe.model.skin} and the configuration is skin ${skin}`);
