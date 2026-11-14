@@ -175,7 +175,10 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // Harmony 515's configuration region read twice, 1073 with a contributed Harmony 880 Pro's key dump, 1075 with the
   // spare Harmony One's region before a document was first synced to it and after, 1078 with that document, the
   // bench run on it and the monitor's log, 1079 with the bench Touch's power source as first read.
-  assert.equal(Object.keys(pythonImages()).length, 1079, 'every fixture tests/lab.py names');
+  // 1105 with the 26 files of the test setup's recipe synced to the bench Touch through `syncDocument`: the document,
+  // the set its build kept, the journals of the dry run and the commit, the three config hash reads, and the committed
+  // sync of eight request lists with the replies to its kept write and its picture list's write.
+  assert.equal(Object.keys(pythonImages()).length, 1105, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

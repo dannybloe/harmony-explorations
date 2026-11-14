@@ -7,8 +7,8 @@ something was Logitech's own client, which fetched each answer from Logitech's s
 Logitech's would have to produce to answer a sync itself.
 
 **Everything here is read in the remote's firmware, production build 4.15.330, and measured in recorded
-syncs of Logitech's client; the preview build's engine was not read for this page. Thirty four syncs answered by a
-program of this project have run on one remote, thirty two of them committed**; what they measured is marked where
+syncs of Logitech's client; the preview build's engine was not read for this page. Thirty five syncs answered by a
+program of this project have run on one remote, thirty three of them committed**; what they measured is marked where
 it stands, and the rest of the rules below are what the firmware does with an answer, not what a remote was seen to
 do with one of ours. Where a rule has only been seen to hold for Logitech's own answers, the page says so. The test
 behind the firmware footnotes asserts, function by function, the names and constants each rule rests on; the order
@@ -34,6 +34,7 @@ or the finish and was committed; what each listed one delivered with 200 is:
 | twenty sixth and twenty seventh | the same four composed whole by this project, every device and activity under an id of ours, and the remote's own put back | committed and acted on[^t-touch-setup-of-ours] |
 | twenty ninth and thirtieth | the same four with every list empty, and the remote's own four put back with its three favourites documents | committed[^t-touch-empty] |
 | thirty second and thirty third | all six documents and two pictures written by this project from nothing, and the remote's own six put back | committed and acted on[^t-touch-from-nothing] |
+| thirty fifth | the same six built again, from a recipe; its two pictures answered 304, the remote still holding them | committed[^t-touch-document-sync] |
 
 ## A sync, end to end
 
@@ -481,7 +482,10 @@ eight lists and was committed, its configuration hash then the new set's, all fo
 and ended every activity as the set states, [built from nothing](devices-and-infrared.md#built-from-nothing). A second
 sync put the remote's own six back with 200 in 19 chunks, the pictures 304, and was committed, its first list asking
 for all six with the tags of ours; the remote's own backgrounds were asked for with the tags it had held before, so
-they had been carried across[^t-touch-from-nothing].
+they had been carried across[^t-touch-from-nothing]. A later sync delivered the same six again, after
+that put back and a sync that changed nothing, and the remote asked for the background of ours and its twin with the
+tags of ours, so both were answered 304 and not sent again, seven answers of 200 where the first delivery had
+nine[^t-touch-document-sync]; that is the carrying of [what a commit keeps](#the-smallest-set-of-documents) below.
 
 ## The smallest set of documents
 
@@ -508,7 +512,10 @@ no activity makes them ask for none**, so by the reading every favourites docume
 commit[^t-touch-empty-reading]. **Pictures are carried by any picture request**: before the screens ask for a picture
 they copy every stored one into the gathered set, and with no picture asked they copy none[^t-touch-empty-reading].
 Measured: after the empty set, which asked for two pictures, the next sync asked for every stored picture with the tag
-the remote held it with, so all ten were carried[^t-touch-empty]. **The drop of the favourites documents is not
+the remote held it with, so all ten were carried[^t-touch-empty]; and a background of ours and its twin, delivered
+in one sync, were asked for by the tags they were delivered under three syncs on, after two committed sets that did
+not name them and that each asked for ten other pictures[^t-touch-document-sync]. What the screens then showed was not
+looked at. **The drop of the favourites documents is not
 measured**: a favourites document is asked for without a tag whether the remote holds it or not, so a put back after a
 set with no favourites activity has to deliver them with 200, as the one measured did[^t-touch-empty][^unchecked].
 
@@ -654,8 +661,8 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 ## Not checked
 
 * Everything here is one firmware build and, for the measured side, the three syncs recorded by Logitech's
-  client and thirty four answered by this project, two stopped, the first at the favourites and the twenty second
-  on a USB read timeout inside its first write of answers, and the other thirty two
+  client and thirty five answered by this project, two stopped, the first at the favourites and the twenty second
+  on a USB read timeout inside its first write of answers, and the other thirty three
   committed. The syncs of ours that delivered documents with 200 delivered the remote's own six, or one of them
   with one value changed, or three with a device of ours added or taken out, or two with an activity of ours added
   or taken out, or the user's favourites document and one picture at an address the remote held, or the settings
@@ -721,6 +728,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-removal-firmware]: Read in the firmware. [The test](../../../packages/codec/test/families/harmony-touch/touch-removal.test.ts)
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-setup-runs.test.ts)
 [^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-empty-runs.test.ts)
+[^t-touch-document-sync]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-document-sync-runs.test.ts)
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)
 [^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/families/harmony-touch/touch-empty.test.ts)
 [^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_empty_screens.py)

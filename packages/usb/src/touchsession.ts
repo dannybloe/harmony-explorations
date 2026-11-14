@@ -50,7 +50,7 @@
  * requests of the recovery tier, behind `HARMONY_TOUCH_RECOVERY`, for the same reason.
  *
  * This said "Nothing in this file has been sent to a remote" until the provisioning read and `getconfighash`
- * went to the bench Touch; every request here has been sent since, through thirty four syncs and the recovery
+ * went to the bench Touch; every request here has been sent since, through thirty five syncs and the recovery
  * tier's abort and restart, `docs/test-notes/harmony-touch.md`.
  */
 import { authoriseReport } from './authorise.ts';

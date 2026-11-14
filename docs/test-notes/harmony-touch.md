@@ -819,24 +819,44 @@ it `todo-touch.md`.
 
 ## A document synced through the function an application calls
 
-**Run on 14 November 2026**, after commit `de41ff78`, with nobody at the bench. The test setup's document, the
+**Run on 14 November 2026**, the committed run on commit `de41ff78` and the dry run and the first hash read before
+it on the working tree that route was built in, with nobody at the bench, which is a person's word and no file's. The test setup's document, the
 recipe `packages/corpus/setups/touch-test.json` copied into the lab, went to the unit through `syncDocument`, by
 `touch-sync.ts --document`, the account's description the lab's own from 9.1. In order, each read before the next:
 
 | what | result |
 |---|---|
 | `touch-sync.ts --document`, no `--commit` | the Touch found by enumeration, the document checked and built, 6 documents and 2 pictures, a set of 8 answers the gate passes, ended as a dry run with nothing opened |
-| `getconfighash` | 200, the hash of 9.4's put back, `reads/20261114T1952Z-touch-confighash` |
-| `touch-sync.ts --document --commit` | the events in order: identify, check, build, the warning to leave the cable, hand-over, write, safe to unplug, written. The hand over handed up nothing, one list answered. The sync handed out eight request lists and 20 answers were written: the six documents in one write of 381470 characters, two lists empty, three of one answer each, one of ten, and the finish. `reads/20261114T1952Z-touch-sync-document`, the set kept beside the document |
+| `getconfighash` | 200, the four tags of the remote's own documents, which 9.4's put back and every put back of them before it share, `reads/20261114T1914Z-touch-confighash` |
+| `getconfighash` | 200, the same, `reads/20261114T1952Z-touch-confighash` |
+| `touch-sync.ts --document --commit` | the events in order: identify, check, build, hand-over, write, written, by the journal; the warning to leave the cable before the hand over and the word that it is safe to unplug after the write went to the terminal alone, their place being the code's. The hand over handed up nothing, one list answered. The sync handed out eight request lists and 20 answers were written: the six documents in one write of 381470 characters, two lists empty, three of one answer each, one of ten, and the finish. `reads/20261114T1952Z-touch-sync-document`, the set kept beside the document |
 | `getconfighash` | 200, the four tags of the set delivered, `reads/20261114T1953Z-touch-confighash` |
 
-The set delivered is 9.1's from-nothing set tag for tag, all eight answers, so the document's route builds what
-9.4 ran and heard.
+The phases are in the journal beside the document; the two warnings, to leave the cable and that it is safe to
+unplug, went only to the script's terminal, so no file holds them. Neither journal has a power source line: the run was
+made before the answerer read the power source.
+
+The set the build kept is 9.1's from-nothing set byte for byte, all eight answers, and the lab's document is
+`packages/corpus/setups/touch-test.json` byte for byte. Built again from the document through `buildFromRecipe` and
+`touchSetOf` with the account's addresses and the lab's sample of the infrared archive, it gives that set answer for
+answer and tag for tag. *Corrected:* this said the set was delivered tag for tag, all eight answers. **Six were
+delivered**: the remote asked for our background and its twin with the set's own tags, so both were answered 304 and
+sent nothing; the 200s were the six documents and the finish, 7 against 13 answered 304. 9.4's forward run had asked
+for the two untagged and taken them 200; 9.4's put back and closing run asked for the person's backgrounds and not for
+ours, so the remote still asked for our two pictures by their tags after two committed sets that did not name them. Every other answer of the
+run is 9.4's forward run's, and every request list but the picture list is that run's entry for entry. So the document's
+route sent what 9.4 ran and heard, but for the two pictures the remote still held.
 
 **What was not seen.** Nobody looked at the remote. That it was on Off was said from memory, Off having been
 the last key pressed; which screen it showed, its USB screen or Charging, is not known, and it answered the
 hand over and the sync. Nothing was heard on the infrared monitor. The unit was left on this set, for a run of
 the 7.1 tests on it, and not put back.
+
+**The infrared half, not run.** The 7.1 tests on the monitor with the unit on this set have not been run. Until they
+are, that the remote plays this set rests on 9.4's 38 of 38 on a set equal to it, not on this run. When they are run,
+their result and the test that holds it go here.
+
+The run is held by `packages/corpus/test/touch/touch-document-sync-runs.test.ts`.
 
 ## The power source, read before a sync
 

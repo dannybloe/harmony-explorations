@@ -253,7 +253,7 @@ What must never be part of that route:
 **Read before any write to a Harmony Touch, and before anything near its reset or restart.** The Touch
 reports 17 for its architecture and Logitech's templates file it under 18; say "the Harmony Touch".
 Everything here is read, in the production firmware 4.15.330 and in Logitech's two clients, and **little of
-it has been run on a unit**: thirty four syncs of ours have run on the bench Touch, the first stopped mid sync and
+it has been run on a unit**: thirty five syncs of ours have run on the bench Touch, the first stopped mid sync and
 cleared by the abort and the restart below, the second committed with every answer a 304 or the finish, the third
 committed with the remote's own six documents delivered with 200 under tags of ours, the fourth answered 304
 against those tags, the next four each delivered one document with one value changed or put back and were
@@ -271,8 +271,8 @@ on, the twenty eighth answered 304 again, the next two delivered the empty confi
 put the remote's own back with its three favourites documents, both committed, the remote restarted by hand in
 between and starting on the empty set, the thirty first answered 304 again, the next two delivered a set built from
 nothing, all six documents and a background written by us with no Logitech document as input, a 13 chunk write, and
-put the remote's own six back, a 19 chunk write, both committed and acted on, and the thirty fourth answered 304
-again; the remote now holds tags of ours for all six documents, which matters to step 7 below; the delete has never been sent, and the only other
+put the remote's own six back, a 19 chunk write, both committed and acted on, the thirty fourth answered 304
+again, and the thirty fifth delivered that set built from nothing again from its recipe, committed; the remote now holds tags of ours for all six documents, which matters to step 7 below; the delete has never been sent, and the only other
 recovery a Touch has been through was Logitech's hidden recovery tool, `docs/test-notes/harmony-touch.md`. The facts are
 `reference/architectures/harmony-touch/firmware.md` "Recovery", the argument is the header of
 `tests/harmony_touch/test_harmony_touch_recovery.py`, and the working note with every file and line is the lab's

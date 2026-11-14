@@ -1324,7 +1324,10 @@ node packages/corpus/bin/touch-sync.ts --document <lab file> --account <lab file
                        application calls, as `write-config.ts --document` does for the Harmony One: built
                        with the account's description from the lab, made into a set at its addresses,
                        the journal and the set built kept beside the document, the run in `reads/`;
-                       without `--commit` it enumerates the Touch and opens nothing. Unrun on a remote.
+                       without `--commit` it opens the Touch for two reads, its identity file and its
+                       power source, and refuses on any source but `usb`, as a commit does. Run once on
+                       the bench Touch and committed,
+                       `packages/corpus/test/touch/touch-document-sync-runs.test.ts`.
 node packages/bench/bin/touch-tests.ts [--write]
                        derive `todo/done/todo-touch.md` 7.1's bench tests for the Harmony Touch from the set
                        the bench unit holds and the recorded favourites, through the engine model

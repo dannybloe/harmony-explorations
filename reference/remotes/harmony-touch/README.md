@@ -12,9 +12,9 @@ it, its identity and a radio query, and nothing else answers without the named d
 its own the transport may open for reading, its power source, which the library's answerer reads before a sync, refusing unless the
 remote is on USB power from a computer's port, [usb.md](usb.md#what-this-library-does-with-a-touch); that name's
 open is a plain read by its firmware, and a unit on `usb` answered that name and a line feed[^t-touch-power-read][^t-touch-power-unit]. Requests to its
-software go through a rail of their own, which answers a sync in place of Logitech's server: thirty four syncs
-of this project have run on one unit and thirty two were committed, [answering a
-sync](../../architectures/harmony-touch/answering-a-sync.md)[^d29][^t-touch-from-nothing]. Its configuration
+software go through a rail of their own, which answers a sync in place of Logitech's server: thirty five syncs
+of this project have run on one unit and thirty three were committed, [answering a
+sync](../../architectures/harmony-touch/answering-a-sync.md)[^d29][^t-touch-document-sync]. Its configuration
 is not reachable as a file[^s200], and Logitech's service does not compile one for it[^s202]: it is a set of
 documents a sync delivers, [the platform's pages](../../architectures/harmony-touch/README.md#the-files). So the
 facts below are Logitech's, from the manual, the service and the client, read in its firmware image, or measured
@@ -104,4 +104,4 @@ checked**[^unchecked].
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_host_client.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-second-sync.test.ts)
-[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)
+[^t-touch-document-sync]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-document-sync-runs.test.ts)

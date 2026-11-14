@@ -88,8 +88,8 @@ user configuration commented out[^s198].
 there was nothing left to read without it<!--superseded--> with two files read, until the power source's open was read
 in the firmware. What the remote asks for during
 a sync goes through `/sys/hlapi`, which is not on `INERT_PATHS`, so the library reaches it only through the
-request rail above, writing a request line and reading its answer[^d29]; that rail has answered thirty four
-syncs on one unit, [answering a sync](../../architectures/harmony-touch/answering-a-sync.md)[^t-touch-from-nothing].
+request rail above, writing a request line and reading its answer[^d29]; that rail has answered thirty five
+syncs on one unit, [answering a sync](../../architectures/harmony-touch/answering-a-sync.md)[^t-touch-document-sync].
 This said the library "opened it once, behind the named door,
 to learn its size, and has never read it"<!--superseded-->, until the rail's first reads.
 
@@ -116,4 +116,4 @@ to learn its size, and has never read it"<!--superseded-->, until the rail's fir
 [^t-touch-serial]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_serial.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^t-touch-session]: Measured on a unit. [The test](../../../packages/usb/test/touch/touchsession.test.ts)
-[^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)
+[^t-touch-document-sync]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-document-sync-runs.test.ts)
