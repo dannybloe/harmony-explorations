@@ -19,17 +19,18 @@ const MANIFEST = new URL('../../package.json', import.meta.url);
 /** The write subpath: the names that exist at run time. */
 const WRITE_VALUES = [
   'CONFIG_WRITE_MODELS', 'CONFIG_WRITE_UNITS', 'ConfigWriteRefusal', 'RECOVERY', 'SYNC_LINES', 'TOUCH_SYNC_UNITS',
-  'answerTouchSync', 'assertTouchSyncAllowed', 'prepareSet', 'writeConfiguration',
+  'answerTouchSync', 'assertTouchSyncAllowed', 'prepareSet', 'pretendRemote', 'syncDocument', 'writeConfiguration',
 ];
 
 /** The write subpath: the types and interfaces, which only the source shows. */
 const WRITE_TYPES = [
   'ConfigWrite', 'ConfigWriteModel', 'ConfigWriteModelName', 'ConfigWriteResult', 'ConfigWriteStamp',
-  'ConfigWriteUnit', 'ConfigWriteUnitLabel', 'SetAnswer', 'TouchSet', 'TouchSyncMode', 'TouchSyncOutcome', 'TouchSyncRun', 'UnitRecords',
+  'ConfigWriteUnit', 'ConfigWriteUnitLabel', 'PretendOptions', 'PretendRemote', 'SetAnswer', 'SyncAttention', 'SyncEvent',
+  'SyncOutcome', 'SyncPhase', 'SyncRemote', 'SyncRequest', 'TouchSet', 'TouchSyncMode', 'TouchSyncOutcome', 'TouchSyncRun', 'UnitRecords',
 ];
 
-/** The two functions that write to a remote, which no entry but the write subpath may offer. */
-const WRITERS = ['writeConfiguration', 'answerTouchSync'];
+/** The functions that write to a remote, which no entry but the write subpath may offer. */
+const WRITERS = ['writeConfiguration', 'answerTouchSync', 'syncDocument'];
 
 test('the write subpath exports exactly its list, by explicit names', async () => {
   const names = entryNames(WRITE);
@@ -39,7 +40,7 @@ test('the write subpath exports exactly its list, by explicit names', async () =
   assert.deepEqual(Object.keys(await import(WRITE.href)).sort(), WRITE_VALUES);
 });
 
-test('the two write functions are on the write subpath and on no other entry', async () => {
+test('the write functions are on the write subpath and on no other entry', async () => {
   const exports = (JSON.parse(readFileSync(MANIFEST, 'utf8')) as { exports: Record<string, string> }).exports;
   assert.equal(exports['./write'], './src/write.ts');
   for (const [subpath, file] of Object.entries(exports)) {

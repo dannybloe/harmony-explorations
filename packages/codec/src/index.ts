@@ -100,7 +100,7 @@ export type { Edit, EditReport, IntroductionTour } from './edit/edit.ts';
 // Building: the recipe a build starts from, and the family that builds for a model, of either kind, or the
 // refusal naming it, plan 013 decisions 1 and 2. The composers and the builders of a compiled family's container
 // are `./build`.
-export { readRecipe, recipeTarget, RecipeError } from './recipe/recipe.ts';
+export { readRecipe, recipeTarget, RecipeError, RECIPE_VERSION } from './recipe/recipe.ts';
 // **The one build an application makes**, plan 014: a recipe in, the configuration or the documents a remote is
 // sent out, the family chosen by the recipe's model.
 export { buildFromRecipe, builtDigest, unstatedChoices } from './families/fromrecipe.ts';
@@ -117,6 +117,17 @@ export type {
   RecipeSequenceStep,
   RecipeTarget,
 } from './recipe/recipe.ts';
+// **The document toolkit**, decision 37: everything an application does to one remote's setup, as functions on the
+// recipe that each return a new one, the questions it asks one, and the check that lists every problem without
+// building. One namespace, `recipe`, so that its short names, `remove`, `move`, `devices`, stand apart from the
+// readers of a compiled configuration above. A contract first, decision 38: what is not built refuses by name.
+export * as recipe from './recipe/toolkit.ts';
+export { NotBuiltError } from './support/contract.ts';
+// Finding a device across every source at once and fetching it as a definition a document carries, decision 41.
+export { fetchDevice, findDevices, networkArchiveSource } from './catalogue/search.ts';
+export type {
+  CarriedDevice, DeviceCache, DeviceQuery, DeviceSearch, DeviceSource, FoundDevice, NetworkArchiveOptions,
+} from './catalogue/search.ts';
 export { ACTIVITY_ROLE_NAMES } from './compose/activityroles.ts';
 export type { ActivityRoleName } from './compose/activityroles.ts';
 export { chooseByModel, familyKind, familyOfModel, modelName, NoFamilyError } from './families/registry.ts';

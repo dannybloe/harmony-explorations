@@ -344,7 +344,13 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 re-exports both. Every choice
                                 of ours a family makes, with its default, is in that family's
                                 choices.ts, and src/recipe/ reads the recipe a build starts from,
-                                docs/recipe.md. Our letters are drawn from the typeface in fonts/
+                                docs/recipe.md, and holds the document toolkit's contract,
+                                toolkit.ts, the namespace `recipe` on the main entry: the changes,
+                                the questions and the check an application works a setup through,
+                                decision 37, with the device search's contract beside it in
+                                src/catalogue/search.ts. Neither is built: each function refuses
+                                by name, `NotBuiltError` in src/support/contract.ts, with the
+                                requirement it waits on, decision 38. Our letters are drawn from the typeface in fonts/
                                 (Oxanium, with its OFL.txt) by src/drawing/typeface.ts on src/drawing/raster.ts, the
                                 one rasteriser for outlines, with opentype.js reading the font;
                                 src/drawing/icons.ts draws icons of Material Design Icons (@mdi/font) on
@@ -499,6 +505,9 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 unit's region reads and the journal. It is the write
                                 path's first caller outside that package, which is why the blind
                                 review's withhold list gained a row for it. It also holds the
+                                contract of the sync an application calls, `syncDocument` and a
+                                pretend remote in `src/sync.ts`, one function for every model that
+                                reports as events, not built and refusing by name, and the
                                 Harmony Touch's answerer, `src/touchsync.ts`, which drives a sync
                                 down through the request session, for the same kind of reason: it
                                 calls the codec's reader and check of a Touch's documents itself

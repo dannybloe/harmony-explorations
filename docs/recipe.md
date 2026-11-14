@@ -29,10 +29,12 @@ misspelling is an error rather than a default.
 
 | field | what it is |
 |---|---|
+| `version` | optional, the format's version, a whole number from 1; absent is 1, and one this does not read is refused |
 | `about` | optional prose, for a person |
 | `model.name` | Logitech's name, `Harmony 650`: "Harmony" and the model table's name |
 | `model.skin` | optional, the skin; it has to agree with the name, and a name two skins share would need it (none does today) |
 | `devices[]` | in the order the configuration numbers them |
+| `devices[].id` | optional, the device's id in this document, which the toolkit gives it and addresses it by, `recipe/toolkit.ts`; kept through a rename, one id on two devices refused, and not read by any builder |
 | `devices[].name` | what the remote calls the device, as its screens draw it |
 | `devices[].device` | its catalogue entry, `<manufacturer>/<file>` in the archive of decision 15 |
 | `devices[].poweredOnBetweenActivities` | optional, MyHarmony's keep this device on when switching activities |
@@ -40,6 +42,7 @@ misspelling is an error rather than a default.
 | `devices[].definition` | optional, the device carried: `record`, the archive's device file as it is, and `commands`, its codeset's commands as `name` and `keycode`; served before any archive, so a recipe that carries every device builds with none. `packages/codec/bin/carry-codes.ts` fills it; plan 014 |
 | `protocols` | optional, the protocol definitions the carried commands are written in, as the archive's protocol files hold them |
 | `activities[]` | in the order the activity menu lists them |
+| `activities[].id` | optional, the activity's id in this document, as a device's |
 | `activities[].name` | as the menu draws it |
 | `activities[].type` | MyHarmony's type: `WatchTV`, `WatchDvd`, `ListenToMusic`, `Custom`; which activity key a type takes is a choice, `activityKeys` |
 | `activities[].devices[]` | each device it uses: `device` by name, `input` by the catalogue's name for it, and `roles`, the jobs it does, `Display`, `Volume`, `ChannelChanging`, `PlayMovie`, `PlayMedia`, `PlayGame`; no role is a pass through device |

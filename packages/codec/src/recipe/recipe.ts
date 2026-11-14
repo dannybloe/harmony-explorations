@@ -31,6 +31,9 @@ export { modelName } from '../families/registry.ts';
 /** A recipe that cannot be read, or names a model nothing here can build for. */
 export class RecipeError extends Error {}
 
+/** The version of the recipe's format this reads and writes, `Recipe.version`. */
+export const RECIPE_VERSION = 1;
+
 /** The model a recipe is for: FreeHarmony's `RemoteModel`, Logitech's name and the skin where known. */
 export interface RecipeModel {
   readonly name: string;
@@ -42,6 +45,12 @@ export interface RecipeModel {
  * "I want to keep this device on when switching Activities", absent meaning off.
  */
 export interface RecipeDevice {
+  /**
+   * The device's id in this document, which the toolkit gives it and addresses it by, `recipe/toolkit.ts`: kept
+   * through every rename, so an application's selection and undo never hold a name. Absent in a recipe written by
+   * hand, which the toolkit's `open` gives one; the builders do not read it.
+   */
+  readonly id?: string;
   readonly name: string;
   readonly device: string;
   readonly poweredOnBetweenActivities?: boolean;
@@ -96,6 +105,8 @@ export type RecipeSequenceStep = { readonly device: string; readonly scan: numbe
  * a person chooses and the compile does not derive, section 323. Absent or empty is a screen with no item.
  */
 export interface RecipeActivity {
+  /** The activity's id in this document, as `RecipeDevice.id` is a device's. */
+  readonly id?: string;
   readonly name: string;
   readonly type: string;
   readonly devices: readonly RecipeActivityDevice[];
@@ -119,6 +130,11 @@ export interface RecipeFavourites {
 
 /** A recipe. The activities are in the order the activity menu lists them. */
 export interface Recipe {
+  /**
+   * The version of the recipe's format, a whole number from 1; absent is 1. It moves when a field changes meaning,
+   * so that a document saved by an older application is brought up on opening rather than misread.
+   */
+  readonly version?: number;
   readonly about?: string;
   readonly model: RecipeModel;
   readonly devices: readonly RecipeDevice[];
@@ -250,13 +266,19 @@ function definitionOf(value: unknown, what: string): RecipeDefinition {
  * role one of the contract's. Refused with the first thing wrong, by where it is.
  */
 export function readRecipe(json: unknown): Recipe {
-  const top = fields(json, 'the recipe', ['model', 'devices', 'activities'], ['about', 'choices', 'favourites', 'touch', 'protocols']);
+  const top = fields(json, 'the recipe', ['model', 'devices', 'activities'], ['version', 'about', 'choices', 'favourites', 'touch', 'protocols']);
+  if (top.version !== undefined && (!Number.isInteger(top.version) || (top.version as number) < 1)) {
+    throw new RecipeError('the recipe\'s version is not a whole number from 1');
+  }
+  if (top.version !== undefined && (top.version as number) > RECIPE_VERSION) {
+    throw new RecipeError(`the recipe is of version ${String(top.version)}, and this reads up to ${RECIPE_VERSION}`);
+  }
   const m = fields(top.model, 'the model', ['name'], ['skin']);
   if (m.skin !== undefined && !Number.isInteger(m.skin)) throw new RecipeError('the model\'s skin is not a number');
   const model: RecipeModel = { name: text(m.name, 'the model\'s name'), ...(m.skin === undefined ? {} : { skin: m.skin as number }) };
   const devices = list(top.devices, 'the devices').map((value, k): RecipeDevice => {
     const what = `device ${k + 1}`;
-    const d = fields(value, what, ['name', 'device'], ['poweredOnBetweenActivities', 'key', 'definition']);
+    const d = fields(value, what, ['name', 'device'], ['id', 'poweredOnBetweenActivities', 'key', 'definition']);
     if (d.poweredOnBetweenActivities !== undefined && typeof d.poweredOnBetweenActivities !== 'boolean') {
       throw new RecipeError(`${what}'s poweredOnBetweenActivities is not true or false`);
     }
@@ -268,6 +290,7 @@ export function readRecipe(json: unknown): Recipe {
       key = { place: k.place as number, ...(k.press === undefined ? {} : { press: k.press as 'short' | 'long' }) };
     }
     return {
+      ...(d.id === undefined ? {} : { id: text(d.id, `${what}'s id`) }),
       name: text(d.name, `${what}'s name`), device: text(d.device, `${what}'s catalogue entry`),
       ...(d.poweredOnBetweenActivities === undefined ? {} : { poweredOnBetweenActivities: d.poweredOnBetweenActivities as boolean }),
       ...(key === undefined ? {} : { key }),
@@ -275,7 +298,7 @@ export function readRecipe(json: unknown): Recipe {
     };
   });
   const activities = list(top.activities, 'the activities').map((value, k): RecipeActivity => {
-    const a = fields(value, `activity ${k + 1}`, ['name', 'type', 'devices'], ['screen']);
+    const a = fields(value, `activity ${k + 1}`, ['name', 'type', 'devices'], ['id', 'screen']);
     const what = `activity ${text(a.name, `activity ${k + 1}'s name`)}`;
     const used = list(a.devices, `${what}'s devices`).map((one, j): RecipeActivityDevice => {
       const at = `${what}'s device ${j + 1}`;
@@ -288,7 +311,10 @@ export function readRecipe(json: unknown): Recipe {
     });
     const screen = a.screen === undefined ? undefined
       : list(a.screen, `${what}'s screen`).map((item, j) => screenItem(item, `${what}'s screen item ${j + 1}`));
-    return { name: a.name as string, type: text(a.type, `${what}'s type`), devices: used, ...(screen === undefined ? {} : { screen }) };
+    return {
+      ...(a.id === undefined ? {} : { id: text(a.id, `${what}'s id`) }),
+      name: a.name as string, type: text(a.type, `${what}'s type`), devices: used, ...(screen === undefined ? {} : { screen }),
+    };
   });
   const favourites = top.favourites === undefined ? undefined
     : list(top.favourites, 'the favourites').map((value, k): RecipeFavourites => {
@@ -309,7 +335,13 @@ export function readRecipe(json: unknown): Recipe {
   if (favourites !== undefined && new Set(favourites.map((one) => one.device)).size !== favourites.length) {
     throw new RecipeError('the favourites name one device twice');
   }
+  // An id names one thing: two devices or two activities under one id would make every address ambiguous.
+  for (const [what, ids] of [['devices', devices.map((one) => one.id)], ['activities', activities.map((one) => one.id)]] as const) {
+    const given = ids.filter((id) => id !== undefined);
+    if (new Set(given).size !== given.length) throw new RecipeError(`two of the ${what} have one id`);
+  }
   return {
+    ...(top.version === undefined ? {} : { version: top.version as number }),
     ...(top.about === undefined ? {} : { about: text(top.about, 'the recipe\'s about') }),
     model, devices, activities,
     ...(top.choices === undefined ? {} : { choices: object(top.choices, 'the choices') }),

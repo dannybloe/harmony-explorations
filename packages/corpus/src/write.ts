@@ -35,3 +35,10 @@ export {
   RECOVERY, SYNC_LINES, TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed, prepareSet,
 } from './touchsync.ts';
 export type { SetAnswer, TouchSet, TouchSyncMode, TouchSyncOutcome, TouchSyncRun } from './touchsync.ts';
+
+// **Syncing a document**, the contract an application writes a remote through, decision 38: one function for every
+// model, reporting as events, and a pretend remote to run it against. Not built yet; each refuses by name.
+export { pretendRemote, syncDocument } from './sync.ts';
+export type {
+  PretendOptions, PretendRemote, SyncAttention, SyncEvent, SyncOutcome, SyncPhase, SyncRemote, SyncRequest,
+} from './sync.ts';
