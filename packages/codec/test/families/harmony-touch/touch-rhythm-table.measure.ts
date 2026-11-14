@@ -233,15 +233,15 @@ test('every refused family is held by the Touch\'s description: Logitech\'s defi
   // `Galaxis 16 Bit Quad Toggle`: 27 of its catalogue codes carry a second `0x` inside a value, which the engine
   // cannot read as a digit; its other 1480 make a packet.
   assert.deepStrictEqual(refused.map((r) => r.row.family).filter((f) => !whole.includes(f)), ['Galaxis 16 Bit Quad Toggle']);
-  assert.deepStrictEqual(outcome, { 'a packet': 8919, 'a digit that is not hexadecimal': 27 });
+  assert.deepStrictEqual(outcome, { 'a packet': 8937, 'a digit that is not hexadecimal': 27 });
   // How many of the catalogue's codes the refusals keep from a Touch, by reason, against those of the rows written.
   const held = (rs: readonly RowResult[]) => rs.reduce((n, r) => n + (codes.get(r.row.family)?.size ?? 0), 0);
-  assert.strictEqual(held(RESULTS.filter((r) => r.refusal === undefined)), 142931);
+  assert.strictEqual(held(RESULTS.filter((r) => r.refusal === undefined)), 143161);
   const byReason: Record<string, number> = {};
   for (const r of refused) byReason[r.refusal!] = (byReason[r.refusal!] ?? 0) + (codes.get(r.row.family)?.size ?? 0);
   assert.deepStrictEqual(byReason, {
     'the family\'s name states no width for its values and none was given': 1720,
-    'a width that is not a whole number of cells': 2175,
+    'a width that is not a whole number of cells': 2193,
     'the row states its frame and not its repetition, so no trailer and no gap': 1441,
     'a whole record shape, which no segment of a definition states': 3610,
   });
@@ -255,7 +255,7 @@ test('every refused family is held by the Touch\'s description: Logitech\'s defi
  * groups name other segments than the definition's own default is a structure the row's blocks do not state, and is
  * counted apart.
  */
-test('Logitech\'s definitions read as the engine reads them send the 29 measured rows\' blocks on 89367 of the 93422 catalogue codes, and every other code is named', { ...skipUnlessIrArchiveRelease() }, () => {
+test('Logitech\'s definitions read as the engine reads them send the 29 measured rows\' blocks on 89448 of the 93504 catalogue codes, and every other code is named', { ...skipUnlessIrArchiveRelease() }, () => {
   const theirs = new Map(archiveProtocols(IR_ARCHIVE!).map((p) => [p.name, p]));
   const codes = archiveCodes();
   const measured = RESULTS.filter((r) => r.writtenAt === 'name' && evidenceOf(r.row) === 'measured');
@@ -286,7 +286,7 @@ test('Logitech\'s definitions read as the engine reads them send the 29 measured
     }
   }
   assert.deepStrictEqual(outcome, {
-    alike: 89367, different: 3634, 'other segments than the default': 417, 'our reader declines the code': 4,
+    alike: 89448, different: 3634, 'other segments than the default': 418, 'our reader declines the code': 4,
   });
   // **The one family that differs is the row's and not the reader's**, as in `test/families/harmony-touch/touch-definition.test.ts`:
   // `MemorexO1 32 Bit` was measured off three codes of the corpus with a constant 35100 microsecond silence after the

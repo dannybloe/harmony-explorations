@@ -87,7 +87,7 @@ nothing about one.[^s170]
 **A value is read at the widths and in the bases its family's definition states, never its name's.**[^s359]
 A family's name states one width per value, `Samsung 16 and 20 Bit` a 16 and a 20,[^s159] but the name's
 number is the digit count on some families, neither the digit nor the bit count on as many, absent on
-others, and right but overflowed by the value on a few, so reading the name refused 52658 catalogue
+others, and right but overflowed by the value on a few, so reading the name refused 53304 catalogue
 commands of 156 families.[^s359] The definition reads all but 172, which are not infrared codes (`HID 16
 Bit`, `Roku IP`, `Sonos IP`) or are misspelt in the catalogue.[^s359] The base comes from the definition's
 cell count,[^s231] and **it is per field**: `Grundig 7 Bit Quad` writes one plain bit and then seven
@@ -228,7 +228,7 @@ has fields.
 Nothing in a configuration says which of a device's ninety codes is volume up: the record carries
 durations and the action list carries an index. Logitech's device catalogue states a name beside every
 code, and a device group is identified in it by the **numbers its records decode to**, which works
-because 104938 distinct numbers cover 2067863 commands.[^s229] Over the configurations measured, 36 of
+because 105006 distinct numbers cover 2087266 commands.[^s229] Over the configurations measured, 36 of
 38 device groups identify, 31 of them on every number they send, and 537 of 598 button bindings get a
 command name; on two configurations Logitech compiled for chosen devices every binding does, 70 of 70 and
 78 of 78.[^s229b]

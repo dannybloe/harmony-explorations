@@ -88,10 +88,10 @@ test('our waveforms reproduce Logitech\'s own renderings over a slice of the cat
     // commands over dozens of families, both sections, with nothing outstanding in it. The counts rose
     // from 10532 over 46 families when this stopped building the waveform itself and called the
     // library's own composition, section 232, since its own copy was two readings behind, and again to
-    // 11445 over 58 when section 233 read the last of the refusals.
-    assert.equal(compared, 11445);
-    assert.equal(agreed, 11445);
-    assert.equal(heldCompared, 6741);
-    assert.equal(heldAgreed, 6741);
+    // 11472 over 58 when section 233 read the last of the refusals.
+    assert.equal(compared, 11472);
+    assert.equal(agreed, 11472);
+    assert.equal(heldCompared, 6768);
+    assert.equal(heldAgreed, 6768);
     assert.equal(families.size, 58);
   });

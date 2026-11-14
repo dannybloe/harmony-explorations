@@ -21,7 +21,7 @@
  *
  * **A calibration of the Touch's end, which needs the archive.** Logitech's own definitions of the 29 measured rows
  * written, read through `enginePacketOf` and played at the compiler's repeat count, against those rows' blocks, which
- * were measured off configurations Logitech's compiler built: 89367 of the 93422 catalogue codes of those families are
+ * were measured off configurations Logitech's compiler built: 89448 of the 93504 catalogue codes of those families are
  * alike, and every code that is not is named. That is the packet reader agreeing with an end it owes nothing to, before
  * it is trusted on definitions of ours.
  *

@@ -75,22 +75,22 @@ test('every device record in the archive reads, and the power and input counts a
         }
       }
     }
-    assert.equal(records, 276236);
+    assert.equal(records, 278220);
     assert.deepEqual(Object.fromEntries([...powerTypes].sort()),
-      { absent: 35409, discrete: 63924, none: 3, toggle: 176596, unknown: 304 });
+      { absent: 35788, discrete: 64441, none: 3, toggle: 177684, unknown: 304 });
     // Section 305's television is one of these: a power press held for a stated time.
-    assert.equal(timedPower, 3234);
-    assert.equal(holds, 49);
+    assert.equal(timedPower, 3270);
+    assert.equal(holds, 54);
     assert.equal(digitHolds, 14);
-    assert.equal(named, 209007);
-    assert.equal(inputs, 1089512);
+    assert.equal(named, 210416);
+    assert.equal(inputs, 1097615);
   });
 
 /**
  * The archive's step order against the service's own. Its author's notes say an action list's order is the
  * steps' `Order` field and not their position in the array, on a small share of lists, so a projection that
  * kept array position would turn a power toggle's press, wait, press into press, press, wait. Measured over
- * the raw capture the archive was projected from: 3884 of 477079 lists are stored out of order, and every
+ * the raw capture the archive was projected from: 3887 of 480158 lists are stored out of order, and every
  * one of them reads in `Order` sequence through this reader. A hold of 0 ms is projected as a plain press,
  * which the comparison follows. Only the lists a device states once are compared here, power, input
  * switching and channel entry; the per input and per state ones are compared in `catalogueraw.test.ts`,
@@ -150,6 +150,6 @@ test('the archive puts every power, input and channel action list in the service
         }
       }
     }
-    assert.equal(compared, 477079);
-    assert.equal(shuffled, 3884);
+    assert.equal(compared, 480158);
+    assert.equal(shuffled, 3887);
   });

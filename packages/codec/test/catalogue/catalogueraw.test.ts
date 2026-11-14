@@ -165,12 +165,12 @@ test('the derived raw files are fresh against the lab\'s SHA256SUMS', needing(sk
   const state = rawDerivedState(RAW_DIRECTORY!);
   assert.equal(state.state, 'fresh', state.state === 'stale' ? state.reason : '');
   if (state.state !== 'fresh') return;
-  assert.equal(state.manifest.devices, 276236);
+  assert.equal(state.manifest.devices, 278220);
   // The index holds every device once, sorted, which is what the binary search relies on.
   const index = readFileSync(join(RAW_DIRECTORY!, RAW_DERIVED_DIRECTORY, RAW_INDEX_FILE));
-  assert.equal(index.readUInt32LE(4), 276236);
+  assert.equal(index.readUInt32LE(4), 278220);
   let previous = -1;
-  for (let at = 0; at < 276236; at++) {
+  for (let at = 0; at < 278220; at++) {
     const id = index.readUInt32LE(8 + at * 20);
     assert.ok(id > previous, `index entry ${at} is out of order`);
     previous = id;

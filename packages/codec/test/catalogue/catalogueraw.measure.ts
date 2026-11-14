@@ -106,10 +106,10 @@ test('every per input and per state action list in the archive is in the service
       }
     }
     assert.deepEqual(counts, {
-      device: [477079, 3884, 477079, 0],
-      input: [680091, 55744, 680091, 0],
-      stateRoute: [82622, 5282, 82622, 0],
-      stateList: [29326, 68, 29326, 0],
+      device: [480158, 3887, 480158, 0],
+      input: [685859, 56463, 685859, 0],
+      stateRoute: [83332, 5283, 83332, 0],
+      stateList: [29526, 68, 29526, 0],
     });
     assert.deepEqual(unaligned, ['110096 states["AV4Input"]']);
   });

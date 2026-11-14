@@ -1160,7 +1160,9 @@ IMAGES = {
     'h650_panasonic_catalogue_device': 'GlobalDeviceManager_GetGlobalDevices.json',
     # The archive's raw capture of every catalogue device's features, a release asset of the archive and
     # not in its checkout: what its projected action lists are checked against for order, section 305.
-    'ir_archive_raw_features': 'device_features_raw.jsonl.gz',
+    # Named by its path: `make catalogue-raw` keeps a superseded release's files in a `previous-` folder
+    # beside it under the same file name, and the capture in use is the one at this path.
+    'ir_archive_raw_features': 'work/ir-archive-raw/device_features_raw.jsonl.gz',
     # Logitech's own compiles of the first test account's Harmony 700 and Harmony 650 records with five
     # catalogue devices added for the purpose, each holding a power press for a stated time, section 306.
     'h700_power_hold_compile': '20261002-h700-power-hold-compile.EzHex',

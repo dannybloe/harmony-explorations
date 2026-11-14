@@ -22,7 +22,7 @@ import { catalogueDevicePower } from '../../src/build.ts';
  * How much of the catalogue the mapping takes, over every record of the archive, and every refusal by
  * its reason. Exact counts, so a reader change or an archive change moves them in the diff.
  */
-test('the mapping takes the power of 235572 of the archive\'s 276236 devices, and every refusal is counted by its reason',
+test('the mapping takes the power of 237169 of the archive\'s 278220 devices, and every refusal is counted by its reason',
   slow(skipUnlessIrArchiveRelease()), () => {
     const outcomes = new Map<string, number>();
     let several = 0;
@@ -55,27 +55,27 @@ test('the mapping takes the power of 235572 of the archive\'s 276236 devices, an
       }
     }
     assert.deepEqual(Object.fromEntries(outcomes), {
-      'accepted': 235572,
-      // No power action at all, 35716 between them, which no compile here shows composed.
-      'the catalogue states the power as absent': 35409,
+      'accepted': 237169,
+      // No power action at all, 36095 between them, which no compile here shows composed.
+      'the catalogue states the power as absent': 35788,
       'the catalogue states the power as unknown': 304,
       'the catalogue states the power as none': 3,
-      // An action this does not know how to compose, for want of a compile holding one. Of the 2993
+      // An action this does not know how to compose, for want of a compile holding one. Of the 2994
       // refused for a wait, the commonest shape is asserted below as waitInOffOnly.
-      'the catalogue\'s action holds a wait': 2993,
+      'the catalogue\'s action holds a wait': 2994,
       'the catalogue\'s action holds a state': 66,
       'the catalogue\'s action holds a press held for an unstated time': 5,
       'the catalogue\'s power on is followed by a send': 89,
       'the catalogue\'s power on is followed by a wait': 2,
       // Statements that are incomplete or ambiguous.
-      'a toggle device with no toggle action': 1321,
-      'a discrete device with no power on action': 302,
+      'a toggle device with no toggle action': 1325,
+      'a discrete device with no power on action': 303,
       'a discrete device with no power off action': 17,
       'a toggle device that also states a power on or off action': 32,
       // Delays a configuration cannot state, counted where nothing above refused the device first.
-      'the catalogue\'s power on delay of N ms is not a whole number of tenths of a second': 118,
+      'the catalogue\'s power on delay of N ms is not a whole number of tenths of a second': 120,
       'the catalogue\'s inter device delay of N ms is not a whole number of tenths of a second': 3,
     });
-    assert.equal([...outcomes.values()].reduce((sum, n) => sum + n, 0), 276236);
-    assert.deepEqual({ several, held, waitInOffOnly }, { several: 2868, held: 2938, waitInOffOnly: 1655 });
+    assert.equal([...outcomes.values()].reduce((sum, n) => sum + n, 0), 278220);
+    assert.deepEqual({ several, held, waitInOffOnly }, { several: 2920, held: 2974, waitInOffOnly: 1655 });
   });

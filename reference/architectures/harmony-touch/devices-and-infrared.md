@@ -347,12 +347,12 @@ nothing](#built-from-nothing).
 Logitech's own definition of every one of the 104 families is written in the same description, and read the way the
 engine reads it, it makes a packet for every catalogue code of 103 of them and for all but 27 codes of the
 104th, `Galaxis 16 Bit Quad Toggle`, whose 27 carry a second `0x` inside a value that the engine cannot read as
-digits[^t-touch-rhythm-table]. Between them the 104 hold 8946 distinct codes of the catalogue, against 142931 for the
+digits[^t-touch-rhythm-table]. Between them the 104 hold 8964 distinct codes of the catalogue, against 143161 for the
 families written.
 
 **The reading is calibrated on Logitech's own definitions.** Read the same way and played at the compiler's repeat count,
 Logitech's definitions of the 29 measured rows written send those rows' blocks, which were measured off configurations
-Logitech's compiler built, on 89367 of the 93422 catalogue codes of those families; 417 name other segments than the
+Logitech's compiler built, on 89448 of the 93504 catalogue codes of those families; 418 name other segments than the
 family's default and 4 do not read, and the 3634 that differ are all of `MemorexO1 32 Bit`, whose row was measured
 with another gap after the frame than Logitech's definition pads to[^t-touch-rhythm-table].
 

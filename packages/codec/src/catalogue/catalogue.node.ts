@@ -68,10 +68,10 @@ export function catalogueCommands(
 /**
  * Every number any keycode in the archive states, and which codesets state it.
  *
- * **This is a full pass over 54118 files and about eight seconds**, which is why it is one call a caller
+ * **This is a full pass over 54610 files and about eight seconds**, which is why it is one call a caller
  * makes deliberately and holds on to. It exists for one job: a configuration numbers its codes and names
  * none of them, so the way to find out what a device in a config **is** is to look up the numbers it
- * sends. That works because a number is specific: 104938 distinct numbers over 2067863 commands.
+ * sends. That works because a number is specific: 105006 distinct numbers over 2087266 commands.
  *
  * The keycodes are matched with a regular expression rather than parsed, deliberately. Parsing means
  * materialising the rendered waveforms, which are 95% of the bytes and which nothing here wants, and the

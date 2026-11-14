@@ -410,10 +410,10 @@ export function catalogueToggledCode(
  * rhythm until section 361, and a fifth spelling's one command is refused for its device's count of 0. Section 359.
  *
  * **Why the definition and not the name.** The composer read every code at the widths the family's name
- * spells until section 359, and so refused 52658 commands of 156 families as unreadable: a name such as
+ * spells until section 359, and so refused 53304 commands of 156 families as unreadable: a name such as
  * `Russound 9 Bit Quad` gives the digit count, `Motorola 16 Bit Hex`, whose values are 32 bits, neither
- * count, and `Philips RC5Ex` no number at all, sections 231 and 233. On the codes both read, the table's block is the same under either reading on 101369
- * of 101593 and differs on 224, all of `Motorola 16 Bit Quad Toggle`, `Kathrein 16 Bit Quad Toggle` and
+ * count, and `Philips RC5Ex` no number at all, sections 231 and 233. On the codes both read, the table's block is the same under either reading on 101454
+ * of 101678 and differs on 224, all of `Motorola 16 Bit Quad Toggle`, `Kathrein 16 Bit Quad Toggle` and
  * `Pace 18 Bit Quad Toggle`, whose toggle field the name made sixteen bits wide where the definition makes
  * it one: the name's block is the definition's at no count, the definition's at the count the family
  * states, 1.

@@ -116,7 +116,7 @@ needs all of theirs. Nothing about this repository moves: `packages/*` stay MIT,
 untroubled in the one direction it has to be.
 
 **Logitech's device database is archived by a third party and it is a source now**, decision 15 in
-`docs/plans/002-the-roadmap.md`, checked out as `../logitech-harmony-ir-archive`: 276236 devices and **Logitech's own
+`docs/plans/002-the-roadmap.md`, checked out as `../logitech-harmony-ir-archive`: 278220 devices and **Logitech's own
 protocol definitions for 685 families, verbatim**, where this project has measured 37. It was tested
 before it was believed, and 33 of 33 comparable families agree with our own measurements off their
 compiler; the three that disagree are ours, being the three fitted to the corpus rather than measured.

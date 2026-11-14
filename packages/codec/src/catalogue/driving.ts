@@ -18,10 +18,10 @@
  * archive's README's unless a comment says it was measured here.
  *
  * **The reader refuses rather than guesses**, like the rest of the archive's readers: a key or a step
- * shape not in the surveyed set throws `ArchiveError` naming it. The set was measured over all 276236
+ * shape not in the surveyed set throws `ArchiveError` naming it. The set was measured over all 278220
  * records of version 2 rather than taken from the README, and the two differ in one place worth
  * knowing: the README's example timing names `minRepeats` where the records carry `pressMinRepeats`,
- * and both occur, `minRepeats` beside it on 78846 records.
+ * and both occur, `minRepeats` beside it on 79464 records.
  *
  * **Decision 15 and decision 11 apply as they do to `catalogue.ts`**: what is read here is Logitech's
  * data, it crosses into this repository only through this reader, and nothing derived from it may be
@@ -65,15 +65,15 @@ export interface DeviceTiming {
   readonly interDeviceDelay: number;
   /** The same while a key is held. */
   readonly holdInterDeviceDelay: number;
-  /** How long the device needs after power on before it listens. Absent on 8178 of 276236 records. */
+  /** How long the device needs after power on before it listens. Absent on 8184 of 278220 records. */
   readonly powerOnDelay?: number;
   /** How long an input change takes to settle. */
   readonly inputDelay: number;
-  /** Logitech's delay for a device driven through a connected app. Zero on 268967 of 276236 records. */
+  /** Logitech's delay for a device driven through a connected app. Zero on 270945 of 278220 records. */
   readonly connectedAppPowerOnDelay: number;
   /** How many times one press sends the code. */
   readonly pressMinRepeats: number;
-  /** A second repeat count on 78846 records, Logitech's `MinRepeats`; which one wins is not read here. */
+  /** A second repeat count on 79464 records, Logitech's `MinRepeats`; which one wins is not read here. */
   readonly minRepeats?: number;
   readonly isInterKeyDelayOptimized: boolean;
 }
@@ -94,7 +94,7 @@ export interface DevicePower {
 /** One input as the device names it. */
 export interface DeviceInput {
   readonly name: string;
-  /** What reaches it. Absent on 409421 inputs, which belong to devices that can only step through. */
+  /** What reaches it. Absent on 411756 inputs, which belong to devices that can only step through. */
   readonly commands?: readonly DriveStep[];
   /** Logitech's own labels for the sockets behind it, `HDMI`, `Antenna`, an open set. */
   readonly ports?: readonly string[];

@@ -64,6 +64,7 @@ R75, decision 39. FreeHarmony takes the FHSDK by version through its `package.js
 
 - [ ] 3.1 Decide how a version is published: what an `exports` map and a build need, and where the packages are served from (decision 4)
 - [ ] 3.2 The first numbered release of `packages/*`, so somebody without this checkout can build on it, and FreeHarmony's `link:` dependency replaced by it
+- [ ] 3.3 The whole API documented for somebody building on it: every entry's functions and types, the schemas of the documents it takes and gives, and worked examples, generated from the sources where that keeps it from drifting; whether it is published with the reference website is to decide
 
 ## 4. The document toolkit
 
@@ -93,7 +94,7 @@ R9 to R11, R20, R72, R81, R82, decision 41. A device is stored as a definition w
 - [ ] 6.3 The archive over the network: its index fetched, one device and its codeset at a time, kept in a local cache, behind the same source a builder is handed (R81)
 - [ ] 6.4 One search over every source, with help for typing errors, each result saying where it came from (R9, R82)
 - [ ] 6.5 The client of Logitech's service offered to an application under a named subpath, within decision 11's rules; the import itself is chapter 13 (R72)
-- [ ] 6.6 The measurements over the whole archive moved to its release of 10 November 2026: the raw side file aligned again, the measurements bound to the release of 2 September (`make archive-measure`, decision 42) taken again and repinned, and the totals the reference quotes brought along; and which release an application's network source reads, a fixed one or the newest
+- [ ] 6.6 Which release of the archive an application's network source reads, a fixed one or the newest; the measurements over the whole archive and the raw side file stand at its release of 10 November 2026 (`make archive-measure`, decision 42)
 
 ## 7. Features
 

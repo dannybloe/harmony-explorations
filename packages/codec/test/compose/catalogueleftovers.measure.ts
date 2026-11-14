@@ -63,9 +63,9 @@ test('five family spellings in the catalogue\'s codes name no definition, 222 co
       ['Ada 40 Bit', 82], ['AudioAnalogue 14 bit', 108], ['DAM 12 Bit', 29], ['Intellibus 17 Bit ', 1], ['toshiba 32 Bit', 2],
     ]);
     // The archive's `protocol` field is the name of the protocol id Logitech's service gives every command
-    // beside its keycode, so on all 2067863 the definition found is the one Logitech's id names. A reproduction
+    // beside its keycode, so on all 2087266 the definition found is the one Logitech's id names. A reproduction
     // rather than an independent closure: the rule was read off that id. What could fail is the fold below.
-    assert.equal(agree, 2067863);
+    assert.equal(agree, 2087266);
     assert.deepEqual(disagree, []);
     // And folding merges nothing: the 684 definitions fold to 684 spellings.
     const folded = new Set([...protocols.keys()].map((name) => name.trim().replace(/\s+/g, ' ').toLowerCase()));

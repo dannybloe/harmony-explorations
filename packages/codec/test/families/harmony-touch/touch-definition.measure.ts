@@ -81,7 +81,7 @@ function archiveCodes(root: string, families: ReadonlySet<string>): Map<string, 
   return out;
 }
 
-test('against Logitech\'s own definitions, the 29 measured rows send the same on 89139 of the 93107 archive codes they place, the stated rows are a round trip, and every other code is named by why', slow({ ...skipUnlessIrArchiveRelease() }), () => {
+test('against Logitech\'s own definitions, the 29 measured rows send the same on 89220 of the 93188 archive codes they place, the stated rows are a round trip, and every other code is named by why', slow({ ...skipUnlessIrArchiveRelease() }), () => {
   const theirs = new Map(archiveProtocols(IR_ARCHIVE!).map((p) => [p.name, p]));
   const ours = new Map<string, IrProtocol>();
   // **A row the name gives no usable width is written at the widths Logitech's definition states**, one per
@@ -177,42 +177,42 @@ test('against Logitech\'s own definitions, the 29 measured rows send the same on
   assert.strictEqual(atTheirWidths.size, 96);
   assert.deepStrictEqual([...ours.keys()].filter((f) => (codes.get(f)?.size ?? 0) === 0), ['ADA 40 Bit', 'Dam 12 Bit']);
   // **The independent half**: 29 rows measured off configurations (20 compiled, 8 both, 1 corpus), whose
-  // blocks owe nothing to the definition they are held against. Of their 93422 codes 315 are not placed
-  // (a release, another number of values, or our renderer of their definition declining), and of the 93107 compared
-  // 89139 are the same; every other one is named by why.
+  // blocks owe nothing to the definition they are held against. Of their 93504 codes 315 are not placed
+  // (a release, another number of values, or our renderer of their definition declining), and of the 93188 compared
+  // 89220 are the same; every other one is named by why.
   assert.strictEqual([...ours.keys()].filter((f) => sourceOf.get(f) !== 'stated').length, 29);
   assert.deepStrictEqual(Object.fromEntries(bySource.measured), {
-    'the same': 89139,
+    'the same': 89220,
     'differs by the toggle bit alone': 228,
     'the code names other segments than the family\'s default': 106,
     differs: 3634,
-    'our key code refuses: the code states a release, which the definition does not send': 188,
+    'our key code refuses: the code states a release, which the definition does not send': 189,
     'our key code refuses: the code states another number of values than the definition sends': 108,
     'their renderer refuses: our keycode reader declines the code': 19,
   });
   // **The round trip half**: the 548 rows of source `stated` written at their name's widths and the 96 at
   // Logitech's, every one converted by `bin/protocols.ts` out of the very definition it is held against, so
   // agreement here says the writer inverts that converter, not that the rhythm is right. Of 49509 codes 5058
-  // are not placed and of the 44451 compared 43937 are the same, 8583 of them once the code is written at the
+  // are not placed and of the 44451 compared 43937 are the same, 8600 of them once the code is written at the
   // definition's widths; of 3895 codes of the 96, 273 are not placed and 3495 of the 3622 compared are the
   // same. No code of either differs for any reason but the toggle and the code's own structure.
   assert.deepStrictEqual(Object.fromEntries(bySource.stated), {
-    'the same': 35354,
-    'the same at the widths Logitech\'s definition states': 8583,
+    'the same': 35482,
+    'the same at the widths Logitech\'s definition states': 8600,
     'differs by the toggle bit alone': 119,
     'the code names other segments than the family\'s default': 395,
-    'our key code refuses: the code states a release, which the definition does not send': 4796,
+    'our key code refuses: the code states a release, which the definition does not send': 4799,
     'our key code refuses: the code states another number of values than the definition sends': 262,
   });
   assert.deepStrictEqual(Object.fromEntries(bySource.atTheirWidths), {
-    'the same': 3491,
+    'the same': 3509,
     'the same at the widths Logitech\'s definition states': 4,
     'differs by the toggle bit alone': 21,
     'the code names other segments than the family\'s default': 106,
     'our key code refuses: the code states a release, which the definition does not send': 260,
     'our key code refuses: the code states another number of values than the definition sends': 13,
   });
-  assert.strictEqual([...tally.values()].reduce((n, k) => n + k, 0), 146826);
+  assert.strictEqual([...tally.values()].reduce((n, k) => n + k, 0), 147074);
   // **The one disagreement is our row's and not the writer's**: `MemorexO1 32 Bit` was measured off three
   // codes of the corpus with a constant 35100 microsecond silence after the frame, and Logitech's definition
   // pads the frame to 107600 instead, so the two agree only where a code's frame runs exactly 72500.

@@ -1069,7 +1069,7 @@ make model-diagram the entity diagram alone as a one page PDF beside the .mmd, l
 make catalogue     what Logitech's device catalogue says about the devices our own configs drive:
                    which device each group is, and the command name behind every button. Needs the
                    archive checkout and the lab, no network, and deliberately not in `make all`, since
-                   it is a ten second full pass over 54118 files. CATALOGUE_ARGS=--detail
+                   it is a ten second full pass over 54610 files. CATALOGUE_ARGS=--detail
 make catalogue-raw pull the archive checkout, fetch its newest raw release when the lab's SHA256SUMS
                    differ, and derive from the 5.5 GB capture a seekable copy, an index and a side file
                    of the fields the archive drops, into the lab. About four minutes when it derives.

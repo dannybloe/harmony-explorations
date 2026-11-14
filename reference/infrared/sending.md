@@ -68,8 +68,8 @@ short at the end, which is the table's long toggle shape and not the count.[^s35
 
 **The table's whole block is sent only for a code the family's name reads too.**[^s359] Every row was
 measured or derived over such codes, and a code only the definition reads is built from the definition at
-the device's count, since on 78 of the 2975 such codes a row takes, it sends fewer frames than the code
-states. On the codes both read, the table's block is the same on 101369 of 101593 and differs on 224
+the device's count, since on 78 of the 2976 such codes a row takes, it sends fewer frames than the code
+states. On the codes both read, the table's block is the same on 101454 of 101678 and differs on 224
 codes of three Quad Toggle families, where the name's block is no count of the definition. Confirmed word
 for word on three devices of one Harmony One compile, 183 records of which 74 are such codes, of
 `Microsoft 30 Bit`, `Sony 20 Bit` and `LG 32 Bit`; the width reading proper is checked against Logitech

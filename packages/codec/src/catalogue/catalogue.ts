@@ -4,7 +4,7 @@
  * **What this is for.** Two gaps close here at once, and neither is about pulses. Picking a device from
  * a catalogue needed Logitech's live service, which answers today and will not one day; and knowing
  * **which command a stored code is** needed the button map service, which two test accounts had told us
- * about 1200 commands' worth. The archive holds 276236 devices from 7889 manufacturers, 257720 of them
+ * about 1200 commands' worth. The archive holds 278220 devices from 7908 manufacturers, 259439 of them
  * with codes, and every command in it carries a name beside its code. `packages/codec/src/catalogue/archive.ts`
  * reads the protocol half of the same checkout; this reads the device half.
  *
@@ -18,9 +18,9 @@
  *
  * **The layout, from the manifest.** `index.json` lists the manufacturers; `devices/<slug>/index.json`
  * lists that manufacturer's models; `devices/<slug>/<file>.json` is one device, naming the codeset it
- * uses; `codesets/<first two>/<hash>.json` is a list of commands. **A codeset is shared**: 257720
- * devices use 54118 of them, one of which serves 3911 devices, so a codeset is a code table rather than
- * a device's property and 35175 of them belong to exactly one device.
+ * uses; `codesets/<first two>/<hash>.json` is a list of commands. **A codeset is shared**: 259439
+ * devices use 54610 of them, one of which serves 3932 devices, so a codeset is a code table rather than
+ * a device's property and 35511 of them belong to exactly one device.
  *
  * **The files are read in `catalogue.node.ts`, and parsed here**, plan 013 decision 5: each reader by path there
  * hands what it read to a parser here, so the catalogue's reading loads where there is no disk, and a builder that
@@ -42,7 +42,7 @@ export interface CatalogueManufacturer {
 /** One model of one manufacturer, as its manufacturer's own index states it. */
 export interface CatalogueModel {
   /**
-   * **Null for the three devices that state no model name**, of 276236: one each under Thomson,
+   * **Null for the three devices that state no model name**, of 278220: one each under Thomson,
    * Gemini and Sony, whose only identity is `globalDeviceId` and whose file is named for it. This
    * field was typed `string` until it was measured, so a caller reaching for a string method on it
    * threw on Sony, which is a manufacturer the tests here already walk.
@@ -67,12 +67,12 @@ export interface CatalogueDevice {
   readonly deviceType: number;
   readonly globalDeviceId: number;
   /**
-   * The codeset path relative to the archive root, absent for the 18516 devices with no codes.
+   * The codeset path relative to the archive root, absent for the 18781 devices with no codes.
    *
    * **The archive spells that absence as `null` and this field is normalised to omit it**, which is
    * the point of the normalising: the count in this comment was right and the type was wrong about
-   * exactly those rows, since all 18516 carry the key with a null value and **not one** of the
-   * 276236 device files omits it. So a `=== undefined` guard was never true once, and every codeless
+   * exactly those rows, since all 18781 carry the key with a null value and **not one** of the
+   * 278220 device files omits it. So a `=== undefined` guard was never true once, and every codeless
    * device came back with a null typed as `string | undefined`, which threw a path error deep in
    * `catalogueCommands` rather than reporting no codes.
    */

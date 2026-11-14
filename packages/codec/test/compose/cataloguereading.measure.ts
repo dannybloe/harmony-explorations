@@ -50,7 +50,7 @@ function renderedKeycodes(): Set<string> {
   return out;
 }
 
-test('the codes a family\'s name cannot read are 52658 commands of 156 families, and the definition reads all but 172, none of them an infrared code the catalogue renders',
+test('the codes a family\'s name cannot read are 53304 commands of 156 families, and the definition reads all but 172, none of them an infrared code the catalogue renders',
   slow(needing(skipUnlessIrArchiveRelease())), () => {
     const rendered = renderedKeycodes();
     const protocols = archiveProtocolsByName(archiveAt(IR_ARCHIVE!));
@@ -69,9 +69,9 @@ test('the codes a family\'s name cannot read are 52658 commands of 156 families,
         assert.ok(!rendered.has(keycode), `${keycode.slice(0, 60)} has a rendering in the archive`);
       }
     }
-    assert.equal(unnamed, 52658);
+    assert.equal(unnamed, 53304);
     assert.equal(families.size, 156);
-    assert.equal(read, 52486);
+    assert.equal(read, 53132);
     // HID and the two IP families are not infrared, their values carrying no `0x` at all and their
     // definitions no rhythm; the other 31 are misspelt in the catalogue, `0x0x...` on 27 `Galaxis 16 Bit
     // Quad Toggle` codes, a stray letter on three `Toshiba 32 Bit` ones and `(c)` on one `Pioneer 32 Bit`.
@@ -113,8 +113,8 @@ test('on a code both readings read, the table\'s block is the same under both on
       const key = `name ${at(a)}, definition ${at(b)}, stated ${protocol!.pressMinimumRepeats}`;
       rebuild.set(key, (rebuild.get(key) ?? 0) + 1);
     }
-    assert.equal(both, 101593);
-    assert.equal(same, 101369);
+    assert.equal(both, 101678);
+    assert.equal(same, 101454);
     assert.deepEqual([...differ].sort(), [
       ['Kathrein 16 Bit Quad Toggle', 80], ['Motorola 16 Bit Quad Toggle', 99], ['Pace 18 Bit Quad Toggle', 45],
     ]);
@@ -146,12 +146,12 @@ test('a code only the definition reads is built from the definition, never the t
         : 'refusal' in blocks ? blocks.refusal : sameTrain(blocks.once, built.once) ? 'the definition\'s' : 'another';
       outcomes.set(outcome, (outcomes.get(outcome) ?? 0) + 1);
     }
-    // Thirteen families have a whole block in the table that takes such a code, 2975 distinct codes.
+    // Fourteen families have a whole block in the table that takes such a code, 2976 distinct codes.
     assert.deepEqual([...taken].sort(), [
       ['Belgacom 16 Bit Quad', 120], ['DreamMultimedia 16 Bit Hex', 1140], ['Galaxis 16 Bit Quad', 197],
       ['LG 32 Bit', 1], ['Microsoft 30 Bit', 70], ['MotorolaO1 16 Bit Hex', 637], ['Multichoice 8 Bit Hex', 55],
       ['Pace 16 Bit Quad', 477], ['PaceO1 16 Bit Quad', 156], ['Samsung 16 and 20 Bit', 41], ['Sony 20 Bit', 1],
-      ['Zenith 11 Bit Quad', 74], ['iMonFixed2', 6],
+      ['Toshiba 32 Bit', 1], ['Zenith 11 Bit Quad', 74], ['iMonFixed2', 6],
     ]);
     // **The table's block is wrong on 78 of them**: it sends fewer intervals than the definition does at the
     // family's own count. A `Samsung 16 and 20 Bit` code stating three to five pairs gets the row's one pair, a
@@ -164,6 +164,6 @@ test('a code only the definition reads is built from the definition, never the t
     // until section 365, which puts the release behind the record's third pointer.
     assert.deepEqual([...outcomes].sort(), [
       ['the code sends nothing on a press', 4],
-      ['the definition\'s', 2971],
+      ['the definition\'s', 2972],
     ]);
   });

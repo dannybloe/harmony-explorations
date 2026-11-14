@@ -5,7 +5,7 @@
  * value written in a notation, `G:Motorola 16 Bit Hex:()(0x...)():3`, and how wide each value is and what
  * base its digits are in is stated by the family's definition. The composer read the width off the
  * family's name until this section, and so refused every command whose name does not spell its width in
- * bits: over the whole archive, 52658 commands of 156 families. Read at the definition's widths, the
+ * bits: over the whole archive, 53304 commands of 156 families. Read at the definition's widths, the
  * reading the renderer `make prontocheck` scores against every rendering in the archive already made, all
  * but 172 of them read, and those 172 are not infrared codes a remote can send: three families with no
  * rhythm at all and 31 codes misspelt in the catalogue itself, none of them rendered there. On the codes

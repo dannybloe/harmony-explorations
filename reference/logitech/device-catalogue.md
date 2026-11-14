@@ -8,8 +8,8 @@ configuration service with a plain login, [the service](service.md#the-device-ca
 
 ## What it holds
 
-**It is large**: 7889 manufacturers and 276236 devices, 257720 of them with codes, in 54118 codesets
-holding 2067863 commands, and every command carries a name beside its code[^s229].
+**It is large**: 7908 manufacturers and 278220 devices, 259439 of them with codes, in 54610 codesets
+holding 2087266 commands, and every command carries a name beside its code[^s229].
 
 **A device's codes come as a codeset, which Logitech calls a language.** A catalogue device lists the
 languages it comes in and which one is the default, and the service fetches a language's commands by its

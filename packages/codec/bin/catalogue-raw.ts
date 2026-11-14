@@ -27,7 +27,7 @@
 import { createHash } from 'node:crypto';
 import {
   closeSync, createReadStream, createWriteStream, existsSync, mkdirSync, openSync, readdirSync, readFileSync,
-  renameSync, statSync, writeFileSync, writeSync,
+  renameSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -120,11 +120,13 @@ let release: string | undefined;
 if (!offline) {
   const headers = { 'User-Agent': 'harmony-explorations', Accept: 'application/vnd.github+json' };
   const releases = await (await fetch(RELEASES, { headers })).json() as Release[];
-  const newest = releases.filter((one) => one.tag_name.startsWith('raw-') && !one.draft)
+  // A raw release is one that publishes the checksum file, whatever its tag: the first was tagged `raw-` and
+  // its date, the next carried the capture on the archive's own release, tagged with the date alone, and a
+  // filter on the tag's spelling took the older one for the newest.
+  const newest = releases.filter((one) => !one.draft && one.assets.some((asset) => asset.name === RAW_SUMS_FILE))
     .sort((a, b) => b.published_at.localeCompare(a.published_at))[0];
   if (newest === undefined) throw new Error('the archive publishes no raw release');
-  const sumsAsset = newest.assets.find((one) => one.name === RAW_SUMS_FILE);
-  if (sumsAsset === undefined) throw new Error(`release ${newest.tag_name} has no ${RAW_SUMS_FILE}`);
+  const sumsAsset = newest.assets.find((one) => one.name === RAW_SUMS_FILE)!;
   const sumsText = await (await fetch(sumsAsset.browser_download_url, { headers })).text();
   const theirs = parseSums(sumsText);
   const ours = parseSums(readFileSync(join(RAW, RAW_SUMS_FILE), 'utf8'));
@@ -160,6 +162,8 @@ if (!offline) {
       if (existsSync(join(RAW, file))) renameSync(join(RAW, file), join(previous, file));
       renameSync(join(incoming, file), join(RAW, file));
     }
+    // Emptied by the moves above; left behind it reads as a download that never finished.
+    rmSync(incoming, { recursive: true });
     console.log(`  the previous files are in ${previous}`);
     release = newest.tag_name;
   }
@@ -182,7 +186,8 @@ if (needed) {
   // Where each device's archive record is, by global device id.
   const where = new Map<number, string>();
   const devicesRoot = join(IR_ARCHIVE, 'devices');
-  for (const slug of readdirSync(devicesRoot)) {
+  // Folders only: Finder leaves a .DS_Store beside them, which is not a manufacturer.
+  for (const slug of readdirSync(devicesRoot, { withFileTypes: true }).filter((one) => one.isDirectory()).map((one) => one.name)) {
     for (const row of JSON.parse(readFileSync(join(devicesRoot, slug, 'index.json'), 'utf8')) as { f: string; id: number }[]) {
       where.set(row.id, join(devicesRoot, slug, row.f));
     }
