@@ -817,6 +817,27 @@ the nine other 7.1 tests on this set, the Xbox's toggle bit, the entry icons and
 family beyond those test 1 sends. The runs are held by `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`. 9.4 is done, and with
 it `todo-touch.md`.
 
+## A document synced through the function an application calls
+
+**Run on 14 November 2026**, after commit `de41ff78`, with nobody at the bench. The test setup's document, the
+recipe `packages/corpus/setups/touch-test.json` copied into the lab, went to the unit through `syncDocument`, by
+`touch-sync.ts --document`, the account's description the lab's own from 9.1. In order, each read before the next:
+
+| what | result |
+|---|---|
+| `touch-sync.ts --document`, no `--commit` | the Touch found by enumeration, the document checked and built, 6 documents and 2 pictures, a set of 8 answers the gate passes, ended as a dry run with nothing opened |
+| `getconfighash` | 200, the hash of 9.4's put back, `reads/20261114T1952Z-touch-confighash` |
+| `touch-sync.ts --document --commit` | the events in order: identify, check, build, the warning to leave the cable, hand-over, write, safe to unplug, written. The hand over handed up nothing, one list answered. The sync handed out eight request lists and 20 answers were written: the six documents in one write of 381470 characters, two lists empty, three of one answer each, one of ten, and the finish. `reads/20261114T1952Z-touch-sync-document`, the set kept beside the document |
+| `getconfighash` | 200, the four tags of the set delivered, `reads/20261114T1953Z-touch-confighash` |
+
+The set delivered is 9.1's from-nothing set tag for tag, all eight answers, so the document's route builds what
+9.4 ran and heard.
+
+**What was not seen.** Nobody looked at the remote. That it was on Off was said from memory, Off having been
+the last key pressed; which screen it showed, its USB screen or Charging, is not known, and it answered the
+hand over and the sync. Nothing was heard on the infrared monitor. The unit was left on this set, for a run of
+the 7.1 tests on it, and not put back.
+
 ## Not done
 
 * *Corrected:* this said no infrared run had been recorded with this unit and nothing about it in use had been
