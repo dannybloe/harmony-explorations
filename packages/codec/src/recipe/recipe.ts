@@ -60,6 +60,8 @@ export interface RecipeDevice {
    * person chooses it in MyHarmony, so it is the recipe's, and only that family reads it.
    */
   readonly key?: RecipeDeviceKey;
+  /** The keys a person chose otherwise in this device's own map, device mode's; absent is none. */
+  readonly keys?: readonly RecipeKey[];
   /**
    * The device's definition carried in the recipe, plan 014: the catalogue's record of it and its codeset's
    * commands, served before any archive, `carriedCatalogue` in `catalogue/carried.ts`. Absent, the build reads the
@@ -75,6 +77,23 @@ export interface RecipeDefinition {
   /** The commands of the codeset the record names, each its name and its keycode, the protocol and the numbers it sends. */
   readonly commands: readonly { readonly name: string; readonly keycode: string }[];
 }
+
+/**
+ * A person's choice for one key, over what the builders derive for it, `RecipeDevice.keys` for a device's own map in
+ * device mode and `RecipeActivity.keys` for an activity's: the key by its scan code, as a sequence's step names one,
+ * the press, short unless given, and what it does instead: a command of any device of the recipe, by the device's
+ * name and the command's, a sequence of the same owner's screen by its name, or nothing at all. A key not listed
+ * keeps what the builders give it, so a recipe never copies a default.
+ */
+export interface RecipeKey {
+  readonly scan: number;
+  readonly press?: 'short' | 'held';
+  readonly action: RecipeKeyAction;
+}
+export type RecipeKeyAction =
+  | { readonly device: string; readonly command: string }
+  | { readonly sequence: string }
+  | { readonly nothing: true };
 
 /** A device key, `RecipeDevice.key`. */
 export interface RecipeDeviceKey {
@@ -111,6 +130,8 @@ export interface RecipeActivity {
   readonly type: string;
   readonly devices: readonly RecipeActivityDevice[];
   readonly screen?: readonly RecipeScreenItem[];
+  /** The keys a person chose otherwise in this activity's map; absent is none. */
+  readonly keys?: readonly RecipeKey[];
 }
 
 /**
@@ -249,6 +270,34 @@ function screenItem(value: unknown, what: string): RecipeScreenItem {
   return { device: text(one.device, `${what}'s device`), command: text(one.command, `${what}'s command`) };
 }
 
+/** The keys a person chose otherwise, `RecipeKey`: each key and press once, each action one of the three. */
+function keysOf(value: unknown, what: string): RecipeKey[] {
+  const keys = list(value, `${what}'s keys`).map((one, k): RecipeKey => {
+    const at = `${what}'s key ${k + 1}`;
+    const key = fields(one, at, ['scan', 'action'], ['press']);
+    if (!Number.isInteger(key.scan) || (key.scan as number) < 0) throw new RecipeError(`${at} names no key`);
+    if (key.press !== undefined && key.press !== 'short' && key.press !== 'held') throw new RecipeError(`${at} is pressed neither short nor held`);
+    const a = object(key.action, `${at}'s action`);
+    let action: RecipeKeyAction;
+    if ('nothing' in a) {
+      fields(a, `${at}'s action`, ['nothing']);
+      if (a.nothing !== true) throw new RecipeError(`${at}'s action is nothing only as true`);
+      action = { nothing: true };
+    } else if ('sequence' in a) {
+      fields(a, `${at}'s action`, ['sequence']);
+      action = { sequence: text(a.sequence, `${at}'s sequence`) };
+    } else {
+      fields(a, `${at}'s action`, ['device', 'command']);
+      action = { device: text(a.device, `${at}'s device`), command: text(a.command, `${at}'s command`) };
+    }
+    return { scan: key.scan as number, ...(key.press === undefined ? {} : { press: key.press as 'short' | 'held' }), action };
+  });
+  // One key and press states one thing: stated twice, which of the two a builder took would be its own order.
+  const places = keys.map((one) => `${one.scan}/${one.press ?? 'short'}`);
+  if (new Set(places).size !== places.length) throw new RecipeError(`${what} states one key twice`);
+  return keys;
+}
+
 /** A carried definition: a record naming its codeset, and commands each a name and a keycode. */
 function definitionOf(value: unknown, what: string): RecipeDefinition {
   const d = fields(value, what, ['record', 'commands']);
@@ -278,7 +327,7 @@ export function readRecipe(json: unknown): Recipe {
   const model: RecipeModel = { name: text(m.name, 'the model\'s name'), ...(m.skin === undefined ? {} : { skin: m.skin as number }) };
   const devices = list(top.devices, 'the devices').map((value, k): RecipeDevice => {
     const what = `device ${k + 1}`;
-    const d = fields(value, what, ['name', 'device'], ['id', 'poweredOnBetweenActivities', 'key', 'definition']);
+    const d = fields(value, what, ['name', 'device'], ['id', 'poweredOnBetweenActivities', 'key', 'keys', 'definition']);
     if (d.poweredOnBetweenActivities !== undefined && typeof d.poweredOnBetweenActivities !== 'boolean') {
       throw new RecipeError(`${what}'s poweredOnBetweenActivities is not true or false`);
     }
@@ -294,11 +343,12 @@ export function readRecipe(json: unknown): Recipe {
       name: text(d.name, `${what}'s name`), device: text(d.device, `${what}'s catalogue entry`),
       ...(d.poweredOnBetweenActivities === undefined ? {} : { poweredOnBetweenActivities: d.poweredOnBetweenActivities as boolean }),
       ...(key === undefined ? {} : { key }),
+      ...(d.keys === undefined ? {} : { keys: keysOf(d.keys, what) }),
       ...(d.definition === undefined ? {} : { definition: definitionOf(d.definition, `${what}'s definition`) }),
     };
   });
   const activities = list(top.activities, 'the activities').map((value, k): RecipeActivity => {
-    const a = fields(value, `activity ${k + 1}`, ['name', 'type', 'devices'], ['id', 'screen']);
+    const a = fields(value, `activity ${k + 1}`, ['name', 'type', 'devices'], ['id', 'screen', 'keys']);
     const what = `activity ${text(a.name, `activity ${k + 1}'s name`)}`;
     const used = list(a.devices, `${what}'s devices`).map((one, j): RecipeActivityDevice => {
       const at = `${what}'s device ${j + 1}`;
@@ -314,6 +364,7 @@ export function readRecipe(json: unknown): Recipe {
     return {
       ...(a.id === undefined ? {} : { id: text(a.id, `${what}'s id`) }),
       name: a.name as string, type: text(a.type, `${what}'s type`), devices: used, ...(screen === undefined ? {} : { screen }),
+      ...(a.keys === undefined ? {} : { keys: keysOf(a.keys, what) }),
     };
   });
   const favourites = top.favourites === undefined ? undefined

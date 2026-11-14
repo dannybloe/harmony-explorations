@@ -112,6 +112,8 @@ export type {
   RecipeDevice,
   RecipeDeviceKey,
   RecipeFavourites,
+  RecipeKey,
+  RecipeKeyAction,
   RecipeModel,
   RecipeScreenItem,
   RecipeSequenceStep,

@@ -55,13 +55,14 @@ export type SequenceId = string;
 export type Owner = { readonly activity: ActivityId } | { readonly device: DeviceId };
 
 /**
- * One key of an owner. `key` is the name the model's drawing gives the key, Logitech's own vocabulary, `VolumeUp`,
- * `DirectionLeft`, the same on every model that has the key. `press` tells a key's second command, sent when it is
- * held, from its first, R38; absent is the short press.
+ * One key of an owner. `scan` is the key's scan code on the model, the number its drawing carries as `data-scan`
+ * and the builders bind by, so an application reads it off the key a person clicked; the drawing's name for the key
+ * is for showing. `press` tells a key's second command, sent when it is held, from its first, R38; absent is the
+ * short press.
  */
 export interface KeyPlace {
   readonly owner: Owner;
-  readonly key: string;
+  readonly scan: number;
   readonly press?: 'short' | 'held';
 }
 
@@ -76,7 +77,7 @@ export type Place =
   | { readonly kind: 'activity'; readonly activity: ActivityId }
   | { readonly kind: 'activity-device'; readonly activity: ActivityId; readonly device: DeviceId }
   | { readonly kind: 'step'; readonly activity: ActivityId; readonly when: 'start' | 'end'; readonly step: number }
-  | { readonly kind: 'key'; readonly owner: Owner; readonly key: string; readonly press?: 'short' | 'held' }
+  | { readonly kind: 'key'; readonly owner: Owner; readonly scan: number; readonly press?: 'short' | 'held' }
   | { readonly kind: 'screen-item'; readonly owner: Owner; readonly item: number }
   | { readonly kind: 'sequence'; readonly sequence: SequenceId }
   | { readonly kind: 'favourite'; readonly device: DeviceId; readonly favourite: number }

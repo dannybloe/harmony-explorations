@@ -49,7 +49,7 @@ const TYPES = [
   'KeyCode', 'KeyLabel', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
   'ModelProperties', 'NetworkArchiveOptions', 'PngHeader',
   'PowerOnDelay', 'ProntoCode', 'Proof', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
-  'RecipeDevice', 'RecipeDeviceKey', 'RecipeFavourites', 'RecipeModel', 'RecipeScreenItem', 'RecipeSequenceStep', 'RecipeTarget',
+  'RecipeDevice', 'RecipeDeviceKey', 'RecipeFavourites', 'RecipeKey', 'RecipeKeyAction', 'RecipeModel', 'RecipeScreenItem', 'RecipeSequenceStep', 'RecipeTarget',
   'RenderedPage', 'Requirement', 'RequirementAnswer', 'RequirementState', 'RequirementStatus', 'RequirementWait', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
 ];
 
