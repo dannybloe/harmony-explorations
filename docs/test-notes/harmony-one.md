@@ -331,3 +331,25 @@ One, with no prediction attached. The others in the same folder carry one: `one-
 the test setup composed onto Logitech's compile, section 403, whose run heard the Denon's and the LG's
 inputs as other commands, the Denon's CBL/SAT as Mode Pure, which section 436 traced to the composed file; `one-1-3b-row-click.json`, the click on
 composed screen rows, section 404; and `one-setup-on-empty.json`, the 8.2 run above.
+
+### A held volume key of the everyday One beside the receiver's own remote
+
+On 15 November 2026 the infrared monitor heard Volume Up of a Denon receiver held about three seconds, twice from
+the everyday One, off the cable and never written, and once from the receiver's own remote, by the word of the
+person pressing; the monitor's file is `reads/20261115T1138Z-ir-monitor.jsonl` in the lab. The receiver was in
+another room and heard none of it.
+
+| held | codes | one code | pause between codes | from the first code to the last |
+|---|---|---|---|---|
+| the everyday One, first | 20 | 57.7 ms | 73 or 74 ms | 2.53 s |
+| the everyday One, second | 24 | 57.7 ms | 73 or 74 ms | 3.06 s |
+| the receiver's own remote | 28 | 58.9 ms | 75 or 76 ms | 3.65 s |
+
+All 72 codes carry one bit pattern, and the monitor matched each to the Denon's Volume Up of `one_config`. The
+One's stream is even from its first code: nothing in the pauses marks where the three codes of a press end and the
+repeating begins. The configuration states that record as a first block of 448.4 ms and a held block of 132.8 ms,
+three sends to a press. So the One sends what the receiver's own remote sends, about two percent faster.
+
+**What this does not settle**: what the receiver does with either stream, since it was not listening. The
+complaint that prompted the measurement, a held volume key that starts late and then runs too fast, is about the
+receiver's answer, and whether its own remote gets the same answer was not observed.

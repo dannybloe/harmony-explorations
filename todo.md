@@ -67,6 +67,9 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
   - [ ] 2.3.10 The new set heard once on the infrared monitor from the bench Harmony Touch, and its own setup put back
 - [ ] 2.4 A pretend remote an application reads and syncs against with nothing attached, its progress and its failures included (R80)
 - [ ] 2.5 What an application asks of the FHSDK that no contract covers, gone through against the requirements once the skeleton stands
+  - [ ] 2.5.1 A message an application shows carries no bench command line: after a Harmony Touch sync that acted on the remote, the way back is a state the outcome names
+  - [ ] 2.5.2 A failure's words name the phase it happened in: a read back that differs is not a write that stopped part way
+  - [ ] 2.5.3 Whether a pretend remote is among the remotes an application lists, and whether reading a Harmony Touch's documents off the remote is a contract, since none exists
 
 ## 3. Released versions
 
@@ -117,7 +120,9 @@ R10 to R19 devices, R21 to R30 activities, R31 to R44 keys and screens, R45 and 
   - [ ] 7.4.1 Untested: nesting deeper than one level, a sub-page on a device's own page, whether the hard Exit key returns from one, and whether going back returns to the page it left (the add-an-activity screen returns with push and pop, section 341)
   - [ ] 7.4.2 A composer for a sub-page, against the 650's favourites page as Logitech compiles it
 - [ ] 7.5 The remote's own help, the advanced help and its delay fixing in every activity: [todo-help.md](todo/todo-help.md) (R44)
-- [ ] 7.6 Tune one command of one device: how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue's value, which Logitech did only through its support desk; first a receiver's volume measured on the infrared monitor against its own remote (a requirement of its own, to be numbered with the next change to the requirements)
+- [ ] 7.6 Tune one command of one device: how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue's value, which Logitech did only through its support desk; a requirement of its own, to be numbered with the next change to the requirements
+  - [x] 7.6.1 A receiver's held volume measured on the infrared monitor, the everyday One beside the receiver's own remote: the same code in the same even stream, the One two percent faster, `docs/test-notes/harmony-one.md`
+  - [ ] 7.6.2 At the receiver: whether its own remote gets the same late start and fast run, and whether codes sent further apart make it step evenly
 
 ## 8. Learning codes
 
