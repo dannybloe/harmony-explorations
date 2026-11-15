@@ -355,14 +355,26 @@ export function activityFromRoles(c: Container, listed: readonly ActivityDevice[
     }
     if (one.roles.length === 0) passThrough.push(one.group);
   }
-  const holding = (roles: readonly ActivityRoleName[]): number | undefined => {
+  const { volume, control } = keyDevicesOfRoles(listed, (one) => one.group);
+  return { targets: activityStartTargets(c, on, inputs), roles: { volume, control }, passThrough };
+}
+
+/**
+ * **The two devices an activity's keys follow, from the roles its devices are listed with**, section 323: the volume
+ * device holds `Volume`; the control device holds `ChannelChanging`, or where none does, one of the play roles. Two
+ * devices holding one of those jobs are refused, since the keys follow only one. Pure and named by `nameOf`, so a
+ * caller that names a device otherwise than by a group, a document family by the device's name, asks the same rule
+ * rather than keeping a copy of it; `activityFromRoles` is one caller.
+ */
+export function keyDevicesOfRoles<T extends { readonly roles: readonly ActivityRoleName[] }, N>(
+  listed: readonly T[], nameOf: (one: T) => N,
+): { readonly volume: N | undefined; readonly control: N | undefined } {
+  const holding = (roles: readonly ActivityRoleName[]): N | undefined => {
     const found = listed.filter((one) => one.roles.some((role) => roles.includes(role)));
     if (found.length > 1) {
-      throw new ComposeError(`devices ${found.map((one) => one.group).join(' and ')} both hold ${roles.join(' or ')}`);
+      throw new ComposeError(`devices ${found.map(nameOf).join(' and ')} both hold ${roles.join(' or ')}`);
     }
-    return found[0]?.group;
+    return found[0] === undefined ? undefined : nameOf(found[0]);
   };
-  const volume = holding(['Volume']);
-  const control = holding(['ChannelChanging']) ?? holding(PLAY_ROLES);
-  return { targets: activityStartTargets(c, on, inputs), roles: { volume, control }, passThrough };
+  return { volume: holding(['Volume']), control: holding(['ChannelChanging']) ?? holding(PLAY_ROLES) };
 }
