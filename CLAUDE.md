@@ -70,14 +70,14 @@ Four documents now, and the rule is one job each.
 * **`todo.md` is the sequence and the only place it lives.** Numbered chapters as markdown
   checkboxes, sub-items indented, **one line each**. Either of us adds, ticks or removes an item
   without ceremony. **Do not restate the sequence anywhere else**, which is the failure being
-  corrected: a summary of the plan is a copy with no test behind it, so it rots the way section 4
-  of the four places warns about and nothing catches it.
+  corrected: a summary of the plan is a copy with no test behind it, so it rots the way the sweep
+  of a finding's summaries warns about and nothing catches it.
 * **A worked out plan goes in `docs/plans/NNN-slug.md`**, one per planning session, numbered in the
   order written, opening with a status line of open, done or superseded. `todo.md` links to it. The
   date lives inside the document rather than in the filename, since a date in a filename is wrong
   the moment a plan is revised.
 * **A plan is a record of what was decided at the time, so it is not swept.** This is the one
-  exception to step 4 of the four places: when a finding kills a claim, the live documents get
+  exception to the sweep a finding takes: when a finding kills a claim, the live documents get
   corrected and a plan keeps what it said, because its value is the reasoning of that session. The
   `finding` skill's list of summaries to grep deliberately excludes `docs/plans/` for that reason.
   A plan whose whole approach is dead gets `status: superseded` and stays.
@@ -299,7 +299,7 @@ The tooling finds `../lab` automatically and `HARMONY_LAB` overrides it. **Tests
 lab is present, and a test must never pass on evidence it does not have**: a claim about the corpus
 takes `skipWithoutLab()` **and** `require_`, a claim about named samples takes `skipUnless(...)`, and
 in Python `lab.require(...)` guards a loop up front. `make test-nolab` and `make test-partial`, both in
-`make all`, enforce the two halves; `docs/README.md` has the measurements behind them.
+`make full`, enforce the two halves; `docs/README.md` has the measurements behind them.
 
 That directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
 
@@ -629,10 +629,13 @@ file's own header is where its reading lives.
   is the one most easily broken**, because the todo item is what a session is working on and naming it feels like
   provenance: 2067 lines in 697 files had piled up before it was written down. Documents may name todos.
   `CodeAndTestsNameNoTodo` in `tests/project/test_toolchain.py` holds it, with the three lines that may stay listed.
-* **When something new is confirmed, four things happen together**: the fact in its home in
-  `reference/` with its footnote; the argument in the header of its regression test, since the archive
-  takes nothing new, which the `[^t-name]` footnote links; the regression test; and a sweep of every
-  summary of the old answer, `reference/` and `docs/superseded.md` included. A number quoted in prose
+* **When something new is confirmed, the fact lands in its home in `reference/` with its footnote, and every
+  summary of the old answer is swept**, `reference/` and `docs/superseded.md` included. **A test is written
+  only where code leans on the fact**, decided on 15 November 2026: then the test exercises that code, its
+  header holds the argument and the `[^t-name]` footnote links it. A fact no code leans on gets no test: its
+  `[^r-name]` footnote says in words where it was read, the image and the address or the file of a client. A
+  test that only restates what a firmware image holds can never fail, and nothing ties it to the sentence it
+  was written for, so it guards neither the code nor the page; 37 such files had piled up, about 590 tests. A number quoted in prose
   carries a fact marker naming what it states, and a claim a finding kills goes into
   `docs/superseded.md` in the same commit; `make facts` checks both, in `make all` and the pre-commit
   hook. A fact about one model also lands in its `reference/remotes/<model>/` page. The `finding` skill
@@ -686,7 +689,11 @@ What stays here are the traps, because they cost something every time they were 
 `packages/*/bin` and `tools/`. The skills carry the rituals that are easy to half-perform. What is easy
 to get wrong:
 
-* **`make all` is everything except `ghidra` and `bench`.** The targets that reach Logitech's service,
+* **`make all` is the everyday run and `make full` is everything except `ghidra` and `bench`.** Since 15
+  November 2026 `make all` holds the checks, the repository's own rules (`tests/project`) and the TypeScript
+  tests; the rest of the Python suite, which tests the research tooling or states a fact about a remote against
+  a lab file and runs no function an application calls, is `make full`'s: after a change to `src/harmony`,
+  `tools` or the lab, and before a release. The targets that reach Logitech's service,
   `make analyze` and `make emitcheck`, need credentials and are never in `make all`; neither are the
   archive's, `make catalogue`, `make catalogue-raw` and `make prontocheck`. **Never print a raw
   catalogue line or a whole device**: one line is up to 35000 tokens.

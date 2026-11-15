@@ -53,7 +53,9 @@ and then links to the argument for it:
 
 The link leads to one of four places: a numbered section of the findings archive, where most of these
 facts were first worked out; a decision, for a choice rather than a fact about a remote; the automated
-test that holds a fact established later; or a public outside source.
+test that holds a fact established later; or a public outside source. One kind of note links nothing: a fact
+established later that no code of this project leans on says in words where it was read, the firmware image
+and the address, or the file of a client, so that anybody holding the same file can look.
 
 **The evidence words**, exactly one of these per note:
 

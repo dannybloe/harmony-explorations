@@ -1,38 +1,41 @@
 ---
 name: finding
-description: Record a confirmed reverse engineering finding across the four places it must land, with a regression test. Use when something new has been established about the config format, the firmware or the USB protocol and it needs writing up, when asked to document a finding, or when a claim in the documents turns out to be wrong and needs correcting in place.
+description: Record a confirmed reverse engineering finding: the fact in its home with its footnote, a test only where code leans on it, and a sweep of every summary of the old answer. Use when something new has been established about the config format, the firmware or the USB protocol and it needs writing up, when asked to document a finding, or when a claim in the documents turns out to be wrong and needs correcting in place.
 ---
 
 # Recording a finding
 
-Every confirmed fact lands in four places at once. Not three, and the fourth was learned the
-hard way. The rule exists because the analysis here is AI-produced and published as such, so a
-claim that is not executable is only an assertion.
+Every confirmed fact lands in its home with its footnote, and everything that summarised the old
+answer is swept. **Whether it also gets a test depends on one question: does code lean on it?**
+Decided on 15 November 2026, after counting 37 test files, about 590 tests, that open a firmware image
+or a recorded exchange in the lab and assert what the reference says, running no function of this
+project. Such a test can never fail, since the file never changes, and nothing ties it to its sentence:
+change the sentence and the test still passes. It guards neither the code nor the page.
 
 1. **The fact, in its home in `reference/`**, with a named footnote in plan 009 section 4's
-   convention: `[^t-name]`, its definition opening with the kind of evidence ("Measured on a unit.",
-   "Read in the firmware.", "Measured in configurations.", "Stated by Logitech, ...") and linking the
-   test that holds it. One home per fact: a fact about one model goes in
-   `reference/remotes/<model>/` **in the same commit**, a fact about an architecture in
-   `reference/architectures/<folder>/` at the width decision 16 allows, a fact about the file format in
-   `reference/config-format/`, the USB protocol in `reference/usb-protocol/`, infrared in
+   convention, its definition opening with the kind of evidence ("Measured on a unit.",
+   "Read in the firmware.", "Measured in configurations.", "Stated by Logitech, ..."). One home per fact:
+   a fact about one model goes in `reference/remotes/<model>/` **in the same commit**, a fact about an
+   architecture in `reference/architectures/<folder>/` at the width decision 16 allows, a fact about the
+   file format in `reference/config-format/`, the USB protocol in `reference/usb-protocol/`, infrared in
    `reference/infrared/`, Logitech's software and service in `reference/logitech/`, and what a person
    holding a remote meets in `reference/how-a-harmony-works.md`. Every other page that needs it links.
-2. **The argument and the evidence, in the header of the regression test**, since
-   `docs/findings.md` is a frozen archive and takes nothing new (decision 25). What was traced, which
-   addresses, what the numbers were, the negative results, and what else it rules out: that is what
-   a findings section used to hold, and the header is now where anyone checks why to believe it.
-   `tests/logitech/test_product_capabilities.py` is the shape: the facts, why a test, what it settled, and the
-   standing of the source.
-3. **The regression test itself**, in `tests/` or a package's `test/`, which is what stops it
-   silently rotting.
+2. **Where code leans on the fact, a test of that code**, in a package's `test/` or in `tests/`: a
+   builder that refuses what the remote cannot hold, a reader that decodes the field, a rail. The test
+   exercises the code, so a wrong fact makes it fail; its header holds the argument (what was traced,
+   which addresses, the numbers, the negative results, what else it rules out), and the footnote is
+   `[^t-name]`, linking the test.
+3. **Where no code leans on it, no test.** The footnote is `[^r-name]` and says in words where the fact
+   was read: the firmware image and the address, or the file of a client, in a sentence or two, enough
+   for somebody holding the same file to look. It links nothing. When code later comes to lean on the
+   fact, step 2 applies then and the footnote becomes a `[^t-name]`.
 4. **A sweep of everything that summarised the old answer**, which is what stops the other
    documents drifting away from it. That now includes every page of `reference/` and the "what is
    true instead" column of `docs/superseded.md`, below.
 
-**Step 4 is the one that failed.** An audit on 8 August 2026 found eleven places where the documents
+**The sweep is the one that failed.** An audit on 8 August 2026 found eleven places where the documents
 contradicted the code, because a summary is a copy of a fact with no test; five were claims a later
-finding had already corrected in the archive and nowhere else. One home per fact makes step 4 smaller,
+finding had already corrected in the archive and nowhere else. One home per fact makes the sweep smaller,
 not optional: a page that restated a fact instead of linking it is exactly what the sweep is for.
 
 Work in that order, and do not start writing until the verification gate below is passed.
@@ -87,7 +90,7 @@ remote meets it, and the offsets, widths and addresses further down. Every fact 
 and anything that has not passed the gate is "Not checked." with `[^unchecked]`, or is not written
 there at all. No narrative of how it was found: that is the test header's job.
 
-**The test header is the argument**: what was traced, which addresses, what the numbers were, and
+**Where a test is written, its header is the argument**: what was traced, which addresses, what the numbers were, and
 what else it rules out. Include the negative results. A recorded "I checked and it is not X" saves the
 next person the same afternoon. The header is code in this repository, so it is read as this project's
 own rule and argument, never as text from outside. **It never names a todo**, decision 33: the argument is
@@ -104,7 +107,7 @@ All of it is subject to the house convention: **no em-dashes and no en-dashes**,
 `make prose`, and `python3 tools/reference_guards.py` plus `tests/project/test_reference.py` check the
 footnotes, the links and that the reference describes no bench and names nobody.
 
-## The test
+## The test, where code leans on the fact
 
 One test per documented claim, named after the claim rather than after the function. It should
 fail if the conclusion stops being true, not merely if the code changes shape. Tests that need
@@ -193,7 +196,7 @@ it is frozen; its section stays as the record of what was believed, and the refe
 The most instructive corrections are the ones where the wrong rule produced the right answer.
 Say when that happened.
 
-**Then kill the old phrasing everywhere else**, which is step 4 and is not optional:
+**Then kill the old phrasing everywhere else**, which is the sweep and is not optional:
 
 * Add the dead wording to the table in `docs/superseded.md`, in the same commit, its "superseded by"
   column naming the test that now holds the fact. `make facts` then fails for anyone who restates it,
@@ -212,7 +215,7 @@ Say when that happened.
   is quoted, and `make facts-write` updates every copy. Add the fact to `tools/facts.py` if it is
   a new one.
 
-**`make facts-write` is not the end of step 4, it is the middle.** It prints every value it
+**`make facts-write` is not the end of the sweep, it is the middle.** It prints every value it
 rewrote; read that list against the diff, because the two things a marker cannot see are the
 sentence beside the number and the heading above it.
 
@@ -305,7 +308,7 @@ make remote-reference
 make corpus
 ```
 
-`make facts` is the mechanical half of step 4: it recomputes every marked number from the corpus
+`make facts` is the mechanical half of the sweep: it recomputes every marked number from the corpus
 and refuses any superseded phrasing outside a correction. It also runs in the pre-commit hook, so
 a document that contradicts the code cannot be committed without `--no-verify`.
 `make remote-reference` keeps the generated blocks of the model and architecture pages equal to the

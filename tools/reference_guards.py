@@ -94,7 +94,10 @@ COPY_PATTERNS = (
 
 # Plan 009 section 4. The label forms, and the evidence words each label may carry. An `x` label is a
 # public outside source, which is a third party or Logitech's own public text (a manual, say).
-LABEL = re.compile(r'^(?:s(\d+)[a-z]?|d(\d+)|t-[a-z0-9]+(?:-[a-z0-9]+)*|x-[a-z0-9]+(?:-[a-z0-9]+)*|unchecked)$')
+# `r-` is a fact established after the archive was frozen that no code of this project leans on: its note
+# says in words where it was read, the image and the address or the file of a client, and links nothing,
+# since a test that only restates what a file holds can never fail and so holds nothing.
+LABEL = re.compile(r'^(?:s(\d+)[a-z]?|d(\d+)|[tr]-[a-z0-9]+(?:-[a-z0-9]+)*|x-[a-z0-9]+(?:-[a-z0-9]+)*|unchecked)$')
 LOGITECH = ('Stated by Logitech.', 'Stated by Logitech, in the manual.',
             'Stated by Logitech, by their service.', 'Stated by Logitech, in their client.',
             'Stated by Logitech, in their catalogue.')
@@ -102,6 +105,7 @@ MEASURED = ('Read in the firmware.', 'Measured on a unit.', 'Measured in configu
 EVIDENCE = {
     's': MEASURED,
     't': MEASURED,
+    'r': MEASURED,
     'x': ('Stated by a third party.',) + LOGITECH,
     'd': ('Chosen by this project.',),
     'unchecked': ('Not checked.',),
@@ -539,6 +543,14 @@ def footnote_problems(path, text, root=ROOT, sections=None, decisions=None):
         if kind == 'unchecked':
             if targets:
                 problems.append((label, 'links although not checked'))
+            continue
+        if kind == 'r':
+            # Where it was read stands in words after the evidence words; a link would promise an argument
+            # elsewhere, which is what the other kinds are for.
+            if targets:
+                problems.append((label, 'links although it says in words where it was read'))
+            elif not body[len(words):].strip(' .'):
+                problems.append((label, 'does not say where it was read'))
             continue
         if len(targets) != 1:
             problems.append((label, 'does not name exactly one source'))

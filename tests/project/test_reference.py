@@ -228,7 +228,8 @@ class PlantedViolations(unittest.TestCase):
 
     def test_footnotes(self):
         good = (
-            'Fact[^s1], choice[^d1], later[^t-thing], outside[^x-forum], open[^unchecked], again[^s1b].\n\n'
+            'Fact[^s1], choice[^d1], later[^t-thing], outside[^x-forum], open[^unchecked], again[^s1b],\n'
+            'read[^r-timers].\n\n'
             # A reference directly followed by a colon is still a reference: the guard once told a
             # definition by its colon and missed this one.
             'As measured[^s1c]: a colon after a reference.\n\n'
@@ -242,11 +243,13 @@ class PlantedViolations(unittest.TestCase):
             '[^unchecked]: Not checked.\n'
             '[^s1b]: Stated by Logitech, in their client. [Section 1](../docs/findings.md#s1)\n'
             '[^s1c]: Measured on a unit. [Section 1](../docs/findings.md#s1)\n'
+            '[^r-timers]: Read in the firmware. The application 4.4, the table at `0x223`.\n'
             '```\n[^s9]: an example in a fence is not a footnote\n```\n')
         path = write(self.root, 'reference/clean.md', good)
         self.assertEqual(guards.footnote_problems(path, good, self.root), [])
         bad = (
-            'A[^S1] b[^s2] c[^s1] d[^d1] e[^d7] f[^t-thing] g[^x-a] h[^unchecked] i[^s3] j[^nodef] k[^d2].\n\n'
+            'A[^S1] b[^s2] c[^s1] d[^d1] e[^d7] f[^t-thing] g[^x-a] h[^unchecked] i[^s3] j[^nodef] k[^d2]\n'
+            'l[^r-linked] m[^r-bare] n[^r-chosen].\n\n'
             '[^S1]: Read in the firmware. [Section 1](../docs/findings.md#s1)\n'
             '[^s2]: Read in the firmware. [Section 2](../docs/findings.md#s2)\n'
             '[^s1]: Guessed. [Section 1](../docs/findings.md#s1)\n'
@@ -257,6 +260,9 @@ class PlantedViolations(unittest.TestCase):
             '[^unchecked]: Not checked. [Section 1](../docs/findings.md#s1)\n'
             '[^s3]: Read in the firmware. [Section 1](../docs/findings.md#s1) [Section 3](../docs/findings.md#s3)\n'
             '[^orphan]: Not checked.\n'
+            '[^r-linked]: Read in the firmware. [Section 1](../docs/findings.md#s1)\n'
+            '[^r-bare]: Read in the firmware.\n'
+            '[^r-chosen]: Chosen by this project. The table at `0x223`.\n'
             '[^d2]: Chosen by this project. [Decision 1](../docs/decisions.md#d1)\n'
             '[^s1]: Read in the firmware. [Section 1](../docs/findings.md#s1)\n')
         path = write(self.root, 'reference/page.md', bad)
@@ -277,6 +283,9 @@ class PlantedViolations(unittest.TestCase):
             ('orphan', 'defined and never referenced'),
             ('orphan', 'label not of an allowed form'),
             ('d2', 'does not link its own decision'),
+            ('r-linked', 'links although it says in words where it was read'),
+            ('r-bare', 'does not say where it was read'),
+            ('r-chosen', 'evidence words do not match the label'),
         })
         counted = guards.footnote_violations(self.root)
         self.assertEqual({path for path, _ in counted}, {'reference/page.md'})

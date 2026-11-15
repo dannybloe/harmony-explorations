@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-project test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all full clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -85,13 +85,21 @@ help:
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
 	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
 	@echo "test-partial the suite against a lab holding one sample: no test may pass partially"
-	@echo "all          everything above except ghidra, bench, probe and site"
+	@echo "test-project the repository's own rules alone: documents, links, the toolchain"
+	@echo "all          the everyday run: the checks, the repository's rules and the TypeScript tests"
+	@echo "full         all, and the Python suite with its two lab checks: after the research tooling or the lab changes, and before a release"
 
 test:
 	@$(PYTHON) -m unittest discover -s $(TESTS)
 	@if [ -z "$$HARMONY_LAB" ] && [ ! -d ../lab ]; then \
 	  echo; echo "note: no lab directory found, so image-backed tests were skipped."; \
 	  echo "      set HARMONY_LAB, or put one alongside the repository."; fi
+
+# The repository's own rules alone: what a document, a link, a generated file and the toolchain must hold.
+# This is the part of the Python suite the everyday run keeps, since it is what a change to the libraries
+# or to a document can break. `-t` keeps the tests' own imports resolving as the whole suite's do.
+test-project:
+	@$(PYTHON) -m unittest discover -s $(TESTS)/project -t $(TESTS)
 
 test-verbose:
 	@$(PYTHON) -m unittest discover -s $(TESTS) -v
@@ -487,7 +495,14 @@ hooks:
 	@git config core.hooksPath .githooks
 	@echo "core.hooksPath set to .githooks; pre-commit checks are live in this clone"
 
-all: lint pyright prose facts myharmony-model test test-nolab test-partial ts audit
+# The everyday run holds what a change to the libraries can break: the checks, the repository's rules and
+# the TypeScript tests. The rest of the Python suite tests the research tooling or states a fact about a
+# remote against a lab file, measured on 15 November 2026 at about five minutes run alone and eleven beside
+# the TypeScript tests, and none of it runs a function an application calls. It is `full`'s.
+all: lint pyright prose facts myharmony-model test-project ts audit
+
+# Everything: after a change to `src/harmony`, `tools` or the lab, and before a release.
+full: all test test-nolab test-partial
 
 clean:
 	@find . -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null; true

@@ -1211,7 +1211,9 @@ make site          build the reference website into site/, strict: any broken li
                    missing from the navigation fails it. SITE_STRICT=false prints the same warnings
                    and builds anyway, for as long as todo/done/todo-reference.md chapters 3 and 4 run. Its
                    environment is made once under ~/.cache, never inside the checkout
-make all           everything except ghidra and bench
+make all           the everyday run: the checks, the repository's rules (tests/project) and the TypeScript tests
+make full          all, and the whole Python suite with test-nolab and test-partial: after a change to the
+                   research tooling or the lab, and before a release
 ```
 
 ```
@@ -1646,7 +1648,7 @@ over the runner-up before trusting its answer.
 
 The tooling finds `../lab` automatically, so no environment variable is needed in a normal
 checkout; `HARMONY_LAB` overrides it. Tests skip cleanly when no lab is present, and **`make test-nolab`
-is what enforces that, in `make all`**. It used to say "enforced rather than assumed" on the strength of
+is what enforces that, in `make full`**. It used to say "enforced rather than assumed" on the strength of
 having been run by hand once, and nothing ran it afterwards: on 10 August 2026 trelowney pointed
 `HARMONY_LAB` at a directory that does not exist and found one Python test and one TypeScript test that
 had slipped through. **A claim of enforcement with no check behind it is the failure this file warns
@@ -1670,7 +1672,7 @@ named samples takes `skipUnless(...)`, which skips. Two tests are allowed the ol
 against whatever dumps are present.
 
 **`make test-nolab` cannot catch the case in between, by construction, and `make test-partial` is
-that half**, added on 13 August 2026 in `make all`: it runs the suite against a lab holding **one**
+that half**, added on 13 August 2026 in `make all` and since 15 November 2026 in `make full`: it runs the suite against a lab holding **one**
 sample and fails on any test that reports successful with one of its own subtests skipped. `test-nolab`
 looks for a **failure**, and here passing is the bug, so no amount of running it would have found this.
 The number it found was **43 tests**, which is the measurement to quote rather than the shape: a test
