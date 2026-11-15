@@ -192,7 +192,8 @@ device's answer and no activity's, since an activity derives from its devices' d
 **Answered for the Harmony One and the Harmony Touch**, the two models whose families state their maps. Every other
 model answers not built, naming the model and R77. `check` holds a document's key choices to the same places: a word
 that is no key of the model, a key the owner's map does not bind, and a press the key does not have are each a problem
-with its place. `packages/codec/test/recipe/toolkitkeys.test.ts` holds all of it on the two reference documents.
+with its place, coded as `setKey` refuses the same place: a key only the other kind of owner binds is not on this model,
+a key the remote binds itself unknown. `packages/codec/test/recipe/toolkitkeys.test.ts` holds all of it on the two reference documents.
 
 ## Changing a document
 

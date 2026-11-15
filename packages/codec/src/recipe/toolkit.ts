@@ -2583,9 +2583,14 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
       return false;
     }
     if (!binds(at, kindOf(owner))) {
-      const why = at.boundBy === 'remote' ? `a ${model}'s maps bind no key of that name: ${at.why ?? 'the configuration binds it outside them'}`
-        : `on a ${model} only ${at.boundBy === 'device' ? 'a device\'s own map' : 'an activity\'s map'} binds it`;
-      say('error', 'unknown-key', place, `${what} chooses what the ${key.key} key does, and ${why}`);
+      // Coded as `setKey` refuses the same place, so an application that acts on a code meets one answer whichever of
+      // the two it asked: a key the remote binds outside every map is no key a person can choose, unknown; a key only
+      // the other kind of owner's map binds is a key the model has, just not in this map, not on this model.
+      if (at.boundBy === 'remote') {
+        say('error', 'unknown-key', place, `${what} chooses what the ${key.key} key does, and a ${model}'s maps bind no key of that name: ${at.why ?? 'the configuration binds it outside them'}`);
+      } else {
+        say('error', 'not-on-this-model', place, `${what} chooses what the ${key.key} key does, and on a ${model} only ${at.boundBy === 'device' ? 'a device\'s own map' : 'an activity\'s map'} binds it`);
+      }
       return false;
     }
     if (!at.presses.includes(press)) {

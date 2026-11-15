@@ -30,7 +30,8 @@
  *   Touch's own block, naming the converter; and stopped with `commands`'s error for a device carrying no definition
  *   when no archive is given, and answered as before when an archive serves it.
  * * **The check** lists a key choice naming no place of the model, a place no map of that owner binds, and a press the
- *   place does not have, from the same places.
+ *   place does not have, from the same places, each with the code `setKey`'s refusal of that place carries: a key only
+ *   the other kind of owner binds is not on this model, a key the remote binds itself unknown.
  * * **What an answer says, and what it leaves alone**: the questions answer the document, so on a Harmony One a stated
  *   timing and a command's tuning answer as the person's while `check` lists each as not built for the model; a choice
  *   equal to the default is the person's; a key choice naming a device the document does not hold stops that owner's
@@ -647,7 +648,7 @@ test('the check lists a key choice naming no place, a place no map of its owner 
     ];
     json.devices[0].keys = [...json.devices[0].keys, { key: 'SwipeUp', action: { nothing: true } }];
   }), [
-    ['error', 'unknown-key', { kind: 'key', owner: { device: 'd1' }, key: 'SwipeUp' }, 'LG TV\'s own map chooses what the SwipeUp key does, and on a Harmony Touch only an activity\'s map binds it'],
+    ['error', 'not-on-this-model', { kind: 'key', owner: { device: 'd1' }, key: 'SwipeUp' }, 'LG TV\'s own map chooses what the SwipeUp key does, and on a Harmony Touch only an activity\'s map binds it'],
     ['error', 'unknown-key', { kind: 'key', owner, key: 'Dance' }, 'activity Listen to Music chooses what the Dance key does, and no model has a key of that name'],
     ['error', 'unknown-key', { kind: 'key', owner, key: 'Favorites' }, `activity Listen to Music chooses what the Favorites key does, and a Harmony Touch's maps bind no key of that name: ${favoritesWhy}`],
     ['error', 'not-on-this-model', { kind: 'key', owner, key: 'Number1', press: 'held' }, 'activity Listen to Music gives the Number1 key a held press, which the Number1 key of a Harmony Touch does not have'],
@@ -656,6 +657,32 @@ test('the check lists a key choice naming no place, a place no map of its owner 
   assert.deepEqual(added(oneTest(), (json) => { json.activities[0].keys = [{ key: 'VolumeUp', press: 'held', action: { nothing: true } }]; }), [
     ['error', 'not-on-this-model', { kind: 'key', owner: { activity: 'a1' }, key: 'VolumeUp', press: 'held' }, 'activity TV kijken gives the VolumeUp key a held press, which the VolumeUp key of a Harmony One does not have'],
   ]);
+});
+
+test('the check codes a key choice as setKey refuses the same place: a key only the other owner binds not on this model, a key the remote binds itself unknown', () => {
+  // Two routes to one place: `setKey`'s refusal, and the check of a document that states the same choice written by
+  // hand. An application acts on the code, so the two have to agree on it, and before they agreed the check said
+  // unknown where `setKey` said not on this model, for a gesture in a device's own map.
+  const touch = touchTest();
+  const reasons = { 'not-on-this-model': 'not-on-this-model', unknown: 'unknown-key' } as const;
+  const cases: readonly (readonly [Owner, string, keyof typeof reasons])[] = [
+    // A gesture is an activity's alone on a Touch: a key the model has, not in a device's map.
+    [{ device: 'd1' }, 'SwipeUp', 'not-on-this-model'],
+    // Favorites is a zone of the touch sensor the screens act on themselves, bound by no map: no key a person chooses.
+    [{ activity: 'a3' }, 'Favorites', 'unknown'],
+  ];
+  for (const [owner, key, reason] of cases) {
+    assert.throws(() => recipe.setKey(touch, { owner, key }, { nothing: true }),
+      (error: unknown) => error instanceof recipe.ChangeRefused && error.reason === reason, key);
+    const listed = added(touch, (json) => {
+      const at = 'device' in owner ? json.devices.find((one: Json) => one.id === owner.device) : json.activities.find((one: Json) => one.id === owner.activity);
+      at.keys = [...(at.keys ?? []), { key, action: { nothing: true } }];
+    });
+    assert.deepEqual(listed.map(([severity, code, place]) => [severity, code, place]), [['error', reasons[reason], { kind: 'key', owner, key }]], key);
+  }
+  // The control: the same gesture in an activity's map is taken by `setKey` and listed by nothing.
+  assert.doesNotThrow(() => recipe.setKey(touch, { owner: { activity: 'a3' }, key: 'SwipeUp' }, { nothing: true }));
+  assert.deepEqual(added(touch, (json) => { json.activities[2].keys = [...(json.activities[2].keys ?? []), { key: 'SwipeUp', action: { nothing: true } }]; }), []);
 });
 
 test('the control: a choice on a place the owner binds, with a press it has, is not listed as a key the model lacks', () => {

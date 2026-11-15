@@ -9,7 +9,7 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 [the evidence](../docs/remote-requirements-evidence.md).
 
 <!-- checklist -->
-Open: 38, of which 21 its own or its family's work, 8 the FHSDK's work alone and 9 a run on a unit alone.
+Open: 38, of which 19 its own or its family's work, 8 the FHSDK's work alone and 11 a run on a unit alone.
 
 ## The whole configuration
 
@@ -38,7 +38,7 @@ Open: 38, of which 21 its own or its family's work, 8 the FHSDK's work alone and
 ## Activities
 
 - [x] R21 Create an activity of a kind with its devices; starting, switching and Off behave as the manuals describe.
-- [ ] R22 Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key. (waits on its family)
+- [ ] R22 Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key. (waits on a run on a unit)
 - [x] R23 Set each device's input in an activity, or leave it alone.
 - [x] R24 Include a pass through device in an activity.
 - [x] R26 Remove an activity.
@@ -51,7 +51,7 @@ Open: 38, of which 21 its own or its family's work, 8 the FHSDK's work alone and
 ## Keys and screens
 
 - [x] R31 Change what a key does in an activity: any command of its devices, a sequence, or nothing.
-- [ ] R32 Change what a key does for a device in device mode, any device's command included, such as the receiver's volume in TV mode. (waits on its family)
+- [ ] R32 Change what a key does for a device in device mode, any device's command included, such as the receiver's volume in TV mode. (waits on a run on a unit)
 - [ ] R33 Give a device its device mode map from the catalogue, every key and screen page, as Logitech's software would. (waits on its family)
 - [x] R34 Put commands on an activity's screen, labelled and ordered, across pages.
 - [x] R35 Put commands on a device's screen pages in device mode.

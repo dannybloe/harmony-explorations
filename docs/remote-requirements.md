@@ -111,7 +111,7 @@ Each remote's open requirements by whose work is missing, every one counted once
 | Harmony 785 | 57 | 55 | 1 | 1 |
 | Harmony 300 | 38 | 20 | 16 | 2 |
 | Harmony 350 | 35 | 19 | 16 | 0 |
-| Harmony Touch | 38 | 21 | 8 | 9 |
+| Harmony Touch | 38 | 19 | 8 | 11 |
 | Harmony Elite | 59 | 57 | 1 | 1 |
 | Harmony Hub | 52 | 49 | 2 | 1 |
 

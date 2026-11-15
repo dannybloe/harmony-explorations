@@ -338,7 +338,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, open, waiting on its family: An activity's key map is not composed for the 785.
 * **Harmony 300**, open, waiting on its family: Only the channel changing role picks the map Watch TV ends in; other roles map no keys and learned commands are not handled.
 * **Harmony 350**, open, waiting on its family: Roles choose Watch TV's final device map and volume source; a learned command landing on its usual key is not offered.
-* **Harmony Touch**, open, waiting on its family: The Touch's maps are stated key by key; nothing maps an activity's keys from its devices' jobs.
+* **Harmony Touch**, open, waiting on a run on a unit: An activity's keys are mapped from its devices' jobs and their default maps, a command landing on the key of its name, and read back from the documents built, but no activity mapped that way has been sent to the unit; a learned command lands on no key until a build reads a command's own code (R19).
 * **Harmony Elite**, open, waiting on its family and the remote itself: Nothing maps an activity's keys from its devices' jobs, and the Elite's keys are not read.
 * **Harmony Hub**, open, waiting on its family: Nothing maps an activity's keys from its devices' jobs for the remotes a hub serves.
 
@@ -520,7 +520,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, open, waiting on the FHSDK and its family: Which command each key takes in a 785 device mode is not read, and nothing changes one.
 * **Harmony 300**, open, waiting on the FHSDK: A device mode remap ran on the unit, made by a lab script; no library function changes one key's binding.
 * **Harmony 350**, open, waiting on the FHSDK: A device's map comes from the family's table and the recipe cannot override a key.
-* **Harmony Touch**, open, waiting on its family: A device's own keys are composed and heard, but a device map can bind only that device's commands, never another's.
+* **Harmony Touch**, open, waiting on a run on a unit: A device's own keys are composed and heard, and a key of its map given another device's command is built and read back from the documents, but no device map binding another device's command has been sent to the unit.
 * **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing changes what a key does in device mode on an Elite; its keys are not read.
 * **Harmony Hub**, unknown: A hub has no keys of its own; how its setup carries a paired remote's device mode maps is not read.
 
