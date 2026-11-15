@@ -690,7 +690,8 @@ What stays here are the traps, because they cost something every time they were 
 to get wrong:
 
 * **`make all` is the everyday run and `make full` is everything except `ghidra` and `bench`.** Since 15
-  November 2026 `make all` holds the checks, the repository's own rules (`tests/project`) and the TypeScript
+  November 2026 `make all` holds the checks, the repository's own rules (`tests/project`), the nine Python files that
+  hold numbers in `packages/usb/src` to the firmware and to Logitech's client (`make test-rails`) and the TypeScript
   tests; the rest of the Python suite, which tests the research tooling or states a fact about a remote against
   a lab file and runs no function an application calls, is `make full`'s: after a change to `src/harmony`,
   `tools` or the lab, and before a release. The targets that reach Logitech's service,

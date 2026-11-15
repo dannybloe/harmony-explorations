@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-project test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all full clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-project test-rails test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all full clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -86,6 +86,7 @@ help:
 	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
 	@echo "test-partial the suite against a lab holding one sample: no test may pass partially"
 	@echo "test-project the repository's own rules alone: documents, links, the toolchain"
+	@echo "test-rails   the nine Python files that hold numbers in packages/usb/src to the firmware and to Logitech's client"
 	@echo "all          the everyday run: the checks, the repository's rules and the TypeScript tests"
 	@echo "full         all, and the Python suite with its two lab checks: after the research tooling or the lab changes, and before a release"
 
@@ -100,6 +101,17 @@ test:
 # or to a document can break. `-t` keeps the tests' own imports resolving as the whole suite's do.
 test-project:
 	@$(PYTHON) -m unittest discover -s $(TESTS)/project -t $(TESTS)
+
+# The Python tests that read a TypeScript source of `packages/usb` and hold a number in it to the firmware or to
+# Logitech's client: the write rails, the command protocol, the write commands and the paths never opened on a
+# file based remote. They are the only tie between those numbers and their source, so they stay in the everyday
+# run although the rest of the Python suite left it. One discovery per file keeps the tests' own imports resolving.
+RAILS_TESTS = test_harmony_525_flash.py test_harmony_525_region.py test_arch14_write_target.py \
+              test_host_client.py test_concordance_notes.py test_findings.py test_client_templates.py \
+              test_usb_firmware.py test_harmony_touch_api_names.py
+
+test-rails:
+	@for one in $(RAILS_TESTS); do $(PYTHON) -m unittest discover -s $(TESTS) -p $$one || exit 1; done
 
 test-verbose:
 	@$(PYTHON) -m unittest discover -s $(TESTS) -v
@@ -499,7 +511,7 @@ hooks:
 # the TypeScript tests. The rest of the Python suite tests the research tooling or states a fact about a
 # remote against a lab file, measured on 15 November 2026 at about five minutes run alone and eleven beside
 # the TypeScript tests, and none of it runs a function an application calls. It is `full`'s.
-all: lint pyright prose facts myharmony-model test-project ts audit
+all: lint pyright prose facts myharmony-model test-project test-rails ts audit
 
 # Everything: after a change to `src/harmony`, `tools` or the lab, and before a release.
 full: all test test-nolab test-partial

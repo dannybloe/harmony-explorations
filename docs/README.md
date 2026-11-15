@@ -1211,7 +1211,11 @@ make site          build the reference website into site/, strict: any broken li
                    missing from the navigation fails it. SITE_STRICT=false prints the same warnings
                    and builds anyway, for as long as todo/done/todo-reference.md chapters 3 and 4 run. Its
                    environment is made once under ~/.cache, never inside the checkout
-make all           the everyday run: the checks, the repository's rules (tests/project) and the TypeScript tests
+make all           the everyday run: the checks, the repository's rules (tests/project), test-rails and the
+                   TypeScript tests
+make test-rails    the nine Python files that read a source of packages/usb and hold a number in it to the
+                   firmware or to Logitech's client: the write rails, the protocol, the write commands, the
+                   paths never opened
 make full          all, and the whole Python suite with test-nolab and test-partial: after a change to the
                    research tooling or the lab, and before a release
 ```
