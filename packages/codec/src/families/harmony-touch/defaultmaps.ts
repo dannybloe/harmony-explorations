@@ -84,6 +84,7 @@
  */
 import { keyDevicesOfRoles, type ActivityRoleName } from '../../compose/activityroles.ts';
 import { BUTTON_KEYS, type TouchButtonKey, type TouchGestureKey } from './compose.ts';
+import { NUMBER_PAD_LEFT, NUMBER_PAD_RIGHT } from './read.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // Device mode: the keys
@@ -218,15 +219,37 @@ export function defaultDeviceKeys(commands: readonly string[], rules: readonly T
 // Device mode: the screen list and the number pad
 // ---------------------------------------------------------------------------------------------------
 
-/** The number pad's group, and the group of the entry that opens it, `BUTTON_GROUPS`. */
-const LIST_GROUP = 0;
-const PAD_GROUP = 2;
-const PAD_OPENER_GROUP = 36;
+/** The list's group, the number pad's, and the group of the entry that opens the pad, `BUTTON_GROUPS`. */
+export const LIST_GROUP = 0;
+export const PAD_GROUP = 2;
+export const PAD_OPENER_GROUP = 36;
 
 /** Where the pad holds each digit: `1` to `9` from 0, and `0` below 8's row, at 10. */
-const DIGIT_SLOTS: Readonly<Record<string, number>> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 0: 10 };
-const LEFT_SLOT = 9;
-const RIGHT_SLOT = 11;
+export const DIGIT_SLOTS: Readonly<Record<string, number>> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 0: 10 };
+/** The pad's keys left and right of 0, by their place in the pad's numbering. */
+export const LEFT_SLOT = 9;
+export const RIGHT_SLOT = 11;
+
+/** One key of the number pad: its slot in the pad's numbering, and the command names the pad screen draws on it. */
+export interface PadKey {
+  readonly slot: number;
+  readonly draws: readonly string[];
+}
+
+/**
+ * **What the number pad screen draws on each of its twelve keys**, by slot: each digit's own name on its key, and on
+ * the keys beside 0 the firmware's lists, `NUMBER_PAD_LEFT` and `NUMBER_PAD_RIGHT` in `read.ts`; the screen places an
+ * entry of the pad's group by its command's name, and an entry of any other name on no key,
+ * `activities-and-buttons.md` "Screen entries and the number pad". The one table the rule reads its digits from and
+ * the check of a person's choice on a pad key holds to, `recipemaps.ts`. The rule's own preferences beside 0,
+ * `DEFAULT_PAD_LEFT` and `DEFAULT_PAD_RIGHT`, are a choice among a device's commands and not this table: they put the
+ * Plex's `Clear` on the left key, which the pad draws on no key, as the score of the rule records.
+ */
+export const PAD_KEYS: readonly PadKey[] = [
+  ...Object.entries(DIGIT_SLOTS).map(([digit, slot]) => ({ slot, draws: [digit] })),
+  { slot: LEFT_SLOT, draws: NUMBER_PAD_LEFT },
+  { slot: RIGHT_SLOT, draws: NUMBER_PAD_RIGHT },
+].sort((a, b) => a.slot - b.slot);
 
 /**
  * The command a default map puts on the pad's key left of 0: `.` on the LG TV, `*` on the Xbox, `Clear` on the Plex,
@@ -250,9 +273,10 @@ export const DEFAULT_PAD_RIGHT: readonly string[] = ['-', '#', 'NumberEnter', 'E
 /** The marks a device's right key keeps for itself and the list holds, `DEFAULT_PAD_RIGHT`. */
 const LISTED_MARKS: ReadonlySet<string> = new Set(['-', '#']);
 
-const LEFT_LABEL = 'NumberPlus';
-const RIGHT_LABEL = 'Number Enter';
-const PAD_OPENER_LABEL = '123';
+/** The labels a default map gives the pad's two keys beside 0, and the entry that opens the pad. */
+export const LEFT_LABEL = 'NumberPlus';
+export const RIGHT_LABEL = 'Number Enter';
+export const PAD_OPENER_LABEL = '123';
 
 /**
  * The commands the list opens with, after Home, the pad's opener and the three power commands, in this order where
@@ -295,9 +319,11 @@ export interface ScreenRules {
 function padEntries(left: readonly string[]): DefaultEntry[] {
   const spelt = spellings(left);
   const pad: DefaultEntry[] = [];
-  for (const [digit, index] of Object.entries(DIGIT_SLOTS)) {
-    const own = spelt.get(digit);
-    if (own !== undefined) pad.push({ entry: own, index, group: PAD_GROUP, press: own });
+  // Each digit by the name the pad draws on its key, `PAD_KEYS`.
+  for (const key of PAD_KEYS) {
+    if (key.slot === LEFT_SLOT || key.slot === RIGHT_SLOT) continue;
+    const own = spelt.get(key.draws[0]!);
+    if (own !== undefined) pad.push({ entry: own, index: key.slot, group: PAD_GROUP, press: own });
   }
   const leftKey = firstHeld(spelt, DEFAULT_PAD_LEFT);
   if (leftKey !== undefined) pad.push({ entry: LEFT_LABEL, index: LEFT_SLOT, group: PAD_GROUP, press: leftKey });

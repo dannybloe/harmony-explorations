@@ -59,7 +59,7 @@ test('a device found, fetched and added, an activity made, two keys chosen, the 
       devices: [{ device: 'd1', roles: ['Display', 'ChannelChanging'] }, { device: 'd2', roles: ['Volume'] }],
     }).document;
     // The keys a choice is made for are the model's to list, by word, and the commands the document's own.
-    const keys = recipe.keyNames(document);
+    const keys = recipe.keyNames(document).map((one) => one.key);
     assert.ok(keys.includes('VolumeUp') && keys.includes('Info'));
     const receiverCommands = recipe.commands(document, 'd2').map((one) => one.name);
     assert.ok(receiverCommands.includes('VolumeUp') && receiverCommands.includes('Mute'));

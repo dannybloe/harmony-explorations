@@ -1,6 +1,6 @@
 /**
  * The maps a family carries, decision 43, `families/maps.ts`: four members a family states and one resolve for every
- * family. No family states maps yet, so the resolve is held here against a family made up for the test, small enough
+ * family. The resolve is held here against a family made up for the test, small enough
  * to read whole: three places, a device rule that binds a key to the command of its own name, and an activity rule
  * that takes the volume key from the device holding `Volume`, and everything else, its screen included, from the one
  * changing channels.
@@ -10,7 +10,8 @@
  * for a press the place lacks is not answered; an activity is derived from its devices' **default** maps, keys and
  * screen, so a choice in a device's own map changes no activity, `reference/how-a-harmony-works.md`; a screen stated
  * is the document's whole and an absent one the family's; a device whose commands cannot be read fails the whole
- * resolve; and the lookup by model answers no maps for any model today.
+ * resolve; a place no owner's map binds is answered for none, and a touch key keeps its surface; and the lookup by model
+ * answers the maps of the families that state them.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -160,13 +161,51 @@ test('an activity\'s choice stands over its default, a gesture\'s second press a
   assert.equal(resolveMaps(MADE_UP, 54, elsewhere, NO_CATALOGUE).activities[0]!.keys.some((one) => one.key === 'Red'), false);
 });
 
+/**
+ * A place no device's or activity's map binds, `remote`, is answered for no owner, even where the document chooses it,
+ * since no owner's map says what it does; and a touch key, the `touch` surface, is answered like any other place for the
+ * owners that bind it, its surface carried through. The family is the made up one with two places more.
+ */
+test('a remote place is answered for no owner, even where chosen, and a touch key keeps its surface in the answer', () => {
+  const more: FamilyMaps = {
+    ...MADE_UP,
+    places: () => [
+      ...PLACES,
+      { key: 'Off', surface: 'keypad', presses: ['short'], boundBy: 'remote', built: false, why: 'no map binds it' },
+      { key: 'SoftLeft', surface: 'touch', presses: ['short'], boundBy: 'device', built: true },
+    ],
+  };
+  const chosen = document({
+    device: { keys: [{ key: 'Off', action: { device: 'Television', command: 'Guide' } }] },
+    activity: { keys: [{ key: 'Off', action: { nothing: true } }] },
+  });
+  const { devices, activities } = resolveMaps(more, 54, chosen, NO_CATALOGUE);
+  for (const owner of [...devices, ...activities]) assert.equal(owner.keys.some((one) => one.key === 'Off'), false, owner.name);
+  assert.deepEqual(devices[0]!.keys.find((one) => one.key === 'SoftLeft'),
+    { key: 'SoftLeft', surface: 'touch', press: 'short', action: { nothing: true }, isDefault: true });
+  assert.equal(activities[0]!.keys.some((one) => one.key === 'SoftLeft'), false);
+  // The control: the same place bound by both owners is answered for each, so it is the binder that leaves it out.
+  const bound: FamilyMaps = { ...more, places: () => more.places(54).map((one) => (one.key === 'Off' ? { ...one, boundBy: 'both' as const } : one)) };
+  const answered = resolveMaps(bound, 54, chosen, NO_CATALOGUE);
+  assert.deepEqual(answered.devices[0]!.keys.find((one) => one.key === 'Off')?.action, { device: 'Television', command: 'Guide' });
+  assert.deepEqual(answered.activities[0]!.keys.find((one) => one.key === 'Off')?.action, { nothing: true });
+});
+
 test('an activity using a device the document does not hold is refused, since there is no map to derive from', () => {
   const lost = document({ activity: { devices: [{ device: 'Player', roles: ['ChannelChanging'] }] } });
   assert.throws(() => resolveMaps(MADE_UP, 54, lost, NO_CATALOGUE), /uses Player, which is no device of the document/);
 });
 
-test('the lookup by model answers no maps for any family today, and refuses a model no family serves', () => {
-  for (const model of [{ name: 'Harmony One', skin: 54 }, { name: 'Harmony 650' }, { name: 'Harmony 350' }, { name: 'Harmony 885' }, { name: 'Harmony Touch' }]) {
+test('the lookup by model answers the maps of the families that state them, none for the rest, and refuses a model no family serves', () => {
+  // The Harmony One's family states its maps, asked by the skin of the model asked for.
+  const one = mapsOfModel({ name: 'Harmony One', skin: 54 });
+  assert.equal(one?.skin, 54);
+  assert.equal(typeof one?.maps.places, 'function');
+  // The Harmony Touch's family states its maps too, its document family alike, at the remote's own skin.
+  const touch = mapsOfModel({ name: 'Harmony Touch' });
+  assert.equal(touch?.skin, 99);
+  assert.equal(typeof touch?.maps.places, 'function');
+  for (const model of [{ name: 'Harmony 650' }, { name: 'Harmony 350' }, { name: 'Harmony 885' }]) {
     assert.equal(mapsOfModel(model), undefined, model.name);
   }
   assert.throws(() => mapsOfModel({ name: 'Harmony 525' }), NoFamilyError);

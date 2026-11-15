@@ -21,6 +21,7 @@ import { withOneActivityDeviceList } from './devicelists.ts';
 import { oneMenuMarkerWriter } from './menus.ts';
 import { oneFromRecipe } from './fromrecipe.ts';
 import { ONE_RECIPE_KEYS } from './recipekeys.ts';
+import { ONE_MAPS } from './recipemaps.ts';
 
 export const ONE: Family<OneChoices> = {
   kind: 'compiled',
@@ -33,6 +34,8 @@ export const ONE: Family<OneChoices> = {
   deviceModeKeys: ONE_HARD_KEYS,
   // A recipe's key choices, R31 and R32: an activity's through the shared composer, device mode's rebound in place.
   recipeKeys: ONE_RECIPE_KEYS,
+  // The places, the commands carried and the default maps, decision 43, derived by the functions the build runs.
+  maps: ONE_MAPS,
   stateTables: ONE_STATE_TABLES,
   fonts: ONE_FONTS,
   sends: ONE_SENDS,

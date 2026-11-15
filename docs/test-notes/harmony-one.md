@@ -365,7 +365,11 @@ key was pressed on which remote is the word of the person pressing. No set top b
 | the everyday One, Channel Up, short | 10 groups | 4, the same | no second group; the pauses between presses ran from 532 to 916 ms |
 | the set top box's own remote, short | 10 groups | 2: one opening code and one in the repeat form, 86 ms apart | none |
 
+| the everyday One, thirty short presses of one channel key, then thirty of the other | 60 groups, two opening codes, 30 and 30 | 4, the same | no second group; the shortest pause between two presses was 507 ms |
+
 A held key on the One sends the repeat form on and on with no second opening code, so a second group is not a key
-held a little long. **What this does not settle**: why the One sent a second group after Channel Down, since ten
-presses of Channel Up without one are too few to clear that key's neighbour or the software, and whether the box
-counts the One's four codes as one press or as more, since it was not listening.
+held a little long. **What this does not settle**: why the One sent a second group five times in the first run and
+never in the sixty presses of the last, which were pressed one at a time; a second press arriving while the first
+group was still going out, sent after a fixed wait, would look the same as a key that registers twice, and nothing
+here tells them apart. Nor whether the box counts the One's four codes as one press or as more, since it was not
+listening.

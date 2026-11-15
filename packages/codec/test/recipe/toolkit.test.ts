@@ -37,13 +37,16 @@ const NOT_BUILT: Record<string, number> = {
   setDeviceCommand: 19,
   addSequence: 37, setSequence: 37,
   setScreen: 34, setFavourites: 45, setLook: 42, setSetting: 47,
-  sequences: 77, key: 77, keys: 77, screen: 77, favourites: 77,
+  sequences: 77, favourites: 77,
 };
 
-/** The functions of the toolkit that are built, each held by a test of its own below. */
+/**
+ * The functions of the toolkit that are built, each held by a test of its own below, but the questions about keys and
+ * screens, `key`, `keys` and `screen`, which `toolkitkeys.test.ts` beside this file holds on the two reference documents.
+ */
 const BUILT = [
-  'activities', 'addActivity', 'addDevice', 'check', 'commands', 'create', 'devices', 'inputs', 'keyNames', 'move', 'open',
-  'remove', 'setActivity', 'setDevice', 'setKey', 'unfilled', 'uses',
+  'activities', 'addActivity', 'addDevice', 'check', 'commands', 'create', 'devices', 'inputs', 'key', 'keyNames', 'keys', 'move', 'open',
+  'remove', 'screen', 'setActivity', 'setDevice', 'setKey', 'unfilled', 'uses',
 ];
 
 /** What a call threw, or undefined where it returned. A promise that rejects counts as a throw. */
@@ -356,30 +359,43 @@ test('a key\'s choice is refused for an owner, a device or a command the documen
     [{ key: 'VolumeUp', action: { device: 'Television', command: 'Dance' } }]);
 });
 
-test('the keys a document\'s model lets a person choose are its family\'s words, 37 on the Harmony One and each one setKey takes, and a model whose family builds none refuses by name', () => {
+test('the keys of a document\'s model are its family\'s places as data, 44 on the Harmony One, the 37 a map binds each one setKey takes, and a model whose family has no maps answers not built', () => {
   const document = small();
-  const names = recipe.keyNames(document);
-  // Every keypad key a Harmony One map binds, by Logitech's word, in the family's order, which is by scan.
-  assert.equal(names.length, 37);
-  assert.equal(new Set(names).size, 37);
-  assert.deepEqual([names[0], names[12], names[36]], ['Number4', 'Enter', 'Menu']);
-  // Each one is a key setKey takes, in an activity's map and in a device's own, and none is a number.
-  for (const name of names) {
+  const places = recipe.keyNames(document);
+  // Every key of a Harmony One by Logitech's word, in the family's order: the 37 keypad keys a map binds, by scan, then
+  // the seven the configuration binds outside every map, each a short press alone, since the One has no long press.
+  assert.equal(places.length, 44);
+  assert.equal(new Set(places.map((one) => one.key)).size, 44);
+  assert.deepEqual([places[0]!.key, places[12]!.key, places[36]!.key], ['Number4', 'Enter', 'Menu']);
+  assert.deepEqual(places[0], { key: 'Number4', surface: 'keypad', presses: ['short'], boundBy: 'both', built: true });
+  const bound = places.filter((one) => one.built);
+  assert.equal(bound.length, 37);
+  assert.ok(bound.every((one) => one.boundBy === 'both' && one.why === undefined && one.presses.join() === 'short'));
+  // The seven no map binds, each with why, the three keypad keys and the four touch keys around the screen.
+  const remote = places.filter((one) => !one.built);
+  assert.deepEqual(remote.map((one) => [one.key, one.surface, one.boundBy]), [
+    ['Activities', 'keypad', 'remote'], ['Off', 'keypad', 'remote'], ['Help', 'keypad', 'remote'],
+    ['ScreenPrev', 'touch', 'remote'], ['ScreenNext', 'touch', 'remote'], ['SoftLeft', 'touch', 'remote'], ['SoftRight', 'touch', 'remote'],
+  ]);
+  assert.ok(remote.every((one) => typeof one.why === 'string' && one.why.length > 0));
+  // Each built place is a key setKey takes, in an activity's map and in a device's own, and none is a number.
+  for (const { key: name } of bound) {
     assert.deepEqual(recipe.setKey(document, { owner: { activity: 'a1' }, key: name }, { nothing: true }).document.activities[0]!.keys, [{ key: name, action: { nothing: true } }]);
     assert.deepEqual(recipe.setKey(document, { owner: { device: 'd1' }, key: name }, { nothing: true }).document.devices[0]!.keys, [{ key: name, action: { nothing: true } }]);
   }
-  // The control: the three keys the drawing names that no map binds are not offered, and setKey refuses each.
-  for (const name of ['Activities', 'Help', 'Off']) {
-    assert.equal(names.includes(name), false);
+  // The control: the places no map binds are listed, and setKey refuses each.
+  for (const { key: name } of remote) {
     assert.deepEqual(refused(() => recipe.setKey(document, { owner: { activity: 'a1' }, key: name }, { nothing: true })), ['unknown', { kind: 'key', owner: { activity: 'a1' }, key: name }]);
   }
   // The answer is the caller's copy: changing it changes no later answer.
-  names.pop();
-  assert.equal(recipe.keyNames(document).length, 37);
-  // A model whose family builds no key's choice yet refuses by name, rather than answering that it has no keys; a
+  places.pop();
+  (places[0]!.presses as string[]).push('held');
+  assert.equal(recipe.keyNames(document).length, 44);
+  assert.deepEqual(recipe.keyNames(document)[0]!.presses, ['short']);
+  // A model whose family has no maps yet answers not built, naming it, rather than answering that it has no keys; a
   // model no family serves is refused as a model nothing builds for.
   assert.throws(() => recipe.keyNames(recipe.open(least())),
-    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.keyNames for the Harmony 650' && error.requirement === 31);
+    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.keyNames for the Harmony 650' && error.requirement === 77);
   assert.throws(() => recipe.keyNames(readRecipe({ ...least(), model: { name: 'Harmony 525' } })),
     (error: unknown) => error instanceof RecipeError && /no family serves/.test(error.message));
 });

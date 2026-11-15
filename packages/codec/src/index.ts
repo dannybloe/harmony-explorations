@@ -110,6 +110,7 @@ export type {
   RecipeActivity,
   RecipeActivityDevice,
   RecipeActivityStep,
+  RecipeChannelStep,
   RecipeCommand,
   RecipeCommandCode,
   RecipeCommandStep,

@@ -49,7 +49,7 @@ const TYPES = [
   'KeyCode', 'KeyLabel', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
   'ModelProperties', 'NetworkArchiveOptions', 'PngHeader',
   'PowerOnDelay', 'ProntoCode', 'Proof', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
-  'RecipeActivityStep', 'RecipeCommand', 'RecipeCommandCode', 'RecipeCommandStep', 'RecipeDevice', 'RecipeDeviceKey', 'RecipeDevicePower',
+  'RecipeActivityStep', 'RecipeChannelStep', 'RecipeCommand', 'RecipeCommandCode', 'RecipeCommandStep', 'RecipeDevice', 'RecipeDeviceKey', 'RecipeDevicePower',
   'RecipeFavourites', 'RecipeIds', 'RecipeKey', 'RecipeKeyAction', 'RecipeModel', 'RecipePress', 'RecipeScreenCommand', 'RecipeScreenItem',
   'RecipeSending', 'RecipeSequence', 'RecipeSequenceStep', 'RecipeSetting', 'RecipeTarget',
   'RenderedPage', 'Requirement', 'RequirementAnswer', 'RequirementState', 'RequirementStatus', 'RequirementWait', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
@@ -90,9 +90,11 @@ const RECIPE_VALUES = [
 /** The document toolkit, `recipe` on the main entry: the types and interfaces. */
 const RECIPE_TYPES = [
   'ActivityChanges', 'ActivityDeviceChoice', 'ActivityId', 'ActivityStep', 'ActivitySummary', 'Change',
-  'CommandCode', 'CommandSummary', 'DeviceChanges', 'DeviceId', 'DeviceSummary', 'Effect', 'Favourite', 'KeyAction',
-  'KeyAnswer', 'KeyPlace', 'Movable', 'NewActivity', 'NewDevice', 'NewSequence', 'Owner', 'Place', 'Problem',
-  'ProblemCode', 'Removable', 'ScreenAnswer', 'ScreenItem', 'SequenceId', 'SequenceStep', 'SequenceSummary',
+  'CommandCode', 'CommandSummary', 'CommandTuningAnswer', 'DeviceChanges', 'DeviceId', 'DeviceSettingsAnswer', 'DeviceSummary',
+  'Effect', 'Favourite', 'KeyAction', 'KeyAnswer', 'KeyBinder', 'KeyPlace', 'KeyPlaceSummary', 'KeySurface', 'Movable',
+  'NewActivity', 'NewDevice', 'NewSequence', 'Owner', 'Place', 'PressAnswer', 'Problem', 'ProblemCode', 'QuestionSources',
+  'Removable', 'ScreenAnswer', 'ScreenEntryAnswer', 'ScreenItem', 'SendingAnswer', 'SequenceAnswer', 'SequenceId',
+  'SequenceStep', 'SequenceStepAnswer', 'SequenceSummary', 'SettingAnswer',
 ];
 
 /** What the Node entry adds to the main entry: the names that exist at run time. */

@@ -105,7 +105,8 @@ export interface RecipeDevice {
   readonly power?: RecipeDevicePower;
   /**
    * A person's choice of how a channel number is entered, R18, in the catalogue's shape, `DeviceChannelTuning`, whose
-   * steps name the device's commands by name; stated whole, over the catalogue's. Version 2.
+   * steps name the device's commands by name. **Member by member, as `timing` is**: each member stated, the digits or
+   * one of the four lists, stands over the catalogue's, and each one left out keeps the catalogue's. Version 2.
    */
   readonly channelTuning?: DeviceChannelTuning;
   /**
@@ -427,11 +428,24 @@ export interface RecipeSequence {
 }
 
 /**
- * One step an activity takes at its start or its end beyond what its devices need anyway, R30, as the toolkit's
- * `ActivityStep` states one: a device's command, a pause in tenths of a second, or one of the activity's sequences by
- * its name. Devices by name, since the recipe names a device by its name underneath. Version 2.
+ * One step an activity takes at its start or its end beyond what its devices need anyway, R30: a device's command, a
+ * pause in tenths of a second, one of the activity's sequences by its name, or a channel tuned through a device,
+ * `RecipeChannelStep`. The first three are the toolkit's `ActivityStep`'s; the channel is the document's alone, since
+ * the toolkit's step has no channel. Devices by name, since the recipe names a device by its name underneath. Version 2.
  */
-export type RecipeActivityStep = RecipeCommandStep | { readonly sequence: string };
+export type RecipeActivityStep = RecipeCommandStep | { readonly sequence: string } | RecipeChannelStep;
+
+/**
+ * A channel tuned through one of the activity's devices as a step at its start or its end, R30: the channel's digits
+ * **as text**, so a leading zero survives, as a favourite channel's does, and the device tunes it the way its channel
+ * tuning says. A step of the activity's own and never of a sequence: a Harmony Touch, the one remote whose documents
+ * were measured holding one, keeps a channel step among an activity's start steps, and its engine skips a sequence's
+ * step of any kind but a command or a pause, `reference/architectures/harmony-touch/activities-and-buttons.md`. Version 2.
+ */
+export interface RecipeChannelStep {
+  readonly device: string;
+  readonly channel: string;
+}
 
 /**
  * One activity: its name, MyHarmony's type, its devices, and its working screen's items in order, which
@@ -752,8 +766,9 @@ function powerOf(value: unknown, what: string): RecipeDevicePower {
 }
 
 /**
- * A person's channel tuning, `RecipeDevice.channelTuning`, in the catalogue's shape. An empty list of steps is kept for
- * the reason `powerOf` gives: `start: []` says nothing is sent before the digits, over the catalogue's steps.
+ * A person's channel tuning, `RecipeDevice.channelTuning`, in the catalogue's shape, read member by member: a member
+ * left out is left out here, so a build keeps the catalogue's for it. An empty list of steps is kept for the reason
+ * `powerOf` gives: `start: []` says nothing is sent before the digits, over the catalogue's steps.
  */
 function channelTuningOf(value: unknown, what: string): DeviceChannelTuning {
   const c = something(fields(value, what, [], ['fixedDigits', 'start', 'finish', 'greaterTen', 'greaterHundred']), what);
@@ -895,6 +910,13 @@ function activityStepsOf(value: unknown, what: string, sequences: ReadonlySet<st
       const name = text(s.sequence, `${at}'s sequence`);
       if (!sequences.has(name)) throw new RecipeError(`${at} runs the sequence ${name}, which is not one of the activity's`);
       return { sequence: name };
+    }
+    if ('channel' in s) {
+      // Digits as text and nothing else: a number would drop a leading zero, and a dot or a dash, which a favourite
+      // channel may hold, is not something a channel step was measured carrying.
+      fields(s, at, ['device', 'channel']);
+      if (typeof s.channel !== 'string' || !/^[0-9]+$/.test(s.channel)) throw new RecipeError(`${at} tunes no channel of digits written as text`);
+      return { device: text(s.device, `${at}'s device`), channel: s.channel };
     }
     return commandStep(s, at);
   });

@@ -150,7 +150,7 @@ test('a document for another model, one the check refuses and one nothing builds
   const wrong = await run(recipe.create({ name: 'Harmony 650' }), remote);
   assert.deepEqual(wrong.words, ['identify', '= refused']);
   assert.equal(wrong.outcome.message, 'the document is for a Harmony 650, skin 72, and the remote on the cable reports skin 54');
-  // A key given a second command when held is an error of the check, which nothing builds yet.
+  // A key given a second command when held is an error of the check: no key of a Harmony One has that press.
   const held = recipe.open({ model: ONE, devices: [{ name: 'Television', device: 'Made/TV', keys: [{ key: 'VolumeUp', press: 'held', action: { nothing: true } }] }], activities: [] });
   assert.equal(recipe.check(held).filter((one) => one.severity === 'error').length, 1);
   const checked = await run(held, remote);

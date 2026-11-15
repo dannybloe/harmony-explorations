@@ -21,6 +21,7 @@ export * from './setup.ts';
 export * from './archivedevice.ts';
 export * from './fromnothing.ts';
 export * from './defaultmaps.ts';
+export * from './recipemaps.ts';
 export * from './empty.ts';
 export * from './engine.ts';
 export * from './packet.ts';

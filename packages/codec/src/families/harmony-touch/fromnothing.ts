@@ -219,8 +219,11 @@ export function readTouchSetupFile(json: unknown): TouchSetupFile {
 // The setup, as a `TouchSetup`, and the catalogue, from the archive
 // ---------------------------------------------------------------------------------------------------
 
-/** A recipe's job, `Display`, as an activity role's kind, `DisplayActivityRole`; a device with none passes through. */
-function rolesOf(roles: readonly string[]): ActivityRoleKind[] {
+/**
+ * A recipe's job, `Display`, as an activity role's kind, `DisplayActivityRole`; a device with none passes through. Also
+ * read by `recipemaps.ts`, which turns a document of version 2 into a setup the same way.
+ */
+export function roleKindsOf(roles: readonly string[]): ActivityRoleKind[] {
   return roles.length === 0 ? ['PassThroughActivityRole'] : roles.map((r) => `${r}ActivityRole` as ActivityRoleKind);
 }
 
@@ -236,7 +239,7 @@ function activityOf(r: RecipeActivity, p: TouchPartActivity): OwnActivity {
     ...(p.tuningDefault === true ? { tuningDefault: true } : {}),
     devices: r.devices.map((u) => ({
       device: u.device,
-      roles: rolesOf(u.roles),
+      roles: roleKindsOf(u.roles),
       powerOn: p.powerOrder[u.device]![0],
       powerOff: p.powerOrder[u.device]![1],
       ...(u.input === undefined ? {} : { input: u.input }),
@@ -403,6 +406,30 @@ export function ourBackground(): OurBackground {
 }
 
 /**
+ * **One setting's value as the text the remote reads, checked against its row**, `SETTING_ROWS`: the one check both
+ * routes to a Touch's Settings take, a setup file's block, `settingsOfSetupFile`, and a document of version 2,
+ * `touchSetupOfDocument` in `recipemaps.ts`. A document may state a yes or no row as true or false and a number row as
+ * a number; the block states every row as text. **Refuses**: a yes or no row's value other than true, false, `"true"`
+ * or `"false"`; and a number row's value that is not a whole number in decimal digits, or is outside the range
+ * `SETTING_ROWS` gives it, which is where the remote mishandles a value or its own screens cannot show it.
+ */
+export function settingText(name: string, value: string | number | boolean): string {
+  const text = typeof value === 'string' ? value : String(value);
+  const row = SETTING_ROWS[name];
+  if (row === undefined) return refuse(`${name} is not a setting a Settings of ours writes`);
+  if (row.kind === 'yes or no') {
+    // A number stated for a yes or no row is refused like any other text: 1 is not true here.
+    if (typeof value === 'number' || (text !== 'true' && text !== 'false')) refuse(`${name}: a yes or no setting takes "true" or "false"`);
+    return text;
+  }
+  // A boolean stated for a number row would read as the text "true", which is no number, and is refused as one.
+  if (typeof value === 'boolean' || !/^(0|[1-9][0-9]*)$/.test(text)) refuse(`${name}: the value is not a whole number written in decimal digits`);
+  const n = Number(text);
+  if (n < row.min || n > row.max) refuse(`${name}: ${text} is outside ${row.min} to ${row.max}, which the remote mishandles or its own screens cannot show`);
+  return text;
+}
+
+/**
  * Settings written from the setup file's `settings`, every row of `SETTINGS_ROWS_WRITTEN` but the two background rows
  * given a value there. **What each field is and why**: `RemoteName` the model's name, which the About screen shows; each
  * row its name and one value, which is all the remote reads of a row but a yes or no row's `DefaultValue`, consulted
@@ -430,14 +457,7 @@ export function settingsOfSetupFile(file: TouchSetupFile): Settings {
     if (name === 'UserImages' || name === 'BackgroundImage') return { Name: name, Values: [background.name], DefaultValue: null };
     const value = values[name];
     if (value === undefined) refuse(`the setting ${name} is given no value`);
-    const row = SETTING_ROWS[name]!;
-    if (row.kind === 'yes or no' && value !== 'true' && value !== 'false') refuse(`${name}: a yes or no setting takes "true" or "false"`);
-    if (row.kind === 'whole number') {
-      if (!/^(0|[1-9][0-9]*)$/.test(value!)) refuse(`${name}: the value is not a whole number written in decimal digits`);
-      const n = Number(value);
-      if (n < row.min || n > row.max) refuse(`${name}: ${value} is outside ${row.min} to ${row.max}, which the remote mishandles or its own screens cannot show`);
-    }
-    return { Name: name, Values: [value!], DefaultValue: null };
+    return { Name: name, Values: [settingText(name, value!)], DefaultValue: null };
   });
   return { RemoteName: file.model.name, DefaultImageBucketUri: '', Settings: rows, UserImageBucketUri: OUR_PICTURE_STORE } as Settings;
 }

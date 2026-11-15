@@ -149,16 +149,23 @@ export interface CatalogueDevicePlan {
 }
 
 /**
- * Exported for the Harmony 300 and 350's device composer, `families/harmony-300-350/devices.ts`, which stores only the
- * commands its keys bind, and takes them out of this plan rather than reading the
- * catalogue a second way: the same codes, blocks and power steps as a device composed whole.
+ * A catalogue device's codes as every composer here reads them: its entry, its commands, the first code of each name,
+ * its driving, and the judgement of whether a code composes, with the blocks that judgement derives. One reading
+ * behind two questions, `catalogueDevicePlan`, what a composition carries and how, and `catalogueCommandsCarried`, which
+ * of the device's commands a configuration can be given at all, so that what a family's maps say a device carries is
+ * what its build carries, decision 43.
  */
-export function catalogueDevicePlan(c: Container, archive: CatalogueSource, request: CatalogueDeviceRequest): CatalogueDevicePlan {
-  const { manufacturer, model, label } = request;
-  const full = request.full === true;
-  if (full && (request.commands !== undefined || request.labels !== undefined)) {
-    throw new ComposeError('a whole device takes every command the catalogue holds, so no commands or labels are given');
-  }
+interface CatalogueCodes {
+  readonly entry: CatalogueDevice;
+  readonly available: CatalogueCommand[];
+  /** The first code of each name, in catalogue order. */
+  readonly byName: ReadonlyMap<string, string>;
+  readonly driving: DeviceDriving;
+  readonly composable: (keycode: string) => boolean;
+  readonly withBlocks: <T extends { stated: string }>(one: T) => T;
+}
+
+function catalogueCodes(archive: CatalogueSource, manufacturer: string, model: string): CatalogueCodes {
   const entry = archive.device(manufacturer, model);
   if (entry.codeset === undefined || entry.codeset === null) {
     throw new ComposeError(`${manufacturer} ${model} states no codeset`);
@@ -206,6 +213,43 @@ export function catalogueDevicePlan(c: Container, archive: CatalogueSource, requ
     const withToggled = toggled === undefined || 'refusal' in toggled ? withRead : { ...withRead, toggled };
     return blocks === undefined || 'refusal' in blocks ? withToggled : { ...withToggled, blocks };
   };
+  return { entry, available, byName, driving, composable, withBlocks };
+}
+
+/** One command of a catalogue device by its name, and whether a composed configuration carries it. */
+export interface CatalogueCommandCarried {
+  readonly name: string;
+  readonly carried: boolean;
+}
+
+/**
+ * **Which of a catalogue device's commands a whole composition carries**, every name of its codeset once, the first
+ * code of each, in catalogue order, each with whether its code composes: the commands `catalogueDevicePlan` takes under
+ * `full` are exactly the carried ones, and the rest are its `leftOut`. Asked by a family's maps, `FamilyMaps.commands`,
+ * decision 43, so the default map a person is shown leaves out what the build leaves out, from the same judgement
+ * rather than a copy of it.
+ *
+ * Generic: the judgement is the shared composer's and asks no family. Whether a configuration of a family can carry a
+ * code is the same question on every compiled family that composes catalogue devices through this module, the Harmony
+ * One, the 600, 650 and 700, and the 300 and 350.
+ */
+export function catalogueCommandsCarried(archive: CatalogueSource, manufacturer: string, model: string): CatalogueCommandCarried[] {
+  const { byName, composable } = catalogueCodes(archive, manufacturer, model);
+  return [...byName].map(([name, keycode]) => ({ name, carried: composable(keycode) }));
+}
+
+/**
+ * Exported for the Harmony 300 and 350's device composer, `families/harmony-300-350/devices.ts`, which stores only the
+ * commands its keys bind, and takes them out of this plan rather than reading the
+ * catalogue a second way: the same codes, blocks and power steps as a device composed whole.
+ */
+export function catalogueDevicePlan(c: Container, archive: CatalogueSource, request: CatalogueDeviceRequest): CatalogueDevicePlan {
+  const { manufacturer, model, label } = request;
+  const full = request.full === true;
+  if (full && (request.commands !== undefined || request.labels !== undefined)) {
+    throw new ComposeError('a whole device takes every command the catalogue holds, so no commands or labels are given');
+  }
+  const { entry, available, byName, driving, composable, withBlocks } = catalogueCodes(archive, manufacturer, model);
 
   // Under `full`, every name whose code composes, in catalogue order; the layout is computed over all
   // of them, as the compiler's is, and a command left out leaves its place to the next.

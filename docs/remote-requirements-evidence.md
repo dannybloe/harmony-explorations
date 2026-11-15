@@ -1164,7 +1164,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R77 Ask a recipe what it holds: what a key does, which devices an activity uses, what is not yet filled in.
 
-* **Every remote**, open, waiting on the FHSDK: The model a recipe is for and the choices it leaves unstated can be asked; what a key does and which devices an activity uses cannot, short of building.
+* **Every remote**, open, waiting on the FHSDK: Which devices an activity uses and what is not filled in can be asked of any document; on the Harmony One and the Harmony Touch so can what every key of a device or an activity does, with how its command is sent or the steps of the sequence it runs, and what its screen shows, from the maps their builds bind by. A Touch document still carrying its own block answers not built until it is converted, every other model answers not built since its family has no maps yet, and the list of a document's sequences and its favourite channels cannot be asked on any model.
 
 ### R78 Check a recipe without building it, and get every problem as a list, each naming the place it concerns.
 

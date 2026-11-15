@@ -183,9 +183,10 @@ test('an activity\'s sequences send commands by name and pause in tenths, each n
   assert.throws(() => readRecipe(two), /two of the sequences have one id/);
 });
 
-test('an activity\'s extra steps at its start and end send, pause or run one of its own sequences', () => {
+test('an activity\'s extra steps at its start and end send, pause, run one of its own sequences or tune a channel', () => {
   const sequences = [{ name: 'Films', steps: [{ device: 'Television', command: 'Netflix' }] }];
-  const steps = [{ device: 'Television', command: 'InputHdmi1' }, { pause: 5 }, { sequence: 'Films' }];
+  // A channel's digits are text, so the leading zero of 07 survives as it does in a favourite channel.
+  const steps = [{ device: 'Television', command: 'InputHdmi1' }, { pause: 5 }, { sequence: 'Films' }, { device: 'Television', channel: '07' }];
   for (const field of ['start', 'end'] as const) {
     assert.deepEqual(readBack(document({ activity: { sequences, [field]: steps } })).activities[0]![field], steps);
     refuses('activity', field, [
@@ -193,8 +194,19 @@ test('an activity\'s extra steps at its start and end send, pause or run one of 
       [[{ sequence: 'Films' }], /runs the sequence Films, which is not one of the activity's/],
       [[{ pause: 0 }], /pauses for no whole number of tenths/],
       [[{ device: 'Television', scan: 3 }], /has a field scan no recipe has/],
+      [[{ device: 'Television', channel: 7 }], /tunes no channel of digits written as text/],
+      [[{ device: 'Television', channel: '7-1' }], /tunes no channel of digits written as text/],
+      [[{ device: 'Television', channel: '' }], /tunes no channel of digits written as text/],
+      [[{ device: 'Television', channel: '7', command: 'Enter' }], /has a field command no recipe has/],
+      [[{ channel: '7' }], /has no device/],
     ]);
   }
+  // A channel step tunes through one of the activity's devices, as a command step sends to one.
+  const json = document({ activity: { end: [{ device: 'Player', channel: '7' }] } });
+  (json['devices'] as Json[]).push({ name: 'Player', device: 'Sony/BDP-S1500' });
+  assert.throws(() => readRecipe(json), /end step 1 sends to Player, which is not one of the activity's devices/);
+  // A channel step is the activity's own and never a sequence's, whose steps send a command or pause.
+  refuses('activity', 'sequences', [[[{ name: 'Films', steps: [{ device: 'Television', channel: '7' }] }], /has a field channel no recipe has/]]);
 });
 
 test('an activity\'s screen takes a label on a command and one of its sequences by name; the steps of version 1 still read', () => {

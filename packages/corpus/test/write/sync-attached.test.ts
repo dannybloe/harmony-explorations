@@ -192,11 +192,12 @@ test('a keeper that cannot keep the configuration ends the sync failed with the 
 });
 
 test('a document the check refuses more than once is refused naming its first problem and counting the rest, in one wording', async () => {
-  // Two keys given a second command when held: two problems, the second counted, with nothing opened.
+  // Two keys given a second command when held, a press no key of a Harmony One has: two problems, the second counted,
+  // with nothing opened.
   const run = await runSync({ heldKeys: true });
   assert.deepEqual(run.outcome, {
     result: 'refused', remote: 'as-before',
-    message: 'Television\'s own map gives the VolumeUp key a second command when held, which nothing builds yet, and 1 more problem the check lists',
+    message: 'Television\'s own map gives the VolumeUp key a held press, which the VolumeUp key of a Harmony One does not have, and 1 more problem the check lists',
   });
   assert.deepEqual(run.words, ['identify', 'check', '= refused']);
   assert.equal(run.opened, 0);

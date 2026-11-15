@@ -39,11 +39,11 @@ misspelling is an error rather than a default.
 | `devices[].device` | its catalogue entry, `<manufacturer>/<file>` in the archive of decision 15 |
 | `devices[].poweredOnBetweenActivities` | optional, MyHarmony's keep this device on when switching activities |
 | `devices[].key` | optional, the Harmony 300 and 350's device key: `place` as the family counts it, from 0, and `press`, `short` or `long`, short unless given; plan 014 |
-| `devices[].keys` | optional, the keys a person chose otherwise in the device's own map, device mode's: each `key`, Logitech's word for the key (`VolumeMute`, `Info`, `Number0`), the name every model's drawing carries as `data-name` in `reference/silhouettes/`, `press`, `short`, `held` or, in version 2, `double`, short unless given, and `action`, one of `{device, command}`, `{sequence}` and `{nothing: true}`; a key not listed keeps what the builders derive, and one key and press stated twice is refused. **A key is never named by its scan code**: a scan is a number inside one family's firmware, Mute is 9 on a Harmony One and another number on a Harmony 650, and a Harmony Touch has none, so a document moved between models would point at other keys; the family that builds for the model turns the word into its scan, `Family.recipeKeys`, and `recipe.keyNames` answers which words a document's model takes. A document written before this named its keys by `scan`, and is refused as a field no recipe has. **Built on the Harmony One**, for a short press sending a command or nothing, on the 37 keypad keys its maps bind, scan 13 named `Enter` by the family where the drawing gives that key no scan; every other model's build refuses a recipe that states a key, and a held press, a double press and a sequence are refused everywhere, rather than building a file whose key does something else |
+| `devices[].keys` | optional, the keys a person chose otherwise in the device's own map, device mode's: each `key`, Logitech's word for the key (`VolumeMute`, `Info`, `Number0`), the name every model's drawing carries as `data-name` in `reference/silhouettes/`, `press`, `short`, `held` or, in version 2, `double`, short unless given, and `action`, one of `{device, command}`, `{sequence}` and `{nothing: true}`; a key not listed keeps what the builders derive, and one key and press stated twice is refused. **A key is never named by its scan code**: a scan is a number inside one family's firmware, Mute is 9 on a Harmony One and another number on a Harmony 650, and a Harmony Touch has none, so a document moved between models would point at other keys; the family that builds for the model turns the word into its scan, `Family.recipeKeys`, and `recipe.keyNames` answers every key of a document's model, with the presses each has and whether a choice on it is built. A document written before this named its keys by `scan`, and is refused as a field no recipe has. **Built on the Harmony One**, for a short press sending a command or nothing, on the 37 keypad keys its maps bind, scan 13 named `Enter` by the family where the drawing gives that key no scan; every other model's build refuses a recipe that states a key, and a held press, a double press and a sequence are refused everywhere, rather than building a file whose key does something else |
 | `devices[].definition` | optional, the device carried: `record`, the archive's device file as it is, and `commands`, its codeset's commands as `name` and `keycode`; served before any archive, so a recipe that carries every device builds with none. `packages/codec/bin/carry-codes.ts` fills it; plan 014 |
 | `devices[].timing` | version 2, optional, a person's timing in the catalogue's own member names, `DeviceTiming` in `catalogue/driving.ts`: `interKeyDelay`, `interDeviceDelay`, `holdInterDeviceDelay`, `powerOnDelay`, `inputDelay`, `connectedAppPowerOnDelay` in milliseconds, `pressMinRepeats` and `minRepeats`, and `isInterKeyDelayOptimized`; each delay and repeat count a whole number from 0, the flag true or false; each member given stands over the catalogue's, and it is kept apart from `definition` so a definition fetched again replaces nothing a person chose. How long a delay or how many repeats a remote takes is the family's to bound when it builds them |
 | `devices[].power` | version 2, optional, the catalogue's power members, `DevicePower`, `type` and the step lists `on`, `off`, `toggle` and `onReset`, each given standing over the catalogue's, and `alwaysOn`, a device never switched off; kept on between activities stays `poweredOnBetweenActivities`. An empty step list is kept, since it says the device is switched by nothing where leaving it out keeps the catalogue's |
-| `devices[].channelTuning` | version 2, optional, how a channel number is entered, in the catalogue's shape, `DeviceChannelTuning`: `fixedDigits` from 1 and the step lists `start`, `finish`, `greaterTen` and `greaterHundred`, stated whole, an empty one kept for the reason `power` gives |
+| `devices[].channelTuning` | version 2, optional, how a channel number is entered, in the catalogue's shape, `DeviceChannelTuning`: `fixedDigits` from 1 and the step lists `start`, `finish`, `greaterTen` and `greaterHundred`, member by member as `timing` is: a member stated stands over the catalogue's and a member left out keeps the catalogue's, an empty list kept for the reason `power` gives |
 | `...steps[]` of power and tuning | the catalogue's steps as the codec reads them, `DriveStep`: `{kind: 'send', command, holdMs?}`, `{kind: 'hold', command}`, `{kind: 'wait', ms}` or `{kind: 'state', state, value}`, a command always by its name |
 | `devices[].screen[]` | version 2, optional, the device's screen list in device mode, stated whole, an empty list for none: each `{ device, command, label? }`, where `device` may be any device of the document, as device mode sends to any; absent is what the family derives |
 | `devices[].commands` | version 2, optional, a person's changes to single commands, by command name, never an empty name nor `__proto__`: `code`, `{ keycode }` in the catalogue's notation or `{ learned }`, at least one pulse, each `{ mark, us }` with `us` a whole number from 1, and `sending`, `copies` in the first block from 1, `heldPaceMs` and `leadInMs` in milliseconds from 0; the sending part is room only and nothing builds it. Upper bounds on copies and paces are the family's to set when it builds them |
@@ -59,7 +59,7 @@ misspelling is an error rather than a default.
 | `activities[].opensOn` | version 2, optional, the screen the activity opens on, by the word the model's family names it by |
 | `activities[].favourites` | version 2, optional, whether this activity holds the favourite channels; at most one activity says true |
 | `activities[].powerOrder[]` | version 2, optional, the order the activity switches its devices on in, by name, each of its devices once |
-| `activities[].start[]`, `end[]` | version 2, optional, extra steps when the activity starts and ends: `{ device, command }`, the device one of the activity's, `{ pause }` in whole tenths of a second from 1, or `{ sequence }`, one of the activity's own `sequences`; none is said by leaving the field out, and an empty list is refused |
+| `activities[].start[]`, `end[]` | version 2, optional, extra steps when the activity starts and ends: `{ device, command }`, the device one of the activity's, `{ pause }` in whole tenths of a second from 1, `{ sequence }`, one of the activity's own `sequences`, or `{ device, channel }`, a channel tuned through one of the activity's devices, its digits as text so a leading zero survives (a step of the activity's own, never of a sequence); none is said by leaving the field out, and an empty list is refused |
 | `activities[].sequences[]` | version 2, optional, the activity's named sequences: `id`, given by the toolkit, `s` and a number, `name`, once within the activity, and `steps`, each `{ device, command }`, the device one of the activity's, or `{ pause }` in whole tenths from 1, at least one sending a command; **a step names its command and never a scan code**, so a document moved to another model means the same commands. In version 2 a key's `{ sequence }` names one of the activity's sequences, either form, and a device's key runs none, a device having no sequences |
 | `choices` | optional, the family's choices over its defaults, the look among them (letters, inks, colours, icons): `FourSlotChoices` for the Harmony 600, 650 and 700, `OneChoices` for the Harmony One, none for the Harmony 300, 350 and Touch; the family refuses one it does not make. A reference recipe states every choice, `unstatedChoices` answering empty, so a default changed later cannot change it; plan 014 |
 | `favourites[]` | optional, favourite channels per device: `device` by name, a device of the recipe, at most once, and `channels`, in the order of the remote's favourite keys |
@@ -90,6 +90,74 @@ favourites on the 350's test setup were typed into MyHarmony's own screen, `todo
 `reference/logitech/service.md`, "Button maps". Every composer
 refuses a recipe that states any, since none writes a favourite channel and a configuration built
 without them would be missing what its recipe asked for.
+
+## Asking a document what its keys do
+
+The toolkit, `recipe` on the codec's main entry (`packages/codec/src/recipe/toolkit.ts`), answers four questions about
+keys and screens before anything is built, R77, decision 43. They read the same maps a build binds by, `resolveMaps`
+over the model's family's maps in `packages/codec/src/families/maps.ts`, so what an application shows is what is built.
+
+| question | answers |
+|---|---|
+| `keyNames(document)` | every key of the model as data, in its family's order: Logitech's word, where it is (keypad, pad, gesture or touch key), the presses it has on this model, whose map binds it (a device's, an activity's, both, or `remote`, neither), whether a person's choice on it is built, and why not |
+| `keys(document, owner, sources?)` | every key the owner's map can bind, bound or not, in the model's order |
+| `key(document, { owner, key, press? }, sources?)` | the same for one key, or one press of it; a word that is no key of the model is refused |
+| `screen(document, owner, sources?)` | the owner's screen list in order, each entry marked default or the person's, and whether the list is the family's or stated whole |
+
+**A key's answer** holds the owner, the key, its `surface` (keypad, pad, gesture or touch key), one entry per press
+the model has for it, and `why` where a person cannot choose what it does. A key the owner's map does not bind, a key
+the remote binds outside every map or a gesture in a device's own map, answers no press and says why; a press asked
+for that the key does not have answers none and says "not on this model". Each press has:
+
+* `press`, short, held or double, and `label`, the label a number pad draws on it, where the family gives one;
+* `action`: a device's command, the device by its id; one of the activity's sequences by its name; or nothing;
+* `isDefault`: true where the family derived it, false where the document chose it. **A choice equal to the default
+  is still the person's**, since the document states it and it stays when the family's default changes; `setKey`
+  with `'default'` gives the key back;
+* for a command, `sending`, how it is sent, below; for a sequence, `sequence`, its id where it has one, its name and
+  its steps, each a device's command, a pause in tenths of a second, or, in a sequence written out in the form of
+  version 1, a device's key by its scan code, which is how that form states a step.
+
+**A screen's entries** are a device's command, the device by its id, with a `label` where one is stated; one of the
+activity's sequences by its name; or an entry the remote acts on itself and that sends nothing, such as one opening
+the number pad, `{ label, client }`, `client` being the family's name for that action. A person states a screen whole,
+so every entry carries the list's mark.
+
+**How a command is sent** is the target device's settings, each `{ value, isDefault }`: how many times one press sends
+the code, the pause before the next command to the same device and to another device, the wait after power on and the
+wait after an input change, in the catalogue's own names, `DeviceTiming`. The default is the catalogue's statement of
+the device and the person's is `devices[].timing`. The wait after power on is left out where neither states one. Where
+the document tunes that one command, `devices[].commands[name].sending`, the tuning is shown beside the settings as the
+person's. Four of the catalogue's nine timing members are not answered: which of its two repeat counts wins is not
+read, and no build sends by the other three. **Whether a key repeats while held is not answered**: it is a property of
+the command's code, decided when a build writes it. Every answer is the caller's own object, so changing one changes
+no other answer and not the document.
+
+**The questions answer the document, not what a build honours.** A timing or a command's tuning the document states is
+answered as the person's on every model, also where the model's build does not read that field yet: every build of a
+Harmony One refuses a document stating either. Whether this model's build reads a stated field is what `check` lists,
+an error at the device saying the field is not built, so an application shows the person's value and that problem
+side by side.
+
+**A device's own map and an activity's are separate.** A key changed in a device's map, device mode's, changes that
+device's answer and no activity's, since an activity derives from its devices' default maps.
+
+**When an answer stops.**
+
+* **A device carrying no definition, with no archive given**: every owner's answers stop, not only those using the
+  device, since the maps are resolved for the whole document at once, with the error `commands` gives, "Television
+  carries no definition, so its commands are not in the document". A carried definition, which `addDevice` puts in
+  the document, or an archive in `sources.archive` that holds the device makes them answer.
+* **A key choice naming a device the document does not hold**: `keys` for that owner, and `key` for that key, stop
+  with an error naming the key and the device. The owner's other keys asked one at a time, its screen and every other
+  owner answer, and `check` lists the choice.
+
+**Answered for the Harmony One and the Harmony Touch**, the two models whose families state their maps. Every other
+model answers not built, naming the model and R77, and so does a document that still carries a Harmony Touch's own
+block, naming the converter, `harmonyTouch.describeTouchDocument` on the codec's `./build`. `check` holds a document's
+key choices to the same places: a word that is no key of the model, a key the owner's map does not bind, and a press
+the key does not have are each a problem with its place. `packages/codec/test/recipe/toolkitkeys.test.ts` holds all of
+it on the two reference documents.
 
 ## Syncing a recipe, and trying it with nothing attached
 

@@ -352,9 +352,12 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 document, a device and an activity added, changed, moved and
                                 removed, a key's choice, the key named by Logitech's word for it
                                 and never by a scan, which the Harmony One's build takes up and
-                                every other model's refuses, keyNames, the words a model's family
-                                offers, the lists, a device's commands and
-                                inputs, what uses something and the check are built; every other
+                                every other model's refuses, the lists, a device's commands and
+                                inputs, what uses something and the check are built, and the
+                                questions about keys and screens, keyNames, keys, key and screen,
+                                for the Harmony One and the Harmony Touch from the maps their
+                                builds bind by, docs/recipe.md "Asking a document what its keys
+                                do"; every other
                                 function, and the
                                 search's source over the network, refuses by name, `NotBuiltError`
                                 in src/support/contract.ts, with the requirement it waits on,

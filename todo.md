@@ -57,9 +57,9 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
 - [ ] 2.3 The same path on the Harmony Touch, the other kind of family, and whatever of the contracts does not fit it changed before anything is released, [plan 018](docs/plans/018-one-document-shape.md), decision 43
   - [x] 2.3.1 The recipe's version 2 types and reader: timing, power, tuning and a screen on a device, what an activity opens on, its power order, steps and sequences, three presses, with the Touch block still read
   - [x] 2.3.2 The maps interface both kinds of family carry: the model's places, a device's and an activity's default map, and defaults with the document's choices resolved
-  - [ ] 2.3.3 The Harmony Touch's maps: places, resolve, ids from the toolkit's ids, and a converter from the old block proven by a round trip with its listed differences
-  - [ ] 2.3.4 The Harmony One's maps, its activity rule extracted in command names so the build and the questions share it
-  - [ ] 2.3.5 The questions answer on both: every key of a device or an activity, bound or not, default or chosen, with the settings its command is sent with (R77)
+  - [x] 2.3.3 The Harmony Touch's maps: places, resolve, ids from the toolkit's ids, and a converter from the old block proven by a round trip with its listed differences
+  - [x] 2.3.4 The Harmony One's maps, its activity rule extracted in command names so the build and the questions share it
+  - [x] 2.3.5 The questions answer on both: every key of a device or an activity, bound or not, default or chosen, with the settings its command is sent with (R77)
   - [ ] 2.3.6 The Touch builds from version 2 and its block and reader go; the reference recorded again
   - [ ] 2.3.7 The callers in `packages/corpus` and `packages/bench` moved to the new shape
   - [ ] 2.3.8 The changes work on a Touch document as on any other: keys with a held and a double press, screens, a device's timing kept over the catalogue's, sequences owned by an activity, a definition fetched again, ids never reused

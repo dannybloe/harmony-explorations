@@ -51,33 +51,61 @@ const PRESS = 2;
  * The keys section 323's rule names, per family, `Family.activityKeyRules`: which keys an activity takes from
  * its volume device, and the keys its three refinements move. Data of the family because they are its keypad's
  * scans; the rule is the same on the Harmony 600, 650 and 700 and on the Harmony One, section 398.
+ *
+ * **A key is a scan by default and may be anything a caller names keys by**, `K`: the rule itself,
+ * `activityKeysOfDevices`, only asks whether two keys are the same key, so the container's caller hands it scans and a
+ * family's maps hand it Logitech's words for the same keys, decision 43, `keyRulesIn` turning the one into the other.
  */
-export interface ActivityKeyRules {
+export interface ActivityKeyRules<K = number> {
   /** VolumeUp, VolumeDown and Mute: the keys taken from the volume device. */
-  readonly volume: readonly number[];
+  readonly volume: readonly K[];
   /**
    * Keys taken from another key of the control device when its own map leaves them unbound, as key and the
    * key it falls back to: the arrows beside the direction pad, which an activity sends DirectionUp and
    * DirectionDown on.
    */
-  readonly fallback: ReadonlyMap<number, number>;
+  readonly fallback: ReadonlyMap<K, K>;
   /**
    * ChannelUp and ChannelDown, and what an activity puts on them instead when the control device's own map has
    * them doing the direction pad's job: SkipForward and SkipBack. A disc player carries its DirectionUp and
    * DirectionDown on the channel keys, and the compiler gives the activity the skip keys there instead.
    */
-  readonly channel: readonly [number, number];
-  readonly direction: readonly [number, number];
-  readonly skip: readonly [number, number];
+  readonly channel: readonly [K, K];
+  readonly direction: readonly [K, K];
+  readonly skip: readonly [K, K];
   /** The Exit key, which takes the control device's own `Exit` screen command where it has one. */
-  readonly exit: number;
+  readonly exit: K;
   /**
    * A key whose partner the control device's own map binds and which it leaves unbound itself, and the screen
    * commands of the device it then takes, in order: the Harmony One's lower arrow, which takes `PageDown` or
    * `StepBack` off the device's screen where its own map put `PageUp` or `StepForward` on the upper one. The
    * order is a choice of ours: no control device of the three activities it was read on draws both, section 398.
+   * `scan` is the key, named so from when every key here was one.
    */
-  readonly partners?: readonly { readonly scan: number; readonly when: number; readonly names: readonly string[] }[];
+  readonly partners?: readonly { readonly scan: K; readonly when: K; readonly names: readonly string[] }[];
+}
+
+/**
+ * A family's rules with every key named another way, by `name`: how a family's maps state its scans' rules in the
+ * words its places use, so the rule is given the same keys either way and the rules stay one table, the family's.
+ * Refused where `name` has no word for a key the rules name, since a rule on an unnamed key would silently drop it.
+ */
+export function keyRulesIn<K, J>(rules: ActivityKeyRules<K>, name: (key: K) => J | undefined): ActivityKeyRules<J> {
+  const of = (key: K): J => {
+    const named = name(key);
+    if (named === undefined) throw new ComposeError(`the activity key rules name a key with no other name, ${String(key)}`);
+    return named;
+  };
+  const pair = (keys: readonly [K, K]): readonly [J, J] => [of(keys[0]), of(keys[1])];
+  return {
+    volume: rules.volume.map(of),
+    fallback: new Map([...rules.fallback].map(([key, from]) => [of(key), of(from)])),
+    channel: pair(rules.channel), direction: pair(rules.direction), skip: pair(rules.skip),
+    exit: of(rules.exit),
+    ...(rules.partners === undefined ? {} : {
+      partners: rules.partners.map((one) => ({ scan: of(one.scan), when: of(one.when), names: one.names })),
+    }),
+  };
 }
 
 /** The label of a device's own Exit command where its map puts another on the Exit key. */
@@ -142,13 +170,29 @@ export function drawsName(c: Container, item: DeviceScreenItem, name: string): b
 }
 
 /**
- * The activity's keypad map from its roles: a scan and the list its press runs, ascending by scan,
- * ready for `composeActivity`'s `keys`.
- *
- * The volume keys come from the volume device's own map, everything else from the control device's,
- * and then the three refinements. The first is read off the compiles and is right on five distinct
- * activities and wrong on four; the other two fire on one activity, the calibration disc player's, where
- * they agree with Logitech's stated map, so they are fitted to it:
+ * One device as the activity rule reads it: its own keypad map, key to command, and its own screen's commands in
+ * order, each with whether it is drawn as a given name. A command is whatever the caller names commands by, a list on
+ * a container, a command's name in a family's maps; the rule only asks whether two are the same. The screen is a
+ * function so that it is read only for the control device, whose screen two refinements look in, and never for the
+ * volume device: `activityKeysOfDevices` asks for it once whenever there is a control device, whether or not a
+ * refinement then finds anything on it.
+ */
+export interface KeyRuleDevice<K, C> {
+  readonly keys: ReadonlyMap<K, C>;
+  readonly screen: () => readonly { readonly command: C; readonly draws: (name: string) => boolean }[];
+}
+
+/** One key of an activity's map as the rule gives it: the command, and which of the two devices it is the command of. */
+export interface RuleBinding<C> {
+  readonly from: 'control' | 'volume';
+  readonly command: C;
+}
+
+/**
+ * **The activity keypad rule**, section 323, over two devices' own maps: the volume keys from the volume device's own
+ * map, everything else from the control device's, and then the three refinements. The first is read off the compiles
+ * and is right on five distinct activities and wrong on four; the other two fire on one activity, the calibration disc
+ * player's, where they agree with Logitech's stated map, so they are fitted to it:
  *
  * - the arrows, on a Harmony 600 scans 26 and 27, fall back to the control device's DirectionUp and
  *   DirectionDown when its own map leaves them unbound;
@@ -157,10 +201,58 @@ export function drawsName(c: Container, item: DeviceScreenItem, name: string): b
  * - Exit takes the control device's own `Exit` screen command when it has one, which is where its own
  *   map put the command it calls Exit after giving the key to something else.
  *
- * The keys are the family's, `ActivityKeyRules`. On the Harmony One the rule holds with its own keys and
- * two additions, section 398: a key runs the send a screen command calls rather than the command with its
- * click, and the lower arrow takes the device's `PageDown` or `StepBack` off its screen where its own map
- * put the partner on the upper one.
+ * The keys are the family's, `ActivityKeyRules`. On the Harmony One the rule holds with its own keys and one addition,
+ * section 398: the lower arrow takes the device's `PageDown` or `StepBack` off its screen where its own map put the
+ * partner on the upper one.
+ *
+ * **The one rule, with two callers**, decision 43: `activityKeysFromRoles` reads the two maps off a container and names
+ * a command by the list it runs, and a family's maps name keys by Logitech's words and commands by their names, so
+ * what an application is shown for an activity's key before anything is built is what the build gives it. Pure.
+ * The map's order is the order the rule set its keys in, which neither caller relies on.
+ */
+export function activityKeysOfDevices<K, C>(
+  rules: ActivityKeyRules<K>, control: KeyRuleDevice<K, C> | undefined, volume: KeyRuleDevice<K, C> | undefined,
+): Map<K, RuleBinding<C>> {
+  const keys = new Map<K, RuleBinding<C>>();
+  const fromControl = (command: C): RuleBinding<C> => ({ from: 'control', command });
+  if (control !== undefined) {
+    const own = control.keys;
+    for (const [key, command] of own) if (!rules.volume.includes(key)) keys.set(key, fromControl(command));
+    for (const [key, from] of rules.fallback) {
+      const fallback = own.get(from);
+      if (!own.has(key) && fallback !== undefined) keys.set(key, fromControl(fallback));
+    }
+    const channelIsDirection = rules.channel.every((key, k) =>
+      own.has(key) && own.get(key) === own.get(rules.direction[k] as K));
+    if (channelIsDirection && rules.skip.every((key) => own.has(key))) {
+      rules.channel.forEach((key, k) => keys.set(key, fromControl(own.get(rules.skip[k] as K) as C)));
+    }
+    const items = control.screen();
+    const exit = items.find((one) => one.draws(EXIT_LABEL));
+    if (exit !== undefined) keys.set(rules.exit, fromControl(exit.command));
+    for (const partner of rules.partners ?? []) {
+      if (own.has(partner.scan) || !own.has(partner.when)) continue;
+      const item = partner.names.map((name) => items.find((one) => one.draws(name))).find((one) => one !== undefined);
+      if (item !== undefined) keys.set(partner.scan, fromControl(item.command));
+    }
+  }
+  if (volume !== undefined) {
+    for (const key of rules.volume) {
+      const command = volume.keys.get(key);
+      if (command !== undefined) keys.set(key, { from: 'volume', command });
+    }
+  }
+  return keys;
+}
+
+/**
+ * The activity's keypad map from its roles: a scan and the list its press runs, ascending by scan,
+ * ready for `composeActivity`'s `keys`.
+ *
+ * The rule is `activityKeysOfDevices`; this is its caller on a container. Each device's own map is read off the
+ * configuration, a command named by the list it runs, and a screen item by the list its key runs, which on the Harmony
+ * One is the send a screen command calls rather than the command with its click, section 398, `keyListOfItem`; an
+ * item is drawn as a name the way its family draws it, `drawsName`.
  *
  * The **order** of the set's entries is not this function's: `composeActivity` writes the set, and a
  * set's entries are in Java's hash bucket order, `keyListBucket`, on 40 of 40 activity sets, with the
@@ -168,36 +260,19 @@ export function drawsName(c: Container, item: DeviceScreenItem, name: string): b
  */
 export function activityKeysFromRoles(c: Container, roles: ActivityRoles): { scan: number; list: number }[] {
   const rules = screenFamily(c).activityKeyRules;
-  const keys = new Map<number, number>();
-  if (roles.control !== undefined) {
-    const own = deviceKeypadLists(c, roles.control);
-    for (const [scan, list] of own) if (!rules.volume.includes(scan)) keys.set(scan, list);
-    for (const [scan, from] of rules.fallback) {
-      const fallback = own.get(from);
-      if (!own.has(scan) && fallback !== undefined) keys.set(scan, fallback);
-    }
-    const channelIsDirection = rules.channel.every((scan, k) =>
-      own.has(scan) && own.get(scan) === own.get(rules.direction[k] as number));
-    if (channelIsDirection && rules.skip.every((scan) => own.has(scan))) {
-      rules.channel.forEach((scan, k) => keys.set(scan, own.get(rules.skip[k] as number) as number));
-    }
-    const items = deviceScreenItems(c, roles.control);
-    const exit = items.find((one) => drawsName(c, one, EXIT_LABEL));
-    if (exit !== undefined) keys.set(rules.exit, keyListOfItem(c, exit.list));
-    for (const partner of rules.partners ?? []) {
-      if (own.has(partner.scan) || !own.has(partner.when)) continue;
-      const item = partner.names.map((name) => items.find((one) => drawsName(c, one, name))).find((one) => one !== undefined);
-      if (item !== undefined) keys.set(partner.scan, keyListOfItem(c, item.list));
-    }
-  }
-  if (roles.volume !== undefined) {
-    const own = deviceKeypadLists(c, roles.volume);
-    for (const scan of rules.volume) {
-      const list = own.get(scan);
-      if (list !== undefined) keys.set(scan, list);
-    }
-  }
-  return [...keys].sort((a, b) => a[0] - b[0]).map(([scan, list]) => ({ scan, list }));
+  const view = (group: number): KeyRuleDevice<number, number> => ({
+    keys: deviceKeypadLists(c, group),
+    screen: () => deviceScreenItems(c, group).map((item) => ({
+      command: keyListOfItem(c, item.list), draws: (name: string) => drawsName(c, item, name),
+    })),
+  });
+  // The control device's own map read before the volume device's, as before the rule was a function of its own; its
+  // screen is now read after the volume device's map rather than before, which changes only which refusal a
+  // configuration failing on both gives first.
+  const control = roles.control === undefined ? undefined : view(roles.control);
+  const volume = roles.volume === undefined ? undefined : view(roles.volume);
+  const keys = activityKeysOfDevices(rules, control, volume);
+  return [...keys].sort((a, b) => a[0] - b[0]).map(([scan, one]) => ({ scan, list: one.command }));
 }
 
 /**

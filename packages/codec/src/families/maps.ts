@@ -21,8 +21,8 @@
  * model's drawing names it (`VolumeMute`, `Number1`, `SwipeUp`), a command by its name in the device's definition, a
  * device by its name in the document. The family turns a word into its own number when it builds.
  *
- * Generic: nothing here is true of one remote and not another. Which architectures: none, since no family implements
- * the interface yet.
+ * Generic: nothing here is true of one remote and not another. Which families implement the interface is each family's
+ * `maps`; the Harmony One's is `families/harmony-one/recipemaps.ts`.
  */
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import type { ActivityRoleName } from '../compose/activityroles.ts';
@@ -35,14 +35,22 @@ import {
 // ---------------------------------------------------------------------------------------------------
 
 /**
- * Where a place is on the remote: the keypad's keys, the number pad a screen draws, or a gesture on a touch surface.
+ * Where a place is on the remote: the keypad's keys, the number pad a screen draws, a gesture on a touch surface, or a
+ * touch key, a key of a touch panel beside a screen, such as the Harmony One's page strips at each side of its screen
+ * and the two keys below it, which its drawing and `reference/remotes/harmony-one/keys.md` call touch keys.
  * A pad place is a key all the same, named as the keypad's digits are, so one choice of a key works on a model whose
  * digits are keys and on one whose digits are drawn.
  */
-export type MapSurface = 'keypad' | 'pad' | 'gesture';
+export type MapSurface = 'keypad' | 'pad' | 'gesture' | 'touch';
 
-/** Whose map can bind a place: a device's own, device mode's, an activity's, or both. */
-export type MapBinder = 'device' | 'activity' | 'both';
+/**
+ * Whose map can bind a place: a device's own, device mode's, an activity's, or both; or `remote`, neither, where no
+ * device's or activity's map binds the place and the configuration binds it outside those maps, as the Harmony One's
+ * Off key and the keys around its screen are, `reference/architectures/harmony-one/compiler.md`. `resolveMaps` answers
+ * a `remote` place for no owner, since no owner's map says what it does; `places` still lists it, with `built` false and
+ * why.
+ */
+export type MapBinder = 'device' | 'activity' | 'both' | 'remote';
 
 /**
  * One place of a model, `FamilyMaps.places`: its word, where it is, the presses it has, whose map binds it, and whether
@@ -182,8 +190,12 @@ export interface ResolvedMaps {
   readonly activities: readonly ResolvedOwner[];
 }
 
-/** Whether an owner of this kind binds a place. */
-const binds = (place: MapPlace, owner: 'device' | 'activity'): boolean => place.boundBy === 'both' || place.boundBy === owner;
+/**
+ * Whether an owner of this kind binds a place: a place bound by both kinds, or by this kind. The one judgement of who
+ * binds a place, which `resolveMaps` resolves by and the toolkit's questions and check ask, so the places a question
+ * lists for an owner are the ones resolve answers for it.
+ */
+export const binds = (place: MapPlace, owner: 'device' | 'activity'): boolean => place.boundBy === 'both' || place.boundBy === owner;
 
 /**
  * Every place and press an owner binds, the document's choice where it states one and the default otherwise. A

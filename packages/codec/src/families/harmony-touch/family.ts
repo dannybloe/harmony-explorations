@@ -23,6 +23,7 @@ import { buildTouchDocuments, ourBackground, readTouchSetupFile, type TouchAccou
 import { readConfiguration, type Configuration } from './read.ts';
 import { withoutTouchEntries, type TouchRemoval } from './remove.ts';
 import { composeTouchSettings, type OwnSettings } from './settings.ts';
+import { TOUCH_MAPS } from './recipemaps.ts';
 
 /** The Harmony Touch's own types, as `DocumentFamily` asks for them. */
 export interface TouchTypes {
@@ -72,4 +73,11 @@ export const HARMONY_TOUCH_FAMILY: DocumentFamily<TouchTypes> = {
   },
   read: (documents) => readConfiguration(documents),
   check: (documents) => refusalsBeforeASync(documents),
+  // Its places and default maps, decision 43, `recipemaps.ts`, which `resolveMaps` puts a document's choices over.
+  // **Read when asked, not when this object is made**: `recipemaps.ts` reaches the registry, which loads this module,
+  // so a program that loads `recipemaps.ts` first meets this object before `TOUCH_MAPS` is set, and a plain member
+  // would stop the load with a reference error.
+  get maps() {
+    return TOUCH_MAPS;
+  },
 };

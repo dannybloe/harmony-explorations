@@ -30,7 +30,9 @@
  * **What is built and what refuses.** A fresh document and opening one; a device and an activity added, renamed,
  * changed, moved and removed, with everything that named them settled; a key's choice, and the keys a model lets a
  * person choose, by Logitech's word for each; the lists, a device's commands and inputs, what uses something, and
- * the check. Every other function refuses by name, `NotBuiltError`,
+ * the check; and the questions about keys and screens, `keyNames`, `key`, `keys` and `screen`, for every model whose
+ * family states its maps, decision 43, the Harmony One and the Harmony Touch, read off the maps the build binds by.
+ * Every other function refuses by name, `NotBuiltError`,
  * with the requirement it waits on, and so does a member of a built one that nothing reads yet, a device's power or
  * an activity's icon; `test/recipe/toolkit.test.ts` holds the list of those still refusing, which is the measure of
  * what is left.
@@ -38,24 +40,30 @@
  * **A document that carries the part of a remote given documents is changed by nothing here yet.** That part names
  * the devices and activities itself, by name and in a form this module does not read, so a rename or a removal here
  * would leave it naming what is gone. Every change refuses such a document by name until the toolkit reads that
- * part; the questions and the check answer for it as for any other.
+ * part; the check answers for it as for any other, and the questions about keys and screens answer not built, naming
+ * the converter that writes such a document in the shape every model shares.
  *
  * **A document comes through `create` or `open`.** Every other function addresses things by id, so it refuses a
  * recipe in which a device or an activity has none, naming it, rather than guess an address for it.
  */
 import type { DeviceChannelTuning, DeviceInputs, DevicePower, DeviceTiming } from '../catalogue/driving.ts';
 import type { ArchiveProtocol } from '../catalogue/archive.ts';
+import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import type { CarriedDevice } from '../catalogue/search.ts';
+import { carriedCatalogue } from '../catalogue/carried.ts';
 import { deviceDriving } from '../catalogue/driving.ts';
 import { ACTIVITY_ROLE_NAMES, type ActivityRoleName } from '../compose/activityroles.ts';
 import { catalogueProtocol } from '../compose/cataloguecodes.ts';
 import { capabilitiesOf } from '../families/capabilities.ts';
-import { chooseByModel, NoFamilyError } from '../families/registry.ts';
+import {
+  binds, resolveMaps, type MapBinder, type MapPlace, type MapScreenEntry, type MapSurface, type ResolvedKey, type ResolvedMaps, type ResolvedOwner,
+} from '../families/maps.ts';
+import { chooseByModel, mapsOfModel, NoFamilyError, type ModelMaps } from '../families/registry.ts';
 import { notBuilt } from '../support/contract.ts';
 import {
   readRecipe, RECIPE_VERSION, RecipeError, versionTwoFields,
   type Recipe, type RecipeActivity, type RecipeCommandCode, type RecipeDevice, type RecipeDeviceKey, type RecipeKey,
-  type RecipeKeyAction, type RecipeModel, type RecipePress, type RecipeScreenItem,
+  type RecipeKeyAction, type RecipeModel, type RecipePress, type RecipeScreenItem, type RecipeSequenceStep,
 } from './recipe.ts';
 
 // ---------------------------------------------------------------------------------------------------
@@ -331,16 +339,177 @@ export interface CommandSummary {
   readonly learned: boolean;
 }
 
-/** What a key does and whether that is the default or a person's choice, R77. */
-export interface KeyAnswer {
-  readonly place: KeyPlace;
-  readonly action: KeyAction;
+/**
+ * What the questions about keys and screens are given beside the document, R77: an archive serving the definitions of
+ * the devices the document carries none of. A definition the document carries is served first, `carriedCatalogue`, so a
+ * document that carries every device's definition needs nothing here.
+ */
+export interface QuestionSources {
+  readonly archive?: CatalogueSource;
+}
+
+/**
+ * Where a key is on the remote, the maps' word for it, `MapSurface`: the keypad, the number pad a screen draws, a
+ * gesture on a touch surface, or a touch key beside a screen.
+ */
+export type KeySurface = MapSurface;
+
+/**
+ * Whose map can bind a key, `MapBinder`: a device's own, an activity's, both, or `remote`, neither, where the
+ * configuration binds the key outside every map and a person's choice there is not built.
+ */
+export type KeyBinder = MapBinder;
+
+/**
+ * One key of a document's model as `keyNames` answers it, R77: Logitech's word for it, where it is, the presses it has
+ * on this model, the short press first, whose map binds it, whether a person's choice on it is built, and why not
+ * where it is not. The places are the model's family's, `FamilyMaps.places`, the ones its build binds by.
+ */
+export interface KeyPlaceSummary {
+  readonly key: string;
+  readonly surface: KeySurface;
+  readonly presses: readonly RecipePress[];
+  readonly boundBy: KeyBinder;
+  readonly built: boolean;
+  readonly why?: string;
+}
+
+/**
+ * One setting a command is sent with, R77: its value, and whether that is the default, the catalogue's statement of
+ * the device, or the person's, the document's own.
+ *
+ * **What the document says, not what a build honours.** A value the document states is answered as the person's on
+ * every model, also where the model's build does not read that field yet and refuses a document stating it, as every
+ * build of a Harmony One does a stated timing, R16 and R17, and a command's tuning, R89. Whether this model's build
+ * reads a stated field is what `check` lists, a problem at the device saying the field is not built; an application
+ * shows both, the person's value here and the problem there.
+ */
+export interface SettingAnswer<T> {
+  readonly value: T;
   readonly isDefault: boolean;
 }
 
-/** An owner's screen: its items in order, and whether that is the default or a person's choice. */
+/**
+ * How a device's commands are sent, member by member in the catalogue's own terms, `DeviceTiming` in
+ * `catalogue/driving.ts`: how many times one press sends the code, the pause after a command before the next one to
+ * the same device and before one to another device, the wait after the device is switched on, and the wait after an
+ * input is changed, each in milliseconds. A member a person states in `RecipeDevice.timing` is theirs and stands over
+ * the catalogue's; every other is the catalogue's.
+ *
+ * **Why these five and not every member of `DeviceTiming`.** They are the members a device's settings carry on every
+ * family whose build sends by them, the Harmony Touch's device record among them, `TIMING_CARRIED` there. The other four
+ * are left out rather than answered: which of the two repeat counts wins, `pressMinRepeats` or `minRepeats`, is not
+ * read; and the delay while a key is held, the connected app's delay and the optimisation flag are sent by no build of
+ * ours, so an answer would show a setting with no effect. **The wait after power on is absent** where neither the
+ * catalogue nor the document states one, 8184 of the catalogue's records, since what a remote then waits is its
+ * family's and not knowable from the two.
+ */
+export interface DeviceSettingsAnswer {
+  readonly pressMinRepeats: SettingAnswer<number>;
+  readonly interKeyDelay: SettingAnswer<number>;
+  readonly interDeviceDelay: SettingAnswer<number>;
+  readonly powerOnDelay?: SettingAnswer<number>;
+  readonly inputDelay: SettingAnswer<number>;
+}
+
+/**
+ * How one command is sent where a person tuned it, `RecipeDevice.commands[name].sending`: the copies of the code in the
+ * first block, the pace of the held block and the silence before the first block, each the person's. **Only what the
+ * document states is answered**: what a command does untuned is in its code, which only a build turns into blocks, so
+ * a member not stated is left out rather than given a value no build has made.
+ */
+export interface CommandTuningAnswer {
+  readonly copies?: SettingAnswer<number>;
+  readonly heldPaceMs?: SettingAnswer<number>;
+  readonly leadInMs?: SettingAnswer<number>;
+}
+
+/**
+ * How a press's command is sent, R77: the target device's settings, and beside them the tuning of that one command
+ * where the document states one. The settings are the device's and stored on it alone, so two keys that send one
+ * device's commands answer the same settings, and a change to them changes both.
+ */
+export interface SendingAnswer {
+  readonly settings: DeviceSettingsAnswer;
+  readonly command?: CommandTuningAnswer;
+}
+
+/**
+ * One step of a sequence as a question answers it: a device's command, a pause in tenths of a second, or, in a
+ * sequence written out in the form of version 1, the command a device's key sends, by the key's scan code as that form
+ * states it, `RecipeSequenceStep`, since that form names no command.
+ */
+export type SequenceStepAnswer = SequenceStep | { readonly device: DeviceId; readonly scan: number };
+
+/**
+ * A sequence a press runs: its name in its activity, the id the document gives it where it has one (a sequence written
+ * out where it sits on a screen, the form of version 1, has none), and its steps in order.
+ */
+export interface SequenceAnswer {
+  readonly id?: SequenceId;
+  readonly name: string;
+  readonly steps: readonly SequenceStepAnswer[];
+}
+
+/** What a press shares whatever it does: which press, the label a pad draws for it, and whether it is the default. */
+interface PressCommon {
+  readonly press: RecipePress;
+  /** The label a pad place draws, where the family gives one. */
+  readonly label?: string;
+  /**
+   * True where the family derived it, false where the document chose it. **A choice equal to the default is still
+   * the person's**, false: the document states it, so it stays what it is when the family's default changes later,
+   * and `setKey` with `'default'` is what gives the key back to the family.
+   */
+  readonly isDefault: boolean;
+}
+
+/**
+ * One press of a key and what it does, R77: a device's command, with how it is sent; one of the activity's sequences,
+ * by its name, with its steps; or nothing, where the place is unbound or a person chose nothing.
+ */
+export type PressAnswer =
+  | PressCommon & { readonly action: { readonly device: DeviceId; readonly command: string }; readonly sending: SendingAnswer }
+  | PressCommon & { readonly action: { readonly sequence: string }; readonly sequence: SequenceAnswer }
+  | PressCommon & { readonly action: { readonly nothing: true } };
+
+/**
+ * One key of an owner as the remote will have it, R77, before anything is built: the owner, the key and where it is,
+ * one entry per press the model has for that key, and, where a person cannot choose what it does, why.
+ *
+ * **A key the owner's map does not bind has no presses**: the configuration binds it outside every map, or the model's
+ * maps bind it for the other kind of owner only, so nothing here can say what it does, and `why` says which. A key the
+ * owner's map binds and whose choice is not built has its presses as the build gives them, and `why` as well.
+ *
+ * **Not answered: whether a key repeats while held.** Repeating is a property of the command's code, its held part, and
+ * not of the key, `reference/how-a-harmony-works.md`, and how a code's held part is sent is decided when a build
+ * writes it; nothing in the document or the catalogue's statement of a device says it.
+ */
+export interface KeyAnswer {
+  readonly owner: Owner;
+  readonly key: string;
+  readonly surface: KeySurface;
+  readonly presses: readonly PressAnswer[];
+  readonly why?: string;
+}
+
+/** An entry of an owner's screen, in order, as the remote will have it. */
+export type ScreenEntryAnswer =
+  /** A device's command, labelled with its own name where no label is given. */
+  | { readonly device: DeviceId; readonly command: string; readonly label?: string; readonly isDefault: boolean }
+  /** One of the activity's sequences, by its name, with its id where it has one. */
+  | { readonly sequence: string; readonly id?: SequenceId; readonly label?: string; readonly isDefault: boolean }
+  /** An entry the remote acts on itself and that sends nothing, such as one opening the number pad, by the family's name for it. */
+  | { readonly label: string; readonly client: string; readonly isDefault: boolean };
+
+/**
+ * An owner's screen, R77: its entries in order, each marked default or the person's, and whether the list as a whole
+ * is the default. A person states a screen whole, so every entry has the list's mark; the list's own mark is what tells
+ * a screen a person emptied from one the family leaves empty.
+ */
 export interface ScreenAnswer {
-  readonly items: readonly ScreenItem[];
+  readonly owner: Owner;
+  readonly items: readonly ScreenEntryAnswer[];
   readonly isDefault: boolean;
 }
 
@@ -368,8 +537,10 @@ function limitsOf(model: RecipeModel): { readonly maxDevices: number | undefined
 /**
  * The keys a document of the model may choose otherwise, by Logitech's word for each, in the family's order, as its
  * family's builder states them, `Family.recipeKeys`; undefined where the family builds no key's choice yet, which is
- * every family but the Harmony One's. One source for the change, the check and the question, so none of them takes a
- * key the build then refuses. Refused as `limitsOf` refuses, for a model no family serves.
+ * every family but the Harmony One's. One source for the change and for the check's word on what is not built, so
+ * neither takes a key the build then refuses; the questions and the check's word on what a model has answer by the
+ * model's places, `mapsOf`, of which these are the ones a choice is built on. Refused as `limitsOf` refuses, for a
+ * model no family serves.
  */
 function keyNamesOf(model: RecipeModel): readonly string[] | undefined {
   try {
@@ -378,6 +549,232 @@ function keyNamesOf(model: RecipeModel): readonly string[] | undefined {
   } catch (error) {
     if (error instanceof NoFamilyError) throw new RecipeError(error.message);
     throw error;
+  }
+}
+
+/**
+ * The maps of a document's model, decision 43, as `mapsOfModel` gives them: undefined where the model's family states
+ * none yet, and refused as `limitsOf` refuses, for a model no family serves.
+ */
+function mapsOf(model: RecipeModel): ModelMaps | undefined {
+  try {
+    return mapsOfModel(model);
+  } catch (error) {
+    if (error instanceof NoFamilyError) throw new RecipeError(error.message);
+    throw error;
+  }
+}
+
+/**
+ * The maps a question about keys and screens answers from, or the reason it cannot answer, in the words an
+ * application shows: **not built** for a document carrying a Harmony Touch's own block, which no question reads and
+ * whose converter writes the one shape every question reads, and for a model whose family has no maps yet, naming the
+ * model. Both wait on R77, the questions' requirement.
+ */
+function mapsToAnswer(document: Recipe, contract: string): ModelMaps {
+  if (document.touch !== undefined) {
+    return notBuilt(`${contract} for a document carrying a Harmony Touch's own block, which harmonyTouch.describeTouchDocument writes in the shape every model shares`, 77);
+  }
+  const found = mapsOf(document.model);
+  if (found === undefined) return notBuilt(`${contract} for the ${document.model.name}`, 77);
+  return found;
+}
+
+/**
+ * The catalogue that stands in where a document carries no definition and no archive is given: refusing every
+ * question, since a question that reaches it would otherwise be told a device has no commands. Reached only for a
+ * document with no device at all, since a device without its definition is refused before, `resolvedOf`.
+ */
+const NO_CATALOGUE: CatalogueSource = {
+  protocols: () => [],
+  device: () => { throw new RecipeError('the document carries no definition, and no archive was given'); },
+  commands: () => { throw new RecipeError('the document carries no definition, and no archive was given'); },
+  driving: () => { throw new RecipeError('the document carries no definition, and no archive was given'); },
+};
+
+/** What every question about keys and screens works from: the model's places, the resolved maps and the catalogue. */
+interface Resolved {
+  readonly model: string;
+  readonly places: readonly MapPlace[];
+  readonly maps: ResolvedMaps;
+  readonly catalogue: CatalogueSource;
+}
+
+/**
+ * **The one route to a document's maps for every question**: the model's family's maps, and `resolveMaps` over them,
+ * the function the build calls, so what an application is shown of a key is what is built, decision 43. Nothing here
+ * derives a map, a default or a place of its own; `test/recipe/toolkitkeys.test.ts` holds the questions to what
+ * `resolveMaps` answers and this module to calling nothing else for a map.
+ *
+ * **The definitions**: the document's carried ones first, then the archive given, `carriedCatalogue`. With neither for
+ * a device, the questions stop with the error `commands` gives for it, naming the device. `resolveMaps` answers the
+ * whole document or nothing, its docstring says why, so one device without its definition stops every owner's answers,
+ * not only those that use it.
+ */
+function resolvedOf(document: Recipe, contract: string, sources: QuestionSources | undefined): Resolved {
+  opened(document);
+  const { skin, maps } = mapsToAnswer(document, contract);
+  if (sources?.archive === undefined) {
+    const bare = document.devices.find((one) => one.definition === undefined);
+    if (bare !== undefined) throw new RecipeError(`${bare.name} carries no definition, so its commands are not in the document`);
+  }
+  const catalogue = carriedCatalogue(document, sources?.archive) ?? NO_CATALOGUE;
+  return { model: document.model.name, places: maps.places(skin), maps: resolveMaps(maps, skin, document, catalogue), catalogue };
+}
+
+/** The resolved owner an `Owner` addresses, by its position in the document, which is the resolved maps' order too. */
+function resolvedOwner(document: Recipe, resolved: Resolved, owner: Owner): ResolvedOwner {
+  if ('device' in owner) {
+    const device = deviceOf(document, owner.device);
+    return resolved.maps.devices[document.devices.indexOf(device)]!;
+  }
+  const activity = activityOf(document, owner.activity);
+  return resolved.maps.activities[document.activities.indexOf(activity)]!;
+}
+
+/** The kind of an owner, as `binds` in `families/maps.ts` asks it: who binds a place is judged there and nowhere else. */
+const kindOf = (owner: Owner): 'device' | 'activity' => ('device' in owner ? 'device' : 'activity');
+
+/**
+ * Turns resolved keys into a question's answers. The device's settings are the same at every key that sends its
+ * commands, so the catalogue is asked once per device; each answer is still an object of its own.
+ */
+class Answerer {
+  /** Each device's timing as the catalogue states it, read once per device. */
+  private readonly timings = new Map<string, DeviceTiming>();
+  private readonly ids: ReadonlyMap<string, DeviceId>;
+  private readonly document: Recipe;
+  private readonly resolved: Resolved;
+
+  constructor(document: Recipe, resolved: Resolved) {
+    this.document = document;
+    this.resolved = resolved;
+    this.ids = new Map(document.devices.map((one) => [one.name, one.id!]));
+  }
+
+  /** A device's id by the name the document gives it, or the refusal naming where it was met. */
+  private idOf(name: string, where: string): DeviceId {
+    const id = this.ids.get(name);
+    if (id === undefined) throw new RecipeError(`${where} names ${name}, which is no device of the document; the check lists it`);
+    return id;
+  }
+
+  /**
+   * A device's settings: each of the five members the document's `timing` states, the person's, over the catalogue's
+   * statement of the device, `DeviceDriving.timing`, the default. The catalogue is the one the maps were resolved
+   * with, so the device's definition the document carries is what is read. **A new object for every press**: the
+   * catalogue is asked once per device, but an answer is the caller's to keep or change, so two presses of one device
+   * share no object and a change to one answer reaches neither another answer nor the document.
+   */
+  private settingsOf(device: RecipeDevice): DeviceSettingsAnswer {
+    let catalogue = this.timings.get(device.name);
+    if (catalogue === undefined) {
+      const slash = device.device.indexOf('/');
+      if (slash <= 0) throw new RecipeError(`${device.name}'s device is not <manufacturer>/<model>`);
+      catalogue = this.resolved.catalogue.driving(device.device.slice(0, slash), device.device.slice(slash + 1)).timing;
+      this.timings.set(device.name, catalogue);
+    }
+    const known = catalogue;
+    const stated = device.timing ?? {};
+    const one = <K extends 'pressMinRepeats' | 'interKeyDelay' | 'interDeviceDelay' | 'inputDelay'>(member: K): SettingAnswer<number> =>
+      (stated[member] !== undefined ? { value: stated[member]!, isDefault: false } : { value: known[member], isDefault: true });
+    const powerOn = stated.powerOnDelay !== undefined ? { value: stated.powerOnDelay, isDefault: false }
+      : known.powerOnDelay !== undefined ? { value: known.powerOnDelay, isDefault: true } : undefined;
+    return {
+      pressMinRepeats: one('pressMinRepeats'),
+      interKeyDelay: one('interKeyDelay'),
+      interDeviceDelay: one('interDeviceDelay'),
+      ...(powerOn === undefined ? {} : { powerOnDelay: powerOn }),
+      inputDelay: one('inputDelay'),
+    };
+  }
+
+  /** How a device's command is sent: the device's settings, and the document's tuning of that one command where it states one. */
+  sendingOf(device: RecipeDevice, command: string): SendingAnswer {
+    const own = device.commands !== undefined && Object.hasOwn(device.commands, command) ? device.commands[command]!.sending : undefined;
+    const theirs = (value: number | undefined): SettingAnswer<number> | undefined => (value === undefined ? undefined : { value, isDefault: false });
+    const tuned: CommandTuningAnswer | undefined = own === undefined ? undefined : {
+      ...(own.copies === undefined ? {} : { copies: theirs(own.copies)! }),
+      ...(own.heldPaceMs === undefined ? {} : { heldPaceMs: theirs(own.heldPaceMs)! }),
+      ...(own.leadInMs === undefined ? {} : { leadInMs: theirs(own.leadInMs)! }),
+    };
+    return { settings: this.settingsOf(device), ...(tuned === undefined ? {} : { command: tuned }) };
+  }
+
+  /**
+   * One of an activity's sequences by its name, with its steps: a sequence of version 2, `RecipeActivity.sequences`,
+   * or one written out where it sits on the activity's screen, the form of version 1. The reader refuses a key naming
+   * a sequence the activity has under neither form, so one is always found for a document that reads.
+   */
+  sequenceOf(activity: RecipeActivity | undefined, name: string, where: string): SequenceAnswer {
+    const own = activity?.sequences?.find((one) => one.name === name);
+    if (own !== undefined) {
+      return {
+        ...(own.id === undefined ? {} : { id: own.id }),
+        name,
+        steps: own.steps.map((step): SequenceStepAnswer => ('pause' in step ? { pause: step.pause } : { device: this.idOf(step.device, where), command: step.command })),
+      };
+    }
+    let written: readonly RecipeSequenceStep[] | undefined;
+    for (const item of activity?.screen ?? []) {
+      if ('sequence' in item && item.sequence === name && item.steps !== undefined) written = item.steps;
+    }
+    if (written === undefined) throw new RecipeError(`${where} runs the sequence ${name}, which is not one of the activity's`);
+    return {
+      name,
+      steps: written.map((step): SequenceStepAnswer => ('pause' in step ? { pause: step.pause } : { device: this.idOf(step.device, where), scan: step.scan })),
+    };
+  }
+
+  /** One resolved press as a question answers it. */
+  pressOf(owner: Owner, found: ResolvedKey): PressAnswer {
+    const common = {
+      press: found.press,
+      ...(found.label === undefined ? {} : { label: found.label }),
+      isDefault: found.isDefault,
+    };
+    const where = `${'device' in owner ? `device ${owner.device}` : `activity ${owner.activity}`}'s ${found.key} key`;
+    const action = found.action;
+    if ('nothing' in action) return { ...common, action: { nothing: true } };
+    if ('sequence' in action) {
+      const activity = 'activity' in owner ? activityOf(this.document, owner.activity) : undefined;
+      return { ...common, action: { sequence: action.sequence }, sequence: this.sequenceOf(activity, action.sequence, where) };
+    }
+    const id = this.idOf(action.device, where);
+    const device = deviceOf(this.document, id);
+    return { ...common, action: { device: id, command: action.command }, sending: this.sendingOf(device, action.command) };
+  }
+
+  /**
+   * One place of an owner, every press it has. A place the owner's map does not bind answers no press and why; a
+   * press asked for that the place does not have answers none, and says so.
+   */
+  keyOf(owner: Owner, place: MapPlace, keys: readonly ResolvedKey[], press?: RecipePress): KeyAnswer {
+    // The owner copied, so no two answers, and no answer and the caller's own value, share an object.
+    const base = { owner: { ...owner }, key: place.key, surface: place.surface };
+    if (!binds(place, kindOf(owner))) {
+      const why = place.boundBy === 'remote'
+        ? place.why ?? 'no device\'s or activity\'s map binds this key'
+        : `on a ${this.resolved.model} only ${place.boundBy === 'device' ? 'a device\'s own map' : 'an activity\'s map'} binds this key`;
+      return { ...base, presses: [], why };
+    }
+    if (press !== undefined && !place.presses.includes(press)) {
+      return { ...base, presses: [], why: `a ${this.resolved.model}'s ${place.key} has no ${press} press: not on this model` };
+    }
+    const presses = keys.filter((one) => one.key === place.key && (press === undefined || one.press === press)).map((one) => this.pressOf(owner, one));
+    return { ...base, presses, ...(place.built ? {} : { why: place.why ?? 'a person\'s choice on this key is not built' }) };
+  }
+
+  /** One entry of a resolved screen as a question answers it. */
+  entryOf(owner: Owner, entry: MapScreenEntry, isDefault: boolean): ScreenEntryAnswer {
+    const where = `${'device' in owner ? `device ${owner.device}` : `activity ${owner.activity}`}'s screen`;
+    if ('client' in entry) return { label: entry.label, client: entry.client, isDefault };
+    if ('sequence' in entry) {
+      const activity = 'activity' in owner ? activityOf(this.document, owner.activity) : undefined;
+      const id = activity?.sequences?.find((one) => one.name === entry.sequence)?.id;
+      return { sequence: entry.sequence, ...(id === undefined ? {} : { id }), ...(entry.label === undefined ? {} : { label: entry.label }), isDefault };
+    }
+    return { device: this.idOf(entry.device, where), command: entry.command, ...(entry.label === undefined ? {} : { label: entry.label }), isDefault };
   }
 }
 
@@ -1040,37 +1437,76 @@ export function inputs(document: Recipe, device: DeviceId): string[] {
 }
 
 /**
- * The keys a document's model lets a person choose what they do, by Logitech's word for each, in the order its family
- * gives them, R31 and R32: the words `setKey` takes and `check` holds a document's choices to. The same keys in an
- * activity's map and in a device's own, since both are maps of the same keypad. Refused by name, as a function not
- * built, for a model whose family builds no key's choice yet, which is every model but the Harmony One, rather than
- * answering an empty list that would say the model has no keys; and as `RecipeError` for a model no family serves.
+ * **Every key of a document's model as data**, R77: each place its family's maps name, keypad keys, number pad places,
+ * gestures and touch keys, in the family's order, with where it is, the presses it has on this model, whose map binds
+ * it, and whether a person's choice on it is built and why not, `KeyPlaceSummary`. The places `check` holds a
+ * document's choices to and `keys` answers by, `FamilyMaps.places`, so an application drawing the remote shows what the
+ * build binds. Not built, by name with R77, for a model whose family has no maps yet, rather than answering an empty
+ * list that would say the model has no keys, and for a document carrying a Harmony Touch's own block; refused as
+ * `RecipeError` for a model no family serves.
  *
  * A word here is the name the model's drawing carries for the key, `data-name`, so an application colours and finds
- * the key on the drawing by it.
+ * the key on the drawing by it. Which of them `setKey` takes today is a narrower list, its family's builder's, which
+ * it refuses outside of.
  */
-export function keyNames(document: Recipe): string[] {
-  const names = keyNamesOf(document.model);
-  if (names === undefined) return notBuilt(`recipe.keyNames for the ${document.model.name}`, 31);
-  return [...names];
+export function keyNames(document: Recipe): KeyPlaceSummary[] {
+  const { skin, maps } = mapsToAnswer(document, 'recipe.keyNames');
+  return maps.places(skin).map((place): KeyPlaceSummary => ({
+    key: place.key, surface: place.surface, presses: [...place.presses], boundBy: place.boundBy, built: place.built,
+    ...(place.why === undefined ? {} : { why: place.why }),
+  }));
 }
 
-/** What one key does. */
-export function key(document: Recipe, place: KeyPlace): KeyAnswer {
-  void document; void place;
-  return notBuilt('recipe.key', 77);
+/**
+ * **What one key of an owner does**, R77, before anything is built: every press the model has for it, each with what
+ * it does and whether that is the default, how a command is sent or a sequence's steps; or, with `press` given, that
+ * press alone. Read off the same maps the build binds by, `resolvedOf`. Where the owner's map does not bind the key, it
+ * answers no press and why; a key the model has no place of is refused, as `ChangeRefused` naming the key.
+ *
+ * **Not built**, by name with R77, for a model whose family has no maps yet and for a document carrying a Harmony
+ * Touch's own block; refused as `commands` refuses where a device carries no definition and no archive is given.
+ */
+export function key(document: Recipe, place: KeyPlace, sources?: QuestionSources): KeyAnswer {
+  const resolved = resolvedOf(document, 'recipe.key', sources);
+  const owner = resolvedOwner(document, resolved, place.owner);
+  const at = resolved.places.find((one) => one.key === place.key);
+  if (at === undefined) {
+    throw new ChangeRefused('unknown', { kind: 'key', owner: place.owner, key: place.key }, `a ${document.model.name} has no key named ${place.key}`);
+  }
+  return new Answerer(document, resolved).keyOf(place.owner, at, owner.keys, place.press);
 }
 
-/** What every key of an owner does, the default ones included: the whole keypad as the remote will have it. */
-export function keys(document: Recipe, owner: Owner): KeyAnswer[] {
-  void document; void owner;
-  return notBuilt('recipe.keys', 77);
+/**
+ * **What every key of an owner does**, R77, the default ones included: every place the owner's map can bind, bound or
+ * not, in the model's order, each with every press the model has for it; the whole map as the remote will have it,
+ * which is what an application shows on its drawing of the keypad. A place the owner's map cannot bind is not listed,
+ * `keyNames` lists it with why; asked for alone, `key` answers it with why. Not built and refused as `key` is.
+ *
+ * **A device's own map and an activity's are separate**, `reference/how-a-harmony-works.md`: a choice in a device's map,
+ * device mode's, changes that device's answer and no activity's, and the other way round.
+ *
+ * **A choice naming a device the document does not hold stops this owner's answer**, as a `RecipeError` naming the key
+ * and the device, since a press of a device that is not there has no id and no settings to answer; `check` lists the
+ * same choice as `unknown-device`. Only that owner stops: `key` still answers the owner's other keys one at a time, and
+ * its screen and every other owner answer. A screen entry naming such a device never reaches a question, since the
+ * reader refuses the document.
+ */
+export function keys(document: Recipe, owner: Owner, sources?: QuestionSources): KeyAnswer[] {
+  const resolved = resolvedOf(document, 'recipe.keys', sources);
+  const found = resolvedOwner(document, resolved, owner);
+  const answerer = new Answerer(document, resolved);
+  return resolved.places.filter((place) => binds(place, kindOf(owner))).map((place) => answerer.keyOf(owner, place, found.keys));
 }
 
-/** What an owner's screen shows. */
-export function screen(document: Recipe, owner: Owner): ScreenAnswer {
-  void document; void owner;
-  return notBuilt('recipe.screen', 77);
+/**
+ * **What an owner's screen shows**, R77: its entries in order, the family's default list or the one the document
+ * states whole, each entry marked accordingly. Not built and refused as `key` is.
+ */
+export function screen(document: Recipe, owner: Owner, sources?: QuestionSources): ScreenAnswer {
+  const resolved = resolvedOf(document, 'recipe.screen', sources);
+  const found = resolvedOwner(document, resolved, owner).screen;
+  const answerer = new Answerer(document, resolved);
+  return { owner: { ...owner }, items: found.items.map((entry) => answerer.entryOf(owner, entry, found.isDefault)), isDefault: found.isDefault };
 }
 
 /** A device's favourite channels, in order. */
@@ -1147,18 +1583,55 @@ export function check(document: Recipe): Problem[] {
 
   // The keys the model's builder takes a choice for; none where the model is one nothing builds, said above.
   const names = limits === undefined ? undefined : keyNamesOf(document.model);
+  // The model's places, the ones `keyNames` and `keys` answer by and the build binds by, decision 43; none where the
+  // model's family has no maps yet, where the builder's words above are all there is to hold a choice to.
+  const modelMaps = limits === undefined ? undefined : mapsOf(document.model);
+  const places = modelMaps?.maps.places(modelMaps.skin);
+  const model = document.model.name;
+
+  /**
+   * Whether a key's choice names a place the owner's map binds, with a press the place has, saying the problem where
+   * not: a word that is no place of the model, a place the remote binds outside every map or that only the other kind
+   * of owner's map binds, and a press the place does not have on this model. True where nothing was said, so what is
+   * not built is said only of a choice that is otherwise right, and never twice of one.
+   */
+  const placed = (owner: Owner, key: RecipeKey, place: Place, what: string): boolean => {
+    if (places === undefined) return true;
+    const press = key.press ?? 'short';
+    const at = places.find((one) => one.key === key.key);
+    if (at === undefined) {
+      say('error', 'unknown-key', place, `${what} chooses what the ${key.key} key does, and a ${model} has no key of that name`);
+      return false;
+    }
+    if (!binds(at, kindOf(owner))) {
+      const why = at.boundBy === 'remote' ? `a ${model}'s maps bind no key of that name: ${at.why ?? 'the configuration binds it outside them'}`
+        : `on a ${model} only ${at.boundBy === 'device' ? 'a device\'s own map' : 'an activity\'s map'} binds it`;
+      say('error', 'unknown-key', place, `${what} chooses what the ${key.key} key does, and ${why}`);
+      return false;
+    }
+    if (!at.presses.includes(press)) {
+      say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a ${press} press, which the ${key.key} key of a ${model} does not have`);
+      return false;
+    }
+    return true;
+  };
 
   /** The problems of one owner's key choices: a key, a device or a command that is not there, and what is not built. */
   const checkKeys = (owner: Owner, keys: readonly RecipeKey[] | undefined, what: string): void => {
     for (const key of keys ?? []) {
       const place: Place = { kind: 'key', owner, key: key.key, ...(key.press === undefined ? {} : { press: key.press }) };
-      if (limits !== undefined && names === undefined) {
-        say('error', 'not-on-this-model', place, `${what} chooses what the ${key.key} key does, which nothing builds for a ${document.model.name} yet`);
-      } else if (names?.includes(key.key) === false) {
-        say('error', 'unknown-key', place, `${what} chooses what the ${key.key} key does, and a ${document.model.name}'s maps bind no key of that name`);
+      if (placed(owner, key, place, what)) {
+        if (limits !== undefined && names === undefined) {
+          say('error', 'not-on-this-model', place, `${what} chooses what the ${key.key} key does, which nothing builds for a ${model} yet`);
+        } else if (names?.includes(key.key) === false) {
+          // A place the maps name and the builder takes no choice on: not built, said as a model's limit is.
+          say('error', places === undefined ? 'unknown-key' : 'not-on-this-model', place, places === undefined
+            ? `${what} chooses what the ${key.key} key does, and a ${model}'s maps bind no key of that name`
+            : `${what} chooses what the ${key.key} key does, which nothing builds for a ${model} yet`);
+        }
+        if (key.press === 'held') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a second command when held, which nothing builds yet`);
+        if (key.press === 'double') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a command when pressed twice, which nothing builds yet`);
       }
-      if (key.press === 'held') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a second command when held, which nothing builds yet`);
-      if (key.press === 'double') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a command when pressed twice, which nothing builds yet`);
       if ('sequence' in key.action) {
         say('error', 'not-on-this-model', place, `${what} puts a sequence on the ${key.key} key, which nothing builds yet`);
       } else if ('device' in key.action) {
