@@ -1123,3 +1123,21 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    searched the whole archive for an example, the search is done once, when the sample is taken, and the example
    is listed. The checkout stays what the scripts over the whole archive read, and what an application's own
    source of the catalogue is, [decision 41](#d41).
+
+43. <a id="d43"></a>**A document has one shape for every remote, and the toolkit is the same for every model.**
+   *Taken on 15 November 2026, [plan 018](plans/018-one-document-shape.md).* A document holds no block that only
+   one family reads: devices, activities, keys, screens, sequences and settings are the same fields on every
+   model, and adding a device or changing what a key does is the same call whatever remote the document is for.
+   What a model does not have is answered by name as not on this model, and what nobody has built yet as not
+   built; neither is a refusal, a word kept for a rail or a check that says no. Whether every corner can be made
+   the same is not promised, and where one cannot, the difference is a named answer and never a second shape.
+
+   **Default maps are derived by rule, per family, and a person reviews them.** What a new device's keys and
+   screen do comes from one derivation that the build and the questions share, so an application can show the
+   whole map, bound or not, before anything is built. A rule is scored against Logitech's choices once, as a check
+   on the rule, and does not have to equal them.
+
+   **A person's change is the document's, and the catalogue never replaces it.** A device's timing and, where a
+   model can carry it, the sending of one command are stored beside the catalogue's definition and never inside
+   it, so fetching a definition again leaves them as they were. Everything about one key can be asked: what each
+   press does, whether that is the default, and the settings its command is sent with.

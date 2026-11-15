@@ -54,7 +54,17 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
 
 - [x] 2.1 The contracts written down: the functions of the document toolkit, the device search and the sync with its events, as types on the entries and held by the surface tests, each refusing by name where nothing is behind it yet
 - [x] 2.2 The skeleton on the spare Harmony One: find a device in the catalogue, put it in a document, change what a key does in an activity and in device mode (R31, R32), check it, build it and sync it with events, through the contracts alone, and heard on the infrared monitor
-- [ ] 2.3 The same path on the Harmony Touch, the other kind of family, and whatever of the contracts does not fit it changed before anything is released
+- [ ] 2.3 The same path on the Harmony Touch, the other kind of family, and whatever of the contracts does not fit it changed before anything is released, [plan 018](docs/plans/018-one-document-shape.md), decision 43
+  - [ ] 2.3.1 The recipe's version 2 types and reader: timing, power, tuning and a screen on a device, what an activity opens on, its power order, steps and sequences, three presses, with the Touch block still read
+  - [ ] 2.3.2 The maps interface both kinds of family carry: the model's places, a device's and an activity's default map, and defaults with the document's choices resolved
+  - [ ] 2.3.3 The Harmony Touch's maps: places, resolve, ids from the toolkit's ids, and a converter from the old block proven by a round trip with its listed differences
+  - [ ] 2.3.4 The Harmony One's maps, its activity rule extracted in command names so the build and the questions share it
+  - [ ] 2.3.5 The questions answer on both: every key of a device or an activity, bound or not, default or chosen, with the settings its command is sent with (R77)
+  - [ ] 2.3.6 The Touch builds from version 2 and its block and reader go; the reference recorded again
+  - [ ] 2.3.7 The callers in `packages/corpus` and `packages/bench` moved to the new shape
+  - [ ] 2.3.8 The changes work on a Touch document as on any other: keys with a held and a double press, screens, a device's timing kept over the catalogue's, sequences owned by an activity, a definition fetched again, ids never reused
+  - [ ] 2.3.9 End to end with nothing attached: a Touch document created, a device added, one key changed, the whole map asked, checked, built and synced to the pretend remote
+  - [ ] 2.3.10 The new set heard once on the infrared monitor from the bench Harmony Touch, and its own setup put back
 - [ ] 2.4 A pretend remote an application reads and syncs against with nothing attached, its progress and its failures included (R80)
 - [ ] 2.5 What an application asks of the FHSDK that no contract covers, gone through against the requirements once the skeleton stands
 

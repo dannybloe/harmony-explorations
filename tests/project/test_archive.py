@@ -78,10 +78,13 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # b271ef0f.
 # Repinned for decision 42, a new entry: no test reads the infrared archive's checkout, tests read a sample of it in
 # the lab, and a measurement over the whole archive is not a test. The digest before it was d67bf1ce.
-DECISIONS_DIGEST = "5504e207a7a3497bb20c48255e1284a780e93e159612d3612b4191b0abdc5101"
+# Repinned for decision 43, a new entry, plan 018: a document has one shape for every remote and the toolkit is
+# the same for every model, default maps are derived by rule, and a person's change is never replaced by the
+# catalogue. The digest before it was 5504e207.
+DECISIONS_DIGEST = "12da54b7f13c1d6ba87e6c922007133c62282713d70aa92d29bee6f79a1a9067"
 
 SECTIONS = 436
-DECISIONS = 42
+DECISIONS = 43
 
 
 def anchor_problems(findings, decisions):
