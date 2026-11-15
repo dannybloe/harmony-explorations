@@ -92,10 +92,10 @@
  },
  {
   "name": "touch-test",
-  "about": "The Harmony Touch test setup, built with John Doe's account",
+  "about": "The Harmony Touch test setup as a document of version 2, decision 43, the converter's output of its earlier form, built with John Doe's account",
   "builtAt": "2026-11-09T12:00:00",
-  "sha256": "b613c0dfcbfc7b2dbcc482d32b8ec8cee667c110a715107aaa0eb3ccc2bb0a79",
-  "size": 260643,
-  "onRemote": "not as it is: the Harmony Touch ran the same set, 38 of 38 codes heard, built with the account's own identifiers, so it differs in Context and in the tuning device's favourites address and key"
+  "sha256": "d311673c295a9f9cd9c078cc6fbb3e1e59fc4ceba400d484bf5abcf8323463a4",
+  "size": 260651,
+  "onRemote": "no: this build, from the document of version 2, has not been on a remote. The set the Harmony Touch ran, 38 of 38 codes heard, was built from the earlier form with the account's own identifiers; this one differs from that form's build in the control port of five devices, two screen entries, one pad label, one key's group and the order of each map's buttons, packages/corpus/test/touch/touch-version-two-set.test.ts"
  }
 ]

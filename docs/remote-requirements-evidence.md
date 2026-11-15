@@ -174,7 +174,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R12 Rename a device.
 
-* **Every remote**, open, waiting on the FHSDK: A recipe states each device's name; no function renames a device in a recipe, which R76 asks for.
+* **Every remote**, proven by `packages/codec/test/recipe/toolkitchanges.test.ts`, "on both references a device renamed follows it into every field that names it, and renamed back is the document before".
 
 ### R13 Remove a device, and say and settle what happens to the activities and favourites that used it.
 
@@ -274,19 +274,19 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R19 Add, fix and remove a device's command, and put a fixed one back to its original code.
 
-* **Harmony One**, open, waiting on the FHSDK: Nothing adds, fixes or removes one command of a device, or puts back its original code.
-* **Harmony 600**, open, waiting on the FHSDK: Nothing adds, fixes or removes one command of a device, or puts a fixed one back.
-* **Harmony 650**, open, waiting on the FHSDK: Commands can be chosen when composing a device, but nothing fixes a command's code or puts the original back.
-* **Harmony 700**, open, waiting on the FHSDK: Nothing adds, fixes, removes or restores a single command of a device.
-* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing adds, fixes or restores a device command in a 525 configuration.
-* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing adds, fixes or restores a device command in a 515 configuration.
-* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing adds, fixes, removes or restores a single command in an 885 configuration.
-* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing adds, fixes, removes or restores a single command in a 785 configuration.
-* **Harmony 300**, open, waiting on the FHSDK: Nothing adds, fixes or removes one command of a device, or restores its original code, for this family.
-* **Harmony 350**, open, waiting on the FHSDK: Nothing adds, fixes or removes a single command of a device on this family.
-* **Harmony Touch**, open, waiting on the FHSDK: No library step adds, fixes or removes one command of a device, or restores a fixed one.
-* **Harmony Elite**, open, waiting on the FHSDK and its family: No library step adds, fixes or removes one command of a device.
-* **Harmony Hub**, open, waiting on the FHSDK and its family: No library step adds, fixes or removes one command of a device.
+* **Harmony One**, open, waiting on the FHSDK: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 600**, open, waiting on the FHSDK: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 650**, open, waiting on the FHSDK: Commands can be chosen when composing a device; the toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 700**, open, waiting on the FHSDK: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 525**, open, waiting on the FHSDK and its family: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 515**, open, waiting on the FHSDK and its family: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 885**, open, waiting on the FHSDK and its family: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 785**, open, waiting on the FHSDK and its family: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 300**, open, waiting on the FHSDK: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony 350**, open, waiting on the FHSDK: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony Touch**, open, waiting on the FHSDK: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command's own code yet, and taking away a command of the definition is not built.
 
 ### R20 Export and import codes as Pronto Hex.
 
@@ -376,7 +376,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R25 Rename an activity.
 
-* **Every remote**, open, waiting on the FHSDK: A recipe states each activity's name; no function renames an activity in a recipe, which R76 asks for.
+* **Every remote**, proven by `packages/codec/test/recipe/toolkitchanges.test.ts`, "on both references an activity renamed changes its name alone, a name another activity holds is refused, and renamed back is the document before".
 
 ### R26 Remove an activity.
 
@@ -470,7 +470,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, open, waiting on the FHSDK and its family: Activities are not composed for the 785, so no order can be chosen.
 * **Harmony 300**, open, waiting on the FHSDK and its family: Nothing lets a person choose the order the activity switches its devices on and off in.
 * **Harmony 350**, open, waiting on the FHSDK and its family: Nothing lets a person choose the order the activity switches its devices on and off in.
-* **Harmony Touch**, open, waiting on the FHSDK: The documents carry a power on and a power off place per device, written from the Touch's own block; nothing in a recipe reaches them yet.
+* **Harmony Touch**, open, waiting on a run on a unit: A recipe's power order for an activity is set by the toolkit and read by the Touch's build into the documents, but no document built from one has been sent to the unit.
 * **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing composes an activity for an Elite, so no order can be chosen.
 * **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing composes an activity for a hub, so no order can be chosen.
 
@@ -486,7 +486,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, unknown: Which screen a 785 activity opens on, and whether a configuration could choose another, is not checked.
 * **Harmony 300**, impossible: The 300 has no screen, so an activity opens on none. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen, so an activity opens on none. `reference/remotes/harmony-350/display.md#harmony-350-display`.
-* **Harmony Touch**, open, waiting on the FHSDK: The documents carry a start screen per activity, written from the Touch's own block; nothing in a recipe reaches it yet.
+* **Harmony Touch**, open, waiting on a run on a unit: A recipe's opening screen for an activity is set by the toolkit, held to the three screens the build takes, and read by the build into the documents, but no document built from one has been sent to the unit.
 * **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing composes an activity for an Elite, so no start screen can be chosen.
 * **Harmony Hub**, unknown: A hub has no screen; whether its setup carries the start screen a paired remote opens an activity on is not read. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
@@ -1160,15 +1160,15 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R76 Change a recipe through functions that each return a new one and keep it consistent: add, change and remove a device, an activity, a key, a screen item, a sequence and a favourite, with no knowledge of how a recipe is laid out.
 
-* **Every remote**, open, waiting on the FHSDK: The recipe's types and the reader that checks one are public, but no function changes a recipe.
+* **Every remote**, open, waiting on the FHSDK: Every change is a function that returns a new recipe and keeps it consistent, and the same call for every model; a key is set only on the Harmony One and the Harmony Touch, whose families state their maps, every other model answering not built, as every change needing the family does on the Harmony 525 and 515, which no family serves. Still not built on any model: favourite channels, the look of the screens, a device's inputs, an activity's icon and its activity key.
 
 ### R77 Ask a recipe what it holds: what a key does, which devices an activity uses, what is not yet filled in.
 
-* **Every remote**, open, waiting on the FHSDK: Which devices an activity uses and what is not filled in can be asked of any document; on the Harmony One and the Harmony Touch so can what every key of a device or an activity does, with how its command is sent or the steps of the sequence it runs, and what its screen shows, from the maps their builds bind by. A Touch document still carrying its own block answers not built until it is converted, every other model answers not built since its family has no maps yet, and the list of a document's sequences and its favourite channels cannot be asked on any model.
+* **Every remote**, open, waiting on the FHSDK: Which devices an activity uses, the sequences an activity holds and what is not filled in can be asked of any document; on the Harmony One and the Harmony Touch so can what every key of a device or an activity does, with how its command is sent or the steps of the sequence it runs, and what its screen shows, from the maps their builds bind by. Every other model answers not built, since its family has no maps yet or, on the Harmony 525 and 515, no family serves it, and a document's favourite channels cannot be asked on any model.
 
 ### R78 Check a recipe without building it, and get every problem as a list, each naming the place it concerns.
 
-* **Every remote**, open, waiting on the FHSDK: The reader and the builders refuse a recipe at the first problem they meet; nothing returns every problem as a list without building.
+* **Every remote**, open, waiting on the FHSDK: The check lists a recipe's problems without building it, each naming its place: a name taken, a limit passed, a choice the model cannot bind or its family refuses, a command a device lacks and a field no build reads; a problem only a build meets, such as a code in a definition the family cannot send, is still found by building.
 
 ### R79 Write a recipe to a remote through one function for every model, which reports its phases, its progress, what the user must do or leave and its outcome as events, and stops only where it is safe.
 

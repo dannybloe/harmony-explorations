@@ -34,19 +34,18 @@ import { archiveSourceAt } from '../../src/node.ts';
 
 /** Every function of the toolkit that is not built, with the requirement its refusal names. */
 const NOT_BUILT: Record<string, number> = {
-  setDeviceCommand: 19,
-  addSequence: 37, setSequence: 37,
-  setScreen: 34, setFavourites: 45, setLook: 42, setSetting: 47,
-  sequences: 77, favourites: 77,
+  setFavourites: 45, setLook: 42, favourites: 77,
 };
 
 /**
  * The functions of the toolkit that are built, each held by a test of its own below, but the questions about keys and
- * screens, `key`, `keys` and `screen`, which `toolkitkeys.test.ts` beside this file holds on the two reference documents.
+ * screens, `key`, `keys` and `screen`, which `toolkitkeys.test.ts` beside this file holds on the two reference documents,
+ * and the changes of a document's version 2 fields on both, `toolkitchanges.test.ts`.
  */
 const BUILT = [
-  'activities', 'addActivity', 'addDevice', 'check', 'commands', 'create', 'devices', 'inputs', 'key', 'keyNames', 'keys', 'move', 'open',
-  'remove', 'screen', 'setActivity', 'setDevice', 'setKey', 'unfilled', 'uses',
+  'activities', 'addActivity', 'addDevice', 'addSequence', 'check', 'commands', 'create', 'devices', 'inputs', 'key', 'keyNames',
+  'keys', 'move', 'open', 'refreshDevice', 'remove', 'screen', 'sequences', 'setActivity', 'setDevice', 'setDeviceCommand',
+  'setKey', 'setScreen', 'setSequence', 'setSetting', 'unfilled', 'uses',
 ];
 
 /** What a call threw, or undefined where it returned. A promise that rejects counts as a throw. */
@@ -202,14 +201,18 @@ function refused(call: () => unknown): [string, unknown] | undefined {
   }
 }
 
-test('a fresh document is empty, states its model and the version, and reads as a recipe; a model nothing builds for is refused', () => {
+test('a fresh document is empty, states its model and the version, and reads as a recipe; a model nothing builds for is not built, and a name no model has is refused', () => {
   const fresh = recipe.create(ONE);
   assert.deepEqual(fresh, { version: RECIPE_VERSION, model: { name: 'Harmony One', skin: 54 }, devices: [], activities: [] });
   assert.deepEqual(readRecipe(JSON.parse(JSON.stringify(fresh))), fresh);
   assert.deepEqual(recipe.check(fresh), []);
   // A model named without its skin keeps none, as a recipe written by hand may.
   assert.deepEqual(recipe.create({ name: 'Harmony 350' }).model, { name: 'Harmony 350' });
-  assert.throws(() => recipe.create({ name: 'Harmony 525' }), (error: unknown) => error instanceof RecipeError && /no family serves/.test(error.message));
+  // A bench model no family serves yet is not built, the answer every call gives it; a name no model has names no
+  // remote, and is refused with the registry's own sentence.
+  assert.throws(() => recipe.create({ name: 'Harmony 525' }),
+    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.create for the Harmony 525' && error.requirement === 76);
+  assert.throws(() => recipe.create({ name: 'Harmony 9999' }), (error: unknown) => error instanceof RecipeError && /no model is called Harmony 9999/.test(error.message));
 });
 
 test('opening gives every device and activity without an id one, in order and past the highest given, and is the same the second time', () => {
@@ -329,7 +332,7 @@ test('a key\'s choice is stated in its owner\'s map, replaced by the next, and g
   assert.deepEqual(mode.activities, document.activities);
 });
 
-test('a key\'s choice is refused for an owner, a device or a command the document does not hold, and a held press and a sequence refuse as not built', () => {
+test('a key\'s choice is refused for an owner, a device, a command or a sequence the document does not hold, and a held press as not on this model', () => {
   const document = small();
   const key = { owner: { activity: 'a1' }, key: 'VolumeUp' } as const;
   const place = { kind: 'key', ...key };
@@ -338,10 +341,10 @@ test('a key\'s choice is refused for an owner, a device or a command the documen
   assert.deepEqual(refused(() => recipe.setKey(document, key, { device: 'd9', command: 'VolumeUp' })), ['unknown', { kind: 'device', device: 'd9' }]);
   assert.deepEqual(refused(() => recipe.setKey(document, key, { device: 'd1', command: 'Dance' })), ['unknown', { kind: 'command', device: 'd1', command: 'Dance' }]);
   assert.deepEqual(refused(() => recipe.setKey(document, { ...key, key: '' }, { nothing: true })), ['invalid', { ...place, key: '' }]);
-  assert.throws(() => recipe.setKey(document, { ...key, press: 'held' }, { nothing: true }),
-    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for a held press' && error.requirement === 38);
-  assert.throws(() => recipe.setKey(document, key, { sequence: 's1' }),
-    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setKey for a sequence' && error.requirement === 37);
+  // A Harmony One has no long press and no double press, which its places say: not on this model, never not built.
+  assert.deepEqual(refused(() => recipe.setKey(document, { ...key, press: 'held' }, { nothing: true })), ['not-on-this-model', { ...place, press: 'held' }]);
+  assert.deepEqual(refused(() => recipe.setKey(document, { ...key, press: 'double' }, { nothing: true })), ['not-on-this-model', { ...place, press: 'double' }]);
+  assert.deepEqual(refused(() => recipe.setKey(document, key, { sequence: 's1' })), ['unknown', { kind: 'sequence', sequence: 's1' }]);
   // A key the model's maps do not bind: the Harmony One's Activities key, which its drawing names and no map binds.
   assert.deepEqual(refused(() => recipe.setKey(document, { ...key, key: 'Activities' }, { nothing: true })), ['unknown', { ...place, key: 'Activities' }]);
   // A model whose builder takes no key's choice yet refuses by name, with the requirement of the map asked for,
@@ -393,11 +396,11 @@ test('the keys of a document\'s model are its family\'s places as data, 44 on th
   assert.equal(recipe.keyNames(document).length, 44);
   assert.deepEqual(recipe.keyNames(document)[0]!.presses, ['short']);
   // A model whose family has no maps yet answers not built, naming it, rather than answering that it has no keys; a
-  // model no family serves is refused as a model nothing builds for.
+  // model no family serves answers not built too, the one answer every call gives it.
   assert.throws(() => recipe.keyNames(recipe.open(least())),
     (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.keyNames for the Harmony 650' && error.requirement === 77);
   assert.throws(() => recipe.keyNames(readRecipe({ ...least(), model: { name: 'Harmony 525' } })),
-    (error: unknown) => error instanceof RecipeError && /no family serves/.test(error.message));
+    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.keyNames for the Harmony 525' && error.requirement === 77);
 });
 
 test('the check lists every problem with its place and code, and a document without the fault lists none', () => {
@@ -410,6 +413,8 @@ test('the check lists every problem with its place and code, and a document with
   const damaged = (change: (json: { devices: Json[]; activities: Json[] }) => void): ReturnType<typeof small> => {
     const json = JSON.parse(JSON.stringify(clean)) as { devices: Json[]; activities: Json[] };
     change(json);
+    // A file damaged by hand records no highest ids, so an id written into it is not one past what it says was given.
+    delete (json as Json)['highestIds'];
     return recipe.open(json);
   };
   // An activity using a device the document does not hold.
@@ -440,11 +445,16 @@ test('the check lists every problem with its place and code, and a document with
   // The same in a device's own map.
   assert.deepEqual(codes(damaged((json) => { json.devices[1]!['keys'] = [{ key: 'VolumeUp', action: { device: 'Television', command: 'Dance' } }]; })),
     [['error', 'unknown-command', { kind: 'key', owner: { device: 'd2' }, key: 'VolumeUp' }]]);
-  // A key the model's maps do not bind: the Harmony One's Activities key in a device's own map, and in an activity's
-  // a word the Harmony One has no key of at all, the Harmony Touch's Favorites.
-  assert.deepEqual(codes(damaged((json) => { json.devices[0]!['keys'] = [{ key: 'Activities', action: { nothing: true } }]; json.activities[0]!['keys'] = [{ key: 'Favorites', action: { nothing: true } }]; })), [
+  // A key the model's maps do not bind: the Harmony One's Activities key in a device's own map; in an activity's a word
+  // the Harmony One has no key of and the Harmony Touch has, its Favorites, which is not on this model; and a word no
+  // model has, which is unknown.
+  assert.deepEqual(codes(damaged((json) => {
+    json.devices[0]!['keys'] = [{ key: 'Activities', action: { nothing: true } }];
+    json.activities[0]!['keys'] = [{ key: 'Favorites', action: { nothing: true } }, { key: 'Teleport', action: { nothing: true } }];
+  })), [
     ['error', 'unknown-key', { kind: 'key', owner: { device: 'd1' }, key: 'Activities' }],
-    ['error', 'unknown-key', { kind: 'key', owner: { activity: 'a1' }, key: 'Favorites' }],
+    ['error', 'not-on-this-model', { kind: 'key', owner: { activity: 'a1' }, key: 'Favorites' }],
+    ['error', 'unknown-key', { kind: 'key', owner: { activity: 'a1' }, key: 'Teleport' }],
   ]);
   // A key's choice on a model whose builder takes none yet: the same file for a Harmony 650, and its control,
   // the same file without the choice, which lists nothing.
@@ -478,7 +488,11 @@ test('the check lists every problem with its place and code, and a document with
 test('every setup file of ours opens and checks: no error, and a note for each device that carries no definition', () => {
   const setups = new URL('../../../corpus/setups/', import.meta.url);
   const counts: Record<string, [number, number]> = {};
-  for (const file of readdirSync(setups).filter((one) => one.endsWith('.json')).sort()) {
+  // The Harmony Touch's test setup there is the earlier form with the Touch's own block, kept as the input of the bench
+  // runs built from it, decision 43; it is refused, naming the converter, and its document of version 2 is the reference.
+  const earlier = 'touch-test.json';
+  assert.throws(() => recipe.open(JSON.parse(readFileSync(new URL(earlier, setups), 'utf8'))), /the earlier form .*describeTouchDocument/);
+  for (const file of readdirSync(setups).filter((one) => one.endsWith('.json') && one !== earlier).sort()) {
     const document = recipe.open(JSON.parse(readFileSync(new URL(file, setups), 'utf8')));
     const problems = recipe.check(document);
     assert.deepEqual(problems.filter((one) => one.severity === 'error'), [], file);
@@ -488,7 +502,7 @@ test('every setup file of ours opens and checks: no error, and a note for each d
   // Devices and notes per file: no setup of ours carries a definition, so each device is one note.
   assert.deepEqual(counts, {
     'h300-test.json': [4, 4], 'h350-test.json': [8, 8], 'h650-options.json': [7, 7], 'h650-start.json': [7, 7],
-    'h650-test.json': [7, 7], 'one-test.json': [7, 7], 'touch-full.json': [7, 7], 'touch-test.json': [7, 7],
+    'h650-test.json': [7, 7], 'one-test.json': [7, 7], 'touch-full.json': [7, 7],
   });
 });
 
@@ -542,31 +556,28 @@ test('a device\'s new name follows it everywhere the document names it, and its 
   assert.deepEqual(recipe.setDevice(renamed, 'd1', { name: 'Television' }).document, document);
   assert.deepEqual(readRecipe(JSON.parse(JSON.stringify(renamed))), renamed);
   assert.equal(mentions(document, 'Television'), 8, 'the document given was changed');
-  // The device key and staying on: set, and given back with no empty field left behind.
+  // The device key and staying on: set, and given back with no empty field left behind. A device key is a Harmony 300's
+  // and 350's alone, so it is set on the same document for a Harmony 350; on the One it is not on this model.
   const bare = recipe.setDevice(document, 'd1', { keptOnBetweenActivities: false, deviceKey: 'none' }).document;
   assert.deepEqual(bare.devices[0], { id: 'd1', name: 'Television', device: 'Made/TV' });
-  const again = recipe.setDevice(bare, 'd1', { keptOnBetweenActivities: true, deviceKey: { place: 0 } }).document;
-  assert.deepEqual(again, document);
+  const again = recipe.setDevice({ ...bare, model: { name: 'Harmony 350' } }, 'd1', { keptOnBetweenActivities: true, deviceKey: { place: 0 } }).document;
+  assert.deepEqual(again, { ...document, model: { name: 'Harmony 350' } });
+  assert.deepEqual(refused(() => recipe.setDevice(bare, 'd1', { deviceKey: { place: 0 } })), ['not-on-this-model', { kind: 'device', device: 'd1' }]);
   // A change that states nothing changes nothing.
   assert.deepEqual(recipe.setDevice(document, 'd1', {}).document, document);
 });
 
-test('a device\'s change is refused for a device the document does not hold, a name taken or empty, and a device key at no place; four members refuse as not built', () => {
+test('a device\'s change is refused for a device the document does not hold, a name taken or empty, and a device key at no place; its inputs refuse as not built', () => {
   const document = everywhere();
   assert.deepEqual(refused(() => recipe.setDevice(document, 'd9', { name: 'Screen' })), ['unknown', { kind: 'device', device: 'd9' }]);
   assert.deepEqual(refused(() => recipe.setDevice(document, 'd1', { name: 'Receiver' })), ['invalid', { kind: 'device', device: 'd1' }]);
-  assert.deepEqual(refused(() => recipe.setDevice(document, 'd1', { deviceKey: { place: -1 } })), ['invalid', { kind: 'device', device: 'd1' }]);
+  assert.deepEqual(refused(() => recipe.setDevice({ ...document, model: { name: 'Harmony 350' } }, 'd1', { deviceKey: { place: -1 } })), ['invalid', { kind: 'device', device: 'd1' }]);
   assert.ok(refused(() => recipe.setDevice(document, 'd1', { name: '  ' })) !== undefined);
   // Its own name again is no name taken.
   assert.deepEqual(recipe.setDevice(document, 'd1', { name: 'Television' }).document, document);
-  const waits: [Parameters<typeof recipe.setDevice>[2], string, number][] = [
-    [{ power: 'default' }, 'its power', 14], [{ inputs: 'default' }, 'its inputs', 15],
-    [{ timing: 'default' }, 'its timing', 16], [{ channelTuning: 'default' }, 'its channel tuning', 18],
-  ];
-  for (const [changes, what, requirement] of waits) {
-    assert.throws(() => recipe.setDevice(document, 'd1', changes),
-      (error: unknown) => error instanceof NotBuiltError && error.contract === `recipe.setDevice for ${what}` && error.requirement === requirement);
-  }
+  // The inputs have no field in the document yet; power, timing and channel tuning are written, `toolkitchanges.test.ts`.
+  assert.throws(() => recipe.setDevice(document, 'd1', { inputs: 'default' }),
+    (error: unknown) => error instanceof NotBuiltError && error.contract === 'recipe.setDevice for its inputs' && error.requirement === 15);
 });
 
 test('an activity\'s name, kind and devices are changed, the devices whole and in the order given, and the rest of it stays', () => {
@@ -586,7 +597,7 @@ test('an activity\'s name, kind and devices are changed, the devices whole and i
   assert.deepEqual(recipe.setActivity(document, 'a1', {}).document, document);
 });
 
-test('an activity\'s change is refused for an activity or a device the document does not hold, a name taken, a device twice and a job no activity has; three members refuse as not built', () => {
+test('an activity\'s change is refused for an activity or a device the document does not hold, a name taken, a device twice and a job no activity has; two members refuse as not built', () => {
   const document = everywhere();
   assert.deepEqual(refused(() => recipe.setActivity(document, 'a9', { name: 'Films' })), ['unknown', { kind: 'activity', activity: 'a9' }]);
   assert.deepEqual(refused(() => recipe.setActivity(document, 'a1', { name: 'Listen' })), ['invalid', { kind: 'activity', activity: 'a1' }]);
@@ -597,8 +608,7 @@ test('an activity\'s change is refused for an activity or a device the document 
   assert.deepEqual(refused(() => recipe.setActivity(document, 'a1', { devices: [{ device: 'd2', roles: ['Dancing' as 'Volume'] }] })),
     ['invalid', { kind: 'device', device: 'd2' }]);
   const waits: [Parameters<typeof recipe.setActivity>[2], string, number][] = [
-    [{ icon: 'none' }, 'its icon', 27], [{ start: 'default' }, 'its extra steps', 30], [{ end: 'default' }, 'its extra steps', 30],
-    [{ activityKey: 'none' }, 'its activity key', 29],
+    [{ icon: 'none' }, 'its icon', 27], [{ activityKey: 'none' }, 'its activity key', 29],
   ];
   for (const [changes, what, requirement] of waits) {
     assert.throws(() => recipe.setActivity(document, 'a1', changes),
@@ -643,9 +653,13 @@ test('what uses a device is every place that names it, and removing it settles e
   assert.deepEqual(recipe.uses(unused, { device: 'd3' }), []);
   const without = recipe.remove(unused, { device: 'd3' });
   assert.deepEqual(without.effects, []);
-  // The protocol definition that came with it goes with it, so the document is the one before it was added.
+  // The protocol definition that came with it goes with it, so the document is the one before it was added, but for
+  // the highest device id given, which it keeps: d3 is not given again, and the next device added is d4.
   assert.deepEqual(unused.protocols, [{ name: 'NEC 32 Bit' }]);
-  assert.deepEqual(without.document, document);
+  assert.deepEqual(without.document, { ...document, highestIds: { device: 3 } });
+  assert.equal(recipe.addDevice(without.document, { name: 'Player', device: carried('Made/BD') }).document.devices[2]!.id, 'd4');
+  // The control: the same addition on the document before d3 was given takes d3.
+  assert.equal(recipe.addDevice(document, { name: 'Player', device: carried('Made/BD') }).document.devices[2]!.id, 'd3');
   // A definition a device that stays is written in stays, and goes with the last device written in it.
   const one = recipe.remove(small(), { device: 'd1' }).document;
   assert.deepEqual(one.protocols, [{ name: 'NEC 32 Bit' }]);
@@ -666,8 +680,7 @@ test('an activity is removed with no effect, since nothing names one, and a remo
   assert.deepEqual(refused(() => recipe.uses(document, { device: 'd9' })), ['unknown', { kind: 'device', device: 'd9' }]);
   assert.deepEqual(refused(() => recipe.uses(document, { activity: 'a9' })), ['unknown', { kind: 'activity', activity: 'a9' }]);
   for (const call of [recipe.remove, recipe.uses] as const) {
-    assert.throws(() => call(document, { sequence: 's1' }),
-      (error: unknown) => error instanceof NotBuiltError && error.contract === `recipe.${call.name} for a sequence` && error.requirement === 37);
+    assert.deepEqual(refused(() => call(document, { sequence: 's1' })), ['unknown', { kind: 'sequence', sequence: 's1' }]);
   }
 });
 
@@ -729,36 +742,23 @@ test('the document\'s own commands of a device, of version 2, mark a command cha
   assert.deepEqual(recipe.devices(small()).map((one) => one.learned), [false, false]);
 });
 
-test('uses answers not built for a document stating a field of version 2, which names devices it does not follow yet', () => {
+test('uses lists a power order among the places that name a device, as the removal settles it', () => {
   const json = JSON.parse(JSON.stringify(small())) as { activities: Json[] };
   json.activities[0]!['powerOrder'] = ['Receiver', 'Television'];
   const document = recipe.open(json);
-  assert.throws(() => recipe.uses(document, { device: 'd1' }), (error: unknown) =>
-    error instanceof NotBuiltError && error.requirement === 77 && error.contract === 'recipe.uses for a document stating the activity Watch TV\'s power order');
-  // The control: without it the same question is answered, the activity's part naming the device.
+  const order = { kind: 'power-order', activity: 'a1', device: 'd1' };
+  assert.deepEqual(recipe.uses(document, { device: 'd1' }), [{ kind: 'activity-device', activity: 'a1', device: 'd1' }, order]);
+  const change = recipe.remove(document, { device: 'd1' });
+  assert.deepEqual(change.effects.map((one) => [one.place, one.effect]), [[{ kind: 'activity-device', activity: 'a1', device: 'd1' }, 'changed'], [order, 'changed']]);
+  assert.deepEqual(change.document.activities[0]!.powerOrder, ['Receiver']);
+  // The control: without a power order the same question lists the activity's part alone.
   assert.deepEqual(recipe.uses(small(), { device: 'd1' }), [{ kind: 'activity-device', activity: 'a1', device: 'd1' }]);
 });
 
-test('a document that carries a remote\'s own documents\' part is changed by nothing, each change refusing by name, and still answers', () => {
-  const document = recipe.open({ ...least(), model: { name: 'Harmony Touch' }, touch: {} });
-  const changes: [string, () => unknown][] = [
-    ['addDevice', () => recipe.addDevice(document, { name: 'Player', device: carried('Made/BD') })],
-    ['addActivity', () => recipe.addActivity(document, { name: 'Listen', type: 'ListenToMusic', devices: [] })],
-    ['setDevice', () => recipe.setDevice(document, 'd1', { name: 'Screen' })],
-    ['setActivity', () => recipe.setActivity(document, 'a1', { name: 'Films' })],
-    ['setKey', () => recipe.setKey(document, { owner: { device: 'd1' }, key: 'VolumeUp' }, { nothing: true })],
-    ['remove', () => recipe.remove(document, { device: 'd1' })],
-    ['move', () => recipe.move(document, { device: 'd1' }, 0)],
-  ];
-  for (const [name, call] of changes) {
-    assert.throws(call, (error: unknown) => error instanceof NotBuiltError
-      && error.contract === `recipe.${name} for a document of a remote given documents` && error.requirement === 76, name);
-  }
-  // The control: the same seven calls on the same document without that part all answer.
-  const plain = recipe.open(least());
+test('a document carrying a Harmony Touch\'s own block of the earlier form never reaches a change: opening it is refused, naming the converter', () => {
+  assert.throws(() => recipe.open({ ...least(), model: { name: 'Harmony Touch' }, touch: {} }),
+    (error: unknown) => error instanceof RecipeError && /describeTouchDocument/.test(error.message));
+  // The control: the same document without the block opens, and every change takes it.
+  const plain = recipe.open({ ...least(), model: { name: 'Harmony Touch' } });
   assert.equal(recipe.setDevice(plain, 'd1', { name: 'Screen' }).document.devices[0]!.name, 'Screen');
-  assert.equal(recipe.remove(plain, { device: 'd1' }).document.devices.length, 0);
-  // The questions answer for it as for any other.
-  assert.deepEqual(recipe.devices(document).map((one) => one.id), ['d1']);
-  assert.deepEqual(recipe.uses(document, { device: 'd1' }), [{ kind: 'activity-device', activity: 'a1', device: 'd1' }]);
 });

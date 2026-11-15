@@ -838,8 +838,11 @@ made before the answerer read the power source.
 
 The set the build kept is 9.1's from-nothing set byte for byte, all eight answers, and the lab's document is
 `packages/corpus/setups/touch-test.json` byte for byte. Built again from the document through `buildFromRecipe` and
-`touchSetOf` with the account's addresses and the lab's sample of the infrared archive, it gives that set answer for
-answer and tag for tag. *Corrected:* this said the set was delivered tag for tag, all eight answers. **Six were
+`touchSetOf` with the account's addresses and the lab's sample of the infrared archive, it gave that set answer for
+answer and tag for tag. That document is the earlier form, with the Touch's own block, which `buildFromRecipe` no
+longer builds since decision 43; the same set is built from it today through the earlier form's route,
+`earlierTouchSetupFile.buildEarlierTouchDocuments` on the codec's `./internal`, as
+`packages/corpus/test/touch/touch-document-sync-runs.test.ts` does. *Corrected:* this said the set was delivered tag for tag, all eight answers. **Six were
 delivered**: the remote asked for our background and its twin with the set's own tags, so both were answered 304 and
 sent nothing; the 200s were the six documents and the finish, 7 against 13 answered 304. 9.4's forward run had asked
 for the two untagged and taken them 200; 9.4's put back and closing run asked for the person's backgrounds and not for

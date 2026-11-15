@@ -93,7 +93,7 @@ import {
   defaultDeviceKeys, type DefaultActivity, type DeviceMapView, type DefaultEntry, type TouchKeyRule, SCREEN_LEADS,
   TOUCH_KEY_RULES,
 } from '../../../src/families/harmony-touch/defaultmaps.ts';
-import { readTouchSetupFile, type TouchSetupFile } from '../../../src/families/harmony-touch/fromnothing.ts';
+import { readEarlierTouchSetupFile, type EarlierTouchSetupFile } from '../../../src/families/harmony-touch/earlierform.ts';
 import type { SetupButton } from '../../../src/families/harmony-touch/setup.ts';
 // Another family's table, for a comparison only: the guard that keeps families apart walks their sources, and tests
 // of one family read another's tables beside this one (`wiring-one.test.ts` among them).
@@ -101,10 +101,10 @@ import { HARD_KEYS } from '../../../src/families/harmony-600-650-700/devicemode.
 import '../../../src/support/resources.node.ts';
 
 const SETUP_FILE = new URL('../../../../corpus/setups/touch-test.json', import.meta.url);
-const file = (): TouchSetupFile => readTouchSetupFile(JSON.parse(readFileSync(SETUP_FILE, 'utf8')));
+const file = (): EarlierTouchSetupFile => readEarlierTouchSetupFile(JSON.parse(readFileSync(SETUP_FILE, 'utf8')));
 
 /** Each device's command names, from its archive entry, by the name the setup gives the device. */
-function commandsOfDevices(f: TouchSetupFile): Map<string, string[]> {
+function commandsOfDevices(f: EarlierTouchSetupFile): Map<string, string[]> {
   const archive = archiveAt(IR_ARCHIVE_SAMPLE!);
   const out = new Map<string, string[]>();
   for (const device of f.devices) {
@@ -168,7 +168,7 @@ const row = (s: KeyScore): [number, number, number, number] => [s.stated, s.repr
 const keyOf = (buttons: readonly SetupButton[], key: string): SetupButton | undefined => buttons.find((one) => one.key === key);
 
 /** Scores every device's keys under `rules`, press and long press. */
-function scoreDevices(f: TouchSetupFile, commands: Map<string, string[]>, rules: readonly TouchKeyRule[]) {
+function scoreDevices(f: EarlierTouchSetupFile, commands: Map<string, string[]>, rules: readonly TouchKeyRule[]) {
   const presses: Difference[] = [];
   const longs: Difference[] = [];
   const press: Record<string, [number, number, number, number]> = {};
@@ -274,7 +274,7 @@ test('the control: every key sending only the command named as the key gives 104
 });
 
 /** Scores each device's screen entries: present, at their index, with their label; and what each differs in. */
-function scoreScreens(f: TouchSetupFile, commands: Map<string, string[]>, rules: Parameters<typeof defaultDeviceEntries>[1]) {
+function scoreScreens(f: EarlierTouchSetupFile, commands: Map<string, string[]>, rules: Parameters<typeof defaultDeviceEntries>[1]) {
   const per: Record<string, [number, number, number, number, number]> = {};
   const differences: Difference[] = [];
   for (const part of f.touch.devices) {
@@ -367,7 +367,7 @@ test('before tuning the screen\'s order: without the leads only the Xbox or the 
 });
 
 /** The setup's own map of a device, as an activity reads it. */
-function statedView(f: TouchSetupFile, commands: Map<string, string[]>, device: string): DeviceMapView {
+function statedView(f: EarlierTouchSetupFile, commands: Map<string, string[]>, device: string): DeviceMapView {
   const part = f.touch.devices.find((one) => one.device === device)!;
   const keys: Record<string, { press: string; longPress?: string }> = {};
   for (const b of part.buttons) {
@@ -386,7 +386,7 @@ function derivedView(commands: Map<string, string[]>, device: string): DeviceMap
 }
 
 /** Scores every activity's keys, gestures and pad with its devices' maps from `mapOf`. */
-function scoreActivities(f: TouchSetupFile, mapOf: (device: string) => DeviceMapView, changes?: Parameters<typeof defaultActivityKeys>[2]) {
+function scoreActivities(f: EarlierTouchSetupFile, mapOf: (device: string) => DeviceMapView, changes?: Parameters<typeof defaultActivityKeys>[2]) {
   const presses: Difference[] = [];
   const longs: Difference[] = [];
   const others: Difference[] = [];

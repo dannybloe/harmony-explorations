@@ -20,7 +20,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import * as lab from '@harmony/lab';
-import { IR_ARCHIVE_SAMPLE, skipWithoutIrArchiveSample } from '@harmony/lab';
 import { MODELS_BY_SKIN } from '@harmony/base/models';
 import { parse, type Container } from '../../src/container/gspm.ts';
 import { inventory, irGroups } from '../../src/index.ts';
@@ -37,7 +36,7 @@ import { emptyTouchDocuments } from '../../src/families/harmony-touch/empty.ts';
 import type { TouchAccount } from '../../src/families/harmony-touch/fromnothing.ts';
 import { ComposeError } from '../../src/shared/core.ts';
 import { answersOf, FULL } from './harmony-touch/touch-sync.ts';
-import { archiveAt } from '../../src/catalogue/catalogue.node.ts';
+import { carriedCatalogue } from '../../src/catalogue/carried.ts';
 import '../../src/support/resources.node.ts';
 
 test('every model of the model table is chosen a compiled family by its architecture or refused naming it, 14 and 21 of 35, the Harmony Touch a document family outside the table and the Harmony 300 and 350 a compiled one', () => {
@@ -191,12 +190,14 @@ const ACCOUNT: TouchAccount = {
   tuning: { DeviceProfileUri: 'example.invalid/profile', ContentProfileKey: 77 },
 };
 
-test('the Touch\'s family reads its setup file, refuses another model\'s, and builds the six documents from it alone', skipWithoutIrArchiveSample(), () => {
+test('the Touch\'s family reads its document of version 2, refuses another model\'s and one of the earlier form, and builds the six documents from it alone', () => {
   const family = HARMONY_TOUCH_FAMILY;
-  const raw = JSON.parse(readFileSync(new URL('../../../corpus/setups/touch-test.json', import.meta.url), 'utf8')) as Record<string, unknown>;
+  // The reference document carries every device's definition, which serve as the archive.
+  const raw = JSON.parse(readFileSync(new URL('../references/touch-test.json', import.meta.url), 'utf8')) as Record<string, unknown>;
   const setup = family.readSetup(raw);
   assert.throws(() => family.readSetup({ ...raw, model: { name: 'Harmony One', skin: 54 } }), /is for the Harmony One, not the Harmony Touch/);
-  const docs = family.build(setup, { archive: archiveAt(IR_ARCHIVE_SAMPLE!), account: ACCOUNT });
+  assert.throws(() => family.readSetup({ ...raw, touch: {} }), /a Harmony Touch's own block, touch, the earlier form/);
+  const docs = family.build(setup, { archive: carriedCatalogue(setup)!, account: ACCOUNT });
   assert.deepEqual(Object.keys(docs), ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList']);
   const read = family.read(docs);
   assert.deepEqual([read.activities.length, read.devices.length], [5, 7]);

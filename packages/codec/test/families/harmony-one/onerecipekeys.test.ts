@@ -73,7 +73,7 @@ import { buildEmptyOneConfiguration } from '../../../src/families/harmony-one/em
 import { ONE_KEYPAD_SCANS, ONE_RECIPE_KEYS } from '../../../src/families/harmony-one/recipekeys.ts';
 import { carriedCatalogue } from '../../../src/catalogue/carried.ts';
 import { chooseByModel } from '../../../src/families/registry.ts';
-import { readTouchSetupFile } from '../../../src/families/harmony-touch/fromnothing.ts';
+import { readEarlierTouchSetupFile } from '../../../src/families/harmony-touch/earlierform.ts';
 import { ComposeError } from '../../../src/shared/core.ts';
 
 const REFERENCES = new URL('../../references/', import.meta.url);
@@ -314,23 +314,29 @@ test('control: the refusal check fails on a recipe whose choice is one the build
 
 test('every family that builds no key choice refuses a recipe stating one, through the one build and through its own route', () => {
   const key = [{ key: 'VolumeUp', action: { nothing: true } }];
-  for (const name of ['h600-five', 'h650-test', 'h700-test-bright', 'h350-test', 'touch-test']) {
+  for (const name of ['h600-five', 'h650-test', 'h700-test-bright', 'h350-test']) {
     const json = recipeJson(name);
     const first = (json.devices as Json[])[0] as Json;
     first.keys = key;
     assert.throws(() => buildFromRecipe(json, { builtAt: BUILT_AT, account: {} as never }),
       (error: unknown) => error instanceof RecipeError
-        && error.message === `nothing here builds a key a recipe chooses for ${name === 'touch-test' ? `the ${json.model.name}` : chooseByModel(json.model).family.name} yet, and the recipe chooses the device ${first.name}'s VolumeUp key`,
+        && error.message === `nothing here builds a key a recipe chooses for ${chooseByModel(json.model).family.name} yet, and the recipe chooses the device ${first.name}'s VolumeUp key`,
       name);
   }
+  // The control: the Harmony Touch builds a key choice its places take, decision 43, so the one build goes past the
+  // keys and stops only at the account it is not given.
+  const touchKeyed = recipeJson('touch-test');
+  ((touchKeyed.devices as Json[])[0] as Json).keys = key;
+  assert.throws(() => buildFromRecipe(touchKeyed, { builtAt: BUILT_AT }), /no account was given/);
   // The family's own route, which a script may take without the one build.
   const h350 = readRecipe({ ...recipeJson('h350-test'), devices: (recipeJson('h350-test').devices as Json[]).map((one, k) => (k === 0 ? { ...one, keys: key } : one)) });
   const noScreen = chooseByModel(h350.model);
   assert.throws(() => noScreen.family.kind === 'compiled' && noScreen.family.fromRecipe?.(h350, noScreen.skin, { builtAt: BUILT_AT, archive: carriedCatalogue(h350) as never }),
     (error: unknown) => error instanceof ComposeError && /^the Harmony 300 and 350 build no key a recipe chooses yet/.test(error.message));
-  const touch = recipeJson('touch-test');
+  // A Harmony Touch's setup file of the earlier form takes its keys from its own block and refuses the recipe's.
+  const touch = JSON.parse(readFileSync(new URL('../harmony-touch/touch-test-earlier-form.json', import.meta.url), 'utf8')) as Json;
   (touch.activities as Json[])[0]!.keys = key;
-  assert.throws(() => readTouchSetupFile(touch), /a Harmony Touch's keys are built from its own part/);
+  assert.throws(() => readEarlierTouchSetupFile(touch), /a Harmony Touch's keys are built from its own part/);
 });
 
 test('the Harmony 600 family\'s own route refuses a recipe stating keys at the shared composer', () => {

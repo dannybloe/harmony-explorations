@@ -4,10 +4,10 @@
  *
  * **The question.** A Touch's document carried a block of its own that stated every key, entry, id and delay. Decision 43
  * replaces it with the fields every model shares and the family's defaults. That holds only if the new fields can say
- * everything the block said that matters to the remote. So: the bench setup's document,
- * `test/references/touch-test.json`, is converted by `describeTouchDocument` into the smallest document of version 2,
+ * everything the block said that matters to the remote. So: the bench setup's document of the earlier form,
+ * `touch-test-earlier-form.json` beside this test, is converted by `describeTouchDocument` into the smallest document of version 2,
  * that document is turned back into the setup the composer builds by `touchSetupOfDocument`, through the shared
- * `resolveMaps`, and the result is compared field by field with the setup the old block gives, `setupOfSetupFile`.
+ * `resolveMaps`, and the result is compared field by field with the setup the old block gives, `setupOfEarlierSetupFile`.
  *
  * **What it measured.** Every field of the seven devices and five activities comes back the same but nine, of four
  * kinds, each a field the document of version 2 deliberately has no place for:
@@ -36,9 +36,9 @@
  * them in, and the activity list is shown in the order its activities are numbered, `activities-and-buttons.md` "A
  * writer keeps an entry list's indices without gaps". The order of a map's buttons is not, `canonical` says why.
  *
- * **What it does not settle.** Whether the six documents built from the new document equal the old ones byte for byte:
- * no build reads a document of version 2 yet, the Touch's build reading the block, so this compares the setups the
- * composer is given and not what it writes. Whether the remote acts on a set built this way as it did on the old:
+ * **What it does not settle.** Whether the six documents built from the new document equal the old ones: this compares
+ * the setups the composer is given and not what it writes, and the six are compared field by field in
+ * `packages/corpus/test/touch/touch-version-two-set.test.ts`. Whether the remote acts on a set built this way as it did on the old:
  * nothing here touches a remote. Whether the rule is Logitech's: the score says how far it is on this one setup.
  *
  * **The control.** A document with one stated field taken out and one changed gives exactly those two more
@@ -59,8 +59,8 @@ import { carriedCatalogue } from '../../../src/catalogue/carried.ts';
 import { resolveMaps, type MapDeviceView } from '../../../src/families/maps.ts';
 import { mapsOfModel } from '../../../src/families/registry.ts';
 import {
-  catalogueOfArchive, readTouchSetupFile, settingsOfSetupFile, setupOfSetupFile, type TouchSetupFile,
-} from '../../../src/families/harmony-touch/fromnothing.ts';
+  catalogueOfEarlierSetupFile, readEarlierTouchSetupFile, settingsOfEarlierSetupFile, setupOfEarlierSetupFile, type EarlierTouchSetupFile,
+} from '../../../src/families/harmony-touch/earlierform.ts';
 import {
   describeTouchDocument, placeOfTouchKey, TOUCH_MAPS, touchKeyOfPlace, touchSetupOfDocument,
 } from '../../../src/families/harmony-touch/recipemaps.ts';
@@ -69,7 +69,7 @@ import {
   type DefaultActivityButton, type DeviceMapView,
 } from '../../../src/families/harmony-touch/defaultmaps.ts';
 import type { TouchSetup } from '../../../src/families/harmony-touch/setup.ts';
-import { readRecipe, type Recipe, type RecipeDevice } from '../../../src/recipe/recipe.ts';
+import { readRecipe, RecipeError, type Recipe, type RecipeDevice } from '../../../src/recipe/recipe.ts';
 import { NotBuiltError } from '../../../src/support/contract.ts';
 import { ComposeRefusal } from '../../../src/families/harmony-touch/compose.ts';
 // The block's route draws our background picture, which needs the codec's deflate.
@@ -77,20 +77,24 @@ import '../../../src/support/resources.node.ts';
 
 type Json = any;
 
-const REFERENCE = new URL('../../references/touch-test.json', import.meta.url);
+/**
+ * The bench setup's document of the earlier form, kept beside this test as the converter's input; the reference,
+ * `test/references/touch-test.json`, is the converter's output.
+ */
+const REFERENCE = new URL('touch-test-earlier-form.json', import.meta.url);
 /** The bench setup's old document, with a change made to its text first where one is given. */
-const oldWith = (change: (json: Json) => void): TouchSetupFile => {
+const oldWith = (change: (json: Json) => void): EarlierTouchSetupFile => {
   const json = JSON.parse(readFileSync(REFERENCE, 'utf8'));
   change(json);
-  return readTouchSetupFile(json);
+  return readEarlierTouchSetupFile(json);
 };
-const old = (): TouchSetupFile => oldWith(() => undefined);
+const old = (): EarlierTouchSetupFile => oldWith(() => undefined);
 /** The definitions the reference carries, as a catalogue: the file read without its block, which the catalogue does not read. */
-const catalogueOfFile = (file: TouchSetupFile): CatalogueSource => {
+const catalogueOfFile = (file: EarlierTouchSetupFile): CatalogueSource => {
   const { touch: _touch, ...recipe } = file;
   return carriedCatalogue(recipe)!;
 };
-const convertedOf = (file: TouchSetupFile): Recipe => describeTouchDocument(file, catalogueOfFile(file));
+const convertedOf = (file: EarlierTouchSetupFile): Recipe => describeTouchDocument(file, catalogueOfFile(file));
 const converted = (): Recipe => convertedOf(old());
 const copy = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
@@ -170,7 +174,7 @@ function differences(block: TouchSetup, document: TouchSetup): Difference[] {
 /** The setup the old block gives, and the setup the document gives back, with the protocol ids and the settings. */
 function roundTrip(document: Recipe) {
   const file = old();
-  const block = setupOfSetupFile(file, catalogueOfArchive(file, catalogueOfFile(file)));
+  const block = setupOfEarlierSetupFile(file, catalogueOfEarlierSetupFile(file, catalogueOfFile(file)));
   const parts = touchSetupOfDocument(document, carriedCatalogue(document)!);
   return { file, block, parts, differences: differences(block, parts.setup) };
 }
@@ -276,7 +280,7 @@ test('the control: a document with one stated field taken out and one changed gi
 test('the converted document states the default maps\' differences and the person\'s fields, and nothing the family derives', () => {
   const document = converted();
   assert.equal(document.version, 2);
-  assert.equal(document.touch, undefined);
+  assert.equal((document as { touch?: unknown }).touch, undefined);
   // It reads back as itself, so it is a document the reader takes and an application can save.
   assert.deepEqual(readRecipe(copy(document)), document);
   const stated = (owner: Json, given: readonly string[]): string[] => Object.keys(owner).filter((k) => !given.includes(k));
@@ -545,7 +549,7 @@ test('settings are checked on this route as on the block\'s, one check: a number
   const blockRefusal = (name: string, value: string): unknown => {
     const file = old();
     try {
-      settingsOfSetupFile({ ...file, touch: { ...file.touch, settings: { ...file.touch.settings, [name]: value } } });
+      settingsOfEarlierSetupFile({ ...file, touch: { ...file.touch, settings: { ...file.touch.settings, [name]: value } } });
       return undefined;
     } catch (e) {
       return e;
@@ -564,12 +568,12 @@ test('refused: a device with no id of the toolkit\'s form or one with a leading 
   said(refusalOf((j) => { j.devices[2].id = 'd01'; }), ComposeRefusal, /the device Blu-ray has the id d01, which is not of the toolkit's form, d1 to d99 with no leading zero/);
   said(refusalOf((j) => { j.devices[2].id = 'd0'; }), ComposeRefusal, /has the id d0, which is not of the toolkit's form/);
   said(refusalOf((j) => { j.activities[2].id = 'a03'; }), ComposeRefusal, /the activity Listen to Music has the id a03, which is not of the toolkit's form/);
-  said(refusalOf((j) => { j.touch = {}; }), ComposeRefusal, /carries a Touch's own block/);
+  said(refusalOf((j) => { j.touch = {}; }), RecipeError, /a Harmony Touch's own block, touch, the earlier form/);
   said(refusalOf((j) => { j.activities[0].keys = [{ key: 'Off', action: { nothing: true } }]; }), ComposeRefusal, /chooses Off, which the remote binds itself/);
   said(refusalOf((j) => { j.devices[0].keys = [{ key: 'SwipeUp', action: { nothing: true } }]; }), ComposeRefusal, /chooses SwipeUp, which a device's map does not bind/);
   said(refusalOf((j) => { j.activities[0].keys = [{ key: 'Number1', press: 'held', action: { nothing: true } }]; }), ComposeRefusal, /Number1 held, a press that place does not have/);
   said(refusalOf((j) => { j.activities[0].keys = [{ key: 'DVR', action: { nothing: true } }]; }), ComposeRefusal, /the key DVR, which is no place of a Harmony Touch/);
-  said(refusalOf((j) => { j.activities[1].start = [{ sequence: 'Test Sequence' }]; }), NotBuiltError, /a step running the sequence Test Sequence/);
+  said(refusalOf((j) => { j.activities[1].start = [{ sequence: 'Test Sequence' }]; }), NotBuiltError, /step 1 at its start, running the sequence Test Sequence/);
   said(refusalOf((j) => { j.devices[0].timing = { holdInterDeviceDelay: 100 }; }), NotBuiltError, /holdInterDeviceDelay.*R16/);
   said(refusalOf((j) => { delete j.settings.KeyBrightness; }), ComposeRefusal, /the setting KeyBrightness is not stated/);
   // The control: the document as converted resolves.

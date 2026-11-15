@@ -50,6 +50,8 @@ export * from './catalogue/archive.ts';
 export * from './catalogue/catalogue.ts';
 export * from './catalogue/driving.ts';
 export * from './catalogue/catalogueraw.ts';
+// The catalogue a recipe carries, its devices' definitions served before any archive.
+export * from './catalogue/carried.ts';
 // The byte accounting behind M2, what the screen bytes are, the emitter, and in place edits.
 export * from './container/coverage.ts';
 export * from './screens/screencategories.ts';
@@ -57,3 +59,6 @@ export * from './container/emit.ts';
 export * from './edit/edit.ts';
 // What the codec asks its loader for.
 export * from './support/resources.ts';
+// A Harmony Touch's setup file of the earlier form, decision 43, one namespace: read and built for the converter and
+// for the tests that rebuild what was sent to a remote from one, and on no entry an application imports.
+export * as earlierTouchSetupFile from './families/harmony-touch/earlierform.ts';

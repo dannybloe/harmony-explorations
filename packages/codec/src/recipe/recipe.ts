@@ -23,16 +23,25 @@
  * choice of becomes ordinary fields that every model shares, a device's timing, power, channel tuning, screen and
  * commands, an activity's opening screen, favourites, power order, extra steps and sequences, the remote's settings,
  * and a third press. Version 2 only adds fields, so a version 1 document reads as it did; the fields of version 2 are
- * refused in a document of version 1, which is exactly what the reader of version 1 did with them. **No build reads a
- * field of version 2 yet**, and a build must not leave one out without a word, since a timing dropped would give a
+ * refused in a document of version 1, which is exactly what the reader of version 1 did with them. **A build reads a
+ * field of version 2 only where the table below says so**, and a build must not leave one out without a word, since a timing dropped would give a
  * configuration the remote accepts and that sends at the catalogue's pace: `unbuiltFields` lists every one a document
  * states, and every build from a recipe refuses on the first, `refuseUnbuiltFields`.
+ *
+ * **Which build reads which field is one table**, `VERSION_TWO`: each part of a field says which kinds of family read
+ * it, so the reader, the guard of every build and the toolkit's check all answer from it. The Harmony Touch's build
+ * reads most of them, its documents being made from them; the compiled families' builds read none yet.
+ *
+ * **A document with a Harmony Touch's own block, `touch`, the earlier form, is refused**, naming the converter that
+ * writes it in this shape, `harmonyTouch.describeTouchDocument` on the codec's `./build`. That form is read only by the
+ * Touch family's reader of it, for the converter and for the tests that rebuild what was sent to a remote from it.
  */
 import type { Model } from '@harmony/base/models';
 import type { DeviceChannelTuning, DevicePower, DeviceTiming, DriveStep } from '../catalogue/driving.ts';
 import { ACTIVITY_ROLE_NAMES, type ActivityRoleName } from '../compose/activityroles.ts';
 import type { Pulse } from '../infrared/irframe.ts';
 import { notBuilt } from '../support/contract.ts';
+import type { DocumentFamily } from '../families/document.ts';
 import type { Family } from '../families/family.ts';
 import { chooseByModel, NoFamilyError, type ModelChoice } from '../families/registry.ts';
 
@@ -42,6 +51,12 @@ export { modelName } from '../families/registry.ts';
 
 /** A recipe that cannot be read, or names a model nothing here can build for. */
 export class RecipeError extends Error {}
+
+/**
+ * The converter of a Harmony Touch's document of the earlier form, with its own block, into the shape every model
+ * shares, as an application finds it: what a refusal of that form names, decision 43.
+ */
+export const TOUCH_CONVERTER = 'harmonyTouch.describeTouchDocument on @harmony/codec/build';
 
 /**
  * The version of the recipe's format this reads and writes, `Recipe.version`. Version 2 adds the fields of one shape
@@ -211,6 +226,14 @@ export function statedKeys(recipe: Recipe): StatedKey[] {
 /** Whose a stated field of version 2 is: the document's, or a device's or an activity's by its name. */
 export type StatedFieldOwner = { readonly document: true } | { readonly device: string } | { readonly activity: string };
 
+/**
+ * A kind of family, as a family states it, `Family.kind` and `DocumentFamily.kind`: what `VERSION_TWO` says reads a part.
+ * **Per kind, because the kind names the families exactly today**: every compiled family's build reads the same of
+ * version 2, none of it, and the Harmony Touch's is the one document family. Should one compiled family come to read a
+ * field another does not, a person's timing on the Harmony One and not on the Harmony 650, this becomes a family's name.
+ */
+export type BuildKind = Family['kind'] | DocumentFamily['kind'];
+
 /** One field of version 2 a recipe states, `versionTwoFields`. */
 export interface StatedField {
   /** The member's name as the recipe spells it: `timing`, `powerOrder`, `keys` for a double press, `screen` for a label. */
@@ -223,13 +246,17 @@ export interface StatedField {
    * anything to read in, `highestIds`, which changes no byte a remote receives.
    */
   readonly requirement: number | undefined;
+  /** The kinds of family whose build reads it, `VERSION_TWO`; empty where none does yet. */
+  readonly readBy: readonly BuildKind[];
 }
 
-/** One part of a stated field of version 2: what it is called after its owner's name, and what its build waits on. */
+/** One part of a stated field of version 2: what it is called after its owner's name, what its build waits on, who reads it. */
 export interface VersionTwoPart {
   readonly what: string;
   /** A requirement's number, or `none` for a part no build has anything to read in. */
   readonly requirement: number | 'none';
+  /** The kinds of family whose build reads this part; absent is none. */
+  readonly readBy?: readonly BuildKind[];
 }
 
 /**
@@ -253,38 +280,84 @@ export interface VersionTwoField {
 /** The repeat counts of `DeviceTiming`, R17; its other members are delays, R16. */
 const REPEAT_COUNTS: readonly string[] = ['pressMinRepeats', 'minRepeats'];
 
-/** A field stated whole: one part, what it is called and what it waits on. */
-const entire = (what: string, requirement: number | 'none') => (): readonly VersionTwoPart[] => [{ what, requirement }];
+/**
+ * The members of a device's timing a Harmony Touch's build reads: the press count and the four delays its composer
+ * writes into a device's record, `SetupDevice` in `families/harmony-touch/setup.ts`, each in the record's field of that
+ * name, `reference/architectures/harmony-touch/devices-and-infrared.md`. The other four, the hold delay between devices,
+ * the connected app's power on delay, the second repeat count and the flag for an optimised delay between keys, the
+ * composer does not write, so a Touch's build does not read them and a document stating one is refused as not built.
+ */
+const TIMING_READ_BY_DOCUMENTS: readonly string[] = ['interKeyDelay', 'interDeviceDelay', 'powerOnDelay', 'inputDelay', 'pressMinRepeats'];
+
+/** The kinds of family that read a part, written once. */
+const DOCUMENTS: readonly BuildKind[] = ['document'];
+
+/** A field stated whole: one part, what it is called, what it waits on and who reads it. */
+const entire = (what: string, requirement: number | 'none', readBy?: readonly BuildKind[]) =>
+  (): readonly VersionTwoPart[] => [{ what, requirement, ...(readBy === undefined ? {} : { readBy }) }];
 
 /** The double presses among a map's keys, each a part waiting on R40: a double press is a gesture's alone. */
-const doubles = (value: unknown): VersionTwoPart[] => ((value ?? []) as readonly RecipeKey[])
-  .filter((key) => key.press === 'double').map((key) => ({ what: `${key.key} key, pressed twice`, requirement: 40 }));
+const doubles = (readBy?: readonly BuildKind[]) => (value: unknown): VersionTwoPart[] => ((value ?? []) as readonly RecipeKey[])
+  .filter((key) => key.press === 'double')
+  .map((key) => ({ what: `${key.key} key, pressed twice`, requirement: 40, ...(readBy === undefined ? {} : { readBy }) }));
 
 /**
- * **Every field version 2 adds, and the requirement each waits on**, decision 43. The one list the reader takes its
- * members of version 2 from and the guard of every build walks, `versionTwoFields`.
+ * An activity's extra steps at its start or end, `which` naming them: the steps as one part a Touch's build reads, and
+ * each step running a sequence a part of its own that no build reads, R30, since a Touch's activity holds no step of
+ * any kind but a command or a pause, `reference/architectures/harmony-touch/activities-and-buttons.md`.
+ */
+const extraSteps = (which: string) => (value: unknown): VersionTwoPart[] => {
+  const steps = value as readonly RecipeActivityStep[];
+  const running = steps.flatMap((step, at) => ('sequence' in step ? [{ what: `step ${at + 1} ${which}, running the sequence ${step.sequence}`, requirement: 30 }] : []));
+  return [...(running.length < steps.length ? [{ what: `steps ${which}`, requirement: 30, readBy: DOCUMENTS }] : []), ...running];
+};
+
+/**
+ * **Every field version 2 adds, the requirement each waits on, and which builds read it**, decision 43. The one list the
+ * reader takes its members of version 2 from, the guard of every build walks, `refuseUnbuiltFields`, and the toolkit's
+ * check lists from, `unbuiltFields`.
  *
  * Two of the requirements are for one field each: R90, the order an activity switches its devices on and off, and
  * R91, the screen it opens on. A double press is R40, a gesture's, since no key but a gesture has one. A command's
  * code is R19 and how it is sent R89. The highest ids given wait on nothing, since they change no byte a remote
  * receives.
+ *
+ * **What a Harmony Touch's build reads**, `touchSetupOfDocument` in `families/harmony-touch/recipemaps.ts`, decision 43:
+ * the settings; a device's timing in the members its composer writes, `TIMING_READ_BY_DOCUMENTS`, its being
+ * always on, its channel tuning and its screen; an activity's opening screen, favourites, power order, extra steps but
+ * one running a sequence, sequences, a screen entry's label and a sequence named on its screen, and a double press,
+ * which its gestures have. **What it does not**: the rest of a device's timing and power, a command's code and how it is
+ * sent, which its composer writes nothing of, and a device key's double press, which no key of a device's map has.
+ * The compiled families' builds read none of it yet.
  */
 export const VERSION_TWO: readonly VersionTwoField[] = [
-  { owner: 'document', member: 'settings', requirements: [47], parts: entire('settings', 47) },
+  { owner: 'document', member: 'settings', requirements: [47], parts: entire('settings', 47, DOCUMENTS) },
   { owner: 'document', member: 'highestIds', requirements: ['none'], parts: entire('highest ids given', 'none') },
   {
     owner: 'device', member: 'timing', requirements: [16, 17],
     parts: (value) => {
       const members = Object.keys(value as object);
+      const read = (one: string): boolean => TIMING_READ_BY_DOCUMENTS.includes(one);
       return [
-        ...(members.some((one) => !REPEAT_COUNTS.includes(one)) ? [{ what: 'delays', requirement: 16 }] : []),
-        ...(members.some((one) => REPEAT_COUNTS.includes(one)) ? [{ what: 'repeat count', requirement: 17 }] : []),
+        ...(members.some((one) => !REPEAT_COUNTS.includes(one) && read(one)) ? [{ what: 'delays', requirement: 16, readBy: DOCUMENTS }] : []),
+        ...(members.some((one) => REPEAT_COUNTS.includes(one) && read(one)) ? [{ what: 'repeat count', requirement: 17, readBy: DOCUMENTS }] : []),
+        // A member no build reads is named by itself, so a refusal says which.
+        ...members.filter((one) => !read(one)).map((one) => ({ what: one, requirement: REPEAT_COUNTS.includes(one) ? 17 : 16 })),
       ];
     },
   },
-  { owner: 'device', member: 'power', requirements: [14], parts: entire('power', 14) },
-  { owner: 'device', member: 'channelTuning', requirements: [18], parts: entire('channel tuning', 18) },
-  { owner: 'device', member: 'screen', requirements: [35], parts: entire('screen', 35) },
+  {
+    owner: 'device', member: 'power', requirements: [14],
+    parts: (value) => {
+      const members = Object.keys(value as object);
+      return [
+        ...(members.includes('alwaysOn') ? [{ what: 'power', requirement: 14, readBy: DOCUMENTS }] : []),
+        ...members.filter((one) => one !== 'alwaysOn').map((one) => ({ what: `power ${one}`, requirement: 14 })),
+      ];
+    },
+  },
+  { owner: 'device', member: 'channelTuning', requirements: [18], parts: entire('channel tuning', 18, DOCUMENTS) },
+  { owner: 'device', member: 'screen', requirements: [35], parts: entire('screen', 35, DOCUMENTS) },
   {
     owner: 'device', member: 'commands', requirements: [19, 89],
     parts: (value) => Object.entries(value as Readonly<Record<string, RecipeCommand>>).flatMap(([name, command]) => [
@@ -292,24 +365,24 @@ export const VERSION_TWO: readonly VersionTwoField[] = [
       ...(command.sending === undefined ? [] : [{ what: `command ${name}'s sending`, requirement: 89 }]),
     ]),
   },
-  { owner: 'device', member: 'keys', form: 'double', requirements: [40], parts: doubles },
-  { owner: 'activity', member: 'opensOn', requirements: [91], parts: entire('opening screen', 91) },
-  { owner: 'activity', member: 'favourites', requirements: [45], parts: entire('hold on the favourites', 45) },
-  { owner: 'activity', member: 'powerOrder', requirements: [90], parts: entire('power order', 90) },
-  { owner: 'activity', member: 'start', requirements: [30], parts: entire('steps at its start', 30) },
-  { owner: 'activity', member: 'end', requirements: [30], parts: entire('steps at its end', 30) },
-  { owner: 'activity', member: 'sequences', requirements: [37], parts: entire('sequences', 37) },
+  { owner: 'device', member: 'keys', form: 'double', requirements: [40], parts: doubles() },
+  { owner: 'activity', member: 'opensOn', requirements: [91], parts: entire('opening screen', 91, DOCUMENTS) },
+  { owner: 'activity', member: 'favourites', requirements: [45], parts: entire('hold on the favourites', 45, DOCUMENTS) },
+  { owner: 'activity', member: 'powerOrder', requirements: [90], parts: entire('power order', 90, DOCUMENTS) },
+  { owner: 'activity', member: 'start', requirements: [30], parts: extraSteps('at its start') },
+  { owner: 'activity', member: 'end', requirements: [30], parts: extraSteps('at its end') },
+  { owner: 'activity', member: 'sequences', requirements: [37], parts: entire('sequences', 37, DOCUMENTS) },
   {
     owner: 'activity', member: 'screen', form: 'label', requirements: [34],
     parts: (value) => ((value ?? []) as readonly RecipeScreenItem[]).flatMap((item, at) =>
-      ('device' in item && item.label !== undefined ? [{ what: `screen item ${at + 1}'s label`, requirement: 34 }] : [])),
+      ('device' in item && item.label !== undefined ? [{ what: `screen item ${at + 1}'s label`, requirement: 34, readBy: DOCUMENTS }] : [])),
   },
   {
     owner: 'activity', member: 'screen', form: 'sequence', requirements: [37],
     parts: (value) => ((value ?? []) as readonly RecipeScreenItem[]).flatMap((item, at) =>
-      ('sequence' in item && item.steps === undefined ? [{ what: `screen item ${at + 1}, the sequence ${item.sequence}`, requirement: 37 }] : [])),
+      ('sequence' in item && item.steps === undefined ? [{ what: `screen item ${at + 1}, the sequence ${item.sequence}`, requirement: 37, readBy: DOCUMENTS }] : [])),
   },
-  { owner: 'activity', member: 'keys', form: 'double', requirements: [40], parts: doubles },
+  { owner: 'activity', member: 'keys', form: 'double', requirements: [40], parts: doubles(DOCUMENTS) },
 ];
 
 /**
@@ -330,18 +403,23 @@ function gateVersionTwo(owner: VersionTwoField['owner'], value: Json, version: n
 
 /**
  * **Every field of version 2 a recipe states**, decision 43: the document's first, then the devices' and the
- * activities', each in the recipe's order and each owner's in the order of `VERSION_TWO`. One walk for every question
- * about them: every build refuses on the first that has a requirement, `refuseUnbuiltFields`, and the toolkit's
- * changes and `uses`, which do not yet follow these fields, refuse a document that states any.
+ * activities', each in the recipe's order and each owner's in the order of `VERSION_TWO`, each part with the kinds of
+ * family whose build reads it. One walk for every question about them: every build refuses on the first its kind does
+ * not read, `refuseUnbuiltFields`, and the toolkit's check lists those the build of the document's model does not
+ * read, `unbuiltFields`. The toolkit's changes and `uses` do not ask it: they write and follow every field whatever a
+ * build reads, so a person's choice is kept while the build catches up.
  */
-export function versionTwoFields(recipe: Omit<Recipe, 'touch'>): StatedField[] {
+export function versionTwoFields(recipe: Recipe): StatedField[] {
   const out: StatedField[] = [];
   const walk = (kind: VersionTwoField['owner'], value: object, owner: StatedFieldOwner, whose: string): void => {
     for (const field of VERSION_TWO.filter((one) => one.owner === kind)) {
       const stated = (value as Record<string, unknown>)[field.member];
       if (stated === undefined) continue;
       for (const part of field.parts(stated)) {
-        out.push({ field: field.member, owner, where: `${whose} ${part.what}`, requirement: part.requirement === 'none' ? undefined : part.requirement });
+        out.push({
+          field: field.member, owner, where: `${whose} ${part.what}`,
+          requirement: part.requirement === 'none' ? undefined : part.requirement, readBy: part.readBy ?? [],
+        });
       }
     }
   };
@@ -352,24 +430,39 @@ export function versionTwoFields(recipe: Omit<Recipe, 'touch'>): StatedField[] {
 }
 
 /**
- * **The fields of version 2 a recipe states that no build reads yet**, each with the requirement it waits on, so that
- * what a document states is either in what is built or the reason nothing is: never left out, where a configuration
- * built without a person's timing would pass every check and send at the catalogue's pace. Empty for every document
- * of version 1. It lists the same fields for every family, since no family's build reads one yet.
+ * **The fields of version 2 a recipe states that a build of `kind` does not read yet**, each with the requirement it
+ * waits on, so that what a document states is either in what is built or the reason nothing is: never left out, where
+ * a configuration built without a person's timing would pass every check and send at the catalogue's pace. Empty for
+ * every document of version 1.
+ *
+ * **Without `kind`, the build of the document's own model**, its family's kind as the registry chooses it, which is
+ * what the toolkit's check asks; a model no family serves has no build, so every stated field is listed for it.
  */
-export function unbuiltFields(recipe: Omit<Recipe, 'touch'>): StatedField[] {
-  return versionTwoFields(recipe).filter((one) => one.requirement !== undefined);
+export function unbuiltFields(recipe: Recipe, kind?: BuildKind): StatedField[] {
+  const reader = kind ?? kindOfModel(recipe.model);
+  return versionTwoFields(recipe).filter((one) => one.requirement !== undefined && (reader === undefined || !one.readBy.includes(reader)));
+}
+
+/** The kind of the family that builds for a model, or undefined where none serves it. */
+function kindOfModel(model: RecipeModel): BuildKind | undefined {
+  try {
+    return chooseByModel(model).family.kind;
+  } catch (error) {
+    if (error instanceof NoFamilyError) return undefined;
+    throw error;
+  }
 }
 
 /**
- * **Refuse a build of a recipe that states a field no build reads yet**, as a function not built, `route` naming the
- * build and the field's requirement the refusal: `buildFromRecipe for the device Television's delays`. Called first
- * by every function that builds from a recipe, the one build, each family's `fromRecipe`, the composers of a setup
- * and the Harmony Touch's reader and builders, so that no route to a configuration or a set of documents passes
- * one by. It takes a recipe without its Touch's part, which is what the Harmony Touch's setup file is.
+ * **Refuse a build of a recipe that states a field a build of `kind` does not read yet**, as a function not built,
+ * `route` naming the build and the field's requirement the refusal: `buildFromRecipe for the device Television's
+ * delays`. Called first by every function that builds from a recipe, the one build, each family's `fromRecipe`, the
+ * composers of a setup and the Harmony Touch's builder, each saying which kind of family's build it is, so that no
+ * route to a configuration or a set of documents passes one by, and a field the Touch's build reads still stops a
+ * compiled family's.
  */
-export function refuseUnbuiltFields(recipe: Omit<Recipe, 'touch'>, route: string): void {
-  const unbuilt = unbuiltFields(recipe)[0];
+export function refuseUnbuiltFields(recipe: Recipe, route: string, kind: BuildKind): void {
+  const unbuilt = unbuiltFields(recipe, kind)[0];
   if (unbuilt !== undefined) notBuilt(`${route} for ${unbuilt.where}`, unbuilt.requirement!);
 }
 
@@ -517,14 +610,6 @@ export interface Recipe {
    */
   readonly choices?: Readonly<Record<string, unknown>>;
   /**
-   * The Harmony Touch's own part: what a person chose for each device and activity beyond what a
-   * recipe states, their ids, delays, keys, screen entries and sequences, the families of our rhythm table their codes
-   * are written with, and the remote's settings. A Touch is given documents rather than a compiled file, so nothing
-   * builds it from a recipe; `readTouchSetupFile` in `families/harmony-touch/fromnothing.ts` reads and checks this part, and
-   * nothing else reads it.
-   */
-  readonly touch?: Readonly<Record<string, unknown>>;
-  /**
    * The protocol definitions the carried devices' commands are written in, as the archive's protocol files hold
    * them, plan 014; served before the archive's, by name.
    */
@@ -569,8 +654,8 @@ export interface RecipeTarget {
  * `chooseByModel`, plan 013: by its skin where given and by its name otherwise. Refused, as a `RecipeError` with the
  * registry's message, where the table has no such model, where a name and a skin disagree, where a name is two skins'
  * and none is given, and where no family serves the model's architecture; and refused where the model's family is a
- * document family, the Harmony Touch's, which builds from its own setup file, `HARMONY_TOUCH_FAMILY.readSetup`, rather
- * than from a recipe target.
+ * document family, the Harmony Touch's, which builds its documents from the recipe through its own members,
+ * `HARMONY_TOUCH_FAMILY.readSetup` and `build`, rather than from a recipe target.
  */
 export function recipeTarget(recipe: Recipe): RecipeTarget {
   let choice: ModelChoice;
@@ -582,7 +667,7 @@ export function recipeTarget(recipe: Recipe): RecipeTarget {
   }
   const { family, model, skin } = choice;
   if (family.kind === 'document') {
-    throw new RecipeError(`the ${recipe.model.name} is given documents, which its family builds from its own setup file and not from a recipe target`);
+    throw new RecipeError(`the ${recipe.model.name} is given documents, which its family builds from the recipe through its own members and not from a recipe target`);
   }
   if (model === undefined) {
     // The Harmony 300 and 350: a compiled family serves them and builds from a setup with its own builder.
@@ -994,14 +1079,28 @@ function highestIdsOf(value: unknown): RecipeIds {
 }
 
 /**
+ * **Refuses a Harmony Touch's own block, `touch`**, the earlier form of a Touch's document, decision 43, which no build
+ * reads, naming the converter that writes it in the shape every model shares. The reader calls it on what it is given,
+ * and the Touch's build calls it again on the document it is handed, since a document that reached the build without
+ * the reader, built in code or cast, would otherwise have its block passed over without a word.
+ */
+export function refuseEarlierTouchBlock(json: unknown): void {
+  if (typeof json === 'object' && json !== null && (json as { touch?: unknown }).touch !== undefined) {
+    throw new RecipeError(`the recipe carries a Harmony Touch's own block, touch, the earlier form no build reads; ${TOUCH_CONVERTER} writes it in the shape every model shares`);
+  }
+}
+
+/**
  * A recipe out of parsed JSON, its shape checked: every field one a recipe has, every name a name, every
  * role one of the contract's, and a field of version 2 only in a document of version 2. Refused with the first thing
  * wrong, by where it is.
  */
 export function readRecipe(json: unknown): Recipe {
+  // Said by name, with the converter, rather than as a field no recipe has.
+  refuseEarlierTouchBlock(json);
   // The members of version 1 here, and those of version 2 from the one table the guard of every build walks.
   const top = fields(json, 'the recipe', ['model', 'devices', 'activities'],
-    ['version', 'about', 'choices', 'favourites', 'touch', 'protocols', ...versionTwoMembers('document')]);
+    ['version', 'about', 'choices', 'favourites', 'protocols', ...versionTwoMembers('document')]);
   if (top.version !== undefined && (!Number.isInteger(top.version) || (top.version as number) < 1)) {
     throw new RecipeError('the recipe\'s version is not a whole number from 1');
   }
@@ -1184,7 +1283,6 @@ export function readRecipe(json: unknown): Recipe {
     model, devices, activities,
     ...(top.choices === undefined ? {} : { choices: object(top.choices, 'the choices') }),
     ...(favourites === undefined ? {} : { favourites }),
-    ...(top.touch === undefined ? {} : { touch: object(top.touch, 'the Touch\'s part') }),
     ...(top.protocols === undefined ? {} : {
       protocols: list(top.protocols, 'the protocols').map((one, k) => {
         const p = object(one, `protocol ${k + 1}`);

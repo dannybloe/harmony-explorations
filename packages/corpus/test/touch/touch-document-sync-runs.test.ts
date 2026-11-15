@@ -23,9 +23,11 @@
  *
  * 1. **The document and the set.** The lab's document is the repository's recipe byte for byte, and the set the run kept
  *    is the from-nothing set byte for byte, six documents and two pictures, every tag ours. **Built again here from the
- *    document**, through `buildFromRecipe` and `touchSetOf` at the account's addresses with the lab's fixed sample of the
- *    infrared archive (decision 42: no test reads the checkout), it gives that set answer for answer and tag for tag. The
- *    tags are digests of each answer's content, `ourTag`, so equal tags are equal documents.
+ *    document**, a setup file of the earlier form, through that form's own route, `earlierTouchSetupFile`, and
+ *    `touchSetOf` at the account's addresses with the lab's fixed sample of the infrared archive (decision 42: no test
+ *    reads the checkout), it gives that set answer for answer and tag for tag. The tags are digests of each answer's
+ *    content, `ourTag`, so equal tags are equal documents. **The one build an application calls refuses that document**,
+ *    as the earlier form, naming the converter, decision 43: an application syncs a document of version 2.
  * 2. **The phases.** The commit's journal reports `identify`, `check`, `build`, `hand-over` and `write`, in that order,
  *    and ends `written, the remote new-configuration`; the dry run's reports the first three and ends as a dry run. The
  *    two attention events a screen gets, not to unplug and safe to unplug, go to the script's terminal and never to the
@@ -76,7 +78,9 @@ import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for, and the archive's reader.
-import { archiveAt, buildFromRecipe } from '@harmony/codec/node';
+import { archiveAt, buildFromRecipe, RecipeError } from '@harmony/codec/node';
+import { harmonyTouch } from '@harmony/codec/build';
+import { earlierTouchSetupFile } from '@harmony/codec/internal';
 import * as lab from '@harmony/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written,
@@ -178,12 +182,23 @@ test('the lab\'s document is the repository\'s recipe byte for byte, and the set
 const accountOf = (): { readonly addresses: Readonly<Record<string, string>> } & Record<string, unknown> =>
   (JSON.parse(text(ACCOUNT)) as { account: { addresses: Record<string, string> } & Record<string, unknown> }).account;
 
-/** The set `syncDocument` makes of a recipe, as `syncAttachedTouch` makes it, with the lab's sample of the archive. */
+/**
+ * The set the run sent, rebuilt from its document with the lab's sample of the archive. **The document is a setup file
+ * of the earlier form**, with a block of the Touch's own, which the one build an application calls refuses, naming the
+ * converter, decision 43; so the set is built here by that form's reader and builder, `earlierTouchSetupFile` on
+ * `@harmony/codec/internal`,
+ * and the pictures every set of ours carries, `HARMONY_TOUCH_FAMILY.buildPictures`, into the same shape the one build
+ * gave, so the closure below holds what was sent byte for byte.
+ */
 function builtSet(json: unknown): TouchSet {
   const account = accountOf();
-  const built = buildFromRecipe(json, { builtAt: '2026-11-14T20:52:00', account: account as never, archive: archiveAt(lab.IR_ARCHIVE_SAMPLE!) });
-  assert.equal(built.kind, 'documents');
-  if (built.kind !== 'documents') throw new Error('unreachable');
+  const archive = archiveAt(lab.IR_ARCHIVE_SAMPLE!);
+  const file = earlierTouchSetupFile.readEarlierTouchSetupFile(json);
+  const built = {
+    kind: 'documents' as const, model: file.model.name, skin: file.model.skin ?? 99,
+    documents: earlierTouchSetupFile.buildEarlierTouchDocuments(file, { archive, account: account as never }),
+    pictures: harmonyTouch.HARMONY_TOUCH_FAMILY.buildPictures(file),
+  };
   const made = touchSetOf(built, account.addresses);
   assert.ok(!('refusals' in made), 'the gate passes the set');
   return (made as { set: TouchSet }).set;
@@ -191,7 +206,7 @@ function builtSet(json: unknown): TouchSet {
 
 const BUILDS = lab.needing(lab.skipWithoutIrArchiveSample(), lab.skipUnless(DOCUMENT, KEPT, ACCOUNT));
 
-test('the closure: the lab\'s document built again through buildFromRecipe and touchSetOf at the account\'s addresses gives the kept set, answer for answer and tag for tag',
+test('the closure: the lab\'s document built again by the route the one build took for it then, the earlier form\'s, and touchSetOf at the account\'s addresses gives the kept set, answer for answer and tag for tag',
   BUILDS, () => {
     const ours = builtSet(JSON.parse(text(DOCUMENT)));
     const kept = setOf(KEPT);
@@ -200,6 +215,11 @@ test('the closure: the lab\'s document built again through buildFromRecipe and t
     assert.deepEqual(ours.answers.map((a, i) => a.etag === kept[i]!.etag), Array(8).fill(true), 'the same tags');
     assert.ok(isDeepStrictEqual(JSON.parse(JSON.stringify(ours.answers)), kept), 'the same answers, content and all');
   });
+
+test('the one build an application calls refuses the run\'s document, as the earlier form, naming the converter', BUILDS, () => {
+  assert.throws(() => buildFromRecipe(JSON.parse(text(DOCUMENT)), { builtAt: '2026-11-14T20:52:00', account: accountOf() as never, archive: archiveAt(lab.IR_ARCHIVE_SAMPLE!) }),
+    (error: unknown) => error instanceof RecipeError && /a Harmony Touch's own block, touch, the earlier form/.test(error.message) && /describeTouchDocument/.test(error.message));
+});
 
 test('the control: the document with the screen\'s brightness lowered builds a set that differs from the kept one in exactly the settings document\'s tag',
   BUILDS, () => {

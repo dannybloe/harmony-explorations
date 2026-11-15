@@ -111,11 +111,11 @@ Each remote's open requirements by whose work is missing, every one counted once
 | Harmony 785 | 57 | 55 | 1 | 1 |
 | Harmony 300 | 38 | 20 | 16 | 2 |
 | Harmony 350 | 35 | 19 | 16 | 0 |
-| Harmony Touch | 38 | 21 | 10 | 7 |
+| Harmony Touch | 38 | 21 | 8 | 9 |
 | Harmony Elite | 59 | 57 | 1 | 1 |
 | Harmony Hub | 52 | 49 | 2 | 1 |
 
-The 17 requirements of the FHSDK as a whole carry one status each, for every remote: R9 open, R12 open, R20 proven, R25 open, R57 open, R60 open, R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 proven, R81 open, R82 open.
+The 17 requirements of the FHSDK as a whole carry one status each, for every remote: R9 open, R12 proven, R20 proven, R25 proven, R57 open, R60 open, R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 proven, R81 open, R82 open.
 
 ## The requirements
 

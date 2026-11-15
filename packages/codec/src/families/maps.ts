@@ -151,6 +151,39 @@ export interface FamilyMaps {
   deviceMap(commands: readonly MapCommand[]): DeviceMap;
   /** An activity's default map, from its type, its devices' jobs and its devices' **default** maps, `deviceOf`. */
   activityMap(activity: MapActivity, deviceOf: (device: string) => MapDeviceView): ActivityMap;
+  /**
+   * **Why the family's build refuses a person's choice on a place it has**, in a sentence a person reads, or undefined
+   * where it takes it. Asked only of a choice the places already allow, a place the owner binds and a press it has,
+   * since those are judged once for every family by `places`; this is for what a family refuses beyond them, such as
+   * a command its screen draws on no key. The toolkit's `setKey` and `check` ask it, so a choice is refused where it is
+   * made and listed in a document that holds one, rather than met first at the build. **Optional**: a family whose
+   * build takes every choice its places allow states none.
+   */
+  refusedChoice?(skin: number, choice: MapChoice): string | undefined;
+  /**
+   * **The screens an activity of the family's can open on**, R91, by the words a document states them in,
+   * `RecipeActivity.opensOn`: the toolkit holds a person's choice to these where it is made and its check holds a
+   * document to them, so a word the model lacks is refused as not on this model rather than met first at the build.
+   * **Optional**: a family stating none has not named its screens yet, and a choice of one is not built there, which is
+   * not the same as a model without the choice.
+   */
+  readonly openingScreens?: readonly string[];
+}
+
+/** One choice of a key as `FamilyMaps.refusedChoice` is asked about it, in the document's words. */
+export interface MapChoice {
+  /** Whose map it is in, and the words for it in a sentence: `activity Watch TV`, `LG TV's own map`. */
+  readonly owner: 'device' | 'activity';
+  readonly what: string;
+  readonly key: string;
+  readonly press: RecipePress;
+  /** A command of a device by the device's name in the document, a sequence by its name, or nothing. */
+  readonly action: RecipeKeyAction;
+  /**
+   * The commands a device of the document has by its name: its definition's and those the document adds, or undefined
+   * where neither the document nor a source given says, in which case a family judges nothing it would need them for.
+   */
+  readonly commandsOf: (device: string) => readonly string[] | undefined;
 }
 
 // ---------------------------------------------------------------------------------------------------

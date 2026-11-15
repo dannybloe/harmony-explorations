@@ -82,7 +82,7 @@ const TOUCH_TYPES = [
 /** The document toolkit, `recipe` on the main entry: the names that exist at run time. */
 const RECIPE_VALUES = [
   'ChangeRefused', 'PROBLEM_CODES', 'activities', 'addActivity', 'addDevice', 'addSequence', 'check', 'commands',
-  'create', 'devices', 'favourites', 'inputs', 'key', 'keyNames', 'keys', 'move', 'open', 'remove', 'screen', 'sequences',
+  'create', 'devices', 'favourites', 'inputs', 'key', 'keyNames', 'keys', 'move', 'open', 'refreshDevice', 'remove', 'screen', 'sequences',
   'setActivity', 'setDevice', 'setDeviceCommand', 'setFavourites', 'setKey', 'setLook', 'setScreen', 'setSequence',
   'setSetting', 'unfilled', 'uses',
 ];
@@ -90,10 +90,10 @@ const RECIPE_VALUES = [
 /** The document toolkit, `recipe` on the main entry: the types and interfaces. */
 const RECIPE_TYPES = [
   'ActivityChanges', 'ActivityDeviceChoice', 'ActivityId', 'ActivityStep', 'ActivitySummary', 'Change',
-  'CommandCode', 'CommandSummary', 'CommandTuningAnswer', 'DeviceChanges', 'DeviceId', 'DeviceSettingsAnswer', 'DeviceSummary',
-  'Effect', 'Favourite', 'KeyAction', 'KeyAnswer', 'KeyBinder', 'KeyPlace', 'KeyPlaceSummary', 'KeySurface', 'Movable',
+  'CommandChange', 'CommandCode', 'CommandSummary', 'CommandTuningAnswer', 'DeviceChanges', 'DeviceId', 'DeviceSettingsAnswer', 'DeviceSummary',
+  'Effect', 'Favourite', 'KeyAction', 'KeyAnswer', 'KeyBinder', 'KeyPlace', 'KeyPlaceSummary', 'KeySurface', 'MemberChanges', 'Movable',
   'NewActivity', 'NewDevice', 'NewSequence', 'Owner', 'Place', 'PressAnswer', 'Problem', 'ProblemCode', 'QuestionSources',
-  'Removable', 'ScreenAnswer', 'ScreenEntryAnswer', 'ScreenItem', 'SendingAnswer', 'SequenceAnswer', 'SequenceId',
+  'RefusalReason', 'Removable', 'ScreenAnswer', 'ScreenEntryAnswer', 'ScreenItem', 'SendingAnswer', 'SequenceAnswer', 'SequenceId',
   'SequenceStep', 'SequenceStepAnswer', 'SequenceSummary', 'SettingAnswer',
 ];
 
@@ -132,6 +132,25 @@ test('the Harmony Touch on the main entry is its view, by explicit names, and no
   const build = await import('../../src/build.ts');
   assert.equal(typeof build.harmonyTouch.composeTouchDeviceOfRow, 'function');
   assert.equal(harmonyTouch['composeTouchDeviceOfRow'], undefined);
+});
+
+test('a Harmony Touch\'s setup file of the earlier form is on no entry an application imports, only in its own namespace on ./internal', async () => {
+  // Decision 43: the converter and the tests that rebuild what was sent to a remote read it; no build an application
+  // reaches does. So neither `harmonyTouch` namespace carries its reader or its builder, and the main entry has no name of it.
+  const build = await import('../../src/build.ts') as unknown as { harmonyTouch: Record<string, unknown> };
+  const main = await import(ENTRY.href) as { harmonyTouch: Record<string, unknown> } & Record<string, unknown>;
+  for (const name of ['readEarlierTouchSetupFile', 'buildEarlierTouchDocuments', 'setupOfEarlierSetupFile', 'readTouchSetupFile']) {
+    assert.equal(build.harmonyTouch[name], undefined, `./build: ${name}`);
+    assert.equal(main.harmonyTouch[name], undefined, `main: ${name}`);
+    assert.equal(main[name], undefined, `main: ${name}`);
+  }
+  assert.equal(main['earlierTouchSetupFile'], undefined);
+  // The control: the namespace on ./internal carries them, so the names looked for above are the right ones.
+  const internal = await import('../../src/internal.ts') as unknown as { earlierTouchSetupFile: Record<string, unknown> };
+  assert.equal(typeof internal.earlierTouchSetupFile['readEarlierTouchSetupFile'], 'function');
+  assert.equal(typeof internal.earlierTouchSetupFile['buildEarlierTouchDocuments'], 'function');
+  // The application's builder of a document of version 2 is on ./build's namespace.
+  assert.equal(typeof build.harmonyTouch['buildTouchDocuments'], 'function');
 });
 
 test('the document toolkit on the main entry is its own list, by explicit names', async () => {

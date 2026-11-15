@@ -13,11 +13,11 @@
  *   `defaultmaps.ts`. Nothing here derives a map a second time; it only turns the rule's answer into the interface's
  *   words and back.
  * * **`touchSetupOfDocument`**, a document of version 2 to the `TouchSetup` that `composeTouchSetup` in `setup.ts` builds,
- *   through the shared `resolveMaps`, so what an application is shown of a key is what is built. No build calls it:
- *   the Touch's build reads the document's own block, `readTouchSetupFile`, and this is the route a document of
- *   version 2 takes to the same composer.
- * * **`describeTouchDocument`**, the converter: an old document with a Touch's block to the smallest document of
- *   version 2 that says the same, by comparing the block with the derived defaults and stating only what differs.
+ *   through the shared `resolveMaps`, so what an application is shown of a key is what is built. The Touch's build,
+ *   `buildTouchDocuments` in `fromnothing.ts`, starts here.
+ * * **`describeTouchDocument`**, the converter: a setup file of the earlier form, with a Touch's own block, read by
+ *   `earlierform.ts`, to the smallest document of version 2 that says the same, by comparing the block with the derived
+ *   defaults and stating only what differs.
  *
  * **The places, in the words every model's drawing uses.** A key is named as `reference/silhouettes/touch.svg` names it,
  * so one choice of a key means the same key on every model that has it: the 26 keys a Touch's documents bind, the
@@ -40,7 +40,7 @@
  * file it under 18. Nothing here sends anything.
  */
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
-import type { DeviceChannelTuning, DeviceTiming, DriveStep } from '../../catalogue/driving.ts';
+import type { DeviceChannelTuning, DriveStep } from '../../catalogue/driving.ts';
 import { statedCode, statedProtocol } from '../../infrared/stated.ts';
 import { notBuilt } from '../../support/contract.ts';
 import {
@@ -49,7 +49,7 @@ import {
   type ResolvedKey, type ResolvedOwner,
 } from '../maps.ts';
 import {
-  readRecipe, type Recipe, type RecipeActivity, type RecipeActivityStep, type RecipeDevice, type RecipeKey,
+  readRecipe, refuseEarlierTouchBlock, refuseUnbuiltFields, type Recipe, type RecipeActivity, type RecipeActivityStep, type RecipeDevice, type RecipeKey,
   type RecipeKeyAction, type RecipePress, type RecipeScreenCommand, type RecipeScreenItem, type RecipeSequence, type RecipeSetting,
 } from '../../recipe/recipe.ts';
 import {
@@ -64,9 +64,8 @@ import {
 } from './defaultmaps.ts';
 import { definitionOfRow, isDefinitionRefusal, keyCodeText } from './definition.ts';
 import type { IrProtocol } from './documents.ts';
-import {
-  catalogueOfArchive, HARMONY_TOUCH_MODEL, roleKindsOf, SETTINGS_ROWS_WRITTEN, settingText, setupOfSetupFile, type TouchSetupFile,
-} from './fromnothing.ts';
+import { catalogueOfEarlierSetupFile, setupOfEarlierSetupFile, type EarlierTouchSetupFile } from './earlierform.ts';
+import { HARMONY_TOUCH_MODEL, roleKindsOf, SETTINGS_ROWS_WRITTEN, settingText } from './fromnothing.ts';
 import { SETTING_ROWS } from './settings.ts';
 import type { SetupButton, SetupChannelTuning, SetupDevice, SetupPress, TouchSetup } from './setup.ts';
 
@@ -285,6 +284,30 @@ export const TOUCH_MAPS: FamilyMaps = {
   },
   deviceMap: (commands) => touchDeviceMap(commands),
   activityMap: (activity, deviceOf) => touchActivityMap(activity, deviceOf),
+  // A person's choice on a pad place that the pad would draw on no key, which the build refuses, `refuseUndrawnChoice`:
+  // asked of that same check here, so the toolkit refuses the choice where it is made and its check lists one a
+  // document holds, with the build's own sentence. A device's commands are spelt as the engine finds them, without
+  // regard to case; where the document does not say which a device has, the command is taken as it is named.
+  refusedChoice: (_skin, choice) => {
+    const pad = padPlaces().find((one) => one.key === choice.key);
+    if (pad === undefined) return undefined;
+    const spelling = (device: string): Spelling => {
+      const names = choice.commandsOf(device);
+      if (names === undefined) return (command) => command;
+      const known = new Map<string, string>();
+      for (const name of names) if (!known.has(name.toLowerCase())) known.set(name.toLowerCase(), name);
+      return (command) => known.get(command.toLowerCase());
+    };
+    try {
+      refuseUndrawnChoice(pad, { key: choice.key, surface: 'pad', press: choice.press, action: choice.action, isDefault: false }, spelling, choice.what);
+      return undefined;
+    } catch (error) {
+      if (error instanceof ComposeRefusal) return error.message;
+      throw error;
+    }
+  },
+  // The words the build takes for the screen an activity opens on, the list it refuses any other word against.
+  openingScreens: ACTIVITY_START_SCREENS,
 };
 
 // ---------------------------------------------------------------------------------------------------
@@ -358,9 +381,6 @@ function favouritesActivity(activities: readonly RecipeActivity[]): number {
   return activities.findIndex((one) => one.favourites !== false && one.devices.some((u) => u.roles.includes('ChannelChanging')));
 }
 
-/** The members of a device's timing the Touch's device record carries, by the name `SetupDevice` gives each. */
-const TIMING_CARRIED: readonly (keyof DeviceTiming)[] = ['interKeyDelay', 'interDeviceDelay', 'powerOnDelay', 'inputDelay', 'pressMinRepeats'];
-
 /** The four step lists of a channel tuning. */
 const TUNING_LISTS = ['start', 'finish', 'greaterTen', 'greaterHundred'] as const;
 
@@ -414,20 +434,13 @@ function setupTuningOf(stated: DeviceChannelTuning, catalogue: DeviceChannelTuni
   return out;
 }
 
-/** Refuses what a document states of a device that the Harmony Touch's documents carry no field for yet. */
-function refuseUncarried(device: RecipeDevice): void {
-  const what = `the device ${device.name}`;
-  if (device.key !== undefined) refuse(`${what} states a device key, which is the Harmony 300 and 350's; a Harmony Touch has none`);
-  for (const member of Object.keys(device.timing ?? {}) as (keyof DeviceTiming)[]) {
-    if (!TIMING_CARRIED.includes(member)) notBuilt(`the Harmony Touch's documents for ${what}'s ${member}`, member === 'minRepeats' ? 17 : 16);
-  }
-  for (const member of Object.keys(device.power ?? {})) {
-    if (member !== 'alwaysOn') notBuilt(`the Harmony Touch's documents for ${what}'s power ${member}`, 14);
-  }
-  for (const [name, command] of Object.entries(device.commands ?? {})) {
-    if (command.code !== undefined) notBuilt(`the Harmony Touch's documents for ${what}'s command ${name}'s code`, 19);
-    if (command.sending !== undefined) notBuilt(`the Harmony Touch's documents for ${what}'s command ${name}'s sending`, 89);
-  }
+/**
+ * Refuses a device key, the Harmony 300 and 350's, which a Harmony Touch has none of. What a document states of a
+ * device that the Touch's composer writes nothing of, a timing member, a power member or a command of its own, is the
+ * guard's, `refuseUnbuiltFields` over `VERSION_TWO`, which says per part which builds read it.
+ */
+function refuseDeviceKey(device: RecipeDevice): void {
+  if (device.key !== undefined) refuse(`the device ${device.name} states a device key, which is the Harmony 300 and 350's; a Harmony Touch has none`);
 }
 
 /**
@@ -560,6 +573,8 @@ function entriesOf(owner: ResolvedOwner, own: string | undefined, sequences: Rea
 
 /** An activity's step as the setup states it: a pause in tenths as seconds, the order the family numbers it by. */
 function stepOf(step: RecipeActivityStep, order: number, what: string): OwnActivityStep {
+  // A step running a sequence is refused by the guard first, `VERSION_TWO`; this stays as the last word for a caller
+  // that builds a setup without it.
   if ('sequence' in step) return notBuilt(`the Harmony Touch's documents for ${what}, a step running the sequence ${step.sequence}`, 30);
   if ('pause' in step) return { delaySeconds: step.pause / 10, order };
   if ('channel' in step) return { device: step.device, channel: step.channel, order };
@@ -659,17 +674,24 @@ export interface TouchDocumentParts {
  * numbers. **The power off order is the power on order, a hypothesis**: the document has one power order, and on all
  * five activities of the bench setup the devices are switched off in the order they are switched on.
  *
- * **Refuses**: a document for another model, one carrying a Touch's own block (which `readTouchSetupFile` reads), favourite channels, choices; what `refuseUncarried` refuses of a device; a key no place takes,
+ * **Refuses**: a document carrying the earlier form's block, `refuseEarlierTouchBlock`, as the reader does; a field of
+ * version 2 the Touch's build does not read, as not built, `refuseUnbuiltFields`; a document for
+ * another model, favourite channels, choices; a device key, `refuseDeviceKey`; a key no place takes,
  * `refuseUnplaced`; a start screen the
  * Touch's composer does not write; a step running a sequence; a list item of version 1's form; a document stating no
  * settings or not every row; and whatever `resolveMaps` and the family's maps refuse.
  */
 export function touchSetupOfDocument(document: Recipe, catalogue: CatalogueSource): TouchDocumentParts {
+  // The one place every build of a Touch passes through, so a document that skipped the reader cannot carry the earlier
+  // form's block into a build that would ignore it.
+  refuseEarlierTouchBlock(document);
   if (document.model.name !== HARMONY_TOUCH_MODEL) refuse(`the document is for the ${document.model.name}, not the ${HARMONY_TOUCH_MODEL}`);
-  if (document.touch !== undefined) refuse('the document carries a Touch\'s own block, which is read by readTouchSetupFile; describeTouchDocument writes it in the shape of version 2');
+  // What the Touch's composer writes nothing of stops here as on every route to a build, decision 43, before any of it
+  // is read: the table says per part which builds read it.
+  refuseUnbuiltFields(document, 'the Harmony Touch\'s documents', 'document');
   if (document.favourites !== undefined) refuse('the document states favourite channels, which nothing here composes: the favourites documents stay the remote\'s');
   if (document.choices !== undefined) refuse('the document states choices, and the Harmony Touch\'s family makes none');
-  for (const device of document.devices) refuseUncarried(device);
+  for (const device of document.devices) refuseDeviceKey(device);
   refuseUnplaced(document);
   const resolved = resolveMaps(TOUCH_MAPS, document.model.skin ?? TOUCH_SKIN, document, catalogue);
   // Each device's commands by their name folded to lower case, as the engine finds a command, for the checks below.
@@ -893,7 +915,7 @@ function typedSetting(name: string, value: string): RecipeSetting {
 
 /**
  * **An old document with a Touch's own block, as the smallest document of version 2 that says the same**, decision 43.
- * The block's setup, `setupOfSetupFile` over the records `catalogueOfArchive` writes from `catalogue`, is compared with
+ * The block's setup, `setupOfEarlierSetupFile` over the records `catalogueOfEarlierSetupFile` writes from `catalogue`, is compared with
  * the setup the family derives from a document stating only the devices, the activities and the settings, and every
  * field of version 2 is stated where the two differ and left out where they agree.
  *
@@ -904,11 +926,11 @@ function typedSetting(name: string, value: string): RecipeSetting {
  *
  * **Refuses**: an id outside the hundred `ID_BASES` gives each kind, since a document's id could not give it back; a
  * press count of null, which a document's timing cannot state; a pause that is no whole number of tenths; an entry
- * opening the pad on an activity's list, or one running a sequence under another name; and what `setupOfSetupFile`
+ * opening the pad on an activity's list, or one running a sequence under another name; and what `setupOfEarlierSetupFile`
  * and `touchSetupOfDocument` refuse.
  */
-export function describeTouchDocument(old: TouchSetupFile, catalogue: CatalogueSource): Recipe {
-  const given = setupOfSetupFile(old, catalogueOfArchive(old, catalogue));
+export function describeTouchDocument(old: EarlierTouchSetupFile, catalogue: CatalogueSource): Recipe {
+  const given = setupOfEarlierSetupFile(old, catalogueOfEarlierSetupFile(old, catalogue));
   const partOfActivity = (name: string) => old.touch.activities.find((one) => one.activity === name)!;
   // The activities in the order the block lists them, which is the document's order in version 2.
   const activities = [...old.activities].sort((a, b) => partOfActivity(a.name).order - partOfActivity(b.name).order);
@@ -936,7 +958,7 @@ export function describeTouchDocument(old: TouchSetupFile, catalogue: CatalogueS
     const what = `the device ${device.name}`;
     const g = given.devices[k]!;
     const d = derived.devices[k]!;
-    // The five members a Touch's device record carries, `TIMING_CARRIED`, each a number.
+    // The five members a Touch's build reads, `TIMING_READ_BY_DOCUMENTS` in `recipe/recipe.ts`, each a number.
     const timing: { pressMinRepeats?: number; interKeyDelay?: number; interDeviceDelay?: number; powerOnDelay?: number; inputDelay?: number } = {};
     if (g.pressRepeats !== d.pressRepeats) {
       if (g.pressRepeats === null) refuse(`${what} repeats a press as the engine's own count, which a document's timing does not state`);

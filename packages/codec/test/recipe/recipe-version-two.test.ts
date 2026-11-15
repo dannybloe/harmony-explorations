@@ -372,7 +372,8 @@ test('every version 2 field stated at once is listed in the table\'s order, the 
   assert.equal(unbuiltFields(all).length, versionTwoFields(all).length - 1);
   assert.equal(versionTwoFields(all)[2]!.where, 'the device Television\'s delays');
 
-  // The documents of version 1 this repository builds, the references, state none; nor does the plain document.
+  // The references of version 1 this repository builds state none, nor does the plain document; the Harmony Touch's,
+  // the one reference of version 2, states fields its build reads and nothing else, decision 43.
   assert.deepEqual(versionTwoFields(readRecipe(document())), []);
   const folder = new URL('../references/', import.meta.url).pathname;
   const recipes = readdirSync(folder).filter((f) => f.endsWith('.json') && f !== 'references.json' && f !== 'john-doe-account.json');
@@ -380,6 +381,21 @@ test('every version 2 field stated at once is listed in the table\'s order, the 
   const listed = (JSON.parse(readFileSync(join(folder, 'references.json'), 'utf8')) as { name: string }[]).map((one) => `${one.name}.json`);
   assert.deepEqual([...recipes].sort(), [...new Set(listed)].sort());
   for (const file of recipes) {
-    assert.deepEqual(versionTwoFields(readRecipe(JSON.parse(readFileSync(join(folder, file), 'utf8')))), [], file);
+    const read = readRecipe(JSON.parse(readFileSync(join(folder, file), 'utf8')));
+    if (file === 'touch-test.json') {
+      assert.equal(read.version, 2);
+      // Exactly the eleven the converter writes for the bench setup, each where it is stated.
+      assert.deepEqual(versionTwoFields(read).map((one) => [one.field, one.where]), [
+        ['settings', 'the remote\'s settings'], ['channelTuning', 'the device LG TV\'s channel tuning'],
+        ['timing', 'the device Denon AV Receiver\'s delays'], ['timing', 'the device KPN\'s delays'],
+        ['opensOn', 'the activity Watch TV\'s opening screen'], ['opensOn', 'the activity Watch a Blu-ray\'s opening screen'],
+        ['sequences', 'the activity Watch a Blu-ray\'s sequences'], ['screen', 'the activity Watch a Blu-ray\'s screen item 1\'s label'],
+        ['screen', 'the activity Watch a Blu-ray\'s screen item 9, the sequence Test Sequence'],
+        ['start', 'the activity Switch Box\'s steps at its start'], ['end', 'the activity Switch Box\'s steps at its end'],
+      ], file);
+      assert.deepEqual(unbuiltFields(read), [], file);
+      continue;
+    }
+    assert.deepEqual(versionTwoFields(read), [], file);
   }
 });

@@ -1,5 +1,7 @@
 /**
- * The Harmony Touch's documents built from a setup file with no Logitech document as input: the
+ * The Harmony Touch's documents built from a setup file of the earlier form, with a block of the Touch's own, with no
+ * Logitech document as input: the form the bench setup's sets were built from, which the tests pinning those runs
+ * rebuild them from, `earlierform.ts`, over the assembly a document of version 2 goes through too, `fromnothing.ts`. The
  * setup file read, Settings and Context written from nothing, the four lists composed onto empty ones, and each device's
  * record written from its catalogue entry in the archive and our own rhythm table, `fromnothing.ts` and
  * `archivedevice.ts`.
@@ -7,7 +9,7 @@
  * **What is held here.**
  *
  * 1. **The setup file describes the bench setup as 8.6's description does.** `packages/corpus/setups/touch-test.json`
- *    read by `readTouchSetupFile` and put in 8.6's form by `setupOfSetupFile` is `touch-setups/8.6-test-setup.json`
+ *    read by `readEarlierTouchSetupFile` and put in 8.6's form by `setupOfEarlierSetupFile` is `touch-setups/8.6-test-setup.json`
  *    exactly, devices, activities, every key, step and sequence, with one difference: the setup file states the LG TV's
  *    channel tuning, three digits and empty steps, which 8.6's composer carried whole from Logitech's record and which the
  *    archive does not hold for that entry. The maker and model come from the catalogue record, so the comparison runs on
@@ -60,9 +62,11 @@ import { ComposeRefusal } from '../../../src/families/harmony-touch/compose.ts';
 import type { DeviceWithFeatures, SyncDocuments } from '../../../src/families/harmony-touch/documents.ts';
 import { deviceRecordOfArchive } from '../../../src/families/harmony-touch/archivedevice.ts';
 import {
-  OUR_PICTURE_STORE, SETTINGS_ROWS_WRITTEN, buildTouchDocuments, ourBackground, emptyTouchLists, readTouchSetupFile, contextOfAccount, settingsOfSetupFile,
-  setupOfSetupFile, type TouchAccount, type TouchSetupFile,
+  OUR_PICTURE_STORE, SETTINGS_ROWS_WRITTEN, ourBackground, emptyTouchLists, contextOfAccount, type TouchAccount,
 } from '../../../src/families/harmony-touch/fromnothing.ts';
+import {
+  buildEarlierTouchDocuments, readEarlierTouchSetupFile, settingsOfEarlierSetupFile, setupOfEarlierSetupFile, type EarlierTouchSetupFile,
+} from '../../../src/families/harmony-touch/earlierform.ts';
 import { pictureRefusals } from '../../../src/families/harmony-touch/favourites.ts';
 import { readConfiguration } from '../../../src/families/harmony-touch/read.ts';
 import { readPng } from '../../../src/screens/png.ts';
@@ -78,7 +82,7 @@ type Json = any;
 const SETUP_FILE = new URL('../../../../corpus/setups/touch-test.json', import.meta.url);
 const DESCRIPTION = new URL('../../../../corpus/touch-setups/8.6-test-setup.json', import.meta.url);
 const raw = (): Json => JSON.parse(readFileSync(SETUP_FILE, 'utf8'));
-const file = (): TouchSetupFile => readTouchSetupFile(raw());
+const file = (): EarlierTouchSetupFile => readEarlierTouchSetupFile(raw());
 const description = (): TouchSetup => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { setup: TouchSetup }).setup;
 
 /** The message a reader or composer refuses with, or nothing when it reads. */
@@ -105,7 +109,7 @@ test('the setup file describes the bench setup as 8.6\'s description does, seven
   const desc = description();
   // The maker and model are the catalogue record's; a catalogue stating 8.6's, with nothing else in it.
   const catalogue = { devices: desc.devices.map((d) => ({ Device: { 'Id-': d.id, Manufacturer: d.manufacturer, Model: d.model }, Commands: [], DeviceFeatures: [] }) as unknown as DeviceWithFeatures), protocols: [] };
-  const ours = JSON.parse(JSON.stringify(setupOfSetupFile(file(), catalogue))) as Json;
+  const ours = JSON.parse(JSON.stringify(setupOfEarlierSetupFile(file(), catalogue))) as Json;
   assert.deepEqual([ours.devices.length, ours.activities.length], [7, 5]);
   assert.deepEqual(ours.devices.filter((d: Json) => d.channelTuning !== undefined).map((d: Json) => [d.name, d.channelTuning]),
     [['LG TV', { fixedDigits: 3, start: [''], finish: [''], greaterTen: [''], greaterHundred: [''] }]]);
@@ -116,7 +120,7 @@ test('the setup file describes the bench setup as 8.6\'s description does, seven
 });
 
 test('the reader refuses another model, favourite channels, no Touch\'s part, an id not ours or shared, a power order off the devices and a setting not text', () => {
-  const r = (x: Json) => refusalOf(() => readTouchSetupFile(x));
+  const r = (x: Json) => refusalOf(() => readEarlierTouchSetupFile(x));
   const t = raw();
   const part = (change: (p: Json) => void): Json => {
     const x = raw();
@@ -142,7 +146,7 @@ test('the reader refuses another model, favourite channels, no Touch\'s part, an
 });
 
 test('Settings from nothing: the nine rows in Logitech\'s order, the file\'s values but the background, ours, no default to fall back on, and a value the remote mishandles refused', () => {
-  const s = settingsOfSetupFile(file()) as Json;
+  const s = settingsOfEarlierSetupFile(file()) as Json;
   const ours = ourBackground().name;
   assert.deepEqual(Object.keys(s), ['RemoteName', 'DefaultImageBucketUri', 'Settings', 'UserImageBucketUri']);
   assert.deepEqual([s.RemoteName, s.DefaultImageBucketUri, s.UserImageBucketUri], ['Harmony Touch', '', OUR_PICTURE_STORE]);
@@ -151,7 +155,7 @@ test('Settings from nothing: the nine rows in Logitech\'s order, the file\'s val
   const values = raw().touch.settings as Record<string, string>;
   assert.deepEqual(s.Settings.map((x: Json) => x.Values),
     SETTINGS_ROWS_WRITTEN.map((n) => (n === 'UserImages' || n === 'BackgroundImage' ? [ours] : [values[n]])));
-  const r = (change: Record<string, unknown>) => refusalOf(() => settingsOfSetupFile({ ...file(), touch: { ...file().touch, settings: { ...values, ...change } as Record<string, string> } }));
+  const r = (change: Record<string, unknown>) => refusalOf(() => settingsOfEarlierSetupFile({ ...file(), touch: { ...file().touch, settings: { ...values, ...change } as Record<string, string> } }));
   const refused: [Record<string, unknown>, RegExp][] = [
     [{ UserImages: 'x' }, /UserImages is not given a value: the background is the picture of ours/],
     [{ BackgroundImage: 'x.png' }, /BackgroundImage is not given a value: the background is the picture of ours/],
@@ -164,7 +168,7 @@ test('Settings from nothing: the nine rows in Logitech\'s order, the file\'s val
   ];
   for (const [change, why] of refused) assert.match(r(change) ?? 'written', why, JSON.stringify(change));
   const { EditLock: _, ...withoutEditLock } = values;
-  assert.match(refusalOf(() => settingsOfSetupFile({ ...file(), touch: { ...file().touch, settings: withoutEditLock } })) ?? '', /EditLock is given no value/);
+  assert.match(refusalOf(() => settingsOfEarlierSetupFile({ ...file(), touch: { ...file().touch, settings: withoutEditLock } })) ?? '', /EditLock is given no value/);
   // The controls: each range's ends.
   for (const change of [{ ScreenBrightness: '10' }, { ScreenBrightness: '100' }, { ScreenTimeout: '1' }, { ScreenTimeout: '30' }, { KeyBrightness: '0' }, { EditLock: 'true' }]) {
     assert.equal(r(change), undefined, JSON.stringify(change));
@@ -238,7 +242,7 @@ test('with the archive: the refusals of a family with no id of ours, an id not o
 test('with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone', skipWithoutIrArchiveSample(), () => {
   proves(4, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
   proves(24, ['harmony-touch'], ['packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts', 'docs/test-notes/harmony-touch.md']);
-  const docs: SyncDocuments = buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE_SAMPLE!), account: ACCOUNT });
+  const docs: SyncDocuments = buildEarlierTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE_SAMPLE!), account: ACCOUNT });
   assert.deepEqual(Object.keys(docs), ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Settings', 'ProtocolList']);
   const read = readConfiguration(docs);
   assert.deepEqual([read.activities.length, read.devices.length, read.maps.length, read.protocols.length], [5, 7, 12, 5]);
@@ -248,5 +252,5 @@ test('with the archive: the six documents from nothing read back as the bench se
   assert.deepEqual(devices.filter((d) => d.Device.DeviceProfileUri !== undefined).map((d) => [d.Device.Name, d.Device.DeviceProfileUri, d.Device.ContentProfileKey]),
     [['LG TV', ACCOUNT.tuning!.DeviceProfileUri, ACCOUNT.tuning!.ContentProfileKey]]);
   // The control: an account with no favourites is refused, since the favourites activity's device needs them.
-  assert.match(refusalOf(() => buildTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE_SAMPLE!), account: { context: ACCOUNT.context } })) ?? '', /the account states no favourites address and key/);
+  assert.match(refusalOf(() => buildEarlierTouchDocuments(file(), { archive: archiveAt(IR_ARCHIVE_SAMPLE!), account: { context: ACCOUNT.context } })) ?? '', /the account states no favourites address and key/);
 });

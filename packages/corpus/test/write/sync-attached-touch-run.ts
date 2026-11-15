@@ -87,7 +87,9 @@ export interface TouchScenario {
   readonly folderFails?: string;
   /** The keeper cannot keep the set it is handed, and says so in these words. */
   readonly keepFails?: string;
-  /** The Touch's document gives two keys of its first device a second command when held, four problems of its check. */
+  /** The Touch's document gives two keys of its first device a double press, which no key of a Touch has: two problems of its check. */
+  readonly doubleKeys?: boolean;
+  /** The Touch's document gives the volume keys of its first device's own map a command when held, which the Touch builds. */
   readonly heldKeys?: boolean;
 }
 
@@ -131,14 +133,29 @@ const words = (events: readonly SyncEvent[]): string[] => events.map((event) => 
     : event.kind === 'attention' ? `! ${event.attention}` : `= ${event.outcome.result}`));
 
 /**
- * The Harmony Touch's reference recipe with two keys of its first device given a second command when held: its check
- * refuses each twice, once for a key chosen on a Harmony Touch and once for the held press, four problems.
+ * The Harmony Touch's reference document with two keys of its first device's own map given a double press, which no key
+ * of a Touch has, only its gestures: its check refuses each once, as a press the key does not have, two problems.
  */
-export function heldKeysTouchDocument(): Recipe {
+export function doubleKeysTouchDocument(): Recipe {
   const json = JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')) as { devices: { keys?: unknown[] }[] };
   json.devices[0]!.keys = [
-    { key: 'VolumeUp', press: 'held', action: { nothing: true } },
-    { key: 'VolumeDown', press: 'held', action: { nothing: true } },
+    { key: 'VolumeUp', press: 'double', action: { nothing: true } },
+    { key: 'VolumeDown', press: 'double', action: { nothing: true } },
+  ];
+  return recipe.open(json);
+}
+
+/**
+ * The Harmony Touch's reference document with the two volume keys of its first device's own map given a command when
+ * held, the device's Mute: a press those keys have on a Touch, which its check passes and its build writes.
+ */
+export function heldKeysTouchDocument(): Recipe {
+  const json = JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')) as { devices: { name: string; keys?: unknown[] }[] };
+  const first = json.devices[0]!;
+  first.keys = [
+    ...(first.keys ?? []),
+    { key: 'VolumeUp', press: 'held', action: { device: first.name, command: 'Mute' } },
+    { key: 'VolumeDown', press: 'held', action: { device: first.name, command: 'Mute' } },
   ];
   return recipe.open(json);
 }
@@ -146,8 +163,9 @@ export function heldKeysTouchDocument(): Recipe {
 export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
   const document: Recipe = scenario.document === 'one'
     ? recipe.create({ name: 'Harmony One', skin: 54 })
-    : scenario.heldKeys === true ? heldKeysTouchDocument()
-      : recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
+    : scenario.doubleKeys === true ? doubleKeysTouchDocument()
+      : scenario.heldKeys === true ? heldKeysTouchDocument()
+        : recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
 
   const handOver = [listAnswer([{ verb: 'POST', uri: 'proxy://Finished' }])];
   const sync = (scenario.sync ?? defaultSync()).map(listAnswer);

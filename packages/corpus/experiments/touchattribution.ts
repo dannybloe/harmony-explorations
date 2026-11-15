@@ -10,23 +10,23 @@
  * generator reproduces is reported as carried from a Logitech document, when the setup set's, Logitech's documents under
  * tags of ours, holds the same value in the same field, or as unattributed.
  *
- * **How a generator is told from the code.** Each step of `buildTouchDocuments` is run again by itself, on the same
+ * **How a generator is told from the code.** Each step of `buildEarlierTouchDocuments` is run again by itself, on the same
  * inputs, and a field is credited to the latest step whose own output holds that value at that place:
  *
- * * **the device records**: `catalogueOfArchive` alone, each record as `deviceRecordOfArchive` writes it; inside it the
+ * * **the device records**: `catalogueOfEarlierSetupFile` alone, each record as `deviceRecordOfArchive` writes it; inside it the
  *   features as `featuresOfDriving` writes them from `catalogueDriving`, and each command's key code as `keyCodeText`
  *   writes it from `statedCode` into our definition, each run again here from the archive;
  * * **what the composer writes over a record**, found by composing the same devices onto **skeleton records**, each
  *   holding only what the composer finds a record by (its maker and model, each feature's kind and the field naming its
  *   device, each command's name and protocol id): a field the composer's output holds there with a value the skeleton
  *   did not hold is the composer's own, `composeTouchSetup`. Everything else on a device came from the record;
- * * **the account's favourites address and key**: the fields where `buildTouchDocuments`'s device list differs from
+ * * **the account's favourites address and key**, `withTuningAddress`: the fields where the device list differs from
  *   the same setup composed onto the catalogue as the archive gives it, each value the account file's;
- * * **the definitions**: `catalogueOfArchive`'s, matched by protocol id, each `definitionOfRow` over our table's row;
+ * * **the definitions**: `catalogueOfEarlierSetupFile`'s, matched by protocol id, each `definitionOfRow` over our table's row;
  * * **the device maps**: the setup composed with its devices alone, `composeButtons` inside `composeTouchSetup`; and
  *   **the activities and their maps**: what composing the activities adds, `composeTouchActivity` and
  *   `withTouchActivity`;
- * * **Context**: `contextOfAccount` over the account file; **Settings**: `settingsOfSetupFile` over the setup file, its
+ * * **Context**: `contextOfAccount` over the account file; **Settings**: `settingsOfRows` over the setup file's rows, through `settingsOfEarlierSetupFile`, its
  *   two background names and its picture store the values `ourBackground` and `OUR_PICTURE_STORE` give;
  * * **the two pictures**: `ourBackground`'s drawings, byte for byte;
  * * **each answer's envelope**: its address the account file's (or `ourBackground`'s for a picture), its body type
@@ -42,6 +42,7 @@
  */
 import { catalogueCommands, catalogueDevice, catalogueDriving, statedCode, archiveAt } from '@harmony/codec/node';
 import { harmonyTouch } from '@harmony/codec/build';
+import { earlierTouchSetupFile } from '@harmony/codec/internal';
 
 import { NOTHING_DOCUMENTS, type TouchAccountFile } from './touchnothingset.ts';
 import { keyOf, ourTag, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
@@ -52,8 +53,8 @@ const copyOf = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
 /** The generators a field of a set from nothing may be credited to, each a function of the codec or the answerer. */
 export const GENERATORS = [
-  'deviceRecordOfArchive', 'featuresOfDriving', 'keyCodeText', 'composeTouchSetup', 'buildTouchDocuments',
-  'definitionOfRow', 'composeButtons', 'composeTouchActivity', 'contextOfAccount', 'settingsOfSetupFile',
+  'deviceRecordOfArchive', 'featuresOfDriving', 'keyCodeText', 'composeTouchSetup', 'withTuningAddress',
+  'definitionOfRow', 'composeButtons', 'composeTouchActivity', 'contextOfAccount', 'settingsOfRows',
   'ourBackground', 'withNothing', 'ourTag',
 ] as const;
 export type Generator = typeof GENERATORS[number];
@@ -126,7 +127,7 @@ export interface NothingInputs {
 
 /** Each generator's own output, computed again from the inputs, in the documents' shape where a document is meant. */
 export interface Layers {
-  /** `catalogueOfArchive`: the device list as the records `deviceRecordOfArchive` writes, in the setup's order. */
+  /** `catalogueOfEarlierSetupFile`: the device list as the records `deviceRecordOfArchive` writes, in the setup's order. */
   readonly records: readonly harmonyTouch.DeviceWithFeatures[];
   /** Per device, the features `featuresOfDriving` writes from the archive's driving. */
   readonly features: harmonyTouch.DeviceFeature[][];
@@ -135,7 +136,7 @@ export interface Layers {
   /** The skeleton each record was reduced to, and the devices the composer wrote onto them. */
   readonly skeletons: Json[];
   readonly composedOnSkeletons: harmonyTouch.DeviceWithFeatures[];
-  /** The definitions `catalogueOfArchive` gives, each `definitionOfRow`'s. */
+  /** The definitions `catalogueOfEarlierSetupFile` gives, each `definitionOfRow`'s. */
   readonly protocols: readonly harmonyTouch.IrProtocol[];
   /** The setup composed with its devices alone, and whole, onto the catalogue as the archive gives it. */
   readonly devicesOnly: harmonyTouch.SyncDocuments;
@@ -156,9 +157,9 @@ function skeletonOf(record: harmonyTouch.DeviceWithFeatures): Json {
 
 /** Every generator run again on the inputs, each by itself. */
 export function layersOf(inputs: NothingInputs): Layers {
-  const file = harmonyTouch.readTouchSetupFile(inputs.file);
-  const catalogue = harmonyTouch.catalogueOfArchive(file, archiveAt(inputs.archive));
-  const setup = harmonyTouch.setupOfSetupFile(file, catalogue);
+  const file = earlierTouchSetupFile.readEarlierTouchSetupFile(inputs.file);
+  const catalogue = earlierTouchSetupFile.catalogueOfEarlierSetupFile(file, archiveAt(inputs.archive));
+  const setup = earlierTouchSetupFile.setupOfEarlierSetupFile(file, catalogue);
   const features: harmonyTouch.DeviceFeature[][] = [];
   const keyCodes: (string | undefined)[][] = [];
   for (const [i, r] of file.devices.entries()) {
@@ -193,7 +194,7 @@ export function layersOf(inputs: NothingInputs): Layers {
     devicesOnly: harmonyTouch.composeTouchSetup(harmonyTouch.emptyTouchLists(), devicesAlone, catalogue),
     whole: harmonyTouch.composeTouchSetup(harmonyTouch.emptyTouchLists(), setup, catalogue),
     context: harmonyTouch.contextOfAccount(inputs.account),
-    settings: harmonyTouch.settingsOfSetupFile(file),
+    settings: earlierTouchSetupFile.settingsOfEarlierSetupFile(file),
     background: harmonyTouch.ourBackground(),
   };
 }
@@ -213,7 +214,7 @@ function deviceListField(layers: Layers, account: TouchAccountFile, path: string
   if (!holds(layers.whole.DeviceList, path, value)) {
     const tuning = account.tuning;
     return tuning !== undefined && /^Device\.(DeviceProfileUri|ContentProfileKey)$/.test(d.rest) && (same(value, tuning.DeviceProfileUri) || same(value, tuning.ContentProfileKey))
-      ? 'buildTouchDocuments' : undefined;
+      ? 'withTuningAddress' : undefined;
   }
   // The composer's own: held on the skeleton's composed device with a value the skeleton did not hold.
   const skeleton = layers.skeletons[d.device];
@@ -241,14 +242,14 @@ function documentField(layers: Layers, account: TouchAccountFile, document: stri
       return holds(layers.context, path, value) ? 'contextOfAccount' : undefined;
     case 'Settings': {
       if (!holds(layers.settings, path, value)) return undefined;
-      return value === layers.background.name || value === harmonyTouch.OUR_PICTURE_STORE ? 'ourBackground' : 'settingsOfSetupFile';
+      return value === layers.background.name || value === harmonyTouch.OUR_PICTURE_STORE ? 'ourBackground' : 'settingsOfRows';
     }
     default:
       return undefined;
   }
 }
 
-/** The definition of the set at a place, matched to `catalogueOfArchive`'s by its protocol id. */
+/** The definition of the set at a place, matched to `catalogueOfEarlierSetupFile`'s by its protocol id. */
 function protocolField(layers: Layers, resource: unknown, path: string, value: unknown): Generator | undefined {
   const m = /^Protocols\[(\d+)\](?:\.(.*))?$/.exec(path);
   if (m === null) return undefined;

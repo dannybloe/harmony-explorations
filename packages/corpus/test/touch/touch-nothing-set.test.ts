@@ -1,8 +1,9 @@
 /**
- * The Harmony Touch from-nothing set: the whole test setup built from a setup file, the archive of the
- * catalogue and our rhythm table, **with no Logitech document as input**, compared field by field with the setup set's, which
- * the bench Touch ran 418 of 418, and its put back; built by `experiments/touchnothingset.ts` over the codec's
- * `buildTouchDocuments`, and rehearsed through the real answerer and session on the fake remote.
+ * The Harmony Touch from-nothing set: the whole test setup built from a setup file of the earlier form, the archive of
+ * the catalogue and our rhythm table, **with no Logitech document as input**, compared field by field with the setup
+ * set's, which the bench Touch ran 418 of 418, and its put back; built by `experiments/touchnothingset.ts` over the
+ * codec's `buildEarlierTouchDocuments`, the form that set was built from, decision 43, and rehearsed through the real
+ * answerer and session on the fake remote.
  *
  * **What is held here.**
  *

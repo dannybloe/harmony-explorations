@@ -26,8 +26,9 @@
  *   inside the lab. `touch-own-set.ts` builds one of the remote's own documents, and the other `touch-*-set.ts`
  *   scripts build the changed ones.
  * * `--document <lab file> --account <lab file>`: **the sync an application calls, on the bench**, as
- *   `write-config.ts --document` is for the Harmony One. The document is a recipe as the toolkit keeps one; it is
- *   checked, built, made into a set at the account's addresses and answered by `syncDocument` on
+ *   `write-config.ts --document` is for the Harmony One. The document is a recipe as the toolkit keeps one, of
+ *   version 2, decision 43; one of the earlier form, with a block of the Touch's own, is refused naming the converter,
+ *   `describeTouchDocument`, before anything is opened. It is checked, built, made into a set at the account's addresses and answered by `syncDocument` on
  *   `@harmony/corpus/write`, which hands the set to the same `answerTouchSync` the other two modes call. The account is
  *   the lab file `touch-nothing-set.ts --describe-account` writes: Context's seven fields, the tuning device's
  *   favourites address and key, and the six documents' addresses, which the build and the set take and which never

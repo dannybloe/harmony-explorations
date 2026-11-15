@@ -108,8 +108,8 @@ export function composeSetupParts(
   devicesComposed: ComposedDeviceNote[]; donorInfrared: DonorInfrared[];
 } {
   let c = donor;
-  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(setup, 'composeSetupParts');
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(setup, 'composeSetupParts', 'compiled');
   // 0. Favourite channels are a recipe field Logitech's service is given and no composer writes, so a
   //    recipe stating some is refused for every family alike rather than built without them, which would
   //    be a configuration missing what its recipe asked for and saying nothing about it.
@@ -579,8 +579,8 @@ export interface ComposedSetup {
  * are the family's own; a recipe stating choices is refused, since what a choice changes is the generators' work.
  */
 export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedSetup {
-  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(setup, 'composeSetup');
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(setup, 'composeSetup', 'compiled');
   const target = recipeTarget(setup);
   // The skins composing alone has been run on are the family's, `Family.composedSkins`; a family the assembly's
   // generators build for goes through `assembleSetup`.

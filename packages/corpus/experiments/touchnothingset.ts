@@ -1,12 +1,17 @@
 /**
- * A Harmony Touch set **built from a setup file with no Logitech document as input**, its put back, the description of
+ * A Harmony Touch set **built from a setup file of the earlier form with no Logitech document as input**, its put back, the description of
  * the account it takes its account values from, and the field by field comparison with the setup set's.
  *
  * **What the from-nothing set is for.** The setup set composed the four documents that name devices and activities from a description and ran them
  * on the bench Touch, 418 of 418, while every device's record, its codes and the definitions were carried from
  * Logitech's documents and Context and Settings stayed the remote's. the from-nothing set builds all six from
- * `packages/corpus/setups/touch-test.json`, the archive of the catalogue and our rhythm table, `buildTouchDocuments` in
- * the codec, and only the account's own values from a description of the account kept in the lab.
+ * `packages/corpus/setups/touch-test.json`, the archive of the catalogue and our rhythm table, `buildEarlierTouchDocuments`
+ * in the codec, and only the account's own values from a description of the account kept in the lab.
+ *
+ * **Why the earlier form.** That file is a setup file of the earlier form, with a block of the Touch's own, which is what
+ * the set the bench Touch ran was built from, so the runs that pin it rebuild it from that form byte for byte; the codec
+ * keeps the form for that and for its converter alone, on `@harmony/codec/internal`'s `earlierTouchSetupFile`, decision
+ * 43. An application builds a Touch's set from a document of version 2 through `syncDocument`.
  *
  * **The account's values, and why a description of them.** Context's seven fields a Touch reads and the address and key
  * of the tuning device's favourites documents are the account's, which the remote echoes and asks by; and the six
@@ -41,7 +46,7 @@
  */
 import { RecipeError, waveformOfArchiveCommand, type Pulse } from '@harmony/codec/node';
 import { harmonyTouch } from '@harmony/codec/build';
-import { mergedIntervals } from '@harmony/codec/internal';
+import { earlierTouchSetupFile, mergedIntervals } from '@harmony/codec/internal';
 
 import { compareSetup, type ComparisonRules, type DocumentComparison, type Pair } from './touchsetupset.ts';
 import { keyOf, prepareSet, touchSetOf, type SetAnswer, type TouchSet } from '../src/touchsync.ts';
@@ -91,7 +96,7 @@ export function describeTouchAccount(set: TouchSet): { readonly account: TouchAc
 }
 
 /**
- * The set of a setup file: the six documents `buildTouchDocuments` writes from the file, the archive at `archive` and the
+ * The set of a setup file of the earlier form: the six documents `buildEarlierTouchDocuments` writes from the file, the archive at `archive` and the
  * account, each at the address the account names and under `ourTag`, in the order the remote asks for them, and the
  * background and its twin the family draws for every set; or why not, the codec's refusal or the answerer's gate.
  *
@@ -106,9 +111,9 @@ export function withNothing(options: {
 }): { readonly set: TouchSet } | { readonly refusals: readonly string[] } {
   let built: { documents: harmonyTouch.SyncDocuments; pictures: readonly harmonyTouch.OwnPicture[] };
   try {
-    const setup = harmonyTouch.readTouchSetupFile(options.file);
+    const setup = earlierTouchSetupFile.readEarlierTouchSetupFile(options.file);
     built = {
-      documents: harmonyTouch.buildTouchDocuments(setup, { archive: archiveAt(options.archive), account: options.account }),
+      documents: earlierTouchSetupFile.buildEarlierTouchDocuments(setup, { archive: archiveAt(options.archive), account: options.account }),
       // The background and its twin, at the addresses our Settings makes the screens build, as the family gives them.
       pictures: harmonyTouch.HARMONY_TOUCH_FAMILY.buildPictures(setup),
     };

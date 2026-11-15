@@ -14,8 +14,8 @@ import { buildEmptyNoScreenConfiguration } from './empty.ts';
 import { buildNoScreenSetup, type DevicePlace } from './setup.ts';
 
 export function noScreenFromRecipe(recipe: Recipe, skin: number, sources: RecipeSources): Uint8Array {
-  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(recipe, 'the Harmony 300 and 350\'s fromRecipe');
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(recipe, 'the Harmony 300 and 350\'s fromRecipe', 'compiled');
   if (recipe.devices.length === 0 && recipe.activities.length === 0) {
     return buildEmptyNoScreenConfiguration({ skin, builtAt: sources.builtAt }).bytes;
   }

@@ -26,6 +26,8 @@
  *   `needs-recovery` with the recovery order and the abort's cost; the remote's own abort `failed` and `as-before`.
  * * **A stop is honoured up to the moment the remote is opened and never after**, and a screen that throws stops
  *   nothing.
+ * * **A press a key of the Touch has passes**: a held key in a device's own map is checked, built and delivered, and
+ *   changes the map document alone; a double press, which only a gesture has, is refused by the check.
  *
  * **What is not claimed.** Anything about a remote: the stand in answers as the scenario says, and what a Harmony
  * Touch does with the set is the bench's to say. Nor that a sync whose every answer is 304 can be told apart: the
@@ -207,12 +209,28 @@ test('a keeper that cannot make its folder or keep the set ends the sync failed 
   // The control: the same run with a keeper that keeps is the first test's, which is written.
 });
 
+test('a held key in a Touch device\'s own map passes the sync\'s check and build and is delivered, changing the map document alone', () => {
+  // The volume keys of the LG TV's own map given a command when held, a press those keys have on a Touch; the reference
+  // holds one held key of that map already, Menu, and these two are the case on their own, beside the plain run.
+  const held = withFlags({ commit: true, heldKeys: true });
+  assert.deepEqual(held.outcome, { result: 'written', remote: 'new-configuration' });
+  assert.deepEqual(held.words, WRITTEN);
+  // The control: the plain reference, built and delivered by the same run, differs from it in the map document alone,
+  // so the two held presses reached the set rather than being passed over.
+  const plain = withFlags({ commit: true });
+  const byAddress = (run: typeof held): Map<string, string> =>
+    new Map(run.kept[0]!.answers.map((a) => [a.uri, JSON.stringify(a.resource)]));
+  const ours = byAddress(held), theirs = byAddress(plain);
+  assert.deepEqual([...ours.keys()], [...theirs.keys()]);
+  assert.deepEqual([...ours.keys()].filter((uri) => ours.get(uri) !== theirs.get(uri)), [ADDRESSES['MapList']]);
+});
+
 test('a Touch\'s document the check refuses more than once is refused naming its first problem and counting the rest, in the wording a flash sync uses', async () => {
-  // Two keys given a second command when held, each refused twice on a Harmony Touch: four problems, three counted.
-  const run = await runTouchSync({ heldKeys: true });
+  // Two keys given a double press, which no key of a Harmony Touch has: two problems, the second counted.
+  const run = await runTouchSync({ doubleKeys: true });
   assert.deepEqual(run.outcome, {
     result: 'refused', remote: 'as-before',
-    message: 'LG TV\'s own map chooses what the VolumeUp key does, which nothing builds for a Harmony Touch yet, and 3 more problems the check lists',
+    message: 'LG TV\'s own map gives the VolumeUp key a double press, which the VolumeUp key of a Harmony Touch does not have, and 1 more problem the check lists',
   });
   assert.deepEqual(run.words, ['identify', 'check', '= refused']);
   assert.equal(run.opened, 0);

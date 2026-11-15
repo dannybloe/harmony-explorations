@@ -17,8 +17,8 @@ import { oneChoices } from './choices.ts';
 import { buildEmptyOneConfiguration } from './empty.ts';
 
 export function oneFromRecipe(recipe: Recipe, skin: number, sources: RecipeSources): Uint8Array {
-  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(recipe, 'the Harmony One\'s fromRecipe');
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(recipe, 'the Harmony One\'s fromRecipe', 'compiled');
   const choices = oneChoices(recipe.choices ?? {});
   if (recipe.devices.length === 0 && recipe.activities.length === 0) {
     return buildEmptyOneConfiguration({ skin, builtAt: sources.builtAt, choices }).bytes;

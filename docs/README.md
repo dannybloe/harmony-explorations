@@ -390,7 +390,19 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 archivedevice.ts write every document and a background picture
                                 from a setup file, the archive of the catalogue, our rhythm table
                                 and a description of the account, with no Logitech document as
-                                input, todo/done/todo-touch.md 9.1, tested in test/families/harmony-touch/touch-fromnothing.test.ts.
+                                input, todo/done/todo-touch.md 9.1. Two routes reach them, decision 43:
+                                buildTouchDocuments, what buildFromRecipe and the family's build call,
+                                reads a document of version 2 through recipemaps.ts; earlierform.ts
+                                reads a setup file of the earlier form, with the Touch's own block,
+                                and is the route the converter, the bench runs built from that form
+                                and packages/corpus's touchnothingset.ts and touchattribution.ts take,
+                                offered only as earlierTouchSetupFile on ./internal. The earlier
+                                form's route is tested in test/families/harmony-touch/touch-fromnothing.test.ts
+                                on packages/corpus/setups/touch-test.json; the earlier form's copy
+                                beside it, touch-test-earlier-form.json, is what touch-resolve.test.ts
+                                converts and what toolkitkeys.test.ts, onerecipekeys.test.ts and
+                                fromrecipe.test.ts read, and test/references/touch-test.json is the
+                                converter's output.
                                 Its engine.ts models what the remote's engine sends for a press,
                                 and when, from the documents, todo/done/todo-touch.md 7.1, moved from
                                 packages/bench in todo/done/todo-sequence.md 7.3.1 as knowledge about the remote; the

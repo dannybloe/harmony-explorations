@@ -142,8 +142,8 @@ export interface Assembled {
  * cannot serve the setup, and check the result as every generator's own calibration checks a compile.
  */
 export function assembleSetup(setup: Recipe, options: AssembleOptions): Assembled {
-  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(setup, 'assembleSetup');
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(setup, 'assembleSetup', 'compiled');
   // The recipe's model, whose definition says what it can hold and whose family builds for it.
   const target = recipeTarget(setup);
   if (target.family !== FOUR_SLOT || !(ASSEMBLY_SKINS.has(target.skin) || OUR_DONOR_SKINS.has(target.skin))) {

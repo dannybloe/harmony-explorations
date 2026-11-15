@@ -67,13 +67,24 @@ misspelling is an error rather than a default.
 | `settings` | version 2, optional, the remote's own settings by the names its family gives them, never an empty name nor `__proto__`, each a text, a number or true or false |
 | `highestIds` | version 2, optional, the highest number the toolkit has given an id of each kind, `device`, `activity` and `sequence`, so an id is never given twice, each a whole number from 0; it counts only ids of the toolkit's form, `d`, `a` or `s` and a number, so an id of that form numbered past it is refused and an id written otherwise is not judged. No build reads it, since it changes no byte a remote receives |
 
-**No build reads a field of version 2 yet, and none leaves one out without a word.** Every route to a build,
-`buildFromRecipe`, each family's `fromRecipe`, the composers of a setup and the Harmony Touch's setup reader and
-builders, refuses a document stating any of them as a function not built, naming the field and the requirement it
-waits on, `refuseUnbuiltFields` in `recipe/recipe.ts`, which walks `VERSION_TWO`, the one table the reader also
-takes its fields of version 2 from; `highestIds` is the one passed over. The toolkit's `check` lists each such field
-as an error, and its changes and `uses` refuse a document stating one, since none of them follows these fields
-through a rename or a removal yet.
+**Which build reads a field of version 2 is one table, and no build leaves one out without a word.**
+`VERSION_TWO` in `recipe/recipe.ts` states, per field and per part of a field, the requirement it waits on and which
+kind of family's build reads it, `readBy`: `compiled` for the families that build one container, `document` for the
+Harmony Touch's. The reader takes its fields of version 2 from it, and the guard, `refuseUnbuiltFields`, walks it for
+the kind of family the route builds for: every route to a build, `buildFromRecipe`, each family's `fromRecipe`, the
+composers of a setup and the Harmony Touch's builder, refuses a document stating a field that kind does not read as a
+function not built, naming the field and the requirement; `highestIds` is the one passed over. **No compiled
+family's build reads a field of version 2 yet.** **The Harmony Touch's reads most of them**: the settings, a device's
+delays and repeat count in the members its documents carry (`interKeyDelay`, `interDeviceDelay`, `powerOnDelay`,
+`inputDelay`, `pressMinRepeats`), its being always on, its channel tuning and its screen, an activity's opening
+screen, its hold on the favourites, its power order, its sequences, the steps at its start and end, a screen entry's
+label and sequence, and a double press on an activity's key. It does not read a device's other four timing members
+(`holdInterDeviceDelay`, `connectedAppPowerOnDelay` and `isInterKeyDelayOptimized`, R16, and the second repeat count,
+`minRepeats`, R17), a power member other than `alwaysOn`, R14, a step
+at a start or end that runs a sequence, R30, a device's own commands, R19 and R89, nor a double press in a device's
+own map, R40. The toolkit's `check` lists each field the document's model does not read
+as an error; its changes write every field whatever the model's build reads, and follow each through a rename and a
+removal, below.
 
 **What is refused as empty**: a name or a text with nothing in it, a field that is an object stating no member
 (`timing: {}`, a command entry `{}`), a sequence or an extra step list with no step, and a learned code with no
@@ -81,6 +92,32 @@ pulse. An empty list is kept where it says something, a device screen of none an
 none. `recipe.open` reads what it opens again as version 2, so a document of version 1 stating what version 2
 refuses, a key running a sequence its activity does not name, is refused there rather than opened once and refused
 on the next load.
+
+## A Harmony Touch's document
+
+**A Harmony Touch is built from a document of version 2 like every other model**, decision 43: `buildFromRecipe`
+chooses its family by the model and builds the six documents a sync delivers, with the account's Context, from the
+document alone. What its document states:
+
+* `model.name` `Harmony Touch`; `choices` and `favourites[]` refused, since its family makes no choice and its
+  favourites documents stay the remote's; a device key refused, since a Touch has none;
+* every device and activity, every sequence included, with the toolkit's id, `d`, `a` or `s` and a number, which the
+  documents number by, and each device's definition carried or found in the archive given;
+* `settings`, **every row the remote's Settings states**, by the names `families/harmony-touch/settings.ts` gives
+  them; there is no table of Logitech's defaults to take a missing one from yet;
+* a device's `timing` in the five members its documents carry, `power.alwaysOn`, `channelTuning` and `screen`; an
+  activity's `opensOn`, `favourites`, `powerOrder`, `start` and `end` but a step running a sequence, `sequences`; and
+  the keys of both maps short or held, and an activity's pressed twice, where the place has that press; everything else its family derives, the
+  keys by `TOUCH_MAPS` in `families/maps.ts` and the favourites by the activity that changes channels.
+
+**The control port is not stated and is always 0**, the remote's own lamp. **A document still carrying the Touch's
+own block, `touch`, is the earlier form and is refused by `readRecipe`**, naming the converter,
+`harmonyTouch.describeTouchDocument` on the codec's `./build`, which writes it in this shape. The earlier form's own
+reader and its route to the six documents are kept for the converter and for the bench runs built from it,
+`families/harmony-touch/earlierform.ts`, offered as `earlierTouchSetupFile` on `./internal` and on no entry an
+application builds on. `packages/codec/test/references/touch-test.json` is the bench test setup in this shape; the
+six documents it builds differ from the earlier form's in the control port of five devices, four buttons and the order
+of each map's buttons, `packages/corpus/test/touch/touch-version-two-set.test.ts`.
 
 **Favourite channels are given to Logitech's service and built by nothing of ours yet.**
 `packages/corpus/bin/build-setup.ts --stage favourites` saves them on a test account's record so a
@@ -153,11 +190,59 @@ device's answer and no activity's, since an activity derives from its devices' d
   owner answer, and `check` lists the choice.
 
 **Answered for the Harmony One and the Harmony Touch**, the two models whose families state their maps. Every other
-model answers not built, naming the model and R77, and so does a document that still carries a Harmony Touch's own
-block, naming the converter, `harmonyTouch.describeTouchDocument` on the codec's `./build`. `check` holds a document's
-key choices to the same places: a word that is no key of the model, a key the owner's map does not bind, and a press
-the key does not have are each a problem with its place. `packages/codec/test/recipe/toolkitkeys.test.ts` holds all of
-it on the two reference documents.
+model answers not built, naming the model and R77. `check` holds a document's key choices to the same places: a word
+that is no key of the model, a key the owner's map does not bind, and a press the key does not have are each a problem
+with its place. `packages/codec/test/recipe/toolkitkeys.test.ts` holds all of it on the two reference documents.
+
+## Changing a document
+
+The toolkit's changes are the only way an application changes a document, and **they are the same calls for every
+model**, decision 43. Each returns a new document of its own, checked as `readRecipe` checks one and sharing no object
+with the document given or with anything passed in, and `effects`, everything else the change touched, each with its
+place and a sentence. A change refuses with `ChangeRefused` and one of four reasons: `unknown`, something the document
+does not hold; `over-limit`, more than the model takes; `invalid`, what was given makes no sense or would leave the
+document naming what is gone; and **`not-on-this-model`**, what the model does not have, from its family's places and
+its capabilities. What nobody has written yet is a different answer, `NotBuiltError`, naming the requirement it waits on.
+A model no family serves yet, a Harmony 525, 515 or 785, answers not built from every call that needs its family:
+`create`, `addDevice`, `addActivity`, `setKey`, `setScreen`, the questions about keys and screens, and `check`. What a
+caller passes is held to its shape, so `null` or a list where a record belongs, and an owner naming both a device and
+an activity, are refused as `invalid` rather than thrown as a `TypeError`; and a refusal the reader gives names the
+device, activity or sequence by its name, never by its position.
+
+**A change writes the document whether or not the model's build reads that field yet**, so a person's choice is kept
+while the build catches up; `check` lists what the model's build does not read, as an error at its place.
+
+| change | what it does |
+|---|---|
+| `addDevice(document, { name, device })` | a device with its carried definition and protocols, last, under the next device id |
+| `refreshDevice(document, device, carried)` | replaces that device's carried definition and nothing else: its name, keys, screen, timing, power, tuning, own commands and every choice naming it stay, a stated value equal to the new definition's included; every choice naming a command the new definition lacks is an effect, `missing`, and `check` lists it. A definition of another catalogue entry is refused |
+| `setDevice(document, device, changes)` | its name, which follows it everywhere the document names it; kept on between activities, true or false; its device key, on the Harmony 300 and 350 alone and not on this model elsewhere, R39; and `timing`, `power` and `channelTuning`, **member by member**: a member given stands over the catalogue's, `'default'` on a member drops that one, `'default'` for the whole drops all. A step of power or channel tuning the change writes names a command the device has, or is refused as unknown. Its inputs answer not built, R15 |
+| `setDeviceCommand(document, device, command, change)` | `{ code, sending }`: a code of its own, `'original'` to drop it, and how that one command is sent, R89, member by member (`copies`, `heldPaceMs`, `leadInMs`); `'original'` drops both; `'removed'` takes away a command the document added, refused while a key, an entry or a step uses it, naming where. Taking away a command of the definition answers not built, R19 |
+| `addActivity`, `setActivity(document, activity, changes)` | its name, kind and devices; `opensOn`, held to the words the model's family names, `FamilyMaps.openingScreens`, not on this model for another word or on a model without a screen, and not built where the family names none yet, the Harmony One's among them, R91; `favourites` (true takes the hold off the activity that had it, reported), `powerOrder` by device ids, and `start` and `end` whole, each step a command or a channel of one of its devices, a pause, or one of its own sequences by id; `'default'` or an empty list gives a member back. Its devices changed, the power order follows; a step still sending to a device it stops using refuses, naming the step. Its icon and activity key answer not built, R27 and R29 |
+| `addSequence(document, activity, sequence)`, `setSequence(document, sequence, changes)` | **a sequence is its activity's**: added to one, its steps a command of one of that activity's devices or a pause, at least one a command; a new name follows to the keys, entries and steps that run it |
+| `setKey(document, { owner, key, press }, action)` | every press the model's places give the owner's map: short, held where the key has a long press, double on a gesture; a device's command, one of the activity's sequences by id, or nothing; `'default'` gives the press back. A press the key lacks, a key only the other kind of owner binds, and a choice the family refuses, `FamilyMaps.refusedChoice`, such as a command a Harmony Touch's number pad draws on no key, are not on this model, and so is a key another model has and this one lacks, a gesture on a Harmony One; a word no model has as a key, and a key the remote binds itself, are unknown, the second with its reason. On a model whose family has no maps, not built |
+| `setScreen(document, owner, items)` | the list whole: `{ device, command, label? }`, and on an activity's screen `{ sequence }` by id; an empty list is a person's empty screen; `'default'` gives it back. A screen on a model without one is not on this model; a page of entries and a sequence's own label answer not built, R36 and R34 |
+| `setSetting(document, name, value)` | one row of `settings`; `'default'` drops it |
+| `remove(document, { device \| activity \| sequence })` | settles everything that named it, each an effect, the same places `uses` lists, in order: a device leaves its activities and power orders, keys sending its commands go back to their defaults, entries and extra steps sending to it go, a sequence loses its steps and goes with its last command step, and with it every key, entry and step that ran it; an activity goes with its sequences, and where it held the favourite channels an effect at the document says no activity holds them now; a sequence goes with every key, entry and step that ran it |
+| `move(document, what, to)` | a device, an activity, or a device within an activity |
+
+`setFavourites`, `setLook` and `favourites` answer not built.
+
+**Ids are never given twice.** The document records the highest number given of each kind, `highestIds`, and every
+change counts from it and records it, a removal included, so the device added after the last one was removed takes the
+next number, and nothing keyed by the old id, a Harmony Touch's favourites among them, passes to it. `open` gives an id
+to everything without one past the highest, a sequence included, and records it where the document records that kind.
+
+**`check(document, sources?)`** lists, beside what it always did, a key's choice on a place or a press the owner's map
+cannot bind, a choice the family refuses, a held press, a double press or a sequence on a key where the model's build
+takes none, an opening screen the model does not have, a device key on a model without device keys, and every key,
+screen entry, step of a sequence or at a start or end, step of a device's power or channel tuning, and command tuning
+that names a command its device does not have, from the device's carried definition, or
+from `sources.archive` for a device carrying none. Where neither says which commands a device has, nothing is said. A
+field of version 2 the model's build does not read is listed naming the model, since another model's build may read it.
+
+`packages/codec/test/recipe/toolkitchanges.test.ts` holds every change on a Harmony One and a Harmony Touch reference
+document, each with its control.
 
 ## Syncing a recipe, and trying it with nothing attached
 

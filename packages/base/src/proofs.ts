@@ -325,6 +325,12 @@ export const PROOFS: readonly Proof[] = [
     bench: [],
   },
   {
+    requirement: 12, models: "every",
+    test: "packages/codec/test/recipe/toolkitchanges.test.ts",
+    title: "on both references a device renamed follows it into every field that names it, and renamed back is the document before",
+    bench: [],
+  },
+  {
     requirement: 13, models: ["harmony-touch"],
     test: "packages/codec/test/families/harmony-touch/touch-removal.test.ts",
     title: "taking out an activity and a device takes out everything naming them and changes nothing else",
@@ -419,6 +425,12 @@ export const PROOFS: readonly Proof[] = [
     test: "packages/codec/test/families/harmony-touch/touch-fromnothing.test.ts",
     title: "with the archive: the six documents from nothing read back as the bench setup, pass the gate, and give the favourites address to the tuning device alone",
     bench: ["packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts", "docs/test-notes/harmony-touch.md"],
+  },
+  {
+    requirement: 25, models: "every",
+    test: "packages/codec/test/recipe/toolkitchanges.test.ts",
+    title: "on both references an activity renamed changes its name alone, a name another activity holds is refused, and renamed back is the document before",
+    bench: [],
   },
   {
     requirement: 26, models: ["harmony-touch"],

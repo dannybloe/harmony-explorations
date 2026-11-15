@@ -13,9 +13,11 @@ import assert from 'node:assert/strict';
 import '../../src/support/resources.node.ts';
 import { readFileSync } from 'node:fs';
 
-import { IR_ARCHIVE_SAMPLE, skipWithoutIrArchiveSample } from '@harmony/lab';
-import { archiveAt, buildFromRecipe, unstatedChoices } from '../../src/node.ts';
-import { buildTouchDocuments, ourBackground, readTouchSetupFile } from '../../src/families/harmony-touch/fromnothing.ts';
+import { buildFromRecipe, RecipeError, unstatedChoices } from '../../src/node.ts';
+import { carriedCatalogue } from '../../src/catalogue/carried.ts';
+import { buildTouchDocuments, ourBackground, readTouchDocument } from '../../src/families/harmony-touch/fromnothing.ts';
+import { touchSetupOfDocument } from '../../src/families/harmony-touch/recipemaps.ts';
+import { HARMONY_TOUCH_FAMILY } from '../../src/families/harmony-touch/family.ts';
 import { buildEmptyFourSlotConfiguration, buildEmptyNoScreenConfiguration, buildEmptyOneConfiguration, fourSlotChoices } from '../../src/build.ts';
 import { OUR_FOUR_SLOT_CHOICES } from '../../src/families/harmony-600-650-700/choices.ts';
 import { ONE_CHOICES } from '../../src/families/harmony-one/choices.ts';
@@ -65,8 +67,8 @@ test('what an application is refused, each naming what is wrong', () => {
   refused(empty('Harmony 885', 17), at, /nothing here builds .* from a recipe yet/);
   // The Touch's documents carry the account's identifiers, and its devices come from the catalogue.
   refused(empty('Harmony Touch', 99), at, /no archive was given/);
-  // A Touch's part in a recipe for another model.
-  refused({ ...(empty('Harmony One', 54) as object), touch: {} }, at, /Harmony Touch's part/);
+  // A Touch's own block, the earlier form, in a recipe for any model: the reader refuses it, naming the converter.
+  refused({ ...(empty('Harmony One', 54) as object), touch: {} }, at, /a Harmony Touch's own block, touch, the earlier form .*describeTouchDocument/);
   // A device on a Harmony 300 or 350 needs its device key, and a key is checked as the recipe is read.
   refused({ ...(empty('Harmony 350', 104) as object), devices: [{ name: 'TV', device: 'LG/OLED65G26LA', key: { place: -1 } }] }, at, /no place/);
 });
@@ -98,17 +100,43 @@ const JOHN_DOE = {
   tuning: { DeviceProfileUri: 'https://example.invalid/john-doe/favourites', ContentProfileKey: 1 },
 } as const;
 
-test('the Harmony Touch through the one build: its family\'s six documents and our background, with a made up account', skipWithoutIrArchiveSample(), () => {
-  const json = JSON.parse(readFileSync(new URL('../../../corpus/setups/touch-test.json', import.meta.url), 'utf8')) as unknown;
-  const archive = archiveAt(IR_ARCHIVE_SAMPLE!);
-  const built = buildFromRecipe(json, { builtAt: BUILT_AT, archive, account: JOHN_DOE as never });
+test('the Harmony Touch through the one build: its family\'s six documents of a document of version 2 and our background, with a made up account', () => {
+  // The reference document, which carries every device's definition, so no archive is read.
+  const json = JSON.parse(readFileSync(new URL('../references/touch-test.json', import.meta.url), 'utf8')) as unknown;
+  const built = buildFromRecipe(json, { builtAt: BUILT_AT, account: JOHN_DOE as never });
   assert.equal(built.kind, 'documents');
   if (built.kind !== 'documents') return;
-  assert.deepEqual(built.documents, buildTouchDocuments(readTouchSetupFile(json), { archive, account: JOHN_DOE as never }));
+  const document = readTouchDocument(json);
+  assert.deepEqual(built.documents, buildTouchDocuments(document, { archive: carriedCatalogue(document)!, account: JOHN_DOE as never }));
   const background = ourBackground();
   assert.deepEqual(built.pictures.map((p) => p.uri), [background.addresses.picture, background.addresses.twin]);
   assert.deepEqual(built.pictures[0]!.png, background.picture);
   // The account's own identifiers reach Context, and nothing builds without an account.
   assert.equal((built.documents.Context as unknown as Record<string, unknown>)['Email'], 'john.doe@example.com');
-  assert.throws(() => buildFromRecipe(json, { builtAt: BUILT_AT, archive }), /no account was given/);
+  assert.throws(() => buildFromRecipe(json, { builtAt: BUILT_AT }), /no account was given/);
+});
+
+test('a Harmony Touch\'s document of the earlier form, with a block of its own, is refused by the one build, naming the converter', () => {
+  const earlier = JSON.parse(readFileSync(new URL('harmony-touch/touch-test-earlier-form.json', import.meta.url), 'utf8')) as unknown;
+  assert.throws(() => buildFromRecipe(earlier, { builtAt: BUILT_AT, account: JOHN_DOE as never }),
+    (error: unknown) => error instanceof RecipeError && /a Harmony Touch's own block, touch, the earlier form/.test(error.message) && /harmonyTouch\.describeTouchDocument/.test(error.message));
+  // The control: the same document without its block reads, and stops only where an account is missing.
+  const { touch: _touch, ...plain } = earlier as Record<string, unknown>;
+  assert.throws(() => buildFromRecipe(plain, { builtAt: BUILT_AT }), /no account was given/);
+});
+
+test('a document that reached a Harmony Touch\'s build without the reader, carrying the earlier form\'s block, is refused by each of the three builds, naming the converter', () => {
+  // A document of version 2 read as an application reads one, then given the block in code, as a cast would: the
+  // reader never sees it, so the refusal has to sit where every build of a Touch passes, `touchSetupOfDocument`.
+  const document = readTouchDocument(JSON.parse(readFileSync(new URL('../references/touch-test.json', import.meta.url), 'utf8')));
+  const carried = { ...document, touch: { devices: [], activities: [], settings: {} } } as typeof document;
+  const sources = { archive: carriedCatalogue(document)!, account: JOHN_DOE as never };
+  const named = (error: unknown): boolean =>
+    error instanceof RecipeError && /a Harmony Touch's own block, touch, the earlier form/.test(error.message) && /harmonyTouch\.describeTouchDocument/.test(error.message);
+  assert.throws(() => touchSetupOfDocument(carried, sources.archive), named);
+  assert.throws(() => buildTouchDocuments(carried, sources), named);
+  assert.throws(() => HARMONY_TOUCH_FAMILY.build(carried, sources), named);
+  // The control: the same document without the block goes through all three, the two builds to the same six.
+  assert.equal(touchSetupOfDocument(document, sources.archive).setup.devices.length, 7);
+  assert.deepEqual(HARMONY_TOUCH_FAMILY.build(document, sources), buildTouchDocuments(document, sources));
 });

@@ -62,7 +62,7 @@ import type { CatalogueSource } from '../../src/catalogue/catalogue.ts';
 import { carriedCatalogue } from '../../src/catalogue/carried.ts';
 import { resolveMaps, type ResolvedKey, type MapScreenEntry } from '../../src/families/maps.ts';
 import { mapsOfModel } from '../../src/families/registry.ts';
-import { readTouchSetupFile } from '../../src/families/harmony-touch/fromnothing.ts';
+import { readEarlierTouchSetupFile as readTouchSetupFile } from '../../src/families/harmony-touch/earlierform.ts';
 import { describeTouchDocument } from '../../src/families/harmony-touch/recipemaps.ts';
 import type { Recipe } from '../../src/recipe/recipe.ts';
 import type { KeyAnswer, Owner, PressAnswer, ScreenAnswer } from '../../src/recipe/toolkit.ts';
@@ -77,7 +77,7 @@ const oneTest = (): Recipe => recipe.open(JSON.parse(readFileSync(new URL('one-t
 
 /** The bench Touch's old document converted to the one shape, opened: the definitions it carries are its catalogue. */
 const touchTest = (): Recipe => {
-  const file = readTouchSetupFile(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
+  const file = readTouchSetupFile(JSON.parse(readFileSync(new URL('../families/harmony-touch/touch-test-earlier-form.json', import.meta.url), 'utf8')));
   const { touch: _touch, ...plain } = file;
   return recipe.open(describeTouchDocument(file, carriedCatalogue(plain)!));
 };
@@ -125,10 +125,13 @@ test('on the Harmony One test setup every owner answers its 37 places, each a sh
   // map binds.
   const bindable = recipe.keyNames(document).filter((one) => one.boundBy === 'both').map((one) => one.key);
   for (const { owner } of ownersOf(document)) assert.deepEqual(recipe.keys(document, owner).map((one) => one.key), bindable);
-  // A key no map binds is answered alone with no press and why; a word that is no key of the model is refused.
+  // A key no map binds is answered alone with no press and why; a word that is another model's key, the Touch's
+  // gesture, is not on this model, and a word no model has is unknown.
   const off = recipe.key(document, { owner: { device: 'd1' }, key: 'Off' });
   assert.deepEqual([off.presses, off.surface, typeof off.why], [[], 'keypad', 'string']);
   assert.throws(() => recipe.key(document, { owner: { device: 'd1' }, key: 'SwipeUp' }),
+    (error: unknown) => error instanceof recipe.ChangeRefused && error.reason === 'not-on-this-model');
+  assert.throws(() => recipe.key(document, { owner: { device: 'd1' }, key: 'Teleport' }),
     (error: unknown) => error instanceof recipe.ChangeRefused && error.reason === 'unknown');
   // A held press asked for answers none, since a Harmony One has no long press.
   const held = recipe.key(document, { owner: { device: 'd1' }, key: 'VolumeUp', press: 'held' });
@@ -474,15 +477,14 @@ test('every model whose family has no maps answers each question not built, nami
   assert.equal(recipe.keys(leastOf('Harmony Touch'), { device: 'd1' }).length, 38);
 });
 
-test('a document still carrying the Touch\'s own block answers not built and names the converter; the converted one answers', () => {
-  const old = recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
-  for (const [name, call] of [
-    ['keys', () => recipe.keys(old, { device: 'd1' })], ['screen', () => recipe.screen(old, { device: 'd1' })], ['keyNames', () => recipe.keyNames(old)],
-  ] as const) {
-    assert.throws(call, (error: unknown) => error instanceof NotBuiltError && error.requirement === 77
-      && error.contract.startsWith(`recipe.${name} for a document carrying a Harmony Touch's own block`) && /describeTouchDocument/.test(error.contract));
-  }
+test('a document still carrying the Touch\'s own block is refused on opening and names the converter; the converted one answers', () => {
+  // The reader refuses the earlier form, decision 43, so no question is ever asked of one.
+  const old = JSON.parse(readFileSync(new URL('../families/harmony-touch/touch-test-earlier-form.json', import.meta.url), 'utf8')) as Json;
+  assert.throws(() => recipe.open(old), (error: unknown) => error instanceof RecipeError
+    && /a Harmony Touch's own block, touch, the earlier form/.test(error.message) && /describeTouchDocument/.test(error.message));
   assert.equal(recipe.keys(touchTest(), { device: 'd1' }).length, 38);
+  // The reference, which is the converter's output, answers the same.
+  assert.equal(recipe.keys(recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8'))), { device: 'd1' }).length, 38);
 });
 
 test('a device with no definition stops every answer with the error commands gives, and an archive serving it answers as before', () => {
@@ -529,8 +531,8 @@ test('on the Harmony One a stated timing and a command\'s tuning answer as the p
   assert.deepEqual(listed.map((one) => [one[0], one[1], one[2]]), [
     ['error', 'not-on-this-model', { kind: 'device', device: 'd1' }], ['error', 'not-on-this-model', { kind: 'device', device: 'd1' }],
   ]);
-  assert.match(listed[0]![3], /LG TV's delays, which nothing builds yet/);
-  assert.match(listed[1]![3], /LG TV's command VolumeUp's sending, which nothing builds yet/);
+  assert.match(listed[0]![3], /LG TV's delays, which the Harmony One's build does not read yet/);
+  assert.match(listed[1]![3], /LG TV's command VolumeUp's sending, which the Harmony One's build does not read yet/);
   // The control: without the two fields the same key answers the catalogue's delay and no tuning, and nothing is listed.
   const plain = recipe.key(oneTest(), { owner: { device: 'd1' }, key: 'VolumeUp' }).presses[0]!;
   assert.ok('sending' in plain);
@@ -646,7 +648,7 @@ test('the check lists a key choice naming no place, a place no map of its owner 
     json.devices[0].keys = [...json.devices[0].keys, { key: 'SwipeUp', action: { nothing: true } }];
   }), [
     ['error', 'unknown-key', { kind: 'key', owner: { device: 'd1' }, key: 'SwipeUp' }, 'LG TV\'s own map chooses what the SwipeUp key does, and on a Harmony Touch only an activity\'s map binds it'],
-    ['error', 'unknown-key', { kind: 'key', owner, key: 'Dance' }, 'activity Listen to Music chooses what the Dance key does, and a Harmony Touch has no key of that name'],
+    ['error', 'unknown-key', { kind: 'key', owner, key: 'Dance' }, 'activity Listen to Music chooses what the Dance key does, and no model has a key of that name'],
     ['error', 'unknown-key', { kind: 'key', owner, key: 'Favorites' }, `activity Listen to Music chooses what the Favorites key does, and a Harmony Touch's maps bind no key of that name: ${favoritesWhy}`],
     ['error', 'not-on-this-model', { kind: 'key', owner, key: 'Number1', press: 'held' }, 'activity Listen to Music gives the Number1 key a held press, which the Number1 key of a Harmony Touch does not have'],
   ]);
@@ -657,11 +659,10 @@ test('the check lists a key choice naming no place, a place no map of its owner 
 });
 
 test('the control: a choice on a place the owner binds, with a press it has, is not listed as a key the model lacks', () => {
-  // A gesture's double press in an activity of the Touch is a place and a press the model has: what is said of it is
-  // only that nothing builds a Touch's choice yet, and a double press, as of every Touch choice today.
+  // A gesture's double press in an activity of the Touch is a place and a press the model has, and the Touch's build
+  // reads both a key choice and a double press, decision 43, so nothing at all is said of it.
   const problems = added(touchTest(), (json) => { json.activities[2].keys = [{ key: 'SwipeUp', press: 'double', action: { nothing: true } }]; });
-  assert.deepEqual(problems.map((one) => one[1]), ['not-on-this-model', 'not-on-this-model']);
-  assert.ok(problems.every((one) => !/does not have|has no key of that name|maps bind no key/.test(one[3])));
+  assert.deepEqual(problems, []);
   // And on the Harmony One a short press on a key its maps bind lists nothing at all.
   assert.deepEqual(added(oneTest(), (json) => { json.activities[0].keys = [{ key: 'VolumeUp', action: { nothing: true } }]; }), []);
 });

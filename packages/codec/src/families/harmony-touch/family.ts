@@ -19,7 +19,8 @@ import {
 import type { SyncDocuments } from './documents.ts';
 import { emptyTouchDocuments } from './empty.ts';
 import { composeTouchFavourites, type OwnFavourites, type OwnPicture } from './favourites.ts';
-import { buildTouchDocuments, ourBackground, readTouchSetupFile, type TouchAccount, type TouchSetupFile } from './fromnothing.ts';
+import type { Recipe } from '../../recipe/recipe.ts';
+import { buildTouchDocuments, ourBackground, readTouchDocument, type TouchAccount } from './fromnothing.ts';
 import { readConfiguration, type Configuration } from './read.ts';
 import { withoutTouchEntries, type TouchRemoval } from './remove.ts';
 import { composeTouchSettings, type OwnSettings } from './settings.ts';
@@ -28,8 +29,9 @@ import { TOUCH_MAPS } from './recipemaps.ts';
 /** The Harmony Touch's own types, as `DocumentFamily` asks for them. */
 export interface TouchTypes {
   readonly documents: SyncDocuments;
-  readonly setup: TouchSetupFile;
-  /** The infrared archive, `archiveAt` on Node, and the account's own fields, which a setup file never holds. */
+  /** A document of version 2, decision 43: the one shape every model shares, with no block of the Touch's own. */
+  readonly setup: Recipe;
+  /** The infrared archive, `archiveAt` on Node, and the account's own fields, which a document never holds. */
   readonly sources: { readonly archive: CatalogueSource; readonly account: TouchAccount };
   /** A device of ours in the rhythm table's terms, as `packages/corpus/touch-devices/` holds one. */
   readonly device: RowDevice;
@@ -52,7 +54,8 @@ export interface TouchTypes {
 export const HARMONY_TOUCH_FAMILY: DocumentFamily<TouchTypes> = {
   kind: 'document',
   name: 'the Harmony Touch',
-  readSetup: (json) => readTouchSetupFile(json),
+  // A document of version 2; one of the earlier form, with the Touch's own block, is refused naming the converter.
+  readSetup: (json) => readTouchDocument(json),
   build: (setup, sources) => buildTouchDocuments(setup, sources),
   // Our background and its small twin, which every set of ours names in its Settings whatever the setup.
   buildPictures: () => {

@@ -1,49 +1,45 @@
 /**
- * **Every document of a Harmony Touch's configuration built from a setup file, with no Logitech document as input.**
+ * **Every document of a Harmony Touch's configuration built from a document of version 2, with no Logitech document as
+ * input**, decision 43.
  *
  * **What this changes against `setup.ts`.** There the four documents that name devices and activities are composed from
  * a description, onto a set of Logitech's documents with those four emptied, and each device's record is carried whole
  * from that set, `setupBaseOf` and `catalogueOfSet` in `setup.ts`; Context and Settings stay the remote's. Here nothing
  * is taken from a set: the base is four empty lists written here, each device's record is written from its catalogue
  * entry in the archive and from our rhythm table, `deviceRecordOfArchive`, and Settings and Context are written here
- * from the setup file and from a description of the account. **The composing itself is `setup.ts`'s**,
+ * from the document and from a description of the account. **The composing itself is `setup.ts`'s**,
  * `composeTouchSetup`, so the maps, the activities and the person's choices for each device go through the code the
  * bench ran 418 of 418.
  *
- * **What a setup file is.** A recipe, `packages/codec/src/recipe/recipe.ts`, in the shape of
- * `packages/corpus/setups/touch-full.json`: the model, each device by its name and its catalogue entry, each activity
- * by its name, type and devices with their inputs and jobs; that shape is what Logitech's service is given to build a
- * setup, and it is not enough here, since the service then fills in the maps, the delays and the rest itself. So the
- * file carries a part of the Touch's own beside it, `touch`, read by `readTouchSetupFile`, holding what a `TouchSetup`
- * holds and the recipe does not, and two things neither holds, each naming our own source:
+ * **What the document is.** A recipe in the one shape every model shares, `packages/codec/src/recipe/recipe.ts`: the
+ * model, each device by its name and its catalogue entry, each activity by its name, type and devices with their inputs
+ * and jobs, and a person's choices as the fields of version 2 that a Touch's build reads, `VERSION_TWO` there. What the
+ * document does not state the family derives, `touchSetupOfDocument` in `recipemaps.ts`: every key, pad place, gesture
+ * and screen entry the person did not choose, the ids of ours from the toolkit's, the order devices are switched on in,
+ * and the protocol id each infrared family of our rhythm table is written under.
  *
- * * `protocols`: **the families of our rhythm table the codes are written with**, each under a protocol id of ours. A
- *   device's codes are read from its catalogue entry and each is written into a definition of ours of the family it
- *   names, and a family the file does not list is refused, so the families a set sends are stated in the file and
- *   checked against the catalogue.
- * * `settings`: the remote's settings, by row, each value the person's choice, but the background, which is ours.
- *
- * **What a recipe states is not stated twice**: an activity's devices, their inputs and their jobs come from the recipe,
- * and the Touch's part adds only each device's two places in the power orders; a device's "kept on between activities"
- * is the recipe's `poweredOnBetweenActivities`. A device or an activity the two parts do not both name is refused.
+ * **A setup file of the earlier form**, a recipe with a block of the Touch's own, `touch`, stating every key, entry, id
+ * and delay, is not read here: `earlierform.ts` reads it, for the converter, `describeTouchDocument`, and for the tests
+ * that rebuild what was sent to a remote from one. Both routes end in the same assembly here, `sixOfSetup`, so a set of
+ * either differs only where their setups or catalogues do.
  *
  * **What comes from the account, and only from it**: Context's seven fields a Touch reads, `OwnContext`, and the address
  * and key of the favourites documents the tuning device names, which the remote keeps and asks for by them. Neither is
  * Logitech's catalogue or a document of theirs, and both are the account's values, so they are kept in the lab and given
- * here as a `TouchAccount`; no setup file holds one.
+ * here as a `TouchAccount`; no document holds one.
  *
- * **Which generator writes each field**, the attribution the comparison below counts:
+ * **Which generator writes each field**, the attribution the comparison of the earlier form's set counts:
  *
  * | document | field | written by |
  * |---|---|---|
  * | the four lists | the shell, each list empty | `emptyTouchLists` |
  * | `DeviceList` | a device's record from its catalogue entry, codes and features | `deviceRecordOfArchive` |
- * | `DeviceList` | a device's id, name, port, repeats, delays, power choices, input delay, channel tuning | `composeTouchSetup` from the Touch's part |
- * | `DeviceList` | the tuning device's favourites address and key | `buildTouchDocuments` from the account |
+ * | `DeviceList` | a device's id, name, port, repeats, delays, power choices, input delay, channel tuning | `composeTouchSetup` from the setup |
+ * | `DeviceList` | the tuning device's favourites address and key | `withTuningAddress` from the account |
  * | `ProtocolList` | each definition | `definitionOfRow` over the rhythm table, through `deviceRecordOfArchive` |
  * | `ActivityList`, `MapList` | every activity and map | `composeTouchSetup`, `composeTouchActivity` and `composeButtons` |
- * | `Settings` | every row and field | `settingsOfSetupFile` |
- * | `Settings` | `BackgroundImage`, `UserImages` and `UserImageBucketUri` | `settingsOfSetupFile` from `ourBackground` |
+ * | `Settings` | every row and field | `settingsOfRows` |
+ * | `Settings` | `BackgroundImage`, `UserImages` and `UserImageBucketUri` | `settingsOfRows` from `ourBackground` |
  * | `Context` | the seven fields read | `contextOfAccount` from the account |
  * | the background and its twin, two pictures | every byte | `ourBackground`, drawn here and encoded by `encodePng` |
  *
@@ -67,241 +63,68 @@
  */
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
 import { encodePng } from '../../screens/png.ts';
-import { readRecipe, type Recipe, type RecipeActivity, refuseUnbuiltFields, statedKeys } from '../../recipe/recipe.ts';
+import { readRecipe, type Recipe, refuseUnbuiltFields } from '../../recipe/recipe.ts';
 import { resource } from '../../support/resources.ts';
 import { deviceRecordOfArchive } from './archivedevice.ts';
-import {
-  ACTIVITY_START_SCREENS, ACTIVITY_TYPES, ComposeRefusal, isOwnId, OWN_IDS,
-  type ActivityRoleKind, type ActivityTypeName, type OwnActivity, type OwnActivityStep, type OwnButton, type OwnSequence,
-} from './compose.ts';
+import { ComposeRefusal, type ActivityRoleKind } from './compose.ts';
 import type { Context, DeviceWithFeatures, Id, IrProtocol, Settings, SyncDocuments } from './documents.ts';
 import { BACKGROUND_BOX, BACKGROUND_TWIN_BOX } from './favourites.ts';
+import { touchSetupOfDocument } from './recipemaps.ts';
 import { composeTouchContext, SETTING_ROWS, type OwnContext } from './settings.ts';
-import { composeTouchSetup, type SetupButton, type SetupChannelTuning, type SetupDevice, type TouchCatalogue, type TouchSetup } from './setup.ts';
+import { composeTouchSetup, type TouchCatalogue, type TouchSetup } from './setup.ts';
 
-type Json = Record<string, unknown>;
-const isRecord = (x: unknown): x is Json => typeof x === 'object' && x !== null && !Array.isArray(x);
 const refuse = (message: string): never => {
   throw new ComposeRefusal(message);
 };
 
-/** The model a Touch's setup file names, Logitech's name for it, as `touch-full.json` names it. */
+/** The model a Touch's document names, Logitech's name for it, as `touch-full.json` names it. */
 export const HARMONY_TOUCH_MODEL = 'Harmony Touch';
 
 // ---------------------------------------------------------------------------------------------------
-// The setup file
+// The document
 // ---------------------------------------------------------------------------------------------------
 
-/** One device's part: what a `TouchSetup` holds of a device and a recipe does not. Every number in milliseconds. */
-export interface TouchPartDevice {
-  /** The recipe device it belongs to, by the name the remote shows. */
-  readonly device: string;
-  readonly id: number;
-  readonly controlPort: number;
-  readonly pressRepeats: number | null;
-  readonly interKeyDelayMs: number;
-  readonly interDeviceDelayMs: number;
-  readonly power?: { readonly onDelayMs?: number; readonly alwaysOn?: boolean };
-  readonly inputDelayMs?: number;
-  readonly channelTuning?: SetupChannelTuning;
-  readonly buttons: readonly SetupButton[];
-  readonly sequences?: readonly OwnSequence[];
-}
-
-/** One activity's part: what a `TouchSetup` holds of an activity beyond the recipe's devices, inputs and jobs. */
-export interface TouchPartActivity {
-  /** The recipe activity it belongs to, by its name. */
-  readonly activity: string;
-  readonly id: number;
-  readonly startScreen: OwnActivity['startScreen'];
-  readonly order: number;
-  readonly tuningDefault?: boolean;
-  /** Each of the recipe activity's devices, by name, and its place in the power on order and in the power off order. */
-  readonly powerOrder: Readonly<Record<string, readonly [number, number]>>;
-  readonly enter?: readonly OwnActivityStep[];
-  readonly leave?: readonly OwnActivityStep[];
-  readonly buttons: readonly OwnButton[];
-  readonly sequences?: readonly OwnSequence[];
-}
-
-/** The Touch's own part of a setup file. */
-export interface TouchPart {
-  /** Each family of our rhythm table the codes are written with, and the protocol id of ours its definition is under. */
-  readonly protocols: Readonly<Record<string, number>>;
-  /** The remote's settings, by row name, each the row's value as the remote reads it. */
-  readonly settings: Readonly<Record<string, string>>;
-  readonly devices: readonly TouchPartDevice[];
-  readonly activities: readonly TouchPartActivity[];
-}
-
-/** A setup file: a recipe for the Harmony Touch with the Touch's part. */
-export interface TouchSetupFile extends Omit<Recipe, 'touch'> {
-  readonly touch: TouchPart;
-}
-
 /**
- * A setup file out of parsed JSON: the recipe read by `readRecipe`, and the Touch's part checked here. **Refuses**, with
- * the first thing wrong and by where it is: a recipe `readRecipe` refuses; a model other than the Harmony Touch; no
- * Touch's part; favourite channels, which nothing here composes; a device or an activity the two parts do not both name,
- * or one named twice; an id that is not ours or that two devices, two activities or two families share; a power order
- * that does not name exactly the activity's devices; and a settings value that is not text. What the composers refuse
- * beyond this, `composeTouchSetup` and the two documents' writers, they refuse when the file is built.
+ * **A Harmony Touch's document out of parsed JSON**, decision 43: a recipe of the one shape every model shares, read by
+ * `readRecipe`, for the Harmony Touch. What the family's build reads of it, and what it refuses, is
+ * `touchSetupOfDocument`'s in `recipemaps.ts`. **Refuses** a recipe `readRecipe` refuses, a document with the earlier
+ * form's own block among them, naming the converter, and a model other than the Harmony Touch.
  */
-export function readTouchSetupFile(json: unknown): TouchSetupFile {
-  const recipe = readRecipe(json);
-  // A field of version 2 no build reads yet is refused on reading, decision 43, `refuseUnbuiltFields`: the file read
-  // here goes on to the builders below and to this repository's experiments, which build it with no other check.
-  refuseUnbuiltFields(recipe, 'readTouchSetupFile');
-  if (recipe.model.name !== HARMONY_TOUCH_MODEL) refuse(`the setup file is for the ${recipe.model.name}, not the ${HARMONY_TOUCH_MODEL}`);
-  if (recipe.favourites !== undefined) refuse('the setup file states favourite channels, which nothing here composes: the favourites documents stay the remote\'s');
-  // The recipe's key choices, R31 and R32, are not what a Touch's buttons are built from, its own part is; refused
-  // rather than left unread, since a file built without them has keys doing something else than the recipe says.
-  const chosen = statedKeys(recipe)[0];
-  if (chosen !== undefined) refuse(`the setup file chooses ${chosen.where}, and a Harmony Touch's keys are built from its own part`);
-  const t = recipe.touch;
-  if (t === undefined) refuse('the setup file has no Touch\'s part, `touch`');
-  const part = t as Json;
-  for (const key of ['protocols', 'settings', 'devices', 'activities']) if (!(key in part)) refuse(`the Touch's part has no ${key}`);
-  if (!isRecord(part['protocols'])) refuse('the Touch\'s protocols are not an object');
-  if (!isRecord(part['settings'])) refuse('the Touch\'s settings are not an object');
-  if (!Array.isArray(part['devices']) || !Array.isArray(part['activities'])) refuse('the Touch\'s devices or activities are not a list');
-  const protocols = part['protocols'] as Record<string, unknown>;
-  const ids = new Set<string>();
-  const ours = (id: unknown, what: string): void => {
-    if (typeof id !== 'number' || !isOwnId(id)) refuse(`${what}'s id is not one of ours, ${OWN_IDS.first} to ${OWN_IDS.last}`);
-    if (ids.has(String(id))) refuse(`${what}'s id is another's too`);
-    ids.add(String(id));
-  };
-  for (const [family, id] of Object.entries(protocols)) ours(id, `the family ${family}`);
-  for (const [row, value] of Object.entries(part['settings'] as Record<string, unknown>)) {
-    if (typeof value !== 'string') refuse(`the setting ${row} is not text, which is what the remote reads a setting as`);
-  }
-  const devices = part['devices'] as Json[];
-  const named = new Set<string>();
-  for (const [k, d] of devices.entries()) {
-    if (!isRecord(d) || typeof d['device'] !== 'string') refuse(`the Touch's device ${k + 1} names no device`);
-    const name = d['device'] as string;
-    if (!recipe.devices.some((r) => r.name === name)) refuse(`the Touch's part names a device "${name}" the recipe does not`);
-    if (named.has(name)) refuse(`the Touch's part names the device "${name}" twice`);
-    named.add(name);
-    ours(d['id'], `the device "${name}"`);
-    if (!Array.isArray(d['buttons'])) refuse(`the device "${name}" has no list of buttons`);
-  }
-  for (const r of recipe.devices) if (!named.has(r.name)) refuse(`the recipe's device "${r.name}" has no part of the Touch's`);
-  const activities = part['activities'] as Json[];
-  const done = new Set<string>();
-  for (const [k, a] of activities.entries()) {
-    if (!isRecord(a) || typeof a['activity'] !== 'string') refuse(`the Touch's activity ${k + 1} names no activity`);
-    const name = a['activity'] as string;
-    const r = recipe.activities.find((x) => x.name === name);
-    if (r === undefined) refuse(`the Touch's part names an activity "${name}" the recipe does not`);
-    if (done.has(name)) refuse(`the Touch's part names the activity "${name}" twice`);
-    done.add(name);
-    ours(a['id'], `the activity "${name}"`);
-    if (!(ACTIVITY_START_SCREENS as readonly unknown[]).includes(a['startScreen'])) refuse(`the activity "${name}" opens on no screen a Touch has`);
-    const order = a['powerOrder'];
-    if (!isRecord(order)) refuse(`the activity "${name}" states no power order`);
-    const listed = Object.keys(order as Json).sort();
-    const used = r!.devices.map((u) => u.device).sort();
-    if (JSON.stringify(listed) !== JSON.stringify(used)) refuse(`the activity "${name}"'s power order does not name exactly its devices`);
-    for (const [device, places] of Object.entries(order as Json)) {
-      if (!Array.isArray(places) || places.length !== 2 || !places.every((p) => Number.isInteger(p) && p > 0)) {
-        refuse(`the activity "${name}"'s power order for "${device}" is not two places counted from 1`);
-      }
-    }
-    if (!Array.isArray(a['buttons'])) refuse(`the activity "${name}" has no list of buttons`);
-  }
-  for (const r of recipe.activities) if (!done.has(r.name)) refuse(`the recipe's activity "${r.name}" has no part of the Touch's`);
-  return { ...recipe, touch: part as unknown as TouchPart };
+export function readTouchDocument(json: unknown): Recipe {
+  const document = readRecipe(json);
+  if (document.model.name !== HARMONY_TOUCH_MODEL) refuse(`the document is for the ${document.model.name}, not the ${HARMONY_TOUCH_MODEL}`);
+  return document;
 }
 
-// ---------------------------------------------------------------------------------------------------
-// The setup, as a `TouchSetup`, and the catalogue, from the archive
-// ---------------------------------------------------------------------------------------------------
-
 /**
- * A recipe's job, `Display`, as an activity role's kind, `DisplayActivityRole`; a device with none passes through. Also
- * read by `recipemaps.ts`, which turns a document of version 2 into a setup the same way.
+ * A recipe's job, `Display`, as an activity role's kind, `DisplayActivityRole`; a device with none passes through. Read
+ * by `recipemaps.ts`, which turns a document into a setup, and by the reader of a setup file of the earlier form.
  */
 export function roleKindsOf(roles: readonly string[]): ActivityRoleKind[] {
   return roles.length === 0 ? ['PassThroughActivityRole'] : roles.map((r) => `${r}ActivityRole` as ActivityRoleKind);
 }
 
-/** An activity of the setup as a `TouchSetup` states one: the recipe's devices, inputs and jobs, and the Touch's part for the rest. */
-function activityOf(r: RecipeActivity, p: TouchPartActivity): OwnActivity {
-  if (!(ACTIVITY_TYPES as readonly string[]).includes(r.type)) refuse(`the activity "${r.name}" is of the type ${r.type}, which is no type of Logitech's`);
-  return {
-    id: p.id,
-    name: r.name,
-    type: r.type as ActivityTypeName,
-    startScreen: p.startScreen,
-    order: p.order,
-    ...(p.tuningDefault === true ? { tuningDefault: true } : {}),
-    devices: r.devices.map((u) => ({
-      device: u.device,
-      roles: roleKindsOf(u.roles),
-      powerOn: p.powerOrder[u.device]![0],
-      powerOff: p.powerOrder[u.device]![1],
-      ...(u.input === undefined ? {} : { input: u.input }),
-    })),
-    ...(p.enter === undefined ? {} : { enter: p.enter }),
-    ...(p.leave === undefined ? {} : { leave: p.leave }),
-    buttons: p.buttons,
-    ...(p.sequences === undefined ? {} : { sequences: p.sequences }),
-  };
+/** One device a catalogue is written for: its catalogue entry, `<manufacturer>/<file>`, and its id of ours. */
+export interface CatalogueDevice {
+  readonly entry: string;
+  readonly id: number;
 }
 
 /**
- * The catalogue a setup file's devices are composed from: each device's record written from its catalogue entry in the
- * archive `archive` reads, `deviceRecordOfArchive`, under its id of ours, with the families the file names; and each definition
- * once. The records are in the file's device order, and a definition appears in the order the records first name it.
+ * **The catalogue a setup's devices are composed from**: each device's record written from its catalogue entry in the
+ * archive `archive` reads, `deviceRecordOfArchive`, under its id of ours, with each infrared family under the protocol
+ * id `protocolIds` gives it; and each definition once. The records are in the order given, and a definition appears in
+ * the order the records first name it.
  */
-export function catalogueOfArchive(file: TouchSetupFile, archive: CatalogueSource): TouchCatalogue {
-  const devices: DeviceWithFeatures[] = [];
+export function catalogueOfDevices(devices: readonly CatalogueDevice[], protocolIds: Readonly<Record<string, number>>, archive: CatalogueSource): TouchCatalogue {
+  const records: DeviceWithFeatures[] = [];
   const protocols: IrProtocol[] = [];
-  for (const r of file.devices) {
-    const p = file.touch.devices.find((x) => x.device === r.name)!;
-    const written = deviceRecordOfArchive(archive, { entry: r.device, id: p.id, protocolIds: file.touch.protocols });
-    devices.push(written.record);
+  for (const one of devices) {
+    const written = deviceRecordOfArchive(archive, { entry: one.entry, id: one.id, protocolIds });
+    records.push(written.record);
     for (const d of written.protocols) if (!protocols.some((x) => x['Id-'] === d['Id-'])) protocols.push(d);
   }
-  return { devices, protocols };
-}
-
-/**
- * The setup as a `TouchSetup`, for `composeTouchSetup`: each device with the maker and model its catalogue
- * record states, so the composer finds the record, and the person's choices; each activity from the recipe and the
- * Touch's part. Devices and activities in the recipe's order.
- */
-export function setupOfSetupFile(file: TouchSetupFile, catalogue: TouchCatalogue): TouchSetup {
-  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(file, 'setupOfSetupFile');
-  const devices: SetupDevice[] = file.devices.map((r) => {
-    const p = file.touch.devices.find((x) => x.device === r.name)!;
-    const record = catalogue.devices.find((d) => d.Device['Id-'] === p.id);
-    if (record === undefined) refuse(`the catalogue holds no record for the device "${r.name}"`);
-    return {
-      id: p.id,
-      name: r.name,
-      manufacturer: String(record!.Device.Manufacturer),
-      model: String(record!.Device.Model),
-      controlPort: p.controlPort,
-      pressRepeats: p.pressRepeats,
-      interKeyDelayMs: p.interKeyDelayMs,
-      interDeviceDelayMs: p.interDeviceDelayMs,
-      power: {
-        ...(p.power?.onDelayMs === undefined ? {} : { onDelayMs: p.power.onDelayMs }),
-        keptOnBetweenActivities: r.poweredOnBetweenActivities ?? false,
-        ...(p.power?.alwaysOn === undefined ? {} : { alwaysOn: p.power.alwaysOn }),
-      },
-      ...(p.inputDelayMs === undefined ? {} : { inputDelayMs: p.inputDelayMs }),
-      ...(p.channelTuning === undefined ? {} : { channelTuning: p.channelTuning }),
-      buttons: p.buttons,
-      ...(p.sequences === undefined ? {} : { sequences: p.sequences }),
-    };
-  });
-  const activities = file.activities.map((r) => activityOf(r, file.touch.activities.find((x) => x.activity === r.name)!));
-  return { devices, activities };
+  return { devices: records, protocols };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -406,10 +229,10 @@ export function ourBackground(): OurBackground {
 }
 
 /**
- * **One setting's value as the text the remote reads, checked against its row**, `SETTING_ROWS`: the one check both
- * routes to a Touch's Settings take, a setup file's block, `settingsOfSetupFile`, and a document of version 2,
- * `touchSetupOfDocument` in `recipemaps.ts`. A document may state a yes or no row as true or false and a number row as
- * a number; the block states every row as text. **Refuses**: a yes or no row's value other than true, false, `"true"`
+ * **One setting's value as the text the remote reads, checked against its row**, `SETTING_ROWS`: the one check every
+ * route to a Touch's Settings takes, `settingsOfRows`, which a document of version 2 reaches through
+ * `touchSetupOfDocument` in `recipemaps.ts` and a setup file of the earlier form through its own block. A document may
+ * state a yes or no row as true or false and a number row as a number; the earlier form's block states every row as text. **Refuses**: a yes or no row's value other than true, false, `"true"`
  * or `"false"`; and a number row's value that is not a whole number in decimal digits, or is outside the range
  * `SETTING_ROWS` gives it, which is where the remote mishandles a value or its own screens cannot show it.
  */
@@ -430,24 +253,21 @@ export function settingText(name: string, value: string | number | boolean): str
 }
 
 /**
- * Settings written from the setup file's `settings`, every row of `SETTINGS_ROWS_WRITTEN` but the two background rows
- * given a value there. **What each field is and why**: `RemoteName` the model's name, which the About screen shows; each
- * row its name and one value, which is all the remote reads of a row but a yes or no row's `DefaultValue`, consulted
- * only when the row has no value, and ours always has one, so it is null; `UserImages` our background alone and
- * `BackgroundImage` the same name, `ourBackground`, so the screens ask for it and its twin, which a set of ours delivers,
- * and show it; `UserImageBucketUri` our store, `OUR_PICTURE_STORE`, which the two addresses are built from; and
- * `DefaultImageBucketUri` empty text, since the remote reads it only for a background neither built in nor the user's,
- * `favourites-and-settings.md` "A background".
+ * **Settings written from the remote's settings by row**, each value as the text the remote reads, every row of
+ * `SETTINGS_ROWS_WRITTEN` but the two background rows given a value there, under `remoteName`. **What each field is and
+ * why**: `RemoteName` the model's name, which the About screen shows; each row its name and one value, which is all the
+ * remote reads of a row but a yes or no row's `DefaultValue`, consulted only when the row has no value, and ours always
+ * has one, so it is null; `UserImages` our background alone and `BackgroundImage` the same name, `ourBackground`, so the
+ * screens ask for it and its twin, which a set of ours delivers, and show it; `UserImageBucketUri` our store,
+ * `OUR_PICTURE_STORE`, which the two addresses are built from; and `DefaultImageBucketUri` empty text, since the remote
+ * reads it only for a background neither built in nor the user's, `favourites-and-settings.md` "A background".
  *
  * **Refuses**, by row: a row this does not write, or either background row, which are ours; a written row with no value;
  * a yes or no row's value other than `"true"` or `"false"`; and a number row's value that is not a whole number in
  * decimal digits, or outside the range `SETTING_ROWS` gives it, which is where the remote mishandles a value or its own
  * screens cannot show it.
  */
-export function settingsOfSetupFile(file: TouchSetupFile): Settings {
-  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(file, 'settingsOfSetupFile');
-  const values = file.touch.settings;
+export function settingsOfRows(values: Readonly<Record<string, string>>, remoteName: string): Settings {
   const background = ourBackground();
   for (const name of Object.keys(values)) {
     if (name === 'UserImages' || name === 'BackgroundImage') refuse(`${name} is not given a value: the background is the picture of ours a set delivers, \`ourBackground\``);
@@ -459,7 +279,7 @@ export function settingsOfSetupFile(file: TouchSetupFile): Settings {
     if (value === undefined) refuse(`the setting ${name} is given no value`);
     return { Name: name, Values: [settingText(name, value!)], DefaultValue: null };
   });
-  return { RemoteName: file.model.name, DefaultImageBucketUri: '', Settings: rows, UserImageBucketUri: OUR_PICTURE_STORE } as Settings;
+  return { RemoteName: remoteName, DefaultImageBucketUri: '', Settings: rows, UserImageBucketUri: OUR_PICTURE_STORE } as Settings;
 }
 
 /**
@@ -489,40 +309,60 @@ export function contextOfAccount(account: TouchAccount): Context {
 // ---------------------------------------------------------------------------------------------------
 
 /**
- * **The six documents of a setup file**, in the order the remote asks for them: the four lists composed by
- * `composeTouchSetup` onto `emptyTouchLists` from the catalogue `archive` gives, Context from the account
- * and Settings from the file.
- *
- * **The tuning device**, the device of the favourites activity, `tuningDefault`, that changes channels, carries the
- * account's favourites address and key, since the remote asks for the favourites documents it keeps by them, and no
- * other device carries either. **Refuses** a favourites activity with no device that changes channels, or with one and
- * an account that states no favourites, and whatever the readers and composers refuse.
+ * **The account's favourites address and key on the tuning device's record**: the device of the favourites activity,
+ * `tuningDefault`, that changes channels, the first of its devices with that job, carries both, since the remote asks
+ * for the favourites documents it keeps by them, and no other device carries either. The catalogue as given where no
+ * activity holds the favourites. **Refuses** a favourites activity with no device that changes channels, and one with
+ * such a device and an account that states no favourites address and key.
  */
-export function buildTouchDocuments(file: TouchSetupFile, options: { readonly archive: CatalogueSource; readonly account: TouchAccount }): SyncDocuments {
-  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  // A file not read by `readTouchSetupFile`, built by hand, meets it here.
-  refuseUnbuiltFields(file, 'buildTouchDocuments');
-  let catalogue = catalogueOfArchive(file, options.archive);
-  const favourites = file.touch.activities.find((a) => a.tuningDefault === true);
-  if (favourites !== undefined) {
-    const r = file.activities.find((a) => a.name === favourites.activity)!;
-    const tuner = r.devices.find((u) => u.roles.includes('ChannelChanging'));
-    if (tuner === undefined) refuse(`the favourites activity "${r.name}" has no device that changes channels`);
-    if (options.account.tuning === undefined) refuse('the account states no favourites address and key for the tuning device');
-    const id = file.touch.devices.find((d) => d.device === tuner!.device)!.id;
-    const at = catalogue.devices.findIndex((d) => d.Device['Id-'] === id);
-    const record = catalogue.devices[at]!;
-    const devices = [...catalogue.devices];
-    devices[at] = { ...record, Device: { ...record.Device, DeviceProfileUri: options.account.tuning!.DeviceProfileUri, ContentProfileKey: options.account.tuning!.ContentProfileKey } };
-    catalogue = { ...catalogue, devices };
-  }
-  const four = composeTouchSetup(emptyTouchLists(), setupOfSetupFile(file, catalogue), catalogue);
+export function withTuningAddress(catalogue: TouchCatalogue, setup: TouchSetup, account: TouchAccount): TouchCatalogue {
+  const favourites = setup.activities.find((a) => a.tuningDefault === true);
+  if (favourites === undefined) return catalogue;
+  const tuner = favourites.devices.find((u) => u.roles.includes('ChannelChangingActivityRole'));
+  if (tuner === undefined) refuse(`the favourites activity "${favourites.name}" has no device that changes channels`);
+  if (account.tuning === undefined) refuse('the account states no favourites address and key for the tuning device');
+  const id = setup.devices.find((d) => d.name === tuner!.device)!.id;
+  const at = catalogue.devices.findIndex((d) => d.Device['Id-'] === id);
+  const record = catalogue.devices[at]!;
+  const devices = [...catalogue.devices];
+  devices[at] = { ...record, Device: { ...record.Device, DeviceProfileUri: account.tuning!.DeviceProfileUri, ContentProfileKey: account.tuning!.ContentProfileKey } };
+  return { ...catalogue, devices };
+}
+
+/**
+ * **The six documents of a setup**, in the order the remote asks for them: the four lists composed by
+ * `composeTouchSetup` onto `emptyTouchLists` from `catalogue`, Context from the account and Settings as given. One
+ * assembly for both routes to a set, a document of version 2, `buildTouchDocuments`, and a setup file of the earlier
+ * form, `buildEarlierTouchDocuments` in `earlierform.ts`, so the two can differ only in the setup and the catalogue
+ * they are handed.
+ */
+export function sixOfSetup(setup: TouchSetup, catalogue: TouchCatalogue, settings: Settings, account: TouchAccount): SyncDocuments {
+  const four = composeTouchSetup(emptyTouchLists(), setup, catalogue);
   return {
     ActivityList: four.ActivityList!,
     DeviceList: four.DeviceList!,
     MapList: four.MapList!,
-    Context: contextOfAccount(options.account),
-    Settings: settingsOfSetupFile(file),
+    Context: contextOfAccount(account),
+    Settings: settings,
     ProtocolList: four.ProtocolList!,
   };
+}
+
+/**
+ * **The six documents of a Harmony Touch's document**, decision 43, with no Logitech document as input: the setup, the
+ * protocol ids and the settings `touchSetupOfDocument` reads off the document; each device's record written from the
+ * catalogue `archive` gives, under the device's id, `catalogueOfDevices`; the tuning device's favourites address and key
+ * from the account, `withTuningAddress`; and the six assembled by `sixOfSetup`. **This is the build an application
+ * reaches**, through the family's `build` and `buildFromRecipe`.
+ *
+ * **Refuses** first a field of version 2 the Touch's build does not read, as not built, `refuseUnbuiltFields`, and then
+ * whatever `touchSetupOfDocument`, the catalogue's writer, `withTuningAddress` and the composers refuse.
+ */
+export function buildTouchDocuments(document: Recipe, options: { readonly archive: CatalogueSource; readonly account: TouchAccount }): SyncDocuments {
+  // A field of version 2 the Touch's build does not read stops this route as every other, decision 43.
+  refuseUnbuiltFields(document, 'buildTouchDocuments', 'document');
+  const parts = touchSetupOfDocument(document, options.archive);
+  const written = catalogueOfDevices(document.devices.map((d, k) => ({ entry: d.device, id: parts.setup.devices[k]!.id })), parts.protocols, options.archive);
+  const catalogue = withTuningAddress(written, parts.setup, options.account);
+  return sixOfSetup(parts.setup, catalogue, settingsOfRows(parts.settings, document.model.name), options.account);
 }

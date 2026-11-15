@@ -14,14 +14,17 @@ import { FOUR_SLOT_CHOICES, fourSlotChoices } from '../../src/families/harmony-6
 const SETUPS = new URL('../../../corpus/setups/', import.meta.url);
 const raw = (file: string): Record<string, unknown> => JSON.parse(readFileSync(new URL(file, SETUPS), 'utf8'));
 
-test('every setup file reads as a recipe: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the One family\'s, and the Harmony 300\'s, 350\'s and Touch\'s, which no recipe target serves, the Touch\'s being a document family\'s',
+test('every setup file reads as a recipe but the Touch\'s test setup of the earlier form, which is refused naming the converter: the three for the Harmony 650, skin 72, which the four slot family builds for and which holds eight devices, the test setup for the Harmony One, skin 54, the One family\'s, and the Harmony 300\'s, 350\'s and Touch\'s, which no recipe target serves, the Touch\'s being a document family\'s',
   () => {
   const files = readdirSync(SETUPS).filter((one) => one.endsWith('.json')).sort();
   assert.deepEqual(files, ['h300-test.json', 'h350-test.json', 'h650-options.json', 'h650-start.json', 'h650-test.json', 'one-test.json', 'touch-full.json', 'touch-test.json']);
-  // Only the Touch's test setup file carries a Touch's part, `touch`, which the recipe passes through unread,
-  // `readTouchSetupFile` in the codec's harmony-touch folder reading it.
-  assert.deepEqual(files.filter((file) => readRecipe(raw(file)).touch !== undefined), ['touch-test.json']);
-  for (const file of files) {
+  // Only the Touch's test setup file carries a Touch's part, `touch`: the earlier form, which the sets the bench Touch
+  // ran were built from and which is kept as that evidence, `earlierform.ts` in the codec's harmony-touch folder reading
+  // it. The reader of a recipe refuses it, naming the converter, decision 43.
+  assert.deepEqual(files.filter((file) => raw(file)['touch'] !== undefined), ['touch-test.json']);
+  assert.throws(() => readRecipe(raw('touch-test.json')), (error: unknown) => error instanceof RecipeError
+    && /a Harmony Touch's own block, touch, the earlier form/.test(error.message) && /harmonyTouch\.describeTouchDocument/.test(error.message));
+  for (const file of files.filter((one) => one !== 'touch-test.json')) {
     const recipe = readRecipe(raw(file));
     // The Harmony 300's and 350's: the no screen family serves them, chosen by model since plan 013
     // (the table holds no record of skins 79 and 104), and builds from a setup with its own builder, so their
@@ -30,13 +33,11 @@ test('every setup file reads as a recipe: the three for the Harmony 650, skin 72
       assert.throws(() => recipeTarget(recipe), /built from a setup by its family's own builder, buildNoScreenSetup/);
       continue;
     }
-    // The Harmony Touch's two: `touch-full.json`, the setup that uses every feature, put on its record by
-    // `build-setup.ts`, and `touch-test.json`, the test setup, built into the six documents by `touch-nothing-set.ts`.
-    // No recipe target serves them, since a Touch takes documents rather than a container. Refused at skin 99 as no
-    // model's until plan 013, when the registry came to choose the Touch's document family by its name and skin;
-    // refused now because that family builds from its own setup file.
+    // The Harmony Touch's `touch-full.json`, the setup that uses every feature, put on its record by `build-setup.ts`.
+    // No recipe target serves it, since a Touch takes documents rather than a container: its family builds them from
+    // the recipe through its own members.
     if (file.startsWith('touch-')) {
-      assert.throws(() => recipeTarget(recipe), /the Harmony Touch is given documents, which its family builds from its own setup file/);
+      assert.throws(() => recipeTarget(recipe), /the Harmony Touch is given documents, which its family builds from the recipe through its own members/);
       continue;
     }
     const target = recipeTarget(recipe);
@@ -48,7 +49,7 @@ test('every setup file reads as a recipe: the three for the Harmony 650, skin 72
   // Only the test setup states working screens: Plasma kijken's, which it composes onto Logitech's starting
   // compile, and the other four as Logitech's compile of the setup draws them, for a build from nothing, which has
   // no compile to take them from.
-  const screens = files.flatMap((file) => readRecipe(raw(file)).activities.filter((one) => one.screen !== undefined)
+  const screens = files.filter((one) => one !== 'touch-test.json').flatMap((file) => readRecipe(raw(file)).activities.filter((one) => one.screen !== undefined)
     .map((one) => `${file} ${one.name} ${one.screen?.length}`));
   assert.deepEqual(screens, [
     'h650-test.json TV kijken 2', 'h650-test.json Film kijken 3', 'h650-test.json Muziek 1', 'h650-test.json Kodi kijken 1',

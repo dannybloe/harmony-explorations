@@ -15,16 +15,18 @@
  * `answerTouchSync` takes. Sending stays there, behind its rails.
  *
  * **What the families read of a recipe that others do not**: the Harmony 300 and 350 a device key per device,
- * `RecipeDevice.key`, and the Harmony Touch its own part, `Recipe.touch`, read by its setup reader, which also takes
- * the account's own identifiers from the sources, since those come off the remote and never sit in a recipe.
+ * `RecipeDevice.key`, and the Harmony Touch the fields of version 2 its documents are made from, decision 43, and the
+ * keys a person chose, through its family's `readSetup` and `build`, which also take the account's own identifiers from
+ * the sources, since those come off the remote and never sit in a recipe. A Touch's document of the earlier form, with
+ * a block of its own, is refused by the reader, naming the converter.
  *
- * **What no family reads is refused before anything is built**: a field of the recipe's version 2, decision 43, that
- * no build reads yet stops the build as a function not built does, with the requirement it waits on,
- * `refuseUnbuiltFields`. Refused rather than left out, since a configuration built without a person's timing or power
- * order is one the remote accepts and that does something else than the document says. Here first, before any source
- * is asked for, and again by every route below it, each family's `fromRecipe`, the composers of a setup and the
- * Harmony Touch's reader and builders, since this repository's scripts and an application through a family's own
- * entries reach those without passing here.
+ * **What the family does not read is refused before anything is built**: a field of the recipe's version 2 that the
+ * build of the model's kind of family does not read stops the build as a function not built does, with the requirement
+ * it waits on, `refuseUnbuiltFields` over `VERSION_TWO`, which says per part which kind of family reads it. Refused
+ * rather than left out, since a configuration built without a person's timing or power order is one the remote accepts
+ * and that does something else than the document says. Here first, before any source is asked for, and again by every
+ * route below it, each family's `fromRecipe`, the composers of a setup and the Harmony Touch's builder, since this
+ * repository's scripts and an application through a family's own entries reach those without passing here.
  */
 import { carriedCatalogue } from '../catalogue/carried.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
@@ -74,14 +76,15 @@ export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
   const { family, skin } = choice;
   if (family.kind === 'compiled' && family.fromRecipe === undefined) throw new RecipeError(`nothing here builds ${family.name} from a recipe yet`);
   const recipe = readRecipe(json);
-  // A field of version 2 no build reads yet, before anything is built or any source is asked for.
-  refuseUnbuiltFields(recipe, 'buildFromRecipe');
-  // A key the recipe chooses otherwise, R31 and R32, is built by a family that states how, `Family.recipeKeys`, and
-  // refused by every other before anything is built: a file built without the choice is one the remote accepts and
-  // whose key does something else. The Harmony Touch's keys are its own part's, which its family reads.
+  // A field of version 2 this kind of family's build does not read, before anything is built or any source is asked for.
+  refuseUnbuiltFields(recipe, 'buildFromRecipe', family.kind);
+  // A key the recipe chooses otherwise, R31 and R32, is built by a compiled family that states how,
+  // `Family.recipeKeys`, and refused by every other before anything is built: a file built without the choice is one
+  // the remote accepts and whose key does something else. The Harmony Touch builds every choice its places take, its
+  // maps' `resolveMaps`, and refuses one they do not, `touchSetupOfDocument`.
   const chosen = statedKeys(recipe)[0];
-  if (chosen !== undefined && (family.kind === 'document' || family.recipeKeys === undefined)) {
-    throw new RecipeError(`nothing here builds a key a recipe chooses for ${family.kind === 'document' ? `the ${model.name}` : family.name} yet, and the recipe chooses ${chosen.where}`);
+  if (chosen !== undefined && family.kind === 'compiled' && family.recipeKeys === undefined) {
+    throw new RecipeError(`nothing here builds a key a recipe chooses for ${family.name} yet, and the recipe chooses ${chosen.where}`);
   }
   // The devices the recipe carries, over the archive given, `catalogue/carried.ts`.
   const archive = carriedCatalogue(recipe, sources.archive);
@@ -95,7 +98,6 @@ export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
       pictures: family.buildPictures(setup) as readonly OwnPicture[],
     };
   }
-  if (recipe.touch !== undefined) throw new RecipeError(`the recipe has a Harmony Touch's part, and it is for the ${model.name}`);
   return {
     kind: 'configuration', model: model.name, skin,
     bytes: family.fromRecipe!(recipe, skin, { builtAt: sources.builtAt, ...(archive === undefined ? {} : { archive }) }),

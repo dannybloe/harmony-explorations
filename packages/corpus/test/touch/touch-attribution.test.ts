@@ -80,10 +80,10 @@ const counts = (fields: readonly AttributedField[]) => attributionCounts(fields)
 const EXPECTED = [
   ['ActivityList', 'composeTouchActivity', 216], ['ActivityList', 'withNothing', 2], ['ActivityList', 'ourTag', 1],
   ['DeviceList', 'deviceRecordOfArchive', 1562], ['DeviceList', 'featuresOfDriving', 633], ['DeviceList', 'keyCodeText', 373],
-  ['DeviceList', 'composeTouchSetup', 110], ['DeviceList', 'buildTouchDocuments', 2], ['DeviceList', 'withNothing', 2], ['DeviceList', 'ourTag', 1],
+  ['DeviceList', 'composeTouchSetup', 110], ['DeviceList', 'withTuningAddress', 2], ['DeviceList', 'withNothing', 2], ['DeviceList', 'ourTag', 1],
   ['MapList', 'composeButtons', 4667], ['MapList', 'composeTouchActivity', 2680], ['MapList', 'withNothing', 2], ['MapList', 'ourTag', 1],
   ['Context', 'contextOfAccount', 10], ['Context', 'withNothing', 2], ['Context', 'ourTag', 1],
-  ['Settings', 'settingsOfSetupFile', 27], ['Settings', 'ourBackground', 3], ['Settings', 'withNothing', 2], ['Settings', 'ourTag', 1],
+  ['Settings', 'settingsOfRows', 27], ['Settings', 'ourBackground', 3], ['Settings', 'withNothing', 2], ['Settings', 'ourTag', 1],
   ['ProtocolList', 'definitionOfRow', 362], ['ProtocolList', 'withNothing', 2], ['ProtocolList', 'ourTag', 1],
   ['the background', 'ourBackground', 2], ['the background', 'withNothing', 1], ['the background', 'ourTag', 1],
   ['the background\'s twin', 'ourBackground', 2], ['the background\'s twin', 'withNothing', 1], ['the background\'s twin', 'ourTag', 1],
@@ -147,7 +147,7 @@ describe('9.3: every field of the set from nothing credited to a generator, none
   it('the device list split as the headers state it: the composer\'s 110 fields, the account\'s two, the rest the archive\'s record', () => {
     const fields = attributeNothingSet(json(BUILT) as TouchSet, inputs(), json(SETUP) as TouchSet).filter((f) => f.document === 'DeviceList');
     const fieldsBy = (by: string): string[] => [...new Set(fields.filter((f) => f.by === by).map((f) => f.field.replace(/^resource\.DevicesWithFeatures\[\]\./, '')))].sort();
-    assert.deepEqual(fieldsBy('buildTouchDocuments'), ['Device.ContentProfileKey', 'Device.DeviceProfileUri']);
+    assert.deepEqual(fieldsBy('withTuningAddress'), ['Device.ContentProfileKey', 'Device.DeviceProfileUri']);
     assert.deepEqual(fieldsBy('composeTouchSetup'), [
       'Device.ControlPort', 'Device.Id-', 'Device.InterDeviceDelay', 'Device.InterKeyDelay', 'Device.Name', 'Device.PressMinRepeats',
       'DeviceFeatures[].DeviceId-',
