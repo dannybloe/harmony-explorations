@@ -107,6 +107,7 @@ R10 to R19 devices, R21 to R30 activities, R31 to R44 keys and screens, R45 and 
   - [ ] 7.4.1 Untested: nesting deeper than one level, a sub-page on a device's own page, whether the hard Exit key returns from one, and whether going back returns to the page it left (the add-an-activity screen returns with push and pop, section 341)
   - [ ] 7.4.2 A composer for a sub-page, against the 650's favourites page as Logitech compiles it
 - [ ] 7.5 The remote's own help, the advanced help and its delay fixing in every activity: [todo-help.md](todo/todo-help.md) (R44)
+- [ ] 7.6 Tune one command of one device: how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue's value, which Logitech did only through its support desk; first a receiver's volume measured on the infrared monitor against its own remote (a requirement of its own, to be numbered with the next change to the requirements)
 
 ## 8. Learning codes
 
