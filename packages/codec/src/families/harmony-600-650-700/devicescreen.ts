@@ -344,13 +344,10 @@ export function composeFourSlotDeviceScreen(
     : codesFor(map, c, setOf(template.counterFont), '/', template.counterFont);
   const laidOut = compiled === undefined ? undefined
     : compiledDeviceModePages(c, template, compiled.title, rows, pageCount);
-  [label, ...(compiled === undefined ? rows.map((row) => row.label) : [])].forEach((text, k) => {
-    const wide = textWidth(c, setOf(template.labelFont), k === 0 ? menuCodes : rowCodes[k - 1] as number[]);
-    if (wide > LABEL_WIDTH) {
-      throw new ComposeError(`'${text}' is ${wide} pixels wide and a corner holds ${LABEL_WIDTH}: `
-        + 'give it a shorter label');
-    }
-  });
+  for (const text of [label, ...(compiled === undefined ? rows.map((row) => row.label) : [])]) {
+    const tooWide = cornerLabelRefusal(c, template, text);
+    if (tooWide !== undefined) throw new ComposeError(tooWide);
+  }
 
   // The device lists as `fourSlotMenus` finds them, which finds the idle one with no row too, the only one an
   // empty configuration has, section 375; on a configuration with a device they are `deviceListMenus`'.
@@ -501,4 +498,18 @@ export function composeFourSlotDeviceScreen(
     pages: pageCount, rowLists: rowBindings,
     ...(laidOut === undefined ? {} : { substituted: laidOut.substituted }),
   };
+}
+
+/**
+ * **Why a text cannot be a device mode page's label**, its menu row or a corner, or undefined where it can: wider in the
+ * label font of `template` than a corner holds, `LABEL_WIDTH`. The one judgement the device screen's builder refuses by
+ * and the family's `nameRefusal` answers `check` with, a device's name being its menu row's label.
+ */
+export function cornerLabelRefusal(c: Container, template: FourSlotTemplate, text: string): string | undefined {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const set = (fontSets(c) ?? [])[template.labelFont];
+  if (set === undefined) throw new ComposeError(`the config does not carry font ${template.labelFont}`);
+  const wide = textWidth(c, set, codesFor(map, c, set, text, template.labelFont));
+  return wide > LABEL_WIDTH ? `'${text}' is ${wide} pixels wide and a corner holds ${LABEL_WIDTH}: give it a shorter label` : undefined;
 }

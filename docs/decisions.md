@@ -1141,3 +1141,38 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    model can carry it, the sending of one command are stored beside the catalogue's definition and never inside
    it, so fetching a definition again leaves them as they were. Everything about one key can be asked: what each
    press does, whether that is the default, and the settings its command is sent with.
+
+44. <a id="d44"></a>**An activity is never invalid, and no role is required. Removing a device marks every activity
+   that used it as needing attention, and an activity can be switched off.** *Taken on 15 November 2026.* Roles stay
+   in the document as the shortcut an activity's default key map is derived from, and as what a remote's own files
+   carry; nothing refuses an activity for a role nobody has.
+
+   **Needs attention.** Removing a device from the document may leave an activity that used it in a state the person
+   does not want, so every activity that used it is kept and marked, with the reason stated in keys: every press of
+   the activity whose answer the removal changed, what it did and what it does now. It is still built and synced,
+   since a mark is a note to a person and not a fault. **The mark is stored in the document because it cannot be
+   worked out from it**: after the removal the document no longer holds the device, so nothing in it says what the
+   keys did before, and a mark derived from the document would vanish at the moment it is needed. An application
+   clears it with one call, at a moment of its own choosing; nothing clears it of its own accord, since only a person
+   can say the activity is now as they want it.
+
+   **A change a person makes to an activity itself sets no mark.** Dropping a device from an activity, or changing its
+   roles, is done by someone looking at that activity, so the change reports the presses it made otherwise as its
+   effects instead.
+
+   **Switched off.** An activity can be switched off on purpose: a stored field, on when absent. A switched off
+   activity is left out of every build and sync, as if removed, and keeps its id, so switching it on again gives the
+   same activity; the build's result and the sync's outcome say which were left out. **The switch is not derived**
+   from anything else in the document, an activity with no device or a mark among them: a person's choice to leave an
+   activity out and a state the FHSDK might judge unusable are two things, and taking one for the other would drop an
+   activity the person still wants. A model's limit on activities is the remote's, so it counts the activities
+   switched on.
+
+   **Logitech's client does otherwise, and this project does not follow it.** Stated by Logitech, in their client and
+   not measured: by its code, MyHarmony deletes the activities a removed device is used in,
+   `DeleteActivitesForThisDevice` in its dashboard's device view. Here the activity and everything else the person
+   built into it stay, and the person decides.
+
+   **Not decided here**: an activity that cannot work at all, such as one that uses no device. It is looked at
+   separately. Measured when this was taken, as a record and not a decision: the Harmony One, 600, 650 and 700 built
+   one, and the Harmony Touch and the Harmony 350 refused it.

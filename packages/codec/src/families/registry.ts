@@ -29,6 +29,7 @@ import { ComposeError } from '../shared/core.ts';
 import { HARMONY_TOUCH_FAMILY } from './harmony-touch/family.ts';
 import type { DocumentFamily } from './document.ts';
 import type { FamilyMaps } from './maps.ts';
+import type { FamilySettings } from './settings.ts';
 import type { ActivityStart, CommonChoices, Family, FamilyTraits, SendShape } from './family.ts';
 import { FOUR_SLOT } from './harmony-600-650-700/index.ts';
 import { NO_SCREEN_FAMILY } from './harmony-300-350/index.ts';
@@ -169,6 +170,14 @@ export interface ModelMaps {
 export function mapsOfModel(asked: ModelNamed): ModelMaps | undefined {
   const { family, skin } = chooseByModel(asked);
   return family.maps === undefined ? undefined : { skin, maps: family.maps };
+}
+
+/**
+ * The settings a document of a model may state, R47, `settings.ts`, either kind of family alike: undefined where the
+ * family's build reads none from a document, and refused as `chooseByModel` refuses a model no family serves.
+ */
+export function settingsOfModel(asked: ModelNamed): FamilySettings | undefined {
+  return chooseByModel(asked).family.settings;
 }
 
 // ---------------------------------------------------------------------------------------------------

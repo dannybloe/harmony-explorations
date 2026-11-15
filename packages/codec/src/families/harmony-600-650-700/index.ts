@@ -20,7 +20,7 @@ import { FOUR_SLOT_FONTS } from './fonts.ts';
 import { FOUR_SLOT_SENDS } from './sends.ts';
 import { FOUR_SLOT_START, fourSlotActivityRewiring } from './start.ts';
 import { checkWiring } from './wiring.ts';
-import { fourSlotFromRecipe } from './fromrecipe.ts';
+import { fourSlotFromRecipe, fourSlotNameRefusal } from './fromrecipe.ts';
 
 // The assembler, `assemble.ts`, and the screen records, backgrounds and comparison are the family's own modules
 // and take what they need from its other modules, so the index passes nothing on: it is the object the registry
@@ -51,4 +51,5 @@ export const FOUR_SLOT: Family<FourSlotChoices> = {
   activityDeviceList: (c, activity) => composeActivityDeviceList(c, activity).bytes,
   // The configuration a recipe describes, from nothing, plan 014.
   fromRecipe: fourSlotFromRecipe,
+  nameRefusal: fourSlotNameRefusal,
 };

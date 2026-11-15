@@ -65,16 +65,20 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
   - [x] 2.3.8 The changes work on a Touch document as on any other: keys with a held and a double press, screens, a device's timing kept over the catalogue's, sequences owned by an activity, a definition fetched again, ids never reused
   - [x] 2.3.9 End to end with nothing attached: a Touch document created, a device added, one key changed, the whole map asked, checked, built and synced to the pretend remote
   - [ ] 2.3.10 The new set heard once on the infrared monitor from the bench Harmony Touch, and its own setup put back
-  - [ ] 2.3.11 A new Touch document builds with no setting stated: the family's own default settings, the check and the build agreeing, and a question that lists a model's settings with their values, defaults and ranges
-  - [ ] 2.3.12 A build's refusal is one class an application can catch on every model, and the account a Touch build takes is a type on an entry
-  - [ ] 2.3.13 Removing a device reports the jobs it leaves undone in each activity, and the check notes an activity with a job no device does
-  - [ ] 2.3.14 A new activity on a Touch arrives with a screen list derived by rule, as a device's does
+  - [x] 2.3.11 A new Touch document builds with no setting stated: the family's own default settings, the check and the build agreeing, and a question that lists a model's settings with their values, defaults and ranges
+  - [x] 2.3.12 A build's refusal is one class an application can catch on every model, and the account a Touch build takes is a type on an entry
+  - [x] 2.3.13 Removing a device, or dropping it from an activity, reports each role it leaves with no device and each press it changes
+  - [x] 2.3.14 A new activity's screen list on a Touch: its number pad and the favourites are derived, the rest starts empty for the person to fill, since no rule over the devices' commands came near the one sample
+  - [x] 2.3.15 An activity is never invalid and no role is required, decision 44: a removal marks each activity that used the device as needing attention, with every press it changed, and the activity is still synced; an application clears the mark; an activity switched off is left out of a build and a sync, which say so
 - [x] 2.4 A pretend remote an application reads and syncs against with nothing attached, its progress and its failures included (R80)
 - [ ] 2.5 What an application asks of the FHSDK that no contract covers, gone through against the requirements once the skeleton stands
   - [ ] 2.5.1 A message an application shows carries no bench command line: after a Harmony Touch sync that acted on the remote, the way back is a state the outcome names
   - [ ] 2.5.2 A failure's words name the phase it happened in: a read back that differs is not a write that stopped part way
   - [ ] 2.5.3 Whether a pretend remote is among the remotes an application lists, and whether reading a Harmony Touch's documents off the remote is a contract, since none exists; a pretend Touch holds the document and not the set it was sent, and nothing reads it back
   - [ ] 2.5.4 What a sync does to an activity that is running: Logitech's client asks nothing before a sync and tells the person afterwards to switch every device off before starting an activity; tried once on the bench Harmony Touch, and what an application says to a person follows from it
+  - [ ] 2.5.5 An activity that cannot work at all, such as one with no device: a Harmony One, 600, 650 and 700 build it, a Harmony Touch and a 350 say no for reasons of their own; one answer for every model is to decide
+  - [ ] 2.5.6 The check takes a few hundred milliseconds a call, since judging a name means drawing it, and judges no name when an application has supplied no fonts: what an application that checks on every edit needs
+  - [ ] 2.5.7 A Harmony 650 activity name of one letter repeated (eight W's) passes the check and fails the build on a self check of the start up screen
 
 ## 3. Released versions
 

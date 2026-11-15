@@ -17,6 +17,7 @@
  */
 
 import type { FamilyMaps } from './maps.ts';
+import type { FamilySettings } from './settings.ts';
 
 /** The types a document family works in, each the family's own. */
 export interface DocumentTypes {
@@ -84,4 +85,10 @@ export interface DocumentFamily<T extends DocumentTypes = DocumentTypes> {
    * none yet, as the Harmony Touch's family does today.
    */
   readonly maps?: FamilyMaps;
+  /**
+   * The remote's own settings a document may state, R47, `settings.ts`: the same interface a compiled family carries,
+   * `Family.settings`, so which settings a model has is asked the same way of every model. Absent where the family's
+   * build reads none from a document.
+   */
+  readonly settings?: FamilySettings;
 }

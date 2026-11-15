@@ -14,6 +14,7 @@ import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import type { HardKey } from '../compose/devicemode.ts';
 import type { Recipe } from '../recipe/recipe.ts';
 import type { FamilyMaps } from './maps.ts';
+import type { FamilySettings } from './settings.ts';
 import type { ActivityKeyRules, DeviceScreenItem } from '../compose/activityroles.ts';
 import type { Container, Instruction } from '../container/gspm.ts';
 import type { Edit } from '../edit/edit.ts';
@@ -319,6 +320,12 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    */
   readonly maps?: FamilyMaps;
   /**
+   * The remote's own settings a document may state, R47, `settings.ts`: the rows the build writes with their kind and
+   * default, the ones not built yet, and the build's judgement of a value. Absent where the build reads no setting
+   * from a document, which is every compiled family: their settings are build choices of their own.
+   */
+  readonly settings?: FamilySettings;
+  /**
    * What `buildStateTables` builds this family's base slots 0, 13 and 14 from, and `describeStateTables` reads
    * them by: the Harmony 600, 650 and 700's, and the Harmony One's, whose tables differ in four values.
    */
@@ -448,6 +455,14 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * nothing from a recipe yet, the Harmony 880 and 885's.
    */
   readonly fromRecipe?: (recipe: Recipe, skin: number, sources: RecipeSources) => Uint8Array;
+  /**
+   * **Why the build from `recipe` refuses a name it draws**, in the builder's own sentence, or undefined where it draws
+   * it: a device's on its row or label, an activity's on its start up screen. Asked by the toolkit's `check`, so a
+   * document a build refuses for a name is listed before the build, `name-not-drawable`; answered by the family's own
+   * judgement on the configuration a build of `recipe` starts from, never by a copy of its rule. **Optional**: a family
+   * whose build refuses no name, or whose judgement is not stated yet, leaves it out, and `check` says nothing.
+   */
+  readonly nameRefusal?: (recipe: Recipe, skin: number, owner: 'device' | 'activity', name: string) => string | undefined;
   /**
    * A recipe's choices over the family's defaults, checked, plan 014: what `composeSetup`
    * composes with when a recipe states choices, so a recipe's look reaches every builder the setup runs. Refuses a

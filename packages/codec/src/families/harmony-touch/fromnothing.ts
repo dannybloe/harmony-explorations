@@ -13,7 +13,7 @@
  *
  * **What the document is.** A recipe in the one shape every model shares, `packages/codec/src/recipe/recipe.ts`: the
  * model, each device by its name and its catalogue entry, each activity by its name, type and devices with their inputs
- * and jobs, and a person's choices as the fields of version 2 that a Touch's build reads, `VERSION_TWO` there. What the
+ * and roles, and a person's choices as the fields of version 2 that a Touch's build reads, `VERSION_TWO` there. What the
  * document does not state the family derives, `touchSetupOfDocument` in `recipemaps.ts`: every key, pad place, gesture
  * and screen entry the person did not choose, the ids of ours from the toolkit's, the order devices are switched on in,
  * and the protocol id each infrared family of our rhythm table is written under.
@@ -63,14 +63,14 @@
  */
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
 import { encodePng } from '../../screens/png.ts';
-import { readRecipe, type Recipe, refuseUnbuiltFields } from '../../recipe/recipe.ts';
+import { readRecipe, type Recipe, recipeToBuild } from '../../recipe/recipe.ts';
 import { resource } from '../../support/resources.ts';
 import { deviceRecordOfArchive } from './archivedevice.ts';
 import { ComposeRefusal, type ActivityRoleKind } from './compose.ts';
 import type { Context, DeviceWithFeatures, Id, IrProtocol, Settings, SyncDocuments } from './documents.ts';
 import { BACKGROUND_BOX, BACKGROUND_TWIN_BOX } from './favourites.ts';
 import { touchSetupOfDocument } from './recipemaps.ts';
-import { composeTouchContext, SETTING_ROWS, type OwnContext } from './settings.ts';
+import { composeTouchContext, settingText, type OwnContext } from './settings.ts';
 import { composeTouchSetup, type TouchCatalogue, type TouchSetup } from './setup.ts';
 
 const refuse = (message: string): never => {
@@ -97,7 +97,7 @@ export function readTouchDocument(json: unknown): Recipe {
 }
 
 /**
- * A recipe's job, `Display`, as an activity role's kind, `DisplayActivityRole`; a device with none passes through. Read
+ * A recipe's role, `Display`, as an activity role's kind, `DisplayActivityRole`; a device with none passes through. Read
  * by `recipemaps.ts`, which turns a document into a setup, and by the reader of a setup file of the earlier form.
  */
 export function roleKindsOf(roles: readonly string[]): ActivityRoleKind[] {
@@ -229,30 +229,6 @@ export function ourBackground(): OurBackground {
 }
 
 /**
- * **One setting's value as the text the remote reads, checked against its row**, `SETTING_ROWS`: the one check every
- * route to a Touch's Settings takes, `settingsOfRows`, which a document of version 2 reaches through
- * `touchSetupOfDocument` in `recipemaps.ts` and a setup file of the earlier form through its own block. A document may
- * state a yes or no row as true or false and a number row as a number; the earlier form's block states every row as text. **Refuses**: a yes or no row's value other than true, false, `"true"`
- * or `"false"`; and a number row's value that is not a whole number in decimal digits, or is outside the range
- * `SETTING_ROWS` gives it, which is where the remote mishandles a value or its own screens cannot show it.
- */
-export function settingText(name: string, value: string | number | boolean): string {
-  const text = typeof value === 'string' ? value : String(value);
-  const row = SETTING_ROWS[name];
-  if (row === undefined) return refuse(`${name} is not a setting a Settings of ours writes`);
-  if (row.kind === 'yes or no') {
-    // A number stated for a yes or no row is refused like any other text: 1 is not true here.
-    if (typeof value === 'number' || (text !== 'true' && text !== 'false')) refuse(`${name}: a yes or no setting takes "true" or "false"`);
-    return text;
-  }
-  // A boolean stated for a number row would read as the text "true", which is no number, and is refused as one.
-  if (typeof value === 'boolean' || !/^(0|[1-9][0-9]*)$/.test(text)) refuse(`${name}: the value is not a whole number written in decimal digits`);
-  const n = Number(text);
-  if (n < row.min || n > row.max) refuse(`${name}: ${text} is outside ${row.min} to ${row.max}, which the remote mishandles or its own screens cannot show`);
-  return text;
-}
-
-/**
  * **Settings written from the remote's settings by row**, each value as the text the remote reads, every row of
  * `SETTINGS_ROWS_WRITTEN` but the two background rows given a value there, under `remoteName`. **What each field is and
  * why**: `RemoteName` the model's name, which the About screen shows; each row its name and one value, which is all the
@@ -310,7 +286,7 @@ export function contextOfAccount(account: TouchAccount): Context {
 
 /**
  * **The account's favourites address and key on the tuning device's record**: the device of the favourites activity,
- * `tuningDefault`, that changes channels, the first of its devices with that job, carries both, since the remote asks
+ * `tuningDefault`, that changes channels, the first of its devices with that role, carries both, since the remote asks
  * for the favourites documents it keeps by them, and no other device carries either. The catalogue as given where no
  * activity holds the favourites. **Refuses** a favourites activity with no device that changes channels, and one with
  * such a device and an account that states no favourites address and key.
@@ -359,8 +335,9 @@ export function sixOfSetup(setup: TouchSetup, catalogue: TouchCatalogue, setting
  * whatever `touchSetupOfDocument`, the catalogue's writer, `withTuningAddress` and the composers refuse.
  */
 export function buildTouchDocuments(document: Recipe, options: { readonly archive: CatalogueSource; readonly account: TouchAccount }): SyncDocuments {
-  // A field of version 2 the Touch's build does not read stops this route as every other, decision 43.
-  refuseUnbuiltFields(document, 'buildTouchDocuments', 'document');
+  // A field of version 2 the Touch's build does not read stops this route as every other, decision 43, and an
+  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  document = recipeToBuild(document, 'buildTouchDocuments', 'document');
   const parts = touchSetupOfDocument(document, options.archive);
   const written = catalogueOfDevices(document.devices.map((d, k) => ({ entry: d.device, id: parts.setup.devices[k]!.id })), parts.protocols, options.archive);
   const catalogue = withTuningAddress(written, parts.setup, options.account);

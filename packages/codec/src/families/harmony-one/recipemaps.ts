@@ -145,7 +145,7 @@ function ruleDevice(view: MapDeviceView): KeyRuleDevice<string, string> {
 }
 
 /**
- * An activity's default map: the two devices its keys follow, from its devices' jobs, `keyDevicesOfRoles`, the rule
+ * An activity's default map: the two devices its keys follow, from its devices' roles, `keyDevicesOfRoles`, the rule
  * over their default maps, and each key bound to the command of the device it came from. The screen is empty, as the
  * build leaves an activity's working screen where the document states none.
  */

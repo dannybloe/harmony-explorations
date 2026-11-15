@@ -305,7 +305,7 @@ test('the steps, screens and keys of version 2 name what the document holds: the
  * document of version 1 to refuse instead, for a form whose neighbour would be refused first.
  */
 const FILMS = [{ name: 'Films', steps: [{ device: 'Television', command: 'Netflix' }] }];
-const SAMPLES: Readonly<Record<string, { readonly on: Parameters<typeof document>[0]; readonly requirements: readonly (number | undefined)[]; readonly alone?: Parameters<typeof document>[0] }>> = {
+const SAMPLES: Readonly<Record<string, { readonly on: Parameters<typeof document>[0]; readonly requirements: readonly (number | undefined)[]; readonly alone?: Parameters<typeof document>[0]; readonly everyBuild?: true }>> = {
   'document.settings': { on: { top: { settings: { Brightness: 20 } } }, requirements: [47] },
   'document.highestIds': { on: { top: { highestIds: { device: 2 } } }, requirements: [undefined] },
   'device.timing': { on: { device: { timing: { interKeyDelay: 300, pressMinRepeats: 2 } } }, requirements: [16, 17] },
@@ -326,6 +326,9 @@ const SAMPLES: Readonly<Record<string, { readonly on: Parameters<typeof document
     alone: { activity: { screen: [{ sequence: 'Films' }] } },
   },
   'activity.keys.double': { on: { activity: { keys: [{ key: 'Play', press: 'double', action: { nothing: true } }] } }, requirements: [40] },
+  // Read by every build, decision 44: a switched off activity is left out, and a mark changes nothing built.
+  'activity.enabled': { on: { activity: { enabled: false } }, requirements: [92], everyBuild: true },
+  'activity.attention': { on: { activity: { attention: [{ happened: 'marked', message: 'the receiver is new' }] } }, requirements: [93], everyBuild: true },
 };
 
 test('every entry of the table of version 2 has a sample, reads in version 2, is listed with its requirements and is refused in version 1', () => {
@@ -340,8 +343,10 @@ test('every entry of the table of version 2 has a sample, reads in version 2, is
     const read = readBack(document(sample.on));
     const stated = versionTwoFields(read).filter((one) => one.field === entry.member);
     assert.deepEqual(stated.map((one) => one.requirement), sample.requirements, `${key}: what versionTwoFields lists`);
-    // What waits on nothing is no reason to refuse a build; everything else is.
-    assert.deepEqual(unbuiltFields(read).filter((one) => one.field === entry.member).map((one) => one.requirement), sample.requirements.filter((one) => one !== undefined), key);
+    // What waits on nothing is no reason to refuse a build, nor what every build reads; everything else is.
+    assert.deepEqual(unbuiltFields(read).filter((one) => one.field === entry.member).map((one) => one.requirement),
+      sample.everyBuild === true ? [] : sample.requirements.filter((one) => one !== undefined), key);
+    assert.deepEqual(stated.map((one) => one.readBy.includes('compiled')), stated.map(() => sample.everyBuild === true), `${key}: read by a compiled build`);
     for (const version of [1, null]) {
       assert.throws(() => readRecipe(document({ ...(sample.alone ?? sample.on), version })), /is of version 2, and the recipe is of version 1/, `${key}, version ${String(version)}`);
     }
@@ -360,16 +365,19 @@ test('every version 2 field stated at once is listed in the table\'s order, the 
       opensOn: 'Favorites', favourites: true, powerOrder: ['Television', 'Receiver'], start: [{ pause: 5 }], end: [{ pause: 5 }], sequences: FILMS,
       screen: [{ device: 'Television', command: 'Netflix', label: 'Films' }, { sequence: 'Films' }],
       keys: [{ key: 'Play', press: 'double', action: { nothing: true } }],
+      enabled: false, attention: [{ happened: 'marked', message: 'the receiver is new' }],
     },
   }));
   assert.deepEqual(versionTwoFields(all).map((one) => [one.field, one.requirement]), [
     ['settings', 47], ['highestIds', undefined],
     ['timing', 16], ['timing', 17], ['power', 14], ['channelTuning', 18], ['screen', 35], ['commands', 19], ['commands', 89], ['keys', 40],
     ['opensOn', 91], ['favourites', 45], ['powerOrder', 90], ['start', 30], ['end', 30], ['sequences', 37], ['screen', 34], ['screen', 37], ['keys', 40],
+    ['enabled', 92], ['attention', 93],
   ]);
-  // The highest ids change no byte a remote receives, so a build has nothing to refuse there.
-  assert.deepEqual(unbuiltFields(all).map((one) => one.field).includes('highestIds'), false);
-  assert.equal(unbuiltFields(all).length, versionTwoFields(all).length - 1);
+  // The highest ids change no byte a remote receives, so a build has nothing to refuse there, and the switch and the
+  // mark are read by every build.
+  assert.deepEqual(unbuiltFields(all).map((one) => one.field).filter((one) => ['highestIds', 'enabled', 'attention'].includes(one)), []);
+  assert.equal(unbuiltFields(all).length, versionTwoFields(all).length - 3);
   assert.equal(versionTwoFields(all)[2]!.where, 'the device Television\'s delays');
 
   // The references of version 1 this repository builds state none, nor does the plain document; the Harmony Touch's,

@@ -66,6 +66,7 @@ import {
   activityIconOf, activityPadBox, colourBehind, colourUnder, STARTUP_ICON_AT, STARTUP_ICON_SIZE, startupIcon,
 } from './activitypictures.ts';
 import { type ExtraFontSet, fontSetOn, measureSet } from '../../drawing/fonttable.ts';
+import { ONE_ADDED_SETS } from './fontsets.ts';
 import type { LetterInks } from '../../drawing/lettering.ts';
 import { ONE_CHOICES, type OneChoices } from './choices.ts';
 import { oneValueMapRoles, withOneScreenTable } from './caseprograms.ts';
@@ -428,6 +429,45 @@ function inline(out: Writer, x: number, y: number, codes: readonly number[]): vo
   out.u8(0);
 }
 
+/** The font an activity's start up title is drawn in: the lighter copy our font step added, `oneActivityFonts`, or the face's own set. */
+function oneStartTitleFont(c: Container, choices: OneChoices): number {
+  const like = startupTitleSet(c);
+  return fontSetOn(c, like, choices.startTitleWeight, startupBehind(c)) ?? like;
+}
+
+/**
+ * The start up title's font, also where `c` holds no device mode yet to say what is behind the title, a configuration
+ * with no device: there it is the set an empty configuration of ours carries for the title, `ONE_ADDED_SETS`, on the
+ * background it states. Not the face's own set, which is heavier: "Starting" and twenty A's measure 225 pixels in it
+ * and 201 in the title's weight.
+ */
+function titleFontAsFarAsKnown(c: Container, choices: OneChoices): number {
+  try {
+    return oneStartTitleFont(c, choices);
+  } catch (error) {
+    if (!(error instanceof ComposeError)) throw error;
+    const like = startupTitleSet(c);
+    const added = ONE_ADDED_SETS.find((one) => one.weight === 'startTitleWeight');
+    return (added === undefined ? undefined : fontSetOn(c, like, choices.startTitleWeight, added.background)) ?? like;
+  }
+}
+
+/**
+ * **Why an activity's name cannot be drawn as its start up title**, "Starting" and the name on one line no wider than
+ * the screen, or undefined where it can: the one judgement the builder refuses by and the family's `nameRefusal`
+ * answers `check` with. In the font the title is drawn in on `c`, as `c` stands.
+ */
+export function oneStartTitleRefusal(c: Container, label: string, choices: OneChoices = ONE_CHOICES): string | undefined {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const font = titleFontAsFarAsKnown(c, choices);
+  const set = (fontSets(c) ?? [])[font];
+  if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+  const title = `${STARTUP_TITLE_WORD} ${label}`;
+  const width = textWidth(c, set, codesFor(map, c, set, title, font));
+  return width > SCREEN_WIDTH ? `'${title}' is ${width} pixels wide and the start up screen ${SCREEN_WIDTH}` : undefined;
+}
+
 /**
  * The Harmony One's half of `composeActivityScreen`, building both screens rather than copying them off an
  * existing activity. The activity's value must be the next one; its handler set is predicted as the next
@@ -473,11 +513,7 @@ export function buildOneActivityScreens(
     pagedOn: lightList(c, [3, 1], true), pagedOff: lightList(c, [3, 1], false),
   };
   const fonts = {
-    // In the lighter copy our font step added for it, `oneActivityFonts`, and in the face's own set otherwise.
-    startTitle: (() => {
-      const like = startupTitleSet(c);
-      return fontSetOn(c, like, choices.startTitleWeight, startupBehind(c)) ?? like;
-    })(),
+    startTitle: oneStartTitleFont(c, choices),
     startLines: fontOfFace(c, STARTUP_LINE_FACE),
     title: activityTitleFont(c),
     devices: devicesFont(c, devicesMode),
@@ -495,9 +531,8 @@ export function buildOneActivityScreens(
   // The texts, all laid out now, against the fonts as they are: nothing below changes a glyph.
   const startTitle = spelled(fonts.startTitle, `${STARTUP_TITLE_WORD} ${label}`);
   const startTitleWidth = width(fonts.startTitle, startTitle);
-  if (startTitleWidth > SCREEN_WIDTH) {
-    throw new ComposeError(`'${STARTUP_TITLE_WORD} ${label}' is ${startTitleWidth} pixels wide and the start up screen ${SCREEN_WIDTH}`);
-  }
+  const tooWide = oneStartTitleRefusal(c, label, choices);
+  if (tooWide !== undefined) throw new ComposeError(tooWide);
   const startTitleX = Math.floor((SCREEN_WIDTH - startTitleWidth) / 2);
   const startLines = STARTUP_LINES.map(([text, y]) => {
     const codes = spelled(fonts.startLines, text);

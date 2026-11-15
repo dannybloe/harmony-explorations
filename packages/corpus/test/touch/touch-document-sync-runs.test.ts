@@ -198,6 +198,7 @@ function builtSet(json: unknown): TouchSet {
     kind: 'documents' as const, model: file.model.name, skin: file.model.skin ?? 99,
     documents: earlierTouchSetupFile.buildEarlierTouchDocuments(file, { archive, account: account as never }),
     pictures: harmonyTouch.HARMONY_TOUCH_FAMILY.buildPictures(file),
+    leftOut: [],
   };
   const made = touchSetOf(built, account.addresses);
   assert.ok(!('refusals' in made), 'the gate passes the set');

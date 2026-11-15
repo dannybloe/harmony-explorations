@@ -70,14 +70,14 @@ function everyState(): { label: string; state: RequirementState; needsBench: boo
   })));
 }
 
-test('the requirements are numbered from 1 with no gap and no repeat, 91 of them under fifteen subjects', () => {
+test('the requirements are numbered from 1 with no gap and no repeat, 93 of them under fifteen subjects', () => {
   // Exact, so a requirement added or taken out shows in this diff; a dropped one stays, withdrawn.
-  assert.equal(REQUIREMENTS.length, 91);
-  assert.deepEqual(REQUIREMENTS.map((one) => one.number), Array.from({ length: 91 }, (_, i) => i + 1));
+  assert.equal(REQUIREMENTS.length, 93);
+  assert.deepEqual(REQUIREMENTS.map((one) => one.number), Array.from({ length: 93 }, (_, i) => i + 1));
   assert.equal(REQUIREMENT_SUBJECTS.length, 15);
   // The subjects are listed in the order of their first requirement, and each subject's requirements are in number
   // order. A requirement added to a subject after a later one was numbered takes the next free number, since a number
-  // is never moved, so a subject's numbers are one run but for those: R89, the devices' latest, and R90 and R91, the activities'.
+  // is never moved, so a subject's numbers are one run but for those: R89, the devices' latest, and R90 to R93, the activities'.
   const firsts = REQUIREMENT_SUBJECTS.map((subject) => REQUIREMENTS.find((one) => one.subject === subject)!.number);
   assert.deepEqual(firsts, [...firsts].sort((a, b) => a - b));
   const late = REQUIREMENTS.filter((one, i, all) => i > 0 && one.subject !== all[i - 1]!.subject

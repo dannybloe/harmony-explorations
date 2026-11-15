@@ -59,6 +59,7 @@
  * **Which architectures**: the Harmony Touch alone, firmware 4.15.330; its firmware reports 17 and Logitech's
  * templates file it under 18. The screens read are the production image's `juniper` skin.
  */
+import type { FamilySetting, FamilySettings } from '../settings.ts';
 import { ComposeRefusal } from './compose.ts';
 import type { Context, Settings } from './documents.ts';
 
@@ -233,3 +234,96 @@ export function luaNumber(x: unknown): number | undefined {
 
 /** The screen backlight's top step, `MAX_LCD_BRIGHTNESS` in the screens: a level of 100 is step 26. */
 export const BACKLIGHT_STEPS = 26;
+
+// ---------------------------------------------------------------------------------------------------
+// A document's settings: the value a build writes for a row, and the family's defaults
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * **One setting's value as the text the remote reads, checked against its row**, `SETTING_ROWS`: the one check every
+ * route to a Touch's Settings takes, `settingsOfRows` in `fromnothing.ts`, which a document of version 2 reaches through
+ * `touchSetupOfDocument` in `recipemaps.ts` and a setup file of the earlier form through its own block, and the one
+ * judgement of a value the toolkit asks, `TOUCH_SETTINGS.refusedValue`, so a change, the check and the build say the
+ * same of it. A document may state a yes or no row as true or false and a number row as a number; the earlier form's
+ * block states every row as text. **Refuses**: a yes or no row's value other than true, false, `"true"` or `"false"`;
+ * and a number row's value that is not a whole number in decimal digits, or is outside the range `SETTING_ROWS` gives
+ * it, which is where the remote mishandles a value or its own screens cannot show it.
+ */
+export function settingText(name: string, value: string | number | boolean): string {
+  const text = typeof value === 'string' ? value : String(value);
+  const row = SETTING_ROWS[name];
+  if (row === undefined) return refuse(`${name} is not a setting a Settings of ours writes`);
+  if (row.kind === 'yes or no') {
+    // A number stated for a yes or no row is refused like any other text: 1 is not true here.
+    if (typeof value === 'number' || (text !== 'true' && text !== 'false')) refuse(`${name}: a yes or no setting takes "true" or "false"`);
+    return text;
+  }
+  // A boolean stated for a number row would read as the text "true", which is no number, and is refused as one.
+  if (typeof value === 'boolean' || !/^(0|[1-9][0-9]*)$/.test(text)) refuse(`${name}: the value is not a whole number written in decimal digits`);
+  const n = Number(text);
+  if (n < row.min || n > row.max) refuse(`${name}: ${text} is outside ${row.min} to ${row.max}, which the remote mishandles or its own screens cannot show`);
+  return text;
+}
+
+/**
+ * **What a Settings of ours writes for a row a document does not state**: the value the Settings document Logitech's
+ * service writes for an account states, a table of ours. Read off the Settings their service sent the bench Touch in
+ * the earliest sync recorded, and the same in the full sync after it: every row that states a value states the same
+ * one as its default, `DefaultValue`, so the value the remote reads and Logitech's default agree,
+ * `packages/codec/test/families/harmony-touch/touch-setting-defaults.test.ts`.
+ *
+ * * **Five rows are Logitech's value**: the clock in 24 hour form, the lock screen on, the edit lock off, the keys'
+ *   light at 35 and the motion sensor on. Two of them are not what the firmware takes for a row with no value, the
+ *   clock, 12 hour there, and the lock screen, off there, `FIRMWARE_SETTINGS` in `read.ts`: a remote on an account
+ *   shows Logitech's, so a document of ours starts where an account Logitech's service made starts.
+ * * **Two rows are the firmware's**: Logitech's document states the screen's brightness and its timeout with no value
+ *   and no default, and the remote then reads the firmware's own, 85 and 10 seconds, so a row of ours states those, which
+ *   the remote reads alike.
+ *
+ * Every value is inside its row's range, `SETTING_ROWS`. **Which architectures**: the Harmony Touch alone; its firmware
+ * reports 17 and Logitech's templates file it under 18.
+ */
+export const TOUCH_SETTING_DEFAULTS = {
+  TwelveHourClock: false,
+  ScreenBrightness: 85,
+  ScreenTimeout: 10,
+  ScreenLockFlag: true,
+  EditLock: false,
+  KeyBrightness: 35,
+  AccelFlag: true,
+} as const satisfies Readonly<Record<string, boolean | number>>;
+
+/**
+ * **The Harmony Touch's settings as its family states them**, `FamilySettings` in `families/settings.ts`: every row a
+ * Settings of ours writes from a document, in the order it writes them, each with its kind from `SETTING_ROWS` and its
+ * default from `TOUCH_SETTING_DEFAULTS`; and the rows the remote has that a Settings of ours does not write from a
+ * document yet.
+ *
+ * **Why those are not built rather than not on the model.** The firmware reads each: the vibration and its effect,
+ * which no sync measured carried, and the activity press duration, which no screen asks for, R47; and a background of
+ * the person's own and the person's pictures, which a Settings of ours fills with our background, a picture delivered
+ * beside the documents, so a person's choice of one waits on the look, R42. `IsWiFiEnabled` and `TimeZoneFlag` are rows
+ * Logitech's documents carry and nothing on the remote reads, so they are in neither list: a document stating either
+ * names a setting the remote does not have.
+ */
+export const TOUCH_SETTINGS: FamilySettings = {
+  rows: Object.entries(TOUCH_SETTING_DEFAULTS).map(([name, value]): FamilySetting => {
+    const row = SETTING_ROWS[name]!;
+    return {
+      name,
+      takes: row.kind === 'yes or no' ? { kind: 'yes or no', choices: [true, false] } : { kind: 'whole number', min: row.min, max: row.max },
+      default: value,
+    };
+  }),
+  notBuilt: { HapticFlag: 47, HapticEffect: 47, ActivityPressDuration: 47, BackgroundImage: 42, UserImages: 42 },
+  // The build's own check, asked rather than copied, so the toolkit refuses what the build refuses in its words.
+  refusedValue: (name, value) => {
+    try {
+      settingText(name, value);
+      return undefined;
+    } catch (error) {
+      if (error instanceof ComposeRefusal) return error.message;
+      throw error;
+    }
+  },
+};

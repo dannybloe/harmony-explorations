@@ -53,13 +53,15 @@ misspelling is an error rather than a default.
 | `activities[].id` | optional, the activity's id in this document, as a device's |
 | `activities[].name` | as the menu draws it |
 | `activities[].type` | MyHarmony's type: `WatchTV`, `WatchDvd`, `ListenToMusic`, `Custom`; which activity key a type takes is a choice, `activityKeys` |
-| `activities[].devices[]` | each device it uses: `device` by name, `input` by the catalogue's name for it, and `roles`, the jobs it does, `Display`, `Volume`, `ChannelChanging`, `PlayMovie`, `PlayMedia`, `PlayGame`; no role is a pass through device |
+| `activities[].devices[]` | each device it uses: `device` by name, `input` by the catalogue's name for it, and `roles`, what it does in the activity, `Display`, `Volume`, `ChannelChanging`, `PlayMovie`, `PlayMedia`, `PlayGame`; no role is a pass through device. **A role is never required**, decision 44: it is the shortcut the activity's default key map is derived from, and an activity with a role no device has is still an activity |
 | `activities[].screen[]` | optional, the working screen's items in order: `{ device, command }`, a command by the label the device's own screen draws it under, in version 2 with a `label` of its own and the device one of the document's; `{ sequence, steps }`, the form of version 1; or, in version 2, `{ sequence }`, one of the activity's own `sequences` by its name. A sequence written out here may not share its name with one of `sequences` |
 | `...screen[].steps[]` | the form of version 1: `{ device, scan }`, the command that device's key sends, by the key's scan code (`reference/remotes/harmony-650/keys.md`), or `{ pause }` in tenths of a second |
 | `activities[].opensOn` | version 2, optional, the screen the activity opens on, by the word the model's family names it by |
 | `activities[].favourites` | version 2, optional, whether this activity holds the favourite channels; at most one activity says true |
 | `activities[].powerOrder[]` | version 2, optional, the order the activity switches its devices on in, by name, each of its devices once |
 | `activities[].start[]`, `end[]` | version 2, optional, extra steps when the activity starts and ends: `{ device, command }`, the device one of the activity's, `{ pause }` in whole tenths of a second from 1, `{ sequence }`, one of the activity's own `sequences`, or `{ device, channel }`, a channel tuned through one of the activity's devices, its digits as text so a leading zero survives (a step of the activity's own, never of a sequence); none is said by leaving the field out, and an empty list is refused |
+| `activities[].enabled` | version 2, optional, R92: `false` switches the activity off, and on is said by leaving the field out, so `true` is refused. **A switched off activity is left out of every build and sync**, as if removed, and keeps its id, so switched on again it is the activity it was; the build's result and the sync's outcome name each one left out, below. Read by every build, decision 44 |
+| `activities[].attention[]` | version 2, optional, R93: the activity's mark of **needing attention**, one reason or more, never an empty list. Each `{ happened, device?, keys?, message }`: `happened` is `device-removed` or `marked`; `device` the device removed, by the name it had, for a removal and for no other, never following a rename since a device of that name later is another; `keys`, where the model's maps are built, every press of the activity whose answer the removal changed, each `{ key, press, was, now }`, what it did and what it does, a key's action each, an empty list where none changed and no list where the keys are not known; and `message`, an English sentence an application may show or word itself from the rest. A mark changes no build, so every build reads it by passing it over, decision 44 |
 | `activities[].sequences[]` | version 2, optional, the activity's named sequences: `id`, given by the toolkit, `s` and a number, `name`, once within the activity, and `steps`, each `{ device, command }`, the device one of the activity's, or `{ pause }` in whole tenths from 1, at least one sending a command; **a step names its command and never a scan code**, so a document moved to another model means the same commands. In version 2 a key's `{ sequence }` names one of the activity's sequences, either form, and a device's key runs none, a device having no sequences |
 | `choices` | optional, the family's choices over its defaults, the look among them (letters, inks, colours, icons): `FourSlotChoices` for the Harmony 600, 650 and 700, `OneChoices` for the Harmony One, none for the Harmony 300, 350 and Touch; the family refuses one it does not make. A reference recipe states every choice, `unstatedChoices` answering empty, so a default changed later cannot change it; plan 014 |
 | `favourites[]` | optional, favourite channels per device: `device` by name, a device of the recipe, at most once, and `channels`, in the order of the remote's favourite keys |
@@ -82,7 +84,9 @@ label and sequence, and a double press on an activity's key. It does not read a 
 (`holdInterDeviceDelay`, `connectedAppPowerOnDelay` and `isInterKeyDelayOptimized`, R16, and the second repeat count,
 `minRepeats`, R17), a power member other than `alwaysOn`, R14, a step
 at a start or end that runs a sequence, R30, a device's own commands, R19 and R89, nor a double press in a device's
-own map, R40. The toolkit's `check` lists each field the document's model does not read
+own map, R40. **Every build reads two of them**, an activity's `enabled` and its `attention`, decision 44: the one
+build and every route take a switched off activity out before any family sees the document, `recipeToBuild`, and a mark
+changes nothing built, so neither stops a build of either kind. The toolkit's `check` lists each field the document's model does not read
 as an error; its changes write every field whatever the model's build reads, and follow each through a rename and a
 removal, below.
 
@@ -103,8 +107,12 @@ document alone. What its document states:
   favourites documents stay the remote's; a device key refused, since a Touch has none;
 * every device and activity, every sequence included, with the toolkit's id, `d`, `a` or `s` and a number, which the
   documents number by, and each device's definition carried or found in the archive given;
-* `settings`, **every row the remote's Settings states**, by the names `families/harmony-touch/settings.ts` gives
-  them; there is no table of Logitech's defaults to take a missing one from yet;
+* `settings`, **any of the seven rows a Settings of ours writes, or none**, by the names
+  `families/harmony-touch/settings.ts` gives them: a row not stated takes the family's default, `TOUCH_SETTING_DEFAULTS`,
+  the value Logitech's service writes for an account where it states one and the firmware's own where it states none,
+  `packages/codec/test/families/harmony-touch/touch-setting-defaults.test.ts`. The vibration, its effect, the activity
+  press duration and the two background rows are rows the remote has that a document states nothing of yet, not built,
+  R47 and R42; any other name is a setting a Touch does not have;
 * a device's `timing` in the five members its documents carry, `power.alwaysOn`, `channelTuning` and `screen`; an
   activity's `opensOn`, `favourites`, `powerOrder`, `start` and `end` but a step running a sequence, `sequences`; and
   the keys of both maps short or held, and an activity's pressed twice, where the place has that press; everything else its family derives, the
@@ -205,7 +213,8 @@ does not hold; `over-limit`, more than the model takes; `invalid`, what was give
 document naming what is gone; and **`not-on-this-model`**, what the model does not have, from its family's places and
 its capabilities. What nobody has written yet is a different answer, `NotBuiltError`, naming the requirement it waits on.
 A model no family serves yet, a Harmony 525, 515 or 785, answers not built from every call that needs its family:
-`create`, `addDevice`, `addActivity`, `setKey`, `setScreen`, the questions about keys and screens, and `check`. What a
+`create`, `addDevice`, `addActivity`, `setKey`, `setScreen`, `setSetting` but for `'default'`, the questions about keys,
+screens and settings, and `check`. What a
 caller passes is held to its shape, so `null` or a list where a record belongs, and an owner naming both a device and
 an activity, are refused as `invalid` rather than thrown as a `TypeError`; and a refusal the reader gives names the
 device, activity or sequence by its name, never by its position.
@@ -219,15 +228,43 @@ while the build catches up; `check` lists what the model's build does not read, 
 | `refreshDevice(document, device, carried)` | replaces that device's carried definition and nothing else: its name, keys, screen, timing, power, tuning, own commands and every choice naming it stay, a stated value equal to the new definition's included; every choice naming a command the new definition lacks is an effect, `missing`, and `check` lists it. A definition of another catalogue entry is refused |
 | `setDevice(document, device, changes)` | its name, which follows it everywhere the document names it; kept on between activities, true or false; its device key, on the Harmony 300 and 350 alone and not on this model elsewhere, R39; and `timing`, `power` and `channelTuning`, **member by member**: a member given stands over the catalogue's, `'default'` on a member drops that one, `'default'` for the whole drops all. A step of power or channel tuning the change writes names a command the device has, or is refused as unknown. Its inputs answer not built, R15 |
 | `setDeviceCommand(document, device, command, change)` | `{ code, sending }`: a code of its own, `'original'` to drop it, and how that one command is sent, R89, member by member (`copies`, `heldPaceMs`, `leadInMs`); `'original'` drops both; `'removed'` takes away a command the document added, refused while a key, an entry or a step uses it, naming where. Taking away a command of the definition answers not built, R19 |
-| `addActivity`, `setActivity(document, activity, changes)` | its name, kind and devices; `opensOn`, held to the words the model's family names, `FamilyMaps.openingScreens`, not on this model for another word or on a model without a screen, and not built where the family names none yet, the Harmony One's among them, R91; `favourites` (true takes the hold off the activity that had it, reported), `powerOrder` by device ids, and `start` and `end` whole, each step a command or a channel of one of its devices, a pause, or one of its own sequences by id; `'default'` or an empty list gives a member back. Its devices changed, the power order follows; a step still sending to a device it stops using refuses, naming the step. Its icon and activity key answer not built, R27 and R29 |
+| `addActivity`, `setActivity(document, activity, changes)` | its name, kind and devices; `opensOn`, held to the words the model's family names, `FamilyMaps.openingScreens`, not on this model for another word or on a model without a screen, and not built where the family names none yet, the Harmony One's among them, R91; `favourites` (true takes the hold off the activity that had it, reported), `powerOrder` by device ids, and `start` and `end` whole, each step a command or a channel of one of its devices, a pause, or one of its own sequences by id; `'default'` or an empty list gives a member back. Its devices or their roles changed, the power order follows, each role no device of it has afterwards is an effect at that role, as a removal reports it, and every press of the activity whose answer changed is an effect at that key, `{ kind: 'key' }`, saying what it did and does; **no mark is set**, since the person changing the activity is looking at it, decision 44. A step still sending to a device it stops using refuses, naming the step. `enabled`, R92, switches it off with `false` and on again with `true`, refused as over the limit where the model takes no more activities switched on; switching off the activity that holds the favourite channels is an effect at it, naming the activity that holds them while it is off, by the family's rule, or saying none does. Its icon and activity key answer not built, R27 and R29 |
+| `markAttention(document, activity, message)`, `clearAttention(document, activity)` | R93: a reason added by hand, `marked`, with the sentence given, without the space around it, and no device or key, refused as `invalid` for a sentence with nothing in it; and every reason taken away at once, the one call an application makes once a person has seen why. Nothing clears a mark of its own accord |
 | `addSequence(document, activity, sequence)`, `setSequence(document, sequence, changes)` | **a sequence is its activity's**: added to one, its steps a command of one of that activity's devices or a pause, at least one a command; a new name follows to the keys, entries and steps that run it |
 | `setKey(document, { owner, key, press }, action)` | every press the model's places give the owner's map: short, held where the key has a long press, double on a gesture; a device's command, one of the activity's sequences by id, or nothing; `'default'` gives the press back. A press the key lacks, a key only the other kind of owner binds, and a choice the family refuses, `FamilyMaps.refusedChoice`, such as a command a Harmony Touch's number pad draws on no key, are not on this model, and so is a key another model has and this one lacks, a gesture on a Harmony One; a word no model has as a key, and a key the remote binds itself, are unknown, the second with its reason. On a model whose family has no maps, not built |
 | `setScreen(document, owner, items)` | the list whole: `{ device, command, label? }`, and on an activity's screen `{ sequence }` by id; an empty list is a person's empty screen; `'default'` gives it back. A screen on a model without one is not on this model; a page of entries and a sequence's own label answer not built, R36 and R34 |
-| `setSetting(document, name, value)` | one row of `settings`; `'default'` drops it |
-| `remove(document, { device \| activity \| sequence })` | settles everything that named it, each an effect, the same places `uses` lists, in order: a device leaves its activities and power orders, keys sending its commands go back to their defaults, entries and extra steps sending to it go, a sequence loses its steps and goes with its last command step, and with it every key, entry and step that ran it; an activity goes with its sequences, and where it held the favourite channels an effect at the document says no activity holds them now; a sequence goes with every key, entry and step that ran it |
+| `setSetting(document, name, value)` | one row of `settings`; `'default'` drops it and the family's default stands. Judged by the model's family where it states its settings, `FamilySettings` in `families/settings.ts`, by the one judgement the check takes too: a value the build refuses for the row is `invalid`, in the build's words; a row the remote has and the build does not write yet answers not built with its requirement, a Harmony Touch's vibration R47; any other name is not on this model. Where the family states none, every compiled family's, the name and the value are written unjudged and `check` lists the field as one the build does not read |
+| `remove(document, { device \| activity \| sequence })` | settles everything that named it, each an effect, the same places `uses` lists, in order: a device leaves its activities and power orders, each role it had in an activity that no other device of the activity has is an effect at that role (`{ kind: 'role', activity, role }`, the role by the document's word, `Volume`), keys sending its commands go back to their defaults, entries and extra steps sending to it go, a sequence loses its steps and goes with its last command step, and with it every key, entry and step that ran it; an activity goes with its sequences, and where it held the favourite channels an effect at the document says no activity holds them now; a sequence goes with every key, entry and step that ran it. **Last, every activity that used a removed device is marked as needing attention**, `device-removed`, an effect at `{ kind: 'attention', activity }` |
 | `move(document, what, to)` | a device, an activity, or a device within an activity |
 
 `setFavourites`, `setLook` and `favourites` answer not built.
+
+**An activity is never invalid, and removing a device marks every activity that used it**, decision 44, R93. The
+activity is kept and marked with every press of its keys whose answer the removal changed, what it did and what it does
+now: a key that sent the device's command and sends nothing, a default that followed the device's role to another
+device, a sequence that went with the device's last step. The keys are read off the model's maps before and after the
+removal, resolved as the questions resolve them, so they are named on the models whose families state maps, the Harmony
+One and the Harmony Touch; **where a model's keys are not built yet the mark is set with no keys**, and its message says
+so, R77. An activity whose keys are known and none changed is marked all the same, its keys an empty list, the Touch's
+pass through switch the example. The activity is still built and synced as it is: the mark is a note to a person and
+not a problem, and `check` lists nothing for it. **It is stored because it cannot be worked out afterwards**: the
+document after the removal no longer says what the keys did. A change of the activity itself through `setActivity`
+sets no mark and reports the presses it changed as effects. A rename follows into a key's `now`, a device that is there,
+and never into the mark's `device` or a key's `was`, a device that is gone; the message stays as written.
+`activities(document)` answers each activity's `enabled` and `attention`. Logitech's client, by its code, deletes the
+activities a removed device is used in; this toolkit does not. **A model's limit on activities counts those switched
+on**, in `check`, `addActivity` and `setActivity` alike, as the build gives the remote only those. An activity that uses
+no device is not decided: the Harmony One, 600, 650 and 700 build one today, and the Harmony Touch and the Harmony 350
+refuse it. `packages/codec/test/recipe/toolkitattention.test.ts` holds the switch and the mark.
+
+**The remote's own settings are asked with `settings(document)`**, R47: every setting the model's build writes, in the
+order it writes them, each `{ name, value, isDefault, default, takes }`, `takes` the choices of a yes or no setting or
+the range of a whole number, the value the document's where it states one and read as what it means, `"30"` as 30, and
+a value equal to the default still the person's. A setting the document states that the build does not write is not
+answered; `check` lists it. A model whose build reads no setting from a document, every compiled family's, answers not
+built, R47: the Harmony One's and the Harmony 600, 650 and 700's settings are build choices of their own and whether the
+Harmony 300 and 350 have any is not checked, so an empty answer would say what is not known. The change, the check and
+the build agree on every setting of a Harmony Touch, `packages/codec/test/recipe/toolkitsettings.test.ts`.
 
 **Ids are never given twice.** The document records the highest number given of each kind, `highestIds`, and every
 change counts from it and records it, a removal included, so the device added after the last one was removed takes the
@@ -236,11 +273,30 @@ to everything without one past the highest, a sequence included, and records it 
 
 **`check(document, sources?)`** lists, beside what it always did, a key's choice on a place or a press the owner's map
 cannot bind, a choice the family refuses, a held press, a double press or a sequence on a key where the model's build
-takes none, an opening screen the model does not have, a device key on a model without device keys, and every key,
+takes none, a sequence on a device's own key (`invalid`, which `readRecipe` refuses and a document that reached the
+check without it may hold) and one its activity does not hold (`unknown-sequence`), each key's choice coded first as
+`setKey` refuses the same choice, the place before the action and the family's own refusal last, a setting as
+`setSetting` judges it, the not built one said as `not-on-this-model` with its requirement, an opening screen the model does not have, a device key on a model without device keys, and every key,
 screen entry, step of a sequence or at a start or end, step of a device's power or channel tuning, and command tuning
 that names a command its device does not have, from the device's carried definition, or
-from `sources.archive` for a device carrying none. Where neither says which commands a device has, nothing is said. A
-field of version 2 the model's build does not read is listed naming the model, since another model's build may read it.
+from `sources.archive` for a device carrying none. Where neither says which commands a device has, nothing is said of
+them and the device is listed as a note, `no-definition`, one it cannot judge, which the build refuses without an
+archive. A field of version 2 the model's build does not read is listed naming the model, since another model's build
+may read it. **A name the build would refuse to draw** is listed as an error, `name-not-drawable`, asked of the model's
+family by its builders' own judgement, `Family.nameRefusal`: on the Harmony One a device's name on a device list's row
+and an activity's on its start up title, on the Harmony 600, 650 and 700 a device's as its device mode label and an
+activity's as its activity menu row's label and on its start up screen. Judging a name draws it, so through the main
+entry with no fonts supplied the check judges none and says so once, a note, `names-not-judged`. Every other place a family draws a name is not judged yet, and a family stating no
+judgement, the Harmony 300 and 350's and the Harmony Touch's, whose builds were not seen to refuse a name, says
+nothing.
+
+**A build says no in three ways an application tells apart, on every model**, from `buildFromRecipe`: `ComposeError`,
+the build refuses the document, a name too long to draw among it; `NotBuiltError`, what the document asks for is not
+built yet, naming its requirement, a field of version 2 the family does not read, a key chosen where the family builds
+none, R31 and R32, a held press, a double press or a sequence on a key, R38, R40 and R37, and a model whose family
+builds nothing from a recipe yet, the Harmony 880 and 885, R4; and `RecipeError`, a source the caller must give is
+missing, an account for a Harmony Touch or an archive for a device the document carries no definition of. A recipe that
+is not one, and a model no family serves, are `RecipeError` too, before any build begins.
 
 `packages/codec/test/recipe/toolkitchanges.test.ts` holds every change on a Harmony One and a Harmony Touch reference
 document, each with its control.
@@ -290,6 +346,17 @@ remote on its cable, `write` with four steps, and ends failed; the second compar
 own abort. A Harmony Touch's documents have no read on any entry yet, so `pretendReader` refuses a Touch, as it
 refuses every model the read of a configuration does not serve.
 
+**An activity switched off is said, not silently missing**, R92, decision 44. `buildFromRecipe` answers `leftOut`, each
+activity it left out by id and name in the document's order, on every model, and a sync says the same once in its
+journal right after the build, `left out, switched off: activity Watch a Film (a2)`, and on every outcome after the
+build, `SyncOutcome.leftOut`, present only where one was left out, on the attached paths and the pretend remote alike.
+On a Harmony Touch the favourite channels go to the first activity left that changes channels, by the family's own
+rule, and with none left no activity holds them and the set still builds. A set with no activity at all made the
+remote ask for no favourites document, `reference/architectures/harmony-touch/answering-a-sync.md`, "The empty
+configuration is stored, committed and started"; whether a set with activities and none holding the favourites does
+the same is not checked, and a put back after either should carry the favourites documents. The other activities keep their ids, and so does the one switched off, so switching it on again builds it
+under the id it had. `packages/corpus/test/write/touch-toolkit-path.test.ts` takes one through a pretend Touch.
+
 ## Against FreeHarmony's data model
 
 Checked against FreeHarmony's `src/shared/content.ts` and `remote.ts` as they stood on 12 October 2026.
@@ -305,7 +372,7 @@ configures; a **difference** is the same thing said another way, which a convert
 | `poweredOnBetweenActivities` | none | **gap** |
 | `activities[].name` | `Activity.name` | same |
 | `activities[].type` | `Activity.kind` | difference: `WatchTV` `watch-tv`, `WatchDvd` `watch-a-film`, `ListenToMusic` `listen-to-music`, `Custom` `other`; FreeHarmony's `play-a-game` has no type here yet and is refused by the assembly |
-| `activities[].devices[]` | `Activity.roles`, one `ActivityRole` per job | difference: a recipe lists a device with its jobs, FreeHarmony a job with its device; roles map `Display` `picture`, `Volume` `sound`, `ChannelChanging` `channels`, `PlayMovie` `film`, `PlayMedia` `media`, `PlayGame` `game` |
+| `activities[].devices[]` | `Activity.roles`, one `ActivityRole` per role | difference: a recipe lists a device with its roles, FreeHarmony a role with its device; roles map `Display` `picture`, `Volume` `sound`, `ChannelChanging` `channels`, `PlayMovie` `film`, `PlayMedia` `media`, `PlayGame` `game` |
 | a device with no role | none | **gap**: a pass through device, an HDMI switch, has no role in FreeHarmony to be listed by |
 | `input` | `ActivityRole.input` | same, by the name the catalogue gives it |
 | none | `ActivityRole.powerOnOrder`, `powerOffOrder`, `delayAfterMs` | the compiler's to decide here; a recipe does not state them yet |

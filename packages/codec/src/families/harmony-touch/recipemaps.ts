@@ -49,7 +49,7 @@ import {
   type ResolvedKey, type ResolvedOwner,
 } from '../maps.ts';
 import {
-  readRecipe, refuseEarlierTouchBlock, refuseUnbuiltFields, type Recipe, type RecipeActivity, type RecipeActivityStep, type RecipeDevice, type RecipeKey,
+  readRecipe, recipeToBuild, refuseEarlierTouchBlock, type Recipe, type RecipeActivity, type RecipeActivityStep, type RecipeDevice, type RecipeKey,
   type RecipeKeyAction, type RecipePress, type RecipeScreenCommand, type RecipeScreenItem, type RecipeSequence, type RecipeSetting,
 } from '../../recipe/recipe.ts';
 import {
@@ -65,8 +65,8 @@ import {
 import { definitionOfRow, isDefinitionRefusal, keyCodeText } from './definition.ts';
 import type { IrProtocol } from './documents.ts';
 import { catalogueOfEarlierSetupFile, setupOfEarlierSetupFile, type EarlierTouchSetupFile } from './earlierform.ts';
-import { HARMONY_TOUCH_MODEL, roleKindsOf, SETTINGS_ROWS_WRITTEN, settingText } from './fromnothing.ts';
-import { SETTING_ROWS } from './settings.ts';
+import { HARMONY_TOUCH_MODEL, roleKindsOf } from './fromnothing.ts';
+import { SETTING_ROWS, settingText, TOUCH_SETTINGS } from './settings.ts';
 import type { SetupButton, SetupChannelTuning, SetupDevice, SetupPress, TouchSetup } from './setup.ts';
 
 const refuse = (message: string): never => {
@@ -284,6 +284,8 @@ export const TOUCH_MAPS: FamilyMaps = {
   },
   deviceMap: (commands) => touchDeviceMap(commands),
   activityMap: (activity, deviceOf) => touchActivityMap(activity, deviceOf),
+  // The rule the build gives the favourite channels by, so who holds them is answered by the build's own reading.
+  favouritesHolder: (activities) => favouritesActivity(activities),
   // A person's choice on a pad place that the pad would draw on no key, which the build refuses, `refuseUndrawnChoice`:
   // asked of that same check here, so the toolkit refuses the choice where it is made and its check lists one a
   // document holds, with the build's own sentence. A device's commands are spelt as the engine finds them, without
@@ -591,22 +593,24 @@ function sequenceOf(sequence: RecipeSequence, what: string): OwnSequence {
 }
 
 /**
- * The settings as the remote reads a row, as text, every row through the same check the Touch's own block takes,
- * `settingText` in `fromnothing.ts`: a yes or no row true or false, a number row a whole number in its range.
+ * The settings as the remote reads a row, as text: every row a Settings of ours writes, `TOUCH_SETTINGS`, the document's
+ * value where it states one and the family's default where it does not, `TOUCH_SETTING_DEFAULTS`, each through
+ * `settingText`, the check every route to a Touch's Settings takes. A row the remote has and a Settings of ours does not
+ * write from a document yet is not built, with the requirement it waits on; any other name is a setting a Harmony Touch
+ * does not have and is refused. The toolkit's `setSetting` and `check` judge a name and a value by the same table and
+ * the same check, so neither passes what this refuses.
  */
 function settingsOf(document: Recipe): Record<string, string> {
-  const settings = document.settings;
-  if (settings === undefined) refuse('the document states no settings, and a Harmony Touch\'s Settings states every row; there is no table of Logitech\'s defaults to take them from yet');
-  const written = SETTINGS_ROWS_WRITTEN.filter((name) => name !== 'UserImages' && name !== 'BackgroundImage');
-  for (const name of Object.keys(settings!)) {
-    if (!(written as readonly string[]).includes(name)) refuse(`the setting ${name} is not one a Harmony Touch's Settings of ours writes, ${written.join(', ')}`);
+  const stated: Readonly<Record<string, RecipeSetting>> = document.settings ?? {};
+  const rows = TOUCH_SETTINGS.rows.map((one) => one.name);
+  for (const name of Object.keys(stated)) {
+    if (rows.includes(name)) continue;
+    // Own names only, so a name such as `constructor` is no row the table inherits.
+    if (Object.hasOwn(TOUCH_SETTINGS.notBuilt, name)) notBuilt(`the Harmony Touch's Settings for the setting ${name}`, TOUCH_SETTINGS.notBuilt[name]!);
+    refuse(`a Harmony Touch has no setting ${name}: the settings a document states are ${rows.join(', ')}`);
   }
   const out: Record<string, string> = {};
-  for (const name of written) {
-    const value: RecipeSetting | undefined = settings![name];
-    if (value === undefined) refuse(`the setting ${name} is not stated, and a Harmony Touch's Settings states every row`);
-    out[name] = settingText(name, value!);
-  }
+  for (const row of TOUCH_SETTINGS.rows) out[row.name] = settingText(row.name, stated[row.name] ?? row.default);
   return out;
 }
 
@@ -688,7 +692,8 @@ export function touchSetupOfDocument(document: Recipe, catalogue: CatalogueSourc
   if (document.model.name !== HARMONY_TOUCH_MODEL) refuse(`the document is for the ${document.model.name}, not the ${HARMONY_TOUCH_MODEL}`);
   // What the Touch's composer writes nothing of stops here as on every route to a build, decision 43, before any of it
   // is read: the table says per part which builds read it.
-  refuseUnbuiltFields(document, 'the Harmony Touch\'s documents', 'document');
+  // An activity switched off is left out here as every build leaves it out, decision 44, `recipeToBuild`.
+  document = recipeToBuild(document, 'the Harmony Touch\'s documents', 'document');
   if (document.favourites !== undefined) refuse('the document states favourite channels, which nothing here composes: the favourites documents stay the remote\'s');
   if (document.choices !== undefined) refuse('the document states choices, and the Harmony Touch\'s family makes none');
   for (const device of document.devices) refuseDeviceKey(device);

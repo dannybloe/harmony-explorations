@@ -4,7 +4,7 @@
  * preliminary definition, field by field against FreeHarmony's data model.
  *
  * **What it holds**: the model it is for, the devices by their catalogue entries, the activities with
- * each device's input and jobs and the working screen's items, the choices of the model's family over
+ * each device's input and roles and the working screen's items, the choices of the model's family over
  * that family's defaults, and favourite channels, which only Logitech's service is given so far, since no
  * composer of ours writes one. **What it never holds is what the model can do**: how many devices it
  * takes, its screen, which family builds for it. Those come from the model's definition,
@@ -291,6 +291,12 @@ const TIMING_READ_BY_DOCUMENTS: readonly string[] = ['interKeyDelay', 'interDevi
 
 /** The kinds of family that read a part, written once. */
 const DOCUMENTS: readonly BuildKind[] = ['document'];
+/**
+ * Both kinds: a part every build reads, the two of decision 44. An activity switched off is read once, before any
+ * family builds, `switchedOn`; an activity's attention mark changes no build, so every build reads it by building as
+ * it would without it. Neither is ever refused as not built.
+ */
+const EVERY_BUILD: readonly BuildKind[] = ['compiled', 'document'];
 
 /** A field stated whole: one part, what it is called, what it waits on and who reads it. */
 const entire = (what: string, requirement: number | 'none', readBy?: readonly BuildKind[]) =>
@@ -328,7 +334,9 @@ const extraSteps = (which: string) => (value: unknown): VersionTwoPart[] => {
  * one running a sequence, sequences, a screen entry's label and a sequence named on its screen, and a double press,
  * which its gestures have. **What it does not**: the rest of a device's timing and power, a command's code and how it is
  * sent, which its composer writes nothing of, and a device key's double press, which no key of a device's map has.
- * The compiled families' builds read none of it yet.
+ * The compiled families' builds read none of it yet, but for the two every build reads, decision 44: an activity
+ * switched off, R92, which `switchedOn` reads before any family builds, and an activity's mark of needing attention,
+ * R93, which changes no build.
  */
 export const VERSION_TWO: readonly VersionTwoField[] = [
   { owner: 'document', member: 'settings', requirements: [47], parts: entire('settings', 47, DOCUMENTS) },
@@ -383,6 +391,8 @@ export const VERSION_TWO: readonly VersionTwoField[] = [
       ('sequence' in item && item.steps === undefined ? [{ what: `screen item ${at + 1}, the sequence ${item.sequence}`, requirement: 37, readBy: DOCUMENTS }] : [])),
   },
   { owner: 'activity', member: 'keys', form: 'double', requirements: [40], parts: doubles(DOCUMENTS) },
+  { owner: 'activity', member: 'enabled', requirements: [92], parts: entire('switch', 92, EVERY_BUILD) },
+  { owner: 'activity', member: 'attention', requirements: [93], parts: entire('attention mark', 93, EVERY_BUILD) },
 ];
 
 /**
@@ -472,7 +482,7 @@ export interface RecipeDeviceKey {
   readonly press?: 'short' | 'long';
 }
 
-/** One device's part in an activity: the input it is switched to, by the catalogue's name, and its jobs. */
+/** One device's part in an activity: the input it is switched to, by the catalogue's name, and its roles. */
 export interface RecipeActivityDevice {
   readonly device: string;
   readonly input?: string;
@@ -574,6 +584,92 @@ export interface RecipeActivity {
   readonly end?: readonly RecipeActivityStep[];
   /** The activity's own sequences, R37, each named once within it. Version 2. */
   readonly sequences?: readonly RecipeSequence[];
+  /**
+   * **Switched off**, R92, decision 44: stated only as `false`, since an activity is on unless it says otherwise, and a
+   * field stating what holds anyway is said by leaving it out. A person switches an activity off on purpose, to keep it
+   * in the document without giving it to the remote: every build leaves it out, `switchedOn`, before any family builds,
+   * and says which it left out. Kept apart from everything else about the activity, so switching it on again gives back
+   * the activity it was, under the same id. Version 2.
+   */
+  readonly enabled?: false;
+  /**
+   * **Needs attention**, R93, decision 44: why a change may have left the activity in a state the person does not want,
+   * one reason or more, each as data an application words itself, `RecipeAttention`. **Stored, because it cannot be
+   * worked out again**: once a device is removed, nothing left in the document says what the activity's keys did with
+   * it. It changes no build: an activity needing attention is built and synced as it is, since it is never invalid. The
+   * toolkit sets it when a device the activity used is removed, and an application clears it by one call. Version 2.
+   */
+  readonly attention?: readonly RecipeAttention[];
+}
+
+/**
+ * One reason an activity needs attention, `RecipeActivity.attention`: what happened, the device it happened to by the
+ * name it had, the keys it changed, and a sentence in English for a person. **What happened** is one of two:
+ *
+ * * `device-removed`: a device the activity used was removed from the document;
+ * * `marked`: an application marked it for a reason of its own, whose sentence is `message` alone.
+ *
+ * **`keys` absent means the keys are not known**: where the model's maps are not built yet, or a device's commands
+ * cannot be read, nothing says what the activity's keys did. **An empty list means none changed**: the activity used
+ * the device and is marked all the same, since a removal of a device it used is worth a person's look.
+ */
+export interface RecipeAttention {
+  readonly happened: 'device-removed' | 'marked';
+  /**
+   * The device, by the name it had when it was removed: one removed has no id left to name it by, and a device added
+   * later under that name is another device, so a rename never follows into this field.
+   */
+  readonly device?: string;
+  readonly keys?: readonly RecipeAttentionKey[];
+  readonly message: string;
+}
+
+/**
+ * One press of an activity's key whose answer the removal changed, every press of the activity and not only those that
+ * sent the removed device's commands: what it did before, `was`, and what it does after, `now`, each nothing, a command
+ * of a device by that device's name, or a sequence by its name. `was` records what was, a device that is gone among
+ * it, and is never rewritten; `now` names what is, so a device named there that is renamed later is followed into it.
+ */
+export interface RecipeAttentionKey {
+  readonly key: string;
+  readonly press: RecipePress;
+  readonly was: RecipeKeyAction;
+  readonly now: RecipeKeyAction;
+}
+
+/** An activity a build left out because the document switches it off, R92: its id where it has one, and its name. */
+export interface LeftOutActivity {
+  readonly id?: string;
+  readonly name: string;
+}
+
+/**
+ * **The document as every build reads it**, R92, decision 44: the activities switched off taken out, and which they
+ * were. The one place `enabled` is read, called before any family builds by `recipeToBuild`, so no family's build
+ * meets a switched off activity and each family's build reads the field without knowing it. **What names an activity
+ * goes with it**, which is only what the activity holds itself, its keys, screen, sequences and steps, and its hold on
+ * the favourite channels: nothing else in a document names an activity, so a family places the favourites by its own
+ * rule among the activities left, as it does for a document where none holds them. An activity switched on again is
+ * the same activity under the same id, since the document kept it whole; what a family numbers by position, a compiled
+ * configuration's activities, follows the activities left, as it would had the document never held the one left out.
+ */
+export function switchedOn(recipe: Recipe): { readonly recipe: Recipe; readonly leftOut: readonly LeftOutActivity[] } {
+  const leftOut = recipe.activities.filter((one) => one.enabled === false)
+    .map((one): LeftOutActivity => ({ ...(one.id === undefined ? {} : { id: one.id }), name: one.name }));
+  if (leftOut.length === 0) return { recipe, leftOut };
+  return { recipe: { ...recipe, activities: recipe.activities.filter((one) => one.enabled !== false) }, leftOut };
+}
+
+/**
+ * **What a route to a build builds from**: a field of version 2 the build of `kind` does not read refused as not built,
+ * `refuseUnbuiltFields`, then the activities switched off left out, `switchedOn`. Called first by every function that
+ * builds from a recipe, so a route reached past `buildFromRecipe`, by this repository's scripts and tests, builds what
+ * the one build builds; only the one build says which activities it left out, since what the others return has no
+ * place to say it.
+ */
+export function recipeToBuild(recipe: Recipe, route: string, kind: BuildKind): Recipe {
+  refuseUnbuiltFields(recipe, route, kind);
+  return switchedOn(recipe).recipe;
 }
 
 /**
@@ -758,6 +854,13 @@ function milliseconds(value: unknown, what: string): number {
 function truth(value: unknown, what: string): boolean {
   if (typeof value !== 'boolean') throw new RecipeError(`${what} is not true or false`);
   return value;
+}
+
+/** An activity's switch, `RecipeActivity.enabled`: false only, since true is what leaving the field out says. */
+function switchedOff(value: unknown, what: string): false {
+  if (value === true) throw new RecipeError(`${what} is true, which is said by leaving it out`);
+  if (value !== false) throw new RecipeError(`${what} is not false`);
+  return false;
 }
 
 /**
@@ -1024,25 +1127,69 @@ function keysOf(value: unknown, what: string, version: number, owner: 'device' |
       throw new RecipeError(`${at} is pressed neither short, held nor double`);
     }
     if (key.press === 'double') formOfVersionTwo(version, owner, 'keys', 'double', `${at}'s double press`);
-    const a = object(key.action, `${at}'s action`);
-    let action: RecipeKeyAction;
-    if ('nothing' in a) {
-      fields(a, `${at}'s action`, ['nothing']);
-      if (a.nothing !== true) throw new RecipeError(`${at}'s action is nothing only as true`);
-      action = { nothing: true };
-    } else if ('sequence' in a) {
-      fields(a, `${at}'s action`, ['sequence']);
-      action = { sequence: text(a.sequence, `${at}'s sequence`) };
-    } else {
-      fields(a, `${at}'s action`, ['device', 'command']);
-      action = { device: text(a.device, `${at}'s device`), command: text(a.command, `${at}'s command`) };
-    }
-    return { key: key.key, ...(key.press === undefined ? {} : { press: key.press as RecipePress }), action };
+    return { key: key.key, ...(key.press === undefined ? {} : { press: key.press as RecipePress }), action: keyActionOf(key.action, `${at}'s action`) };
   });
   // One key and press states one thing: stated twice, which of the two a builder took would be its own order.
   const places = keys.map((one) => `${one.key}/${one.press ?? 'short'}`);
   if (new Set(places).size !== places.length) throw new RecipeError(`${what} states one key twice`);
   return keys;
+}
+
+/**
+ * What a key does, `RecipeKeyAction`: nothing, only as true; a sequence by its name; or a device's command by the two
+ * names. The one reading of an action, which a key's choice and a key an attention mark records both take.
+ */
+function keyActionOf(value: unknown, what: string): RecipeKeyAction {
+  const a = object(value, what);
+  if ('nothing' in a) {
+    fields(a, what, ['nothing']);
+    if (a.nothing !== true) throw new RecipeError(`${what} is nothing only as true`);
+    return { nothing: true };
+  }
+  if ('sequence' in a) {
+    fields(a, what, ['sequence']);
+    return { sequence: text(a.sequence, `${what}'s sequence`) };
+  }
+  fields(a, what, ['device', 'command']);
+  return { device: text(a.device, `${what}'s device`), command: text(a.command, `${what}'s command`) };
+}
+
+/** What can have happened to an activity that needs attention, `RecipeAttention.happened`. */
+const ATTENTION_HAPPENINGS: readonly RecipeAttention['happened'][] = ['device-removed', 'marked'];
+
+/**
+ * An activity's attention mark, `RecipeActivity.attention`: one reason or more, each with what happened, the device for
+ * a removal and for no other, the keys where they are known, an empty list where none changed, and a sentence for a
+ * person. **Keys are a record and not a
+ * choice**: whether a key or a device named in them is one the model or the document still has is not judged, since a
+ * later change can take either away and the record stays what happened.
+ */
+function attentionOf(value: unknown, what: string): RecipeAttention[] {
+  return some(value, what).map((one, k): RecipeAttention => {
+    const at = `${what} ${k + 1}`;
+    const r = fields(one, at, ['happened', 'message'], ['device', 'keys']);
+    if (!(ATTENTION_HAPPENINGS as readonly unknown[]).includes(r.happened)) {
+      throw new RecipeError(`${at} says ${String(r.happened)} happened, which is none of ${ATTENTION_HAPPENINGS.join(', ')}`);
+    }
+    const happened = r.happened as RecipeAttention['happened'];
+    if ((happened === 'marked') !== (r.device === undefined)) {
+      throw new RecipeError(happened === 'marked' ? `${at} names a device, and a mark set by hand names none` : `${at} names no device, and ${happened} happens to one`);
+    }
+    if (happened === 'marked' && r.keys !== undefined) throw new RecipeError(`${at} names keys, and a mark set by hand names none`);
+    // An empty list says the keys are known and none changed, which is not what leaving the field out says.
+    const keys = r.keys === undefined ? undefined : list(r.keys, `${at}'s keys`).map((key, j): RecipeAttentionKey => {
+      const where = `${at}'s key ${j + 1}`;
+      const f = fields(key, where, ['key', 'press', 'was', 'now']);
+      if (f.press !== 'short' && f.press !== 'held' && f.press !== 'double') throw new RecipeError(`${where} is pressed neither short, held nor double`);
+      return { key: text(f.key, `${where}'s key`), press: f.press, was: keyActionOf(f.was, `${where}'s action before`), now: keyActionOf(f.now, `${where}'s action now`) };
+    });
+    return {
+      happened,
+      ...(r.device === undefined ? {} : { device: text(r.device, `${at}'s device`) }),
+      ...(keys === undefined ? {} : { keys }),
+      message: text(r.message, `${at}'s message`),
+    };
+  });
 }
 
 /** A carried definition: a record naming its codeset, and commands each a name and a keycode. */
@@ -1213,6 +1360,9 @@ export function readRecipe(json: unknown): Recipe {
       ...(a.start === undefined ? {} : { start: activityStepsOf(a.start, `${what}'s start`, sequenceNames) }),
       ...(a.end === undefined ? {} : { end: activityStepsOf(a.end, `${what}'s end`, sequenceNames) }),
       ...(sequences === undefined ? {} : { sequences }),
+      // Switched off is said only as false: on is what an activity is when the field is left out.
+      ...(a.enabled === undefined ? {} : { enabled: switchedOff(a.enabled, `${what}'s enabled`) }),
+      ...(a.attention === undefined ? {} : { attention: attentionOf(a.attention, `${what}'s attention`) }),
     };
   });
   // The favourite channels belong to one activity: two holding them would leave which one the remote shows to a

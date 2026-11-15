@@ -171,7 +171,7 @@ const GROUPS: readonly {
     scope: 'model',
     requirements: [
       [21, SHOWN, 'Create an activity of a kind with its devices; starting, switching and Off behave as the manuals describe.'],
-      [22, SHOWN, 'Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key.'],
+      [22, SHOWN, 'Say which device has which role in an activity, and map its keys from that, a learned command with a standard name landing on its usual key.'],
       [23, SHOWN, 'Set each device\'s input in an activity, or leave it alone.'],
       [24, SHOWN, 'Include a pass through device in an activity.'],
       [25, TESTED, 'Rename an activity.', 'whole'],
@@ -183,6 +183,9 @@ const GROUPS: readonly {
       // Numbered after the hub's, since a number is never moved, and listed with the activities they are about.
       [90, SHOWN, 'Choose the order in which an activity switches its devices on and off.'],
       [91, SHOWN, 'Choose the screen an activity opens on, where the remote has more than one.'],
+      // Numbered after R91, decision 44, and listed with the activities they are about.
+      [92, SHOWN, 'Switch an activity off, so the remote is given everything but it and is told which was left out, and on again as it was.'],
+      [93, TESTED, 'Mark every activity that used a device removed from the document as needing attention, saying which of its keys now do otherwise and how, keep building and syncing it, and clear the mark.'],
     ],
   },
   {
@@ -475,7 +478,7 @@ function unknown(why: string, reference: readonly string[] = []): RequirementSta
 
 /**
  * Every bench model's written status on the requirements of the models, those of R1 to R72 that are not the FHSDK's
- * as a whole and R83 to R91, that no proof makes met:
+ * as a whole and R83 to R93, that no proof makes met:
  * open, impossible or unknown, each with its reason, judged by reading the model's test notes, its bench tests and its
  * reference pages, an open one saying first whose work is missing. A requirement a proof names for the model has no entry here, and one with neither is a fault,
  * `test/requirements.test.ts`: every requirement on every model is proven or written, never both.
@@ -544,6 +547,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
     90: open(SHARED_FAMILY, 'The start switches the devices on in the order the activity\'s device list puts them, a rule of the build; nothing lets a person choose that order or the order off.'),
     91: unknown('Logitech\'s configurations open every activity on its working screen after the start up screen; whether one of ours could open on another is not checked.', ['reference/remotes/harmony-one/display.md#what-a-person-sees']),
+    92: open(BENCH, 'A build from a recipe leaves a switched off activity out, the same configuration as one without it, and a sync says which it left out, but no such build has been sent to the unit.'),
   },
   // The Harmony 600.
   'harmony-600': {
@@ -606,6 +610,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
     90: open(SHARED_FAMILY, 'The start switches the devices on in the order the activity\'s device list puts them, a rule of the build; nothing lets a person choose that order or the order off.'),
     91: unknown('Logitech\'s configurations open every activity on its working screen; whether one of ours could open on another is not checked.', ['reference/remotes/harmony-600/behaviour.md#starting-switching-and-ending-activities']),
+    92: open(BENCH, 'A build from a recipe leaves a switched off activity out, the same configuration as one without it, and a sync says which, but no such build has been sent to the 600.'),
+    93: open(FAMILY, 'A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.'),
   },
   // The Harmony 650.
   'harmony-650': {
@@ -673,6 +679,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
     90: open(SHARED_FAMILY, 'The start switches the devices on in the order the activity\'s device list puts them, a rule of the build; nothing lets a person choose that order or the order off.'),
     91: unknown('Logitech\'s configurations open every activity on its working screen; whether one of ours could open on another is not checked.', ['reference/remotes/harmony-650/behaviour.md#starting-and-switching-activities']),
+    92: open(BENCH, 'A build from a recipe leaves a switched off activity out, the same configuration as one without it, and a sync says which, but no such build has been sent to the 650.'),
+    93: open(FAMILY, 'A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.'),
   },
   // The Harmony 700.
   'harmony-700': {
@@ -737,6 +745,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
     90: open(SHARED_FAMILY, 'The start switches the devices on in the order the activity\'s device list puts them, a rule of the build; nothing lets a person choose that order or the order off.'),
     91: unknown('Logitech\'s configurations open every activity on its working screen; whether one of ours could open on another is not checked.', ['reference/remotes/harmony-700/behaviour.md#starting-switching-and-ending-activities']),
+    92: open(BENCH, 'A build from a recipe leaves a switched off activity out, the same configuration as one without it, and a sync says which, but no such build has been sent to the 700.'),
+    93: open(FAMILY, 'A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.'),
   },
   // The Harmony 525.
   'harmony-525': {
@@ -808,6 +818,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED_FAMILY, 'Nothing composes a device for a 525, so no command of one can be tuned.'),
     90: open(SHARED_FAMILY, 'Nothing composes an activity for the 525, so no order can be chosen.'),
     91: unknown('Which screen a 525 activity opens on, and whether a configuration could choose another, is not checked.'),
+    92: open(SHARED_FAMILY, 'No family serves the 525, so nothing builds one from a recipe or leaves an activity out.'),
+    93: open(SHARED_FAMILY, 'No family serves the 525, so no document of one is changed or marked.'),
   },
   // The Harmony 515, on the Harmony 525's platform with an application of its own, 3.4. Its bench unit has only been
   // read, decision 35, so everything that touches a write is open, and what the 525 shows is not assumed.
@@ -882,6 +894,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED_FAMILY, 'Nothing composes a device for a 515, so no command of one can be tuned.'),
     90: open(SHARED_FAMILY, 'Nothing composes an activity for the 515, so no order can be chosen.'),
     91: unknown('Which screen a 515 activity opens on, and whether a configuration could choose another, is not checked.'),
+    92: open(SHARED_FAMILY, 'No family serves the 515, so nothing builds one from a recipe or leaves an activity out.'),
+    93: open(SHARED_FAMILY, 'No family serves the 515, so no document of one is changed or marked.'),
   },
   // The Harmony 885.
   'harmony-885': {
@@ -950,6 +964,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
     90: open(SHARED_FAMILY, 'Activities are not composed for the 885, so no order can be chosen.'),
     91: unknown('Which screen an 885 activity opens on, and whether a configuration could choose another, is not checked.'),
+    92: open(SHARED_FAMILY, 'Nothing builds an 885 from a recipe yet, so nothing leaves an activity out of one.'),
+    93: open(FAMILY, 'A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.'),
   },
   // The Harmony 785, on the Harmony 880 and 885's platform with the Harmony 720's application. Both bench units have
   // only been read, decision 34, so everything that touches a write is open, and what the 885 shows is not assumed.
@@ -1025,6 +1041,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED_FAMILY, 'Nothing composes a device for the 785, so no command of one can be tuned.'),
     90: open(SHARED_FAMILY, 'Activities are not composed for the 785, so no order can be chosen.'),
     91: unknown('Which screen a 785 activity opens on, and whether a configuration could choose another, is not checked.'),
+    92: open(SHARED_FAMILY, 'Nothing builds a 785 from a recipe yet, so nothing leaves an activity out of one.'),
+    93: open(FAMILY, 'A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.'),
   },
   // The Harmony 300.
   'harmony-300': {
@@ -1096,6 +1114,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
     90: open(SHARED_FAMILY, 'Nothing lets a person choose the order the activity switches its devices on and off in.'),
     91: impossible(['reference/remotes/harmony-300/display.md#harmony-300-display'], 'The 300 has no screen, so an activity opens on none.'),
+    92: open(BENCH, 'A build from a recipe leaves a switched off activity out, the same configuration as one without it, but no such build has been sent to the 300.'),
+    93: open(FAMILY, 'A removal marks the activity that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.'),
   },
   // The Harmony 350.
   'harmony-350': {
@@ -1162,6 +1182,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
     90: open(SHARED_FAMILY, 'Nothing lets a person choose the order the activity switches its devices on and off in.'),
     91: impossible(['reference/remotes/harmony-350/display.md#harmony-350-display'], 'The 350 has no screen, so an activity opens on none.'),
+    92: open(BENCH, 'A build from a recipe leaves its activity out when switched off, the same configuration as one without it, but no such build has been sent to the 350.'),
+    93: open(FAMILY, 'A removal marks the activity that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.'),
   },
   // The Harmony Touch.
   'harmony-touch': {
@@ -1178,7 +1200,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     17: open(MODEL, 'A repeat count is composed, but six taps sent four or five frames where three were predicted, unexplained.'),
     18: open(BENCH, 'A channel tuning setting composes, but no composed tuning was heard; the favourites heard ran on Logitech\'s carried tuning.'),
     19: open(SHARED, 'The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command\'s own code yet, and taking away a command of the definition is not built.'),
-    22: open(BENCH, 'An activity\'s keys are mapped from its devices\' jobs and their default maps, a command landing on the key of its name, and read back from the documents built, but no activity mapped that way has been sent to the unit; a learned command lands on no key until a build reads a command\'s own code (R19).'),
+    22: open(SHARED, 'An activity\'s keys are mapped from its devices\' roles and their default maps and read back from the documents built, but a learned command lands on no key until a build reads a command\'s own code, R19, and no activity mapped that way has been sent to the unit.'),
     27: open(FAMILY, 'The composer writes an activity with no picture of its own, so it shows its type\'s default picture.'),
     28: open(BENCH, 'Places are composed and renumbered after a removal, but reordering the activity list or an activity\'s devices was never shown.'),
     29: impossible(['reference/remotes/harmony-touch/keys.md#every-key-on-the-drawing'], 'The Touch has no activity keys; its 27 keypad keys and two touch zones include none.'),
@@ -1191,7 +1213,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     42: open(FAMILY, 'Only our background picture is drawn and shown; typeface, inks, icons and theme are not offered.'),
     44: open(FAMILY, 'The Touch has help on its screen, but nothing builds or checks it for activities of ours.'),
     45: open(FAMILY, 'Adding and reordering were shown, but no favourite can be removed or named by the composer.'),
-    47: open(FAMILY, 'Two settings were changed on the unit; reading settings off it, the touch sound, the tutorial and defaults are not done.'),
+    47: open(FAMILY, 'Two settings were changed on the unit and a document takes its family\'s defaults; reading settings off the unit, the vibration and the tutorial are not done.'),
     49: unknown('Whether a Touch carries the accelerometer is not checked, and the bench unit\'s settings offer no tilt entry.'),
     50: unknown('Whether a Touch has a Remote Assistant or a Starting Activity message to switch is not known.'),
     51: unknown('An activity field marks guided or manual help, but whether that is Smart or Full help is not known.'),
@@ -1217,6 +1239,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED_MODEL, 'A command has no timing field in the documents, and how the remote plays a held code has not been read, so nothing tunes one command.'),
     90: open(BENCH, 'A recipe\'s power order for an activity is set by the toolkit and read by the Touch\'s build into the documents, but no document built from one has been sent to the unit.'),
     91: open(BENCH, 'A recipe\'s opening screen for an activity is set by the toolkit, held to the three screens the build takes, and read by the build into the documents, but no document built from one has been sent to the unit.'),
+    92: open(BENCH, 'A build leaves a switched off activity out of the documents, the same documents as without it, and a sync to a pretend Touch says which, but no such set has been sent to the unit.'),
   },
   // The Harmony Elite, the remote of the set: skin 111, on the Harmony Touch's image, provisioned from its hub. Nothing
   // is written to it, decision 36, and no family builds for it, so nothing here is proven but what a test proves for
@@ -1240,7 +1263,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     18: open(SHARED_FAMILY, 'Nothing sets how a device tunes a channel in an Elite\'s setup.'),
     19: open(SHARED_FAMILY, 'The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command\'s own code yet, and taking away a command of the definition is not built.'),
     21: open(FAMILY, 'Nothing composes an activity for an Elite, and none of ours has run on one.'),
-    22: open(FAMILY_MODEL, 'Nothing maps an activity\'s keys from its devices\' jobs, and the Elite\'s keys are not read.'),
+    22: open(FAMILY_MODEL, 'Nothing maps an activity\'s keys from its devices\' roles, and the Elite\'s keys are not read.'),
     23: open(FAMILY, 'Nothing sets a device\'s input in an activity of an Elite\'s setup.'),
     24: open(FAMILY, 'Nothing includes a pass through device in an activity of an Elite\'s setup.'),
     26: open(SHARED_FAMILY, 'Nothing removes an activity from an Elite\'s setup.'),
@@ -1296,6 +1319,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED_FAMILY, 'No library step tunes one command of a device in an Elite\'s setup.'),
     90: open(SHARED_FAMILY, 'Nothing composes an activity for an Elite, so no order can be chosen.'),
     91: open(SHARED_FAMILY, 'Nothing composes an activity for an Elite, so no start screen can be chosen.'),
+    92: open(SHARED_FAMILY, 'Nothing composes an Elite\'s setup, so nothing leaves an activity out of one.'),
+    93: open(SHARED_FAMILY, 'No family serves the Elite, so no document of one is changed or marked.'),
   },
   // The Harmony Hub, skin 106: a remote without keys or a screen, reached over the cable for its identity file alone so
   // far. Its request channel is closed, decision 36, and its setup is to be read over the network, plan 016. What its
@@ -1320,7 +1345,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     18: open(SHARED_FAMILY, 'Nothing sets how a device tunes a channel in a hub\'s setup.'),
     19: open(SHARED_FAMILY, 'The toolkit adds a command with its own code to a recipe, gives one a new code and puts the original back, but no build reads a command\'s own code yet, and taking away a command of the definition is not built.'),
     21: open(FAMILY, 'Nothing composes an activity for a hub, and none of ours has run on one.'),
-    22: open(FAMILY, 'Nothing maps an activity\'s keys from its devices\' jobs for the remotes a hub serves.'),
+    22: open(FAMILY, 'Nothing maps an activity\'s keys from its devices\' roles for the remotes a hub serves.'),
     23: open(FAMILY, 'Nothing sets a device\'s input in an activity of a hub\'s setup.'),
     24: open(FAMILY, 'Nothing includes a pass through device in an activity of a hub\'s setup.'),
     26: open(SHARED_FAMILY, 'Nothing removes an activity from a hub\'s setup.'),
@@ -1376,6 +1401,8 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     89: open(SHARED_FAMILY, 'No library step tunes one command of a device in a hub\'s setup.'),
     90: open(SHARED_FAMILY, 'Nothing composes an activity for a hub, so no order can be chosen.'),
     91: unknown('A hub has no screen; whether its setup carries the start screen a paired remote opens an activity on is not read.', ['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine']),
+    92: open(SHARED_FAMILY, 'Nothing composes a hub\'s setup, so nothing leaves an activity out of one.'),
+    93: open(SHARED_FAMILY, 'No family serves the hub, so no document of one is changed or marked.'),
   },
 };
 

@@ -17,6 +17,10 @@
  *   than built and found equal;
  * * **none**: the part waits on no requirement, `highestIds`, and the documents are the reference's.
  *
+ * Two rows every build reads, decision 44: an activity switched off is a read part whose documents differ, the activity
+ * left out; and an activity's attention mark is a read part whose documents are the reference's, since a mark is a
+ * note to a person and changes nothing built, `sameDocuments`.
+ *
  * **Walked from the table.** Every row of `VERSION_TWO` has a case, and every case names a row, so a row added to the
  * table fails here until it has one. A device's timing and power are read member by member, so the members the table
  * marks read are found by asking the table of each member alone and must be exactly the members with a read case; a
@@ -61,6 +65,11 @@ interface Case {
   readonly expect: Expect;
   /** Where the part the case states is, as `versionTwoFields` says it. */
   readonly where: string;
+  /**
+   * A part read that changes nothing built by design, an activity's attention mark, decision 44: a note to a person
+   * that every build passes over, so its documents are the reference's.
+   */
+  readonly sameDocuments?: true;
   readonly change: (document: Json) => void;
 }
 
@@ -152,6 +161,11 @@ const CASES: Case[] = [
     row: 'activity keys double', label: 'a double press on an activity\'s gesture', expect: 'read', where: 'the activity Watch TV\'s SwipeUp key, pressed twice',
     change: (d) => { activity(d, 'Watch TV').keys.push({ key: 'SwipeUp', press: 'double', action: { device: 'LG TV', command: 'Mute' } }); },
   },
+  { row: 'activity enabled', label: 'an activity switched off', expect: 'read', where: 'the activity Listen to Music\'s switch', change: (d) => { activity(d, 'Listen to Music').enabled = false; } },
+  {
+    row: 'activity attention', label: 'an activity marked as needing attention', expect: 'read', sameDocuments: true, where: 'the activity Listen to Music\'s attention mark',
+    change: (d) => { activity(d, 'Listen to Music').attention = [{ happened: 'marked', message: 'the receiver is new' }]; },
+  },
 ];
 
 const build = (document: Json): string => {
@@ -166,7 +180,7 @@ test('every row of the table has a case and every case names a row, and the memb
   const readMembers = (row: string): string[] => CASES.filter((one) => one.row === row && one.expect === 'read').map((one) => one.member!);
   assert.deepEqual(readMembers('device timing'), ['interKeyDelay', 'interDeviceDelay', 'powerOnDelay', 'inputDelay', 'pressMinRepeats']);
   assert.deepEqual(readMembers('device power'), ['alwaysOn']);
-  assert.deepEqual(['read', 'not read', 'none'].map((expect) => CASES.filter((one) => one.expect === expect).length), [22, 12, 1]);
+  assert.deepEqual(['read', 'not read', 'none'].map((expect) => CASES.filter((one) => one.expect === expect).length), [24, 12, 1]);
 });
 
 test('each case states the part it says, and the table says of it what the case expects', () => {
@@ -180,7 +194,7 @@ test('each case states the part it says, and the table says of it what the case 
   }
 });
 
-test('a field the table says the Harmony Touch reads changes its six documents, one marked unread is refused as not built, and highestIds changes nothing', () => {
+test('a field the table says the Harmony Touch reads changes its six documents, but an attention mark, which changes nothing by design, one marked unread is refused as not built, and highestIds changes nothing', () => {
   const plain = build(reference());
   const outcomes: Record<Expect, string[]> = { read: [], 'not read': [], none: [] };
   for (const one of CASES) {
@@ -191,9 +205,9 @@ test('a field the table says the Harmony Touch reads changes its six documents, 
       assert.throws(() => build(document), (error: unknown) => error instanceof NotBuiltError && error.requirement === part.requirement
         && error.message.includes(one.where), one.label);
     } else {
-      assert.equal(build(document) !== plain, one.expect === 'read', one.label);
+      assert.equal(build(document) !== plain, one.expect === 'read' && one.sameDocuments !== true, one.label);
     }
     outcomes[one.expect].push(one.label);
   }
-  assert.deepEqual([outcomes.read.length, outcomes['not read'].length, outcomes.none.length], [22, 12, 1]);
+  assert.deepEqual([outcomes.read.length, outcomes['not read'].length, outcomes.none.length], [24, 12, 1]);
 });

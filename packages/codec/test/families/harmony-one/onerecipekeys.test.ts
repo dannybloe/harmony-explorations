@@ -64,7 +64,7 @@ import { slow } from '@harmony/lab';
 import { proves } from '@harmony/testkit/proof';
 import '../../../src/support/resources.node.ts';
 import {
-  activities, buildFromRecipe, builtDigest, type Container, deviceModeMaps, devices, keyCodes, parse, readRecipe, RecipeError,
+  activities, buildFromRecipe, builtDigest, type Container, deviceModeMaps, devices, keyCodes, parse, readRecipe,
 } from '../../../src/node.ts';
 import { handlerSets, modeRecords, taggedList, diffRanges } from '../../../src/internal.ts';
 import { TRAILER_CHECKSUM_OFFSET } from '../../../src/container/gspm.ts';
@@ -74,7 +74,7 @@ import { ONE_KEYPAD_SCANS, ONE_RECIPE_KEYS } from '../../../src/families/harmony
 import { carriedCatalogue } from '../../../src/catalogue/carried.ts';
 import { chooseByModel } from '../../../src/families/registry.ts';
 import { readEarlierTouchSetupFile } from '../../../src/families/harmony-touch/earlierform.ts';
-import { ComposeError } from '../../../src/shared/core.ts';
+import { NotBuiltError } from '../../../src/support/contract.ts';
 
 const REFERENCES = new URL('../../references/', import.meta.url);
 type Json = Record<string, any>;
@@ -185,7 +185,7 @@ const built = () => {
 
 test('without key choices the test setup builds to the fingerprint its reference recorded', slow(), () => {
   const { base } = built();
-  assert.equal(builtDigest({ kind: 'configuration', model: 'Harmony One', skin: 54, bytes: base.blob }), ONE_TEST_SHA256);
+  assert.equal(builtDigest({ kind: 'configuration', model: 'Harmony One', skin: 54, bytes: base.blob, leftOut: [] }), ONE_TEST_SHA256);
 });
 
 /**
@@ -196,7 +196,7 @@ const BY_SCAN_SHA256 = {
   chosen: 'f582e99220d2c33b5cd33553d76688fb6377a498e2872f035db564d0bb8dc77b',
   nothing: '0918cc90915e75e706f6fead7f66eb8eff43999bc8e08bd71429d8c6efd6ca34',
 };
-const digestOf = (c: Container): string => builtDigest({ kind: 'configuration', model: 'Harmony One', skin: 54, bytes: c.blob });
+const digestOf = (c: Container): string => builtDigest({ kind: 'configuration', model: 'Harmony One', skin: 54, bytes: c.blob, leftOut: [] });
 
 test('the choices named by word build to the fingerprints the same choices named by scan built to', slow(), () => {
   const { base, chosen, nothing } = built();
@@ -275,18 +275,19 @@ test('control: the key comparison finds nothing between a build and itself, and 
 // recipe of the Harmony One's goes through, `composeSetup`; and the same refusal through the one build, once.
 
 let donor: Uint8Array | undefined;
-const refusedOnTheOne = (chosen: Parameters<typeof withKeys>[0], message: RegExp): void => {
+const refusedOnTheOne = (chosen: Parameters<typeof withKeys>[0], message: RegExp, kind: typeof AssemblyError | typeof NotBuiltError = AssemblyError): void => {
   donor ??= buildEmptyOneConfiguration({ skin: 54, builtAt: BUILT_AT, blend: false }).bytes;
   const recipe = readRecipe(withKeys(chosen));
   assert.throws(() => composeSetup(recipe, { donor: donor as Uint8Array, builtAt: BUILT_AT, archive: carriedCatalogue(recipe) as never }),
-    (error: unknown) => error instanceof AssemblyError && message.test(error.message));
+    (error: unknown) => error instanceof kind && message.test(error.message));
 };
 
-test('a held press, a sequence, a scan no map binds, an unknown device and an unknown command are each refused by name', () => {
+test('a held press and a sequence answer not built, and a scan no map binds, an unknown device and an unknown command are each refused by name', () => {
+  // Not built rather than refused: a held press, R38, and a sequence on a key, R37, are in the contract.
   refusedOnTheOne({ activities: { 'TV kijken': [{ key: 'Info', press: 'held', action: { device: 'KPN', command: 'Info' } }] } },
-    /^the activity TV kijken's Info key, held: a held press is not built yet$/);
+    /^composeSetupParts for the activity TV kijken's Info key, held is in the contract and not built yet, requirement R38$/, NotBuiltError);
   refusedOnTheOne({ activities: { Muziek: [{ key: 'Info', action: { sequence: 'Sleep' } }] } },
-    /^the activity Muziek's Info key runs the sequence Sleep, and a sequence on a key is not built yet$/);
+    /^composeSetupParts for the activity Muziek's Info key, running the sequence Sleep is in the contract and not built yet, requirement R37$/, NotBuiltError);
   // The Activities key is on the keypad and no map binds it; ScreenNext is the page strip beside the screen; and
   // Favorites is a word of the Harmony Touch's that the Harmony One has no key of.
   refusedOnTheOne({ devices: { KPN: [{ key: 'Activities', action: { nothing: true } }] } }, /^the device KPN's Activities key: Activities is no key the Harmony One's maps bind$/);
@@ -296,9 +297,9 @@ test('a held press, a sequence, a scan no map binds, an unknown device and an un
     /^the device LG TV's VolumeUp key sends a command of Yamaha, which is no device of the recipe$/);
   refusedOnTheOne({ devices: { 'LG TV': [{ key: 'VolumeUp', action: { device: 'Denon', command: 'VolumeUpLouder' } }] } },
     /^the device LG TV's VolumeUp key sends VolumeUpLouder, which Denon's definition does not have$/);
-  // The one build refuses the same, as a refusal of the composition.
+  // The one build answers the same, not built.
   assert.throws(() => buildFromRecipe(withKeys({ activities: { Muziek: [{ key: 'Info', action: { sequence: 'Sleep' } }] } }), { builtAt: BUILT_AT }),
-    /a sequence on a key is not built yet/);
+    (error: unknown) => error instanceof NotBuiltError && error.requirement === 37);
 });
 
 test('control: the refusal check fails where the refusal names another thing than expected', () => {
@@ -312,15 +313,16 @@ test('control: the refusal check fails on a recipe whose choice is one the build
     (error: unknown) => error instanceof assert.AssertionError);
 });
 
-test('every family that builds no key choice refuses a recipe stating one, through the one build and through its own route', () => {
+test('every family that builds no key choice answers not built for a recipe stating one, through the one build and through its own route', () => {
   const key = [{ key: 'VolumeUp', action: { nothing: true } }];
   for (const name of ['h600-five', 'h650-test', 'h700-test-bright', 'h350-test']) {
     const json = recipeJson(name);
     const first = (json.devices as Json[])[0] as Json;
     first.keys = key;
+    // A device's key choice is R32, and the one build names the family and the place.
     assert.throws(() => buildFromRecipe(json, { builtAt: BUILT_AT, account: {} as never }),
-      (error: unknown) => error instanceof RecipeError
-        && error.message === `nothing here builds a key a recipe chooses for ${chooseByModel(json.model).family.name} yet, and the recipe chooses the device ${first.name}'s VolumeUp key`,
+      (error: unknown) => error instanceof NotBuiltError && error.requirement === 32
+        && error.contract === `buildFromRecipe for the device ${first.name}'s VolumeUp key on ${chooseByModel(json.model).family.name}`,
       name);
   }
   // The control: the Harmony Touch builds a key choice its places take, decision 43, so the one build goes past the
@@ -332,19 +334,19 @@ test('every family that builds no key choice refuses a recipe stating one, throu
   const h350 = readRecipe({ ...recipeJson('h350-test'), devices: (recipeJson('h350-test').devices as Json[]).map((one, k) => (k === 0 ? { ...one, keys: key } : one)) });
   const noScreen = chooseByModel(h350.model);
   assert.throws(() => noScreen.family.kind === 'compiled' && noScreen.family.fromRecipe?.(h350, noScreen.skin, { builtAt: BUILT_AT, archive: carriedCatalogue(h350) as never }),
-    (error: unknown) => error instanceof ComposeError && /^the Harmony 300 and 350 build no key a recipe chooses yet/.test(error.message));
+    (error: unknown) => error instanceof NotBuiltError && error.requirement === 32 && /^composeNoScreenSetup for the device /.test(error.contract));
   // A Harmony Touch's setup file of the earlier form takes its keys from its own block and refuses the recipe's.
   const touch = JSON.parse(readFileSync(new URL('../harmony-touch/touch-test-earlier-form.json', import.meta.url), 'utf8')) as Json;
   (touch.activities as Json[])[0]!.keys = key;
   assert.throws(() => readEarlierTouchSetupFile(touch), /a Harmony Touch's keys are built from its own part/);
 });
 
-test('the Harmony 600 family\'s own route refuses a recipe stating keys at the shared composer', () => {
+test('the Harmony 600 family\'s own route answers not built for a recipe stating keys at the shared composer', () => {
   const recipe = readRecipe(withKeys({ devices: {} }, 'h600-five'));
   const first = recipe.devices[0]!;
   const keyed = { ...recipe, devices: [{ ...first, keys: [{ key: 'VolumeUp', action: { nothing: true as const } }] }, ...recipe.devices.slice(1)] };
   const four = chooseByModel(keyed.model);
   assert.throws(() => four.family.kind === 'compiled' && four.family.fromRecipe?.(keyed, four.skin, { builtAt: BUILT_AT, archive: carriedCatalogue(keyed) as never }),
-    (error: unknown) => error instanceof AssemblyError
-      && error.message === `nothing here builds a key a recipe chooses for the Harmony 600, 650 and 700 yet, and the recipe chooses the device ${first.name}'s VolumeUp key`);
+    (error: unknown) => error instanceof NotBuiltError && error.requirement === 32
+      && error.contract === `composeSetupParts for the device ${first.name}'s VolumeUp key on the Harmony 600, 650 and 700`);
 });

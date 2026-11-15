@@ -337,11 +337,11 @@ export function activityRolesFromSends(c: Container, activity: number): Activity
 }
 
 /**
- * The jobs a device can do in an activity, by the names Logitech's contract gives their role types,
+ * The roles a device can have in an activity, by the names Logitech's contract gives their role types,
  * `reference/logitech/data-model/model.md`. A device listed with **none** of them is a pass through device, the
  * contract's `PassThroughActivityRole`: one the signal passes through unaltered, an HDMI switch or an
  * amplifier that only routes the picture. MyHarmony states it as a role of its own; here it is the
- * empty list, because it does none of the jobs and the compile gives it nothing a job would.
+ * empty list, because it has none of the roles and the compile gives it nothing a role would.
  */
 export const ACTIVITY_ROLE_NAMES = ['Display', 'Volume', 'ChannelChanging', 'PlayMovie', 'PlayMedia', 'PlayGame'] as const;
 export type ActivityRoleName = (typeof ACTIVITY_ROLE_NAMES)[number];
@@ -349,11 +349,11 @@ export type ActivityRoleName = (typeof ACTIVITY_ROLE_NAMES)[number];
 /** The roles that make a device the control device when no device changes channels, section 323. */
 const PLAY_ROLES: readonly ActivityRoleName[] = ['PlayMovie', 'PlayMedia', 'PlayGame'];
 
-/** One device of an activity in the platform's terms: which device, its jobs, and its input. */
+/** One device of an activity in the platform's terms: which device, its roles, and its input. */
 export interface ActivityDevice {
   /** The device, as an index into base slot 5's group array, as `ActivityRoles` names it. */
   readonly group: number;
-  /** Its jobs in this activity. Empty is a pass through device, switched on and to its input only. */
+  /** Its roles in this activity. Empty is a pass through device, switched on and to its input only. */
   readonly roles: readonly ActivityRoleName[];
   /**
    * The input the activity puts it on: what `inputTarget` gives for a composed device, or the device's
@@ -401,7 +401,7 @@ export interface ActivityFromRoles {
  *
  * The roles go the way section 323 measured: the volume keys to the device with `Volume`, everything
  * else to the one with `ChannelChanging`, or where none changes channels the one that plays. A display
- * or a pass through device contributes no key. Two devices claiming one of those two jobs are refused,
+ * or a pass through device contributes no key. Two devices claiming one of those two roles are refused,
  * since the keypad follows only one.
  */
 export function activityFromRoles(c: Container, listed: readonly ActivityDevice[]): ActivityFromRoles {
@@ -437,7 +437,7 @@ export function activityFromRoles(c: Container, listed: readonly ActivityDevice[
 /**
  * **The two devices an activity's keys follow, from the roles its devices are listed with**, section 323: the volume
  * device holds `Volume`; the control device holds `ChannelChanging`, or where none does, one of the play roles. Two
- * devices holding one of those jobs are refused, since the keys follow only one. Pure and named by `nameOf`, so a
+ * devices holding one of those roles are refused, since the keys follow only one. Pure and named by `nameOf`, so a
  * caller that names a device otherwise than by a group, a document family by the device's name, asks the same rule
  * rather than keeping a copy of it; `activityFromRoles` is one caller.
  */

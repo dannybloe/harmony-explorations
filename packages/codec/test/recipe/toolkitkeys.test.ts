@@ -406,7 +406,10 @@ function valueImports(source: string): Map<string, string[]> {
 const ALLOWED_IMPORTS: readonly [string, readonly string[]][] = [
   ['../families/capabilities.ts', ['capabilitiesOf']],
   ['../families/maps.ts', ['binds', 'resolveMaps']],
-  ['../families/registry.ts', ['chooseByModel', 'mapsOfModel', 'NoFamilyError']],
+  ['../families/registry.ts', ['chooseByModel', 'mapsOfModel', 'NoFamilyError', 'settingsOfModel']],
+  // The settings a model's family states, read as data through the generic interface and never a family's own module:
+  // the question, the change and the check judge a setting by the family's table, as the build does.
+  ['../families/settings.ts', ['settingValue']],
   // Of the composers, a constant list of jobs and the reading of which protocol a code names.
   ['../compose/activityroles.ts', ['ACTIVITY_ROLE_NAMES']],
   ['../compose/cataloguecodes.ts', ['catalogueProtocol']],
@@ -661,8 +664,8 @@ test('the check lists a key choice naming no place, a place no map of its owner 
 
 test('the check codes a key choice as setKey refuses the same place: a key only the other owner binds not on this model, a key the remote binds itself unknown', () => {
   // Two routes to one place: `setKey`'s refusal, and the check of a document that states the same choice written by
-  // hand. An application acts on the code, so the two have to agree on it, and before they agreed the check said
-  // unknown where `setKey` said not on this model, for a gesture in a device's own map.
+  // hand. An application acts on the code, so the two have to agree on it: a gesture in a device's own map is not on
+  // this model by both, a zone the remote binds itself unknown by both.
   const touch = touchTest();
   const reasons = { 'not-on-this-model': 'not-on-this-model', unknown: 'unknown-key' } as const;
   const cases: readonly (readonly [Owner, string, keyof typeof reasons])[] = [
@@ -683,6 +686,101 @@ test('the check codes a key choice as setKey refuses the same place: a key only 
   // The control: the same gesture in an activity's map is taken by `setKey` and listed by nothing.
   assert.doesNotThrow(() => recipe.setKey(touch, { owner: { activity: 'a3' }, key: 'SwipeUp' }, { nothing: true }));
   assert.deepEqual(added(touch, (json) => { json.activities[2].keys = [...(json.activities[2].keys ?? []), { key: 'SwipeUp', action: { nothing: true } }]; }), []);
+});
+
+/** What `setKey` says of a choice, as a check's code would say it: a reason's code, not built, or nothing. */
+type KeySaid = 'ok' | 'unknown' | 'invalid' | 'not-on-this-model' | 'not built';
+
+function setKeySays(document: Recipe, place: { owner: Owner; key: string }, action: Parameters<typeof recipe.setKey>[2]): KeySaid {
+  try {
+    recipe.setKey(document, place, action);
+    return 'ok';
+  } catch (error) {
+    if (error instanceof recipe.ChangeRefused) return error.reason as KeySaid;
+    if (error instanceof NotBuiltError) return 'not built';
+    throw error;
+  }
+}
+
+/**
+ * What the check says first at a key's place in a document that states the choice written by hand, as setKey's word:
+ * any of the unknown codes is `unknown`, and a not built choice is the check's not on this model saying "yet". The
+ * document is given to the check as an object, never through `recipe.open`, since the reader refuses some of these
+ * choices before a check could see them, which is the case the check has to cover.
+ */
+function checkSays(document: Recipe, place: { owner: Owner; key: string }, action: Json): KeySaid | 'ok, but not built' {
+  const json = copy(document) as Json;
+  const at = 'device' in place.owner ? json.devices.find((one: Json) => one.id === (place.owner as { device: string }).device)
+    : json.activities.find((one: Json) => one.id === (place.owner as { activity: string }).activity);
+  at.keys = [...(at.keys ?? []).filter((one: Json) => !(one.key === place.key && (one.press ?? 'short') === 'short')), { key: place.key, action }];
+  const before = new Set(recipe.check(document).map((one) => JSON.stringify(one)));
+  const here = recipe.check(json as Recipe).filter((one) => !before.has(JSON.stringify(one)))
+    .filter((one) => JSON.stringify(one.place) === JSON.stringify({ kind: 'key', owner: place.owner, key: place.key }));
+  if (here.length === 0) return 'ok';
+  const first = here[0]!;
+  if (first.code === 'not-on-this-model' && / yet\b/.test(first.message)) return here.every((one) => / yet\b/.test(one.message)) ? 'ok, but not built' : 'not built';
+  return first.code.startsWith('unknown-') ? 'unknown' : first.code as KeySaid;
+}
+
+test('the check codes a key choice first as setKey refuses it, over every kind of place of the Harmony Touch and the Harmony One, both kinds of owner and every kind of action', () => {
+  const touch = touchTest();
+  // The One's test setup holds no sequence with an id, so its first activity is given one, of its first device's
+  // first command, for a sequence to be a choice there.
+  const plainOne = oneTest();
+  const oneActivity = plainOne.activities[0]!;
+  const oneDevice = plainOne.devices.find((one) => one.name === oneActivity.devices[0]!.device)!;
+  const one = recipe.addSequence(plainOne, oneActivity.id!, { name: 'Both', steps: [{ device: oneDevice.id!, command: recipe.commands(plainOne, oneDevice.id!)[0]!.name }] }).document;
+  const outcomes = new Map<string, number>();
+  const differing: string[] = [];
+  for (const [model, document, other] of [['Harmony Touch', touch, one], ['Harmony One', one, touch]] as const) {
+    // One place of every kind the model has, by surface, whose maps bind it and whether a choice is built; a word no
+    // model has; and a word the other model has and this one lacks.
+    const kinds = new Map<string, string>();
+    for (const place of recipe.keyNames(document)) {
+      const kind = `${place.surface} ${place.boundBy} ${place.built}`;
+      if (!kinds.has(kind)) kinds.set(kind, place.key);
+    }
+    const own = new Set(recipe.keyNames(document).map((place) => place.key));
+    const words = [...kinds.values(), 'Dance', recipe.keyNames(other).find((place) => !own.has(place.key))!.key];
+    const activity = document.activities.find((one) => (one.sequences ?? []).length > 0)!;
+    const sequence = activity.sequences![0]!;
+    const device = document.devices[0]!;
+    const command = recipe.commands(document, device.id!)[0]!.name;
+    for (const owner of [{ device: device.id! }, { activity: activity.id! }] as Owner[]) {
+      // Every kind of action: nothing; a command the device has and one it lacks; a sequence of the activity's, which a
+      // device has none of, and one it does not hold.
+      const actions: [string, Parameters<typeof recipe.setKey>[2], Json][] = [
+        ['nothing', { nothing: true }, { nothing: true }],
+        ['a command', { device: device.id!, command }, { device: device.name, command }],
+        ['a command it lacks', { device: device.id!, command: 'Dance' }, { device: device.name, command: 'Dance' }],
+        ['its sequence', { sequence: sequence.id! }, { sequence: sequence.name }],
+        ['no sequence of its', { sequence: 's99' }, { sequence: 'Nothing Held' }],
+      ];
+      for (const word of words) {
+        for (const [what, given, stated] of actions) {
+          const change = setKeySays(document, { owner, key: word }, given);
+          const check = checkSays(document, { owner, key: word }, stated);
+          outcomes.set(change, (outcomes.get(change) ?? 0) + 1);
+          // A choice setKey takes is one the check lists nothing of, or only as not built yet for the model's build.
+          const agrees = change === 'ok' ? check === 'ok' || check === 'ok, but not built' : check === change;
+          if (!agrees) differing.push(`${model} ${JSON.stringify(owner)} ${word} ${what}: setKey ${change}, check ${check}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(differing, []);
+  // Every refusal a choice on a place of the model can meet is among them; not built is not, since every place a map
+  // binds takes a choice on both models and a place none binds is unknown.
+  assert.deepEqual([...outcomes.keys()].sort(), ['invalid', 'not-on-this-model', 'ok', 'unknown']);
+  // The two the check said otherwise than setKey, by name, as the controls: a pad key of the Touch given a command its
+  // device lacks, which the family's own refusal answered before the command was looked up, and a device's key running
+  // a sequence, which the reader refuses and the check passed.
+  const pad = { owner: { activity: 'a1' }, key: 'Number1' };
+  assert.deepEqual([setKeySays(touch, pad, { device: 'd1', command: 'Dance' }), checkSays(touch, pad, { device: touch.devices[0]!.name, command: 'Dance' })], ['unknown', 'unknown']);
+  const deviceKey = { owner: { device: 'd1' }, key: 'Info' };
+  assert.deepEqual([setKeySays(touch, deviceKey, { sequence: 's1' }), checkSays(touch, deviceKey, { sequence: 'Test Sequence' })], ['invalid', 'invalid']);
+  assert.throws(() => recipe.open({ ...copy(touch), devices: copy(touch).devices.map((one, k) => (k === 0 ? { ...one, keys: [{ key: 'Info', action: { sequence: 'Test Sequence' } }] } : one)) }),
+    /a device has no sequences/);
 });
 
 test('the control: a choice on a place the owner binds, with a press it has, is not listed as a key the model lacks', () => {

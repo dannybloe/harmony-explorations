@@ -24,7 +24,11 @@ import {
   valueMaps,
 } from '../container/valuemap.ts';
 
-export class ComposeError extends Error {}
+// The refusal class, in a module of its own that imports nothing so the classes extending it load in any order,
+// `support/refusal.ts`; re-exported here, where every composer imports it from.
+import { ComposeError } from '../support/refusal.ts';
+
+export { ComposeError };
 
 /** The action list table's base slot, whose lists are what everything that runs points at. */
 export const ACTION_TABLE_SLOT = 10;

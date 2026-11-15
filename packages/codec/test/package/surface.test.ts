@@ -46,13 +46,14 @@ const TYPES = [
   'DeviceDelays', 'DeviceDriving', 'DeviceInput', 'DeviceInputs', 'DeviceListRow', 'DeviceModeMap', 'DevicePower',
   'DeviceQuery', 'DeviceSearch', 'DeviceSource', 'DeviceState', 'DeviceTiming', 'DocumentFamily', 'DocumentTypes', 'Edit', 'EditReport', 'EzHex',
   'FoundDevice', 'Identification', 'InfraredCode', 'IntendedVersionField', 'IntroductionTour', 'Inventory', 'IrFrame', 'IrGroup',
-  'KeyCode', 'KeyLabel', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
+  'KeyCode', 'KeyLabel', 'LeftOutActivity', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
   'ModelProperties', 'NetworkArchiveOptions', 'PngHeader',
   'PowerOnDelay', 'ProntoCode', 'Proof', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
   'RecipeActivityStep', 'RecipeChannelStep', 'RecipeCommand', 'RecipeCommandCode', 'RecipeCommandStep', 'RecipeDevice', 'RecipeDeviceKey', 'RecipeDevicePower',
   'RecipeFavourites', 'RecipeIds', 'RecipeKey', 'RecipeKeyAction', 'RecipeModel', 'RecipePress', 'RecipeScreenCommand', 'RecipeScreenItem',
   'RecipeSending', 'RecipeSequence', 'RecipeSequenceStep', 'RecipeSetting', 'RecipeTarget',
   'RenderedPage', 'Requirement', 'RequirementAnswer', 'RequirementState', 'RequirementStatus', 'RequirementWait', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
+  'TouchAccount',
 ];
 
 /** The Harmony Touch's view, `harmonyTouch` on the main entry: the names that exist at run time. */
@@ -81,20 +82,20 @@ const TOUCH_TYPES = [
 
 /** The document toolkit, `recipe` on the main entry: the names that exist at run time. */
 const RECIPE_VALUES = [
-  'ChangeRefused', 'PROBLEM_CODES', 'activities', 'addActivity', 'addDevice', 'addSequence', 'check', 'commands',
-  'create', 'devices', 'favourites', 'inputs', 'key', 'keyNames', 'keys', 'move', 'open', 'refreshDevice', 'remove', 'screen', 'sequences',
+  'ChangeRefused', 'PROBLEM_CODES', 'activities', 'addActivity', 'addDevice', 'addSequence', 'check', 'clearAttention', 'commands',
+  'create', 'devices', 'favourites', 'inputs', 'key', 'keyNames', 'keys', 'markAttention', 'move', 'open', 'refreshDevice', 'remove', 'screen', 'sequences',
   'setActivity', 'setDevice', 'setDeviceCommand', 'setFavourites', 'setKey', 'setLook', 'setScreen', 'setSequence',
-  'setSetting', 'unfilled', 'uses',
+  'setSetting', 'settings', 'unfilled', 'uses',
 ];
 
 /** The document toolkit, `recipe` on the main entry: the types and interfaces. */
 const RECIPE_TYPES = [
-  'ActivityChanges', 'ActivityDeviceChoice', 'ActivityId', 'ActivityStep', 'ActivitySummary', 'Change',
+  'ActivityChanges', 'ActivityDeviceChoice', 'ActivityId', 'ActivityStep', 'ActivitySummary', 'Attention', 'AttentionKey', 'Change',
   'CommandChange', 'CommandCode', 'CommandSummary', 'CommandTuningAnswer', 'DeviceChanges', 'DeviceId', 'DeviceSettingsAnswer', 'DeviceSummary',
   'Effect', 'Favourite', 'KeyAction', 'KeyAnswer', 'KeyBinder', 'KeyPlace', 'KeyPlaceSummary', 'KeySurface', 'MemberChanges', 'Movable',
   'NewActivity', 'NewDevice', 'NewSequence', 'Owner', 'Place', 'PressAnswer', 'Problem', 'ProblemCode', 'QuestionSources',
-  'RefusalReason', 'Removable', 'ScreenAnswer', 'ScreenEntryAnswer', 'ScreenItem', 'SendingAnswer', 'SequenceAnswer', 'SequenceId',
-  'SequenceStep', 'SequenceStepAnswer', 'SequenceSummary', 'SettingAnswer',
+  'RefusalReason', 'RemoteSettingAnswer', 'Removable', 'ScreenAnswer', 'ScreenEntryAnswer', 'ScreenItem', 'SendingAnswer', 'SequenceAnswer', 'SequenceId',
+  'SequenceStep', 'SequenceStepAnswer', 'SequenceSummary', 'SettingAnswer', 'SettingKind',
 ];
 
 /** What the Node entry adds to the main entry: the names that exist at run time. */

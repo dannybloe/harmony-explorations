@@ -172,7 +172,7 @@ test('a checklist ticks what is proven, says what an open one waits on, marks wh
   // or the catalogue alone, renaming among them.
   for (const number of [9, 12, 20, 25, 57, 60, 68, 73, 74, 75]) assert.ok(!lines.some((line) => / R(\d+) /.exec(line)?.[1] === String(number)), `R${number}`);
   // Every box is one line under a subject.
-  assert.equal(lines.filter((line) => line.startsWith('- [x] ')).length, 13);
+  assert.equal(lines.filter((line) => line.startsWith('- [x] ')).length, 14);
 });
 
 test('a checklist keeps its header and the remote\'s own work as written, and refuses a file without its markers', () => {
@@ -195,11 +195,11 @@ test('the short document is the introduction, two tables and the requirements; t
   const headings = text.split('\n').filter((line) => /^##? /.test(line));
   assert.deepEqual(headings, ['# The FHSDK\'s requirements, per remote', '## Where each remote stands', '## What the open ones wait on', '## The requirements']);
   // A row per remote: proven, open, unknown, impossible, and proven of possible, as the data counts them.
-  assert.ok(text.includes('| Harmony 650 | 10 | 52 | 3 | 9 | 10 of 65 |'));
+  assert.ok(text.includes('| Harmony 650 | 10 | 54 | 3 | 9 | 10 of 67 |'));
   // And a row per remote of whose work its open ones are: its own or its family's, the FHSDK's alone, a run alone.
-  assert.ok(text.includes('| Harmony 650 | 52 | 24 | 19 | 9 |'));
+  assert.ok(text.includes('| Harmony 650 | 54 | 25 | 19 | 10 |'));
   // The Harmony 515, which no family serves, waits on the FHSDK alone for one requirement only.
-  assert.ok(text.includes('| Harmony 515 | 50 | 49 | 1 | 0 |'));
+  assert.ok(text.includes('| Harmony 515 | 52 | 51 | 1 | 0 |'));
   // The evidence document names the tests that prove a met, by file and title.
   const evidence = evidenceDocument(PROOFS);
   const one = PROOFS.find((proof) => proof.requirement === 1 && proof.models !== 'every' && proof.models.includes('harmony-650'))!;

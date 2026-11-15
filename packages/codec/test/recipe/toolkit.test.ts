@@ -40,12 +40,14 @@ const NOT_BUILT: Record<string, number> = {
 /**
  * The functions of the toolkit that are built, each held by a test of its own below, but the questions about keys and
  * screens, `key`, `keys` and `screen`, which `toolkitkeys.test.ts` beside this file holds on the two reference documents,
- * and the changes of a document's version 2 fields on both, `toolkitchanges.test.ts`.
+ * the changes of a document's version 2 fields on both, `toolkitchanges.test.ts`, and the remote's own settings,
+ * `settings` and `setSetting` judged by the model's family, `toolkitsettings.test.ts`, and an activity's switch and its
+ * attention mark, `markAttention` and `clearAttention` among them, `toolkitattention.test.ts`.
  */
 const BUILT = [
-  'activities', 'addActivity', 'addDevice', 'addSequence', 'check', 'commands', 'create', 'devices', 'inputs', 'key', 'keyNames',
-  'keys', 'move', 'open', 'refreshDevice', 'remove', 'screen', 'sequences', 'setActivity', 'setDevice', 'setDeviceCommand',
-  'setKey', 'setScreen', 'setSequence', 'setSetting', 'unfilled', 'uses',
+  'activities', 'addActivity', 'addDevice', 'addSequence', 'check', 'clearAttention', 'commands', 'create', 'devices', 'inputs', 'key',
+  'keyNames', 'keys', 'markAttention', 'move', 'open', 'refreshDevice', 'remove', 'screen', 'sequences', 'setActivity', 'setDevice',
+  'setDeviceCommand', 'setKey', 'setScreen', 'setSequence', 'setSetting', 'settings', 'unfilled', 'uses',
 ];
 
 /** What a call threw, or undefined where it returned. A promise that rejects counts as a throw. */
@@ -290,12 +292,13 @@ test('an activity is added last by its devices\' ids, written under their names,
   assert.deepEqual(recipe.activities(document), [{
     id: 'a1', name: 'Watch TV', type: 'WatchTV',
     devices: [{ device: 'd1', input: 'HDMI 1', roles: ['Display'] }, { device: 'd2', roles: ['Volume'] }],
+    enabled: true, attention: [],
   }]);
   const two = recipe.addActivity(document, { name: 'Listen', type: 'ListenToMusic', devices: [{ device: 'd2', roles: ['Volume'] }] }).document;
   assert.deepEqual(two.activities.map((one) => [one.id, one.name]), [['a1', 'Watch TV'], ['a2', 'Listen']]);
 });
 
-test('an activity is refused with a device the document does not hold or names twice, a job no activity has, a name taken, and as the second on a Harmony 350', () => {
+test('an activity is refused with a device the document does not hold or names twice, a role no activity has, a name taken, and as the second on a Harmony 350', () => {
   const document = small();
   const listen = { name: 'Listen', type: 'ListenToMusic' };
   assert.deepEqual(refused(() => recipe.addActivity(document, { ...listen, devices: [{ device: 'd9', roles: [] }] })), ['unknown', { kind: 'device', device: 'd9' }]);
@@ -457,10 +460,11 @@ test('the check lists every problem with its place and code, and a document with
     ['error', 'unknown-key', { kind: 'key', owner: { activity: 'a1' }, key: 'Teleport' }],
   ]);
   // A key's choice on a model whose builder takes none yet: the same file for a Harmony 650, and its control,
-  // the same file without the choice, which lists nothing.
+  // the same file without the choice, which lists nothing. The device is called TV here, since a Harmony 650's corner
+  // does not hold Television, which the check would list as well.
   const onA650 = (keys: boolean): [string, string, unknown][] => codes(recipe.open({
     model: { name: 'Harmony 650' },
-    devices: [{ name: 'Television', device: 'Made/TV', definition: carried('Made/TV').definition, ...(keys ? { keys: [{ key: 'VolumeUp', action: { nothing: true } }] } : {}) }],
+    devices: [{ name: 'TV', device: 'Made/TV', definition: carried('Made/TV').definition, ...(keys ? { keys: [{ key: 'VolumeUp', action: { nothing: true } }] } : {}) }],
     activities: [],
   }));
   assert.deepEqual(onA650(true), [['error', 'not-on-this-model', { kind: 'key', owner: { device: 'd1' }, key: 'VolumeUp' }]]);
@@ -597,7 +601,7 @@ test('an activity\'s name, kind and devices are changed, the devices whole and i
   assert.deepEqual(recipe.setActivity(document, 'a1', {}).document, document);
 });
 
-test('an activity\'s change is refused for an activity or a device the document does not hold, a name taken, a device twice and a job no activity has; two members refuse as not built', () => {
+test('an activity\'s change is refused for an activity or a device the document does not hold, a name taken, a device twice and a role no activity has; two members refuse as not built', () => {
   const document = everywhere();
   assert.deepEqual(refused(() => recipe.setActivity(document, 'a9', { name: 'Films' })), ['unknown', { kind: 'activity', activity: 'a9' }]);
   assert.deepEqual(refused(() => recipe.setActivity(document, 'a1', { name: 'Listen' })), ['invalid', { kind: 'activity', activity: 'a1' }]);
@@ -622,25 +626,37 @@ test('what uses a device is every place that names it, and removing it settles e
   assert.deepEqual(places, [
     { kind: 'key', owner: { device: 'd2' }, key: 'VolumeUp' },
     { kind: 'activity-device', activity: 'a1', device: 'd1' },
+    // The television's role there, the picture, which the receiver that stays does not have.
+    { kind: 'role', activity: 'a1', role: 'Display' },
     { kind: 'screen-item', owner: { activity: 'a1' }, item: 0 },
     { kind: 'screen-item', owner: { activity: 'a1' }, item: 2 },
     { kind: 'screen-item', owner: { activity: 'a1' }, item: 3 },
     { kind: 'key', owner: { activity: 'a1' }, key: 'VolumeUp' },
     { kind: 'favourite', device: 'd1', favourite: 0 },
+    // Last, the activity that used it, marked as needing attention, decision 44: what its keys do now cannot be known
+    // here, since no device carries a definition and no archive is given, so the mark names no key and says why.
+    { kind: 'attention', activity: 'a1' },
   ]);
   const change = recipe.remove(document, { device: 'd1' });
   // The effects are the same places, in the same order, and what happened to each.
   assert.deepEqual(change.effects.map((one) => one.place), places);
-  assert.deepEqual(change.effects.map((one) => one.effect), ['removed', 'changed', 'removed', 'changed', 'changed', 'removed', 'removed']);
+  assert.deepEqual(change.effects.map((one) => one.effect), ['removed', 'changed', 'changed', 'removed', 'changed', 'changed', 'removed', 'removed', 'changed']);
   for (const one of change.effects) assert.match(one.message, /Television/);
-  // Nothing names it any more, and what named only the receiver is as it was.
-  assert.equal(mentions(change.document, 'Television'), 0);
+  assert.deepEqual(change.document.activities[0]!.attention, [{
+    happened: 'device-removed', device: 'Television',
+    message: 'Television was removed, and what the activity\'s keys do now is not known, since the document carries no definition, and no archive was given',
+  }]);
+  // Nothing names it any more but the mark, which records it by name on purpose, and what named only the receiver is
+  // as it was.
+  assert.equal(mentions(change.document, 'Television'), 1);
+  assert.equal(mentions({ ...change.document, activities: change.document.activities.map(({ attention: _, ...rest }) => rest) }, 'Television'), 0);
   assert.deepEqual(change.document.devices, [{ id: 'd2', name: 'Receiver', device: 'Made/AVR' }]);
   assert.deepEqual(change.document.activities[0], {
     id: 'a1', name: 'Watch TV', type: 'WatchTV', devices: [{ device: 'Receiver', roles: ['Volume'] }],
     // The sequence with a step of the receiver's keeps it and its pause; the one left with a pause alone is gone.
     screen: [{ device: 'Receiver', command: 'Dolby' }, { sequence: 'Both', steps: [{ pause: 5 }, { device: 'Receiver', scan: 4 }] }],
     keys: [{ key: 'VolumeDown', action: { device: 'Receiver', command: 'VolumeDown' } }],
+    attention: change.document.activities[0]!.attention,
   });
   assert.deepEqual(change.document.activities[1], document.activities[1]);
   assert.equal('favourites' in change.document, false);
@@ -747,12 +763,17 @@ test('uses lists a power order among the places that name a device, as the remov
   json.activities[0]!['powerOrder'] = ['Receiver', 'Television'];
   const document = recipe.open(json);
   const order = { kind: 'power-order', activity: 'a1', device: 'd1' };
-  assert.deepEqual(recipe.uses(document, { device: 'd1' }), [{ kind: 'activity-device', activity: 'a1', device: 'd1' }, order]);
+  // The television's part and the role it alone has there, the picture, come before its place in the power order.
+  const part = { kind: 'activity-device', activity: 'a1', device: 'd1' };
+  const role = { kind: 'role', activity: 'a1', role: 'Display' };
+  // And last the activity's attention mark, decision 44, naming no key: the made up definitions' codes cannot be read.
+  const attention = { kind: 'attention', activity: 'a1' };
+  assert.deepEqual(recipe.uses(document, { device: 'd1' }), [part, role, order, attention]);
   const change = recipe.remove(document, { device: 'd1' });
-  assert.deepEqual(change.effects.map((one) => [one.place, one.effect]), [[{ kind: 'activity-device', activity: 'a1', device: 'd1' }, 'changed'], [order, 'changed']]);
+  assert.deepEqual(change.effects.map((one) => [one.place, one.effect]), [[part, 'changed'], [role, 'changed'], [order, 'changed'], [attention, 'changed']]);
   assert.deepEqual(change.document.activities[0]!.powerOrder, ['Receiver']);
-  // The control: without a power order the same question lists the activity's part alone.
-  assert.deepEqual(recipe.uses(small(), { device: 'd1' }), [{ kind: 'activity-device', activity: 'a1', device: 'd1' }]);
+  // The control: without a power order the same question lists the activity's part, the role and the mark alone.
+  assert.deepEqual(recipe.uses(small(), { device: 'd1' }), [part, role, attention]);
 });
 
 test('a document carrying a Harmony Touch\'s own block of the earlier form never reaches a change: opening it is refused, naming the converter', () => {
@@ -761,4 +782,38 @@ test('a document carrying a Harmony Touch\'s own block of the earlier form never
   // The control: the same document without the block opens, and every change takes it.
   const plain = recipe.open({ ...least(), model: { name: 'Harmony Touch' } });
   assert.equal(recipe.setDevice(plain, 'd1', { name: 'Screen' }).document.devices[0]!.name, 'Screen');
+});
+
+test('check lists a name the build cannot draw, by the family\'s own judgement, for a device and a switched on activity', () => {
+  const reference = (name: string): Record<string, unknown> =>
+    JSON.parse(readFileSync(new URL(`../references/${name}.json`, import.meta.url), 'utf8')) as Record<string, unknown>;
+  const named = (name: string, device: string | undefined, activity: string | undefined) => {
+    let document = recipe.open(reference(name));
+    if (device !== undefined) document = recipe.setDevice(document, 'd1', { name: device }).document;
+    if (activity !== undefined) document = recipe.setActivity(document, 'a1', { name: activity }).document;
+    return recipe.check(document).filter((one) => one.code === 'name-not-drawable').map((one) => [one.place, one.message]);
+  };
+  // The Harmony One: a device's name wider than its device list row, and an activity's "Starting" line wider than the
+  // start up screen. The reasons are the builders' own words, which the build refuses with.
+  const long = 'A'.repeat(20);
+  assert.deepEqual(named('one-test', long, long), [
+    [{ kind: 'device', device: 'd1' }, `the build cannot draw the device ${long}'s name: '${long}' is wider than 101 pixels on its own`],
+    [{ kind: 'activity', activity: 'a1' }, `the build cannot draw the activity ${long}'s name: 'Starting ${long}' is 201 pixels wide and the start up screen 176`],
+  ]);
+  // The control: names the One draws.
+  assert.deepEqual(named('one-test', 'Living Room TV', 'Movie Night Extra'), []);
+  // The Harmony 650 judges by its own rules: a device's name is the label of a corner of 59 pixels, which a name the
+  // One draws does not fit, and an activity's is the label of its activity menu row, 122 pixels, which the One's
+  // start up screen takes. A pixel apart: Movie Night Extra is 123 wide.
+  assert.deepEqual(named('h650-test', 'Living Room TV', 'Movie Night Extra'), [
+    [{ kind: 'device', device: 'd1' }, 'the build cannot draw the device Living Room TV\'s name: \'Living Room TV\' is 108 pixels wide and a corner holds 59: give it a shorter label'],
+    [{ kind: 'activity', activity: 'a1' }, 'the build cannot draw the activity Movie Night Extra\'s name: \'Movie Night Extra\' is 123 pixels wide and a row holds 122: give it a shorter label'],
+  ]);
+  assert.deepEqual(named('h650-test', 'TV', 'Netflix and chill'), []);
+  // An activity switched off is left out of the build, so its name is not judged.
+  let off = recipe.setActivity(recipe.open(reference('one-test')), 'a1', { name: long }).document;
+  off = recipe.setActivity(off, 'a1', { enabled: false }).document;
+  assert.deepEqual(recipe.check(off).filter((one) => one.code === 'name-not-drawable'), []);
+  // The Harmony Touch and the Harmony 350 draw no name the build can refuse, so their families judge none.
+  assert.deepEqual(named('h350-test', long, long), []);
 });

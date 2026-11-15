@@ -77,23 +77,23 @@ is [the evidence](remote-requirements-evidence.md), and each bench remote's requ
 
 ## Where each remote stands
 
-Over the 74 requirements that have a status per model. Possible is every one but the impossible ones; the evidence behind each status is [the evidence](remote-requirements-evidence.md), and each remote's list of them its checklist.
+Over the 76 requirements that have a status per model. Possible is every one but the impossible ones; the evidence behind each status is [the evidence](remote-requirements-evidence.md), and each remote's list of them its checklist.
 
 | remote | proven | open | unknown | impossible | proven of possible | checklist |
 |---|---|---|---|---|---|---|
-| Harmony One | 13 | 48 | 3 | 10 | 13 of 64 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
-| Harmony 600 | 15 | 47 | 4 | 8 | 15 of 66 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
-| Harmony 650 | 10 | 52 | 3 | 9 | 10 of 65 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
-| Harmony 700 | 13 | 48 | 5 | 8 | 13 of 66 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
-| Harmony 525 | 6 | 48 | 10 | 10 | 6 of 64 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
-| Harmony 515 | 4 | 50 | 12 | 8 | 4 of 66 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
-| Harmony 885 | 9 | 51 | 4 | 10 | 9 of 64 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
-| Harmony 785 | 3 | 57 | 8 | 6 | 3 of 68 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
-| Harmony 300 | 6 | 38 | 7 | 23 | 6 of 51 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
-| Harmony 350 | 11 | 35 | 6 | 22 | 11 of 52 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
-| Harmony Touch | 22 | 38 | 6 | 8 | 22 of 66 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
-| Harmony Elite | 0 | 59 | 9 | 6 | 0 of 68 | [todo-harmony-elite.md](../todo/todo-harmony-elite.md) |
-| Harmony Hub | 0 | 52 | 14 | 8 | 0 of 66 | [todo-harmony-hub.md](../todo/todo-harmony-hub.md) |
+| Harmony One | 14 | 49 | 3 | 10 | 14 of 66 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
+| Harmony 600 | 15 | 49 | 4 | 8 | 15 of 68 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
+| Harmony 650 | 10 | 54 | 3 | 9 | 10 of 67 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
+| Harmony 700 | 13 | 50 | 5 | 8 | 13 of 68 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
+| Harmony 525 | 6 | 50 | 10 | 10 | 6 of 66 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
+| Harmony 515 | 4 | 52 | 12 | 8 | 4 of 68 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
+| Harmony 885 | 9 | 53 | 4 | 10 | 9 of 66 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
+| Harmony 785 | 3 | 59 | 8 | 6 | 3 of 70 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
+| Harmony 300 | 6 | 40 | 7 | 23 | 6 of 53 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
+| Harmony 350 | 11 | 37 | 6 | 22 | 11 of 54 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
+| Harmony Touch | 23 | 39 | 6 | 8 | 23 of 68 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
+| Harmony Elite | 0 | 61 | 9 | 6 | 0 of 70 | [todo-harmony-elite.md](../todo/todo-harmony-elite.md) |
+| Harmony Hub | 0 | 54 | 14 | 8 | 0 of 68 | [todo-harmony-hub.md](../todo/todo-harmony-hub.md) |
 
 ## What the open ones wait on
 
@@ -101,19 +101,19 @@ Each remote's open requirements by whose work is missing, every one counted once
 
 | remote | open | its own or its family's work | the FHSDK's work alone | a run on a unit alone |
 |---|---|---|---|---|
-| Harmony One | 48 | 28 | 16 | 4 |
-| Harmony 600 | 47 | 24 | 18 | 5 |
-| Harmony 650 | 52 | 24 | 19 | 9 |
-| Harmony 700 | 48 | 23 | 19 | 6 |
-| Harmony 525 | 48 | 46 | 2 | 0 |
-| Harmony 515 | 50 | 49 | 1 | 0 |
-| Harmony 885 | 51 | 45 | 5 | 1 |
-| Harmony 785 | 57 | 55 | 1 | 1 |
-| Harmony 300 | 38 | 20 | 16 | 2 |
-| Harmony 350 | 35 | 19 | 16 | 0 |
-| Harmony Touch | 38 | 19 | 8 | 11 |
-| Harmony Elite | 59 | 57 | 1 | 1 |
-| Harmony Hub | 52 | 49 | 2 | 1 |
+| Harmony One | 49 | 28 | 16 | 5 |
+| Harmony 600 | 49 | 25 | 18 | 6 |
+| Harmony 650 | 54 | 25 | 19 | 10 |
+| Harmony 700 | 50 | 24 | 19 | 7 |
+| Harmony 525 | 50 | 48 | 2 | 0 |
+| Harmony 515 | 52 | 51 | 1 | 0 |
+| Harmony 885 | 53 | 47 | 5 | 1 |
+| Harmony 785 | 59 | 57 | 1 | 1 |
+| Harmony 300 | 40 | 21 | 16 | 3 |
+| Harmony 350 | 37 | 20 | 16 | 1 |
+| Harmony Touch | 39 | 19 | 9 | 11 |
+| Harmony Elite | 61 | 59 | 1 | 1 |
+| Harmony Hub | 54 | 51 | 2 | 1 |
 
 The 17 requirements of the FHSDK as a whole carry one status each, for every remote: R9 open, R12 proven, R20 proven, R25 proven, R57 open, R60 open, R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 proven, R81 open, R82 open.
 
@@ -149,7 +149,7 @@ The 17 requirements of the FHSDK as a whole carry one status each, for every rem
 ### Activities
 
 * **R21** Create an activity of a kind with its devices; starting, switching and Off behave as the manuals describe.
-* **R22** Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key.
+* **R22** Say which device has which role in an activity, and map its keys from that, a learned command with a standard name landing on its usual key.
 * **R23** Set each device's input in an activity, or leave it alone.
 * **R24** Include a pass through device in an activity.
 * **R25** Rename an activity.
@@ -160,6 +160,8 @@ The 17 requirements of the FHSDK as a whole carry one status each, for every rem
 * **R30** Add steps to an activity's start and end: commands, pauses, a sequence.
 * **R90** Choose the order in which an activity switches its devices on and off.
 * **R91** Choose the screen an activity opens on, where the remote has more than one.
+* **R92** Switch an activity off, so the remote is given everything but it and is told which was left out, and on again as it was.
+* **R93** Mark every activity that used a device removed from the document as needing attention, saying which of its keys now do otherwise and how, keep building and syncing it, and clear the mark.
 
 ### Keys and screens
 

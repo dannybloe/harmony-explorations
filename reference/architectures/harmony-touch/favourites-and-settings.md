@@ -91,6 +91,14 @@ account already has**: for a setting missing from the account's document, nothin
 on the remote, and the firmware's default is what it reads again[^t-touch-favourites-firmware]. Whether the remote shows a vibration or
 motion setting is not checked[^unchecked].
 
+**What Logitech's service writes for an account is not the firmware's defaults on every row.** Its Settings states a
+value on five rows, each the same as the row's own `DefaultValue`: the clock in 24 hour form, the lock screen on, the
+edit lock off, the keys' light at 35 and the motion sensor on; and it states the screen's brightness and its timeout
+with no value and no default, so the remote takes the firmware's 85 and 10 seconds for
+those[^t-touch-settings-defaults]. Two of the five differ from the firmware's own, the clock and the lock screen, so a
+remote on such an account shows a 24 hour clock and the lock screen. Whether the service writes the same for every
+account and region is not checked[^unchecked].
+
 On the remote the timeout is a slider from 1 to 30 seconds and the screen and key brightness are sliders from
 10 to 100 each, with a warning past 95 that a brighter screen and keys drain the battery faster; a setting of
 100 is the display backlight's step 26 and the key light's step 42[^t-touch-keys]. What the settings screens
@@ -422,6 +430,7 @@ to the remote in the sync measured carried the field[^t-touch-favourites].
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-full-bench-runs.test.ts)
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-favourites-runs.test.ts)
 [^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-settings-runs.test.ts)
+[^t-touch-settings-defaults]: Stated by Logitech, by their service. [The test](../../../packages/codec/test/families/harmony-touch/touch-setting-defaults.test.ts)
 [^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-empty-runs.test.ts)
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)
 [^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/families/harmony-touch/touch-empty.test.ts)

@@ -23,7 +23,7 @@ import type { Recipe } from '../../recipe/recipe.ts';
 import { buildTouchDocuments, ourBackground, readTouchDocument, type TouchAccount } from './fromnothing.ts';
 import { readConfiguration, type Configuration } from './read.ts';
 import { withoutTouchEntries, type TouchRemoval } from './remove.ts';
-import { composeTouchSettings, type OwnSettings } from './settings.ts';
+import { composeTouchSettings, TOUCH_SETTINGS, type OwnSettings } from './settings.ts';
 import { TOUCH_MAPS } from './recipemaps.ts';
 
 /** The Harmony Touch's own types, as `DocumentFamily` asks for them. */
@@ -82,5 +82,10 @@ export const HARMONY_TOUCH_FAMILY: DocumentFamily<TouchTypes> = {
   // would stop the load with a reference error.
   get maps() {
     return TOUCH_MAPS;
+  },
+  // The settings a document may state, the rows a Settings of ours writes with their kinds and Logitech's defaults,
+  // `settings.ts`; read when asked, as the maps are, so the order modules load in cannot meet it unset.
+  get settings() {
+    return TOUCH_SETTINGS;
   },
 };

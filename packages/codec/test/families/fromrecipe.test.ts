@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import '../../src/support/resources.node.ts';
 import { readFileSync } from 'node:fs';
 
-import { buildFromRecipe, RecipeError, unstatedChoices } from '../../src/node.ts';
+import { buildFromRecipe, ComposeError, NotBuiltError, RecipeError, unstatedChoices } from '../../src/node.ts';
 import { carriedCatalogue } from '../../src/catalogue/carried.ts';
 import { buildTouchDocuments, ourBackground, readTouchDocument } from '../../src/families/harmony-touch/fromnothing.ts';
 import { touchSetupOfDocument } from '../../src/families/harmony-touch/recipemaps.ts';
@@ -63,8 +63,6 @@ test('what an application is refused, each naming what is wrong', () => {
   const at = { builtAt: BUILT_AT };
   refused({ devices: [], activities: [] }, at, /names no model/);
   refused(empty('Harmony 9000', 1), at, /no model has skin 1/);
-  // The Harmony 885 is served by a family that builds nothing from a recipe yet.
-  refused(empty('Harmony 885', 17), at, /nothing here builds .* from a recipe yet/);
   // The Touch's documents carry the account's identifiers, and its devices come from the catalogue.
   refused(empty('Harmony Touch', 99), at, /no archive was given/);
   // A Touch's own block, the earlier form, in a recipe for any model: the reader refuses it, naming the converter.
@@ -139,4 +137,77 @@ test('a document that reached a Harmony Touch\'s build without the reader, carry
   // The control: the same document without the block goes through all three, the two builds to the same six.
   assert.equal(touchSetupOfDocument(document, sources.archive).setup.devices.length, 7);
   assert.deepEqual(HARMONY_TOUCH_FAMILY.build(document, sources), buildTouchDocuments(document, sources));
+});
+
+test('a build that says no throws ComposeError, the main entry\'s one refusal class, from a Harmony Touch\'s build and from every compiled family\'s', () => {
+  // Each refusal below is thrown by a class of its family's own, which is why the test catches it by the one class an
+  // application has, the main entry's `ComposeError`, and names the class it came as, so a family that went back to a
+  // class of its own outside it fails here by name.
+  const caught = (build: () => unknown): string => {
+    try {
+      build();
+    } catch (error) {
+      assert.ok(error instanceof ComposeError, `${String(error)} is no ComposeError`);
+      assert.ok(!(error instanceof RecipeError) && !(error instanceof NotBuiltError), String(error));
+      return `${error.constructor.name}: ${error.message}`;
+    }
+    return assert.fail('the build did not refuse');
+  };
+  const reference = (name: string): Record<string, unknown> =>
+    JSON.parse(readFileSync(new URL(`../references/${name}.json`, import.meta.url), 'utf8')) as Record<string, unknown>;
+  // The Harmony Touch's composer: a timeout of no seconds, which the remote's sleep timer does not hold.
+  const touch = reference('touch-test');
+  touch.settings = { ...(touch.settings as object), ScreenTimeout: 0 };
+  assert.match(caught(() => buildFromRecipe(touch, { builtAt: BUILT_AT, account: JOHN_DOE as never })), /^ComposeRefusal: ScreenTimeout: 0 is outside 1 to 30/);
+  // The Harmony One's shared assembly: a key no map of the One binds.
+  const one = reference('one-test');
+  (one.activities as { name: string; keys?: unknown }[]).find((activity) => activity.name === 'Muziek')!.keys = [{ key: 'Activities', action: { nothing: true } }];
+  assert.match(caught(() => buildFromRecipe(one, { builtAt: BUILT_AT })), /^AssemblyError: .*Activities is no key the Harmony One's maps bind/);
+  // A name the build cannot draw: a device's wider than the Harmony One's device list row, which its screen records
+  // refuse and its assembly passes on naming the devices it was composing, and wider than a corner of a device page,
+  // on the Harmony 650.
+  const longOne = reference('one-test');
+  (longOne.devices as { name: string }[])[0]!.name = 'A'.repeat(20);
+  assert.match(caught(() => buildFromRecipe(longOne, { builtAt: BUILT_AT })), /^AssemblyError: composing A{20}, .*: 'A{20}' is wider than 101 pixels on its own$/);
+  const longFour = reference('h650-test');
+  (longFour.devices as { name: string }[])[0]!.name = 'Living Room TV';
+  assert.match(caught(() => buildFromRecipe(longFour, { builtAt: BUILT_AT })), /'Living Room TV' is \d+ pixels wide and a corner holds 59/);
+  // The Harmony One's own choices, and the Harmony 600, 650 and 700's, each a choice the family does not make.
+  assert.match(caught(() => buildFromRecipe({ ...(empty('Harmony One', 54) as object), choices: { screenLight: 30 } }, { builtAt: BUILT_AT })), /^ComposeError: .*no choice called screenLight/);
+  assert.match(caught(() => buildFromRecipe({ ...(empty('Harmony 650', 72) as object), choices: { screenLight: 30 } }, { builtAt: BUILT_AT })), /^ChoiceError: .*no choice called screenLight/);
+  // The Harmony 300 and 350's: a device given no device key, which these remotes need for every device.
+  const noScreen = reference('h350-test');
+  const [first, ...rest] = noScreen.devices as { name: string; key?: unknown }[];
+  const { key: _key, ...keyless } = first!;
+  assert.match(caught(() => buildFromRecipe({ ...noScreen, devices: [keyless, ...rest] }, { builtAt: BUILT_AT })),
+    new RegExp(`^ComposeError: device ${first!.name} states no device key`));
+  // The control: a document that is not one, and a function not built, are the two other answers and no refusal of a
+  // build, so an application tells the three apart by class.
+  assert.throws(() => buildFromRecipe({ devices: [], activities: [] }, { builtAt: BUILT_AT }), (error: unknown) => error instanceof RecipeError && !(error instanceof ComposeError));
+  assert.ok(!(new NotBuiltError('recipe.setLook', 42) instanceof ComposeError));
+});
+
+test('what is missing answers in one of two classes on every model: a build not built yet, or a source the caller did not give', () => {
+  // Not built: the Harmony 885's family builds nothing from a recipe yet, R4, and a key a recipe chooses is built on the
+  // Harmony One and the Harmony Touch alone, R32 for a device's key.
+  assert.throws(() => buildFromRecipe(empty('Harmony 885', 17), { builtAt: BUILT_AT }),
+    (error: unknown) => error instanceof NotBuiltError && error.requirement === 4 && error.contract === 'buildFromRecipe for the Harmony 880 and 885');
+  for (const name of ['h650-test', 'h350-test']) {
+    const keyed = JSON.parse(readFileSync(new URL(`../references/${name}.json`, import.meta.url), 'utf8')) as { devices: { keys?: unknown }[] };
+    keyed.devices[0]!.keys = [{ key: 'VolumeUp', action: { nothing: true } }];
+    assert.throws(() => buildFromRecipe(keyed, { builtAt: BUILT_AT }), (error: unknown) => error instanceof NotBuiltError && error.requirement === 32, name);
+  }
+  // A missing source: a device that carries no definition, built with no archive, on a model of every kind. The class
+  // is the one "no account was given" answers with, and the message names the device and what to give.
+  for (const name of ['one-test', 'h650-test', 'h350-test', 'touch-test']) {
+    const bare = JSON.parse(readFileSync(new URL(`../references/${name}.json`, import.meta.url), 'utf8')) as { devices: { name: string; device: string; definition?: unknown }[] };
+    const first = bare.devices[0]!;
+    delete first.definition;
+    assert.throws(() => buildFromRecipe(bare, { builtAt: BUILT_AT, account: JOHN_DOE as never }),
+      (error: unknown) => error instanceof RecipeError && !(error instanceof ComposeError)
+        && error.message === `${first.name} carries no definition of ${first.device}, and no archive was given to build it from`, name);
+  }
+  // The Touch's account is the other source, and it answers in the same class.
+  const touch = JSON.parse(readFileSync(new URL('../references/touch-test.json', import.meta.url), 'utf8')) as unknown;
+  assert.throws(() => buildFromRecipe(touch, { builtAt: BUILT_AT }), (error: unknown) => error instanceof RecipeError && /no account was given/.test(error.message));
 });

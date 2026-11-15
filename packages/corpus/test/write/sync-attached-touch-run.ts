@@ -91,6 +91,8 @@ export interface TouchScenario {
   readonly doubleKeys?: boolean;
   /** The Touch's document gives the volume keys of its first device's own map a command when held, which the Touch builds. */
   readonly heldKeys?: boolean;
+  /** The Touch's document switches its third activity off, which the build leaves out and the outcome names, decision 44. */
+  readonly switchedOff?: boolean;
 }
 
 export interface TouchRun {
@@ -160,12 +162,23 @@ export function heldKeysTouchDocument(): Recipe {
   return recipe.open(json);
 }
 
+/**
+ * The Harmony Touch's reference document with its third activity, Listen to Music, switched off through the toolkit:
+ * a build leaves it out and a sync names it on its outcome, decision 44, so the pretend Touch and the attached one are
+ * compared on a sync that leaves one out.
+ */
+export function switchedOffTouchDocument(): Recipe {
+  const document = recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
+  return recipe.setActivity(document, 'a3', { enabled: false }).document;
+}
+
 export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
   const document: Recipe = scenario.document === 'one'
     ? recipe.create({ name: 'Harmony One', skin: 54 })
     : scenario.doubleKeys === true ? doubleKeysTouchDocument()
       : scenario.heldKeys === true ? heldKeysTouchDocument()
-        : recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
+        : scenario.switchedOff === true ? switchedOffTouchDocument()
+          : recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
 
   const handOver = [listAnswer([{ verb: 'POST', uri: 'proxy://Finished' }])];
   const sync = (scenario.sync ?? defaultSync()).map(listAnswer);

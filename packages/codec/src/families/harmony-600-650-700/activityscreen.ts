@@ -201,8 +201,6 @@ export function composeFourSlotActivityRow(
   // rule, 5 of 5 full pages on the four arch 14 configurations drawing both labels in one, and the
   // Harmony 700's last page is why it is read off that page and not the first: its lone label is in a
   // smaller font than the menu's others, section 289. Spelled before anything moves.
-  const map = characterMap(c);
-  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const lastProgram = screenProgram(c, page.program) ?? [];
   const bar = lastProgram.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
   // A page with no label has only its title's font in effect there, so the first label takes the device
@@ -212,18 +210,8 @@ export function composeFourSlotActivityRow(
   const preferred = layout.used === 0 ? fourSlotTemplate(c, undefined).labelFont
     : lastProgram.slice(0, bar < 0 ? 0 : bar).findLast((one) => one.opcode === SCREEN_SELECT_FONT)?.operands[0];
   if (preferred === undefined) throw new ComposeError("the activity menu's last page selects no label font");
-  const font = fontThatSpells(c, map, label, preferred);
-  const fontSet = (fontSets(c) ?? [])[font];
-  if (fontSet === undefined) throw new ComposeError(`the config does not carry font ${font}`);
-  const codes = codesFor(map, c, fontSet, label, font);
-  // The composer's own conservative limit, the width a corner layout's labels span, 3 to 125. The
-  // compiler draws a name too wide for the label font whole in a smaller font, and a centred label
-  // reaches 128 on one two row device list, section 289; this refuses instead.
-  const wide = textWidth(c, fontSet, codes);
-  if (wide > FOUR_SLOT_RIGHT_END - FOUR_SLOT_LEFT_X) {
-    throw new ComposeError(`'${label}' is ${wide} pixels wide and a row holds `
-      + `${FOUR_SLOT_RIGHT_END - FOUR_SLOT_LEFT_X}: give it a shorter label`);
-  }
+  const { font, codes, refusal } = activityRowLabel(c, label, preferred);
+  if (refusal !== undefined) throw new ComposeError(refusal);
 
   // 1. The row lists: select the entry, write 0 into the marker. One per button on the page and one
   // per button on its copy, identical, below base slot 10's table with their pointers appended. A new
@@ -580,14 +568,7 @@ function ourActivityScreenChrome(c: Container): ActivityScreenChrome {
   const device = deviceModeChrome(c);
   const look = stateLookOf(c, ourStateColours(c).activity ?? FOUR_SLOT_CHOICES.stateColours.activity);
   if (look === undefined) throw new ComposeError('the configuration holds no activity look to draw a working screen in');
-  const off = screenRecordModes(c, takeApart(c)).off;
-  const offPage = modeRecords(c)?.[off]?.pages[0];
-  const offProgram = offPage === undefined ? [] : screenProgram(c, offPage.program) ?? [];
-  const offImage = offProgram.find((one) => one.opcode === SCREEN_DRAW_IMAGE);
-  const offFont = offProgram[1];
-  if (offImage === undefined || offFont?.opcode !== SCREEN_SELECT_FONT) {
-    throw new ComposeError(`Off, mode ${off}, draws no picture or selects no font second`);
-  }
+  const startup = ourStartupLook(c);
   const word = bottomWord(c, WORKING_SCREEN_WORD);
   const starts = arch14Starts(c);
   const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan;
@@ -595,8 +576,8 @@ function ourActivityScreenChrome(c: Container): ActivityScreenChrome {
   const devicesKey = devicesKeyOperand(c);
   const chrome: ActivityScreenChrome = {
     look: OUR_LOOK,
-    startupPicture: u24(offImage.operands, offImage.operands.length - 3),
-    startupFont: starts.startup.size > 0 ? startupFontOf(c, starts) : offFont.operands[0] as number,
+    startupPicture: startup.picture,
+    startupFont: startup.font,
     startupKeyMap: compilerTagOrder(keypad).map((tag) => ({ tag, operand: 0, opcode: 0 })),
     working: {
       look: OUR_LOOK,
@@ -615,12 +596,73 @@ function ourActivityScreenChrome(c: Container): ActivityScreenChrome {
 }
 
 /**
+ * **An activity's name as its activity menu row's label**: the font it is drawn in, the first that spells it from
+ * `preferred`, its codes, and why it cannot be drawn where it is wider than a row. The composer's own conservative
+ * limit, the width a corner layout's labels span, 3 to 125. The compiler draws a name too wide for the label font whole
+ * in a smaller font, and a centred label reaches 128 on one two row device list, section 289; this refuses instead.
+ * The activity menu's builder draws by it, and the family's `nameRefusal` answers `check` with it.
+ */
+export function activityRowLabel(c: Container, label: string, preferred: number): {
+  readonly font: number; readonly codes: number[]; readonly refusal: string | undefined;
+} {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const font = fontThatSpells(c, map, label, preferred);
+  const fontSet = (fontSets(c) ?? [])[font];
+  if (fontSet === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+  const codes = codesFor(map, c, fontSet, label, font);
+  const wide = textWidth(c, fontSet, codes);
+  const room = FOUR_SLOT_RIGHT_END - FOUR_SLOT_LEFT_X;
+  return { font, codes, refusal: wide > room ? `'${label}' is ${wide} pixels wide and a row holds ${room}: give it a shorter label` : undefined };
+}
+
+/**
+ * A start up screen's picture and font on a configuration of ours: Off's picture, and the font the start up screens
+ * already held draw in, or Off's, which it selects second, where none is held yet. Apart from the rest of the chrome,
+ * since these two are all a start up screen's title is judged by, and an empty configuration, with no device page to
+ * take the rest from, has them.
+ */
+function ourStartupLook(c: Container): { readonly picture: number; readonly font: number } {
+  const off = screenRecordModes(c, takeApart(c)).off;
+  const offPage = modeRecords(c)?.[off]?.pages[0];
+  const offProgram = offPage === undefined ? [] : screenProgram(c, offPage.program) ?? [];
+  const offImage = offProgram.find((one) => one.opcode === SCREEN_DRAW_IMAGE);
+  const offFont = offProgram[1];
+  if (offImage === undefined || offFont?.opcode !== SCREEN_SELECT_FONT) {
+    throw new ComposeError(`Off, mode ${off}, draws no picture or selects no font second`);
+  }
+  const starts = arch14Starts(c);
+  return {
+    picture: u24(offImage.operands, offImage.operands.length - 3),
+    font: starts.startup.size > 0 ? startupFontOf(c, starts) : offFont.operands[0] as number,
+  };
+}
+
+/**
  * A start up screen built, as parts: the picture, the font, the title "Starting" and `label` broken
  * greedily at `STARTUP_TITLE_MAX` onto at most two lines at y 5 and 19, each centred, then the three
  * fixed lines, each centred, and the end. A title that does not fit two lines is refused.
  */
 function startupParts(c: Container, chrome: ActivityScreenChrome, label: string): MenuPart[] {
   return fixedLineScreenParts(c, chrome.startupPicture, chrome.startupFont, STARTUP_TITLE_PREFIX + label);
+}
+
+/**
+ * **Why an activity's name cannot be drawn on its start up screen**, or undefined where it can: the screen laid out as
+ * the builder lays it out, `startupParts`, its refusal the answer. The family's `nameRefusal` answers `check` with it.
+ */
+export function fourSlotStartupRefusal(c: Container, label: string): string | undefined {
+  try {
+    // On a configuration of ours the picture and the font alone, which an empty one holds with no device page yet; on
+    // one of Logitech's the chrome the builder reads.
+    const startup = inOurLook(c) ? ourStartupLook(c) : activityScreenChrome(c);
+    fixedLineScreenParts(c, 'picture' in startup ? startup.picture : startup.startupPicture,
+      'font' in startup ? startup.font : startup.startupFont, STARTUP_TITLE_PREFIX + label);
+    return undefined;
+  } catch (error) {
+    if (error instanceof ComposeError) return error.message;
+    throw error;
+  }
 }
 
 /**

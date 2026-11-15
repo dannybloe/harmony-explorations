@@ -12,6 +12,10 @@
  * of, a power member beside always on, a command's own code or sending, a device key pressed twice and an extra step
  * running a sequence, stops both.
  *
+ * **Two fields every build reads**, an activity switched off and its attention mark, decision 44: the one build and every
+ * route leave a switched off activity out before any family builds, and a mark changes no build, so neither stops a
+ * build of either kind, and the check lists neither.
+ *
  * Held here one stated field per kind on the Harmony One, of a compiled family, and on the Harmony Touch, the document
  * family, each with its requirement and whether the Touch reads it; the control, a document of version 2 stating only
  * what no build has to read, goes past the refusal on both. **And every other route to a build refuses the same**, each
@@ -95,6 +99,15 @@ const KINDS: readonly (readonly [string, Parameters<typeof document>[1], number,
   ['settings', { top: { settings: { Brightness: 20 } } }, 47, 'the remote\'s settings', true],
 ];
 
+/**
+ * The two fields every build reads, decision 44, each with its requirement and the words that say where it is: the
+ * builds take a switched off activity out before any family sees the document, and a mark changes nothing built.
+ */
+const EVERY_BUILD_READS: readonly (readonly [string, Parameters<typeof document>[1], number, string])[] = [
+  ['switched off', { activity: { enabled: false } }, 92, 'the activity Watch TV\'s switch'],
+  ['attention mark', { activity: { attention: [{ happened: 'marked', message: 'the receiver is new' }] } }, 93, 'the activity Watch TV\'s attention mark'],
+];
+
 /** That a call stops as not built, with the contract and requirement given. */
 function stopsAsNotBuilt(call: () => unknown, contract: string, requirement: number, label: string): void {
   assert.throws(call, (error: unknown) => {
@@ -128,10 +141,19 @@ test('the table says per part which kind of family reads it: the Harmony Touch\'
     assert.equal(unbuiltFields(readRecipe(document(ONE, on)), 'compiled').some((one) => one.where === where), true, `${kind} on the One`);
     assert.equal(unbuiltFields(readRecipe(document(ONE, on))).some((one) => one.where === where), true, `${kind} on the One, by its model`);
   }
+  // The two every build reads: both kinds named, and listed by neither as unbuilt.
+  for (const [kind, on, requirement, where] of EVERY_BUILD_READS) {
+    for (const model of [ONE, TOUCH]) {
+      const read = readRecipe(document(model, on));
+      assert.deepEqual(versionTwoFields(read).map((one) => [one.where, one.requirement, one.readBy]), [[where, requirement, ['compiled', 'document']]], `${kind} on the ${model.name}`);
+      assert.deepEqual(unbuiltFields(read), [], `${kind} on the ${model.name}`);
+    }
+  }
   // Every field of the table reaches one sample here, so a field added to the table without a sample fails.
-  const sampled = new Set(KINDS.flatMap(([, on]) => versionTwoFields(readRecipe(document(TOUCH, on))).map((one) => one.field)));
+  const sampled = new Set([...KINDS, ...EVERY_BUILD_READS].flatMap(([, on]) => versionTwoFields(readRecipe(document(TOUCH, on))).map((one) => one.field)));
   assert.deepEqual([...new Set(VERSION_TWO.filter((one) => one.member !== 'highestIds').map((one) => one.member))].sort(), [...sampled].sort());
-  // No part of the table names a compiled family as its reader: none of their builds reads a field of version 2 yet.
+  // No other part of the table names a compiled family as its reader: none of their builds reads any other field of
+  // version 2 yet.
   const all = KINDS.flatMap(([, on]) => versionTwoFields(readRecipe(document(ONE, on))));
   assert.deepEqual(all.filter((one) => one.readBy.includes('compiled')), []);
 });
@@ -148,11 +170,13 @@ test('a field of version 2 stops the one build as not built, with its requiremen
   }
 });
 
-test('the control: a document of version 2 stating only what no build reads goes past that refusal, on both kinds', () => {
-  // The highest ids given change no byte a remote receives. Past the refusal each family meets its own: no archive and
-  // no account for the Touch, no catalogue to compose the devices from for the One. Neither is the not built refusal.
+test('the control: a document of version 2 stating only what no build reads, or what every build reads, goes past that refusal, on both kinds', () => {
+  // The highest ids given change no byte a remote receives, and a switch and a mark are read by every build. Past the
+  // refusal each family meets its own: no archive and no account for the Touch, no catalogue to compose the devices
+  // from for the One. Neither is the not built refusal.
   for (const model of [ONE, TOUCH]) {
     passesTheGuard(() => buildFromRecipe(document(model, { top: { highestIds: { device: 2 } } }), { builtAt: BUILT_AT }), model.name);
+    for (const [kind, on] of EVERY_BUILD_READS) passesTheGuard(() => buildFromRecipe(document(model, on), { builtAt: BUILT_AT }), `${kind} on the ${model.name}`);
   }
 });
 
@@ -166,9 +190,15 @@ test('the toolkit\'s check lists each field the build of the document\'s model d
       assert.deepEqual(problems.map((one) => one.severity), listed ? ['error'] : [], `${kind} on the ${model.name}`);
     }
   }
-  // The highest ids change no byte a remote receives, so the check lists nothing for them.
+  // The highest ids change no byte a remote receives, so the check lists nothing for them, nor for the two every build
+  // reads; the control for the latter is the first loop, which lists the One's fields.
   const ids = recipe.open(document(ONE, { top: { highestIds: { device: 5 } } }));
   assert.deepEqual(recipe.check(ids).filter((one) => one.severity === 'error'), []);
+  for (const [kind, on] of EVERY_BUILD_READS) {
+    for (const model of [ONE, TOUCH]) {
+      assert.deepEqual(recipe.check(recipe.open(document(model, on))).filter((one) => one.code === 'not-on-this-model'), [], `${kind} on the ${model.name}`);
+    }
+  }
 });
 
 /**

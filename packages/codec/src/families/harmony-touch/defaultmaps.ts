@@ -56,7 +56,7 @@
  * in `compose/activityroles.ts`, section 323, which the setup's five activities agree with: the volume keys go to the
  * device holding `Volume`; every other key to the device holding `ChannelChanging`, or where none does, the one
  * holding a play role; and the key sends what that device's own map sends for the same key, press and long press.
- * Two devices holding one of those jobs are refused, as that rule refuses them: no setup under
+ * Two devices holding one of those roles are refused, as that rule refuses them: no setup under
  * `packages/corpus/setups/` has such an activity, and what a Touch does with two volume roles is not read in its
  * firmware, `activities-and-buttons.md` "An activity: what it is made of", so taking the first would be a guess. A key that
  * device's map leaves unbound stays unbound in the activity: no other device of the activity fills it. **Three
@@ -426,7 +426,7 @@ const NO_GESTURE_TYPE = 'Custom';
 
 /**
  * The two devices an activity's keys follow, the volume device and the control device, either undefined: the shared
- * rule, `keyDevicesOfRoles`, by device name. It refuses two devices holding one job, `ComposeError`.
+ * rule, `keyDevicesOfRoles`, by device name. It refuses two devices holding one role, `ComposeError`.
  */
 export function activityKeyDevices(activity: DefaultActivity): { readonly volume: string | undefined; readonly control: string | undefined } {
   return keyDevicesOfRoles(activity.devices, (one) => one.device);

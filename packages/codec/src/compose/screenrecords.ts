@@ -64,9 +64,14 @@ import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContain
 import { MODE_PAGE_POINTERS, type ModePage, type ModeRecord, type TaggedList, modePages, modeRecords, pageListCopies, taggedList } from '../container/sections.ts';
 import { SCREEN_CALL, type ScreenInstruction, screenProgram } from '../screens/screen.ts';
 import { type PieceTarget } from '../assembly/statetables.ts';
+// From the module that imports nothing, since the class below extends it as this module loads.
+import { ComposeError } from '../support/refusal.ts';
 
-/** A refusal, named so a caller can tell a description this does not build from a bug. */
-export class ScreenRecordError extends Error {}
+/**
+ * A refusal, named so a caller can tell a description this does not build from a bug. A build's refusal, `ComposeError`,
+ * since it reaches an application out of the one build, a name too long to draw among what it refuses.
+ */
+export class ScreenRecordError extends ComposeError {}
 
 /**
  * A page record is two pointers, the list then the program, section 66, and on the Harmony One a lead byte

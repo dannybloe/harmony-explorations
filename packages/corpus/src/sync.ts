@@ -61,7 +61,7 @@
  */
 import {
   buildFromRecipe, chooseByModel, NotBuiltError, recipe, recipeTarget,
-  type BuildSources, type Built, type Recipe, type RecipeModel,
+  type BuildSources, type Built, type LeftOutActivity, type Recipe, type RecipeModel,
 } from '@harmony/codec/node';
 import { harmonyTouch } from '@harmony/codec/build';
 import {
@@ -144,6 +144,14 @@ export interface SyncOutcome {
   readonly remote: SyncEnding['remote'];
   /** Why, in a sentence, for every result but `written`. */
   readonly message?: string;
+  /**
+   * **The activities the document switches off, which the build left out**, R92, decision 44, in the document's order:
+   * on every outcome reached after the build, whatever it was, and absent where the document switches none off or the
+   * sync ended before the build. Stated on the outcome, the one event a screen is sure to show, since what the remote
+   * holds afterwards cannot say it: an activity left out is simply not there. The build's own result says the same,
+   * `Built.leftOut`, and the journal has a line of it.
+   */
+  readonly leftOut?: readonly LeftOutActivity[];
 }
 
 /**
@@ -425,6 +433,11 @@ interface Reporter {
   readonly stopped: (before: string) => SyncOutcome;
   /** Whether a stop has been asked, read afresh each time since it can be asked at any moment. */
   readonly asked: () => boolean;
+  /**
+   * The activities the build left out, said once in the journal by the build and on every outcome after it, R92: the
+   * one place every path, attached or pretend, says it, so the two say it alike.
+   */
+  readonly leftOut: (activities: readonly LeftOutActivity[]) => void;
 }
 
 function reporterOf(request: SyncRequest, say: (line: string) => void, log: (line: string) => void): Reporter {
@@ -440,7 +453,10 @@ function reporterOf(request: SyncRequest, say: (line: string) => void, log: (lin
     }
   };
   let current: SyncPhase | undefined;
-  const end = (outcome: SyncOutcome): SyncOutcome => {
+  // The activities the build left out, attached to whatever outcome follows the build.
+  let left: readonly LeftOutActivity[] = [];
+  const end = (given: SyncOutcome): SyncOutcome => {
+    const outcome: SyncOutcome = left.length === 0 ? given : { ...given, leftOut: left.map((one) => ({ ...one })) };
     say(`${outcome.result}, the remote ${outcome.remote}${outcome.message === undefined ? '' : `: ${outcome.message}`}`);
     emit({ kind: 'outcome', outcome });
     return outcome;
@@ -459,6 +475,12 @@ function reporterOf(request: SyncRequest, say: (line: string) => void, log: (lin
     refused: (message) => end({ result: 'refused', remote: 'as-before', message }),
     stopped: (before) => end({ result: 'stopped', remote: 'as-before', message: `stopped before ${before}, with nothing written` }),
     asked: () => request.stop?.aborted === true,
+    leftOut: (activities) => {
+      left = activities;
+      if (activities.length > 0) {
+        say(`left out, switched off: ${activities.map((one) => `activity ${one.name}${one.id === undefined ? '' : ` (${one.id})`}`).join(', ')}`);
+      }
+    },
   };
 }
 
@@ -485,7 +507,8 @@ function identify(r: Reporter, document: Recipe, documents: boolean, reported: n
 
 /**
  * The `check` and `build` phases, the same for every path: the document's check, refused on its first error with the
- * count of the rest, and the build from the request's sources. `inject` lets the pretend remote stand in for a document
+ * count of the rest, and the build from the request's sources, which leaves out the activities the document switches
+ * off and says which, in the journal and on the outcome, R92. `inject` lets the pretend remote stand in for a document
  * that fails either; an attached sync passes none.
  */
 function checkAndBuild(
@@ -508,12 +531,16 @@ function checkAndBuild(
   r.enter('build');
   const buildFails = inject?.('build');
   if (buildFails !== undefined) return { outcome: r.refused(buildFails) };
+  let built: Built;
   try {
-    return { built: buildFromRecipe(document, request.sources) };
+    built = buildFromRecipe(document, request.sources);
   } catch (error) {
     // Every refusal of a build is the document's or the sources', and nothing has touched the remote.
     return { outcome: r.refused(said(error)) };
   }
+  // The activities the document switches off, left out by the build: said here, once, for every path.
+  r.leftOut(built.leftOut);
+  return { built };
 }
 
 /**

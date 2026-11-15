@@ -32,7 +32,7 @@
  * endings the cases are: for the Harmony One, written, a dry run, nothing to write, a stop before the sync, during the
  * compare and once the write began, a screen that throws, a remote of another model, no answer when opened, and a
  * failure in the compare, the write (with the same sync again), the read back and the restart; for the Harmony Touch,
- * written, a dry run, a power source but usb in a dry run and a commit, no answer when opened in a dry run and a
+ * written, written with an activity switched off, whose outcome names it on both sides, a dry run, a power source but usb in a dry run and a commit, no answer when opened in a dry run and a
  * commit, a stop before the sync, while it builds and once the hand over began, a screen that throws, a remote of
  * another model, the remote's own abort, and a failure in the hand over and once the sync started. **The refusals the
  * pretend remote never produces are not compared here**, since it has no rail, no keeper and no unit to refuse: a
@@ -55,7 +55,7 @@ import {
   RECOVERY, SYNC_ENDINGS, pretendRemote, syncDocument, type PretendOptions, type SyncEvent, type SyncOutcome,
 } from '../../src/write.ts';
 import { BUILT_AT, HELD_AT, runSync, runSyncCommittedAll, type SyncScenario } from './sync-attached-run.ts';
-import { ACCOUNT, runTouchSync, runTouchSyncCommittedAll, type TouchScenario } from './sync-attached-touch-run.ts';
+import { ACCOUNT, runTouchSync, runTouchSyncCommittedAll, switchedOffTouchDocument, type TouchScenario } from './sync-attached-touch-run.ts';
 
 const ONE: RecipeModel = { name: 'Harmony One', skin: 54 };
 const TOUCH: RecipeModel = { name: 'Harmony Touch', skin: 99 };
@@ -232,6 +232,8 @@ const STOPPED = 'the run stopped on an error: the remote stopped answering';
 
 const TOUCH_CASES: readonly Case<TouchScenario>[] = [
   { name: 'written', attached: { commit: true }, committed: true, pretend: touchPretend() },
+  { name: 'written, an activity switched off', attached: { commit: true, switchedOff: true }, committed: true,
+    pretend: touchPretend({}, { document: switchedOffTouchDocument() }) },
   { name: 'a dry run', attached: {}, committed: false, pretend: touchPretend({}, { commit: false }) },
   { name: 'a dry run on battery', attached: { powerstate: 'battery\n' }, committed: false, pretend: touchPretend({ powerSource: 'battery' }, { commit: false }) },
   { name: 'a commit on battery', attached: { commit: true, powerstate: 'battery\n' }, committed: true, pretend: touchPretend({ powerSource: 'battery' }) },
@@ -264,6 +266,11 @@ test('a sync to a pretend Harmony Touch reports what a sync to an attached one r
   }
   // Every ending an answered sync has, by the source's own list, reached on both sides.
   assert.deepEqual([...reached].sort(), endings('document'));
+  // The case with an activity switched off compares outcomes that name it, so the two sides agree on a statement made,
+  // not on an absent one; every other case's outcome names none.
+  const off = TOUCH_CASES.findIndex((one) => one.name === 'written, an activity switched off');
+  assert.deepEqual(attached[off]!.outcome.leftOut, [{ id: 'a3', name: 'Listen to Music' }]);
+  assert.deepEqual(attached.filter((_, k) => k !== off).map((one) => one.outcome.leftOut), TOUCH_CASES.slice(1).map(() => undefined));
 
   // The control: the same comparison, run on the failing hand over with the pretend remote told to fail in the write
   // instead, has to fail, and on the event words.

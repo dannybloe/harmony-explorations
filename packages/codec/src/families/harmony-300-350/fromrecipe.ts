@@ -8,14 +8,15 @@
  * refused rather than given a place this family would have to invent.
  */
 import { ComposeError } from '../../shared/core.ts';
-import { refuseUnbuiltFields, type Recipe } from '../../recipe/recipe.ts';
+import { recipeToBuild, type Recipe } from '../../recipe/recipe.ts';
 import type { RecipeSources } from '../family.ts';
 import { buildEmptyNoScreenConfiguration } from './empty.ts';
 import { buildNoScreenSetup, type DevicePlace } from './setup.ts';
 
 export function noScreenFromRecipe(recipe: Recipe, skin: number, sources: RecipeSources): Uint8Array {
-  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(recipe, 'the Harmony 300 and 350\'s fromRecipe', 'compiled');
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
+  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  recipe = recipeToBuild(recipe, 'the Harmony 300 and 350\'s fromRecipe', 'compiled');
   if (recipe.devices.length === 0 && recipe.activities.length === 0) {
     return buildEmptyNoScreenConfiguration({ skin, builtAt: sources.builtAt }).bytes;
   }

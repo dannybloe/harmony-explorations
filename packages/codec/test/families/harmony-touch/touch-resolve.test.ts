@@ -26,11 +26,11 @@
  * **The converted document states what the default maps' score lists and nothing more**: five device keys, the
  * differences `touch-default-maps.test.ts` gives the devices, and seven activity keys, its differences end to end; four
  * timing members on the Denon and one on the KPN, the LG TV's channel tuning, five activity lists, two opening screens,
- * one sequence and one activity's three start steps and one end step. Three things the document's shape had to be
+ * one sequence and one activity's three start steps and one end step. Two things the document's shape had to be
  * decided on are measured here: **the power off order equals the power on order on 5 of 5 activities**, so the family
- * derives it, a hypothesis marked so; **one channel step and pauses of 1 and 2 seconds** are what the steps need, so the
- * document has a channel step and no finer pause; **no Settings document Logitech's service wrote is held in the
- * codec**, only the firmware's defaults and made up rows, so the settings are stated whole.
+ * derives it, a hypothesis marked so; and **one channel step and pauses of 1 and 2 seconds** are what the steps need, so
+ * the document has a channel step and no finer pause. The settings are stated whole, as the block's file states them;
+ * a document that states fewer builds, each row it leaves out the family's default, `touch-setting-defaults.test.ts`.
  *
  * **The order of the devices and of the activities is compared**: the setup's order is the order the composer writes
  * them in, and the activity list is shown in the order its activities are numbered, `activities-and-buttons.md` "A
@@ -561,7 +561,7 @@ test('settings are checked on this route as on the block\'s, one check: a number
   assert.equal(refusalOf((j) => { j.settings.ScreenBrightness = 10; j.settings.AccelFlag = false; }), undefined);
 });
 
-test('refused: a device with no id of the toolkit\'s form or one with a leading zero, a document with a block, a key no place takes, a step running a sequence, a timing the Touch does not carry and a setting not stated', () => {
+test('refused: a device with no id of the toolkit\'s form or one with a leading zero, a document with a block, a key no place takes, a step running a sequence, a timing the Touch does not carry, a setting the Touch does not have and one not built yet', () => {
   said(refusalOf((j) => { delete j.devices[2].id; }), ComposeRefusal, /the device Blu-ray has no id of the toolkit's form, d1 to d99/);
   said(refusalOf((j) => { j.devices[2].id = 'player'; }), ComposeRefusal, /the device Blu-ray has the id player, which is not of the toolkit's form/);
   // d01 would be the same number as d1, so it is refused where the id becomes one, naming it.
@@ -575,7 +575,16 @@ test('refused: a device with no id of the toolkit\'s form or one with a leading 
   said(refusalOf((j) => { j.activities[0].keys = [{ key: 'DVR', action: { nothing: true } }]; }), ComposeRefusal, /the key DVR, which is no place of a Harmony Touch/);
   said(refusalOf((j) => { j.activities[1].start = [{ sequence: 'Test Sequence' }]; }), NotBuiltError, /step 1 at its start, running the sequence Test Sequence/);
   said(refusalOf((j) => { j.devices[0].timing = { holdInterDeviceDelay: 100 }; }), NotBuiltError, /holdInterDeviceDelay.*R16/);
-  said(refusalOf((j) => { delete j.settings.KeyBrightness; }), ComposeRefusal, /the setting KeyBrightness is not stated/);
+  said(refusalOf((j) => { j.settings.TouchSound = true; }), ComposeRefusal, /a Harmony Touch has no setting TouchSound/);
+  said(refusalOf((j) => { j.settings.HapticFlag = true; }), NotBuiltError, /the setting HapticFlag.*R47/);
+  // A setting not stated is no refusal: the row is the family's default, the keys' light at 35.
+  const keyLight = (change: (json: Json) => void): string | undefined => {
+    const json = copy(converted()) as Json;
+    change(json);
+    const document = readRecipe(json);
+    return touchSetupOfDocument(document, carriedCatalogue(document)!).settings.KeyBrightness;
+  };
+  assert.deepEqual([keyLight((j) => { delete j.settings.KeyBrightness; }), keyLight((j) => { j.settings.KeyBrightness = 60; })], ['35', '60']);
   // The control: the document as converted resolves.
   assert.equal(refusalOf(() => undefined), undefined);
 });

@@ -52,8 +52,9 @@
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
 import { type Container, parse } from '../../container/gspm.ts';
 import { devices } from '../../inventory/inventory.ts';
-import { type Recipe, refuseUnbuiltFields, statedKeys } from '../../recipe/recipe.ts';
+import { type Recipe, recipeToBuild, statedKeys } from '../../recipe/recipe.ts';
 import { ComposeError, nameOfLabel } from '../../shared/core.ts';
+import { notBuilt } from '../../support/contract.ts';
 import { type ComposedNoScreenActivity, composeNoScreenActivity, type NoScreenActivityDevice, WATCH_TV_SCAN } from './activity.ts';
 import { composeNoScreenDevice, keyMaps, PRESS } from './devices.ts';
 import { emptyNoScreenForComposing, withAcknowledgingEntry } from './empty.ts';
@@ -113,13 +114,14 @@ function entryOf(device: string): { manufacturer: string; model: string } {
 
 /** Compose a whole setup onto a Harmony 350 configuration. Restamped, by the last composer that ran. */
 export function composeNoScreenSetup(c: Container, archive: CatalogueSource, request: NoScreenSetupRequest): ComposedNoScreenSetup {
-  const { recipe, keys } = request;
-  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(recipe, 'composeNoScreenSetup', 'compiled');
+  const { keys } = request;
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
+  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  const recipe = recipeToBuild(request.recipe, 'composeNoScreenSetup', 'compiled');
   // A key the recipe chooses otherwise, R31 and R32, is not built on these remotes yet, and a file built without it
   // would leave the key doing what the builders give it, so the recipe is refused rather than built.
   const chosen = statedKeys(recipe)[0];
-  if (chosen !== undefined) throw new ComposeError(`the Harmony 300 and 350 build no key a recipe chooses yet, and the recipe chooses ${chosen.where}`);
+  if (chosen !== undefined) notBuilt(`composeNoScreenSetup for ${chosen.where}`, chosen.owner === 'device' ? 32 : 31);
   const skin = (c.versionWord ?? -1) & 0xff;
   if (recipe.model.skin !== undefined && recipe.model.skin !== skin) {
     throw new ComposeError(`the setup is for skin ${recipe.model.skin} and the configuration is skin ${skin}`);
@@ -278,13 +280,14 @@ export interface NoScreenSetupFromNothing extends NoScreenSetupRequest {
  * writing it restamps again last, as every writer does.
  */
 export function buildNoScreenSetup(archive: CatalogueSource, request: NoScreenSetupFromNothing): ComposedNoScreenSetup {
-  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(request.recipe, 'buildNoScreenSetup', 'compiled');
-  const skin = request.recipe.model.skin;
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
+  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  const recipe = recipeToBuild(request.recipe, 'buildNoScreenSetup', 'compiled');
+  const skin = recipe.model.skin;
   if (skin === undefined) throw new ComposeError('the setup states no skin, so the model the configuration is built for is not known');
   const empty = emptyNoScreenForComposing({
     skin, builtAt: request.builtAt, ...(request.zoneHours === undefined ? {} : { zoneHours: request.zoneHours }),
   });
-  const composed = composeNoScreenSetup(empty.container, archive, { recipe: request.recipe, keys: request.keys });
+  const composed = composeNoScreenSetup(empty.container, archive, { recipe, keys: request.keys });
   return { ...composed, bytes: withAcknowledgingEntry(parse(composed.bytes)).blob };
 }

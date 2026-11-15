@@ -914,6 +914,34 @@ function emptyListRow(c: Container, lists: readonly OneDeviceList[], choices: On
 }
 
 /**
+ * The font a device list's row names are drawn in. Lists of no row select no row font, the empty One's: their first
+ * row is drawn in the font the fixed screens draw their whole width rows in, which is the device lists' row font on all
+ * sixteen English compiles of skin 54 that describe both, findings section 435.
+ */
+function rowFontOf(c: Container, held: ReturnType<typeof describeOneDeviceLists>): number {
+  const row = (held.spec.screen.fonts as Partial<typeof held.spec.screen.fonts>).row;
+  return row ?? describeOneFixedScreens(c, takeApart(c)).spec.fonts.wide;
+}
+
+/**
+ * **Why a device's name cannot be drawn on a device list's row**, or undefined where it can: broken into lines as
+ * `withOneDeviceListRow` breaks it, `deviceListNameLines`, in the row font of `c`'s lists, so the family's
+ * `nameRefusal` answers `check` with the builder's own judgement.
+ */
+export function oneDeviceNameRefusal(c: Container, name: string): string | undefined {
+  const lists = oneDeviceLists(c);
+  if (lists.length === 0) throw new ComposeError('no device list to put a row on');
+  const held = describeOneDeviceLists(c, takeApart(c), blobReader(c), lists);
+  try {
+    deviceListNameLines(c, rowFontOf(c, held), name);
+    return undefined;
+  } catch (error) {
+    if (error instanceof ScreenRecordError) return error.message;
+    throw error;
+  }
+}
+
+/**
  * A device's row put on every device list by building the lists again, section 424: the One
  * family's device composer, in place of appending a row to each the way `composeMenuPage` appends one.
  *
@@ -942,11 +970,7 @@ export function withOneDeviceListRow(
   const start = firstRow === undefined ? given : withBankPictures(given, [firstRow.box, firstRow.icon]).container;
   const held = describeOneDeviceLists(start, takeApart(start), blobReader(start), lists);
   const { plans, roles } = heldPlans(start, held, lists);
-  // Lists of no row select no row font, the empty One's: their first row is drawn in the
-  // font the fixed screens draw their whole width rows in, which is the device lists' row font on all sixteen English
-  // compiles of skin 54 that describe both, findings section 435.
-  const heldFonts = { ...held.spec.screen.fonts };
-  if ((heldFonts as Partial<typeof heldFonts>).row === undefined) heldFonts.row = describeOneFixedScreens(start, takeApart(start)).spec.fonts.wide;
+  const heldFonts = { ...held.spec.screen.fonts, row: rowFontOf(start, held) };
   const lines = deviceListNameLines(start, heldFonts.row, name);
   const firstList = (start.actionLists() ?? []).length;
   let nextList = firstList;

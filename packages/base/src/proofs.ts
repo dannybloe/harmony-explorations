@@ -1098,4 +1098,10 @@ export const PROOFS: readonly Proof[] = [
     title: "a pretend remote is read through readConfig as a remote on the cable is, with its progress, and a failure asked for stops the read part way after its retries",
     bench: [],
   },
+  {
+    requirement: 93, models: ["harmony-one", "harmony-touch"],
+    test: "packages/codec/test/recipe/toolkitattention.test.ts",
+    title: "on the Harmony One and the Harmony Touch removing a device marks every activity that used it, with every press whose answer changed",
+    bench: [],
+  },
 ];

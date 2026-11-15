@@ -57,9 +57,13 @@
  * sample exercises on one device, or on none, as a hypothesis.** Seven devices is a small sample, and a rule fitted to
  * it predicts other devices only as far as a second sample shows.
  *
+ * **An activity's screen list outside its pad has no default: it is empty until a person states one.** Rules over the
+ * devices' command names and the activity's roles were scored once against the five activities' lists and none came
+ * near: the best found 27 of the 33 entries and added 42 the lists do not hold. Measured once, held by no test.
+ *
  * **What it does not settle.** Why any difference is there: nothing records which maps were changed by hand, and the
  * person does not remember, so a reason given beside a difference is a reading. Whether Logitech's rule is this rule
- * on any device outside the seven. Anything of an activity's screen list but its pad.
+ * on any device outside the seven. What chooses the entries of an activity's screen list outside its pad.
  *
  * **What would falsify it.** A second setup Logitech's service built whose maps the rule misses on keys whose
  * commands this sample already has, or a device whose screen list keeps a command a key takes as its own.

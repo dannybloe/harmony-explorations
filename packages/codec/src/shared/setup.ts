@@ -7,7 +7,7 @@
  * activity keys and the delays.
  */
 import {
-  type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget, refuseUnbuiltFields, type StatedKey, statedKeys,
+  type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget, recipeToBuild, type StatedKey, statedKeys,
 } from '../recipe/recipe.ts';
 import { familyOf, sendsOf } from '../families/registry.ts';
 import { saveEdits } from '../edit/edit.ts';
@@ -25,9 +25,12 @@ import {
   activities, devices, deviceVariables, infraredCodesPerList, SEND_INFRARED, DEVICE_QUANTITY,
 } from '../inventory/inventory.ts';
 import {
-  ComposeError, type ComposeRow, composeActivity, composeActivityMenuRow, keepDeviceOn,
+  type ComposeRow, composeActivity, composeActivityMenuRow, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
 } from '../compose/compose.ts';
+// From the module that imports nothing, since `AssemblyError` below extends it as this module loads.
+import { ComposeError } from '../support/refusal.ts';
+import { notBuilt } from '../support/contract.ts';
 import {
   activityFromRoles, activityKeysFromRoles, activityScreenRows, deviceKeypadLists, type ActivityDevice,
 } from '../compose/activityroles.ts';
@@ -46,8 +49,11 @@ import { activityPauseGroups, composeSequence } from '../compose/sequence.ts';
  */
 export type DonorInfrared = { readonly name: string } & Omit<ComposedDonorInfrared, 'bytes'>;
 
-/** A refusal, named so a caller can tell a setup the donor cannot serve from a bug. */
-export class AssemblyError extends Error {}
+/**
+ * A refusal, named so a caller can tell a setup the donor cannot serve from a bug. A build's refusal, `ComposeError`,
+ * so an application that catches that one class catches this too, `support/refusal.ts`.
+ */
+export class AssemblyError extends ComposeError {}
 
 export interface AssembleOptions {
   /** The container every part no generator builds is taken from: a Logitech compile, or a library. */
@@ -108,8 +114,9 @@ export function composeSetupParts(
   devicesComposed: ComposedDeviceNote[]; donorInfrared: DonorInfrared[];
 } {
   let c = donor;
-  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(setup, 'composeSetupParts', 'compiled');
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
+  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  setup = recipeToBuild(setup, 'composeSetupParts', 'compiled');
   // 0. Favourite channels are a recipe field Logitech's service is given and no composer writes, so a
   //    recipe stating some is refused for every family alike rather than built without them, which would
   //    be a configuration missing what its recipe asked for and saying nothing about it.
@@ -333,14 +340,18 @@ function checkStatedKeys(
 ): void {
   const builder = family.recipeKeys;
   if (builder === undefined) {
-    throw new AssemblyError(`nothing here builds a key a recipe chooses for ${family.name} yet, and the recipe chooses ${(chosen[0] as StatedKey).where}`);
+    // Not built rather than refused: the family builds no key choice yet, R31 for an activity's key and R32 for a device's.
+    const first = chosen[0] as StatedKey;
+    notBuilt(`composeSetupParts for ${first.where} on ${family.name}`, first.owner === 'device' ? 32 : 31);
   }
   for (const one of chosen) {
     const { key, where } = one;
     // A held press and a double press alike: built as a short press, either would give a key that does something
     // else than the recipe says.
-    if (key.press !== undefined && key.press !== 'short') throw new AssemblyError(`${where}: a ${key.press} press is not built yet`);
-    if ('sequence' in key.action) throw new AssemblyError(`${where} runs the sequence ${key.action.sequence}, and a sequence on a key is not built yet`);
+    // `where` names the press already, `, held` or `, double`.
+    if (key.press === 'held') notBuilt(`composeSetupParts for ${where}`, 38);
+    if (key.press === 'double') notBuilt(`composeSetupParts for ${where}`, 40);
+    if ('sequence' in key.action) notBuilt(`composeSetupParts for ${where}, running the sequence ${key.action.sequence}`, 37);
     if (!builder.keys.includes(key.key)) throw new AssemblyError(`${where}: ${key.key} is no key ${family.name}'s maps bind`);
     if (one.owner === 'activity' && donorActivities.includes(one.name)) {
       throw new AssemblyError(`${where}: ${one.name} is the donor's activity, which is not composed here`);
@@ -579,8 +590,9 @@ export interface ComposedSetup {
  * are the family's own; a recipe stating choices is refused, since what a choice changes is the generators' work.
  */
 export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedSetup {
-  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
-  refuseUnbuiltFields(setup, 'composeSetup', 'compiled');
+  // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
+  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  setup = recipeToBuild(setup, 'composeSetup', 'compiled');
   const target = recipeTarget(setup);
   // The skins composing alone has been run on are the family's, `Family.composedSkins`; a family the assembly's
   // generators build for goes through `assembleSetup`.

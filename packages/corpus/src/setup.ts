@@ -7,8 +7,8 @@
  * (`work/myharmony/src/`, the activity store, the activity converter and the activity setup wizard) and
  * not yet seen working from here: one call, `UserAccountDirector/SaveActivities`, with the account and a
  * list of activities. There is no list of an activity's devices; the devices are whichever devices its
- * **roles** name, a role being a job a device does in that activity (shows the picture, takes the
- * volume, changes channels). A device the activity uses for no job gets a pass through role, which is
+ * **roles** name, a role being what a device does in that activity (shows the picture, takes the
+ * volume, changes channels). A device the activity uses with no other role gets a pass through role, which is
  * how the client adds an HDMI switch. A device's input is set on **every** role of that device, by the
  * input's name as the catalogue states it. Ids, the power on and off order and the activity group are
  * left for the service to assign, which is what the replies captured in the lab show it doing.
@@ -28,7 +28,7 @@ import type { ActivityRoleName, Recipe, RecipeActivity, RecipeDevice } from '@ha
 export type SetupDevice = RecipeDevice;
 
 /**
- * The jobs a device can do in an activity, as the contract names their role types. The codec's list,
+ * The roles a device can have in an activity, as the contract names their role types. The codec's list,
  * since the activity composer takes the same roles, `activityFromRoles`, and one vocabulary in two
  * places is two until one of them moves. A device listed with none is a pass through device here too.
  */
@@ -57,8 +57,8 @@ function id(value: number): { IsPersisted: true; Value: number } {
 }
 
 /**
- * The roles of one activity: each job a device does, in the order the setup lists them, and a pass
- * through role for a device listed with no job. `deviceIds` maps a setup's device name to the account's
+ * The roles of one activity: each role a device has, in the order the setup lists them, and a pass
+ * through role for a device listed with no role. `deviceIds` maps a setup's device name to the account's
  * own device id, which is not the catalogue's.
  */
 export function activityRoles(activity: SetupActivity, deviceIds: ReadonlyMap<string, number>):

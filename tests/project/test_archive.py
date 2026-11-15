@@ -81,10 +81,13 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # Repinned for decision 43, a new entry, plan 018: a document has one shape for every remote and the toolkit is
 # the same for every model, default maps are derived by rule, and a person's change is never replaced by the
 # catalogue. The digest before it was 5504e207.
-DECISIONS_DIGEST = "12da54b7f13c1d6ba87e6c922007133c62282713d70aa92d29bee6f79a1a9067"
+# Repinned for decision 44, a new entry: an activity is never invalid and no role is required, a change that may
+# leave one otherwise than a person wants marks it as needing attention, and an activity can be switched off. The
+# digest before it was 12da54b7.
+DECISIONS_DIGEST = "7af40829d865f8c9761631cab7a3fa8ab2624f48c305a5cab25fb2c224ca8079"
 
 SECTIONS = 436
-DECISIONS = 43
+DECISIONS = 44
 
 
 def anchor_problems(findings, decisions):

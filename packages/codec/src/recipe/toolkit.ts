@@ -33,7 +33,7 @@
  * refuses while it holds an error. A function not built refuses by name.
  *
  * **A person's choice is a deviation from a default.** What a key does, what a screen shows, how a device is
- * powered: the builders derive each from the catalogue and from which device does which job. The document states
+ * powered: the builders derive each from the catalogue and from which device has which role. The document states
  * only where a person chose otherwise, and every such setter takes `'default'` to put the choice back, so "what the
  * remote would do anyway" is never copied into the document, where it would go stale.
  *
@@ -69,14 +69,16 @@ import { capabilitiesOf } from '../families/capabilities.ts';
 import {
   binds, resolveMaps, type MapBinder, type MapPlace, type MapScreenEntry, type MapSurface, type ResolvedKey, type ResolvedMaps, type ResolvedOwner,
 } from '../families/maps.ts';
-import { chooseByModel, mapsOfModel, NoFamilyError, type ModelChoice, type ModelMaps } from '../families/registry.ts';
+import { chooseByModel, mapsOfModel, NoFamilyError, settingsOfModel, type ModelChoice, type ModelMaps } from '../families/registry.ts';
+import { settingValue, type FamilySettings, type SettingKind } from '../families/settings.ts';
 import { notBuilt } from '../support/contract.ts';
+import { ResourceError } from '../support/resources.ts';
 import {
   readRecipe, RECIPE_VERSION, RecipeError, unbuiltFields,
   type Recipe, type RecipeActivity, type RecipeActivityStep, type RecipeCommand, type RecipeCommandCode, type RecipeCommandStep,
   type RecipeDevice, type RecipeDeviceKey, type RecipeDevicePower, type RecipeKey, type RecipeKeyAction, type RecipeModel,
   type RecipePress, type RecipeScreenCommand, type RecipeScreenItem, type RecipeSending, type RecipeSequence,
-  type RecipeSequenceStep, type RecipeSetting,
+  type RecipeSequenceStep, type RecipeSetting, type RecipeAttention, type RecipeAttentionKey,
 } from './recipe.ts';
 
 // ---------------------------------------------------------------------------------------------------
@@ -120,6 +122,18 @@ export type Place =
   | { readonly kind: 'command'; readonly device: DeviceId; readonly command: string }
   | { readonly kind: 'activity'; readonly activity: ActivityId }
   | { readonly kind: 'activity-device'; readonly activity: ActivityId; readonly device: DeviceId }
+  /**
+   * One role of an activity, by the document's word for it, `ActivityRoleName`, Logitech's: where a change says that no
+   * device of the activity has that role any more. A role is the document's and the same word on every model, and never
+   * required, decision 44; what a model does without it, such as volume keys that then send nothing, is the model's
+   * family's and not said here.
+   */
+  | { readonly kind: 'role'; readonly activity: ActivityId; readonly role: ActivityRoleName }
+  /**
+   * An activity's mark of needing attention, `RecipeActivity.attention`, R93, decision 44: where a change says it set
+   * the mark, or added a reason to it, and why.
+   */
+  | { readonly kind: 'attention'; readonly activity: ActivityId }
   | { readonly kind: 'step'; readonly activity: ActivityId; readonly when: 'start' | 'end'; readonly step: number }
   /** A device's place in the order an activity switches its devices on and off, `ActivityChanges.powerOrder`. */
   | { readonly kind: 'power-order'; readonly activity: ActivityId; readonly device: DeviceId }
@@ -163,15 +177,19 @@ export const PROBLEM_CODES = [
   'unknown-device', 'unknown-command', 'unknown-input', 'unknown-key', 'unknown-sequence',
   // A device with no definition carried, so nothing can be built for it without a source.
   'no-definition',
-  // Two things a remote lists side by side under one name, or a name its screen cannot draw.
-  'name-taken', 'name-not-drawable',
+  // Two things a remote lists side by side under one name, or a name its screen cannot draw; and the note that names
+  // could not be judged, since judging draws them and the codec was given nothing to draw with.
+  'name-taken', 'name-not-drawable', 'names-not-judged',
   // More than the model takes, in a document that did not come through the toolkit's own changes.
   'over-limit',
   // Something the model cannot do at all, or that is not built for it yet.
   'not-on-this-model',
+  // What makes no sense where it stands, as a change refuses it `invalid`: a value outside the range its setting takes,
+  // a sequence on a device's own key, which a device has none of.
+  'invalid',
   // A sequence longer than the remote survives.
   'sequence-too-long',
-  // Not wrong, not finished: a job no device does, an input not chosen.
+  // Not wrong, not finished: an activity that uses no device yet, an input not chosen.
   'unfinished',
 ] as const;
 export type ProblemCode = typeof PROBLEM_CODES[number];
@@ -272,7 +290,7 @@ export interface CommandChange {
   readonly sending?: MemberChanges<RecipeSending> | 'default';
 }
 
-/** One device's part in an activity: the input it is switched to, or none to leave it alone, and its jobs, R22 to R24. */
+/** One device's part in an activity: the input it is switched to, or none to leave it alone, and its roles, R22 to R24. */
 export interface ActivityDeviceChoice {
   readonly device: DeviceId;
   readonly input?: string;
@@ -290,7 +308,7 @@ export type ActivityStep =
   | { readonly sequence: SequenceId }
   | { readonly device: DeviceId; readonly channel: string };
 
-/** An activity as it is added: its name, Logitech's kind, and its devices with their jobs, R21. */
+/** An activity as it is added: its name, Logitech's kind, and its devices with their roles, R21. */
 export interface NewActivity {
   readonly name: string;
   readonly type: string;
@@ -302,7 +320,7 @@ export interface ActivityChanges {
   /** R25. */
   readonly name?: string;
   readonly type?: string;
-  /** The devices and their jobs, in the order the activity lists them, R22 to R24 and R28. */
+  /** The devices and their roles, in the order the activity lists them, R22 to R24 and R28. */
   readonly devices?: readonly ActivityDeviceChoice[];
   /** R27, by the name of one of our icons. */
   readonly icon?: string | 'none';
@@ -320,6 +338,11 @@ export interface ActivityChanges {
   readonly favourites?: boolean | 'default';
   /** The order it switches its devices on and off in, R90, every device of the activity once; `'default'` is the family's. */
   readonly powerOrder?: readonly DeviceId[] | 'default';
+  /**
+   * Whether it is switched on, R92, decision 44: false keeps it in the document and out of every build and sync, which
+   * say they left it out; true switches it on again, the same activity under the same id.
+   */
+  readonly enabled?: boolean;
 }
 
 /** One step of a sequence, R37: a device's command by its name, or a pause in tenths of a second. */
@@ -394,7 +417,29 @@ export interface ActivitySummary {
   readonly name: string;
   readonly type: string;
   readonly devices: readonly ActivityDeviceChoice[];
+  /** False where a person switched it off, R92: a build and a sync leave it out, and say so. */
+  readonly enabled: boolean;
+  /**
+   * Why it needs attention, R93, each reason as the document records it, `Attention`; empty where it needs none. An
+   * activity needing attention is still built and synced: it is never invalid, decision 44.
+   */
+  readonly attention: readonly Attention[];
 }
+
+/**
+ * One reason an activity needs attention, R93, decision 44, as the document records it, `RecipeAttention`: what
+ * happened, `device-removed` or `marked`; the device by the name it had, since one removed has no id left; every press
+ * of the activity whose answer the removal changed, with what it did and does, where the keys are known; and a sentence
+ * in English. **Data an application words itself**: the sentence is there for one that does not.
+ */
+export type Attention = RecipeAttention;
+
+/**
+ * One press of an activity's key whose answer a change made otherwise, `RecipeAttentionKey`: the key, the press, what it
+ * did, `was`, and what it does, `now`, each a device's command by the device's name, a sequence by its name, or nothing.
+ * By name and not by id, as the record it is: the device it sent to may be gone.
+ */
+export type AttentionKey = RecipeAttentionKey;
 
 /** A sequence as a list shows it, with the activity it belongs to. */
 export interface SequenceSummary {
@@ -583,6 +628,27 @@ export interface ScreenAnswer {
   readonly owner: Owner;
   readonly items: readonly ScreenEntryAnswer[];
   readonly isDefault: boolean;
+}
+
+/** The kind of value a remote's setting takes, yes or no or a whole number in a range, `families/settings.ts`. */
+export type { SettingKind };
+
+/**
+ * One of the remote's own settings as the remote will have it, R47, before anything is built: its name as the family
+ * gives it, its value, whether that is the default, what the default is, and the kind of value it takes, the choices of
+ * a yes or no setting or the range of a number.
+ *
+ * **The value is the document's where it states one**, as what the family takes it to mean, true or false or a number,
+ * also where it is written as text; a value the family's build refuses is answered as the document states it, and
+ * `check` lists it. **A value equal to the default is still the person's**, `isDefault` false, since the document
+ * states it and it stays when the family's default changes; `setSetting` with `'default'` gives it back.
+ */
+export interface RemoteSettingAnswer {
+  readonly name: string;
+  readonly value: boolean | number | string;
+  readonly isDefault: boolean;
+  readonly default: boolean | number;
+  readonly takes: SettingKind;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -1187,7 +1253,7 @@ function changeable(document: Recipe): void {
 
 /**
  * An activity's devices as the recipe states them, from the ids a caller gave: each a device of the document, named
- * once, with jobs an activity has. An input is not judged here: whether a device has it is the check's to say, so
+ * once, with roles an activity has. An input is not judged here: whether a device has it is the check's to say, so
  * an activity can be put together before every choice is made.
  */
 function chosenDevices(document: Recipe, activity: string, choices: readonly ActivityDeviceChoice[]): RecipeActivity['devices'] {
@@ -1200,7 +1266,7 @@ function chosenDevices(document: Recipe, activity: string, choices: readonly Act
     seen.add(choice.device);
     for (const role of choice.roles) {
       if (!(ACTIVITY_ROLE_NAMES as readonly string[]).includes(role)) {
-        throw new ChangeRefused('invalid', { kind: 'device', device: choice.device }, `activity ${activity} gives ${device.name} a job ${String(role)} no activity has`);
+        throw new ChangeRefused('invalid', { kind: 'device', device: choice.device }, `activity ${activity} gives ${device.name} a role ${String(role)} no activity has`);
       }
     }
     // The recipe names a device by its name underneath, which is why a rename has to follow every reference.
@@ -1290,11 +1356,12 @@ function commandUses(document: Recipe): CommandUse[] {
  * One place a device or a sequence is named, and what kind of mention it is, which is what a removal does about it:
  * a key's choice, a part in an activity, a place in a power order, an entry of a screen, a sequence written out on a
  * screen (version 1's form), a sequence of an activity's own, a key, entry or extra step running a sequence that goes,
- * an extra step at a start or an end, and the favourites.
+ * an extra step at a start or an end, the favourites, and a role of an activity that no device of it has once the
+ * device is gone.
  */
 interface Mention {
   readonly place: Place;
-  readonly kind: 'key' | 'part' | 'order' | 'screen' | 'step' | 'sequence' | 'runs' | 'activity-step' | 'favourites';
+  readonly kind: 'key' | 'part' | 'role' | 'order' | 'screen' | 'step' | 'sequence' | 'runs' | 'activity-step' | 'favourites';
   /** In words, for an effect's sentence: `activity Watch TV's VolumeUp key`. */
   readonly where: string;
   /** For a sequence: whether it goes, having no step left that sends a command. */
@@ -1331,6 +1398,160 @@ function runsOf(activity: RecipeActivity, name: string, entries: boolean): Menti
   return found;
 }
 
+/**
+ * **The roles an activity loses in a change of its devices**: every role a device of `before` had that no device of
+ * `after` has, once each, in the order `before` lists them, with the device that had it (the first, where two had).
+ * The one reading of a role left with no device, which a removal of a device and `setActivity` both report, so the two
+ * say the same thing of the same loss.
+ *
+ * **A role is the document's**, Logitech's word for what a device does in an activity, `ActivityRoleName`, and the same
+ * on every model. **It is never required**, decision 44: an activity with no device for the volume may be just what a
+ * person wants, so this is said as an effect, a fact a person may want to know, and never as a problem. What a model's
+ * remote then does, such as an activity's volume keys sending nothing where a family follows the volume role for them,
+ * is the family's, and what it does to the keys is the attention mark's to say, `attentionOf`. A device with no role, a
+ * pass through device, takes no role with it when it goes.
+ */
+function rolesLeft(before: RecipeActivity['devices'], after: RecipeActivity['devices']): { readonly role: ActivityRoleName; readonly device: string }[] {
+  const kept = new Set(after.flatMap((used) => used.roles));
+  const left: { role: ActivityRoleName; device: string }[] = [];
+  for (const used of before) {
+    for (const role of used.roles) {
+      if (!kept.has(role) && !left.some((one) => one.role === role)) left.push({ role, device: used.device });
+    }
+  }
+  return left;
+}
+
+/** The sentence for a role no device of an activity has any more, which a removal and `setActivity` both say. */
+const roleLeftMessage = (where: string, device: string): string => `${where} was ${device}'s, and no device of the activity has it now`;
+
+/**
+ * **Every press of each activity named whose answer differs between two documents**, decision 44: every press of the
+ * activity's map that does one thing in `before` and another in `after`, with both. Read off the resolved maps of the
+ * two documents, `resolveMaps`, the maps the build binds by and the questions answer from, so what is listed is
+ * exactly what a person asking `keys` would see change: a key that sent the removed device's command, and as much a
+ * default that followed a role to another device, or a sequence that went with the device's last step.
+ *
+ * **Undefined, with why, where the keys cannot be known**: the model's family states no maps yet, or a device's
+ * commands cannot be read, a definition neither carried nor in the archive given. An activity whose keys are known and
+ * none changed answers an empty list.
+ */
+function pressesChanged(
+  before: Recipe, after: Recipe, activities: readonly ActivityId[], sources: QuestionSources | undefined,
+): { readonly keys: ReadonlyMap<ActivityId, RecipeAttentionKey[]> } | { readonly why: string } {
+  let found: ModelMaps | undefined;
+  try {
+    found = mapsOfModel(before.model);
+  } catch (error) {
+    if (error instanceof NoFamilyError) return { why: `no family serves the ${before.model.name} yet` };
+    throw error;
+  }
+  if (found === undefined) return { why: `the keys of a ${before.model.name} are not built yet, R77` };
+  const { skin, maps } = found;
+  let was: ResolvedMaps;
+  let now: ResolvedMaps;
+  try {
+    was = resolveMaps(maps, skin, before, carriedCatalogue(before, sources?.archive) ?? NO_CATALOGUE);
+    now = resolveMaps(maps, skin, after, carriedCatalogue(after, sources?.archive) ?? NO_CATALOGUE);
+  } catch (error) {
+    // A device whose commands cannot be read stops every map, `resolveMaps` says why, and the questions stop on it too;
+    // a change never does, so the answer names no key and says why in the reader's words, or plainly where the error
+    // came from deeper than the reader, a definition whose codes the catalogue cannot read.
+    return { why: error instanceof RecipeError ? error.message : 'the commands of the document\'s devices could not be read' };
+  }
+  const same = (a: RecipeKeyAction, b: RecipeKeyAction): boolean => JSON.stringify(a) === JSON.stringify(b);
+  const NOTHING: RecipeKeyAction = { nothing: true };
+  const keys = new Map<ActivityId, RecipeAttentionKey[]>();
+  for (const id of activities) {
+    const old = was.activities.find((one) => one.id === id)?.keys ?? [];
+    const fresh = now.activities.find((one) => one.id === id)?.keys ?? [];
+    const changed: RecipeAttentionKey[] = [];
+    // Every press either side answers, in the order the map before lists them and then any only the map after has.
+    const presses = [...old, ...fresh.filter((one) => !old.some((other) => other.key === one.key && other.press === one.press))];
+    for (const { key, press } of presses) {
+      const then = old.find((one) => one.key === key && one.press === press)?.action ?? NOTHING;
+      const after_ = fresh.find((one) => one.key === key && one.press === press)?.action ?? NOTHING;
+      if (!same(then, after_)) changed.push({ key, press, was: then, now: after_ });
+    }
+    keys.set(id, changed);
+  }
+  return { keys };
+}
+
+/** A press as a sentence names it: the key alone for a short press, with the press otherwise, `Guide held`. */
+const pressWords = (key: { readonly key: string; readonly press: RecipePress }): string => (key.press === 'short' ? key.key : `${key.key} ${key.press}`);
+
+/** A list in words: `A`, `A and B`, `A, B and C`. */
+const listed = (items: readonly string[]): string => (items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)!}`);
+
+/** What a press does, in words: a device's command, a sequence, or nothing. */
+const actionWords = (action: RecipeKeyAction): string => ('device' in action ? `${action.device}'s ${action.command}`
+  : 'sequence' in action ? `the sequence ${action.sequence}` : 'nothing');
+
+/**
+ * What changed presses do now, in words: those that send nothing first, then each that sends something else; empty
+ * where no press changed.
+ */
+function changedWords(keys: readonly RecipeAttentionKey[]): string {
+  const nothing = keys.filter((one) => 'nothing' in one.now).map(pressWords);
+  const elsewhere = keys.filter((one) => !('nothing' in one.now)).map((one) => `${pressWords(one)} sends ${actionWords(one.now)}`);
+  return [
+    ...(nothing.length === 0 ? [] : [`${listed(nothing)} ${nothing.length === 1 ? 'sends' : 'send'} nothing now`]),
+    ...(elsewhere.length === 0 ? [] : [`${listed(elsewhere)} instead`]),
+  ].join(', and ');
+}
+
+/**
+ * The sentence of a removal's reason, `RecipeAttention.message`: the device removed, and then which presses of the
+ * activity do otherwise now, that none does, or, where the keys are not known, why.
+ */
+function attentionMessage(device: string, keys: readonly RecipeAttentionKey[] | undefined, why?: string): string {
+  const what = `${device} was removed`;
+  if (keys === undefined) return `${what}, and what the activity's keys do now is not known, since ${why ?? 'nothing says'}`;
+  if (keys.length === 0) return `${what}, and no key of the activity does otherwise now`;
+  return `${what}; of the activity's keys, ${changedWords(keys)}`;
+}
+
+/**
+ * **The mark a removal of a device sets**, decision 44: for each activity that used `device`, a reason, `RecipeAttention`,
+ * with every press of the activity whose answer the removal changed, and the effect that tells a person, at the
+ * activity's mark. Every activity that used the device is marked, whether or not a key changed, since the removal of a
+ * device it used is worth a look; `after` is the document the removal makes, its activities given the reasons here.
+ */
+function withAttention(
+  before: Recipe, after: Recipe, device: string, activities: readonly ActivityId[], sources: QuestionSources | undefined,
+): { readonly document: Recipe; readonly effects: Effect[] } {
+  if (activities.length === 0) return { document: after, effects: [] };
+  const changed = pressesChanged(before, after, activities, sources);
+  const effects: Effect[] = [];
+  const marked = after.activities.map((activity) => {
+    if (!activities.includes(activity.id!)) return activity;
+    const keys = 'keys' in changed ? changed.keys.get(activity.id!) ?? [] : undefined;
+    const reason: RecipeAttention = {
+      happened: 'device-removed', device, ...(keys === undefined ? {} : { keys }),
+      message: attentionMessage(device, keys, 'why' in changed ? changed.why : undefined),
+    };
+    effects.push({ place: { kind: 'attention', activity: activity.id! }, effect: 'changed', message: `activity ${activity.name} needs attention: ${reason.message}` });
+    return { ...activity, attention: [...(activity.attention ?? []), reason] };
+  });
+  return { document: { ...after, activities: marked }, effects };
+}
+
+/**
+ * **The presses a change of an activity itself made otherwise**, as effects, one per press at the key's place: what a
+ * person changing the activity's devices or roles through `setActivity` is told, in place of a mark, since that person is
+ * looking at the activity. The same reading a removal's mark takes, `pressesChanged`; nothing where the keys are not
+ * known, which `keys` then answers not built itself.
+ */
+function pressEffects(before: Recipe, after: Recipe, activity: RecipeActivity, sources: QuestionSources | undefined): Effect[] {
+  const changed = pressesChanged(before, after, [activity.id!], sources);
+  if (!('keys' in changed)) return [];
+  return (changed.keys.get(activity.id!) ?? []).map((one): Effect => ({
+    place: { kind: 'key', owner: { activity: activity.id! }, key: one.key, press: one.press }, effect: 'changed',
+    message: `activity ${activity.name}'s ${pressWords(one)} sent ${actionWords(one.was)} and sends ${actionWords(one.now)} now`,
+  }));
+}
+
 /** Whether a step sends to a device of that name, a command or a channel tuned through it. */
 const sendsTo = (step: object, name: string): boolean => 'device' in step && (step as { device: string }).device === name;
 
@@ -1358,6 +1579,11 @@ function mentionsOf(document: Recipe, device: RecipeDevice): Mention[] {
     const owner: Owner = { activity: activity.id! };
     if (activity.devices.some((used) => used.device === name)) {
       found.push({ place: { kind: 'activity-device', activity: activity.id!, device: device.id! }, kind: 'part', where: `activity ${activity.name}` });
+      // Each role the device had that no other device of the activity has: the activity keeps its devices' other
+      // roles, and a person is told which one has no device left, beside the part it names.
+      for (const { role } of rolesLeft(activity.devices, activity.devices.filter((used) => used.device !== name))) {
+        found.push({ place: { kind: 'role', activity: activity.id!, role }, kind: 'role', where: `activity ${activity.name}'s role ${role}` });
+      }
     }
     if (activity.powerOrder?.includes(name) === true) {
       found.push({ place: { kind: 'power-order', activity: activity.id!, device: device.id! }, kind: 'order', where: `activity ${activity.name}'s power order` });
@@ -1485,7 +1711,9 @@ function members<T extends object>(now: T | undefined, changes: MemberChanges<T>
 /**
  * The document with every mention of a device's name made the new one: the recipe names a device by its name
  * underneath, so a rename follows it into an activity's devices and power order, every key's choice, every screen's
- * entries, a sequence's steps of either form, the steps at a start or an end, and the favourites. Ids do not move.
+ * entries, a sequence's steps of either form, the steps at a start or an end, what a key of an attention mark does now,
+ * and the favourites. Ids do not move. A mark's device, what its keys did and its sentence are left as they were
+ * written: they say what happened, then, to a device that is gone.
  */
 function renamedDevice(document: Recipe, from: string, to: string): Recipe {
   const entry = <T extends { readonly device: string }>(item: T): T => (item.device === from ? { ...item, device: to } : item);
@@ -1506,6 +1734,12 @@ function renamedDevice(document: Recipe, from: string, to: string): Recipe {
       ...stated('sequences', activity.sequences?.map((one) => ({ ...one, steps: one.steps.map(step) }))),
       ...stated('start', activity.start?.map(step)),
       ...stated('end', activity.end?.map(step)),
+      // An attention mark's device is one that is gone, and a key's `was` what was: both stay as recorded, since a device
+      // of that name now is another device. A key's `now` names a device that is there, and follows it.
+      ...stated('attention', activity.attention?.map((reason) => (reason.keys === undefined ? reason : {
+        ...reason,
+        keys: reason.keys.map((key) => ('device' in key.now && key.now.device === from ? { ...key, now: { ...key.now, device: to } } : key)),
+      }))),
     })),
     ...stated('favourites', document.favourites?.map(entry)),
   };
@@ -1802,8 +2036,8 @@ export function setDeviceCommand(document: Recipe, device: DeviceId, command: st
 
 /**
  * Add an activity, R21, last in the activity menu, under an id no activity has carried: its devices by id, each with
- * its jobs and the input it is switched to, or none. Refused over the model's activity count, under a name another
- * activity has, with a device the document does not hold or names twice, and with a job no activity has. An input is
+ * its roles and the input it is switched to, or none. Refused over the model's activity count, under a name another
+ * activity has, with a device the document does not hold or names twice, and with a role no activity has. An input is
  * not judged here: whether a device has it is the check's to say, so an activity can be put together before every
  * choice is made.
  */
@@ -1820,14 +2054,25 @@ export function addActivity(document: Recipe, activity: NewActivity): Change {
     throw new ChangeRefused('invalid', whole, `activity ${name} states no kind`);
   }
   if (!Array.isArray(activity.devices)) throw new ChangeRefused('invalid', whole, `activity ${name}'s devices are not a list`);
-  if (maxActivities !== undefined && document.activities.length >= maxActivities) {
-    throw new ChangeRefused('over-limit', whole, `a ${document.model.name} holds ${maxActivities} ${maxActivities === 1 ? 'activity' : 'activities'}, and the document holds that many`);
+  // A new activity is switched on, so it counts against the remote's limit as every activity switched on does.
+  if (maxActivities !== undefined && switchedOnCount(document) >= maxActivities) {
+    throw new ChangeRefused('over-limit', whole, activityLimitMessage(document.model.name, maxActivities, 'holds that many'));
   }
   const devices = chosenDevices(document, name, activity.devices);
   const { id, document: counted } = givenId(document, 'activity');
   const added: RecipeActivity = { id, name, type: activity.type, devices };
   return { document: finished({ ...counted, activities: [...counted.activities, added] }, whole), effects: [] };
 }
+
+/**
+ * **The activities a remote is given**: those switched on, decision 44. The limit on activities is the remote's, so it
+ * counts these and not the ones a build leaves out, and `check`, `addActivity` and `setActivity` count alike.
+ */
+const switchedOnCount = (document: Recipe): number => document.activities.filter((one) => one.enabled !== false).length;
+
+/** The sentence an activity over the model's limit is told in, by what the document holds. */
+const activityLimitMessage = (model: string, max: number, holds: string): string =>
+  `a ${model} holds ${max} ${max === 1 ? 'activity' : 'activities'} switched on, and the document ${holds}`;
 
 /**
  * **Why a model takes no activity opening on `screen`**, R91, or undefined where it takes it, the one judgement
@@ -1854,7 +2099,7 @@ function openingScreen(model: RecipeModel, screen: string, place: Place, asked: 
 }
 
 /**
- * Change an activity, member by member: its name, R25, its kind, its devices with their jobs and inputs, whole and in
+ * Change an activity, member by member: its name, R25, its kind, its devices with their roles and inputs, whole and in
  * the order given, R22 to R24 and R28; the screen it opens on, R91; whether it holds the favourite channels, R45, true
  * taking the hold off the activity that had it, which is reported; the order it switches its devices on and off in,
  * R90; and its extra steps at its start and its end, R30, each list whole, a sequence of its own by id. `'default'`, or
@@ -1862,11 +2107,18 @@ function openingScreen(model: RecipeModel, screen: string, place: Place, asked: 
  *
  * **Its devices changed, what names them follows**: a power order loses a device no longer used and puts one newly
  * used last; a step of its sequences, or at its start or end, that sends to a device no longer used refuses the change,
- * naming the step, since that step is a person's and only they know what replaces it. Its icon and its activity key
- * have no field in the document yet and refuse by name. **This writes the document**: whether the model's build reads
- * a stated member is what `check` lists.
+ * naming the step, since that step is a person's and only they know what replaces it; and each role a device had that
+ * no device of the activity has afterwards is an effect at that role, naming the activity and the role, as a removal of
+ * the device reports it; and every press of the activity whose answer the change made otherwise is an effect at that
+ * key, saying what it did and does, read off the maps with `sources` as a removal's mark reads them. **No mark is
+ * set**, decision 44: the person making the change is looking at the activity.
+ * **Whether it is switched on**, R92: false keeps it out of every build and sync, true switches it on again, the same
+ * activity under the same id, refused as over the limit where the model takes no more activities switched on.
+ * Switching off the activity that holds the favourite channels is an effect at it, naming the activity that holds them
+ * while it is off, by the family's rule, or saying none does. Its icon and its activity key have no field in the document yet and refuse by name.
+ * **This writes the document**: whether the model's build reads a stated member is what `check` lists.
  */
-export function setActivity(document: Recipe, activity: ActivityId, changes: ActivityChanges): Change {
+export function setActivity(document: Recipe, activity: ActivityId, changes: ActivityChanges, sources?: QuestionSources): Change {
   changeable(document);
   const now = activityOf(document, activity);
   given(changes, `activity ${now.name}'s changes`, { kind: 'activity', activity });
@@ -1925,17 +2177,37 @@ export function setActivity(document: Recipe, activity: ActivityId, changes: Act
     throw new ChangeRefused('invalid', place, `whether activity ${name} holds the favourites is neither true nor false`);
   }
   const holds = changes.favourites === undefined ? now.favourites : changes.favourites === 'default' ? undefined : changes.favourites;
+  if (changes.enabled !== undefined && typeof changes.enabled !== 'boolean') {
+    throw new ChangeRefused('invalid', place, `whether activity ${name} is switched on is neither true nor false`);
+  }
+  // Switched off is stated as false and on by leaving the field out, so an activity switched on again is the one it was.
+  const enabled = changes.enabled === undefined ? now.enabled : changes.enabled ? undefined : false;
+  // Switching one on is refused past the remote's limit, which counts the activities switched on, as `addActivity` is.
+  if (now.enabled === false && enabled === undefined) {
+    const { maxActivities } = limitsOf(document.model, ['recipe.setActivity', 76]);
+    if (maxActivities !== undefined && switchedOnCount(document) >= maxActivities) {
+      throw new ChangeRefused('over-limit', place, activityLimitMessage(document.model.name, maxActivities, 'holds that many'));
+    }
+  }
   const changed: RecipeActivity = {
-    ...without(now, 'name', 'type', 'devices', 'opensOn', 'favourites', 'powerOrder', 'start', 'end'),
+    ...without(now, 'name', 'type', 'devices', 'opensOn', 'favourites', 'powerOrder', 'start', 'end', 'enabled'),
     name, type: changes.type ?? now.type, devices: used,
     ...stated('opensOn', opensOn),
     ...stated('favourites', holds),
     ...stated('powerOrder', order),
     ...stated('start', steps('start')),
     ...stated('end', steps('end')),
+    ...stated('enabled', enabled),
   };
   let next = withActivity(document, changed);
-  const effects: Effect[] = [];
+  // A role a device had that no device of the activity has after the change, a device dropped or its roles changed, is
+  // told to a person at the role, as a removal of the device tells it: the activity is kept, only the role has no device.
+  const effects: Effect[] = changes.devices === undefined ? [] : rolesLeft(now.devices, used).map(({ role, device }): Effect => ({
+    place: { kind: 'role', activity, role }, effect: 'changed', message: roleLeftMessage(`activity ${name}'s role ${role}`, device),
+  }));
+  // Every press of the activity the change of its devices or roles made otherwise is told as an effect at the key,
+  // decision 44: no mark, since the person making the change is looking at the activity.
+  if (changes.devices !== undefined) effects.push(...pressEffects(document, next, changed, sources));
   if (holds === true) {
     // One activity holds the favourite channels: the one that had them gives them up, which a person is told.
     next = {
@@ -1947,7 +2219,69 @@ export function setActivity(document: Recipe, activity: ActivityId, changes: Act
       }),
     };
   }
+  // Switched off while it holds the favourite channels: a person is told who holds them while it is off, as a removal
+  // tells that none does.
+  if (now.enabled !== false && enabled === false) {
+    const before = favouritesHolderOf(document);
+    if (before?.id === activity) {
+      const after = favouritesHolderOf(next);
+      effects.push({
+        place, effect: 'changed',
+        message: `activity ${name} held the favourite channels, and while it is switched off ${after === undefined ? 'no activity holds them' : `activity ${after.name} holds them`}`,
+      });
+    }
+  }
   return { document: finished(next, place), effects };
+}
+
+/**
+ * **Which activity a build gives the favourite channels to**, of those switched on: by the family's own rule where its
+ * maps state one, `FamilyMaps.favouritesHolder`, the Harmony Touch's, and otherwise the one the document says holds
+ * them. Undefined where none does.
+ */
+function favouritesHolderOf(document: Recipe): RecipeActivity | undefined {
+  const on = document.activities.filter((one) => one.enabled !== false);
+  let rule: ((activities: readonly RecipeActivity[]) => number) | undefined;
+  try {
+    rule = mapsOfModel(document.model)?.maps.favouritesHolder;
+  } catch (error) {
+    if (!(error instanceof NoFamilyError)) throw error;
+  }
+  if (rule === undefined) return on.find((one) => one.favourites === true);
+  const at = rule(on);
+  return at < 0 ? undefined : on[at];
+}
+
+/**
+ * **Mark an activity as needing attention by hand**, R93, decision 44: an application may have reasons of its own, a
+ * person's note, a device it knows to be faulty. The reason is added to whatever the activity's mark already holds, as
+ * `marked` with the sentence given, without the space around it, and no device or key, and the activity is still built
+ * and synced as it is. Refused as `invalid` for a sentence with nothing in it.
+ */
+export function markAttention(document: Recipe, activity: ActivityId, message: string): Change {
+  changeable(document);
+  const now = activityOf(document, activity);
+  const place: Place = { kind: 'attention', activity };
+  // A sentence a person reads, kept as given; one with nothing in it gives no reason, and a mark is never set without one.
+  if (typeof message !== 'string' || message.trim() === '') {
+    throw new ChangeRefused('invalid', place, `the reason activity ${now.name} needs attention says nothing`);
+  }
+  // Kept without the space around it, which a person typing a note leaves by accident and a list shows as a gap.
+  const said = message.trim();
+  const changed: RecipeActivity = { ...now, attention: [...(now.attention ?? []), { happened: 'marked', message: said }] };
+  return { document: finished(withActivity(document, changed), place), effects: [] };
+}
+
+/**
+ * **Clear an activity's mark of needing attention**, R93, decision 44: every reason at once, the one call an
+ * application makes once a person has seen why. When it does so is the application's business; nothing here clears a
+ * mark of its own accord, since only a person can say the activity is now as they want it. An activity with no mark is
+ * left as it is.
+ */
+export function clearAttention(document: Recipe, activity: ActivityId): Change {
+  changeable(document);
+  const now = activityOf(document, activity);
+  return { document: finished(withActivity(document, without(now, 'attention')), { kind: 'attention', activity }), effects: [] };
 }
 
 /**
@@ -2136,15 +2470,62 @@ export function setLook(document: Recipe, choices: Readonly<Record<string, unkno
 }
 
 /**
+ * The settings a document of the model may state, R47, as its family states them, `settingsOfModel`: undefined where
+ * the family's build reads none from a document, every compiled family's; not built, as every call answers, for a model
+ * no family serves yet.
+ */
+function remoteSettingsOf(model: RecipeModel, asked: Asked): FamilySettings | undefined {
+  servedBy(model, asked);
+  return settingsOfModel(model);
+}
+
+/**
+ * **What a family says of one setting a document states**, the one judgement `setSetting` and `check` both take, so the
+ * two code a setting alike and neither passes what the build refuses: nothing where the build writes the row and takes
+ * the value; `invalid` for a value the build refuses, in the build's own words, `FamilySettings.refusedValue`; not built,
+ * with the requirement, for a row the remote has and the build does not write yet; and not on this model for any other
+ * name, naming the ones a document states.
+ */
+type SettingVerdict =
+  | { readonly reason: 'invalid' | 'not-on-this-model'; readonly message: string }
+  | { readonly requirement: number };
+
+function settingVerdict(family: FamilySettings, model: string, name: string, value: RecipeSetting): SettingVerdict | undefined {
+  if (family.rows.some((one) => one.name === name)) {
+    const why = family.refusedValue(name, value);
+    return why === undefined ? undefined : { reason: 'invalid', message: why };
+  }
+  // Own names only, so a name such as `constructor` is no setting the table inherits.
+  if (Object.hasOwn(family.notBuilt, name)) return { requirement: family.notBuilt[name]! };
+  return { reason: 'not-on-this-model', message: `a ${model} has no setting ${name}: the settings a document states are ${family.rows.map((one) => one.name).join(', ')}` };
+}
+
+/**
  * One of the remote's own settings by its name, R47, `Recipe.settings`: a text, a number or true or false; `'default'`
- * drops the choice and leaves the family's. Which names a model has is its family's to say and is not judged here; a
- * build refuses a name its family does not have. **This writes the document**: whether the model's build reads the
- * settings is what `check` lists.
+ * drops the choice and leaves the family's default, which `settings` answers. **Judged by the model's family where it
+ * states its settings**, `FamilySettings`, by the one judgement `check` takes too, `settingVerdict`:
+ *
+ * * **invalid**: a value the build refuses for the row, outside its range or of another kind, in the build's words;
+ * * **not built**, `NotBuiltError` with the requirement: a setting the remote has that the build does not write yet,
+ *   such as a Harmony Touch's vibration;
+ * * **not on this model**: any other name, a setting the model does not have.
+ *
+ * **Where the family states none**, every compiled family, whose build reads no setting from a document, the name and
+ * the value are written as given and not judged: a change writes the document whether or not the model's build reads
+ * the field, and `check` lists the field as one the build does not read. Giving a setting back is judged by none of
+ * these, so a document that holds a setting can always be put right. Not built, as every call that needs its family,
+ * for a model no family serves yet.
  */
 export function setSetting(document: Recipe, setting: string, value: number | boolean | string | 'default'): Change {
   changeable(document);
   const place: Place = { kind: 'setting', setting };
   if (typeof setting !== 'string' || setting === '' || setting === '__proto__') throw new ChangeRefused('invalid', place, `${String(setting)} is no setting's name`);
+  if (value !== 'default') {
+    const family = remoteSettingsOf(document.model, ['recipe.setSetting', 47]);
+    const verdict = family === undefined ? undefined : settingVerdict(family, document.model.name, setting, value);
+    if (verdict !== undefined && 'requirement' in verdict) return notBuilt(`recipe.setSetting for the ${document.model.name}'s setting ${setting}`, verdict.requirement);
+    if (verdict !== undefined) throw new ChangeRefused(verdict.reason, place, verdict.message);
+  }
   const settings: Record<string, RecipeSetting> = { ...document.settings };
   if (value === 'default') delete settings[setting];
   else settings[setting] = value;
@@ -2157,17 +2538,24 @@ export function setSetting(document: Recipe, setting: string, value: number | bo
  * the places `uses` lists. Every removal keeps the highest id given, so the id is not given again.
  *
  * * **A device** leaves the activities that used it, which stay, with their other devices or with none, and their
- *   power orders; a key's choice that sent one of its commands goes back to the key's default; an entry of any screen
- *   that showed one goes; a step at a start or an end that sent to it goes; a sequence loses the steps that sent to it,
- *   and goes with its last step that sends a command, as then does every key, entry and step that ran it; and its
- *   favourite channels go with it. The protocol definitions its commands were written in go too, unless a device that
- *   stays is written in them; one the document held for no device of its own is left alone.
+ *   power orders; each role it had in an activity that no other device of the activity has is an effect at that role,
+ *   naming the activity and the role, since what followed the role (an activity's volume keys following its volume
+ *   device, on a family whose keys do) has no device left to follow; a key's choice that sent one of its commands goes
+ *   back to the key's default; an entry of any screen that showed one goes; a step at a start or an end that sent to it
+ *   goes; a sequence loses the steps that sent to it, and goes with its last step that sends a command, as then does
+ *   every key, entry and step that ran it; and its favourite channels go with it. The protocol definitions its commands
+ *   were written in go too, unless a device that stays is written in them; one the document held for no device of its
+ *   own is left alone. **Last, every activity that used it is marked as needing attention**, R93, decision 44, with
+ *   every press of its keys whose answer the removal changed and what each did and does, read off the maps before and
+ *   after with `sources` as the questions read them: none where no key changed, and no list where the keys cannot be
+ *   known, a model whose maps are not built yet or a device whose commands cannot be read. The activity is kept, built
+ *   and synced: it is never invalid.
  * * **An activity** goes with its sequences; nothing else names an activity, and its one effect beyond itself is the
  *   hold on the favourite channels, where it held them: they are then held by no activity, reported at the document.
  * * **A sequence** goes from its activity, and every key that ran it goes back to its default, every screen entry and
  *   extra step that ran it goes.
  */
-export function remove(document: Recipe, what: Removable): Change {
+export function remove(document: Recipe, what: Removable, sources?: QuestionSources): Change {
   changeable(document);
   removable(what);
   if ('sequence' in what) {
@@ -2186,11 +2574,22 @@ export function remove(document: Recipe, what: Removable): Change {
     const next = { ...document, activities: document.activities.filter((one) => one.id !== gone.id) };
     return { document: finished(keptHighest(document, next), { kind: 'activity', activity: what.activity }), effects };
   }
-  const gone = deviceOf(document, what.device);
+  const { document: next, effects } = removedDevice(document, deviceOf(document, what.device), sources);
+  return { document: finished(keptHighest(document, next), { kind: 'device', device: what.device }), effects };
+}
+
+/**
+ * **A device removed**, the one reading `remove` and `uses` both take: the document without it, everything that named it
+ * settled, and every effect, the mentions' in the walk's order and then every activity that used it marked as needing
+ * attention, decision 44, `withAttention`. Not yet checked or given its
+ * highest ids back; `remove` does both.
+ */
+function removedDevice(document: Recipe, gone: RecipeDevice, sources: QuestionSources | undefined): { readonly document: Recipe; readonly effects: Effect[] } {
   const name = gone.name;
   const effects: Effect[] = mentionsOf(document, gone).map((one): Effect => {
     switch (one.kind) {
       case 'part': return { place: one.place, effect: 'changed', message: `${one.where} no longer uses ${name}` };
+      case 'role': return { place: one.place, effect: 'changed', message: roleLeftMessage(one.where, name) };
       case 'order': return { place: one.place, effect: 'changed', message: `${one.where} no longer switches ${name}` };
       case 'key': return { place: one.place, effect: 'removed', message: `${one.where} sent a command of ${name} and goes back to its default` };
       case 'screen': return { place: one.place, effect: 'removed', message: `${one.where} showed a command of ${name}, which is taken off it` };
@@ -2223,7 +2622,11 @@ export function remove(document: Recipe, what: Removable): Change {
     ...stated('favourites', kept === undefined || kept.length === 0 ? undefined : kept),
     ...stated('protocols', protocols),
   };
-  return { document: finished(keptHighest(document, next), { kind: 'device', device: what.device }), effects };
+  // Last, every activity that used the device, marked as needing attention: kept,
+  // built and synced, and the keys said, decision 44.
+  const users = document.activities.filter((one) => one.devices.some((used) => used.device === name)).map((one) => one.id!);
+  const marked = withAttention(document, next, name, users, sources);
+  return { document: marked.document, effects: [...effects, ...marked.effects] };
 }
 
 /**
@@ -2314,7 +2717,10 @@ export function devices(document: Recipe): DeviceSummary[] {
   });
 }
 
-/** The activities, in the order of the activity menu. */
+/**
+ * The activities, in the order of the activity menu, each with whether it is switched on, R92, and why it needs
+ * attention, R93, where it does: a switched off activity is listed, since it is still the document's.
+ */
 export function activities(document: Recipe): ActivitySummary[] {
   opened(document);
   const idOf = new Map(document.devices.map((one) => [one.name, one.id!]));
@@ -2326,6 +2732,9 @@ export function activities(document: Recipe): ActivitySummary[] {
     devices: one.devices.filter((used) => idOf.has(used.device)).map((used) => ({
       device: idOf.get(used.device)!, ...(used.input === undefined ? {} : { input: used.input }), roles: used.roles,
     })),
+    enabled: one.enabled !== false,
+    // Each reason the caller's own, so changing one changes neither the document nor another answer.
+    attention: plain(one.attention ?? []),
   }));
 }
 
@@ -2458,6 +2867,34 @@ export function screen(document: Recipe, owner: Owner, sources?: QuestionSources
   return { owner: { ...owner }, items: found.items.map((entry) => answerer.entryOf(owner, entry, found.isDefault)), isDefault: found.isDefault };
 }
 
+/**
+ * **The remote's own settings as the remote will have them**, R47, before anything is built: every setting the model's
+ * build writes from a document, in the order it writes them, each with its value, whether that is the default, the
+ * default, and the kind of value it takes, `RemoteSettingAnswer`. Read off the model's family, `FamilySettings`, the
+ * table its build writes by, so what an application is shown is what is built.
+ *
+ * **Only the settings the build writes are listed.** A setting the document states that the model does not have, or
+ * that the build does not write yet, is not answered here; `check` lists it, as `setSetting` refuses it.
+ *
+ * **Not built**, R47, for a model whose build reads no setting from a document, which is every compiled family's: the
+ * Harmony One's and the Harmony 600, 650 and 700's settings are build choices of their own, and whether the Harmony 300
+ * and 350 have any is not checked, so an empty list would say what is not known. The Harmony Touch answers its seven.
+ * Every answer is the caller's own, so changing one changes no other and not the document.
+ */
+export function settings(document: Recipe): RemoteSettingAnswer[] {
+  const family = remoteSettingsOf(document.model, ['recipe.settings', 47]);
+  if (family === undefined) return notBuilt(`recipe.settings for the ${document.model.name}`, 47);
+  const stated: Readonly<Record<string, RecipeSetting>> = document.settings ?? {};
+  return family.rows.map((row): RemoteSettingAnswer => {
+    const takes: SettingKind = row.takes.kind === 'yes or no' ? { kind: 'yes or no', choices: [true, false] } : { ...row.takes };
+    // Own names only, so a document's `constructor` is no value of a row.
+    if (!Object.hasOwn(stated, row.name)) return { name: row.name, value: row.default, isDefault: true, default: row.default, takes };
+    const own = stated[row.name]!;
+    const value = family.refusedValue(row.name, own) === undefined ? settingValue(row, own) : own;
+    return { name: row.name, value, isDefault: false, default: row.default, takes };
+  });
+}
+
 /** A device's favourite channels, in order. */
 export function favourites(document: Recipe, device: DeviceId): Favourite[] {
   void document; void device;
@@ -2467,12 +2904,16 @@ export function favourites(document: Recipe, device: DeviceId): Favourite[] {
 /**
  * **Everything that names a device or a sequence**: what removing it would touch, the same places, in the same order,
  * that `remove` reports as effects, since both take one walk. For a device, every key's choice, screen entry, part in
- * an activity, place in a power order, step of a sequence of either form, extra step at a start or an end and its
- * favourites; and where a sequence goes with the device, everything that runs that sequence. For a sequence, every key,
- * screen entry and extra step of its activity that runs it. For an activity, the document where it holds the favourite
- * channels, which its removal leaves held by none, and nothing otherwise, since nothing names an activity.
+ * an activity, role of an activity that no other device of it has, place in a power order, step of a sequence of either
+ * form, extra step at a start or an end and its favourites; and where a sequence goes with the device, everything that
+ * runs that sequence. A role is not a mention of the device's name, but a removal leaves it with no device, so it is
+ * listed where the removal reports it; and last, the attention mark of every activity that used the device, decision 44,
+ * its keys read off the resolved maps with `sources` as the questions read them. For a
+ * sequence, every key, screen entry and extra step of its activity that runs it.
+ * For an activity, the document where it holds the favourite channels, which its removal leaves held by none, and
+ * nothing otherwise, since nothing names an activity.
  */
-export function uses(document: Recipe, what: Removable): Place[] {
+export function uses(document: Recipe, what: Removable, sources?: QuestionSources): Place[] {
   opened(document);
   removable(what);
   if ('sequence' in what) {
@@ -2480,7 +2921,8 @@ export function uses(document: Recipe, what: Removable): Place[] {
     return runsOf(activity, sequence.name, true).map((one) => one.place);
   }
   if ('activity' in what) return activityMentions(activityOf(document, what.activity)).map((one) => one.place);
-  return mentionsOf(document, deviceOf(document, what.device)).map((one) => one.place);
+  // The removal's own reading, so the attention marks it would set are listed as it sets them.
+  return removedDevice(document, deviceOf(document, what.device), sources).effects.map((one) => one.place);
 }
 
 /** What is not yet filled in, R77: the places of the problems `check` codes `unfinished`. */
@@ -2527,8 +2969,31 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
   if (limits.maxDevices !== undefined && document.devices.length > limits.maxDevices) {
     say('error', 'over-limit', whole, `a ${document.model.name} holds ${limits.maxDevices} devices, and the document holds ${document.devices.length}`);
   }
-  if (limits.maxActivities !== undefined && document.activities.length > limits.maxActivities) {
-    say('error', 'over-limit', whole, `a ${document.model.name} holds ${limits.maxActivities} ${limits.maxActivities === 1 ? 'activity' : 'activities'}, and the document holds ${document.activities.length}`);
+  if (limits.maxActivities !== undefined && switchedOnCount(document) > limits.maxActivities) {
+    say('error', 'over-limit', whole, activityLimitMessage(document.model.name, limits.maxActivities, `has ${switchedOnCount(document)} switched on`));
+  }
+
+  // A name the build would refuse to draw, asked of the model's family by its own judgement, `Family.nameRefusal`:
+  // each device, and each activity switched on, since the build leaves the others out.
+  const choice = servedBy(document.model, asked);
+  const drawable = choice.family.kind === 'compiled' ? choice.family.nameRefusal : undefined;
+  if (drawable !== undefined) {
+    const skin = choice.skin;
+    // Judging a name draws it, in the fonts the codec is supplied, and the main entry loads with none, `resources.ts`:
+    // a check there says once that it judged no name rather than failing or passing every name unseen.
+    try {
+      for (const device of document.devices) {
+        const why = drawable(document, skin, 'device', device.name);
+        if (why !== undefined) say('error', 'name-not-drawable', { kind: 'device', device: device.id! }, `the build cannot draw the device ${device.name}'s name: ${why}`);
+      }
+      for (const activity of document.activities.filter((one) => one.enabled !== false)) {
+        const why = drawable(document, skin, 'activity', activity.name);
+        if (why !== undefined) say('error', 'name-not-drawable', { kind: 'activity', activity: activity.id! }, `the build cannot draw the activity ${activity.name}'s name: ${why}`);
+      }
+    } catch (error) {
+      if (!(error instanceof ResourceError)) throw error;
+      say('note', 'names-not-judged', whole, `no name was judged against what a ${document.model.name} draws, since ${error.message}`);
+    }
   }
 
   const byName = new Map<string, RecipeDevice>();
@@ -2537,8 +3002,13 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
     // The first of a name keeps it; every later one is the problem, so that fixing the listed ones is enough.
     if (byName.has(device.name)) say('error', 'name-taken', place, `two devices are named ${device.name}`);
     else byName.set(device.name, device);
-    if (device.definition === undefined) {
-      say('note', 'no-definition', place, `${device.name} carries no definition, so it builds only where a catalogue holding ${device.device} is given`);
+    // A device with no definition is built from the archive, a source the caller gives the build: without one given
+    // here its commands cannot be judged, and the build refuses it as a source missing; with one that holds it, it is
+    // judged by that archive below, and with one that does not, it cannot be.
+    if (device.definition === undefined && knownCommands(device, sources?.archive) === undefined) {
+      say('note', 'no-definition', place, sources?.archive === undefined
+        ? `${device.name} carries no definition and no archive was given, so its commands cannot be judged, and it builds only where an archive holding ${device.device} is given`
+        : `${device.name} carries no definition, and the archive given does not hold ${device.device}, so its commands cannot be judged`);
     }
     if (device.key !== undefined && impossibleOn(document.model, 39, asked)) {
       say('error', 'not-on-this-model', place, `${device.name} is put on a device key, and a ${document.model.name} has no device keys`);
@@ -2600,11 +3070,18 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
     return true;
   };
 
-  /** The problems of one owner's key choices: a key, a device or a command that is not there, and what is not built. */
-  const checkKeys = (owner: Owner, keys: readonly RecipeKey[] | undefined, what: string): void => {
+  /**
+   * The problems of one owner's key choices, **in the order `setKey` judges the same choice and coded as it refuses
+   * it**, so an application that acts on a code meets one answer whichever of the two it asked: the place first, then
+   * the action, a sequence on a device's own key `invalid` and a device, a command or a sequence the document does not
+   * hold unknown, and the family's own refusal last, asked only of a choice whose place and action are both right, as
+   * `setKey` asks it once it has found the action. What is not built is said only of a choice that is otherwise right.
+   */
+  const checkKeys = (owner: Owner, keys: readonly RecipeKey[] | undefined, what: string, sequences: ReadonlySet<string>): void => {
     for (const key of keys ?? []) {
       const place = keyPlace(owner, key);
-      if (placed(owner, key, place, what)) {
+      const onAPlace = placed(owner, key, place, what);
+      if (onAPlace) {
         const at = places?.find((one) => one.key === key.key);
         if (at !== undefined && !at.built) {
           say('error', 'not-on-this-model', place, `${what} chooses what the ${key.key} key does, which nothing builds for a ${model} yet: ${at.why ?? 'the build takes no choice on it'}`);
@@ -2615,26 +3092,43 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
         }
         if (!forms && key.press === 'held') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a second command when held, which nothing builds for a ${model} yet`);
         if (!forms && key.press === 'double') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a command when pressed twice, which nothing builds for a ${model} yet`);
-        // What the model's family refuses beyond its places, asked only of a choice its places take.
-        const why = places === undefined ? undefined : modelMaps!.maps.refusedChoice?.(modelMaps!.skin, {
+      }
+      // The action, as `readRecipe` and `setKey` hold it: true where it names what the document holds.
+      let held = true;
+      if ('sequence' in key.action) {
+        if ('device' in owner) {
+          // A device has no sequences: `readRecipe` refuses a document stating one and `setKey` refuses the choice as
+          // `invalid`, so a document that reached the check without the reader is told the same.
+          say('error', 'invalid', place, `${what} runs the sequence ${key.action.sequence} on the ${key.key} key, and a device has no sequences`);
+          held = false;
+        } else if (!sequences.has(key.action.sequence)) {
+          say('error', 'unknown-sequence', place, `${what} runs the sequence ${key.action.sequence} on the ${key.key} key, which is not one of the activity's`);
+          held = false;
+        } else if (!forms) {
+          say('error', 'not-on-this-model', place, `${what} puts a sequence on the ${key.key} key, which nothing builds for a ${model} yet`);
+        }
+      } else if ('device' in key.action) {
+        const device = byName.get(key.action.device);
+        if (device === undefined) {
+          say('error', 'unknown-device', place, `${what} gives the ${key.key} key a command of ${key.action.device}, which is no device of the document`);
+          held = false;
+        } else if (commandsOf(device.name)?.has(key.action.command) === false) {
+          say('error', 'unknown-command', place, `${what} gives the ${key.key} key ${device.name}'s ${key.action.command}, which ${device.name} does not have`);
+          held = false;
+        }
+      }
+      // What the model's family refuses beyond its places, asked only of a choice its places take and whose action the
+      // document holds, as `setKey` asks it last.
+      if (onAPlace && held && places !== undefined) {
+        const why = modelMaps!.maps.refusedChoice?.(modelMaps!.skin, {
           owner: kindOf(owner), what, key: key.key, press: key.press ?? 'short', action: key.action,
           commandsOf: (name) => { const found = commandsOf(name); return found === undefined ? undefined : [...found]; },
         });
         if (why !== undefined) say('error', 'not-on-this-model', place, why);
       }
-      if ('sequence' in key.action) {
-        if (!forms) say('error', 'not-on-this-model', place, `${what} puts a sequence on the ${key.key} key, which nothing builds for a ${model} yet`);
-      } else if ('device' in key.action) {
-        const device = byName.get(key.action.device);
-        if (device === undefined) {
-          say('error', 'unknown-device', place, `${what} gives the ${key.key} key a command of ${key.action.device}, which is no device of the document`);
-        } else if (commandsOf(device.name)?.has(key.action.command) === false) {
-          say('error', 'unknown-command', place, `${what} gives the ${key.key} key ${device.name}'s ${key.action.command}, which ${device.name} does not have`);
-        }
-      }
     }
   };
-  for (const device of document.devices) checkKeys({ device: device.id! }, device.keys, `${device.name}'s own map`);
+  for (const device of document.devices) checkKeys({ device: device.id! }, device.keys, `${device.name}'s own map`, new Set());
 
   const activityNames = new Set<string>();
   for (const activity of document.activities) {
@@ -2662,7 +3156,13 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
         say('error', 'unknown-device', place, `activity ${activity.name}'s screen shows a command of ${item.device}, which is no device of the document`);
       }
     }
-    checkKeys({ activity: activity.id! }, activity.keys, `activity ${activity.name}`);
+    // The sequences a key of it may run, by name, either form, as `readRecipe` holds them: its own, and one written out
+    // where it sits on its screen, the form of version 1.
+    const runnable = new Set([
+      ...(activity.sequences ?? []).map((one) => one.name),
+      ...(activity.screen ?? []).flatMap((item) => ('sequence' in item && 'steps' in item ? [item.sequence] : [])),
+    ]);
+    checkKeys({ activity: activity.id! }, activity.keys, `activity ${activity.name}`, runnable);
   }
 
   // Every other place a command is named, held to its device's commands: a key's were said with the key above.
@@ -2679,6 +3179,19 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
         say('error', 'unknown-command', { kind: 'command', device: device.id!, command: name }, `${device.name}'s ${name} is tuned, and ${device.name} has no command of that name`);
       }
     }
+  }
+
+  // The remote's own settings, held to the model's family by the judgement `setSetting` takes, `settingVerdict`, so the
+  // two code a setting alike and the build refuses nothing the check passed: a value the build refuses invalid, a
+  // setting the build does not write yet not built, said with its requirement, and any other name not on this model.
+  // Where the family states no settings, the field is said below as one the model's build does not read.
+  const remote = remoteSettingsOf(document.model, asked);
+  for (const [name, value] of Object.entries(remote === undefined ? {} : document.settings ?? {})) {
+    const verdict = settingVerdict(remote!, model, name, value);
+    if (verdict === undefined) continue;
+    const place: Place = { kind: 'setting', setting: name };
+    if ('requirement' in verdict) say('error', 'not-on-this-model', place, `the document states the setting ${name}, which nothing builds for a ${model} yet, R${verdict.requirement}`);
+    else say('error', verdict.reason, place, verdict.message);
   }
 
   // The fields of version 2 the build of the document's model does not read yet, decision 43, `unbuiltFields` over the

@@ -30,12 +30,23 @@
  */
 import { carriedCatalogue } from '../catalogue/carried.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
-import { readRecipe, RecipeError, refuseUnbuiltFields, statedKeys } from '../recipe/recipe.ts';
+import { readRecipe, RecipeError, refuseUnbuiltFields, statedKeys, switchedOn, type LeftOutActivity } from '../recipe/recipe.ts';
+import { notBuilt } from '../support/contract.ts';
 import { resource } from '../support/resources.ts';
 import type { SyncDocuments } from './harmony-touch/documents.ts';
 import type { OwnPicture } from './harmony-touch/favourites.ts';
 import type { TouchAccount } from './harmony-touch/fromnothing.ts';
 import { chooseByModel, NoFamilyError, type ModelChoice } from './registry.ts';
+
+/**
+ * The Harmony Touch's account, the identifiers its documents carry, which an application reads off the remote and
+ * hands to the build as `BuildSources.account`; exported beside the sources, so an application holding one names its
+ * type rather than the option's.
+ */
+export type { TouchAccount };
+
+/** An activity a build left out because the document switches it off, R92, exported beside what a build gives. */
+export type { LeftOutActivity };
 
 /** What a build takes besides the recipe. */
 export interface BuildSources {
@@ -50,19 +61,35 @@ export interface BuildSources {
   readonly account?: TouchAccount;
 }
 
-/** What a build gives: the configuration of a compiled family, or a document family's documents and pictures. */
+/**
+ * What a build gives: the configuration of a compiled family, or a document family's documents and pictures; and on
+ * both, **the activities the document switches off, which the build left out**, R92, decision 44, in the document's
+ * order, empty where it switches none off. Said here because the bytes or documents built cannot say it: an activity
+ * left out is simply not in them, and a person who switched one off and forgot would otherwise see it vanish unexplained.
+ */
 export type Built =
-  | { readonly kind: 'configuration'; readonly model: string; readonly skin: number; readonly bytes: Uint8Array }
+  | {
+    readonly kind: 'configuration'; readonly model: string; readonly skin: number; readonly bytes: Uint8Array;
+    readonly leftOut: readonly LeftOutActivity[];
+  }
   | {
     readonly kind: 'documents'; readonly model: string; readonly skin: number;
     readonly documents: SyncDocuments; readonly pictures: readonly OwnPicture[];
+    readonly leftOut: readonly LeftOutActivity[];
   };
 
 /**
  * The remote a recipe describes, built from nothing. Takes the recipe as parsed JSON and reads it, so a caller hands
- * over what it holds; refused, as a `RecipeError`, where the recipe is not one, where its model is one no family
- * serves or a family that builds nothing from a recipe yet, and where a document family is given no archive or account;
- * the families refuse what they do not build, each with its own refusal.
+ * over what it holds. **A build says no in three ways an application tells apart, on every model**:
+ *
+ * * `ComposeError`, the build refuses the document: the families refuse what they will not build with it or a
+ *   subclass of it, `support/refusal.ts`;
+ * * `NotBuiltError`, what the document asks for is not built yet: a field of version 2 the family does not read, a key
+ *   a recipe chooses where the family builds none, and a model whose family builds nothing from a recipe yet, each
+ *   naming the requirement it waits on;
+ * * `RecipeError`, a source the caller must give is missing: an account for a Harmony Touch, and an archive for a
+ *   device the document carries no definition of. The same class refuses a recipe that is not one, before any of this,
+ *   and a model no family serves.
  */
 export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
   const model = modelOf(json);
@@ -74,33 +101,47 @@ export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
     throw error;
   }
   const { family, skin } = choice;
-  if (family.kind === 'compiled' && family.fromRecipe === undefined) throw new RecipeError(`nothing here builds ${family.name} from a recipe yet`);
-  const recipe = readRecipe(json);
+  // A family that builds nothing from a recipe, the Harmony 880 and 885's today: what is missing is the build, R4.
+  if (family.kind === 'compiled' && family.fromRecipe === undefined) notBuilt(`buildFromRecipe for ${family.name}`, 4);
+  const read = readRecipe(json);
   // A field of version 2 this kind of family's build does not read, before anything is built or any source is asked for.
-  refuseUnbuiltFields(recipe, 'buildFromRecipe', family.kind);
+  refuseUnbuiltFields(read, 'buildFromRecipe', family.kind);
+  // The activities switched off, R92, left out here, once, before any family builds: every family's build reads the
+  // switch by never meeting a switched off activity, and the result says which were left out, decision 44.
+  const { recipe, leftOut } = switchedOn(read);
   // A key the recipe chooses otherwise, R31 and R32, is built by a compiled family that states how,
   // `Family.recipeKeys`, and refused by every other before anything is built: a file built without the choice is one
   // the remote accepts and whose key does something else. The Harmony Touch builds every choice its places take, its
   // maps' `resolveMaps`, and refuses one they do not, `touchSetupOfDocument`.
   const chosen = statedKeys(recipe)[0];
   if (chosen !== undefined && family.kind === 'compiled' && family.recipeKeys === undefined) {
-    throw new RecipeError(`nothing here builds a key a recipe chooses for ${family.name} yet, and the recipe chooses ${chosen.where}`);
+    // An activity's key is R31, a device's own R32.
+    notBuilt(`buildFromRecipe for ${chosen.where} on ${family.name}`, chosen.owner === 'device' ? 32 : 31);
+  }
+  // A device the document carries no definition of is built from the archive, which is then a source the caller must
+  // give; without it the catalogue's own refusal would come from deep inside a family, of a class no caller expects.
+  const uncarried = recipe.devices.find((one) => one.definition === undefined);
+  if (uncarried !== undefined && sources.archive === undefined) {
+    throw new RecipeError(`${uncarried.name} carries no definition of ${uncarried.device}, and no archive was given to build it from`);
   }
   // The devices the recipe carries, over the archive given, `catalogue/carried.ts`.
   const archive = carriedCatalogue(recipe, sources.archive);
   if (family.kind === 'document') {
     if (archive === undefined) throw new RecipeError(`the ${model.name} is built from the catalogue, and the recipe carries no device and no archive was given`);
     if (sources.account === undefined) throw new RecipeError(`the ${model.name}'s documents carry its account's identifiers, and no account was given`);
-    const setup = family.readSetup(json);
+    // The family reads the document with the switched off activities taken out, as it was read here.
+    const setup = family.readSetup(recipe);
     return {
       kind: 'documents', model: model.name, skin,
       documents: family.build(setup, { archive, account: sources.account }) as SyncDocuments,
       pictures: family.buildPictures(setup) as readonly OwnPicture[],
+      leftOut,
     };
   }
   return {
     kind: 'configuration', model: model.name, skin,
     bytes: family.fromRecipe!(recipe, skin, { builtAt: sources.builtAt, ...(archive === undefined ? {} : { archive }) }),
+    leftOut,
   };
 }
 

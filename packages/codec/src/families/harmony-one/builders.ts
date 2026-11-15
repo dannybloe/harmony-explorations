@@ -129,7 +129,8 @@ import { ScreenRecordError, assertRebuilt } from '../../compose/screenrecords.ts
 import { StateTablesError, buildStateTables, builtStatePieces, describeStateTables, withStateTables } from '../../assembly/statetables.ts';
 import { WiringError, builtPieces, compareWiring, withWiring } from '../../assembly/wiringparts.ts';
 import { FirmwareSectionsError } from '../../assembly/firmwaresections.ts';
-import { ComposeError } from '../../shared/core.ts';
+// From the module that imports nothing, since `OneBuildError` below extends it as this module loads.
+import { ComposeError } from '../../support/refusal.ts';
 import { buildOneFirmwareScreens, describeOneFirmwareScreens, withOneFirmwareScreens } from './firmwarescreens.ts';
 import { buildOneFixedScreens, describeOneFixedScreens, withOneFixedScreens } from './fixedscreens.ts';
 import { buildOneTourScreens, describeOneTourScreens, withOneTourScreens } from './tourscreens.ts';
@@ -152,8 +153,11 @@ import { withoutTourAndAssistant } from './withouttour.ts';
 import { oneOurPictures, withOnePictures } from './pictures.ts';
 import { PictureError } from '../../drawing/pictures.ts';
 
-/** A builder on the composed path refusing the configuration, with the part it was building. */
-export class OneBuildError extends Error {}
+/**
+ * A builder on the composed path refusing the configuration, with the part it was building. A build's refusal,
+ * `ComposeError`, so an application catches it as it catches every family's, `support/refusal.ts`.
+ */
+export class OneBuildError extends ComposeError {}
 
 /** The parts the builders make, in the order they run and the order `oneBuiltBytes` attributes a byte. */
 export const ONE_BUILT = [
@@ -305,6 +309,9 @@ function building<T>(what: OneBuilt, run: () => T): T {
   try {
     return run();
   } catch (error) {
+    // A refusal already named by an inner `building` passes as it is: `OneBuildError` is a `ComposeError`, so without
+    // this the outer part would name itself in front of the inner one's words a second time.
+    if (error instanceof OneBuildError) throw error;
     if (isRefusal(error)) throw new OneBuildError(`building the Harmony One's ${what}: ${error.message}`);
     throw error;
   }

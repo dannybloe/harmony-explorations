@@ -326,7 +326,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony Elite**, open, waiting on its family: Nothing composes an activity for an Elite, and none of ours has run on one.
 * **Harmony Hub**, open, waiting on its family: Nothing composes an activity for a hub, and none of ours has run on one.
 
-### R22 Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key.
+### R22 Say which device has which role in an activity, and map its keys from that, a learned command with a standard name landing on its usual key.
 
 * **Harmony One**, open, waiting on its family: Keys are mapped from roles and the Denon's volume was heard; the learned command part does not exist for the One.
 * **Harmony 600**, open, waiting on its family: Keys mapped from roles ran on the 600; a learned command landing on its usual key is not built, since learning is not.
@@ -338,9 +338,9 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, open, waiting on its family: An activity's key map is not composed for the 785.
 * **Harmony 300**, open, waiting on its family: Only the channel changing role picks the map Watch TV ends in; other roles map no keys and learned commands are not handled.
 * **Harmony 350**, open, waiting on its family: Roles choose Watch TV's final device map and volume source; a learned command landing on its usual key is not offered.
-* **Harmony Touch**, open, waiting on a run on a unit: An activity's keys are mapped from its devices' jobs and their default maps, a command landing on the key of its name, and read back from the documents built, but no activity mapped that way has been sent to the unit; a learned command lands on no key until a build reads a command's own code (R19).
-* **Harmony Elite**, open, waiting on its family and the remote itself: Nothing maps an activity's keys from its devices' jobs, and the Elite's keys are not read.
-* **Harmony Hub**, open, waiting on its family: Nothing maps an activity's keys from its devices' jobs for the remotes a hub serves.
+* **Harmony Touch**, open, waiting on the FHSDK: An activity's keys are mapped from its devices' roles and their default maps and read back from the documents built, but a learned command lands on no key until a build reads a command's own code, R19, and no activity mapped that way has been sent to the unit.
+* **Harmony Elite**, open, waiting on its family and the remote itself: Nothing maps an activity's keys from its devices' roles, and the Elite's keys are not read.
+* **Harmony Hub**, open, waiting on its family: Nothing maps an activity's keys from its devices' roles for the remotes a hub serves.
 
 ### R23 Set each device's input in an activity, or leave it alone.
 
@@ -489,6 +489,38 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony Touch**, open, waiting on a run on a unit: A recipe's opening screen for an activity is set by the toolkit, held to the three screens the build takes, and read by the build into the documents, but no document built from one has been sent to the unit.
 * **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing composes an activity for an Elite, so no start screen can be chosen.
 * **Harmony Hub**, unknown: A hub has no screen; whether its setup carries the start screen a paired remote opens an activity on is not read. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
+
+### R92 Switch an activity off, so the remote is given everything but it and is told which was left out, and on again as it was.
+
+* **Harmony One**, open, waiting on a run on a unit: A build from a recipe leaves a switched off activity out, the same configuration as one without it, and a sync says which it left out, but no such build has been sent to the unit.
+* **Harmony 600**, open, waiting on a run on a unit: A build from a recipe leaves a switched off activity out, the same configuration as one without it, and a sync says which, but no such build has been sent to the 600.
+* **Harmony 650**, open, waiting on a run on a unit: A build from a recipe leaves a switched off activity out, the same configuration as one without it, and a sync says which, but no such build has been sent to the 650.
+* **Harmony 700**, open, waiting on a run on a unit: A build from a recipe leaves a switched off activity out, the same configuration as one without it, and a sync says which, but no such build has been sent to the 700.
+* **Harmony 525**, open, waiting on the FHSDK and its family: No family serves the 525, so nothing builds one from a recipe or leaves an activity out.
+* **Harmony 515**, open, waiting on the FHSDK and its family: No family serves the 515, so nothing builds one from a recipe or leaves an activity out.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Nothing builds an 885 from a recipe yet, so nothing leaves an activity out of one.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing builds a 785 from a recipe yet, so nothing leaves an activity out of one.
+* **Harmony 300**, open, waiting on a run on a unit: A build from a recipe leaves a switched off activity out, the same configuration as one without it, but no such build has been sent to the 300.
+* **Harmony 350**, open, waiting on a run on a unit: A build from a recipe leaves its activity out when switched off, the same configuration as one without it, but no such build has been sent to the 350.
+* **Harmony Touch**, open, waiting on a run on a unit: A build leaves a switched off activity out of the documents, the same documents as without it, and a sync to a pretend Touch says which, but no such set has been sent to the unit.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing composes an Elite's setup, so nothing leaves an activity out of one.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing composes a hub's setup, so nothing leaves an activity out of one.
+
+### R93 Mark every activity that used a device removed from the document as needing attention, saying which of its keys now do otherwise and how, keep building and syncing it, and clear the mark.
+
+* **Harmony One**, proven by `packages/codec/test/recipe/toolkitattention.test.ts`, "on the Harmony One and the Harmony Touch removing a device marks every activity that used it, with every press whose answer changed".
+* **Harmony 600**, open, waiting on its family: A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.
+* **Harmony 650**, open, waiting on its family: A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.
+* **Harmony 700**, open, waiting on its family: A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.
+* **Harmony 525**, open, waiting on the FHSDK and its family: No family serves the 525, so no document of one is changed or marked.
+* **Harmony 515**, open, waiting on the FHSDK and its family: No family serves the 515, so no document of one is changed or marked.
+* **Harmony 885**, open, waiting on its family: A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.
+* **Harmony 785**, open, waiting on its family: A removal marks the activities that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.
+* **Harmony 300**, open, waiting on its family: A removal marks the activity that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.
+* **Harmony 350**, open, waiting on its family: A removal marks the activity that used the device, but names no key: the family states no maps yet, so what its keys do after the removal is not known.
+* **Harmony Touch**, proven by `packages/codec/test/recipe/toolkitattention.test.ts`, "on the Harmony One and the Harmony Touch removing a device marks every activity that used it, with every press whose answer changed".
+* **Harmony Elite**, open, waiting on the FHSDK and its family: No family serves the Elite, so no document of one is changed or marked.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: No family serves the hub, so no document of one is changed or marked.
 
 ## Keys and screens
 
@@ -764,7 +796,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, open, waiting on its family: The 785's settings are neither read nor changed by anything yet.
 * **Harmony 300**, unknown: Logitech lists no settings for the 300, and whether the remote has any is not checked.
 * **Harmony 350**, unknown: Logitech lists no settings for the 350; whether its firmware holds any a person would change is not known. `reference/remotes/harmony-350/features.md#what-logitechs-service-states`.
-* **Harmony Touch**, open, waiting on its family: Two settings were changed on the unit; reading settings off it, the touch sound, the tutorial and defaults are not done.
+* **Harmony Touch**, open, waiting on its family: Two settings were changed on the unit and a document takes its family's defaults; reading settings off the unit, the vibration and the tutorial are not done.
 * **Harmony Elite**, open, waiting on its family: Nothing reads or changes an Elite's settings.
 * **Harmony Hub**, open, waiting on its family: Nothing reads or changes a hub's settings.
 

@@ -19,7 +19,7 @@ import { withOneComposedBuilders } from './builders.ts';
 import { withOneActivityMenuRow } from './activitymenu.ts';
 import { withOneActivityDeviceList } from './devicelists.ts';
 import { oneMenuMarkerWriter } from './menus.ts';
-import { oneFromRecipe } from './fromrecipe.ts';
+import { oneFromRecipe, oneNameRefusal } from './fromrecipe.ts';
 import { ONE_RECIPE_KEYS } from './recipekeys.ts';
 import { ONE_MAPS } from './recipemaps.ts';
 
@@ -62,5 +62,6 @@ export const ONE: Family<OneChoices> = {
   composedSkins: new Set([54]),
   // The configuration a recipe describes, from nothing, plan 014.
   fromRecipe: oneFromRecipe,
+  nameRefusal: oneNameRefusal,
   readChoices: oneChoices,
 };

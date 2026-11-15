@@ -72,6 +72,7 @@ import { definitionOfRow, isDefinitionRefusal, keyCodeText } from './definition.
 import { rawOfLearned, rhythmOfLearned, type LearnedRaw, type LearnedRow } from './learned.ts';
 import type { Pulse } from '../../infrared/irframe.ts';
 import { statedProtocol, type StatedCode, type StatedItem } from '../../infrared/stated.ts';
+import { ComposeError } from '../../support/refusal.ts';
 import type { StatedProtocol } from '../../infrared/protocols.ts';
 
 /**
@@ -141,7 +142,12 @@ export interface ComposedTouchDevice {
   readonly protocols: readonly IrProtocol[];
 }
 
-export class ComposeRefusal extends Error {}
+/**
+ * The Harmony Touch's composers saying no. **A build's refusal like every family's**, `ComposeError` in
+ * `support/refusal.ts`, so an application catches one class whichever model it builds for; the name of its own stays
+ * for the code here that tells a composer's refusal from another family's.
+ */
+export class ComposeRefusal extends ComposeError {}
 
 /**
  * The keys whose name is a command's name, exactly: the one key rule Logitech's own maps follow on most of

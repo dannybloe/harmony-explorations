@@ -30,6 +30,12 @@ right devices on, sets their inputs and gives the keypad one map spanning severa
 an activity is a value of one counting variable, [Activities and
 devices](config-format/activities-and-devices.md#1-a-value-of-the-activity-counter).[^s273]
 
+**role** (Logitech's word). What a device does in an activity: shows the picture, takes the volume, changes
+channels, or only passes a signal through. Logitech's records give each device of an activity one or more,
+[MyHarmony's data model](logitech/data-model/model.md#the-roles-say-what-each-device-is-for). Here a role is the
+shortcut an activity's default key map is derived from, the volume keys following the device that takes the
+volume, and never required: an activity with a role no device has is still an activity.[^d44]
+
 **device mode** (Logitech's word). Pointing the whole remote at one device, so every key drives that
 device and nothing else, as its own old remote would. How each model gets in and out differs,
 [How a Harmony works](how-a-harmony-works.md#getting-into-device-mode-and-back).
@@ -487,6 +493,7 @@ It is how a section was named: the firmware copies each section's pointer into a
 that reads that variable says what the section is for, [the configuration file](config-format/README.md#the-base-slots).[^s38]
 
 [^s273]: Measured in configurations. [Section 273](../docs/findings.md#s273)
+[^d44]: Chosen by this project. [Decision 44](../docs/decisions.md#d44)
 [^s57]: Read in the firmware. [Section 57](../docs/findings.md#s57)
 [^s81]: Measured in configurations. [Section 81](../docs/findings.md#s81)
 [^x-forum]: Stated by a third party. [The comparison table of harmony-remote-forum.de](https://www.harmony-remote-forum.de/harmony_compare.php)

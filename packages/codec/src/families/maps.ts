@@ -8,7 +8,7 @@
  * device's commands a remote can be given is the family's too, since each family writes codes its own way, so the
  * family answers the **commands** it would carry. A new device arrives with a sensible map that a person reviews, so
  * the family derives the **default map of a device** from those commands, and the **default map of an activity** from
- * the default maps of its devices and the jobs they do. That last one reads the devices' default maps and never their
+ * the default maps of its devices and the roles they have. That last one reads the devices' default maps and never their
  * resolved ones: a person's change to a device's own key changes no activity, because an activity and device mode are
  * two maps of the same keypad, authored separately, `reference/how-a-harmony-works.md`.
  *
@@ -27,7 +27,7 @@
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import type { ActivityRoleName } from '../compose/activityroles.ts';
 import {
-  RecipeError, type Recipe, type RecipeDevice, type RecipeKey, type RecipeKeyAction, type RecipePress, type RecipeScreenCommand,
+  RecipeError, type Recipe, type RecipeActivity, type RecipeDevice, type RecipeKey, type RecipeKeyAction, type RecipePress, type RecipeScreenCommand,
 } from '../recipe/recipe.ts';
 
 // ---------------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ export interface ActivityMap {
   readonly screen: readonly MapScreenEntry[];
 }
 
-/** An activity as a default map is derived from it: Logitech's type, and its devices by name with their jobs. */
+/** An activity as a default map is derived from it: Logitech's type, and its devices by name with their roles. */
 export interface MapActivity {
   readonly type: string;
   readonly devices: readonly { readonly device: string; readonly roles: readonly ActivityRoleName[] }[];
@@ -149,7 +149,7 @@ export interface FamilyMaps {
   commands(device: RecipeDevice, catalogue: CatalogueSource): readonly MapCommand[];
   /** A device's default map, from its commands. */
   deviceMap(commands: readonly MapCommand[]): DeviceMap;
-  /** An activity's default map, from its type, its devices' jobs and its devices' **default** maps, `deviceOf`. */
+  /** An activity's default map, from its type, its devices' roles and its devices' **default** maps, `deviceOf`. */
   activityMap(activity: MapActivity, deviceOf: (device: string) => MapDeviceView): ActivityMap;
   /**
    * **Why the family's build refuses a person's choice on a place it has**, in a sentence a person reads, or undefined
@@ -168,6 +168,13 @@ export interface FamilyMaps {
    * not the same as a model without the choice.
    */
   readonly openingScreens?: readonly string[];
+  /**
+   * **Which of `activities` holds the favourite channels by the family's own rule**, its index, or -1 where none does:
+   * the one the build gives them to. The toolkit asks it to tell a person who holds them once the activity holding them
+   * is switched off, decision 44. **Optional**: a family whose build reads no hold on the favourites leaves it out, and
+   * then the hold is the one a document states.
+   */
+  favouritesHolder?(activities: readonly RecipeActivity[]): number;
 }
 
 /** One choice of a key as `FamilyMaps.refusedChoice` is asked about it, in the document's words. */

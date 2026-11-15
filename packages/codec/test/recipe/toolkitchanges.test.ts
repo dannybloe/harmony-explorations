@@ -100,12 +100,14 @@ const notBuilt = (contract: string, requirement: number) => (error: unknown): bo
  * How often a name stands as a value in a document's own words: its JSON without the carried definitions and the
  * protocols, which are the catalogue's text and may hold a manufacturer's name a rename does not touch, and without the
  * inputs an activity chooses, which are the catalogue's names too: the Denon's input for the player is named Blu-ray.
+ * Nor an activity's attention mark, which records a device removed by the name it had, on purpose, decision 44: the
+ * tests of the mark hold what it names, `toolkitattention.test.ts`.
  */
 const mentions = (document: Recipe, name: string): number => {
   const own = {
     ...document,
     devices: document.devices.map(({ definition: _definition, ...rest }) => rest),
-    activities: document.activities.map((one) => ({ ...one, devices: one.devices.map(({ input: _input, ...rest }) => rest) })),
+    activities: document.activities.map(({ attention: _attention, ...one }) => ({ ...one, devices: one.devices.map(({ input: _input, ...rest }) => rest) })),
     protocols: undefined,
   };
   return JSON.stringify(own).split(JSON.stringify(name)).length - 1;
@@ -187,14 +189,18 @@ test('on both references an activity renamed changes its name alone, a name anot
 /**
  * Where the One's reference with its stated fields names the KPN, written out from what `oneStated` put there and what
  * the reference itself holds, independently of the toolkit's walk: the LG TV's own key and screen entry; Watch TV's
- * devices, power order, its screen entry, its sequence Zappen with the screen entry and the key running it, and two of
- * its extra steps; and Plasma's activity's devices and three screen entries, the third a sequence written out with its
- * steps, which sends to the KPN alone.
+ * devices, the role of changing channels, which the KPN alone has there, power order, its screen entry, its sequence
+ * Zappen with the screen entry and the key running it, and two of its extra steps; and Plasma's activity's devices, the
+ * same role, and three screen entries, the third a sequence written out with its steps, which sends to the KPN alone.
+ * Last, the two activities that used the KPN, each marked as needing attention, decision 44, since a removal marks every
+ * activity that used the device: which keys do otherwise is read off the maps, not the walk, and held by
+ * `toolkitattention.test.ts`.
  */
 const ONE_KPN_NAMED_AT: readonly Place[] = [
   { kind: 'key', owner: { device: 'd1' }, key: 'Guide' },
   { kind: 'screen-item', owner: { device: 'd1' }, item: 0 },
   { kind: 'activity-device', activity: 'a1', device: 'd4' },
+  { kind: 'role', activity: 'a1', role: 'ChannelChanging' },
   { kind: 'power-order', activity: 'a1', device: 'd4' },
   { kind: 'screen-item', owner: { activity: 'a1' }, item: 1 },
   { kind: 'sequence', sequence: 's1' },
@@ -203,9 +209,12 @@ const ONE_KPN_NAMED_AT: readonly Place[] = [
   { kind: 'step', activity: 'a1', when: 'start', step: 0 },
   { kind: 'step', activity: 'a1', when: 'start', step: 2 },
   { kind: 'activity-device', activity: 'a5', device: 'd4' },
+  { kind: 'role', activity: 'a5', role: 'ChannelChanging' },
   { kind: 'screen-item', owner: { activity: 'a5' }, item: 0 },
   { kind: 'screen-item', owner: { activity: 'a5' }, item: 1 },
   { kind: 'screen-item', owner: { activity: 'a5' }, item: 3 },
+  { kind: 'attention', activity: 'a1' },
+  { kind: 'attention', activity: 'a5' },
 ];
 
 test('on both references removing a device settles exactly the places uses lists, a sequence sending to it alone going with everything that ran it', () => {
@@ -245,6 +254,98 @@ test('on the One what stays after a removal is what did not name the device: the
   const tv = recipe.remove(document, { device: 'd4' }).document.devices[0]!;
   assert.equal(tv.keys, undefined);
   assert.deepEqual(tv.screen, []);
+});
+
+/** The roles a change reports left with no device, as `activity id: role`, in the order it reports them. */
+const rolesLeft = (change: Change): string[] => change.effects
+  .flatMap((one) => (one.place.kind === 'role' ? [`${one.place.activity}: ${one.place.role}`] : []));
+
+/** An activity's devices as `setActivity` takes them, by id, with one device's roles given otherwise. */
+function devicesOf(document: Recipe, activity: number, roles: Readonly<Record<string, readonly string[]>> = {}): Json[] {
+  const idOf = (name: string): string => document.devices.find((one) => one.name === name)!.id!;
+  return document.activities[activity]!.devices.map((used) => ({
+    device: idOf(used.device), ...(used.input === undefined ? {} : { input: used.input }), roles: roles[used.device] ?? used.roles,
+  }));
+}
+
+/**
+ * **A removal says which roles it leaves with no device**: each role the removed device had in an activity that no
+ * other device of the activity has is an effect at that role, naming the activity and the role, and `uses` lists the
+ * same places. Written out from the two references' own activities, not from the walk: on the Touch the receiver has
+ * the volume in four activities and nothing else has, and the LG TV six roles in four activities; on the One the Denon the volume
+ * in two, and the LG TV three roles in two. **The control** is a role another device still has: the switch box given
+ * the picture as well, the LG TV's removal leaves that activity's picture done and reports its volume alone.
+ */
+test('on both references removing a device reports each role it leaves with no device in each activity, and uses lists the same places', () => {
+  const cases = [
+    ['Harmony Touch', touchTest(), 'd2', ['a1: Volume', 'a2: Volume', 'a3: Volume', 'a5: Volume']],
+    ['Harmony Touch', touchTest(), 'd1', ['a1: Display', 'a1: ChannelChanging', 'a2: Display', 'a4: Volume', 'a4: Display', 'a5: Display']],
+    ['Harmony One', oneTest(), 'd3', ['a1: Volume', 'a2: Volume']],
+    ['Harmony One', oneTest(), 'd1', ['a1: Display', 'a4: Display', 'a4: Volume']],
+  ] as const;
+  for (const [model, document, id, expected] of cases) {
+    const change = kept(document, () => recipe.remove(document, { device: id }));
+    assert.deepEqual(rolesLeft(change), expected, `${model} ${id}`);
+    assert.deepEqual(recipe.uses(document, { device: id }).filter((one) => one.kind === 'role'), change.effects.map((one) => one.place).filter((one) => one.kind === 'role'), `${model} ${id}`);
+    // Each role is reported right after the activity's own part, so a person reads the two together.
+    const places = change.effects.map((one) => one.place.kind);
+    places.forEach((kind, at) => { if (kind === 'role') assert.ok(places[at - 1] === 'role' || places[at - 1] === 'activity-device', `${model} ${id} at ${at}`); });
+  }
+  // The sentence names the activity, the role and the device that had it.
+  const receiver = recipe.remove(touchTest(), { device: 'd2' }).effects.find((one) => one.place.kind === 'role')!;
+  assert.deepEqual(receiver, {
+    place: { kind: 'role', activity: 'a1', role: 'Volume' }, effect: 'changed',
+    message: 'activity Watch TV\'s role Volume was Denon AV Receiver\'s, and no device of the activity has it now',
+  });
+  // The control: the switch box given the picture as well, through the toolkit, which reports no role lost by that.
+  for (const [model, document, id, switchBox, expected] of [
+    ['Harmony Touch', touchTest(), 'd1', 3, ['a1: Display', 'a1: ChannelChanging', 'a2: Display', 'a4: Volume', 'a5: Display']],
+    ['Harmony One', oneTest(), 'd1', 3, ['a1: Display', 'a4: Volume']],
+  ] as const) {
+    const activity = document.activities[switchBox]!;
+    const given = recipe.setActivity(document, activity.id!, { devices: devicesOf(document, switchBox, { Switch: ['Display'] }) });
+    assert.deepEqual(given.effects, [], model);
+    assert.deepEqual(rolesLeft(recipe.remove(given.document, { device: id })), expected, model);
+  }
+  // A device with no role, the switch, takes no role with it.
+  const lone = touchTest();
+  const passThrough = lone.devices.find((one) => one.name === 'Switch')!.id!;
+  assert.deepEqual(rolesLeft(recipe.remove(lone, { device: passThrough })), []);
+});
+
+/**
+ * **`setActivity` dropping a device says the same**: a role no device of the activity has afterwards is an effect at it,
+ * in the removal's sentence; the control is the same drop with the role given to the device that stays, which reports
+ * nothing. On the Touch's Watch TV and the One's Film kijken, each dropping its receiver.
+ */
+test('on both references setActivity dropping a device reports each role no device has afterwards, and none where another device takes it', () => {
+  for (const [model, document, activity, receiver, keeper] of [
+    ['Harmony Touch', touchTest(), 0, 'Denon AV Receiver', 'LG TV'],
+    ['Harmony One', oneTest(), 1, 'Denon', 'Kodi'],
+  ] as const) {
+    const now = document.activities[activity]!;
+    const left = devicesOf(document, activity).filter((one) => one.device !== document.devices.find((d) => d.name === receiver)!.id);
+    const dropped = kept(document, () => recipe.setActivity(document, now.id!, { devices: left }));
+    // The role, and then each press of the activity that does otherwise now, decision 44, and no mark, since a change
+    // a person makes is one they see: here the volume keys that sent the receiver's commands send nothing now.
+    assert.deepEqual(dropped.effects[0]!.place, { kind: 'role', activity: now.id, role: 'Volume' }, model);
+    assert.deepEqual(dropped.document.activities[activity]!.attention, undefined, model);
+    const pressed = dropped.effects.slice(1);
+    assert.ok(pressed.length > 0, model);
+    for (const one of pressed) assert.deepEqual([one.place.kind, 'owner' in one.place && one.place.owner], ['key', { activity: now.id }], model);
+    const volumeUp = pressed.find((one) => one.place.kind === 'key' && one.place.key === 'VolumeUp' && one.place.press === 'short');
+    assert.match(volumeUp!.message, new RegExp(`^activity ${now.name}'s VolumeUp sent ${receiver}'s \\w+ and sends nothing now$`), model);
+    assert.deepEqual(dropped.effects[0], {
+      place: { kind: 'role', activity: now.id, role: 'Volume' }, effect: 'changed',
+      message: `activity ${now.name}'s role Volume was ${receiver}'s, and no device of the activity has it now`,
+    }, model);
+    // The control: the device that stays takes the volume, and no role is left with no device. The keys that sent the
+    // receiver's commands go to it instead, so each is still an effect, and the VolumeUp names the keeper now.
+    const taken = devicesOf(document, activity, { [keeper]: [...now.devices.find((one) => one.device === keeper)!.roles, 'Volume'] })
+      .filter((one) => one.device !== document.devices.find((d) => d.name === receiver)!.id);
+    const given = kept(document, () => recipe.setActivity(document, now.id!, { devices: taken })).effects;
+    assert.ok(given.length > 0 && given.every((one) => one.place.kind === 'key'), model);
+  }
 });
 
 test('on both references a sequence is removed with every key, entry and step that ran it, and renamed with each of them following', () => {
@@ -803,4 +904,17 @@ test('a refusal the reader gives names the sequence by its name and says what an
     assert.match(said, new RegExp(`sequence ${sequence!.name}'s steps is empty, and a document states a list only where it holds something$`), model);
     assert.doesNotMatch(said, /sequence [0-9]|said by leaving it out/, model);
   }
+});
+
+test('through the main entry with nothing supplied, the check says once that it judged no name, and lists everything else', () => {
+  // This file imports the main entry alone and supplies the codec nothing, as a renderer that has not yet supplied
+  // its fonts, so judging a name, which draws it, cannot be done. The check says so, once, at the document; with the
+  // fonts supplied, `toolkit.test.ts` holds what it judges.
+  const problems = recipe.check(oneTest());
+  const notes = problems.filter((one) => one.code === 'names-not-judged');
+  assert.deepEqual(notes.map((one) => [one.severity, one.place]), [['note', { kind: 'document' }]]);
+  assert.match(notes[0]!.message, /^no name was judged against what a Harmony One draws, since the codec was supplied no \w+/);
+  assert.deepEqual(problems.filter((one) => one.code === 'name-not-drawable'), []);
+  // The control: a model whose family judges no name says nothing of names either way.
+  assert.deepEqual(recipe.check(touchTest()).filter((one) => one.code === 'names-not-judged'), []);
 });

@@ -33,6 +33,7 @@ import { iconNames } from '../../drawing/icons.ts';
 import type { CommonChoices, DelayDefaults } from '../family.ts';
 import { type BackgroundColours } from './backgrounds.ts';
 import { type OurPictureName } from './pictures.ts';
+import { ComposeError } from '../../support/refusal.ts';
 
 export interface FourSlotChoices extends CommonChoices {
   /**
@@ -184,8 +185,11 @@ export const FOUR_SLOT_CHOICES: FourSlotChoices = {
 /** The label faces drawn on the same geometry as a regular face, `oxaniumFacesOf`. */
 const TWIN_FACES = [['F15', 'R15'], ['F13', 'R13']] as const;
 
-/** A recipe's choice this family does not make, named, so a misspelt one is not silently a default. */
-export class ChoiceError extends Error {}
+/**
+ * A recipe's choice this family does not make, named, so a misspelt one is not silently a default. A build's refusal,
+ * `ComposeError`, so an application catches it as it catches every family's, `support/refusal.ts`.
+ */
+export class ChoiceError extends ComposeError {}
 
 /** The family's choices with a recipe's over its defaults. */
 /**

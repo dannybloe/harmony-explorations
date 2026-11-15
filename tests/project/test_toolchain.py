@@ -1695,7 +1695,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 194 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled. 195 with
         # `reference/ir-archive-sample/`, the files of the infrared archive the tests read, decision 42. 196 with
         # `work/sync-skeleton/`, the document synced to the spare Harmony One.
-        self.assertEqual(len(named), 196, "lab paths the register names")
+        self.assertEqual(len(named), 197, "lab paths the register names")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1818,8 +1818,8 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # and 169 with `work/harmony-hub-firmware/`, the hub's firmware unpacked and decompiled,
         # and 170 with `reference/ir-archive-sample/`, the infrared archive's sample, decision 42,
         # and 171 with `work/sync-skeleton/`, the document synced to the spare Harmony One.
-        self.assertEqual(len(rows), 171)
-        self.assertEqual(len(dict(rows)), 171, 'a duplicated path would make a query ambiguous')
+        self.assertEqual(len(rows), 172)
+        self.assertEqual(len(dict(rows)), 172, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

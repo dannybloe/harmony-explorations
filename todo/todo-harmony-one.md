@@ -9,7 +9,7 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 [the evidence](../docs/remote-requirements-evidence.md).
 
 <!-- checklist -->
-Open: 48, of which 28 its own or its family's work, 16 the FHSDK's work alone and 4 a run on a unit alone.
+Open: 49, of which 28 its own or its family's work, 16 the FHSDK's work alone and 5 a run on a unit alone.
 
 ## The whole configuration
 
@@ -38,7 +38,7 @@ Open: 48, of which 28 its own or its family's work, 16 the FHSDK's work alone an
 ## Activities
 
 - [x] R21 Create an activity of a kind with its devices; starting, switching and Off behave as the manuals describe.
-- [ ] R22 Say which device does which job in an activity, and map its keys from that, a learned command with a standard name landing on its usual key. (waits on its family)
+- [ ] R22 Say which device has which role in an activity, and map its keys from that, a learned command with a standard name landing on its usual key. (waits on its family)
 - [x] R23 Set each device's input in an activity, or leave it alone.
 - [ ] R24 Include a pass through device in an activity. (waits on its family)
 - [ ] R26 Remove an activity. (waits on the FHSDK)
@@ -47,6 +47,8 @@ Open: 48, of which 28 its own or its family's work, 16 the FHSDK's work alone an
 - [ ] R30 Add steps to an activity's start and end: commands, pauses, a sequence. (waits on the FHSDK)
 - [ ] R90 Choose the order in which an activity switches its devices on and off. (waits on the FHSDK and its family)
 - [ ] R91 Choose the screen an activity opens on, where the remote has more than one. (find out first)
+- [ ] R92 Switch an activity off, so the remote is given everything but it and is told which was left out, and on again as it was. (waits on a run on a unit)
+- [x] R93 Mark every activity that used a device removed from the document as needing attention, saying which of its keys now do otherwise and how, keep building and syncing it, and clear the mark.
 
 ## Keys and screens
 
