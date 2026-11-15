@@ -36,23 +36,13 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 
 import { HAND_OVER, PROVISIONING, READ_LIST, SYNC, WRITE_ANSWERS } from '../../src/touchsync.ts';
 import { RECOVERY, SYNC_LINES } from '../../src/write.ts';
-import { ADDRESSES, defaultSync, runTouchSync, type TouchRun, type TouchScenario } from './sync-attached-touch-run.ts';
+import { ADDRESSES, defaultSync, runTouchSync, runTouchSyncCommitted, type TouchScenario } from './sync-attached-touch-run.ts';
 
-/** One run in a process of its own with the two request flags set and the recovery flag unset. */
-function withFlags(scenario: TouchScenario): TouchRun {
-  const out = execFileSync(process.execPath, [fileURLToPath(new URL('./sync-attached-touch-run.ts', import.meta.url))], {
-    input: JSON.stringify(scenario),
-    env: { ...process.env, HARMONY_ENABLE_WRITES: '1', HARMONY_TOUCH_REQUESTS: '1', HARMONY_TOUCH_RECOVERY: '' },
-    encoding: 'utf8',
-    maxBuffer: 1 << 26,
-  });
-  return JSON.parse(out) as TouchRun;
-}
+/** One run in a process of its own with the two request flags set and the recovery flag unset, `runTouchSyncCommitted`. */
+const withFlags = runTouchSyncCommitted;
 
 /** The words of a written sync, the same as the pretend remote's for a document model. */
 const WRITTEN = ['identify', 'check', 'build', '! do-not-unplug', 'hand-over', 'write', '! safe-to-unplug', '= written'];
@@ -200,4 +190,30 @@ test('a stop is honoured up to the moment the remote is opened and not after, an
   const throwing = withFlags({ commit: true, observerThrows: true });
   assert.deepEqual(throwing.outcome, { result: 'written', remote: 'new-configuration' });
   assert.equal(throwing.answers.filter((a) => a.statusCode === '200').length, 10);
+});
+
+test('a keeper that cannot make its folder or keep the set ends the sync failed with the remote as it was, in its own words, with nothing opened', () => {
+  // An application learns of every failure through the outcome, so a keeper's throw is one too, never a rejection, as
+  // it is for the keeper of a write into flash, `sync-attached.test.ts`.
+  for (const [scenario, message] of [
+    [{ folderFails: 'the folder for the run cannot be made' }, 'the folder for the run cannot be made'],
+    [{ keepFails: 'the disk holding the sets is full' }, 'the disk holding the sets is full'],
+  ] as const) {
+    const run = withFlags({ commit: true, ...scenario });
+    assert.deepEqual(run.outcome, { result: 'failed', remote: 'as-before', message }, message);
+    assert.deepEqual(run.words, ['identify', 'check', 'build', '= failed'], message);
+    assert.deepEqual([run.opened, run.kept.length, run.written.length, run.answers.length], [0, 0, 0, 0], message);
+  }
+  // The control: the same run with a keeper that keeps is the first test's, which is written.
+});
+
+test('a Touch\'s document the check refuses more than once is refused naming its first problem and counting the rest, in the wording a flash sync uses', async () => {
+  // Two keys given a second command when held, each refused twice on a Harmony Touch: four problems, three counted.
+  const run = await runTouchSync({ heldKeys: true });
+  assert.deepEqual(run.outcome, {
+    result: 'refused', remote: 'as-before',
+    message: 'LG TV\'s own map chooses what the VolumeUp key does, which nothing builds for a Harmony Touch yet, and 3 more problems the check lists',
+  });
+  assert.deepEqual(run.words, ['identify', 'check', '= refused']);
+  assert.equal(run.opened, 0);
 });

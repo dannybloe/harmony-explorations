@@ -13,7 +13,10 @@
  * above it, and the flash is a pattern everywhere else so no neighbour is blank. The rails are real: the pretend
  * remote asserts each rail its `HarmonyRemote` counterpart asserts, `fake-classic-remote.ts`.
  */
-import { buildFromRecipe, recipe } from '@harmony/codec/node';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+import { buildFromRecipe, recipe, type Recipe } from '@harmony/codec/node';
 import { unitIdentityText, type FoundRemote, type HarmonyRemote } from '@harmony/usb';
 import { CONFIG_REGION_BASE, ERASE_BLOCK_SIZE } from '@harmony/usb/rails';
 import { NOMINAL_FLASH_SIZE } from '@harmony/usb/write';
@@ -28,8 +31,8 @@ const PRODUCT = 0xc121;
 const FIRMWARE = 0x34;
 const RELEASE = 0x1054;
 /** When the document is built, and when what the remote holds was. */
-const BUILT_AT = '2026-11-14T10:00:00';
-const HELD_AT = '2026-11-01T08:00:00';
+export const BUILT_AT = '2026-11-14T10:00:00';
+export const HELD_AT = '2026-11-01T08:00:00';
 
 export interface SyncScenario {
   readonly commit?: boolean;
@@ -49,6 +52,18 @@ export interface SyncScenario {
   readonly failWrite?: number;
   /** Build the second sync at another moment than the first, where there is a second. */
   readonly againAtAnotherMoment?: boolean;
+  /** The remote does not answer when it is opened, with these words. */
+  readonly openFails?: string;
+  /** Every flash read fails with these words: the compare before the write stops at its first block. */
+  readonly readFails?: string;
+  /** Every flash read fails with these words once the read back has begun. */
+  readonly verifyFails?: string;
+  /** The restart fails with these words. */
+  readonly restartFails?: string;
+  /** The keeper cannot keep the configuration it is handed, and says so in these words. */
+  readonly keepFails?: string;
+  /** The document gives two keys of its device a second command when held, two problems of its check. */
+  readonly heldKeys?: boolean;
 }
 
 export interface SyncRun {
@@ -72,11 +87,34 @@ const words = (events: readonly SyncEvent[]): string[] => events.map((event) => 
   : event.kind === 'progress' ? `${event.phase} ${event.done}/${event.total}`
     : event.kind === 'attention' ? `! ${event.attention}` : `= ${event.outcome.result}`));
 
+/** The empty Harmony One setup's configuration by the moment it was built at, for every run of this process. */
+const BUILDS = new Map<string, Uint8Array>();
+
+/** The empty Harmony One setup with two keys of a device given a second command when held, which its check refuses twice. */
+export function heldKeysDocument(): Recipe {
+  return recipe.open({
+    model: ONE,
+    devices: [{ name: 'Television', device: 'Made/TV', keys: [
+      { key: 'VolumeUp', press: 'held', action: { nothing: true } },
+      { key: 'VolumeDown', press: 'held', action: { nothing: true } },
+    ] }],
+    activities: [],
+  });
+}
+
 export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
   const base = CONFIG_REGION_BASE[ARCHITECTURE] as number;
   const blockSize = ERASE_BLOCK_SIZE[ARCHITECTURE] as number;
-  const document = recipe.create(ONE);
-  const configuration = (builtAt: string): Uint8Array => (buildFromRecipe(document, { builtAt }) as { bytes: Uint8Array }).bytes;
+  // What the remote holds is always built from the empty setup; the document synced is that setup, or one its check
+  // refuses, which nothing builds.
+  const plain = recipe.create(ONE);
+  const document = scenario.heldKeys === true ? heldKeysDocument() : plain;
+  const configuration = (builtAt: string): Uint8Array => {
+    // The same setup built at the same moment is the same bytes, so the runs of one process build each moment once.
+    const known = BUILDS.get(builtAt) ?? (buildFromRecipe(plain, { builtAt }) as { bytes: Uint8Array }).bytes;
+    BUILDS.set(builtAt, known);
+    return Uint8Array.from(known);
+  };
   const built = configuration(BUILT_AT);
   const held = scenario.holdsTheDocument === true ? built : configuration(HELD_AT);
 
@@ -89,6 +127,18 @@ export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
   const remote = new FakeClassicRemote({ architecture: ARCHITECTURE, firmware: FIRMWARE, flash, identity: identityFor(scenario.onCable ?? 1) });
   let writes = 0;
   const write = remote.writeFlash.bind(remote);
+  // Reads fail from the start, or from the moment the read back is entered, which the events say.
+  let reading = scenario.readFails;
+  const read = remote.readFlash.bind(remote);
+  remote.readFlash = async (address, count): Promise<Uint8Array> => {
+    if (reading !== undefined) throw new Error(reading);
+    return read(address, count);
+  };
+  const reset = remote.resetDevice.bind(remote);
+  remote.resetDevice = async (p): Promise<void> => {
+    if (scenario.restartFails !== undefined) throw new Error(scenario.restartFails);
+    await reset(p);
+  };
   remote.writeFlash = async (p, address, data): Promise<void> => {
     writes += 1;
     if (writes === scenario.failWrite) throw new Error('the cable was pulled');
@@ -119,11 +169,13 @@ export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
           records: { text: () => unitIdentityText(identityFor(1)), where: (label) => `units/${label}.txt` },
           region: { name: 'held', bytes: region },
           keep: (bytes) => {
+            if (scenario.keepFails !== undefined) throw new Error(scenario.keepFails);
             kept += 1;
             keptTheBuild &&= bytes.length === built.length && bytes.every((b, i) => b === built[i]);
           },
           open: async () => {
             opened += 1;
+            if (scenario.openFails !== undefined) throw new Error(scenario.openFails);
             return { remote: remote as unknown as HarmonyRemote, productId: PRODUCT };
           },
         },
@@ -133,6 +185,7 @@ export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
       onEvent: (event) => {
         events.push(event);
         if (event.kind === 'phase' && event.phase === scenario.stopAt) stop.abort();
+        if (event.kind === 'phase' && event.phase === 'verify' && scenario.verifyFails !== undefined) reading = scenario.verifyFails;
         if (scenario.observerThrows === true) throw new Error('the screen failed');
       },
       journal: (line) => lines.push(line),
@@ -156,11 +209,40 @@ export async function runSync(scenario: SyncScenario): Promise<SyncRun> {
   };
 }
 
+/**
+ * One run in a process of its own with the two write flags set, which is how a test commits: the rails read the flags
+ * once, as they load, so the test's own process, which has neither, cannot.
+ */
+export function runSyncCommitted(scenario: SyncScenario): SyncRun {
+  return runSyncCommittedAll([scenario])[0]!;
+}
+
+/**
+ * Several runs in one process of their own with the two write flags set, one after another, each with its own stand
+ * in, flash and keeper, so a test that commits many pays for one process rather than one per run.
+ */
+export function runSyncCommittedAll(scenarios: readonly SyncScenario[]): SyncRun[] {
+  const out = execFileSync(process.execPath, [fileURLToPath(import.meta.url)], {
+    input: JSON.stringify(scenarios),
+    env: { ...process.env, HARMONY_ENABLE_WRITES: '1', HARMONY_FIRST_WRITE: '1' },
+    encoding: 'utf8',
+    maxBuffer: 1 << 26,
+  });
+  return JSON.parse(out) as SyncRun[];
+}
+
 async function main(): Promise<void> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
-  const scenario = JSON.parse(Buffer.concat(chunks).toString('utf8')) as SyncScenario;
-  process.stdout.write(JSON.stringify(await runSync(scenario)));
+  // A list of scenarios is run one after another and answered as a list; one scenario alone, as itself.
+  const asked = JSON.parse(Buffer.concat(chunks).toString('utf8')) as SyncScenario | SyncScenario[];
+  if (!Array.isArray(asked)) {
+    process.stdout.write(JSON.stringify(await runSync(asked)));
+    return;
+  }
+  const runs: SyncRun[] = [];
+  for (const scenario of asked) runs.push(await runSync(scenario));
+  process.stdout.write(JSON.stringify(runs));
 }
 
 if (import.meta.main) {

@@ -22,18 +22,28 @@
  * inside that path, on the same inputs, and which units may be written is still the library's list and never a
  * caller's, `packages/usb/src/rails.ts`. Writing a user's own remote is R6, a decision of its own before it is built.
  *
- * **Built**: the pretend remote, and a sync to one, which checks and builds the document for real and only
- * pretends the cable; a sync to an attached remote of a model whose configuration is written into flash, the
- * Harmony One, 600, 650 and 700, through `writeConfiguration` and nothing else; and a sync to an attached Harmony
- * Touch, a remote that asks for its documents and is answered, through `answerTouchSync` and nothing else. A sync to
- * an attached remote of any other model refuses by name, `NotBuiltError`, with the requirement it waits on, before
- * anything is opened.
+ * **Built**: a sync to an attached remote of a model whose configuration is written into flash, the Harmony One, 600,
+ * 650 and 700, through `writeConfiguration` and nothing else; a sync to an attached Harmony Touch, a remote that asks
+ * for its documents and is answered, through `answerTouchSync` and nothing else; and the pretend remote, R80, which
+ * answers a sync of the same models and a read of a configuration, below. A sync of a document of any other model
+ * refuses by name, `NotBuiltError`, with the requirement it waits on, before anything is opened, to a pretend remote
+ * as to an attached one.
  *
  * **What an attached sync adds to the write path is nothing.** It checks and builds the document, hands what was
  * built to the model's write path with the keeper's records of the unit, and turns what that reports into events.
  * Which unit is on the cable, whether it may be written, every compare before an erase and every read back after a
  * write, every request a Touch is sent and every check of an answer are that path's and the rails' under it,
  * asserted where they always were.
+ *
+ * **The pretend remote runs the same sync, and only the cable is pretended.** What a sync reports is derived once, in
+ * the stages below that every path goes through: the phases before anything is opened, the check and the build, and
+ * the two mappings from what a write path reports to events and an outcome, one for a write into flash and one for an
+ * answered sync. An attached sync hands those mappings the model's real write path; a pretend sync hands them a stand
+ * in that reports the same steps, lines and outcomes `writeConfiguration` and `answerTouchSync` report, and keeps what
+ * it was given in memory. So a screen built against the pretend remote sees the events, the order, the outcomes and
+ * the words of the real one, and a change to a mapping changes both, which `pretend-against-attached.test.ts` holds.
+ * Where the pretend's stand in says something itself, the words a failure is reported with, it says it in the form
+ * the real path's own failures take.
  *
  * **Two kinds of remote, two kinds of keeper.** The contract was first written against the compiled family alone,
  * and a Harmony Touch fits it only where its sync has the same shape: the phases before anything is opened, a stop
@@ -42,7 +52,12 @@
  * plan 013 decision 1, since what a keeper holds for a flash write (a region read, the records of several units) and
  * for an answered sync (one unit's record, the account's addresses, the folder the run is kept in) have nothing in
  * common but `keep` and `open`, and those two take different things. A Touch adds one phase, `hand-over`, and reports
- * no progress, since nothing it reports gives a total; the pretend remote of a document model reports the same.
+ * no progress, since nothing it reports gives a total; the pretend remote of a Touch reports the same.
+ *
+ * **Reading.** The read of a remote an application has today is the read of a configuration out of flash,
+ * `readConfig` on `@harmony/corpus`'s main entry, which a `ConfigReader` and a `RemoteProfile` serve. A pretend remote
+ * of a model that read serves offers both, `pretendReader`, over what it holds. A Harmony Touch's documents have no
+ * read of their own on any entry yet, so a pretend Touch offers none either.
  */
 import {
   buildFromRecipe, chooseByModel, NotBuiltError, recipe, recipeTarget,
@@ -51,15 +66,19 @@ import {
 import { harmonyTouch } from '@harmony/codec/build';
 import {
   HarmonyRemote, openFileBasedRemote, openHarmony, RailError, readTouchPowerSource, skinId, type FoundRemote,
-  type Transport,
+  type TouchPowerSource, type Transport,
 } from '@harmony/usb';
+import { encodeVersionBlock } from '@harmony/usb/protocol';
+import { ERASE_BLOCK_SIZE } from '@harmony/usb/rails';
+import { blocksDiffering } from '@harmony/usb/write';
+import { PROFILES, ReadError, type ConfigReader, type RemoteProfile } from './read.ts';
 import {
   CONFIG_WRITE_MODELS, ConfigWriteRefusal, ConfigWriteStopped, writeConfiguration,
-  type ConfigWriteStep, type ConfigWriteUnit, type UnitRecords,
+  type ConfigWriteResult, type ConfigWriteStep, type ConfigWriteUnit, type UnitRecords,
 } from './writeconfig.ts';
 import {
-  SYNC_LINES, answerTouchSync, assertTouchSyncAllowed, assertTouchSyncUnit, describePowerSource, touchFolderRefusal,
-  touchPowerRefusal, touchSetOf, type TouchSet, type TouchSyncOutcome,
+  RECOVERY, SYNC_LINES, abortCost, answerTouchSync, assertTouchSyncAllowed, assertTouchSyncUnit, describePowerSource,
+  prepareSet, touchFolderRefusal, touchPowerRefusal, touchSetOf, type TouchSet, type TouchSyncOutcome,
 } from './touchsync.ts';
 
 /**
@@ -119,24 +138,52 @@ export type SyncEvent =
  * changes up and committed, so it is `written`.
  */
 export interface SyncOutcome {
-  readonly result:
-    // The remote holds the document's configuration: read back and equal, or, on a Harmony Touch, committed by it.
-    | 'written'
-    // The remote already held it.
-    | 'nothing-to-write'
-    // Everything up to the first write was done and nothing was sent, `commit` being false.
-    | 'dry-run'
-    // A stop was asked and honoured.
-    | 'stopped'
-    // A check or a rail refused before anything was written.
-    | 'refused'
-    // Something went wrong on the cable or in the remote; `remote` says what that left.
-    | 'failed';
+  /** How it ended: one of `SYNC_ENDINGS`' results, each described there. */
+  readonly result: SyncEnding['result'];
   /** The remote as the sync left it: untouched, holding the new configuration, or needing its recovery route. */
-  readonly remote: 'as-before' | 'new-configuration' | 'needs-recovery';
+  readonly remote: SyncEnding['remote'];
   /** Why, in a sentence, for every result but `written`. */
   readonly message?: string;
 }
+
+/**
+ * **Every way a sync ends, per kind of remote**: each result with what it leaves the remote as. The one place the
+ * outcomes are stated, so that `SyncOutcome`'s types are derived from it and a screen, or a test that every ending is
+ * reached, can walk it; a result or a state added to the type is added here or nowhere.
+ *
+ * * `written`: the remote holds the document's configuration, read back and equal, or, on a Harmony Touch, committed
+ *   by it.
+ * * `nothing-to-write`: the remote already held it; a write into flash only, `SyncOutcome`'s header says why.
+ * * `dry-run`: everything up to the first write was done and nothing was sent, `commit` being false.
+ * * `stopped`: a stop was asked and honoured, so the remote is as it was.
+ * * `refused`: a check or a rail refused before anything was written.
+ * * `failed`: something went wrong on the cable, in the remote or in its keeper; `remote` says what that left: as it
+ *   was before anything changed, needing its recovery part way, and, for flash, the new configuration whole with only
+ *   the restart owed. A Harmony Touch swaps a set in only at its commit, so a failure never leaves it the new one.
+ */
+export const SYNC_ENDINGS = {
+  compiled: [
+    { result: 'written', remote: 'new-configuration' },
+    { result: 'nothing-to-write', remote: 'as-before' },
+    { result: 'dry-run', remote: 'as-before' },
+    { result: 'stopped', remote: 'as-before' },
+    { result: 'refused', remote: 'as-before' },
+    { result: 'failed', remote: 'as-before' },
+    { result: 'failed', remote: 'needs-recovery' },
+    { result: 'failed', remote: 'new-configuration' },
+  ],
+  document: [
+    { result: 'written', remote: 'new-configuration' },
+    { result: 'dry-run', remote: 'as-before' },
+    { result: 'stopped', remote: 'as-before' },
+    { result: 'refused', remote: 'as-before' },
+    { result: 'failed', remote: 'as-before' },
+    { result: 'failed', remote: 'needs-recovery' },
+  ],
+} as const;
+
+/** One ending of `SYNC_ENDINGS`, of either kind of remote. */
+export type SyncEnding = (typeof SYNC_ENDINGS)[keyof typeof SYNC_ENDINGS][number];
 
 /**
  * What a sync to an attached remote needs that only whoever keeps the remote holds. On the bench these are the lab's;
@@ -252,246 +299,98 @@ export interface SyncRequest {
 }
 
 /**
- * A remote that is not there, R80: it answers a sync with the phases, the progress and the warnings a sync has,
- * and it can be told to fail, so an application's every screen can be built and tried with nothing attached. It
- * holds whatever was last synced to it, for as long as the object lives. Made by `pretendRemote` and by nothing
+ * A remote that is not there, R80: an application syncs to it and reads it as it would a remote on the cable, and it
+ * answers with the events, the outcomes and the words a remote on the cable gives, its failures included, so every
+ * screen of a sync and a read can be built and tried with nothing attached. Made by `pretendRemote` and by nothing
  * else: an object put together to look like one is refused.
+ *
+ * **What it holds**, for as long as the object lives: for a model whose configuration is written into flash, the
+ * bytes of the configuration last written to it, which a sync compares by erase block as the real write does and a
+ * read reads back; for a Harmony Touch, nothing but the document last synced, since a Touch's sync never asks the
+ * remote what it holds.
  */
 export interface PretendRemote {
   readonly kind: 'pretend';
   readonly model: RecipeModel;
-  /** The document last synced to it, or the one it was made with. */
+  /**
+   * The document whose configuration it holds whole: the one last synced to it, or the one it was made with; undefined
+   * when it holds none of ours, and after a write that stopped part way, which leaves it holding a part of each.
+   */
   readonly holds: () => Recipe | undefined;
 }
+
+/**
+ * What goes wrong in the next sync or the next read of a pretend remote, once. Each is a failure of the remote or the
+ * cable, reported where the real path meets it, and the outcome says what the real path says a failure there leaves:
+ *
+ * * `identify`: the remote does not answer when it is asked which unit it is. **This shows after `build`**, where both
+ *   real paths open the remote, since the `identify` phase reads only what the remote says without being opened and
+ *   cannot fail on the cable; it ends `failed` with the remote as it was.
+ * * `check` and `build`: the document refused by its check or its build, `refused` and as it was. These two are the
+ *   document's and not the remote's, and stand in for a document that fails them.
+ * * `backup`: reading what the remote holds stops part way, `failed` and as it was.
+ * * `hand-over`, a Harmony Touch's: the remote stops answering while it hands its own changes up, `failed` and needing
+ *   its recovery.
+ * * `write`: the remote stops answering part way through the write, `failed` and needing its recovery; for flash the
+ *   block being written is left erased, and the same sync run again finishes it, as on the real remote.
+ * * `verify`: what the remote holds does not read back as what was written, `failed` and needing its recovery.
+ * * `restart`: the restart fails, `failed` with the remote holding the new configuration, and a restart by hand asked.
+ * * `read`: the next read stops answering part way, after the windows the retries allow, as `readConfig` meets it.
+ *
+ * A phase a model's sync does not have is never entered, so failing in it fails nothing.
+ */
+export type PretendFailure = SyncPhase | 'read';
 
 /** How a pretend remote behaves. */
 export interface PretendOptions {
   readonly model: RecipeModel;
-  /** What it holds to begin with; absent is a remote with no setup of ours. */
+  /** What it holds to begin with; absent is a remote with no setup of ours, whose configuration region is erased. */
   readonly holds?: Recipe;
-  /** Fail the next sync in this phase, and that one only; the outcome says what a failure there leaves. */
-  readonly failIn?: SyncPhase;
   /**
-   * How long it takes over each step of progress, in milliseconds, so a screen can be watched moving; absent or 0
-   * answers at once, which is what a test wants. A number the caller picks: it is no measurement of any remote.
+   * What the configuration it holds to begin with was built from, for a model whose configuration is written into
+   * flash: the moment, which every stamp in it is taken from, and a catalogue for a device `holds` names and does not
+   * carry. Absent, it is built at the first moment of 2026 with no catalogue, any moment before a sync's own being as good. A sync of the same document built at the same
+   * moment then has nothing to write, and one built at another moment writes the blocks the stamps are in, as a remote
+   * on the cable does.
+   */
+  readonly heldSources?: BuildSources;
+  /** Fail the next sync or read where this says, and that one only, `PretendFailure`. */
+  readonly failIn?: PretendFailure;
+  /**
+   * A Harmony Touch's own abort: the next sync that reaches the write is aborted by the remote, which deletes what it
+   * had gathered and keeps the set it held, `failed` with the remote as it was. Once, as `failIn` is.
+   */
+  readonly aborts?: boolean;
+  /**
+   * The power source a pretend Harmony Touch reports, `usb` when absent: on any other a sync is refused before the
+   * remote is acted on, in a dry run and a commit alike, with the words the real check gives.
+   */
+  readonly powerSource?: TouchPowerSource;
+  /**
+   * How long it takes over each step, in milliseconds, so a screen can be watched moving; absent or 0 answers at once,
+   * which is what a test wants. A number the caller picks: it is no measurement of any remote.
    */
   readonly stepMs?: number;
 }
 
-/** What `pretendRemote` keeps for a pretend remote, apart from the object an application holds. */
-interface PretendState {
-  holds: Recipe | undefined;
-  failIn: SyncPhase | undefined;
-  readonly stepMs: number;
+/**
+ * A read of a pretend remote, as `readConfig` takes one: the reader its commands go to, and the profile of the
+ * remote's model, which says where its configuration starts. `readConfig(read.reader, read.profile, options)` then
+ * reads it as it reads a remote on the cable, with the same progress, the same checks and the same failures.
+ */
+export interface PretendRead {
+  readonly reader: ConfigReader;
+  readonly profile: RemoteProfile;
 }
 
-/** Every pretend remote made here, by its object: what tells one made by `pretendRemote` from one put together. */
-const PRETEND = new WeakMap<PretendRemote, PretendState>();
-
-/** A pretend remote of a model, R80. */
-export function pretendRemote(options: PretendOptions): PretendRemote {
-  const stepMs = options.stepMs ?? 0;
-  if (!Number.isFinite(stepMs) || stepMs < 0) throw new RangeError(`a pretend remote cannot take ${String(options.stepMs)} milliseconds over a step`);
-  const state: PretendState = { holds: options.holds, failIn: options.failIn, stepMs };
-  const remote: PretendRemote = { kind: 'pretend', model: options.model, holds: () => state.holds };
-  PRETEND.set(remote, state);
-  return remote;
-}
-
-/** The size of one step of a pretend write: an erase block of the compiled families' flash. */
-const PRETEND_BLOCK = 0x10000;
+// ---------------------------------------------------------------------------------------------------
+// What every sync shares: the events, the phases before anything is opened, and the two mappings
+// ---------------------------------------------------------------------------------------------------
 
 /**
- * The phases a pretend sync runs after the build, by what was built, the first of them that acts on the remote, and
- * how many steps of progress each has. A configuration is written into flash, so what the remote held is read first,
- * every byte is read back and the remote restarts at the end, with progress by erase block. Documents are delivered
- * as a Harmony Touch's sync delivers them, **the same phases in the same order as `syncAttachedTouch` reports**, so a
- * screen built against the pretend remote fits the real one: the remote's own changes handed up, then the documents
- * answered until it commits, and no progress, since nothing a Touch reports gives a total. **This is the pretend
- * remote's own shape**, there for a screen to be built against, and each real path reports the phases it has.
+ * The words a person is told, once, for every path. Stated once here so that the pretend remote and an attached one
+ * cannot drift apart in what they ask of a person.
  */
-function pretendSteps(built: Built): { readonly phases: readonly SyncPhase[]; readonly acts: SyncPhase; readonly steps: number } {
-  if (built.kind === 'configuration') {
-    return { phases: ['backup', 'write', 'verify', 'restart'], acts: 'write', steps: Math.max(1, Math.ceil(built.bytes.length / PRETEND_BLOCK)) };
-  }
-  return { phases: ['hand-over', 'write'], acts: 'hand-over', steps: 0 };
-}
-
-/** What a failure leaves, which is the first thing a person has to be told. */
-type Left = { readonly result: SyncOutcome['result']; readonly remote: SyncOutcome['remote']; readonly message: string };
-
-/** What a failure in a phase leaves, for a configuration written into flash and for the phases every sync has. */
-const FAILURE: Readonly<Record<SyncPhase, Left>> = {
-  identify: { result: 'failed', remote: 'as-before', message: 'the remote did not answer when it was asked which remote it is' },
-  check: { result: 'refused', remote: 'as-before', message: 'the document was refused by its check' },
-  build: { result: 'refused', remote: 'as-before', message: 'the document could not be built' },
-  backup: { result: 'failed', remote: 'as-before', message: 'reading what the remote holds stopped part way, before anything was written' },
-  'hand-over': {
-    result: 'failed', remote: 'needs-recovery',
-    message: 'the sync stopped while the remote handed its own changes up, so it may hold a sync marked running: run its recovery, which starts with a read that says whether anything is left to clear',
-  },
-  write: { result: 'failed', remote: 'needs-recovery', message: 'the write stopped part way, so the remote holds a part of each configuration' },
-  verify: { result: 'failed', remote: 'needs-recovery', message: 'what the remote holds does not read back as what was written' },
-  restart: { result: 'failed', remote: 'new-configuration', message: 'the remote holds the new configuration and did not restart by itself' },
-};
-
-/**
- * What a failure in the write leaves on a remote that asks for documents, where it differs from flash: a Harmony
- * Touch swaps the new set in only at its commit, so a sync stopped before it leaves the set it held, and what is left
- * to clear is a sync marked running, `reference/architectures/harmony-touch/firmware.md` "A sync that stops halfway".
- */
-const DOCUMENT_FAILURE: Readonly<Partial<Record<SyncPhase, Left>>> = {
-  write: {
-    result: 'failed', remote: 'needs-recovery',
-    message: 'the sync stopped before the remote committed it, so it keeps the set it held and may hold a sync marked running: run its recovery, which starts with a read that says whether anything is left to clear',
-  },
-};
-
-/** The dry run's words for a set of documents, the same for the pretend remote and an attached Harmony Touch. */
-const documentsDryRun = (documents: number, pictures: number): string =>
-  `everything before the remote is acted on was done, and the set holds ${documents} ${documents === 1 ? 'document' : 'documents'} `
-  + `and ${pictures} ${pictures === 1 ? 'picture' : 'pictures'}`;
-
-/** A sync to a pretend remote: the document checked and built for real, the cable pretended. */
-async function syncPretend(request: SyncRequest, remote: PretendRemote): Promise<SyncOutcome> {
-  const state = PRETEND.get(remote);
-  if (state === undefined) throw new TypeError('a pretend remote comes through pretendRemote: this one was put together by hand');
-  const { document, onEvent, journal } = request;
-  // One failure asked for is one failure: the sync after it runs as any other.
-  const failIn = state.failIn;
-  state.failIn = undefined;
-  const say = (line: string): void => journal(`pretend ${remote.model.name}: ${line}`);
-  const end = (outcome: SyncOutcome): SyncOutcome => {
-    say(`${outcome.result}, the remote ${outcome.remote}${outcome.message === undefined ? '' : `: ${outcome.message}`}`);
-    onEvent({ kind: 'outcome', outcome });
-    return outcome;
-  };
-  /** Which failures apply: a configuration's, or a set of documents' where the two differ, known once it is built. */
-  let failures: Readonly<Partial<Record<SyncPhase, Left>>> = {};
-  /** Enter a phase; the outcome to end with where this is the phase told to fail or a stop is honoured here. */
-  const enter = (phase: SyncPhase, stoppable: boolean): SyncOutcome | undefined => {
-    if (stoppable && request.stop?.aborted === true) {
-      return { result: 'stopped', remote: 'as-before', message: `stopped before ${phase}, with nothing written` };
-    }
-    say(phase);
-    onEvent({ kind: 'phase', phase });
-    if (failIn !== phase) return undefined;
-    const { result, remote: left, message } = failures[phase] ?? FAILURE[phase];
-    return { result, remote: left, message };
-  };
-  const step = async (): Promise<void> => {
-    if (state.stepMs > 0) await new Promise<void>((resolve) => { setTimeout(resolve, state.stepMs); });
-  };
-
-  let stopped = enter('identify', true);
-  if (stopped !== undefined) return end(stopped);
-  await step();
-  // A remote takes a configuration built for its own model and no other; which model that is, a pretend remote
-  // was made with and a real one reports.
-  if (document.model.name !== remote.model.name
-    || (document.model.skin !== undefined && remote.model.skin !== undefined && document.model.skin !== remote.model.skin)) {
-    return end({ result: 'refused', remote: 'as-before', message: `the document is for a ${document.model.name} and the remote is a ${remote.model.name}` });
-  }
-
-  stopped = enter('check', true);
-  if (stopped !== undefined) return end(stopped);
-  let errors: ReturnType<typeof recipe.check>;
-  try {
-    errors = recipe.check(document).filter((one) => one.severity === 'error');
-  } catch (error) {
-    return end({ result: 'refused', remote: 'as-before', message: error instanceof Error ? error.message : String(error) });
-  }
-  if (errors.length > 0) {
-    const more = errors.length - 1;
-    return end({
-      result: 'refused', remote: 'as-before',
-      message: `${errors[0]!.message}${more === 0 ? '' : `, and ${more} more ${more === 1 ? 'problem' : 'problems'} the check lists`}`,
-    });
-  }
-
-  stopped = enter('build', true);
-  if (stopped !== undefined) return end(stopped);
-  let built: Built;
-  try {
-    built = buildFromRecipe(document, request.sources);
-  } catch (error) {
-    // Every refusal of a build is the document's or the sources', and nothing has touched the remote.
-    return end({ result: 'refused', remote: 'as-before', message: error instanceof Error ? error.message : String(error) });
-  }
-  if (built.kind === 'documents') {
-    // The answerer's gate over the documents, which the real path runs before anything is sent: a set the codec's
-    // reader and check refuse is refused here too. The addresses and the envelope are the keeper's and the set's, which
-    // a pretend remote does not have, so this is the documents' half of `prepareSet`.
-    const findings = harmonyTouch.refusalsBeforeASync(built.documents);
-    if (findings.length > 0) {
-      const more = findings.length - 1;
-      // A favourites document is named by its whole address, which carries the account's identifiers: name its kind.
-      const named = findings[0]!.document.includes('://') ? 'a favourites document' : findings[0]!.document;
-      return end({
-        result: 'refused', remote: 'as-before',
-        message: `${named}: ${findings[0]!.message}${more === 0 ? '' : `, and ${more} more ${more === 1 ? 'reason' : 'reasons'} the gate lists`}`,
-      });
-    }
-    failures = DOCUMENT_FAILURE;
-  }
-  say(built.kind === 'configuration' ? `built a configuration of ${built.bytes.length} bytes` : `built ${Object.keys(built.documents).length} documents and ${built.pictures.length} pictures`);
-
-  // The remote holds this very document already: there is nothing to send it. **A configuration only**: a remote that
-  // asks for documents cannot be asked what it holds by the real path, which syncs it again whatever it holds, so the
-  // pretend one does too.
-  if (built.kind === 'configuration' && state.holds !== undefined && JSON.stringify(state.holds) === JSON.stringify(document)) {
-    return end({ result: 'nothing-to-write', remote: 'as-before', message: 'the remote already holds this document' });
-  }
-
-  const { phases, acts, steps } = pretendSteps(built);
-  let writing = false;
-  for (const phase of phases) {
-    if (phase === acts) {
-      if (!request.commit) {
-        return end({
-          result: 'dry-run', remote: 'as-before',
-          message: built.kind === 'documents' ? documentsDryRun(Object.keys(built.documents).length, built.pictures.length)
-            : `everything up to the write was done, and ${steps} ${steps === 1 ? 'part' : 'parts'} would be written`,
-        });
-      }
-      // The last moment a stop is honoured, and the first at which the cable must stay in.
-      if (request.stop?.aborted === true) {
-        return end({ result: 'stopped', remote: 'as-before', message: `stopped before the ${phase === 'hand-over' ? 'hand over' : 'write'}, with nothing written` });
-      }
-      onEvent({ kind: 'attention', attention: 'do-not-unplug', message: ATTENTION['do-not-unplug'] });
-      writing = true;
-    }
-    if (phase === 'restart') {
-      onEvent({ kind: 'attention', attention: 'restarting', message: ATTENTION['restarting'] });
-    }
-    const failed = enter(phase, !writing);
-    if (failed !== undefined) {
-      if (phase === 'restart') {
-        onEvent({ kind: 'attention', attention: 'restart-by-hand', message: ATTENTION['restart-by-hand'] });
-      }
-      return end(failed);
-    }
-    // A phase with no progress, the restart and every phase of a set of documents, takes one step and reports none.
-    if (phase === 'restart' || steps === 0) {
-      await step();
-      continue;
-    }
-    for (let done = 1; done <= steps; done += 1) {
-      await step();
-      // A read can be given up between two steps; a write cannot, `stop` in the header.
-      if (!writing && request.stop?.aborted === true) {
-        return end({ result: 'stopped', remote: 'as-before', message: `stopped during ${phase}, with nothing written` });
-      }
-      onEvent({ kind: 'progress', phase, done, total: steps });
-    }
-  }
-  // A dry run whose build has no write phase cannot be: every build is written. Reached with the write done.
-  state.holds = document;
-  onEvent({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
-  return end({ result: 'written', remote: 'new-configuration' });
-}
-
-/** The words a person is told, once, for the pretend remote and an attached one alike. */
 const ATTENTION = {
   'do-not-unplug': 'Leave the remote on its cable until the sync says it is done.',
   restarting: 'The remote restarts and is away from the cable for a moment.',
@@ -499,20 +398,40 @@ const ATTENTION = {
   'restart-by-hand': 'Take the batteries out of the remote and put them back.',
 } as const satisfies Readonly<Record<SyncAttention, string>>;
 
+/** What a thrown value says, as a sentence. */
+const said = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+/** The first of a list of problems and how many more there are, as one sentence. */
+const firstOf = (list: readonly string[], noun: 'problem' | 'reason', of: string): string => {
+  const more = list.length - 1;
+  return `${list[0]!}${more === 0 ? '' : `, and ${more} more ${more === 1 ? noun : `${noun}s`} ${of} lists`}`;
+};
+
 /**
- * A sync to an attached remote whose configuration is written into flash: the document checked and built, and the
- * configuration written by `writeConfiguration`, whose steps become the events.
- *
- * **Which phase a failure is in decides what the remote is left as**, and that is tracked by the steps the write
- * itself reports: before its first command that changes the remote, the remote is as it was; from there until the
- * whole configuration has read back, it holds a part of each, and the same sync run again is the way out, since
- * the write recognises its own interrupted blocks; after that it holds the new configuration and only the restart
- * is owed.
+ * How one sync reports, whichever path it takes: its events, its own lines in the journal, the phase it is in, and how
+ * it ends. One of these per sync, so that every path emits, journals and ends the same way.
  */
-async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promise<SyncOutcome> {
-  const { document, journal } = request;
+interface Reporter {
+  /** A line of the sync's own, under the path's prefix: `sync: ` on the cable, the pretend remote's name otherwise. */
+  readonly say: (line: string) => void;
+  /** A line a write path reports itself, into the journal as it comes. */
+  readonly log: (line: string) => void;
+  readonly emit: (event: SyncEvent) => void;
+  readonly enter: (phase: SyncPhase) => void;
+  /** The phase last entered, undefined before the first. */
+  readonly phase: () => SyncPhase | undefined;
+  readonly end: (outcome: SyncOutcome) => SyncOutcome;
+  readonly refused: (message: string) => SyncOutcome;
+  readonly stopped: (before: string) => SyncOutcome;
+  /** Whether a stop has been asked, read afresh each time since it can be asked at any moment. */
+  readonly asked: () => boolean;
+}
+
+function reporterOf(request: SyncRequest, say: (line: string) => void, log: (line: string) => void): Reporter {
   // An observer never stops a sync: a screen that throws between an erase and its write must not be what leaves a
-  // remote without a configuration, so what it throws is dropped, as the write path drops its own observer's.
+  // remote without a configuration, nor, once a Touch's hand over has begun, a sync marked running on it, so what it
+  // throws is dropped, as the write path drops its own observer's. The pretend remote drops it too, so a screen that
+  // throws is met the same way with nothing attached.
   const emit = (event: SyncEvent): void => {
     try {
       request.onEvent(event);
@@ -520,100 +439,619 @@ async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promi
       // Dropped on purpose.
     }
   };
+  let current: SyncPhase | undefined;
   const end = (outcome: SyncOutcome): SyncOutcome => {
-    journal(`sync: ${outcome.result}, the remote ${outcome.remote}${outcome.message === undefined ? '' : `: ${outcome.message}`}`);
+    say(`${outcome.result}, the remote ${outcome.remote}${outcome.message === undefined ? '' : `: ${outcome.message}`}`);
     emit({ kind: 'outcome', outcome });
     return outcome;
   };
-  const refused = (message: string): SyncOutcome => end({ result: 'refused', remote: 'as-before', message });
-  const stopped = (before: string): SyncOutcome => end({ result: 'stopped', remote: 'as-before', message: `stopped before ${before}, with nothing written` });
-  const said = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-  /** Whether a stop has been asked, read afresh each time since it can be asked at any moment. */
-  const asked = (): boolean => request.stop?.aborted === true;
-  let phase: SyncPhase = 'identify';
-  const enter = (next: SyncPhase): void => {
-    phase = next;
-    journal(`sync: ${next}`);
-    emit({ kind: 'phase', phase: next });
+  return {
+    say,
+    log,
+    emit,
+    enter: (next) => {
+      current = next;
+      say(next);
+      emit({ kind: 'phase', phase: next });
+    },
+    phase: () => current,
+    end,
+    refused: (message) => end({ result: 'refused', remote: 'as-before', message }),
+    stopped: (before) => end({ result: 'stopped', remote: 'as-before', message: `stopped before ${before}, with nothing written` }),
+    asked: () => request.stop?.aborted === true,
   };
+}
 
-  // Which model is on the cable, as far as its enumeration says: the skin a remote reports without being opened.
-  // Which unit it is, is read off the remote by the write, after every check that needs no remote has passed.
-  if (asked()) return stopped('identify');
-  enter('identify');
+/**
+ * The `identify` phase: whether the document is for the remote, by the skin the remote reports without being opened.
+ * The skin a document is for is asked the way its path asks it, `recipeTarget` for a model whose configuration is
+ * written into flash and the registry's choice for one given documents, `recipeTarget` refusing the latter. Undefined
+ * where it is; the outcome to end with where it is not or a stop was asked.
+ */
+function identify(r: Reporter, document: Recipe, documents: boolean, reported: number | undefined): SyncOutcome | undefined {
+  if (r.asked()) return r.stopped('identify');
+  r.enter('identify');
   let skin: number;
   try {
-    skin = recipeTarget(document).skin;
+    skin = documents ? chooseByModel(document.model).skin : recipeTarget(document).skin;
   } catch (error) {
-    return refused(said(error));
+    return r.refused(said(error));
   }
-  const attached = remote.found.release === undefined ? undefined : skinId(remote.found.release);
-  if (attached !== skin) {
-    return refused(`the document is for a ${document.model.name}, skin ${skin}, and the remote on the cable reports ${attached === undefined ? 'no skin' : `skin ${attached}`}`);
+  if (reported !== skin) {
+    return r.refused(`the document is for a ${document.model.name}, skin ${skin}, and the remote on the cable reports ${reported === undefined ? 'no skin' : `skin ${reported}`}`);
   }
-  // The keeper has to hold what a flash write needs: a keeper of a remote that asks for documents holds no region read
-  // and no records of these units, and handing it on would fail inside the write for a reason nobody named.
-  const keeper = remote.keeper;
-  if (keeper.kind !== 'compiled') {
-    return refused(`the remote on the cable is a ${document.model.name}, whose configuration is written into flash, and its keeper `
-      + 'holds what a sync of a remote that asks for documents needs, not the region read and unit records a write into flash compares with');
-  }
+  return undefined;
+}
 
-  if (asked()) return stopped('check');
-  enter('check');
+/**
+ * The `check` and `build` phases, the same for every path: the document's check, refused on its first error with the
+ * count of the rest, and the build from the request's sources. `inject` lets the pretend remote stand in for a document
+ * that fails either; an attached sync passes none.
+ */
+function checkAndBuild(
+  r: Reporter, request: SyncRequest, inject?: (phase: 'check' | 'build') => string | undefined,
+): { readonly built: Built } | { readonly outcome: SyncOutcome } {
+  const { document } = request;
+  if (r.asked()) return { outcome: r.stopped('check') };
+  r.enter('check');
+  const checkFails = inject?.('check');
+  if (checkFails !== undefined) return { outcome: r.refused(checkFails) };
   let errors: ReturnType<typeof recipe.check>;
   try {
     errors = recipe.check(document).filter((one) => one.severity === 'error');
   } catch (error) {
-    return refused(said(error));
+    return { outcome: r.refused(said(error)) };
   }
-  if (errors.length > 0) {
-    const more = errors.length - 1;
-    return refused(`${errors[0]!.message}${more === 0 ? '' : `, and ${more} more ${more === 1 ? 'problem' : 'problems'} the check lists`}`);
-  }
+  if (errors.length > 0) return { outcome: r.refused(firstOf(errors.map((one) => one.message), 'problem', 'the check')) };
 
-  if (asked()) return stopped('build');
-  enter('build');
-  let built: Built;
+  if (r.asked()) return { outcome: r.stopped('build') };
+  r.enter('build');
+  const buildFails = inject?.('build');
+  if (buildFails !== undefined) return { outcome: r.refused(buildFails) };
   try {
-    built = buildFromRecipe(document, request.sources);
+    return { built: buildFromRecipe(document, request.sources) };
   } catch (error) {
-    return refused(said(error));
+    // Every refusal of a build is the document's or the sources', and nothing has touched the remote.
+    return { outcome: r.refused(said(error)) };
   }
-  if (built.kind !== 'configuration') return refused(`the ${document.model.name} is given documents, which this path does not write`);
-  journal(`sync: built a configuration of ${built.bytes.length} bytes for skin ${built.skin}, stamped ${request.sources.builtAt}`);
+}
 
+/**
+ * A write into flash as the sync sees it: called with the observer of its steps, it resolves with how the write ended
+ * and the blocks it wrote or would write, or throws as `writeConfiguration` throws, `ConfigWriteStopped` for a stop it
+ * honoured, `ConfigWriteRefusal` or `RailError` for a refusal, anything else for a failure.
+ */
+type FlashWrite = (onStep: (at: ConfigWriteStep) => void) => Promise<{
+  readonly outcome: ConfigWriteResult['outcome'];
+  readonly blocks: readonly number[];
+}>;
+
+/**
+ * From the build on, for a configuration written into flash: the write's steps turned into phases and progress, and
+ * how it ended into the outcome.
+ *
+ * **Which phase a failure is in decides what the remote is left as**, and that is tracked by the steps the write
+ * itself reports: before its first command that changes the remote, the remote is as it was; from there until the
+ * whole configuration has read back, it holds a part of each, and the same sync run again is the way out, since
+ * the write recognises its own interrupted blocks; after that it holds the new configuration and only the restart
+ * is owed.
+ */
+async function intoFlash(r: Reporter, request: SyncRequest, write: FlashWrite): Promise<SyncOutcome> {
   // What the write reports, turned into phases and progress. `began` and `verified` are what a failure is judged by.
   let began = false;
   let verified = false;
   const onStep = (at: ConfigWriteStep): void => {
     if (at.step === 'identified') {
-      journal(`sync: the remote on the cable is ${at.unit}`);
+      r.say(`the remote on the cable is ${at.unit}`);
     } else if (at.step === 'comparing') {
-      if (phase !== 'backup') enter('backup');
-      emit({ kind: 'progress', phase: 'backup', done: at.done, total: at.total });
+      if (r.phase() !== 'backup') r.enter('backup');
+      r.emit({ kind: 'progress', phase: 'backup', done: at.done, total: at.total });
     } else if (at.step === 'writing') {
       if (at.done === 0) {
         began = true;
-        emit({ kind: 'attention', attention: 'do-not-unplug', message: ATTENTION['do-not-unplug'] });
-        enter('write');
+        r.emit({ kind: 'attention', attention: 'do-not-unplug', message: ATTENTION['do-not-unplug'] });
+        r.enter('write');
       } else {
-        emit({ kind: 'progress', phase: 'write', done: at.done, total: at.total });
+        r.emit({ kind: 'progress', phase: 'write', done: at.done, total: at.total });
       }
     } else if (at.step === 'verifying') {
-      enter('verify');
+      r.enter('verify');
     } else {
       verified = true;
-      emit({ kind: 'attention', attention: 'restarting', message: ATTENTION.restarting });
-      enter('restart');
+      r.emit({ kind: 'attention', attention: 'restarting', message: ATTENTION.restarting });
+      r.enter('restart');
     }
   };
 
-  if (asked()) return stopped('the remote was opened');
-  // What the remote is given is kept first, before a committed write opens anything.
-  if (request.commit) keeper.keep(built.bytes);
+  if (r.asked()) return r.stopped('the remote was opened');
   try {
-    const result = await writeConfiguration({
+    const result = await write(onStep);
+    if (result.outcome === 'nothing to write') return r.end({ result: 'nothing-to-write', remote: 'as-before', message: 'the remote already holds this configuration' });
+    if (result.outcome === 'dry run') {
+      return r.end({
+        result: 'dry-run', remote: 'as-before',
+        message: `everything up to the write was done, and ${result.blocks.length} ${result.blocks.length === 1 ? 'block' : 'blocks'} would be written`,
+      });
+    }
+    r.emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
+    return r.end({ result: 'written', remote: 'new-configuration' });
+  } catch (error) {
+    if (error instanceof ConfigWriteStopped) return r.stopped('the write');
+    if (!began) {
+      // Nothing that changes the remote was sent: a refusal of the write or of a rail, or a read that failed.
+      const result = error instanceof ConfigWriteRefusal || error instanceof RailError ? 'refused' : 'failed';
+      return r.end({ result, remote: 'as-before', message: said(error) });
+    }
+    if (verified) {
+      r.emit({ kind: 'attention', attention: 'restart-by-hand', message: ATTENTION['restart-by-hand'] });
+      return r.end({ result: 'failed', remote: 'new-configuration', message: `the configuration is written and read back, and the restart failed: ${said(error)}` });
+    }
+    return r.end({
+      result: 'failed', remote: 'needs-recovery',
+      message: `the write stopped part way: ${said(error)}. Leave the remote on its cable with its batteries in and run the same sync again, built at the same moment, which finishes the blocks it left`,
+    });
+  }
+}
+
+/**
+ * The two lines of the answerer's account that move a screen on, out of `SYNC_LINES`, its own list of every line it
+ * reports: the hand over starting, the first request that acts on the remote, and the sync started. Taken from the
+ * list rather than typed again, and `sync-attached-touch.test.ts` holds that each is still one of its forms and that
+ * the events follow it.
+ */
+const HANDING_OVER = SYNC_LINES.find((form) => form.test('sync: handing over the remote\'s changes'))!;
+const STARTED = SYNC_LINES.find((form) => form.test('sync: started'))!;
+
+/** The dry run's words for a set of documents, the same for every path. */
+const documentsDryRun = (documents: number, pictures: number): string =>
+  `everything before the remote is acted on was done, and the set holds ${documents} ${documents === 1 ? 'document' : 'documents'} `
+  + `and ${pictures} ${pictures === 1 ? 'picture' : 'pictures'}`;
+
+/** What a sync delivered as documents needs from its path, once the set is made and has passed the gate. */
+interface DocumentDelivery {
+  /** A dry run's one read: the remote's power source, opened for and closed again; throws as the open or the read does. */
+  readonly powerSource: () => Promise<TouchPowerSource>;
+  /**
+   * What a commit does before the remote is opened, the flags, the folder and the set kept: a refusal, or undefined.
+   * What it throws, a keeper whose folder or keep fails, ends the sync `failed` with the remote as it was.
+   */
+  readonly beforeCommit: () => string | undefined;
+  /** The answered sync, its account reported line by line; throws only before anything acts, as `answerTouchSync`. */
+  readonly answer: (report: (line: string) => void) => Promise<TouchSyncOutcome>;
+}
+
+/**
+ * From the gate on, for a remote given documents: a dry run's power source, and a commit's answered sync, whose
+ * account becomes the events and whose outcome becomes the sync's.
+ *
+ * **A dry run reads the remote's power source and ends**, refusing on any source but `usb` as a commit would, since a
+ * dry run exists to say up front whether a commit would go through. **A stop is honoured up to the moment the remote
+ * is opened, and never after**: the answerer takes no stop, so once it is called the sync runs to its end.
+ *
+ * **What the outcome says**, `SyncOutcome`'s header: `written` once the remote committed and finished; a refusal
+ * before the remote was acted on `refused` and `as-before`, a power source but `usb` among them; one after it `failed`
+ * and `needs-recovery`, with the recovery order and the abort's cost in the message; the remote's own abort `failed`
+ * and `as-before`. A throw out of the answer is always before anything acts: a rail's refusal is `refused`, anything
+ * else, the open or the session failing, `failed`, and either `as-before`.
+ */
+async function deliverDocuments(
+  r: Reporter, request: SyncRequest, counts: { readonly documents: number; readonly pictures: number }, path: DocumentDelivery,
+): Promise<SyncOutcome> {
+  if (!request.commit) {
+    // The power source, the one thing a dry run reads off the remote: a read, closed again before the dry run ends.
+    if (r.asked()) return r.stopped('the remote was opened');
+    let source: TouchPowerSource;
+    try {
+      source = await path.powerSource();
+    } catch (error) {
+      // Nothing that acts was sent: the open or the read failed, or the guard refused it.
+      return r.end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
+    }
+    r.say(`power source, ${describePowerSource(source)}`);
+    const unpowered = touchPowerRefusal(source);
+    if (unpowered !== undefined) return r.refused(unpowered);
+    return r.end({ result: 'dry-run', remote: 'as-before', message: documentsDryRun(counts.documents, counts.pictures) });
+  }
+
+  // The last moment a stop is honoured, the header says why.
+  if (r.asked()) return r.stopped('the remote was opened');
+  // A keeper that cannot make its folder or keep the set fails before anything is opened, and an application learns
+  // of it through the outcome as of every other failure, never as a throw out of `syncDocument`; the same as the
+  // keeper of a write into flash, whose keep runs inside the write `intoFlash` catches.
+  let before: string | undefined;
+  try {
+    before = path.beforeCommit();
+  } catch (error) {
+    return r.end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
+  }
+  if (before !== undefined) return r.refused(before);
+
+  /** The answerer's account: every line into the journal, and the two that move a screen on, into events. */
+  const report = (line: string): void => {
+    r.log(line);
+    if (HANDING_OVER.test(line)) {
+      // From the hand over on, the remote has been acted on: a cable pulled now can leave a sync marked running.
+      r.emit({ kind: 'attention', attention: 'do-not-unplug', message: ATTENTION['do-not-unplug'] });
+      r.enter('hand-over');
+    } else if (STARTED.test(line)) {
+      r.enter('write');
+    }
+  };
+  let outcome: TouchSyncOutcome;
+  try {
+    outcome = await path.answer(report);
+  } catch (error) {
+    // Every throw of the answer is before anything that acts on the remote was sent.
+    return r.end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
+  }
+  if (outcome.ending === 'finished') {
+    r.emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
+    return r.end({ result: 'written', remote: 'new-configuration' });
+  }
+  if (outcome.ending === 'aborted') {
+    // The remote's own abort deletes the set it was gathering and reloads the one it held before it is queued,
+    // `reference/architectures/harmony-touch/answering-a-sync.md` "How a sync aborts", so nothing is left running.
+    r.emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
+    return r.end({ result: 'failed', remote: 'as-before', message: 'the remote aborted the sync, deleted what it had gathered and kept the set it held' });
+  }
+  const reason = outcome.reason ?? 'no reason given';
+  if (!outcome.acted) return r.refused(reason);
+  return r.end({
+    result: 'failed', remote: 'needs-recovery',
+    message: `${reason}. Recovery: ${outcome.recovery ?? 'none stated'}. ${outcome.abortCost ?? ''}`.trimEnd(),
+  });
+}
+
+/**
+ * The set a build of documents is delivered as, through the answerer's gate, `touchSetOf`; the outcome where the gate
+ * refuses it, with nothing opened, as the answerer would refuse it with nothing sent.
+ */
+function setOf(r: Reporter, built: Extract<Built, { kind: 'documents' }>, addresses: Readonly<Record<string, string>>): TouchSet | SyncOutcome {
+  const made = touchSetOf(built, addresses);
+  if ('refusals' in made) return r.refused(firstOf(made.refusals, 'reason', 'the gate'));
+  r.say(`built ${Object.keys(built.documents).length} documents and ${built.pictures.length} pictures, `
+    + `a set of ${made.set.answers.length} answers the gate passes`);
+  return made.set;
+}
+
+// ---------------------------------------------------------------------------------------------------
+// The pretend remote
+// ---------------------------------------------------------------------------------------------------
+
+/** What `pretendRemote` keeps for a pretend remote, apart from the object an application holds. */
+interface PretendState {
+  holds: Recipe | undefined;
+  failIn: PretendFailure | undefined;
+  aborts: boolean;
+  readonly powerSource: TouchPowerSource;
+  readonly stepMs: number;
+  /** The skin it reports without being opened, as a remote on the cable reports it in its release word. */
+  readonly skin: number;
+  /** Its model's architecture, which says how large an erase block is and where a read finds the configuration. */
+  readonly architecture: number | undefined;
+  /** Its configuration region from the region's base, whole blocks where it was written; undefined is erased. */
+  region: Uint8Array | undefined;
+}
+
+/** Every pretend remote made here, by its object: what tells one made by `pretendRemote` from one put together. */
+const PRETEND = new WeakMap<PretendRemote, PretendState>();
+
+/** The state of a pretend remote made here, or a refusal of one put together by hand. */
+function stateOf(remote: PretendRemote): PretendState {
+  const state = PRETEND.get(remote);
+  if (state === undefined) throw new TypeError('a pretend remote comes through pretendRemote: this one was put together by hand');
+  return state;
+}
+
+/** The moment a pretend remote's first configuration is built at, where `PretendOptions.heldSources` names none. */
+const PRETEND_HELD_AT = '2026-01-01T00:00:00';
+
+/** A pretend remote of a model, R80. */
+export function pretendRemote(options: PretendOptions): PretendRemote {
+  const stepMs = options.stepMs ?? 0;
+  if (!Number.isFinite(stepMs) || stepMs < 0) throw new RangeError(`a pretend remote cannot take ${String(options.stepMs)} milliseconds over a step`);
+  // The model as the library knows it: a skin to report, an architecture, and the kind of family that builds for it.
+  let choice: ReturnType<typeof chooseByModel>;
+  try {
+    choice = chooseByModel(options.model);
+  } catch (error) {
+    throw new RangeError(`a pretend remote is of a model the library knows: ${said(error)}`);
+  }
+  // What it holds to begin with, built now where its model's configuration is written into flash, so that a read
+  // before any sync reads it and the first sync compares with it, as a remote on the cable is read and compared.
+  let region: Uint8Array | undefined;
+  if (options.holds !== undefined) {
+    if (options.holds.model.name !== options.model.name) {
+      throw new RangeError(`a pretend ${options.model.name} cannot hold a document for a ${options.holds.model.name}`);
+    }
+    if (choice.family.kind === 'compiled') {
+      const built = buildFromRecipe(options.holds, options.heldSources ?? { builtAt: PRETEND_HELD_AT });
+      if (built.kind === 'configuration') region = Uint8Array.from(built.bytes);
+    }
+  }
+  const state: PretendState = {
+    holds: options.holds,
+    failIn: options.failIn,
+    aborts: options.aborts === true,
+    powerSource: options.powerSource ?? 'usb',
+    stepMs,
+    skin: choice.skin,
+    architecture: choice.model?.architecture,
+    region,
+  };
+  const remote: PretendRemote = { kind: 'pretend', model: options.model, holds: () => state.holds };
+  PRETEND.set(remote, state);
+  return remote;
+}
+
+/** One step of a pretend remote's time, `PretendOptions.stepMs`. */
+const pause = async (state: PretendState): Promise<void> => {
+  if (state.stepMs > 0) await new Promise<void>((resolve) => { setTimeout(resolve, state.stepMs); });
+};
+
+/**
+ * What the pretend remote's stand ins throw when told to fail, each worded as the real path's own failure there is
+ * worded once it reaches the outcome: a remote that does not answer, a read back that differs, a restart not taken.
+ */
+const PRETEND_FAILS = {
+  identify: 'the remote did not answer when it was asked which unit it is',
+  backup: 'the remote stopped answering while what it holds was read',
+  write: 'the remote stopped answering',
+  verify: 'what the remote holds does not read back as what was written',
+  restart: 'the remote did not take the restart',
+  check: 'the document was refused by its check',
+  build: 'the document could not be built',
+} as const;
+
+/** Made up addresses for a pretend Harmony Touch's set, one per configuration document, each keyed by its name. */
+const PRETEND_ADDRESSES: Readonly<Record<string, string>> = Object.fromEntries(
+  harmonyTouch.CONFIGURATION_DOCUMENTS.map((name) => [name, `harmony://pretend/${name}`]),
+);
+
+/**
+ * The pretend remote's write into flash, in `writeConfiguration`'s steps and order: asked which unit it is, every block
+ * that differs read and compared, nothing to write where none differs, a dry run ended there, a stop honoured there and
+ * nowhere later, then the blocks erased and written one by one, the whole read back and the restart. **The blocks are
+ * the real write's**, `blocksDiffering` over what it holds and what was built, at its model's erase block size, so a
+ * screen's counts are the counts a remote on the cable would give for the same two configurations.
+ */
+function pretendFlashWrite(
+  state: PretendState, request: SyncRequest, bytes: Uint8Array, failIn: PretendFailure | undefined, name: string,
+): FlashWrite {
+  return async (onStep) => {
+    await pause(state);
+    if (failIn === 'identify') throw new Error(PRETEND_FAILS.identify);
+    onStep({ step: 'identified', unit: `a pretend ${name}` });
+    // Every model a document is synced into flash for has a write target, `CONFIG_WRITE_MODELS`; the refusal is
+    // `writeConfiguration`'s own for an architecture with none.
+    const blockSize = ERASE_BLOCK_SIZE[state.architecture ?? -1];
+    if (blockSize === undefined) throw new ConfigWriteRefusal(`architecture ${String(state.architecture)} has no write target`);
+    const held = state.region ?? new Uint8Array(0);
+    const length = Math.ceil(Math.max(held.length, bytes.length) / blockSize) * blockSize;
+    // What it holds, in whole blocks, erased past its end; and what it should hold, the new configuration over it.
+    const region = new Uint8Array(length).fill(0xff);
+    region.set(held, 0);
+    const target = Uint8Array.from(region);
+    target.set(bytes, 0);
+    const blocks = blocksDiffering(region, target, 0, blockSize);
+    if (blocks.length === 0) return { outcome: 'nothing to write', blocks };
+    for (let done = 1; done <= blocks.length; done += 1) {
+      await pause(state);
+      // A read that stops part way, at the block half way through, before it is reported compared, as the real write
+      // reports a block only once it is read. With one block to compare, no block is reported and the failure shows
+      // after the build, as it does on the cable.
+      if (failIn === 'backup' && done === Math.ceil(blocks.length / 2)) throw new Error(PRETEND_FAILS.backup);
+      onStep({ step: 'comparing', done, total: blocks.length });
+    }
+    if (!request.commit) return { outcome: 'dry run', blocks };
+    // The one point a stop is honoured, as in the real write: every block compared and nothing changed.
+    if (request.stop?.aborted === true) throw new ConfigWriteStopped('stopped before anything was written');
+    onStep({ step: 'writing', done: 0, total: blocks.length });
+    // From the first erase the remote holds no document of ours whole until the write is read back.
+    state.region = region;
+    state.holds = undefined;
+    const failAt = failIn === 'write' ? Math.floor(blocks.length / 2) : -1;
+    for (const [k, block] of blocks.entries()) {
+      await pause(state);
+      region.fill(0xff, block, block + blockSize);
+      // The block erased and not written, which the same sync run again finishes.
+      if (k === failAt) throw new Error(PRETEND_FAILS.write);
+      region.set(target.subarray(block, block + blockSize), block);
+      onStep({ step: 'writing', done: k + 1, total: blocks.length });
+    }
+    onStep({ step: 'verifying' });
+    await pause(state);
+    if (failIn === 'verify') {
+      // What reads back differs: the last block written reads erased, so a sync run again writes it.
+      const last = blocks.at(-1)!;
+      region.fill(0xff, last, last + blockSize);
+      throw new Error(PRETEND_FAILS.verify);
+    }
+    state.holds = request.document;
+    onStep({ step: 'restarting' });
+    await pause(state);
+    if (failIn === 'restart') throw new Error(PRETEND_FAILS.restart);
+    return { outcome: 'written', blocks };
+  };
+}
+
+/**
+ * The pretend remote's answered sync, in `answerTouchSync`'s order and lines, each one of `SYNC_LINES`: the open, the
+ * gate's line, the power source and its refusal, the provisioning, the hand over, the sync started, every list of the
+ * set answered, and the finish; a failure after the remote was acted on carries `RECOVERY` and the abort's cost as
+ * the answerer words them, `abortCost`.
+ */
+function pretendAnswer(
+  state: PretendState, request: SyncRequest, set: TouchSet, failIn: PretendFailure | undefined, aborts: boolean,
+): DocumentDelivery {
+  /** A refusal once the remote was acted on, as `syncTouch` ends one. */
+  const actedAndStopped = (report: (line: string) => void, stage: 'hand over' | 'sync', lists: number, answered: number): TouchSyncOutcome => {
+    const reason = `the run stopped on an error: ${PRETEND_FAILS.write}`;
+    const cost = abortCost(stage, []);
+    report(`sync: refused, ${reason}`);
+    report(`sync: recovery, ${RECOVERY}`);
+    report(`sync: recovery, ${cost}`);
+    return { ending: 'refused', reason, acted: true, recovery: RECOVERY, abortCost: cost, lists, answered, handedUp: [] };
+  };
+  return {
+    powerSource: async () => {
+      await pause(state);
+      if (failIn === 'identify') throw new Error(PRETEND_FAILS.identify);
+      return state.powerSource;
+    },
+    beforeCommit: () => undefined,
+    answer: async (report) => {
+      await pause(state);
+      if (failIn === 'identify') throw new Error(PRETEND_FAILS.identify);
+      const gate = prepareSet(set);
+      if ('refusals' in gate) throw new Error(gate.refusals[0]);
+      report(`sync: gate passed, ${gate.set.entries.size} answers, ${gate.set.tags.stated} tags stated and ${gate.set.tags.ours} ours`);
+      report(`sync: power source, ${describePowerSource(state.powerSource)}`);
+      const unpowered = touchPowerRefusal(state.powerSource);
+      if (unpowered !== undefined) {
+        report(`sync: refused, ${unpowered}`);
+        return { ending: 'refused', reason: unpowered, acted: false, lists: 0, answered: 0, handedUp: [] };
+      }
+      report('sync: provisioned, mode 0');
+      report('sync: handing over the remote\'s changes');
+      await pause(state);
+      if (failIn === 'hand-over') return actedAndStopped(report, 'hand over', 0, 0);
+      report('sync: hand over, request list 1, 1 answered');
+      report('sync: started');
+      await pause(state);
+      if (aborts) {
+        report('sync: request list 1, 1 answered');
+        report('sync: aborted');
+        return { ending: 'aborted', acted: true, lists: 1, answered: 1, handedUp: [] };
+      }
+      if (failIn === 'write') return actedAndStopped(report, 'sync', 0, 0);
+      // The lists a remote that holds none of the set asks: its documents, then its pictures, then the finish.
+      const lists = [
+        set.answers.filter((a) => a['body-type'] === 'application/json').length,
+        set.answers.filter((a) => a['body-type'] === 'image/png').length,
+        1,
+      ].filter((n) => n > 0);
+      for (const [k, n] of lists.entries()) {
+        await pause(state);
+        report(`sync: request list ${k + 1}, ${n} answered`);
+      }
+      report('sync: finished');
+      state.holds = request.document;
+      return { ending: 'finished', acted: true, lists: lists.length, answered: lists.reduce((a, b) => a + b, 0), handedUp: [] };
+    },
+  };
+}
+
+/**
+ * A sync to a pretend remote: the document checked and built for real, and handed to the stage every path shares
+ * with a stand in for the model's write path, `pretendFlashWrite` or `pretendAnswer`, so the events and the outcome are
+ * derived as an attached sync's are. Its own lines go into the journal under the pretend remote's name, so a journal
+ * never reads as a record of a remote that was there.
+ */
+async function syncPretend(request: SyncRequest, remote: PretendRemote, documents: boolean): Promise<SyncOutcome> {
+  const state = stateOf(remote);
+  const { document, journal } = request;
+  // One failure asked for is one failure: the sync after it runs as any other. A failure of the next read is the
+  // read's, and stays for it.
+  const failIn = state.failIn === 'read' ? undefined : state.failIn;
+  if (state.failIn !== 'read') state.failIn = undefined;
+  const aborts = state.aborts;
+  state.aborts = false;
+  const log = (line: string): void => journal(`pretend ${remote.model.name}: ${line}`);
+  const r = reporterOf(request, log, log);
+
+  const refusedAtIdentify = identify(r, document, documents, state.skin);
+  if (refusedAtIdentify !== undefined) return refusedAtIdentify;
+  const made = checkAndBuild(r, request, (phase) => (failIn === phase ? PRETEND_FAILS[phase] : undefined));
+  if ('outcome' in made) return made.outcome;
+  const { built } = made;
+
+  if (built.kind === 'configuration') {
+    r.say(`built a configuration of ${built.bytes.length} bytes for skin ${built.skin}, stamped ${request.sources.builtAt}`);
+    return intoFlash(r, request, pretendFlashWrite(state, request, built.bytes, failIn, remote.model.name));
+  }
+  const set = setOf(r, built, PRETEND_ADDRESSES);
+  if (!('answers' in set)) return set;
+  return deliverDocuments(r, request, { documents: Object.keys(built.documents).length, pictures: built.pictures.length },
+    pretendAnswer(state, request, set, failIn, aborts));
+}
+
+/**
+ * A read of a pretend remote, R80: what `readConfig` takes, a reader and the profile of the remote's model, served
+ * from what the pretend remote holds. The read itself is `readConfig`'s, so its progress, its retries and its checks
+ * are a real read's; a remote holding none of ours reads as erased and is refused by the same check as a remote that
+ * holds no configuration. Refused, as `profileFor` refuses a product id, for a model the read of a configuration does
+ * not serve: a Harmony Touch, whose documents no entry reads yet, and the Harmony 300 and 350.
+ */
+export function pretendReader(remote: PretendRemote): PretendRead {
+  const state = stateOf(remote);
+  const profile = PROFILES.find((one) => one.architecture === state.architecture);
+  if (profile === undefined) {
+    throw new ReadError(`no config base known for the ${remote.model.name}. Known: ${PROFILES.map((one) => one.model).join(', ')}`);
+  }
+  /** Where a read told to fail stops answering: half way into the configuration, past the windows before it. */
+  let failsFrom: number | undefined;
+  const reader: ConfigReader = {
+    getVersion: async () => {
+      await pause(state);
+      // The first command of every read: a failure asked for the next read is this read's.
+      if (state.failIn === 'read') {
+        state.failIn = undefined;
+        failsFrom = Math.floor((state.region?.length ?? 0) / 2);
+      }
+      return encodeVersionBlock({ architecture: state.architecture!, skin: state.skin });
+    },
+    readFlash: async (address, count) => {
+      await pause(state);
+      const at = address - profile.configBase;
+      // A window that is never answered, in the words the command layer gives silence, so the read asks again as
+      // often as it does on the cable and then gives up.
+      if (failsFrom !== undefined && at > 0 && at + count > failsFrom) throw new Error(`flash read returned 0 of ${count} bytes`);
+      const out = new Uint8Array(count).fill(0xff);
+      const held = state.region;
+      if (held !== undefined && at < held.length) out.set(held.subarray(Math.max(0, at), Math.min(held.length, at + count)), 0);
+      return out;
+    },
+  };
+  return { reader, profile };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// A remote on the cable
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * A sync to an attached remote whose configuration is written into flash: the document checked and built, and the
+ * configuration written by `writeConfiguration`, whose steps become the events through `intoFlash`.
+ */
+async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promise<SyncOutcome> {
+  const { document, journal } = request;
+  const r = reporterOf(request, (line) => journal(`sync: ${line}`), journal);
+
+  // Which model is on the cable, as far as its enumeration says: the skin a remote reports without being opened.
+  // Which unit it is, is read off the remote by the write, after every check that needs no remote has passed.
+  const refusedAtIdentify = identify(r, document, false, remote.found.release === undefined ? undefined : skinId(remote.found.release));
+  if (refusedAtIdentify !== undefined) return refusedAtIdentify;
+  // The keeper has to hold what a flash write needs: a keeper of a remote that asks for documents holds no region read
+  // and no records of these units, and handing it on would fail inside the write for a reason nobody named.
+  const keeper = remote.keeper;
+  if (keeper.kind !== 'compiled') {
+    return r.refused(`the remote on the cable is a ${document.model.name}, whose configuration is written into flash, and its keeper `
+      + 'holds what a sync of a remote that asks for documents needs, not the region read and unit records a write into flash compares with');
+  }
+
+  const made = checkAndBuild(r, request);
+  if ('outcome' in made) return made.outcome;
+  const { built } = made;
+  if (built.kind !== 'configuration') return r.refused(`the ${document.model.name} is given documents, which this path does not write`);
+  r.say(`built a configuration of ${built.bytes.length} bytes for skin ${built.skin}, stamped ${request.sources.builtAt}`);
+
+  return intoFlash(r, request, async (onStep) => {
+    // What the remote is given is kept first, before a committed write opens anything. A keep that throws is caught
+    // by `intoFlash` before the write began, so the sync ends `failed` with the remote as it was and nothing opened,
+    // as a Harmony Touch's keeper that fails does, `deliverDocuments`.
+    if (request.commit) keeper.keep(built.bytes);
+    return writeConfiguration({
       config: { name: `the configuration built for ${document.model.name}`, bytes: built.bytes },
       region: keeper.region,
       units: keeper.units,
@@ -636,31 +1074,7 @@ async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promi
       onStep,
       ...(request.stop === undefined ? {} : { stop: request.stop }),
     });
-    if (result.outcome === 'nothing to write') return end({ result: 'nothing-to-write', remote: 'as-before', message: 'the remote already holds this configuration' });
-    if (result.outcome === 'dry run') {
-      return end({
-        result: 'dry-run', remote: 'as-before',
-        message: `everything up to the write was done, and ${result.blocks.length} ${result.blocks.length === 1 ? 'block' : 'blocks'} would be written`,
-      });
-    }
-    emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
-    return end({ result: 'written', remote: 'new-configuration' });
-  } catch (error) {
-    if (error instanceof ConfigWriteStopped) return stopped('the write');
-    if (!began) {
-      // Nothing that changes the remote was sent: a refusal of the write or of a rail, or a read that failed.
-      const result = error instanceof ConfigWriteRefusal || error instanceof RailError ? 'refused' : 'failed';
-      return end({ result, remote: 'as-before', message: said(error) });
-    }
-    if (verified) {
-      emit({ kind: 'attention', attention: 'restart-by-hand', message: ATTENTION['restart-by-hand'] });
-      return end({ result: 'failed', remote: 'new-configuration', message: `the configuration is written and read back, and the restart failed: ${said(error)}` });
-    }
-    return end({
-      result: 'failed', remote: 'needs-recovery',
-      message: `the write stopped part way: ${said(error)}. Leave the remote on its cable with its batteries in and run the same sync again, built at the same moment, which finishes the blocks it left`,
-    });
-  }
+  });
 }
 
 /**
@@ -671,89 +1085,37 @@ async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promi
 const TOUCH_SYNC_MODELS: readonly string[] = ['Harmony Touch'];
 
 /**
- * The two lines of the answerer's account that move a screen on, out of `SYNC_LINES`, its own list of every line it
- * reports: the hand over starting, the first request that acts on the remote, and the sync started. Taken from the
- * list rather than typed again, and `sync-attached-touch.test.ts` holds that each is still one of its forms and that
- * the events follow it.
- */
-const HANDING_OVER = SYNC_LINES.find((form) => form.test('sync: handing over the remote\'s changes'))!;
-const STARTED = SYNC_LINES.find((form) => form.test('sync: started'))!;
-
-/**
  * A sync to an attached Harmony Touch: the document checked and built, the set its documents are delivered as made
- * and passed through the gate, and the set answered by `answerTouchSync`, whose account becomes the events.
+ * and passed through the gate, and the set answered by `answerTouchSync`, whose account becomes the events through
+ * `deliverDocuments`.
  *
  * **The order**, each refusal before anything is opened ending `refused` with the remote as it was: the model the
  * remote enumerates as, by its skin, against the document's, and the keeper's kind, its unit against the library's
  * list, `identify`; the document's check, `check`; the build, which needs the account, and the set made from it at
  * the keeper's addresses with the gate over it, `build`. **A dry run then reads the remote's power source and
- * ends**: it opens the remote, reads the identity file and `/tde/powerstate` through the read only route, closes it, and refuses on any
- * source but `usb` as a commit would, since a dry run exists to say up front whether a commit would go through; it
- * sends nothing that acts and needs no flag, which is `bin/touch-sync.ts --document` without `--commit`. A commit then
- * checks the flags, makes the keeper's folder, keeps the set, and hands it to `answerTouchSync`, which opens the
- * remote, reads its power source, compares its serial with the record, refuses on any source but `usb`, reads its
- * provisioning, and only then acts: `hand-over` from its line saying so, `write` from its line saying the sync
- * started.
+ * ends**: it opens the remote, reads the identity file and `/tde/powerstate` through the read only route, closes it,
+ * and refuses on any source but `usb` as a commit would; it sends nothing that acts and needs no flag, which is
+ * `bin/touch-sync.ts --document` without `--commit`. A commit then checks the flags, makes the keeper's folder, keeps
+ * the set, and hands it to `answerTouchSync`, which opens the remote, reads its power source, compares its serial with
+ * the record, refuses on any source but `usb`, reads its provisioning, and only then acts: `hand-over` from its line
+ * saying so, `write` from its line saying the sync started.
  *
  * **A stop is honoured up to the moment the remote is opened, and never after.** The first request that acts is the
  * hand over, and between the open and it there are only reads, the power source, the identity file, the gate run
- * again and the provisioning read, at which a stop could in principle still be honoured; but the answerer takes no stop and is not
- * changed here, so once it is called the sync runs to its end. That is the last check before `answerTouchSync`.
- *
- * **What the outcome says**, `SyncOutcome`'s header: `written` once the remote committed and finished; a refusal
- * before the remote was acted on `refused` and `as-before`, a power source but `usb` among them, in a dry run and a
- * commit alike; one after it `failed` and `needs-recovery`, with the
- * recovery order and the abort's cost in the message, since those are what a person does next; and the remote's own
- * abort `failed` and `as-before`. A throw out of `answerTouchSync` is always before anything acts, its header says so:
- * a rail's refusal is `refused`, anything else, the open or the session failing, `failed`, and either `as-before`.
+ * again and the provisioning read, at which a stop could in principle still be honoured; but the answerer takes no
+ * stop and is not changed here, so once it is called the sync runs to its end.
  */
 async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): Promise<SyncOutcome> {
   const { document, journal } = request;
-  // An observer never stops a sync, as `syncAttached` argues: once the hand over has begun, a screen that throws must
-  // not be what leaves a sync marked running on the remote.
-  const emit = (event: SyncEvent): void => {
-    try {
-      request.onEvent(event);
-    } catch {
-      // Dropped on purpose.
-    }
-  };
-  const end = (outcome: SyncOutcome): SyncOutcome => {
-    journal(`sync: ${outcome.result}, the remote ${outcome.remote}${outcome.message === undefined ? '' : `: ${outcome.message}`}`);
-    emit({ kind: 'outcome', outcome });
-    return outcome;
-  };
-  const refused = (message: string): SyncOutcome => end({ result: 'refused', remote: 'as-before', message });
-  const stopped = (before: string): SyncOutcome => end({ result: 'stopped', remote: 'as-before', message: `stopped before ${before}, with nothing written` });
-  const said = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-  const asked = (): boolean => request.stop?.aborted === true;
-  const enter = (next: SyncPhase): void => {
-    journal(`sync: ${next}`);
-    emit({ kind: 'phase', phase: next });
-  };
-  /** The first refusal of a list, and how many more there are, as a sentence. */
-  const first = (refusals: readonly string[], of: string): string => {
-    const more = refusals.length - 1;
-    return `${refusals[0]!}${more === 0 ? '' : `, and ${more} more ${more === 1 ? 'reason' : 'reasons'} ${of} lists`}`;
-  };
+  const r = reporterOf(request, (line) => journal(`sync: ${line}`), journal);
 
-  if (asked()) return stopped('identify');
-  enter('identify');
   // The model as the remote enumerates it, by the skin in its release word, which a Harmony Touch states as 99 and the
   // Harmony Elite, on the same product id, as 111; the unit is the session's to read once the remote is opened.
-  let skin: number;
-  try {
-    skin = chooseByModel(document.model).skin;
-  } catch (error) {
-    return refused(said(error));
-  }
-  const attached = remote.found.release === undefined ? undefined : skinId(remote.found.release);
-  if (attached !== skin) {
-    return refused(`the document is for a ${document.model.name}, skin ${skin}, and the remote on the cable reports ${attached === undefined ? 'no skin' : `skin ${attached}`}`);
-  }
+  const refusedAtIdentify = identify(r, document, true, remote.found.release === undefined ? undefined : skinId(remote.found.release));
+  if (refusedAtIdentify !== undefined) return refusedAtIdentify;
   const keeper = remote.keeper;
   if (keeper.kind !== 'document') {
-    return refused(`the remote on the cable is a ${document.model.name}, which asks for its documents and is answered, and its keeper `
+    return r.refused(`the remote on the cable is a ${document.model.name}, which asks for its documents and is answered, and its keeper `
       + 'holds what a write into flash needs, not the unit record, the account\'s addresses and the folder an answered sync keeps');
   }
   // The library's list of units, asked now so a dry run is refused for a unit a commit would be; the same check and
@@ -761,92 +1123,48 @@ async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): 
   try {
     assertTouchSyncUnit(keeper.label);
   } catch (error) {
-    return refused(said(error));
+    return r.refused(said(error));
   }
 
-  if (asked()) return stopped('check');
-  enter('check');
-  let errors: ReturnType<typeof recipe.check>;
-  try {
-    errors = recipe.check(document).filter((one) => one.severity === 'error');
-  } catch (error) {
-    return refused(said(error));
-  }
-  if (errors.length > 0) return refused(first(errors.map((one) => one.message), 'the check'));
-
-  if (asked()) return stopped('build');
-  enter('build');
-  let built: Built;
-  try {
-    built = buildFromRecipe(document, request.sources);
-  } catch (error) {
-    return refused(said(error));
-  }
-  if (built.kind !== 'documents') return refused(`the ${document.model.name} is given a configuration, which this path does not answer`);
-  // The set the documents are delivered as, at the keeper's addresses, through the answerer's gate: a set the gate
-  // refuses is refused here with nothing opened, as the answerer would refuse it with nothing sent.
-  const made = touchSetOf(built, keeper.addresses);
-  if ('refusals' in made) return refused(first(made.refusals, 'the gate'));
-  const set = made.set;
-  journal(`sync: built ${Object.keys(built.documents).length} documents and ${built.pictures.length} pictures, `
-    + `a set of ${set.answers.length} answers the gate passes`);
+  const made = checkAndBuild(r, request);
+  if ('outcome' in made) return made.outcome;
+  const { built } = made;
+  if (built.kind !== 'documents') return r.refused(`the ${document.model.name} is given a configuration, which this path does not answer`);
+  // The set the documents are delivered as, at the keeper's addresses, through the answerer's gate.
+  const set = setOf(r, built, keeper.addresses);
+  if (!('answers' in set)) return set;
 
   /** Open the Touch: the keeper's way, a test's stand in, or the one found, through the file protocol's guard. */
   const openTouch = keeper.open ?? (() => openFileBasedRemote({
     productId: remote.found.productId, ...(remote.found.path === undefined ? {} : { path: remote.found.path }),
   }));
-
-  if (!request.commit) {
-    // The power source, the one thing a dry run reads off the remote: a read, closed again before the dry run ends.
-    if (asked()) return stopped('the remote was opened');
-    let source: string;
-    try {
+  let folder = '';
+  return deliverDocuments(r, request, { documents: Object.keys(built.documents).length, pictures: built.pictures.length }, {
+    powerSource: async () => {
       const transport = await openTouch();
       try {
-        source = await readTouchPowerSource(transport);
+        return await readTouchPowerSource(transport);
       } finally {
         await transport.close();
       }
-    } catch (error) {
-      // Nothing that acts was sent: the open or the read failed, or the guard refused it.
-      return end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
-    }
-    journal(`sync: power source, ${describePowerSource(source)}`);
-    const unpowered = touchPowerRefusal(source);
-    if (unpowered !== undefined) return refused(unpowered);
-    return end({ result: 'dry-run', remote: 'as-before', message: documentsDryRun(Object.keys(built.documents).length, built.pictures.length) });
-  }
-
-  // The last moment a stop is honoured, the header says why.
-  if (asked()) return stopped('the remote was opened');
-  // The flags, before a folder is made or the set kept: `answerTouchSync` asks the same again before it opens
-  // anything, so this moves no rail; asking here leaves nothing behind for a commit that cannot run, as
-  // `bin/touch-sync.ts` asks first for the same reason.
-  try {
-    assertTouchSyncAllowed();
-  } catch (error) {
-    return refused(said(error));
-  }
-  const folder = keeper.folder();
-  const taken = touchFolderRefusal(folder);
-  if (taken !== undefined) return refused(taken);
-  // What the remote is given is kept first, before anything is opened.
-  keeper.keep(set);
-
-  /** The answerer's account: every line into the journal, and the two that move a screen on, into events. */
-  const report = (line: string): void => {
-    journal(line);
-    if (HANDING_OVER.test(line)) {
-      // From the hand over on, the remote has been acted on: a cable pulled now can leave a sync marked running.
-      emit({ kind: 'attention', attention: 'do-not-unplug', message: ATTENTION['do-not-unplug'] });
-      enter('hand-over');
-    } else if (STARTED.test(line)) {
-      enter('write');
-    }
-  };
-  let outcome: TouchSyncOutcome;
-  try {
-    outcome = await answerTouchSync({
+    },
+    beforeCommit: () => {
+      // The flags, before a folder is made or the set kept: `answerTouchSync` asks the same again before it opens
+      // anything, so this moves no rail; asking here leaves nothing behind for a commit that cannot run, as
+      // `bin/touch-sync.ts` asks first for the same reason.
+      try {
+        assertTouchSyncAllowed();
+      } catch (error) {
+        return said(error);
+      }
+      folder = keeper.folder();
+      const taken = touchFolderRefusal(folder);
+      if (taken !== undefined) return taken;
+      // What the remote is given is kept first, before anything is opened.
+      keeper.keep(set);
+      return undefined;
+    },
+    answer: (report) => answerTouchSync({
       mode: { kind: 'set', set },
       folder,
       label: keeper.label,
@@ -854,46 +1172,29 @@ async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): 
       open: openTouch,
       log: journal,
       report,
-    });
-  } catch (error) {
-    // Every throw of `answerTouchSync` is before anything that acts on the remote was sent.
-    return end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
-  }
-  if (outcome.ending === 'finished') {
-    emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
-    return end({ result: 'written', remote: 'new-configuration' });
-  }
-  if (outcome.ending === 'aborted') {
-    // The remote's own abort deletes the set it was gathering and reloads the one it held before it is queued,
-    // `reference/architectures/harmony-touch/answering-a-sync.md` "How a sync aborts", so nothing is left running.
-    emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
-    return end({ result: 'failed', remote: 'as-before', message: 'the remote aborted the sync, deleted what it had gathered and kept the set it held' });
-  }
-  const reason = outcome.reason ?? 'no reason given';
-  if (!outcome.acted) return refused(reason);
-  return end({
-    result: 'failed', remote: 'needs-recovery',
-    message: `${reason}. Recovery: ${outcome.recovery ?? 'none stated'}. ${outcome.abortCost ?? ''}`.trimEnd(),
+    }),
   });
 }
 
 /**
  * Sync a document to a remote, R79: checked, built, written by the model's own write path and, where that path reads
  * back, read back; reported as events. Resolves with the outcome, which is also the last event; a document or a remote
- * that is refused is an outcome and not a throw. Built to a pretend remote, to an attached remote of a model whose
- * configuration is written into flash, and to an attached Harmony Touch; to an attached remote of any other model it
- * refuses by name before anything is opened.
+ * that is refused is an outcome and not a throw. Built for the Harmony One, 600, 650 and 700 and the Harmony Touch, on
+ * the cable and as a pretend remote; for a document of any other model it refuses by name before anything is opened.
  */
 export async function syncDocument(request: SyncRequest): Promise<SyncOutcome> {
   const remote = request.remote;
-  if (remote.kind === 'pretend') return syncPretend(request, remote);
   const model = request.document.model.name;
   // The path is chosen by the document's model: a Touch's document to a Touch's path, which refuses a remote that
   // enumerates as another model, and so on for flash. Which remote is attached never chooses the path, so a document
-  // is never handed to a write path that was not built for it.
-  if (TOUCH_SYNC_MODELS.includes(model)) return syncAttachedTouch(request, remote);
+  // is never handed to a write path that was not built for it, and a pretend remote takes the same path.
+  const documents = TOUCH_SYNC_MODELS.includes(model);
   // The models `writeConfiguration` writes and a document builds for. The Harmony 885 is written by it and built
-  // from no document yet, which its build says; the Harmony 300 and 350 are written by a path of their own.
-  if (!Object.hasOwn(CONFIG_WRITE_MODELS, model)) throw new NotBuiltError(`syncDocument for an attached ${model}`, 79);
-  return syncAttached(request, remote);
+  // from no document yet, which its build says; the Harmony 300 and 350 are written by a path of their own, not
+  // behind this function yet, so a pretend remote of theirs refuses as an attached one does.
+  if (!documents && !Object.hasOwn(CONFIG_WRITE_MODELS, model)) {
+    throw new NotBuiltError(`syncDocument for ${remote.kind === 'pretend' ? 'a pretend' : 'an attached'} ${model}`, 79);
+  }
+  if (remote.kind === 'pretend') return syncPretend(request, remote, documents);
+  return documents ? syncAttachedTouch(request, remote) : syncAttached(request, remote);
 }

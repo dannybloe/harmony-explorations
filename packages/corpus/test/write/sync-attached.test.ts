@@ -31,23 +31,13 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 
 import { NotBuiltError, recipe } from '@harmony/codec/node';
 import { syncDocument, type SyncRequest } from '../../src/write.ts';
-import { runSync, type SyncRun, type SyncScenario } from './sync-attached-run.ts';
+import { runSync, runSyncCommitted, type SyncRun } from './sync-attached-run.ts';
 
-/** One run in a process of its own with the two write flags set. */
-function withFlags(scenario: SyncScenario): SyncRun {
-  const out = execFileSync(process.execPath, [fileURLToPath(new URL('./sync-attached-run.ts', import.meta.url))], {
-    input: JSON.stringify(scenario),
-    env: { ...process.env, HARMONY_ENABLE_WRITES: '1', HARMONY_FIRST_WRITE: '1' },
-    encoding: 'utf8',
-    maxBuffer: 1 << 26,
-  });
-  return JSON.parse(out) as SyncRun;
-}
+/** One run in a process of its own with the two write flags set, `runSyncCommitted`. */
+const withFlags = runSyncCommitted;
 
 /** The pretend remote's calls that change a remote. */
 const changes = (run: SyncRun): string[] => run.calls.filter((call) => /^(eraseFlash|writeFlash|invalidateCachedRegions|resetDevice)/.test(call));
@@ -190,4 +180,24 @@ test('a sync to an attached remote of a model with a write path of its own refus
     }) as SyncRequest;
     await assert.rejects(() => syncDocument(further), /the request's journal was read/, model.name);
   }
+});
+
+test('a keeper that cannot keep the configuration ends the sync failed with the remote as it was, in its own words, with nothing opened', () => {
+  // An application learns of every failure through the outcome, so a keeper's throw is one too, never a rejection.
+  const run = withFlags({ commit: true, keepFails: 'the disk holding the backups is full' });
+  assert.deepEqual(run.outcome, { result: 'failed', remote: 'as-before', message: 'the disk holding the backups is full' });
+  assert.deepEqual(run.words, ['identify', 'check', 'build', '= failed']);
+  assert.deepEqual([run.opened, run.kept, changes(run).length, run.unchanged], [0, 0, 0, true]);
+  // The control: the same run with a keeper that keeps is the first test's, which is written.
+});
+
+test('a document the check refuses more than once is refused naming its first problem and counting the rest, in one wording', async () => {
+  // Two keys given a second command when held: two problems, the second counted, with nothing opened.
+  const run = await runSync({ heldKeys: true });
+  assert.deepEqual(run.outcome, {
+    result: 'refused', remote: 'as-before',
+    message: 'Television\'s own map gives the VolumeUp key a second command when held, which nothing builds yet, and 1 more problem the check lists',
+  });
+  assert.deepEqual(run.words, ['identify', 'check', '= refused']);
+  assert.equal(run.opened, 0);
 });

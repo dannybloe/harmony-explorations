@@ -651,6 +651,35 @@ export function touchFolderRefusal(folder: string): string | undefined {
 const fileName = (n: number, what: string): string => `${String(n).padStart(3, '0')}-${what}`;
 
 /**
+ * What an abort would cost where a run stands, the second recovery line of a refusal after the remote was acted on:
+ * `stage` is where the run stood, before the hand over, in it, or in the sync after it, and `handedUp` the keys of what
+ * the remote handed up so far. Inside the hand over it is the handed up document's tag, whether or not its answer was
+ * written: before it, the abort empties the outgoing queue the change waits in; after it, the change is already off
+ * that queue, and the screens never sent the commit that would have kept our tag. Once the hand over ended, it was
+ * committed before `proxy://Finished` was queued, so an abort in the sync costs no tag.
+ *
+ * **A function of its own rather than a closure of `syncTouch`** so that the pretend remote of `sync.ts`, which tells
+ * a refusal after the remote was acted on as this answerer tells it, words it with the same sentences rather than a
+ * copy of them.
+ */
+export function abortCost(stage: 'before' | 'hand over' | 'sync', handedUp: readonly string[]): string {
+  const names = handedUp.map((k) => (k.includes(':') ? 'a favourites document' : k)).join(' and ');
+  if (stage === 'hand over') {
+    if (handedUp.length === 0) {
+      return 'abort cost, if a change was waiting on the remote an abort now empties the queue it waits in, and '
+        + 'that document keeps no tag; ask before aborting';
+    }
+    return `abort cost, ${names}: the change made to it on the remote stays there with no tag and is never handed up `
+      + 'again, so a later --unchanged run refuses at it; ask before aborting';
+  }
+  if (handedUp.length > 0) {
+    return `abort cost, none to a tag: the hand over committed ${names} under a tag of ours, and an abort now leaves `
+      + 'the committed set as it is';
+  }
+  return 'abort cost, none to a tag: an abort now leaves the committed set as it is';
+}
+
+/**
  * Drive one sync down, from the gate to `proxy://Finished` or `proxy://Abort`, as the header lists. Never
  * throws for a refusal or for the remote failing to answer: every ending is an outcome, a refusal after the
  * remote was acted on naming `RECOVERY`. It throws only when the folder cannot be used, before anything is
@@ -773,29 +802,8 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     }
   };
 
-  /**
-   * What an abort would cost where the run stands, the header's second recovery line. Inside the hand over it
-   * is the handed up document's tag, whether or not its answer was written: before it, the abort empties the
-   * outgoing queue the change waits in; after it, the change is already off that queue, and the screens never
-   * sent the commit that would have kept our tag. Once the hand over ended, it was committed before
-   * `proxy://Finished` was queued, so an abort in the sync costs no tag.
-   */
-  const costOfAnAbort = (): string => {
-    const names = handedUp.map((k) => (k.includes(':') ? 'a favourites document' : k)).join(' and ');
-    if (stage === 'hand over') {
-      if (handedUp.length === 0) {
-        return 'abort cost, if a change was waiting on the remote an abort now empties the queue it waits in, and '
-          + 'that document keeps no tag; ask before aborting';
-      }
-      return `abort cost, ${names}: the change made to it on the remote stays there with no tag and is never handed up `
-        + 'again, so a later --unchanged run refuses at it; ask before aborting';
-    }
-    if (handedUp.length > 0) {
-      return `abort cost, none to a tag: the hand over committed ${names} under a tag of ours, and an abort now leaves `
-        + 'the committed set as it is';
-    }
-    return 'abort cost, none to a tag: an abort now leaves the committed set as it is';
-  };
+  /** What an abort would cost where the run stands, `abortCost`, which says why. */
+  const costOfAnAbort = (): string => abortCost(stage, handedUp);
 
   const end = (outcome: Omit<TouchSyncOutcome, 'acted' | 'lists' | 'answered' | 'handedUp'>): TouchSyncOutcome => {
     const whole = { ...outcome, acted, lists, answered, handedUp };

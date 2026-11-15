@@ -519,9 +519,13 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 review's withhold list gained a row for it. It also holds the
                                 contract of the sync an application calls, `syncDocument` and a
                                 pretend remote in `src/sync.ts`, one function for every model that
-                                reports as events: the pretend remote and a sync to one are
-                                built, the document checked and built for real and the cable
-                                pretended, and so is a sync to an attached Harmony One, 600, 650
+                                reports as events: the pretend remote, R80, and a sync to one are
+                                built, the document checked and built for real and only the cable
+                                pretended, through the same stages an attached sync goes through,
+                                so its events and outcomes are the real path's,
+                                `test/write/pretend-against-attached.test.ts`; `pretendReader`
+                                hands `readConfig` a reader over what it holds; and so is a sync
+                                to an attached Harmony One, 600, 650
                                 or 700, which hands the built configuration to
                                 `writeConfiguration` with the keeper's records of the unit and
                                 turns its steps into events, adding nothing to the write path, and

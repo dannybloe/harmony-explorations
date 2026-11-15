@@ -40,12 +40,14 @@ export {
 export type { SetAnswer, TouchSet, TouchSyncMode, TouchSyncOutcome, TouchSyncRun } from './touchsync.ts';
 
 // **Syncing a document**, the contract an application writes a remote through, decision 38: one function for every
-// model, reporting as events, and a pretend remote to run it against. Built to a pretend remote, to an attached
-// Harmony One, 600, 650 or 700, over `writeConfiguration`, and to an attached Harmony Touch, over `answerTouchSync`;
-// to an attached remote of any other model it refuses by name. The keeper is one of two kinds, by the kind of family
-// the remote's model is chosen into: `CompiledKeeper` for a write into flash, `DocumentKeeper` for an answered sync.
-export { pretendRemote, syncDocument } from './sync.ts';
+// model, reporting as events, and a pretend remote to run it against, R80, which a read of a configuration,
+// `readConfig` on the main entry, reads through `pretendReader`. Built to a pretend remote and to an attached remote of
+// the same models: a Harmony One, 600, 650 or 700, over `writeConfiguration`, and a Harmony Touch, over
+// `answerTouchSync`; for a document of any other model it refuses by name. The keeper is one of two kinds, by the kind
+// of family the remote's model is chosen into: `CompiledKeeper` for a write into flash, `DocumentKeeper` for an
+// answered sync.
+export { SYNC_ENDINGS, pretendReader, pretendRemote, syncDocument } from './sync.ts';
 export type {
-  AttachedRemote, CompiledKeeper, DocumentKeeper, PretendOptions, PretendRemote, RemoteKeeper, SyncAttention, SyncEvent,
-  SyncOutcome, SyncPhase, SyncRemote, SyncRequest,
+  AttachedRemote, CompiledKeeper, DocumentKeeper, PretendFailure, PretendOptions, PretendRead, PretendRemote, RemoteKeeper,
+  SyncAttention, SyncEnding, SyncEvent, SyncOutcome, SyncPhase, SyncRemote, SyncRequest,
 } from './sync.ts';

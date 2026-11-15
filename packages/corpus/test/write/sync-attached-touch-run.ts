@@ -15,7 +15,9 @@
  *
  * Not a test file itself, so the runner does not pick it up.
  */
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -77,6 +79,16 @@ export interface TouchScenario {
   readonly observerThrows?: boolean;
   /** The text the pretend Touch's `/tde/powerstate` serves; its own default, `usb` and a newline, when absent. */
   readonly powerstate?: string;
+  /** The remote does not answer when it is opened, with these words. */
+  readonly openFails?: string;
+  /** The remote answers the hand over's request list with status 500, once the hand over has begun. */
+  readonly handOverFails?: boolean;
+  /** The keeper cannot make the run's folder, and says so in these words. */
+  readonly folderFails?: string;
+  /** The keeper cannot keep the set it is handed, and says so in these words. */
+  readonly keepFails?: string;
+  /** The Touch's document gives two keys of its first device a second command when held, four problems of its check. */
+  readonly heldKeys?: boolean;
 }
 
 export interface TouchRun {
@@ -118,10 +130,24 @@ const words = (events: readonly SyncEvent[]): string[] => events.map((event) => 
   : event.kind === 'progress' ? `${event.phase} ${event.done}/${event.total}`
     : event.kind === 'attention' ? `! ${event.attention}` : `= ${event.outcome.result}`));
 
+/**
+ * The Harmony Touch's reference recipe with two keys of its first device given a second command when held: its check
+ * refuses each twice, once for a key chosen on a Harmony Touch and once for the held press, four problems.
+ */
+export function heldKeysTouchDocument(): Recipe {
+  const json = JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')) as { devices: { keys?: unknown[] }[] };
+  json.devices[0]!.keys = [
+    { key: 'VolumeUp', press: 'held', action: { nothing: true } },
+    { key: 'VolumeDown', press: 'held', action: { nothing: true } },
+  ];
+  return recipe.open(json);
+}
+
 export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
   const document: Recipe = scenario.document === 'one'
     ? recipe.create({ name: 'Harmony One', skin: 54 })
-    : recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
+    : scenario.heldKeys === true ? heldKeysTouchDocument()
+      : recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
 
   const handOver = [listAnswer([{ verb: 'POST', uri: 'proxy://Finished' }])];
   const sync = (scenario.sync ?? defaultSync()).map(listAnswer);
@@ -137,7 +163,10 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
         started = true;
         return OK(SYNC);
       }
-      if (line.startsWith(READ_LIST)) return (started ? sync : handOver).shift() ?? listAnswer([]);
+      if (line.startsWith(READ_LIST)) {
+        if (!started && scenario.handOverFails === true) return 'Response,{"errorCode":"500"}';
+        return (started ? sync : handOver).shift() ?? listAnswer([]);
+      }
       if (line.startsWith(WRITE_ANSWERS)) return OK(WRITE_ANSWERS);
       return 'Response,{"errorCode":"404"}';
     },
@@ -168,6 +197,7 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
       permittedUnit: unitIdentityFromSerial(scenario.recordSerial ?? SERIAL),
       addresses,
       folder: () => {
+        if (scenario.folderFails !== undefined) throw new Error(scenario.folderFails);
         folders += 1;
         const folder = join(base, 'run');
         if (scenario.folderTaken === true) {
@@ -176,9 +206,13 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
         }
         return folder;
       },
-      keep: (set) => { kept.push(set); },
+      keep: (set) => {
+        if (scenario.keepFails !== undefined) throw new Error(scenario.keepFails);
+        kept.push(set);
+      },
       open: async () => {
         opened += 1;
+        if (scenario.openFails !== undefined) throw new Error(scenario.openFails);
         return guardFileProtocol(remote, TOUCH_PRODUCT);
       },
     };
@@ -216,10 +250,40 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
   return { words: words(events), outcome, journal, written, answers, kept, folders, opened, closed, openedPaths: remote.opened };
 }
 
+/**
+ * One run in a process of its own with the two request flags set and the recovery flag unset, which is how a test
+ * commits: the rails read the flags once, as they load, so the test's own process, which has neither, cannot.
+ */
+export function runTouchSyncCommitted(scenario: TouchScenario): TouchRun {
+  return runTouchSyncCommittedAll([scenario])[0]!;
+}
+
+/**
+ * Several runs in one process of their own with the two request flags set, one after another, each with its own stand
+ * in, folder and keeper, so a test that commits many pays for one process rather than one per run.
+ */
+export function runTouchSyncCommittedAll(scenarios: readonly TouchScenario[]): TouchRun[] {
+  const out = execFileSync(process.execPath, [fileURLToPath(import.meta.url)], {
+    input: JSON.stringify(scenarios),
+    env: { ...process.env, HARMONY_ENABLE_WRITES: '1', HARMONY_TOUCH_REQUESTS: '1', HARMONY_TOUCH_RECOVERY: '' },
+    encoding: 'utf8',
+    maxBuffer: 1 << 26,
+  });
+  return JSON.parse(out) as TouchRun[];
+}
+
 async function main(): Promise<void> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
-  process.stdout.write(JSON.stringify(await runTouchSync(JSON.parse(Buffer.concat(chunks).toString('utf8')) as TouchScenario)));
+  // A list of scenarios is run one after another and answered as a list; one scenario alone, as itself.
+  const asked = JSON.parse(Buffer.concat(chunks).toString('utf8')) as TouchScenario | TouchScenario[];
+  if (!Array.isArray(asked)) {
+    process.stdout.write(JSON.stringify(await runTouchSync(asked)));
+    return;
+  }
+  const runs: TouchRun[] = [];
+  for (const scenario of asked) runs.push(await runTouchSync(scenario));
+  process.stdout.write(JSON.stringify(runs));
 }
 
 if (import.meta.main) {
