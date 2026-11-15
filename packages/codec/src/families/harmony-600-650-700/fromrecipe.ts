@@ -12,13 +12,15 @@
  * blended when the choices say so, and the one a setup is assembled onto never has, since `assembleSetup` blends once,
  * last, over every text it adds, and refuses a donor that is blended already.
  */
-import type { Recipe } from '../../recipe/recipe.ts';
+import { refuseUnbuiltFields, type Recipe } from '../../recipe/recipe.ts';
 import type { RecipeSources } from '../family.ts';
 import { assembleSetup } from './assemble.ts';
 import { fourSlotChoices, OUR_FOUR_SLOT_CHOICES, type FourSlotChoicesGiven } from './choices.ts';
 import { buildEmptyFourSlotConfiguration } from './empty.ts';
 
 export function fourSlotFromRecipe(recipe: Recipe, skin: number, sources: RecipeSources): Uint8Array {
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(recipe, 'the Harmony 600, 650 and 700\'s fromRecipe');
   const given = (recipe.choices ?? {}) as FourSlotChoicesGiven;
   if (recipe.devices.length === 0 && recipe.activities.length === 0) {
     return buildEmptyFourSlotConfiguration({ skin, builtAt: sources.builtAt, choices: fourSlotChoices(given, OUR_FOUR_SLOT_CHOICES) }).bytes;

@@ -353,3 +353,19 @@ three sends to a press. So the One sends what the receiver's own remote sends, a
 **What this does not settle**: what the receiver does with either stream, since it was not listening. The
 complaint that prompted the measurement, a held volume key that starts late and then runs too fast, is about the
 receiver's answer, and whether its own remote gets the same answer was not observed.
+
+### Short presses of the everyday One's channel keys beside the set top box's own remote
+
+The same day, same monitor, `reads/20261115T1233Z-ir-monitor.jsonl` in the lab, the everyday One off the cable; which
+key was pressed on which remote is the word of the person pressing. No set top box was listening.
+
+| pressed | presses heard | codes to a press | what else |
+|---|---|---|---|
+| the everyday One, Channel Down, short, and two long | 22 groups | 4: one opening code and three in the repeat form, 85 or 86 ms apart | 4 of the short ones were followed by a second whole group, opening code included, 283 or 284 ms after the first ended; one long press by such a group 328 ms after it |
+| the everyday One, Channel Up, short | 10 groups | 4, the same | no second group; the pauses between presses ran from 532 to 916 ms |
+| the set top box's own remote, short | 10 groups | 2: one opening code and one in the repeat form, 86 ms apart | none |
+
+A held key on the One sends the repeat form on and on with no second opening code, so a second group is not a key
+held a little long. **What this does not settle**: why the One sent a second group after Channel Down, since ten
+presses of Channel Up without one are too few to clear that key's neighbour or the software, and whether the box
+counts the One's four codes as one press or as more, since it was not listening.

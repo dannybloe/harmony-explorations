@@ -7,7 +7,7 @@
  * activity keys and the delays.
  */
 import {
-  type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget, type StatedKey, statedKeys,
+  type Recipe, type RecipeActivity, type RecipeDevice, type RecipeTarget, recipeTarget, refuseUnbuiltFields, type StatedKey, statedKeys,
 } from '../recipe/recipe.ts';
 import { familyOf, sendsOf } from '../families/registry.ts';
 import { saveEdits } from '../edit/edit.ts';
@@ -108,6 +108,8 @@ export function composeSetupParts(
   devicesComposed: ComposedDeviceNote[]; donorInfrared: DonorInfrared[];
 } {
   let c = donor;
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(setup, 'composeSetupParts');
   // 0. Favourite channels are a recipe field Logitech's service is given and no composer writes, so a
   //    recipe stating some is refused for every family alike rather than built without them, which would
   //    be a configuration missing what its recipe asked for and saying nothing about it.
@@ -335,7 +337,9 @@ function checkStatedKeys(
   }
   for (const one of chosen) {
     const { key, where } = one;
-    if (key.press === 'held') throw new AssemblyError(`${where}: a held press is not built yet`);
+    // A held press and a double press alike: built as a short press, either would give a key that does something
+    // else than the recipe says.
+    if (key.press !== undefined && key.press !== 'short') throw new AssemblyError(`${where}: a ${key.press} press is not built yet`);
     if ('sequence' in key.action) throw new AssemblyError(`${where} runs the sequence ${key.action.sequence}, and a sequence on a key is not built yet`);
     if (!builder.keys.includes(key.key)) throw new AssemblyError(`${where}: ${key.key} is no key ${family.name}'s maps bind`);
     if (one.owner === 'activity' && donorActivities.includes(one.name)) {
@@ -436,6 +440,9 @@ function composeSetupActivity(
       rows.push(...activityScreenRows(c, [{ group, label: item.command }]));
       continue;
     }
+    // A sequence named by the activity's own list, of the recipe's version 2, R37, is not built: every route refuses
+    // it first, `refuseUnbuiltFields`, and this stays as the last word should a caller build an activity on its own.
+    if (item.steps === undefined) throw new AssemblyError(`activity ${activity.name}'s screen names the sequence ${item.sequence}, and a sequence by name is not built yet`);
     const lists = c.actionLists() ?? [];
     const interKeyDelays: Record<number, number> = {};
     const steps = item.steps.map((step) => {
@@ -572,6 +579,8 @@ export interface ComposedSetup {
  * are the family's own; a recipe stating choices is refused, since what a choice changes is the generators' work.
  */
 export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedSetup {
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(setup, 'composeSetup');
   const target = recipeTarget(setup);
   // The skins composing alone has been run on are the family's, `Family.composedSkins`; a family the assembly's
   // generators build for goes through `assembleSetup`.

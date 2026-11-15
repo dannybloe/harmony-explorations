@@ -53,7 +53,7 @@ import { dirname } from 'node:path';
 
 import { assertFileFamilyContainer } from '@harmony/usb/rails';
 
-import { parse, type Recipe } from '../src/index.ts';
+import { parse, readRecipe } from '../src/index.ts';
 import {
   buildNoScreenSetup,
   type ComposedNoScreenSetup,
@@ -102,7 +102,8 @@ const fromNothing = cli.flag('from-nothing');
 const setupPath = cli.value('setup') ?? fail('--setup <recipe.json> is required');
 const output = cli.value('out') ?? fail('--out <file> is required');
 const archive = process.env.HARMONY_IR_ARCHIVE ?? fail('HARMONY_IR_ARCHIVE names the catalogue checkout');
-const recipe = JSON.parse(readFileSync(setupPath, 'utf8')) as Recipe;
+// Read as every recipe is, so a file this script is given is held to the shape a build is, version 2's guard included.
+const recipe = readRecipe(JSON.parse(readFileSync(setupPath, 'utf8')));
 
 let out: ComposedNoScreenSetup;
 if (fromNothing) {

@@ -121,8 +121,10 @@ const SHOWN = true;
 const TESTED = false;
 
 /**
- * The requirements by subject, in the order they are numbered. Kept as groups so the subject is written once and the
- * document's sections follow it; `REQUIREMENTS` below is the flat list an application reads.
+ * The requirements by subject, each subject's in the order they are numbered and the subjects in the order of their
+ * first. Kept as groups so the subject is written once and the document's sections follow it; `REQUIREMENTS` below is
+ * the flat list an application reads. **A requirement added to a subject after a later subject was numbered takes the
+ * next free number and is listed with its subject**, R89 among the devices', since a number is never moved.
  */
 const GROUPS: readonly {
   readonly subject: string;
@@ -159,6 +161,8 @@ const GROUPS: readonly {
       [17, SHOWN, 'Set how many times a device\'s commands repeat.'],
       [18, SHOWN, 'Set how a device tunes a channel number.'],
       [19, SHOWN, 'Add, fix and remove a device\'s command, and put a fixed one back to its original code.'],
+      // Numbered after the hub's, since a number is never moved, and listed with the devices it is about.
+      [89, SHOWN, 'Tune one command of a device: how many times a press sends it, how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue\'s value.'],
       [20, TESTED, 'Export and import codes as Pronto Hex.', 'whole'],
     ],
   },
@@ -176,6 +180,9 @@ const GROUPS: readonly {
       [28, SHOWN, 'Order the activity menu and an activity\'s device list.'],
       [29, SHOWN, 'Choose which activities the activity keys start.'],
       [30, SHOWN, 'Add steps to an activity\'s start and end: commands, pauses, a sequence.'],
+      // Numbered after the hub's, since a number is never moved, and listed with the activities they are about.
+      [90, SHOWN, 'Choose the order in which an activity switches its devices on and off.'],
+      [91, SHOWN, 'Choose the screen an activity opens on, where the remote has more than one.'],
     ],
   },
   {
@@ -317,7 +324,9 @@ export const REQUIREMENT_SUBJECTS: readonly string[] = GROUPS.map((group) => gro
 
 /** Every requirement, in number order, withdrawn ones included. */
 export const REQUIREMENTS: readonly Requirement[] = GROUPS.flatMap((group) =>
-  group.requirements.map(([number, needsBench, text, scope]) => ({ number, subject: group.subject, text, scope: scope ?? group.scope, needsBench })));
+  group.requirements.map(([number, needsBench, text, scope]) => ({ number, subject: group.subject, text, scope: scope ?? group.scope, needsBench })))
+  // The groups list a requirement with its subject, which is not always in number order, R89; the list is.
+  .sort((a, b) => a.number - b.number);
 
 /** The requirement with this number, or undefined for a number never given. */
 export function requirement(number: number): Requirement | undefined {
@@ -466,7 +475,7 @@ function unknown(why: string, reference: readonly string[] = []): RequirementSta
 
 /**
  * Every bench model's written status on the requirements of the models, those of R1 to R72 that are not the FHSDK's
- * as a whole and R83 to R88, that no proof makes met:
+ * as a whole and R83 to R91, that no proof makes met:
  * open, impossible or unknown, each with its reason, judged by reading the model's test notes, its bench tests and its
  * reference pages, an open one saying first whose work is missing. A requirement a proof names for the model has no entry here, and one with neither is a fault,
  * `test/requirements.test.ts`: every requirement on every model is proven or written, never both.
@@ -532,6 +541,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
+    90: open(SHARED_FAMILY, 'The start switches the devices on in the order the activity\'s device list puts them, a rule of the build; nothing lets a person choose that order or the order off.'),
+    91: unknown('Logitech\'s configurations open every activity on its working screen after the start up screen; whether one of ours could open on another is not checked.', ['reference/remotes/harmony-one/display.md#what-a-person-sees']),
   },
   // The Harmony 600.
   'harmony-600': {
@@ -591,6 +603,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
+    90: open(SHARED_FAMILY, 'The start switches the devices on in the order the activity\'s device list puts them, a rule of the build; nothing lets a person choose that order or the order off.'),
+    91: unknown('Logitech\'s configurations open every activity on its working screen; whether one of ours could open on another is not checked.', ['reference/remotes/harmony-600/behaviour.md#starting-switching-and-ending-activities']),
   },
   // The Harmony 650.
   'harmony-650': {
@@ -655,6 +670,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
+    90: open(SHARED_FAMILY, 'The start switches the devices on in the order the activity\'s device list puts them, a rule of the build; nothing lets a person choose that order or the order off.'),
+    91: unknown('Logitech\'s configurations open every activity on its working screen; whether one of ours could open on another is not checked.', ['reference/remotes/harmony-650/behaviour.md#starting-and-switching-activities']),
   },
   // The Harmony 700.
   'harmony-700': {
@@ -716,6 +734,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
+    90: open(SHARED_FAMILY, 'The start switches the devices on in the order the activity\'s device list puts them, a rule of the build; nothing lets a person choose that order or the order off.'),
+    91: unknown('Logitech\'s configurations open every activity on its working screen; whether one of ours could open on another is not checked.', ['reference/remotes/harmony-700/behaviour.md#starting-switching-and-ending-activities']),
   },
   // The Harmony 525.
   'harmony-525': {
@@ -784,6 +805,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED_FAMILY, 'Nothing composes a device for a 525, so no command of one can be tuned.'),
+    90: open(SHARED_FAMILY, 'Nothing composes an activity for the 525, so no order can be chosen.'),
+    91: unknown('Which screen a 525 activity opens on, and whether a configuration could choose another, is not checked.'),
   },
   // The Harmony 515, on the Harmony 525's platform with an application of its own, 3.4. Its bench unit has only been
   // read, decision 35, so everything that touches a write is open, and what the 525 shows is not assumed.
@@ -855,6 +879,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED_FAMILY, 'Nothing composes a device for a 515, so no command of one can be tuned.'),
+    90: open(SHARED_FAMILY, 'Nothing composes an activity for the 515, so no order can be chosen.'),
+    91: unknown('Which screen a 515 activity opens on, and whether a configuration could choose another, is not checked.'),
   },
   // The Harmony 885.
   'harmony-885': {
@@ -920,6 +947,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
+    90: open(SHARED_FAMILY, 'Activities are not composed for the 885, so no order can be chosen.'),
+    91: unknown('Which screen an 885 activity opens on, and whether a configuration could choose another, is not checked.'),
   },
   // The Harmony 785, on the Harmony 880 and 885's platform with the Harmony 720's application. Both bench units have
   // only been read, decision 34, so everything that touches a write is open, and what the 885 shows is not assumed.
@@ -992,6 +1022,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED_FAMILY, 'Nothing composes a device for the 785, so no command of one can be tuned.'),
+    90: open(SHARED_FAMILY, 'Activities are not composed for the 785, so no order can be chosen.'),
+    91: unknown('Which screen a 785 activity opens on, and whether a configuration could choose another, is not checked.'),
   },
   // The Harmony 300.
   'harmony-300': {
@@ -1060,6 +1093,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
+    90: open(SHARED_FAMILY, 'Nothing lets a person choose the order the activity switches its devices on and off in.'),
+    91: impossible(['reference/remotes/harmony-300/display.md#harmony-300-display'], 'The 300 has no screen, so an activity opens on none.'),
   },
   // The Harmony 350.
   'harmony-350': {
@@ -1123,6 +1159,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED, 'The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.'),
+    90: open(SHARED_FAMILY, 'Nothing lets a person choose the order the activity switches its devices on and off in.'),
+    91: impossible(['reference/remotes/harmony-350/display.md#harmony-350-display'], 'The 350 has no screen, so an activity opens on none.'),
   },
   // The Harmony Touch.
   'harmony-touch': {
@@ -1175,6 +1214,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub; writing a remote of one\'s own is R6.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
+    89: open(SHARED_MODEL, 'A command has no timing field in the documents, and how the remote plays a held code has not been read, so nothing tunes one command.'),
+    90: open(SHARED, 'The documents carry a power on and a power off place per device, written from the Touch\'s own block; nothing in a recipe reaches them yet.'),
+    91: open(SHARED, 'The documents carry a start screen per activity, written from the Touch\'s own block; nothing in a recipe reaches it yet.'),
   },
   // The Harmony Elite, the remote of the set: skin 111, on the Harmony Touch's image, provisioned from its hub. Nothing
   // is written to it, decision 36, and no family builds for it, so nothing here is proven but what a test proves for
@@ -1251,6 +1293,9 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: the Elite is its hub\'s remote and takes its setup from the hub it is paired to.'),
     87: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: the Elite is its hub\'s remote and is driven by its keys.'),
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: the Elite shows the smart home devices its hub found and finds none itself.'),
+    89: open(SHARED_FAMILY, 'No library step tunes one command of a device in an Elite\'s setup.'),
+    90: open(SHARED_FAMILY, 'Nothing composes an activity for an Elite, so no order can be chosen.'),
+    91: open(SHARED_FAMILY, 'Nothing composes an activity for an Elite, so no start screen can be chosen.'),
   },
   // The Harmony Hub, skin 106: a remote without keys or a screen, reached over the cable for its identity file alone so
   // far. Its request channel is closed, decision 36, and its setup is to be read over the network, plan 016. What its
@@ -1328,12 +1373,15 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     86: open(MODEL, 'What a hub clears when it is set up for another account is read in its image; nothing here does it.'),
     87: open(MODEL, 'Nothing asks a hub to start an activity, send a command or say which activity is on.'),
     88: open(MODEL, 'The document the smart home devices are kept in is read in the remotes\' image; none has been read off a hub.'),
+    89: open(SHARED_FAMILY, 'No library step tunes one command of a device in a hub\'s setup.'),
+    90: open(SHARED_FAMILY, 'Nothing composes an activity for a hub, so no order can be chosen.'),
+    91: unknown('A hub has no screen; whether its setup carries the start screen a paired remote opens an activity on is not read.', ['reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine']),
   },
 };
 
 /**
  * The written statuses of the requirements about the FHSDK as a whole, one each and shared by every model, for those
- * no proof makes met; R20, R73 and R74 are proven, so they are not here. Each waits on the FHSDK itself, since no
+ * no proof makes met; R20, R73, R74 and R80 are proven, so they are not here. Each waits on the FHSDK itself, since no
  * family and no model has a part in it.
  */
 const WHOLE_STATUSES: Readonly<Record<number, RequirementState>> = {
@@ -1347,8 +1395,7 @@ const WHOLE_STATUSES: Readonly<Record<number, RequirementState>> = {
   76: open(SHARED, 'The recipe\'s types and the reader that checks one are public, but no function changes a recipe.'),
   77: open(SHARED, 'The model a recipe is for and the choices it leaves unstated can be asked; what a key does and which devices an activity uses cannot, short of building.'),
   78: open(SHARED, 'The reader and the builders refuse a recipe at the first problem they meet; nothing returns every problem as a list without building.'),
-  79: open(SHARED, 'Writing is three functions, one per kind of remote, each reporting lines for a journal; no one function chooses among them or reports events.'),
-  80: open(SHARED, 'A pretend Harmony Touch exists in the test kit, which no application may depend on; no pretend remote is offered.'),
+  79: open(SHARED, 'One function, syncDocument, chooses the write path by the document\'s model and reports its phases, progress, what a person must do or leave and its outcome as events, stopping only where it is safe; it is built for the Harmony One, 600, 650 and 700 and the Harmony Touch, and not yet for the Harmony 300, 350 and 885.'),
   81: open(SHARED, 'The archive is read from a checkout on disk, through a source a builder is handed; no source reads it over the network or keeps a cache.'),
   82: open(SHARED, 'The catalogue is asked from the archive alone; nothing searches Logitech\'s service beside it or says per result where it came from.'),
 };

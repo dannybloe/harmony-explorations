@@ -16,6 +16,8 @@
  * document stays in the family's own modules, where its tests are.
  */
 
+import type { FamilyMaps } from './maps.ts';
+
 /** The types a document family works in, each the family's own. */
 export interface DocumentTypes {
   /** A set of the remote's documents, the whole set a remote holds or is to be given. */
@@ -76,4 +78,10 @@ export interface DocumentFamily<T extends DocumentTypes = DocumentTypes> {
   read(documents: T['documents']): T['configuration'];
   /** What the remote would refuse in the documents, empty where a sync may deliver them. */
   check(documents: T['documents']): readonly T['finding'][];
+  /**
+   * The family's maps, decision 43, `maps.ts`: the same interface a compiled family carries, `Family.maps`, so the
+   * places, the default maps and their resolving are asked the same way of every model. Absent where the family states
+   * none yet, as the Harmony Touch's family does today.
+   */
+  readonly maps?: FamilyMaps;
 }

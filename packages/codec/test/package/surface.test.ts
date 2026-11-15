@@ -49,7 +49,9 @@ const TYPES = [
   'KeyCode', 'KeyLabel', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
   'ModelProperties', 'NetworkArchiveOptions', 'PngHeader',
   'PowerOnDelay', 'ProntoCode', 'Proof', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
-  'RecipeDevice', 'RecipeDeviceKey', 'RecipeFavourites', 'RecipeKey', 'RecipeKeyAction', 'RecipeModel', 'RecipeScreenItem', 'RecipeSequenceStep', 'RecipeTarget',
+  'RecipeActivityStep', 'RecipeCommand', 'RecipeCommandCode', 'RecipeCommandStep', 'RecipeDevice', 'RecipeDeviceKey', 'RecipeDevicePower',
+  'RecipeFavourites', 'RecipeIds', 'RecipeKey', 'RecipeKeyAction', 'RecipeModel', 'RecipePress', 'RecipeScreenCommand', 'RecipeScreenItem',
+  'RecipeSending', 'RecipeSequence', 'RecipeSequenceStep', 'RecipeSetting', 'RecipeTarget',
   'RenderedPage', 'Requirement', 'RequirementAnswer', 'RequirementState', 'RequirementStatus', 'RequirementWait', 'ScreenChoice', 'ScreenVariant', 'StatedCode', 'StatedProtocol',
 ];
 

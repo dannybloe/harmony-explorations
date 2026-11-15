@@ -10,13 +10,15 @@
  * **The recipe's choices over `ONE_CHOICES`**, `oneChoices`, in both: the empty configuration is built with them,
  * and `composeSetup` reads them again through `Family.readChoices` for every step it runs.
  */
-import type { Recipe } from '../../recipe/recipe.ts';
+import { refuseUnbuiltFields, type Recipe } from '../../recipe/recipe.ts';
 import { composeSetup } from '../../shared/setup.ts';
 import type { RecipeSources } from '../family.ts';
 import { oneChoices } from './choices.ts';
 import { buildEmptyOneConfiguration } from './empty.ts';
 
 export function oneFromRecipe(recipe: Recipe, skin: number, sources: RecipeSources): Uint8Array {
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(recipe, 'the Harmony One\'s fromRecipe');
   const choices = oneChoices(recipe.choices ?? {});
   if (recipe.devices.length === 0 && recipe.activities.length === 0) {
     return buildEmptyOneConfiguration({ skin, builtAt: sources.builtAt, choices }).bytes;

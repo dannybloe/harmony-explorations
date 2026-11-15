@@ -111,7 +111,8 @@ const least = (): Record<string, unknown> => ({
 });
 
 test('a recipe carries an id per device and activity and its format\'s version, and reads as before without them', () => {
-  assert.equal(RECIPE_VERSION, 1);
+  // Version 2 adds the fields of one shape for every model, decision 43, and reads a document of version 1 as before.
+  assert.equal(RECIPE_VERSION, 2);
   const plain = readRecipe(least());
   assert.deepEqual([plain.version, plain.devices[0]!.id, plain.activities[0]!.id], [undefined, undefined, undefined]);
   const json = least();
@@ -126,7 +127,7 @@ test('a recipe carries an id per device and activity and its format\'s version, 
 
 test('a version this does not read, an id that is no name, and one id on two devices or two activities are refused', () => {
   const withVersion = (version: unknown): Record<string, unknown> => ({ ...least(), version });
-  assert.throws(() => readRecipe(withVersion(2)), /is of version 2, and this reads up to 1/);
+  assert.throws(() => readRecipe(withVersion(3)), /is of version 3, and this reads up to 2/);
   assert.throws(() => readRecipe(withVersion(0)), /version is not a whole number from 1/);
   assert.throws(() => readRecipe(withVersion('1')), /version is not a whole number from 1/);
   const twoDevices = least();
@@ -200,7 +201,7 @@ function refused(call: () => unknown): [string, unknown] | undefined {
 
 test('a fresh document is empty, states its model and the version, and reads as a recipe; a model nothing builds for is refused', () => {
   const fresh = recipe.create(ONE);
-  assert.deepEqual(fresh, { version: 1, model: { name: 'Harmony One', skin: 54 }, devices: [], activities: [] });
+  assert.deepEqual(fresh, { version: RECIPE_VERSION, model: { name: 'Harmony One', skin: 54 }, devices: [], activities: [] });
   assert.deepEqual(readRecipe(JSON.parse(JSON.stringify(fresh))), fresh);
   assert.deepEqual(recipe.check(fresh), []);
   // A model named without its skin keeps none, as a recipe written by hand may.
@@ -217,7 +218,8 @@ test('opening gives every device and activity without an id one, in order and pa
   const opened = recipe.open(json);
   assert.deepEqual(opened.devices.map((one) => one.id), ['d6', 'd5', 'd7']);
   assert.deepEqual(opened.activities.map((one) => one.id), ['a1']);
-  assert.equal(opened.version, 1);
+  // Opening brings a document up to the version this writes: version 2 only adds fields, so nothing else moves.
+  assert.equal(opened.version, RECIPE_VERSION);
   // Everything but the ids and the version is as it was read.
   const strip = (one: Json): Json => { const { id: _id, ...rest } = one; return rest; };
   assert.deepEqual(opened.devices.map((one) => strip(one as unknown as Json)), readRecipe(json).devices.map((one) => strip(one as unknown as Json)));
@@ -400,8 +402,13 @@ test('the check lists every problem with its place and code, and a document with
   // An input the device does not have, where its definition says which it has.
   assert.deepEqual(codes(damaged((json) => { (json.activities[0]!['devices'] as Json[])[0]!['input'] = 'HDMI 9'; })),
     [['error', 'unknown-input', { kind: 'activity-device', activity: 'a1', device: 'd1' }]]);
-  // A key given a command its device does not have, a device that is not there, a held press and a sequence.
+  // A key given a command its device does not have, a device that is not there, a held press and a sequence, the
+  // one written out on the activity's screen: a key running a sequence the activity does not name is refused by the
+  // reader itself, so it never reaches the check.
+  assert.throws(() => damaged((json) => { json.activities[0]!['keys'] = [{ key: 'Rewind', action: { sequence: 'Movie night' } }]; }),
+    (error: unknown) => error instanceof RecipeError && /Rewind key runs the sequence Movie night, which is not one of the activity's/.test(error.message));
   assert.deepEqual(codes(damaged((json) => {
+    json.activities[0]!['screen'] = [{ sequence: 'Movie night', steps: [{ device: 'Television', scan: 1 }] }];
     json.activities[0]!['keys'] = [
       { key: 'VolumeUp', action: { device: 'Television', command: 'Dance' } },
       { key: 'VolumeDown', action: { device: 'Amplifier', command: 'VolumeUp' } },
@@ -684,6 +691,36 @@ test('a device\'s commands and inputs are its definition\'s, in its order, and a
   for (const call of [recipe.commands, recipe.inputs] as const) {
     assert.throws(() => call(bare, 'd1'), (error: unknown) => error instanceof RecipeError && /carries no definition/.test(error.message));
   }
+});
+
+test('the document\'s own commands of a device, of version 2, mark a command changed or learned and add one the definition lacks; devices says which device has a learned one', () => {
+  const json = JSON.parse(JSON.stringify(small())) as { devices: Json[] };
+  json.devices[0]!['commands'] = {
+    VolumeUp: { code: { keycode: 'G:NEC 32 Bit:()(0x9)():3' } },
+    VolumeDown: { sending: { copies: 2 } },
+    Netflix: { code: { learned: [{ mark: true, us: 9000 }, { mark: false, us: 4500 }] } },
+  };
+  const document = recipe.open(json);
+  assert.deepEqual(recipe.commands(document, 'd1'), [
+    { name: 'VolumeUp', changed: true, learned: false },
+    // How a command is sent is no change of its code.
+    { name: 'VolumeDown', changed: false, learned: false },
+    { name: 'InputHdmi1', changed: false, learned: false },
+    { name: 'Netflix', changed: true, learned: true },
+  ]);
+  assert.deepEqual(recipe.devices(document).map((one) => [one.id, one.learned]), [['d1', true], ['d2', false]]);
+  // The control: the same document without its own commands answers as the definition alone.
+  assert.deepEqual(recipe.devices(small()).map((one) => one.learned), [false, false]);
+});
+
+test('uses answers not built for a document stating a field of version 2, which names devices it does not follow yet', () => {
+  const json = JSON.parse(JSON.stringify(small())) as { activities: Json[] };
+  json.activities[0]!['powerOrder'] = ['Receiver', 'Television'];
+  const document = recipe.open(json);
+  assert.throws(() => recipe.uses(document, { device: 'd1' }), (error: unknown) =>
+    error instanceof NotBuiltError && error.requirement === 77 && error.contract === 'recipe.uses for a document stating the activity Watch TV\'s power order');
+  // The control: without it the same question is answered, the activity's part naming the device.
+  assert.deepEqual(recipe.uses(small(), { device: 'd1' }), [{ kind: 'activity-device', activity: 'a1', device: 'd1' }]);
 });
 
 test('a document that carries a remote\'s own documents\' part is changed by nothing, each change refusing by name, and still answers', () => {

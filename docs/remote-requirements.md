@@ -77,23 +77,23 @@ is [the evidence](remote-requirements-evidence.md), and each bench remote's requ
 
 ## Where each remote stands
 
-Over the 71 requirements that have a status per model. Possible is every one but the impossible ones; the evidence behind each status is [the evidence](remote-requirements-evidence.md), and each remote's list of them its checklist.
+Over the 74 requirements that have a status per model. Possible is every one but the impossible ones; the evidence behind each status is [the evidence](remote-requirements-evidence.md), and each remote's list of them its checklist.
 
 | remote | proven | open | unknown | impossible | proven of possible | checklist |
 |---|---|---|---|---|---|---|
-| Harmony One | 13 | 46 | 2 | 10 | 13 of 61 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
-| Harmony 600 | 15 | 45 | 3 | 8 | 15 of 63 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
-| Harmony 650 | 10 | 50 | 2 | 9 | 10 of 62 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
-| Harmony 700 | 13 | 46 | 4 | 8 | 13 of 63 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
-| Harmony 525 | 6 | 46 | 9 | 10 | 6 of 61 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
-| Harmony 515 | 4 | 48 | 11 | 8 | 4 of 63 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
-| Harmony 885 | 9 | 49 | 3 | 10 | 9 of 61 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
-| Harmony 785 | 3 | 55 | 7 | 6 | 3 of 65 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
-| Harmony 300 | 6 | 36 | 7 | 22 | 6 of 49 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
-| Harmony 350 | 11 | 33 | 6 | 21 | 11 of 50 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
-| Harmony Touch | 22 | 35 | 6 | 8 | 22 of 63 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
-| Harmony Elite | 0 | 56 | 9 | 6 | 0 of 65 | [todo-harmony-elite.md](../todo/todo-harmony-elite.md) |
-| Harmony Hub | 0 | 50 | 13 | 8 | 0 of 63 | [todo-harmony-hub.md](../todo/todo-harmony-hub.md) |
+| Harmony One | 13 | 48 | 3 | 10 | 13 of 64 | [todo-harmony-one.md](../todo/todo-harmony-one.md) |
+| Harmony 600 | 15 | 47 | 4 | 8 | 15 of 66 | [todo-harmony-600.md](../todo/todo-harmony-600.md) |
+| Harmony 650 | 10 | 52 | 3 | 9 | 10 of 65 | [todo-harmony-650.md](../todo/todo-harmony-650.md) |
+| Harmony 700 | 13 | 48 | 5 | 8 | 13 of 66 | [todo-harmony-700.md](../todo/todo-harmony-700.md) |
+| Harmony 525 | 6 | 48 | 10 | 10 | 6 of 64 | [todo-harmony-525.md](../todo/todo-harmony-525.md) |
+| Harmony 515 | 4 | 50 | 12 | 8 | 4 of 66 | [todo-harmony-515.md](../todo/todo-harmony-515.md) |
+| Harmony 885 | 9 | 51 | 4 | 10 | 9 of 64 | [todo-harmony-885.md](../todo/todo-harmony-885.md) |
+| Harmony 785 | 3 | 57 | 8 | 6 | 3 of 68 | [todo-harmony-785.md](../todo/todo-harmony-785.md) |
+| Harmony 300 | 6 | 38 | 7 | 23 | 6 of 51 | [todo-harmony-300.md](../todo/todo-harmony-300.md) |
+| Harmony 350 | 11 | 35 | 6 | 22 | 11 of 52 | [todo-harmony-350.md](../todo/todo-harmony-350.md) |
+| Harmony Touch | 22 | 38 | 6 | 8 | 22 of 66 | [todo-harmony-touch.md](../todo/todo-harmony-touch.md) |
+| Harmony Elite | 0 | 59 | 9 | 6 | 0 of 68 | [todo-harmony-elite.md](../todo/todo-harmony-elite.md) |
+| Harmony Hub | 0 | 52 | 14 | 8 | 0 of 66 | [todo-harmony-hub.md](../todo/todo-harmony-hub.md) |
 
 ## What the open ones wait on
 
@@ -101,21 +101,21 @@ Each remote's open requirements by whose work is missing, every one counted once
 
 | remote | open | its own or its family's work | the FHSDK's work alone | a run on a unit alone |
 |---|---|---|---|---|
-| Harmony One | 46 | 27 | 15 | 4 |
-| Harmony 600 | 45 | 23 | 17 | 5 |
-| Harmony 650 | 50 | 23 | 18 | 9 |
-| Harmony 700 | 46 | 22 | 18 | 6 |
-| Harmony 525 | 46 | 44 | 2 | 0 |
-| Harmony 515 | 48 | 47 | 1 | 0 |
-| Harmony 885 | 49 | 44 | 4 | 1 |
-| Harmony 785 | 55 | 53 | 1 | 1 |
-| Harmony 300 | 36 | 19 | 15 | 2 |
-| Harmony 350 | 33 | 18 | 15 | 0 |
-| Harmony Touch | 35 | 20 | 8 | 7 |
-| Harmony Elite | 56 | 54 | 1 | 1 |
-| Harmony Hub | 50 | 47 | 2 | 1 |
+| Harmony One | 48 | 28 | 16 | 4 |
+| Harmony 600 | 47 | 24 | 18 | 5 |
+| Harmony 650 | 52 | 24 | 19 | 9 |
+| Harmony 700 | 48 | 23 | 19 | 6 |
+| Harmony 525 | 48 | 46 | 2 | 0 |
+| Harmony 515 | 50 | 49 | 1 | 0 |
+| Harmony 885 | 51 | 45 | 5 | 1 |
+| Harmony 785 | 57 | 55 | 1 | 1 |
+| Harmony 300 | 38 | 20 | 16 | 2 |
+| Harmony 350 | 35 | 19 | 16 | 0 |
+| Harmony Touch | 38 | 21 | 10 | 7 |
+| Harmony Elite | 59 | 57 | 1 | 1 |
+| Harmony Hub | 52 | 49 | 2 | 1 |
 
-The 17 requirements of the FHSDK as a whole carry one status each, for every remote: R9 open, R12 open, R20 proven, R25 open, R57 open, R60 open, R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 open, R81 open, R82 open.
+The 17 requirements of the FHSDK as a whole carry one status each, for every remote: R9 open, R12 open, R20 proven, R25 open, R57 open, R60 open, R68 open, R73 proven, R74 proven, R75 open, R76 open, R77 open, R78 open, R79 open, R80 proven, R81 open, R82 open.
 
 ## The requirements
 
@@ -144,6 +144,7 @@ The 17 requirements of the FHSDK as a whole carry one status each, for every rem
 * **R18** Set how a device tunes a channel number.
 * **R19** Add, fix and remove a device's command, and put a fixed one back to its original code.
 * **R20** Export and import codes as Pronto Hex.
+* **R89** Tune one command of a device: how many times a press sends it, how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue's value.
 
 ### Activities
 
@@ -157,6 +158,8 @@ The 17 requirements of the FHSDK as a whole carry one status each, for every rem
 * **R28** Order the activity menu and an activity's device list.
 * **R29** Choose which activities the activity keys start.
 * **R30** Add steps to an activity's start and end: commands, pauses, a sequence.
+* **R90** Choose the order in which an activity switches its devices on and off.
+* **R91** Choose the screen an activity opens on, where the remote has more than one.
 
 ### Keys and screens
 

@@ -1068,4 +1068,22 @@ export const PROOFS: readonly Proof[] = [
     title: "the main entry reads every family with no resource supplied, answering as the Node entry does",
     bench: [],
   },
+  {
+    requirement: 80, models: "every",
+    test: "packages/corpus/test/write/pretend-against-attached.test.ts",
+    title: "a sync to a pretend Harmony One reports what a sync to an attached one reports, event for event and outcome for outcome, reaching every ending of a write into flash",
+    bench: [],
+  },
+  {
+    requirement: 80, models: "every",
+    test: "packages/corpus/test/write/pretend-against-attached.test.ts",
+    title: "a sync to a pretend Harmony Touch reports what a sync to an attached one reports, event for event and outcome for outcome, reaching every ending of an answered sync",
+    bench: [],
+  },
+  {
+    requirement: 80, models: "every",
+    test: "packages/corpus/test/write/sync-contract.test.ts",
+    title: "a pretend remote is read through readConfig as a remote on the cable is, with its progress, and a failure asked for stops the read part way after its retries",
+    bench: [],
+  },
 ];

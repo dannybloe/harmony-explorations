@@ -28,6 +28,7 @@ import type { Container } from '../container/gspm.ts';
 import { ComposeError } from '../shared/core.ts';
 import { HARMONY_TOUCH_FAMILY } from './harmony-touch/family.ts';
 import type { DocumentFamily } from './document.ts';
+import type { FamilyMaps } from './maps.ts';
 import type { ActivityStart, CommonChoices, Family, FamilyTraits, SendShape } from './family.ts';
 import { FOUR_SLOT } from './harmony-600-650-700/index.ts';
 import { NO_SCREEN_FAMILY } from './harmony-300-350/index.ts';
@@ -151,6 +152,23 @@ export function chooseByModel(asked: ModelNamed): ModelChoice {
 /** The family that builds for a model, either kind, or a refusal naming the model, `chooseByModel`. */
 export function familyOfModel(asked: ModelNamed): AnyFamily {
   return chooseByModel(asked).family;
+}
+
+/** A model's maps and the skin its places are asked for, `mapsOfModel`. */
+export interface ModelMaps {
+  readonly skin: number;
+  readonly maps: FamilyMaps;
+}
+
+/**
+ * The maps of the family that builds for a model, decision 43, either kind of family alike, with the model's skin,
+ * which is what the family's places are asked by; undefined where the family states no maps yet, and refused as
+ * `chooseByModel` refuses a model no family serves. Asked by model and never by a family's kind, so a caller holds one
+ * interface for every remote.
+ */
+export function mapsOfModel(asked: ModelNamed): ModelMaps | undefined {
+  const { family, skin } = chooseByModel(asked);
+  return family.maps === undefined ? undefined : { skin, maps: family.maps };
 }
 
 // ---------------------------------------------------------------------------------------------------

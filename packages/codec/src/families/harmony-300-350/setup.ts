@@ -52,7 +52,7 @@
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
 import { type Container, parse } from '../../container/gspm.ts';
 import { devices } from '../../inventory/inventory.ts';
-import { type Recipe, statedKeys } from '../../recipe/recipe.ts';
+import { type Recipe, refuseUnbuiltFields, statedKeys } from '../../recipe/recipe.ts';
 import { ComposeError, nameOfLabel } from '../../shared/core.ts';
 import { type ComposedNoScreenActivity, composeNoScreenActivity, type NoScreenActivityDevice, WATCH_TV_SCAN } from './activity.ts';
 import { composeNoScreenDevice, keyMaps, PRESS } from './devices.ts';
@@ -114,6 +114,8 @@ function entryOf(device: string): { manufacturer: string; model: string } {
 /** Compose a whole setup onto a Harmony 350 configuration. Restamped, by the last composer that ran. */
 export function composeNoScreenSetup(c: Container, archive: CatalogueSource, request: NoScreenSetupRequest): ComposedNoScreenSetup {
   const { recipe, keys } = request;
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(recipe, 'composeNoScreenSetup');
   // A key the recipe chooses otherwise, R31 and R32, is not built on these remotes yet, and a file built without it
   // would leave the key doing what the builders give it, so the recipe is refused rather than built.
   const chosen = statedKeys(recipe)[0];
@@ -276,6 +278,8 @@ export interface NoScreenSetupFromNothing extends NoScreenSetupRequest {
  * writing it restamps again last, as every writer does.
  */
 export function buildNoScreenSetup(archive: CatalogueSource, request: NoScreenSetupFromNothing): ComposedNoScreenSetup {
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(request.recipe, 'buildNoScreenSetup');
   const skin = request.recipe.model.skin;
   if (skin === undefined) throw new ComposeError('the setup states no skin, so the model the configuration is built for is not known');
   const empty = emptyNoScreenForComposing({

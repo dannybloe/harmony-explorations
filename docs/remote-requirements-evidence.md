@@ -292,6 +292,22 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 * **Every remote**, proven by `packages/codec/test/infrared/pronto.test.ts`, "a Pronto header states the carrier as a count and the sections as pairs".
 
+### R89 Tune one command of a device: how many times a press sends it, how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue's value.
+
+* **Harmony One**, open, waiting on the FHSDK: The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.
+* **Harmony 600**, open, waiting on the FHSDK: The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.
+* **Harmony 650**, open, waiting on the FHSDK: The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.
+* **Harmony 700**, open, waiting on the FHSDK: The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing composes a device for a 525, so no command of one can be tuned.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing composes a device for a 515, so no command of one can be tuned.
+* **Harmony 885**, open, waiting on the FHSDK: The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Nothing composes a device for the 785, so no command of one can be tuned.
+* **Harmony 300**, open, waiting on the FHSDK: The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.
+* **Harmony 350**, open, waiting on the FHSDK: The composer takes explicit blocks per command, and nothing in a recipe reaches them, so no command can be tuned on its own.
+* **Harmony Touch**, open, waiting on the FHSDK and the remote itself: A command has no timing field in the documents, and how the remote plays a held code has not been read, so nothing tunes one command.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: No library step tunes one command of a device in an Elite's setup.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: No library step tunes one command of a device in a hub's setup.
+
 ## Activities
 
 ### R21 Create an activity of a kind with its devices; starting, switching and Off behave as the manuals describe.
@@ -441,6 +457,38 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony Touch**, proven by `packages/codec/test/families/harmony-touch/touch-activity-add.test.ts`, "an activity described by its devices composes and reads back: devices in order with their input, steps, its map by the engine's identifier, no finding". Shown on a unit in `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`, `docs/test-notes/harmony-touch.md`.
 * **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing adds steps to an activity's start or end in an Elite's setup.
 * **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing adds steps to an activity's start or end in a hub's setup.
+
+### R90 Choose the order in which an activity switches its devices on and off.
+
+* **Harmony One**, open, waiting on the FHSDK and its family: The start switches the devices on in the order the activity's device list puts them, a rule of the build; nothing lets a person choose that order or the order off.
+* **Harmony 600**, open, waiting on the FHSDK and its family: The start switches the devices on in the order the activity's device list puts them, a rule of the build; nothing lets a person choose that order or the order off.
+* **Harmony 650**, open, waiting on the FHSDK and its family: The start switches the devices on in the order the activity's device list puts them, a rule of the build; nothing lets a person choose that order or the order off.
+* **Harmony 700**, open, waiting on the FHSDK and its family: The start switches the devices on in the order the activity's device list puts them, a rule of the build; nothing lets a person choose that order or the order off.
+* **Harmony 525**, open, waiting on the FHSDK and its family: Nothing composes an activity for the 525, so no order can be chosen.
+* **Harmony 515**, open, waiting on the FHSDK and its family: Nothing composes an activity for the 515, so no order can be chosen.
+* **Harmony 885**, open, waiting on the FHSDK and its family: Activities are not composed for the 885, so no order can be chosen.
+* **Harmony 785**, open, waiting on the FHSDK and its family: Activities are not composed for the 785, so no order can be chosen.
+* **Harmony 300**, open, waiting on the FHSDK and its family: Nothing lets a person choose the order the activity switches its devices on and off in.
+* **Harmony 350**, open, waiting on the FHSDK and its family: Nothing lets a person choose the order the activity switches its devices on and off in.
+* **Harmony Touch**, open, waiting on the FHSDK: The documents carry a power on and a power off place per device, written from the Touch's own block; nothing in a recipe reaches them yet.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing composes an activity for an Elite, so no order can be chosen.
+* **Harmony Hub**, open, waiting on the FHSDK and its family: Nothing composes an activity for a hub, so no order can be chosen.
+
+### R91 Choose the screen an activity opens on, where the remote has more than one.
+
+* **Harmony One**, unknown: Logitech's configurations open every activity on its working screen after the start up screen; whether one of ours could open on another is not checked. `reference/remotes/harmony-one/display.md#what-a-person-sees`.
+* **Harmony 600**, unknown: Logitech's configurations open every activity on its working screen; whether one of ours could open on another is not checked. `reference/remotes/harmony-600/behaviour.md#starting-switching-and-ending-activities`.
+* **Harmony 650**, unknown: Logitech's configurations open every activity on its working screen; whether one of ours could open on another is not checked. `reference/remotes/harmony-650/behaviour.md#starting-and-switching-activities`.
+* **Harmony 700**, unknown: Logitech's configurations open every activity on its working screen; whether one of ours could open on another is not checked. `reference/remotes/harmony-700/behaviour.md#starting-switching-and-ending-activities`.
+* **Harmony 525**, unknown: Which screen a 525 activity opens on, and whether a configuration could choose another, is not checked.
+* **Harmony 515**, unknown: Which screen a 515 activity opens on, and whether a configuration could choose another, is not checked.
+* **Harmony 885**, unknown: Which screen an 885 activity opens on, and whether a configuration could choose another, is not checked.
+* **Harmony 785**, unknown: Which screen a 785 activity opens on, and whether a configuration could choose another, is not checked.
+* **Harmony 300**, impossible: The 300 has no screen, so an activity opens on none. `reference/remotes/harmony-300/display.md#harmony-300-display`.
+* **Harmony 350**, impossible: The 350 has no screen, so an activity opens on none. `reference/remotes/harmony-350/display.md#harmony-350-display`.
+* **Harmony Touch**, open, waiting on the FHSDK: The documents carry a start screen per activity, written from the Touch's own block; nothing in a recipe reaches it yet.
+* **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing composes an activity for an Elite, so no start screen can be chosen.
+* **Harmony Hub**, unknown: A hub has no screen; whether its setup carries the start screen a paired remote opens an activity on is not read. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 
 ## Keys and screens
 
@@ -1124,11 +1172,11 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 
 ### R79 Write a recipe to a remote through one function for every model, which reports its phases, its progress, what the user must do or leave and its outcome as events, and stops only where it is safe.
 
-* **Every remote**, open, waiting on the FHSDK: Writing is three functions, one per kind of remote, each reporting lines for a journal; no one function chooses among them or reports events.
+* **Every remote**, open, waiting on the FHSDK: One function, syncDocument, chooses the write path by the document's model and reports its phases, progress, what a person must do or leave and its outcome as events, stopping only where it is safe; it is built for the Harmony One, 600, 650 and 700 and the Harmony Touch, and not yet for the Harmony 300, 350 and 885.
 
 ### R80 A pretend remote an application reads and writes with nothing attached, its progress and its failures included.
 
-* **Every remote**, open, waiting on the FHSDK: A pretend Harmony Touch exists in the test kit, which no application may depend on; no pretend remote is offered.
+* **Every remote**, proven by `packages/corpus/test/write/pretend-against-attached.test.ts`, "a sync to a pretend Harmony One reports what a sync to an attached one reports, event for event and outcome for outcome, reaching every ending of a write into flash"; `packages/corpus/test/write/pretend-against-attached.test.ts`, "a sync to a pretend Harmony Touch reports what a sync to an attached one reports, event for event and outcome for outcome, reaching every ending of an answered sync"; `packages/corpus/test/write/sync-contract.test.ts`, "a pretend remote is read through readConfig as a remote on the cable is, with its progress, and a failure asked for stops the read part way after its retries".
 
 ### R81 Read the catalogue over the network a device at a time, from its index, kept in a local cache; the whole archive on disk is the other source.
 

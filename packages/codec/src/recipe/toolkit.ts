@@ -51,12 +51,11 @@ import { ACTIVITY_ROLE_NAMES, type ActivityRoleName } from '../compose/activityr
 import { catalogueProtocol } from '../compose/cataloguecodes.ts';
 import { capabilitiesOf } from '../families/capabilities.ts';
 import { chooseByModel, NoFamilyError } from '../families/registry.ts';
-import type { Pulse } from '../infrared/irframe.ts';
 import { notBuilt } from '../support/contract.ts';
 import {
-  readRecipe, RECIPE_VERSION, RecipeError,
-  type Recipe, type RecipeActivity, type RecipeDevice, type RecipeDeviceKey, type RecipeKey, type RecipeKeyAction,
-  type RecipeModel, type RecipeScreenItem,
+  readRecipe, RECIPE_VERSION, RecipeError, versionTwoFields,
+  type Recipe, type RecipeActivity, type RecipeCommandCode, type RecipeDevice, type RecipeDeviceKey, type RecipeKey,
+  type RecipeKeyAction, type RecipeModel, type RecipePress, type RecipeScreenItem,
 } from './recipe.ts';
 
 // ---------------------------------------------------------------------------------------------------
@@ -81,12 +80,13 @@ export type Owner = { readonly activity: ActivityId } | { readonly device: Devic
  * drawing carries as `data-name`, so an application reads it off the key a person clicked, and the same key on every
  * model that has it. Which words a document's model takes is `keyNames`'s answer; the number a family's firmware
  * knows the key by is the family's and never the document's, `RecipeKey`. `press` tells a key's second command, sent
- * when it is held, from its first, R38; absent is the short press.
+ * when it is held, from its first, R38, and in the document's version 2 its double press; absent is the short press,
+ * `RecipePress`.
  */
 export interface KeyPlace {
   readonly owner: Owner;
   readonly key: string;
-  readonly press?: 'short' | 'held';
+  readonly press?: RecipePress;
 }
 
 /**
@@ -100,7 +100,7 @@ export type Place =
   | { readonly kind: 'activity'; readonly activity: ActivityId }
   | { readonly kind: 'activity-device'; readonly activity: ActivityId; readonly device: DeviceId }
   | { readonly kind: 'step'; readonly activity: ActivityId; readonly when: 'start' | 'end'; readonly step: number }
-  | { readonly kind: 'key'; readonly owner: Owner; readonly key: string; readonly press?: 'short' | 'held' }
+  | { readonly kind: 'key'; readonly owner: Owner; readonly key: string; readonly press?: RecipePress }
   | { readonly kind: 'screen-item'; readonly owner: Owner; readonly item: number }
   | { readonly kind: 'sequence'; readonly sequence: SequenceId }
   | { readonly kind: 'favourite'; readonly device: DeviceId; readonly favourite: number }
@@ -179,9 +179,10 @@ export class ChangeRefused extends RecipeError {
 
 /**
  * A code for a device's command, R19 and R11: the catalogue's own notation, or pulses learned from the device's
- * original remote, which the definition then marks as learned.
+ * original remote, which the definition then marks as learned. The document holds it as `RecipeCommandCode`, in
+ * `RecipeDevice.commands`, so this is that type.
  */
-export type CommandCode = { readonly keycode: string } | { readonly learned: readonly Pulse[] };
+export type CommandCode = RecipeCommandCode;
 
 /**
  * A device as it is added: what the remote calls it and the definition a search fetched for it, R10, or one built
@@ -449,10 +450,17 @@ function inputNames(device: RecipeDevice): ReadonlySet<string> | undefined {
  * Refuse a change to a document that carries the part of a remote given documents, `Recipe.touch`: that part names
  * devices and activities itself, and no change here follows it yet. Said as a function not built, with the
  * requirement of the toolkit's changes, so an application meets one kind of "not yet".
+ *
+ * **The same for a document that states a field of version 2**, decision 43: a power order, a sequence's steps and an
+ * extra step name devices, sequences and commands, which no change here follows through a rename or a removal yet,
+ * and the highest ids given are not yet what `nextId` counts from. A change would leave such a document naming what
+ * is gone, or give an id twice, so it refuses rather than do half the work.
  */
 function changeable(document: Recipe, contract: string): void {
   opened(document);
   if (document.touch !== undefined) notBuilt(`${contract} for a document of a remote given documents`, 76);
+  const stated = versionTwoFields(document)[0];
+  if (stated !== undefined) notBuilt(`${contract} for a document stating ${stated.where}`, 76);
 }
 
 /**
@@ -510,7 +518,8 @@ function mentionsOf(document: Recipe, device: RecipeDevice): Mention[] {
     }
     (activity.screen ?? []).forEach((item, at) => {
       if ('sequence' in item) {
-        if (item.steps.some((step) => 'device' in step && step.device === device.name)) {
+        // A sequence named by the activity's own list, of version 2, carries no steps here to name a device.
+        if ((item.steps ?? []).some((step) => 'device' in step && step.device === device.name)) {
           found.push({ place: { kind: 'screen-item', owner, item: at }, kind: 'step', where: `activity ${activity.name}'s sequence ${item.sequence}` });
         }
       } else if (item.device === device.name) {
@@ -600,7 +609,12 @@ export function open(json: unknown): Recipe {
     activityIds[at] = id;
     return { id, ...one };
   });
-  return { ...read, version: RECIPE_VERSION, devices, activities };
+  const opened: Recipe = { ...read, version: RECIPE_VERSION, devices, activities };
+  // Read again as what it now is, a document of the current version: a version 1 file can state what version 2
+  // refuses, a key running a sequence the activity does not name, and opening it unchecked would hand back a document
+  // that does not open a second time, where opening is meant to be safe on every load.
+  readRecipe(opened);
+  return opened;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -690,7 +704,7 @@ export function setDevice(document: Recipe, device: DeviceId, changes: DeviceCha
         devices: activity.devices.map((used) => (used.device === now.name ? { ...used, device: name } : used)),
         ...(activity.screen === undefined ? {} : {
           screen: activity.screen.map((item) => ('sequence' in item
-            ? { ...item, steps: item.steps.map((step) => ('device' in step && step.device === now.name ? { ...step, device: name } : step)) }
+            ? (item.steps === undefined ? item : { ...item, steps: item.steps.map((step) => ('device' in step && step.device === now.name ? { ...step, device: name } : step)) })
             : item.device === now.name ? { ...item, device: name } : item)),
         }),
         ...(activity.keys === undefined ? {} : { keys: renamed(activity.keys)! }),
@@ -790,6 +804,8 @@ export function setKey(document: Recipe, key: KeyPlace, action: KeyAction | 'def
   // A key's second command and a sequence on a key are in the contract and not built: said by name, so that an
   // application meets the same refusal here as from a function that is not built at all.
   if (key.press === 'held') return notBuilt('recipe.setKey for a held press', 38);
+  // A double press exists on a gesture alone, so it waits on the gestures' requirement, R40, for either owner.
+  if (key.press === 'double') return notBuilt('recipe.setKey for a double press', 40);
   if (action !== 'default' && 'sequence' in action) return notBuilt('recipe.setKey for a sequence', 37);
   // A word and never a number: a scan code is one family's, and a document naming one would point at another key
   // once moved to another model.
@@ -899,6 +915,8 @@ export function remove(document: Recipe, what: Removable): Change {
     const left = without(keys);
     const items = screen?.flatMap((item): RecipeScreenItem[] => {
       if (!('sequence' in item)) return item.device === gone.name ? [] : [item];
+      // A sequence by its name alone is of version 2, which `changeable` keeps from reaching here.
+      if (item.steps === undefined) return [item];
       const steps = item.steps.filter((step) => !('device' in step && step.device === gone.name));
       // A sequence has at least one step that sends something: one left with pauses alone, or with none, goes.
       return steps.some((step) => 'device' in step) ? [{ ...item, steps }] : [];
@@ -960,8 +978,9 @@ export function devices(document: Recipe): DeviceSummary[] {
       name: one.name,
       entry: one.device,
       ...(slash < 0 ? {} : { manufacturer: one.device.slice(0, slash), model: one.device.slice(slash + 1) }),
-      // No definition marks a command as learned yet, R11, so no device is.
-      learned: false,
+      // A command whose code the document states as learned pulses, decision 43; no definition marks one as learned
+      // yet, R11, so that is the only place a learned command can be.
+      learned: Object.values(one.commands ?? {}).some((command) => command.code !== undefined && 'learned' in command.code),
     };
   });
 }
@@ -988,16 +1007,24 @@ export function sequences(document: Recipe): SequenceSummary[] {
 }
 
 /**
- * A device's commands, by name, in its definition's own order. Refused, as a `RecipeError`, for a device that
- * carries no definition: its commands are in a catalogue and not in the document, and an empty list would say it
- * has none.
+ * A device's commands, by name, in its definition's own order, then any the document's own commands of the device
+ * name that the definition does not, in the order they are stated. A command is changed where the document states a
+ * code for it, of either kind, and learned where that code is learned pulses, `RecipeDevice.commands`; how it is
+ * sent is no change of its code. Refused, as a `RecipeError`, for a device that carries no definition: its commands
+ * are in a catalogue and not in the document, and an empty list would say it has none.
  */
 export function commands(document: Recipe, device: DeviceId): CommandSummary[] {
   opened(document);
   const one = deviceOf(document, device);
   if (one.definition === undefined) throw new RecipeError(`${one.name} carries no definition, so its commands are not in the document`);
-  // No definition marks a command as changed or learned yet, R19 and R11.
-  return one.definition.commands.map((command) => ({ name: command.name, changed: false, learned: false }));
+  const own = one.commands ?? {};
+  const summary = (name: string): CommandSummary => {
+    const code = Object.hasOwn(own, name) ? own[name]!.code : undefined;
+    return { name, changed: code !== undefined, learned: code !== undefined && 'learned' in code };
+  };
+  const defined = one.definition.commands.map((command) => command.name);
+  // A command the document adds by its name alone would otherwise be missing from the list while it is in the file.
+  return [...defined, ...Object.keys(own).filter((name) => !defined.includes(name))].map(summary);
 }
 
 /**
@@ -1054,11 +1081,16 @@ export function favourites(document: Recipe, device: DeviceId): Favourite[] {
 
 /**
  * Everything that names a device or an activity: what removing it would touch, the same places `remove` reports as
- * effects. Nothing names an activity, so its list is empty. A sequence of its own is not built.
+ * effects. Nothing names an activity, so its list is empty. A sequence of its own is not built. **Not built for a
+ * document that states a field of version 2**, decision 43, as the changes are not: a power order, a sequence's
+ * steps, the steps at a start or an end and a device's screen name devices, and a list that left them out would say
+ * a removal touches less than it does.
  */
 export function uses(document: Recipe, what: Removable): Place[] {
   opened(document);
   if ('sequence' in what) return notBuilt('recipe.uses for a sequence', 37);
+  const stated = versionTwoFields(document)[0];
+  if (stated !== undefined) return notBuilt(`recipe.uses for a document stating ${stated.where}`, 77);
   if ('activity' in what) {
     activityOf(document, what.activity);
     return [];
@@ -1126,6 +1158,7 @@ export function check(document: Recipe): Problem[] {
         say('error', 'unknown-key', place, `${what} chooses what the ${key.key} key does, and a ${document.model.name}'s maps bind no key of that name`);
       }
       if (key.press === 'held') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a second command when held, which nothing builds yet`);
+      if (key.press === 'double') say('error', 'not-on-this-model', place, `${what} gives the ${key.key} key a command when pressed twice, which nothing builds yet`);
       if ('sequence' in key.action) {
         say('error', 'not-on-this-model', place, `${what} puts a sequence on the ${key.key} key, which nothing builds yet`);
       } else if ('device' in key.action) {
@@ -1163,6 +1196,18 @@ export function check(document: Recipe): Problem[] {
       }
     }
     checkKeys({ activity: activity.id! }, activity.keys, `activity ${activity.name}`);
+  }
+
+  // The fields of version 2 no build reads yet, decision 43: each is an error, since the build refuses on it, said
+  // where it is. A double press is said by the keys above already, so it is not said twice.
+  const activityByName = new Map(document.activities.map((one) => [one.name, one]));
+  for (const field of versionTwoFields(document)) {
+    if (field.requirement === undefined || field.field === 'keys') continue;
+    const owner = field.owner;
+    const place: Place = 'device' in owner && byName.has(owner.device) ? { kind: 'device', device: byName.get(owner.device)!.id! }
+      : 'activity' in owner && activityByName.has(owner.activity) ? { kind: 'activity', activity: activityByName.get(owner.activity)!.id! }
+        : whole;
+    say('error', 'not-on-this-model', place, `the document states ${field.where}, which nothing builds yet`);
   }
   return problems;
 }

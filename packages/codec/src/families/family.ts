@@ -13,6 +13,7 @@
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import type { HardKey } from '../compose/devicemode.ts';
 import type { Recipe } from '../recipe/recipe.ts';
+import type { FamilyMaps } from './maps.ts';
 import type { ActivityKeyRules, DeviceScreenItem } from '../compose/activityroles.ts';
 import type { Container, Instruction } from '../container/gspm.ts';
 import type { Edit } from '../edit/edit.ts';
@@ -310,6 +311,13 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * accepts and a key that does something else. The Harmony One has it, `families/harmony-one/recipekeys.ts`.
    */
   readonly recipeKeys?: RecipeKeyBuilder;
+  /**
+   * The family's maps, decision 43, `maps.ts`: the model's places, the commands it carries for a device, and the
+   * default maps of a device and of an activity, which `resolveMaps` puts the document's choices over for the build and
+   * the questions alike. The same interface as a document family's, so a key is asked the same way of every model.
+   * Absent where the family states none yet, which is every compiled family today.
+   */
+  readonly maps?: FamilyMaps;
   /**
    * What `buildStateTables` builds this family's base slots 0, 13 and 14 from, and `describeStateTables` reads
    * them by: the Harmony 600, 650 and 700's, and the Harmony One's, whose tables differ in four values.

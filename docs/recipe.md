@@ -29,7 +29,7 @@ misspelling is an error rather than a default.
 
 | field | what it is |
 |---|---|
-| `version` | optional, the format's version, a whole number from 1; absent is 1, and one this does not read is refused |
+| `version` | optional, the format's version, a whole number from 1; absent is 1, and one this does not read is refused. **Version 2**, decision 43, is one shape for every model: it adds the fields marked version 2 below and changes the meaning of none, so a document of version 1 reads and builds as before, and a field of version 2 in a document of version 1 is refused, as the reader of version 1 refused it. `recipe.create` and `recipe.open` write version 2 |
 | `about` | optional prose, for a person |
 | `model.name` | Logitech's name, `Harmony 650`: "Harmony" and the model table's name |
 | `model.skin` | optional, the skin; it has to agree with the name, and a name two skins share would need it (none does today) |
@@ -39,8 +39,14 @@ misspelling is an error rather than a default.
 | `devices[].device` | its catalogue entry, `<manufacturer>/<file>` in the archive of decision 15 |
 | `devices[].poweredOnBetweenActivities` | optional, MyHarmony's keep this device on when switching activities |
 | `devices[].key` | optional, the Harmony 300 and 350's device key: `place` as the family counts it, from 0, and `press`, `short` or `long`, short unless given; plan 014 |
-| `devices[].keys` | optional, the keys a person chose otherwise in the device's own map, device mode's: each `key`, Logitech's word for the key (`VolumeMute`, `Info`, `Number0`), the name every model's drawing carries as `data-name` in `reference/silhouettes/`, `press`, `short` or `held`, short unless given, and `action`, one of `{device, command}`, `{sequence}` and `{nothing: true}`; a key not listed keeps what the builders derive, and one key and press stated twice is refused. **A key is never named by its scan code**: a scan is a number inside one family's firmware, Mute is 9 on a Harmony One and another number on a Harmony 650, and a Harmony Touch has none, so a document moved between models would point at other keys; the family that builds for the model turns the word into its scan, `Family.recipeKeys`, and `recipe.keyNames` answers which words a document's model takes. A document written before this named its keys by `scan`, and is refused as a field no recipe has. **Built on the Harmony One**, for a short press sending a command or nothing, on the 37 keypad keys its maps bind, scan 13 named `Enter` by the family where the drawing gives that key no scan; every other model's build refuses a recipe that states a key, and a held press and a sequence are refused everywhere, rather than building a file whose key does something else |
+| `devices[].keys` | optional, the keys a person chose otherwise in the device's own map, device mode's: each `key`, Logitech's word for the key (`VolumeMute`, `Info`, `Number0`), the name every model's drawing carries as `data-name` in `reference/silhouettes/`, `press`, `short`, `held` or, in version 2, `double`, short unless given, and `action`, one of `{device, command}`, `{sequence}` and `{nothing: true}`; a key not listed keeps what the builders derive, and one key and press stated twice is refused. **A key is never named by its scan code**: a scan is a number inside one family's firmware, Mute is 9 on a Harmony One and another number on a Harmony 650, and a Harmony Touch has none, so a document moved between models would point at other keys; the family that builds for the model turns the word into its scan, `Family.recipeKeys`, and `recipe.keyNames` answers which words a document's model takes. A document written before this named its keys by `scan`, and is refused as a field no recipe has. **Built on the Harmony One**, for a short press sending a command or nothing, on the 37 keypad keys its maps bind, scan 13 named `Enter` by the family where the drawing gives that key no scan; every other model's build refuses a recipe that states a key, and a held press, a double press and a sequence are refused everywhere, rather than building a file whose key does something else |
 | `devices[].definition` | optional, the device carried: `record`, the archive's device file as it is, and `commands`, its codeset's commands as `name` and `keycode`; served before any archive, so a recipe that carries every device builds with none. `packages/codec/bin/carry-codes.ts` fills it; plan 014 |
+| `devices[].timing` | version 2, optional, a person's timing in the catalogue's own member names, `DeviceTiming` in `catalogue/driving.ts`: `interKeyDelay`, `interDeviceDelay`, `holdInterDeviceDelay`, `powerOnDelay`, `inputDelay`, `connectedAppPowerOnDelay` in milliseconds, `pressMinRepeats` and `minRepeats`, and `isInterKeyDelayOptimized`; each delay and repeat count a whole number from 0, the flag true or false; each member given stands over the catalogue's, and it is kept apart from `definition` so a definition fetched again replaces nothing a person chose. How long a delay or how many repeats a remote takes is the family's to bound when it builds them |
+| `devices[].power` | version 2, optional, the catalogue's power members, `DevicePower`, `type` and the step lists `on`, `off`, `toggle` and `onReset`, each given standing over the catalogue's, and `alwaysOn`, a device never switched off; kept on between activities stays `poweredOnBetweenActivities`. An empty step list is kept, since it says the device is switched by nothing where leaving it out keeps the catalogue's |
+| `devices[].channelTuning` | version 2, optional, how a channel number is entered, in the catalogue's shape, `DeviceChannelTuning`: `fixedDigits` from 1 and the step lists `start`, `finish`, `greaterTen` and `greaterHundred`, stated whole, an empty one kept for the reason `power` gives |
+| `...steps[]` of power and tuning | the catalogue's steps as the codec reads them, `DriveStep`: `{kind: 'send', command, holdMs?}`, `{kind: 'hold', command}`, `{kind: 'wait', ms}` or `{kind: 'state', state, value}`, a command always by its name |
+| `devices[].screen[]` | version 2, optional, the device's screen list in device mode, stated whole, an empty list for none: each `{ device, command, label? }`, where `device` may be any device of the document, as device mode sends to any; absent is what the family derives |
+| `devices[].commands` | version 2, optional, a person's changes to single commands, by command name, never an empty name nor `__proto__`: `code`, `{ keycode }` in the catalogue's notation or `{ learned }`, at least one pulse, each `{ mark, us }` with `us` a whole number from 1, and `sending`, `copies` in the first block from 1, `heldPaceMs` and `leadInMs` in milliseconds from 0; the sending part is room only and nothing builds it. Upper bounds on copies and paces are the family's to set when it builds them |
 | `protocols` | optional, the protocol definitions the carried commands are written in, as the archive's protocol files hold them |
 | `activities[]` | in the order the activity menu lists them |
 | `activities[].keys` | optional, the same for the activity's map |
@@ -48,11 +54,33 @@ misspelling is an error rather than a default.
 | `activities[].name` | as the menu draws it |
 | `activities[].type` | MyHarmony's type: `WatchTV`, `WatchDvd`, `ListenToMusic`, `Custom`; which activity key a type takes is a choice, `activityKeys` |
 | `activities[].devices[]` | each device it uses: `device` by name, `input` by the catalogue's name for it, and `roles`, the jobs it does, `Display`, `Volume`, `ChannelChanging`, `PlayMovie`, `PlayMedia`, `PlayGame`; no role is a pass through device |
-| `activities[].screen[]` | optional, the working screen's items in order: `{ device, command }`, a command by the label the device's own screen draws it under, or `{ sequence, steps }` |
-| `...screen[].steps[]` | `{ device, scan }`, the command that device's key sends, by the key's scan code (`reference/remotes/harmony-650/keys.md`), or `{ pause }` in tenths of a second |
+| `activities[].screen[]` | optional, the working screen's items in order: `{ device, command }`, a command by the label the device's own screen draws it under, in version 2 with a `label` of its own and the device one of the document's; `{ sequence, steps }`, the form of version 1; or, in version 2, `{ sequence }`, one of the activity's own `sequences` by its name. A sequence written out here may not share its name with one of `sequences` |
+| `...screen[].steps[]` | the form of version 1: `{ device, scan }`, the command that device's key sends, by the key's scan code (`reference/remotes/harmony-650/keys.md`), or `{ pause }` in tenths of a second |
+| `activities[].opensOn` | version 2, optional, the screen the activity opens on, by the word the model's family names it by |
+| `activities[].favourites` | version 2, optional, whether this activity holds the favourite channels; at most one activity says true |
+| `activities[].powerOrder[]` | version 2, optional, the order the activity switches its devices on in, by name, each of its devices once |
+| `activities[].start[]`, `end[]` | version 2, optional, extra steps when the activity starts and ends: `{ device, command }`, the device one of the activity's, `{ pause }` in whole tenths of a second from 1, or `{ sequence }`, one of the activity's own `sequences`; none is said by leaving the field out, and an empty list is refused |
+| `activities[].sequences[]` | version 2, optional, the activity's named sequences: `id`, given by the toolkit, `s` and a number, `name`, once within the activity, and `steps`, each `{ device, command }`, the device one of the activity's, or `{ pause }` in whole tenths from 1, at least one sending a command; **a step names its command and never a scan code**, so a document moved to another model means the same commands. In version 2 a key's `{ sequence }` names one of the activity's sequences, either form, and a device's key runs none, a device having no sequences |
 | `choices` | optional, the family's choices over its defaults, the look among them (letters, inks, colours, icons): `FourSlotChoices` for the Harmony 600, 650 and 700, `OneChoices` for the Harmony One, none for the Harmony 300, 350 and Touch; the family refuses one it does not make. A reference recipe states every choice, `unstatedChoices` answering empty, so a default changed later cannot change it; plan 014 |
 | `favourites[]` | optional, favourite channels per device: `device` by name, a device of the recipe, at most once, and `channels`, in the order of the remote's favourite keys |
 | `...favourites[].channels[]` | each a channel number **as text**, digits with at most one dot or dash between them, so a leading zero survives: `"07"` is a channel of its own. Logitech's service holds a channel as text, `reference/logitech/service.md`, "Button maps" |
+| `settings` | version 2, optional, the remote's own settings by the names its family gives them, never an empty name nor `__proto__`, each a text, a number or true or false |
+| `highestIds` | version 2, optional, the highest number the toolkit has given an id of each kind, `device`, `activity` and `sequence`, so an id is never given twice, each a whole number from 0; it counts only ids of the toolkit's form, `d`, `a` or `s` and a number, so an id of that form numbered past it is refused and an id written otherwise is not judged. No build reads it, since it changes no byte a remote receives |
+
+**No build reads a field of version 2 yet, and none leaves one out without a word.** Every route to a build,
+`buildFromRecipe`, each family's `fromRecipe`, the composers of a setup and the Harmony Touch's setup reader and
+builders, refuses a document stating any of them as a function not built, naming the field and the requirement it
+waits on, `refuseUnbuiltFields` in `recipe/recipe.ts`, which walks `VERSION_TWO`, the one table the reader also
+takes its fields of version 2 from; `highestIds` is the one passed over. The toolkit's `check` lists each such field
+as an error, and its changes and `uses` refuse a document stating one, since none of them follows these fields
+through a rename or a removal yet.
+
+**What is refused as empty**: a name or a text with nothing in it, a field that is an object stating no member
+(`timing: {}`, a command entry `{}`), a sequence or an extra step list with no step, and a learned code with no
+pulse. An empty list is kept where it says something, a device screen of none and a power or tuning step list of
+none. `recipe.open` reads what it opens again as version 2, so a document of version 1 stating what version 2
+refuses, a key running a sequence its activity does not name, is refused there rather than opened once and refused
+on the next load.
 
 **Favourite channels are given to Logitech's service and built by nothing of ours yet.**
 `packages/corpus/bin/build-setup.ts --stage favourites` saves them on a test account's record so a
@@ -62,6 +90,51 @@ favourites on the 350's test setup were typed into MyHarmony's own screen, `todo
 `reference/logitech/service.md`, "Button maps". Every composer
 refuses a recipe that states any, since none writes a favourite channel and a configuration built
 without them would be missing what its recipe asked for.
+
+## Syncing a recipe, and trying it with nothing attached
+
+An application hands a whole recipe to `syncDocument` on `@harmony/corpus/write`, R79, which checks it, builds it,
+writes it with the model's own write path and tells what it does as events: the phase it is in, how far along, what
+a person must do or leave, and how it ended. Its header in `packages/corpus/src/sync.ts` is the contract; the order of
+the phases per kind of remote is on `SyncPhase`, and every way a sync ends, each result with what it leaves the remote
+as, per kind of remote, is `SYNC_ENDINGS`, which `SyncOutcome`'s types are derived from.
+
+**A pretend remote takes the place of the cable**, R80, so every screen of a sync and a read can be built and tried
+with no remote attached. It goes through the same stages as a remote on the cable, so its events, their order, its
+outcomes and their words are the real path's, which `packages/corpus/test/write/pretend-against-attached.test.ts`
+holds for a Harmony One and a Harmony Touch. A worked example, for a Harmony One:
+
+```ts
+import { recipe } from '@harmony/codec';
+import { readConfig } from '@harmony/corpus';
+import { pretendReader, pretendRemote, syncDocument } from '@harmony/corpus/write';
+
+const document = recipe.create({ name: 'Harmony One', skin: 54 });
+// Fifty milliseconds a step, so a progress bar can be watched; the next sync fails part way through its write.
+const remote = pretendRemote({ model: document.model, stepMs: 50, failIn: 'write' });
+
+const sync = (): ReturnType<typeof syncDocument> => syncDocument({
+  document, remote, commit: true,
+  sources: { builtAt: '2026-11-15T09:00:00' },
+  onEvent: (event) => console.log(event),   // a screen draws the latest event of each kind
+  journal: (line) => console.log(line),     // required: the record of what was done
+});
+
+await sync();   // { result: 'failed', remote: 'needs-recovery', message: 'the write stopped part way: ...' }
+await sync();   // { result: 'written', remote: 'new-configuration' }: the same sync again finishes the blocks it left
+
+// The read of a configuration, as off a remote on the cable: the same progress, checks and failures.
+const { reader, profile } = pretendReader(remote);
+const read = await readConfig(reader, profile, { onProgress: ({ done, total }) => console.log(done, total) });
+```
+
+The first sync reports `identify`, `check`, `build`, `backup` with eight steps of progress, the warning to leave the
+remote on its cable, `write` with four steps, and ends failed; the second compares and writes the four blocks left.
+`failIn` names one failure for the next sync or read: `identify`, `check`, `build`, `backup`, `hand-over`, `write`,
+`verify`, `restart` or `read`, each ending as the real path ends a failure there. A pretend Harmony Touch also takes
+`powerSource`, which refuses a sync on anything but `usb` as the remote's own check does, and `aborts`, the remote's
+own abort. A Harmony Touch's documents have no read on any entry yet, so `pretendReader` refuses a Touch, as it
+refuses every model the read of a configuration does not serve.
 
 ## Against FreeHarmony's data model
 

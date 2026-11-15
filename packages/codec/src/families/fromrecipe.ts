@@ -17,10 +17,18 @@
  * **What the families read of a recipe that others do not**: the Harmony 300 and 350 a device key per device,
  * `RecipeDevice.key`, and the Harmony Touch its own part, `Recipe.touch`, read by its setup reader, which also takes
  * the account's own identifiers from the sources, since those come off the remote and never sit in a recipe.
+ *
+ * **What no family reads is refused before anything is built**: a field of the recipe's version 2, decision 43, that
+ * no build reads yet stops the build as a function not built does, with the requirement it waits on,
+ * `refuseUnbuiltFields`. Refused rather than left out, since a configuration built without a person's timing or power
+ * order is one the remote accepts and that does something else than the document says. Here first, before any source
+ * is asked for, and again by every route below it, each family's `fromRecipe`, the composers of a setup and the
+ * Harmony Touch's reader and builders, since this repository's scripts and an application through a family's own
+ * entries reach those without passing here.
  */
 import { carriedCatalogue } from '../catalogue/carried.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
-import { readRecipe, RecipeError, statedKeys } from '../recipe/recipe.ts';
+import { readRecipe, RecipeError, refuseUnbuiltFields, statedKeys } from '../recipe/recipe.ts';
 import { resource } from '../support/resources.ts';
 import type { SyncDocuments } from './harmony-touch/documents.ts';
 import type { OwnPicture } from './harmony-touch/favourites.ts';
@@ -66,6 +74,8 @@ export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
   const { family, skin } = choice;
   if (family.kind === 'compiled' && family.fromRecipe === undefined) throw new RecipeError(`nothing here builds ${family.name} from a recipe yet`);
   const recipe = readRecipe(json);
+  // A field of version 2 no build reads yet, before anything is built or any source is asked for.
+  refuseUnbuiltFields(recipe, 'buildFromRecipe');
   // A key the recipe chooses otherwise, R31 and R32, is built by a family that states how, `Family.recipeKeys`, and
   // refused by every other before anything is built: a file built without the choice is one the remote accepts and
   // whose key does something else. The Harmony Touch's keys are its own part's, which its family reads.

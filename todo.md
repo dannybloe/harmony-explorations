@@ -55,8 +55,8 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
 - [x] 2.1 The contracts written down: the functions of the document toolkit, the device search and the sync with its events, as types on the entries and held by the surface tests, each refusing by name where nothing is behind it yet
 - [x] 2.2 The skeleton on the spare Harmony One: find a device in the catalogue, put it in a document, change what a key does in an activity and in device mode (R31, R32), check it, build it and sync it with events, through the contracts alone, and heard on the infrared monitor
 - [ ] 2.3 The same path on the Harmony Touch, the other kind of family, and whatever of the contracts does not fit it changed before anything is released, [plan 018](docs/plans/018-one-document-shape.md), decision 43
-  - [ ] 2.3.1 The recipe's version 2 types and reader: timing, power, tuning and a screen on a device, what an activity opens on, its power order, steps and sequences, three presses, with the Touch block still read
-  - [ ] 2.3.2 The maps interface both kinds of family carry: the model's places, a device's and an activity's default map, and defaults with the document's choices resolved
+  - [x] 2.3.1 The recipe's version 2 types and reader: timing, power, tuning and a screen on a device, what an activity opens on, its power order, steps and sequences, three presses, with the Touch block still read
+  - [x] 2.3.2 The maps interface both kinds of family carry: the model's places, a device's and an activity's default map, and defaults with the document's choices resolved
   - [ ] 2.3.3 The Harmony Touch's maps: places, resolve, ids from the toolkit's ids, and a converter from the old block proven by a round trip with its listed differences
   - [ ] 2.3.4 The Harmony One's maps, its activity rule extracted in command names so the build and the questions share it
   - [ ] 2.3.5 The questions answer on both: every key of a device or an activity, bound or not, default or chosen, with the settings its command is sent with (R77)
@@ -65,7 +65,7 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
   - [ ] 2.3.8 The changes work on a Touch document as on any other: keys with a held and a double press, screens, a device's timing kept over the catalogue's, sequences owned by an activity, a definition fetched again, ids never reused
   - [ ] 2.3.9 End to end with nothing attached: a Touch document created, a device added, one key changed, the whole map asked, checked, built and synced to the pretend remote
   - [ ] 2.3.10 The new set heard once on the infrared monitor from the bench Harmony Touch, and its own setup put back
-- [ ] 2.4 A pretend remote an application reads and syncs against with nothing attached, its progress and its failures included (R80)
+- [x] 2.4 A pretend remote an application reads and syncs against with nothing attached, its progress and its failures included (R80)
 - [ ] 2.5 What an application asks of the FHSDK that no contract covers, gone through against the requirements once the skeleton stands
   - [ ] 2.5.1 A message an application shows carries no bench command line: after a Harmony Touch sync that acted on the remote, the way back is a state the outcome names
   - [ ] 2.5.2 A failure's words name the phase it happened in: a read back that differs is not a write that stopped part way
@@ -120,7 +120,7 @@ R10 to R19 devices, R21 to R30 activities, R31 to R44 keys and screens, R45 and 
   - [ ] 7.4.1 Untested: nesting deeper than one level, a sub-page on a device's own page, whether the hard Exit key returns from one, and whether going back returns to the page it left (the add-an-activity screen returns with push and pop, section 341)
   - [ ] 7.4.2 A composer for a sub-page, against the 650's favourites page as Logitech compiles it
 - [ ] 7.5 The remote's own help, the advanced help and its delay fixing in every activity: [todo-help.md](todo/todo-help.md) (R44)
-- [ ] 7.6 Tune one command of one device: how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue's value, which Logitech did only through its support desk; a requirement of its own, to be numbered with the next change to the requirements
+- [ ] 7.6 Tune one command of one device: how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue's value, which Logitech did only through its support desk; R89
   - [x] 7.6.1 A receiver's held volume measured on the infrared monitor, the everyday One beside the receiver's own remote: the same code in the same even stream, the One two percent faster, `docs/test-notes/harmony-one.md`
   - [ ] 7.6.2 At the receiver: whether its own remote gets the same late start and fast run, and whether codes sent further apart make it step evenly
 

@@ -9,7 +9,7 @@ What each requirement means is [the requirements](../docs/remote-requirements.md
 [the evidence](../docs/remote-requirements-evidence.md).
 
 <!-- checklist -->
-Open: 46, of which 27 its own or its family's work, 15 the FHSDK's work alone and 4 a run on a unit alone.
+Open: 48, of which 28 its own or its family's work, 16 the FHSDK's work alone and 4 a run on a unit alone.
 
 ## The whole configuration
 
@@ -33,6 +33,7 @@ Open: 46, of which 27 its own or its family's work, 15 the FHSDK's work alone an
 - [ ] R17 Set how many times a device's commands repeat. (waits on the FHSDK)
 - [ ] R18 Set how a device tunes a channel number. (waits on the FHSDK and its family)
 - [ ] R19 Add, fix and remove a device's command, and put a fixed one back to its original code. (waits on the FHSDK)
+- [ ] R89 Tune one command of a device: how many times a press sends it, how long a held key waits before it repeats and how fast it then repeats, kept in the document and never replaced by the catalogue's value. (waits on the FHSDK)
 
 ## Activities
 
@@ -44,6 +45,8 @@ Open: 46, of which 27 its own or its family's work, 15 the FHSDK's work alone an
 - [ ] R27 Give an activity an icon. (waits on the FHSDK)
 - [ ] R28 Order the activity menu and an activity's device list. (waits on its family)
 - [ ] R30 Add steps to an activity's start and end: commands, pauses, a sequence. (waits on the FHSDK)
+- [ ] R90 Choose the order in which an activity switches its devices on and off. (waits on the FHSDK and its family)
+- [ ] R91 Choose the screen an activity opens on, where the remote has more than one. (find out first)
 
 ## Keys and screens
 

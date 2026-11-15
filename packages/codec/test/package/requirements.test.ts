@@ -195,11 +195,11 @@ test('the short document is the introduction, two tables and the requirements; t
   const headings = text.split('\n').filter((line) => /^##? /.test(line));
   assert.deepEqual(headings, ['# The FHSDK\'s requirements, per remote', '## Where each remote stands', '## What the open ones wait on', '## The requirements']);
   // A row per remote: proven, open, unknown, impossible, and proven of possible, as the data counts them.
-  assert.ok(text.includes('| Harmony 650 | 10 | 50 | 2 | 9 | 10 of 62 |'));
+  assert.ok(text.includes('| Harmony 650 | 10 | 52 | 3 | 9 | 10 of 65 |'));
   // And a row per remote of whose work its open ones are: its own or its family's, the FHSDK's alone, a run alone.
-  assert.ok(text.includes('| Harmony 650 | 50 | 23 | 18 | 9 |'));
+  assert.ok(text.includes('| Harmony 650 | 52 | 24 | 19 | 9 |'));
   // The Harmony 515, which no family serves, waits on the FHSDK alone for one requirement only.
-  assert.ok(text.includes('| Harmony 515 | 48 | 47 | 1 | 0 |'));
+  assert.ok(text.includes('| Harmony 515 | 50 | 49 | 1 | 0 |'));
   // The evidence document names the tests that prove a met, by file and title.
   const evidence = evidenceDocument(PROOFS);
   const one = PROOFS.find((proof) => proof.requirement === 1 && proof.models !== 'every' && proof.models.includes('harmony-650'))!;

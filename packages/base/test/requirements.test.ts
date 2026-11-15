@@ -70,14 +70,19 @@ function everyState(): { label: string; state: RequirementState; needsBench: boo
   })));
 }
 
-test('the requirements are numbered from 1 with no gap and no repeat, 88 of them under fifteen subjects', () => {
+test('the requirements are numbered from 1 with no gap and no repeat, 91 of them under fifteen subjects', () => {
   // Exact, so a requirement added or taken out shows in this diff; a dropped one stays, withdrawn.
-  assert.equal(REQUIREMENTS.length, 88);
-  assert.deepEqual(REQUIREMENTS.map((one) => one.number), Array.from({ length: 88 }, (_, i) => i + 1));
+  assert.equal(REQUIREMENTS.length, 91);
+  assert.deepEqual(REQUIREMENTS.map((one) => one.number), Array.from({ length: 91 }, (_, i) => i + 1));
   assert.equal(REQUIREMENT_SUBJECTS.length, 15);
-  // The subjects follow each other in number order: a subject's requirements are one run.
-  const runs = REQUIREMENTS.map((one) => one.subject).filter((subject, i, all) => subject !== all[i - 1]);
-  assert.deepEqual(runs, REQUIREMENT_SUBJECTS);
+  // The subjects are listed in the order of their first requirement, and each subject's requirements are in number
+  // order. A requirement added to a subject after a later one was numbered takes the next free number, since a number
+  // is never moved, so a subject's numbers are one run but for those: R89, the devices' latest, and R90 and R91, the activities'.
+  const firsts = REQUIREMENT_SUBJECTS.map((subject) => REQUIREMENTS.find((one) => one.subject === subject)!.number);
+  assert.deepEqual(firsts, [...firsts].sort((a, b) => a - b));
+  const late = REQUIREMENTS.filter((one, i, all) => i > 0 && one.subject !== all[i - 1]!.subject
+    && REQUIREMENTS.some((other) => other.number < one.number && other.subject === one.subject));
+  assert.deepEqual(late.map((one) => [one.number, one.subject]), [[89, 'Devices and codes'], [90, 'Activities']]);
   for (const one of REQUIREMENTS) assert.ok(one.text.length > 0 && one.text.endsWith('.'), `R${one.number}`);
 });
 
@@ -112,7 +117,7 @@ test('every bench model has a status for every requirement, and a whole one is t
     const states = BENCH_MODELS.map((model) => requirementState(model.key, one.number));
     assert.ok(states.every((state) => state === states[0]), `R${one.number} is one status`);
   }
-  assert.throws(() => requirementState('harmony-one', 89), /no requirement R89/);
+  assert.throws(() => requirementState('harmony-one', 999), /no requirement R999/);
   assert.equal(requirement(0), undefined);
 });
 
@@ -356,13 +361,13 @@ test('the control: a requirement both proven and written, and one neither, are e
 
 test('the control: a proof naming no requirement, no bench model, a model twice or some models for a whole requirement is found', () => {
   const faults = namingFaults([
-    planted({ requirement: 89 }),
+    planted({ requirement: 999 }),
     planted({ models: ['harmony-520'] }),
     planted({ models: ['harmony-one', 'harmony-one'] }),
     planted({ requirement: 73, models: ['harmony-one'] }),
   ]);
   assert.equal(faults.length, 4, faults.join('\n'));
-  assert.match(faults[0]!, /no requirement R89/);
+  assert.match(faults[0]!, /no requirement R999/);
   assert.match(faults[1]!, /harmony-520 is no bench model/);
   assert.match(faults[2]!, /a model named twice/);
   assert.match(faults[3]!, /R73 is the FHSDK's as a whole/);
@@ -416,7 +421,7 @@ test('the helper checks its own arguments and nothing else: a requirement, bench
   assert.doesNotThrow(() => proof.proves(20, 'every'));
   // A path that does not exist passes here: the helper does not look at the disk, the checks above do.
   assert.doesNotThrow(() => proof.proves(1, ['harmony-650'], ['docs/test-notes/no-such.md']));
-  assert.throws(() => proof.proves(89, 'every'), /no requirement R89/);
+  assert.throws(() => proof.proves(999, 'every'), /no requirement R999/);
   assert.throws(() => proof.proves(1.5, 'every'), /no requirement/);
   assert.throws(() => proof.proves(1, []), /names no model/);
   assert.throws(() => proof.proves(1, ['harmony-520' as BenchModelKey]), /harmony-520, which is no bench model/);

@@ -67,7 +67,7 @@
  */
 import type { CatalogueSource } from '../../catalogue/catalogue.ts';
 import { encodePng } from '../../screens/png.ts';
-import { readRecipe, type Recipe, type RecipeActivity, statedKeys } from '../../recipe/recipe.ts';
+import { readRecipe, type Recipe, type RecipeActivity, refuseUnbuiltFields, statedKeys } from '../../recipe/recipe.ts';
 import { resource } from '../../support/resources.ts';
 import { deviceRecordOfArchive } from './archivedevice.ts';
 import {
@@ -149,6 +149,9 @@ export interface TouchSetupFile extends Omit<Recipe, 'touch'> {
  */
 export function readTouchSetupFile(json: unknown): TouchSetupFile {
   const recipe = readRecipe(json);
+  // A field of version 2 no build reads yet is refused on reading, decision 43, `refuseUnbuiltFields`: the file read
+  // here goes on to the builders below and to this repository's experiments, which build it with no other check.
+  refuseUnbuiltFields(recipe, 'readTouchSetupFile');
   if (recipe.model.name !== HARMONY_TOUCH_MODEL) refuse(`the setup file is for the ${recipe.model.name}, not the ${HARMONY_TOUCH_MODEL}`);
   if (recipe.favourites !== undefined) refuse('the setup file states favourite channels, which nothing here composes: the favourites documents stay the remote\'s');
   // The recipe's key choices, R31 and R32, are not what a Touch's buttons are built from, its own part is; refused
@@ -268,6 +271,8 @@ export function catalogueOfArchive(file: TouchSetupFile, archive: CatalogueSourc
  * Touch's part. Devices and activities in the recipe's order.
  */
 export function setupOfSetupFile(file: TouchSetupFile, catalogue: TouchCatalogue): TouchSetup {
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(file, 'setupOfSetupFile');
   const devices: SetupDevice[] = file.devices.map((r) => {
     const p = file.touch.devices.find((x) => x.device === r.name)!;
     const record = catalogue.devices.find((d) => d.Device['Id-'] === p.id);
@@ -413,6 +418,8 @@ export function ourBackground(): OurBackground {
  * screens cannot show it.
  */
 export function settingsOfSetupFile(file: TouchSetupFile): Settings {
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(file, 'settingsOfSetupFile');
   const values = file.touch.settings;
   const background = ourBackground();
   for (const name of Object.keys(values)) {
@@ -472,6 +479,9 @@ export function contextOfAccount(account: TouchAccount): Context {
  * an account that states no favourites, and whatever the readers and composers refuse.
  */
 export function buildTouchDocuments(file: TouchSetupFile, options: { readonly archive: CatalogueSource; readonly account: TouchAccount }): SyncDocuments {
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  // A file not read by `readTouchSetupFile`, built by hand, meets it here.
+  refuseUnbuiltFields(file, 'buildTouchDocuments');
   let catalogue = catalogueOfArchive(file, options.archive);
   const favourites = file.touch.activities.find((a) => a.tuningDefault === true);
   if (favourites !== undefined) {

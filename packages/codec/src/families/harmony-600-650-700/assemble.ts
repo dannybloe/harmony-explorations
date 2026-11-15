@@ -73,7 +73,7 @@
  * and names no remote. The skin sets it gates on are the family's, `skins.ts`, and the state tables it builds are
  * the family's own facts, `FOUR_SLOT_STATE_TABLES`, where it asked the registry for them.
  */
-import { type Recipe, recipeTarget } from '../../recipe/recipe.ts';
+import { type Recipe, recipeTarget, refuseUnbuiltFields } from '../../recipe/recipe.ts';
 import { AssemblyError, type AssembleOptions, type AssemblyStep, checkComposed, composeSetupParts } from '../../shared/setup.ts';
 import { sameBytes, u16 } from '../../support/bytes.ts';
 import { archSlot } from '../../container/gspm.ts';
@@ -142,6 +142,8 @@ export interface Assembled {
  * cannot serve the setup, and check the result as every generator's own calibration checks a compile.
  */
 export function assembleSetup(setup: Recipe, options: AssembleOptions): Assembled {
+  // A field of version 2 no build reads yet stops this route as every other, decision 43, `refuseUnbuiltFields`.
+  refuseUnbuiltFields(setup, 'assembleSetup');
   // The recipe's model, whose definition says what it can hold and whose family builds for it.
   const target = recipeTarget(setup);
   if (target.family !== FOUR_SLOT || !(ASSEMBLY_SKINS.has(target.skin) || OUR_DONOR_SKINS.has(target.skin))) {
