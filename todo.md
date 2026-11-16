@@ -88,7 +88,7 @@ R75, decision 39. FreeHarmony takes the FHSDK by version through its `package.js
   - [x] 3.1.1 Two packages renamed before anything is released, folders and import names together: `codec` to `config` and `corpus` to `remote`, and every package under the prefix `@freeharmony-sdk`
   - [x] 3.1.2 No released package depends on the lab locator: the Logitech service client in `corpus` takes its credentials from its caller, and the bench scripts hand it the lab's
   - [x] 3.1.3 The route written down as a decision: the packed files attached to a GitHub release, npm possibly later; FreeHarmony's committed `package.json` names a released version and a local override to the folder next door is for development only, which adjusts decision 39, [decision 45](docs/decisions.md#d45)
-- [ ] 3.2 The first numbered release of `packages/*`, so somebody without this checkout can build on it, and FreeHarmony's `link:` dependency replaced by it
+- [ ] 3.2 The first numbered release of `packages/*`, so somebody without this checkout can build on it, and FreeHarmony's `link:` dependency replaced by it; held back on 16 November 2026: nothing is released while the SDK cannot write a user's own remote, 5.4, so this item waits for it, and the rehearsal of the release already passes (`make release-check`)
 - [x] 3.3 The whole API documented for somebody building on it, published as the website's own section, `reference/sdk/`: a page per entry generated from the sources, the documents' shapes, and a guide whose examples run as tests, held by `make api-reference`, the pre-commit hook and the site workflow
 
 ## 4. The document toolkit
