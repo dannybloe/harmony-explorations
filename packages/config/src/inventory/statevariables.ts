@@ -75,20 +75,20 @@ export function stateVariables(c: Container): StateVariable[] {
 /**
  * How many devices the config drives: one infrared group per device.
  *
- * Base slot 5's groups are the device partition of the infrared database, 8 to 164 codes each, and
- * a group may be empty. Two things say a group is a device rather than some other grouping: the
+ * Base slot 5's groups are the device partition of the infrared database, and a group may be empty.
+ *
+ * @privateRemarks
+ * 8 to 164 codes each. Two things say a group is a device rather than some other grouping: the
  * config compiled for one device carries exactly one group, and on the two arch 14 configs the
  * number of distinct device identifiers in the state variable names is the number of groups, 4 and
  * 6.
- *
- * @privateRemarks
  * Section 86.
  */
 export function deviceCount(c: Container): number | undefined {
   return irGroups(c)?.length;
 }
 
-/** The distinct device identifiers the names carry, in first appearance order. Arch 14 only. */
+/** The distinct device identifiers the names carry, in first appearance order. Harmony 600, 650 and 700 only. */
 export function deviceIds(c: Container): number[] {
   const out: number[] = [];
   for (const variable of stateVariables(c)) {

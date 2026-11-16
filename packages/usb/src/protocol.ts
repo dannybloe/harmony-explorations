@@ -813,8 +813,8 @@ export interface VersionReading {
   /**
    * Field 6, which names a **platform** and not an architecture.
    *
-   * `0x0C` on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700), which are one platform under
-   * it, `0x09` on arch 9 (Harmony 525) and `0x08` on arch 8 (Harmony 880 and 885).
+   * `0x0C` on the Harmony One and the Harmony 600 and 700, which are one platform under it, `0x09` on
+   * the Harmony 525 and `0x08` on the Harmony 880 and 885.
    *
    * @privateRemarks
    * **What a remote in a recovery role answers is per architecture**, and this said `0x00` for any

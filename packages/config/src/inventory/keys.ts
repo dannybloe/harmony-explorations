@@ -115,7 +115,7 @@ export interface DeviceModeMap {
    *
    * The tag is the whole key code, an event type in `0xC0` and a scan code in `0x3F`, exactly as
    * base slot 9 spells one. These are physical keys: the scan codes here and the ones a page binds
-   * are disjoint populations on arch 9, 12 and 14.
+   * are disjoint populations on the Harmony 525, the Harmony One and the Harmony 600, 650 and 700.
    *
    * @privateRemarks
    * section 271.

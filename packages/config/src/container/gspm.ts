@@ -237,9 +237,11 @@ export class KeyRecord {
   }
 
   /**
-   * The keypad scanner's own linear index, or a virtual event's number. On arch 14 these run 1
-   * to 54 within the scanner's range of 1 to 56, one of the three agreements that established
-   * this reading.
+   * The keypad scanner's own linear index, or a virtual event's number. On the Harmony 600, 650 and
+   * 700 these run 1 to 54 within the scanner's range of 1 to 56.
+   *
+   * @privateRemarks
+   * One of the three agreements that established this reading.
    */
   get scanCode(): number {
     return this.eventCode & SCAN_MASK;
@@ -262,8 +264,12 @@ export const INSTRUCTION_LENGTH = 3;
 
 /**
  * One action list instruction: a 16 bit operand and an opcode byte. Opcode meanings are not
- * established. The inventory differs by architecture, which is itself a finding: arch 14 leans on
- * opcodes that do not appear in the arch 9 sample at all.
+ * established. The opcodes in use differ per model: the Harmony 600, 650 and 700 lean on opcodes
+ * that no Harmony 525 configuration uses.
+ *
+ * @privateRemarks
+ * The inventory differs by architecture, which is itself a finding: arch 14 leans on opcodes that do
+ * not appear in the arch 9 sample at all.
  */
 export interface Instruction {
   readonly operand: number;
@@ -329,7 +335,7 @@ export class Container {
   /** The container itself, cookie through end marker. */
   readonly blob: Uint8Array;
   readonly sections: readonly Section[];
-  /** Which raw slot the architecture record was found in, 1 normally and 0 on arch 10. */
+  /** Which raw slot the architecture record was found in, 1 normally and 0 on the Harmony 890 and 895. */
   architectureSlot?: number;
   /** Stated by section slot 1, see `ARCH_RECORD_SLOT`. */
   architecture: number | undefined = undefined;
@@ -403,7 +409,7 @@ export class Container {
    * The **legacy label**, kept because every document and sample table here uses it.
    *
    * It splits one byte into nibbles and prints them as major.minor, which reads as a plausible
-   * version for `0x14` to `0x17` and as nonsense otherwise: an arch 16 (Harmony 350) container comes
+   * version for `0x14` to `0x17` and as nonsense otherwise: a Harmony 350's container comes
    * out `0.15`, a lower version than a remote five years older. The byte is the pointer count: prefer
    * `statedPointerCount`.
    *

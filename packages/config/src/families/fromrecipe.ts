@@ -93,9 +93,11 @@ export type Built =
  *
  * * `ComposeError`, the build refuses the document: the families refuse what they will not build with it or a
  *   subclass of it, `support/refusal.ts`;
- * * `NotBuiltError`, what the document asks for is not built yet: a field of version 2 the family does not read, a key
- *   a recipe chooses where the family builds none, and a model whose family builds nothing from a recipe yet, each
- *   naming the requirement it waits on;
+ * * `NotBuiltError`, what the document asks for is not built yet, each naming what it waits on. Not built yet: a model
+ *   whose family builds nothing from a recipe yet; a field of version 2 the family does not read; a key the document
+ *   chooses otherwise where the family builds no such choice, and a held press, a double press or a sequence on a key
+ *   where it builds only a command; and on a Harmony Touch, a sequence as a step of an activity's start or end, and a
+ *   setting its build does not write yet, such as its vibration;
  * * `RecipeError`, a source the caller must give is missing: an account for a Harmony Touch, and an archive for a
  *   device the document carries no definition of. The same class refuses a recipe that is not one, before any of this,
  *   and a model no family serves.

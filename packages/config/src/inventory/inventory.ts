@@ -39,7 +39,7 @@ export interface Inventory {
    * section 20.
    */
   architecture?: number;
-  /** When the config was built, from base slot 3. On arch 12 this is also what the clock is set to. */
+  /** When the config was built, from base slot 3. On the Harmony One this is also what the clock is set to. */
   builtAt?: string;
   devices: Device[];
   activities: Activity[];
@@ -51,9 +51,12 @@ export interface Inventory {
  * The whole inventory of a config, composed.
  *
  * **Here so that a caller does not have to know the order.** Naming a device needs the infrared groups,
- * the state variables, the action lists and, for three devices in the corpus, the screen text; naming an
- * activity needs the touch hit map on arch 12 and the modes elsewhere. An application that assembled
- * that itself would be a second copy of the composition, and the first thing to drift.
+ * the state variables, the action lists and, for some devices, the screen text; naming an
+ * activity needs the touch hit map on the Harmony One and the modes elsewhere. An application that
+ * assembled that itself would be a second copy of the composition, and the first thing to drift.
+ *
+ * @privateRemarks
+ * The screen text names three devices in the corpus.
  */
 export function inventory(c: Container): Inventory {
   const out: Inventory = { devices: devices(c), activities: activities(c) };

@@ -238,12 +238,13 @@ export function isMicrochipBootloader(vendorId: number, productId: number): bool
  * 17 an 885, 19 an 890, 22 a 525, 54 a Harmony One, 66 a 700, 71 a 600, 72 a 650. Every config
  * states its own in the `<SKIN>` element of its EZHex header, which is what these cases are checked
  * against. It matters because the 600 and the 700 share product id 0xC122, so the product id does
- * not name an arch 14 model and this does, before a single config byte is read.
+ * not name which of the Harmony 600, 650 and 700 it is and this does, before a single config byte is
+ * read.
  *
  * **The low byte's encoding is per firmware generation and reading it wrong is silent**, so the
  * high byte decides: `0x08` and `0x09` carry the skin in plain binary, and there the high byte is
- * the protocol number; `0x10` carries it in BCD, on arch 12 and arch 14 alike, so there it is a
- * constant whose meaning is not established. Anything else is undefined rather than guessed,
+ * the protocol number; `0x10` carries it in BCD, on the Harmony One and the Harmony 600, 650 and 700
+ * alike, so there it is a constant whose meaning is not established. Anything else is undefined rather than guessed,
  * because a guess names the wrong remote: an 885's 0x0811 read as BCD is 11, a Harmony 655.
  *
  * @privateRemarks

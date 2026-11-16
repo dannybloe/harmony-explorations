@@ -250,9 +250,9 @@ export const SKINS_WITHOUT_A_MODEL_RECORD: Readonly<Record<number, string>> = {
 /**
  * The models this library deliberately cannot describe, and why, so the gap is a statement.
  *
- * Arch 15 enumerates as a network class rather than HID. `openHarmony` will not find one, so a
- * capability record would be reachable only by a caller who already knows the model, which is the
- * opposite of what this module is for.
+ * The Harmony 900, 1000 and 1100 enumerate as a network class rather than HID. `openHarmony` will
+ * not find one, so a capability record would be reachable only by a caller who already knows the
+ * model, which is the opposite of what this module is for.
  */
 export const OUT_OF_TRANSPORT_REACH: readonly string[] = ['900', '1000', '1000i', '1100', '1100i'];
 
@@ -317,7 +317,7 @@ export function modelForSkin(skin: number | undefined): Model | undefined {
  * Whether an architecture has a touch panel in any model this table knows.
  *
  * The question a reader of base slot 17 wants answered, and it is per architecture rather than per
- * model because that is how the firmware differs: only arch 12 seeks that slot as a hit map.
+ * model because that is how the firmware differs: only the Harmony One's seeks that slot as a hit map.
  */
 export function architectureHasTouch(architecture: number): boolean {
   return Object.values(MODELS_BY_SKIN).some(

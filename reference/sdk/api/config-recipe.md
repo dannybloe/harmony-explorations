@@ -17,9 +17,9 @@ change returns a new document with a list of its effects, and refuses with `reci
 function create(model: RecipeModel): Recipe
 ```
 
-A fresh document for a model: no device, no activity, and valid as it stands. Not built for a model no family serves
-yet, and refused as a [`RecipeError`](config.md#recipeerror) for one that names no remote, `servedBy`, so a document is never started that
-nothing could build.
+A fresh document for a model: no device, no activity, and valid as it stands. Refused as a [`RecipeError`](config.md#recipeerror) for a
+model that names no remote, so a document is never started that nothing could build. Not built yet: a model no family
+builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its `properties.family`.
 
 Uses [`RecipeModel`](config.md#recipemodel), [`Recipe`](config.md#recipe).
 
@@ -249,6 +249,8 @@ activity has, with a device the document does not hold or names twice, and with 
 not judged here: whether a device has it is the check's to say, so an activity can be put together before every
 choice is made.
 
+Not built yet: a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its `properties.family`.
+
 Uses [`Recipe`](config.md#recipe), [`recipe.NewActivity`](#recipenewactivity), [`recipe.Change`](#recipechange).
 
 ### `recipe.addDevice`
@@ -261,6 +263,8 @@ Add a device with its definition, last in the device list, under an id no device
 The definition is carried in the document, with the protocol definitions its commands are written in, so the setup
 builds and stays editable when no source of devices answers any more. Refused over the model's device count, and
 under a name another device has: the remote lists devices by name, and so does the recipe underneath.
+
+Not built yet: a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its `properties.family`.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.NewDevice`](#recipenewdevice), [`recipe.Change`](#recipechange).
 
@@ -386,8 +390,12 @@ activity under the same id, refused as over the limit where the model takes no m
 **Its devices all dropped**, it is kept and takes no part: a build and a sync leave it out, which is an
 effect at the activity; given a device again, it takes part again, refused as over the limit as switching on is.
 Taking out of the build the activity that holds the favourite channels, either way, is an effect at it, naming the
-activity that holds them while it is out, by the family's rule, or saying none does. Its icon and its activity key have no field in the document yet and refuse by name.
+activity that holds them while it is out, by the family's rule, or saying none does.
 **This writes the document**: whether the model's build reads a stated member is what [`check`](#recipecheck) lists.
+
+Not built yet: its icon and its activity key, on every model; the screen it opens on, for a model whose family does
+not name its screens yet; and, for a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its
+`properties.family`, a screen to open on and a change that makes the activity take part again.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.ActivityId`](#recipeactivityid), [`recipe.ActivityChanges`](#recipeactivitychanges), [`recipe.QuestionSources`](#recipequestionsources), [`recipe.Change`](#recipechange).
 
@@ -401,8 +409,10 @@ Change a device, member by member: its name, which follows the device everywhere
 underneath the recipe names a device by its name, and that is the toolkit keeping the whole consistent and not an
 effect to report; whether it stays on between activities and its device key; and its power, timing, and channel tuning, each a person's member standing over the catalogue's, [`DeviceChanges`](#recipedevicechanges). **This writes
 the document**: whether the model's build reads a stated timing, power or tuning is what [`check`](#recipecheck) lists, so a person's
-choice is kept while the build for their model catches up. Its inputs have no field in the document yet and refuse by
-name.
+choice is kept while the build for their model catches up.
+
+Not built yet: its inputs, on every model; and a device key, for a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof)
+shows by leaving out its `properties.family`.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.DeviceId`](#recipedeviceid), [`recipe.DeviceChanges`](#recipedevicechanges), [`recipe.Change`](#recipechange).
 
@@ -420,8 +430,9 @@ or tuning is what [`check`](#recipecheck) lists.
 
 Refused: a tuning of a command the device does not have, where its definition says which it has; `'original'` of a
 command the document added, which has no original; and `'removed'` of a command still used, naming where, since the
-key or the step that sends it is a person's choice that only they can replace. Taking away a command of the
-definition itself has no field in the document and refuses by name.
+key or the step that sends it is a person's choice that only they can replace.
+
+Not built yet: `'removed'` of a command of the device's definition itself, which the document has no field for.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.DeviceId`](#recipedeviceid), [`recipe.CommandChange`](#recipecommandchange), [`recipe.Change`](#recipechange).
 
@@ -431,7 +442,8 @@ Uses [`Recipe`](config.md#recipe), [`recipe.DeviceId`](#recipedeviceid), [`recip
 function setFavourites(document: Recipe, device: DeviceId, favourites: readonly Favourite[]): Change
 ```
 
-A device's favourite channels, whole and in order; an empty list is none. Refused over the model's count.
+**Not built yet**: a device's favourite channels, whole and in order, an empty list being none, refused over the
+model's count. It throws [`NotBuiltError`](config.md#notbuilterror) when called.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.DeviceId`](#recipedeviceid), [`recipe.Favourite`](#recipefavourite), [`recipe.Change`](#recipechange).
 
@@ -452,8 +464,12 @@ build binds by:
   refuses, [`FamilyMaps.refusedChoice`](config-types.md#familymaps), such as a command a Harmony Touch's number pad draws on no key;
 * **unknown**: a word that is no key of the model, a key the remote binds outside every map, with the reason, and a
   device, a command or a sequence the document does not hold, or a sequence of another activity;
-* **invalid**: a sequence on a device's own map, since a device has no sequences;
-* **not built**, by name: every choice on a model whose family has no maps yet.
+* **invalid**: a sequence on a device's own map, since a device has no sequences.
+
+Not built yet, [`NotBuiltError`](config.md#notbuilterror): a choice on a key [`keyNames`](#recipekeynames) lists as not built; every choice on a model whose
+family has no key maps yet, where [`keyNames`](#recipekeynames) answers not built yet as well, but a short press on a key the family's
+build names; and every choice on a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its
+`properties.family`.
 
 Giving a press back is judged by none of these, so a document that holds a choice can always be put right. **This
 writes the document**: whether the model's build takes a held press or a sequence on a key is what [`check`](#recipecheck) lists.
@@ -466,8 +482,8 @@ Uses [`Recipe`](config.md#recipe), [`recipe.KeyPlace`](#recipekeyplace), [`recip
 function setLook(document: Recipe, choices: Readonly<Record<string, unknown>> | 'default'): Change
 ```
 
-The look of the screens: the choices of the model's family over its defaults, only the ones given changed;
-`'default'` drops every choice.
+**Not built yet**: the look of the screens, the choices of the model's family over its defaults, only the ones given
+changed, and `'default'` dropping every choice. It throws [`NotBuiltError`](config.md#notbuilterror) when called.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.Change`](#recipechange).
 
@@ -483,9 +499,12 @@ label of its own or the command's; or, on an activity's screen, one of its own s
 a screen a person emptied, which is not the default.
 
 Refused: a screen on a model that has none, `not-on-this-model`; a sequence on a device's screen, since a device has
-none; a device, a command or a sequence the document does not hold. A page of entries, and a label of a
-sequence's own have no field in the document yet and refuse by name. **This writes the document**: whether the
+none; a device, a command or a sequence the document does not hold. **This writes the document**: whether the
 model's build reads a stated screen is what [`check`](#recipecheck) lists.
+
+Not built yet: a page of entries and a label of a sequence's own, which the document has no field for, on every
+model; and every screen but the default, for a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving
+out its `properties.family`.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.Owner`](#recipeowner), [`recipe.ScreenItem`](#recipescreenitem), [`recipe.Change`](#recipechange).
 
@@ -511,15 +530,16 @@ drops the choice and leaves the family's default, which [`settings`](#recipesett
 states its settings**, [`FamilySettings`](config-types.md#familysettings), by the one judgement [`check`](#recipecheck) takes too, `settingVerdict`:
 
 * **invalid**: a value the build refuses for the row, outside its range or of another kind, in the build's words;
-* **not built**, [`NotBuiltError`](config.md#notbuilterror) with the requirement: a setting the remote has that the build does not write yet,
-  such as a Harmony Touch's vibration;
 * **not on this model**: any other name, a setting the model does not have.
 
 **Where the family states none**, every compiled family, whose build reads no setting from a document, the name and
 the value are written as given and not judged: a change writes the document whether or not the model's build reads
 the field, and [`check`](#recipecheck) lists the field as one the build does not read. Giving a setting back is judged by none of
-these, so a document that holds a setting can always be put right. Not built, as every call that needs its family,
-for a model no family serves yet.
+these, so a document that holds a setting can always be put right.
+
+Not built yet, [`NotBuiltError`](config.md#notbuilterror): a setting the remote has that the build does not write yet, such as a Harmony
+Touch's vibration; and every setting but the default, for a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows
+by leaving out its `properties.family`.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.Change`](#recipechange).
 
@@ -567,7 +587,7 @@ Uses [`Recipe`](config.md#recipe), [`recipe.DeviceSummary`](#recipedevicesummary
 function favourites(document: Recipe, device: DeviceId): Favourite[]
 ```
 
-A device's favourite channels, in order.
+**Not built yet**: a device's favourite channels, in order. It throws [`NotBuiltError`](config.md#notbuilterror) when called.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.DeviceId`](#recipedeviceid), [`recipe.Favourite`](#recipefavourite).
 
@@ -594,8 +614,10 @@ it does and whether that is the default, how a command is sent or a sequence's s
 press alone. Read off the same maps the build binds by, `resolvedOf`. Where the owner's map does not bind the key, it
 answers no press and why; a key the model has no place of is refused, as [`ChangeRefused`](#recipechangerefused) naming the key.
 
-**Not built**, [`NotBuiltError`](config.md#notbuilterror), for a model whose family has no maps yet; refused as [`commands`](#recipecommands) refuses where a
-device carries no definition and no archive is given.
+Refused as [`commands`](#recipecommands) refuses where a device carries no definition and no archive is given.
+
+Not built yet, [`NotBuiltError`](config.md#notbuilterror): a model whose family has no key maps yet; and a model no family builds for, which
+[`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its `properties.family`.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.KeyPlace`](#recipekeyplace), [`recipe.QuestionSources`](#recipequestionsources), [`recipe.KeyAnswer`](#recipekeyanswer).
 
@@ -609,8 +631,11 @@ function keyNames(document: Recipe): KeyPlaceSummary[]
 gestures and touch keys, in the family's order, with where it is, the presses it has on this model, whose map binds
 it, and whether a person's choice on it is built and why not, [`KeyPlaceSummary`](#recipekeyplacesummary). The places [`check`](#recipecheck) holds a
 document's choices to and [`keys`](#recipekeys) answers by, [`FamilyMaps.places`](config-types.md#familymaps), so an application drawing the remote shows what the
-build binds. Not built, [`NotBuiltError`](config.md#notbuilterror), for a model whose family has no maps yet, rather than answering an empty
-list that would say the model has no keys, and for a model no family serves, `servedBy`.
+build binds.
+
+Not built yet, [`NotBuiltError`](config.md#notbuilterror): a model whose family has no key maps yet, rather than an empty list that would say
+the model has no keys; and a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its
+`properties.family`.
 
 A word here is the name the model's drawing carries for the key, `data-name`, so an application colours and finds
 the key on the drawing by it. [`setKey`](#recipesetkey) takes a choice on exactly the places listed here as built, for the presses
@@ -627,7 +652,7 @@ function keys(document: Recipe, owner: Owner, sources?: QuestionSources): KeyAns
 **What every key of an owner does**, the default ones included: every place the owner's map can bind, bound or
 not, in the model's order, each with every press the model has for it; the whole map as the remote will have it,
 which is what an application shows on its drawing of the keypad. A place the owner's map cannot bind is not listed,
-[`keyNames`](#recipekeynames) lists it with why; asked for alone, [`key`](#recipekey) answers it with why. Not built and refused as [`key`](#recipekey) is.
+[`keyNames`](#recipekeynames) lists it with why; asked for alone, [`key`](#recipekey) answers it with why. Not built yet, and refused, as [`key`](#recipekey) is.
 
 **A device's own map and an activity's are separate**, [`reference/how-a-harmony-works.md`](../../how-a-harmony-works.md): a choice in a device's map,
 device mode's, changes that device's answer and no activity's, and the other way round.
@@ -647,7 +672,7 @@ function screen(document: Recipe, owner: Owner, sources?: QuestionSources): Scre
 ```
 
 **What an owner's screen shows**: its entries in order, the family's default list or the one the document
-states whole, each entry marked accordingly. Not built and refused as [`key`](#recipekey) is.
+states whole, each entry marked accordingly. Not built yet, and refused, as [`key`](#recipekey) is.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.Owner`](#recipeowner), [`recipe.QuestionSources`](#recipequestionsources), [`recipe.ScreenAnswer`](#recipescreenanswer).
 
@@ -677,9 +702,11 @@ table its build writes by, so what an application is shown is what is built.
 **Only the settings the build writes are listed.** A setting the document states that the model does not have, or
 that the build does not write yet, is not answered here; [`check`](#recipecheck) lists it, as [`setSetting`](#recipesetsetting) refuses it.
 
-**Not built**, for a model whose build reads no setting from a document, which is every compiled family's: the
-Harmony One's and the Harmony 600, 650 and 700's settings are build choices of their own, and whether the Harmony 300
-and 350 have any is not checked, so an empty list would say what is not known. The Harmony Touch answers its seven.
+Not built yet, [`NotBuiltError`](config.md#notbuilterror): a model whose build reads no setting from a document, which is every compiled
+family's, since the Harmony One's and the Harmony 600, 650 and 700's settings are build choices of their own, and
+whether the Harmony 300 and 350 have any is not checked, so an empty list would say what is not known; and a model no
+family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its `properties.family`. The Harmony Touch answers its
+seven.
 Every answer is the caller's own, so changing one changes no other and not the document.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.RemoteSettingAnswer`](#reciperemotesettinganswer).
@@ -739,8 +766,9 @@ commands a device has, nothing is said of them: the device's own note says it ca
 
 **Held to the model's capabilities** as the changes are: a key word another model has and this one lacks, an opening
 screen the model does not have, and a device key on a model without device keys, each not on this model. A field of
-version 2 the model's build does not read is listed naming the model, since the build of another reads it. Not built,
-as every call is, for a model no family serves yet.
+version 2 the model's build does not read is listed naming the model, since the build of another reads it.
+
+Not built yet: a model no family builds for, which [`capabilitiesOf`](config.md#capabilitiesof) shows by leaving out its `properties.family`.
 
 Uses [`Recipe`](config.md#recipe), [`recipe.QuestionSources`](#recipequestionsources), [`recipe.Problem`](#recipeproblem).
 

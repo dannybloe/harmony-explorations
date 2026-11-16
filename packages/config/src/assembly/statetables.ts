@@ -139,8 +139,11 @@ export interface StateTableFacts {
   readonly clockCarry: boolean;
   /**
    * The minute calls a list on every write besides incrementing the hour, `StateTablesSpec.minuteList`: on
-   * all 19 Harmony One compiles, whose screens show a clock, and on none of the thirteen arch 14 ones, whose
-   * screens show none. A description that disagrees with its family here is refused.
+   * the Harmony One, whose screens show a clock, and not on the Harmony 600, 650 and 700, whose screens show
+   * none. A description that disagrees with its family here is refused.
+   *
+   * @privateRemarks
+   * On all 19 Harmony One compiles and on none of the thirteen arch 14 ones.
    */
   readonly minuteCall: boolean;
 }

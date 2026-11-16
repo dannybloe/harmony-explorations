@@ -416,8 +416,8 @@ interface ComposeActivity {
   readonly keys?: readonly { readonly scan: number; readonly list: number | undefined }[];
   /**
    * What tag 2, the leave handler, runs. Omitted emits the **null instruction**, opcode 0 with
-   * operand 0, which is what 21 of the corpus's 50 activities carry, all on arch 8 and arch 9.
-   * So the tag is required and giving it something to run is not.
+   * operand 0, which Logitech's own configurations of the Harmony 880 and 885 and the Harmony 525
+   * carry for some activities. So the tag is required and giving it something to run is not.
    */
   readonly leaveList?: number;
   /**
@@ -602,19 +602,20 @@ interface ComposedActivityRow {
   page: number;
   /**
    * The base slot 10 list the row runs: beep, select the entry, clear the device mode marker, and on
-   * arch 14 (Harmony 600, 650 and 700) the first of `rowLists`, which carry no beep.
+   * the Harmony 600, 650 and 700 the first of `rowLists`, which carry no beep.
    */
   rowList: number;
   /** The scan code the new row answers to, which is its position in the page's hit rectangles. */
   scan: number;
   /**
-   * Every scan the row answers to: `scan` alone on arch 12 (Harmony One), and on arch 14 (Harmony
-   * 600, 650 and 700) both buttons of the row, top or bottom.
+   * Every scan the row answers to: `scan` alone on the Harmony One, and on the Harmony 600, 650 and
+   * 700 both buttons of the row, top or bottom.
    */
   scans: number[];
   /**
-   * How many row lists were written from `rowList` on: one on arch 12, where every binding shares
-   * it, and on arch 14 one per button on the page and another per button on its copy, as the compiler
+   * How many row lists were written from `rowList` on: one on the Harmony One, where every binding
+   * shares it, and on the Harmony 600, 650 and 700 one per button on the page and another per button
+   * on its copy, as the compiler
    * writes them.
    */
   rowLists: number;
@@ -632,24 +633,24 @@ interface ComposedActivityScreen {
   activity: number;
   /** The new working screen, base slot 6. */
   mode: number;
-  /** The start up screen the enter list should open with: an existing one on the Harmony One, the one composed with it on arch 14. */
+  /** The start up screen the enter list should open with: an existing one on the Harmony One, the one composed with it on the Harmony 600, 650 and 700. */
   startupMode: number;
   /** The existing list every activity's enter list calls to say an activity is running. Harmony One only. */
   activeList?: number;
-  /** The base slot 14 record that gained the activity's case: on arch 14, the working screen's. */
+  /** The base slot 14 record that gained the activity's case: on the Harmony 600, 650 and 700, the working screen's. */
   map: number;
   /** The list the page's "Devices" key runs: beep, enter the device list. Harmony One only. */
   devicesList?: number;
-  /** The scan codes the pads answer to, in row order. Empty on arch 14, whose pads are the corners. */
+  /** The scan codes the pads answer to, in row order. Empty on the Harmony 600, 650 and 700, whose pads are the corners. */
   scans: number[];
-  /** Arch 14 only: the variable the start sequence holds at 1, and the one it writes before deferring. */
+  /** Harmony 600, 650 and 700 only: the variable the start sequence holds at 1, and the one it writes before deferring. */
   startVariable?: number;
   flagVariable?: number;
-  /** Arch 14 only: the base slot 9 entry the keypad map case selects, which `composeActivity` must add. */
+  /** Harmony 600, 650 and 700 only: the base slot 9 entry the keypad map case selects, which `composeActivity` must add. */
   set?: number;
-  /** Arch 14 only: the base slot 14 records that gained a case, working screen's first. */
+  /** Harmony 600, 650 and 700 only: the base slot 14 records that gained a case, working screen's first. */
   maps?: number[];
-  /** Arch 14 only: how many pages the working screen has. */
+  /** Harmony 600, 650 and 700 only: how many pages the working screen has. */
   pages?: number;
   /**
    * Keys the screens need the activity's own keypad to bind, which `composeActivity` adds to the ones the
@@ -694,13 +695,13 @@ interface ComposedDevice {
   /** The device's power variable, in base slot 13's numbering. */
   variable: number;
   /**
-   * Arch 14 only: what every command opens with. `variable` is the device's
+   * Harmony 600, 650 and 700 only: what every command opens with. `variable` is the device's
    * `InterDeviceDelay_<identifier>`, `table` the base slot 14 record mapping it, `list` the one list
    * of the device's own that applies it, and `identifier` the number the variable's name carries.
    */
   delay?: { variable: number; table: number; list: number; identifier: number };
   /**
-   * Arch 14 only: the power on delay. `variable` is `PowerOnDelay_<identifier>`,
+   * Harmony 600, 650 and 700 only: the power on delay. `variable` is `PowerOnDelay_<identifier>`,
    * `table` the base slot 14 record mapping it, `list` the list holding that `0x72`, and `on` the
    * list the power variable runs to switch the device on: the power command, then `list`.
    */
@@ -763,8 +764,8 @@ interface ComposeDevice {
    */
   readonly interKeyDelay?: number;
   /**
-   * The inter device delay in tenths of a second. On arch 14, 0 to 20, which an activity's start, All Off
-   * and Help queue in front of each of this device's commands; default
+   * The inter device delay in tenths of a second. On the Harmony 600, 650 and 700, 0 to 20, which an
+   * activity's start, All Off and Help queue in front of each of this device's commands; default
    * `INTER_DEVICE_DELAY_DEFAULT`. On the Harmony 880 and 885 the silence each power step's record opens
    * with, `SendShape.powerStep` in the side keys family, `reference/infrared/sending.md`; default its
    * `SIDE_KEYS_INTER_DEVICE_DEFAULT`. The Harmony One's composer reads none.
@@ -772,7 +773,7 @@ interface ComposeDevice {
   readonly interDeviceDelay?: number;
   /**
    * The power on delay in tenths of a second, waited after the power command when the device is
-   * switched on. On arch 14 0 to 450, a variable mapped through base slot 14, default
+   * switched on. On the Harmony 600, 650 and 700 0 to 450, a variable mapped through base slot 14, default
    * `POWER_ON_DELAY_DEFAULT`. On the Harmony One 1 to 255, a bare `0x7C` wait at the end of the on list,
    * and none where it is not given.
    */
@@ -801,16 +802,16 @@ interface ComposedScreen {
   rowList: number;
   /** The menus whose last page was full, so a new one row page was added to each. */
   pagesAdded: number[];
-  /** Arch 14 only: how many row lists were written, from `rowList` on, one per menu binding and copy. */
+  /** Harmony 600, 650 and 700 only: how many row lists were written, from `rowList` on, one per menu binding and copy. */
   rowLists?: number;
-  /** Arch 14 only: how many keys of the new device mode's key map send one of its commands. */
+  /** Harmony 600, 650 and 700 only: how many keys of the new device mode's key map send one of its commands. */
   keys?: number;
-  /** Arch 14 only: how many pages the new device mode has. */
+  /** Harmony 600, 650 and 700 only: how many pages the new device mode has. */
   pages?: number;
   /**
-   * Arch 14 with `compiled` only: the texts drawn in a font of another size than the compiler's rules
-   * pick, because no font of that size in the configuration carries every glyph they need, or because
-   * a character has no width in the size that decides them. Each is a page that differs from the
+   * Harmony 600, 650 and 700 with `compiled` only: the texts drawn in a font of another size than
+   * the compiler's rules pick, because no font of that size in the configuration carries every glyph
+   * they need, or because a character has no width in the size that decides them. Each is a page that differs from the
    * compiler's, and a caller reports them rather than discovering them on the remote.
    */
   substituted?: string[];
@@ -862,8 +863,8 @@ interface ComposeScreenOptions {
    */
   iconLike?: string;
   /**
-   * Arch 14 only: the device list row whose device mode the new one takes its key map from, by its
-   * drawn label. Every key that mode binds is bound in the new one too, to the new device's command
+   * Harmony 600, 650 and 700 only: the device list row whose device mode the new one takes its key
+   * map from, by its drawn label. Every key that mode binds is bound in the new one too, to the new device's command
    * sending the same frame where exactly one does and to nothing otherwise, so a key never falls
    * through to another device's map. Without it the first row's mode is the template and no key
    * matches unless the numbers happen to agree.
@@ -1604,8 +1605,8 @@ interface Instruction {
 ```
 
 One action list instruction: a 16 bit operand and an opcode byte. Opcode meanings are not
-established. The inventory differs by architecture, which is itself a finding: arch 14 leans on
-opcodes that do not appear in the arch 9 sample at all.
+established. The opcodes in use differ per model: the Harmony 600, 650 and 700 lean on opcodes
+that no Harmony 525 configuration uses.
 
 ### `Json`
 
@@ -1626,9 +1627,8 @@ class KeyRecord {
   get eventType(): number;
   get eventName(): string;
   /**
-   * The keypad scanner's own linear index, or a virtual event's number. On arch 14 these run 1
-   * to 54 within the scanner's range of 1 to 56, one of the three agreements that established
-   * this reading.
+   * The keypad scanner's own linear index, or a virtual event's number. On the Harmony 600, 650 and
+   * 700 these run 1 to 54 within the scanner's range of 1 to 56.
    */
   get scanCode(): number;
   /** False for the handful of codes that carry no event bits at all. */
@@ -1827,7 +1827,7 @@ digits are keys and on one whose digits are drawn.
 interface ModePage {
   /** The page record's own address, as the entry's pointer array holds it. */
   address: number;
-  /** The arch 12 byte in front of the two pointers, absent elsewhere. */
+  /** The Harmony One's byte in front of the two pointers, absent elsewhere. */
   lead: number | undefined;
   /** A tagged list, in the same encoding the mode record's list uses. */
   list: number;
@@ -1841,7 +1841,7 @@ One page of a mode: a tagged list of its own and the screen program that draws i
 
 The firmware looks a tag up in `list` first and falls back to the mode record's list when it
 finds nothing, so a page overrides rather than replaces. `program` goes straight to the screen
-interpreter, `0x1879C` on arch 14 and `0x295AC` on arch 12.
+interpreter, `0x1879C` on the Harmony 600, 650 and 700 and `0x295AC` on the Harmony One.
 
 ### `OwnActivity`
 
@@ -2751,8 +2751,8 @@ interface StateTableFacts {
   readonly clockCarry: boolean;
   /**
    * The minute calls a list on every write besides incrementing the hour, `StateTablesSpec.minuteList`: on
-   * all 19 Harmony One compiles, whose screens show a clock, and on none of the thirteen arch 14 ones, whose
-   * screens show none. A description that disagrees with its family here is refused.
+   * the Harmony One, whose screens show a clock, and not on the Harmony 600, 650 and 700, whose screens show
+   * none. A description that disagrees with its family here is refused.
    */
   readonly minuteCall: boolean;
 }

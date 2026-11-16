@@ -457,8 +457,8 @@ export async function readFile(transport: Transport, path: string): Promise<Uint
 /**
  * The identity file, parsed into its fields.
  *
- * Text rather than a packed block, which is the surprise of this family: `arch 0x10`, one field per
- * line, name then a space then a value. The firmware holds every one of those names as a string, so
+ * Text rather than a packed block, which is the surprise of this family: one field per line, name
+ * then a space then a value, the architecture among them under the name `arch`. The firmware holds every one of those names as a string, so
  * the parse is checked against the image and not only against a reply.
  */
 export function parseSysInfo(text: string): Map<string, string> {

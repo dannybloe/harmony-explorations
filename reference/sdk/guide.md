@@ -498,8 +498,8 @@ Changes are how a person's edits reach the document.
 
 Every change returns a new document and a list of what else it touched, so an application can show the effects and
 keep the new document or drop it. Things are addressed by id, never by name or position, so a rename changes nothing
-else. What a model does not have is refused as not on this model; what nobody has built yet is refused as not built,
-naming what it waits on.
+else. What a model does not have is refused as not on this model; what nobody has built yet throws `NotBuiltError`,
+naming what it waits on, and each function's description in the API reference says which parts are not built yet.
 
 <!-- example:packages/remote/examples/change.ts -->
 ```ts

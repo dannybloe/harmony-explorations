@@ -512,7 +512,7 @@ function shapeOf(checker: ts.TypeChecker, symbol: ts.Symbol): string {
 }
 
 /** A symbol's doc comment, its public part, from the first of its declarations that carries one. */
-function docOf(symbol: ts.Symbol): string | undefined {
+export function docOf(symbol: ts.Symbol): string | undefined {
   for (const declaration of symbol.declarations ?? []) {
     const statement = statementOf(declaration);
     const { doc } = leadingComments(declaration.getSourceFile(), statement);

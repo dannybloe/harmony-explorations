@@ -19,8 +19,8 @@ Six guards, each defined once in `tools/reference_guards.py` and each run here i
 6. **The FHSDK's section speaks to a stranger.** `reference/sdk/` is mostly generated from the packages' doc
    comments, whose public part ends at `@privateRemarks`, so its prose carries no findings section, plan, decision or
    requirement number, no todo, no HTML comment but the generator's markers, no date, no relative time, no bench,
-   lab, dump or appliance, and no link to `CLAUDE.md`, the findings archive, a plan or a test. Prose is the text
-   outside code, and the comments printed inside a code block.
+   lab, dump or appliance, no architecture number, and no link to `CLAUDE.md`, the findings archive, a plan or a
+   test. Prose is the text outside code, and the comments printed inside a code block.
 
 **Two narrowings in that section, each by kind, with the reason beside it in the guards.** The API's own names say
 `bench`, `BENCH_MODELS` among them, so in `reference/sdk/` the bench guard counts that word in prose alone and lets it
@@ -259,14 +259,17 @@ class PlantedViolations(unittest.TestCase):
             '<!-- /example -->\n\n<!-- shape:@freeharmony-sdk/base#Proof -->\n```ts\ninterface Proof {\n'
             '  /** Where it was shown on a remote. */\n  readonly bench: string;\n}\n```\n<!-- /shape -->\n\n'
             'A `section 3`, `R12`, `decision 4` and `plan 013` in code; a label, a dumpling, a benchmark; built at a '
-            'moment, a fortnightly, the 16th of the month. [The guide](guide.md).\n')
+            'moment, a fortnightly, the 16th of the month. [The guide](guide.md). An `arch 14` in code, an '
+            'architecture, the archives, ARCH_8_PRODUCT.\n\n'
+            '```ts\nconst MODELS = {\n  \'Harmony 650\': { architecture: 14 },\n};\n```\n')
         write(self.root, 'reference/sdk/api/clean.md', clean)
         write(self.root, 'reference/sdk/guide.md', '# Guide\n')
         self.assertEqual(dict(guards.sdk_violations(self.root)), {})
         write(self.root, 'reference/sdk/api/page.md', (
             '# Page\n\nSee section 128, plan 013 and decision 44, R92 and a todo; a <!--superseded--> claim and an '
-            '&lt;!--superseded--> one; on 16 November 2026, and recently; the bench, the lab, a dump, an appliance.\n\n'
-            '```ts\ninterface Thing {\n  /** Read for weeks, section 7. */\n  readonly a: number;\n}\n```\n\n'
+            '&lt;!--superseded--> one; on 16 November 2026, and recently; the bench, the lab, a dump, an appliance; '
+            'on arch 14 and Arch 0x10, architecture 12 and architectures 8.\n\n'
+            '```ts\ninterface Thing {\n  /** Read for weeks, section 7, on arch 9. */\n  readonly a: number;\n}\n```\n\n'
             '[brief](../../../CLAUDE.md) [archive](../../../docs/findings.md) [plan](../../../docs/plans/001-a-plan.md) '
             '[test](../../../packages/base/test/x.test.ts)\n'))
         found = guards.sdk_violations(self.root)
@@ -284,6 +287,7 @@ class PlantedViolations(unittest.TestCase):
             ('reference/sdk/api/page.md', 'lab'): 1,
             ('reference/sdk/api/page.md', 'dump'): 1,
             ('reference/sdk/api/page.md', 'appliance'): 1,
+            ('reference/sdk/api/page.md', 'architecture number'): 5,
             ('reference/sdk/api/page.md', 'link to CLAUDE.md'): 1,
             ('reference/sdk/api/page.md', 'link to docs/findings.md'): 1,
             ('reference/sdk/api/page.md', 'link to a plan'): 1,

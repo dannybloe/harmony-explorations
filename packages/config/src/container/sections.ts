@@ -314,11 +314,13 @@ export class StateTableError extends Error {}
  * own width arithmetic needs, and then **fills every byte above it with `0xFE` at each boot**. The
  * seeding loop runs first and over `count`, so a container whose `count` exceeds the sum seeds
  * variables into bytes the fill then paints over: they hold 65278 rather than what their record
- * says, and nothing anywhere reports it. Measured on arch 12 (Harmony One) at `0x2A330` and arch 14
- * (Harmony 700 reference image) at `0x17A42`, and confirmed on a connected Harmony One where the
- * `0xFE` run begins at the computed byte and not one either side.
+ * says, and nothing anywhere reports it. Read in the firmware of the Harmony One and the Harmony 700.
  *
  * @privateRemarks
+ * Measured on arch 12 (Harmony One) at `0x2A330` and arch 14 (Harmony 700 reference image) at `0x17A42`,
+ * and confirmed on a connected Harmony One where the `0xFE` run begins at the computed byte and not one
+ * either side.
+ *
  * A separate bound check does exist, `0x2A694` and `0x17DCA`, and it is **not** what fires here:
  * its callers are host command handlers, and a configuration's own state write reaches the store
  * with no bound check at all. The first version of this rail had that backwards.
@@ -511,12 +513,12 @@ export function stateRecords(c: Container): StateRecord[] | undefined {
  *
  * The firmware looks a tag up in `list` first and falls back to the mode record's list when it
  * finds nothing, so a page overrides rather than replaces. `program` goes straight to the screen
- * interpreter, `0x1879C` on arch 14 and `0x295AC` on arch 12.
+ * interpreter, `0x1879C` on the Harmony 600, 650 and 700 and `0x295AC` on the Harmony One.
  */
 export interface ModePage {
   /** The page record's own address, as the entry's pointer array holds it. */
   address: number;
-  /** The arch 12 byte in front of the two pointers, absent elsewhere. */
+  /** The Harmony One's byte in front of the two pointers, absent elsewhere. */
   lead: number | undefined;
   /** A tagged list, in the same encoding the mode record's list uses. */
   list: number;

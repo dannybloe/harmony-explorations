@@ -573,10 +573,12 @@ read back; reported as events. Resolves with the outcome, which is also the last
 an exception: a document the check or the build refuses, a remote on the cable that is not the document's model, a
 refusal by the write path or its checks (the write switches among them), a stop, and a failure of the remote or the
 cable, each with what it left the remote as. It rejects in two cases only, both before anything is opened or sent:
-with [`NotBuiltError`](config.md#notbuilterror) for a document of a model whose sync is not built, every model but the Harmony One, 600, 650,
-700 and 885 and the Harmony Touch (a Harmony 300 or 350 among them), and with a `TypeError` for a pretend remote
-that [`pretendRemote`](#pretendremote) did not make. A Harmony 885's document gets as far as the build and ends `refused`, since no
-document builds for an 885 yet. [`capabilitiesOf`](config.md#capabilitiesof) says beforehand whether a model's sync is there.
+with [`NotBuiltError`](config.md#notbuilterror) for a document of a model whose sync is not built yet, and with a `TypeError` for a pretend
+remote that [`pretendRemote`](#pretendremote) did not make. A Harmony 885's document gets as far as the build and ends `refused`, since
+no document builds for an 885 yet.
+
+Not built yet: a sync of every model but the Harmony One, 600, 650, 700 and 885 and the Harmony Touch, a Harmony 300
+or 350 among them.
 
 Uses [`SyncRequest`](#syncrequest), [`SyncOutcome`](#syncoutcome).
 

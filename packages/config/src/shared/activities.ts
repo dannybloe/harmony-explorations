@@ -78,11 +78,11 @@ export interface ComposeActivity {
   readonly keys?: readonly { readonly scan: number; readonly list: number | undefined }[];
   /**
    * What tag 2, the leave handler, runs. Omitted emits the **null instruction**, opcode 0 with
-   * operand 0, which is what 21 of the corpus's 50 activities carry, all on arch 8 and arch 9.
-   * So the tag is required and giving it something to run is not.
+   * operand 0, which Logitech's own configurations of the Harmony 880 and 885 and the Harmony 525
+   * carry for some activities. So the tag is required and giving it something to run is not.
    *
    * @privateRemarks
-   * Section 273.
+   * Section 273: 21 of the corpus's 50 activities carry it, all on arch 8 and arch 9.
    */
   readonly leaveList?: number;
   /**

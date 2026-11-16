@@ -47,8 +47,8 @@ export interface Device {
   /** The base slot 13 variables whose name carries this device's label. */
   variables: number[];
   /**
-   * The mode the device list enters for this device, as a base slot 6 index. Arch 12 (Harmony One)
-   * only, since the row shape it is read from is that model's, and undefined where no row reaches
+   * The mode the device list enters for this device, as a base slot 6 index. Harmony One only,
+   * since the row shape it is read from is that model's, and undefined where no row reaches
    * the device.
    */
   mode?: number;

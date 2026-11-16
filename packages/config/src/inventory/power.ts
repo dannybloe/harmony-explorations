@@ -290,7 +290,7 @@ export interface PowerOnDelay {
   variable: number;
 }
 
-/** Every arch 14 device's power on delay, by the route `PowerOnDelay` describes. */
+/** Every device's power on delay on the Harmony 600, 650 and 700, by the route `PowerOnDelay` describes. */
 export function powerOnDelays(c: Container): PowerOnDelay[] {
   const lists = c.actionLists();
   const records = stateRecords(c);
@@ -420,9 +420,9 @@ export interface DeviceDelays {
    * Where the number was read, because the two architectures keep it in unrelated places and a
    * caller that wants to **change** one has to know which.
    *
-   * `variable` is arch 14 (Harmony 600 and 700): a state variable in base slot 13 whose name carries
-   * Logitech's device identifier. `instruction` is arch 8, 9 and 12 (Harmony 880 and 885, Harmony
-   * 525, Harmony One): a `0x7C` inline in the action list that switches the device on.
+   * `variable` is the Harmony 600, 650 and 700's: a state variable in base slot 13 whose name carries
+   * Logitech's device identifier. `instruction` is the Harmony 880 and 885's, the Harmony 525's and the
+   * Harmony One's: a `0x7C` inline in the action list that switches the device on.
    *
    * @privateRemarks
    * Section 235.
@@ -431,19 +431,19 @@ export interface DeviceDelays {
   /** Tenths of a second between switching the device on and sending it anything. */
   powerOn: number;
   /**
-   * Logitech's numeric identifier for the device. **Arch 14 only**, since it is the variable's name
-   * that carries it and the other architectures have no variable.
+   * Logitech's numeric identifier for the device. **Harmony 600, 650 and 700 only**, since it is the
+   * variable's name that carries it and the other models have no variable.
    */
   id?: number;
-  /** What the remote's own "set to default" page would put back into `powerOn`. Arch 14 only. */
+  /** What the remote's own "set to default" page would put back into `powerOn`. Harmony 600, 650 and 700 only. */
   defaultPowerOn?: number;
   /**
-   * Tenths of a second between two codes when the second goes to a different device. **Arch 14
-   * only**, and its absence elsewhere is honest rather than settled: where arch 8, 9 and 12 keep
-   * this, if they keep it at all, is open.
+   * Tenths of a second between two codes when the second goes to a different device. **Harmony 600,
+   * 650 and 700 only**, and its absence elsewhere is honest rather than settled: where the Harmony 880
+   * and 885, the Harmony 525 and the Harmony One keep this, if they keep it at all, is open.
    */
   interDevice?: number;
-  /** What that page would put back into `interDevice`. Arch 14 only. */
+  /** What that page would put back into `interDevice`. Harmony 600, 650 and 700 only. */
   defaultInterDevice?: number;
 }
 

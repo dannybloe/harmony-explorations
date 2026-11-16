@@ -31,7 +31,7 @@ Where a running remote keeps the key being pressed, per model.
 const ARCH_8_PRODUCT = 0xc110
 ```
 
-The product id every arch 8 remote enumerates with: the 880, 885, 880 Pro, 720 and 785 alike.
+The product id the Harmony 880, 885, 880 Pro, 720 and 785 all enumerate with.
 
 ### `WATCH`
 
@@ -48,8 +48,9 @@ one, which is exactly the kind of question a live read settles faster than a dis
 
 Keyed by product id. That names the One and the 525, but `0xC122` is the 600's, 650's and 700's alike,
 so on a 700 this entry watches the 600's address and `--address 0x3a2` is needed; the skin would
-tell them apart, as it does for arch 8, and that change is not made here. Arch 8's product id is
-not in this table, because every arch 8 model shares it and their addresses differ: [`WATCH_BY_SKIN`](#watch_by_skin).
+tell them apart, as it does for the Harmony 880, 885, 720 and 785, and that change is not made here. Their
+product id is not in this table, because every one of those models shares it and their addresses differ:
+[`WATCH_BY_SKIN`](#watch_by_skin).
 
 Uses [`Watch`](#watch-type).
 
@@ -70,7 +71,7 @@ What to watch on one model: its name for the banner and the data memory addresse
 const WATCH_BY_SKIN: Readonly<Record<number, Watch>>
 ```
 
-Arch 8's defaults by skin.
+The defaults by skin of the models that share [`ARCH_8_PRODUCT`](#arch_8_product), the Harmony 880, 885, 880 Pro and 720.
 
 The held key and the last key pressed, **in that order**, as a pair, for the same reason as the 525's.
 The key reader page relies on the order: the first address is the key held, zero when none, and the
@@ -322,7 +323,7 @@ function architectureHasTouch(architecture: number): boolean
 Whether an architecture has a touch panel in any model this table knows.
 
 The question a reader of base slot 17 wants answered, and it is per architecture rather than per
-model because that is how the firmware differs: only arch 12 seeks that slot as a hit map.
+model because that is how the firmware differs: only the Harmony One's seeks that slot as a hit map.
 
 ### `hasLongPress`
 
@@ -429,9 +430,9 @@ const OUT_OF_TRANSPORT_REACH: readonly string[]
 
 The models this library deliberately cannot describe, and why, so the gap is a statement.
 
-Arch 15 enumerates as a network class rather than HID. [`openHarmony`](usb.md#openharmony) will not find one, so a
-capability record would be reachable only by a caller who already knows the model, which is the
-opposite of what this module is for.
+The Harmony 900, 1000 and 1100 enumerate as a network class rather than HID. [`openHarmony`](usb.md#openharmony) will
+not find one, so a capability record would be reachable only by a caller who already knows the
+model, which is the opposite of what this module is for.
 
 ### `Panel`
 

@@ -128,16 +128,16 @@ export interface ComposedScreen {
    * section 240.
    */
   pagesAdded: number[];
-  /** Arch 14 only: how many row lists were written, from `rowList` on, one per menu binding and copy. */
+  /** Harmony 600, 650 and 700 only: how many row lists were written, from `rowList` on, one per menu binding and copy. */
   rowLists?: number;
-  /** Arch 14 only: how many keys of the new device mode's key map send one of its commands. */
+  /** Harmony 600, 650 and 700 only: how many keys of the new device mode's key map send one of its commands. */
   keys?: number;
-  /** Arch 14 only: how many pages the new device mode has. */
+  /** Harmony 600, 650 and 700 only: how many pages the new device mode has. */
   pages?: number;
   /**
-   * Arch 14 with `compiled` only: the texts drawn in a font of another size than the compiler's rules
-   * pick, because no font of that size in the configuration carries every glyph they need, or because
-   * a character has no width in the size that decides them. Each is a page that differs from the
+   * Harmony 600, 650 and 700 with `compiled` only: the texts drawn in a font of another size than
+   * the compiler's rules pick, because no font of that size in the configuration carries every glyph
+   * they need, or because a character has no width in the size that decides them. Each is a page that differs from the
    * compiler's, and a caller reports them rather than discovering them on the remote.
    */
   substituted?: string[];
@@ -407,8 +407,8 @@ export interface ComposeScreenOptions {
    */
   iconLike?: string;
   /**
-   * Arch 14 only: the device list row whose device mode the new one takes its key map from, by its
-   * drawn label. Every key that mode binds is bound in the new one too, to the new device's command
+   * Harmony 600, 650 and 700 only: the device list row whose device mode the new one takes its key
+   * map from, by its drawn label. Every key that mode binds is bound in the new one too, to the new device's command
    * sending the same frame where exactly one does and to nothing otherwise, so a key never falls
    * through to another device's map. Without it the first row's mode is the template and no key
    * matches unless the numbers happen to agree.
@@ -516,22 +516,23 @@ export interface ComposedActivityRow {
   page: number;
   /**
    * The base slot 10 list the row runs: beep, select the entry, clear the device mode marker, and on
-   * arch 14 (Harmony 600, 650 and 700) the first of `rowLists`, which carry no beep.
+   * the Harmony 600, 650 and 700 the first of `rowLists`, which carry no beep.
    */
   rowList: number;
   /** The scan code the new row answers to, which is its position in the page's hit rectangles. */
   scan: number;
   /**
-   * Every scan the row answers to: `scan` alone on arch 12 (Harmony One), and on arch 14 (Harmony
-   * 600, 650 and 700) both buttons of the row, top or bottom.
+   * Every scan the row answers to: `scan` alone on the Harmony One, and on the Harmony 600, 650 and
+   * 700 both buttons of the row, top or bottom.
    *
    * @privateRemarks
    * section 273.
    */
   scans: number[];
   /**
-   * How many row lists were written from `rowList` on: one on arch 12, where every binding shares
-   * it, and on arch 14 one per button on the page and another per button on its copy, as the compiler
+   * How many row lists were written from `rowList` on: one on the Harmony One, where every binding
+   * shares it, and on the Harmony 600, 650 and 700 one per button on the page and another per button
+   * on its copy, as the compiler
    * writes them.
    *
    * @privateRemarks
@@ -582,24 +583,24 @@ export interface ComposedActivityScreen {
   activity: number;
   /** The new working screen, base slot 6. */
   mode: number;
-  /** The start up screen the enter list should open with: an existing one on the Harmony One, the one composed with it on arch 14. */
+  /** The start up screen the enter list should open with: an existing one on the Harmony One, the one composed with it on the Harmony 600, 650 and 700. */
   startupMode: number;
   /** The existing list every activity's enter list calls to say an activity is running. Harmony One only. */
   activeList?: number;
-  /** The base slot 14 record that gained the activity's case: on arch 14, the working screen's. */
+  /** The base slot 14 record that gained the activity's case: on the Harmony 600, 650 and 700, the working screen's. */
   map: number;
   /** The list the page's "Devices" key runs: beep, enter the device list. Harmony One only. */
   devicesList?: number;
-  /** The scan codes the pads answer to, in row order. Empty on arch 14, whose pads are the corners. */
+  /** The scan codes the pads answer to, in row order. Empty on the Harmony 600, 650 and 700, whose pads are the corners. */
   scans: number[];
-  /** Arch 14 only: the variable the start sequence holds at 1, and the one it writes before deferring. */
+  /** Harmony 600, 650 and 700 only: the variable the start sequence holds at 1, and the one it writes before deferring. */
   startVariable?: number;
   flagVariable?: number;
-  /** Arch 14 only: the base slot 9 entry the keypad map case selects, which `composeActivity` must add. */
+  /** Harmony 600, 650 and 700 only: the base slot 9 entry the keypad map case selects, which `composeActivity` must add. */
   set?: number;
-  /** Arch 14 only: the base slot 14 records that gained a case, working screen's first. */
+  /** Harmony 600, 650 and 700 only: the base slot 14 records that gained a case, working screen's first. */
   maps?: number[];
-  /** Arch 14 only: how many pages the working screen has. */
+  /** Harmony 600, 650 and 700 only: how many pages the working screen has. */
   pages?: number;
   /**
    * Keys the screens need the activity's own keypad to bind, which `composeActivity` adds to the ones the

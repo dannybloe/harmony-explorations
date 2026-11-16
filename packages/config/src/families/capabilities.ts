@@ -43,7 +43,7 @@ export interface ModelProperties {
   /**
    * The family that builds for the model, as the registry chooses it, by the name it gives itself and its kind: a
    * compiled family builds the one container the remote is written with, a document family the documents it
-   * assembles one from. Left out for a model no family serves, the Harmony 525.
+   * assembles one from. Left out for a model no family serves yet.
    */
   readonly family?: { readonly name: string; readonly kind: 'compiled' | 'document' };
   /** The most devices the host software lets the model hold, the model table's `maxDevices`. */

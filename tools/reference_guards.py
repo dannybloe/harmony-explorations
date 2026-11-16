@@ -34,8 +34,9 @@ and read its diff, because a pin that grows is a violation being waved through.
   generated from the packages' doc comments, whose public part is everything before `@privateRemarks`. So its prose
   carries none of this repository's own pointers or bookkeeping: no findings section, plan, decision or requirement
   number, no todo, no HTML comment but the generator's own markers, no date, no relative time, no bench, lab, dump or
-  appliance, and no link to `CLAUDE.md`, the findings archive, a plan or a test. Prose is the text outside code spans
-  and code blocks, and the comments inside a code block, since a member's comment printed in a shape is read as prose.
+  appliance, no architecture number, and no link to `CLAUDE.md`, the findings archive, a plan or a test. Prose is the
+  text outside code spans and code blocks, and the comments inside a code block, since a member's comment printed in a
+  shape is read as prose.
 
 **A key never carries a person's name.** A link target or a word could, some day, so `redact` replaces
 any kind or path containing one with a digest before it is printed or pinned. That is what lets the
@@ -118,6 +119,12 @@ SDK_ARCHIVE_PATTERN = r'\bcatalogue, archived\b|config/src/catalogue/archive\w*\
 # The `sdk` guard's kinds, each a pattern counted in `sdk_prose`, and the flags it is read with: case is ignored
 # but for a requirement number, `R12`, where a capital is what makes it one. A date is a day, a month by name and a
 # year; a relative time is the expressions that tell the reader when something happened rather than what is true.
+#
+# **An architecture number is this project's handle for a family of remotes and names nothing on a stranger's desk**,
+# so the section names the models instead: "the Harmony 600, 650 and 700", never "arch 14". The rule is the word
+# `arch`, `architecture` or `architectures` followed by a space and a number, decimal or `0x`, in any case. Prose
+# only, as every kind here: the code a page prints may hold the number a field states, `architecture: 14` beside the
+# model it is for in a constant, which is a value and not a sentence, and passes since no space follows the word.
 MONTHS = 'January|February|March|April|May|June|July|August|September|October|November|December'
 SDK_WORDS = (
     ('section number', r'\bsections? \d+', re.I),
@@ -132,6 +139,7 @@ SDK_WORDS = (
     ('lab', r'\blabs?\b', re.I),
     ('dump', r'\bdump(?:s|ed|ing)?\b', re.I),
     ('appliance', r'\bappliances?\b', re.I),
+    ('architecture number', r'\barch(?:itectures?)?\s+(?:0x)?\d', re.I),
 )
 # The HTML comments the generator writes, `packages/lab/bin/api-reference.ts`: a page's introduction, its note that
 # it is generated, and the blocks it fills. Any other comment, `<!--superseded-->` printed out of a source comment

@@ -94,11 +94,13 @@ export interface ActivityBinding {
 /**
  * Every button binding that starts an activity, and which activity it starts.
  *
- * **This is the chain an interface needs and it took four hops to find.** A page's
+ * **This is the chain an interface needs, and it is four hops long.** A page's
  * tagged list binds a key to opcode `0x7F`, which names a base slot 10 action list; that list
  * carries `0x1F` with operand `0xFF | set`, which selects a base slot 9 binding set; that set's own
- * tagged list carries another `0x7F`, naming the list that writes `CurrentActivityState`.
+ * tagged list carries another `0x7F`, naming the list that writes `CurrentActivityState`. There is one
+ * such list per activity and no spares.
  *
+ * @privateRemarks
  * Two routes were ruled out before this one: no screen switch reads the variable's
  * index, and base slot 14's value maps point at targets that draw no text, and the touch hit map exists on arch 12
  * alone.
@@ -107,7 +109,6 @@ export interface ActivityBinding {
  * activity count exactly, in every container that has a name tree, across four architectures. So
  * there is one such list per activity and no spares.
  *
- * @privateRemarks
  * Section 120.
  * section 112. The touch hit map was proposed in `CLAUDE.md` as a third route and was wrong.
  */
@@ -377,17 +378,18 @@ export interface ActivityName {
  * That is what separates the label from the "Starting" splash text every row shares.
  *
  * **A label the menu wrapped onto a second row** is looked for last, and only for an activity nothing
- * else resolved, which is a Harmony 525 and nothing else here.
+ * else resolved.
  *
- * **Arch 12 does not use any of that, and it runs first**. No string rule can work on a
- * touch panel: three pages of one Harmony One configuration bind activities on scans {50,51,52}, {50,48,49} and {48,49}
- * while each draws its labels at the same rows, so no fixed code to row map exists. A Harmony One takes
+ * **The Harmony One does not use any of that, and it runs first**. No string rule can work on a
+ * touch panel: one page binds its activities on other scans than the next while each draws its labels
+ * at the same rows, so no fixed code to row map exists. A Harmony One takes
  * the label from base slot 17's hit map instead, through the index in the mode page's own `lead` byte,
- * so the rectangle is stated and the label is the text the firmware's hit test puts inside it. Sections
- * 121, 124 and 125.
+ * so the rectangle is stated and the label is the text the firmware's hit test puts inside it.
  *
  * @privateRemarks
- * section 112; section 121; section 125.
+ * A wrapped label is a Harmony 525's and nothing else here. Three pages of one Harmony One configuration
+ * bind activities on scans {50,51,52}, {50,48,49} and {48,49}.
+ * section 112; section 121; section 124; section 125.
  */
 export function activityNames(c: Container): ActivityName[] {
   const bindings = activityBindings(c);

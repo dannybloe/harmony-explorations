@@ -368,7 +368,7 @@ From [`LeftOutActivity`](api/config.md#leftoutactivity).
 
 [`syncDocument`](api/remote-write.md#syncdocument) reports what it does as events and resolves with its outcome,
 which is also its last event. Every refusal and failure from the check on is an outcome; a sync rejects only before
-anything is opened, with `NotBuiltError` for a model whose sync is not built and with a `TypeError` for a pretend
+anything is opened, with `NotBuiltError` for a model whose sync is not built yet and with a `TypeError` for a pretend
 remote `pretendRemote` did not make. A failure that leaves the remote needing something done names a state of a
 closed list, which says what is true of the remote, whether it may be unplugged and what puts it right.
 

@@ -63,8 +63,8 @@ export interface ComposeDevice {
    */
   readonly interKeyDelay?: number;
   /**
-   * The inter device delay in tenths of a second. On arch 14, 0 to 20, which an activity's start, All Off
-   * and Help queue in front of each of this device's commands; default
+   * The inter device delay in tenths of a second. On the Harmony 600, 650 and 700, 0 to 20, which an
+   * activity's start, All Off and Help queue in front of each of this device's commands; default
    * `INTER_DEVICE_DELAY_DEFAULT`. On the Harmony 880 and 885 the silence each power step's record opens
    * with, `SendShape.powerStep` in the side keys family, `reference/infrared/sending.md`; default its
    * `SIDE_KEYS_INTER_DEVICE_DEFAULT`. The Harmony One's composer reads none.
@@ -75,7 +75,7 @@ export interface ComposeDevice {
   readonly interDeviceDelay?: number;
   /**
    * The power on delay in tenths of a second, waited after the power command when the device is
-   * switched on. On arch 14 0 to 450, a variable mapped through base slot 14, default
+   * switched on. On the Harmony 600, 650 and 700 0 to 450, a variable mapped through base slot 14, default
    * `POWER_ON_DELAY_DEFAULT`. On the Harmony One 1 to 255, a bare `0x7C` wait at the end of the on list,
    * and none where it is not given.
    */
@@ -102,7 +102,7 @@ export interface ComposedDevice {
   /** The device's power variable, in base slot 13's numbering. */
   variable: number;
   /**
-   * Arch 14 only: what every command opens with. `variable` is the device's
+   * Harmony 600, 650 and 700 only: what every command opens with. `variable` is the device's
    * `InterDeviceDelay_<identifier>`, `table` the base slot 14 record mapping it, `list` the one list
    * of the device's own that applies it, and `identifier` the number the variable's name carries.
    *
@@ -111,7 +111,7 @@ export interface ComposedDevice {
    */
   delay?: { variable: number; table: number; list: number; identifier: number };
   /**
-   * Arch 14 only: the power on delay. `variable` is `PowerOnDelay_<identifier>`,
+   * Harmony 600, 650 and 700 only: the power on delay. `variable` is `PowerOnDelay_<identifier>`,
    * `table` the base slot 14 record mapping it, `list` the list holding that `0x72`, and `on` the
    * list the power variable runs to switch the device on: the power command, then `list`.
    *

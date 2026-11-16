@@ -117,11 +117,12 @@ export function scanFootnote(source: ScanSource): string {
  * Which population a key belongs to, which is a real division and not a label.
  *
  * A scan bound by a mode page is a key the screen speaks for, a scan bound by a base slot 9 set is a key on the
- * keypad, and the two share no code at all on three of the four architectures and exactly one on arch 8. It matters
+ * keypad, and the two share no code at all on the Harmony 525, the Harmony One and the Harmony 600, 650 and 700, and
+ * exactly one on the Harmony 880 and 885. It matters
  * to the interface because colouring by device works on the keypad group, while what a screen key does depends on the
  * page in force.
  *
- * `touch` is a key with no moulded part, answering a touch on the case. On arch 12 (Harmony One) base
+ * `touch` is a key with no moulded part, answering a touch on the case. On the Harmony One base
  * slot 17 states its rectangle; on a Harmony Touch it is the star and the house printed above the
  * screen, which its manual lists as buttons and says to tap, and nothing about its configuration has
  * been read, so there the kind says what the product is and nothing about a population.
@@ -341,7 +342,7 @@ export interface Screen {
   readonly h: number;
   readonly pixels: { readonly width: number; readonly height: number };
   /**
-   * Whether the glass is a touch panel. Arch 12 (Harmony One), where base slot 17 is a touch hit map,
+   * Whether the glass is a touch panel. The Harmony One, where base slot 17 is a touch hit map,
    * and the Harmony Touch, whose own manual calls it an LCD touch screen. On the Touch the raster is
    * not from `SCREEN_SIZES` either, which has no entry for its architecture, but from the size of the
    * screen captures in its user guide.

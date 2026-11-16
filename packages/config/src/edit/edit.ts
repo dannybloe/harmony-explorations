@@ -377,25 +377,27 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
  * was generated.
  *
  * **Seven values are stamped and an eighth is derived**, which is the part that is easy to miss. The
- * year's maximum is that year plus one, in all nineteen containers measured, where the other six
- * maxima are fixed. Stamp the year without it and a config saved more than a year after it was built
+ * year's maximum is that year plus one, where the other six maxima are fixed. Stamp the year without it and a config saved more than a year after it was built
  * declares a value outside the variable's own declared range: built in 2023 the year record is 23 with
- * a maximum of 24, and saving it in 2026 would write 26 into a range that stops at 24. Nothing here
- * has watched a remote mishandle that, so it is a rail taken from the format's own rule rather than
- * from a measured failure, which is the weaker of the two kinds and is marked as such.
+ * a maximum of 24, and saving it in 2026 would write 26 into a range that stops at 24. This is a rail
+ * taken from the format's own rule rather than from a remote seen to mishandle such a value.
  *
  * The seven values come from `clockRecordFields`, the same encoder base slot 3 uses, rather than from
  * a second decomposition of the same string: that is the rule this project bans two copies of.
  *
  * The transitions those records carry are **not** touched. They are structural, not date derived: on
- * arch 8, 9, 12 and 14 the seven records carry one skeleton in every container, the carry: the minute
+ * the Harmony 880 and 885, the Harmony 525, the Harmony One and the Harmony 600, 650 and 700 the seven
+ * records carry one skeleton in every container, the carry: the minute
  * adds one to the hour, the hour calls a list adding one to the day and the weekday, the day adds one to
  * the month and the month to the year, the other three carry nothing, and the only part that varies is
  * which action list the hour's `0x7F` names (the Harmony One's minute carries a second transition). On
- * arch 16 (Harmony 300 and 350) the five configurations read carry none at all, so the remote's clock
- * stops at the minute; a save leaves that alone too.
+ * the Harmony 300 and 350 the records carry none at all, so the remote's clock stops at the minute; a
+ * save leaves that alone too.
  *
  * @privateRemarks
+ * The year's maximum: in all nineteen containers measured. Nothing here has watched a remote mishandle a
+ * year past it, which is the weaker of the two kinds of rail and is marked as such. The Harmony 300 and
+ * 350: the five configurations read.
  * `tests/harmony_300_350/test_harmony_350_clock.py`.
  * Section 130.
  */
@@ -520,7 +522,8 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
  * **`tenths` is capped at 100, which no inline power on delay here exceeds, not a field width.** A byte
  * holds 255, and the enqueueing worker folds two consecutive quantities for one device by taking the
  * larger **except** at 100, where it pushes a second entry instead. No inline power on delay
- * on arch 8, 9 or 12 exceeds 100, and a larger one spelled out would be a length change and not a byte
+ * in Logitech's configurations of the Harmony 880 and 885, the Harmony 525 or the Harmony One exceeds 100,
+ * and a larger one spelled out would be a length change and not a byte
  * edit. Logitech's compiler does write a single `0x7C` above 100 for a sequence's pause on the Harmony
  * One, and the Harmony 350's factory configuration holds one of 170 in its activity's start,
  * but whether the remote honours one is unmeasured, so a caller asking for one here is asking for something
@@ -528,7 +531,7 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
  * two instructions, 100 and 70, which `powerOnInstructions` does not report and this does not edit.
  *
  * **Where a family keeps another copy that a key reaches, this changes it too**, asking `Family.powerOnDelayCopies`.
- * On arch 16 (Harmony 300 and 350) Watch TV switches a device with one power code on by calling that code's list
+ * On the Harmony 300 and 350 Watch TV switches a device with one power code on by calling that code's list
  * and a `0x7C` of its own, so the delay is written twice; a device with separate codes is switched through its
  * `Power` variable and has the one copy.
  *

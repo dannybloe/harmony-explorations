@@ -43,9 +43,7 @@ firmware computes `narrow + 2 * wide` as the RAM the variables occupy, which is 
 own width arithmetic needs, and then **fills every byte above it with `0xFE` at each boot**. The
 seeding loop runs first and over `count`, so a container whose `count` exceeds the sum seeds
 variables into bytes the fill then paints over: they hold 65278 rather than what their record
-says, and nothing anywhere reports it. Measured on arch 12 (Harmony One) at `0x2A330` and arch 14
-(Harmony 700 reference image) at `0x17A42`, and confirmed on a connected Harmony One where the
-`0xFE` run begins at the computed byte and not one either side.
+says, and nothing anywhere reports it. Read in the firmware of the Harmony One and the Harmony 700.
 
 Uses [`Container`](#container).
 
@@ -86,9 +84,11 @@ over what it holds. **A build says no in three ways an application tells apart, 
 
 * [`ComposeError`](#composeerror), the build refuses the document: the families refuse what they will not build with it or a
   subclass of it, [`support/refusal.ts`](../../../packages/config/src/support/refusal.ts);
-* [`NotBuiltError`](#notbuilterror), what the document asks for is not built yet: a field of version 2 the family does not read, a key
-  a recipe chooses where the family builds none, and a model whose family builds nothing from a recipe yet, each
-  naming the requirement it waits on;
+* [`NotBuiltError`](#notbuilterror), what the document asks for is not built yet, each naming what it waits on. Not built yet: a model
+  whose family builds nothing from a recipe yet; a field of version 2 the family does not read; a key the document
+  chooses otherwise where the family builds no such choice, and a held press, a double press or a sequence on a key
+  where it builds only a command; and on a Harmony Touch, a sequence as a step of an activity's start or end, and a
+  setting its build does not write yet, such as its vibration;
 * [`RecipeError`](#recipeerror), a source the caller must give is missing: an account for a Harmony Touch, and an archive for a
   device the document carries no definition of. The same class refuses a recipe that is not one, before any of this,
   and a model no family serves.
@@ -735,23 +735,22 @@ So a config carried over with its old records carries a stale clock in two place
 was generated.
 
 **Seven values are stamped and an eighth is derived**, which is the part that is easy to miss. The
-year's maximum is that year plus one, in all nineteen containers measured, where the other six
-maxima are fixed. Stamp the year without it and a config saved more than a year after it was built
+year's maximum is that year plus one, where the other six maxima are fixed. Stamp the year without it and a config saved more than a year after it was built
 declares a value outside the variable's own declared range: built in 2023 the year record is 23 with
-a maximum of 24, and saving it in 2026 would write 26 into a range that stops at 24. Nothing here
-has watched a remote mishandle that, so it is a rail taken from the format's own rule rather than
-from a measured failure, which is the weaker of the two kinds and is marked as such.
+a maximum of 24, and saving it in 2026 would write 26 into a range that stops at 24. This is a rail
+taken from the format's own rule rather than from a remote seen to mishandle such a value.
 
 The seven values come from `clockRecordFields`, the same encoder base slot 3 uses, rather than from
 a second decomposition of the same string: that is the rule this project bans two copies of.
 
 The transitions those records carry are **not** touched. They are structural, not date derived: on
-arch 8, 9, 12 and 14 the seven records carry one skeleton in every container, the carry: the minute
+the Harmony 880 and 885, the Harmony 525, the Harmony One and the Harmony 600, 650 and 700 the seven
+records carry one skeleton in every container, the carry: the minute
 adds one to the hour, the hour calls a list adding one to the day and the weekday, the day adds one to
 the month and the month to the year, the other three carry nothing, and the only part that varies is
 which action list the hour's `0x7F` names (the Harmony One's minute carries a second transition). On
-arch 16 (Harmony 300 and 350) the five configurations read carry none at all, so the remote's clock
-stops at the minute; a save leaves that alone too.
+the Harmony 300 and 350 the records carry none at all, so the remote's clock stops at the minute; a
+save leaves that alone too.
 
 Uses [`Container`](#container), [`Edit`](#edit).
 
@@ -925,7 +924,8 @@ its 0 to 1 transition, `powerOnInstructions`.
 **`tenths` is capped at 100, which no inline power on delay here exceeds, not a field width.** A byte
 holds 255, and the enqueueing worker folds two consecutive quantities for one device by taking the
 larger **except** at 100, where it pushes a second entry instead. No inline power on delay
-on arch 8, 9 or 12 exceeds 100, and a larger one spelled out would be a length change and not a byte
+in Logitech's configurations of the Harmony 880 and 885, the Harmony 525 or the Harmony One exceeds 100,
+and a larger one spelled out would be a length change and not a byte
 edit. Logitech's compiler does write a single `0x7C` above 100 for a sequence's pause on the Harmony
 One, and the Harmony 350's factory configuration holds one of 170 in its activity's start,
 but whether the remote honours one is unmeasured, so a caller asking for one here is asking for something
@@ -933,7 +933,7 @@ this function cannot honestly do. The same configuration spells that television'
 two instructions, 100 and 70, which `powerOnInstructions` does not report and this does not edit.
 
 **Where a family keeps another copy that a key reaches, this changes it too**, asking [`Family.powerOnDelayCopies`](config-types.md#family).
-On arch 16 (Harmony 300 and 350) Watch TV switches a device with one power code on by calling that code's list
+On the Harmony 300 and 350 Watch TV switches a device with one power code on by calling that code's list
 and a `0x7C` of its own, so the delay is written twice; a device with separate codes is switched through its
 `Power` variable and has the one copy.
 
@@ -2401,18 +2401,11 @@ function activityBindings(c: Container): ActivityBinding[]
 
 Every button binding that starts an activity, and which activity it starts.
 
-**This is the chain an interface needs and it took four hops to find.** A page's
+**This is the chain an interface needs, and it is four hops long.** A page's
 tagged list binds a key to opcode `0x7F`, which names a base slot 10 action list; that list
 carries `0x1F` with operand `0xFF | set`, which selects a base slot 9 binding set; that set's own
-tagged list carries another `0x7F`, naming the list that writes `CurrentActivityState`.
-
-Two routes were ruled out before this one: no screen switch reads the variable's
-index, and base slot 14's value maps point at targets that draw no text, and the touch hit map exists on arch 12
-alone.
-
-The closure is a count. The number of base slot 10 lists that write the variable equals the
-activity count exactly, in every container that has a name tree, across four architectures. So
-there is one such list per activity and no spares.
+tagged list carries another `0x7F`, naming the list that writes `CurrentActivityState`. There is one
+such list per activity and no spares.
 
 Uses [`Container`](#container), [`ActivityBinding`](#activitybinding).
 
@@ -2472,14 +2465,13 @@ its splash screen is a verb plus the name, so the two share the name and neither
 That is what separates the label from the "Starting" splash text every row shares.
 
 **A label the menu wrapped onto a second row** is looked for last, and only for an activity nothing
-else resolved, which is a Harmony 525 and nothing else here.
+else resolved.
 
-**Arch 12 does not use any of that, and it runs first**. No string rule can work on a
-touch panel: three pages of one Harmony One configuration bind activities on scans {50,51,52}, {50,48,49} and {48,49}
-while each draws its labels at the same rows, so no fixed code to row map exists. A Harmony One takes
+**The Harmony One does not use any of that, and it runs first**. No string rule can work on a
+touch panel: one page binds its activities on other scans than the next while each draws its labels
+at the same rows, so no fixed code to row map exists. A Harmony One takes
 the label from base slot 17's hit map instead, through the index in the mode page's own `lead` byte,
-so the rectangle is stated and the label is the text the firmware's hit test puts inside it. Sections
-121, 124 and 125.
+so the rectangle is stated and the label is the text the firmware's hit test puts inside it.
 
 Uses [`Container`](#container), [`ActivityName`](#activityname).
 
@@ -2563,8 +2555,8 @@ interface Device {
   /** The base slot 13 variables whose name carries this device's label. */
   variables: number[];
   /**
-   * The mode the device list enters for this device, as a base slot 6 index. Arch 12 (Harmony One)
-   * only, since the row shape it is read from is that model's, and undefined where no row reaches
+   * The mode the device list enters for this device, as a base slot 6 index. Harmony One only,
+   * since the row shape it is read from is that model's, and undefined where no row reaches
    * the device.
    */
   mode?: number;
@@ -2581,11 +2573,7 @@ function deviceCount(c: Container): number | undefined
 
 How many devices the config drives: one infrared group per device.
 
-Base slot 5's groups are the device partition of the infrared database, 8 to 164 codes each, and
-a group may be empty. Two things say a group is a device rather than some other grouping: the
-config compiled for one device carries exactly one group, and on the two arch 14 configs the
-number of distinct device identifiers in the state variable names is the number of groups, 4 and
-6.
+Base slot 5's groups are the device partition of the infrared database, and a group may be empty.
 
 Uses [`Container`](#container).
 
@@ -2601,27 +2589,27 @@ interface DeviceDelays {
    * Where the number was read, because the two architectures keep it in unrelated places and a
    * caller that wants to **change** one has to know which.
    *
-   * `variable` is arch 14 (Harmony 600 and 700): a state variable in base slot 13 whose name carries
-   * Logitech's device identifier. `instruction` is arch 8, 9 and 12 (Harmony 880 and 885, Harmony
-   * 525, Harmony One): a `0x7C` inline in the action list that switches the device on.
+   * `variable` is the Harmony 600, 650 and 700's: a state variable in base slot 13 whose name carries
+   * Logitech's device identifier. `instruction` is the Harmony 880 and 885's, the Harmony 525's and the
+   * Harmony One's: a `0x7C` inline in the action list that switches the device on.
    */
   source: 'variable' | 'instruction';
   /** Tenths of a second between switching the device on and sending it anything. */
   powerOn: number;
   /**
-   * Logitech's numeric identifier for the device. **Arch 14 only**, since it is the variable's name
-   * that carries it and the other architectures have no variable.
+   * Logitech's numeric identifier for the device. **Harmony 600, 650 and 700 only**, since it is the
+   * variable's name that carries it and the other models have no variable.
    */
   id?: number;
-  /** What the remote's own "set to default" page would put back into `powerOn`. Arch 14 only. */
+  /** What the remote's own "set to default" page would put back into `powerOn`. Harmony 600, 650 and 700 only. */
   defaultPowerOn?: number;
   /**
-   * Tenths of a second between two codes when the second goes to a different device. **Arch 14
-   * only**, and its absence elsewhere is honest rather than settled: where arch 8, 9 and 12 keep
-   * this, if they keep it at all, is open.
+   * Tenths of a second between two codes when the second goes to a different device. **Harmony 600,
+   * 650 and 700 only**, and its absence elsewhere is honest rather than settled: where the Harmony 880
+   * and 885, the Harmony 525 and the Harmony One keep this, if they keep it at all, is open.
    */
   interDevice?: number;
-  /** What that page would put back into `interDevice`. Arch 14 only. */
+  /** What that page would put back into `interDevice`. Harmony 600, 650 and 700 only. */
   defaultInterDevice?: number;
 }
 ```
@@ -2692,7 +2680,7 @@ interface DeviceModeMap {
    *
    * The tag is the whole key code, an event type in `0xC0` and a scan code in `0x3F`, exactly as
    * base slot 9 spells one. These are physical keys: the scan codes here and the ones a page binds
-   * are disjoint populations on arch 9, 12 and 14.
+   * are disjoint populations on the Harmony 525, the Harmony One and the Harmony 600, 650 and 700.
    */
   keypad: KeyCode[];
   /** The same for every page of that mode, which is device mode's screen and is usually the larger half. */
@@ -2745,7 +2733,7 @@ One infrared code: which device it goes to, and which of that device's codes it 
 interface Inventory {
   /** The architecture the config states, which is the only place it says so. */
   architecture?: number;
-  /** When the config was built, from base slot 3. On arch 12 this is also what the clock is set to. */
+  /** When the config was built, from base slot 3. On the Harmony One this is also what the clock is set to. */
   builtAt?: string;
   devices: Device[];
   activities: Activity[];
@@ -2767,9 +2755,9 @@ function inventory(c: Container): Inventory
 The whole inventory of a config, composed.
 
 **Here so that a caller does not have to know the order.** Naming a device needs the infrared groups,
-the state variables, the action lists and, for three devices in the corpus, the screen text; naming an
-activity needs the touch hit map on arch 12 and the modes elsewhere. An application that assembled
-that itself would be a second copy of the composition, and the first thing to drift.
+the state variables, the action lists and, for some devices, the screen text; naming an
+activity needs the touch hit map on the Harmony One and the modes elsewhere. An application that
+assembled that itself would be a second copy of the composition, and the first thing to drift.
 
 Uses [`Container`](#container), [`Inventory`](#inventory-type).
 
@@ -2885,7 +2873,7 @@ which `powerOnInstructions` reads.
 function powerOnDelays(c: Container): PowerOnDelay[]
 ```
 
-Every arch 14 device's power on delay, by the route [`PowerOnDelay`](#powerondelay) describes.
+Every device's power on delay on the Harmony 600, 650 and 700, by the route [`PowerOnDelay`](#powerondelay) describes.
 
 Uses [`Container`](#container), [`PowerOnDelay`](#powerondelay).
 
@@ -3136,7 +3124,7 @@ class Container {
   /** The container itself, cookie through end marker. */
   readonly blob: Uint8Array;
   readonly sections: readonly Section[];
-  /** Which raw slot the architecture record was found in, 1 normally and 0 on arch 10. */
+  /** Which raw slot the architecture record was found in, 1 normally and 0 on the Harmony 890 and 895. */
   architectureSlot?: number;
   /** Stated by section slot 1, see `ARCH_RECORD_SLOT`. */
   architecture: number | undefined;
@@ -3180,7 +3168,7 @@ class Container {
    * The **legacy label**, kept because every document and sample table here uses it.
    *
    * It splits one byte into nibbles and prints them as major.minor, which reads as a plausible
-   * version for `0x14` to `0x17` and as nonsense otherwise: an arch 16 (Harmony 350) container comes
+   * version for `0x14` to `0x17` and as nonsense otherwise: a Harmony 350's container comes
    * out `0.15`, a lower version than a remote five years older. The byte is the pointer count: prefer
    * `statedPointerCount`.
    */
@@ -3632,7 +3620,7 @@ interface ModelProperties {
   /**
    * The family that builds for the model, as the registry chooses it, by the name it gives itself and its kind: a
    * compiled family builds the one container the remote is written with, a document family the documents it
-   * assembles one from. Left out for a model no family serves, the Harmony 525.
+   * assembles one from. Left out for a model no family serves yet.
    */
   readonly family?: { readonly name: string; readonly kind: 'compiled' | 'document' };
   /** The most devices the host software lets the model hold, the model table's `maxDevices`. */

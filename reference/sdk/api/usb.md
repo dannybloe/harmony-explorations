@@ -272,12 +272,13 @@ A skin is Logitech's own index into its model list, so the number names the remo
 17 an 885, 19 an 890, 22 a 525, 54 a Harmony One, 66 a 700, 71 a 600, 72 a 650. Every config
 states its own in the `<SKIN>` element of its EZHex header, which is what these cases are checked
 against. It matters because the 600 and the 700 share product id 0xC122, so the product id does
-not name an arch 14 model and this does, before a single config byte is read.
+not name which of the Harmony 600, 650 and 700 it is and this does, before a single config byte is
+read.
 
 **The low byte's encoding is per firmware generation and reading it wrong is silent**, so the
 high byte decides: `0x08` and `0x09` carry the skin in plain binary, and there the high byte is
-the protocol number; `0x10` carries it in BCD, on arch 12 and arch 14 alike, so there it is a
-constant whose meaning is not established. Anything else is undefined rather than guessed,
+the protocol number; `0x10` carries it in BCD, on the Harmony One and the Harmony 600, 650 and 700
+alike, so there it is a constant whose meaning is not established. Anything else is undefined rather than guessed,
 because a guess names the wrong remote: an 885's 0x0811 read as BCD is 11, a Harmony 655.
 
 ### `Transport`
@@ -482,8 +483,8 @@ interface VersionReading {
   /**
    * Field 6, which names a **platform** and not an architecture.
    *
-   * `0x0C` on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700), which are one platform under
-   * it, `0x09` on arch 9 (Harmony 525) and `0x08` on arch 8 (Harmony 880 and 885).
+   * `0x0C` on the Harmony One and the Harmony 600 and 700, which are one platform under it, `0x09` on
+   * the Harmony 525 and `0x08` on the Harmony 880 and 885.
    */
   readonly platform: number;
 }
@@ -560,8 +561,8 @@ function parseSysInfo(text: string): Map<string, string>
 
 The identity file, parsed into its fields.
 
-Text rather than a packed block, which is the surprise of this family: `arch 0x10`, one field per
-line, name then a space then a value. The firmware holds every one of those names as a string, so
+Text rather than a packed block, which is the surprise of this family: one field per line, name
+then a space then a value, the architecture among them under the name `arch`. The firmware holds every one of those names as a string, so
 the parse is checked against the image and not only against a reply.
 
 ### `readFile`

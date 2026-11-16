@@ -1513,14 +1513,17 @@ async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): 
  * an exception: a document the check or the build refuses, a remote on the cable that is not the document's model, a
  * refusal by the write path or its checks (the write switches among them), a stop, and a failure of the remote or the
  * cable, each with what it left the remote as. It rejects in two cases only, both before anything is opened or sent:
- * with `NotBuiltError` for a document of a model whose sync is not built, every model but the Harmony One, 600, 650,
- * 700 and 885 and the Harmony Touch (a Harmony 300 or 350 among them), and with a `TypeError` for a pretend remote
- * that `pretendRemote` did not make. A Harmony 885's document gets as far as the build and ends `refused`, since no
- * document builds for an 885 yet. `capabilitiesOf` says beforehand whether a model's sync is there.
+ * with `NotBuiltError` for a document of a model whose sync is not built yet, and with a `TypeError` for a pretend
+ * remote that `pretendRemote` did not make. A Harmony 885's document gets as far as the build and ends `refused`, since
+ * no document builds for an 885 yet.
+ *
+ * Not built yet: a sync of every model but the Harmony One, 600, 650, 700 and 885 and the Harmony Touch, a Harmony 300
+ * or 350 among them.
  *
  * @privateRemarks
  * R79. The Harmony 885 is in `CONFIG_WRITE_MODELS`, so its document is let through to the build, whose `NotBuiltError`
- * the build phase turns into a refusal.
+ * the build phase turns into a refusal. `capabilitiesOf` does not say beforehand which models' sync is there: R79 is
+ * open on every model.
  */
 export async function syncDocument(request: SyncRequest): Promise<SyncOutcome> {
   const remote = request.remote;
