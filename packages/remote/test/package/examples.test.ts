@@ -37,7 +37,18 @@ const programs = readdirSync(EXAMPLES).filter((name) => name.endsWith('.ts') && 
 const DOCUMENTS = ['one-test.json', 'touch-test.json'];
 
 test('the examples are the ones the guide is written around, so one added or dropped shows in this diff', () => {
-  assert.deepEqual(programs, ['add-device.ts', 'build.ts', 'change.ts', 'check.ts', 'create.ts', 'imports.ts', 'keys.ts', 'read.ts', 'sync.ts']);
+  assert.deepEqual(programs, [
+    'add-device.ts',
+    'build.ts',
+    'change.ts',
+    'check.ts',
+    'create.ts',
+    'first.ts',
+    'imports.ts',
+    'keys.ts',
+    'read.ts',
+    'sync.ts',
+  ]);
 });
 
 // Side by side, since three of them build a Harmony One's configuration and take seconds each.

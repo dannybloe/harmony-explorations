@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-project test-rails test-archive test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write api-reference api-reference-write all full release-pack release-check clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-project test-rails test-archive test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write api-reference api-reference-write sdk-diagrams sdk-diagrams-write all full release-pack release-check clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -71,6 +71,7 @@ help:
 	@echo "requirements-write  regenerate the proofs module, both requirements documents and the bench checklists"
 	@echo "api-reference  check the website's SDK pages, reference/sdk/, against the packages' sources and examples"
 	@echo "api-reference-write  regenerate the API pages and the example and shape blocks of the SDK pages"
+	@echo "sdk-diagrams  check the SDK overview's drawings, reference/sdk/diagrams/, against the sources; -write redraws (needs dot)"
 	@echo "site         build the reference website into site/, strict; SITE_STRICT=false builds past a warning"
 	@echo "site-offline the same website for browsing from disk: open site/index.html, no server needed"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
@@ -464,6 +465,19 @@ api-reference:
 
 api-reference-write:
 	@node packages/lab/bin/api-reference.ts --write
+
+# The four drawings of the SDK's overview page, `reference/sdk/diagrams/`: what each says is read off the packages'
+# sources and graphviz lays it out, the `draw-a-diagram` skill. Each is a DOT source this writes and the SVG `dot`
+# draws from it. The check holds the DOT source to the sources and the SVG to its DOT source by the digest it records,
+# since graphviz does not promise the same SVG across versions, and runs in `make ts` too,
+# packages/lab/test/sdk-diagrams.test.ts. Writing needs `dot`, `brew install graphviz`, and draws again only the SVG
+# whose source changed. It also fills each image's text on reference/sdk/overview.md from the same data.
+# No lab, no network, no remote.
+sdk-diagrams:
+	@node packages/lab/bin/sdk-diagrams.ts
+
+sdk-diagrams-write:
+	@node packages/lab/bin/sdk-diagrams.ts --write
 
 # The reference website, plan 009 section 3: MkDocs with the Material theme builds `reference/` into
 # `site/`, which is ignored and never committed; `mkdocs.yml` and `tools/site/hooks.py` say what is built

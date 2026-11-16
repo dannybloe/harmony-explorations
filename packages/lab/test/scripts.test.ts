@@ -53,9 +53,10 @@ const NOT_RUN: Readonly<Record<string, string>> = {
 };
 
 test('the scan found the scripts, rather than nothing', () => {
-  // Without this a wrong path would make every check below pass on no files. 74 on 8 November 2026, 77 on 9 November with the codec's carry-codes, build-recipe and reference scripts, 78 on 10 November with the requirements document's, 79 on 14 November with the archive sample's, 81 with the release's pack and check, 82 with the API reference's generator.
+  // Without this a wrong path would make every check below pass on no files. The count moves with every script
+  // added or removed, so a script that appears or goes shows in this diff.
   const all = scripts();
-  assert.equal(all.length, 82);
+  assert.equal(all.length, 83);
   for (const one of [...Object.keys(ENTRY_POINT_CHECKS), ...Object.keys(NOT_RUN)]) assert.ok(all.includes(one), one);
 });
 

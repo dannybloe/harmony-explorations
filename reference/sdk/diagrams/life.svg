@@ -1,0 +1,254 @@
+<!-- drawn by graphviz 15.1.1 from life.dot, sha256 169ca4ad018d8b4a3cb2f73fcc894b2a8028bfd939c8b845cf080b942c920546. Generated: do not edit. -->
+<!-- Title: life Pages: 1 -->
+<svg
+ viewBox="0.00 0.00 847.00 674.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 652.85)">
+<title>life</title>
+<polygon fill="#ffffff" stroke="none" points="-21.6,21.6 -21.6,-652.85 825.73,-652.85 825.73,21.6 -21.6,21.6"/>
+<!-- model -->
+<g id="node1" class="node">
+<title>model</title>
+<polygon fill="#ffffff" stroke="none" points="223.75,-602.5 223.75,-627.25 320.5,-627.25 320.5,-602.5 223.75,-602.5"/>
+<polygon fill="none" stroke="#57606a" points="223.75,-602.5 223.75,-627.25 320.5,-627.25 320.5,-602.5 223.75,-602.5"/>
+<text xml:space="preserve" text-anchor="start" x="229.75" y="-610.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">a model</text>
+<polygon fill="none" stroke="#57606a" points="223.75,-579.25 223.75,-602.5 320.5,-602.5 320.5,-579.25 223.75,-579.25"/>
+<text xml:space="preserve" text-anchor="start" x="229.75" y="-588.25" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">by Logitech&#39;s name</text>
+</g>
+<!-- create -->
+<g id="node4" class="node">
+<title>create</title>
+<polygon fill="#ffffff" stroke="none" points="209.88,-509.5 209.88,-534.25 334.38,-534.25 334.38,-509.5 209.88,-509.5"/>
+<polygon fill="none" stroke="#57606a" points="209.88,-509.5 209.88,-534.25 334.38,-534.25 334.38,-509.5 209.88,-509.5"/>
+<text xml:space="preserve" text-anchor="start" x="215.88" y="-517.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">create</text>
+<polygon fill="none" stroke="#57606a" points="209.88,-483.25 209.88,-509.5 334.38,-509.5 334.38,-483.25 209.88,-483.25"/>
+<text xml:space="preserve" text-anchor="start" x="215.88" y="-493" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">recipe.create</text>
+<polygon fill="none" stroke="#57606a" points="209.88,-460 209.88,-483.25 334.38,-483.25 334.38,-460 209.88,-460"/>
+<text xml:space="preserve" text-anchor="start" x="215.88" y="-469" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">@freeharmony&#45;sdk/config</text>
+</g>
+<!-- model&#45;&gt;create -->
+<g id="edge7" class="edge">
+<title>model&#45;&gt;create</title>
+<path fill="none" stroke="#57606a" d="M272.12,-575.44C272.12,-566.59 272.12,-556.45 272.12,-546.5"/>
+<polygon fill="#57606a" stroke="#57606a" points="274.58,-546.72 272.13,-539.72 269.68,-546.72 274.58,-546.72"/>
+</g>
+<!-- saved -->
+<g id="node2" class="node">
+<title>saved</title>
+<polygon fill="#ffffff" stroke="none" points="396.62,-602.5 396.62,-627.25 513.62,-627.25 513.62,-602.5 396.62,-602.5"/>
+<polygon fill="none" stroke="#57606a" points="396.62,-602.5 396.62,-627.25 513.62,-627.25 513.62,-602.5 396.62,-602.5"/>
+<text xml:space="preserve" text-anchor="start" x="402.62" y="-610.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">a saved document</text>
+<polygon fill="none" stroke="#57606a" points="396.62,-579.25 396.62,-602.5 513.62,-602.5 513.62,-579.25 396.62,-579.25"/>
+<text xml:space="preserve" text-anchor="start" x="402.62" y="-588.25" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">JSON</text>
+</g>
+<!-- open -->
+<g id="node6" class="node">
+<title>open</title>
+<polygon fill="#ffffff" stroke="none" points="392.88,-509.5 392.88,-534.25 517.38,-534.25 517.38,-509.5 392.88,-509.5"/>
+<polygon fill="none" stroke="#57606a" points="392.88,-509.5 392.88,-534.25 517.38,-534.25 517.38,-509.5 392.88,-509.5"/>
+<text xml:space="preserve" text-anchor="start" x="398.88" y="-517.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">open</text>
+<polygon fill="none" stroke="#57606a" points="392.88,-483.25 392.88,-509.5 517.38,-509.5 517.38,-483.25 392.88,-483.25"/>
+<text xml:space="preserve" text-anchor="start" x="398.88" y="-493" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">recipe.open</text>
+<polygon fill="none" stroke="#57606a" points="392.88,-460 392.88,-483.25 517.38,-483.25 517.38,-460 392.88,-460"/>
+<text xml:space="preserve" text-anchor="start" x="398.88" y="-469" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">@freeharmony&#45;sdk/config</text>
+</g>
+<!-- saved&#45;&gt;open -->
+<g id="edge8" class="edge">
+<title>saved&#45;&gt;open</title>
+<path fill="none" stroke="#57606a" d="M455.12,-575.44C455.12,-566.59 455.12,-556.45 455.12,-546.5"/>
+<polygon fill="#57606a" stroke="#57606a" points="457.58,-546.72 455.13,-539.72 452.68,-546.72 457.58,-546.72"/>
+</g>
+<!-- document -->
+<g id="node3" class="node">
+<title>document</title>
+<polygon fill="#d6e4f5" stroke="none" points="317.75,-281.5 317.75,-306.25 408.5,-306.25 408.5,-281.5 317.75,-281.5"/>
+<polygon fill="none" stroke="#57606a" points="317.75,-281.5 317.75,-306.25 408.5,-306.25 408.5,-281.5 317.75,-281.5"/>
+<text xml:space="preserve" text-anchor="start" x="323.75" y="-289.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">the document</text>
+<polygon fill="none" stroke="#57606a" points="317.75,-255.25 317.75,-281.5 408.5,-281.5 408.5,-255.25 317.75,-255.25"/>
+<text xml:space="preserve" text-anchor="start" x="323.75" y="-265" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Recipe</text>
+<polygon fill="none" stroke="#57606a" points="317.75,-232 317.75,-255.25 408.5,-255.25 408.5,-232 317.75,-232"/>
+<text xml:space="preserve" text-anchor="start" x="323.75" y="-241" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">plain data</text>
+</g>
+<!-- change -->
+<g id="node8" class="node">
+<title>change</title>
+<polygon fill="#ffffff" stroke="none" points="300.88,-162.25 300.88,-187 425.38,-187 425.38,-162.25 300.88,-162.25"/>
+<polygon fill="none" stroke="#57606a" points="300.88,-162.25 300.88,-187 425.38,-187 425.38,-162.25 300.88,-162.25"/>
+<text xml:space="preserve" text-anchor="start" x="306.88" y="-170.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">change, such as</text>
+<polygon fill="none" stroke="#57606a" points="300.88,-136 300.88,-162.25 425.38,-162.25 425.38,-136 300.88,-136"/>
+<text xml:space="preserve" text-anchor="start" x="306.88" y="-145.75" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">recipe.setKey</text>
+<polygon fill="none" stroke="#57606a" points="300.88,-112.75 300.88,-136 425.38,-136 425.38,-112.75 300.88,-112.75"/>
+<text xml:space="preserve" text-anchor="start" x="306.88" y="-121.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">@freeharmony&#45;sdk/config</text>
+</g>
+<!-- document&#45;&gt;change -->
+<g id="edge11" class="edge">
+<title>document&#45;&gt;change</title>
+<path fill="none" stroke="#57606a" d="M363.12,-228.1C363.12,-218.76 363.12,-208.72 363.12,-199.07"/>
+<polygon fill="#57606a" stroke="#57606a" points="365.58,-199.23 363.13,-192.23 360.68,-199.23 365.58,-199.23"/>
+</g>
+<!-- check -->
+<g id="node10" class="node">
+<title>check</title>
+<polygon fill="#ffffff" stroke="none" points="21.88,-162.25 21.88,-187 146.38,-187 146.38,-162.25 21.88,-162.25"/>
+<polygon fill="none" stroke="#57606a" points="21.88,-162.25 21.88,-187 146.38,-187 146.38,-162.25 21.88,-162.25"/>
+<text xml:space="preserve" text-anchor="start" x="27.88" y="-170.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">check</text>
+<polygon fill="none" stroke="#57606a" points="21.88,-136 21.88,-162.25 146.38,-162.25 146.38,-136 21.88,-136"/>
+<text xml:space="preserve" text-anchor="start" x="27.88" y="-145.75" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">recipe.check</text>
+<polygon fill="none" stroke="#57606a" points="21.88,-112.75 21.88,-136 146.38,-136 146.38,-112.75 21.88,-112.75"/>
+<text xml:space="preserve" text-anchor="start" x="27.88" y="-121.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">@freeharmony&#45;sdk/config</text>
+</g>
+<!-- document&#45;&gt;check -->
+<g id="edge12" class="edge">
+<title>document&#45;&gt;check</title>
+<path fill="none" stroke="#57606a" d="M309.83,-253.96C273.87,-243.63 225.74,-228.27 185.12,-210 175.31,-205.58 165.22,-200.46 155.41,-195.12"/>
+<polygon fill="#57606a" stroke="#57606a" points="156.6,-192.98 149.29,-191.73 154.22,-197.26 156.6,-192.98"/>
+</g>
+<!-- build -->
+<g id="node12" class="node">
+<title>build</title>
+<polygon fill="#ffffff" stroke="none" points="466.88,-162.25 466.88,-187 591.38,-187 591.38,-162.25 466.88,-162.25"/>
+<polygon fill="none" stroke="#57606a" points="466.88,-162.25 466.88,-187 591.38,-187 591.38,-162.25 466.88,-162.25"/>
+<text xml:space="preserve" text-anchor="start" x="472.88" y="-170.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">build</text>
+<polygon fill="none" stroke="#57606a" points="466.88,-136 466.88,-162.25 591.38,-162.25 591.38,-136 466.88,-136"/>
+<text xml:space="preserve" text-anchor="start" x="472.88" y="-145.75" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">buildFromRecipe</text>
+<polygon fill="none" stroke="#57606a" points="466.88,-112.75 466.88,-136 591.38,-136 591.38,-112.75 466.88,-112.75"/>
+<text xml:space="preserve" text-anchor="start" x="472.88" y="-121.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">@freeharmony&#45;sdk/config</text>
+</g>
+<!-- document&#45;&gt;build -->
+<g id="edge13" class="edge">
+<title>document&#45;&gt;build</title>
+<path fill="none" stroke="#57606a" d="M416.1,-230.7C431.8,-219.62 449.14,-207.37 465.44,-195.86"/>
+<polygon fill="#57606a" stroke="#57606a" points="466.81,-197.89 471.11,-191.85 463.98,-193.89 466.81,-197.89"/>
+</g>
+<!-- sync -->
+<g id="node14" class="node">
+<title>sync</title>
+<polygon fill="#ffffff" stroke="none" points="637,-162.25 637,-187 789.25,-187 789.25,-162.25 637,-162.25"/>
+<polygon fill="none" stroke="#57606a" points="637,-162.25 637,-187 789.25,-187 789.25,-162.25 637,-162.25"/>
+<text xml:space="preserve" text-anchor="start" x="643" y="-170.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">sync</text>
+<polygon fill="none" stroke="#57606a" points="637,-136 637,-162.25 789.25,-162.25 789.25,-136 637,-136"/>
+<text xml:space="preserve" text-anchor="start" x="643" y="-145.75" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">syncDocument</text>
+<polygon fill="none" stroke="#57606a" points="637,-112.75 637,-136 789.25,-136 789.25,-112.75 637,-112.75"/>
+<text xml:space="preserve" text-anchor="start" x="643" y="-121.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">@freeharmony&#45;sdk/remote/write</text>
+</g>
+<!-- document&#45;&gt;sync -->
+<g id="edge14" class="edge">
+<title>document&#45;&gt;sync</title>
+<path fill="none" stroke="#57606a" d="M416.46,-252.91C467.15,-238.15 545.34,-214.57 612.12,-191 615.19,-189.92 618.3,-188.8 621.43,-187.66"/>
+<polygon fill="#57606a" stroke="#57606a" points="622.13,-190.01 627.85,-185.29 620.43,-185.42 622.13,-190.01"/>
+</g>
+<!-- create_gives -->
+<g id="node5" class="node">
+<title>create_gives</title>
+<polygon fill="#eef4fb" stroke="none" points="199.38,-388.75 199.38,-415 344.88,-415 344.88,-388.75 199.38,-388.75"/>
+<polygon fill="none" stroke="#57606a" points="199.38,-388.75 199.38,-415 344.88,-415 344.88,-388.75 199.38,-388.75"/>
+<text xml:space="preserve" text-anchor="start" x="205.38" y="-398.5" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Recipe</text>
+<polygon fill="none" stroke="#57606a" points="199.38,-351.25 199.38,-388.75 344.88,-388.75 344.88,-351.25 199.38,-351.25"/>
+<text xml:space="preserve" text-anchor="start" x="205.38" y="-373" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">the document, empty and</text>
+<text xml:space="preserve" text-anchor="start" x="205.38" y="-360.25" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">valid for its model</text>
+</g>
+<!-- create&#45;&gt;create_gives -->
+<g id="edge1" class="edge">
+<title>create&#45;&gt;create_gives</title>
+<path fill="none" stroke="#57606a" d="M272.12,-456.01C272.12,-446.68 272.12,-436.72 272.12,-427.27"/>
+<polygon fill="#57606a" stroke="#57606a" points="274.58,-427.29 272.13,-420.29 269.68,-427.29 274.58,-427.29"/>
+</g>
+<!-- create_gives&#45;&gt;document -->
+<g id="edge9" class="edge">
+<title>create_gives&#45;&gt;document</title>
+<path fill="none" stroke="#57606a" d="M300.42,-347.3C308.37,-337.52 317.14,-326.72 325.54,-316.38"/>
+<polygon fill="#57606a" stroke="#57606a" points="327.25,-318.17 329.76,-311.19 323.44,-315.08 327.25,-318.17"/>
+</g>
+<!-- open_gives -->
+<g id="node7" class="node">
+<title>open_gives</title>
+<polygon fill="#eef4fb" stroke="none" points="386.12,-388.75 386.12,-415 524.12,-415 524.12,-388.75 386.12,-388.75"/>
+<polygon fill="none" stroke="#57606a" points="386.12,-388.75 386.12,-415 524.12,-415 524.12,-388.75 386.12,-388.75"/>
+<text xml:space="preserve" text-anchor="start" x="392.12" y="-398.5" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Recipe</text>
+<polygon fill="none" stroke="#57606a" points="386.12,-351.25 386.12,-388.75 524.12,-388.75 524.12,-351.25 386.12,-351.25"/>
+<text xml:space="preserve" text-anchor="start" x="392.12" y="-373" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">the document, its shape</text>
+<text xml:space="preserve" text-anchor="start" x="392.12" y="-360.25" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">checked</text>
+</g>
+<!-- open&#45;&gt;open_gives -->
+<g id="edge2" class="edge">
+<title>open&#45;&gt;open_gives</title>
+<path fill="none" stroke="#57606a" d="M455.12,-456.01C455.12,-446.68 455.12,-436.72 455.12,-427.27"/>
+<polygon fill="#57606a" stroke="#57606a" points="457.58,-427.29 455.13,-420.29 452.68,-427.29 457.58,-427.29"/>
+</g>
+<!-- open_gives&#45;&gt;document -->
+<g id="edge10" class="edge">
+<title>open_gives&#45;&gt;document</title>
+<path fill="none" stroke="#57606a" d="M426.52,-347.3C418.48,-337.52 409.61,-326.72 401.12,-316.38"/>
+<polygon fill="#57606a" stroke="#57606a" points="403.19,-315.04 396.85,-311.19 399.4,-318.15 403.19,-315.04"/>
+</g>
+<!-- change_gives -->
+<g id="node9" class="node">
+<title>change_gives</title>
+<polygon fill="#eef4fb" stroke="none" points="237.38,-41.5 237.38,-67.75 388.88,-67.75 388.88,-41.5 237.38,-41.5"/>
+<polygon fill="none" stroke="#57606a" points="237.38,-41.5 237.38,-67.75 388.88,-67.75 388.88,-41.5 237.38,-41.5"/>
+<text xml:space="preserve" text-anchor="start" x="243.38" y="-51.25" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Change</text>
+<polygon fill="none" stroke="#57606a" points="237.38,-4 237.38,-41.5 388.88,-41.5 388.88,-4 237.38,-4"/>
+<text xml:space="preserve" text-anchor="start" x="243.38" y="-25.75" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">a new document and what</text>
+<text xml:space="preserve" text-anchor="start" x="243.38" y="-13" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">else the change touched</text>
+</g>
+<!-- change&#45;&gt;change_gives -->
+<g id="edge3" class="edge">
+<title>change&#45;&gt;change_gives</title>
+<path fill="none" stroke="#57606a" d="M345.22,-108.76C340.93,-99.15 336.33,-88.86 332,-79.16"/>
+<polygon fill="#57606a" stroke="#57606a" points="334.3,-78.3 329.21,-72.91 329.83,-80.3 334.3,-78.3"/>
+</g>
+<!-- change_gives&#45;&gt;document -->
+<g id="edge15" class="edge">
+<title>change_gives&#45;&gt;document</title>
+<path fill="none" stroke="#57606a" stroke-dasharray="5,2" d="M248.48,-71.65C235.55,-81.8 223.71,-94.17 216.38,-108.75 199.95,-141.41 197.47,-159.71 216.38,-191 235.03,-221.89 270.62,-241.02 302.07,-252.5"/>
+<polygon fill="#57606a" stroke="#57606a" points="301.12,-254.76 308.53,-254.76 302.73,-250.14 301.12,-254.76"/>
+<text xml:space="preserve" text-anchor="middle" x="248.25" y="-145.43" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#1f2328"> its document</text>
+</g>
+<!-- check_gives -->
+<g id="node11" class="node">
+<title>check_gives</title>
+<polygon fill="#eef4fb" stroke="none" points="8,-41.5 8,-67.75 160.25,-67.75 160.25,-41.5 8,-41.5"/>
+<polygon fill="none" stroke="#57606a" points="8,-41.5 8,-67.75 160.25,-67.75 160.25,-41.5 8,-41.5"/>
+<text xml:space="preserve" text-anchor="start" x="14" y="-51.25" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Problem[]</text>
+<polygon fill="none" stroke="#57606a" points="8,-4 8,-41.5 160.25,-41.5 160.25,-4 8,-4"/>
+<text xml:space="preserve" text-anchor="start" x="14" y="-25.75" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">every problem, each at the</text>
+<text xml:space="preserve" text-anchor="start" x="14" y="-13" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">place it concerns</text>
+</g>
+<!-- check&#45;&gt;check_gives -->
+<g id="edge4" class="edge">
+<title>check&#45;&gt;check_gives</title>
+<path fill="none" stroke="#57606a" d="M84.12,-108.76C84.12,-99.43 84.12,-89.47 84.12,-80.02"/>
+<polygon fill="#57606a" stroke="#57606a" points="86.58,-80.04 84.13,-73.04 81.68,-80.04 86.58,-80.04"/>
+</g>
+<!-- build_gives -->
+<g id="node13" class="node">
+<title>build_gives</title>
+<polygon fill="#eef4fb" stroke="none" points="459,-35.12 459,-61.38 593.25,-61.38 593.25,-35.12 459,-35.12"/>
+<polygon fill="none" stroke="#57606a" points="459,-35.12 459,-61.38 593.25,-61.38 593.25,-35.12 459,-35.12"/>
+<text xml:space="preserve" text-anchor="start" x="465" y="-44.88" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Built</text>
+<polygon fill="none" stroke="#57606a" points="459,-10.38 459,-35.12 593.25,-35.12 593.25,-10.38 459,-10.38"/>
+<text xml:space="preserve" text-anchor="start" x="465" y="-19.38" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">what the remote is sent</text>
+</g>
+<!-- build&#45;&gt;build_gives -->
+<g id="edge5" class="edge">
+<title>build&#45;&gt;build_gives</title>
+<path fill="none" stroke="#57606a" d="M528.05,-108.76C527.74,-97.25 527.41,-84.77 527.11,-73.49"/>
+<polygon fill="#57606a" stroke="#57606a" points="529.56,-73.58 526.92,-66.65 524.66,-73.71 529.56,-73.58"/>
+</g>
+<!-- sync_gives -->
+<g id="node15" class="node">
+<title>sync_gives</title>
+<polygon fill="#eef4fb" stroke="none" points="634.12,-41.5 634.12,-67.75 796.12,-67.75 796.12,-41.5 634.12,-41.5"/>
+<polygon fill="none" stroke="#57606a" points="634.12,-41.5 634.12,-67.75 796.12,-67.75 796.12,-41.5 634.12,-41.5"/>
+<text xml:space="preserve" text-anchor="start" x="640.12" y="-51.25" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Promise&lt;SyncOutcome&gt;</text>
+<polygon fill="none" stroke="#57606a" points="634.12,-4 634.12,-41.5 796.12,-41.5 796.12,-4 634.12,-4"/>
+<text xml:space="preserve" text-anchor="start" x="640.12" y="-25.75" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">how it ended, and what it</text>
+<text xml:space="preserve" text-anchor="start" x="640.12" y="-13" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">left the remote as</text>
+</g>
+<!-- sync&#45;&gt;sync_gives -->
+<g id="edge6" class="edge">
+<title>sync&#45;&gt;sync_gives</title>
+<path fill="none" stroke="#57606a" d="M713.84,-108.76C714.01,-99.43 714.19,-89.47 714.35,-80.02"/>
+<polygon fill="#57606a" stroke="#57606a" points="716.8,-80.08 714.48,-73.04 711.9,-79.99 716.8,-80.08"/>
+</g>
+</g>
+</svg>

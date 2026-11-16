@@ -264,23 +264,21 @@ export const POWER_ON_DELAY_VALUES: readonly number[] =
   compilerCaseOrder(Array.from({ length: POWER_ON_DELAY_CASES }, (_, value) => value));
 
 /**
- * An arch 14 device's power on delay, read from the list its `Power` variable runs when it goes
- * from off to on.
+ * A device's power on delay on a Harmony 600, 650 or 700, read from the list its `Power` variable runs when it
+ * goes from off to on. That on list calls the device's power command first and the delay list last, each by a
+ * `0x7F`; the delay list holds one `0x72`, whose operand is `(table << 8) | variable` and whose variable is the
+ * device's `PowerOnDelay_<identifier>`. Some devices carry a further instruction between the two calls, or a third
+ * call after them. The off transition sends a code of the device with no delay.
  *
- * ```
- * on list      [0x7F power command, ..., 0x7F delay]
- * delay        [0x72 (table << 8) | variable]          the device's PowerOnDelay_<identifier>
- * ```
- *
- * The on list runs a send list of the device and then the delay list, on 15 of the 15
- * devices with a `Power` variable on the four distinct arch 14 configurations, the second Harmony
- * 700 configuration repeating the first; two televisions carry one
- * more instruction between them and one video recorder a third call after. The off transition sends
- * a code of the device with no delay, the same code as the on list on 5 of the 15. Arch 8, 9 and 12 inline the delay as a
- * `0x7C` instead, which `powerOnInstructions` reads.
+ * The Harmony One, the Harmony 525 and the Harmony 880 and 885 state the delay inline instead, as a `0x7C`,
+ * which `powerOnInstructions` reads.
  *
  * @privateRemarks
- * section 288.
+ * section 288. Measured on the four distinct arch 14 configurations of the corpus, the second Harmony 700
+ * configuration repeating the first: the on list runs a send list of the device and then the delay list on 15 of
+ * the 15 devices with a `Power` variable; two televisions carry one more instruction between them and one video
+ * recorder a third call after; the off transition sends the same code as the on list on 5 of the 15. Arch 8, 9 and
+ * 12 inline the delay.
  */
 export interface PowerOnDelay {
   group: number;

@@ -1,0 +1,281 @@
+<!-- drawn by graphviz 15.1.1 from sync.dot, sha256 4e3f5bd3742b839de90875c1b926fecc6e3b2a44e96ffb07ebe611dad219e279. Generated: do not edit. -->
+<!-- Title: sync Pages: 1 -->
+<svg
+ viewBox="0.00 0.00 819.00 943.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 921.6)">
+<title>sync</title>
+<polygon fill="#ffffff" stroke="none" points="-21.6,21.6 -21.6,-921.6 797.6,-921.6 797.6,21.6 -21.6,21.6"/>
+<g id="clust1" class="cluster">
+<title>cluster_compiled</title>
+<path fill="#ffffff" stroke="#57606a" d="M188.25,-346C188.25,-346 410.25,-346 410.25,-346 416.25,-346 422.25,-352 422.25,-358 422.25,-358 422.25,-880 422.25,-880 422.25,-886 416.25,-892 410.25,-892 410.25,-892 188.25,-892 188.25,-892 182.25,-892 176.25,-886 176.25,-880 176.25,-880 176.25,-358 176.25,-358 176.25,-352 182.25,-346 188.25,-346"/>
+<text xml:space="preserve" text-anchor="start" x="184.5" y="-875.7" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="14.00">a remote sent one configuration file</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_document</title>
+<path fill="#ffffff" stroke="#57606a" d="M442.25,-346C442.25,-346 599.25,-346 599.25,-346 605.25,-346 611.25,-352 611.25,-358 611.25,-358 611.25,-709 611.25,-709 611.25,-715 605.25,-721 599.25,-721 599.25,-721 442.25,-721 442.25,-721 436.25,-721 430.25,-715 430.25,-709 430.25,-709 430.25,-358 430.25,-358 430.25,-352 436.25,-346 442.25,-346"/>
+<text xml:space="preserve" text-anchor="start" x="438.25" y="-704.7" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="14.00">a remote sent documents</text>
+</g>
+<!-- compiled_identify -->
+<g id="node1" class="node">
+<title>compiled_identify</title>
+<polygon fill="#eef4fb" stroke="none" points="330.25,-825.88 330.25,-852.12 402.25,-852.12 402.25,-825.88 330.25,-825.88"/>
+<polygon fill="none" stroke="#57606a" points="330.25,-825.88 330.25,-852.12 402.25,-852.12 402.25,-825.88 330.25,-825.88"/>
+<text xml:space="preserve" text-anchor="start" x="336.25" y="-835.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">identify</text>
+</g>
+<!-- compiled_check -->
+<g id="node2" class="node">
+<title>compiled_check</title>
+<polygon fill="#eef4fb" stroke="none" points="342.5,-752.88 342.5,-779.12 392,-779.12 392,-752.88 342.5,-752.88"/>
+<polygon fill="none" stroke="#57606a" points="342.5,-752.88 342.5,-779.12 392,-779.12 392,-752.88 342.5,-752.88"/>
+<text xml:space="preserve" text-anchor="start" x="348.5" y="-762.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">check</text>
+</g>
+<!-- compiled_identify&#45;&gt;compiled_check -->
+<g id="edge1" class="edge">
+<title>compiled_identify&#45;&gt;compiled_check</title>
+<path fill="none" stroke="#57606a" d="M366.49,-821.17C366.61,-812.51 366.76,-801.77 366.9,-792.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="369.34,-792.25 366.99,-785.22 364.44,-792.18 369.34,-792.25"/>
+</g>
+<!-- compiled_build -->
+<g id="node3" class="node">
+<title>compiled_build</title>
+<polygon fill="#eef4fb" stroke="none" points="342.5,-654.88 342.5,-681.12 392,-681.12 392,-654.88 342.5,-654.88"/>
+<polygon fill="none" stroke="#57606a" points="342.5,-654.88 342.5,-681.12 392,-681.12 392,-654.88 342.5,-654.88"/>
+<text xml:space="preserve" text-anchor="start" x="348.5" y="-664.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">build</text>
+</g>
+<!-- compiled_check&#45;&gt;compiled_build -->
+<g id="edge2" class="edge">
+<title>compiled_check&#45;&gt;compiled_build</title>
+<path fill="none" stroke="#57606a" d="M367.25,-748.28C367.25,-733.36 367.25,-711.32 367.25,-694.26"/>
+<polygon fill="#57606a" stroke="#57606a" points="369.7,-694.37 367.25,-687.37 364.8,-694.37 369.7,-694.37"/>
+</g>
+<!-- compiled_backup -->
+<g id="node4" class="node">
+<title>compiled_backup</title>
+<polygon fill="#eef4fb" stroke="none" points="338.75,-581.88 338.75,-608.12 395.75,-608.12 395.75,-581.88 338.75,-581.88"/>
+<polygon fill="none" stroke="#57606a" points="338.75,-581.88 338.75,-608.12 395.75,-608.12 395.75,-581.88 338.75,-581.88"/>
+<text xml:space="preserve" text-anchor="start" x="344.75" y="-591.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">backup</text>
+</g>
+<!-- compiled_build&#45;&gt;compiled_backup -->
+<g id="edge3" class="edge">
+<title>compiled_build&#45;&gt;compiled_backup</title>
+<path fill="none" stroke="#57606a" d="M367.25,-650.17C367.25,-641.51 367.25,-630.77 367.25,-621.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="369.7,-621.22 367.25,-614.22 364.8,-621.22 369.7,-621.22"/>
+</g>
+<!-- compiled_write -->
+<g id="node5" class="node">
+<title>compiled_write</title>
+<polygon fill="#eef4fb" stroke="none" points="342.5,-508.88 342.5,-535.12 392,-535.12 392,-508.88 342.5,-508.88"/>
+<polygon fill="none" stroke="#57606a" points="342.5,-508.88 342.5,-535.12 392,-535.12 392,-508.88 342.5,-508.88"/>
+<text xml:space="preserve" text-anchor="start" x="348.5" y="-518.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">write</text>
+</g>
+<!-- compiled_backup&#45;&gt;compiled_write -->
+<g id="edge4" class="edge">
+<title>compiled_backup&#45;&gt;compiled_write</title>
+<path fill="none" stroke="#57606a" d="M367.25,-577.17C367.25,-568.51 367.25,-557.77 367.25,-548.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="369.7,-548.22 367.25,-541.22 364.8,-548.22 369.7,-548.22"/>
+</g>
+<!-- compiled_verify -->
+<g id="node6" class="node">
+<title>compiled_verify</title>
+<polygon fill="#eef4fb" stroke="none" points="338.75,-435.88 338.75,-462.12 395.75,-462.12 395.75,-435.88 338.75,-435.88"/>
+<polygon fill="none" stroke="#57606a" points="338.75,-435.88 338.75,-462.12 395.75,-462.12 395.75,-435.88 338.75,-435.88"/>
+<text xml:space="preserve" text-anchor="start" x="344.75" y="-445.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">verify</text>
+</g>
+<!-- compiled_write&#45;&gt;compiled_verify -->
+<g id="edge5" class="edge">
+<title>compiled_write&#45;&gt;compiled_verify</title>
+<path fill="none" stroke="#57606a" d="M367.25,-504.17C367.25,-495.51 367.25,-484.77 367.25,-475.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="369.7,-475.22 367.25,-468.22 364.8,-475.22 369.7,-475.22"/>
+</g>
+<!-- compiled_restart -->
+<g id="node7" class="node">
+<title>compiled_restart</title>
+<polygon fill="#eef4fb" stroke="none" points="336,-362.88 336,-389.12 400.5,-389.12 400.5,-362.88 336,-362.88"/>
+<polygon fill="none" stroke="#57606a" points="336,-362.88 336,-389.12 400.5,-389.12 400.5,-362.88 336,-362.88"/>
+<text xml:space="preserve" text-anchor="start" x="342" y="-372.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">restart</text>
+</g>
+<!-- compiled_verify&#45;&gt;compiled_restart -->
+<g id="edge6" class="edge">
+<title>compiled_verify&#45;&gt;compiled_restart</title>
+<path fill="none" stroke="#57606a" d="M367.49,-431.17C367.61,-422.51 367.76,-411.77 367.9,-402.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="370.34,-402.25 367.99,-395.22 365.44,-402.18 370.34,-402.25"/>
+</g>
+<!-- outcome -->
+<g id="node13" class="node">
+<title>outcome</title>
+<polygon fill="#d6e4f5" stroke="none" points="378,-279.25 378,-304 472.5,-304 472.5,-279.25 378,-279.25"/>
+<polygon fill="none" stroke="#57606a" points="378,-279.25 378,-304 472.5,-304 472.5,-279.25 378,-279.25"/>
+<text xml:space="preserve" text-anchor="start" x="384" y="-287.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">the outcome</text>
+<polygon fill="none" stroke="#57606a" points="378,-253 378,-279.25 472.5,-279.25 472.5,-253 378,-253"/>
+<text xml:space="preserve" text-anchor="start" x="384" y="-262.75" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">SyncOutcome</text>
+</g>
+<!-- compiled_restart&#45;&gt;outcome -->
+<g id="edge11" class="edge">
+<title>compiled_restart&#45;&gt;outcome</title>
+<path fill="none" stroke="#57606a" d="M367.51,-346C368.28,-339.16 369.9,-332.09 373,-326 375.15,-321.77 377.86,-317.75 380.91,-313.97"/>
+<polygon fill="#57606a" stroke="#57606a" points="382.52,-315.84 385.32,-308.98 378.85,-312.6 382.52,-315.84"/>
+<text xml:space="preserve" text-anchor="middle" x="411.62" y="-327.55" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#1f2328"> from any phase</text>
+</g>
+<!-- document_identify -->
+<g id="node8" class="node">
+<title>document_identify</title>
+<polygon fill="#eef4fb" stroke="none" points="454.25,-654.88 454.25,-681.12 526.25,-681.12 526.25,-654.88 454.25,-654.88"/>
+<polygon fill="none" stroke="#57606a" points="454.25,-654.88 454.25,-681.12 526.25,-681.12 526.25,-654.88 454.25,-654.88"/>
+<text xml:space="preserve" text-anchor="start" x="460.25" y="-664.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">identify</text>
+</g>
+<!-- document_check -->
+<g id="node9" class="node">
+<title>document_check</title>
+<polygon fill="#eef4fb" stroke="none" points="465.5,-581.88 465.5,-608.12 515,-608.12 515,-581.88 465.5,-581.88"/>
+<polygon fill="none" stroke="#57606a" points="465.5,-581.88 465.5,-608.12 515,-608.12 515,-581.88 465.5,-581.88"/>
+<text xml:space="preserve" text-anchor="start" x="471.5" y="-591.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">check</text>
+</g>
+<!-- document_identify&#45;&gt;document_check -->
+<g id="edge7" class="edge">
+<title>document_identify&#45;&gt;document_check</title>
+<path fill="none" stroke="#57606a" d="M490.25,-650.17C490.25,-641.51 490.25,-630.77 490.25,-621.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="492.7,-621.22 490.25,-614.22 487.8,-621.22 492.7,-621.22"/>
+</g>
+<!-- document_build -->
+<g id="node10" class="node">
+<title>document_build</title>
+<polygon fill="#eef4fb" stroke="none" points="465.5,-508.88 465.5,-535.12 515,-535.12 515,-508.88 465.5,-508.88"/>
+<polygon fill="none" stroke="#57606a" points="465.5,-508.88 465.5,-535.12 515,-535.12 515,-508.88 465.5,-508.88"/>
+<text xml:space="preserve" text-anchor="start" x="471.5" y="-518.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">build</text>
+</g>
+<!-- document_check&#45;&gt;document_build -->
+<g id="edge8" class="edge">
+<title>document_check&#45;&gt;document_build</title>
+<path fill="none" stroke="#57606a" d="M490.25,-577.17C490.25,-568.51 490.25,-557.77 490.25,-548.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="492.7,-548.22 490.25,-541.22 487.8,-548.22 492.7,-548.22"/>
+</g>
+<!-- document_hand_over -->
+<g id="node11" class="node">
+<title>document_hand_over</title>
+<polygon fill="#eef4fb" stroke="none" points="450.5,-435.88 450.5,-462.12 530,-462.12 530,-435.88 450.5,-435.88"/>
+<polygon fill="none" stroke="#57606a" points="450.5,-435.88 450.5,-462.12 530,-462.12 530,-435.88 450.5,-435.88"/>
+<text xml:space="preserve" text-anchor="start" x="456.5" y="-445.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">hand&#45;over</text>
+</g>
+<!-- document_build&#45;&gt;document_hand_over -->
+<g id="edge9" class="edge">
+<title>document_build&#45;&gt;document_hand_over</title>
+<path fill="none" stroke="#57606a" d="M490.25,-504.17C490.25,-495.51 490.25,-484.77 490.25,-475.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="492.7,-475.22 490.25,-468.22 487.8,-475.22 492.7,-475.22"/>
+</g>
+<!-- document_write -->
+<g id="node12" class="node">
+<title>document_write</title>
+<polygon fill="#eef4fb" stroke="none" points="457.5,-362.88 457.5,-389.12 507,-389.12 507,-362.88 457.5,-362.88"/>
+<polygon fill="none" stroke="#57606a" points="457.5,-362.88 457.5,-389.12 507,-389.12 507,-362.88 457.5,-362.88"/>
+<text xml:space="preserve" text-anchor="start" x="463.5" y="-372.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">write</text>
+</g>
+<!-- document_hand_over&#45;&gt;document_write -->
+<g id="edge10" class="edge">
+<title>document_hand_over&#45;&gt;document_write</title>
+<path fill="none" stroke="#57606a" d="M488.35,-431.17C487.38,-422.51 486.17,-411.77 485.08,-402.14"/>
+<polygon fill="#57606a" stroke="#57606a" points="487.52,-401.89 484.3,-395.21 482.65,-402.44 487.52,-401.89"/>
+</g>
+<!-- document_write&#45;&gt;outcome -->
+<g id="edge12" class="edge">
+<title>document_write&#45;&gt;outcome</title>
+<path fill="none" stroke="#57606a" d="M464.94,-346C459.12,-336.24 452.55,-325.24 446.46,-315.04"/>
+<polygon fill="#57606a" stroke="#57606a" points="448.67,-313.97 442.98,-309.21 444.47,-316.48 448.67,-313.97"/>
+<text xml:space="preserve" text-anchor="middle" x="497.48" y="-327.55" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#1f2328"> from any phase</text>
+</g>
+<!-- left_new_configuration -->
+<g id="node14" class="node">
+<title>left_new_configuration</title>
+<polygon fill="#ffffff" stroke="none" points="8,-140 8,-174 318.5,-174 318.5,-140 8,-140"/>
+<polygon fill="none" stroke="#57606a" points="8,-140 8,-174 318.5,-174 318.5,-140 8,-140"/>
+<text xml:space="preserve" text-anchor="start" x="14" y="-157.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">the remote holds the new configuration</text>
+<text xml:space="preserve" text-anchor="start" x="14" y="-147.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">new&#45;configuration</text>
+<polygon fill="none" stroke="#57606a" points="8,-106 8,-140 318.5,-140 318.5,-106 8,-106"/>
+<text xml:space="preserve" text-anchor="start" x="14" y="-123.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">written</text>
+<text xml:space="preserve" text-anchor="start" x="14" y="-113.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">either kind</text>
+<polygon fill="none" stroke="#57606a" points="8,-72 8,-106 318.5,-106 318.5,-72 8,-72"/>
+<text xml:space="preserve" text-anchor="start" x="14" y="-89.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">failed</text>
+<text xml:space="preserve" text-anchor="start" x="59" y="-89.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">: </text>
+<text xml:space="preserve" text-anchor="start" x="65" y="-89.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">restart&#45;owed</text>
+<text xml:space="preserve" text-anchor="start" x="14" y="-79.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">a configuration file only, may be unplugged</text>
+<polygon fill="none" stroke="#57606a" points="8,-38 8,-72 318.5,-72 318.5,-38 8,-38"/>
+<text xml:space="preserve" text-anchor="start" x="14" y="-55.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">failed</text>
+<text xml:space="preserve" text-anchor="start" x="59" y="-55.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">: </text>
+<text xml:space="preserve" text-anchor="start" x="65" y="-55.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">restart&#45;withheld</text>
+<text xml:space="preserve" text-anchor="start" x="14" y="-45.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">a configuration file only, do not unplug, not reached by any model yet</text>
+</g>
+<!-- outcome&#45;&gt;left_new_configuration -->
+<g id="edge13" class="edge">
+<title>outcome&#45;&gt;left_new_configuration</title>
+<path fill="none" stroke="#57606a" d="M381.69,-249.15C353.54,-230.83 315.48,-206.06 279.01,-182.33"/>
+<polygon fill="#57606a" stroke="#57606a" points="280.69,-180.51 273.49,-178.74 278.02,-184.61 280.69,-180.51"/>
+</g>
+<!-- left_as_before -->
+<g id="node15" class="node">
+<title>left_as_before</title>
+<polygon fill="#ffffff" stroke="none" points="359.25,-174 359.25,-208 491.25,-208 491.25,-174 359.25,-174"/>
+<polygon fill="none" stroke="#57606a" points="359.25,-174 359.25,-208 491.25,-208 491.25,-174 359.25,-174"/>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-191.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">the remote as it was</text>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-181.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">as&#45;before</text>
+<polygon fill="none" stroke="#57606a" points="359.25,-140 359.25,-174 491.25,-174 491.25,-140 359.25,-140"/>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-157.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">nothing&#45;to&#45;write</text>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-147.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">a configuration file only</text>
+<polygon fill="none" stroke="#57606a" points="359.25,-106 359.25,-140 491.25,-140 491.25,-106 359.25,-106"/>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-123.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">dry&#45;run</text>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-113.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">either kind</text>
+<polygon fill="none" stroke="#57606a" points="359.25,-72 359.25,-106 491.25,-106 491.25,-72 359.25,-72"/>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-89.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">stopped</text>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-79.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">either kind</text>
+<polygon fill="none" stroke="#57606a" points="359.25,-38 359.25,-72 491.25,-72 491.25,-38 359.25,-38"/>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-55.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">refused</text>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-45.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">either kind</text>
+<polygon fill="none" stroke="#57606a" points="359.25,-4 359.25,-38 491.25,-38 491.25,-4 359.25,-4"/>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-21.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">failed</text>
+<text xml:space="preserve" text-anchor="start" x="365.25" y="-11.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">either kind</text>
+</g>
+<!-- outcome&#45;&gt;left_as_before -->
+<g id="edge14" class="edge">
+<title>outcome&#45;&gt;left_as_before</title>
+<path fill="none" stroke="#57606a" d="M425.25,-249.35C425.25,-240.75 425.25,-230.73 425.25,-220.05"/>
+<polygon fill="#57606a" stroke="#57606a" points="427.7,-220.28 425.25,-213.28 422.8,-220.28 427.7,-220.28"/>
+</g>
+<!-- left_needs_recovery -->
+<g id="node16" class="node">
+<title>left_needs_recovery</title>
+<polygon fill="#ffffff" stroke="none" points="532.5,-174 532.5,-208 768,-208 768,-174 532.5,-174"/>
+<polygon fill="none" stroke="#57606a" points="532.5,-174 532.5,-208 768,-208 768,-174 532.5,-174"/>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-191.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">the remote needs its recovery</text>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-181.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">needs&#45;recovery</text>
+<polygon fill="none" stroke="#57606a" points="532.5,-140 532.5,-174 768,-174 768,-140 532.5,-140"/>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-157.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">failed</text>
+<text xml:space="preserve" text-anchor="start" x="583.5" y="-157.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">: </text>
+<text xml:space="preserve" text-anchor="start" x="589.5" y="-157.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">write&#45;unfinished</text>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-147.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">a configuration file only, do not unplug</text>
+<polygon fill="none" stroke="#57606a" points="532.5,-106 532.5,-140 768,-140 768,-106 532.5,-106"/>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-123.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">failed</text>
+<text xml:space="preserve" text-anchor="start" x="583.5" y="-123.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">: </text>
+<text xml:space="preserve" text-anchor="start" x="589.5" y="-123.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">neighbour&#45;erased</text>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-113.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">a configuration file only, do not unplug</text>
+<polygon fill="none" stroke="#57606a" points="532.5,-72 532.5,-106 768,-106 768,-72 532.5,-72"/>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-89.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">failed</text>
+<text xml:space="preserve" text-anchor="start" x="583.5" y="-89.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">: </text>
+<text xml:space="preserve" text-anchor="start" x="589.5" y="-89.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">read&#45;back&#45;failed</text>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-79.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">a configuration file only, do not unplug</text>
+<polygon fill="none" stroke="#57606a" points="532.5,-38 532.5,-72 768,-72 768,-38 532.5,-38"/>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-55.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">failed</text>
+<text xml:space="preserve" text-anchor="start" x="583.5" y="-55.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">: </text>
+<text xml:space="preserve" text-anchor="start" x="589.5" y="-55.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">stopped&#45;in&#45;hand&#45;over</text>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-45.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">documents only, do not unplug</text>
+<polygon fill="none" stroke="#57606a" points="532.5,-4 532.5,-38 768,-38 768,-4 532.5,-4"/>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-21.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">failed</text>
+<text xml:space="preserve" text-anchor="start" x="583.5" y="-21.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">: </text>
+<text xml:space="preserve" text-anchor="start" x="589.5" y="-21.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">stopped&#45;after&#45;hand&#45;over</text>
+<text xml:space="preserve" text-anchor="start" x="538.5" y="-11.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">documents only, do not unplug</text>
+</g>
+<!-- outcome&#45;&gt;left_needs_recovery -->
+<g id="edge15" class="edge">
+<title>outcome&#45;&gt;left_needs_recovery</title>
+<path fill="none" stroke="#57606a" d="M462.97,-249.17C478.27,-237.65 496.12,-224.21 512.25,-212 514.16,-210.55 516.09,-209.09 518.03,-207.62"/>
+<polygon fill="#57606a" stroke="#57606a" points="519.36,-209.69 523.46,-203.51 516.4,-205.79 519.36,-209.69"/>
+</g>
+</g>
+</svg>

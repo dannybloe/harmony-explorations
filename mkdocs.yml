@@ -349,6 +349,7 @@ nav:
   - Glossary: glossary.md
   - The SDK:
       - sdk/README.md
+      - How it fits together: sdk/overview.md
       - Guide: sdk/guide.md
       - Documents: sdk/documents.md
       - API reference:

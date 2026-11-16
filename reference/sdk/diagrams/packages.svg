@@ -1,0 +1,154 @@
+<!-- drawn by graphviz 15.1.1 from packages.dot, sha256 6259a6f99f10ad6c8293aab1bc5a4499a8831c5cd470c385191465e472df4c1e. Generated: do not edit. -->
+<!-- Title: packages Pages: 1 -->
+<svg
+ viewBox="0.00 0.00 618.00 548.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 526.6)">
+<title>packages</title>
+<polygon fill="#ffffff" stroke="none" points="-21.6,21.6 -21.6,-526.6 596.46,-526.6 596.46,21.6 -21.6,21.6"/>
+<!-- application -->
+<g id="node1" class="node">
+<title>application</title>
+<polygon fill="#ffffff" stroke="none" points="130.37,-474.62 130.37,-499.38 222.62,-499.38 222.62,-474.62 130.37,-474.62"/>
+<polygon fill="none" stroke="#57606a" points="130.37,-474.62 130.37,-499.38 222.62,-499.38 222.62,-474.62 130.37,-474.62"/>
+<text xml:space="preserve" text-anchor="start" x="136.37" y="-482.98" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">an application</text>
+</g>
+<!-- base -->
+<g id="node2" class="node">
+<title>base</title>
+<polygon fill="#d6e4f5" stroke="none" points="27.99,-77.5 27.99,-103.75 222.99,-103.75 222.99,-77.5 27.99,-77.5"/>
+<polygon fill="none" stroke="#57606a" points="27.99,-77.5 27.99,-103.75 222.99,-103.75 222.99,-77.5 27.99,-77.5"/>
+<text xml:space="preserve" text-anchor="start" x="33.99" y="-87.25" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">@freeharmony&#45;sdk/base</text>
+<polygon fill="none" stroke="#57606a" points="27.99,-27.25 27.99,-77.5 222.99,-77.5 222.99,-27.25 27.99,-27.25"/>
+<text xml:space="preserve" text-anchor="start" x="33.99" y="-61.75" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">the table of models, the key</text>
+<text xml:space="preserve" text-anchor="start" x="33.99" y="-49" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">codes, and what the SDK must do,</text>
+<text xml:space="preserve" text-anchor="start" x="33.99" y="-36.25" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">with each model&#39;s status</text>
+<polygon fill="none" stroke="#57606a" points="27.99,-4 27.99,-27.25 222.99,-27.25 222.99,-4 27.99,-4"/>
+<text xml:space="preserve" text-anchor="start" x="33.99" y="-13" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">loads in a browser and in Node</text>
+</g>
+<!-- application&#45;&gt;base -->
+<g id="edge1" class="edge">
+<title>application&#45;&gt;base</title>
+<path fill="none" stroke="#57606a" stroke-dasharray="5,2" d="M122.39,-478.25C94.03,-471.19 61.53,-457.7 43.49,-432 2.91,-374.15 18.64,-346.56 11.49,-276.25 6.08,-222.97 -10.5,-204.58 11.49,-155.75 18.49,-140.22 29.19,-126.11 41.28,-113.7"/>
+<polygon fill="#57606a" stroke="#57606a" points="42.98,-115.47 46.25,-108.81 39.54,-111.98 42.98,-115.47"/>
+</g>
+<!-- config -->
+<g id="node3" class="node">
+<title>config</title>
+<polygon fill="#d6e4f5" stroke="none" points="32.49,-246 32.49,-272.25 218.49,-272.25 218.49,-246 32.49,-246"/>
+<polygon fill="none" stroke="#57606a" points="32.49,-246 32.49,-272.25 218.49,-272.25 218.49,-246 32.49,-246"/>
+<text xml:space="preserve" text-anchor="start" x="38.49" y="-255.75" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">@freeharmony&#45;sdk/config</text>
+<polygon fill="none" stroke="#57606a" points="32.49,-183 32.49,-246 218.49,-246 218.49,-183 32.49,-183"/>
+<text xml:space="preserve" text-anchor="start" x="38.49" y="-230.25" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">the document and its toolkit, the</text>
+<text xml:space="preserve" text-anchor="start" x="38.49" y="-217.5" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">check, the build, finding a</text>
+<text xml:space="preserve" text-anchor="start" x="38.49" y="-204.75" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">device, what each model can do,</text>
+<text xml:space="preserve" text-anchor="start" x="38.49" y="-192" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">reading a configuration file</text>
+<polygon fill="none" stroke="#57606a" points="32.49,-159.75 32.49,-183 218.49,-183 218.49,-159.75 32.49,-159.75"/>
+<text xml:space="preserve" text-anchor="start" x="38.49" y="-168.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">loads in a browser and in Node</text>
+</g>
+<!-- application&#45;&gt;config -->
+<g id="edge2" class="edge">
+<title>application&#45;&gt;config</title>
+<path fill="none" stroke="#57606a" stroke-dasharray="5,2" d="M122.37,-473.73C100.15,-465.74 76.6,-452.78 63.49,-432 34.94,-386.71 55.1,-327.86 79.8,-283.19"/>
+<polygon fill="#57606a" stroke="#57606a" points="81.89,-284.48 83.22,-277.18 77.63,-282.06 81.89,-284.48"/>
+</g>
+<!-- remote -->
+<g id="node4" class="node">
+<title>remote</title>
+<polygon fill="#d6e4f5" stroke="none" points="83.87,-401.75 83.87,-428 269.12,-428 269.12,-401.75 83.87,-401.75"/>
+<polygon fill="none" stroke="#57606a" points="83.87,-401.75 83.87,-428 269.12,-428 269.12,-401.75 83.87,-401.75"/>
+<text xml:space="preserve" text-anchor="start" x="89.87" y="-411.5" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">@freeharmony&#45;sdk/remote</text>
+<polygon fill="none" stroke="#57606a" points="83.87,-351.5 83.87,-401.75 269.12,-401.75 269.12,-351.5 83.87,-351.5"/>
+<text xml:space="preserve" text-anchor="start" x="89.87" y="-386" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">reading a remote&#39;s configuration;</text>
+<text xml:space="preserve" text-anchor="start" x="89.87" y="-373.25" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">on its write subpath the sync and</text>
+<text xml:space="preserve" text-anchor="start" x="89.87" y="-360.5" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">a pretend remote</text>
+<polygon fill="none" stroke="#57606a" points="83.87,-328.25 83.87,-351.5 269.12,-351.5 269.12,-328.25 83.87,-328.25"/>
+<text xml:space="preserve" text-anchor="start" x="89.87" y="-337.25" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">runs in Node, through a native module</text>
+</g>
+<!-- application&#45;&gt;remote -->
+<g id="edge3" class="edge">
+<title>application&#45;&gt;remote</title>
+<path fill="none" stroke="#57606a" stroke-dasharray="5,2" d="M176.49,-469.3C176.49,-461.16 176.49,-450.82 176.49,-440.06"/>
+<polygon fill="#57606a" stroke="#57606a" points="178.94,-440.29 176.49,-433.29 174.04,-440.29 178.94,-440.29"/>
+</g>
+<!-- silhouettes -->
+<g id="node5" class="node">
+<title>silhouettes</title>
+<polygon fill="#d6e4f5" stroke="none" points="310.49,-395.38 310.49,-421.62 532.49,-421.62 532.49,-395.38 310.49,-395.38"/>
+<polygon fill="none" stroke="#57606a" points="310.49,-395.38 310.49,-421.62 532.49,-421.62 532.49,-395.38 310.49,-395.38"/>
+<text xml:space="preserve" text-anchor="start" x="316.49" y="-405.12" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">@freeharmony&#45;sdk/silhouettes</text>
+<polygon fill="none" stroke="#57606a" points="310.49,-357.88 310.49,-395.38 532.49,-395.38 532.49,-357.88 310.49,-357.88"/>
+<text xml:space="preserve" text-anchor="start" x="316.49" y="-379.62" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">each model&#39;s front face, as data</text>
+<text xml:space="preserve" text-anchor="start" x="316.49" y="-366.88" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">and as a drawing</text>
+<polygon fill="none" stroke="#57606a" points="310.49,-334.62 310.49,-357.88 532.49,-357.88 532.49,-334.62 310.49,-334.62"/>
+<text xml:space="preserve" text-anchor="start" x="316.49" y="-343.62" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">loads in a browser and in Node</text>
+</g>
+<!-- application&#45;&gt;silhouettes -->
+<g id="edge4" class="edge">
+<title>application&#45;&gt;silhouettes</title>
+<path fill="none" stroke="#57606a" stroke-dasharray="5,2" d="M215.32,-469.07C240.34,-458.15 274.29,-443.34 307.42,-428.89"/>
+<polygon fill="#57606a" stroke="#57606a" points="308.09,-431.27 313.53,-426.22 306.13,-426.78 308.09,-431.27"/>
+</g>
+<!-- usb -->
+<g id="node6" class="node">
+<title>usb</title>
+<polygon fill="#d6e4f5" stroke="none" points="259.37,-233.25 259.37,-259.5 453.62,-259.5 453.62,-233.25 259.37,-233.25"/>
+<polygon fill="none" stroke="#57606a" points="259.37,-233.25 259.37,-259.5 453.62,-259.5 453.62,-233.25 259.37,-233.25"/>
+<text xml:space="preserve" text-anchor="start" x="265.37" y="-243" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">@freeharmony&#45;sdk/usb</text>
+<polygon fill="none" stroke="#57606a" points="259.37,-195.75 259.37,-233.25 453.62,-233.25 453.62,-195.75 259.37,-195.75"/>
+<text xml:space="preserve" text-anchor="start" x="265.37" y="-217.5" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">finding a remote on the USB cable</text>
+<text xml:space="preserve" text-anchor="start" x="265.37" y="-204.75" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">and opening it to read</text>
+<polygon fill="none" stroke="#57606a" points="259.37,-172.5 259.37,-195.75 453.62,-195.75 453.62,-172.5 259.37,-172.5"/>
+<text xml:space="preserve" text-anchor="start" x="265.37" y="-181.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">runs in Node, through a native module</text>
+</g>
+<!-- application&#45;&gt;usb -->
+<g id="edge5" class="edge">
+<title>application&#45;&gt;usb</title>
+<path fill="none" stroke="#57606a" stroke-dasharray="5,2" d="M230.54,-486.55C324.61,-486.22 512.35,-479.46 553.49,-432 584.86,-395.82 577.96,-365.42 553.49,-324.25 534.45,-292.19 502.09,-269.11 469.04,-252.78"/>
+<polygon fill="#57606a" stroke="#57606a" points="470.27,-250.65 462.9,-249.84 468.15,-255.07 470.27,-250.65"/>
+</g>
+<!-- config&#45;&gt;base -->
+<g id="edge6" class="edge">
+<title>config&#45;&gt;base</title>
+<path fill="none" stroke="#57606a" d="M125.49,-155.83C125.49,-142.89 125.49,-129.18 125.49,-116.16"/>
+<polygon fill="#57606a" stroke="#57606a" points="127.94,-116.24 125.49,-109.24 123.04,-116.24 127.94,-116.24"/>
+<text xml:space="preserve" text-anchor="middle" x="155.12" y="-127.3" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#1f2328"> depends on</text>
+</g>
+<!-- remote&#45;&gt;config -->
+<g id="edge7" class="edge">
+<title>remote&#45;&gt;config</title>
+<path fill="none" stroke="#57606a" d="M159.65,-324.25C155.56,-311.38 151.12,-297.45 146.84,-284.02"/>
+<polygon fill="#57606a" stroke="#57606a" points="149.26,-283.55 144.8,-277.62 144.59,-285.04 149.26,-283.55"/>
+<text xml:space="preserve" text-anchor="middle" x="182.15" y="-295.8" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#1f2328"> depends on</text>
+</g>
+<!-- remote&#45;&gt;usb -->
+<g id="edge8" class="edge">
+<title>remote&#45;&gt;usb</title>
+<path fill="none" stroke="#57606a" d="M235.93,-324.25C255.98,-306.42 278.32,-286.54 298.27,-268.8"/>
+<polygon fill="#57606a" stroke="#57606a" points="299.65,-270.85 303.25,-264.37 296.39,-267.19 299.65,-270.85"/>
+<text xml:space="preserve" text-anchor="middle" x="296.12" y="-295.8" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#1f2328"> depends on</text>
+</g>
+<!-- usb&#45;&gt;base -->
+<g id="edge9" class="edge">
+<title>usb&#45;&gt;base</title>
+<path fill="none" stroke="#57606a" d="M289.68,-168.69C264.25,-151.06 234.97,-130.76 208.24,-112.23"/>
+<polygon fill="#57606a" stroke="#57606a" points="209.9,-110.4 202.75,-108.43 207.11,-114.43 209.9,-110.4"/>
+<text xml:space="preserve" text-anchor="middle" x="270.62" y="-127.3" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#1f2328"> depends on</text>
+</g>
+<!-- node&#45;hid -->
+<g id="node7" class="node">
+<title>node&#45;hid</title>
+<polygon fill="#ffffff" stroke="none" points="315.99,-52.38 315.99,-78.62 396.99,-78.62 396.99,-52.38 315.99,-52.38"/>
+<polygon fill="none" stroke="#57606a" points="315.99,-52.38 315.99,-78.62 396.99,-78.62 396.99,-52.38 315.99,-52.38"/>
+<text xml:space="preserve" text-anchor="start" x="321.99" y="-62.12" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">node&#45;hid</text>
+<polygon fill="none" stroke="#57606a" points="315.99,-29.12 315.99,-52.38 396.99,-52.38 396.99,-29.12 315.99,-29.12"/>
+<text xml:space="preserve" text-anchor="start" x="321.99" y="-38.12" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#57606a">a native module</text>
+</g>
+<!-- usb&#45;&gt;node&#45;hid -->
+<g id="edge10" class="edge">
+<title>usb&#45;&gt;node&#45;hid</title>
+<path fill="none" stroke="#57606a" d="M356.49,-168.69C356.49,-143.95 356.49,-113.96 356.49,-90.97"/>
+<polygon fill="#57606a" stroke="#57606a" points="358.94,-91.04 356.49,-84.04 354.04,-91.04 358.94,-91.04"/>
+<text xml:space="preserve" text-anchor="middle" x="386.12" y="-127.3" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#1f2328"> depends on</text>
+</g>
+</g>
+</svg>

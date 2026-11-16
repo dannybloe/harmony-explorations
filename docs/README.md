@@ -231,7 +231,10 @@ reference/sdk/                  the SDK's own section of the website: an opening
                                 api-reference-write`): every page under api/ but its introduction,
                                 and in the pages written by hand the blocks between example and
                                 shape markers. Exempt by name from two of the reference's guards,
-                                tools/reference_guards.py says which and why
+                                tools/reference_guards.py says which and why. Its diagrams/ folder
+                                holds the overview page's four drawings, each a DOT source and the
+                                SVG graphviz draws from it, **generated** by
+                                packages/lab/bin/sdk-diagrams.ts (`make sdk-diagrams-write`)
 reference/key-reader/           a browser page that reads which key is pressed on a Harmony, through
                                 WebHID, read only, todo/done/todo-prepare-885.md 2.6. **Generated** by
                                 packages/keyreader/bin/build.ts (`make key-reader`) and never edited
@@ -481,6 +484,12 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 TypeScript compiler, and the example and shape blocks of its
                                 pages written by hand; test/api-reference.test.ts is the check,
                                 beside the pre-commit hook's step 6 and the site workflow's job.
+                                And bin/sdk-diagrams.ts, `make sdk-diagrams` and `make
+                                sdk-diagrams-write`: the overview page's drawings, what each says
+                                read off the packages' sources and laid out by graphviz;
+                                test/sdk-diagrams.test.ts holds each DOT source to the sources,
+                                each SVG to its DOT source by the digest it records, and the image
+                                texts it fills into reference/sdk/overview.md to the same data.
                                 And src/tiers.ts, the two tiers of the suite: `slow()`, and each
                                 family's compiles once, whole and with a pair, so a per compile
                                 test walks `sampled(family)`, the pair on a step and the whole
@@ -1233,6 +1242,9 @@ make api-reference
                    check the SDK's pages, reference/sdk/, against what the five packages' sources and
                    the guide's examples generate, naming each page that differs;
                    api-reference-write rewrites them. No lab, no network, no remote
+make sdk-diagrams  check the SDK overview's drawings, reference/sdk/diagrams/, against the packages'
+                   sources; sdk-diagrams-write writes the DOT sources and draws again each SVG whose
+                   source changed, which needs graphviz. No lab, no network, no remote
 make requirements  read every test's proofs and check what they and the statuses written in
                    packages/base/src/requirements.ts generate: packages/base/src/proofs.ts,
                    docs/remote-requirements.md but its introduction, docs/remote-requirements-evidence.md

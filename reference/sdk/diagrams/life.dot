@@ -1,0 +1,35 @@
+digraph life {
+  graph [rankdir=TB, bgcolor="#ffffff", pad=0.3, nodesep=0.35, ranksep=0.5, fontname="Helvetica"];
+  node [shape=plaintext, fontname="Helvetica", fontsize=12, fontcolor="#1f2328", color="#57606a"];
+  edge [fontname="Helvetica", fontsize=11, fontcolor="#1f2328", color="#57606a", arrowsize=0.7];
+  model [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>a model</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">by Logitech's name</FONT></TD></TR></TABLE>>];
+  saved [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>a saved document</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">JSON</FONT></TD></TR></TABLE>>];
+  document [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#d6e4f5" ALIGN="LEFT" BALIGN="LEFT"><B>the document</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">Recipe</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">plain data</FONT></TD></TR></TABLE>>];
+  create [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>create</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">recipe.create</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">@freeharmony-sdk/config</FONT></TD></TR></TABLE>>];
+  create_gives [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#eef4fb" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">Recipe</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">the document, empty and<BR/>valid for its model</TD></TR></TABLE>>];
+  create -> create_gives;
+  open [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>open</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">recipe.open</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">@freeharmony-sdk/config</FONT></TD></TR></TABLE>>];
+  open_gives [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#eef4fb" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">Recipe</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">the document, its shape<BR/>checked</TD></TR></TABLE>>];
+  open -> open_gives;
+  change [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>change, such as</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">recipe.setKey</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">@freeharmony-sdk/config</FONT></TD></TR></TABLE>>];
+  change_gives [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#eef4fb" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">Change</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">a new document and what<BR/>else the change touched</TD></TR></TABLE>>];
+  change -> change_gives;
+  check [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>check</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">recipe.check</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">@freeharmony-sdk/config</FONT></TD></TR></TABLE>>];
+  check_gives [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#eef4fb" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">Problem[]</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">every problem, each at the<BR/>place it concerns</TD></TR></TABLE>>];
+  check -> check_gives;
+  build [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>build</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">buildFromRecipe</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">@freeharmony-sdk/config</FONT></TD></TR></TABLE>>];
+  build_gives [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#eef4fb" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">Built</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">what the remote is sent</TD></TR></TABLE>>];
+  build -> build_gives;
+  sync [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>sync</B></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">syncDocument</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">@freeharmony-sdk/remote/write</FONT></TD></TR></TABLE>>];
+  sync_gives [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#eef4fb" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">Promise&lt;SyncOutcome&gt;</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">how it ended, and what it<BR/>left the remote as</TD></TR></TABLE>>];
+  sync -> sync_gives;
+  model -> create;
+  saved -> open;
+  create_gives -> document;
+  open_gives -> document;
+  document -> change;
+  document -> check;
+  document -> build;
+  document -> sync;
+  change_gives -> document [label=" its document", style=dashed];
+}

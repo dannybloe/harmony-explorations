@@ -12,6 +12,8 @@ An application holds one **document** per remote: plain data, the same shape for
 back as JSON. It changes the document with functions that each return a new one, asks it questions, checks it, and
 hands it to a build or a sync. It never needs to know how a remote's files are laid out.
 
+* [How it fits together](overview.md) is the place to start: four drawings of the packages, the life of a document,
+  its shape and a sync, each made from the libraries' source.
 * [The guide](guide.md) walks through all of that with small programs, each of which runs as a test of this
   project, so the code on that page works as it stands.
 * [The documents](documents.md) are the shapes the SDK takes and gives: the document itself, a check's problems, a

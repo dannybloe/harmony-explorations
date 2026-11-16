@@ -532,13 +532,8 @@ export interface IrGroup {
 }
 
 /**
- * One group per entry of base slot 5, each a second array of the same shape:
- *
- * ```
- * +0x00  u8   zero, the same spare byte the section table carries
- * +0x01  u16  count
- * +0x03  u24  record address[count]
- * ```
+ * One group per entry of base slot 5, each a second array of the same shape: a zero byte, the same spare byte the
+ * section table carries, then a 16 bit count, then that many 24 bit record addresses.
  */
 export function irGroups(c: Container): IrGroup[] | undefined {
   if (c.architecture === undefined) return undefined;

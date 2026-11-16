@@ -1,0 +1,315 @@
+<!-- drawn by graphviz 15.1.1 from shape.dot, sha256 5c6b97acd76c397a1ac61a6e3c0d937b92eed5a2063801e12ca49f2b8cd5c6dd. Generated: do not edit. -->
+<!-- Title: shape Pages: 1 -->
+<svg
+ viewBox="0.00 0.00 1123.00 1002.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 980.1)">
+<title>shape</title>
+<polygon fill="#ffffff" stroke="none" points="-21.6,21.6 -21.6,-980.1 1101.35,-980.1 1101.35,21.6 -21.6,21.6"/>
+<!-- Recipe -->
+<g id="node1" class="node">
+<title>Recipe</title>
+<polygon fill="#d6e4f5" stroke="none" points="405.38,-931.75 405.38,-954.5 761.88,-954.5 761.88,-931.75 405.38,-931.75"/>
+<polygon fill="none" stroke="#57606a" points="405.38,-931.75 405.38,-954.5 761.88,-954.5 761.88,-931.75 405.38,-931.75"/>
+<text xml:space="preserve" text-anchor="start" x="563.75" y="-939.1" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">Recipe</text>
+<polygon fill="none" stroke="#57606a" points="405.38,-907.5 405.38,-931.75 761.88,-931.75 761.88,-907.5 405.38,-907.5"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-916.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">version? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="462.12" y="-916.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">number</text>
+<polygon fill="none" stroke="#57606a" points="405.38,-883.25 405.38,-907.5 761.88,-907.5 761.88,-883.25 405.38,-883.25"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-892.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">about? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="453.12" y="-892.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="#eef4fb" stroke="none" points="405.38,-859 405.38,-883.25 761.88,-883.25 761.88,-859 405.38,-859"/>
+<polygon fill="none" stroke="#57606a" points="405.38,-859 405.38,-883.25 761.88,-883.25 761.88,-859 405.38,-859"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-867.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">model &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="449.38" y="-867.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeModel</text>
+<polygon fill="#eef4fb" stroke="none" points="405.38,-834.75 405.38,-859 761.88,-859 761.88,-834.75 405.38,-834.75"/>
+<polygon fill="none" stroke="#57606a" points="405.38,-834.75 405.38,-859 761.88,-859 761.88,-834.75 405.38,-834.75"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-843.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">devices &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="457.62" y="-843.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeDevice[]</text>
+<polygon fill="#eef4fb" stroke="none" points="405.38,-810.5 405.38,-834.75 761.88,-834.75 761.88,-810.5 405.38,-810.5"/>
+<polygon fill="none" stroke="#57606a" points="405.38,-810.5 405.38,-834.75 761.88,-834.75 761.88,-810.5 405.38,-810.5"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-819.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">activities &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="462.88" y="-819.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeActivity[]</text>
+<polygon fill="none" stroke="#57606a" points="405.38,-786.25 405.38,-810.5 761.88,-810.5 761.88,-786.25 405.38,-786.25"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-795.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">favourites? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="474.88" y="-795.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeFavourites[]</text>
+<polygon fill="none" stroke="#57606a" points="405.38,-762 405.38,-786.25 761.88,-786.25 761.88,-762 405.38,-762"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-770.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">choices? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="464.38" y="-770.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Readonly&lt;Record&lt;string, unknown&gt;&gt;</text>
+<polygon fill="none" stroke="#57606a" points="405.38,-737.75 405.38,-762 761.88,-762 761.88,-737.75 405.38,-737.75"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-746.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">protocols? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="471.88" y="-746.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Readonly&lt;Record&lt;string, unknown&gt;&gt;[]</text>
+<polygon fill="#eef4fb" stroke="none" points="405.38,-713.5 405.38,-737.75 761.88,-737.75 761.88,-713.5 405.38,-713.5"/>
+<polygon fill="none" stroke="#57606a" points="405.38,-713.5 405.38,-737.75 761.88,-737.75 761.88,-713.5 405.38,-713.5"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-722.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">settings? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="464.38" y="-722.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Readonly&lt;Record&lt;string, RecipeSetting&gt;&gt;</text>
+<polygon fill="none" stroke="#57606a" points="405.38,-689.25 405.38,-713.5 761.88,-713.5 761.88,-689.25 405.38,-689.25"/>
+<text xml:space="preserve" text-anchor="start" x="410.38" y="-698.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">highestIds? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="477.88" y="-698.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeIds</text>
+</g>
+<!-- RecipeModel -->
+<g id="node2" class="node">
+<title>RecipeModel</title>
+<polygon fill="#d6e4f5" stroke="none" points="171.12,-477 171.12,-499.75 262.12,-499.75 262.12,-477 171.12,-477"/>
+<polygon fill="none" stroke="#57606a" points="171.12,-477 171.12,-499.75 262.12,-499.75 262.12,-477 171.12,-477"/>
+<text xml:space="preserve" text-anchor="start" x="179.5" y="-484.35" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeModel</text>
+<polygon fill="none" stroke="#57606a" points="171.12,-452.75 171.12,-477 262.12,-477 262.12,-452.75 171.12,-452.75"/>
+<text xml:space="preserve" text-anchor="start" x="176.12" y="-461.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">name &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="212.12" y="-461.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="171.12,-428.5 171.12,-452.75 262.12,-452.75 262.12,-428.5 171.12,-428.5"/>
+<text xml:space="preserve" text-anchor="start" x="176.12" y="-437.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">skin? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="210.62" y="-437.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">number</text>
+</g>
+<!-- Recipe&#45;&gt;RecipeModel -->
+<g id="edge1" class="edge">
+<title>Recipe:r2&#45;&gt;RecipeModel</title>
+<path fill="none" stroke="#57606a" d="M404.38,-871.12C247.67,-871.12 221.35,-618.88 217.24,-512.04"/>
+<polygon fill="#57606a" stroke="#57606a" points="219.69,-512.11 217,-505.2 214.79,-512.28 219.69,-512.11"/>
+</g>
+<!-- RecipeDevice -->
+<g id="node3" class="node">
+<title>RecipeDevice</title>
+<polygon fill="#d6e4f5" stroke="none" points="566.75,-598.25 566.75,-621 940.5,-621 940.5,-598.25 566.75,-598.25"/>
+<polygon fill="none" stroke="#57606a" points="566.75,-598.25 566.75,-621 940.5,-621 940.5,-598.25 566.75,-598.25"/>
+<text xml:space="preserve" text-anchor="start" x="714.25" y="-605.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeDevice</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-574 566.75,-598.25 940.5,-598.25 940.5,-574 566.75,-574"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-582.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">id? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="594.25" y="-582.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-549.75 566.75,-574 940.5,-574 940.5,-549.75 566.75,-549.75"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-558.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">name &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="607.75" y="-558.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-525.5 566.75,-549.75 940.5,-549.75 940.5,-525.5 566.75,-525.5"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-534.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">device &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="613" y="-534.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-501.25 566.75,-525.5 940.5,-525.5 940.5,-501.25 566.75,-501.25"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-510.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">poweredOnBetweenActivities? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="742" y="-510.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">boolean</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-477 566.75,-501.25 940.5,-501.25 940.5,-477 566.75,-477"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-485.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">key? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="603.25" y="-485.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeDeviceKey</text>
+<polygon fill="#eef4fb" stroke="none" points="566.75,-452.75 566.75,-477 940.5,-477 940.5,-452.75 566.75,-452.75"/>
+<polygon fill="none" stroke="#57606a" points="566.75,-452.75 566.75,-477 940.5,-477 940.5,-452.75 566.75,-452.75"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-461.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">keys? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="609.25" y="-461.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeKey[]</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-428.5 566.75,-452.75 940.5,-452.75 940.5,-428.5 566.75,-428.5"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-437.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">definition? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="633.25" y="-437.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeDefinition</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-404.25 566.75,-428.5 940.5,-428.5 940.5,-404.25 566.75,-404.25"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-413.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">timing? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="616.75" y="-413.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Partial&lt;DeviceTiming&gt;</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-380 566.75,-404.25 940.5,-404.25 940.5,-380 566.75,-380"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-388.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">power? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="617.5" y="-388.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeDevicePower</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-355.75 566.75,-380 940.5,-380 940.5,-355.75 566.75,-355.75"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-364.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">channelTuning? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="664" y="-364.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">DeviceChannelTuning</text>
+<polygon fill="#eef4fb" stroke="none" points="566.75,-331.5 566.75,-355.75 940.5,-355.75 940.5,-331.5 566.75,-331.5"/>
+<polygon fill="none" stroke="#57606a" points="566.75,-331.5 566.75,-355.75 940.5,-355.75 940.5,-331.5 566.75,-331.5"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-340.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">screen? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="620.5" y="-340.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeScreenCommand[]</text>
+<polygon fill="none" stroke="#57606a" points="566.75,-307.25 566.75,-331.5 940.5,-331.5 940.5,-307.25 566.75,-307.25"/>
+<text xml:space="preserve" text-anchor="start" x="571.75" y="-316.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">commands? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="643" y="-316.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">Readonly&lt;Record&lt;string, RecipeCommand&gt;&gt;</text>
+</g>
+<!-- Recipe&#45;&gt;RecipeDevice -->
+<g id="edge2" class="edge">
+<title>Recipe:r3&#45;&gt;RecipeDevice</title>
+<path fill="none" stroke="#57606a" d="M762.88,-846.88C854.62,-846.88 844.47,-735.31 815.78,-632.8"/>
+<polygon fill="#57606a" stroke="#57606a" points="818.19,-632.32 813.91,-626.26 813.48,-633.67 818.19,-632.32"/>
+</g>
+<!-- RecipeActivity -->
+<g id="node4" class="node">
+<title>RecipeActivity</title>
+<polygon fill="#d6e4f5" stroke="none" points="303.5,-622.5 303.5,-645.25 525.75,-645.25 525.75,-622.5 303.5,-622.5"/>
+<polygon fill="none" stroke="#57606a" points="303.5,-622.5 303.5,-645.25 525.75,-645.25 525.75,-622.5 303.5,-622.5"/>
+<text xml:space="preserve" text-anchor="start" x="373.38" y="-629.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeActivity</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-598.25 303.5,-622.5 525.75,-622.5 525.75,-598.25 303.5,-598.25"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-607.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">id? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="331" y="-607.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-574 303.5,-598.25 525.75,-598.25 525.75,-574 303.5,-574"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-582.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">name &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="344.5" y="-582.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-549.75 303.5,-574 525.75,-574 525.75,-549.75 303.5,-549.75"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-558.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">type &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="337" y="-558.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="#eef4fb" stroke="none" points="303.5,-525.5 303.5,-549.75 525.75,-549.75 525.75,-525.5 303.5,-525.5"/>
+<polygon fill="none" stroke="#57606a" points="303.5,-525.5 303.5,-549.75 525.75,-549.75 525.75,-525.5 303.5,-525.5"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-534.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">devices &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="355.75" y="-534.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeActivityDevice[]</text>
+<polygon fill="#eef4fb" stroke="none" points="303.5,-501.25 303.5,-525.5 525.75,-525.5 525.75,-501.25 303.5,-501.25"/>
+<polygon fill="none" stroke="#57606a" points="303.5,-501.25 303.5,-525.5 525.75,-525.5 525.75,-501.25 303.5,-501.25"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-510.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">screen? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="357.25" y="-510.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeScreenItem[]</text>
+<polygon fill="#eef4fb" stroke="none" points="303.5,-477 303.5,-501.25 525.75,-501.25 525.75,-477 303.5,-477"/>
+<polygon fill="none" stroke="#57606a" points="303.5,-477 303.5,-501.25 525.75,-501.25 525.75,-477 303.5,-477"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-485.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">keys? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="346" y="-485.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeKey[]</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-452.75 303.5,-477 525.75,-477 525.75,-452.75 303.5,-452.75"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-461.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">opensOn? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="370" y="-461.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-428.5 303.5,-452.75 525.75,-452.75 525.75,-428.5 303.5,-428.5"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-437.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">favourites? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="373" y="-437.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">boolean</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-404.25 303.5,-428.5 525.75,-428.5 525.75,-404.25 303.5,-404.25"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-413.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">powerOrder? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="384.25" y="-413.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string[]</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-380 303.5,-404.25 525.75,-404.25 525.75,-380 303.5,-380"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-388.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">start? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="343.75" y="-388.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeActivityStep[]</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-355.75 303.5,-380 525.75,-380 525.75,-355.75 303.5,-355.75"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-364.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">end? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="341.5" y="-364.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeActivityStep[]</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-331.5 303.5,-355.75 525.75,-355.75 525.75,-331.5 303.5,-331.5"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-340.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">sequences? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="379.75" y="-340.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeSequence[]</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-307.25 303.5,-331.5 525.75,-331.5 525.75,-307.25 303.5,-307.25"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-316.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">enabled? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="364.75" y="-316.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">false</text>
+<polygon fill="none" stroke="#57606a" points="303.5,-283 303.5,-307.25 525.75,-307.25 525.75,-283 303.5,-283"/>
+<text xml:space="preserve" text-anchor="start" x="308.5" y="-291.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">attention? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="367" y="-291.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeAttention[]</text>
+</g>
+<!-- Recipe&#45;&gt;RecipeActivity -->
+<g id="edge3" class="edge">
+<title>Recipe:r4&#45;&gt;RecipeActivity</title>
+<path fill="none" stroke="#57606a" d="M404.38,-822.62C328.89,-822.62 327.41,-741.99 346.67,-657.32"/>
+<polygon fill="#57606a" stroke="#57606a" points="349.04,-657.96 348.25,-650.58 344.27,-656.84 349.04,-657.96"/>
+</g>
+<!-- RecipeSetting -->
+<g id="node10" class="node">
+<title>RecipeSetting</title>
+<polygon fill="#d6e4f5" stroke="none" points="981.5,-489.12 981.5,-511.88 1071.75,-511.88 1071.75,-489.12 981.5,-489.12"/>
+<polygon fill="none" stroke="#57606a" points="981.5,-489.12 981.5,-511.88 1071.75,-511.88 1071.75,-489.12 981.5,-489.12"/>
+<text xml:space="preserve" text-anchor="start" x="986.5" y="-496.48" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeSetting</text>
+<polygon fill="none" stroke="#57606a" points="981.5,-464.88 981.5,-489.12 1071.75,-489.12 1071.75,-464.88 981.5,-464.88"/>
+<text xml:space="preserve" text-anchor="start" x="986.5" y="-473.62" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="981.5,-440.62 981.5,-464.88 1071.75,-464.88 1071.75,-440.62 981.5,-440.62"/>
+<text xml:space="preserve" text-anchor="start" x="986.5" y="-449.38" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">number</text>
+<polygon fill="none" stroke="#57606a" points="981.5,-416.38 981.5,-440.62 1071.75,-440.62 1071.75,-416.38 981.5,-416.38"/>
+<text xml:space="preserve" text-anchor="start" x="986.5" y="-425.12" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">boolean</text>
+</g>
+<!-- Recipe&#45;&gt;RecipeSetting -->
+<g id="edge4" class="edge">
+<title>Recipe:r8&#45;&gt;RecipeSetting</title>
+<path fill="none" stroke="#57606a" d="M762.88,-725.62C857.09,-725.62 894.82,-716.68 960.62,-649.25 993.62,-615.44 1010.24,-564.01 1018.55,-524.09"/>
+<polygon fill="#57606a" stroke="#57606a" points="1020.95,-524.58 1019.9,-517.24 1016.14,-523.63 1020.95,-524.58"/>
+</g>
+<!-- RecipeKey -->
+<g id="node6" class="node">
+<title>RecipeKey</title>
+<polygon fill="#d6e4f5" stroke="none" points="644.25,-216.25 644.25,-239 805,-239 805,-216.25 644.25,-216.25"/>
+<polygon fill="none" stroke="#57606a" points="644.25,-216.25 644.25,-239 805,-239 805,-216.25 644.25,-216.25"/>
+<text xml:space="preserve" text-anchor="start" x="693.5" y="-223.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeKey</text>
+<polygon fill="none" stroke="#57606a" points="644.25,-192 644.25,-216.25 805,-216.25 805,-192 644.25,-192"/>
+<text xml:space="preserve" text-anchor="start" x="649.25" y="-200.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">key &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="674" y="-200.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="644.25,-167.75 644.25,-192 805,-192 805,-167.75 644.25,-167.75"/>
+<text xml:space="preserve" text-anchor="start" x="649.25" y="-176.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">press? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="691.25" y="-176.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipePress</text>
+<polygon fill="#eef4fb" stroke="none" points="644.25,-143.5 644.25,-167.75 805,-167.75 805,-143.5 644.25,-143.5"/>
+<polygon fill="none" stroke="#57606a" points="644.25,-143.5 644.25,-167.75 805,-167.75 805,-143.5 644.25,-143.5"/>
+<text xml:space="preserve" text-anchor="start" x="649.25" y="-152.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">action &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="687.5" y="-152.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeKeyAction</text>
+</g>
+<!-- RecipeDevice&#45;&gt;RecipeKey -->
+<g id="edge5" class="edge">
+<title>RecipeDevice:r5&#45;&gt;RecipeKey</title>
+<path fill="none" stroke="#57606a" d="M565.75,-464.88C547.79,-464.88 558.42,-319.16 566.75,-303.25 574.77,-287.93 601.97,-266.93 631.6,-247.31"/>
+<polygon fill="#57606a" stroke="#57606a" points="632.57,-249.6 637.09,-243.71 629.89,-245.5 632.57,-249.6"/>
+</g>
+<!-- RecipeScreenCommand -->
+<g id="node9" class="node">
+<title>RecipeScreenCommand</title>
+<polygon fill="#d6e4f5" stroke="none" points="775.88,-76.75 775.88,-99.5 925.38,-99.5 925.38,-76.75 775.88,-76.75"/>
+<polygon fill="none" stroke="#57606a" points="775.88,-76.75 775.88,-99.5 925.38,-99.5 925.38,-76.75 775.88,-76.75"/>
+<text xml:space="preserve" text-anchor="start" x="780.88" y="-84.1" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeScreenCommand</text>
+<polygon fill="none" stroke="#57606a" points="775.88,-52.5 775.88,-76.75 925.38,-76.75 925.38,-52.5 775.88,-52.5"/>
+<text xml:space="preserve" text-anchor="start" x="780.88" y="-61.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">device &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="822.12" y="-61.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="775.88,-28.25 775.88,-52.5 925.38,-52.5 925.38,-28.25 775.88,-28.25"/>
+<text xml:space="preserve" text-anchor="start" x="780.88" y="-37.1" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">command &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="839.38" y="-37.1" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="775.88,-4 775.88,-28.25 925.38,-28.25 925.38,-4 775.88,-4"/>
+<text xml:space="preserve" text-anchor="start" x="780.88" y="-12.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">label? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="819.88" y="-12.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+</g>
+<!-- RecipeDevice&#45;&gt;RecipeScreenCommand -->
+<g id="edge6" class="edge">
+<title>RecipeDevice:r10&#45;&gt;RecipeScreenCommand</title>
+<path fill="none" stroke="#57606a" d="M941.5,-343.62C989.77,-343.62 923.04,-195.81 880.74,-110.92"/>
+<polygon fill="#57606a" stroke="#57606a" points="882.98,-109.93 877.66,-104.77 878.6,-112.13 882.98,-109.93"/>
+</g>
+<!-- RecipeActivityDevice -->
+<g id="node5" class="node">
+<title>RecipeActivityDevice</title>
+<polygon fill="#d6e4f5" stroke="none" points="8,-216.25 8,-239 185.25,-239 185.25,-216.25 8,-216.25"/>
+<polygon fill="none" stroke="#57606a" points="8,-216.25 8,-239 185.25,-239 185.25,-216.25 8,-216.25"/>
+<text xml:space="preserve" text-anchor="start" x="35.88" y="-223.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeActivityDevice</text>
+<polygon fill="none" stroke="#57606a" points="8,-192 8,-216.25 185.25,-216.25 185.25,-192 8,-192"/>
+<text xml:space="preserve" text-anchor="start" x="13" y="-200.85" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">device &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="54.25" y="-200.85" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="8,-167.75 8,-192 185.25,-192 185.25,-167.75 8,-167.75"/>
+<text xml:space="preserve" text-anchor="start" x="13" y="-176.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">input? &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="52" y="-176.6" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">string</text>
+<polygon fill="none" stroke="#57606a" points="8,-143.5 8,-167.75 185.25,-167.75 185.25,-143.5 8,-143.5"/>
+<text xml:space="preserve" text-anchor="start" x="13" y="-152.35" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#1f2328">roles &#160;</text>
+<text xml:space="preserve" text-anchor="start" x="45.25" y="-152.35" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">ActivityRoleName[]</text>
+</g>
+<!-- RecipeActivity&#45;&gt;RecipeActivityDevice -->
+<g id="edge7" class="edge">
+<title>RecipeActivity:r3&#45;&gt;RecipeActivityDevice</title>
+<path fill="none" stroke="#57606a" d="M302.5,-537.62C273.68,-537.62 299.03,-302.7 282.62,-279 282.53,-278.87 243.22,-260.52 200.76,-240.74"/>
+<polygon fill="#57606a" stroke="#57606a" points="201.84,-238.54 194.46,-237.8 199.77,-242.98 201.84,-238.54"/>
+</g>
+<!-- RecipeActivity&#45;&gt;RecipeKey -->
+<g id="edge9" class="edge">
+<title>RecipeActivity:r5&#45;&gt;RecipeKey</title>
+<path fill="none" stroke="#57606a" d="M526.75,-489.12C550.2,-489.12 533.12,-298.17 546.62,-279 568.39,-248.12 589.63,-259.48 623.62,-243 625.31,-242.18 627.01,-241.36 628.72,-240.52"/>
+<polygon fill="#57606a" stroke="#57606a" points="629.72,-242.76 634.93,-237.48 627.57,-238.36 629.72,-242.76"/>
+</g>
+<!-- RecipeScreenItem -->
+<g id="node8" class="node">
+<title>RecipeScreenItem</title>
+<polygon fill="#d6e4f5" stroke="none" points="225.88,-216.25 225.88,-239 603.38,-239 603.38,-216.25 225.88,-216.25"/>
+<polygon fill="none" stroke="#57606a" points="225.88,-216.25 225.88,-239 603.38,-239 603.38,-216.25 225.88,-216.25"/>
+<text xml:space="preserve" text-anchor="start" x="362.5" y="-223.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeScreenItem</text>
+<polygon fill="#eef4fb" stroke="none" points="225.88,-192 225.88,-216.25 603.38,-216.25 603.38,-192 225.88,-192"/>
+<polygon fill="none" stroke="#57606a" points="225.88,-192 225.88,-216.25 603.38,-216.25 603.38,-192 225.88,-192"/>
+<text xml:space="preserve" text-anchor="start" x="230.88" y="-200.75" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">RecipeScreenCommand</text>
+<polygon fill="none" stroke="#57606a" points="225.88,-167.75 225.88,-192 603.38,-192 603.38,-167.75 225.88,-167.75"/>
+<text xml:space="preserve" text-anchor="start" x="230.88" y="-176.5" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">{ sequence: string; steps: RecipeSequenceStep[] }</text>
+<polygon fill="none" stroke="#57606a" points="225.88,-143.5 225.88,-167.75 603.38,-167.75 603.38,-143.5 225.88,-143.5"/>
+<text xml:space="preserve" text-anchor="start" x="230.88" y="-152.25" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">{ sequence: string; steps?: undefined }</text>
+</g>
+<!-- RecipeActivity&#45;&gt;RecipeScreenItem -->
+<g id="edge8" class="edge">
+<title>RecipeActivity:r4&#45;&gt;RecipeScreenItem</title>
+<path fill="none" stroke="#57606a" d="M526.75,-513.38C552.79,-513.38 537.22,-302.38 525.75,-279 520.31,-267.91 512.7,-257.83 503.99,-248.78"/>
+<polygon fill="#57606a" stroke="#57606a" points="505.89,-247.22 499.19,-244.05 502.45,-250.71 505.89,-247.22"/>
+</g>
+<!-- RecipeKeyAction -->
+<g id="node7" class="node">
+<title>RecipeKeyAction</title>
+<polygon fill="#d6e4f5" stroke="none" points="462.38,-76.75 462.38,-99.5 734.88,-99.5 734.88,-76.75 462.38,-76.75"/>
+<polygon fill="none" stroke="#57606a" points="462.38,-76.75 462.38,-99.5 734.88,-99.5 734.88,-76.75 462.38,-76.75"/>
+<text xml:space="preserve" text-anchor="start" x="548.75" y="-84.1" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#1f2328">RecipeKeyAction</text>
+<polygon fill="none" stroke="#57606a" points="462.38,-52.5 462.38,-76.75 734.88,-76.75 734.88,-52.5 462.38,-52.5"/>
+<text xml:space="preserve" text-anchor="start" x="467.38" y="-61.25" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">{ device: string; command: string }</text>
+<polygon fill="none" stroke="#57606a" points="462.38,-28.25 462.38,-52.5 734.88,-52.5 734.88,-28.25 462.38,-28.25"/>
+<text xml:space="preserve" text-anchor="start" x="467.38" y="-37" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">{ sequence: string }</text>
+<polygon fill="none" stroke="#57606a" points="462.38,-4 462.38,-28.25 734.88,-28.25 734.88,-4 462.38,-4"/>
+<text xml:space="preserve" text-anchor="start" x="467.38" y="-12.75" font-family="Courier,monospace" font-size="12.00" fill="#1f2328">{ nothing: true }</text>
+</g>
+<!-- RecipeKey&#45;&gt;RecipeKeyAction -->
+<g id="edge10" class="edge">
+<title>RecipeKey:r2&#45;&gt;RecipeKeyAction</title>
+<path fill="none" stroke="#57606a" d="M643.25,-155.62C631.92,-155.62 621.68,-134.38 613.86,-111.19"/>
+<polygon fill="#57606a" stroke="#57606a" points="616.26,-110.63 611.78,-104.72 611.6,-112.14 616.26,-110.63"/>
+</g>
+<!-- RecipeScreenItem&#45;&gt;RecipeScreenCommand -->
+<g id="edge11" class="edge">
+<title>RecipeScreenItem:r0&#45;&gt;RecipeScreenCommand</title>
+<path fill="none" stroke="#57606a" d="M604.38,-204.12C634.34,-204.12 602.19,-160.44 623.62,-139.5 667.12,-97 699.12,-125.97 755.62,-103.5 757.16,-102.89 758.69,-102.26 760.24,-101.62"/>
+<polygon fill="#57606a" stroke="#57606a" points="761.14,-103.9 766.59,-98.88 759.2,-99.4 761.14,-103.9"/>
+</g>
+</g>
+</svg>

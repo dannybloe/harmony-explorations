@@ -1,0 +1,22 @@
+digraph packages {
+  graph [rankdir=TB, bgcolor="#ffffff", pad=0.3, nodesep=0.35, ranksep=0.5, fontname="Helvetica"];
+  node [shape=plaintext, fontname="Helvetica", fontsize=12, fontcolor="#1f2328", color="#57606a"];
+  edge [fontname="Helvetica", fontsize=11, fontcolor="#1f2328", color="#57606a", arrowsize=0.7];
+  application [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><B>an application</B></TD></TR></TABLE>>];
+  base [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#d6e4f5" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">@freeharmony-sdk/base</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">the table of models, the key<BR/>codes, and what the SDK must do,<BR/>with each model's status</TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">loads in a browser and in Node</FONT></TD></TR></TABLE>>];
+  config [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#d6e4f5" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">@freeharmony-sdk/config</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">the document and its toolkit, the<BR/>check, the build, finding a<BR/>device, what each model can do,<BR/>reading a configuration file</TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">loads in a browser and in Node</FONT></TD></TR></TABLE>>];
+  remote [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#d6e4f5" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">@freeharmony-sdk/remote</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">reading a remote's configuration;<BR/>on its write subpath the sync and<BR/>a pretend remote</TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">runs in Node, through a native module</FONT></TD></TR></TABLE>>];
+  silhouettes [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#d6e4f5" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">@freeharmony-sdk/silhouettes</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">each model's front face, as data<BR/>and as a drawing</TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">loads in a browser and in Node</FONT></TD></TR></TABLE>>];
+  usb [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#d6e4f5" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">@freeharmony-sdk/usb</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT">finding a remote on the USB cable<BR/>and opening it to read</TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">runs in Node, through a native module</FONT></TD></TR></TABLE>>];
+  "node-hid" [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#57606a"><TR><TD BGCOLOR="#ffffff" ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="Courier">node-hid</FONT></TD></TR><TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="#57606a">a native module</FONT></TD></TR></TABLE>>];
+  application -> base [style=dashed, color="#57606a"];
+  application -> config [style=dashed, color="#57606a"];
+  application -> remote [style=dashed, color="#57606a"];
+  application -> silhouettes [style=dashed, color="#57606a"];
+  application -> usb [style=dashed, color="#57606a"];
+  config -> "base" [label=" depends on"];
+  remote -> "config" [label=" depends on"];
+  remote -> "usb" [label=" depends on"];
+  usb -> "base" [label=" depends on"];
+  usb -> "node-hid" [label=" depends on"];
+}

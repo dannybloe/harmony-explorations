@@ -298,15 +298,8 @@ export interface StateTable {
 }
 
 /**
- * Base slot 13: how many state variables there are and how wide each one is.
- *
- * ```
- * +0x00  u16  count
- * +0x02  u16  narrow
- * +0x04  u16  wide
- * +0x06  u16  narrow, again
- * +0x08  u24  entry[count]
- * ```
+ * Base slot 13: how many state variables there are and how wide each one is. It opens with four 16 bit words,
+ * `count`, `narrow`, `wide` and `narrow` again, and `count` entries of 24 bits each follow them.
  *
  * The split is what the firmware's lookup uses: an index below `narrow` reads one byte and an
  * index at or above it reads two, so the width belongs to the index and not to the value.

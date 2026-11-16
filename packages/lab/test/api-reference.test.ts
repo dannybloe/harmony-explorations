@@ -36,7 +36,11 @@ test('the reference is these pages, so a page added or dropped shows in this dif
     ...PAGES.map((one) => `${SECTION}/api/${one.page}`),
     `${SECTION}/api/config-types.md`, `${SECTION}/api/remote-types.md`, `${SECTION}/api/silhouettes-types.md`,
     `${SECTION}/api/usb-types.md`,
-    `${SECTION}/api/README.md`, `${SECTION}/documents.md`, `${SECTION}/guide.md`, `${SECTION}/README.md`,
+    `${SECTION}/api/README.md`,
+    `${SECTION}/documents.md`,
+    `${SECTION}/guide.md`,
+    `${SECTION}/overview.md`,
+    `${SECTION}/README.md`,
   ]);
 });
 

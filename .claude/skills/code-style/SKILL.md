@@ -61,17 +61,16 @@ export class SetupEditor {
     name: string,
   ): Effect[] {
 
-    const place = { kind: 'device', device } as const;
-    const change = recipe.setDevice(this.document, place, { name });
-
-    if (!change.ok) {
-      throw new ChangeRefused(change.refusal);
-    }
+    const change = recipe.setDevice(
+      this.document,
+      device,
+      { name },
+    );
 
     // The document is replaced as a whole: a change never edits the one it was given.
     this.document = change.document;
 
-    return change.effects;
+    return [...change.effects];
 
   }
 
@@ -144,7 +143,14 @@ export async function readWhole(reader: ConfigReader, options: ReadOptions = {})
 }
 
 export async function readQuietly(reader: ConfigReader, options: ReadOptions = {}) {
-  return readWhole(reader, { ...options, onProgress: undefined });
+
+  const quiet = {
+    ...options,
+    onProgress: undefined,
+  };
+
+  return readWhole(reader, quiet);
+
 }
 ```
 
