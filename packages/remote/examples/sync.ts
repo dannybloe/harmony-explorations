@@ -14,6 +14,7 @@ import {
   pretendRemote,
   SYNC_STATES,
   syncDocument,
+  syncIsBuilt,
   type SyncEvent,
 } from '@freeharmony-sdk/remote/write';
 
@@ -191,6 +192,13 @@ const notBuilt = syncDocument({
 });
 
 await assert.rejects(notBuilt, NotBuiltError);
+
+// So an application asks before it offers a sync. `syncIsBuilt`, given the
+// document's model, is false in both cases above and true where a sync is
+// there.
+assert.equal(syncIsBuilt(harmony885), false);
+assert.equal(syncIsBuilt(harmony350), false);
+assert.equal(syncIsBuilt(document.model), true);
 
 // A Harmony Touch asks for its documents and is answered: no backup, no read
 // back and no restart, and a hand over of the changes made on its own screens

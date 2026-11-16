@@ -29,7 +29,9 @@ A document starts from a model, named as Logitech names it, or from a document s
 an application keeps one document per remote and replaces it with the new one each change returns, so an undo is
 keeping the old one. It asks the check for problems to show beside the fields a person edits, builds the document
 where it wants what the remote is sent without sending it, and syncs it to send it: a sync runs the check and the
-build itself before it writes. Each box after a step is the type that step's function returns.
+build itself before it writes. Whether a build or a sync is there for the model at all it asks before offering
+either: `capabilitiesOf` answers for the build with `builds`, and `syncIsBuilt` for a sync. Each box after a step is
+the type that step's function returns.
 
 ![The steps an application takes with a document, a Recipe, and what each gives back: recipe.create gives Recipe,
 the document, empty and valid for its model; recipe.open gives Recipe, the document, its shape checked;

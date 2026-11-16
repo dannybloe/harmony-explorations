@@ -19,7 +19,7 @@ const MANIFEST = new URL('../../package.json', import.meta.url);
 /** The write subpath: the names that exist at run time. */
 const WRITE_VALUES = [
   'CONFIG_WRITE_MODELS', 'CONFIG_WRITE_UNITS', 'ConfigWriteRefusal', 'ConfigWriteStopped', 'RECOVERY', 'SYNC_ENDINGS', 'SYNC_LINES', 'SYNC_STATES', 'TOUCH_SYNC_UNITS',
-  'answerTouchSync', 'assertTouchSyncAllowed', 'prepareSet', 'pretendReader', 'pretendRemote', 'syncDocument', 'writeConfiguration',
+  'answerTouchSync', 'assertTouchSyncAllowed', 'prepareSet', 'pretendReader', 'pretendRemote', 'syncDocument', 'syncIsBuilt', 'writeConfiguration',
 ];
 
 /** The write subpath: the types and interfaces, which only the source shows. */

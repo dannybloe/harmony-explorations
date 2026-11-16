@@ -67,11 +67,15 @@ try {
   waitsOn = error.requirement;
 }
 
-// So an application asks first. `capabilitiesOf` answers, requirement by
-// requirement, whether an ability is there (`met`), still open, not possible
-// on that model, or not known, and gives the model's own properties.
+// So an application asks first. `capabilitiesOf` says whether a document of
+// the model builds at all, `builds`, which decides whether to offer a build;
+// it answers, requirement by requirement, whether an ability is there
+// (`met`), still open, not possible on that model, or not known; and it gives
+// the model's own properties.
 const capabilities = capabilitiesOf('harmony-one')!;
 
+assert.equal(capabilities.builds, true);
+assert.equal(capabilitiesOf('harmony-885')!.builds, false);
 assert.equal(capabilities.name, 'Harmony One');
 assert.equal(capabilities.properties.maxDevices, 15);
 

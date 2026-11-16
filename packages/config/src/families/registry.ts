@@ -51,6 +51,17 @@ export function familyKind(family: AnyFamily): 'compiled' | 'document' {
 }
 
 /**
+ * Whether `buildFromRecipe` builds a document for the remotes of a family: every document family does, and a compiled
+ * family does where it states how, `Family.fromRecipe`. The one place the question is answered, so the build's own
+ * not built refusal, `builtFrom` in `fromrecipe.ts`, and the answer an application reads beforehand,
+ * `ModelCapabilities.builds` in `capabilities.ts`, cannot come apart: both call this. It reads only what the family
+ * states, so a family that gains a build answers yes the moment it states one, with no list of models to update.
+ */
+export function buildsFromRecipe(family: AnyFamily): boolean {
+  return family.kind === 'document' || family.fromRecipe !== undefined;
+}
+
+/**
  * What the registry refuses with: a model or a configuration no family serves. A `ComposeError`, since what asks
  * is a composer and every caller that already meets a composer's refusal meets this one the same way.
  */

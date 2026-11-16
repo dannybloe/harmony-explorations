@@ -6,7 +6,8 @@
  * remote reported, and answers with everything an interface needs to decide what to offer: a feature is offered
  * where its requirement is met on that model; the other statuses, open, impossible and unknown, are for a developer,
  * each with the sentence that says why. An open one also says whose work is missing, `state.waitsOn`: the FHSDK's
- * for every model, the family's, the model's own, or only a run on a unit. The requirements and their statuses are data in the base,
+ * for every model, the family's, the model's own, or only a run on a unit. Whether a document of the model builds at
+ * all is `builds`, so a Build button is offered or left out before anything is built. The requirements and their statuses are data in the base,
  * `@freeharmony-sdk/base/requirements`, which has no import at all; this module joins them to what only the codec knows, the
  * family that builds for the model and the screen it draws on, so it sits beside the registry it asks.
  *
@@ -31,7 +32,7 @@ import { ACTIVITY_KEYS } from './harmony-600-650-700/activitykeys.ts';
 import { NO_SCREEN_FAMILY } from './harmony-300-350/index.ts';
 import { HARMONY_TOUCH_FAMILY } from './harmony-touch/family.ts';
 import { FAVOURITES_LIMIT } from './harmony-touch/favourites.ts';
-import { chooseByModel, familyKind, NoFamilyError, type AnyFamily } from './registry.ts';
+import { buildsFromRecipe, chooseByModel, familyKind, NoFamilyError, type AnyFamily } from './registry.ts';
 
 // The requirement types an application meets in an answer, so it needs no second import to name them.
 export type { BenchModelKey, Proof, Requirement, RequirementState, RequirementStatus, RequirementWait } from '@freeharmony-sdk/base/requirements';
@@ -75,7 +76,9 @@ export interface RequirementAnswer {
   readonly state: RequirementState;
 }
 
-/** A model of `BENCH_MODELS`, its properties and the status of every requirement on it, in number order.
+/**
+ * A model of `BENCH_MODELS`, its properties, whether a document of it builds, and the status of every requirement on
+ * it, in number order.
  *
  * @privateRemarks
  * A bench model.
@@ -85,6 +88,13 @@ export interface ModelCapabilities {
   readonly name: string;
   readonly skins: readonly number[];
   readonly properties: ModelProperties;
+  /**
+   * Whether `buildFromRecipe` builds a document of this model: true where it does, false where it answers
+   * `NotBuiltError` or no family builds for the model at all. An application asks this before it offers to build,
+   * rather than calling the build and catching the error. True does not promise that every document builds: a document
+   * can still ask for something the build does not do yet, which the build then names, `NotBuiltError`.
+   */
+  readonly builds: boolean;
   readonly requirements: readonly RequirementAnswer[];
 }
 
@@ -169,8 +179,8 @@ function propertiesOf(model: BenchModel): ModelProperties {
 }
 
 /**
- * A model's properties and the status of every requirement on it, by its key or by a skin one of its remotes
- * reports, for the models of `BENCH_MODELS`; undefined for a key or a skin none of them has, a remote these statuses
+ * A model's properties, whether `buildFromRecipe` builds a document of it, and the status of every requirement on it,
+ * by its key or by a skin one of its remotes reports, for the models of `BENCH_MODELS`; undefined for a key or a skin none of them has, a remote these statuses
  * were never judged for.
  *
  * @privateRemarks
@@ -179,11 +189,18 @@ function propertiesOf(model: BenchModel): ModelProperties {
 export function capabilitiesOf(keyOrSkin: BenchModelKey | number): ModelCapabilities | undefined {
   const model = benchModel(keyOrSkin);
   if (model === undefined) return undefined;
+
+  // Whether the build takes the model is the registry's question, the one the build's own refusal asks, so the two
+  // cannot disagree; a model no family serves builds nothing.
+  const family = familyOfBenchModel(model);
+  const builds = family !== undefined && buildsFromRecipe(family);
+
   return {
     key: model.key,
     name: model.name,
     skins: model.skins,
     properties: propertiesOf(model),
+    builds,
     requirements: REQUIREMENTS.map((requirement) => ({ requirement, state: requirementState(model.key, requirement.number) })),
   };
 }

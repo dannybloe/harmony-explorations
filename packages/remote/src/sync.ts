@@ -66,7 +66,7 @@
  * read of their own on any entry yet, so a pretend Touch offers none either.
  */
 import {
-  buildFromRecipe, chooseByModel, NotBuiltError, recipe, recipeTarget,
+  buildFromRecipe, capabilitiesOf, chooseByModel, NoFamilyError, NotBuiltError, recipe, recipeTarget,
   type BuildSources, type Built, type LeftOutActivity, type LeftOutReason, type Recipe, type RecipeModel,
 } from '@freeharmony-sdk/config/node';
 import { harmonyTouch } from '@freeharmony-sdk/config/build';
@@ -1417,6 +1417,49 @@ async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promi
 const TOUCH_SYNC_MODELS: readonly string[] = ['Harmony Touch'];
 
 /**
+ * Whether a write path behind `syncDocument` takes a document of the model, by the name the document gives it: the
+ * Harmony Touch's answered sync, `TOUCH_SYNC_MODELS`, or a write into flash, `CONFIG_WRITE_MODELS`. The one place
+ * this is decided, so `syncDocument`'s refusal and `syncIsBuilt` cannot come apart; both read the two lists the write
+ * paths already keep, and add none of their own.
+ */
+function writePathTakes(model: string): boolean {
+  return TOUCH_SYNC_MODELS.includes(model) || Object.hasOwn(CONFIG_WRITE_MODELS, model);
+}
+
+/**
+ * Whether `syncDocument` syncs a document of this model: a write path takes the model, and a document of it builds.
+ * False where `syncDocument` would reject with `NotBuiltError`, and false too where it would take the document and
+ * end `refused` in the build because nothing builds for the model yet, as for a Harmony 885. An application asks
+ * this before it offers to sync, and passes the document's own `model`.
+ *
+ * True does not promise that a sync ends `written`: the document is still checked and built, the remote on the cable
+ * still has to be the document's model, and every check a write makes still applies. It says only that the sync of
+ * this model is there.
+ *
+ * @privateRemarks
+ * The build half is the codec's answer, `capabilitiesOf(...).builds`, asked by the skin the registry chooses for the
+ * model, as the recipe toolkit asks for a model's limits; it answers for the bench models, which every model a write
+ * path takes is. A model the registry refuses, or one outside the bench models, answers false.
+ */
+export function syncIsBuilt(model: RecipeModel): boolean {
+
+  if (!writePathTakes(model.name)) return false;
+
+  // The skin the build would be chosen by, so the answer is the one the build gives for this document's model. A
+  // name and skin the registry refuses build nothing, and a sync of them ends refused.
+  let skin: number;
+  try {
+    skin = chooseByModel(model).skin;
+  } catch (error) {
+    if (error instanceof NoFamilyError) return false;
+    throw error;
+  }
+
+  return capabilitiesOf(skin)?.builds ?? false;
+
+}
+
+/**
  * A sync to an attached Harmony Touch: the document checked and built, the set its documents are delivered as made
  * and passed through the gate, and the set answered by `answerTouchSync`, whose account becomes the events through
  * `deliverDocuments`.
@@ -1520,10 +1563,15 @@ async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): 
  * Not built yet: a sync of every model but the Harmony One, 600, 650, 700 and 885 and the Harmony Touch, a Harmony 300
  * or 350 among them.
  *
+ * **Asking beforehand.** `syncIsBuilt` with the document's model says whether this sync is there for it, both cases
+ * above at once: a model this function rejects, and a model whose document it takes and nothing builds. An application
+ * offers a sync only where that answer is true, rather than finding out from the error or the outcome.
+ *
  * @privateRemarks
  * R79. The Harmony 885 is in `CONFIG_WRITE_MODELS`, so its document is let through to the build, whose `NotBuiltError`
- * the build phase turns into a refusal. `capabilitiesOf` does not say beforehand which models' sync is there: R79 is
- * open on every model.
+ * the build phase turns into a refusal. `syncIsBuilt` answers beforehand which models' sync is there, from the same
+ * question this function's refusal asks, `writePathTakes`, and the build's own, `capabilitiesOf(...).builds`; the
+ * requirement's status does not, since R79 is open on every model.
  */
 export async function syncDocument(request: SyncRequest): Promise<SyncOutcome> {
   const remote = request.remote;
@@ -1532,10 +1580,10 @@ export async function syncDocument(request: SyncRequest): Promise<SyncOutcome> {
   // enumerates as another model, and so on for flash. Which remote is attached never chooses the path, so a document
   // is never handed to a write path that was not built for it, and a pretend remote takes the same path.
   const documents = TOUCH_SYNC_MODELS.includes(model);
-  // The models `writeConfiguration` writes and a document builds for. The Harmony 885 is written by it and built
-  // from no document yet, which its build says; the Harmony 300 and 350 are written by a path of their own, not
-  // behind this function yet, so a pretend remote of theirs refuses as an attached one does.
-  if (!documents && !Object.hasOwn(CONFIG_WRITE_MODELS, model)) {
+  // A model no write path takes, the question `syncIsBuilt` asks too. The Harmony 885 is written by
+  // `writeConfiguration` and built from no document yet, which its build says; the Harmony 300 and 350 are written
+  // by a path of their own, not behind this function yet, so a pretend remote of theirs refuses as an attached one does.
+  if (!writePathTakes(model)) {
     throw new NotBuiltError(`syncDocument for ${remote.kind === 'pretend' ? 'a pretend' : 'an attached'} ${model}`, 79);
   }
   if (remote.kind === 'pretend') return syncPretend(request, remote, documents);

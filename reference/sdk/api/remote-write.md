@@ -183,7 +183,7 @@ Uses [`TouchSyncOptions`](remote-types.md#touchsyncoptions), [`Transport`](usb.m
 
 ## Syncing a document
 
-The one function an application writes a remote through, for every model, reporting as events, and a pretend remote to run it against, which a read of a configuration, [`readConfig`](remote.md#readconfig) on the main entry, reads through [`pretendReader`](#pretendreader). Built to a pretend remote and to an attached remote of the same models: a Harmony One, 600, 650 or 700, over [`writeConfiguration`](#writeconfiguration), and a Harmony Touch, over [`answerTouchSync`](#answertouchsync); for a document of any other model it refuses by name, as not built yet. The keeper is one of two kinds, by the kind of family the remote's model is chosen into: [`CompiledKeeper`](#compiledkeeper) for a write into flash, [`DocumentKeeper`](#documentkeeper) for an answered sync. What a failed sync leaves a remote needing is a state of a closed list, [`SYNC_STATES`](#sync_states), with what is true of the remote, whether it may be unplugged and what puts it right, so an application acts on data rather than on a sentence.
+The one function an application writes a remote through, for every model, reporting as events, and a pretend remote to run it against, which a read of a configuration, [`readConfig`](remote.md#readconfig) on the main entry, reads through [`pretendReader`](#pretendreader). Built to a pretend remote and to an attached remote of the same models: a Harmony One, 600, 650 or 700, over [`writeConfiguration`](#writeconfiguration), and a Harmony Touch, over [`answerTouchSync`](#answertouchsync); for a document of any other model it refuses by name, as not built yet. The keeper is one of two kinds, by the kind of family the remote's model is chosen into: [`CompiledKeeper`](#compiledkeeper) for a write into flash, [`DocumentKeeper`](#documentkeeper) for an answered sync. What a failed sync leaves a remote needing is a state of a closed list, [`SYNC_STATES`](#sync_states), with what is true of the remote, whether it may be unplugged and what puts it right, so an application acts on data rather than on a sentence. Whether that sync is there for a document's model is [`syncIsBuilt`](#syncisbuilt), asked before a sync is offered.
 
 ### `AttachedRemote`
 
@@ -580,6 +580,10 @@ no document builds for an 885 yet.
 Not built yet: a sync of every model but the Harmony One, 600, 650, 700 and 885 and the Harmony Touch, a Harmony 300
 or 350 among them.
 
+**Asking beforehand.** [`syncIsBuilt`](#syncisbuilt) with the document's model says whether this sync is there for it, both cases
+above at once: a model this function rejects, and a model whose document it takes and nothing builds. An application
+offers a sync only where that answer is true, rather than finding out from the error or the outcome.
+
 Uses [`SyncRequest`](#syncrequest), [`SyncOutcome`](#syncoutcome).
 
 ### `SyncEnding`
@@ -605,6 +609,23 @@ type SyncEvent =
 One thing a sync reports. A screen needs no more than the latest of each kind.
 
 Uses [`SyncPhase`](#syncphase), [`SyncAttention`](#syncattention), [`SyncOutcome`](#syncoutcome).
+
+### `syncIsBuilt`
+
+```ts
+function syncIsBuilt(model: RecipeModel): boolean
+```
+
+Whether [`syncDocument`](#syncdocument) syncs a document of this model: a write path takes the model, and a document of it builds.
+False where [`syncDocument`](#syncdocument) would reject with [`NotBuiltError`](config.md#notbuilterror), and false too where it would take the document and
+end `refused` in the build because nothing builds for the model yet, as for a Harmony 885. An application asks
+this before it offers to sync, and passes the document's own `model`.
+
+True does not promise that a sync ends `written`: the document is still checked and built, the remote on the cable
+still has to be the document's model, and every check a write makes still applies. It says only that the sync of
+this model is there.
+
+Uses [`RecipeModel`](config.md#recipemodel).
 
 ### `SyncOutcome`
 

@@ -37,7 +37,7 @@ import { resource } from '../support/resources.ts';
 import type { SyncDocuments } from './harmony-touch/documents.ts';
 import type { OwnPicture } from './harmony-touch/favourites.ts';
 import type { TouchAccount } from './harmony-touch/fromnothing.ts';
-import { chooseByModel, NoFamilyError, type ModelChoice } from './registry.ts';
+import { buildsFromRecipe, chooseByModel, NoFamilyError, type ModelChoice } from './registry.ts';
 
 /**
  * The Harmony Touch's account, the identifiers its documents carry, which an application reads off the remote and
@@ -101,6 +101,10 @@ export type Built =
  * * `RecipeError`, a source the caller must give is missing: an account for a Harmony Touch, and an archive for a
  *   device the document carries no definition of. The same class refuses a recipe that is not one, before any of this,
  *   and a model no family serves.
+ *
+ * **Asking beforehand.** Whether a model's documents build at all, the first of the not built cases and a model no
+ * family serves, is answered before anything is built by `capabilitiesOf`, its `builds`, from the same question this
+ * build asks; so an application offers a build only where that answer is true, rather than finding out from the error.
  */
 export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
   // What a build remembers about the letters it reads is kept for its length and emptied when it ends, so an
@@ -119,8 +123,10 @@ function builtFrom(json: unknown, sources: BuildSources): Built {
     throw error;
   }
   const { family, skin } = choice;
-  // A family that builds nothing from a recipe, the Harmony 880 and 885's today: what is missing is the build, R4.
-  if (family.kind === 'compiled' && family.fromRecipe === undefined) notBuilt(`buildFromRecipe for ${family.name}`, 4);
+  // A family that builds nothing from a recipe, the Harmony 880 and 885's today: what is missing is the build, R4. The
+  // question is the registry's `buildsFromRecipe`, which `capabilitiesOf` asks too, so the answer an application reads
+  // beforehand and this refusal are one.
+  if (!buildsFromRecipe(family)) notBuilt(`buildFromRecipe for ${family.name}`, 4);
   const read = readRecipe(json);
   // A field of version 2 this kind of family's build does not read, before anything is built or any source is asked for.
   refuseUnbuiltFields(read, 'buildFromRecipe', family.kind);

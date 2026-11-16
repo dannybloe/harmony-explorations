@@ -6,14 +6,22 @@
  * a line in this file's diff and gets asked whether it belongs. Each comes from the model table, the model's family, or
  * a reference page the answer names; the last test holds that every page named exists, and that the family and the
  * skins agree with the registry, the other place that turns a model into a family.
+ *
+ * **Whether a model's documents build**, `builds`, is held to the build itself: for every bench model it is exactly
+ * whether `buildFromRecipe` of a freshly created document of that model gets past the build's not built refusal, and
+ * the models it is true for are a literal below, so a family that gains or loses its build is a line in this diff.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { BENCH_MODELS, REQUIREMENTS, requirementState } from '@freeharmony-sdk/base/requirements';
+import { BENCH_MODELS, REQUIREMENTS, requirementState, type BenchModel } from '@freeharmony-sdk/base/requirements';
+import { buildFromRecipe, NotBuiltError, recipe, type BuildSources, type Recipe } from '../../src/node.ts';
 import { capabilitiesOf, type ModelProperties } from '../../src/families/capabilities.ts';
-import { chooseByModel, NoFamilyError } from '../../src/families/registry.ts';
+import { buildsFromRecipe, chooseByModel, NoFamilyError } from '../../src/families/registry.ts';
+import { FOUR_SLOT as FOUR_SLOT_FAMILY } from '../../src/families/harmony-600-650-700/index.ts';
+import { SIDE_KEYS } from '../../src/families/harmony-880-885/index.ts';
+import { HARMONY_TOUCH_FAMILY } from '../../src/families/harmony-touch/family.ts';
 
 const ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
 
@@ -116,4 +124,125 @@ test('the family named is the one the registry chooses for the model, and every 
     assert.equal(properties.family?.name, chosen, model.name);
     for (const page of properties.references) assert.ok(existsSync(ROOT + page.split('#')[0]!), page);
   }
+});
+
+/**
+ * What a build of an empty document is given: a moment, a made up account for the Harmony Touch, whose documents carry
+ * one, and a catalogue that holds nothing, since an empty document names no device; a Touch's build asks for a
+ * catalogue all the same, and one that answers no device keeps the test off any archive.
+ */
+const EMPTY_SOURCES: BuildSources = {
+  builtAt: '2026-11-16T12:00:00',
+  account: {
+    context: {
+      'AccountId-': '1000001',
+      CountryCode: 'NL',
+      Email: 'john.doe@example.com',
+      HouseholdUserProfileUri: null,
+      InstallerId: null,
+      Language: 'en-GB',
+      SetupSession: { Type: 0, SetupType: null },
+    },
+    tuning: {
+      DeviceProfileUri: 'https://example.invalid/john-doe/favourites',
+      ContentProfileKey: 1,
+    },
+  } as never,
+  archive: {
+    protocols: () => [],
+    device: () => assert.fail('an empty document asks the catalogue for no device'),
+    commands: () => assert.fail('an empty document asks the catalogue for no commands'),
+    driving: () => assert.fail('an empty document asks the catalogue for no driving rules'),
+  },
+};
+
+/**
+ * Whether the build of a document gets past the build's own not built refusal, the one `builds` answers beforehand:
+ * true where it builds, false where it throws that refusal, `NotBuiltError` naming `buildFromRecipe` for the model's
+ * family with the build's requirement. Anything else is thrown on, a not built of another kind among it, so the test
+ * cannot read some other refusal as the answer.
+ */
+function getsPastTheGate(document: Recipe): boolean {
+
+  try {
+    buildFromRecipe(document, EMPTY_SOURCES);
+    return true;
+  } catch (error) {
+
+    const gate = error instanceof NotBuiltError
+      && error.requirement === 4
+      && /^buildFromRecipe for the /.test(error.contract);
+
+    if (gate) return false;
+
+    throw error;
+  }
+
+}
+
+/**
+ * Whether a freshly created document of a bench model builds, or false where no document of it can be created at all,
+ * which is a model no family serves: `recipe.create` says not built for it, naming the model.
+ */
+function freshDocumentBuilds(model: BenchModel): boolean {
+
+  let document: Recipe;
+  try {
+    document = recipe.create({ name: model.name, skin: model.skins[0]! });
+  } catch (error) {
+    const noFamily = error instanceof NotBuiltError && error.contract === `recipe.create for the ${model.name}`;
+    if (noFamily) return false;
+    throw error;
+  }
+
+  return getsPastTheGate(document);
+
+}
+
+test('a model builds exactly where a fresh document of it gets past the build\'s not built refusal, and these models build', () => {
+
+  for (const model of BENCH_MODELS) {
+    assert.equal(capabilitiesOf(model.key)?.builds, freshDocumentBuilds(model), model.name);
+  }
+
+  const building = BENCH_MODELS
+    .filter((model) => capabilitiesOf(model.key)!.builds)
+    .map((model) => model.key);
+
+  assert.deepEqual(building, [
+    'harmony-one',
+    'harmony-600',
+    'harmony-650',
+    'harmony-700',
+    'harmony-300',
+    'harmony-350',
+    'harmony-touch',
+  ]);
+
+});
+
+test('the control: the answer follows what a family states, and the gate is told apart from a not built of another kind', () => {
+
+  // The question reads the family and nothing else: a compiled family with its build taken away answers no, the
+  // same family with it answers yes, and a document family answers yes, as the build does.
+  const { fromRecipe, ...withoutBuild } = FOUR_SLOT_FAMILY;
+  assert.equal(typeof fromRecipe, 'function');
+  assert.equal(buildsFromRecipe(FOUR_SLOT_FAMILY), true);
+  assert.equal(buildsFromRecipe(withoutBuild as typeof FOUR_SLOT_FAMILY), false);
+  assert.equal(buildsFromRecipe(SIDE_KEYS), false);
+  assert.equal(buildsFromRecipe(HARMONY_TOUCH_FAMILY), true);
+
+  // A document of a model that builds, asking for a key the build does not choose yet, is refused as not built by
+  // another requirement after the gate; the classifier throws it on rather than reading it as "does not build".
+  const keyed = recipe.open({
+    model: { name: 'Harmony 650', skin: 72 },
+    devices: [{ name: 'Television', device: 'Made/TV', keys: [{ key: 'VolumeUp', action: { nothing: true } }] }],
+    activities: [],
+  });
+
+  assert.throws(
+    () => getsPastTheGate(keyed),
+    (error: unknown) => error instanceof NotBuiltError && error.requirement === 32,
+  );
+
 });

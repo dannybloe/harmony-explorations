@@ -15,7 +15,8 @@
  * the journal, which is required, tells the same story under the pretend remote's name. That it holds what was written
  * and compares by erase block as the real write does, so a sync of the same build again has nothing to write and a
  * write that stopped part way is finished by the same sync run again. That a screen which throws stops nothing. That
- * a document of a model whose sync is not built is refused by name, to a pretend remote as to an attached one. And that
+ * a document of a model whose sync is not built is refused by name, to a pretend remote as to an attached one, and that
+ * `syncIsBuilt` answers beforehand exactly where a sync of a bench model's document goes through. And that
  * a read of it is `readConfig`'s, with its progress, its retries and its failures, over what it holds.
  *
  * **A Harmony Touch's pretend sync has the attached Touch's shape**: identify, check, build, the warning, the hand over,
@@ -31,13 +32,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { buildFromRecipe, NotBuiltError, recipe, type BuildSources, type Recipe } from '@freeharmony-sdk/config/node';
+import { buildFromRecipe, NotBuiltError, recipe, type BuildSources, type Recipe, type RecipeModel } from '@freeharmony-sdk/config/node';
+import { BENCH_MODELS, type BenchModel } from '@freeharmony-sdk/base/requirements';
 import { readVersion } from '@freeharmony-sdk/usb';
 import { proves } from '@freeharmony-sdk/testkit/proof';
 import { ReadError, readConfig, type ReadProgress } from '../../src/index.ts';
 import { MAX_WINDOW_RETRIES } from '../../src/read.ts';
 import {
-  SYNC_LINES, SYNC_STATES, pretendReader, pretendRemote, syncDocument, type PretendRemote, type SyncEvent, type SyncOutcome,
+  SYNC_LINES, SYNC_STATES, pretendReader, pretendRemote, syncDocument, syncIsBuilt, type PretendRemote, type SyncEvent, type SyncOutcome,
   type SyncPhase,
 } from '../../src/write.ts';
 import { touchPowerRefusal } from '../../src/touchsync.ts';
@@ -174,6 +176,105 @@ test('a document of a model whose sync is not built is refused by name to a pret
   });
   // The control: a Harmony 600, whose configuration is written into flash, is synced.
   assert.equal((await run(recipe.create({ name: 'Harmony 600' }), pretendRemote({ model: { name: 'Harmony 600' } }))).outcome.result, 'written');
+});
+
+/** How a sync of a bench model's document ended, and the model as the document names it. */
+interface SyncKind {
+  readonly kind:
+    | 'no family'
+    | 'not built'
+    | 'nothing builds'
+    | 'written';
+  readonly asked: RecipeModel;
+}
+
+/**
+ * What a sync of a document of a bench model does with a pretend remote of that model, in three kinds: it is rejected
+ * as not built, it ends refused in the build because nothing builds for the model, or it goes through and is written.
+ * A model no family serves has neither a document nor a pretend remote, and is the fourth. The Harmony Touch's document
+ * is its reference recipe with the account it needs; every other model's is a fresh empty document. Anything else is
+ * a failure of the test, so no other ending can pass as one of these.
+ */
+async function syncKind(model: BenchModel): Promise<SyncKind> {
+
+  const asked = { name: model.name, skin: model.skins[0]! };
+  const touch = model.name === TOUCH.name;
+
+  let document: Recipe;
+  try {
+    document = touch ? touchDocument() : recipe.create(asked);
+  } catch (error) {
+    assert.ok(error instanceof NotBuiltError && error.contract === `recipe.create for the ${model.name}`, String(error));
+    return { kind: 'no family', asked };
+  }
+
+  const remote = pretendRemote({ model: document.model });
+  const sources = touch ? TOUCH_SOURCES : SOURCES;
+
+  let ended: Awaited<ReturnType<typeof run>>;
+  try {
+    ended = await run(document, remote, { sources });
+  } catch (error) {
+
+    const refused = error instanceof NotBuiltError
+      && error.requirement === 79
+      && error.contract === `syncDocument for a pretend ${model.name}`;
+
+    assert.ok(refused, String(error));
+    return { kind: 'not built', asked: document.model };
+  }
+
+  if (ended.outcome.result === 'written') return { kind: 'written', asked: document.model };
+
+  // Refused in the build, and for the reason that nothing builds for the model: the build's own not built refusal.
+  assert.deepEqual(ended.words, ['identify', 'check', 'build', '= refused'], model.name);
+  assert.match(ended.outcome.message!, /^buildFromRecipe for the .* is in the contract and not built yet, requirement R4$/, model.name);
+
+  return { kind: 'nothing builds', asked: document.model };
+
+}
+
+test('a sync is built for a model exactly where a sync of its document to a pretend remote goes through, and these models sync', async () => {
+
+  const kinds: Record<string, string> = {};
+
+  for (const model of BENCH_MODELS) {
+    const { kind, asked } = await syncKind(model);
+    kinds[model.key] = kind;
+    assert.equal(syncIsBuilt(asked), kind === 'written', model.name);
+  }
+
+  const syncing = BENCH_MODELS
+    .filter((model) => kinds[model.key] === 'written')
+    .map((model) => model.key);
+
+  assert.deepEqual(syncing, [
+    'harmony-one',
+    'harmony-600',
+    'harmony-650',
+    'harmony-700',
+    'harmony-touch',
+  ]);
+
+  // The control: every way a sync can not be there occurs among the models, so the answer is held against each. The
+  // Harmony 885 is the one the build half of the answer exists for: its document is taken by a write path and
+  // nothing builds it.
+  assert.deepEqual(kinds, {
+    'harmony-one': 'written',
+    'harmony-600': 'written',
+    'harmony-650': 'written',
+    'harmony-700': 'written',
+    'harmony-525': 'no family',
+    'harmony-515': 'no family',
+    'harmony-885': 'nothing builds',
+    'harmony-785': 'not built',
+    'harmony-300': 'not built',
+    'harmony-350': 'not built',
+    'harmony-touch': 'written',
+    'harmony-elite': 'no family',
+    'harmony-hub': 'no family',
+  });
+
 });
 
 test('a failure asked for in each phase of a configuration\'s sync ends where and as the real path ends it, named by its phase in its words, once, and the sync after it runs through', async () => {

@@ -281,7 +281,9 @@ export const inventedAccount: TouchAccount = {
 A document is the one thing an application holds per remote, so it is the first thing made.
 
 A document is created empty for a model, named as Logitech names it, and is valid as it stands. What the SDK can do
-for that model is a question of its own, which `capabilitiesOf` answers before a document is started.
+for that model is a question of its own, which `capabilitiesOf` answers before a document is started. Its `builds`
+says whether a document of the model builds at all, so an application offers a build only where it is true, rather
+than finding out from `NotBuiltError`.
 
 <!-- example:packages/remote/examples/create.ts -->
 ```ts
@@ -354,11 +356,15 @@ try {
   waitsOn = error.requirement;
 }
 
-// So an application asks first. `capabilitiesOf` answers, requirement by
-// requirement, whether an ability is there (`met`), still open, not possible
-// on that model, or not known, and gives the model's own properties.
+// So an application asks first. `capabilitiesOf` says whether a document of
+// the model builds at all, `builds`, which decides whether to offer a build;
+// it answers, requirement by requirement, whether an ability is there
+// (`met`), still open, not possible on that model, or not known; and it gives
+// the model's own properties.
 const capabilities = capabilitiesOf('harmony-one')!;
 
+assert.equal(capabilities.builds, true);
+assert.equal(capabilitiesOf('harmony-885')!.builds, false);
 assert.equal(capabilities.name, 'Harmony One');
 assert.equal(capabilities.properties.maxDevices, 15);
 
@@ -941,6 +947,10 @@ From the check on, every refusal and every failure is an outcome and not an exce
 build refuses, a remote that is not the document's model, a refusal by the write path or its checks, a stop, and a
 failure of the remote or the cable, each saying what it left the remote as.
 
+Whether a sync is there for a document's model at all is asked beforehand: `syncIsBuilt`, given the document's
+model, is true where a write path takes the model and its document builds, so an application offers a sync only
+there.
+
 <!-- example:packages/remote/examples/sync.ts -->
 ```ts
 // A document synced to a pretend Harmony One and a pretend Harmony Touch,
@@ -959,6 +969,7 @@ import {
   pretendRemote,
   SYNC_STATES,
   syncDocument,
+  syncIsBuilt,
   type SyncEvent,
 } from '@freeharmony-sdk/remote/write';
 
@@ -1136,6 +1147,13 @@ const notBuilt = syncDocument({
 });
 
 await assert.rejects(notBuilt, NotBuiltError);
+
+// So an application asks before it offers a sync. `syncIsBuilt`, given the
+// document's model, is false in both cases above and true where a sync is
+// there.
+assert.equal(syncIsBuilt(harmony885), false);
+assert.equal(syncIsBuilt(harmony350), false);
+assert.equal(syncIsBuilt(document.model), true);
 
 // A Harmony Touch asks for its documents and is answered: no backup, no read
 // back and no restart, and a hand over of the changes made on its own screens

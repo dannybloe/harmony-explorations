@@ -93,6 +93,10 @@ over what it holds. **A build says no in three ways an application tells apart, 
   device the document carries no definition of. The same class refuses a recipe that is not one, before any of this,
   and a model no family serves.
 
+**Asking beforehand.** Whether a model's documents build at all, the first of the not built cases and a model no
+family serves, is answered before anything is built by [`capabilitiesOf`](#capabilitiesof), its `builds`, from the same question this
+build asks; so an application offers a build only where that answer is true, rather than finding out from the error.
+
 Uses [`BuildSources`](#buildsources), [`Built`](#built).
 
 ### `BuildSources`
@@ -3561,8 +3565,8 @@ Its properties, and how far the FHSDK serves it, the status of every requirement
 function capabilitiesOf(keyOrSkin: BenchModelKey | number): ModelCapabilities | undefined
 ```
 
-A model's properties and the status of every requirement on it, by its key or by a skin one of its remotes
-reports, for the models of [`BENCH_MODELS`](base.md#bench_models); undefined for a key or a skin none of them has, a remote these statuses
+A model's properties, whether [`buildFromRecipe`](#buildfromrecipe) builds a document of it, and the status of every requirement on it,
+by its key or by a skin one of its remotes reports, for the models of [`BENCH_MODELS`](base.md#bench_models); undefined for a key or a skin none of them has, a remote these statuses
 were never judged for.
 
 Uses [`BenchModelKey`](base.md#benchmodelkey), [`ModelCapabilities`](#modelcapabilities).
@@ -3603,11 +3607,19 @@ interface ModelCapabilities {
   readonly name: string;
   readonly skins: readonly number[];
   readonly properties: ModelProperties;
+  /**
+   * Whether `buildFromRecipe` builds a document of this model: true where it does, false where it answers
+   * `NotBuiltError` or no family builds for the model at all. An application asks this before it offers to build,
+   * rather than calling the build and catching the error. True does not promise that every document builds: a document
+   * can still ask for something the build does not do yet, which the build then names, `NotBuiltError`.
+   */
+  readonly builds: boolean;
   readonly requirements: readonly RequirementAnswer[];
 }
 ```
 
-A model of [`BENCH_MODELS`](base.md#bench_models), its properties and the status of every requirement on it, in number order.
+A model of [`BENCH_MODELS`](base.md#bench_models), its properties, whether a document of it builds, and the status of every requirement on
+it, in number order.
 
 Uses [`BenchModelKey`](base.md#benchmodelkey), [`ModelProperties`](#modelproperties), [`RequirementAnswer`](#requirementanswer).
 
