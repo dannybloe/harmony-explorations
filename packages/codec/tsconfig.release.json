@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Compiled to the release folder and not to `dist`: the typecheck project writes `dist` with a different root
+    // and this output is what a tarball carries, so the two must never overwrite each other.
+    // `rootDir` is `src` so a compiled module sits at the same place relative to the package folder's other
+    // resources as its source does (the codec's Node resources find their fonts that way).
+    "rootDir": "src",
+    "outDir": "../../release/build/codec",
+    "tsBuildInfoFile": "../../release/build/codec.tsbuildinfo",
+    // A map points at sources the tarball does not carry.
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../base/tsconfig.release.json" }]
+}

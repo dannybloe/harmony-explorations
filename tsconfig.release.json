@@ -1,0 +1,13 @@
+{
+  // Builds, in dependency order, the packages a release carries. Nothing else references these projects, so the
+  // typecheck and the tests are untouched by them; `bin/release-pack.ts` in `packages/lab` runs this.
+  "files": [],
+  "references": [
+    { "path": "./packages/base/tsconfig.release.json" },
+    { "path": "./packages/lab/tsconfig.release.json" },
+    { "path": "./packages/usb/tsconfig.release.json" },
+    { "path": "./packages/codec/tsconfig.release.json" },
+    { "path": "./packages/corpus/tsconfig.release.json" },
+    { "path": "./packages/silhouettes/tsconfig.release.json" }
+  ]
+}

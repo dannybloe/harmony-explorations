@@ -83,8 +83,8 @@ class TypeScriptProjects(unittest.TestCase):
         # decided by the workspace layout and moves only when a package or a directory is added,
         # and then it moves in the diff rather than being absorbed. 25 with `packages/base`, its `src`
         # and `test`; 26 with `packages/testkit`, its `src`; 28 with the `experiments` of
-        # `packages/bench` and `packages/corpus`.
-        self.assertEqual(found, 28, 'source directories claimed by a tsconfig')
+        # `packages/bench` and `packages/corpus`; 29 with the `bin` of `packages/lab`.
+        self.assertEqual(found, 29, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
         """`make ts` builds the root, so a package missing from it is a package nobody compiles.
@@ -1959,8 +1959,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
 
     SWEPT_SUFFIXES = ('.md', '.ts', '.py', '.txt')
     # `worktrees` is `.claude/worktrees/`, an agent's second checkout, which states the write path
-    # exactly as this one does and is not a document anybody hands over.
-    SKIP_DIRS = {'node_modules', '.git', '.pnpm', 'dist', '__pycache__', 'var', 'worktrees'}
+    # exactly as this one does and is not a document anybody hands over. `release` is what `make release-pack`
+    # writes, the compiled copy of the sources, which git ignores and which holds those files' declarations.
+    SKIP_DIRS = {'node_modules', '.git', '.pnpm', 'dist', '__pycache__', 'var', 'worktrees', 'release'}
 
     def _document(self):
         with io.open(self.DOC, encoding='utf-8') as handle:

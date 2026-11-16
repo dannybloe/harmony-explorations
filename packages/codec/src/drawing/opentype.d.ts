@@ -4,7 +4,9 @@
  * depends on nothing.
  */
 declare module 'opentype.js' {
-  import type { PathCommand } from './raster.ts';
+  // An import type and not an import declaration, which an ambient module may not make through a relative name:
+  // a consumer's compiler checks the shipped copy of this file, and refuses the declaration form.
+  type PathCommand = import('./raster.ts').PathCommand;
 
   export interface Glyph {
     /** The glyph's place in the font, 0 being the one drawn for a character the font lacks. */

@@ -463,6 +463,10 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 (the first occurrence wins, an unknown option is ignored, no
                                 --name=value). test/cli.test.ts holds the shapes, and
                                 test/scripts.test.ts that no script reads process.argv itself.
+                                And bin/release-pack.ts and bin/release-check.ts, `make release-pack` and
+                                `make release-check`: the tarballs of the shipped packages made on this
+                                machine, and the check that an application installs and loads them.
+                                tsconfig.release.json here and in each shipped package is the compile they run.
                                 And src/tiers.ts, the two tiers of the suite: `slow()`, and each
                                 family's compiles once, whole and with a pair, so a per compile
                                 test walks `sampled(family)`, the pair on a step and the whole
@@ -1092,6 +1096,14 @@ make ts-test       the TypeScript tests without the slow tier, `slow()` in packa
 make ts-test-all   all of them, the slow tier's corpus wide compositions and family censuses included,
                    and every compile of each family: before a push
 make audit         check the npm dependency tree for known vulnerabilities
+make release-pack  compile base, lab, usb, codec, corpus and silhouettes to JavaScript with declarations, stage each
+                   as the folder its tarball is made from (compiled code, the codec's fonts, the licence, a
+                   manifest generated at this moment) and pack them into release/tarballs, which git ignores.
+                   Prints each tarball with size, SHA-256 and files. Publishes nothing: every committed
+                   package.json stays private. RELEASE_ARGS=--dry-run lists and packs nothing
+make release-check install those tarballs offline into a throwaway project, load every subpath, type check an
+                   import of each, and refuse a test, fixture, script, map or var file in a tarball. In
+                   `make full`, not in `make all`. Covers everything but the native HID binding
 make hooks         install .githooks/pre-commit, once per clone
 make golden        compare the golden vectors; golden-write regenerates them. Since section 139
                    they carry the infrared header reading, which is what caught the two codecs

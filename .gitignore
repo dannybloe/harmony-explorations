@@ -78,3 +78,7 @@ reference/logitech/data-model/catalogue-model.pdf
 # committed; a GitHub Action publishes it. Anchored with a leading slash, since a bare `site/` would also
 # ignore `tools/site/`, which holds the build itself.
 /site/
+
+# What `make release-pack` writes: the compiled packages, their staging folders and the tarballs. Nothing here is
+# a source, and a tarball must never be committed.
+/release/

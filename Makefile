@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-project test-rails test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all full clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-project test-rails test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all full release-pack release-check clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -86,6 +86,8 @@ help:
 	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
 	@echo "test-partial the suite against a lab holding one sample: no test may pass partially"
 	@echo "test-project the repository's own rules alone: documents, links, the toolchain"
+	@echo "release-pack  compile the shipped packages and pack them into release/tarballs; RELEASE_ARGS=--dry-run lists without packing. Publishes nothing"
+	@echo "release-check  install those tarballs offline into a throwaway project and load every subpath they export"
 	@echo "test-rails   the nine Python files that hold numbers in packages/usb/src to the firmware and to Logitech's client"
 	@echo "all          the everyday run: the checks, the repository's rules and the TypeScript tests"
 	@echo "full         all, and the Python suite with its two lab checks: after the research tooling or the lab changes, and before a release"
@@ -395,6 +397,20 @@ page:
 silhouettes:
 	@node packages/silhouettes/bin/generate.ts $(SILHOUETTE_ARGS)
 
+# A release made on this machine, publishing nothing: the shipped packages compiled to JavaScript with declarations,
+# each staged as the folder its tarball is made from and packed into release/tarballs, which git ignores. It prints
+# every tarball with its size and SHA-256 and the files it holds, so what would leave the machine can be read first.
+# RELEASE_ARGS=--dry-run prints the same lists and packs nothing. How a version is published is not decided here.
+release-pack:
+	@node packages/lab/bin/release-pack.ts $(RELEASE_ARGS)
+
+# Installs the tarballs of `release-pack` offline into a project under the temporary folder, with the overrides a
+# consumer writes, loads every subpath they export under plain Node and type checks an import of each, and refuses a
+# file in a tarball that is a test, a fixture, a script, a map or anything under var. It makes the tarballs first, so
+# it never checks the ones of an earlier run. RELEASE_CHECK_ARGS=--keep leaves the project in place.
+release-check: release-pack
+	@node packages/lab/bin/release-check.ts $(RELEASE_CHECK_ARGS)
+
 # The key reader, a browser page that reads which key is pressed on a Harmony through WebHID, read only.
 # `reference/key-reader/` is generated output, built from packages/keyreader and three modules of
 # packages/usb, so this is what changes it; a hand edit or a source changed without this fails
@@ -513,8 +529,9 @@ hooks:
 # the TypeScript tests, and none of it runs a function an application calls. It is `full`'s.
 all: lint pyright prose facts myharmony-model test-project test-rails ts audit
 
-# Everything: after a change to `src/harmony`, `tools` or the lab, and before a release.
-full: all test test-nolab test-partial
+# Everything: after a change to `src/harmony`, `tools` or the lab, and before a release. `release-check` is here and
+# not in `all` because it compiles every shipped package and installs them, which a change to a test never needs.
+full: all test test-nolab test-partial release-check
 
 clean:
 	@find . -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null; true

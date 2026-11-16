@@ -78,6 +78,25 @@ imports rather than by a paragraph like this one. **That probe exists now**, in 
 asserts the resolved real path is outside `node_modules`, which is the mechanism, and that the
 dependency's spelling matches the stated package manager, which is what a fresh clone needs.
 
+**What an application writes to take the tarballs `make release-pack` makes**, as `make release-check` does it
+and holds it: the packages are compiled JavaScript with declarations, because Node refuses to strip types under
+`node_modules`, and `release/tarballs` holds one per package (`@harmony/base`, `lab`, `usb`, `codec`, `corpus` and
+`silhouettes`, all at the one version of the root `package.json`). A tarball names the others by that version, which
+no registry holds yet, so the consumer lists the packages it uses and points **every** `@harmony` name at its tarball
+as an override, `node-hid` included wherever the native binding cannot be fetched:
+
+```yaml
+# pnpm-workspace.yaml of the consumer (pnpm 11 reads overrides from here; npm reads an "overrides" object in package.json)
+overrides:
+  "@harmony/base": "file:/path/to/release/tarballs/harmony-base-0.0.0.tgz"
+  "@harmony/usb": "file:/path/to/release/tarballs/harmony-usb-0.0.0.tgz"
+  # ...one line for each tarball the consumer's own dependencies pull in
+```
+
+and the same `file:` paths as its `dependencies`, then `pnpm install`. The check's own consumer replaces `node-hid`
+with an empty stand-in so that it runs offline, so **the native binding is the part nothing here loads**. Nothing about
+how a version is published is fixed by this: the tarballs are the part every route needs.
+
 **A hand maintained copy in FreeHarmony is the one route that is refused**, and not on taste: it is
 this repository's oldest rule, that two copies of a derivation are two copies until one of them moves.
 It has already happened twice here, once in the opcode tables that the rule is named after and once in
