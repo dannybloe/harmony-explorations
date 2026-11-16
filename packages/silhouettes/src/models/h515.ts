@@ -1,7 +1,7 @@
 /**
  * The Harmony 515, skin 67, architecture 9.
  *
- * **The Harmony 525's drawing with three changes**, which is Danny's reading of the unit on the bench:
+ * **The Harmony 525's drawing with three changes**, which is a reading of the unit on the bench:
  * the case, the mouldings, every key shape and every other marking are the 525's, and only the
  * nameplate and the markings on two keys differ. So this file takes the 525's model and changes those
  * three rather than copying a single path, since two copies of a traced shape are two copies until one

@@ -9,7 +9,7 @@
  * **Explicit names**, decision 31 and plan 013 decision 6, held by `test/package/surface.test.ts`. The rest is under
  * named subpaths: `./read`, the reader module whole, which loads without the transport and which a window loads
  * on its own; and `./file`, filing a read in the lab corpus, which is this repository's bench and not an
- * application's.
+ * application's, so a release leaves it out.
  */
 
 // Reading a configuration off a remote: the read, and what each model's read needs.

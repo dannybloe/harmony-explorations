@@ -467,7 +467,7 @@ export function activityNames(c: Container): ActivityName[] {
   // **A string the modes say exactly beats one they only contain**, and that is not a tie break, it is
   // what stops containment crossing a word boundary. An activity's chain also enters the mode that
   // lists its devices, and that list is the same for every activity, so on a Harmony 880 whose owner
-  // described his own config every activity said every device's name. One of the four menu labels is
+  // described their own config every activity said every device's name. One of the four menu labels is
   // the first word of a device's name, so containment made it a candidate for all four activities, the
   // chrome rule below then read a label four activities claim as a footer, and the activity it belonged
   // to lost its only candidate. Two other arch 8 configs and the 885 gained a name from the same rule.

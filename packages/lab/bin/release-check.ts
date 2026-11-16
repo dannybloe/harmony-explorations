@@ -57,6 +57,11 @@ const ALLOWED: readonly RegExp[] = [
   /^fonts\/Oxanium\/static\/Oxanium-[A-Za-z]+\.ttf$/,
 ];
 
+/** Entries the workspace has and a release must not: filing a read away in the lab's folder layout. */
+const BENCH_ONLY: ReadonlyArray<readonly [owner: string, subpath: string]> = [
+  ['@freeharmony-sdk/remote', './file'],
+];
+
 /** Names that must never appear in a path, said separately so the failure names the reason. */
 const NEVER: ReadonlyArray<readonly [RegExp, string]> = [
   [/\.map$/, 'a source map'],
@@ -153,6 +158,10 @@ for (const p of packed) {
   if (manifest.license === undefined || !files.includes('LICENSE')) fail(`${manifest.name} states no licence or carries no LICENSE`);
   // Somebody holding only the tarball has to be able to find the documentation and the source.
   if (!files.includes('README.md')) fail(`${manifest.name} carries no README`);
+  // Stated here and not read from the pack script: the entries that serve this repository's bench and no application.
+  for (const [owner, subpath] of BENCH_ONLY) {
+    if (manifest.name === owner && subpath in manifest.exports) fail(`${owner} exports ${subpath}, which is the bench's own`);
+  }
   if (manifest['homepage'] === undefined || manifest['repository'] === undefined) fail(`${manifest.name} names no homepage or no repository`);
   for (const forbidden of ['scripts', 'devDependencies']) {
     if (forbidden in manifest) fail(`${manifest.name} carries ${forbidden}`);

@@ -27,7 +27,7 @@ An application meets them inside what it is given and never has to import them.
 The packages have more subpaths than these, for the libraries' own scripts, tests and tools, and an application
 does not build on them: `@freeharmony-sdk/config/build` and `/internal` hold the builders and the
 format's parts below the document; `@freeharmony-sdk/remote/file` files a read away in the folder layout the libraries' own scripts keep
-reads; `@freeharmony-sdk/usb/write`, `/rails`, `/internal`, `/protocol`, `/readwindow`, `/touchsession` and
+reads, and a released package leaves it out; `@freeharmony-sdk/usb/write`, `/rails`, `/internal`, `/protocol`, `/readwindow`, `/touchsession` and
 `/touchrecording` hold the write machinery, the checks every write passes, and the protocol's parts, and its
 `/models`, `/keys` and `/trailer` carry the base package's modules of those names;
 `@freeharmony-sdk/silhouettes/internal` holds what a model's geometry is written with, the shapes and the transforms

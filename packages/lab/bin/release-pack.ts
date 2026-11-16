@@ -48,13 +48,32 @@ const TARBALLS = join(RELEASE, 'tarballs');
  * released package may depend on it, decision 45, and `testkit`, `bench`, `probe` and `keyreader`, which an
  * application never builds on.
  */
-const SHIPPED: ReadonlyArray<{ readonly name: string; readonly resources: readonly string[] }> = [
+interface Shipped {
+  readonly name: string;
+  readonly resources: readonly string[];
+  /**
+   * Subpaths the workspace uses and a release leaves out, each with the module it names: the entry is dropped from
+   * the tarball's `exports` and the compiled module from its files. For what serves this repository's own bench and
+   * scripts and no application.
+   */
+  readonly withheld?: Readonly<Record<string, string>>;
+}
+
+const SHIPPED: readonly Shipped[] = [
   { name: 'base', resources: [] },
   { name: 'usb', resources: [] },
   // The codec's Node resources read `fonts/Oxanium` relative to the compiled module, which is why the compile keeps
   // `rootDir: src` and the folder sits beside `dist`.
   { name: 'config', resources: ['fonts'] },
-  { name: 'remote', resources: [] },
+  // Filing a read away in the lab's folder layout is the bench's and the scripts' own; an application keeps what
+  // it reads where it chooses.
+  {
+    name: 'remote',
+    resources: [],
+    withheld: {
+      './file': 'file',
+    },
+  },
   { name: 'silhouettes', resources: [] },
 ];
 
@@ -105,9 +124,12 @@ function run(command: string, args: readonly string[], cwd: string): string {
  * * `homepage` and `repository` are the root's, the repository with the package's own folder, so somebody holding
  *   only the tarball finds the documentation and the source.
  */
-function releaseManifest(committed: Manifest, root: RootManifest, resources: readonly string[], folder: string): Manifest {
+function releaseManifest(committed: Manifest, root: RootManifest, shipped: Shipped): Manifest {
+  const { name: folder, resources, withheld = {} } = shipped;
   const exports: Record<string, unknown> = {};
   for (const [subpath, target] of Object.entries(committed.exports)) {
+    // A withheld subpath is not an entry of the release.
+    if (Object.hasOwn(withheld, subpath)) continue;
     const stem = target.replace(/^\.\/src\//, './dist/').replace(/\.ts$/, '');
     exports[subpath] = { types: `${stem}.d.ts`, default: `${stem}.js` };
   }
@@ -208,7 +230,8 @@ console.log('compiling');
 run(join(ROOT, 'node_modules', '.bin', 'tsc'), ['--build', 'tsconfig.release.json'], ROOT);
 
 let packed = 0;
-for (const { name, resources } of SHIPPED) {
+for (const shipped of SHIPPED) {
+  const { name, resources, withheld = {} } = shipped;
   const stage = join(STAGE, name);
   const committed = readJson<Manifest>(join(ROOT, 'packages', name, 'package.json'));
 
@@ -218,13 +241,20 @@ for (const { name, resources } of SHIPPED) {
     filter: (source) => !source.endsWith('.map') && !source.endsWith('.tsbuildinfo'),
   });
   carryAmbientDeclarations(name, join(stage, 'dist'));
+
+  // A withheld module leaves with its entry. A module the release still carries must not import it, or the tarball
+  // would name a file it does not hold; the release check loads every entry, which is what finds that.
+  for (const module of Object.values(withheld)) {
+    rmSync(join(stage, 'dist', `${module}.js`));
+    rmSync(join(stage, 'dist', `${module}.d.ts`));
+  }
+
   for (const resource of resources) cpSync(join(ROOT, 'packages', name, resource), join(stage, resource), { recursive: true });
   cpSync(join(ROOT, 'LICENSE'), join(stage, 'LICENSE'));
   const manifest = releaseManifest(
     committed,
     rootManifest,
-    resources,
-    name,
+    shipped,
   );
 
   writeFileSync(join(stage, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);

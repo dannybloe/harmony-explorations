@@ -15,20 +15,20 @@
  *
  * **This is what Logitech identifies a unit by.** Their service takes those three GUIDs as a serial
  * and `ValidateRemote` refuses a synthetic one, section 136, which is how a remote is bound to an
- * account. Danny's decision on 30 August 2026 was to do the same rather than invent a fingerprint
+ * account. The decision on 30 August 2026 was to do the same rather than invent a fingerprint
  * out of configuration bytes, which was this project's own earlier proposal and was reinventing a
  * serial check the hard way.
  *
  * ## Where a serial is kept, which is the caller's business and not this module's
  *
- * Also his decision, the same day, and it is the reason this module holds **no table of units** and
+ * Also decided the same day, and it is the reason this module holds **no table of units** and
  * reads no file. The comparison is between two blocks a caller supplies, so where the expected one
  * is kept is the caller's decision:
  *
  * * on the bench, a file in the **private lab**, since a unit identifier is that unit's hardware
  *   identity and this repository is public
  * * in **FreeHarmony**, stored with the user's own data alongside everything else it knows about
- *   their remote, which is Danny's statement of the product design on 30 August 2026
+ *   their remote, which is the product design as stated on 30 August 2026
  *
  * Both want the same thing out of here: the identity in a form that can be written down and read
  * back, which is `unitIdentityText`, and a comparison that takes it. `packages/probe` is deliberately

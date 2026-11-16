@@ -99,9 +99,9 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
  * this library can even open, since 27 September 2026 a Harmony 650, and since 29 September 2026 a
  * Harmony 700. **Three units may be
  * written to**: the spare Harmony One, which is arch 12, and the Harmony 525, which is arch 9, by
- * Danny's decision of 5 September 2026, and the Harmony 650, which is arch 14, by his decision of 27
+ * the decision of 5 September 2026, and the Harmony 650, which is arch 14, by the decision of 27
  * September. **Five since 29 September 2026**: the Harmony 600 and the Harmony 700, both arch 14, by
- * Danny's decision that day. His everyday Harmony One is excluded by name. This said "the 600
+ * the decision of that day. The everyday Harmony One is excluded by name. This said "the 600
  * because it is the only arch 14 remote in existence here"<!--superseded--> and that "arch 14 has no
  * write target"<!--superseded--> until the 650 arrived, which was exactly the condition it named for
  * reopening: a second arch 14 remote.
@@ -113,7 +113,7 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
  * carries each exclusion, on arch 12 separating the spare from the everyday One and on arch 14 a
  * write meant for one unit from the other two. Section 281.
  *
- * **Arch 9 was added on 6 September 2026, on Danny's word, for the block rehearsal.** It had been
+ * **Arch 9 was added on 6 September 2026, on a decision of that day, for the block rehearsal.** It had been
  * permitted since 5 September and refused by this list, which is the distinction the module rests
  * on: permission is not capability, and section 267 supplying every constant a write needs did not
  * change the answer either. What changed is that the demonstration was authorised, and it is the
@@ -151,9 +151,9 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [8, 9, 12, 1
 // row, and the RAM write list does not move, so the three steps that hang or overwrite an 885 stay
 // unreachable whatever this list says. `rails.test.ts` asserts each refusal with every door open.
 //
-// **Arch 14 joined on 27 September 2026, for the Harmony 650**, section 281. Danny's decision: a
+// **Arch 14 joined on 27 September 2026, for the Harmony 650**, section 281. The decision: a
 // second hand Harmony 650 arrived, arch 14 like the 600, and may be reprogrammed freely. The 600 was
-// excluded by name until his decision of 29 September 2026 admitted it and the Harmony 700, and it is
+// excluded by name until the decision of 29 September 2026 admitted it and the Harmony 700, and it is
 // **the identity check** that holds each unit's line, not this list, since both remotes are arch 14
 // and both enumerate as `0xC122`: a permission names one unit's record, and the 600's identity block
 // differs from the 650's, compared off both units' own internal page reads. What this admits is the flash block path and nothing else,
@@ -171,7 +171,7 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [8, 9, 12, 1
  * section 247. Arch 9 (Harmony 525) has no escape row and `assertResetAllowed` refuses it on that
  * ground as well.
  *
- * **Arch 14 joined on 27 September 2026, section 282**, Danny's decision, once the path had been read
+ * **Arch 14 joined on 27 September 2026, section 282**, by decision, once the path had been read
  * on the Harmony 650's own build rather than only on the Harmony 700's, section 97: the escape's
  * `0x02` sets one flag, the main loop turns it into mode 3, and mode 3 waits and executes `RESET`,
  * with nothing on the way that writes program memory. The 600's bytes are identical. The unit check
@@ -202,7 +202,7 @@ export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [8, 12, 14];
  * (Harmony 525), which was reachable through the write list since section 269 and has not been sent
  * one. Narrowing arch 9 is a separate decision and this commit does not take it.
  *
- * **Arch 14 joined on 27 September 2026, section 282**, Danny's decision, after its executor was read
+ * **Arch 14 joined on 27 September 2026, section 282**, by decision, after its executor was read
  * on the Harmony 650's own build: four five byte records in data memory cleared, the verdict and the
  * container select bits cleared, and a flag set that the **next** `ERASE_FLASH` consumes. That last
  * part is the difference from arch 12 and it is not this command's effect but the erase's: the first
@@ -1100,7 +1100,7 @@ export const FIRMWARE_STAGE: boolean = process.env['HARMONY_FIRMWARE_STAGE'] ===
 
 /**
  * Throws unless `image` may be written into the staging region of the remote on the cable. Section
- * 297, and **the one place this project writes flash outside a configuration region**, Danny's
+ * 297, and **the one place this project writes flash outside a configuration region**, by the
  * decision of 29 September 2026, decision 18.
  *
  * * **The staging region and nothing else**, erased whole and in 64 KiB blocks, so neither the embedded

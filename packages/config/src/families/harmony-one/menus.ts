@@ -109,7 +109,7 @@ export const MENU_EDGE_SCANS: readonly [number, number] = [46, 47];
  * and this table is that spelled out rather than computed, since the order is what a match needs.
  *
  * **Neither of those is a page flip and this file said the fourth one was**, until 7 September 2026,
- * when Danny corrected it from the remote in his hand and section 275 measured it. A Harmony One
+ * when it was corrected from a remote in the hand and section 275 measured it. A Harmony One
  * turns a list's pages with the two buttons **beside** the display, which are scans 46 and 47, and
  * **no mode page in either configuration binds either of them**, 0 bindings over 778 pages, so the
  * paging is answered above the page and never on it. The rectangle above the edges is the left of the

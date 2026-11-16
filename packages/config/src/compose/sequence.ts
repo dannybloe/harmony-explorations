@@ -9,7 +9,7 @@
  * `reference/logitech/data-model/model.md`.
  *
  * **What it compiles to, read off the four compiles that hold one**, the spare Harmony One's account after
- * Danny authored two on 23 August 2026, `one_spare_20260830` and the three protocol campaign compiles,
+ * two were authored on 23 August 2026, `one_spare_20260830` and the three protocol campaign compiles,
  * against a capture of the same two sequences' steps taken that evening from a second account record.
  * Section 327:
  *
