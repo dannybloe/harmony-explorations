@@ -84,8 +84,8 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
 
 R75, decision 39. FreeHarmony takes the FHSDK by version through its `package.json`, never as the folder next door.
 
-- [ ] 3.1 Decide how a version is published: what an `exports` map and a build need, and where the packages are served from (decision 4)
-  - [ ] 3.1.1 Two packages renamed before anything is released, folders and import names together: `codec` to `config` and `corpus` to `remote`, and every package under the prefix `@freeharmony-sdk`
+- [x] 3.1 Decide how a version is published: what an `exports` map and a build need, and where the packages are served from (decision 4)
+  - [x] 3.1.1 Two packages renamed before anything is released, folders and import names together: `codec` to `config` and `corpus` to `remote`, and every package under the prefix `@freeharmony-sdk`
   - [x] 3.1.2 No released package depends on the lab locator: the Logitech service client in `corpus` takes its credentials from its caller, and the bench scripts hand it the lab's
   - [x] 3.1.3 The route written down as a decision: the packed files attached to a GitHub release, npm possibly later; FreeHarmony's committed `package.json` names a released version and a local override to the folder next door is for development only, which adjusts decision 39, [decision 45](docs/decisions.md#d45)
 - [ ] 3.2 The first numbered release of `packages/*`, so somebody without this checkout can build on it, and FreeHarmony's `link:` dependency replaced by it
