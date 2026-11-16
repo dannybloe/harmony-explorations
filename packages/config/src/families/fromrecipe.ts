@@ -31,6 +31,7 @@
 import { carriedCatalogue } from '../catalogue/carried.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
 import { readRecipe, RecipeError, refuseUnbuiltFields, statedKeys, takingPart, type LeftOutActivity, type LeftOutReason } from '../recipe/recipe.ts';
+import { keepingGlyphFacts } from '../screens/text.ts';
 import { notBuilt } from '../support/contract.ts';
 import { resource } from '../support/resources.ts';
 import type { SyncDocuments } from './harmony-touch/documents.ts';
@@ -97,6 +98,13 @@ export type Built =
  *   and a model no family serves.
  */
 export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
+  // What a build remembers about the letters it reads is kept for its length and emptied when it ends, so an
+  // application that stays open holds none of it between two builds.
+  return keepingGlyphFacts(() => builtFrom(json, sources));
+}
+
+/** The build itself, `buildFromRecipe` without what it tidies up afterwards. */
+function builtFrom(json: unknown, sources: BuildSources): Built {
   const model = modelOf(json);
   let choice: ModelChoice;
   try {

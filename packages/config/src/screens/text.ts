@@ -343,12 +343,37 @@ interface ShapeFacts { readonly blank: boolean; readonly key: string; form?: Ret
  * instead of once per step, which would be most of what reading the letters costs. The key is the glyph's own stored
  * bytes, the width byte to the end byte, from which its pixels are decoded, with the height that heads its shape key
  * and the packing that says how the bytes read; so two glyphs share facts exactly when they share pixels and height.
- * Emptied when it grows past `SHAPE_FACTS_LIMIT`, so a long running application does not keep every glyph it ever
- * read.
+ * **What it is worth is inside one build**, where the same glyphs are met at every step, so a build empties it when
+ * it ends, `keepingGlyphFacts`: an application that builds and syncs keeps none of it afterwards. What reads a
+ * configuration's letters outside a build leaves that configuration's glyphs here until the next build ends, and it
+ * is emptied when it grows past `SHAPE_FACTS_LIMIT` whatever filled it.
  */
 const SHAPE_FACTS = new Map<string, ShapeFacts>();
 /** How many glyphs' facts are kept before they are dropped and found again: a few times the glyphs of a build. */
 const SHAPE_FACTS_LIMIT = 200_000;
+/** How many pieces of work that keep the glyph facts are running, one inside the other: `keepingGlyphFacts`. */
+let keepingFor = 0;
+
+/**
+ * **Run a piece of work that reads the same glyphs many times, and forget their facts when it ends.** A build is
+ * that work: it makes a configuration in hundreds of steps and reads the letters of each, so the facts are kept for
+ * its length and emptied when it returns or throws, which leaves nothing of it in a process that stays open. Work
+ * inside work keeps them until the outermost ends, so a build that builds another does not empty them under it.
+ */
+export function keepingGlyphFacts<T>(work: () => T): T {
+  keepingFor += 1;
+  try {
+    return work();
+  } finally {
+    keepingFor -= 1;
+    if (keepingFor === 0) SHAPE_FACTS.clear();
+  }
+}
+
+/** How many glyphs' facts are kept at this moment, for a test of what a build leaves behind. */
+export function glyphFactsKept(): number {
+  return SHAPE_FACTS.size;
+}
 
 function shapeFacts(c: Container, height: number, glyph: Glyph): ShapeFacts {
   const at = c.blobOffsetOf(glyph.address) as number;

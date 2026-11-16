@@ -35,6 +35,8 @@ import {
   type CodecResources,
   type Recipe,
 } from '../../src/index.ts';
+// Supplies nothing: it only says how many glyphs' facts the text reader holds, for what a build leaves behind.
+import { glyphFactsKept } from '../../src/screens/text.ts';
 
 const REFERENCES = new URL('../references/', import.meta.url);
 const reference = (name: string): unknown => JSON.parse(readFileSync(new URL(`${name}.json`, REFERENCES), 'utf8'));
@@ -105,6 +107,9 @@ test('once a renderer supplies the five, the empty Harmony One builds to its rec
   // what a renderer handed over are those bytes exactly.
   assert.equal(builtDigest(built), sha256);
   assert.deepEqual([...asked].sort(), ['iconFont', 'iconList', 'oxanium', 'sha256'], 'the build drew letters and icons');
+  // A build reads the letters of every step it takes and forgets what it kept of them when it ends, so an
+  // application that stays open holds none of it between two builds.
+  assert.equal(glyphFactsKept(), 0, 'the build ended and glyph facts are still kept');
   assert.equal(built.kind, 'configuration');
   if (built.kind !== 'configuration') return;
   // And a screen of it drawn and written as a PNG of the screen's size, the deflate asked for.

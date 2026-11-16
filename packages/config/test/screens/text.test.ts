@@ -25,8 +25,10 @@ import {
   drawnCodes,
   fontSets,
   glyphAt,
+  glyphFactsKept,
   glyphRunAt,
   isBlank,
+  keepingGlyphFacts,
   reachablePrograms,
   referencedStringAddress,
   screenStrings,
@@ -578,3 +580,27 @@ test('section 396: the X the Harmony One seed gained spells model names base slo
   const families3 = strings('harvest_one_families_3');
   for (const text of ['ZoomIn', 'ZoomOut']) assert.ok(families3.texts.has(text), text);
 });
+
+test('work that keeps the glyph facts leaves none behind when it ends, and work inside work keeps them until the outermost ends',
+  skipUnless('one_config'), () => {
+    // A fresh parse each time, so the character map is worked out again and the glyph facts are read again instead
+    // of the map being handed back from what the container already remembers.
+    const read = (): CharacterMap | undefined => characterMap(parse(require_('one_config')));
+
+    // The control: outside such work the facts stay, which is what the emptying below is measured against.
+    assert.notEqual(read(), undefined);
+    const outside = glyphFactsKept();
+    assert.ok(outside > 0, 'reading a configuration\'s letters keeps no glyph facts, so nothing below can show them emptied');
+
+    const inside = keepingGlyphFacts(() => {
+      keepingGlyphFacts(() => read());
+      // The inner work has ended and the outer has not: the facts are still here.
+      return glyphFactsKept();
+    });
+    assert.equal(inside, outside, 'work inside work emptied the facts under the work around it');
+    assert.equal(glyphFactsKept(), 0, 'the outermost work ended and glyph facts are still kept');
+
+    // Work that throws empties them all the same.
+    assert.throws(() => keepingGlyphFacts(() => { read(); throw new Error('stopped'); }), /stopped/);
+    assert.equal(glyphFactsKept(), 0, 'work that threw left glyph facts behind');
+  });
