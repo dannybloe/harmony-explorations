@@ -44,11 +44,12 @@ const TARBALLS = join(ROOT, 'release', 'tarballs');
 /**
  * The files a tarball may hold, each as a whole path with the folder `package/` removed. Written out and not shared
  * with the pack script: a check that reads the same list it checks is a check of nothing. Compiled code and its
- * declarations, the manifest and the licence, and the codec's font and the font's own licence. A map, a test, a
+ * declarations, the manifest, the README and the licence, and the codec's font and the font's own licence. A map, a test, a
  * fixture, a script or anything under `var` matches none of these.
  */
 const ALLOWED: readonly RegExp[] = [
   /^package\.json$/,
+  /^README\.md$/,
   /^LICENSE$/,
   /^dist\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.js$/,
   /^dist\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.d\.ts$/,
@@ -150,6 +151,9 @@ for (const p of packed) {
   const { manifest, files } = p;
   if ('private' in manifest) fail(`${manifest.name} is private in its tarball`);
   if (manifest.license === undefined || !files.includes('LICENSE')) fail(`${manifest.name} states no licence or carries no LICENSE`);
+  // Somebody holding only the tarball has to be able to find the documentation and the source.
+  if (!files.includes('README.md')) fail(`${manifest.name} carries no README`);
+  if (manifest['homepage'] === undefined || manifest['repository'] === undefined) fail(`${manifest.name} names no homepage or no repository`);
   for (const forbidden of ['scripts', 'devDependencies']) {
     if (forbidden in manifest) fail(`${manifest.name} carries ${forbidden}`);
   }
@@ -167,7 +171,7 @@ for (const p of packed) {
     }
   }
 }
-if (failures.length === 0) ok('no private, one licence, exact versions, every export target packed');
+if (failures.length === 0) ok('no private, one licence, a README, a homepage and a repository, exact versions, every export target packed');
 
 // 3. A consumer: the project, the overrides, the offline install.
 console.log('install');

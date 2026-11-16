@@ -4,6 +4,11 @@
   "private": true,
   "description": "Harmony config format research, and the application it is for",
   "license": "MIT",
+  "homepage": "https://dannybloe.github.io/harmony-explorations/sdk/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dannybloe/harmony-explorations.git"
+  },
   "type": "module",
   "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "engines": {

@@ -2,7 +2,7 @@
   "name": "@freeharmony-sdk/config",
   "version": "0.0.0",
   "private": true,
-  "description": "The one Harmony config codec: container, sections, records",
+  "description": "The document an application edits for a Harmony remote, its check and its build into what the remote is sent, and the reader of a configuration",
   "license": "MIT",
   "type": "module",
   "exports": {

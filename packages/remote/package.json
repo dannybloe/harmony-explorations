@@ -2,7 +2,7 @@
   "name": "@freeharmony-sdk/remote",
   "version": "0.0.0",
   "private": true,
-  "description": "Read a config off a remote and file it in the lab corpus",
+  "description": "Reading a Harmony remote's configuration off the remote and syncing a document to it",
   "license": "MIT",
   "type": "module",
   "exports": {

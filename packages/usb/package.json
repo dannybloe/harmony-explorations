@@ -2,7 +2,7 @@
   "name": "@freeharmony-sdk/usb",
   "version": "0.0.0",
   "private": true,
-  "description": "HID transport and the Harmony command protocol",
+  "description": "Finding a Harmony remote on the USB cable and talking to it: the HID transport, the command protocol and the checks in front of every write",
   "license": "MIT",
   "type": "module",
   "exports": {

@@ -70,6 +70,15 @@ interface Manifest {
   [key: string]: unknown;
 }
 
+/** What the release reads from the root manifest: the one version, the licence, and where the SDK is documented and kept. */
+interface RootManifest {
+  version: string;
+  license: string;
+  homepage: string;
+  repository: { type: string; url: string };
+  engines?: unknown;
+}
+
 function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, 'utf8')) as T;
 }
@@ -92,9 +101,11 @@ function run(command: string, args: readonly string[], cwd: string): string {
  * * a dependency on a workspace package becomes that exact version, because a tarball cannot say `workspace:*`;
  * * development dependencies and scripts are dropped, an application does not install them and they name packages
  *   that are not in a registry;
- * * `private` is absent here only, so an accidental publish of the committed package still fails.
+ * * `private` is absent here only, so an accidental publish of the committed package still fails;
+ * * `homepage` and `repository` are the root's, the repository with the package's own folder, so somebody holding
+ *   only the tarball finds the documentation and the source.
  */
-function releaseManifest(committed: Manifest, root: { version: string; license: string; engines?: unknown }, resources: readonly string[]): Manifest {
+function releaseManifest(committed: Manifest, root: RootManifest, resources: readonly string[], folder: string): Manifest {
   const exports: Record<string, unknown> = {};
   for (const [subpath, target] of Object.entries(committed.exports)) {
     const stem = target.replace(/^\.\/src\//, './dist/').replace(/\.ts$/, '');
@@ -110,6 +121,11 @@ function releaseManifest(committed: Manifest, root: { version: string; license: 
     description: committed.description,
     license: root.license,
     type: committed.type,
+    homepage: root.homepage,
+    repository: {
+      ...root.repository,
+      directory: `packages/${folder}`,
+    },
     exports,
     files: ['dist', '!dist/**/*.map', ...resources],
   };
@@ -152,7 +168,31 @@ function carryAmbientDeclarations(name: string, dist: string): void {
   }
 }
 
-const rootManifest = readJson<{ version: string; license: string; engines?: unknown }>(join(ROOT, 'package.json'));
+/**
+ * The tarball's README: what the package is, in the manifest's own sentence, how the five belong together and where
+ * the documentation is. Written here and not kept as a file per package, so it cannot say something else than the
+ * manifest packed beside it.
+ */
+function releaseReadme(manifest: Manifest, root: RootManifest): string {
+
+  return [
+    `# ${manifest.name}`,
+    '',
+    `${manifest.description}.`,
+    '',
+    'One of the five packages of the FreeHarmony SDK, which reads, edits, builds and syncs the configuration of a',
+    'Logitech Harmony remote. The five are released together under one version and depend on each other at exactly',
+    'that version.',
+    '',
+    `Documentation, with a guide and the API reference: ${root.homepage}`,
+    '',
+    `Licence: ${root.license}.`,
+    '',
+  ].join('\n');
+
+}
+
+const rootManifest = readJson<RootManifest>(join(ROOT, 'package.json'));
 
 // A fresh release every time: a file left from an earlier run would be packed without anyone having chosen it.
 // The compile keeps its own incremental state and is not cleared.
@@ -180,7 +220,15 @@ for (const { name, resources } of SHIPPED) {
   carryAmbientDeclarations(name, join(stage, 'dist'));
   for (const resource of resources) cpSync(join(ROOT, 'packages', name, resource), join(stage, resource), { recursive: true });
   cpSync(join(ROOT, 'LICENSE'), join(stage, 'LICENSE'));
-  writeFileSync(join(stage, 'package.json'), `${JSON.stringify(releaseManifest(committed, rootManifest, resources), null, 2)}\n`);
+  const manifest = releaseManifest(
+    committed,
+    rootManifest,
+    resources,
+    name,
+  );
+
+  writeFileSync(join(stage, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(join(stage, 'README.md'), releaseReadme(manifest, rootManifest));
 
   // npm only to make the archive: no script runs and nothing is fetched. `--dry-run` builds the same list without
   // writing the file.
