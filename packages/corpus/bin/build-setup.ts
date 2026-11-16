@@ -48,7 +48,7 @@
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { LAB, IR_ARCHIVE } from '@harmony/lab';
+import { LAB, IR_ARCHIVE, serviceCredentialsEnv } from '@harmony/lab';
 import {
   activities as configActivities, devices as configDevices, parse, payloadOf, catalogueDevice, readRecipe,
 } from '@harmony/codec/node';
@@ -105,7 +105,8 @@ const session = new MyHarmonySession((operation, reply) => {
   writeFileSync(join(replies, `${String(sequence).padStart(4, '0')}-${operation}.bin`), reply.bytes);
 });
 
-const { email, password } = credentials(selector);
+// The environment first, then the lab's credentials file: the service client itself reads no file.
+const { email, password } = credentials(selector, { ...serviceCredentialsEnv(), ...process.env });
 await session.login(email, password);
 console.log(`signed in to test account ${selector}`);
 

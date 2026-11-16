@@ -1100,7 +1100,7 @@ make ts-test       the TypeScript tests without the slow tier, `slow()` in packa
 make ts-test-all   all of them, the slow tier's corpus wide compositions and family censuses included,
                    and every compile of each family: before a push
 make audit         check the npm dependency tree for known vulnerabilities
-make release-pack  compile base, lab, usb, codec, corpus and silhouettes to JavaScript with declarations, stage each
+make release-pack  compile base, usb, codec, corpus and silhouettes to JavaScript with declarations, stage each
                    as the folder its tarball is made from (compiled code, the codec's fonts, the licence, a
                    manifest generated at this moment) and pack them into release/tarballs, which git ignores.
                    Prints each tarball with size, SHA-256 and files. Publishes nothing: every committed

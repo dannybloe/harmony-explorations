@@ -16,11 +16,11 @@
   },
   "dependencies": {
     "@harmony/codec": "workspace:*",
-    "@harmony/lab": "workspace:*",
     "@harmony/usb": "workspace:*"
   },
   "devDependencies": {
     "@harmony/base": "workspace:*",
+    "@harmony/lab": "workspace:*",
     "@harmony/testkit": "workspace:*"
   }
 }

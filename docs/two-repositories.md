@@ -80,7 +80,7 @@ dependency's spelling matches the stated package manager, which is what a fresh 
 
 **What an application writes to take the tarballs `make release-pack` makes**, as `make release-check` does it
 and holds it: the packages are compiled JavaScript with declarations, because Node refuses to strip types under
-`node_modules`, and `release/tarballs` holds one per package (`@harmony/base`, `lab`, `usb`, `codec`, `corpus` and
+`node_modules`, and `release/tarballs` holds one per package (`@harmony/base`, `usb`, `codec`, `corpus` and
 `silhouettes`, all at the one version of the root `package.json`). A tarball names the others by that version, which
 no registry holds yet, so the consumer lists the packages it uses and points **every** `@harmony` name at its tarball
 as an override, `node-hid` included wherever the native binding cannot be fetched:

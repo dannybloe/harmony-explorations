@@ -79,9 +79,6 @@ importers:
       '@harmony/codec':
         specifier: workspace:*
         version: link:../codec
-      '@harmony/lab':
-        specifier: workspace:*
-        version: link:../lab
       '@harmony/usb':
         specifier: workspace:*
         version: link:../usb
@@ -89,6 +86,9 @@ importers:
       '@harmony/base':
         specifier: workspace:*
         version: link:../base
+      '@harmony/lab':
+        specifier: workspace:*
+        version: link:../lab
       '@harmony/testkit':
         specifier: workspace:*
         version: link:../testkit

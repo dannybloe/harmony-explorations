@@ -49,7 +49,7 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync } from 
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { LAB, IR_ARCHIVE } from '@harmony/lab';
+import { LAB, IR_ARCHIVE, serviceCredentialsEnv } from '@harmony/lab';
 import { devices as configDevices, parse, payloadOf, catalogueDevice } from '@harmony/codec/node';
 import {
   ACCOUNT_MANAGER, DELETION_MANAGER, DEVICE_MANAGER, MyHarmonySession,
@@ -153,7 +153,8 @@ function expectOk(operation: string, reply: Reply): Record<string, unknown> {
 
 const devicesOnRecord = (): Promise<{ Id: { Value: number } }[]> => recordDevices(session, record);
 
-const { email, password } = credentials(selector);
+// The environment first, then the lab's credentials file: the service client itself reads no file.
+const { email, password } = credentials(selector, { ...serviceCredentialsEnv(), ...process.env });
 await session.login(email, password);
 console.log(`signed in to test account ${selector}`);
 

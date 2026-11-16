@@ -19,9 +19,6 @@
  * Nothing here talks to a remote. A compile is taken as a file; syncing it to a remote is the desktop
  * application's step and is not implemented anywhere in this repository.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { LAB } from '@harmony/lab';
 
 export const SVCS = 'https://svcs.myharmony.com';
 export const SECURITY = `${SVCS}/CompositeSecurityServices/Security.svc/json/`;
@@ -91,28 +88,19 @@ export function assertCallAllowed(operation: string, env: NodeJS.ProcessEnv = pr
 }
 
 /**
- * The selected account's credentials: `MYHARMONY_EMAIL<n>` and `MYHARMONY_PASSWORD<n>` from the
- * environment, else from the lab's `work/myharmony/credentials.env`, where selector 1 has no suffix and
- * selector 2 the suffix `2`. Parsed rather than sourced, so nothing lands in a process listing; only the
- * two keys are read, and neither value is ever printed.
+ * The selected account's credentials, `MYHARMONY_EMAIL<n>` and `MYHARMONY_PASSWORD<n>`, out of the variables its
+ * caller gives, the process's own by default: selector 1 has no suffix and selector 2 the suffix `2`. **Nothing is
+ * read from a file here**: an application has no lab, so a caller that keeps its credentials in a file reads that
+ * file itself and passes what it holds, as the bench scripts do with the lab's. Only the two keys are read, and
+ * neither value is ever printed.
  */
-export function credentials(selector: string, env: NodeJS.ProcessEnv = process.env):
+export function credentials(selector: string, env: Readonly<Record<string, string | undefined>> = process.env):
     { email: string; password: string } {
   const suffix = selector === '1' ? '' : selector;
   const keys = [`MYHARMONY_EMAIL${suffix}`, `MYHARMONY_PASSWORD${suffix}`] as const;
-  const fromEnv = keys.map((key) => env[key]);
-  if (fromEnv[0] && fromEnv[1]) return { email: fromEnv[0], password: fromEnv[1] };
-  if (LAB === undefined) throw new ServiceRefusal(`no ${keys.join(' and ')} and no lab to read them from`);
-  const found = new Map<string, string>();
-  for (const line of readFileSync(join(LAB, 'work', 'myharmony', 'credentials.env'), 'utf8').split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed === '' || trimmed.startsWith('#')) continue;
-    const at = trimmed.indexOf('=');
-    if (at > 0) found.set(trimmed.slice(0, at).trim(), trimmed.slice(at + 1).trim().replace(/^["']|["']$/g, ''));
-  }
-  const email = found.get(keys[0]);
-  const password = found.get(keys[1]);
-  if (!email || !password) throw new ServiceRefusal(`credentials.env has no ${keys.join(' and ')}`);
+  const email = env[keys[0]];
+  const password = env[keys[1]];
+  if (!email || !password) throw new ServiceRefusal(`no ${keys.join(' and ')} was given`);
   return { email, password };
 }
 

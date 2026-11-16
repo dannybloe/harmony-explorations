@@ -26,7 +26,7 @@ const cli = commandLine({
   usage: [
     'usage: node packages/lab/bin/release-pack.ts [--dry-run]',
     '',
-    'Compiles base, lab, usb, codec, corpus and silhouettes, stages each as the folder its tarball is made from and packs',
+    'Compiles base, usb, codec, corpus and silhouettes, stages each as the folder its tarball is made from and packs',
     'the tarballs into release/tarballs, printing each with its size and SHA-256 and the files it holds.',
     '',
     '  --dry-run   compile and stage, print the same lists, and pack nothing',
@@ -44,13 +44,12 @@ const TARBALLS = join(RELEASE, 'tarballs');
 
 /**
  * The packages a release carries, in dependency order, each with the folders it needs at run time beside its
- * compiled code. `lab` is here only because `corpus` states it as a run time dependency: `corpus/src/myharmony.ts`
- * loads it, and no entry of `corpus` reaches that module. Not here on purpose: `testkit`, `bench`, `probe` and
- * `keyreader`, which an application never builds on.
+ * compiled code. Not here on purpose: `lab`, which locates a private folder an application does not have, so no
+ * released package may depend on it, decision 45, and `testkit`, `bench`, `probe` and `keyreader`, which an
+ * application never builds on.
  */
 const SHIPPED: ReadonlyArray<{ readonly name: string; readonly resources: readonly string[] }> = [
   { name: 'base', resources: [] },
-  { name: 'lab', resources: [] },
   { name: 'usb', resources: [] },
   // The codec's Node resources read `fonts/Oxanium` relative to the compiled module, which is why the compile keeps
   // `rootDir: src` and the folder sits beside `dist`.

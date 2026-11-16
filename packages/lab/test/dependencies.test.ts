@@ -121,7 +121,7 @@ const AT_RUN_TIME: Readonly<Record<string, readonly string[]>> = {
   base: [],
   bench: ['@harmony/base', '@harmony/codec', '@harmony/corpus', '@harmony/lab', '@harmony/usb'],
   codec: ['@harmony/base', '@mdi/font', 'opentype.js'],
-  corpus: ['@harmony/codec', '@harmony/lab', '@harmony/usb'],
+  corpus: ['@harmony/codec', '@harmony/usb'],
   keyreader: [],
   lab: [],
   // `@harmony/lab` is listed while no module of `src` loads it, the review's finding, kept as found.
@@ -136,7 +136,7 @@ const FOR_DEVELOPMENT: Readonly<Record<string, readonly string[]>> = {
   base: ['@harmony/testkit'],
   bench: ['@harmony/testkit', 'playwright'],
   codec: ['@harmony/lab', '@harmony/testkit', '@harmony/usb'],
-  corpus: ['@harmony/base', '@harmony/testkit'],
+  corpus: ['@harmony/base', '@harmony/lab', '@harmony/testkit'],
   // The page's `src` loads `@harmony/base` and `@harmony/usb`, bundled for a browser by `bin/build.ts`.
   keyreader: ['@harmony/base', '@harmony/lab', '@harmony/silhouettes', '@harmony/usb'],
   // A test says which requirement it proves through the kit, `@harmony/testkit/proof`.
@@ -294,8 +294,6 @@ test('a library\'s src loads @harmony/lab in exactly the modules listed, each wi
   const LISTED: Readonly<Record<string, string>> = {
     // The bench instrument opens lab images, loaded only when one is asked for.
     'bench/src/bench.ts': 'the bench instrument opens the lab\'s images',
-    // The client of Logitech's service for the gathering track, reached by its two scripts and no entry.
-    'corpus/src/myharmony.ts': 'the gathering track\'s service client keeps its session in the lab',
     // The test kit is a development dependency only.
     'testkit/src/touch-recording.ts': 'the test kit reads recorded syncs out of the lab by name',
   };

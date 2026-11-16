@@ -13,5 +13,5 @@
     "sourceMap": false
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../codec/tsconfig.release.json" }, { "path": "../lab/tsconfig.release.json" }, { "path": "../usb/tsconfig.release.json" }]
+  "references": [{ "path": "../codec/tsconfig.release.json" }, { "path": "../usb/tsconfig.release.json" }]
 }

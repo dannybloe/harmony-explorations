@@ -2375,3 +2375,23 @@ export function newReadFolder(lab: string, name: string, now: Date = new Date())
     }
   }
 }
+
+/**
+ * **The variables of the lab's credentials file for Logitech's service**, `work/myharmony/credentials.env`, as a
+ * record a bench script lays under the process's own environment and hands to the service client, which reads its
+ * two keys from what it is given and from no file. Parsed and never sourced, so nothing lands in a process listing,
+ * and no value is printed here. Empty where there is no lab or no such file.
+ */
+export function serviceCredentialsEnv(lab: string | undefined = LAB): Record<string, string> {
+  const found: Record<string, string> = {};
+  if (lab === undefined) return found;
+  const file = join(lab, 'work', 'myharmony', 'credentials.env');
+  if (!existsSync(file)) return found;
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed === '' || trimmed.startsWith('#')) continue;
+    const at = trimmed.indexOf('=');
+    if (at > 0) found[trimmed.slice(0, at).trim()] = trimmed.slice(at + 1).trim().replace(/^["']|["']$/g, '');
+  }
+  return found;
+}
