@@ -12,7 +12,7 @@
  * `touch_device_set_back` fixture, with the activity of `packages/corpus/touch-activities/test-cinema.json` added by
  * the codec, `withTouchActivity`. Built here from the source so that a change to the composer shows in the
  * predictions, and held equal, document for document, to the set the bench Touch was given, the `touch_activity_set`
- * fixture, which `packages/corpus/test/touch/touch-activity-set.test.ts` also holds as parsed JSON, tags and all. The favourites are the
+ * fixture, which `packages/corpus/test-archive/touch/touch-activity-set.test.ts` also holds as parsed JSON, tags and all. The favourites are the
  * recorded full sync's, as in 7.1.
  *
  * **Its start is told from every recorded activity's.** The monitor hears codes in order, so the claim is about the

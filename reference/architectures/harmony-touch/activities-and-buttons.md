@@ -507,6 +507,6 @@ themselves, `Numpad` opening the number pad[^t-touch-activities-firmware].
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-setup-runs.test.ts)
 [^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-empty-runs.test.ts)
 [^t-touch-empty-reading]: Read in the firmware. [The test](../../../packages/codec/test/families/harmony-touch/touch-empty.test.ts)
-[^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-setup-set.test.ts)
+[^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test-archive/touch/touch-setup-set.test.ts)
 [^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/families/harmony-touch/touch-setup.test.ts)
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)

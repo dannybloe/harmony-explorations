@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-project test-rails test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all full release-pack release-check clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-project test-rails test-archive test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all full release-pack release-check clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -88,6 +88,7 @@ help:
 	@echo "test-project the repository's own rules alone: documents, links, the toolchain"
 	@echo "release-pack  compile the shipped packages and pack them into release/tarballs; RELEASE_ARGS=--dry-run lists without packing. Publishes nothing"
 	@echo "release-check  install those tarballs offline into a throwaway project and load every subpath they export"
+	@echo "test-archive the archived tests of one off bench builders, packages/corpus/test-archive; in neither all nor full"
 	@echo "test-rails   the nine Python files that hold numbers in packages/usb/src to the firmware and to Logitech's client"
 	@echo "all          the everyday run: the checks, the repository's rules and the TypeScript tests"
 	@echo "full         all, and the Python suite with its two lab checks: after the research tooling or the lab changes, and before a release"
@@ -232,6 +233,12 @@ ts-test:
 # by `make all`; a step runs `make ts-test`.
 ts-test-all:
 	@HARMONY_SLOW_TESTS=1 $(PNPM) test
+
+# The archive: tests of one off set builders for Harmony Touch bench experiments that are done. They are kept
+# and typechecked (the corpus project includes the folder) and are in neither `all` nor `full`, because no
+# application leans on what they test. Run on demand; see packages/corpus/test-archive/README.md.
+test-archive:
+	@HARMONY_SLOW_TESTS=1 node --test 'packages/corpus/test-archive/**/*.test.ts'
 
 audit:
 	@$(PNPM) audit

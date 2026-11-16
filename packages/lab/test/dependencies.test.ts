@@ -279,7 +279,7 @@ test('the test kit is a development dependency only, and nothing but a test impo
       const imports = specifiersIn(file).some((s) => packageOf(s) === '@harmony/testkit');
       if (!imports) continue;
       const where = relative(join(PACKAGES, name), file);
-      if (where.split(sep)[0] === 'test') found.push(`${name}/${where.split(sep).join('/')}`);
+      if (['test', 'test-archive'].includes(where.split(sep)[0] ?? '')) found.push(`${name}/${where.split(sep).join('/')}`);
       else offending.push(`${name}/${where}`);
     }
   }

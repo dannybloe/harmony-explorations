@@ -43,7 +43,7 @@ import * as lab from '@harmony/lab';
 
 import { chainTags, changeDocuments, changeOneValue, listChanges, setDifferences } from '../../experiments/touchchangedset.ts';
 import { keyOf, resultOf, setTag, type RemoteRequest, type SetAnswer, type TouchSet, type TouchSyncOutcome } from '../../src/touchsync.ts';
-import type { Scenario } from './touch-sync-run.ts';
+import type { Scenario } from '../../test/touch/touch-sync-run.ts';
 
 const ACCOUNT = 'harmony://Account/1';
 const ADDRESS: Record<string, string> = {
@@ -206,7 +206,7 @@ interface Run {
 
 /** One run of the answerer in a process of its own with the two request flags set, as `touch-sync.test.ts` runs it. */
 function run(scenario: Scenario): Run {
-  const script = fileURLToPath(new URL('./touch-sync-run.ts', import.meta.url));
+  const script = fileURLToPath(new URL('../../test/touch/touch-sync-run.ts', import.meta.url));
   const out = execFileSync(process.execPath, [script], {
     input: JSON.stringify(scenario),
     env: { ...process.env, HARMONY_ENABLE_WRITES: '1', HARMONY_TOUCH_REQUESTS: '1', HARMONY_TOUCH_RECOVERY: '' },

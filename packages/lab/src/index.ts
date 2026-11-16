@@ -634,7 +634,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // committed removal and after the put back; the first try, which stopped on a USB read timeout while the answers to
   // its first request list were being written, with what it kept; the two committed syncs with the reply to their kept
   // write; the closing `--unchanged` run; the bench run and the monitor log. Read by
-  // `packages/bench/test/touch85-runs.test.ts`, the sets also by `packages/corpus/test/touch/touch-removal-set.test.ts` and
+  // `packages/bench/test/touch85-runs.test.ts`, the sets also by `packages/corpus/test-archive/touch/touch-removal-set.test.ts` and
   // `packages/bench/test/touch85.test.ts`. Every committed run of these handed out eight request lists, numbered as the settings'.
   touch_removal_set: 'work/touch-firmware/sets/8.5-removal/set.json',
   touch_removal_set_back: 'work/touch-firmware/sets/8.5-removal-back/set.json',
@@ -710,7 +710,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // after it and after the put back; the two committed syncs with the reply to their kept write; the closing
   // `--unchanged` run; the ten full bench tests, `touch-7-1-*.json`, run on the setup, the last attempt of each, and the three attempts that
   // were started again and are superseded by the next attempt of the same test; and the monitor log. Read by
-  // `packages/bench/test/touch86-runs.test.ts`, the sets also by `packages/corpus/test/touch/touch-setup-set.test.ts` and
+  // `packages/bench/test/touch86-runs.test.ts`, the sets also by `packages/corpus/test-archive/touch/touch-setup-set.test.ts` and
   // `packages/bench/test/touch86.test.ts`. Every committed run of these handed out eight request lists, numbered as the removal's.
   touch_setup_set: 'work/touch-firmware/sets/8.6-setup/set.json',
   touch_setup_set_back: 'work/touch-firmware/sets/8.6-setup-back/set.json',
@@ -799,7 +799,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // kept write and to the put back's two chunk write of the line up; the closing `--unchanged` run; the person's
   // photograph of the favourites page on the empty set, a photo of the remote that a test may name and no document
   // embeds; and the monitor log. Read by `packages/bench/test/touch92-runs.test.ts`, the sets also by
-  // `packages/corpus/test/touch/touch-empty-set.test.ts`.
+  // `packages/corpus/test-archive/touch/touch-empty-set.test.ts`.
   touch_empty_set: 'work/touch-firmware/sets/9.2-empty/set.json',
   touch_empty_set_back: 'work/touch-firmware/sets/9.2-empty-back/set.json',
   touch_empty_confighash_before: 'reads/20261107T1124Z-touch-confighash/answer.txt',

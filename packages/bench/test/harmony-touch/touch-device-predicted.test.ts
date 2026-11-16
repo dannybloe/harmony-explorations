@@ -12,7 +12,7 @@
  * `touch_changed_set_label_back` fixture, with the device of `packages/corpus/touch-devices/test-projector.json`
  * added by the codec, `withTouchDevice`. Built here from the source so that a change to the composer shows in the
  * predictions, and held equal, document for document, to the set the bench Touch was given, the `touch_device_set`
- * fixture, which `packages/corpus/test/touch/touch-device-set.test.ts` also holds as parsed JSON, tags and all. The
+ * fixture, which `packages/corpus/test-archive/touch/touch-device-set.test.ts` also holds as parsed JSON, tags and all. The
  * favourites are the recorded full sync's, as in 7.1.
  *
  * **No bench code can be heard as one of the device's, and no two of its own as each other.** The monitor names a

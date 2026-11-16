@@ -21,7 +21,7 @@
  * 1. **The two sets.** The device set differs from `6.9-label-back` in exactly the three documents, content and
  *    tag, and the put back holds `6.9-label-back`'s six documents as parsed JSON, with the three under tags that are
  *    neither set's. That each is what the composer and `changeDocuments` give is held by
- *    `packages/corpus/test/touch/touch-device-set.test.ts`; here they are the sets as delivered. **The identifiers of
+ *    `packages/corpus/test-archive/touch/touch-device-set.test.ts`; here they are the sets as delivered. **The identifiers of
  *    ours**, `OWN_IDS` in the codec's `compose.ts`, nine digits from 900000000: the device is 900000001 and its
  *    definition 900000002, where every device and activity id of Logitech's in the documents the remote held is
  *    eight digits and every protocol id the catalogue's, under a thousand.

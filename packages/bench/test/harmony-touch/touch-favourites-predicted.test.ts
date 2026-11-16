@@ -13,7 +13,7 @@
  * `packages/corpus/touch-favourites/8.3-favourites.json` composed onto them by the codec, `composeTouchFavourites`: the
  * user's favourites document changed, the tuning device's and the line up kept. Composed here from the source, so a
  * change to the composer shows in the predictions, and held equal to the set the bench Touch was given, the
- * `touch_favourites_set` fixture, which `packages/corpus/test/touch/touch-favourites-set.test.ts` also holds.
+ * `touch_favourites_set` fixture, which `packages/corpus/test-archive/touch/touch-favourites-set.test.ts` also holds.
  *
  * **What is heard tells the two apart.** A favourite is heard as its channel's digits, so the claim is about the digits
  * in the order of the taps: the six favourites of ours give 0 6 1, 0 0 4, 0 0 3, 0 0 2, 0 0 1, 6 6 6, the channel added

@@ -10,7 +10,7 @@
  * what the derivation gives and what it predicts in outline.
  *
  * **What the predictions rest on.** The documents of the set the bench Touch holds since 8.4's put back, which are the
- * `touch_activity_set_back` fixture's, content and tags, `packages/corpus/test/touch/touch-removal-set.test.ts`, with the
+ * `touch_activity_set_back` fixture's, content and tags, `packages/corpus/test-archive/touch/touch-removal-set.test.ts`, with the
  * removal of `packages/corpus/touch-removals/8.5-removal.json` applied by the codec, `withoutTouchEntries`. Built here
  * from the source so that a change to the removal shows in the predictions, and held equal, document for document, to
  * the set built in the lab and delivered, `work/touch-firmware/sets/8.5-removal`, the fixture `touch_removal_set`. The

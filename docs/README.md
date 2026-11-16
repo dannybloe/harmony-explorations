@@ -575,10 +575,10 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 `todo/done/todo-touch.md` 8.5, and `experiments/touchsetupset.ts`, which builds a set
                                 with the whole setup composed from a description, compares it with
                                 Logitech's documents field by field and builds its put back,
-                                `todo/done/todo-touch.md` 8.6, tested in `test/touch/touch-setup-set.test.ts`, and
+                                `todo/done/todo-touch.md` 8.6, tested in `test-archive/touch/touch-setup-set.test.ts`, and
                                 `experiments/touchemptyset.ts`, which builds the empty configuration and its
                                 put back with the favourites documents and logos the remote held,
-                                `todo/done/todo-touch.md` 9.2, tested in `test/touch/touch-empty-set.test.ts`, and
+                                `todo/done/todo-touch.md` 9.2, tested in `test-archive/touch/touch-empty-set.test.ts`, and
                                 `experiments/touchnothingset.ts`, which builds the set from nothing, its put
                                 back and its comparison with 8.6's set field by field and command by
                                 command, `todo/done/todo-touch.md` 9.1, tested in `test/touch/touch-nothing-set.test.ts`,
@@ -598,6 +598,10 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 Touch's sync, `writeConfiguration` and `answerTouchSync`, as functions
                                 an application calls, `todo/done/todo-sequence.md` 7.3.10, test/package/write-surface.test.ts;
                                 `./file` filing a read in the lab corpus
+packages/corpus/test-archive/ TS: the tests of nine one off set builders for finished Harmony Touch bench
+                                experiments, kept and typechecked with the package but in neither
+                                `make all` nor `make full`; `make test-archive` runs them, and its
+                                README.md says what each was
 packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
                                 second, ir.html, is the infrared monitor: what a Flirc USB receiver
                                 hears, named against the bench remotes' configurations, plus
@@ -1498,7 +1502,7 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        retags only the documents whose content changed, `withRemoval` in
                        `experiments/touchremovalset.ts`; `--removal-back` is its exact inverse,
                        `putBackRemoval`. `--check` then prints the structural diff entry by entry,
-                       `removalChanges`, `packages/corpus/test/touch/touch-removal-set.test.ts` holding the
+                       `removalChanges`, `packages/corpus/test-archive/touch/touch-removal-set.test.ts` holding the
                        sets and `packages/bench/test/harmony-touch/touch-removal-runs.test.ts` both sets' runs. `--setup`
                        composes a whole setup from a description in `packages/corpus/touch-setups/`, such
                        as `8.6-test-setup.json`, by the codec's `composeTouchSetup` onto the source with
@@ -1508,7 +1512,7 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        `--describe-setup` writes a set's setup as a description, names and numbers and no
                        code, address or value of the account. `--check` then prints the comparison with
                        the source's documents field by field, `compareSetup`, NOT OK on any difference no
-                       row explains, `packages/corpus/test/touch/touch-setup-set.test.ts` holding the sets and
+                       row explains, `packages/corpus/test-archive/touch/touch-setup-set.test.ts` holding the sets and
                        `packages/bench/test/harmony-touch/touch-setup-runs.test.ts` both sets' runs. `--empty` builds the
                        empty configuration, the source's six with the four lists emptied by the codec's
                        `emptyTouchDocuments` and delivered under new tags, `withEmpty` in
@@ -1516,7 +1520,7 @@ node packages/corpus/bin/touch-device-set.ts --check <set folder> [--same-as <se
                        states them and the favourites documents and logos the remote held, since by the
                        reading the empty set's commit drops the favourites, `emptyBackOf`. `--check` of
                        either prints what the commit keeps, `keptAtTheCommit`, and the content a `--list`
-                       asks for, `packages/corpus/test/touch/touch-empty-set.test.ts` holding the sets and
+                       asks for, `packages/corpus/test-archive/touch/touch-empty-set.test.ts` holding the sets and
                        `packages/bench/test/harmony-touch/touch-empty-runs.test.ts` both sets' runs. `--written` judges a
                        file that answers any of the six, the run's `007-answers-request.txt`, and names
                        and passes over one that answers none of them, the favourites, pictures and

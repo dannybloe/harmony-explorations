@@ -710,7 +710,7 @@ Whether these are enough to know a whole configuration arrived is not settled[^u
 [^t-touch-power-read]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_names.py)
 [^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
 [^t-touch-api-engine]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_engine.py)
-[^t-touch-tag-shape]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-own-set.test.ts)
+[^t-touch-tag-shape]: Measured on a unit. [The test](../../../packages/corpus/test-archive/touch/touch-own-set.test.ts)
 [^t-touch-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-sync.test.ts)
 [^t-touch-both-ways]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-sync-both-ways.test.ts)
 [^t-touch-favourites-firmware]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_favourites.py)

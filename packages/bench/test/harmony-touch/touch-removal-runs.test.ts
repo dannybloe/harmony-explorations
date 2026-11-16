@@ -24,7 +24,7 @@
  * 1. **The two sets.** The removal is `8.4-settings-back`'s six with ActivityList, DeviceList, MapList and ProtocolList
  *    changed and retagged with tags of ours, Context and Settings as they were, content and tags; its reader finds four
  *    activities shown and six devices, neither Listen to Music nor the Denon AV Receiver. The put back is
- *    `8.4-settings-back` exactly. What the removal takes out entry by entry is `packages/corpus/test/touch/touch-removal-set.test.ts`.
+ *    `8.4-settings-back` exactly. What the removal takes out entry by entry is `packages/corpus/test-archive/touch/touch-removal-set.test.ts`.
  * 2. **The first try stopped inside the write of its first answers, and what it kept says no more than that.** Its
  *    folder holds the request line of that write and no reply to it, neither the announcement's nor the write's, and
  *    nothing after it; the line is byte for byte the committed run's first write but for the session id, 393683

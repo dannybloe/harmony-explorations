@@ -20,7 +20,7 @@
  *    emptied under tags of ours, Context and Settings as they were, content and tags; the put back is `8.6-setup-back`'s
  *    six exactly and eleven pieces of content beside them, the user's favourites document, the tuning device's, the line
  *    up, the uploaded logo and seven station logos, each under the tag the remote held it with. How the two are built is
- *    `packages/corpus/test/touch/touch-empty-set.test.ts`.
+ *    `packages/corpus/test-archive/touch/touch-empty-set.test.ts`.
  * 2. **The empty set answered the four 200 with its content and tags and Context and Settings 304, over four request
  *    lists, and the remote asked for no favourites document**: the lists were the six, an empty one, the two background
  *    pictures, answered 304 against the tags the remote sent, and the finish; nothing handed up, `finished`. The six went

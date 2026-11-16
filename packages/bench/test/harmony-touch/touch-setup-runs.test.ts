@@ -21,7 +21,7 @@
  *    composed by us and delivered under tags of ours, ProtocolList's content the source's, Context and Settings as they
  *    were, content and tags; its reader finds five activities shown and seven devices, under the same names, and no
  *    device or activity keeps an id of the source. The put back is `8.5-removal-back` exactly. How the setup is
- *    composed and compared with Logitech's documents field by field is `packages/corpus/test/touch/touch-setup-set.test.ts`.
+ *    composed and compared with Logitech's documents field by field is `packages/corpus/test-archive/touch/touch-setup-set.test.ts`.
  * 2. **The setup and the put back each answered the four 200 with the set's content and tags**, Context and Settings
  *    304 against their tags, the three favourites documents 304 with a tag of ours, the ten pictures 304, the finish
  *    200, and finished, over eight request lists, nothing handed up. The six went in one write, the run's

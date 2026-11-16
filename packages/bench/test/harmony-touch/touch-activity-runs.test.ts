@@ -20,7 +20,7 @@
  * 1. **The two sets.** The activity set differs from `8.1-device-back` in exactly ActivityList and MapList, content
  *    and tag, and the put back holds `8.1-device-back`'s six documents as parsed JSON, with the two under tags that
  *    are neither set's. That each is what the composer and `changeDocuments` give is held by
- *    `packages/corpus/test/touch/touch-activity-set.test.ts`; here they are the sets as delivered. Read back from the
+ *    `packages/corpus/test-archive/touch/touch-activity-set.test.ts`; here they are the sets as delivered. Read back from the
  *    delivered set, the activity is id 900000003, nine digits from `OWN_IDS` where every activity id of Logitech's in
  *    the documents the remote held is eight, type 5 (`Custom`) with group 0 as `ACTIVITY_GROUPS` gives it, place 5,
  *    the last of six, not hidden, two devices, two start steps and one end step, a map of 13 keys and 4 entries.

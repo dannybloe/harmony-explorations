@@ -87,7 +87,7 @@ COPY_PATTERNS = (
     # lookbehinds are the same two names as a link's anchor, `container.md#the-metadata-archive`,
     # which the guard counted as the copy when a heading was first named that way.
     ('the archive, meaning the copy',
-     r'(?<!metadata )(?<!metadata-)(?<!findings )(?<!findings-)\barchive\b(?!\s+sections?\b)'
+     r'(?<!metadata )(?<!metadata-)(?<!test-)(?<!findings )(?<!findings-)\barchive\b(?!\s+sections?\b)'
      r'|\bcatalogue, archived\b'
      r'|codec/src/catalogue/archive\w*\.ts'),
 )
@@ -578,7 +578,7 @@ def footnote_problems(path, text, root=ROOT, sections=None, decisions=None):
             elif number not in decisions:
                 problems.append((label, 'names a decision that does not exist'))
         elif kind == 't':
-            if not re.search(r'(^|/)tests?/', where) or os.path.isdir(destination):
+            if not re.search(r'(^|/)(tests?|test-archive)/', where) or os.path.isdir(destination):
                 problems.append((label, 'does not link a test file'))
     return problems
 
