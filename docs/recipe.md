@@ -330,7 +330,7 @@ const sync = (): ReturnType<typeof syncDocument> => syncDocument({
   journal: (line) => console.log(line),     // required: the record of what was done
 });
 
-await sync();   // { result: 'failed', remote: 'needs-recovery', message: 'the write stopped part way: ...' }
+await sync();   // { result: 'failed', remote: 'needs-recovery', phase: 'write', state: 'write-unfinished', message: 'the write stopped part way: ...' }
 await sync();   // { result: 'written', remote: 'new-configuration' }: the same sync again finishes the blocks it left
 
 // The read of a configuration, as off a remote on the cable: the same progress, checks and failures.
@@ -341,7 +341,19 @@ const read = await readConfig(reader, profile, { onProgress: ({ done, total }) =
 The first sync reports `identify`, `check`, `build`, `backup` with eight steps of progress, the warning to leave the
 remote on its cable, `write` with four steps, and ends failed; the second compares and writes the four blocks left.
 `failIn` names one failure for the next sync or read: `identify`, `check`, `build`, `backup`, `hand-over`, `write`,
-`verify`, `restart` or `read`, each ending as the real path ends a failure there. A pretend Harmony Touch also takes
+`neighbour` (an erase that reaches the block beside its own), `verify`, `restart` or `read`, each ending as the real
+path ends a failure there.
+
+**A failed outcome says where and what is owed, as data.** `phase` names the phase the failure happened in and the
+message is worded for it, so a read back that did not come back as written never reads as a write that stopped part
+way. Where the remote is left needing something, `state` names one of `SYNC_STATES`, a closed list that says for each
+what is true of the remote, whether it may be unplugged and what puts it right: `write-unfinished`,
+`neighbour-erased`, `read-back-failed`, `restart-owed` and `restart-withheld` for a configuration written into flash,
+`stopped-in-hand-over` and `stopped-after-hand-over` for a Harmony Touch. `neighbour-erased` is the one where the
+same sync must not be run again: an erase reached the block beside the one being written, and putting that block back
+is not built yet, so the remote is sent nothing more. No message names a command, script, path or
+switch of this repository: a rail that refuses for a switch not set is reported in words of its own, its own words
+kept in the journal, and the bench's scripts word their commands from the state. A pretend Harmony Touch also takes
 `powerSource`, which refuses a sync on anything but `usb` as the remote's own check does, and `aborts`, the remote's
 own abort. A Harmony Touch's documents have no read on any entry yet, so `pretendReader` refuses a Touch, as it
 refuses every model the read of a configuration does not serve.

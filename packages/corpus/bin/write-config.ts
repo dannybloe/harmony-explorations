@@ -85,16 +85,18 @@ import { basename, dirname, join } from 'node:path';
 
 import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import { HarmonyRemote, RailError, RemoteError, listHarmony, openHarmony } from '@harmony/usb';
-import { failureLine } from '@harmony/usb/write';
+import { BlockWriteError, failureLine } from '@harmony/usb/write';
 import { localTimestamp, recipe } from '@harmony/codec/node';
 import {
   ConfigWriteRefusal,
+  SYNC_STATES,
   syncDocument,
   writeConfiguration,
   type ConfigWriteUnit,
   type ConfigWriteUnitLabel,
 } from '../src/write.ts';
 import { stoppedAfterErase } from '../src/stamp.ts';
+import { SWITCHED_OFF } from '../src/sync.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -567,13 +569,49 @@ async function syncTheDocument(documentPath: string): Promise<void> {
     journal: (line) => say(`${line}\n`),
   });
   if (!['written', 'dry-run', 'nothing-to-write'].includes(outcome.result)) {
-    process.stderr.write(`${outcome.result}: ${outcome.message ?? ''}\n`);
+    process.stderr.write(`${outcome.result}${outcome.phase === undefined ? '' : ` in ${outcome.phase}`}: ${outcome.message ?? ''}\n`);
+    // The library names the state the remote was left in and no command; the bench's way back is worded here from it.
+    const step = benchStep(outcome.message ?? '');
+    if (step !== undefined) {
+      // Before the state's own way back, since an erase that reached a neighbouring block is also a write left
+      // unfinished, and running again is the one thing it must not get.
+      process.stderr.write(`${step}\n`);
+    } else if (outcome.state === 'write-unfinished' || outcome.state === 'read-back-failed') {
+      process.stderr.write('Do not unplug the remote and do not take its batteries out: run this command again with the '
+        + 'same arguments, which builds the document at this run\'s moment, read from its journal, and finishes the '
+        + 'blocks it left.\n');
+    } else if (outcome.state !== undefined) {
+      process.stderr.write(`the remote is left ${outcome.state}: ${SYNC_STATES[outcome.state].holds}; ${SYNC_STATES[outcome.state].next}\n`);
+    } else if (outcome.message === SWITCHED_OFF) {
+      process.stderr.write('--commit needs HARMONY_ENABLE_WRITES=1 and HARMONY_FIRST_WRITE=1\n');
+    }
     process.exit(1);
   }
 }
 
+/**
+ * The step a person at the bench takes after a refusal or a failure whose words, being the library's, name no step
+ * only that person can take. Matched on the library's own constants rather than on its prose, so a reworded message
+ * cannot silently drop the instruction.
+ */
+function benchStep(message: string): string | undefined {
+  if (message.includes(BlockWriteError.NEIGHBOUR_ERASED)) {
+    return 'Do not run this command again: stop and read docs/adding-a-device.md phase 8 before touching this unit again.';
+  }
+  if (message.includes(ConfigWriteRefusal.BUILD_NOT_READ)) return "Read the cache drop and the restart in that build's image first.";
+  if (message.includes(ConfigWriteRefusal.BACKUP_NOT_CURRENT)) return 'Take a fresh region read of this unit and write against that.';
+  if (message.includes(ConfigWriteRefusal.BACKUP_TOO_SHORT)) return 'Read a region of this unit that covers it and write against that.';
+  return undefined;
+}
+
 main().catch((error: unknown) => {
-  const known = error instanceof ConfigWriteRefusal || error instanceof RailError || error instanceof RemoteError;
-  process.stderr.write(`${failureLine(known ? error.message : String(error), pastTheErase)}\n`);
+  const known = error instanceof ConfigWriteRefusal || error instanceof RailError || error instanceof RemoteError
+    || error instanceof BlockWriteError;
+  const message = known ? error.message : String(error);
+  const step = benchStep(message);
+  // An erase that reached a neighbouring block is past the erase too, and `failureLine`'s way back from there, running
+  // the same command again, is what it must not get, so its own step replaces that advice rather than following it.
+  const lost = message.includes(BlockWriteError.NEIGHBOUR_ERASED);
+  process.stderr.write(`${lost ? message : failureLine(message, pastTheErase)}${step === undefined ? '' : `\n${step}`}\n`);
   process.exit(1);
 });

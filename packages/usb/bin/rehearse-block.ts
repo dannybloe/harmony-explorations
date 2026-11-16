@@ -115,6 +115,7 @@ import { ERASE_BLOCK_SIZE, WRITABLE_CEILING } from '../src/rails.ts';
 import { CONFIG_REGION_BASE, assertFirstWriteAllowed, assertUnitIsPermitted } from '../src/rails.ts';
 import { NOMINAL_FLASH_SIZE, failureLine, neighbourBlocks } from '../src/rehearsal.ts';
 import {
+  BlockWriteError,
   MAX_TRANSFER,
   firstDifference,
   reportCount,
@@ -739,5 +740,11 @@ main().catch((error: unknown) => {
   if (error instanceof RailError) fail(failureLine(`refused: ${error.message}`, pastTheErase));
   if (error instanceof Refusal) fail(failureLine(error.message, pastTheErase));
   if (error instanceof RemoteError) fail(failureLine(`the remote: ${error.message}`, pastTheErase));
+  // An erase that reached a neighbouring block, whether or not the dump covers it: the library's words stop at
+  // "send nothing more", and the bench's step is this one. Not through `failureLine`, whose way back past the erase
+  // is to run the same command again, the one thing this must not get.
+  if (error instanceof BlockWriteError && error.message.includes(BlockWriteError.NEIGHBOUR_ERASED)) {
+    fail(`${error.message}\nDo not run this command again: stop and read docs/adding-a-device.md phase 8 before touching this unit again.`);
+  }
   throw error;
 });

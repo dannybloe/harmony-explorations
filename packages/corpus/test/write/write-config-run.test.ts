@@ -148,7 +148,7 @@ describe('the shipped state, the flags unset', () => {
     const build = await runWrite({ sample: ONE, architecture: 12, firmware: 0x33, commit: true });
     assert.match(build.error!.message, /^the spare Harmony One reports firmware 3\.3, and the cache drop and the restart this sends have been read in build 3\.4 only/);
     const record = await runWrite({ sample: ONE, architecture: 12, recorded: false });
-    assert.match(record.error!.message, /^the lab has no recorded identity for one_spare, .* Write it to units\/one_spare\.txt$/);
+    assert.match(record.error!.message, /^the records hold no identity for one_spare, .* Its record belongs at units\/one_spare\.txt$/);
     for (const run of [build, record]) assert.ok(!run.calls.includes('readUnitIdentity'));
     // The control: the same build without a commit is a dry run, since only a commit sends the two commands.
     assert.equal((await runWrite({ sample: ONE, architecture: 12, firmware: 0x33 })).outcome?.outcome, 'dry run');
@@ -166,7 +166,9 @@ describe('the shipped state, the flags unset', () => {
 
   it('refuses a remote that does not hold the region read, before any erase, and says what it found', skipUnless(ONE), async () => {
     const run = await runWrite({ sample: ONE, architecture: 12, remoteHolds: 'other' });
-    assert.match(run.error!.message, /^the remote and r differ at 0x[0-9a-f]+: .* Take a fresh region read\.$/);
+    assert.match(run.error!.message, new RegExp('^the remote differs from the backup it was given, r, at 0x[0-9a-f]+: '
+      + "0x[0-9a-f]+ on the remote, 0x[0-9a-f]+ in the backup\\. So the backup is not this unit's current content, "
+      + 'what an erase would destroy is not known, and nothing was written\\.$'));
     assert.deepEqual(changes(run), []);
   });
 

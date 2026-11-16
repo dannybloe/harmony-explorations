@@ -46,8 +46,10 @@ export type { SetAnswer, TouchSet, TouchSyncMode, TouchSyncOutcome, TouchSyncRun
 // `answerTouchSync`; for a document of any other model it refuses by name. The keeper is one of two kinds, by the kind
 // of family the remote's model is chosen into: `CompiledKeeper` for a write into flash, `DocumentKeeper` for an
 // answered sync.
-export { SYNC_ENDINGS, pretendReader, pretendRemote, syncDocument } from './sync.ts';
+// What a failed sync leaves a remote needing is a state of a closed list, `SYNC_STATES`, with what is true of the
+// remote, whether it may be unplugged and what puts it right, so an application acts on data rather than on a sentence.
+export { SYNC_ENDINGS, SYNC_STATES, pretendReader, pretendRemote, syncDocument } from './sync.ts';
 export type {
   AttachedRemote, CompiledKeeper, DocumentKeeper, PretendFailure, PretendOptions, PretendRead, PretendRemote, RemoteKeeper,
-  SyncAttention, SyncEnding, SyncEvent, SyncOutcome, SyncPhase, SyncRemote, SyncRequest,
+  SyncAttention, SyncEnding, SyncEvent, SyncOutcome, SyncPhase, SyncRemote, SyncRequest, SyncState,
 } from './sync.ts';

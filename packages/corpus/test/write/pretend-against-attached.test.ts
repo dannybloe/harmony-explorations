@@ -25,16 +25,22 @@
  *
  * **What is compared, exactly.** The events as words, progress included, and the outcome, message included, wherever
  * the two stand ins fail with the same words; where a failure's own words are the stand in's, the attached one's
- * `the cable was pulled` and the pretend remote's `the remote stopped answering`, the message is compared around them.
+ * `the cable was pulled` and the pretend remote's `the remote stopped answering`, the message is compared around them,
+ * and the phase and the state the outcome names exactly. **And on both sides no word a person is shown names a
+ * command, script, path or switch of the bench**, in an outcome or an attention event.
  *
  * **Which endings, and which are left to the attached tests.** Every ending of `SYNC_ENDINGS` for each kind is reached
  * on both sides and asserted against that list, so a new ending fails here until a case reaches it. Within those
  * endings the cases are: for the Harmony One, written, a dry run, nothing to write, a stop before the sync, during the
  * compare and once the write began, a screen that throws, a remote of another model, no answer when opened, and a
- * failure in the compare, the write (with the same sync again), the read back and the restart; for the Harmony Touch,
+ * failure in the compare, the write (with the same sync again), an erase that reaches the block beside its own, the
+ * read back and the restart; for the Harmony 600, 650
+ * and 700, written, on the same stand in; **one ending is reached by no case**, a restart withheld, which only a Harmony
+ * 885's write does and no document builds for an 885 yet, and the test names it; for the Harmony Touch,
  * written, written with an activity switched off, whose outcome names it on both sides, a dry run, a power source but usb in a dry run and a commit, no answer when opened in a dry run and a
  * commit, a stop before the sync, while it builds and once the hand over began, a screen that throws, a remote of
- * another model, the remote's own abort, and a failure in the hand over and once the sync started. **The refusals the
+ * another model, the remote's own abort, and a failure in the hand over and once the sync started, one of these an
+ * answer that never came. **The refusals the
  * pretend remote never produces are not compared here**, since it has no rail, no keeper and no unit to refuse: a
  * wrong unit on the cable, a unit the library does not list, the write flags or the request flags missing, a backup
  * that is not what the remote holds, a keeper of the wrong kind or one that fails, a taken folder, an address the
@@ -52,9 +58,9 @@ import { readFileSync } from 'node:fs';
 import { recipe, type BuildSources, type Recipe, type RecipeModel } from '@harmony/codec/node';
 import { proves } from '@harmony/testkit/proof';
 import {
-  RECOVERY, SYNC_ENDINGS, pretendRemote, syncDocument, type PretendOptions, type SyncEvent, type SyncOutcome,
+  SYNC_ENDINGS, pretendRemote, syncDocument, type PretendOptions, type SyncEvent, type SyncOutcome,
 } from '../../src/write.ts';
-import { BUILT_AT, HELD_AT, runSync, runSyncCommittedAll, type SyncScenario } from './sync-attached-run.ts';
+import { BUILT_AT, HELD_AT, SYNC_MODELS, runSync, runSyncCommittedAll, type SyncScenario } from './sync-attached-run.ts';
 import { ACCOUNT, runTouchSync, runTouchSyncCommittedAll, switchedOffTouchDocument, type TouchScenario } from './sync-attached-touch-run.ts';
 
 const ONE: RecipeModel = { name: 'Harmony One', skin: 54 };
@@ -67,11 +73,16 @@ const touchDocument = (): Recipe => recipe.open(JSON.parse(readFileSync(new URL(
 /** The words a stand in fails with where both sides can be told the same: the remote not answering when opened. */
 const NO_ANSWER = 'the remote did not answer when it was asked which unit it is';
 
+/** What an application's user has none of: a switch, a script, a path of this repository or a command line option. */
+const BENCH = /HARMONY_[A-Z_]|\bnode\b|\bbin\/|\.ts\b|\.md\b|(^|\s)--[a-z]/;
+
 /** One sync as both sides report it: its events as words, its outcome, and the same sync again where one was run. */
 interface Reported {
   readonly words: string[];
   readonly outcome: SyncOutcome;
   readonly again?: { readonly words: string[]; readonly outcome: SyncOutcome };
+  /** The words of every attention event, which a person is shown as the outcome's message is. */
+  readonly told?: readonly string[];
 }
 
 /** The events as the attached runs give them: short words, progress included. */
@@ -93,7 +104,7 @@ interface PretendRun {
 /** One sync to a pretend remote as the attached runs make theirs, and the same sync again where asked. */
 async function pretend(asked: PretendRun): Promise<Reported> {
   const remote = pretendRemote(asked.remote);
-  const once = async (): Promise<{ words: string[]; outcome: SyncOutcome }> => {
+  const once = async (): Promise<{ words: string[]; outcome: SyncOutcome; told: string[] }> => {
     const events: SyncEvent[] = [];
     const stop = new AbortController();
     if (asked.stopAt === 'start') stop.abort();
@@ -107,14 +118,14 @@ async function pretend(asked: PretendRun): Promise<Reported> {
       journal: () => undefined,
       stop: stop.signal,
     });
-    return { words: wordsOf(events), outcome };
+    return { words: wordsOf(events), outcome, told: events.flatMap((event) => (event.kind === 'attention' ? [event.message] : [])) };
   };
   const first = await once();
   return asked.again === true ? { ...first, again: await once() } : first;
 }
 
 /** A message with a stand in's own words for a failure taken out, so two stand ins' messages compare around them. */
-const around = (message: string | undefined, words: string): string => (message ?? '').replace(words, '<the failure>');
+const around = (message: string | undefined, words: string | RegExp): string => (message ?? '').replace(words, '<the failure>');
 
 /** One case: what the attached stand in is told, whether it commits, what the pretend remote is told, and its words. */
 interface Case<Scenario> {
@@ -124,7 +135,7 @@ interface Case<Scenario> {
   readonly committed: boolean;
   readonly pretend: PretendRun;
   /** Where the failure's words are each stand in's: the attached one's, and the pretend remote's. */
-  readonly words?: { readonly theirs: string; readonly ours: string };
+  readonly words?: { readonly theirs: string | RegExp; readonly ours: string };
 }
 
 /**
@@ -137,7 +148,8 @@ function compare(name: string, attached: Reported, ours: Reported, words: Case<u
   if (words === undefined) {
     assert.deepEqual(ours.outcome, attached.outcome, name);
   } else {
-    assert.deepEqual([ours.outcome.result, ours.outcome.remote], [attached.outcome.result, attached.outcome.remote], name);
+    assert.deepEqual([ours.outcome.result, ours.outcome.remote, ours.outcome.phase, ours.outcome.state],
+      [attached.outcome.result, attached.outcome.remote, attached.outcome.phase, attached.outcome.state], name);
     assert.equal(around(ours.outcome.message, words.ours), around(attached.outcome.message, words.theirs), name);
     assert.notEqual(around(ours.outcome.message, words.ours), ours.outcome.message, `${name}: the pretend remote's words are in its message`);
   }
@@ -163,8 +175,18 @@ function attachedRuns<Scenario, Run>(
   })();
 }
 
-/** The endings of a kind, as `result remote`, sorted. */
-const endings = (kind: keyof typeof SYNC_ENDINGS): string[] => SYNC_ENDINGS[kind].map((one) => `${one.result} ${one.remote}`).sort();
+/** An ending as words, `result remote` and the state it names where it names one. */
+const ending = (one: { readonly result: string; readonly remote: string; readonly state?: string }): string =>
+  `${one.result} ${one.remote}${one.state === undefined ? '' : ` ${one.state}`}`;
+/** The endings of a kind as words, sorted, but those `unreached` names. */
+const endings = (kind: keyof typeof SYNC_ENDINGS, unreached: readonly string[] = []): string[] =>
+  SYNC_ENDINGS[kind].map(ending).filter((one) => !unreached.includes(one)).sort();
+/** Every message and attention a person is shown of a sync on both sides: none may name a bench command. */
+const benchFree = (name: string, ...runs: readonly Reported[]): void => {
+  for (const run of runs.flatMap((one) => (one.again === undefined ? [one] : [one, one.again as Reported]))) {
+    for (const said of [run.outcome.message ?? '', ...(run.told ?? [])]) assert.doesNotMatch(said, BENCH, name);
+  }
+};
 
 // ---------------------------------------------------------------------------------------------------
 // A Harmony One, written into flash
@@ -176,6 +198,9 @@ const ONE_SOURCES: BuildSources = { builtAt: BUILT_AT };
 const onePretend = (remote: PretendOptions, more: Partial<PretendRun> = {}): PretendRun =>
   ({ document: oneDocument(), sources: ONE_SOURCES, remote, commit: true, ...more });
 const PULLED = 'the cable was pulled';
+/** The pretend remote's words for an erase that reached the block beside its own. */
+const NEIGHBOUR_WORDS = 'the erase reached the block beside the one it was told to erase, and putting that block back is '
+  + 'not built yet: send nothing more to this unit';
 
 const ONE_CASES: readonly Case<SyncScenario>[] = [
   { name: 'written', attached: { commit: true }, committed: true, pretend: onePretend(ONE_HOLDING) },
@@ -189,14 +214,30 @@ const ONE_CASES: readonly Case<SyncScenario>[] = [
   { name: 'a remote of another model', attached: { commit: true, release: 0x1072 }, committed: true, pretend: onePretend({ model: { name: 'Harmony 650' } }) },
   { name: 'no answer when opened', attached: { commit: true, openFails: NO_ANSWER }, committed: true, pretend: onePretend({ ...ONE_HOLDING, failIn: 'identify' }) },
   { name: 'a read of what it holds that fails', attached: { commit: true, readFails: PULLED }, committed: true,
-    pretend: onePretend({ ...ONE_HOLDING, failIn: 'backup' }), words: { theirs: PULLED, ours: 'the remote stopped answering while what it holds was read' } },
+    pretend: onePretend({ ...ONE_HOLDING, failIn: 'backup' }), words: { theirs: PULLED, ours: 'the remote stopped answering' } },
   { name: 'a write that fails part way, and the same sync again', attached: { commit: true, failWrite: 1 }, committed: true,
     pretend: onePretend({ ...ONE_HOLDING, failIn: 'write' }, { again: true }), words: { theirs: PULLED, ours: 'the remote stopped answering' } },
+  // The block write's words name the addresses the stand in's flash gave, so they are taken out by their shape.
+  { name: 'an erase that reaches the block beside its own', attached: { commit: true, eraseReaches: true }, committed: true,
+    pretend: onePretend({ ...ONE_HOLDING, failIn: 'neighbour' }),
+    words: { theirs: /the erase changed 0x[\s\S]*send nothing more to this unit\./, ours: NEIGHBOUR_WORDS } },
   { name: 'a read back that fails', attached: { commit: true, verifyFails: PULLED }, committed: true,
-    pretend: onePretend({ ...ONE_HOLDING, failIn: 'verify' }), words: { theirs: PULLED, ours: 'what the remote holds does not read back as what was written' } },
+    pretend: onePretend({ ...ONE_HOLDING, failIn: 'verify' }), words: { theirs: PULLED, ours: 'the last block written reads back erased' } },
   { name: 'a restart that fails', attached: { commit: true, restartFails: PULLED }, committed: true,
     pretend: onePretend({ ...ONE_HOLDING, failIn: 'restart' }), words: { theirs: PULLED, ours: 'the remote did not take the restart' } },
+  // The three other models whose configuration is written into flash, on the same stand in: each written, the pretend
+  // remote holding the same setup built at the other moment, as the attached one does.
+  ...(['Harmony 600', 'Harmony 650', 'Harmony 700'] as const).map((model): Case<SyncScenario> => {
+    const on = SYNC_MODELS[model].model;
+    return {
+      name: `written, a ${model}`, attached: { model, commit: true }, committed: true,
+      pretend: { document: recipe.create(on), sources: ONE_SOURCES, remote: { model: on, holds: recipe.create(on), heldSources: { builtAt: HELD_AT } }, commit: true },
+    };
+  }),
 ];
+
+/** The endings a write into flash has that no case reaches, each with why: a restart withheld, the Harmony 885's alone. */
+const ONE_UNREACHED = ['failed new-configuration restart-withheld'];
 
 test('a sync to a pretend Harmony One reports what a sync to an attached one reports, event for event and outcome for outcome, reaching every ending of a write into flash', async () => {
   proves(80, 'every');
@@ -205,10 +246,13 @@ test('a sync to a pretend Harmony One reports what a sync to an attached one rep
   for (const [k, one] of ONE_CASES.entries()) {
     const ours = await pretend(one.pretend);
     compare(one.name, attached[k]!, ours, one.words, one.pretend.again === true);
-    reached.add(`${ours.outcome.result} ${ours.outcome.remote}`);
+    benchFree(one.name, ours, attached[k]!);
+    reached.add(ending(ours.outcome));
   }
-  // Every ending a write into flash has, by the source's own list, reached on both sides.
-  assert.deepEqual([...reached].sort(), endings('compiled'));
+  // Every ending a write into flash has, by the source's own list, reached on both sides, but the one no model a
+  // document builds for reaches; and that one is still on the list, so it is not reached because it went.
+  assert.deepEqual([...reached].sort(), endings('compiled', ONE_UNREACHED));
+  assert.ok(ONE_UNREACHED.every((one) => SYNC_ENDINGS.compiled.map(ending).includes(one)));
 
   // The control: the same comparison, run on the failing write with the pretend remote told to fail in the read back
   // instead, has to fail, and on the event words.
@@ -228,7 +272,9 @@ test('a sync to a pretend Harmony One reports what a sync to an attached one rep
 const TOUCH_SOURCES: BuildSources = { builtAt: BUILT_AT, account: ACCOUNT as never };
 const touchPretend = (remote: Partial<PretendOptions> = {}, more: Partial<PretendRun> = {}): PretendRun =>
   ({ document: touchDocument(), sources: TOUCH_SOURCES, remote: { model: TOUCH, ...remote }, commit: true, ...more });
-const STOPPED = 'the run stopped on an error: the remote stopped answering';
+const STOPPED = 'the remote stopped answering';
+/** The session's words for a reply that never came to the first open of the sync's first request list, `touchsession.ts`. */
+const SILENCE = 'no reply to the open for reading within 40000 ms';
 
 const TOUCH_CASES: readonly Case<TouchScenario>[] = [
   { name: 'written', attached: { commit: true }, committed: true, pretend: touchPretend() },
@@ -251,6 +297,8 @@ const TOUCH_CASES: readonly Case<TouchScenario>[] = [
     pretend: touchPretend({ failIn: 'hand-over' }), words: { theirs: 'the remote answered a request list with status 500', ours: STOPPED } },
   { name: 'a write that fails once the sync started', attached: { commit: true, sync: [[{ verb: 'GET', uri: 'harmony://Account/1/Other' }]] },
     committed: true, pretend: touchPretend({ failIn: 'write' }), words: { theirs: 'the set holds no answer for Other', ours: STOPPED } },
+  { name: 'an answer that never came once the sync started', attached: { commit: true, silentOnceStarted: true }, committed: true,
+    pretend: touchPretend({ failIn: 'write' }), words: { theirs: SILENCE, ours: STOPPED } },
 ];
 
 test('a sync to a pretend Harmony Touch reports what a sync to an attached one reports, event for event and outcome for outcome, reaching every ending of an answered sync', async () => {
@@ -260,9 +308,8 @@ test('a sync to a pretend Harmony Touch reports what a sync to an attached one r
   for (const [k, one] of TOUCH_CASES.entries()) {
     const ours = await pretend(one.pretend);
     compare(one.name, attached[k]!, ours, one.words, false);
-    // After the answerer's reason, the recovery order and the abort's cost are the answerer's own sentences.
-    if (one.words !== undefined) assert.ok(ours.outcome.message!.includes(`. Recovery: ${RECOVERY}. abort cost, `), one.name);
-    reached.add(`${ours.outcome.result} ${ours.outcome.remote}`);
+    benchFree(one.name, ours, attached[k]!);
+    reached.add(ending(ours.outcome));
   }
   // Every ending an answered sync has, by the source's own list, reached on both sides.
   assert.deepEqual([...reached].sort(), endings('document'));

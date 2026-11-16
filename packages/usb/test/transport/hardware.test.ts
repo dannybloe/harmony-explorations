@@ -1,12 +1,17 @@
 /**
- * The one test that touches real USB, and it only looks.
+ * The tests that touch real USB.
  *
- * Enumeration, never an open: this asks the operating system what is attached and stops there. It
- * skips when no remote is plugged in, which is most of the time, and that is the point of keeping it
- * separate from everything else. A test that needs hardware and silently passes without it is a test
- * that reports on nothing.
+ * **Every test in this file is gated on `HARMONY_HARDWARE_TESTS=1`**, the two enumeration tests
+ * included, so an ordinary run asks the operating system nothing about the bus. Enumeration is not
+ * an open, but it is still a question put to the bus, and on a bench where irreplaceable remotes are
+ * attached an everyday run should not reach the bus at all. Run them on purpose with
+ * `HARMONY_HARDWARE_TESTS=1 node --test packages/usb/test/transport/hardware.test.ts`.
  *
- * The tests below the enumeration one do send commands, and they are gated twice over: on
+ * The two enumeration tests ask what is attached and stop there; the second skips when no remote is
+ * plugged in. A test that needs hardware and silently passes without it is a test that reports on
+ * nothing, which is why a skip says why.
+ *
+ * The tests below the enumeration ones send commands, and they are gated twice over: on
  * HARMONY_HARDWARE_TESTS=1 and on the specific remote each was written for. A test that fails
  * because you plugged in the other supported remote is a broken test, not a finding, so they skip
  * on the wrong unit rather than asserting a 600's skin against a One.
@@ -97,7 +102,18 @@ const BENCH = [
   },
 ] as const;
 
-test('node-hid loads and enumerates the bus', async () => {
+/**
+ * Whether a person asked for the tests that reach the bus. Read once, here, so the enumeration tests
+ * below are gated by the same switch as the ones that open a remote.
+ */
+const HARDWARE = process.env['HARMONY_HARDWARE_TESTS'] === '1';
+const NOT_ASKED = 'set HARMONY_HARDWARE_TESTS=1 to let tests reach the USB bus';
+
+test('node-hid loads and enumerates the bus', async (t) => {
+  if (!HARDWARE) {
+    t.skip(NOT_ASKED);
+    return;
+  }
   // Which is worth checking on its own: node-hid is a native module, so this failing means the
   // binding did not build or load for this platform, not that anything about Harmony is wrong.
   const hid = await import('node-hid');
@@ -108,6 +124,10 @@ test('node-hid loads and enumerates the bus', async () => {
 
 test('an attached Harmony is recognised by vendor and product range', async (t) => {
   proves(62, ['harmony-one'], ['docs/test-notes/harmony-one.md#telling-the-two-ones-apart']);
+  if (!HARDWARE) {
+    t.skip(NOT_ASKED);
+    return;
+  }
   const found = await listHarmony();
   if (found.length === 0) {
     t.skip('no Harmony remote attached');
@@ -132,7 +152,6 @@ test('an attached Harmony is recognised by vendor and product range', async (t) 
  * against the lab dump of that same unit, which is an answer obtained without any of this code. A
  * read that returns plausible bytes proves nothing; a read that returns the right bytes does.
  */
-const HARDWARE = process.env['HARMONY_HARDWARE_TESTS'] === '1';
 
 // One test per bench model rather than one test that picks a model. With both remotes attached
 // both run, and a session covers arch 12 and arch 14 at once.

@@ -84,8 +84,22 @@ import { ACTION_QUEUE_INSTRUCTIONS, trailerChecksum, worstQueueRun } from '@harm
 import { profileFor, readConfig } from './read.ts';
 import { StampError, stampForWrite } from './stamp.ts';
 
-/** A refusal of the write, before anything was sent or at any point after, as opposed to a fault. */
-export class ConfigWriteRefusal extends Error {}
+/**
+ * A refusal of the write, before anything was sent or at any point after, as opposed to a fault.
+ *
+ * **Two of its texts end in a step only a person at a bench can take**, and the library names no step of that
+ * kind, since its caller may be an application whose user cannot take it. So the words that say which refusal it
+ * was are kept here as constants, and a script that has such a person in front of it adds its own instruction
+ * where a message carries one, rather than matching on prose that could be reworded under it.
+ */
+export class ConfigWriteRefusal extends Error {
+  /** In the refusal of a commit on a firmware build whose cache drop and restart have not been read. */
+  static readonly BUILD_NOT_READ = 'so a write to a remote on this build is not built yet';
+  /** In the refusal of a backup that differs from what the remote holds, found before anything was erased. */
+  static readonly BACKUP_NOT_CURRENT = "the backup is not this unit's current content";
+  /** In the refusal of a block to be written that the backup does not reach, found before anything was erased. */
+  static readonly BACKUP_TOO_SHORT = 'runs past the end of the backup it was given';
+}
 
 /**
  * The refusal of a run that was asked to stop, `ConfigWrite.stop`: thrown at the one point a stop is honoured,
@@ -96,14 +110,22 @@ export class ConfigWriteStopped extends ConfigWriteRefusal {}
 
 /**
  * Where a run is, for a caller that shows it, `ConfigWrite.onStep`: the unit recognised, each block read and
- * compared before anything is erased, each block written and read back, the whole configuration read back, and
- * the restart. `writing` with `done` 0 is the moment before the first command that changes the remote.
+ * compared before anything is erased, each block written and read back, the whole configuration read back, the
+ * whole read back found equal, and the restart. `writing` with `done` 0 is the moment before the first command that
+ * changes the remote.
+ *
+ * **`verified` is its own step** because what a failure after it means differs from one before it: before it the
+ * remote may hold a configuration that does not read back as written, and after it the configuration is whole and
+ * only the restart is owed. Between `verified` and `restarting` sits the check that can withhold the restart, the
+ * staged install status on a Harmony 885, so a caller told of both can say a restart was withheld rather than that a
+ * read back failed.
  */
 export type ConfigWriteStep =
   | { readonly step: 'identified'; readonly unit: string }
   | { readonly step: 'comparing'; readonly done: number; readonly total: number }
   | { readonly step: 'writing'; readonly done: number; readonly total: number }
   | { readonly step: 'verifying' }
+  | { readonly step: 'verified' }
   | { readonly step: 'restarting' };
 
 /**
@@ -361,8 +383,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     const known = Object.hasOwn(permitted, unit.label) ? permitted[unit.label] : undefined;
     if (known === undefined) {
       throw new ConfigWriteRefusal(`${unit.label} is not a unit this may write: the units are the library's, `
-        + `${Object.keys(permitted).join(', ')}, CLAUDE.md "Never write to a remote". `
-        + 'Refusing before anything is opened.');
+        + `${Object.keys(permitted).join(', ')}. Refusing before anything is opened.`);
     }
     const { architecture } = CONFIG_WRITE_MODELS[known.model];
     (targets[architecture] ??= []).push({ ...known, label: unit.label, regions: unit.regions });
@@ -468,7 +489,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     if (commit && !model.sequenceReadOn.includes(identity.firmware)) {
       throw new ConfigWriteRefusal(`${unit.name} reports firmware ${identity.firmware}, and the cache drop and the `
         + `restart this sends have been read in ${model.sequenceReadOn.length === 0 ? 'no build of it yet'
-          : `build ${model.sequenceReadOn.join(' and ')} only`}. Read both in that build's image first.`);
+          : `build ${model.sequenceReadOn.join(' and ')} only`}, ${ConfigWriteRefusal.BUILD_NOT_READ}`);
     }
     // Before the unit check and before any comparison, so that a run which would leave the remote reading
     // a region while it is erased stops having read nothing but the version and the identity. Not only on
@@ -478,9 +499,10 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     }
     const stored = request.records.text(unit.label);
     if (stored === undefined) {
-      throw new ConfigWriteRefusal(`the lab has no recorded identity for ${unit.label}, so nothing `
+      // The records are the caller's, so where they are kept is the caller's own words, `UnitRecords.where`.
+      throw new ConfigWriteRefusal(`the records hold no identity for ${unit.label}, so nothing `
         + 'can say whether the remote on the cable is the one this may write to. Two remotes of one '
-        + `model enumerate identically. Write it to ${request.records.where(unit.label)}`);
+        + `model enumerate identically. Its record belongs at ${request.records.where(unit.label)}`);
     }
     const permitted = unitIdentityFromText(stored);
     const identityBlock = await remote.readUnitIdentity();
@@ -579,8 +601,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
           + 'E1 02 with that byte set erases the application and copies 64 KiB over it. Leave the remote '
           + 'as it is, running on its built in configuration, and report the value. A battery pull restarts '
           + 'it without an install, since the bootloader clears the request after any reset but the RESET '
-          + 'instruction, reference/architectures/harmony-880-885/firmware.md; decide that step once the '
-          + 'value is understood, and do not rerun this script');
+          + 'instruction; decide that step once the value is understood, and do not run this write again');
     };
 
     /**
@@ -661,8 +682,8 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
           + `0x${ceiling.toString(16)}, below which the stored application firmware sits`);
       }
       if (block - base + blockSize > dump.length) {
-        throw new ConfigWriteRefusal(`block 0x${block.toString(16)} runs past the end of ${dumpName}, so the `
-          + 'bytes the erase would destroy are not known. Read a region that covers it.');
+        throw new ConfigWriteRefusal(`block 0x${block.toString(16)} ${ConfigWriteRefusal.BACKUP_TOO_SHORT}, `
+          + `${dumpName}, so the bytes the erase would destroy are not known, and nothing was written`);
       }
     }
 
@@ -717,11 +738,12 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
         continue;
       }
       if (differs !== undefined) {
-        throw new ConfigWriteRefusal(`the remote and ${dumpName} differ at `
+        // Said before any block was erased, since every block is compared before the first erase, so nothing was
+        // written; the backup is the caller's, `dumpName` is its own name for it.
+        throw new ConfigWriteRefusal(`the remote differs from the backup it was given, ${dumpName}, at `
           + `0x${(plan.block + differs).toString(16)}: 0x${live[differs]!.toString(16)} on the `
-          + `device, 0x${plan.intended[differs]!.toString(16)} in the dump. Refusing: the dump is `
-          + "not this unit's current content, so what an erase would destroy is unknown. Take a "
-          + 'fresh region read.');
+          + `remote, 0x${plan.intended[differs]!.toString(16)} in the backup. So ${ConfigWriteRefusal.BACKUP_NOT_CURRENT}, `
+          + 'what an erase would destroy is not known, and nothing was written.');
       }
     }
     say(interrupted === 0
@@ -870,6 +892,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     // blocks, all show up here and nowhere else.
     step({ step: 'verifying' });
     await containerMatchesTheFile();
+    step({ step: 'verified' });
 
     // **Step 7, and it is the last thing this does on purpose.** concordance ends a config
     // write with a device reset and waits for the remote to come back, which is the battery pull

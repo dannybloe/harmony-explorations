@@ -22,8 +22,15 @@
  *   enumerates as a Harmony One, a Harmony One's document on a Touch, a keeper of the other kind on either, a unit
  *   the library does not list, an address the keeper lacks, and a folder that already holds a run.
  * * **The outcome says what the remote was left as**: a refusal before the remote was acted on, by the session's unit
- *   check or the provisioning read, `refused` and `as-before`; one after it, a document the set lacks, `failed` and
- *   `needs-recovery` with the recovery order and the abort's cost; the remote's own abort `failed` and `as-before`.
+ *   check or the provisioning read, `refused` and `as-before`; one after it `failed` and `needs-recovery`, named by
+ *   its phase, worded for it and naming the state it left: a document the set lacks once the sync started, and an
+ *   answer that never came then, `write` and `stopped-after-hand-over`; a change the remote handed up that the set
+ *   would revert, a hand over refused, `hand-over` and `stopped-after-hand-over`, the sync not started; a request list
+ *   answered with an error inside the hand over, `hand-over` and `stopped-in-hand-over`. The answerer's recovery order
+ *   and abort cost, the bench's commands, are in the journal and never in the message. The remote's own abort is
+ *   `failed` and `as-before`.
+ * * **No word an application's user is shown names a switch**: a commit without the request flags is refused in
+ *   words of its own, the rail's kept in the journal.
  * * **A stop is honoured up to the moment the remote is opened and never after**, and a screen that throws stops
  *   nothing.
  * * **A press a key of the Touch has passes**: a held key in a device's own map is checked, built and delivered, and
@@ -41,7 +48,11 @@ import assert from 'node:assert/strict';
 
 import { HAND_OVER, PROVISIONING, READ_LIST, SYNC, WRITE_ANSWERS } from '../../src/touchsync.ts';
 import { RECOVERY, SYNC_LINES } from '../../src/write.ts';
-import { ADDRESSES, defaultSync, runTouchSync, runTouchSyncCommitted, type TouchScenario } from './sync-attached-touch-run.ts';
+import { SWITCHED_OFF } from '../../src/sync.ts';
+
+/** What an application's user has none of: a switch, a script, a path of this repository or a command line option. */
+const BENCH = /HARMONY_[A-Z_]|\bnode\b|\bbin\/|\.ts\b|\.md\b|(^|\s)--[a-z]/;
+import { ADDRESSES, defaultSync, runTouchSync, runTouchSyncCommitted, runTouchSyncCommittedAll, type TouchScenario } from './sync-attached-touch-run.ts';
 
 /** One run in a process of its own with the two request flags set and the recovery flag unset, `runTouchSyncCommitted`. */
 const withFlags = runTouchSyncCommitted;
@@ -86,7 +97,10 @@ test('without the request flags a commit is refused with nothing made, kept or o
   // This process has neither flag.
   assert.equal(process.env['HARMONY_TOUCH_REQUESTS'], undefined);
   const refused = await runTouchSync({ commit: true });
-  assert.deepEqual(refused.outcome, { result: 'refused', remote: 'as-before', message: '--commit needs HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1' });
+  assert.deepEqual(refused.outcome, { result: 'refused', remote: 'as-before', message: SWITCHED_OFF });
+  assert.doesNotMatch(SWITCHED_OFF, BENCH);
+  // The rail's words, which name the switches, are the journal's, for a person at the bench.
+  assert.ok(refused.journal.includes('sync: the rail refused: --commit needs HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1'), refused.journal.join('\n'));
   assert.deepEqual(refused.words, ['identify', 'check', 'build', '= refused']);
   assert.deepEqual([refused.kept.length, refused.folders, refused.opened, refused.written.length], [0, 0, 0, 0]);
 
@@ -100,6 +114,16 @@ test('without the request flags a commit is refused with nothing made, kept or o
   assert.deepEqual(dry.openedPaths, ['/sys/sysinfo R', '/tde/powerstate R']);
   assert.ok(dry.journal.includes('sync: built 6 documents and 2 pictures, a set of 8 answers the gate passes'), dry.journal.join('\n'));
   assert.ok(dry.journal.includes('sync: power source, usb'), dry.journal.join('\n'));
+});
+
+test('with the recovery flag set as well a commit is refused in the same words as without the request flags, and the journal says which', () => {
+  // The outcome is one sentence for both ways a switch refuses, so an application shows the same thing; the rail's
+  // own words, kept in the journal, are what tell a person at the bench it was the recovery switch.
+  const [refused] = runTouchSyncCommittedAll([{ commit: true }], true);
+  assert.deepEqual(refused!.outcome, { result: 'refused', remote: 'as-before', message: SWITCHED_OFF });
+  assert.ok(refused!.journal.some((line) => line.startsWith('sync: the rail refused: --commit refuses with HARMONY_TOUCH_RECOVERY set')),
+    refused!.journal.join('\n'));
+  assert.deepEqual([refused!.kept.length, refused!.folders, refused!.opened, refused!.written.length], [0, 0, 0, 0]);
 });
 
 test('a power source but usb is refused with the remote as it was, in a dry run and a commit, before /sys/hlapi is opened', async () => {
@@ -137,7 +161,7 @@ test('a document for another model, a keeper of the other kind, an unlisted unit
     ['a Harmony One\'s document on a Touch', { document: 'one' }, ['identify'], /^the document is for a Harmony One, skin 54, and the remote on the cable reports skin 99$/],
     ['a compiled keeper on a Touch', { keeper: 'compiled' }, ['identify'], /^the remote on the cable is a Harmony Touch, which asks for its documents and is answered, and its keeper holds what a write into flash needs/],
     ['a document keeper on a Harmony One', { document: 'one', remote: 'one' }, ['identify'], /^the remote on the cable is a Harmony One, whose configuration is written into flash, and its keeper holds what a sync of a remote that asks for documents needs/],
-    ['an unlisted unit', { label: 'other' }, ['identify'], /^other is not a Harmony Touch this may sync: the units are the library's, touch,/],
+    ['an unlisted unit', { label: 'other' }, ['identify'], /^other is not a Harmony Touch this library may sync, so nothing was opened and nothing was sent$/],
     ['a missing address', { withoutAddress: 'Context' }, ['identify', 'check', 'build'], /^the account names no address of Context$/],
     ['no account', { noAccount: true }, ['identify', 'check', 'build'], /no account was given/],
     ['a taken folder', { folderTaken: true }, ['identify', 'check', 'build'], /already holds files, and a run never writes over another's$/],
@@ -166,15 +190,18 @@ test('a refusal before the remote is acted on leaves it as it was, one after lea
 
   // A document the set lacks, asked once the sync has started: the answerer refuses and the remote needs recovery.
   const lacking = withFlags({ commit: true, sync: [[{ verb: 'GET', uri: 'harmony://Account/1/Other' }]] });
-  assert.deepEqual([lacking.outcome.result, lacking.outcome.remote], ['failed', 'needs-recovery']);
-  assert.ok(lacking.outcome.message!.startsWith('the set holds no answer for Other. Recovery: '), lacking.outcome.message);
-  assert.ok(lacking.outcome.message!.includes(RECOVERY));
-  assert.match(lacking.outcome.message!, /abort cost, none to a tag: an abort now leaves the committed set as it is$/);
+  assert.deepEqual(lacking.outcome, {
+    result: 'failed', remote: 'needs-recovery', phase: 'write', state: 'stopped-after-hand-over',
+    message: 'the sync stopped while the remote was being answered: the set holds no answer for Other',
+  });
   assert.deepEqual(lacking.words, ['identify', 'check', 'build', '! do-not-unplug', 'hand-over', 'write', '= failed']);
+  // The recovery order and what an abort would cost are the answerer's lines in the journal, for the bench.
+  assert.ok(lacking.journal.includes(`sync: recovery, ${RECOVERY}`));
+  assert.ok(lacking.journal.includes('sync: recovery, abort cost, none to a tag: an abort now leaves the committed set as it is'));
 
   // The remote's own abort: it kept the set it held, so it may be unplugged.
   const aborted = withFlags({ commit: true, sync: [[{ verb: 'POST', uri: 'proxy://Abort' }]] });
-  assert.deepEqual(aborted.outcome, { result: 'failed', remote: 'as-before', message: 'the remote aborted the sync, deleted what it had gathered and kept the set it held' });
+  assert.deepEqual(aborted.outcome, { result: 'failed', remote: 'as-before', phase: 'write', message: 'the remote aborted the sync, deleted what it had gathered and kept the set it held' });
   assert.deepEqual(aborted.words, ['identify', 'check', 'build', '! do-not-unplug', 'hand-over', 'write', '! safe-to-unplug', '= failed']);
   // The control: the default lists, the first test's, end written.
   assert.equal(defaultSync().length, 3);
@@ -202,7 +229,7 @@ test('a keeper that cannot make its folder or keep the set ends the sync failed 
     [{ keepFails: 'the disk holding the sets is full' }, 'the disk holding the sets is full'],
   ] as const) {
     const run = withFlags({ commit: true, ...scenario });
-    assert.deepEqual(run.outcome, { result: 'failed', remote: 'as-before', message }, message);
+    assert.deepEqual(run.outcome, { result: 'failed', remote: 'as-before', phase: 'build', message }, message);
     assert.deepEqual(run.words, ['identify', 'check', 'build', '= failed'], message);
     assert.deepEqual([run.opened, run.kept.length, run.written.length, run.answers.length], [0, 0, 0, 0], message);
   }
@@ -234,4 +261,35 @@ test('a Touch\'s document the check refuses more than once is refused naming its
   });
   assert.deepEqual(run.words, ['identify', 'check', '= refused']);
   assert.equal(run.opened, 0);
+});
+
+test('a failure in each phase the remote is acted on in is named by that phase and worded for it: a hand over refused, a request list answered with an error, an answer that never came', () => {
+  const [refusedHandOver, failedHandOver, silent, opened] = runTouchSyncCommittedAll([
+    { commit: true, handsUpSettings: true }, { commit: true, handOverFails: true }, { commit: true, silentOnceStarted: true },
+    { commit: true, openFails: 'the remote did not answer when it was asked which unit it is' },
+  ]);
+  // The remote handed up the Settings the set holds: the hand over ended and committed it, and the answerer refused to
+  // start a sync that would revert it, so the sync was not started.
+  assert.deepEqual([refusedHandOver!.outcome.result, refusedHandOver!.outcome.remote, refusedHandOver!.outcome.phase, refusedHandOver!.outcome.state],
+    ['failed', 'needs-recovery', 'hand-over', 'stopped-after-hand-over']);
+  assert.ok(refusedHandOver!.outcome.message!.startsWith('the remote handed its own changes up, and the sync was not started: the remote handed up Settings, which the set also holds'),
+    refusedHandOver!.outcome.message);
+  assert.deepEqual(refusedHandOver!.words, ['identify', 'check', 'build', '! do-not-unplug', 'hand-over', '= failed']);
+  assert.equal(refusedHandOver!.written.includes(SYNC), false, 'no sync request was sent');
+  // A request list of the hand over answered with an error: stopped inside the hand over, where an abort would cost a tag.
+  assert.deepEqual(failedHandOver!.outcome, {
+    result: 'failed', remote: 'needs-recovery', phase: 'hand-over', state: 'stopped-in-hand-over',
+    message: 'the sync stopped while the remote handed its own changes up: the remote answered a request list with status 500',
+  });
+  // No reply once the sync started, an answer that never came: told as such, in the write.
+  assert.deepEqual([silent!.outcome.result, silent!.outcome.remote, silent!.outcome.phase, silent!.outcome.state],
+    ['failed', 'needs-recovery', 'write', 'stopped-after-hand-over']);
+  assert.match(silent!.outcome.message!, /^the sync stopped while the remote was being answered: no reply to the .* within \d+ ms$/);
+  // The remote not opened: nothing acted on, named by identify, where the remote is asked which unit it is.
+  assert.deepEqual(opened!.outcome, {
+    result: 'failed', remote: 'as-before', phase: 'identify',
+    message: 'the remote could not be opened and identified, so nothing that acts on it was sent: the remote did not answer when it was asked which unit it is',
+  });
+  for (const run of [refusedHandOver!, failedHandOver!, silent!, opened!]) assert.doesNotMatch(run.outcome.message!, BENCH);
+  // The control: the same runs with nothing out of place are the first test's, which is written.
 });

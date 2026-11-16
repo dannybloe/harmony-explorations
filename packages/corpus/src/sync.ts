@@ -45,6 +45,12 @@
  * Where the pretend's stand in says something itself, the words a failure is reported with, it says it in the form
  * the real path's own failures take.
  *
+ * **What a sync says is for a person, and what it leaves is data.** Every event's and outcome's words are shown to an
+ * application's user, who has none of this repository's scripts, paths or switches, so they name none: a rail's refusal
+ * that names a switch is reported as `SWITCHED_OFF` with the rail's own words in the journal, and a failure is worded
+ * for the phase it happened in, `SyncOutcome.phase`. What the remote is left needing is a state of a closed list,
+ * `SYNC_STATES`, which an application acts on and from which the bench's scripts word their own commands.
+ *
  * **Two kinds of remote, two kinds of keeper.** The contract was first written against the compiled family alone,
  * and a Harmony Touch fits it only where its sync has the same shape: the phases before anything is opened, a stop
  * honoured up to the first request that acts, and an outcome that says what the remote was left as. Where it does not,
@@ -70,15 +76,15 @@ import {
 } from '@harmony/usb';
 import { encodeVersionBlock } from '@harmony/usb/protocol';
 import { ERASE_BLOCK_SIZE } from '@harmony/usb/rails';
-import { blocksDiffering } from '@harmony/usb/write';
+import { BlockWriteError, blocksDiffering } from '@harmony/usb/write';
 import { PROFILES, ReadError, type ConfigReader, type RemoteProfile } from './read.ts';
 import {
   CONFIG_WRITE_MODELS, ConfigWriteRefusal, ConfigWriteStopped, writeConfiguration,
   type ConfigWriteResult, type ConfigWriteStep, type ConfigWriteUnit, type UnitRecords,
 } from './writeconfig.ts';
 import {
-  RECOVERY, SYNC_LINES, abortCost, answerTouchSync, assertTouchSyncAllowed, assertTouchSyncUnit, describePowerSource,
-  prepareSet, touchFolderRefusal, touchPowerRefusal, touchSetOf, type TouchSet, type TouchSyncOutcome,
+  RECOVERY, RUN_STOPPED, SYNC_LINES, abortCost, answerTouchSync, assertTouchSyncAllowed, assertTouchSyncUnit,
+  describePowerSource, prepareSet, touchFolderRefusal, touchPowerRefusal, touchSetOf, type TouchSet, type TouchSyncOutcome,
 } from './touchsync.ts';
 
 /**
@@ -131,11 +137,15 @@ export type SyncEvent =
  * answered, so it holds the new set (nothing is read back: the answerer has no read back, and the remote's own commit
  * is the check); `refused` with the remote `as-before` for every refusal before the first request that acts on it,
  * the gate, a power source but `usb` and the provisioning read among them; `failed` with the remote `needs-recovery` for a refusal after it,
- * the message carrying the recovery order and what an abort would cost there; and `failed` with the remote
- * `as-before` when the remote itself aborted, since an abort deletes what it had gathered and reloads the set it
- * held. **`nothing-to-write` is never a Touch's outcome**: what the remote holds can be told only by asking it, a
- * request the answerer does not send, and a sync whose every answer turns out 304 has still handed the remote's own
- * changes up and committed, so it is `written`.
+ * with the state it was left in, `stopped-in-hand-over` or `stopped-after-hand-over`, which says what an abort would
+ * cost there; and `failed` with the remote `as-before` when the remote itself aborted, since an abort deletes what it
+ * had gathered and reloads the set it held. **`nothing-to-write` is never a Touch's outcome**: what the remote holds
+ * can be told only by asking it, a request the answerer does not send, and a sync whose every answer turns out 304 has
+ * still handed the remote's own changes up and committed, so it is `written`.
+ *
+ * **Words for a person, data for an application.** `message` is a sentence to show and carries no command, script,
+ * path or switch of this repository's bench, since an application's user has none of them; what an application acts
+ * on is `result`, `remote`, `phase` and `state`. The bench's scripts word their own instructions from `state`.
  */
 export interface SyncOutcome {
   /** How it ended: one of `SYNC_ENDINGS`' results, each described there. */
@@ -144,6 +154,21 @@ export interface SyncOutcome {
   readonly remote: SyncEnding['remote'];
   /** Why, in a sentence, for every result but `written`. */
   readonly message?: string;
+  /**
+   * **The phase a failure happened in**, on a `failed` outcome and on no other, and `message` is worded for that
+   * phase: a write that stopped part way, a read back that did not come back as written, a restart that failed or was
+   * withheld, a hand over that was refused, an answer that never came. It is the phase last entered, but for two pieces
+   * of work done outside the phase they belong to: the remote is opened and asked which unit it is once the document is
+   * built, on both kinds of remote, and a failure there is `identify`'s; and on a write into flash the check that can
+   * withhold the restart runs after the read back and before the restart phase is entered, and a restart it withheld
+   * is `restart`'s.
+   */
+  readonly phase?: SyncPhase;
+  /**
+   * **What the remote was left needing**, on a `failed` outcome that leaves it needing something done: one of
+   * `SYNC_STATES`, which says what is true of the remote, whether it may be unplugged and what puts it right.
+   */
+  readonly state?: SyncState;
   /**
    * **The activities the document switches off, which the build left out**, R92, decision 44, in the document's order:
    * on every outcome reached after the build, whatever it was, and absent where the document switches none off or the
@@ -155,9 +180,96 @@ export interface SyncOutcome {
 }
 
 /**
- * **Every way a sync ends, per kind of remote**: each result with what it leaves the remote as. The one place the
- * outcomes are stated, so that `SyncOutcome`'s types are derived from it and a screen, or a test that every ending is
- * reached, can walk it; a result or a state added to the type is added here or nowhere.
+ * **The states a failed sync can leave a remote in that need something done**, a closed list: for each, what is true
+ * of the remote (`holds`), whether it may be unplugged now (`unplug`), and what puts it right (`next`), each worded for
+ * a person and naming no command, script or switch. An outcome names one in `SyncOutcome.state`, and `SYNC_ENDINGS`
+ * pairs each with the result and the remote it comes with. A state is named only where something is owed: a failure
+ * that leaves the remote as it was names none.
+ *
+ * **Why data and not a sentence in the message.** The way back from these differs per state and an application has to
+ * act on it, offer the same sync again, ask for the batteries, or keep the person from unplugging, which it cannot do
+ * by reading a sentence; and the bench's scripts word their own commands from the same state, so the library's words
+ * carry none of them.
+ *
+ * * `write-unfinished`, a configuration written into flash: the write stopped part way.
+ * * `neighbour-erased`, the same: the write stopped because an erase reached the block beside the one it was told to
+ *   erase. Its own state, never `write-unfinished`, because that one's way back, the same sync again, erases and writes
+ *   the blocks the sync owns and leaves the neighbour as the erase left it, so here running again is what must not
+ *   happen.
+ * * `read-back-failed`, the same: every block was written, and the whole configuration did not read back as written.
+ * * `restart-owed`, the same: the new configuration is whole and the restart failed.
+ * * `restart-withheld`, the same: the new configuration is whole and a check before the restart withheld it. Only a
+ *   Harmony 885's write withholds one, `CONFIG_WRITE_MODELS`, and no document builds for an 885 yet, so no sync reaches
+ *   this state today; it is stated so that the words are right on the day one does.
+ * * `stopped-in-hand-over`, a Harmony Touch: the sync stopped while the remote handed its own changes up.
+ * * `stopped-after-hand-over`, the same: the hand over had ended, and the sync then stopped.
+ *
+ * The Harmony Touch's two are the answerer's recovery order and its abort's cost, `RECOVERY` and `abortCost` in
+ * `touchsync.ts`, `reference/architectures/harmony-touch/answering-a-sync.md`, put as what is true and what is done
+ * rather than as the bench's commands; the steps themselves, the read, the abort and the restart, are not built into
+ * the library yet.
+ */
+export const SYNC_STATES = {
+  'write-unfinished': {
+    holds: 'part of the configuration it held and part of the new one, the block being written when the write stopped '
+      + 'erased or half written, and it has not been restarted',
+    unplug: false,
+    next: 'leave it on its cable with its batteries in and run the same sync again, built at the same moment, which '
+      + 'finishes the blocks it left',
+  },
+  'neighbour-erased': {
+    holds: 'part of the configuration it held and part of the new one, and a block beside the one being written erased '
+      + 'as well, outside the block the write was told to erase; what that block held is in the backup the sync was '
+      + 'given where the backup reaches it, which the message says, and it has not been restarted',
+    unplug: false,
+    next: 'send this remote nothing more and do not run the sync again: putting the erased block back is not built yet',
+  },
+  'read-back-failed': {
+    holds: 'every block of the new configuration, each read back as it was written, and the whole configuration did not '
+      + 'read back as written; it has not been restarted',
+    unplug: false,
+    next: 'leave it on its cable with its batteries in and run the same sync again, built at the same moment, which '
+      + 'writes again every block that holds the new configuration or erased flash, and refuses a block that holds '
+      + 'anything else',
+  },
+  'restart-owed': {
+    holds: 'the new configuration, written and read back whole, and it has not restarted to take it up',
+    unplug: true,
+    next: 'restart it by hand, its batteries out and back in',
+  },
+  'restart-withheld': {
+    holds: 'the new configuration, written and read back whole, and a check before the restart withheld it, so it has '
+      + 'not taken it up; the message says what the check found',
+    unplug: false,
+    next: 'leave it as it is until what the check found is understood: no restart, by hand or over the cable, is '
+      + 'offered for it',
+  },
+  'stopped-in-hand-over': {
+    holds: 'the set it held before, still committed; a sync may be left marked running on it, and a change made on its '
+      + 'own screens may be waiting to be handed up',
+    unplug: false,
+    next: 'ask it first whether a sync is marked running: if none is, nothing is owed; if one is, it is aborted and the '
+      + 'remote restarted, and an abort now can leave a change made on its own screens without the tag that hands it '
+      + 'up, so the person is asked before it; if it gives no answer, stop there. The library offers none of these '
+      + 'steps yet',
+  },
+  'stopped-after-hand-over': {
+    holds: 'the set it held before with what it handed up committed; a sync may be left marked running on it',
+    unplug: false,
+    next: 'ask it first whether a sync is marked running: if none is, nothing is owed; if one is, it is aborted and the '
+      + 'remote restarted, which costs nothing; if it gives no answer, stop there. The library offers none of these '
+      + 'steps yet',
+  },
+} as const satisfies Readonly<Record<string, { readonly holds: string; readonly unplug: boolean; readonly next: string }>>;
+
+/** One state of `SYNC_STATES`. */
+export type SyncState = keyof typeof SYNC_STATES;
+
+/**
+ * **Every way a sync ends, per kind of remote**: each result with what it leaves the remote as, and the state it names
+ * where it names one. The one place the outcomes are stated, so that `SyncOutcome`'s types are derived from it and a
+ * screen, or a test that every ending is reached, can walk it; a result or a state added to the type is added here or
+ * nowhere.
  *
  * * `written`: the remote holds the document's configuration, read back and equal, or, on a Harmony Touch, committed
  *   by it.
@@ -165,9 +277,10 @@ export interface SyncOutcome {
  * * `dry-run`: everything up to the first write was done and nothing was sent, `commit` being false.
  * * `stopped`: a stop was asked and honoured, so the remote is as it was.
  * * `refused`: a check or a rail refused before anything was written.
- * * `failed`: something went wrong on the cable, in the remote or in its keeper; `remote` says what that left: as it
- *   was before anything changed, needing its recovery part way, and, for flash, the new configuration whole with only
- *   the restart owed. A Harmony Touch swaps a set in only at its commit, so a failure never leaves it the new one.
+ * * `failed`: something went wrong on the cable, in the remote or in its keeper; `remote` says what that left, as it
+ *   was before anything changed, needing its recovery part way, or, for flash, the new configuration whole with only
+ *   the restart owed, and `state` what is owed. A Harmony Touch swaps a set in only at its commit, so a failure never
+ *   leaves it the new one.
  */
 export const SYNC_ENDINGS = {
   compiled: [
@@ -177,8 +290,11 @@ export const SYNC_ENDINGS = {
     { result: 'stopped', remote: 'as-before' },
     { result: 'refused', remote: 'as-before' },
     { result: 'failed', remote: 'as-before' },
-    { result: 'failed', remote: 'needs-recovery' },
-    { result: 'failed', remote: 'new-configuration' },
+    { result: 'failed', remote: 'needs-recovery', state: 'write-unfinished' },
+    { result: 'failed', remote: 'needs-recovery', state: 'neighbour-erased' },
+    { result: 'failed', remote: 'needs-recovery', state: 'read-back-failed' },
+    { result: 'failed', remote: 'new-configuration', state: 'restart-owed' },
+    { result: 'failed', remote: 'new-configuration', state: 'restart-withheld' },
   ],
   document: [
     { result: 'written', remote: 'new-configuration' },
@@ -186,9 +302,10 @@ export const SYNC_ENDINGS = {
     { result: 'stopped', remote: 'as-before' },
     { result: 'refused', remote: 'as-before' },
     { result: 'failed', remote: 'as-before' },
-    { result: 'failed', remote: 'needs-recovery' },
+    { result: 'failed', remote: 'needs-recovery', state: 'stopped-in-hand-over' },
+    { result: 'failed', remote: 'needs-recovery', state: 'stopped-after-hand-over' },
   ],
-} as const;
+} as const satisfies Readonly<Record<string, readonly { readonly result: string; readonly remote: string; readonly state?: SyncState }[]>>;
 
 /** One ending of `SYNC_ENDINGS`, of either kind of remote. */
 export type SyncEnding = (typeof SYNC_ENDINGS)[keyof typeof SYNC_ENDINGS][number];
@@ -333,21 +450,30 @@ export interface PretendRemote {
  *
  * * `identify`: the remote does not answer when it is asked which unit it is. **This shows after `build`**, where both
  *   real paths open the remote, since the `identify` phase reads only what the remote says without being opened and
- *   cannot fail on the cable; it ends `failed` with the remote as it was.
+ *   cannot fail on the cable; it ends `failed` in `identify`, as `SyncOutcome.phase` says of that work, with the remote
+ *   as it was.
  * * `check` and `build`: the document refused by its check or its build, `refused` and as it was. These two are the
  *   document's and not the remote's, and stand in for a document that fails them.
- * * `backup`: reading what the remote holds stops part way, `failed` and as it was.
- * * `hand-over`, a Harmony Touch's: the remote stops answering while it hands its own changes up, `failed` and needing
- *   its recovery.
- * * `write`: the remote stops answering part way through the write, `failed` and needing its recovery; for flash the
- *   block being written is left erased, and the same sync run again finishes it, as on the real remote.
- * * `verify`: what the remote holds does not read back as what was written, `failed` and needing its recovery.
- * * `restart`: the restart fails, `failed` with the remote holding the new configuration, and a restart by hand asked.
+ * * `backup`: reading what the remote holds stops part way, `failed` in `backup` and as it was.
+ * * `hand-over`, a Harmony Touch's: the remote stops answering while it hands its own changes up, `failed` in
+ *   `hand-over` and `stopped-in-hand-over`.
+ * * `write`: the remote stops answering part way through the write, `failed` in `write`: for flash `write-unfinished`,
+ *   the block being written left erased, and the same sync run again finishes it, as on the real remote; for a Harmony
+ *   Touch, once the sync has started, `stopped-after-hand-over`.
+ * * `verify`: the last block written reads back erased, `failed` in `verify` and `read-back-failed`, and the same sync
+ *   run again writes it.
+ * * `restart`: the restart fails, `failed` in `restart` with the remote holding the new configuration,
+ *   `restart-owed`, and a restart by hand asked.
+ * * `neighbour`: the first erase of the write reaches the block beside it, `failed` in `write` and `neighbour-erased`,
+ *   as `writeBlock` reports it on the real remote. For flash only; a Harmony Touch erases nothing.
  * * `read`: the next read stops answering part way, after the windows the retries allow, as `readConfig` meets it.
+ *
+ * The states are `SYNC_STATES`'; a restart withheld by a check, `restart-withheld`, has no stand in, since no model a
+ * pretend remote is made of withholds one.
  *
  * A phase a model's sync does not have is never entered, so failing in it fails nothing.
  */
-export type PretendFailure = SyncPhase | 'read';
+export type PretendFailure = SyncPhase | 'neighbour' | 'read';
 
 /** How a pretend remote behaves. */
 export interface PretendOptions {
@@ -409,6 +535,23 @@ const ATTENTION = {
 /** What a thrown value says, as a sentence. */
 const said = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
+/**
+ * **A rail's refusal that names a switch**, the environment flags a person at the bench sets to open a write path:
+ * every rail that refuses because one is not set, or because one is set that a path refuses, says which by its name,
+ * `rails.ts` and `assertTouchSyncAllowed`. Those words are the bench's, and an application's user has no switch to
+ * set, so `refusedWords` turns such a refusal into `SWITCHED_OFF` and keeps the rail's own words in the journal.
+ */
+const NAMES_A_SWITCH = /\bHARMONY_[A-Z_]+/;
+
+/**
+ * What an outcome says where a rail refused for a switch, `NAMES_A_SWITCH`. **Worded for both ways a switch refuses**:
+ * one this sync needs that is not set, and one that is set where a sync does not take it, the Harmony Touch's recovery
+ * switch. Which of the two it was is in the rail's words in the journal, and a person who can change the switches has
+ * those.
+ */
+export const SWITCHED_OFF = 'the switches this process was started with do not let this sync change the remote, so nothing '
+  + 'that changes it was sent';
+
 /** The first of a list of problems and how many more there are, as one sentence. */
 const firstOf = (list: readonly string[], noun: 'problem' | 'reason', of: string): string => {
   const more = list.length - 1;
@@ -430,6 +573,11 @@ interface Reporter {
   readonly phase: () => SyncPhase | undefined;
   readonly end: (outcome: SyncOutcome) => SyncOutcome;
   readonly refused: (message: string) => SyncOutcome;
+  /**
+   * A refusal out of a thrown value, a rail's or a check's: refused with its words, but a rail's that names a switch,
+   * which is refused with `SWITCHED_OFF` and keeps the rail's words in the journal, `NAMES_A_SWITCH` says why.
+   */
+  readonly refusedBy: (error: unknown) => SyncOutcome;
   readonly stopped: (before: string) => SyncOutcome;
   /** Whether a stop has been asked, read afresh each time since it can be asked at any moment. */
   readonly asked: () => boolean;
@@ -457,7 +605,8 @@ function reporterOf(request: SyncRequest, say: (line: string) => void, log: (lin
   let left: readonly LeftOutActivity[] = [];
   const end = (given: SyncOutcome): SyncOutcome => {
     const outcome: SyncOutcome = left.length === 0 ? given : { ...given, leftOut: left.map((one) => ({ ...one })) };
-    say(`${outcome.result}, the remote ${outcome.remote}${outcome.message === undefined ? '' : `: ${outcome.message}`}`);
+    say(`${outcome.result}${outcome.phase === undefined ? '' : ` in ${outcome.phase}`}, the remote ${outcome.remote}`
+      + `${outcome.state === undefined ? '' : `, ${outcome.state}`}${outcome.message === undefined ? '' : `: ${outcome.message}`}`);
     emit({ kind: 'outcome', outcome });
     return outcome;
   };
@@ -473,6 +622,12 @@ function reporterOf(request: SyncRequest, say: (line: string) => void, log: (lin
     phase: () => current,
     end,
     refused: (message) => end({ result: 'refused', remote: 'as-before', message }),
+    refusedBy: (error) => {
+      const words = said(error);
+      if (!(error instanceof RailError) || !NAMES_A_SWITCH.test(words)) return end({ result: 'refused', remote: 'as-before', message: words });
+      say(`the rail refused: ${words}`);
+      return end({ result: 'refused', remote: 'as-before', message: SWITCHED_OFF });
+    },
     stopped: (before) => end({ result: 'stopped', remote: 'as-before', message: `stopped before ${before}, with nothing written` }),
     asked: () => request.stop?.aborted === true,
     leftOut: (activities) => {
@@ -554,37 +709,67 @@ type FlashWrite = (onStep: (at: ConfigWriteStep) => void) => Promise<{
 }>;
 
 /**
+ * The words a failure in each phase of a write into flash is reported with, in front of what the write said: each is
+ * true of that phase and of no other, so a read back that did not come back as written never reads as a write that
+ * stopped part way, nor a withheld restart as a failed one. Stated once, so the pretend remote and an attached one say
+ * the same, as `ATTENTION` is.
+ */
+const FLASH_FAILED = {
+  identify: 'the remote on the cable could not be identified, so nothing was written',
+  backup: 'reading what the remote holds stopped, so nothing was written',
+  write: 'the write stopped part way',
+  verify: 'every block was written, and the whole configuration did not read back as written',
+  restart: 'the configuration is written and read back, and the restart failed',
+  withheld: 'the configuration is written and read back, and the restart was withheld',
+} as const;
+
+/**
  * From the build on, for a configuration written into flash: the write's steps turned into phases and progress, and
  * how it ended into the outcome.
  *
- * **Which phase a failure is in decides what the remote is left as**, and that is tracked by the steps the write
- * itself reports: before its first command that changes the remote, the remote is as it was; from there until the
- * whole configuration has read back, it holds a part of each, and the same sync run again is the way out, since
- * the write recognises its own interrupted blocks; after that it holds the new configuration and only the restart
- * is owed.
+ * **Which phase a failure is in decides what the remote is left as and what the outcome says**, and that is tracked
+ * by the steps the write itself reports: until the unit is identified a failure is `identify`'s, and until the first
+ * command that changes the remote, `backup`'s, the remote as it was either way; from there until the whole
+ * configuration has read back it holds a part of each, `write-unfinished` while the blocks are written and
+ * `read-back-failed` once they all are, and the same sync run again is the way out, since the write recognises its
+ * own interrupted blocks; once it has read back whole it holds the new configuration and only the restart is owed,
+ * `restart-withheld` where a check before the restart refused it and `restart-owed` where the restart itself failed.
  */
 async function intoFlash(r: Reporter, request: SyncRequest, write: FlashWrite): Promise<SyncOutcome> {
-  // What the write reports, turned into phases and progress. `began` and `verified` are what a failure is judged by.
+  // What the write reports, turned into phases and progress. `at`, `began`, `verified` and `restarting` are what a
+  // failure is judged by: the phase whose work was going on, whether anything that changes the remote was sent,
+  // whether the whole configuration read back as written, and whether the restart was sent.
+  // Widened on purpose: the step observer assigns it, which the compiler's narrowing does not follow.
+  let at = 'identify' as SyncPhase;
   let began = false;
   let verified = false;
-  const onStep = (at: ConfigWriteStep): void => {
-    if (at.step === 'identified') {
-      r.say(`the remote on the cable is ${at.unit}`);
-    } else if (at.step === 'comparing') {
+  let restarting = false;
+  const onStep = (step: ConfigWriteStep): void => {
+    if (step.step === 'identified') {
+      at = 'backup';
+      r.say(`the remote on the cable is ${step.unit}`);
+    } else if (step.step === 'comparing') {
       if (r.phase() !== 'backup') r.enter('backup');
-      r.emit({ kind: 'progress', phase: 'backup', done: at.done, total: at.total });
-    } else if (at.step === 'writing') {
-      if (at.done === 0) {
+      r.emit({ kind: 'progress', phase: 'backup', done: step.done, total: step.total });
+    } else if (step.step === 'writing') {
+      if (step.done === 0) {
         began = true;
+        at = 'write';
         r.emit({ kind: 'attention', attention: 'do-not-unplug', message: ATTENTION['do-not-unplug'] });
         r.enter('write');
       } else {
-        r.emit({ kind: 'progress', phase: 'write', done: at.done, total: at.total });
+        r.emit({ kind: 'progress', phase: 'write', done: step.done, total: step.total });
       }
-    } else if (at.step === 'verifying') {
+    } else if (step.step === 'verifying') {
+      at = 'verify';
       r.enter('verify');
-    } else {
+    } else if (step.step === 'verified') {
+      // Read back whole: from here a failure leaves the new configuration in place with the restart owed. The phase
+      // is entered with the restart itself, so a screen moves on when the remote is about to leave the cable.
       verified = true;
+      at = 'restart';
+    } else {
+      restarting = true;
       r.emit({ kind: 'attention', attention: 'restarting', message: ATTENTION.restarting });
       r.enter('restart');
     }
@@ -605,17 +790,44 @@ async function intoFlash(r: Reporter, request: SyncRequest, write: FlashWrite): 
   } catch (error) {
     if (error instanceof ConfigWriteStopped) return r.stopped('the write');
     if (!began) {
-      // Nothing that changes the remote was sent: a refusal of the write or of a rail, or a read that failed.
-      const result = error instanceof ConfigWriteRefusal || error instanceof RailError ? 'refused' : 'failed';
-      return r.end({ result, remote: 'as-before', message: said(error) });
+      // Nothing that changes the remote was sent: a refusal of the write or of a rail, or a failure while the unit
+      // was identified or what it holds was read.
+      if (error instanceof ConfigWriteRefusal || error instanceof RailError) return r.refusedBy(error);
+      const phase = at === 'identify' ? 'identify' : 'backup';
+      return r.end({ result: 'failed', remote: 'as-before', phase, message: `${FLASH_FAILED[phase]}: ${said(error)}` });
+    }
+    if (restarting) {
+      r.emit({ kind: 'attention', attention: 'restart-by-hand', message: ATTENTION['restart-by-hand'] });
+      return r.end({
+        result: 'failed', remote: 'new-configuration', phase: 'restart', state: 'restart-owed',
+        message: `${FLASH_FAILED.restart}: ${said(error)}`,
+      });
     }
     if (verified) {
-      r.emit({ kind: 'attention', attention: 'restart-by-hand', message: ATTENTION['restart-by-hand'] });
-      return r.end({ result: 'failed', remote: 'new-configuration', message: `the configuration is written and read back, and the restart failed: ${said(error)}` });
+      // Between the read back and the restart only the check that can withhold the restart runs, so whatever ended the
+      // write here kept the restart from being sent, and nothing is asked of a person: the check's words say why.
+      return r.end({
+        result: 'failed', remote: 'new-configuration', phase: 'restart', state: 'restart-withheld',
+        message: `${FLASH_FAILED.withheld}: ${said(error)}`,
+      });
+    }
+    if (error instanceof BlockWriteError && error.message.includes(BlockWriteError.NEIGHBOUR_ERASED)) {
+      // Chosen by the block write's own constant, so a rewording of its message cannot turn this back into a write
+      // left unfinished, whose way back, the same sync again, is the one thing this state must not be offered.
+      return r.end({
+        result: 'failed', remote: 'needs-recovery', phase: 'write', state: 'neighbour-erased',
+        message: `${FLASH_FAILED.write}: ${said(error)}`,
+      });
+    }
+    if (at === 'verify') {
+      return r.end({
+        result: 'failed', remote: 'needs-recovery', phase: 'verify', state: 'read-back-failed',
+        message: `${FLASH_FAILED.verify}: ${said(error)}`,
+      });
     }
     return r.end({
-      result: 'failed', remote: 'needs-recovery',
-      message: `the write stopped part way: ${said(error)}. Leave the remote on its cable with its batteries in and run the same sync again, built at the same moment, which finishes the blocks it left`,
+      result: 'failed', remote: 'needs-recovery', phase: 'write', state: 'write-unfinished',
+      message: `${FLASH_FAILED.write}: ${said(error)}`,
     });
   }
 }
@@ -629,6 +841,18 @@ async function intoFlash(r: Reporter, request: SyncRequest, write: FlashWrite): 
 const HANDING_OVER = SYNC_LINES.find((form) => form.test('sync: handing over the remote\'s changes'))!;
 const STARTED = SYNC_LINES.find((form) => form.test('sync: started'))!;
 
+/**
+ * The words a failure in each phase of an answered sync is reported with, in front of the answerer's reason, each true
+ * of that phase: the remote not opened or not identified, the hand over stopped, the hand over ended with the sync not
+ * started, and the sync stopped while the remote was being answered. The same for every path, as `FLASH_FAILED` is.
+ */
+const TOUCH_FAILED = {
+  identify: 'the remote could not be opened and identified, so nothing that acts on it was sent',
+  handOver: 'the sync stopped while the remote handed its own changes up',
+  notStarted: 'the remote handed its own changes up, and the sync was not started',
+  write: 'the sync stopped while the remote was being answered',
+} as const;
+
 /** The dry run's words for a set of documents, the same for every path. */
 const documentsDryRun = (documents: number, pictures: number): string =>
   `everything before the remote is acted on was done, and the set holds ${documents} ${documents === 1 ? 'document' : 'documents'} `
@@ -640,7 +864,8 @@ interface DocumentDelivery {
   readonly powerSource: () => Promise<TouchPowerSource>;
   /**
    * What a commit does before the remote is opened, the flags, the folder and the set kept: a refusal, or undefined.
-   * What it throws, a keeper whose folder or keep fails, ends the sync `failed` with the remote as it was.
+   * A rail's refusal is thrown, so that one naming a switch is worded as `refusedBy` words it; anything else it throws,
+   * a keeper whose folder or keep fails, ends the sync `failed` with the remote as it was.
    */
   readonly beforeCommit: () => string | undefined;
   /** The answered sync, its account reported line by line; throws only before anything acts, as `answerTouchSync`. */
@@ -657,9 +882,12 @@ interface DocumentDelivery {
  *
  * **What the outcome says**, `SyncOutcome`'s header: `written` once the remote committed and finished; a refusal
  * before the remote was acted on `refused` and `as-before`, a power source but `usb` among them; one after it `failed`
- * and `needs-recovery`, with the recovery order and the abort's cost in the message; the remote's own abort `failed`
- * and `as-before`. A throw out of the answer is always before anything acts: a rail's refusal is `refused`, anything
- * else, the open or the session failing, `failed`, and either `as-before`.
+ * and `needs-recovery`, in the phase it happened in and with the state the answerer's stage says it left, in words of
+ * that phase and the answerer's reason; the remote's own abort `failed` and `as-before`. A throw out of the answer is
+ * always before anything acts: a rail's refusal is `refused`, anything else, the open or the session failing,
+ * `failed` in `identify`, and either `as-before`. **The answerer's recovery order and abort cost are not in the
+ * message**: they are the bench's commands, and the journal has them as the answerer reported them; an application
+ * reads the same from the state, `SYNC_STATES`.
  */
 async function deliverDocuments(
   r: Reporter, request: SyncRequest, counts: { readonly documents: number; readonly pictures: number }, path: DocumentDelivery,
@@ -671,8 +899,10 @@ async function deliverDocuments(
     try {
       source = await path.powerSource();
     } catch (error) {
-      // Nothing that acts was sent: the open or the read failed, or the guard refused it.
-      return r.end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
+      // Nothing that acts was sent: the guard refused the read, or the open or the read failed, which is the remote
+      // not being opened and identified.
+      if (error instanceof RailError) return r.refusedBy(error);
+      return r.end({ result: 'failed', remote: 'as-before', phase: 'identify', message: `${TOUCH_FAILED.identify}: ${said(error)}` });
     }
     r.say(`power source, ${describePowerSource(source)}`);
     const unpowered = touchPowerRefusal(source);
@@ -684,12 +914,13 @@ async function deliverDocuments(
   if (r.asked()) return r.stopped('the remote was opened');
   // A keeper that cannot make its folder or keep the set fails before anything is opened, and an application learns
   // of it through the outcome as of every other failure, never as a throw out of `syncDocument`; the same as the
-  // keeper of a write into flash, whose keep runs inside the write `intoFlash` catches.
+  // keeper of a write into flash. A keeper's failure is the build's, whose result it was keeping, in its own words.
   let before: string | undefined;
   try {
     before = path.beforeCommit();
   } catch (error) {
-    return r.end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
+    if (error instanceof RailError) return r.refusedBy(error);
+    return r.end({ result: 'failed', remote: 'as-before', phase: 'build', message: said(error) });
   }
   if (before !== undefined) return r.refused(before);
 
@@ -708,8 +939,10 @@ async function deliverDocuments(
   try {
     outcome = await path.answer(report);
   } catch (error) {
-    // Every throw of the answer is before anything that acts on the remote was sent.
-    return r.end({ result: error instanceof RailError ? 'refused' : 'failed', remote: 'as-before', message: said(error) });
+    // Every throw of the answer is before anything that acts on the remote was sent: a rail's refusal, or the remote
+    // not opened, its power source not read or its unit not identified, which is `identify`'s work.
+    if (error instanceof RailError) return r.refusedBy(error);
+    return r.end({ result: 'failed', remote: 'as-before', phase: 'identify', message: `${TOUCH_FAILED.identify}: ${said(error)}` });
   }
   if (outcome.ending === 'finished') {
     r.emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
@@ -719,15 +952,32 @@ async function deliverDocuments(
     // The remote's own abort deletes the set it was gathering and reloads the one it held before it is queued,
     // `reference/architectures/harmony-touch/answering-a-sync.md` "How a sync aborts", so nothing is left running.
     r.emit({ kind: 'attention', attention: 'safe-to-unplug', message: ATTENTION['safe-to-unplug'] });
-    return r.end({ result: 'failed', remote: 'as-before', message: 'the remote aborted the sync, deleted what it had gathered and kept the set it held' });
+    return r.end({
+      result: 'failed', remote: 'as-before', ...phaseNow(r),
+      message: 'the remote aborted the sync, deleted what it had gathered and kept the set it held',
+    });
   }
   const reason = outcome.reason ?? 'no reason given';
   if (!outcome.acted) return r.refused(reason);
+  // Acted on, so the answerer stood in the hand over or past it. Its stage says what an abort would cost and so which
+  // state the remote is in; the phase last entered says whether the sync had started. An error of the cable or the
+  // remote comes with the answerer's own words for one in front, which the lead says already.
+  const why = reason.startsWith(RUN_STOPPED) ? reason.slice(RUN_STOPPED.length) : reason;
+  if (outcome.stage === 'hand over') {
+    return r.end({ result: 'failed', remote: 'needs-recovery', phase: 'hand-over', state: 'stopped-in-hand-over', message: `${TOUCH_FAILED.handOver}: ${why}` });
+  }
+  const started = r.phase() === 'write';
   return r.end({
-    result: 'failed', remote: 'needs-recovery',
-    message: `${reason}. Recovery: ${outcome.recovery ?? 'none stated'}. ${outcome.abortCost ?? ''}`.trimEnd(),
+    result: 'failed', remote: 'needs-recovery', phase: started ? 'write' : 'hand-over', state: 'stopped-after-hand-over',
+    message: `${started ? TOUCH_FAILED.write : TOUCH_FAILED.notStarted}: ${why}`,
   });
 }
+
+/** The phase last entered as an outcome's `phase`, or nothing before the first. */
+const phaseNow = (r: Reporter): { readonly phase?: SyncPhase } => {
+  const phase = r.phase();
+  return phase === undefined ? {} : { phase };
+};
 
 /**
  * The set a build of documents is delivered as, through the answerer's gate, `touchSetOf`; the outcome where the gate
@@ -817,14 +1067,19 @@ const pause = async (state: PretendState): Promise<void> => {
 };
 
 /**
- * What the pretend remote's stand ins throw when told to fail, each worded as the real path's own failure there is
- * worded once it reaches the outcome: a remote that does not answer, a read back that differs, a restart not taken.
+ * What the pretend remote's stand ins throw when told to fail, each in the form a real failure there takes: a remote
+ * that does not answer, a block that reads back otherwise than written, a restart not taken. The words that say which
+ * phase it was are not here: they are put in front by the stage every path shares, `FLASH_FAILED` and `TOUCH_FAILED`,
+ * as they are in front of a real failure's.
  */
 const PRETEND_FAILS = {
   identify: 'the remote did not answer when it was asked which unit it is',
-  backup: 'the remote stopped answering while what it holds was read',
+  backup: 'the remote stopped answering',
   write: 'the remote stopped answering',
-  verify: 'what the remote holds does not read back as what was written',
+  // In the words that end the real refusal, its constant among them, so a caller tells it apart the same way.
+  neighbour: `the erase reached the block beside the one it was told to erase, and ${BlockWriteError.NEIGHBOUR_ERASED}: `
+    + 'send nothing more to this unit',
+  verify: 'the last block written reads back erased',
   restart: 'the remote did not take the restart',
   check: 'the document was refused by its check',
   build: 'the document could not be built',
@@ -877,12 +1132,17 @@ function pretendFlashWrite(
     // From the first erase the remote holds no document of ours whole until the write is read back.
     state.region = region;
     state.holds = undefined;
-    const failAt = failIn === 'write' ? Math.floor(blocks.length / 2) : -1;
+    const failAt = failIn === 'write' || failIn === 'neighbour' ? Math.floor(blocks.length / 2) : -1;
     for (const [k, block] of blocks.entries()) {
       await pause(state);
       region.fill(0xff, block, block + blockSize);
       // The block erased and not written, which the same sync run again finishes.
-      if (k === failAt) throw new Error(PRETEND_FAILS.write);
+      if (k === failAt && failIn === 'write') throw new Error(PRETEND_FAILS.write);
+      // The erase reaching the block above as well, as far as the region holds it, which no sync puts back.
+      if (k === failAt) {
+        region.fill(0xff, block + blockSize, Math.min(block + 2 * blockSize, region.length));
+        throw new BlockWriteError(PRETEND_FAILS.neighbour);
+      }
       region.set(target.subarray(block, block + blockSize), block);
       onStep({ step: 'writing', done: k + 1, total: blocks.length });
     }
@@ -894,6 +1154,7 @@ function pretendFlashWrite(
       region.fill(0xff, last, last + blockSize);
       throw new Error(PRETEND_FAILS.verify);
     }
+    onStep({ step: 'verified' });
     state.holds = request.document;
     onStep({ step: 'restarting' });
     await pause(state);
@@ -911,14 +1172,14 @@ function pretendFlashWrite(
 function pretendAnswer(
   state: PretendState, request: SyncRequest, set: TouchSet, failIn: PretendFailure | undefined, aborts: boolean,
 ): DocumentDelivery {
-  /** A refusal once the remote was acted on, as `syncTouch` ends one. */
+  /** A refusal once the remote was acted on, as `syncTouch` ends one: an error of the cable, the remote not answering. */
   const actedAndStopped = (report: (line: string) => void, stage: 'hand over' | 'sync', lists: number, answered: number): TouchSyncOutcome => {
-    const reason = `the run stopped on an error: ${PRETEND_FAILS.write}`;
+    const reason = `${RUN_STOPPED}${PRETEND_FAILS.write}`;
     const cost = abortCost(stage, []);
     report(`sync: refused, ${reason}`);
     report(`sync: recovery, ${RECOVERY}`);
     report(`sync: recovery, ${cost}`);
-    return { ending: 'refused', reason, acted: true, recovery: RECOVERY, abortCost: cost, lists, answered, handedUp: [] };
+    return { ending: 'refused', reason, acted: true, stage, recovery: RECOVERY, abortCost: cost, lists, answered, handedUp: [] };
   };
   return {
     powerSource: async () => {
@@ -937,7 +1198,7 @@ function pretendAnswer(
       const unpowered = touchPowerRefusal(state.powerSource);
       if (unpowered !== undefined) {
         report(`sync: refused, ${unpowered}`);
-        return { ending: 'refused', reason: unpowered, acted: false, lists: 0, answered: 0, handedUp: [] };
+        return { ending: 'refused', reason: unpowered, acted: false, stage: 'before', lists: 0, answered: 0, handedUp: [] };
       }
       report('sync: provisioned, mode 0');
       report('sync: handing over the remote\'s changes');
@@ -949,7 +1210,7 @@ function pretendAnswer(
       if (aborts) {
         report('sync: request list 1, 1 answered');
         report('sync: aborted');
-        return { ending: 'aborted', acted: true, lists: 1, answered: 1, handedUp: [] };
+        return { ending: 'aborted', acted: true, stage: 'sync', lists: 1, answered: 1, handedUp: [] };
       }
       if (failIn === 'write') return actedAndStopped(report, 'sync', 0, 0);
       // The lists a remote that holds none of the set asks: its documents, then its pictures, then the finish.
@@ -964,7 +1225,7 @@ function pretendAnswer(
       }
       report('sync: finished');
       state.holds = request.document;
-      return { ending: 'finished', acted: true, lists: lists.length, answered: lists.reduce((a, b) => a + b, 0), handedUp: [] };
+      return { ending: 'finished', acted: true, stage: 'sync', lists: lists.length, answered: lists.reduce((a, b) => a + b, 0), handedUp: [] };
     },
   };
 }
@@ -1073,11 +1334,19 @@ async function syncAttached(request: SyncRequest, remote: AttachedRemote): Promi
   if (built.kind !== 'configuration') return r.refused(`the ${document.model.name} is given documents, which this path does not write`);
   r.say(`built a configuration of ${built.bytes.length} bytes for skin ${built.skin}, stamped ${request.sources.builtAt}`);
 
+  // What the remote is given is kept first, before a committed write opens anything, and after the last moment a stop
+  // asked during the build is honoured, so a stopped sync keeps nothing. A keep that throws ends the sync `failed` in
+  // `build`, whose result it was keeping, with the remote as it was and nothing opened, in the keeper's own words, as a
+  // Harmony Touch's keeper that fails does, `deliverDocuments`.
+  if (r.asked()) return r.stopped('the remote was opened');
+  if (request.commit) {
+    try {
+      keeper.keep(built.bytes);
+    } catch (error) {
+      return r.end({ result: 'failed', remote: 'as-before', phase: 'build', message: said(error) });
+    }
+  }
   return intoFlash(r, request, async (onStep) => {
-    // What the remote is given is kept first, before a committed write opens anything. A keep that throws is caught
-    // by `intoFlash` before the write began, so the sync ends `failed` with the remote as it was and nothing opened,
-    // as a Harmony Touch's keeper that fails does, `deliverDocuments`.
-    if (request.commit) keeper.keep(built.bytes);
     return writeConfiguration({
       config: { name: `the configuration built for ${document.model.name}`, bytes: built.bytes },
       region: keeper.region,
@@ -1178,12 +1447,9 @@ async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): 
     beforeCommit: () => {
       // The flags, before a folder is made or the set kept: `answerTouchSync` asks the same again before it opens
       // anything, so this moves no rail; asking here leaves nothing behind for a commit that cannot run, as
-      // `bin/touch-sync.ts` asks first for the same reason.
-      try {
-        assertTouchSyncAllowed();
-      } catch (error) {
-        return said(error);
-      }
+      // `bin/touch-sync.ts` asks first for the same reason. Its refusal is thrown on, since it names the switches,
+      // which the outcome does not, `refusedBy`.
+      assertTouchSyncAllowed();
       folder = keeper.folder();
       const taken = touchFolderRefusal(folder);
       if (taken !== undefined) return taken;

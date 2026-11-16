@@ -47,7 +47,9 @@ import {
   requestedPath,
 } from '../../src/filepipe.ts';
 import { TransportError, type Transport } from '../../src/transport.ts';
+import { readSysInfo } from '../../src/index.ts';
 import { proves } from '@harmony/testkit/proof';
+import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
 
 interface Recording extends Transport {
   readonly sent: Uint8Array[];
@@ -423,6 +425,16 @@ describe('the identity file is text, and the firmware states its field names', (
     assert.equal(fields.get('arch'), '0x10');
     assert.equal(fields.get('link_packet_length'), '64');
     assert.equal(fields.size, 4);
+  });
+
+  it('is read off a remote through the main entry into every field it states, opening that file and no other', async () => {
+    // What an application calls to name a file based remote it found: the identity file read whole and parsed. The
+    // pretend Touch serves the text given, so every field is seen to arrive, not only the build a refusal reads.
+    const text = 'arch 0x11\nskin 0x63\nusb_product_id 0xc12b\nfw_ver 4.15.330\n';
+    const remote = new FakeTouchRemote({ sysinfo: text });
+    const fields = await readSysInfo(guardFileProtocol(remote, 0xc12b));
+    assert.deepEqual([...fields], [['arch', '0x11'], ['skin', '0x63'], ['usb_product_id', '0xc12b'], ['fw_ver', '4.15.330']]);
+    assert.deepEqual(remote.opened, ['/sys/sysinfo R']);
   });
 
   it(

@@ -805,9 +805,9 @@ A test asserts the two are disjoint across the whole Harmony product range. The 
 and not Harmony because the identity is a stock one, so a hit means a device in that state and not a
 model. What it is for is telling "the remote went into recovery" from "nothing is plugged in", which
 is the difference between a bench measurement and a shrug. `packages/usb/test/transport/hardware.test.ts` is
-the only test that touches USB, and it skips rather than passes when nothing is attached. Its
-enumeration tests only look; the rest open the device and send read commands, and those are gated on
-`HARMONY_HARDWARE_TESTS=1` so a routine `make ts` never claims a remote on its way past. Each test
+the only test that touches USB, and it skips rather than passes when nothing is attached. Every test
+in it is gated on `HARMONY_HARDWARE_TESTS=1`, so a routine `make ts` asks nothing of the bus: its two
+enumeration tests only look, and the rest open the device and send read commands. Each test
 asks for **its own model** by product id, so a Harmony One and a Harmony 600 can be attached at once
 and one session covers both architectures. Exactly one of that model, though: two Harmony Ones
 enumerate identically and `openHarmony` refuses an ambiguous selector rather than guessing.

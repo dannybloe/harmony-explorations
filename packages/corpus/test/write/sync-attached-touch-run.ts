@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { recipe, type Recipe } from '@harmony/codec/node';
+import { buildFromRecipe, recipe, type Recipe } from '@harmony/codec/node';
 import { harmonyTouch } from '@harmony/codec/build';
 import { unitIdentityFromSerial, type FoundRemote, type HarmonyRemote } from '@harmony/usb';
 import { guardFileProtocol } from '@harmony/usb/internal';
@@ -83,6 +83,13 @@ export interface TouchScenario {
   readonly openFails?: string;
   /** The remote answers the hand over's request list with status 500, once the hand over has begun. */
   readonly handOverFails?: boolean;
+  /**
+   * The remote hands up its Settings in the hand over, the document as the set holds it: a change the set would
+   * revert, so the answerer refuses once the hand over has ended, before the sync request.
+   */
+  readonly handsUpSettings?: boolean;
+  /** Once the sync has started, the remote gives no reply to anything, an answer that never comes. */
+  readonly silentOnceStarted?: boolean;
   /** The keeper cannot make the run's folder, and says so in these words. */
   readonly folderFails?: string;
   /** The keeper cannot keep the set it is handed, and says so in these words. */
@@ -180,7 +187,16 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
         : scenario.switchedOff === true ? switchedOffTouchDocument()
           : recipe.open(JSON.parse(readFileSync(new URL('touch-test.json', REFERENCES), 'utf8')));
 
-  const handOver = [listAnswer([{ verb: 'POST', uri: 'proxy://Finished' }])];
+  // The Settings the set holds, put as the remote puts a document it hands up: its JSON, URL encoded.
+  const settings = (): RemoteRequest => {
+    const built = buildFromRecipe(document, { builtAt: '2026-11-14T10:00:00', account: ACCOUNT as never });
+    const resource = built.kind === 'documents' ? built.documents['Settings'] : undefined;
+    return { verb: 'PUT', uri: ADDRESSES['Settings']!, resource: encodeURIComponent(JSON.stringify(resource)) };
+  };
+  const handOver = [
+    ...(scenario.handsUpSettings === true ? [listAnswer([settings()])] : []),
+    listAnswer([{ verb: 'POST', uri: 'proxy://Finished' }]),
+  ];
   const sync = (scenario.sync ?? defaultSync()).map(listAnswer);
   let started = false;
   const remote = new FakeTouchRemote({
@@ -196,6 +212,7 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
       }
       if (line.startsWith(READ_LIST)) {
         if (!started && scenario.handOverFails === true) return 'Response,{"errorCode":"500"}';
+        if (started && scenario.silentOnceStarted === true) silent = true;
         return (started ? sync : handOver).shift() ?? listAnswer([]);
       }
       if (line.startsWith(WRITE_ANSWERS)) return OK(WRITE_ANSWERS);
@@ -204,6 +221,10 @@ export async function runTouchSync(scenario: TouchScenario): Promise<TouchRun> {
   });
   let closed = false;
   remote.close = async (): Promise<void> => { closed = true; };
+  // Silence once the sync has started: every reply after the first request list is asked for is never read.
+  const read = remote.read.bind(remote);
+  let silent = false;
+  remote.read = async (): Promise<Uint8Array | undefined> => (silent ? undefined : read());
 
   const base = mkdtempSync(join(tmpdir(), 'sync-attached-touch-'));
   const kept: TouchSet[] = [];
@@ -291,12 +312,13 @@ export function runTouchSyncCommitted(scenario: TouchScenario): TouchRun {
 
 /**
  * Several runs in one process of their own with the two request flags set, one after another, each with its own stand
- * in, folder and keeper, so a test that commits many pays for one process rather than one per run.
+ * in, folder and keeper, so a test that commits many pays for one process rather than one per run. `recovery` sets the
+ * recovery flag as well, which a sync refuses, so a test can see that refusal reported.
  */
-export function runTouchSyncCommittedAll(scenarios: readonly TouchScenario[]): TouchRun[] {
+export function runTouchSyncCommittedAll(scenarios: readonly TouchScenario[], recovery = false): TouchRun[] {
   const out = execFileSync(process.execPath, [fileURLToPath(import.meta.url)], {
     input: JSON.stringify(scenarios),
-    env: { ...process.env, HARMONY_ENABLE_WRITES: '1', HARMONY_TOUCH_REQUESTS: '1', HARMONY_TOUCH_RECOVERY: '' },
+    env: { ...process.env, HARMONY_ENABLE_WRITES: '1', HARMONY_TOUCH_REQUESTS: '1', HARMONY_TOUCH_RECOVERY: recovery ? '1' : '' },
     encoding: 'utf8',
     maxBuffer: 1 << 26,
   });

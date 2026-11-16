@@ -88,7 +88,7 @@ describe('answering a sync as a library function', () => {
     for (const label of ['other', 'constructor']) {
       const run = withFlags(BOTH, { label });
       assert.equal(run.error?.name, 'RailError');
-      assert.match(run.error?.message ?? '', new RegExp(`^${label} is not a Harmony Touch this may sync: the units are the library's, touch,`));
+      assert.match(run.error?.message ?? '', new RegExp(`^${label} is not a Harmony Touch this library may sync, so nothing was opened and nothing was sent$`));
       assert.equal(run.opened, false, `${label} opened the Touch`);
       assert.deepEqual(run.written, []);
     }

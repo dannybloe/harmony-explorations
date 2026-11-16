@@ -118,7 +118,8 @@ import { TOUCH_PRODUCT_ID, TOUCH_RECOVERY_DOOR, TOUCH_REQUEST_DOOR, WRITES_ENABL
 
 import type { TouchAccountFile } from '../experiments/touchnothingset.ts';
 import { RECOVERY, SYNC_LINES, TOUCH_NOT_FOUND, prepareSet, type TouchSet, type TouchSyncMode } from '../src/touchsync.ts';
-import { TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed, syncDocument } from '../src/write.ts';
+import { SYNC_STATES, TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed, syncDocument } from '../src/write.ts';
+import { SWITCHED_OFF } from '../src/sync.ts';
 import { commandLine, fail } from '@harmony/lab/cli';
 
 const cli = commandLine({
@@ -263,7 +264,17 @@ async function syncTheDocument(documentFile: string): Promise<void> {
   if (folder !== undefined) console.log(`\nkept in ${folder}`);
   console.log(`journal: ${journalPath}`);
   if (!['written', 'dry-run'].includes(outcome.result)) {
-    console.error(`${outcome.result}: ${outcome.message ?? ''}`);
+    console.error(`${outcome.result}${outcome.phase === undefined ? '' : ` in ${outcome.phase}`}: ${outcome.message ?? ''}`);
+    // The library names the state the remote was left in and no command; at the bench the way back is the read and
+    // the recovery steps of this repository's scripts, in the answerer's order, and what an abort would cost there
+    // is the answerer's own line in the journal above.
+    if (outcome.state !== undefined) {
+      console.error(`the remote is left ${outcome.state}: ${SYNC_STATES[outcome.state].holds}`);
+      console.error(`recovery: ${RECOVERY}`);
+      console.error('do not unplug the remote before that read has answered');
+    } else if (outcome.message === SWITCHED_OFF) {
+      console.error('--commit needs HARMONY_ENABLE_WRITES=1 and HARMONY_TOUCH_REQUESTS=1, and HARMONY_TOUCH_RECOVERY unset');
+    }
     process.exit(1);
   }
 }

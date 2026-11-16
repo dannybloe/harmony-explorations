@@ -9,7 +9,9 @@
  * before the first write and the word that it is safe after the last, and one outcome, last, which is also what the
  * call resolves with. That the document is checked and built for real on the way, so a document the check or the build
  * refuses ends as `refused` with the remote as it was. That a dry run, a stop, nothing to write and a failure asked for
- * in each phase end as the outcome their place in the sync leaves, in the words the real path ends them with, and that
+ * in each phase end as the outcome their place in the sync leaves, in the words the real path ends them with: a failure
+ * named by the phase it happened in, worded for that phase, and naming the state of `SYNC_STATES` the remote was left
+ * in where one is owed, with no bench command, script, path or switch in any of it; and that
  * the journal, which is required, tells the same story under the pretend remote's name. That it holds what was written
  * and compares by erase block as the real write does, so a sync of the same build again has nothing to write and a
  * write that stopped part way is finished by the same sync run again. That a screen which throws stops nothing. That
@@ -20,7 +22,7 @@
  * the write, the word that it may be unplugged, and no progress, since nothing a Touch reports gives a total; its dry
  * run reads the power source and stops before the hand over, it is synced again whatever it holds, a power source but
  * `usb` is refused before anything acts, its own abort leaves it as it was, and a failure in the hand over or the write
- * leaves it needing its recovery, carrying the recovery order and the abort's cost as the answerer words them.
+ * leaves it needing its recovery, in the state of that phase, `stopped-in-hand-over` or `stopped-after-hand-over`.
  *
  * **What is not claimed.** Anything about a remote: the pretend remote's stand ins report what the real write paths
  * report, and what a remote does with a document is the bench's to say.
@@ -35,7 +37,7 @@ import { proves } from '@harmony/testkit/proof';
 import { ReadError, readConfig, type ReadProgress } from '../../src/index.ts';
 import { MAX_WINDOW_RETRIES } from '../../src/read.ts';
 import {
-  RECOVERY, SYNC_LINES, pretendReader, pretendRemote, syncDocument, type PretendRemote, type SyncEvent, type SyncOutcome,
+  SYNC_LINES, SYNC_STATES, pretendReader, pretendRemote, syncDocument, type PretendRemote, type SyncEvent, type SyncOutcome,
   type SyncPhase,
 } from '../../src/write.ts';
 import { touchPowerRefusal } from '../../src/touchsync.ts';
@@ -85,8 +87,8 @@ const progress = (words: readonly string[], phase: string): string[] => words.fi
 /** The phases entered, in order, without the warnings and the outcome. */
 const phases = (words: readonly string[]): string[] => shape(words).filter((word) => !/^[!=]/.test(word));
 
-/** The ending of the real path's message for a write that stopped part way, after the reason. */
-const RUN_AGAIN = '. Leave the remote on its cable with its batteries in and run the same sync again, built at the same moment, which finishes the blocks it left';
+/** What an application's user has none of: a switch, a script, a path of this repository or a command line option. */
+const BENCH = /HARMONY_[A-Z_]|\bnode\b|\bbin\/|\.ts\b|\.md\b|(^|\s)--[a-z]/;
 
 test('a sync to a pretend Harmony One runs its seven phases in order with progress where the write reports any, warns before the write and ends written', async () => {
   const remote = pretendRemote({ model: ONE });
@@ -174,27 +176,35 @@ test('a document of a model whose sync is not built is refused by name to a pret
   assert.equal((await run(recipe.create({ name: 'Harmony 600' }), pretendRemote({ model: { name: 'Harmony 600' } }))).outcome.result, 'written');
 });
 
-test('a failure asked for in each phase of a configuration\'s sync ends where and as the real path ends it, once, and the sync after it runs through', async () => {
-  const left: Record<Exclude<SyncPhase, 'hand-over'>, [SyncOutcome['result'], SyncOutcome['remote'], string, string]> = {
-    // The remote is asked which unit it is once it is opened, after the build: the identify phase opens nothing.
-    identify: ['failed', 'as-before', 'the remote did not answer when it was asked which unit it is', 'build'],
-    check: ['refused', 'as-before', 'the document was refused by its check', 'check'],
-    build: ['refused', 'as-before', 'the document could not be built', 'build'],
-    backup: ['failed', 'as-before', 'the remote stopped answering while what it holds was read', 'backup'],
-    write: ['failed', 'needs-recovery', `the write stopped part way: the remote stopped answering${RUN_AGAIN}`, 'write'],
-    verify: ['failed', 'needs-recovery', `the write stopped part way: what the remote holds does not read back as what was written${RUN_AGAIN}`, 'verify'],
-    restart: ['failed', 'new-configuration', 'the configuration is written and read back, and the restart failed: the remote did not take the restart', 'restart'],
+test('a failure asked for in each phase of a configuration\'s sync ends where and as the real path ends it, named by its phase in its words, once, and the sync after it runs through', async () => {
+  // What each failure ends as: its result, the remote, the phase the outcome names, the state it names, its words, and
+  // the phase last entered. A failure of the document names no phase: it is refused, not failed.
+  const left: Record<Exclude<SyncPhase, 'hand-over'>, [SyncOutcome['result'], SyncOutcome['remote'], SyncPhase | undefined, SyncOutcome['state'], string, string]> = {
+    // The remote is asked which unit it is once it is opened, after the build: the identify phase opens nothing, and
+    // the outcome names that work as identify's.
+    identify: ['failed', 'as-before', 'identify', undefined, 'the remote on the cable could not be identified, so nothing was written: the remote did not answer when it was asked which unit it is', 'build'],
+    check: ['refused', 'as-before', undefined, undefined, 'the document was refused by its check', 'check'],
+    build: ['refused', 'as-before', undefined, undefined, 'the document could not be built', 'build'],
+    backup: ['failed', 'as-before', 'backup', undefined, 'reading what the remote holds stopped, so nothing was written: the remote stopped answering', 'backup'],
+    write: ['failed', 'needs-recovery', 'write', 'write-unfinished', 'the write stopped part way: the remote stopped answering', 'write'],
+    // A read back that differs is told as one, and not as a write that stopped part way.
+    verify: ['failed', 'needs-recovery', 'verify', 'read-back-failed', 'every block was written, and the whole configuration did not read back as written: the last block written reads back erased', 'verify'],
+    restart: ['failed', 'new-configuration', 'restart', 'restart-owed', 'the configuration is written and read back, and the restart failed: the remote did not take the restart', 'restart'],
   };
   const document = recipe.create(ONE);
   for (const phase of Object.keys(left) as (keyof typeof left)[]) {
     const remote = pretendRemote({ model: ONE, failIn: phase });
-    const { words, outcome } = await run(document, remote);
-    const [result, state, message, last] = left[phase];
-    assert.deepEqual([outcome.result, outcome.remote, outcome.message], [result, state, message], phase);
+    const { words, events, outcome } = await run(document, remote);
+    const [result, state, named, owed, message, last] = left[phase];
+    assert.deepEqual([outcome.result, outcome.remote, outcome.phase, outcome.state, outcome.message], [result, state, named, owed, message], phase);
     assert.equal(phases(words).at(-1), last, phase);
-    // Only a failed restart asks for one by hand, and no failure says the remote may be unplugged.
+    // No word a person is shown names a command of the bench.
+    for (const said of [outcome.message!, ...events.flatMap((event) => (event.kind === 'attention' ? [event.message] : []))]) assert.doesNotMatch(said, BENCH, phase);
+    // Only a failed restart asks for one by hand, and no failure says the remote may be unplugged: the state says
+    // whether it may be, and only the owed restart's does.
     assert.equal(words.includes('! restart-by-hand'), phase === 'restart', phase);
     assert.equal(words.includes('! safe-to-unplug'), false, phase);
+    if (owed !== undefined) assert.equal(SYNC_STATES[owed].unplug, phase === 'restart', phase);
     // A remote whose restart failed holds the new configuration whole; every other failure leaves it holding none.
     assert.equal(remote.holds(), phase === 'restart' ? document : undefined, phase);
     // The failure was for one sync: the next is written, or has nothing left to write after a failed restart.
@@ -209,7 +219,7 @@ test('a write that stopped part way leaves the block it was writing erased, and 
   // Eight blocks to write: four are written, the fifth is erased and the write stops there.
   const first = await run(document, remote);
   assert.deepEqual(progress(first.words, 'write'), ['write 1/8', 'write 2/8', 'write 3/8', 'write 4/8']);
-  assert.equal(first.outcome.remote, 'needs-recovery');
+  assert.deepEqual([first.outcome.remote, first.outcome.state], ['needs-recovery', 'write-unfinished']);
   // Run again, the four it left are what differ.
   const again = await run(document, remote);
   assert.deepEqual(again.outcome, { result: 'written', remote: 'new-configuration' });
@@ -410,25 +420,36 @@ test('a pretend Harmony Touch with no account or one the gate refuses is refused
   assert.deepEqual(ungated.words, ['identify', 'check', 'build', '= refused']);
   assert.deepEqual([ungated.outcome.result, ungated.outcome.remote], ['refused', 'as-before']);
   assert.match(ungated.outcome.message!, /^Context\.HouseholdUserProfileUri: the household's address is neither a string nor a number.*\(screens raise\)$/);
-  const recovery = `. Recovery: ${RECOVERY}. abort cost, `;
-  const left: Record<'identify' | 'check' | 'build' | 'hand-over' | 'write', [SyncOutcome['result'], SyncOutcome['remote'], string, string[]]> = {
-    identify: ['failed', 'as-before', 'the remote did not answer when it was asked which unit it is', ['identify', 'check', 'build', '= failed']],
-    check: ['refused', 'as-before', 'the document was refused by its check', ['identify', 'check', '= refused']],
-    build: ['refused', 'as-before', 'the document could not be built', ['identify', 'check', 'build', '= refused']],
-    'hand-over': ['failed', 'needs-recovery',
-      `the run stopped on an error: the remote stopped answering${recovery}if a change was waiting on the remote an abort now empties the queue it waits in, and that document keeps no tag; ask before aborting`,
+  // What each failure ends as: its result, the remote, the phase the outcome names, the state it names, its words, and
+  // the events. The answerer's recovery order and abort cost are the bench's commands and stay in the journal; the
+  // state says the same as data.
+  const left: Record<'identify' | 'check' | 'build' | 'hand-over' | 'write', [SyncOutcome['result'], SyncOutcome['remote'], SyncPhase | undefined, SyncOutcome['state'], string, string[]]> = {
+    identify: ['failed', 'as-before', 'identify', undefined,
+      'the remote could not be opened and identified, so nothing that acts on it was sent: the remote did not answer when it was asked which unit it is',
+      ['identify', 'check', 'build', '= failed']],
+    check: ['refused', 'as-before', undefined, undefined, 'the document was refused by its check', ['identify', 'check', '= refused']],
+    build: ['refused', 'as-before', undefined, undefined, 'the document could not be built', ['identify', 'check', 'build', '= refused']],
+    'hand-over': ['failed', 'needs-recovery', 'hand-over', 'stopped-in-hand-over',
+      'the sync stopped while the remote handed its own changes up: the remote stopped answering',
       ['identify', 'check', 'build', '! do-not-unplug', 'hand-over', '= failed']],
-    write: ['failed', 'needs-recovery',
-      `the run stopped on an error: the remote stopped answering${recovery}none to a tag: an abort now leaves the committed set as it is`,
+    write: ['failed', 'needs-recovery', 'write', 'stopped-after-hand-over',
+      'the sync stopped while the remote was being answered: the remote stopped answering',
       ['identify', 'check', 'build', '! do-not-unplug', 'hand-over', 'write', '= failed']],
   };
   const before = touchDocument();
   for (const phase of Object.keys(left) as (keyof typeof left)[]) {
     const remote = pretendRemote({ model: TOUCH, holds: before, failIn: phase });
-    const { words, outcome } = await run(touchDocument(), remote, { sources: TOUCH_SOURCES });
-    const [result, state, message, said] = left[phase];
-    assert.deepEqual([outcome.result, outcome.remote, outcome.message], [result, state, message], phase);
+    const { words, lines, outcome } = await run(touchDocument(), remote, { sources: TOUCH_SOURCES });
+    const [result, state, named, owed, message, said] = left[phase];
+    assert.deepEqual([outcome.result, outcome.remote, outcome.phase, outcome.state, outcome.message], [result, state, named, owed, message], phase);
     assert.deepEqual(words, said, phase);
+    assert.doesNotMatch(outcome.message!, BENCH, phase);
+    // A Touch is never safe to unplug while a sync may be marked running on it, and the journal still carries the
+    // answerer's own recovery lines for the bench.
+    if (owed !== undefined) {
+      assert.equal(SYNC_STATES[owed].unplug, false, phase);
+      assert.ok(lines.some((line) => line.includes('sync: recovery, first read getconfighash')), phase);
+    }
     // A Touch swaps a new set in only at its commit, so every failure leaves it holding what it held.
     assert.equal(remote.holds(), before, phase);
   }
@@ -443,7 +464,7 @@ test('a pretend Harmony Touch\'s own abort ends failed with the remote as it was
   const before = touchDocument();
   const remote = pretendRemote({ model: TOUCH, holds: before, aborts: true });
   const aborted = await run(touchDocument(), remote, { sources: TOUCH_SOURCES });
-  assert.deepEqual(aborted.outcome, { result: 'failed', remote: 'as-before', message: 'the remote aborted the sync, deleted what it had gathered and kept the set it held' });
+  assert.deepEqual(aborted.outcome, { result: 'failed', remote: 'as-before', phase: 'write', message: 'the remote aborted the sync, deleted what it had gathered and kept the set it held' });
   assert.deepEqual(aborted.words, ['identify', 'check', 'build', '! do-not-unplug', 'hand-over', 'write', '! safe-to-unplug', '= failed']);
   assert.equal(remote.holds(), before);
   // Once: the sync after it is written.

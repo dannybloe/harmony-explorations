@@ -1449,52 +1449,45 @@ class TheDocumentChecksReadOnlyTrackedFiles(unittest.TestCase):
         importlib.reload(facts)
         return facts
 
-    def test_an_untracked_document_is_not_read_and_a_tracked_one_is(self):
-        import subprocess
+    def _in_a_repository_of_its_own(self, name, walk):
+        """Show the walk skipping `name` untracked and reading it once it is tracked.
+
+        The probe goes into a throwaway repository, never this one: staging a probe in the real index
+        meant that a commit made by anyone else while this ran would have carried it. The walk is
+        pointed there by its module's `ROOT`, which every function on the path reads at call time.
+        Git's own variables are cleared for the duration, because inside a hook `GIT_INDEX_FILE` names
+        this repository's index and `git ls-files` in the throwaway one would read that instead.
+        """
+        import tempfile
         facts = self._facts()
-        probe = os.path.join(self.root, 'zz-toolchain-probe.md')
-        self.assertFalse(os.path.exists(probe), 'the probe path must be free')
-        tracked = None
+        saved_root = facts.ROOT
+        saved_env = {k: v for k, v in os.environ.items() if k.startswith('GIT_')}
         try:
-            with open(probe, 'w', encoding='utf-8') as fh:
-                fh.write('a probe\n')
-            self.assertNotIn(probe, set(facts.documents()),
-                             'an untracked markdown file is not a published document')
-            # And tracked, the same file is read. `git add` is what makes it part of the repository,
-            # which is the distinction the check is drawing.
-            subprocess.run(['git', 'add', '-f', probe], cwd=self.root, check=True,
-                           capture_output=True)
-            tracked = probe
-            self.assertIn(probe, set(facts.documents()),
-                          'a tracked markdown file is a published document')
+            for key in saved_env:
+                del os.environ[key]
+            with tempfile.TemporaryDirectory() as scratch:
+                root = os.path.realpath(scratch)
+                subprocess.run(['git', 'init', '-q', root], check=True, capture_output=True)
+                probe = os.path.join(root, name)
+                with open(probe, 'w', encoding='utf-8') as fh:
+                    fh.write('# a probe\n')
+                facts.ROOT = root
+                self.assertNotIn(probe, set(walk(facts)),
+                                 'an untracked file is not part of the repository')
+                # `git add` is what makes it part of the repository, which is the distinction the
+                # check is drawing.
+                subprocess.run(['git', 'add', '-f', name], cwd=root, check=True, capture_output=True)
+                self.assertIn(probe, set(walk(facts)), 'a tracked file is part of the repository')
         finally:
-            if tracked is not None:
-                subprocess.run(['git', 'rm', '-q', '--cached', tracked], cwd=self.root,
-                               check=False, capture_output=True)
-            if os.path.exists(probe):
-                os.remove(probe)
+            facts.ROOT = saved_root
+            os.environ.update(saved_env)
+
+    def test_an_untracked_document_is_not_read_and_a_tracked_one_is(self):
+        self._in_a_repository_of_its_own('zz-toolchain-probe.md', lambda facts: facts.documents())
 
     def test_the_source_walk_draws_the_same_line(self):
         """The phrase check reads `.ts` and `.py` too, and it is the half that gates a commit."""
-        import subprocess
-        facts = self._facts()
-        probe = os.path.join(self.root, 'zz_toolchain_probe.py')
-        self.assertFalse(os.path.exists(probe), 'the probe path must be free')
-        tracked = None
-        try:
-            with open(probe, 'w', encoding='utf-8') as fh:
-                fh.write('# a probe\n')
-            self.assertNotIn(probe, set(facts.sources()))
-            subprocess.run(['git', 'add', '-f', probe], cwd=self.root, check=True,
-                           capture_output=True)
-            tracked = probe
-            self.assertIn(probe, set(facts.sources()))
-        finally:
-            if tracked is not None:
-                subprocess.run(['git', 'rm', '-q', '--cached', tracked], cwd=self.root,
-                               check=False, capture_output=True)
-            if os.path.exists(probe):
-                os.remove(probe)
+        self._in_a_repository_of_its_own('zz_toolchain_probe.py', lambda facts: facts.sources())
 
     def test_the_real_documents_are_still_read(self):
         """The control on the control: narrowing the walk must not empty it."""

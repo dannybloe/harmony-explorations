@@ -18,7 +18,7 @@ const MANIFEST = new URL('../../package.json', import.meta.url);
 
 /** The write subpath: the names that exist at run time. */
 const WRITE_VALUES = [
-  'CONFIG_WRITE_MODELS', 'CONFIG_WRITE_UNITS', 'ConfigWriteRefusal', 'ConfigWriteStopped', 'RECOVERY', 'SYNC_ENDINGS', 'SYNC_LINES', 'TOUCH_SYNC_UNITS',
+  'CONFIG_WRITE_MODELS', 'CONFIG_WRITE_UNITS', 'ConfigWriteRefusal', 'ConfigWriteStopped', 'RECOVERY', 'SYNC_ENDINGS', 'SYNC_LINES', 'SYNC_STATES', 'TOUCH_SYNC_UNITS',
   'answerTouchSync', 'assertTouchSyncAllowed', 'prepareSet', 'pretendReader', 'pretendRemote', 'syncDocument', 'writeConfiguration',
 ];
 
@@ -26,7 +26,7 @@ const WRITE_VALUES = [
 const WRITE_TYPES = [
   'AttachedRemote', 'CompiledKeeper', 'ConfigWrite', 'ConfigWriteModel', 'ConfigWriteModelName', 'ConfigWriteResult', 'ConfigWriteStamp',
   'ConfigWriteStep', 'ConfigWriteUnit', 'ConfigWriteUnitLabel', 'DocumentKeeper', 'PretendFailure', 'PretendOptions', 'PretendRead', 'PretendRemote', 'RemoteKeeper', 'SetAnswer', 'SyncAttention', 'SyncEnding', 'SyncEvent',
-  'SyncOutcome', 'SyncPhase', 'SyncRemote', 'SyncRequest', 'TouchSet', 'TouchSyncMode', 'TouchSyncOutcome', 'TouchSyncRun', 'UnitRecords',
+  'SyncOutcome', 'SyncPhase', 'SyncRemote', 'SyncRequest', 'SyncState', 'TouchSet', 'TouchSyncMode', 'TouchSyncOutcome', 'TouchSyncRun', 'UnitRecords',
 ];
 
 /** The functions that write to a remote, which no entry but the write subpath may offer. */

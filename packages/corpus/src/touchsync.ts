@@ -591,6 +591,13 @@ export interface TouchSyncOutcome {
   readonly reason?: string;
   /** Whether anything that acts on the remote had been sent when the run ended. */
   readonly acted: boolean;
+  /**
+   * Where the run stood when it ended: before the hand over, in it, or past it, the sync request and the sync itself.
+   * **Data a caller acts on**, where `recovery` and `abortCost` are the sentences a person at the bench reads: what an
+   * abort would cost follows from it, and `syncDocument` names the state a refusal after the remote was acted on left
+   * it in by it. Absent on an outcome made before it was reported.
+   */
+  readonly stage?: 'before' | 'hand over' | 'sync';
   /** The order of recovery steps, `RECOVERY`, for a refusal after the remote was acted on. */
   readonly recovery?: string;
   /** What an abort would cost at the point the run stopped, for the same refusals. */
@@ -604,6 +611,13 @@ export interface TouchSyncOutcome {
 
 /** A refusal of ours, carried to the one place that turns it into an outcome. */
 class Refusal extends Error {}
+
+/**
+ * The words in front of a refusal's reason when an error of the cable or the remote, rather than a refusal of ours,
+ * ended the run. Exported so that a caller which says in its own words that the run stopped can leave these out
+ * rather than say it twice, `syncDocument`.
+ */
+export const RUN_STOPPED = 'the run stopped on an error: ';
 
 /** An answer's status, `errorCode` in the long form's object and `code` otherwise, as text. */
 export function statusOf(text: string): string | undefined {
@@ -640,11 +654,12 @@ export function resultOf(text: string): Record<string, unknown> | undefined {
 /**
  * Why a run cannot be kept in `folder`, or undefined: it has to be new or empty, so a run never writes over another's.
  * `syncTouch` throws with these words before anything is sent, and `syncDocument` asks first, so a person is told by a
- * refusal rather than a throw.
+ * refusal rather than a throw. **The folder is not named in them**: it is the caller's, which knows where it put it,
+ * and an application's user is told what is wrong rather than shown a path.
  */
 export function touchFolderRefusal(folder: string): string | undefined {
   return existsSync(folder) && readdirSync(folder).length > 0
-    ? `the lab folder ${folder} already holds files, and a run never writes over another's` : undefined;
+    ? 'the folder the run is to be kept in already holds files, and a run never writes over another\'s' : undefined;
 }
 
 /** A name for a file of the folder: a number in order and what it is, with nothing of an address in it. */
@@ -805,8 +820,8 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
   /** What an abort would cost where the run stands, `abortCost`, which says why. */
   const costOfAnAbort = (): string => abortCost(stage, handedUp);
 
-  const end = (outcome: Omit<TouchSyncOutcome, 'acted' | 'lists' | 'answered' | 'handedUp'>): TouchSyncOutcome => {
-    const whole = { ...outcome, acted, lists, answered, handedUp };
+  const end = (outcome: Omit<TouchSyncOutcome, 'acted' | 'stage' | 'lists' | 'answered' | 'handedUp'>): TouchSyncOutcome => {
+    const whole = { ...outcome, acted, stage, lists, answered, handedUp };
     if (outcome.ending === 'refused') {
       report(`sync: refused, ${outcome.reason ?? 'no reason given'}`);
       if (whole.recovery !== undefined) report(`sync: recovery, ${whole.recovery}`);
@@ -835,7 +850,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     try {
       document = JSON.parse(decodeURIComponent(raw.replace(/\+/g, ' ')));
     } catch {
-      return { refuse: `the remote handed up ${describe(r.uri)} in a form this answerer cannot decode; it is kept in the lab as it came` };
+      return { refuse: `the remote handed up ${describe(r.uri)} in a form this answerer cannot decode; it is kept in the run's folder as it came` };
     }
     writeFileSync(join(folder, 'handed-up', fileName(n, `${label}.json`)), `${JSON.stringify(document, null, 2)}\n`);
     handedUp.push(key);
@@ -862,7 +877,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     const gate = prepareSet(options.mode.set);
     if ('refusals' in gate) {
       writeFileSync(join(folder, 'gate.txt'), `${gate.refusals.join('\n')}\n`);
-      return end({ ending: 'refused', reason: `the gate found ${gate.refusals.length} reasons the set cannot be written, kept in gate.txt` });
+      return end({ ending: 'refused', reason: `the gate found ${gate.refusals.length} reasons the set cannot be written, each kept in the run's folder` });
     }
     prepared = gate.set;
     report(`sync: gate passed, ${prepared.entries.size} answers, ${prepared.tags.stated} tags stated and ${prepared.tags.ours} ours`);
@@ -919,7 +934,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
       if (clashing.length > 0) {
         throw new Refusal(`the remote handed up ${clashing.map((k) => (k.includes(':') ? 'a favourites document' : k)).join(' and ')}, `
           + 'which the set also holds, so answering the set would revert the change made on the remote; the change is kept '
-          + 'in the lab and committed on the remote, so rebuild the set from it');
+          + 'in the run\'s folder and committed on the remote, so rebuild the set from it');
       }
     }
 
@@ -933,7 +948,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
     return end({ ending });
   } catch (error: unknown) {
     const reason = error instanceof Refusal ? error.message
-      : `the run stopped on an error: ${error instanceof Error ? error.message : String(error)}`;
+      : `${RUN_STOPPED}${error instanceof Error ? error.message : String(error)}`;
     return end(acted ? { ending: 'refused', reason, recovery: RECOVERY, abortCost: costOfAnAbort() } : { ending: 'refused', reason });
   }
 }
@@ -977,8 +992,9 @@ export const TOUCH_SYNC_UNITS = ['touch'] as const;
  */
 export function assertTouchSyncUnit(label: string): void {
   if (!(TOUCH_SYNC_UNITS as readonly string[]).includes(label)) {
-    throw new RailError(`${label} is not a Harmony Touch this may sync: the units are the library's, `
-      + `${TOUCH_SYNC_UNITS.join(', ')}, decision 29. Refusing before anything is opened.`);
+    // Worded for whoever is shown it: the list and why it is short are this file's, not the reader's.
+    throw new RailError(`${label} is not a Harmony Touch this library may sync, so nothing was opened and nothing `
+      + 'was sent');
   }
 }
 

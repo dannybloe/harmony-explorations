@@ -47,8 +47,18 @@ import { writeChunkLengths } from './writes.ts';
  */
 export const MAX_TRANSFER = 3150;
 
-/** A refusal from this sequence, so a caller can tell it from a transport error. */
-export class BlockWriteError extends Error {}
+/**
+ * A refusal from this sequence, so a caller can tell it from a transport error.
+ *
+ * `NEIGHBOUR_ERASED` is in the one refusal after which the remote must not be sent anything more, whether or not the
+ * known good content covers the block: an erase reached a neighbouring block, and a write run again would erase and
+ * write its own block and leave that one as the erase left it. A caller that reports a state tells this case apart
+ * by the constant, and a script with a person at the bench adds its own instruction where a message carries it, so
+ * the library's words name no document and no step only that person can take.
+ */
+export class BlockWriteError extends Error {
+  static readonly NEIGHBOUR_ERASED = 'putting that block back is not built yet';
+}
 
 /**
  * The first index at which two equal length buffers differ.
@@ -161,11 +171,10 @@ export async function writeBlock(w: BlockWrite): Promise<void> {
         + "bytes this project has assumed, which was Logitech's client's word and has never been "
         + 'measured. '
         + (w.coversBlock(neighbour)
-          ? `${w.sourceName} covers that block, so its content is recoverable, but not by this `
-            + 'run: it writes one block and this needs a plan for two.'
+          ? `${w.sourceName} covers that block, so what was there is known, and `
+            + `${BlockWriteError.NEIGHBOUR_ERASED}: send nothing more to this unit.`
           : 'The known good content does not cover that block, so what was there is not recoverable '
-            + 'from it. Stop and read docs/adding-a-device.md phase 8 before touching this unit '
-            + 'again.'));
+            + `from it, and ${BlockWriteError.NEIGHBOUR_ERASED}: send nothing more to this unit.`));
     }
   }
   if (w.neighbours.length === 2) {

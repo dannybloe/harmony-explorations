@@ -72,8 +72,8 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
   - [x] 2.3.15 An activity is never invalid and no role is required, decision 44: a removal marks each activity that used the device as needing attention, with every press it changed, and the activity is still synced; an application clears the mark; an activity switched off is left out of a build and a sync, which say so
 - [x] 2.4 A pretend remote an application reads and syncs against with nothing attached, its progress and its failures included (R80)
 - [ ] 2.5 What an application asks of the FHSDK that no contract covers, gone through against the requirements once the skeleton stands
-  - [ ] 2.5.1 A message an application shows carries no bench command line: after a Harmony Touch sync that acted on the remote, the way back is a state the outcome names
-  - [ ] 2.5.2 A failure's words name the phase it happened in: a read back that differs is not a write that stopped part way
+  - [x] 2.5.1 A message an application shows carries no bench command line: after a Harmony Touch sync that acted on the remote, the way back is a state the outcome names
+  - [x] 2.5.2 A failure's words name the phase it happened in: a read back that differs is not a write that stopped part way
   - [ ] 2.5.3 Whether a pretend remote is among the remotes an application lists, and whether reading a Harmony Touch's documents off the remote is a contract, since none exists; a pretend Touch holds the document and not the set it was sent, and nothing reads it back
   - [ ] 2.5.4 What a sync does to an activity that is running: Logitech's client asks nothing before a sync and tells the person afterwards to switch every device off before starting an activity; tried once on the bench Harmony Touch, and what an application says to a person follows from it
   - [ ] 2.5.5 An activity that cannot work at all, such as one with no device: a Harmony One, 600, 650 and 700 build it, a Harmony Touch and a 350 say no for reasons of their own; one answer for every model is to decide
