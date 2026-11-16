@@ -1055,6 +1055,9 @@ because the guidance was too long to keep in this file. Among them (this said "e
 * **`code-navigation`**, ask the language index rather than grepping for a symbol, with the two
   pitfalls that make it worse than grep when they are not known: the IDE does not index Python and
   answers anyway, from the directory, and the reply's `resolvedSymbol` is what says so.
+* **`code-style`**, how new TypeScript is laid out where no tool decides it: blank lines as paragraphs,
+  where a long line breaks, destructuring and the options object. It holds for new and edited statements
+  and for every file under a package's `examples/`, and existing code is never reflowed to match it.
 * **`how-a-harmony-works`**, the operating concept of the product, and the rule that a corpus
   measurement cannot answer a question about behaviour. Read before designing anything.
 * **`status-report`**, how to say where the work stands: short, plain, one concrete example
