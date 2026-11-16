@@ -347,3 +347,24 @@ nav:
       - logitech/README.md
       - Product line: logitech/product-line.md
   - Glossary: glossary.md
+  - The SDK:
+      - sdk/README.md
+      - Guide: sdk/guide.md
+      - Documents: sdk/documents.md
+      - API reference:
+          - sdk/api/README.md
+          - base: sdk/api/base.md
+          - base/models: sdk/api/base-models.md
+          - config: sdk/api/config.md
+          - "config: harmonyTouch": sdk/api/config-harmony-touch.md
+          - "config: recipe": sdk/api/config-recipe.md
+          - config/node: sdk/api/config-node.md
+          - remote: sdk/api/remote.md
+          - remote/read: sdk/api/remote-read.md
+          - remote/write: sdk/api/remote-write.md
+          - silhouettes: sdk/api/silhouettes.md
+          - usb: sdk/api/usb.md
+          - More types of config: sdk/api/config-types.md
+          - More types of remote: sdk/api/remote-types.md
+          - More types of silhouettes: sdk/api/silhouettes-types.md
+          - More types of usb: sdk/api/usb-types.md

@@ -49,6 +49,7 @@ function activityVariable(c: Container): StateVariable | undefined {
 /**
  * How many activities the config defines, or undefined when it has no name tree to say so.
  *
+ * @privateRemarks
  * The count is the variable's highest value rather than its number of values, and section 121 is why:
  * the values are `0` upward with one of them, `idleActivityValue`, meaning no activity, so `highest`
  * of `highest + 1` values are activities. The calibration is the pair of section 58: a config compiled
@@ -64,6 +65,7 @@ export interface ActivityBinding {
   /**
    * The value written into `CurrentActivityState`.
    *
+   * @privateRemarks
    * **Zero is an activity like any other**, which corrects the reading section 86 gave: it said value<!--superseded-->
    * 0 is "no activity running" and the rest are the activities. The idle value is the record's own
    * `first`, and section 273 replaced the description that used to sit here with a rule: the variable
@@ -74,7 +76,12 @@ export interface ActivityBinding {
   activity: number;
   /** Index into `modePages`, which is the screen the button belongs to. */
   page: number;
-  /** The tagged list's key code: an event type in `0xC0` and a scan code in `0x3F`. Section 17. */
+  /**
+   * The tagged list's key code: an event type in `0xC0` and a scan code in `0x3F`.
+   *
+   * @privateRemarks
+   * Section 17.
+   */
   tag: number;
   /** The scan code alone, which is what a silhouette would eventually name. */
   scan: number;
@@ -87,18 +94,22 @@ export interface ActivityBinding {
 /**
  * Every button binding that starts an activity, and which activity it starts.
  *
- * **This is the chain an interface needs and it took four hops to find.** Section 120. A page's
+ * **This is the chain an interface needs and it took four hops to find.** A page's
  * tagged list binds a key to opcode `0x7F`, which names a base slot 10 action list; that list
  * carries `0x1F` with operand `0xFF | set`, which selects a base slot 9 binding set; that set's own
  * tagged list carries another `0x7F`, naming the list that writes `CurrentActivityState`.
  *
- * Two routes were ruled out before this one, section 112: no screen switch reads the variable's
- * index, and base slot 14's value maps point at targets that draw no text. A third was proposed in
- * `CLAUDE.md` and was wrong, the touch hit map, which exists on arch 12 alone.
+ * Two routes were ruled out before this one: no screen switch reads the variable's
+ * index, and base slot 14's value maps point at targets that draw no text, and the touch hit map exists on arch 12
+ * alone.
  *
  * The closure is a count. The number of base slot 10 lists that write the variable equals the
  * activity count exactly, in every container that has a name tree, across four architectures. So
  * there is one such list per activity and no spares.
+ *
+ * @privateRemarks
+ * Section 120.
+ * section 112. The touch hit map was proposed in `CLAUDE.md` as a third route and was wrong.
  */
 export function activityBindings(c: Container): ActivityBinding[] {
   const variable = activityVariable(c);
@@ -214,7 +225,7 @@ export function caseQueued(c: Container, address: number): Instruction | undefin
 
 /**
  * The screen each activity shows while it runs, read from the table the remote itself consults to
- * get back to it, section 279.
+ * get back to it.
  *
  * **An activity has two screens and this is the second.** Its enter list opens by entering a mode
  * whose page says "Keep the remote pointed at your system" and binds every key to nothing; the
@@ -243,6 +254,9 @@ export function caseQueued(c: Container, address: number): Instruction | undefin
  * Cases for values no activity binds are ignored, and so is a binding with no case, which is exactly
  * what a composed activity is before its screen is composed. Undefined when the walk reaches no such
  * record or more than one, since two candidates would be a guess.
+ *
+ * @privateRemarks
+ * section 279.
  */
 export function activityScreens(c: Container): ActivityScreens | undefined {
   const variable = activityVariable(c);
@@ -343,10 +357,10 @@ export interface ActivityName {
 }
 
 /**
- * Which activity a drawn name belongs to, section 121.
+ * Which activity a drawn name belongs to.
  *
  * The question the application could not answer: a mode page's screen program draws the activity
- * names and nothing else names them, section 112, so listing them was possible and saying which entry
+ * names and nothing else names them, so listing them was possible and saying which entry
  * starts which activity was not. `activityBindings` gets as far as the **page**. This gets to the
  * string on it, and the route is not geometry:
  *
@@ -365,12 +379,15 @@ export interface ActivityName {
  * **A label the menu wrapped onto a second row** is looked for last, and only for an activity nothing
  * else resolved, which is a Harmony 525 and nothing else here.
  *
- * **Arch 12 does not use any of that, and it runs first**, section 125. No string rule can work on a
- * touch panel: three pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and {48,49}
+ * **Arch 12 does not use any of that, and it runs first**. No string rule can work on a
+ * touch panel: three pages of one Harmony One configuration bind activities on scans {50,51,52}, {50,48,49} and {48,49}
  * while each draws its labels at the same rows, so no fixed code to row map exists. A Harmony One takes
  * the label from base slot 17's hit map instead, through the index in the mode page's own `lead` byte,
  * so the rectangle is stated and the label is the text the firmware's hit test puts inside it. Sections
  * 121, 124 and 125.
+ *
+ * @privateRemarks
+ * section 112; section 121; section 125.
  */
 export function activityNames(c: Container): ActivityName[] {
   const bindings = activityBindings(c);
@@ -791,7 +808,12 @@ export function handlerSetRoles(c: Container): HandlerSetRole[] {
 
 /** An activity, with the devices it drives and the key map it installs. */
 export interface Activity extends ActivityName {
-  /** The base slot 9 set the chain selects: the activity's own key map while it runs. Section 39. */
+  /**
+   * The base slot 9 set the chain selects: the activity's own key map while it runs.
+   *
+   * @privateRemarks
+   * Section 39.
+   */
   set: number;
   /** The devices it addresses, by infrared group, ascending. */
   devices: number[];
@@ -802,12 +824,15 @@ export interface Activity extends ActivityName {
  *
  * `activityNames` says which key starts an activity and what it is called; this adds which **devices**
  * it drives, which is the other half of what an interface shows. The route is the base slot 9 set the
- * starting chain selects, section 120: that set is the key map the activity installs, so the devices
+ * starting chain selects: that set is the key map the activity installs, so the devices
  * its bindings send to are the devices the activity uses. An activity in the corpus drives one to three
  * of them.
  *
  * The union is over the whole set rather than over the start sequence alone, deliberately: an activity
  * that sends the volume to a receiver is using that receiver whether or not it switched it on.
+ *
+ * @privateRemarks
+ * section 120.
  */
 export function activities(c: Container): Activity[] {
   const codes = infraredCodesPerList(c);

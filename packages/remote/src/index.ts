@@ -12,6 +12,6 @@
  * application's.
  */
 
-// Reading a configuration off a remote, and what each model's read needs.
+// Reading a configuration off a remote: the read, and what each model's read needs.
 export { PROFILES, profileFor, readConfig, ReadError } from './read.ts';
 export type { ConfigRead, ConfigReader, ReadOptions, ReadProgress, RemoteProfile } from './read.ts';

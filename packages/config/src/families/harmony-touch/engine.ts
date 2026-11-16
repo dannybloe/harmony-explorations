@@ -152,13 +152,14 @@ export interface Send {
 /**
  * The engine's overhead around a send and a sleep, at the two ends of the band. A send's lamp starts this
  * long after the engine asks for it and the engine goes on this long after the lamp stops; a sleep ends this
- * long late. The top end is calibrated, `touch-full-bench-predicted.test.ts`: the 6.9 runs put a send and a sleep together at
- * 133 to 192 ms beyond a stated delay, and the 3.2 runs' activity starts at less.
+ * long late. The top end is calibrated against timed runs on the remote, `touch-full-bench-predicted.test.ts`: a send
+ * and a sleep together came to 133 to 192 ms beyond a stated delay, and an activity's start to less.
  */
 export const TIMING = {
   low: { beforeLampMs: 0, afterLampMs: 0, sleepLateMs: 0 },
   high: { beforeLampMs: 60, afterLampMs: 90, sleepLateMs: 60 },
 } as const;
+/** The engine's overhead at one end of the band, one of `TIMING`. */
 export type Timing = (typeof TIMING)[keyof typeof TIMING];
 
 /** How long a person leaves between two steps: longer than any wait the engine holds, so no wait carries over. */
@@ -361,7 +362,7 @@ export type FirstFrame = (once: readonly Pulse[]) => readonly Pulse[];
 
 /**
  * The lamp's time for a command, from its definition: the codec's rendering of the code at the device's
- * repeat count, which gave the frame counts the monitor heard for every code of the 3.2 and 6.9 runs. Its first
+ * repeat count, which gave the frame counts an infrared receiver heard for every code of the timed runs. Its first
  * frame is cut by the receiver's rule, `firstFrame`.
  */
 export function airtimeOf(device: ReadDevice, command: ReadCommand, firstFrame: FirstFrame): Airtime {

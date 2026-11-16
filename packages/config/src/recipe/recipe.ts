@@ -60,7 +60,10 @@ export const TOUCH_CONVERTER = 'harmonyTouch.describeTouchDocument on @freeharmo
 
 /**
  * The version of the recipe's format this reads and writes, `Recipe.version`. Version 2 adds the fields of one shape
- * for every model, decision 43, and changes the meaning of none, so a document of version 1 reads as before.
+ * for every model, and changes the meaning of none, so a document of version 1 reads as before.
+ *
+ * @privateRemarks
+ * decision 43.
  */
 export const RECIPE_VERSION = 2;
 
@@ -68,11 +71,19 @@ export const RECIPE_VERSION = 2;
  * How a key is pressed, wherever a key's choice or a key's place names one: `held` is the long press, a second
  * command chosen by how long the key is down, which is a property of the key, and not repeating while held, which is
  * the command's, `reference/how-a-harmony-works.md`; `double` is two presses in quick succession, which a Harmony
- * Touch's gestures take, R40. `double` is of version 2. Which presses a model has is its family's to say.
+ * Touch's gestures take. `double` is of version 2. Which presses a model has is its family's to say.
+ *
+ * @privateRemarks
+ * R40.
  */
 export type RecipePress = 'short' | 'held' | 'double';
 
-/** The model a recipe is for: FreeHarmony's `RemoteModel`, Logitech's name and the skin where known. */
+/**
+ * The model a recipe is for: Logitech's name and the skin where known.
+ *
+ * @privateRemarks
+ * FreeHarmony's `RemoteModel`.
+ */
 export interface RecipeModel {
   readonly name: string;
   readonly skin?: number;
@@ -94,45 +105,66 @@ export interface RecipeDevice {
   readonly poweredOnBetweenActivities?: boolean;
   /**
    * The device key it goes on, on a remote with a key per device and no screen, the Harmony 300 and 350: the key's
-   * place as `DevicePlace` counts it, from 0, `DEVICE_KEYS` in the family's `keys.ts`, and a short or a long press, short unless given. Plan 014: a
+   * place as `DevicePlace` counts it, from 0, `DEVICE_KEYS` in the family's `keys.ts`, and a short or a long press, short unless given. A
    * person chooses it in MyHarmony, so it is the recipe's, and only that family reads it.
+   *
+   * @privateRemarks
+   * Plan 014.
    */
   readonly key?: RecipeDeviceKey;
   /** The keys a person chose otherwise in this device's own map, device mode's; absent is none. */
   readonly keys?: readonly RecipeKey[];
   /**
-   * The device's definition carried in the recipe, plan 014: the catalogue's record of it and its codeset's
+   * The device's definition carried in the recipe: the catalogue's record of it and its codeset's
    * commands, served before any archive, `carriedCatalogue` in `catalogue/carried.ts`. Absent, the build reads the
    * catalogue entry `device` names from the archive it is given.
+   *
+   * @privateRemarks
+   * plan 014.
    */
   readonly definition?: RecipeDefinition;
   /**
-   * A person's timing for the device, R16 and R17, in the catalogue's own member names, `DeviceTiming`, each member
+   * A person's timing for the device, in the catalogue's own member names, `DeviceTiming`, each member
    * given standing over the catalogue's and every other the catalogue's. Kept apart from `definition` so that fetching
    * the definition again replaces the catalogue's statement and never the person's. Version 2.
+   *
+   * @privateRemarks
+   * R16 and R17.
    */
   readonly timing?: Partial<DeviceTiming>;
   /**
-   * A person's choice of how the device is powered, R14: the catalogue's own members, `DevicePower`, each given
+   * A person's choice of how the device is powered: the catalogue's own members, `DevicePower`, each given
    * standing over the catalogue's, and `alwaysOn`, a device that is never switched off, which the catalogue does not
    * state. Kept on between activities is `poweredOnBetweenActivities`, the field version 1 has. Version 2.
+   *
+   * @privateRemarks
+   * R14.
    */
   readonly power?: RecipeDevicePower;
   /**
-   * A person's choice of how a channel number is entered, R18, in the catalogue's shape, `DeviceChannelTuning`, whose
+   * A person's choice of how a channel number is entered, in the catalogue's shape, `DeviceChannelTuning`, whose
    * steps name the device's commands by name. **Member by member, as `timing` is**: each member stated, the digits or
    * one of the four lists, stands over the catalogue's, and each one left out keeps the catalogue's. Version 2.
+   *
+   * @privateRemarks
+   * R18.
    */
   readonly channelTuning?: DeviceChannelTuning;
   /**
-   * The device's screen list in device mode as a person chose it, R35, stated whole: every entry in order, an empty
+   * The device's screen list in device mode as a person chose it, stated whole: every entry in order, an empty
    * list for none. Absent is what the family derives. Version 2.
+   *
+   * @privateRemarks
+   * R35.
    */
   readonly screen?: readonly RecipeScreenCommand[];
   /**
-   * A person's changes to single commands of the device, by command name, R19: a code replacing the definition's,
+   * A person's changes to single commands of the device, by command name: a code replacing the definition's,
    * and the sending part, which is room only: nothing builds it yet. Kept apart from `definition` for the same reason
    * as `timing`. Version 2.
+   *
+   * @privateRemarks
+   * R19.
    */
   readonly commands?: Readonly<Record<string, RecipeCommand>>;
 }
@@ -143,16 +175,21 @@ export interface RecipeDevicePower extends Partial<DevicePower> {
 }
 
 /**
- * A code for one command: the catalogue's own notation, or pulses learned from the device's original remote, R19 and
- * R11. The toolkit's `CommandCode` is this.
+ * A code for one command: the catalogue's own notation, or pulses learned from the device's original remote. The toolkit's `CommandCode` is this.
+ *
+ * @privateRemarks
+ * R19 and R11.
  */
 export type RecipeCommandCode = { readonly keycode: string } | { readonly learned: readonly Pulse[] };
 
 /**
  * How one command is sent, where a person tuned it over what its code states: the copies of the code in the first
  * block, the pace of the held block in milliseconds, and the silence before the first block in milliseconds, the lead
- * in the compiled families' composers already take per command, R89. **Room only**: the place is in the document so its
+ * in the compiled families' composers already take per command. **Room only**: the place is in the document so its
  * shape does not move again, and no build reads it.
+ *
+ * @privateRemarks
+ * R89.
  */
 export interface RecipeSending {
   readonly copies?: number;
@@ -194,6 +231,10 @@ export interface RecipeKey {
   readonly press?: RecipePress;
   readonly action: RecipeKeyAction;
 }
+/**
+ * What a key does: a device's command, by the device's name and the command's, one of the activity's sequences,
+ * or nothing.
+ */
 export type RecipeKeyAction =
   | { readonly device: string; readonly command: string }
   | { readonly sequence: string }
@@ -491,7 +532,10 @@ export interface RecipeActivityDevice {
 
 /**
  * A command entry of a screen list: a device's command, by the device's name and the command's, and in version 2 the
- * label the screen shows for it, R34, absent for the command's own name. The steps of a version 1 screen use no label.
+ * label the screen shows for it, absent for the command's own name. The steps of a version 1 screen use no label.
+ *
+ * @privateRemarks
+ * R34.
  */
 export interface RecipeScreenCommand {
   readonly device: string;
@@ -500,29 +544,39 @@ export interface RecipeScreenCommand {
 }
 
 /**
- * One item of an activity's working screen, section 323: a device's command by the label that device's own screen
+ * One item of an activity's working screen: a device's command by the label that device's own screen
  * draws it under, or a sequence, Logitech's "sequence" of MyHarmony. **Two forms of a sequence**: version 1 states
  * one where it sits, by its name and its steps, a step sending the command a device's key sends by the key's scan
  * code, `keys.md`, or pausing, in tenths of a second; version 2 names one of the activity's own sequences,
  * `RecipeActivity.sequences`, whose steps name commands and never a scan, so a document moved to another model means
  * the same commands. `steps` is what tells the two apart: present on the first form, never on the second.
+ *
+ * @privateRemarks
+ * section 323.
  */
 export type RecipeScreenItem =
   | RecipeScreenCommand
   | { readonly sequence: string; readonly steps: readonly RecipeSequenceStep[] }
   | { readonly sequence: string; readonly steps?: undefined };
+/** One step of a sequence as version 1 states it: a device's key by its scan code, or a pause. */
 export type RecipeSequenceStep = { readonly device: string; readonly scan: number } | { readonly pause: number };
 
 /**
- * One step of a version 2 sequence, R37: a device's command by the device's name and the command's, or a pause in
+ * One step of a version 2 sequence: a device's command by the device's name and the command's, or a pause in
  * tenths of a second, as the toolkit's `SequenceStep` and the version 1 steps count a pause.
+ *
+ * @privateRemarks
+ * R37.
  */
 export type RecipeCommandStep = { readonly device: string; readonly command: string } | { readonly pause: number };
 
 /**
- * A named sequence an activity owns, R37: its id in the document, which the toolkit gives it as it gives a device's,
+ * A named sequence an activity owns: its id in the document, which the toolkit gives it as it gives a device's,
  * its name, and its steps, at least one of them sending a command. It draws on its activity's devices; a key, a
  * screen item and an extra step of the same activity name it. Version 2.
+ *
+ * @privateRemarks
+ * R37.
  */
 export interface RecipeSequence {
   readonly id?: string;
@@ -531,19 +585,25 @@ export interface RecipeSequence {
 }
 
 /**
- * One step an activity takes at its start or its end beyond what its devices need anyway, R30: a device's command, a
+ * One step an activity takes at its start or its end beyond what its devices need anyway: a device's command, a
  * pause in tenths of a second, one of the activity's sequences by its name, or a channel tuned through a device,
  * `RecipeChannelStep`. The first three are the toolkit's `ActivityStep`'s; the channel is the document's alone, since
  * the toolkit's step has no channel. Devices by name, since the recipe names a device by its name underneath. Version 2.
+ *
+ * @privateRemarks
+ * R30.
  */
 export type RecipeActivityStep = RecipeCommandStep | { readonly sequence: string } | RecipeChannelStep;
 
 /**
- * A channel tuned through one of the activity's devices as a step at its start or its end, R30: the channel's digits
+ * A channel tuned through one of the activity's devices as a step at its start or its end: the channel's digits
  * **as text**, so a leading zero survives, as a favourite channel's does, and the device tunes it the way its channel
  * tuning says. A step of the activity's own and never of a sequence: a Harmony Touch, the one remote whose documents
  * were measured holding one, keeps a channel step among an activity's start steps, and its engine skips a sequence's
  * step of any kind but a command or a pause, `reference/architectures/harmony-touch/activities-and-buttons.md`. Version 2.
+ *
+ * @privateRemarks
+ * R30.
  */
 export interface RecipeChannelStep {
   readonly device: string;
@@ -552,7 +612,10 @@ export interface RecipeChannelStep {
 
 /**
  * One activity: its name, MyHarmony's type, its devices, and its working screen's items in order, which
- * a person chooses and the compile does not derive, section 323. Absent or empty is a screen with no item.
+ * a person chooses and the compile does not derive. Absent or empty is a screen with no item.
+ *
+ * @privateRemarks
+ * section 323.
  */
 export interface RecipeActivity {
   /** The activity's id in this document, as `RecipeDevice.id` is a device's. */
@@ -560,48 +623,81 @@ export interface RecipeActivity {
   readonly name: string;
   readonly type: string;
   /**
-   * The devices it uses. **None is allowed and kept**, decision 44: an activity with no device stays in the document,
+   * The devices it uses. **None is allowed and kept**: an activity with no device stays in the document,
    * and every build and sync leaves it out and says so, `leftOutBecause`, until a device is added.
+   *
+   * @privateRemarks
+   * decision 44.
    */
   readonly devices: readonly RecipeActivityDevice[];
   readonly screen?: readonly RecipeScreenItem[];
   /** The keys a person chose otherwise in this activity's map; absent is none. */
   readonly keys?: readonly RecipeKey[];
   /**
-   * The screen the activity opens on, R91, by the word the model's family names it by; absent is the family's
+   * The screen the activity opens on, by the word the model's family names it by; absent is the family's
    * default. Which words there are is the family's to say, so this reader takes any. Version 2.
+   *
+   * @privateRemarks
+   * R91.
    */
   readonly opensOn?: string;
   /**
-   * Whether this activity holds the favourite channels, R45: at most one activity of a document says true. Absent is
+   * Whether this activity holds the favourite channels: at most one activity of a document says true. Absent is
    * the family's default, false says this one does not. Version 2.
+   *
+   * @privateRemarks
+   * R45.
    */
   readonly favourites?: boolean;
   /**
-   * The order the activity switches its devices on and off in, R90, by their names: every device of the activity once.
+   * The order the activity switches its devices on and off in, by their names: every device of the activity once.
    * Absent is the family's default. Version 2.
+   *
+   * @privateRemarks
+   * R90.
    */
   readonly powerOrder?: readonly string[];
-  /** Extra steps when the activity starts, R30; absent is none. Version 2. */
+  /**
+   * Extra steps when the activity starts; absent is none. Version 2.
+   *
+   * @privateRemarks
+   * R30.
+   */
   readonly start?: readonly RecipeActivityStep[];
-  /** Extra steps when the activity ends, R30; absent is none. Version 2. */
+  /**
+   * Extra steps when the activity ends; absent is none. Version 2.
+   *
+   * @privateRemarks
+   * R30.
+   */
   readonly end?: readonly RecipeActivityStep[];
-  /** The activity's own sequences, R37, each named once within it. Version 2. */
+  /**
+   * The activity's own sequences, each named once within it. Version 2.
+   *
+   * @privateRemarks
+   * R37.
+   */
   readonly sequences?: readonly RecipeSequence[];
   /**
-   * **Switched off**, R92, decision 44: stated only as `false`, since an activity is on unless it says otherwise, and a
+   * **Switched off**: stated only as `false`, since an activity is on unless it says otherwise, and a
    * field stating what holds anyway is said by leaving it out. A person switches an activity off on purpose, to keep it
    * in the document without giving it to the remote: every build leaves it out, `takingPart`, before any family builds,
    * and says which it left out. Kept apart from everything else about the activity, so switching it on again gives back
    * the activity it was, under the same id. Version 2.
+   *
+   * @privateRemarks
+   * R92; decision 44.
    */
   readonly enabled?: false;
   /**
-   * **Needs attention**, R93, decision 44: why a change may have left the activity in a state the person does not want,
+   * **Needs attention**: why a change may have left the activity in a state the person does not want,
    * one reason or more, each as data an application words itself, `RecipeAttention`. **Stored, because it cannot be
    * worked out again**: once a device is removed, nothing left in the document says what the activity's keys did with
    * it. It changes no build: an activity needing attention is built and synced as it is, since it is never invalid. The
    * toolkit sets it when a device the activity used is removed, and an application clears it by one call. Version 2.
+   *
+   * @privateRemarks
+   * R93; decision 44.
    */
   readonly attention?: readonly RecipeAttention[];
 }
@@ -642,19 +738,28 @@ export interface RecipeAttentionKey {
 }
 
 /**
- * **Why a build leaves an activity out**, decision 44, a closed list an application words itself:
+ * **Why a build leaves an activity out**, a closed list an application words itself:
  *
- * * `switched-off`: a person switched it off, R92, `RecipeActivity.enabled`;
+ * * `switched-off`: a person switched it off, `RecipeActivity.enabled`;
  * * `no-device`: it uses no device, so there is nothing for it to switch on, put on an input or send a key to. **No
  *   device, no activity**: it is left out as a switched off one is, on every model, and never refused, since an
- *   activity is never invalid. Taken on 16 November 2026, decision 44.
+ *   activity is never invalid.
  *
  * An activity both switched off and with no device is left out as `switched-off`, the person's own choice, which is
  * what switching it on again would answer first.
+ *
+ * @privateRemarks
+ * No device, no activity was taken on 16 November 2026.
+ * decision 44; R92; decision 44.
  */
 export type LeftOutReason = 'switched-off' | 'no-device';
 
-/** An activity a build left out, decision 44: its id where it has one, its name, and why, `LeftOutReason`. */
+/**
+ * An activity a build left out: its id where it has one, its name, and why, `LeftOutReason`.
+ *
+ * @privateRemarks
+ * decision 44.
+ */
 export interface LeftOutActivity {
   readonly id?: string;
   readonly name: string;
@@ -713,9 +818,8 @@ export function recipeToBuild(recipe: Recipe, route: string, kind: BuildKind): R
  * zero is a channel of its own ("07" is not "7"), `reference/logitech/service.md`, "Button maps". A digit,
  * a dot or a dash only, the characters MyHarmony's favourites screen reads a channel number for.
  *
- * **Sent to Logitech's service and built by nothing yet**: `packages/remote/bin/build-setup.ts --stage
- * favourites` saves them on a test account's record, so a compile of theirs holds them, and the codec's
- * composers refuse a recipe that states any, since none of them writes a favourite channel.
+ * **Built by nothing yet**: every build refuses a recipe that states any, since none writes a favourite channel,
+ * rather than build a configuration without what the recipe asked for.
  */
 export interface RecipeFavourites {
   readonly device: string;
@@ -742,12 +846,18 @@ export interface Recipe {
   readonly choices?: Readonly<Record<string, unknown>>;
   /**
    * The protocol definitions the carried devices' commands are written in, as the archive's protocol files hold
-   * them, plan 014; served before the archive's, by name.
+   * them; served before the archive's, by name.
+   *
+   * @privateRemarks
+   * plan 014.
    */
   readonly protocols?: readonly Readonly<Record<string, unknown>>[];
   /**
-   * The remote's own settings a person chose, R47, by the names the model's family gives them, each a text, a number
+   * The remote's own settings a person chose, by the names the model's family gives them, each a text, a number
    * or true or false; absent is the family's defaults. Which names there are is the family's to say. Version 2.
+   *
+   * @privateRemarks
+   * R47.
    */
   readonly settings?: Readonly<Record<string, RecipeSetting>>;
   /**
@@ -782,11 +892,14 @@ export interface RecipeTarget {
 
 /**
  * The model a recipe names, its skin and its definition, and the family that builds for it, chosen by the registry,
- * `chooseByModel`, plan 013: by its skin where given and by its name otherwise. Refused, as a `RecipeError` with the
+ * `chooseByModel`: by its skin where given and by its name otherwise. Refused, as a `RecipeError` with the
  * registry's message, where the table has no such model, where a name and a skin disagree, where a name is two skins'
  * and none is given, and where no family serves the model's architecture; and refused where the model's family is a
  * document family, the Harmony Touch's, which builds its documents from the recipe through its own members,
  * `HARMONY_TOUCH_FAMILY.readSetup` and `build`, rather than from a recipe target.
+ *
+ * @privateRemarks
+ * plan 013.
  */
 export function recipeTarget(recipe: Recipe): RecipeTarget {
   let choice: ModelChoice;

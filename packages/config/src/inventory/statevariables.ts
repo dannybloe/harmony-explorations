@@ -79,7 +79,10 @@ export function stateVariables(c: Container): StateVariable[] {
  * a group may be empty. Two things say a group is a device rather than some other grouping: the
  * config compiled for one device carries exactly one group, and on the two arch 14 configs the
  * number of distinct device identifiers in the state variable names is the number of groups, 4 and
- * 6. Section 86.
+ * 6.
+ *
+ * @privateRemarks
+ * Section 86.
  */
 export function deviceCount(c: Container): number | undefined {
   return irGroups(c)?.length;
@@ -233,11 +236,14 @@ export function firmwareStateVariableMax(architecture: number | undefined): numb
  *
  * **The name is the point.** A variant is a list of switch arms, and "arm 1 of 2 at state 35" tells a
  * person nothing, while `PS3_Power = 1` tells them exactly when the screen looks like that. Base slot 0
- * names the state variables, section 77, so the two readings meet here.
+ * names the state variables, so the two readings meet here.
  *
- * Only some variables are named: `one_config` has 46 base slot 13 records and 12 names, so an unnamed
- * one is shown by its index rather than invented. That is the same rule `VERSION_FIELDS` follows in the
- * bench instrument, and for the same reason.
+ * Only some variables are named: one Harmony One configuration has 46 base slot 13 records and 12 names, so
+ * an unnamed one is shown by its index rather than invented, since a name made up for it would read as one the
+ * configuration states.
+ *
+ * @privateRemarks
+ * section 77.
  */
 export function describeChoices(c: Container, choices: readonly ScreenChoice[]): string[] {
   const names = new Map(stateVariables(c).map((one) => [one.index, one.label]));

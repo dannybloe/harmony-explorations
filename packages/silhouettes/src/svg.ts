@@ -16,6 +16,7 @@ import { ICONS, extentOf } from './icons.ts';
 import { CASE_HEIGHT, LAYERS } from './types.ts';
 import type { Key, Label, LayerName, Model, Rocker } from './types.ts';
 
+/** How `toSvg` draws: which layers it includes. */
 export interface SvgOptions {
   /**
    * Which layers to emit. Omitting a layer keeps the file small, which is the point for a real
@@ -66,6 +67,7 @@ const CASE_STROKE = 2;
 /**
  * The default value of every custom property, and the one place it is written.
  *
+ * @privateRemarks
  * Each is emitted twice on purpose: as the fallback inside `var()` in the style block, and as a
  * presentation attribute on the shape. That is not two sources, because both come from here, and it
  * buys the thing that made it necessary. **A renderer that does not understand custom properties
@@ -240,6 +242,10 @@ function clipId(model: Model, part: string): string {
   return `clip-${model.id}-${part}`;
 }
 
+/**
+ * A model's face as an SVG document. Every key is a group with an id from `elementId`, and every colour is a
+ * custom property with a default, so an interface colours and hides keys with its own style sheet.
+ */
 export function toSvg(model: Model, options: SvgOptions = {}): string {
   const layers = new Set(options.layers ?? LAYERS);
   const on = (name: LayerName) => layers.has(name);

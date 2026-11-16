@@ -167,10 +167,13 @@ export const FINISHED = 'proxy://Finished';
 export const ABORT = 'proxy://Abort';
 
 /**
- * The order a person follows after any stop once the remote has been acted on, the preflight's section 5: the
- * read first, since its answer says whether anything is left to clear, and a run of `touch-recover.ts` per
- * step, each answer read before the next, as `recovering-a-remote` sets out. The abort's cost at the point a
+ * The order a person follows after any stop once a Harmony Touch has been acted on: a read of the remote first, since
+ * its answer says whether anything is left to clear, and then one recovery step at a time, each answer read before the
+ * next. The abort's cost at the point a
  * run stopped is a line of its own, `TouchSyncOutcome.abortCost`.
+ *
+ * @privateRemarks
+ * The preflight's section 5; a run of `touch-recover.ts` per step, as `recovering-a-remote` sets out.
  */
 export const RECOVERY = 'first read getconfighash, node packages/usb/bin/touch-request.ts --request confighash --commit: '
   + '200 needs nothing; 202 needs node packages/usb/bin/touch-recover.ts --step abort, that read again, then --step reboot; '
@@ -241,6 +244,7 @@ export interface SetAnswer {
   readonly resource: unknown;
 }
 
+/** The documents a Harmony Touch is answered with in one sync, each at the address it asks for. */
 export interface TouchSet {
   readonly answers: readonly SetAnswer[];
 }
@@ -252,6 +256,7 @@ export interface PreparedSet {
   readonly tags: { readonly stated: number; readonly ours: number };
 }
 
+/** What a Touch's sync answers with: nothing new, so the remote keeps what it holds, or a set of documents. */
 export type TouchSyncMode =
   | { readonly kind: 'unchanged' }
   | { readonly kind: 'set'; readonly set: TouchSet };
@@ -544,7 +549,10 @@ function describe(uri: string): string {
 
 /**
  * The lines a run reports, one per step, for a status band to read. Every line `syncTouch` reports matches
- * one, which `touch-sync.test.ts` holds; the script's header lists the same forms.
+ * one.
+ *
+ * @privateRemarks
+ * Which `touch-sync.test.ts` holds; the script's header lists the same forms.
  */
 export const SYNC_LINES: readonly RegExp[] = [
   /^sync: gate passed, \d+ answers, \d+ tags stated and \d+ ours$/,
@@ -573,7 +581,7 @@ export interface TouchSyncOptions {
    * `readTouchPowerSource`; `answerTouchSync` reads it itself. The run refuses before anything acts unless it is `usb`.
    */
   readonly powerSource: TouchPowerSource;
-  /** The lab folder every request, answer and handed up document is kept in; new or empty. */
+  /** The folder every request, answer and handed up document is kept in; new or empty. */
   readonly folder: string;
   /** Each line of `SYNC_LINES` as it happens. */
   readonly report?: (line: string) => void;
@@ -585,6 +593,7 @@ export interface TouchSyncOptions {
   readonly maxHandOuts?: number;
 }
 
+/** How a Touch's sync ended, why where it was refused, and what was sent. */
 export interface TouchSyncOutcome {
   readonly ending: 'finished' | 'aborted' | 'refused';
   /** Why, for a refusal. */
@@ -593,7 +602,7 @@ export interface TouchSyncOutcome {
   readonly acted: boolean;
   /**
    * Where the run stood when it ended: before the hand over, in it, or past it, the sync request and the sync itself.
-   * **Data a caller acts on**, where `recovery` and `abortCost` are the sentences a person at the bench reads: what an
+   * **Data a caller acts on**, where `recovery` and `abortCost` are the sentences a person at the remote reads: what an
    * abort would cost follows from it, and `syncDocument` names the state a refusal after the remote was acted on left
    * it in by it. Absent on an outcome made before it was reported.
    */
@@ -605,7 +614,7 @@ export interface TouchSyncOutcome {
   /** How many request lists were read in the sync down, and how many answers written in it. */
   readonly lists: number;
   readonly answered: number;
-  /** The keys of what the remote handed up, each kept in the lab before its answer. */
+  /** The keys of what the remote handed up, each kept in the run's folder before its answer. */
   readonly handedUp: readonly string[];
 }
 
@@ -961,6 +970,7 @@ export async function syncTouch(options: TouchSyncOptions): Promise<TouchSyncOut
  * Throws unless a sync may be driven: `HARMONY_ENABLE_WRITES=1` and `HARMONY_TOUCH_REQUESTS=1` set, and
  * `HARMONY_TOUCH_RECOVERY` not.
  *
+ * @privateRemarks
  * **Why the recovery flag refuses**: a session driving a sync has no reason to hold the recovery door,
  * `TOUCH_RECOVERY_DOOR` in `rails.ts`, and the recovery steps are a person's, one per run of
  * `packages/usb/bin/touch-recover.ts`; a sync run with that door open could reach the abort, the delete or the
@@ -979,9 +989,12 @@ export function assertTouchSyncAllowed(): void {
 }
 
 /**
- * **The Harmony Touches that may be synced, and no others**, decision 29: the one bench unit, by the label of its
- * record. `answerTouchSync` refuses any other label before it opens anything, so the
- * list is the library's and not a caller's; the script's label is this one.
+ * **The Harmony Touches that may be synced, and no others**, each by the label of its record. `answerTouchSync` refuses
+ * any other label before it opens anything, so the list is the library's and not a caller's. Syncing a user's own
+ * remote is not built yet.
+ *
+ * @privateRemarks
+ * Decision 29: the one bench unit. The script's label is this one.
  */
 export const TOUCH_SYNC_UNITS = ['touch'] as const;
 

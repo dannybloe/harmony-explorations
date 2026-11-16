@@ -114,11 +114,19 @@ export interface ComposedScreen {
   menus: readonly number[];
   /**
    * The base slot 10 list the new menu rows run: beep, enter the mode, mark device mode. On the Harmony One every
-   * row runs a list of its own, as Logitech's do, section 424, and this is the first list index the rebuilt device
+   * row runs a list of its own, as Logitech's do, and this is the first list index the rebuilt device
    * lists took.
+   *
+   * @privateRemarks
+   * section 424.
    */
   rowList: number;
-  /** The menus whose last page was full, so a new one row page was added to each, section 240. */
+  /**
+   * The menus whose last page was full, so a new one row page was added to each.
+   *
+   * @privateRemarks
+   * section 240.
+   */
   pagesAdded: number[];
   /** Arch 14 only: how many row lists were written, from `rowList` on, one per menu binding and copy. */
   rowLists?: number;
@@ -374,19 +382,23 @@ export function pageTexts(start: Container, menu: number): PageTexts {
 
 /**
  * Compose the screen half of a device: its own mode with one page drawing its label and its
- * commands, and one new row on every device list menu, entering that mode.
+ * commands, and one new row on every device list menu, entering that mode. Harmony One only: a page's hit
+ * rectangles, its lead byte and every position here are that model's.
  *
+ * @privateRemarks
  * Harmony One (arch 12) only, deliberately: a page's hit rectangles, its lead byte and every
- * position here are that model's, section 125, and the checklist's goal is a device on the spare
+ * position here are that model's, and what it was written for is a device on a Harmony
  * One. The hit rectangles themselves are reused rather than inserted: the page declares hit page
  * 10, the standard six slot device layout, and a page may bind any subset of what its hit page
  * offers, which is the closure section 125 measured at 268 of 268.
  *
  * What is deliberately not composed, each a difference for phase 7 to explain: the device icon on a
- * menu row **grown** on to an existing page (a row on a **new** page wears one, section 241, copied
+ * menu row **grown** on to an existing page (a row on a **new** page wears one, copied
  * from the row `iconLike` names), the page's bottom bar switch on state variable 35, the record
  * list's keypad bindings, and the per mode housekeeping lists the corpus chrome queues with opcode
  * 0x73.
+ *
+ * section 125; section 241.
  */
 export interface ComposeScreenOptions {
   /**
@@ -403,15 +415,17 @@ export interface ComposeScreenOptions {
    */
   keysLike?: string;
   /**
-   * Lay the device mode out the way Logitech's compiler does, `devicemode.ts`, section
-   * 325, rather than with one label font and a key map copied from another device. The rows' labels
+   * Lay the device mode out the way Logitech's compiler does, `devicemode.ts`, rather than with one label font and a key map copied from another device. The rows' labels
    * are then sized, split and cut by the compiler's rules and drawn in a font of the size those rules
    * pick, the title is `title` cut to what the page counter leaves, a counter of two digits is drawn
    * where the compiler draws one, and the key map is `keys`, a list per scan, with every other key
    * bound to nothing. On the Harmony 600, 650 and 700 `keysLike` is still the mode whose key map's shape
    * is copied, its 47 tags and its two navigation entries, but none of its bindings. On the Harmony One the
-   * rows are laid out by the One family's own rules, section 394, and of this only `keys` is read, into
+   * rows are laid out by the One family's own rules, and of this only `keys` is read, into
    * the shape of an existing device mode of as many pages.
+   *
+   * @privateRemarks
+   * section 325; section 394.
    */
   compiled?: { title: string; keys: ReadonlyMap<number, number> };
 }
@@ -509,13 +523,19 @@ export interface ComposedActivityRow {
   scan: number;
   /**
    * Every scan the row answers to: `scan` alone on arch 12 (Harmony One), and on arch 14 (Harmony
-   * 600, 650 and 700) both buttons of the row, top or bottom, section 273.
+   * 600, 650 and 700) both buttons of the row, top or bottom.
+   *
+   * @privateRemarks
+   * section 273.
    */
   scans: number[];
   /**
    * How many row lists were written from `rowList` on: one on arch 12, where every binding shares
    * it, and on arch 14 one per button on the page and another per button on its copy, as the compiler
-   * writes them, section 285.
+   * writes them.
+   *
+   * @privateRemarks
+   * section 285.
    */
   rowLists: number;
 }
@@ -524,8 +544,8 @@ export interface ComposeActivityRowOptions {
   /**
    * An existing activity menu row whose icon the new row wears, by its drawn label, so a television
    * activity gets the television icon. Without it the first row's icon is copied, whatever it shows,
-   * which is `composeDeviceScreen`'s behaviour and its documented wart: on the spare Harmony One the
-   * first row is a music activity, so an unqualified television activity comes out wearing a disc.
+   * which is `composeDeviceScreen`'s behaviour and its documented wart: on a Harmony One whose first
+   * row is a music activity an unqualified television activity comes out wearing a disc.
    */
   iconLike?: string;
   /**
@@ -542,7 +562,10 @@ export interface ComposeActivityScreenOptions {
    * That screen draws the activity's icon, so a television activity wants a television one. Without
    * it, on the Harmony One, the start up screen of the activity whose working screen served as the
    * template is used. **Harmony One only**: on a Harmony 600, 650 or 700 every start up screen draws one picture and is
-   * built, section 336, so it is refused there rather than ignored.
+   * built, so it is refused there rather than ignored.
+   *
+   * @privateRemarks
+   * section 336.
    */
   startupLike?: string;
   /**
@@ -581,7 +604,10 @@ export interface ComposedActivityScreen {
   /**
    * Keys the screens need the activity's own keypad to bind, which `composeActivity` adds to the ones the
    * roles give: on the Harmony One, scan 55, the key that opens the device list, bound in every activity of
-   * Logitech's compiles, findings section 399.
+   * Logitech's compiles.
+   *
+   * @privateRemarks
+   * Findings section 399.
    */
   keys?: { scan: number; list: number }[];
 }

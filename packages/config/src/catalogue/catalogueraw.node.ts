@@ -20,7 +20,7 @@ import {
 } from './catalogueraw.ts';
 import { catalogueDriving } from './driving.node.ts';
 
-/** The SHA-256 the lab's `SHA256SUMS` states for one file, or undefined. */
+/** The SHA-256 a folder's `SHA256SUMS` file states for one of its files, or undefined. */
 export function statedSha256(directory: string, file: string): string | undefined {
   const path = join(directory, RAW_SUMS_FILE);
   if (!existsSync(path)) return undefined;

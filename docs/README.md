@@ -225,6 +225,13 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
                                 the objection and the measurement that outweighed it. A key whose
                                 scan code is measured carries it as data-scan and the rest carry
                                 none rather than a guess
+reference/sdk/                  the SDK's own section of the website: an opening page, a guide of
+                                worked examples, the documents' shapes, and api/, the API reference.
+                                **Generated** by packages/lab/bin/api-reference.ts (`make
+                                api-reference-write`): every page under api/ but its introduction,
+                                and in the pages written by hand the blocks between example and
+                                shape markers. Exempt by name from two of the reference's guards,
+                                tools/reference_guards.py says which and why
 reference/key-reader/           a browser page that reads which key is pressed on a Harmony, through
                                 WebHID, read only, todo/done/todo-prepare-885.md 2.6. **Generated** by
                                 packages/keyreader/bin/build.ts (`make key-reader`) and never edited
@@ -467,6 +474,13 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
                                 `make release-check`: the tarballs of the shipped packages made on this
                                 machine, and the check that an application installs and loads them.
                                 tsconfig.release.json here and in each shipped package is the compile they run.
+                                And bin/api-reference.ts, `make api-reference` and `make
+                                api-reference-write`: the SDK's section of the website,
+                                reference/sdk/, a page per public entry of the five shipped
+                                packages generated from their sources with the installed
+                                TypeScript compiler, and the example and shape blocks of its
+                                pages written by hand; test/api-reference.test.ts is the check,
+                                beside the pre-commit hook's step 6 and the site workflow's job.
                                 And src/tiers.ts, the two tiers of the suite: `slow()`, and each
                                 family's compiles once, whole and with a pair, so a per compile
                                 test walks `sampled(family)`, the pair on a step and the whole
@@ -598,6 +612,15 @@ packages/remote/                TS: read a config off a remote and file it, read
                                 Touch's sync, `writeConfiguration` and `answerTouchSync`, as functions
                                 an application calls, `todo/done/todo-sequence.md` 7.3.10, test/package/write-surface.test.ts;
                                 `./file` filing a read in the lab corpus
+packages/remote/examples/       TS: the guide's worked examples, small programs an application could
+                                be: create a document, add a device, change keys, screens and
+                                activities, ask what every key does, check, build, sync to the
+                                pretend remote and read a remote. The website's guide,
+                                reference/sdk/guide.md, shows each as its file, and
+                                test/package/examples.test.ts runs each in a process of its own,
+                                with no lab and no remote. Here because this package's dependencies
+                                already reach config, usb and base, every package an example
+                                imports; none uses silhouettes, which would close a cycle
 packages/remote/test-archive/ TS: the tests of nine one off set builders for finished Harmony Touch bench
                                 experiments, kept and typechecked with the package but in neither
                                 `make all` nor `make full`; `make test-archive` runs them, and its
@@ -1203,6 +1226,10 @@ make remote-reference
                    against the code they come from, naming the file and block that drifted.
                    remote-reference-write rewrites them. Not called `remotes`, which is taken by
                    the line above. No lab, no network
+make api-reference
+                   check the SDK's pages, reference/sdk/, against what the five packages' sources and
+                   the guide's examples generate, naming each page that differs;
+                   api-reference-write rewrites them. No lab, no network, no remote
 make requirements  read every test's proofs and check what they and the statuses written in
                    packages/base/src/requirements.ts generate: packages/base/src/proofs.ts,
                    docs/remote-requirements.md but its introduction, docs/remote-requirements-evidence.md

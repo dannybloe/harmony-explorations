@@ -21,8 +21,9 @@
  * one that draws a letter, an icon or a picture asks for what the loader supplies, `resources.ts`.
  */
 
-// What the codec asks its loader for, the fonts, the icon list, a PNG's deflate and SHA-256: supplied by the
-// Node entry, or by a renderer through `supplyResources` before it builds. Reading asks for none of them.
+// Resources: what the codec asks its loader for, the fonts, the icon list, a PNG's deflate and SHA-256. The Node
+// entry supplies them as it loads; a renderer supplies them through `supplyResources` before it builds or draws.
+// Reading a configuration asks for none of them.
 export { ResourceError, supplyResources } from './support/resources.ts';
 export type { CodecResources } from './support/resources.ts';
 
@@ -73,14 +74,14 @@ export type {
   PowerOnDelay,
 } from './inventory/inventory.ts';
 
-// Its screens, drawn as the remote draws them, and a drawing written as a PNG.
+// Its screens: drawn as the remote draws them, and a drawing written as a PNG.
 export { describeChoices } from './inventory/inventory.ts';
 export { renderPage, renderPages, renderVariants, SCREEN_SIZES } from './screens/render.ts';
 export type { Raster, RenderedPage, ScreenChoice, ScreenVariant } from './screens/render.ts';
 export { encodePng, rasterPng, readPng } from './screens/png.ts';
 export type { PngHeader } from './screens/png.ts';
 
-// Editing it in place: the edits a configuration takes without changing length, and the stamp a save gives it.
+// Editing it in place: the edits a configuration takes without changing its length, and the stamp a save gives it.
 export {
   applyEdits,
   clockStateEdits,
@@ -97,12 +98,12 @@ export {
 } from './edit/edit.ts';
 export type { Edit, EditReport, IntroductionTour } from './edit/edit.ts';
 
-// Building: the recipe a build starts from, and the family that builds for a model, of either kind, or the
-// refusal naming it, plan 013 decisions 1 and 2. The composers and the builders of a compiled family's container
-// are `./build`.
+// Building: the recipe a build starts from, the document an application holds for one remote. A build chooses the
+// family that builds for the recipe's model, of either kind: a compiled family writes one configuration file, a
+// document family, the Harmony Touch's, the documents its sync delivers.
 export { readRecipe, recipeTarget, RecipeError, RECIPE_VERSION } from './recipe/recipe.ts';
-// **The one build an application makes**, plan 014: a recipe in, the configuration or the documents a remote is
-// sent out, the family chosen by the recipe's model.
+// **The one build an application makes**: a recipe in, the configuration or the documents a remote is sent out,
+// the family chosen by the recipe's model.
 export { buildFromRecipe, builtDigest, unstatedChoices } from './families/fromrecipe.ts';
 export type { BuildSources, Built, LeftOutActivity, LeftOutReason, TouchAccount } from './families/fromrecipe.ts';
 export type {
@@ -131,13 +132,13 @@ export type {
   RecipeSetting,
   RecipeTarget,
 } from './recipe/recipe.ts';
-// **The document toolkit**, decision 37: everything an application does to one remote's setup, as functions on the
-// recipe that each return a new one, the questions it asks one, and the check that lists every problem without
-// building. One namespace, `recipe`, so that its short names, `remove`, `move`, `devices`, stand apart from the
-// readers of a compiled configuration above. A contract first, decision 38: what is not built refuses by name.
+// The document toolkit: everything an application does to one remote's setup, as functions on the recipe that
+// each return a new one, the questions it asks one, and the check that lists every problem without building. One
+// namespace, `recipe`, so that its short names, `remove`, `move`, `devices`, stand apart from the readers of a
+// compiled configuration above. What is not built yet refuses by name, `NotBuiltError`.
 export * as recipe from './recipe/toolkit.ts';
 export { NotBuiltError } from './support/contract.ts';
-// Finding a device across every source at once and fetching it as a definition a document carries, decision 41.
+// Finding a device: across every source at once, and fetched as a definition a document carries.
 export { fetchDevice, findDevices, networkArchiveSource } from './catalogue/search.ts';
 export type {
   CarriedDevice, DeviceCache, DeviceQuery, DeviceSearch, DeviceSource, FoundDevice, NetworkArchiveOptions,
@@ -148,8 +149,8 @@ export { chooseByModel, familyKind, familyOfModel, modelName, NoFamilyError } fr
 export type { AnyFamily, ModelChoice, ModelNamed } from './families/registry.ts';
 export type { DocumentFamily, DocumentTypes } from './families/document.ts';
 
-// What a bench model is and how far the FHSDK serves it: its properties and the status of every requirement with its
-// evidence, decision 33. An application offers a feature where its requirement is met on the model.
+// What a model can do: its properties, and how far the FHSDK serves it, the status of every requirement with its
+// evidence. An application offers a feature where its requirement is met on the model.
 export { capabilitiesOf } from './families/capabilities.ts';
 export type {
   BenchModelKey, ModelCapabilities, ModelProperties, Proof, Requirement, RequirementAnswer, RequirementState, RequirementStatus,
@@ -162,9 +163,9 @@ export { ComposeError } from './shared/core.ts';
 export { assertQueueFits, QueueError } from './container/queue.ts';
 export { assertStateTableConsistent, StateTableError } from './container/sections.ts';
 
-// Infrared: a configuration's codes, a code heard or learned cut into frames, Pronto Hex, our rhythm table, and
-// Logitech's device catalogue and protocol archive as parsed from what a caller hands over (the Node entry reads
-// them off the disk).
+// Infrared: a configuration's codes, a code heard or learned cut into frames, Pronto Hex, the table of protocol
+// rhythms, and Logitech's device catalogue and protocol definitions as parsed from what a caller hands over (the
+// Node entry reads them off the disk).
 export { irGroups } from './infrared/ir.ts';
 export type { IrGroup } from './infrared/ir.ts';
 export { framesOfPulses, fromFirstMark, irFrame, irFrames, irSendsPerPress, pulsesOfFrame } from './infrared/irframe.ts';
@@ -205,7 +206,7 @@ export type {
   DeviceTiming,
 } from './catalogue/driving.ts';
 
-// **The Harmony Touch's configuration**: not a container but Logitech's documents, which the remote fetches
+// The Harmony Touch's configuration: not a container but Logitech's documents, which the remote fetches
 // through the computer and keeps itself. Read into a typed view, checked for what the remote would refuse or
 // ignore, its engine's sends predicted, and its family. One namespace, `harmonyTouch`, kept apart by name from
 // the families of the compiled remotes; its composers are the namespace of the same name on `./build`.

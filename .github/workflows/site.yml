@@ -31,7 +31,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The SDK's pages, `reference/sdk/`, are generated from the five packages' sources, and a page that no longer
+  # matches them must not be published: this job regenerates every page in memory and fails when one differs from
+  # what is committed, and the build below waits for it, so neither the build nor the deploy runs. It is the same
+  # check as `make api-reference`, the test in `make all` and step 6 of the pre-commit hook; this one holds for a
+  # commit made with the hook not installed.
+  #
+  # **Node is pinned to one exact version and its download to one hash**, written here rather than fetched beside
+  # the file, so a changed download fails instead of running. No setup action is used, which keeps the actions this
+  # workflow trusts to the four below. pnpm is the version `package.json` names, through Node's own corepack, which
+  # checks the download against the sha512 named there beside the version; the install takes the lock file as it is
+  # and runs **no install script**: the generator reads the sources with the TypeScript compiler and loads no native
+  # module, so `node-hid`'s build, approved for the machines that read a remote, is not needed here.
+  #
+  # **It may read the code and nothing else.** It runs code out of `node_modules`, so it gets none of the Pages and
+  # identity permissions the deploy needs, whatever the workflow grants the jobs that publish.
+  api-reference:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      NODE_VERSION: '24.18.1'
+      NODE_SHA256: 'd6c664df3f3f61458e8c277585571328522d705166723a7c7823a9253a4d15a0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Node at its pinned version and hash
+        run: |
+          archive="node-v${NODE_VERSION}-linux-x64.tar.xz"
+          curl --fail --silent --show-error --location --output "$RUNNER_TEMP/$archive" "https://nodejs.org/dist/v${NODE_VERSION}/$archive"
+          echo "$NODE_SHA256  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          tar --extract --xz --file "$RUNNER_TEMP/$archive" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/node-v${NODE_VERSION}-linux-x64/bin" >> "$GITHUB_PATH"
+
+      - name: Install the workspace from its lock file, with no install script
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check the SDK pages against the sources
+        run: node packages/lab/bin/api-reference.ts --check
+
   build:
+    needs: api-reference
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

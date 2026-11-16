@@ -101,17 +101,27 @@ function refusableInternalCount(count: number): boolean {
   return !Number.isInteger(count) || count < 0 || count % 2 !== 0;
 }
 
+/**
+ * A command the remote answered wrongly or not at all, or a request refused before it was sent: because the remote
+ * would not survive it (an odd count of internal memory, an address outside the window), because the model has no
+ * such command, or because the architecture is not known yet, where the message says to call `getVersion()` first.
+ * Nothing was changed on the remote by a refusal of a read; reading again after the cause is fixed is safe.
+ */
 export class RemoteError extends Error {}
 
+/** How long `HarmonyRemote` waits for the remote, and which model's rule for addresses it applies. */
 export interface RemoteOptions {
   /** How long to wait for one report. The default is generous: a flash read is not instant. */
   readonly timeoutMs?: number;
   /** How many empty polls in a row end a transfer that has stopped producing data. */
   readonly idlePolls?: number;
   /**
-   * Which architecture's address rule applies, since the device's own validator is not the same
-   * on all of them. Defaults to the arch 12 and arch 14 rule; an arch 9 remote needs `9` or every
-   * address that works is refused before it is sent. `docs/findings.md` section 76.
+   * Which architecture's address rule applies, since the remote's own check of an address is not the same on all of
+   * them. The default is the rule of the Harmony One, 600, 650 and 700; a Harmony 525 needs `9`, or every address
+   * that works is refused before it is sent. `getVersion` sets it from the remote's own answer when it is not given.
+   *
+   * @privateRemarks
+   * `docs/findings.md` section 76.
    */
   readonly architecture?: number;
 }
@@ -135,6 +145,14 @@ const INTERNAL_OFFSET_MAX = 0xffc0;
 const DEFAULT_TIMEOUT_MS = 2000;
 const DEFAULT_IDLE_POLLS = 3;
 
+/**
+ * A Harmony opened on USB, spoken to in its own commands: its version, its identity, its memory and its flash.
+ * An application usually needs only `readConfig`, which takes one of these.
+ *
+ * The class also carries the members the write path uses, which are left off this page: they refuse unless the
+ * process was started with the write switches, and an application writes through `@freeharmony-sdk/remote/write`,
+ * never through them directly.
+ */
 export class HarmonyRemote {
   private readonly transport: Transport;
   private readonly timeoutMs: number;
@@ -149,8 +167,10 @@ export class HarmonyRemote {
   }
 
   /**
-   * Adopt the architecture the remote itself stated, once its version block has been read.
+   * Adopt the architecture the remote itself stated, once its version block has been read. It narrows rather than
+   * overrides: an architecture already given in the options is kept.
    *
+   * @privateRemarks
    * Narrows rather than overrides: it refuses to change an architecture the caller supplied, so a
    * script that pinned one keeps it and a caller that pinned the wrong one still gets the refusal
    * it asked for. It exists because the address rule has to come from somewhere and the remote's
@@ -164,6 +184,7 @@ export class HarmonyRemote {
     if (this.architecture === undefined) this.architecture = architecture;
   }
 
+  /** Close the handle. The remote is left as it was. */
   async close(): Promise<void> {
     await this.transport.close();
   }
@@ -175,11 +196,14 @@ export class HarmonyRemote {
    * Every report this class sends goes through here, which is what makes the guard's rule true:
    * a mutating report reaching a real remote came through a method that asked `rails.ts` first.
    *
-   * **The authorisation is recorded against the transport rather than on it**, section 224. It used
+   * **The authorisation is recorded against the transport rather than on it**. It used
    * to be a method the transport carried, which meant `openHarmony`'s caller carried it too and
    * could authorise anything at all; `authorise.ts` holds it now and the barrel does not export that
    * file. An unguarded transport, which is what the tests use, ignores the record entirely, so they
    * keep their raw access with no branch here to get wrong.
+   *
+   * @privateRemarks
+   * section 224.
    */
   private async send(report: Uint8Array): Promise<void> {
     authoriseReport(this.transport, report);
@@ -222,7 +246,7 @@ export class HarmonyRemote {
    * this session had sent it no commands at all, the cable was not touched and the remote was not
    * reconnected, and the next attempt a few minutes later answered and a whole 1.6 MB config read
    * off it with both integrity checks passing. Its clock proved no reboot happened in between, since
-   * uptime was continuous with the boot that followed the sync. Section 155.
+   * uptime was continuous with the boot that followed the sync.
    *
    * So the first command of a long idle session can be dropped, and without this a person plugging a
    * remote in would be shown a hard failure that a second attempt clears.
@@ -232,6 +256,9 @@ export class HarmonyRemote {
    * to a remote. A general retry inside `exchange` would resend whatever it was given, which for a
    * write is the one thing this package must never do, and the evidence covers this command and no
    * other.
+   *
+   * @privateRemarks
+   * Section 155.
    */
   private async exchangeVersion(): Promise<Reply> {
     try {
@@ -243,8 +270,12 @@ export class HarmonyRemote {
   }
 
   /**
-   * The version block, twelve bytes on arch 12 and arch 14 and **seven on a Harmony 525**.
+   * The version block as the remote sends it, twelve bytes on the Harmony One, 600, 650 and 700 and **seven on a
+   * Harmony 525**: the length is the reply's, not a constant. `readVersion` names its fields, and `getVersion` also
+   * tells this object which architecture's address rule applies. Throws `RemoteError` when the remote does not
+   * answer or answers something else.
    *
+   * @privateRemarks
    * Twelve because two independent counts agree there: the firmware stores through its output
    * pointer at exactly twelve sites, and the executor copies twelve bytes. A read of a Harmony 600
    * compared against `concordance -i` on the same unit identified six of them first, and eleven have a
@@ -252,7 +283,7 @@ export class HarmonyRemote {
    *
    * **The length is stated by the reply and is not a constant.** This used to insist on twelve, so
    * an arch 9 remote answering `0x27` and seven good fields was refused twice over: once because
-   * the decoder matched the whole byte and once because of this check. Measured on the bench on
+   * the decoder matched the whole byte and once because of this check. Measured on a unit on
    * 8 August 2026; `docs/findings.md` section 76.
    *
    * Raw bytes, not a labelled object, and that stays true until a second remote agrees. Ten labels
@@ -282,8 +313,11 @@ export class HarmonyRemote {
   }
 
   /**
-   * One byte of the data memory of a running remote, over `READ_MISC` selector `0x07`.
+   * One byte of the data memory of a running remote, over `READ_MISC` selector `0x07`. Throws `RemoteError` before
+   * anything is sent when the architecture is not known yet (call `getVersion()` first) and on a Harmony 525, whose
+   * firmware has no way to read it and would answer zero for every address.
    *
+   * @privateRemarks
    * This is the capability that stands in for the deferred emulator: poll a variable while
    * operating the remote by hand, and watch what the firmware does. The button mapping experiment
    * is the first use, by watching the keypad scanner's index while every key is pressed.
@@ -329,10 +363,13 @@ export class HarmonyRemote {
   }
 
   /**
-   * The hardware feature read, `READ_MISC` selector `0x0C`, section 212: detail 0 is one byte of data
-   * memory, which Logitech's client masks to a hardware flag, and detail 1 a sixteen bit value a
-   * routine computes, which the client calls the battery level. Returns the two bytes after the
-   * selector as the firmware sends them, **high byte first**: on the Harmony 650's 0.2 build the arm
+   * The hardware feature read, `READ_MISC` selector `0x0C`: detail 0 is one byte of data memory, which Logitech's
+   * client masks to a hardware flag, and detail 1 a sixteen bit value a routine computes, which the client calls the
+   * battery level. Returns the two bytes after the selector as the firmware sends them, **high byte first**. Throws
+   * `RemoteError` when the architecture is not known yet and on a Harmony 525, as `readRam` does.
+   *
+   * @privateRemarks
+   * Section 212. On the Harmony 650's 0.2 build the arm
    * at `0x0CB44` fills `0xD64` and `0xD63`, high and low, detail 0 clearing the high byte and copying
    * data memory `0x3FF` into the low one, detail 1 taking `PRODH` and `PRODL` from `0x11184`, and the
    * sender at `0x0CB68` emits `0xD64` and then `0xD63`. So the reply's `word` is the value. Refused on
@@ -354,10 +391,13 @@ export class HarmonyRemote {
   }
 
   /**
-   * Read `count` bytes of flash from `address`.
+   * Read `count` bytes of flash from `address`. The reply's sequence numbers are checked, so a dropped report is a
+   * `RemoteError` rather than silent corruption. Throws `RemoteError` before sending for an address the model's rule
+   * refuses and for an odd count of the processor's internal memory, which would never terminate on the remote.
    *
+   * @privateRemarks
    * Measured against a Harmony 600, and verified the only way worth verifying a read: 256 bytes off
-   * the remote came back byte-identical to the lab dump of that same unit, which is an answer
+   * the remote came back byte-identical to an earlier read of that same unit by another tool, an answer
    * obtained without this code.
    *
    * The reply is a series of `0x6A` chunks, each 62 bytes of data behind a sequence byte, then
@@ -425,8 +465,10 @@ export class HarmonyRemote {
    * same wait as any other silence rather than hanging.
    */
   /**
-   * Read whatever a previous session left queued, before asking the remote anything.
+   * Read whatever a previous session left queued, before asking the remote anything. Reads only, bounded, and quiet
+   * when there is nothing to take; a session that has to be right, a writer's, calls it first.
    *
+   * @privateRemarks
    * The drain on a failed read, below, cleans a pipe this session dirtied. It cannot clean one a
    * **previous** session left: on 3 September 2026 the remote re-enumerated in the middle of a flash
    * read, section 242, the handle that read died with it, and the next session's `GET_VERSION` was
@@ -533,8 +575,12 @@ export class HarmonyRemote {
    * single probe rather than from the device. `docs/findings.md` section 22.
    */
   /**
-   * The unit's own 64 byte identity block, which is what says **which** remote this is.
+   * The unit's own 64 byte identity block, which is what says **which** remote this is: two remotes of one model
+   * enumerate alike, and this tells them apart. One flash read, at an address that depends on the architecture.
+   * It returns the bytes and nothing else; `identifiesAUnit`, `sameUnit` and `unitIdentityText` judge and print them,
+   * and an application keeps the value it expects with its user's own data.
    *
+   * @privateRemarks
    * One `READ_FLASH`, so no new protocol and no write. **Where it reads is per architecture**, and
    * that was found on hardware on 6 September 2026: this method sent internal page `0xFF` offset
    * `0xF400` for every remote, which is right for arch 12 (Harmony One) and arch 14 and is an
@@ -552,8 +598,7 @@ export class HarmonyRemote {
    * field named the serial is `0xEE` on every unit here.
    *
    * It returns the bytes and nothing else: no table of units, no name, no file. Where a caller keeps
-   * the expected value is the caller's decision, the lab on the bench and the user's own data in
-   * FreeHarmony.
+   * the expected value is the caller's decision: an application keeps it with its user's own data.
    */
   async readUnitIdentity(): Promise<Uint8Array> {
     const address = identityAddress(this.architecture);
@@ -567,6 +612,11 @@ export class HarmonyRemote {
     return this.readFlash(address, IDENTITY_BYTES);
   }
 
+  /**
+   * Read `count` bytes of the processor's internal program memory, page `0xFE` or `0xFF`, from `offset`. Throws
+   * `RemoteError` before anything is sent for an odd count, which the remote's firmware never finishes, for an offset
+   * above `0xFFC0`, and for a read that would run past the end of the 64 KiB page.
+   */
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
     if (refusableInternalCount(count)) {
       // A read of this region can restart the remote, and this refusal is what avoids it. Measured
@@ -637,6 +687,8 @@ export class HarmonyRemote {
   /**
    * Send one flash write: the announce, the data packets, and the done that is acknowledged.
    *
+   * @hidden
+   * @privateRemarks
    * Section 175 derived every packet, `writes.ts` builds them, and `rails.ts` decides whether they
    * may be sent. This method's own contribution is small and worth stating, because all three of
    * these have already been the shape of a defect in the read path.
@@ -715,6 +767,11 @@ export class HarmonyRemote {
     );
   }
 
+  /**
+   * Erase the flash block at `address`, after the rails have judged it.
+   *
+   * @hidden
+   */
   async eraseFlash(p: WritePermission, address: number): Promise<void> {
     assertEraseAllowed(p, address);
     await this.#eraseFlashUnchecked(address);
@@ -735,6 +792,8 @@ export class HarmonyRemote {
   /**
    * Write one byte into the data memory of a running remote.
    *
+   * @hidden
+   * @privateRemarks
    * **This said "volatile, and still gated" and the first half was an assumption**, section 139: the
    * request carries a sixteen bit data address and bank 15 from `0xF40` up is the special function
    * registers, `EECON1`, `EECON2`, `TABLAT` and `TBLPTR` among them, which are what a PIC18 self
@@ -767,6 +826,8 @@ export class HarmonyRemote {
   /**
    * Read internal memory with a count that will not terminate, on purpose.
    *
+   * @hidden
+   * @privateRemarks
    * The only caller is an experiment whose subject is the hang. `assertDeliberateHangAllowed`
    * refuses unless `HARMONY_ODD_READ_EXPERIMENT=1`, and refuses an even count too, so this cannot
    * quietly become a second ordinary read path. The ordinary refusal in `readInternalMemory` is
@@ -787,6 +848,8 @@ export class HarmonyRemote {
   /**
    * End the command session: `0xE0 0x01`, which clears the command state variable and nothing else.
    *
+   * @hidden
+   * @privateRemarks
    * `docs/findings.md` sections 97 and 99. This is the one thing that lets a remote take the
    * unconditional path out of USB mode when its cable goes, instead of sitting in USB mode until its
    * batteries come out. It writes no storage of any kind.
@@ -808,6 +871,8 @@ export class HarmonyRemote {
   /**
    * Drop the remote's cached region descriptors: `0xA1 0x02`, step 2 of a config write.
    *
+   * @hidden
+   * @privateRemarks
    * **Why a write needs it**, section 245: concordance's own comment is that it exists "so that
    * nothing will attempt to reference it while we're working", and arch 12 executes its
    * configuration in place out of the flash a write is about to erase. Ours did not send it, and two
@@ -836,10 +901,12 @@ export class HarmonyRemote {
   /**
    * Restart the remote: the escape with sub-command `0x02`, the last step of a config write.
    *
+   * @hidden
+   * @privateRemarks
    * `0x02` sets a flag whose single reader drives the top level mode to 3, and mode 3 waits and then
    * executes the PIC18 `RESET` instruction, section 97. concordance sends this and then waits for the
-   * remote to reappear on the bus, which is the battery pull this bench has been doing by hand after
-   * every write, section 245.
+   * remote to reappear on the bus, which replaces taking the batteries out by hand after every write,
+   * section 245.
    *
    * **No reply is waited for and the handle is finished afterwards.** Nothing acknowledges a command
    * that ends in a reset, and the device leaves the bus, so a caller closes the handle and, if it
@@ -852,10 +919,13 @@ export class HarmonyRemote {
   }
 
   /**
-   * One setting of the arch 14 settings store, `0x13 0xB2 0x00 setting`, which is a read. Section 304.
+   * One setting of the settings store of a Harmony 600, 650 or 700, `0x13 0xB2 0x00 setting`, which is a read.
+   * A saved delay is four of these: `latestSettings` and `delaySlots` read the same out of `readSettingsStore`.
+   * Throws `RemoteError` on any other model.
    *
-   * A saved delay is four of these, section 303: `latestSettings` and `delaySlots` in `settings.ts`
-   * read the same thing out of a lab dump, so the two can be compared. Refused on any other
+   * @privateRemarks
+   * Section 304. A saved delay is four of these, section 303: `latestSettings` and `delaySlots` in `settings.ts`
+   * read the same thing out of a read of the settings page, so the two can be compared. Refused on any other
    * architecture, since on the Harmony One the same report is a version request with stray bytes and
    * elsewhere it is unread.
    */
@@ -880,8 +950,11 @@ export class HarmonyRemote {
 
   /**
    * Append `writes` to an arch 14 remote's settings store, one `0x14 0xB3` each, and return the store
-   * as it was before and as it is after. Section 304.
+   * as it was before and as it is after.
    *
+   * @hidden
+   * @privateRemarks
+   * Section 304.
    * **Everything the rail judges is read here, off the remote**: the architecture and the firmware build
    * off the version block, the unit off its identity block, and the store itself, whose shape decides
    * whether the firmware's append does what `predictStoreAfter` says. The caller supplies the recorded
@@ -926,10 +999,11 @@ export class HarmonyRemote {
   }
 
   /**
-   * The arch 14 firmware update status byte, `B2 06 00`, which is a read. Section 295.
+   * The firmware update status byte of a Harmony 600, 650 or 700, `B2 06 00`, which is a read: 0 at rest, 2 while an
+   * image staged in the remote's external flash is waiting to be installed. Throws `RemoteError` on any other model.
    *
-   * 0 at rest, 2 while an image staged in external flash is waiting to be installed. Refused on any
-   * other architecture, since selector 6 is a different accessor elsewhere and a plausible byte from
+   * @privateRemarks
+   * Section 295. Refused on any other architecture, since selector 6 is a different accessor elsewhere and a plausible byte from
    * the wrong one is the failure `readRam` documents.
    */
   async readUpdateStatus(): Promise<number> {
@@ -947,11 +1021,15 @@ export class HarmonyRemote {
 
   /**
    * Ask a remote to **reinstall the application image already staged in its external flash**, and
-   * restart it so that it does. Section 295. It has to be in safe mode or running an application
-   * build whose status byte handler is read, section 297, which `assertReinstallAllowed` judges.
+   * restart it so that it does. It has to be in safe mode or running an application
+   * build whose status byte handler is read, which `assertReinstallAllowed` judges.
    * The restart goes to whichever is running; the 0.2, 2.5 and 2.8 applications' escape handlers are
-   * read, sections 282, 298 and 97, and no safe mode image's.
+   * read, 298 and 97, and no safe mode image's.
    *
+   * @hidden
+   * @privateRemarks
+   * Section 295.
+   * section 297; sections 282.
    * This writes no flash. On arch 14 a firmware install is two halves: the host writes the new image
    * into external flash at `0x000000`, and the remote's safe mode image copies it into internal flash
    * at start up when the update status byte says 2. This sends only the second half, exactly as
@@ -1012,8 +1090,12 @@ export class HarmonyRemote {
 
   /**
    * Write a firmware image into the staging region of an arch 14 remote, for its safe mode image to
-   * install at the next start when the update status byte says 2. Section 297, decision 18.
+   * install at the next start when the update status byte says 2.
    *
+   * @hidden
+   * @privateRemarks
+   * Section 297.
+   * decision 18.
    * This is Logitech's own sequence for skin 66 up to, and not including, the part that makes the
    * remote act on it: the status byte set to 0 and read back, so that a restart in the middle installs
    * nothing; the region's 64 KiB blocks erased; the image written; and the whole region read back and
@@ -1027,7 +1109,7 @@ export class HarmonyRemote {
    * configuration at the region's end must come through byte for byte, or this throws. That detects a
    * wider sector and does not prevent one.
    *
-   * **It takes no backup and checks none**: the rule that the region must match a lab read before
+   * **It takes no backup and checks none**: the rule that the region must match a backup read before
    * anything is erased is `reinstall-firmware.ts`'s, so another caller of this method does not get it.
    * The transfers are 32 KiB, which is not Logitech's 25200 nor the configuration writer's 3150;
    * it worked once, section 297.

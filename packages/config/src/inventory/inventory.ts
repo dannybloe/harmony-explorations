@@ -32,7 +32,12 @@ export * from './power.ts';
 
 /** Everything an interface needs to show a config, in one object. */
 export interface Inventory {
-  /** The architecture the config states, section 20, which is the only place it says so. */
+  /**
+   * The architecture the config states, which is the only place it says so.
+   *
+   * @privateRemarks
+   * section 20.
+   */
   architecture?: number;
   /** When the config was built, from base slot 3. On arch 12 this is also what the clock is set to. */
   builtAt?: string;

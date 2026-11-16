@@ -85,8 +85,10 @@ import { profileFor, readConfig } from './read.ts';
 import { StampError, stampForWrite } from './stamp.ts';
 
 /**
- * A refusal of the write, before anything was sent or at any point after, as opposed to a fault.
+ * A refusal of the write, before anything was sent or at any point after, as opposed to a fault. The words that
+ * say which refusal it was are constants on the class, so a caller tells them apart without matching on prose.
  *
+ * @privateRemarks
  * **Two of its texts end in a step only a person at a bench can take**, and the library names no step of that
  * kind, since its caller may be an application whose user cannot take it. So the words that say which refusal it
  * was are kept here as constants, and a script that has such a person in front of it adds its own instruction
@@ -131,6 +133,7 @@ export type ConfigWriteStep =
 /**
  * What a model's write end needs, which is the firmware's and not the caller's to say.
  *
+ * @privateRemarks
  * Moved here from `write-config.ts`'s table of units, where each fact sat on every unit of its model, by
  * 7.3.10: the facts are about the model's firmware, and a unit inherits them by naming its model.
  */
@@ -138,9 +141,13 @@ export interface ConfigWriteModel {
   /** The architecture every unit of this model reports, which the remote's own version block is checked against. */
   readonly architecture: number;
   /**
-   * The firmware builds, as the remote reports them, in whose own image the cache drop and the restart this
-   * sends were read before either was sent. A unit reporting any other build is refused a commit, because both
-   * commands are the firmware's and not the format's: the 650's were read on its build 0.2 and sent once each
+   * The firmware builds, as the remote reports them, whose cache drop and restart commands are known. A remote
+   * reporting any other build is refused a commit, because both commands are the firmware's and not the format's.
+   * Empty for a model none of whose builds is known yet. **The version string is not a build**: the 600 and the 650
+   * both report 0.2 and differ.
+   *
+   * @privateRemarks
+   * In whose own image the cache drop and the restart this sends were read before either was sent: the 650's were read on its build 0.2 and sent once each
    * before a write depended on them, section 282. The Harmony 700's 2.8 was read against that build, section
    * 299; the script's table said it had been sent neither, which stopped being true with the 700's first
    * configuration write, section 301, and was corrected when 7.3.10 moved the table here. Empty for a model
@@ -151,6 +158,7 @@ export interface ConfigWriteModel {
   /**
    * Why `invalidate: false` is refused on this model, or undefined where the control is offered.
    *
+   * @privateRemarks
    * **The control is the Harmony One's**, section 250: there the drop clears a verdict and nothing the write
    * needs. **On the Harmony 880 and 885 the drop is what keeps the remote off the region**: it moves every
    * lookup to the built in configuration until the next start, and the firmware runs from the same flash part,
@@ -163,6 +171,7 @@ export interface ConfigWriteModel {
    * The data memory address of the staged install's status byte, where a restart over USB can install
    * firmware, or undefined where it cannot.
    *
+   * @privateRemarks
    * **On the Harmony 880 and 885 the restart this ends with is an install whenever that byte is not 0**,
    * `reference/architectures/harmony-880-885/firmware.md` "What the bootloader does at power on": the byte at
    * `0x100` survives the processor's `RESET` instruction, which is how `E1 02` ends, and the bootloader then
@@ -193,30 +202,35 @@ const ARCH8_INSTALL_STATUS = 0x100;
  */
 export const CONFIG_WRITE_MODELS = {
   // **4.4 is the build their write end was read in**, the 885's application, `tests/harmony_880_885/test_harmony_885_write_end.py`;
-  // both bench units report it, version block `44 21 49 01 80 11 08`. The 880 runs the same application, but no
-  // 880 is a unit here.
+  // both 885s it was read on report it, version block `44 21 49 01 80 11 08`. The 880 runs the same application,
+  // but no 880 has been written.
   'Harmony 885': {
     architecture: 8, sequenceReadOn: ['4.4'], dropRequired: ARCH8_DROP_REQUIRED, installStatusAt: ARCH8_INSTALL_STATUS,
   },
   'Harmony One': { architecture: 12, sequenceReadOn: ['3.4'] },
   'Harmony 650': { architecture: 14, sequenceReadOn: ['0.2'] },
-  // The same build as the 650, `600-0.2-code-base0x9000-COMPLETE.bin`, read off the bench unit.
+  // The same build as the 650, read off a Harmony 600.
   'Harmony 600': { architecture: 14, sequenceReadOn: ['0.2'] },
-  // 2.8, which the bench unit runs since section 297: the drop is read in section 299 and the restart in 97.
-  // Its first configuration change, a power on delay raised and put back, is section 301.
+  // 2.8, the build the drop was read in, section 299, and the restart, section 97. Its first configuration change,
+  // a power on delay raised and put back, is section 301.
   'Harmony 700': { architecture: 14, sequenceReadOn: ['2.8'] },
 } as const satisfies Readonly<Record<string, ConfigWriteModel>>;
 
+/** A model the configuration write serves, by its name in `CONFIG_WRITE_MODELS`. */
 export type ConfigWriteModelName = keyof typeof CONFIG_WRITE_MODELS;
 
 /**
- * **The units that may be written, and no others**, `CLAUDE.md` "Never write to a remote": each by the label of
- * its record, with what the account calls it and its model. The script's table of targets was this list until
- * the write became a function, and an independent review of that change found the list had become
- * a caller's parameter: any label with any model and a record of the caller's choosing would have been written.
- * So the list and the pairing of a label with its model are the library's, and `writeConfiguration` refuses any
- * other label before it opens anything. A caller still supplies a unit's region reads and its record's text,
- * which are its bookkeeping; the unit on the cable must still match that record by its own identity block.
+ * **The remotes that may be written, and no others**: the remotes the SDK's writes are proven on, each by the label of
+ * its record, with what it is called and its model. `writeConfiguration` refuses any other label before it opens
+ * anything. Writing a user's own remote is not built yet, so an application reaches no remote through this list.
+ *
+ * @privateRemarks
+ * `CLAUDE.md` "Never write to a remote". The script's table of targets was this list until the write became a function, and an independent review of that
+ * change found the list had become a caller's parameter: any label with any model and a record of the caller's
+ * choosing would have been written. So the list and the pairing of a label with its model are the library's, and
+ * `writeConfiguration` refuses any other label before it opens anything. A caller still supplies a unit's region
+ * reads and its record's text, which are its bookkeeping; the unit on the cable must still match that record by its
+ * own identity block.
  *
  * **A new unit is a line here**, beside the decision that permits it, in the same commit, as a new architecture
  * is a line in `rails.ts`. The order is the script's old table's, which a refusal lists units in.
@@ -266,6 +280,10 @@ export type ConfigWriteStamp =
    */
   | { readonly kind: 'resume'; readonly journal: string };
 
+/**
+ * What `writeConfiguration` is given: the configuration, the backup of the remote it is compared against, the
+ * unit it may write, and whom it tells what it does.
+ */
 export interface ConfigWrite {
   /** The configuration: the name it is known by in the account, a path for the script, and its bytes. */
   readonly config: { readonly name: string; readonly bytes: Uint8Array };
@@ -278,15 +296,22 @@ export interface ConfigWrite {
   /** Write. Without it the run reads only and says what a commit would do, the script's dry run. */
   readonly commit: boolean;
   /**
-   * Send the cache drop before the first erase, the ordinary write; false is section 250's control, the
-   * script's `--no-invalidate`, and refused on a model whose drop is required.
+   * Send the cache drop before the first erase, as an ordinary write does; false leaves it out, and is refused on a
+   * model whose drop is required.
+   *
+   * @privateRemarks
+   * False is section 247's control, `--no-restart`.
+   * False is section 250's control, the script's `--no-invalidate`.
    */
   readonly invalidate: boolean;
-  /** Send the restart at the end, the ordinary write; false is section 247's control, `--no-restart`. */
+  /** Send the restart at the end, as an ordinary write does; false leaves it out. */
   readonly restart: boolean;
   /**
-   * Send one command and write nothing, on a remote that already holds the configuration: the drop, section
-   * 250's isolating control, `--drop-only`, or the restart, section 282, `--restart-only`.
+   * Send one command and write nothing, on a remote that already holds the configuration: the cache drop or the
+   * restart.
+   *
+   * @privateRemarks
+   * The drop is section 250's isolating control, `--drop-only`; the restart section 282, `--restart-only`.
    */
   readonly only?: 'drop' | 'restart';
   /** Open the one remote to write, after every check that needs no remote has passed. */
@@ -297,9 +322,12 @@ export interface ConfigWrite {
    */
   saveStamped(bytes: Uint8Array): void;
   /**
-   * Each line of the account, without its newline, as it happens. **Required**, the journal of section 243: a
-   * killed run's account of itself is the only record of what reached the flash, so a write that keeps none is
-   * not one this offers. The script appends every line to the file beside the configuration.
+   * Each line of the account, without its newline, as it happens. **Required**: a run's own account of itself is the
+   * only record of what reached the flash when it is killed part way, so a write that keeps none is not one this
+   * offers. Keep the lines somewhere that outlives the process, a file beside the configuration for instance.
+   *
+   * @privateRemarks
+   * The journal of section 243. The script appends every line to the file beside the configuration.
    */
   readonly say: (line: string) => void;
   /** True the instant before the first erase goes out, false once its block is verified, as `writeBlock` sets it. */
@@ -321,6 +349,7 @@ export interface ConfigWrite {
   readonly warn?: (line: string) => void;
 }
 
+/** How a configuration write ended, and what it wrote. */
 export interface ConfigWriteResult {
   /** How the run ended: nothing differed, a dry run, one of the two controls, or a written configuration. */
   readonly outcome: 'nothing to write' | 'dry run' | 'dropped' | 'restarted' | 'written';
@@ -519,13 +548,16 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
     }
 
     /**
-     * The compatibility gate, section 225, and here it has something to compare only sometimes.
+     * The compatibility gate, and here it has something to compare only sometimes.
      *
      * A container that came off a remote carries no XML wrapper and states none of the six fields,
      * so a config derived from one states none either and the gate reports zero compared. That is
      * the truth about the input rather than a pass, and it is printed so nobody assumes otherwise.
      * A config that arrived as a file from Logitech's service does carry them, and then this is the
      * check that refuses a config built for a different remote.
+     *
+     * @privateRemarks
+     * section 225.
      */
     const statedVersion: StatedVersion = {};
     const comparison = compareIntendedVersion(statedVersion, identity);
@@ -543,6 +575,7 @@ export async function writeConfiguration(request: ConfigWrite): Promise<ConfigWr
      * precondition, where its job is to establish what the remote holds before a control changes
      * anything about it.
      *
+     * @privateRemarks
      * **Through `readConfig` rather than a loop of `readFlash`, and that was learned here.** The
      * first version read the range itself and the run failed at 24304 bytes with a chunk out of
      * sequence, which is section 223's transient: HIDAPI's macOS backend holds about 31 input

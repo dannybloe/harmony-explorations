@@ -36,6 +36,7 @@ export type Panel = 'colour' | 'monochrome' | 'none';
 /** Whether a model senses movement, and how the table distinguishes two generations of it. */
 export type MotionSensor = 'tilt' | 'motion' | 'none';
 
+/** A model as the table holds it: its name, its platform, and what its hardware has. */
 export interface Model {
   /** The name Logitech marketed it under, in the region the skin belongs to. */
   readonly name: string;
@@ -43,6 +44,7 @@ export interface Model {
    * The same product's name in the other region, where there is one, from the comparison table's own
    * "Eur#" column.
    *
+   * @privateRemarks
    * **An alias is not the same hardware, and this comment said it was for an hour.** The two remotes
    * share a specification row and differ in their keypad: the European 525 carries four colour keys
    * where the 520 has none, and the European 885 carries them where the 880 has a pair of chevrons
@@ -63,8 +65,9 @@ export interface Model {
   readonly favourites?: number;
   readonly panel: Panel;
   /**
-   * Whether the screen is a touch panel.
+   * Whether the screen is a touch panel: the Harmony One's alone among the models in this table.
    *
+   * @privateRemarks
    * The one capability field this project has confirmed on its own, and by a negative: base slot 17
    * is a touch hit map on arch 12 and names the picture bank everywhere else, sections 45 and 62. The
    * only arch 12 model here is the One, and it is the only one this table calls touch. So the two
@@ -86,12 +89,14 @@ export interface Model {
   /** The sound and picture shortcut pair. */
   readonly soundPictureButtons: boolean;
   /**
-   * The newest firmware version the comparison table knows about.
+   * The newest firmware version Logitech's comparison table knows about, which is out of date for some models: a
+   * lower bound, not the latest release.
    *
+   * @privateRemarks
    * **A lower bound and out of date, measured rather than assumed**: the table says 2.5.0 for the 700
-   * where the lab holds 2.8, and 0.2 for the 650 where it holds 0.4. It is kept because it is right
-   * about the two bench remotes, 3.4.0 on the One and 0.2 on the 600, and because a version below it
-   * is a remote nobody has updated.
+   * where Logitech released 2.8, and 0.2 for the 650 where a release of 0.4 exists. It is kept because it
+   * is right for the One, 3.4.0, and the 600, 0.2, and because a version below it is a remote nobody has
+   * updated.
    */
   readonly firmwareSeen?: string;
 }
@@ -157,9 +162,10 @@ export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
 };
 
 /**
- * Models this project can describe whose skin number is recorded nowhere, so a connected one cannot
- * be recognised.
+ * Models the libraries can describe whose skin number is recorded nowhere, so a connected one cannot be recognised.
+ * It is empty; it is kept because a model Logitech lists without a skin would belong here.
  *
+ * @privateRemarks
  * **It is empty, as of 13 August 2026, and that is not a claim that the table is complete.** All
  * eight entries it held got their number from Logitech's live catalogue, section 131: the 550, 620,
  * 665, 670, 720, 745, 880 Pro and 890 Pro. The statement of incompleteness moved to
@@ -173,8 +179,11 @@ export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
 export const MODELS_WITHOUT_A_SKIN: readonly Model[] = [];
 
 /**
- * Skins Logitech's own catalogue names and this library will not describe, with the vendor's name.
+ * Skins Logitech's own catalogue names and this library will not describe, with the vendor's name: rebadges sold
+ * under other brands, the Harmony 200 and 300, whose capability fields nothing has read, and models the transport
+ * cannot reach. A name here tells a person that their remote is recognised as a product and not yet as a model.
  *
+ * @privateRemarks
  * Section 131. `ProductsManager/GetAllProducts` lists 80 skins below 100. Every one whose model this
  * project can place on an architecture is in `MODELS_BY_SKIN` above; these are the rest, and they are
  * listed rather than added because a `Model` record needs an architecture and a panel, and inventing
@@ -251,10 +260,14 @@ export const OUT_OF_TRANSPORT_REACH: readonly string[] = ['900', '1000', '1000i'
  * The skins whose product record declares a **long press**, from Logitech's own live service.
  *
  * A long press is a second, different action on one button, chosen by how long it is held. It is not a
- * repeat: whether a code repeats while a key is down is a property of the code, section 127, and a
+ * repeat: whether a code repeats while a key is down is a property of the code, and a
  * button with a long press cannot repeat at all, because the firmware has to wait to find out which of
- * the two was meant.
+ * the two was meant. It is the vendor's word: of the models on this list only the Harmony 350 is reachable, as a file,
+ * and how its configuration states a long press is not read. Skin 112 is `HarmonyElite`, sold as the **Harmony 950**;
+ * skin 100 is `Harmony Touch Plus`, sold as the **Harmony Ultimate**.
  *
+ * @privateRemarks
+ * Section 127 for the repeat.
  * **Stated as the positive list on purpose.** Every skin in `MODELS_BY_SKIN` is absent from it, so a
  * `longPress` field on `Model` would be 35 copies of `false` and would be making a claim about this
  * table rather than about the product. `hasLongPress` answers the question a caller actually asks, and
@@ -282,8 +295,10 @@ export const SKINS_WITH_A_LONG_PRESS: readonly number[] =
   [98, 99, 100, 101, 102, 104, 105, 107, 108, 109, 111, 112, 113, 114, 116];
 
 /**
- * Whether the model a skin names offers a long press as a separate action.
+ * Whether the model a skin names offers a long press as a separate action. False for every skin `openHarmony` can
+ * open, so a key read out of a configuration read that way never carries one.
  *
+ * @privateRemarks
  * False for every skin `openHarmony` can open, which is the answer FreeHarmony needs: a button read
  * out of a config it reads that way never carries one, so the field on a binding is always absent after
  * an import. The Harmony 350, skin 104, is true here and is read only as a file, section 262, where how

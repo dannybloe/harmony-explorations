@@ -83,6 +83,7 @@ export interface ArchiveProtocol {
   /**
    * Per field, the width in bits and which segment carries it.
    *
+   * @privateRemarks
    * This is where a family's bit width comes from, rather than the `irp` string, which states it too
    * and would have to be parsed. It said `NumberOfBits` was null on every definition read
    * here<!--superseded-->, and that was this reader looking in the wrong place: the field sits inside a
@@ -105,6 +106,12 @@ export interface ArchiveProtocol {
   readonly irp: string | null;
 }
 
+/**
+ * A device archive that cannot be read or does not hold what was asked of it: an archive missing, or without its
+ * index or manifest, or of a version this reader does not know; no such manufacturer, device or code set in it; an
+ * entry whose steps or fields have a shape this reader does not know, or a key that names a code set or a protocol
+ * the archive does not hold; a press with no command; and a device found by a source that is not among those given.
+ */
 export class ArchiveError extends Error {}
 
 /** What an archive's manifest states, once its schema version is one this reader knows. */
@@ -1146,8 +1153,12 @@ export type WaveformRefusal =
   | 'our encoder threw';
 
 /**
- * The waveform one command of Logitech's catalogue sends, from their own protocol definition.
+ * The waveform one command of Logitech's catalogue sends, from their own protocol definition. `storedForm` keeps the
+ * one microsecond a configuration's last duration carries and a rendering does not, so a comparison against the
+ * archive's own renderings passes `false` and a writer wants the default. `asStored` gives the blocks as a configuration holds them:
+ * the toggle bit as the code states it, and the release block apart as `release`.
  *
+ * @privateRemarks
  * **This composes seven readings and it exists so that there is one of it.** Reading a catalogue command
  * takes the family's rhythm, the definition's own field widths, the keycode grammar, the command's own
  * cycles rather than the family's default, the widths and the toggle bit imposed on the values, the
@@ -1159,15 +1170,17 @@ export type WaveformRefusal =
  * `storedForm` is the one microsecond a configuration's last duration carries and a rendering does not,
  * so a comparison against the archive's renderer passes `false` and a writer wants the default.
  *
- * **`asStored` is the writer's other two differences from a rendering**, section 348, and it exists so
+ * **`asStored` is the writer's other two differences from a rendering**, and it exists so
  * that the composer reads a command through these same seven readings rather than an eighth copy. A
  * rendering clears every toggle bit, which is the archive's convention for comparing, and a writer sends
  * the value the code states, which is what Logitech's compiles hold on every toggle family section 348
  * compared. And a rendering appends the release block to the first transmission, where a configuration
  * keeps it behind a pointer of its own: so under `asStored` the release block comes back separately as
  * `release`, and `once` is the record's first block alone. `toggleFlipped` builds the record's second
- * pointer group, section 365: the same blocks with the toggle bit flipped, and the stated
+ * pointer group: the same blocks with the toggle bit flipped, and the stated
  * frames where no frame carries one.
+ *
+ * section 348; section 365.
  */
 export function waveformOfArchiveCommand(
   protocol: ArchiveProtocol, keycode: string,

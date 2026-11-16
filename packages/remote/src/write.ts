@@ -17,7 +17,7 @@
  * `@freeharmony-sdk/usb`'s guarded transports; the flags are read by the rails, never by a caller.
  */
 
-// Writing a configuration to a remote of the compiled families: the Harmony One, 600, 650, 700 and 885.
+// Writing a configuration: to a remote of the compiled families, the Harmony One, 600, 650, 700 and 885.
 export {
   CONFIG_WRITE_MODELS, CONFIG_WRITE_UNITS, ConfigWriteRefusal, ConfigWriteStopped, writeConfiguration,
 } from './writeconfig.ts';
@@ -33,17 +33,17 @@ export type {
   UnitRecords,
 } from './writeconfig.ts';
 
-// Answering a Harmony Touch's sync: the whole run, the flags it checks first, and what a caller hands it.
+// Answering a Harmony Touch's sync: the whole run, the switches it checks first, and what a caller hands it.
 export {
   RECOVERY, SYNC_LINES, TOUCH_SYNC_UNITS, answerTouchSync, assertTouchSyncAllowed, prepareSet,
 } from './touchsync.ts';
 export type { SetAnswer, TouchSet, TouchSyncMode, TouchSyncOutcome, TouchSyncRun } from './touchsync.ts';
 
-// **Syncing a document**, the contract an application writes a remote through, decision 38: one function for every
-// model, reporting as events, and a pretend remote to run it against, R80, which a read of a configuration,
-// `readConfig` on the main entry, reads through `pretendReader`. Built to a pretend remote and to an attached remote of
-// the same models: a Harmony One, 600, 650 or 700, over `writeConfiguration`, and a Harmony Touch, over
-// `answerTouchSync`; for a document of any other model it refuses by name. The keeper is one of two kinds, by the kind
+// Syncing a document: the one function an application writes a remote through, for every model, reporting as
+// events, and a pretend remote to run it against, which a read of a configuration, `readConfig` on the main entry,
+// reads through `pretendReader`. Built to a pretend remote and to an attached remote of the same models: a Harmony
+// One, 600, 650 or 700, over `writeConfiguration`, and a Harmony Touch, over `answerTouchSync`; for a document of any
+// other model it refuses by name, as not built yet. The keeper is one of two kinds, by the kind
 // of family the remote's model is chosen into: `CompiledKeeper` for a write into flash, `DocumentKeeper` for an
 // answered sync.
 // What a failed sync leaves a remote needing is a state of a closed list, `SYNC_STATES`, with what is true of the

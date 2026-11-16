@@ -119,6 +119,7 @@ export interface IrProtocol extends Typed {
   } | null;
 }
 
+/** The document that holds the infrared protocols the devices' commands are written in. */
 export interface ProtocolList extends Carried {
   readonly Protocols: readonly IrProtocol[];
 }
@@ -173,6 +174,7 @@ export interface FeatureAction extends Typed {
   readonly StateValue?: string;
 }
 
+/** One input of a device, by its name, with the steps that select it. */
 export interface Input extends Carried {
   readonly InputName: string;
   readonly InputOrder?: number;
@@ -202,12 +204,14 @@ export interface DeviceFeature extends Typed {
   readonly FinishActions?: readonly FeatureAction[] | null;
 }
 
+/** One device of the DeviceList document: the device, what it can do, and its commands. */
 export interface DeviceWithFeatures extends Carried {
   readonly Device: Device;
   readonly DeviceFeatures: readonly DeviceFeature[] | null;
   readonly Commands: readonly Command[] | null;
 }
 
+/** The document that holds every device with its commands. */
 export interface DeviceList extends Carried {
   readonly DevicesWithFeatures: readonly DeviceWithFeatures[];
 }
@@ -240,6 +244,7 @@ export interface ActivityAction extends Typed {
   readonly ChannelNumber?: string | number;
 }
 
+/** One activity as the ActivityList document holds it: its name and kind, its devices and their roles, and what it does as it starts and ends. */
 export interface Activity extends Carried {
   readonly 'Id-': Id;
   readonly Name?: string;
@@ -256,6 +261,7 @@ export interface Activity extends Carried {
   readonly LeaveActions?: readonly ActivityAction[] | null;
 }
 
+/** The document that holds every activity. */
 export interface ActivityList extends Carried {
   readonly Activities: readonly Activity[];
 }
@@ -292,6 +298,7 @@ export interface Button extends Typed {
   readonly ButtonDoublePressAction?: ButtonActionDocument | null;
 }
 
+/** One sequence of an activity: a named list of commands and pauses that one key sends. */
 export interface Sequence extends Carried {
   readonly SequenceId: Id;
   readonly Name?: string;
@@ -307,6 +314,7 @@ export interface ButtonMap extends Typed {
   readonly Sequences?: readonly Sequence[] | null;
 }
 
+/** The document that holds every key map, a device's own and each activity's. */
 export interface MapList extends Carried {
   readonly ButtonMaps: readonly ButtonMap[];
 }
@@ -315,6 +323,7 @@ export interface MapList extends Carried {
 // Context and Settings, `favourites-and-settings.md`
 // ---------------------------------------------------------------------------------------------------
 
+/** The document that ties the remote to its account: the account's number, the address of the user's favourites, and the language. */
 export interface Context extends Carried {
   readonly 'AccountId-'?: Id;
   readonly HouseholdUserProfileUri?: string | null;
@@ -332,6 +341,7 @@ export interface Setting extends Carried {
   readonly DefaultValue?: string | null;
 }
 
+/** The document that holds the remote's own settings, its name and background among them. */
 export interface Settings extends Carried {
   readonly RemoteName?: string | null;
   readonly UserImageBucketUri?: string | null;
@@ -360,6 +370,7 @@ export interface DialPosition extends Carried {
   readonly added?: boolean;
 }
 
+/** A favourites document kept per device: the positions a provider's channels are on. */
 export interface ContentDevice extends Carried {
   readonly id?: string;
   readonly services?: Readonly<Record<string, Carried & { readonly dialPositions?: readonly DialPosition[] | null }>> | null;
@@ -372,6 +383,7 @@ export interface Channel extends Carried {
   readonly station?: (Carried & { readonly id?: string; readonly shortName?: string; readonly fullName?: string }) | null;
 }
 
+/** A favourites document kept per channel provider: its channels. */
 export interface ContentService extends Carried {
   readonly id?: string;
   readonly channels?: readonly Channel[] | null;
@@ -405,7 +417,9 @@ export const CONFIGURATION_DOCUMENTS = ['ActivityList', 'DeviceList', 'MapList',
 
 /** The start of each favourites document's address, `favourites-and-settings.md`, "Where each is kept". */
 export const CONTENT_USER = 'content://1.0/user;';
+/** The start of the address of a favourites document kept per device. */
 export const CONTENT_DEVICE = 'content://1.0/device;';
+/** The start of the address of a favourites document kept per channel provider, its line up. */
 export const CONTENT_SERVICE = 'content://1.0/service/';
 
 /** One answer the computer hands the remote: the address, and the document, parsed. */

@@ -36,7 +36,11 @@ import { NO_SCREEN_FAMILY } from './harmony-300-350/index.ts';
 import { SIDE_KEYS } from './harmony-880-885/index.ts';
 import { ONE } from './harmony-one/index.ts';
 
-/** A family of either kind, plan 013 decision 1: `kind` tells them apart. */
+/** A family of either kind: `kind` tells them apart.
+ *
+ * @privateRemarks
+ * Plan 013 decision 1.
+ */
 export type AnyFamily = Family | DocumentFamily;
 
 /**
@@ -81,7 +85,11 @@ export function familyOf(c: Container): Family | undefined {
 // By model
 // ---------------------------------------------------------------------------------------------------
 
-/** A model as it is asked about: Logitech's name, "Harmony 650", and the skin where known. FreeHarmony's `RemoteModel`. */
+/** A model as it is asked about: Logitech's name, "Harmony 650", and the skin where known.
+ *
+ * @privateRemarks
+ * FreeHarmony's `RemoteModel`.
+ */
 export interface ModelNamed {
   readonly name: string;
   readonly skin?: number;

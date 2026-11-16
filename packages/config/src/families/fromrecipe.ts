@@ -67,11 +67,14 @@ export interface BuildSources {
 
 /**
  * What a build gives: the configuration of a compiled family, or a document family's documents and pictures; and on
- * both, **the activities the build left out and why**, decision 44, in the document's order, empty where every activity
- * takes part: each one the document switches off, R92, and each one that uses no device, which is left out the same
+ * both, **the activities the build left out and why**, in the document's order, empty where every activity
+ * takes part: each one the document switches off, and each one that uses no device, which is left out the same
  * way on every model. Said here because the bytes or documents built cannot say it: an activity left out is simply not
  * in them, and a person who switched one off and forgot, or removed its last device, would otherwise see it vanish
  * unexplained.
+ *
+ * @privateRemarks
+ * decision 44; R92.
  */
 export type Built =
   | {
@@ -171,10 +174,13 @@ function modelOf(json: unknown): { readonly name: string; readonly skin?: number
 }
 
 /**
- * **The choices a recipe leaves to its family's defaults**, by name, plan 014: empty where the
+ * **The choices a recipe leaves to its family's defaults**, by name: empty where the
  * recipe states every choice its family makes, which a reference recipe does, so that a default changed later cannot
  * change a reference without its recipe saying so. A family that makes no choice, a document family among them,
  * answers empty.
+ *
+ * @privateRemarks
+ * plan 014.
  */
 export function unstatedChoices(json: unknown): readonly string[] {
   const { family } = chooseByModel(modelOf(json));
@@ -184,10 +190,13 @@ export function unstatedChoices(json: unknown): readonly string[] {
 }
 
 /**
- * **A build's fingerprint**, plan 014 and decision 32: the SHA-256 of what is sent, so two builds are the same exactly
- * when their fingerprints are. A configuration's is that of its bytes. A set of documents' is that of one text
- * holding each document as JSON in the order the build gives them, and each picture's address and the SHA-256 of its
- * bytes, so a document or a picture changed anywhere changes it. The references are held by these: the bytes a
+ * **A build's fingerprint**: the SHA-256 of what is sent, so two builds are the same exactly when their fingerprints
+ * are. A configuration's is that of its bytes. A set of documents' is that of one text holding each document as JSON
+ * in the order the build gives them, and each picture's address and the SHA-256 of its bytes, so a document or a
+ * picture changed anywhere changes it.
+ *
+ * @privateRemarks
+ * Plan 014 and decision 32. The references are held by these: the bytes a
  * reference stood for are rebuilt from its recipe at the commit that recorded it, which is what `bin/reference.ts`
  * does to show where two builds differ.
  */

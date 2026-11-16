@@ -22,8 +22,8 @@ import {
 // consumed on its own as `@freeharmony-sdk/remote/read` precisely so that the read comes without the transport.
 import { MAX_WINDOW_RETRIES, readFlashWindow, type WindowRetry } from '@freeharmony-sdk/usb/readwindow';
 
-// Still exported from here, where callers and tests have always found it. The value lives once, beside
-// the loop it bounds.
+// The read's own limit on retries, offered beside the read so that a caller of the read alone finds it here. The
+// value lives once, in the USB package, beside the loop it bounds.
 export { MAX_WINDOW_RETRIES };
 
 /**
@@ -38,7 +38,7 @@ export interface ConfigReader {
   readFlash(address: number, count: number): Promise<Uint8Array>;
 }
 
-/** Everything that differs between the architectures this project can read. */
+/** Everything that differs between the kinds of remote a configuration is read off, one profile per product id. */
 export interface RemoteProfile {
   readonly productId: number;
   readonly model: string;
@@ -50,6 +50,7 @@ export interface RemoteProfile {
   /**
    * The base the container's **own** pointers count from, when that is not `configBase`.
    *
+   * @privateRemarks
    * Two spaces, and on arch 9 they differ by a megabyte: `READ_FLASH` answers at `0x820000` and
    * is silent below `0x800000`, while the container's `end_addr` and every section pointer inside
    * it are `0x02xxxx`. Reading the length as `end_addr - configBase` then gives a negative number,
@@ -65,6 +66,10 @@ export interface RemoteProfile {
   readonly unverified?: true;
 }
 
+/**
+ * What the read knows of each model it reads, by the product id it reports on USB: where its configuration starts
+ * and the highest address one may end at. A remote whose product id is not here is refused by `profileFor`.
+ */
 export const PROFILES: readonly RemoteProfile[] = [
   { productId: 0xc121, model: 'Harmony One', architecture: 12, configBase: 0x040000, configEnd: 0x400000 },
   // **`configEnd` was `0x400000` here until 29 August 2026 and the part is 2 MiB.** It came from
@@ -108,14 +113,18 @@ export const PROFILES: readonly RemoteProfile[] = [
     configEnd: 0x1d0000 },
 ];
 
+/**
+ * A read that cannot go on: a remote the read does not know, a configuration whose header, length, end marker or
+ * checksum is wrong, or fewer bytes than were asked for. Nothing is handed back when it is thrown.
+ */
 export class ReadError extends Error {}
 
 /**
  * The profile for an attached remote, or a refusal that says why.
  *
  * Refusing beats guessing a base address. Reading the wrong address returns bytes that are not a
- * container, which is a confusing failure, and this project covers two architectures out of at
- * least eleven that exist, so an unknown product id is the expected case rather than a fault.
+ * container, which is a confusing failure, and not every Harmony is read here, so an unknown product
+ * id is a remote the read does not know yet rather than a fault.
  */
 export function profileFor(productId: number): RemoteProfile {
   const found = PROFILES.find((p) => p.productId === productId);
@@ -132,6 +141,10 @@ export function profileFor(productId: number): RemoteProfile {
 /** Enough bytes to hold the magic, `end_addr` and the format word. */
 export const HEADER_PROBE = 16;
 
+/**
+ * What the first bytes of a configuration state: which container it is, where it ends, its format word, and the
+ * length that gives.
+ */
 export interface ConfigHeader {
   readonly family: Family;
   readonly endAddr: number;
@@ -144,7 +157,7 @@ export interface ConfigHeader {
  * Read the container header and work out how long the whole thing is.
  *
  * The magic is checked against every known family rather than against `GSPM` alone, so a container
- * from an architecture nobody here has read still gets a sensible length instead of a refusal.
+ * from an architecture not read yet still gets a sensible length instead of a refusal.
  */
 export function parseHeader(head: Uint8Array, profile: RemoteProfile): ConfigHeader {
   if (head.length < HEADER_PROBE) {
@@ -170,12 +183,17 @@ export function parseHeader(head: Uint8Array, profile: RemoteProfile): ConfigHea
   return { family, endAddr, format, length };
 }
 
+/** How far a read is, in bytes, as `ReadOptions.onProgress` is told after every chunk. */
 export interface ReadProgress {
   /** Bytes in hand, including the header probe. */
   readonly done: number;
   readonly total: number;
 }
 
+/**
+ * A configuration read off a remote, checked: the profile it was read with, its header, the remote's version
+ * block, and the bytes.
+ */
 export interface ConfigRead {
   readonly profile: RemoteProfile;
   readonly header: ConfigHeader;
@@ -183,16 +201,20 @@ export interface ConfigRead {
   readonly bytes: Uint8Array;
   readonly durationMs: number;
   /**
-   * How many windows had to be asked for again, section 223.
+   * How many windows had to be asked for again.
    *
    * Reported rather than swallowed: a read that needed retries is still a good read, since every
    * window is verified by the sequence check and the whole file by the end marker and the trailer
    * checksum, but a link that needs them constantly is a fault somebody should see. Zero is the
    * normal value and the one worth noticing when it changes.
+   *
+   * @privateRemarks
+   * Section 223.
    */
   readonly retries: number;
 }
 
+/** How a read is run: the size of each request, and whom it tells of its progress and its retries. */
 export interface ReadOptions {
   /** Bytes per `READ_FLASH`. 16 KiB is what the hardware tests use for the firmware read. */
   readonly chunkBytes?: number;
@@ -203,6 +225,7 @@ export interface ReadOptions {
   readonly now?: () => number;
 }
 
+/** The bytes asked for in one request when `ReadOptions.chunkBytes` does not say, 16 KiB. */
 export const DEFAULT_CHUNK_BYTES = 16384;
 
 /**

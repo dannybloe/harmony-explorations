@@ -103,8 +103,11 @@ export type Owner = { readonly activity: ActivityId } | { readonly device: Devic
  * drawing carries as `data-name`, so an application reads it off the key a person clicked, and the same key on every
  * model that has it. Which words a document's model takes is `keyNames`'s answer; the number a family's firmware
  * knows the key by is the family's and never the document's, `RecipeKey`. `press` tells a key's second command, sent
- * when it is held, from its first, R38, and in the document's version 2 its double press; absent is the short press,
+ * when it is held, from its first, and in the document's version 2 its double press; absent is the short press,
  * `RecipePress`.
+ *
+ * @privateRemarks
+ * R38.
  */
 export interface KeyPlace {
   readonly owner: Owner;
@@ -125,13 +128,19 @@ export type Place =
   /**
    * One role of an activity, by the document's word for it, `ActivityRoleName`, Logitech's: where a change says that no
    * device of the activity has that role any more. A role is the document's and the same word on every model, and never
-   * required, decision 44; what a model does without it, such as volume keys that then send nothing, is the model's
+   * required; what a model does without it, such as volume keys that then send nothing, is the model's
    * family's and not said here.
+   *
+   * @privateRemarks
+   * decision 44.
    */
   | { readonly kind: 'role'; readonly activity: ActivityId; readonly role: ActivityRoleName }
   /**
-   * An activity's mark of needing attention, `RecipeActivity.attention`, R93, decision 44: where a change says it set
+   * An activity's mark of needing attention, `RecipeActivity.attention`: where a change says it set
    * the mark, or added a reason to it, and why.
+   *
+   * @privateRemarks
+   * R93; decision 44.
    */
   | { readonly kind: 'attention'; readonly activity: ActivityId }
   | { readonly kind: 'step'; readonly activity: ActivityId; readonly when: 'start' | 'end'; readonly step: number }
@@ -193,11 +202,15 @@ export const PROBLEM_CODES = [
   // decision 44, and an input not chosen.
   'unfinished',
 ] as const;
+/** What kind of problem a check found, one of `PROBLEM_CODES`. */
 export type ProblemCode = typeof PROBLEM_CODES[number];
 
 /**
- * One problem of a document, R78. An `error` is something a build or a sync refuses on; a `note` is worth showing
+ * One problem of a document. An `error` is something a build or a sync refuses on; a `note` is worth showing
  * and stops nothing. `place` is what it concerns, `message` an English sentence naming it.
+ *
+ * @privateRemarks
+ * R78.
  */
 export interface Problem {
   readonly severity: 'error' | 'note';
@@ -237,15 +250,21 @@ export class ChangeRefused extends RecipeError {
 // ---------------------------------------------------------------------------------------------------
 
 /**
- * A code for a device's command, R19 and R11: the catalogue's own notation, or pulses learned from the device's
+ * A code for a device's command: the catalogue's own notation, or pulses learned from the device's
  * original remote, which the definition then marks as learned. The document holds it as `RecipeCommandCode`, in
  * `RecipeDevice.commands`, so this is that type.
+ *
+ * @privateRemarks
+ * R19 and R11.
  */
 export type CommandCode = RecipeCommandCode;
 
 /**
- * A device as it is added: what the remote calls it and the definition a search fetched for it, R10, or one built
- * from learned commands, R11.
+ * A device as it is added: what the remote calls it and the definition a search fetched for it, or one built
+ * from learned commands.
+ *
+ * @privateRemarks
+ * R10; R11.
  */
 export interface NewDevice {
   readonly name: string;
@@ -262,36 +281,73 @@ export type MemberChanges<T> = { readonly [K in keyof T]?: T[K] | 'default' };
  * What a person changes about a device; a member left out is left as it is. Each of power, inputs, timing and
  * channel tuning has the shape the catalogue states the same thing in, since a person's choice stands over the
  * catalogue's statement, **member by member**: a member given is the person's, `'default'` on a member gives that one
- * back, and `'default'` for the whole gives every one back, R14 to R18. The document keeps only what a person chose,
+ * back, and `'default'` for the whole gives every one back. The document keeps only what a person chose,
  * so a definition fetched again replaces none of it, `refreshDevice`.
+ *
+ * @privateRemarks
+ * R12.
+ * R14 to R18.
  */
 export interface DeviceChanges {
-  /** R12. Every reference to the device follows, since references are by id. */
+  /** Its name. Every reference to the device follows, since references are by id. */
   readonly name?: string;
-  /** Kept on when an activity that does not use it starts, R14. */
+  /**
+   * Kept on when an activity that does not use it starts.
+   *
+   * @privateRemarks
+   * R14.
+   */
   readonly keptOnBetweenActivities?: boolean;
-  /** How it is powered, R14, the catalogue's members and `alwaysOn`, a device never switched off. */
+  /**
+   * How it is powered, the catalogue's members and `alwaysOn`, a device never switched off.
+   *
+   * @privateRemarks
+   * R14.
+   */
   readonly power?: MemberChanges<RecipeDevicePower> | 'default';
   readonly inputs?: DeviceInputs | 'default';
-  /** The delays and the repeat counts, R16 and R17, in the catalogue's own member names, `DeviceTiming`. */
+  /**
+   * The delays and the repeat counts, in the catalogue's own member names, `DeviceTiming`.
+   *
+   * @privateRemarks
+   * R16 and R17.
+   */
   readonly timing?: MemberChanges<DeviceTiming> | 'default';
-  /** How a channel number is entered, R18, its steps naming the device's commands by name. */
+  /**
+   * How a channel number is entered, its steps naming the device's commands by name.
+   *
+   * @privateRemarks
+   * R18.
+   */
   readonly channelTuning?: MemberChanges<DeviceChannelTuning> | 'default';
-  /** The device key it goes on, on a model with a key per device, R39. */
+  /**
+   * The device key it goes on, on a model with a key per device.
+   *
+   * @privateRemarks
+   * R39.
+   */
   readonly deviceKey?: RecipeDeviceKey | 'none';
 }
 
 /**
- * A person's change to one command of a device, R19 and R89: a code of its own, `'original'` to drop it and send the
+ * A person's change to one command of a device: a code of its own, `'original'` to drop it and send the
  * definition's code again, and how that one command is sent, member by member as a device's timing is, the copies of
  * the code in a press, the pace of the held block and the silence before the first block, `RecipeSending`.
+ *
+ * @privateRemarks
+ * R19 and R89.
  */
 export interface CommandChange {
   readonly code?: CommandCode | 'original';
   readonly sending?: MemberChanges<RecipeSending> | 'default';
 }
 
-/** One device's part in an activity: the input it is switched to, or none to leave it alone, and its roles, R22 to R24. */
+/**
+ * One device's part in an activity: the input it is switched to, or none to leave it alone, and its roles.
+ *
+ * @privateRemarks
+ * R22 to R24.
+ */
 export interface ActivityDeviceChoice {
   readonly device: DeviceId;
   readonly input?: string;
@@ -299,9 +355,12 @@ export interface ActivityDeviceChoice {
 }
 
 /**
- * One step of an activity's start or end beyond what its devices need anyway, R30: a command of one of the activity's
+ * One step of an activity's start or end beyond what its devices need anyway: a command of one of the activity's
  * devices, a pause in tenths of a second, one of the activity's own sequences, or a channel tuned through one of its
  * devices, its digits as text so a leading zero survives, `RecipeChannelStep`.
+ *
+ * @privateRemarks
+ * R30.
  */
 export type ActivityStep =
   | { readonly device: DeviceId; readonly command: string }
@@ -309,7 +368,12 @@ export type ActivityStep =
   | { readonly sequence: SequenceId }
   | { readonly device: DeviceId; readonly channel: string };
 
-/** An activity as it is added: its name, Logitech's kind, and its devices with their roles, R21. */
+/**
+ * An activity as it is added: its name, Logitech's kind, and its devices with their roles.
+ *
+ * @privateRemarks
+ * R21.
+ */
 export interface NewActivity {
   readonly name: string;
   readonly type: string;
@@ -318,64 +382,119 @@ export interface NewActivity {
 
 /** What a person changes about an activity; a member left out is left as it is. */
 export interface ActivityChanges {
-  /** R25. */
+  /** Its name.
+ *
+ * @privateRemarks
+   * R22 to R24 and R28.
+ * R25.
+ */
   readonly name?: string;
   readonly type?: string;
-  /** The devices and their roles, in the order the activity lists them, R22 to R24 and R28. */
+  /** The devices and their roles, in the order the activity lists them. */
   readonly devices?: readonly ActivityDeviceChoice[];
-  /** R27, by the name of one of our icons. */
+  /** Its icon, by the name of one of the SDK's icons.
+   *
+   * @privateRemarks
+   * R27.
+   */
   readonly icon?: string | 'none';
-  /** Extra steps at its start and its end, R30, each list whole; `'default'` is none. */
+  /**
+   * Extra steps at its start and its end, each list whole; `'default'` is none.
+   *
+   * @privateRemarks
+   * R30.
+   */
   readonly start?: readonly ActivityStep[] | 'default';
   readonly end?: readonly ActivityStep[] | 'default';
-  /** Which activity key starts it, counted from 0, on a model with activity keys, R29. */
+  /**
+   * Which activity key starts it, counted from 0, on a model with activity keys.
+   *
+   * @privateRemarks
+   * R29.
+   */
   readonly activityKey?: number | 'none';
-  /** The screen it opens on, R91, by the word the model's family names it by; `'default'` is the family's. */
+  /**
+   * The screen it opens on, by the word the model's family names it by; `'default'` is the family's.
+   *
+   * @privateRemarks
+   * R91.
+   */
   readonly opensOn?: string | 'default';
   /**
-   * Whether it holds the favourite channels, R45: true takes the hold off whichever activity had it, since one
+   * Whether it holds the favourite channels: true takes the hold off whichever activity had it, since one
    * activity holds them; false says this one does not; `'default'` leaves it to the family.
+   *
+   * @privateRemarks
+   * R45.
    */
   readonly favourites?: boolean | 'default';
-  /** The order it switches its devices on and off in, R90, every device of the activity once; `'default'` is the family's. */
+  /**
+   * The order it switches its devices on and off in, every device of the activity once; `'default'` is the family's.
+   *
+   * @privateRemarks
+   * R90.
+   */
   readonly powerOrder?: readonly DeviceId[] | 'default';
   /**
-   * Whether it is switched on, R92, decision 44: false keeps it in the document and out of every build and sync, which
+   * Whether it is switched on: false keeps it in the document and out of every build and sync, which
    * say they left it out; true switches it on again, the same activity under the same id.
+   *
+   * @privateRemarks
+   * R92; decision 44.
    */
   readonly enabled?: boolean;
 }
 
-/** One step of a sequence, R37: a device's command by its name, or a pause in tenths of a second. */
+/**
+ * One step of a sequence: a device's command by its name, or a pause in tenths of a second.
+ *
+ * @privateRemarks
+ * R37.
+ */
 export type SequenceStep = { readonly device: DeviceId; readonly command: string } | { readonly pause: number };
 
 /**
- * A sequence as it is added: its name and its steps. **A sequence is its activity's**, decision 43: it is added to one
+ * A sequence as it is added: its name and its steps. **A sequence is its activity's**: it is added to one
  * activity, its steps send to that activity's devices, and a key, a screen entry or an extra step of the same activity
  * runs it, by its id.
+ *
+ * @privateRemarks
+ * decision 43.
  */
 export interface NewSequence {
   readonly name: string;
   readonly steps: readonly SequenceStep[];
 }
 
-/** What a key does, R31 and R32: a command of any device, a sequence, or nothing at all. */
+/**
+ * What a key does: a command of any device, a sequence, or nothing at all.
+ *
+ * @privateRemarks
+ * R31 and R32.
+ */
 export type KeyAction =
   | { readonly device: DeviceId; readonly command: string }
   | { readonly sequence: SequenceId }
   | { readonly nothing: true };
 
 /**
- * One item of an owner's screen, in the order a person put them; the toolkit pages them by the model's screen, R34
- * and R35. A label left out is the command's or the sequence's own. An item with `page` opens a page of the items
- * given, with a way back, R36.
+ * One item of an owner's screen, in the order a person put them; the toolkit pages them by the model's screen. A label left out is the command's or the sequence's own. An item with `page` opens a page of the items
+ * given, with a way back.
+ *
+ * @privateRemarks
+ * R34 and R35; R36.
  */
 export type ScreenItem =
   | { readonly label?: string; readonly device: DeviceId; readonly command: string }
   | { readonly label?: string; readonly sequence: SequenceId }
   | { readonly label: string; readonly page: readonly ScreenItem[] };
 
-/** A favourite channel, R45 and R46: the number as text, since a leading zero is a channel of its own. */
+/**
+ * A favourite channel: the number as text, since a leading zero is a channel of its own.
+ *
+ * @privateRemarks
+ * R45 and R46.
+ */
 export interface Favourite {
   readonly channel: string;
   readonly name?: string;
@@ -387,8 +506,11 @@ export interface Favourite {
 export type Removable = { readonly device: DeviceId } | { readonly activity: ActivityId } | { readonly sequence: SequenceId };
 
 /**
- * What `move` puts at another position, R28: a device in the device list, an activity in the activity menu, or a
+ * What `move` puts at another position: a device in the device list, an activity in the activity menu, or a
  * device within one activity's list.
+ *
+ * @privateRemarks
+ * R28.
  */
 export type Movable =
   | { readonly device: DeviceId }
@@ -418,26 +540,40 @@ export interface ActivitySummary {
   readonly name: string;
   readonly type: string;
   readonly devices: readonly ActivityDeviceChoice[];
-  /** False where a person switched it off, R92: a build and a sync leave it out, and say so. */
+  /**
+   * False where a person switched it off: a build and a sync leave it out, and say so.
+   *
+   * @privateRemarks
+   * R92.
+   */
   readonly enabled: boolean;
   /**
-   * **Why a build and a sync leave it out**, decision 44, absent where it takes part: `switched-off`, as `enabled` says,
+   * **Why a build and a sync leave it out**, absent where it takes part: `switched-off`, as `enabled` says,
    * or `no-device`, since it uses none. The same answer a build gives in `Built.leftOut`, asked without building, so an
    * application can show it beside the activity before a sync.
+   *
+   * @privateRemarks
+   * decision 44.
    */
   readonly leftOut?: LeftOutReason;
   /**
-   * Why it needs attention, R93, each reason as the document records it, `Attention`; empty where it needs none. An
-   * activity needing attention is still built and synced: it is never invalid, decision 44.
+   * Why it needs attention, each reason as the document records it, `Attention`; empty where it needs none. An
+   * activity needing attention is still built and synced: it is never invalid.
+   *
+   * @privateRemarks
+   * R93; decision 44.
    */
   readonly attention: readonly Attention[];
 }
 
 /**
- * One reason an activity needs attention, R93, decision 44, as the document records it, `RecipeAttention`: what
+ * One reason an activity needs attention, as the document records it, `RecipeAttention`: what
  * happened, `device-removed` or `marked`; the device by the name it had, since one removed has no id left; every press
  * of the activity whose answer the removal changed, with what it did and does, where the keys are known; and a sentence
  * in English. **Data an application words itself**: the sentence is there for one that does not.
+ *
+ * @privateRemarks
+ * R93, decision 44.
  */
 export type Attention = RecipeAttention;
 
@@ -464,9 +600,12 @@ export interface CommandSummary {
 }
 
 /**
- * What the questions about keys and screens are given beside the document, R77: an archive serving the definitions of
+ * What the questions about keys and screens are given beside the document: an archive serving the definitions of
  * the devices the document carries none of. A definition the document carries is served first, `carriedCatalogue`, so a
  * document that carries every device's definition needs nothing here.
+ *
+ * @privateRemarks
+ * R77.
  */
 export interface QuestionSources {
   readonly archive?: CatalogueSource;
@@ -485,9 +624,12 @@ export type KeySurface = MapSurface;
 export type KeyBinder = MapBinder;
 
 /**
- * One key of a document's model as `keyNames` answers it, R77: Logitech's word for it, where it is, the presses it has
+ * One key of a document's model as `keyNames` answers it: Logitech's word for it, where it is, the presses it has
  * on this model, the short press first, whose map binds it, whether a person's choice on it is built, and why not
  * where it is not. The places are the model's family's, `FamilyMaps.places`, the ones its build binds by.
+ *
+ * @privateRemarks
+ * R77.
  */
 export interface KeyPlaceSummary {
   readonly key: string;
@@ -499,14 +641,17 @@ export interface KeyPlaceSummary {
 }
 
 /**
- * One setting a command is sent with, R77: its value, and whether that is the default, the catalogue's statement of
+ * One setting a command is sent with: its value, and whether that is the default, the catalogue's statement of
  * the device, or the person's, the document's own.
  *
  * **What the document says, not what a build honours.** A value the document states is answered as the person's on
  * every model, also where the model's build does not read that field yet and refuses a document stating it, as every
- * build of a Harmony One does a stated timing, R16 and R17, and a command's tuning, R89. Whether this model's build
+ * build of a Harmony One does a stated timing, and a command's tuning. Whether this model's build
  * reads a stated field is what `check` lists, a problem at the device saying the field is not built; an application
  * shows both, the person's value here and the problem there.
+ *
+ * @privateRemarks
+ * R16 and R17; R77; R89.
  */
 export interface SettingAnswer<T> {
   readonly value: T;
@@ -549,9 +694,12 @@ export interface CommandTuningAnswer {
 }
 
 /**
- * How a press's command is sent, R77: the target device's settings, and beside them the tuning of that one command
+ * How a press's command is sent: the target device's settings, and beside them the tuning of that one command
  * where the document states one. The settings are the device's and stored on it alone, so two keys that send one
  * device's commands answer the same settings, and a change to them changes both.
+ *
+ * @privateRemarks
+ * R77.
  */
 export interface SendingAnswer {
   readonly settings: DeviceSettingsAnswer;
@@ -589,8 +737,11 @@ interface PressCommon {
 }
 
 /**
- * One press of a key and what it does, R77: a device's command, with how it is sent; one of the activity's sequences,
+ * One press of a key and what it does: a device's command, with how it is sent; one of the activity's sequences,
  * by its name, with its steps; or nothing, where the place is unbound or a person chose nothing.
+ *
+ * @privateRemarks
+ * R77.
  */
 export type PressAnswer =
   | PressCommon & { readonly action: { readonly device: DeviceId; readonly command: string }; readonly sending: SendingAnswer }
@@ -598,7 +749,7 @@ export type PressAnswer =
   | PressCommon & { readonly action: { readonly nothing: true } };
 
 /**
- * One key of an owner as the remote will have it, R77, before anything is built: the owner, the key and where it is,
+ * One key of an owner as the remote will have it, before anything is built: the owner, the key and where it is,
  * one entry per press the model has for that key, and, where a person cannot choose what it does, why.
  *
  * **A key the owner's map does not bind has no presses**: the configuration binds it outside every map, or the model's
@@ -608,6 +759,9 @@ export type PressAnswer =
  * **Not answered: whether a key repeats while held.** Repeating is a property of the command's code, its held part, and
  * not of the key, `reference/how-a-harmony-works.md`, and how a code's held part is sent is decided when a build
  * writes it; nothing in the document or the catalogue's statement of a device says it.
+ *
+ * @privateRemarks
+ * R77.
  */
 export interface KeyAnswer {
   readonly owner: Owner;
@@ -627,9 +781,12 @@ export type ScreenEntryAnswer =
   | { readonly label: string; readonly client: string; readonly isDefault: boolean };
 
 /**
- * An owner's screen, R77: its entries in order, each marked default or the person's, and whether the list as a whole
+ * An owner's screen: its entries in order, each marked default or the person's, and whether the list as a whole
  * is the default. A person states a screen whole, so every entry has the list's mark; the list's own mark is what tells
  * a screen a person emptied from one the family leaves empty.
+ *
+ * @privateRemarks
+ * R77.
  */
 export interface ScreenAnswer {
   readonly owner: Owner;
@@ -641,7 +798,7 @@ export interface ScreenAnswer {
 export type { SettingKind };
 
 /**
- * One of the remote's own settings as the remote will have it, R47, before anything is built: its name as the family
+ * One of the remote's own settings as the remote will have it, before anything is built: its name as the family
  * gives it, its value, whether that is the default, what the default is, and the kind of value it takes, the choices of
  * a yes or no setting or the range of a number.
  *
@@ -649,6 +806,9 @@ export type { SettingKind };
  * also where it is written as text; a value the family's build refuses is answered as the document states it, and
  * `check` lists it. **A value equal to the default is still the person's**, `isDefault` false, since the document
  * states it and it stays when the family's default changes; `setSetting` with `'default'` gives it back.
+ *
+ * @privateRemarks
+ * R47.
  */
 export interface RemoteSettingAnswer {
   readonly name: string;
@@ -1869,10 +2029,13 @@ export function open(json: unknown): Recipe {
 // ---------------------------------------------------------------------------------------------------
 
 /**
- * Add a device with its definition, R10, last in the device list, under an id no device of the document has carried.
+ * Add a device with its definition, last in the device list, under an id no device of the document has carried.
  * The definition is carried in the document, with the protocol definitions its commands are written in, so the setup
  * builds and stays editable when no source of devices answers any more. Refused over the model's device count, and
  * under a name another device has: the remote lists devices by name, and so does the recipe underneath.
+ *
+ * @privateRemarks
+ * R10.
  */
 export function addDevice(document: Recipe, device: NewDevice): Change {
   changeable(document);
@@ -1895,7 +2058,7 @@ export function addDevice(document: Recipe, device: NewDevice): Change {
 }
 
 /**
- * **Fetch a device's definition again**, decision 43: replaces the definition the document carries for the device, and
+ * **Fetch a device's definition again**: replaces the definition the document carries for the device, and
  * nothing else. Its name, its keys and screen, its timing, power and channel tuning, its own commands, and every
  * choice that names it stay as they are, also a stated value equal to what the new definition states: a person's
  * choice is theirs, and stays theirs when the catalogue later changes its mind. The protocol definitions follow the
@@ -1906,6 +2069,9 @@ export function addDevice(document: Recipe, device: NewDevice): Change {
  * of a command it no longer has. Each stays in the document, and `check` lists it until a person chooses again.
  * Nothing refreshes on its own. Refused for a definition of another catalogue entry, which is another device and is
  * added as one.
+ *
+ * @privateRemarks
+ * decision 43.
  */
 export function refreshDevice(document: Recipe, device: DeviceId, carried: CarriedDevice): Change {
   changeable(document);
@@ -1932,13 +2098,15 @@ export function refreshDevice(document: Recipe, device: DeviceId, carried: Carri
 }
 
 /**
- * Change a device, member by member: its name, R12, which follows the device everywhere the document names it, since
+ * Change a device, member by member: its name, which follows the device everywhere the document names it, since
  * underneath the recipe names a device by its name, and that is the toolkit keeping the whole consistent and not an
- * effect to report; whether it stays on between activities and its device key; and its power, R14, timing, R16 and
- * R17, and channel tuning, R18, each a person's member standing over the catalogue's, `DeviceChanges`. **This writes
+ * effect to report; whether it stays on between activities and its device key; and its power, timing, and channel tuning, each a person's member standing over the catalogue's, `DeviceChanges`. **This writes
  * the document**: whether the model's build reads a stated timing, power or tuning is what `check` lists, so a person's
  * choice is kept while the build for their model catches up. Its inputs have no field in the document yet and refuse by
  * name.
+ *
+ * @privateRemarks
+ * R12; R14; R16 and R17; R18.
  */
 export function setDevice(document: Recipe, device: DeviceId, changes: DeviceChanges): Change {
   changeable(document);
@@ -1996,7 +2164,7 @@ export function setDevice(document: Recipe, device: DeviceId, changes: DeviceCha
 }
 
 /**
- * Change one command of a device, R19 and R89, in the document's own commands of it, `RecipeDevice.commands`: a code
+ * Change one command of a device, in the document's own commands of it, `RecipeDevice.commands`: a code
  * of its own, replacing the definition's or adding a command the definition lacks; how that one command is sent, member
  * by member; `'original'` to drop both and send the definition's code as the definition sends it; and `'removed'` to
  * take away a command the document added. **This writes the document**: whether the model's build reads a stated code
@@ -2006,6 +2174,9 @@ export function setDevice(document: Recipe, device: DeviceId, changes: DeviceCha
  * command the document added, which has no original; and `'removed'` of a command still used, naming where, since the
  * key or the step that sends it is a person's choice that only they can replace. Taking away a command of the
  * definition itself has no field in the document and refuses by name.
+ *
+ * @privateRemarks
+ * R19 and R89.
  */
 export function setDeviceCommand(document: Recipe, device: DeviceId, command: string, change: CommandChange | 'original' | 'removed'): Change {
   changeable(document);
@@ -2042,11 +2213,14 @@ export function setDeviceCommand(document: Recipe, device: DeviceId, command: st
 }
 
 /**
- * Add an activity, R21, last in the activity menu, under an id no activity has carried: its devices by id, each with
+ * Add an activity, last in the activity menu, under an id no activity has carried: its devices by id, each with
  * its roles and the input it is switched to, or none. Refused over the model's activity count, under a name another
  * activity has, with a device the document does not hold or names twice, and with a role no activity has. An input is
  * not judged here: whether a device has it is the check's to say, so an activity can be put together before every
  * choice is made.
+ *
+ * @privateRemarks
+ * R21.
  */
 export function addActivity(document: Recipe, activity: NewActivity): Change {
   changeable(document);
@@ -2114,10 +2288,9 @@ function openingScreen(model: RecipeModel, screen: string, place: Place, asked: 
 }
 
 /**
- * Change an activity, member by member: its name, R25, its kind, its devices with their roles and inputs, whole and in
- * the order given, R22 to R24 and R28; the screen it opens on, R91; whether it holds the favourite channels, R45, true
- * taking the hold off the activity that had it, which is reported; the order it switches its devices on and off in,
- * R90; and its extra steps at its start and its end, R30, each list whole, a sequence of its own by id. `'default'`, or
+ * Change an activity, member by member: its name, its kind, its devices with their roles and inputs, whole and in
+ * the order given; the screen it opens on; whether it holds the favourite channels, true
+ * taking the hold off the activity that had it, which is reported; the order it switches its devices on and off in; and its extra steps at its start and its end, each list whole, a sequence of its own by id. `'default'`, or
  * an empty list of steps, gives a member back.
  *
  * **Its devices changed, what names them follows**: a power order loses a device no longer used and puts one newly
@@ -2126,14 +2299,18 @@ function openingScreen(model: RecipeModel, screen: string, place: Place, asked: 
  * no device of the activity has afterwards is an effect at that role, naming the activity and the role, as a removal of
  * the device reports it; and every press of the activity whose answer the change made otherwise is an effect at that
  * key, saying what it did and does, read off the maps with `sources` as a removal's mark reads them. **No mark is
- * set**, decision 44: the person making the change is looking at the activity.
- * **Whether it is switched on**, R92: false keeps it out of every build and sync, true switches it on again, the same
+ * set**: the person making the change is looking at the activity.
+ * **Whether it is switched on**: false keeps it out of every build and sync, true switches it on again, the same
  * activity under the same id, refused as over the limit where the model takes no more activities that take part.
- * **Its devices all dropped**, it is kept and takes no part, decision 44: a build and a sync leave it out, which is an
+ * **Its devices all dropped**, it is kept and takes no part: a build and a sync leave it out, which is an
  * effect at the activity; given a device again, it takes part again, refused as over the limit as switching on is.
  * Taking out of the build the activity that holds the favourite channels, either way, is an effect at it, naming the
  * activity that holds them while it is out, by the family's rule, or saying none does. Its icon and its activity key have no field in the document yet and refuse by name.
  * **This writes the document**: whether the model's build reads a stated member is what `check` lists.
+ *
+ * @privateRemarks
+ * Its devices are R22 to R24 and R28.
+ * R25; R45; R30; R91; R90; decision 44; R92; decision 44.
  */
 export function setActivity(document: Recipe, activity: ActivityId, changes: ActivityChanges, sources?: QuestionSources): Change {
   changeable(document);
@@ -2278,10 +2455,13 @@ function favouritesHolderOf(document: Recipe): RecipeActivity | undefined {
 }
 
 /**
- * **Mark an activity as needing attention by hand**, R93, decision 44: an application may have reasons of its own, a
+ * **Mark an activity as needing attention by hand**: an application may have reasons of its own, a
  * person's note, a device it knows to be faulty. The reason is added to whatever the activity's mark already holds, as
  * `marked` with the sentence given, without the space around it, and no device or key, and the activity is still built
  * and synced as it is. Refused as `invalid` for a sentence with nothing in it.
+ *
+ * @privateRemarks
+ * R93; decision 44.
  */
 export function markAttention(document: Recipe, activity: ActivityId, message: string): Change {
   changeable(document);
@@ -2298,10 +2478,13 @@ export function markAttention(document: Recipe, activity: ActivityId, message: s
 }
 
 /**
- * **Clear an activity's mark of needing attention**, R93, decision 44: every reason at once, the one call an
+ * **Clear an activity's mark of needing attention**: every reason at once, the one call an
  * application makes once a person has seen why. When it does so is the application's business; nothing here clears a
  * mark of its own accord, since only a person can say the activity is now as they want it. An activity with no mark is
  * left as it is.
+ *
+ * @privateRemarks
+ * R93; decision 44.
  */
 export function clearAttention(document: Recipe, activity: ActivityId): Change {
   changeable(document);
@@ -2310,10 +2493,13 @@ export function clearAttention(document: Recipe, activity: ActivityId): Change {
 }
 
 /**
- * Add a sequence to an activity, R37, last among its sequences, under an id no sequence has carried: its name, once
+ * Add a sequence to an activity, last among its sequences, under an id no sequence has carried: its name, once
  * within the activity, and its steps, each a command of one of the activity's devices or a pause in tenths of a
  * second, at least one sending a command. It sends nothing until a key, a screen entry or an extra step of the same
  * activity runs it, by its id.
+ *
+ * @privateRemarks
+ * R37.
  */
 export function addSequence(document: Recipe, activity: ActivityId, sequence: NewSequence): Change {
   changeable(document);
@@ -2331,8 +2517,11 @@ export function addSequence(document: Recipe, activity: ActivityId, sequence: Ne
 }
 
 /**
- * Change a sequence's name or its steps, R37. A new name follows it everywhere its activity runs it, a key, a screen
+ * Change a sequence's name or its steps. A new name follows it everywhere its activity runs it, a key, a screen
  * entry and an extra step; the steps are given whole, as `addSequence` takes them.
+ *
+ * @privateRemarks
+ * R37.
  */
 export function setSequence(document: Recipe, sequence: SequenceId, changes: Partial<NewSequence>): Change {
   changeable(document);
@@ -2353,11 +2542,11 @@ export function setSequence(document: Recipe, sequence: SequenceId, changes: Par
 }
 
 /**
- * Say what a key does, in an activity, R31, or for a device in device mode, R32, for each press the key has on the
- * model: `short`, absent, the first command; `held`, the long press, R38; `double`, a gesture pressed twice, R40. What it
+ * Say what a key does, in an activity, or for a device in device mode, for each press the key has on the
+ * model: `short`, absent, the first command; `held`, the long press; `double`, a gesture pressed twice. What it
  * does: a command of any device of the document, a sequence of the activity's own by its id, or nothing; `'default'`
  * gives that press back to what the family derives. Judged by the model's places, the ones `keyNames` lists and the
- * build binds by, decision 43:
+ * build binds by:
  *
  * * **not on this model**, `ChangeRefused` `not-on-this-model`: a press the key does not have, a held press on a Harmony
  *   One; a key only the other kind of owner binds, a gesture in a device's own map; and a choice the model's family
@@ -2369,6 +2558,9 @@ export function setSequence(document: Recipe, sequence: SequenceId, changes: Par
  *
  * Giving a press back is judged by none of these, so a document that holds a choice can always be put right. **This
  * writes the document**: whether the model's build takes a held press or a sequence on a key is what `check` lists.
+ *
+ * @privateRemarks
+ * R31; R32; R38; R40; decision 43.
  */
 export function setKey(document: Recipe, key: KeyPlace, action: KeyAction | 'default'): Change {
   changeable(document);
@@ -2439,15 +2631,18 @@ export function setKey(document: Recipe, key: KeyPlace, action: KeyAction | 'def
 }
 
 /**
- * Say what an owner's screen shows, R34 and R35, the list whole and in order; `'default'` gives it back to what the
+ * Say what an owner's screen shows, the list whole and in order; `'default'` gives it back to what the
  * family derives. An entry is a device's command, any device of the document as device mode sends to any, with a
  * label of its own or the command's; or, on an activity's screen, one of its own sequences by its id. An empty list is
  * a screen a person emptied, which is not the default.
  *
  * Refused: a screen on a model that has none, `not-on-this-model`; a sequence on a device's screen, since a device has
- * none; a device, a command or a sequence the document does not hold. A page of entries, R36, and a label of a
+ * none; a device, a command or a sequence the document does not hold. A page of entries, and a label of a
  * sequence's own have no field in the document yet and refuse by name. **This writes the document**: whether the
  * model's build reads a stated screen is what `check` lists.
+ *
+ * @privateRemarks
+ * R34 and R35; R36.
  */
 export function setScreen(document: Recipe, owner: Owner, items: readonly ScreenItem[] | 'default'): Change {
   changeable(document);
@@ -2479,15 +2674,23 @@ export function setScreen(document: Recipe, owner: Owner, items: readonly Screen
   return { document: finished(next, place), effects: [] };
 }
 
-/** A device's favourite channels, whole and in order, R45; an empty list is none. Refused over the model's count. */
+/**
+ * A device's favourite channels, whole and in order; an empty list is none. Refused over the model's count.
+ *
+ * @privateRemarks
+ * R45.
+ */
 export function setFavourites(document: Recipe, device: DeviceId, favourites: readonly Favourite[]): Change {
   void document; void device; void favourites;
   return notBuilt('recipe.setFavourites', 45);
 }
 
 /**
- * The look of the screens, R42: the choices of the model's family over its defaults, only the ones given changed;
+ * The look of the screens: the choices of the model's family over its defaults, only the ones given changed;
  * `'default'` drops every choice.
+ *
+ * @privateRemarks
+ * R42.
  */
 export function setLook(document: Recipe, choices: Readonly<Record<string, unknown>> | 'default'): Change {
   void document; void choices;
@@ -2526,7 +2729,7 @@ function settingVerdict(family: FamilySettings, model: string, name: string, val
 }
 
 /**
- * One of the remote's own settings by its name, R47, `Recipe.settings`: a text, a number or true or false; `'default'`
+ * One of the remote's own settings by its name, `Recipe.settings`: a text, a number or true or false; `'default'`
  * drops the choice and leaves the family's default, which `settings` answers. **Judged by the model's family where it
  * states its settings**, `FamilySettings`, by the one judgement `check` takes too, `settingVerdict`:
  *
@@ -2540,6 +2743,9 @@ function settingVerdict(family: FamilySettings, model: string, name: string, val
  * the field, and `check` lists the field as one the build does not read. Giving a setting back is judged by none of
  * these, so a document that holds a setting can always be put right. Not built, as every call that needs its family,
  * for a model no family serves yet.
+ *
+ * @privateRemarks
+ * R47.
  */
 export function setSetting(document: Recipe, setting: string, value: number | boolean | string | 'default'): Change {
   changeable(document);
@@ -2559,7 +2765,7 @@ export function setSetting(document: Recipe, setting: string, value: number | bo
 }
 
 /**
- * Remove a device, R13, an activity, R26, or a sequence, R37, and settle everything that used it, each as an effect,
+ * Remove a device, an activity, or a sequence, and settle everything that used it, each as an effect,
  * the places `uses` lists. Every removal keeps the highest id given, so the id is not given again.
  *
  * * **A device** leaves the activities that used it, which stay, with their other devices or with none, and their
@@ -2570,16 +2776,19 @@ export function setSetting(document: Recipe, setting: string, value: number | bo
  *   goes; a sequence loses the steps that sent to it, and goes with its last step that sends a command, as then does
  *   every key, entry and step that ran it; and its favourite channels go with it. The protocol definitions its commands
  *   were written in go too, unless a device that stays is written in them; one the document held for no device of its
- *   own is left alone. **Last, every activity that used it is marked as needing attention**, R93, decision 44, with
+ *   own is left alone. **Last, every activity that used it is marked as needing attention**, with
  *   every press of its keys whose answer the removal changed and what each did and does, read off the maps before and
  *   after with `sources` as the questions read them: none where no key changed, and no list where the keys cannot be
  *   known, a model whose maps are not built yet or a device whose commands cannot be read. The activity is kept, built
  *   and synced: it is never invalid. **An activity the removal leaves with no device** is kept as well, and a build
- *   and a sync leave it out from then on, decision 44, an effect at the activity after its mark.
+ *   and a sync leave it out from then on, an effect at the activity after its mark.
  * * **An activity** goes with its sequences; nothing else names an activity, and its one effect beyond itself is the
  *   hold on the favourite channels, where it held them: they are then held by no activity, reported at the document.
  * * **A sequence** goes from its activity, and every key that ran it goes back to its default, every screen entry and
  *   extra step that ran it goes.
+ *
+ * @privateRemarks
+ * R13; R26; R37; R93, decision 44; decision 44.
  */
 export function remove(document: Recipe, what: Removable, sources?: QuestionSources): Change {
   changeable(document);
@@ -2703,7 +2912,12 @@ function settledActivity(activity: RecipeActivity, device: string | undefined, g
   };
 }
 
-/** Put a device, an activity or an activity's device at another position, counted from 0, R28. */
+/**
+ * Put a device, an activity or an activity's device at another position, counted from 0.
+ *
+ * @privateRemarks
+ * R28.
+ */
 export function move(document: Recipe, what: Movable, to: number): Change {
   changeable(document);
   given(what, 'what is moved', { kind: 'document' });
@@ -2749,9 +2963,12 @@ export function devices(document: Recipe): DeviceSummary[] {
 }
 
 /**
- * The activities, in the order of the activity menu, each with whether it is switched on, R92, why a build and a sync
- * leave it out where they do, switched off or using no device, decision 44, and why it needs attention, R93, where it
+ * The activities, in the order of the activity menu, each with whether it is switched on, why a build and a sync
+ * leave it out where they do, switched off or using no device, and why it needs attention, where it
  * does: an activity left out is listed, since it is still the document's.
+ *
+ * @privateRemarks
+ * R92; decision 44; R93.
  */
 export function activities(document: Recipe): ActivitySummary[] {
   opened(document);
@@ -2772,9 +2989,12 @@ export function activities(document: Recipe): ActivitySummary[] {
 }
 
 /**
- * The sequences, R37, each with the activity it belongs to, in the document's order: the activities' in the menu's
+ * The sequences, each with the activity it belongs to, in the document's order: the activities' in the menu's
  * order and each activity's in its own. A step names its device by id. A sequence written out on a screen, the form of
  * version 1, has no id to address it by and is not listed; `key` and `screen` still answer it where it runs.
+ *
+ * @privateRemarks
+ * R37.
  */
 export function sequences(document: Recipe): SequenceSummary[] {
   opened(document);
@@ -2827,16 +3047,20 @@ export function inputs(document: Recipe, device: DeviceId): string[] {
 }
 
 /**
- * **Every key of a document's model as data**, R77: each place its family's maps name, keypad keys, number pad places,
+ * **Every key of a document's model as data**: each place its family's maps name, keypad keys, number pad places,
  * gestures and touch keys, in the family's order, with where it is, the presses it has on this model, whose map binds
  * it, and whether a person's choice on it is built and why not, `KeyPlaceSummary`. The places `check` holds a
  * document's choices to and `keys` answers by, `FamilyMaps.places`, so an application drawing the remote shows what the
- * build binds. Not built, by name with R77, for a model whose family has no maps yet, rather than answering an empty
+ * build binds. Not built, `NotBuiltError`, for a model whose family has no maps yet, rather than answering an empty
  * list that would say the model has no keys, and for a model no family serves, `servedBy`.
  *
  * A word here is the name the model's drawing carries for the key, `data-name`, so an application colours and finds
  * the key on the drawing by it. `setKey` takes a choice on exactly the places listed here as built, for the presses
  * listed and the kind of owner whose map binds it.
+ *
+ * @privateRemarks
+ * Not built names R77.
+ * R77.
  */
 export function keyNames(document: Recipe): KeyPlaceSummary[] {
   const { skin, maps } = mapsToAnswer(document, 'recipe.keyNames');
@@ -2847,13 +3071,17 @@ export function keyNames(document: Recipe): KeyPlaceSummary[] {
 }
 
 /**
- * **What one key of an owner does**, R77, before anything is built: every press the model has for it, each with what
+ * **What one key of an owner does**, before anything is built: every press the model has for it, each with what
  * it does and whether that is the default, how a command is sent or a sequence's steps; or, with `press` given, that
  * press alone. Read off the same maps the build binds by, `resolvedOf`. Where the owner's map does not bind the key, it
  * answers no press and why; a key the model has no place of is refused, as `ChangeRefused` naming the key.
  *
- * **Not built**, by name with R77, for a model whose family has no maps yet; refused as `commands` refuses where a
+ * **Not built**, `NotBuiltError`, for a model whose family has no maps yet; refused as `commands` refuses where a
  * device carries no definition and no archive is given.
+ *
+ * @privateRemarks
+ * Not built names R77.
+ * R77.
  */
 export function key(document: Recipe, place: KeyPlace, sources?: QuestionSources): KeyAnswer {
   given(place, 'a key', { kind: 'document' });
@@ -2866,7 +3094,7 @@ export function key(document: Recipe, place: KeyPlace, sources?: QuestionSources
 }
 
 /**
- * **What every key of an owner does**, R77, the default ones included: every place the owner's map can bind, bound or
+ * **What every key of an owner does**, the default ones included: every place the owner's map can bind, bound or
  * not, in the model's order, each with every press the model has for it; the whole map as the remote will have it,
  * which is what an application shows on its drawing of the keypad. A place the owner's map cannot bind is not listed,
  * `keyNames` lists it with why; asked for alone, `key` answers it with why. Not built and refused as `key` is.
@@ -2879,6 +3107,9 @@ export function key(document: Recipe, place: KeyPlace, sources?: QuestionSources
  * same choice as `unknown-device`. Only that owner stops: `key` still answers the owner's other keys one at a time, and
  * its screen and every other owner answer. A screen entry naming such a device never reaches a question, since the
  * reader refuses the document.
+ *
+ * @privateRemarks
+ * R77.
  */
 export function keys(document: Recipe, owner: Owner, sources?: QuestionSources): KeyAnswer[] {
   ownerGiven(owner);
@@ -2889,8 +3120,11 @@ export function keys(document: Recipe, owner: Owner, sources?: QuestionSources):
 }
 
 /**
- * **What an owner's screen shows**, R77: its entries in order, the family's default list or the one the document
+ * **What an owner's screen shows**: its entries in order, the family's default list or the one the document
  * states whole, each entry marked accordingly. Not built and refused as `key` is.
+ *
+ * @privateRemarks
+ * R77.
  */
 export function screen(document: Recipe, owner: Owner, sources?: QuestionSources): ScreenAnswer {
   ownerGiven(owner);
@@ -2901,7 +3135,7 @@ export function screen(document: Recipe, owner: Owner, sources?: QuestionSources
 }
 
 /**
- * **The remote's own settings as the remote will have them**, R47, before anything is built: every setting the model's
+ * **The remote's own settings as the remote will have them**, before anything is built: every setting the model's
  * build writes from a document, in the order it writes them, each with its value, whether that is the default, the
  * default, and the kind of value it takes, `RemoteSettingAnswer`. Read off the model's family, `FamilySettings`, the
  * table its build writes by, so what an application is shown is what is built.
@@ -2909,10 +3143,13 @@ export function screen(document: Recipe, owner: Owner, sources?: QuestionSources
  * **Only the settings the build writes are listed.** A setting the document states that the model does not have, or
  * that the build does not write yet, is not answered here; `check` lists it, as `setSetting` refuses it.
  *
- * **Not built**, R47, for a model whose build reads no setting from a document, which is every compiled family's: the
+ * **Not built**, for a model whose build reads no setting from a document, which is every compiled family's: the
  * Harmony One's and the Harmony 600, 650 and 700's settings are build choices of their own, and whether the Harmony 300
  * and 350 have any is not checked, so an empty list would say what is not known. The Harmony Touch answers its seven.
  * Every answer is the caller's own, so changing one changes no other and not the document.
+ *
+ * @privateRemarks
+ * R47; R47.
  */
 export function settings(document: Recipe): RemoteSettingAnswer[] {
   const family = remoteSettingsOf(document.model, ['recipe.settings', 47]);
@@ -2940,12 +3177,15 @@ export function favourites(document: Recipe, device: DeviceId): Favourite[] {
  * an activity, role of an activity that no other device of it has, place in a power order, step of a sequence of either
  * form, extra step at a start or an end and its favourites; and where a sequence goes with the device, everything that
  * runs that sequence. A role is not a mention of the device's name, but a removal leaves it with no device, so it is
- * listed where the removal reports it; and last, the attention mark of every activity that used the device, decision 44,
+ * listed where the removal reports it; and last, the attention mark of every activity that used the device,
  * its keys read off the resolved maps with `sources` as the questions read them, then every activity the removal
- * leaves with no device, which a build and a sync leave out from then on, decision 44. For a
+ * leaves with no device, which a build and a sync leave out from then on. For a
  * sequence, every key, screen entry and extra step of its activity that runs it.
  * For an activity, the document where it holds the favourite channels, which its removal leaves held by none, and
  * nothing otherwise, since nothing names an activity.
+ *
+ * @privateRemarks
+ * decision 44; decision 44.
  */
 export function uses(document: Recipe, what: Removable, sources?: QuestionSources): Place[] {
   opened(document);
@@ -2959,7 +3199,12 @@ export function uses(document: Recipe, what: Removable, sources?: QuestionSource
   return removedDevice(document, deviceOf(document, what.device), sources).effects.map((one) => one.place);
 }
 
-/** What is not yet filled in, R77: the places of the problems `check` codes `unfinished`. */
+/**
+ * What is not yet filled in: the places of the problems `check` codes `unfinished`.
+ *
+ * @privateRemarks
+ * R77.
+ */
 export function unfilled(document: Recipe): Place[] {
   return check(document).filter((one) => one.code === 'unfinished').map((one) => one.place);
 }
@@ -2969,11 +3214,11 @@ export function unfilled(document: Recipe): Place[] {
 // ---------------------------------------------------------------------------------------------------
 
 /**
- * Every problem of a document as a list, without building it, R78. Empty is a document a build takes; a build and a
+ * Every problem of a document as a list, without building it. Empty is a document a build takes; a build and a
  * sync refuse while the list holds an error, and say the same problems. Each problem is a sentence a person reads,
  * with the place it concerns.
  *
- * **Held to the model's places**, decision 43, the ones `keyNames` lists and the build binds by: a key's choice on a
+ * **Held to the model's places**, the ones `keyNames` lists and the build binds by: a key's choice on a
  * word that is no key of the model, on a key the owner's map does not bind, with a press the key does not have, or on
  * a key the model's build takes no choice on; a held press, a double press or a sequence on a key where the model's
  * build takes none, `keyFormsBuilt`; and a choice the model's family refuses, `FamilyMaps.refusedChoice`.
@@ -2988,6 +3233,9 @@ export function unfilled(document: Recipe): Place[] {
  * screen the model does not have, and a device key on a model without device keys, each not on this model. A field of
  * version 2 the model's build does not read is listed naming the model, since the build of another reads it. Not built,
  * as every call is, for a model no family serves yet.
+ *
+ * @privateRemarks
+ * decision 43; R78.
  */
 export function check(document: Recipe, sources?: QuestionSources): Problem[] {
   opened(document);

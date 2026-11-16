@@ -33,9 +33,12 @@ const MANUFACTURERS_READ = 5;
 const DEFAULT_LIMIT = 50;
 
 /**
- * The archive checked out at `root` as a source, R9. `find` reads indexes only, and a device's own file only for
+ * The archive checked out at `root` as a source. `find` reads indexes only, and a device's own file only for
  * the results it is about to give, to state the kind of device and to hold a kind that was asked for; `fetch` reads
  * the device's record, its codeset and the protocol definitions its codes name, `carriedDeviceAt`.
+ *
+ * @privateRemarks
+ * R9.
  */
 export function archiveSourceAt(root: string): DeviceSource {
   return {

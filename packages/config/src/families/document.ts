@@ -46,9 +46,12 @@ export interface DocumentTypes {
 }
 
 /**
- * A family whose remotes are given documents, plan 013 decision 1. Every change returns the whole set, the
+ * A family whose remotes are given documents. Every change returns the whole set, the
  * documents it changed in place of the ones it was given and every other as given, so a caller never merges.
  * Each member refuses what the family's composer or reader refuses, with that refusal.
+ *
+ * @privateRemarks
+ * Plan 013 decision 1.
  */
 export interface DocumentFamily<T extends DocumentTypes = DocumentTypes> {
   readonly kind: 'document';
@@ -60,7 +63,10 @@ export interface DocumentFamily<T extends DocumentTypes = DocumentTypes> {
   build(setup: T['setup'], sources: T['sources']): T['documents'];
   /**
    * The pictures of ours a set built from a setup carries beside its documents, at the addresses the documents make
-   * the remote ask for them, plan 014: a build is the documents and these together.
+   * the remote ask for them: a build is the documents and these together.
+   *
+   * @privateRemarks
+   * plan 014.
    */
   buildPictures(setup: T['setup']): readonly T['picture'][];
   /** The configuration with no device and no activity, made from the documents a remote holds. */
@@ -80,15 +86,21 @@ export interface DocumentFamily<T extends DocumentTypes = DocumentTypes> {
   /** What the remote would refuse in the documents, empty where a sync may deliver them. */
   check(documents: T['documents']): readonly T['finding'][];
   /**
-   * The family's maps, decision 43, `maps.ts`: the same interface a compiled family carries, `Family.maps`, so the
+   * The family's maps, `maps.ts`: the same interface a compiled family carries, `Family.maps`, so the
    * places, the default maps and their resolving are asked the same way of every model. Absent where the family states
-   * none yet, as the Harmony Touch's family does today.
+   * none yet, as the Harmony Touch's family does.
+   *
+   * @privateRemarks
+   * decision 43.
    */
   readonly maps?: FamilyMaps;
   /**
-   * The remote's own settings a document may state, R47, `settings.ts`: the same interface a compiled family carries,
+   * The remote's own settings a document may state, `settings.ts`: the same interface a compiled family carries,
    * `Family.settings`, so which settings a model has is asked the same way of every model. Absent where the family's
    * build reads none from a document.
+   *
+   * @privateRemarks
+   * R47.
    */
   readonly settings?: FamilySettings;
 }

@@ -23,6 +23,13 @@ import { TRAILER_CHECKSUM_OFFSET, trailerChecksum } from './trailer.ts';
 import type { SettingWrite } from './settings.ts';
 import type { Compatibility, StatedVersion } from './compatible.ts';
 
+/**
+ * A change to a remote refused by one of the checks every write passes: a switch not set, a remote that is not
+ * on the list of remotes that may be written, or an address, a length or a file outside what may be written. Each
+ * check runs before the command it judges is sent, so that command did nothing; but a write is many commands, and
+ * a refusal part way through (of a later block, or of the restart) leaves what was already written in place. Read
+ * the remote back before doing anything else when one is thrown after a write began.
+ */
 export class RailError extends Error {}
 
 /**
@@ -384,7 +391,7 @@ export const WRITES_ENABLED: boolean = process.env['HARMONY_ENABLE_WRITES'] === 
  * Everything that has to be true before a write is even considered.
  *
  * Deliberately not defaulted. A caller that has not thought about whether there is a verified
- * dump of this exact unit cannot construct one of these by accident, and the booleans that remain
+ * backup of this exact unit's flash cannot construct one of these by accident, and the booleans that remain
  * are facts about the world that no code here can check for itself.
  *
  * **One of them stopped being a boolean on 30 August 2026**, section 225. `intendedVersionMatches`
@@ -399,7 +406,7 @@ export interface WritePermission {
   readonly architecture: number;
   /** Length in bytes of the config being written, which bounds the region. */
   readonly configLength: number;
-  /** A verified original dump of this exact unit exists in the lab. */
+  /** A verified backup of this exact unit's original flash exists, kept by the caller. */
   readonly originalDumpVerified: boolean;
   /**
    * What the config's wrapper states about the remote it was built for, exactly as it states it.
@@ -432,16 +439,16 @@ export interface WritePermission {
    * Ones enumerate identically, so section 188 recorded the question as one the library could not
    * answer, and every caller answered it `true`. It can be answered: the unit's own program memory
    * holds a 64 byte identity block whose two GUIDs are what Logitech's own service takes as a
-   * serial. Danny's decision was to identify a unit the way the vendor does rather than to invent a
+   * serial. The decision was to identify a unit the way the vendor does rather than to invent a
    * fingerprint, which was this project's own earlier proposal.
    */
   readonly identityBlock: Uint8Array;
   /**
    * The identity of the unit that **may** be written to, from wherever the caller keeps it.
    *
-   * Not a table in this library, deliberately: a unit identifier is that unit's hardware identity, so
-   * the bench keeps it in the private lab and FreeHarmony keeps it with the user's own data. Either
-   * the whole block or the 32 byte discriminator, since a stored copy is the shorter one.
+   * Not a table in this library, deliberately: a unit identifier is that unit's hardware identity, so this
+   * project's scripts keep it with their records of its own remotes and an application with its user's data.
+   * Either the whole block or the 32 byte discriminator, since a stored copy is the shorter one.
    */
   readonly permittedUnit: Uint8Array;
 }

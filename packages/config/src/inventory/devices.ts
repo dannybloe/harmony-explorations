@@ -20,11 +20,13 @@ import { deviceVariables } from './statevariables.ts';
 /** One device: an infrared group, and the name the config gives it. */
 export interface Device {
   /**
-   * Index into base slot 5's group array, which is the device's identity when it sends infrared.
-   * Section 86. **Undefined for a device that sends nothing**, which the remote lists all the same:
-   * the Wii in a protocol campaign compile has a row on the device list, a device mode of its own,
-   * and not one infrared code, and until 1 September 2026 this reader did not see it, because it
-   * took the infrared groups as the population. Section 239.
+   * Index into base slot 5's group array, which is the device's identity when it sends infrared. **Undefined for a
+   * device that sends nothing**, which the remote lists all the same, with a row on the device list and a device mode
+   * of its own.
+   *
+   * @privateRemarks
+   * Section 86. The Wii in a protocol campaign compile has not one infrared code, and until 1 September 2026 this
+   * reader did not see it, because it took the infrared groups as the population. Section 239.
    */
   group?: number;
   /** How many infrared codes it has. A group may be empty, and a device may have no group. */
@@ -286,6 +288,7 @@ function labelCornerRows(
   });
 }
 
+/** The devices a configuration holds, in its own order, each with its name where the configuration states one. */
 export function devices(c: Container): Device[] {
   const groups = irGroups(c) ?? [];
   const records = stateRecords(c);

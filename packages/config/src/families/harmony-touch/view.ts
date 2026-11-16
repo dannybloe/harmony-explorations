@@ -7,7 +7,7 @@
  * same name on `@freeharmony-sdk/config/build`, `index.ts` in this folder, whole.
  */
 
-// The documents a Touch stores as its configuration, typed, and the set a sync delivers.
+// Its documents: the documents a Touch stores as its configuration, typed, and the set a sync delivers.
 export {
   CONFIGURATION_DOCUMENTS,
   CONTENT_DEVICE,
@@ -57,7 +57,7 @@ export type {
   Typed,
 } from './documents.ts';
 
-// The documents read as the remote reads them: devices, activities, buttons, favourites, context and settings.
+// Reading them as the remote does: devices, activities, buttons, favourites, context and settings.
 export {
   CHANNEL_DEVICE_ORDER,
   DEFAULT_PRESS_REPEATS,
@@ -102,7 +102,7 @@ export type {
   SettingValue,
 } from './read.ts';
 
-// What the remote would refuse or ignore in them, and what refuses a set before a sync.
+// The check: what the remote would refuse or ignore in them, and what refuses a set before a sync.
 export {
   checkConfiguration,
   favouritesAddressFindings,
@@ -112,10 +112,10 @@ export {
 } from './check.ts';
 export type { Finding, Rule } from './check.ts';
 
-// What the remote's engine sends for a press, and when, predicted from the documents.
+// The engine: what the remote's engine sends for a press, and when, predicted from the documents.
 export { airtimeOf, BETWEEN_STEPS_MS, TIMING, TouchEngine } from './engine.ts';
 export type { Airtime, FirstFrame, Send, Timing } from './engine.ts';
 
-// The Touch as a document family, which the registry chooses by model.
+// The family: the Touch as a document family, which the registry chooses by model.
 export { HARMONY_TOUCH_FAMILY } from './family.ts';
 export type { TouchTypes } from './family.ts';

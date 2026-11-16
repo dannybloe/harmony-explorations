@@ -33,7 +33,12 @@ import type { Glyph } from '../screens/font.ts';
 import { rgb565, rgbTo565 } from '../screens/png.ts';
 import { renderFace, type FaceSpec, type RenderedFace } from './typeface.ts';
 
-/** The two colourings a letter is drawn in, decision 20. */
+/**
+ * The two colourings a letter is drawn in.
+ *
+ * @privateRemarks
+ * decision 20.
+ */
 export type Lettering = 'shadowed' | 'plain';
 
 /**
@@ -56,12 +61,15 @@ export const LETTERING_CHARACTERS: readonly string[] = Array.from({ length: 95 }
  * rows Logitech drew on, which the shared renderer draws and the shared alphabet reads back whichever family
  * lettered a configuration, so it is kept here once rather than per family; which family letters in which
  * face is the family's, `FamilyFonts`. The first nine are one per face Logitech draws its Harmony 650 screens in, measured in
- * 8.2 over the 13 compiles in the lab's `work/sample-8-2/`: each one's cell height, the row its baseline
+ * thirteen of Logitech's compiles: each one's cell height, the row its baseline
  * sits on, whether a glyph opens with a blank column, and the width of a space; the Oxanium cut and pixel
  * size whose capitals and x-height land on Logitech's rows, the weight chosen by look, Regular for the
  * three regular faces and SemiBold for the six label faces; and the rows its letters reach, which are the
  * rows the letters first drawn with Pillow reached, which the renderer fits the outlines to since that is
- * what Pillow's hinting did. Tunable, decision 19.
+ * what Pillow's hinting did. Tunable.
+ *
+ * @privateRemarks
+ * decision 19.
  */
 export const OXANIUM_FACE_SPECS = {
   F15: { what: 'bold 15, corner labels and menu rows', cell: 15, baseline: 11, lead: 1, weight: 'SemiBold', px: 14, space: 4,
@@ -82,9 +90,9 @@ export const OXANIUM_FACE_SPECS = {
     rows: { cap: 9, x: 7, ascender: 9, descender: 3 } },
   R13: { what: 'regular 13, Help', cell: 13, baseline: 9, lead: 0, weight: 'Regular', px: 11, space: 3,
     rows: { cap: 8, x: 6, ascender: 8, descender: 2 } },
-  // The Harmony One's five faces, measured over every set of its nine Logitech compiles in the lab
-  // (`work/one-track/fonts/rows.ts`): the same cells as the 650's, but a 14 or 15 pixel capital is a row
-  // shorter and starts a row lower, on row 3 on all 1009 of them, and the 16 pixel face is the greeting's alone.
+  // The Harmony One's five faces, measured over every set of nine Logitech compiles of the One: the same cells as
+  // the 650's, but a 14 or 15 pixel capital is a row shorter and starts a row lower, on row 3 on all 1009 of them,
+  // and the 16 pixel face is the greeting's alone.
   // The 11 pixel face sits on the 650's rows and opens with ink rather than a blank column on 218 of 307
   // letters. Findings section 396.
   // The weights are the ones whose stroke is Logitech's, the median run of ink along a row: Bold draws the

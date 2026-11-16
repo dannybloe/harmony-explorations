@@ -44,6 +44,7 @@ import { SEGMENT_LENGTHS } from './segmentlengths.ts';
  * | 28 | empty | `Start`, two values, `Trailer` | MitsubishiO1 Dual 8 16 Bit |
  * | 7 | a value | a value | Pioneer 32 Bit 2 |
  *
+ * @privateRemarks
  * **Two things the old reading was getting wrong, and both are the same quiet failure.** Reading slot B
  * alone **refused** every `Toshiba 32 Bit` code, because it found the word `Repeat` where it wanted a
  * number, and Toshiba is the family the most appliances in the census use. And on
@@ -77,6 +78,7 @@ export type StatedItem =
   | { readonly kind: 'frame'; readonly frame: StatedFrame }
   | { readonly kind: 'word'; readonly word: StatedWord };
 
+/** An infrared code as a configuration states it, by its family and the values it sends, rather than as pulses. */
 export interface StatedCode {
   readonly family: string;
   /** Every item both slots state, in the order they are written, which is the order they are sent. */
@@ -91,6 +93,7 @@ export interface StatedCode {
    * The same items split back into the three slots the code writes them in, always three arrays and any
    * of them possibly empty.
    *
+   * @privateRemarks
    * **`items` deliberately loses the boundary and this deliberately keeps it**, because the two answer
    * different questions. An encoder building one transmission wants the flat order, which is the order
    * the frames go out in. A **repeat** wants the boundary: the second slot is the group a remote sends
@@ -124,8 +127,11 @@ function valueOf(digits: string, base: number): bigint {
 }
 
 /**
- * Read one of their catalogue codes, or `undefined` where the shape is not one this has seen.
+ * Read one of Logitech's catalogue codes, or `undefined` where the shape is not one this has seen. The field
+ * widths come out of the family's name, and a value that does not fit its width is refused rather than read as a
+ * wider frame.
  *
+ * @privateRemarks
  * **The widths come out of the family's own name, which is where they put them.** A name stating as
  * many widths as the code states values pairs them in order, which is what "Samsung 16 and 20 Bit" and
  * "MitsubishiO1 Dual 8 16 Bit" need; a name stating one width gives it to every value. The closure is
@@ -149,8 +155,7 @@ function valueOf(digits: string, base: number): bigint {
  * error. And `Quad` cannot be a frame count here, because these codes state **three** values, where the
  * four families naming `Dual` state two.
  *
- * **The name is not the discriminator, and the second family naming `Quad` is what settled it**, section
- * 231. This said the name was the discriminator and the digit set only corroboration, and named the
+ * **The name is not the discriminator, and the second family naming `Quad` is what settled it**. This said the name was the discriminator and the digit set only corroboration, and named the
  * condition that would reopen it: a second family naming the word, measured. `Quad 5 Bit` is that family
  * and it is an ordinary two symbol family, five bits, its values plain hexadecimal, so the word carries
  * the base on one family and nothing at all on the other. Logitech's own definition states the base, as
@@ -169,6 +174,8 @@ function valueOf(digits: string, base: number): bigint {
  * sections' widths summing to exactly the 38 the name states, with each section's final set bit carried
  * structurally. The per value widths are not in the name; they are stated by the rhythm table entry's
  * `sections`, so this reader keeps `bits` as the name's width on every frame of such a code.
+ *
+ * section 231.
  */
 export function statedCode(
   keyCode: string,
@@ -176,6 +183,7 @@ export function statedCode(
     /**
      * The width of each value in **bits**, from the definition rather than the name.
      *
+     * @privateRemarks
      * **The name is not enough and section 231 is where it stops being enough at all.** For an ordinary
      * family the number before `Bit` is a bit count and is right on 179 of the 202 families that state
      * several values. For one of the 142 families whose cell carries more than one bit it is worth
@@ -187,18 +195,21 @@ export function statedCode(
     /**
      * How many bits one digit of this code's values carries, from the definition rather than the name.
      *
-     * **The name is a guess and it is wrong for one family in two**, section 231. `Quad` in a family
+     * @privateRemarks
+     * **The name is a guess and it is wrong for one family in two**. `Quad` in a family
      * name is the base of its digits on `Galaxis 16 Bit Quad Toggle` and is nothing of the kind on
      * `Quad 5 Bit`, which states two symbols and five bits and writes its values in hexadecimal: read as
      * quaternary, three of its five renderable codes send another number entirely. Logitech's own
      * definition states it, as the number of cells in the frame segment, so a caller holding the
      * definition passes it and the name's rule is the fallback for a caller holding only a table row.
      *
-     * **A list is one entry per field, paired with the values exactly as `widths` is**, section 233,
+     * **A list is one entry per field, paired with the values exactly as `widths` is**,
      * because a family can mix the bases: `Grundig 7 Bit Quad` writes a plain bit and then seven
      * quaternary digits, and reading the second field in hexadecimal sends 16 where the appliance is
      * told 4. `frameDigitBases` in `archive.ts` is what supplies these; a single number still means the
      * whole code.
+     *
+     * section 233; section 231.
      */
     readonly bitsPerDigit?: number | readonly number[];
   } = {},
@@ -430,6 +441,10 @@ export function cellsOf(entry: StatedProtocol): CellTimings | undefined {
   };
 }
 
+/**
+ * The pulses a code of a known family sends for a value of so many bits, or undefined for a family not in
+ * `PROTOCOLS`.
+ */
 export function pulsesOfStatedCode(
   family: string, bits: number, value: bigint, periodNs?: number,
 ): Pulse[] | undefined {

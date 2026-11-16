@@ -523,6 +523,7 @@ export function irBuildRecord(fields: IrRecordFields): IrBuiltRecord {
   return { bytes, pointer: start + IR_RECORD_POINTER_BIAS };
 }
 
+/** One device's infrared codes in a configuration: the address of each, and where the list of them sits. */
 export interface IrGroup {
   addresses: number[];
   /** The group's own array, so the accounting claims exactly what was read. */

@@ -1,6 +1,8 @@
 /**
- * Whether two byte arrays hold the same bytes, the one copy.
+ * Whether two byte arrays hold the same bytes: false where the lengths differ, and otherwise whether the bytes at
+ * every index are equal, so two empty arrays are the same.
  *
+ * @privateRemarks
  * Plan 013 step 6. The codec had a `sameBytes` in its own `bytes.ts` first, and eight more
  * private copies stood beside it: the codec's `sequence.ts` and `glyphborrow.ts`, the Harmony 600, 650 and 700
  * family's `pictures.ts` and `assemble.ts`, `packages/usb`'s `transport.ts`, `filepipe.ts` and `filewrite.ts`, and

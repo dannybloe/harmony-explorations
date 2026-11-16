@@ -77,9 +77,10 @@ import type { StatedProtocol } from '../../infrared/protocols.ts';
 
 /**
  * The names a Touch's documents give its 26 keys: the drawing's 27 keypad keys less Off, which the screens
- * handle themselves, with the DVR key spelt as the documents spell it. Held against the measured documents
- * in `test/families/harmony-touch/touch-compose.test.ts` and in `packages/usb/test/touch/touch-activities.test.ts`; the drawing's keypad less
- * Off is where the list was read from, and no test compares it with the drawing.
+ * handle themselves, with the DVR key spelt as the documents spell it.
+ *
+ * @privateRemarks
+ * Held against the measured documents in `test/families/harmony-touch/touch-compose.test.ts` and in `packages/usb/test/touch/touch-activities.test.ts`; the drawing's keypad less Off is where the list was read from, and no test compares it with the drawing.
  */
 export const BUTTON_KEYS = [
   'Blue', 'ChannelDown', 'ChannelUp', 'DVR', 'DirectionDown', 'DirectionLeft', 'DirectionRight', 'DirectionUp',
@@ -587,8 +588,8 @@ export const ACTIVITY_START_SCREENS = ['Commands', 'Favorites', 'Gesturepad'] as
 /**
  * **The gestures a map of ours may hold**: the five Logitech's documents put on each activity but the Custom one,
  * `activities-and-buttons.md`, "Gestures". The screens also name held and released gestures, `SwipeUpHold` and the
- * like, and index a table that has no entry for some of them with a long press, the lab's
- * `work/touch-firmware/notes/6.10-screens-reads.md`, row 184; no document measured holds one, so they are refused.
+ * like, and index a table that has no entry for some of them with a long press, read in the screens' firmware; no
+ * document measured holds one, so they are refused.
  */
 export const GESTURE_KEYS = ['SwipeUp', 'SwipeDown', 'SwipeLeft', 'SwipeRight', 'Tap'] as const;
 export type TouchGestureKey = (typeof GESTURE_KEYS)[number];

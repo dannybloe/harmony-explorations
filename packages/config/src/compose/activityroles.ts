@@ -48,13 +48,17 @@ import { activityStartTargets } from './inputs.ts';
 const PRESS = 2;
 
 /**
- * The keys section 323's rule names, per family, `Family.activityKeyRules`: which keys an activity takes from
+ * The keys the activity keypad rule names, per family, `Family.activityKeyRules`: which keys an activity takes from
  * its volume device, and the keys its three refinements move. Data of the family because they are its keypad's
- * scans; the rule is the same on the Harmony 600, 650 and 700 and on the Harmony One, section 398.
+ * scans; the rule is the same on the Harmony 600, 650 and 700 and on the Harmony One.
  *
  * **A key is a scan by default and may be anything a caller names keys by**, `K`: the rule itself,
  * `activityKeysOfDevices`, only asks whether two keys are the same key, so the container's caller hands it scans and a
- * family's maps hand it Logitech's words for the same keys, decision 43, `keyRulesIn` turning the one into the other.
+ * family's maps hand it Logitech's words for the same keys, `keyRulesIn` turning the one into the other.
+ *
+ * @privateRemarks
+ * Section 323's rule.
+ * decision 43; section 398.
  */
 export interface ActivityKeyRules<K = number> {
   /** VolumeUp, VolumeDown and Mute: the keys taken from the volume device. */
@@ -79,8 +83,11 @@ export interface ActivityKeyRules<K = number> {
    * A key whose partner the control device's own map binds and which it leaves unbound itself, and the screen
    * commands of the device it then takes, in order: the Harmony One's lower arrow, which takes `PageDown` or
    * `StepBack` off the device's screen where its own map put `PageUp` or `StepForward` on the upper one. The
-   * order is a choice of ours: no control device of the three activities it was read on draws both, section 398.
+   * order is a choice of ours: no control device of the three activities it was read on draws both.
    * `scan` is the key, named so from when every key here was one.
+   *
+   * @privateRemarks
+   * section 398.
    */
   readonly partners?: readonly { readonly scan: K; readonly when: K; readonly names: readonly string[] }[];
 }
@@ -344,6 +351,7 @@ export function activityRolesFromSends(c: Container, activity: number): Activity
  * empty list, because it has none of the roles and the compile gives it nothing a role would.
  */
 export const ACTIVITY_ROLE_NAMES = ['Display', 'Volume', 'ChannelChanging', 'PlayMovie', 'PlayMedia', 'PlayGame'] as const;
+/** A role a device plays in an activity, in Logitech's word for it. */
 export type ActivityRoleName = (typeof ACTIVITY_ROLE_NAMES)[number];
 
 /** The roles that make a device the control device when no device changes channels, section 323. */

@@ -106,7 +106,12 @@ export const NAME_TREE_SLOT = 0;
 export interface StateTableFacts {
   /** For a refusal: the compiles these facts were measured on. */
   readonly measuredOn: string;
-  /** How many variables the firmware owns, the clock's seven and the records after them, section 284. */
+  /**
+   * How many variables the firmware owns, the clock's seven and the records after them.
+   *
+   * @privateRemarks
+   * section 284.
+   */
   readonly firmwareVariables: number;
   /** The firmware's records after the clock, 7 upward, as `[first, max]`, none with a transition. */
   readonly firmwareRecords: readonly (readonly [number, number])[];

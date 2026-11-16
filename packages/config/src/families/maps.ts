@@ -135,8 +135,11 @@ export interface MapDeviceView {
 }
 
 /**
- * **The maps a family carries**, decision 43. Four members, each pure: the same inputs give the same answer, and none
+ * **The maps a family carries**. Four members, each pure: the same inputs give the same answer, and none
  * reads a container or a document of a remote, so the questions can ask them with nothing attached.
+ *
+ * @privateRemarks
+ * decision 43.
  */
 export interface FamilyMaps {
   /** Every place of the model of `skin`, bound or not, in the family's order. */
@@ -161,18 +164,24 @@ export interface FamilyMaps {
    */
   refusedChoice?(skin: number, choice: MapChoice): string | undefined;
   /**
-   * **The screens an activity of the family's can open on**, R91, by the words a document states them in,
+   * **The screens an activity of the family's can open on**, by the words a document states them in,
    * `RecipeActivity.opensOn`: the toolkit holds a person's choice to these where it is made and its check holds a
    * document to them, so a word the model lacks is refused as not on this model rather than met first at the build.
    * **Optional**: a family stating none has not named its screens yet, and a choice of one is not built there, which is
    * not the same as a model without the choice.
+   *
+   * @privateRemarks
+   * R91.
    */
   readonly openingScreens?: readonly string[];
   /**
    * **Which of `activities` holds the favourite channels by the family's own rule**, its index, or -1 where none does:
    * the one the build gives them to. The toolkit asks it to tell a person who holds them once the activity holding them
-   * is switched off, decision 44. **Optional**: a family whose build reads no hold on the favourites leaves it out, and
+   * is switched off. **Optional**: a family whose build reads no hold on the favourites leaves it out, and
    * then the hold is the one a document states.
+   *
+   * @privateRemarks
+   * decision 44.
    */
   favouritesHolder?(activities: readonly RecipeActivity[]): number;
 }

@@ -46,6 +46,7 @@ export const ACTION_QUEUE_INSTRUCTIONS = ACTION_QUEUE_BYTES / INSTRUCTION_LENGTH
  */
 export const STEP_CEILING = 20000;
 
+/** Lists of actions that do not fit the remote's queue of instructions, so the remote would not run them whole. */
 export class QueueError extends Error {}
 
 export interface QueueRun {
@@ -197,10 +198,13 @@ function runs(c: Container): WorstRun[] {
 /**
  * Refuse a container whose own lists overflow the ring.
  *
- * **This is a rail and not a warning**, per `CLAUDE.md`: a config that overflows is one the remote
+ * **This is a rail and not a warning**: a config that overflows is one the remote
  * accepts, whose checksums verify, which this project accounts for to the byte, and which quietly
  * does less than it says. The caller that matters is the config writer, so nothing reaches a
  * remote without passing this.
+ *
+ * @privateRemarks
+ * Per `CLAUDE.md`.
  */
 export function assertQueueFits(c: Container): void {
   const over = overflowingLists(c);

@@ -30,15 +30,15 @@ export {
   SKINS_WITHOUT_A_MODEL_RECORD,
 } from './models.ts';
 export type { Model, MotionSensor, Panel } from './models.ts';
-// The configuration container's trailer checksum, the one copy.
+// The trailer checksum: the configuration container's trailer checksum, the one copy.
 export { TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_SEED, trailerChecksum } from './trailer.ts';
-// Where a running remote keeps the key being pressed, per model.
+// Keys: where a running remote keeps the key being pressed, per model.
 export { ARCH_8_PRODUCT, WATCH, WATCH_BY_SKIN } from './keys.ts';
 export type { Watch } from './keys.ts';
-// Whether two byte arrays hold the same bytes, the one copy.
+// Bytes: whether two byte arrays hold the same bytes, the one copy.
 export { sameBytes } from './bytes.ts';
-// What the FHSDK must do for an application, numbered for good, and each bench model's status on every requirement
-// with its evidence, decision 33. The codec's `capabilitiesOf` joins these to a model's properties.
+// Requirements: what the FHSDK must do for an application, numbered for good, and each model's status on every
+// requirement with its evidence. The config package's `capabilitiesOf` joins these to a model's properties.
 export {
   benchModel,
   BENCH_MODELS,

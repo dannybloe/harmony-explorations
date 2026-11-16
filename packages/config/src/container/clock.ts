@@ -116,6 +116,7 @@ export function clockRecord(blob: Uint8Array, off: number): string | undefined {
 /**
  * The one place a `builtAt` string is spelled, `YYYY-MM-DDTHH:MM:SS` with every field padded.
  *
+ * @privateRemarks
  * It was spelled twice, here and in `edit.ts`'s `localTimestamp`, each with its own `padStart`
  * helper and both correct. Two right copies is the state that precedes two diverging ones, which is
  * this repository's oldest rule and which no test can see while they agree. `TIMESTAMP` below is

@@ -53,13 +53,13 @@ import { glyphsReferencedBy } from './text.ts';
 import { modePages, type ModePage } from '../container/sections.ts';
 
 /**
- * The display of each architecture, in pixels.
+ * Each platform's screen in pixels, by the platform number a configuration states.
  *
+ * @privateRemarks
  * **Measured from the configs, not from a data sheet.** Every one of these is the size of the full
  * screen background pictures the configs draw, 257 of them on one Harmony One, and the drawn text of
  * each architecture stops just inside it. Section 129.
- */
-/*
+ *
  * **Arch 10 has an entry since section 183 and this comment used to explain why it did not.** The
  * reason was that an arch 10 container states no architecture, so nothing would look the row up. That
  * turned out to be wrong about the container rather than about the table: section 182 found the
@@ -99,6 +99,7 @@ function pixelAt(blob: Uint8Array, off: number): number {
 /** A pixel nothing drew. Not black, which is a colour a config chooses often and deliberately. */
 export const UNDRAWN = -1;
 
+/** A drawn screen: its size, and a colour for every pixel. */
 export interface Raster {
   width: number;
   height: number;
@@ -106,6 +107,7 @@ export interface Raster {
   pixels: Int32Array;
 }
 
+/** A page of a configuration drawn as the remote draws it, and what the drawing met. */
 export interface RenderedPage {
   raster: Raster;
   /** How many pictures were drawn, and how many the program named and this could not decode. */
@@ -350,6 +352,7 @@ export interface ScreenChoice extends ScreenCase {
   arms: number;
 }
 
+/** One way a page can look, and the choices in its program that give it. */
 export interface ScreenVariant {
   page: RenderedPage;
   /** The arms taken, in the order the program met them. Empty for a page that cannot vary. */
@@ -359,6 +362,7 @@ export interface ScreenVariant {
 /**
  * Every appearance a page can have, or as many as `limit` allows.
  *
+ * @privateRemarks
  * A screen program switches on the state of the remote, so "the screen of page 45" is not one image:
  * section 129 counted the branches and drew the first arm of each. This walks the arms instead, and
  * each variant carries the choices that produced it, so an interface can say **when** a screen looks
@@ -422,9 +426,10 @@ export interface TextDrawn {
    * The pixels the pictures drew in the box before the draw, row major, clipped to the screen: what lies
    * behind the text, with every other text left out. Two lines of a screen can overlap by a row or more, 3 on
    * a Harmony One help screen, so a line's box can hold the bottom of the one above; that is another text and
-   * not the background, and a letter blended for it would be blended for a neighbour's ink. Said "the pixels
-   * in the box before the draw" until 16 October 2026, which was the same thing while letters were one bit
-   * and nothing overlapping had been blended.
+   * not the background, and a letter blended for it would be blended for a neighbour's ink.
+   *
+   * @privateRemarks
+   * Said "the pixels in the box before the draw" until 16 October 2026, which was the same thing while letters were one bit and nothing overlapping had been blended.
    */
   under: number[];
   /**
@@ -618,7 +623,12 @@ function stamped(rows: readonly (readonly (number | undefined)[])[], draw: numbe
 /** How deep calls are followed: one level is all the corpus uses, and two leaves room without risking a loop. */
 const CALL_DEPTH = 2;
 
-/** Render a mode page, which is the unit a person sees: one screen of one mode. Section 66. */
+/**
+ * Render a mode page, which is the unit a person sees: one screen of one mode.
+ *
+ * @privateRemarks
+ * Section 66.
+ */
 export function renderPage(c: Container, page: ModePage): RenderedPage | undefined {
   return renderProgram(c, page.program);
 }

@@ -42,11 +42,14 @@ export interface ProntoCode {
   readonly repeat: readonly number[];
   /**
    * True where a word was wider than the format's four hexadecimal digits, which is a defect in
-   * whoever wrote the string rather than a variant of it. Section 233.
+   * whoever wrote the string rather than a variant of it.
    *
    * A Pronto word is a 16 bit field. The value is read anyway, since it is unambiguous and refusing it
    * loses a comparison over somebody else's overflow, and this flag is what keeps that visible rather
    * than quietly widening the format.
+   *
+   * @privateRemarks
+   * Section 233.
    */
   readonly overlong: boolean;
 }

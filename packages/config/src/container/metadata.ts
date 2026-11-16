@@ -60,18 +60,22 @@ const LOCAL_HEADER = 0x04034b50;
 /** A central directory entry, which is where the compressed length is when a descriptor is used. */
 const CENTRAL_HEADER = 0x02014b50;
 
+/** One command of a device, by its number and its name. */
 export interface MetadataCommand {
   /** The index a base slot 5 record is addressed by, as the archive states it. */
   readonly index: number;
   readonly name: string;
 }
 
+/** One device as the list a configuration carries names it, with its commands. */
 export interface MetadataDevice {
   readonly name: string;
   readonly index: number;
   /**
-   * The archive's `DeviceId`, which is **not** a catalogue id and was written up as one for an hour.
+   * The archive's `DeviceId`, which is **not** a catalogue id.
    *
+   * @privateRemarks
+   * It was written up as one for an hour.
    * The three on the one container that has any are 83244049, 83244050 and 83244051, consecutive, and
    * the public infrared archive's own `globalDeviceId` runs from 763 to about 523634, so this number
    * is outside that space entirely. It is account scoped, so it identifies a device on the owner's
@@ -81,6 +85,7 @@ export interface MetadataDevice {
   readonly commands: readonly MetadataCommand[];
 }
 
+/** The list of devices and commands by name that a Harmony 300, 350, 890 or 895 configuration carries. */
 export interface Metadata {
   /** The file's whole text, so a caller can read what this reader does not model. */
   readonly xml: string;

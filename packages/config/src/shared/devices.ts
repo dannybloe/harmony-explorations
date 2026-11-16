@@ -21,43 +21,56 @@ export interface ComposeDevice {
   /**
    * The word the config knows the device by, ASCII with no underscore, because a state
    * variable's name is `<label>_<property>_<values>` and the underscore is the separator that
-   * makes the label recoverable, section 126.
+   * makes the label recoverable.
+   *
+   * @privateRemarks
+   * section 126.
    */
   readonly label: string;
   readonly commands: readonly ComposeCommand[];
   /** Which command is the power toggle, driving the device's one state variable. Default 0. */
   readonly power?: number;
   /**
-   * The catalogue's power on and power off steps, each composed as a record of its own, section 309,
+   * The catalogue's power on and power off steps, each composed as a record of its own,
    * which the power variable's two transitions then send in place of `commands[power]`'s list. The two
    * may be the same step, a toggle, and then share one record. Absent means `power` is sent both ways,
    * which is what a composed device did before and what sends an ordinary press where Logitech's
    * catalogue asks for a held one: three frames where the Harmony 650's Panasonic needs four.
    *
-   * **Several steps are an action performed in order**, section 320: the Knoll HDP-1100's catalogue
+   * **Several steps are an action performed in order**: the Knoll HDP-1100's catalogue
    * switches it off with its power toggle held for half a second, three times, and Logitech's compiler
    * wrote one list calling that step's send list three times, which is what the off transition runs. A
    * step stated twice is one record and one send list, called twice. `catalogueDevicePower` in
    * `devicepower.ts` reads these out of the catalogue.
+   *
+   * @privateRemarks
+   * section 309; section 320.
    */
   readonly powerOn?: ComposePowerStep | readonly ComposePowerStep[];
   readonly powerOff?: ComposePowerStep | readonly ComposePowerStep[];
   /**
    * The amount of the `0x7C` paired with each power step's send, in tenths of a second: the catalogue's
-   * inter key delay, section 320. Every power step send list Logitech compiled for the test devices of
+   * inter key delay. Every power step send list Logitech compiled for the test devices of
    * the six power hold compiles carries its device's inter key delay there, 1, 4 or 5, while the same
    * devices' ordinary presses carry 1, which is what `commands` still get. Their compiler also adds, on
    * some devices, an uncalled second list per digit at the inter key delay and a second list for some
    * input commands at the input delay; what decides either is not read and neither is composed.
-   * Default `DEVICE_QUANTITY_DEFAULT`, what a power step got before section 320.
+   * Default `DEVICE_QUANTITY_DEFAULT`.
+   *
+   * @privateRemarks
+   * The default is what a power step got before section 320.
+   * section 320.
    */
   readonly interKeyDelay?: number;
   /**
    * The inter device delay in tenths of a second. On arch 14, 0 to 20, which an activity's start, All Off
-   * and Help queue in front of each of this device's commands, section 335; default
+   * and Help queue in front of each of this device's commands; default
    * `INTER_DEVICE_DELAY_DEFAULT`. On the Harmony 880 and 885 the silence each power step's record opens
    * with, `SendShape.powerStep` in the side keys family, `reference/infrared/sending.md`; default its
    * `SIDE_KEYS_INTER_DEVICE_DEFAULT`. The Harmony One's composer reads none.
+   *
+   * @privateRemarks
+   * section 335.
    */
   readonly interDeviceDelay?: number;
   /**
@@ -78,23 +91,32 @@ export interface ComposedDevice {
    * The lists that perform the power actions, where `powerOn` and `powerOff` were given: what a
    * device page's power keys should name so that they send what the catalogue asks for rather than an
    * ordinary press. For an action of one step that is the step's own send list, equal for a toggle;
-   * for several it is a list calling each step's send list in order, section 320. `off` is also what
+   * for several it is a list calling each step's send list in order. `off` is also what
    * the power variable runs to switch the device off. `on` never carries the power on delay, which
    * only the transition adds: no device mode key Logitech compiled runs one.
+   *
+   * @privateRemarks
+   * section 320.
    */
   powerSteps?: { on?: number; off?: number };
   /** The device's power variable, in base slot 13's numbering. */
   variable: number;
   /**
-   * Arch 14 only: what every command opens with, section 287. `variable` is the device's
+   * Arch 14 only: what every command opens with. `variable` is the device's
    * `InterDeviceDelay_<identifier>`, `table` the base slot 14 record mapping it, `list` the one list
    * of the device's own that applies it, and `identifier` the number the variable's name carries.
+   *
+   * @privateRemarks
+   * section 287.
    */
   delay?: { variable: number; table: number; list: number; identifier: number };
   /**
-   * Arch 14 only: the power on delay, section 288. `variable` is `PowerOnDelay_<identifier>`,
+   * Arch 14 only: the power on delay. `variable` is `PowerOnDelay_<identifier>`,
    * `table` the base slot 14 record mapping it, `list` the list holding that `0x72`, and `on` the
    * list the power variable runs to switch the device on: the power command, then `list`.
+   *
+   * @privateRemarks
+   * section 288.
    */
   powerOnDelay?: { variable: number; table: number; list: number; on: number };
 }

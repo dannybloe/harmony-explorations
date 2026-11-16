@@ -32,6 +32,7 @@ import { valueMaps } from '../container/valuemap.ts';
 /**
  * One device's target state when an activity is running: a base slot 13 variable and its value.
  *
+ * @privateRemarks
  * **A composer never names a code here and that is section 273's load bearing point**, restating
  * the anatomy's P4: the enter list writes the *device's* variable, and the code goes out because
  * that variable's transition runs the list that sends it. Over the corpus 424 of the 436 sends an
@@ -49,56 +50,68 @@ export interface ComposeActivity {
   /**
    * The word the activity is known by, which the **screen half** draws on the menu page as pixels.
    *
+   * @privateRemarks
    * **It deliberately does not take a device label's grammar**, and the first version of this
    * function did: it refused an underscore, which is right for a device because a state variable is
    * named `<label>_<property>_<values>` and the underscore is the separator that makes the label
-   * recoverable. An activity has **no node in the name tree at all**, section 273, so that reason
+   * recoverable. An activity has **no node in the name tree at all**, so that reason
    * does not transfer and the rule refused `Watch_TV` for nothing. Printable ASCII still holds,
    * since the glyph sets are what draw it.
    *
    * This function only checks and carries it. Nothing here writes it into the container, which is
    * why it comes back in `ComposedActivity`: the screen half is what draws it, and an unused field
    * with a rail in front of it is worse than no field.
+   *
+   * section 273.
    */
   readonly label: string;
   readonly targets: readonly ComposeActivityTarget[];
   /**
    * The activity's keypad map: a scan code and the base slot 10 list its press runs, in the order written. A key with
    * no list is swallowed: an entry of opcode and operand 0, which matches the key and runs nothing, so no map below
-   * the activity's sees it, `reference/config-format/modes-and-keys.md`; a key a recipe chooses to do nothing, R31,
+   * the activity's sees it, `reference/config-format/modes-and-keys.md`; a key a recipe chooses to do nothing,
    * where a key left out of the map falls through to the maps below instead.
+   *
+   * @privateRemarks
+   * R31.
    */
   readonly keys?: readonly { readonly scan: number; readonly list: number | undefined }[];
   /**
    * What tag 2, the leave handler, runs. Omitted emits the **null instruction**, opcode 0 with
    * operand 0, which is what 21 of the corpus's 50 activities carry, all on arch 8 and arch 9.
-   * So the tag is required and giving it something to run is not. Section 273.
+   * So the tag is required and giving it something to run is not.
+   *
+   * @privateRemarks
+   * Section 273.
    */
   readonly leaveList?: number;
   /**
    * The activity key to put the new activity on, by the name printed on it, Watch TV, Watch a Movie or
-   * Listen to Music, section 314. Only where the family has activity keys, `Family.activityKeyEditor`: the
+   * Listen to Music. Only where the family has activity keys, `Family.activityKeyEditor`: the
    * Harmony 600, 650 and 700, where it is one entry in base slot 9 entry 1 and a same length edit made after
    * everything else here. Omitted leaves every key as it was, and the activity is reachable from the menu
    * only, which is what an activity on no key is on those models. Whatever the key did before is replaced,
    * an activity included; that one keeps its own menu row and loses only the key.
+   *
+   * @privateRemarks
+   * section 314.
    */
   readonly activityKey?: string;
   /**
    * What tag 5 runs. Tag 5 is on all 50 activities and **always runs a real list**, so it cannot be
-   * the null instruction the way tag 2 can. What fires it is read now, section 313: the activity
+   * the null instruction the way tag 2 can. What fires it is read now: the activity
    * switch runs it when the activity asked for is the one already running, so it is what picking the
-   * running activity again from the menu or an activity key does. This said "what fires it is not
-   * established" until section 313.
+   * running activity again from the menu or an activity key does.
    *
-   * **On the Harmony 600, 650 and 700, with `screen` given, omitted builds Logitech's own shape**,
-   * section 313, measured on 43 of the 43 activities Logitech compiled for those models: the start
+   * @privateRemarks
+   * This said "what fires it is not established" until section 313.
+   * **On the Harmony 600, 650 and 700, with `screen` given, omitted builds Logitech's own shape**, measured on 43 of the 43 activities Logitech compiled for those models: the start
    * variable set to 1, the enter list's **input** writes in the enter list's order, the flag set to 1,
    * the working screen entered directly, and the start variable back to 0. No start up screen, no power
    * write and no write of the activity counter, which is already right. Where tag 1 defers its working
    * screen behind `3F D000` so it waits for the infrared ahead of it, tag 5 runs that step directly,
    * which is Logitech's choice too; ours enters the working screen itself, because a composed activity
-   * has no Remote Assistant branch to run instead, the form `h600_config` compiles.
+   * has no Remote Assistant branch to run instead, the form Logitech compiles for a Harmony 600.
    *
    * **Elsewhere omitted still points it at the enter list**, section 273's default and the reasoning
    * below, which replays the whole start including the start up screen. That includes the Harmony
@@ -106,7 +119,7 @@ export interface ComposeActivity {
    * lists they call are compared by content rather than by number, and until that is a test the
    * Harmony One keeps the default.
    *
-   * What is measured over every architecture is the envelope, section 273: **the state writes in a tag 5 list are a subset
+   * What is measured over every architecture is the envelope: **the state writes in a tag 5 list are a subset
    * of the enter list's, on 50 of 50**, and the subset is **empty** on 24 of them. One candidate
    * rule dies on that same measurement, so it is not used here: "the enter list without the power
    * writes" matches 0 of 50. A second, "a **prefix** of the enter list", was written up as dying
@@ -119,15 +132,20 @@ export interface ComposeActivity {
    * Omitted points it at the **enter list**, whose write set is trivially a subset of itself, so
    * the default sits inside the measured envelope instead of outside it. That it is *behaviourally*
    * right is still unestablished, and a caller that knows better should pass a list.
+   *
+   * section 313; section 313; section 273.
    */
   readonly resumeList?: number;
   /**
-   * The activity's two screens, from `composeActivityScreen`, section 279. Given, the enter list
+   * The activity's two screens, from `composeActivityScreen`. Given, the enter list
    * opens the way every Harmony One activity's does: enter the start up screen, cancel the timers,
    * write the state, say an activity is running, and enter the working screen **deferred**, through
    * the six byte `0x3F` band `0xD0` instruction every activity's chain uses, so it is not on until
    * the infrared ahead of it is out. Omitted, the enter list writes state and nothing else, which is
    * what this function produced until then and what left the remote on the page that started it.
+   *
+   * @privateRemarks
+   * section 279.
    */
   readonly screen?: {
     readonly startupMode: number;
@@ -137,7 +155,10 @@ export interface ComposeActivity {
     /**
      * Harmony 600, 650 and 700: the variable the start sequence holds at 1 while it runs, the one it
      * writes 1 before deferring the working screen, and the base slot 9 entry the screen's keypad map
-     * case selects, section 290. All three from `composeActivityScreen`.
+     * case selects. All three from `composeActivityScreen`.
+     *
+     * @privateRemarks
+     * section 290.
      */
     readonly startVariable?: number | undefined;
     readonly flagVariable?: number | undefined;

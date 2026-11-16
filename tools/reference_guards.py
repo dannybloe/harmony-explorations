@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The five guards of `reference/`, plan 009 section 5, and the script that pins their current findings.
+The six guards of `reference/`, plan 009 section 5, and the script that pins their current findings.
 
     python3 tools/reference_guards.py           every violation, then the counts per guard per folder
     python3 tools/reference_guards.py --counts  the counts only
@@ -15,7 +15,7 @@ new gets in, and it also fails when a count fell without the list following, so 
 shrink and always says what is left. `--pin` writes that list; run it after a step removed violations,
 and read its diff, because a pin that grows is a violation being waved through.
 
-**The five guards**, each a function returning a `Counter` of `(path, kind) -> count`:
+**The six guards**, each a function returning a `Counter` of `(path, kind) -> count`:
 
 * `bench`: the reference describes no bench. Words that only describe our own work, the lab's fixture
   names (read from `tests/lab.py` at run time) and links into the test notes, the lab register or the
@@ -30,6 +30,12 @@ and read its diff, because a pin that grows is a violation being waved through.
 * `links`: every relative link in `reference/`, `docs/`, the root documents and the skills resolves,
   file and anchor. `docs/findings.md` and `docs/decisions.md` are the archive and
   `tests/project/test_archive.py` checks their links, so they are left out here rather than checked twice.
+* `sdk`: the FHSDK's section, `reference/sdk/`, is written for a stranger building an application, and much of it is
+  generated from the packages' doc comments, whose public part is everything before `@privateRemarks`. So its prose
+  carries none of this repository's own pointers or bookkeeping: no findings section, plan, decision or requirement
+  number, no todo, no HTML comment but the generator's own markers, no date, no relative time, no bench, lab, dump or
+  appliance, and no link to `CLAUDE.md`, the findings archive, a plan or a test. Prose is the text outside code spans
+  and code blocks, and the comments inside a code block, since a member's comment printed in a shape is read as prose.
 
 **A key never carries a person's name.** A link target or a word could, some day, so `redact` replaces
 any kind or path containing one with a digest before it is printed or pinned. That is what lets the
@@ -49,13 +55,21 @@ import urllib.parse
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEST_FILE = os.path.join(ROOT, 'tests', 'project', 'test_reference.py')
 
-GUARDS = ('bench', 'names', 'copy', 'footnotes', 'links')
+GUARDS = ('bench', 'names', 'copy', 'footnotes', 'links', 'sdk')
 
 # Logitech's own generated data, plan 009 section 5: their words, not ours, so the bench words do not
 # apply. `model.md` beside them is ours and is not exempt.
 EXEMPT_FROM_BENCH = frozenset(
     'reference/logitech/data-model/' + name
     for name in ('model.json', 'operations.json', 'entities.md', 'core-model.mmd'))
+
+# The FHSDK's section, `reference/sdk/`, documents an API whose own names say `bench`, `BENCH_MODELS`, `Proof.bench`
+# and the wait `'bench'` among them, so the word cannot be kept out of its pages without renaming the API. There the
+# word is counted in prose alone, `sdk_prose`, and passes inside code formatting, a name in a code span or the code of
+# a block; in prose it is counted as everywhere, in the generated pages and the hand written ones alike. Every other
+# bench kind is counted over the whole text, as in the rest of the reference.
+SDK_SECTION = 'reference/sdk/'
+
 
 # The bench words of plan 009 section 5, each a pattern and the kind it is counted under. Word
 # boundaries, so `label` is not `lab` and a todo file's name still counts as `todo`. Case is ignored: "Lab" opens
@@ -90,6 +104,47 @@ COPY_PATTERNS = (
      r'(?<!metadata )(?<!metadata-)(?<!test-)(?<!findings )(?<!findings-)\barchive\b(?!\s+sections?\b)'
      r'|\bcatalogue, archived\b'
      r'|config/src/catalogue/archive\w*\.ts'),
+)
+
+# The FHSDK's section, `reference/sdk/`, documents an API whose parameters name the device archive an application
+# hands a build or a search, `BuildSources.archive`, `QuestionSources.archive`, and whose prose says "the device
+# archive" for what those take. So the bare word `archive` is the API's own word there and is not counted in that
+# folder; the rest of the kind still is, "catalogue, archived" and a path to the converter's modules, and so is every
+# other kind of the copy guard, "the infrared archive", its repository, the variable that locates it, decision 15 and
+# its author.
+ARCHIVE_WORD_KIND = 'the archive, meaning the copy'
+SDK_ARCHIVE_PATTERN = r'\bcatalogue, archived\b|config/src/catalogue/archive\w*\.ts'
+
+# The `sdk` guard's kinds, each a pattern counted in `sdk_prose`, and the flags it is read with: case is ignored
+# but for a requirement number, `R12`, where a capital is what makes it one. A date is a day, a month by name and a
+# year; a relative time is the expressions that tell the reader when something happened rather than what is true.
+MONTHS = 'January|February|March|April|May|June|July|August|September|October|November|December'
+SDK_WORDS = (
+    ('section number', r'\bsections? \d+', re.I),
+    ('plan number', r'\bplans? \d+', re.I),
+    ('decision number', r'\bdecisions? \d+', re.I),
+    ('requirement number', r'\bR\d+\b', 0),
+    ('todo', r'\btodo\b', re.I),
+    ('date', r'\b\d{1,2} (?:%s) \d{4}\b' % MONTHS, 0),
+    ('relative time', r'\b(?:yesterday|recently|lately|today|fortnight|last (?:week|month|year)|a while'
+                      r'|for (?:days|weeks|months|years)|(?:days|weeks|months|years) ago)\b', re.I),
+    ('bench', r'\bbench(?:es)?\b', re.I),
+    ('lab', r'\blabs?\b', re.I),
+    ('dump', r'\bdump(?:s|ed|ing)?\b', re.I),
+    ('appliance', r'\bappliances?\b', re.I),
+)
+# The HTML comments the generator writes, `packages/lab/bin/api-reference.ts`: a page's introduction, its note that
+# it is generated, and the blocks it fills. Any other comment, `<!--superseded-->` printed out of a source comment
+# say, or one escaped as `&lt;!--`, is counted.
+SDK_MARKER = re.compile(r'^(?:<|&lt;)!-- (?:/?introduction|Generated from the source comments|example:\S+|/example'
+                        r'|shape:\S+|/shape)\b')
+HTML_COMMENT = re.compile(r'(?:<|&lt;)!--.*?(?:-->|$)')
+# What a page of the section never links: this repository's working brief, the findings archive, a plan, and a test.
+SDK_LINKS = (
+    ('link to CLAUDE.md', lambda where: where == 'CLAUDE.md'),
+    ('link to docs/findings.md', lambda where: where == 'docs/findings.md'),
+    ('link to a plan', lambda where: where.startswith('docs/plans/')),
+    ('link to a test', lambda where: re.search(r'(?:^|/)tests?/', where) is not None),
 )
 
 # Plan 009 section 4. The label forms, and the evidence words each label may carry. An `x` label is a
@@ -420,8 +475,9 @@ def bench_violations(root=ROOT, fixtures=()):
             continue
         text = read(path)
         prose = TEST_LINK_TARGET.sub('](test)', text)
+        in_sdk = name.startswith(SDK_SECTION)
         for kind, pattern in words:
-            count = len(pattern.findall(prose))
+            count = len(pattern.findall(sdk_prose(text) if in_sdk and kind == 'bench' else prose))
             if count:
                 found[(name, kind)] += count
         if fixture:
@@ -482,6 +538,8 @@ def copy_violations(root=ROOT, authors=None):
         text = read(path)
         name = rel(path, root)
         for kind, pattern in patterns:
+            if kind == ARCHIVE_WORD_KIND and name.startswith(SDK_SECTION):
+                pattern = re.compile(SDK_ARCHIVE_PATTERN, re.I)
             count = len(pattern.findall(text))
             if count:
                 found[(name, kind)] += count
@@ -605,6 +663,58 @@ def link_violations(root=ROOT):
     return found
 
 
+def sdk_prose(text):
+    """The prose of a page of the FHSDK's section: what a reader takes as text, and nothing that is code.
+
+    The lines outside fenced code with their inline code removed, as `prose_lines` gives them, and inside a fence the
+    text of its comments, with inline code removed from them too: a shape printed in a block carries each member's doc
+    comment, which a reader reads as prose, while the code around it, an identifier such as `BENCH_MODELS` included,
+    is the API's own name and passes.
+    """
+    out = [line for _, line in prose_lines(text)]
+    fenced, block = None, []
+    for line in text.split('\n'):
+        match = FENCE.match(line)
+        if match:
+            if fenced is None:
+                fenced, block = match.group(1), []
+            elif match.group(1) == fenced:
+                fenced = None
+                code = '\n'.join(block)
+                for comment in re.findall(r'/\*[\s\S]*?\*/|(?<![:\w])//[^\n]*', code):
+                    out.append(INLINE_CODE.sub('', comment))
+            continue
+        if fenced is not None:
+            block.append(line)
+    return '\n'.join(out)
+
+
+def sdk_violations(root=ROOT):
+    """The FHSDK's section: none of this repository's pointers or bookkeeping in its prose, see the module's header."""
+    found = collections.Counter()
+    words = [(kind, re.compile(pattern, flags)) for kind, pattern, flags in SDK_WORDS]
+    for path in files_under(root, SDK_SECTION, ('.md',)):
+        name = rel(path, root)
+        text = read(path)
+        prose = sdk_prose(text)
+        for kind, pattern in words:
+            count = len(pattern.findall(prose))
+            if count:
+                found[(name, kind)] += count
+        for comment in HTML_COMMENT.findall(prose):
+            if not SDK_MARKER.match(comment):
+                found[(name, 'html comment')] += 1
+        for _, target in links(text):
+            destination, _ = resolve(path, target, root)
+            if destination is None:
+                continue
+            where = rel(destination, root)
+            for kind, matches in SDK_LINKS:
+                if matches(where):
+                    found[(name, kind)] += 1
+    return found
+
+
 def run_all(root=ROOT):
     """Every guard's findings, keys redacted, and which guards ran only in part.
 
@@ -619,6 +729,7 @@ def run_all(root=ROOT):
         'copy': copy_violations(root, authors),
         'footnotes': footnote_violations(root),
         'links': link_violations(root),
+        'sdk': sdk_violations(root),
     }
     hidden = people | (authors or set())
     redacted = {}

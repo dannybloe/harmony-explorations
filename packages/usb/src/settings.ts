@@ -28,11 +28,13 @@ export const DELAY_SETTINGS: readonly number[] = [
 ];
 
 /**
- * The latest value of every setting in a page `0xFF` dump, or of the store alone when `page` is
- * exactly the two blocks.
+ * The latest value of every setting in a read of flash page `0xFF`, or of the store alone when `page` is
+ * exactly the two blocks. The active block is the one whose header is not erased. Throws a plain `Error` when the
+ * read is too short to hold the store, and when neither block or both blocks carry a header, since which one the
+ * remote uses cannot then be told.
  *
- * **The active block is the one whose header is not erased**, and a dump where both carry one is
- * refused: which of the two the firmware is using is decided by header bits nobody here has
+ * @privateRemarks
+ * A read where both carry one is refused: which of the two the firmware is using is decided by header bits nobody here has
  * re-derived, section 282, and guessing would compare a read against the wrong block.
  */
 export function latestSettings(page: Uint8Array): Map<number, number> {
@@ -64,7 +66,7 @@ export interface DelaySlot {
 
 /**
  * The delay slots that hold a key, read out of any map from setting to value: the store's latest
- * values from a dump, or what the remote answered over USB. An absent setting reads as erased.
+ * values from a read of its page, or what the remote answered over USB. An absent setting reads as erased.
  */
 export function delaySlots(settings: ReadonlyMap<number, number>): DelaySlot[] {
   const at = (setting: number) => settings.get(setting) ?? ERASED;

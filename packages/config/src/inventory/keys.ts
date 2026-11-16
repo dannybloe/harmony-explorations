@@ -19,15 +19,21 @@ export interface KeyCode {
   /**
    * Which kind of tagged list the binding is in.
    *
+   * @privateRemarks
    * **Both matter and for a while this only had the first.** A `page` binding belongs to a screen,
    * which is where a soft key lives. A `set` binding belongs to a base slot 9 handler set, which is
-   * the key map an activity installs, and that is where the hard keys are: the volume keys of the
-   * bench Harmony One are in its activities' sets and in no mode page at all.
+   * the key map an activity installs, and that is where the hard keys are: the volume keys of a
+   * Harmony One are in its activities' sets and in no mode page at all.
    */
   where: 'page' | 'set';
   /** Index into `modePages` or into base slot 9's addresses, according to `where`. */
   index: number;
-  /** The tagged list's key code: an event type in `0xC0` and a scan code in `0x3F`. Section 17. */
+  /**
+   * The tagged list's key code: an event type in `0xC0` and a scan code in `0x3F`.
+   *
+   * @privateRemarks
+   * Section 17.
+   */
   tag: number;
   /**
    * The event type: 0 none, 1 release, 2 press, 3 repeat.
@@ -44,8 +50,12 @@ export interface KeyCode {
 }
 
 /**
- * Every button binding in the config that sends infrared, and what it sends.
+ * Every button binding in the config that sends infrared, and what it sends: the button map an interface shows for
+ * a device or for a running activity. **A binding may send several codes**, a macro, which is why the order is kept.
+ * A code is sent on the press, never on a release or a repeat, and most bindings send nothing at all, since
+ * navigation and screen switching are bindings too. A code carries no name of its own.
  *
+ * @privateRemarks
  * This is the button map an interface shows for a device or for a running activity, and it is the last
  * hop of section 126: a page's tagged list binds a key to a base slot 10 list and the list's `0x7D`
  * instructions name the device and the code. **A binding may send several**, 85 of 3106 across the
@@ -62,12 +72,14 @@ export interface KeyCode {
  * end "and from nowhere for a hard key"<!--superseded-->, and section 133 is where that stopped being
  * true: the durations decode back into the bit frame the device sees, `irframe.ts`, and a frame can be
  * matched against a catalogue of named commands. Thirty two buttons of a Harmony One and thirty six of
- * a Harmony 600 are named that way, section 133, with nothing written anywhere; the drawings in
+ * a Harmony 600 are named that way, with nothing written anywhere; the drawings in
  * `packages/silhouettes` carry them.
  *
  * **That route is not available from inside this function**, which is why the return value still has a
  * number and no name: it needs the catalogue and the button maps of the account that generated the
  * config, so it works on a config we had made and not on one somebody contributed.
+ *
+ * section 133.
  */
 export function keyCodes(c: Container): KeyCode[] {
   const codes = infraredCodesPerList(c);
@@ -103,7 +115,10 @@ export interface DeviceModeMap {
    *
    * The tag is the whole key code, an event type in `0xC0` and a scan code in `0x3F`, exactly as
    * base slot 9 spells one. These are physical keys: the scan codes here and the ones a page binds
-   * are disjoint populations on arch 9, 12 and 14, section 271.
+   * are disjoint populations on arch 9, 12 and 14.
+   *
+   * @privateRemarks
+   * section 271.
    */
   keypad: KeyCode[];
   /** The same for every page of that mode, which is device mode's screen and is usually the larger half. */
@@ -115,6 +130,7 @@ export interface DeviceModeMap {
 /**
  * Device mode's own map, per device: the map the remote installs when somebody picks a device.
  *
+ * @privateRemarks
  * **This closes section 151's open question and refutes what it left standing.** That section
  * measured base slot 9 and found that every keypad map sending an infrared code is installed by an
  * activity, and concluded that no configuration here holds a map for device mode. Base slot 9 is
@@ -231,7 +247,10 @@ export function softKeyScans(c: Container): number[] {
  * **Not the same population as `keyCodes`**, and the difference has bitten twice: `keyCodes` only
  * reports a binding that ends in an infrared code, so a key that starts an activity or opens another
  * menu is absent from it. Anything asking "which pages are there and what do they bind" wants this,
- * or it silently loses every activity page. Section 129.
+ * or it silently loses every activity page.
+ *
+ * @privateRemarks
+ * Section 129.
  */
 export function pageScans(c: Container): number[][] {
   return modePages(c).map((page) => {
@@ -319,6 +338,7 @@ export interface KeyLabel {
   /**
    * How it was attributed, and the two are not equally strong.
    *
+   * @privateRemarks
    * `touch` is stated: base slot 17 gives the key's rectangle and the label is the text inside it, so
    * it exists on arch 12 (Harmony One) alone. `row` is `SCREEN_ROWS`, whose band is measured and whose
    * side is established per architecture, so it is a reading of the hardware's layout rather than of
@@ -404,6 +424,7 @@ function boundScans(c: Container, page: ModePage): Set<number> {
   );
 }
 
+/** The word each key's screen label shows, by key, as the remote draws it. */
 export function keyLabels(c: Container): Map<string, KeyLabel> {
   const out = new Map<string, KeyLabel>();
   const pages = modePages(c);

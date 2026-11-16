@@ -42,6 +42,10 @@ Logitech, and the models they sold.
 **[Glossary](glossary.md)**: every term these pages use, and whether it is Logitech's word, a standard
 one or one coined here.
 
+**[The SDK](sdk/README.md)**: the libraries for building an application that sets up a Harmony, with a
+guide of worked examples, the shapes of the documents it takes and gives, and a reference of every name it
+offers.
+
 ## How to read a footnote
 
 Every fact carries a footnote. The note at the bottom of the page opens with **the kind of evidence**

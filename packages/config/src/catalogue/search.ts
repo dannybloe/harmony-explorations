@@ -79,8 +79,11 @@ export function matchOf(typed: string, candidate: string): number {
 }
 
 /**
- * What a person typed to find a device, R9: the manufacturer and the model number as text, typing errors allowed,
+ * What a person typed to find a device: the manufacturer and the model number as text, typing errors allowed,
  * and the kind of device where they chose one. A field left out is not asked about.
+ *
+ * @privateRemarks
+ * R9.
  */
 export interface DeviceQuery {
   readonly manufacturer?: string;
@@ -103,7 +106,12 @@ export interface FoundDevice {
   readonly type?: string;
   /** How well it fits what was typed, from 0 to 1, 1 an exact match. Results come best first. */
   readonly match: number;
-  /** The versions of its code set, where the source holds several, R10; the first is the one fetched unless another is asked for. */
+  /**
+   * The versions of its code set, where the source holds several; the first is the one fetched unless another is asked for.
+   *
+   * @privateRemarks
+   * R10.
+   */
   readonly versions?: readonly string[];
 }
 
@@ -131,8 +139,11 @@ export interface DeviceSource {
 }
 
 /**
- * Where a network source keeps what it fetched, so a device asked for twice is fetched once, R81. The application's:
+ * Where a network source keeps what it fetched, so a device asked for twice is fetched once. The application's:
  * a folder, a browser's storage, or nothing at all in a test. Keys are the paths the source asked for.
+ *
+ * @privateRemarks
+ * R81.
  */
 export interface DeviceCache {
   get(key: string): Promise<Uint8Array | undefined>;
@@ -149,8 +160,11 @@ export interface NetworkArchiveOptions {
 }
 
 /**
- * One search over every source at once, R82 and R9: the results of all of them in one list, best first, each naming
+ * One search over every source at once: the results of all of them in one list, best first, each naming
  * its source. A source that fails does not fail the search; what it said is in `failed`.
+ *
+ * @privateRemarks
+ * R82 and R9.
  */
 export interface DeviceSearch {
   readonly found: readonly FoundDevice[];
@@ -158,10 +172,13 @@ export interface DeviceSearch {
 }
 
 /**
- * Ask every source for a device, R82: all of them at once, their results in one list, best first and then by
+ * Ask every source for a device: all of them at once, their results in one list, best first and then by
  * manufacturer and model so that the order is the same on every run, cut to the query's limit. A source that throws
  * is named in `failed` with what it said and the others' results stand, since one source being away is the ordinary
  * case and not a reason to show nothing.
+ *
+ * @privateRemarks
+ * R82.
  */
 export async function findDevices(sources: readonly DeviceSource[], query: DeviceQuery): Promise<DeviceSearch> {
   const settled = await Promise.allSettled(sources.map(async (source) => source.find(query)));
@@ -177,9 +194,12 @@ export async function findDevices(sources: readonly DeviceSource[], query: Devic
 }
 
 /**
- * Fetch one result's definition from the source that found it, R10; `version` chooses among `FoundDevice.versions`.
+ * Fetch one result's definition from the source that found it; `version` chooses among `FoundDevice.versions`.
  * Refused, as an `ArchiveError`, where the result names a source that was not handed in: a result is only good with
  * the sources it came from.
+ *
+ * @privateRemarks
+ * R10.
  */
 export async function fetchDevice(
   sources: readonly DeviceSource[], found: FoundDevice, options?: { readonly version?: string },
@@ -189,7 +209,14 @@ export async function fetchDevice(
   return source.fetch(found, options);
 }
 
-/** The infrared archive read over the network a device at a time, from its own index, kept in the cache given, R81. */
+/**
+ * **Not built yet**: the device archive read over the network a device at a time, from its own index, kept in the
+ * cache given. It throws `NotBuiltError` when called; `archiveSourceAt` of `@freeharmony-sdk/config/node` reads an
+ * archive from a folder on disk instead.
+ *
+ * @privateRemarks
+ * R81.
+ */
 export function networkArchiveSource(options: NetworkArchiveOptions): DeviceSource {
   void options;
   return notBuilt('networkArchiveSource', 81);

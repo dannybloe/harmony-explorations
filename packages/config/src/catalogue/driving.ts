@@ -32,7 +32,7 @@ import { ArchiveError } from './archive.ts';
 /**
  * One step of an action list. A list is performed in order, and every actionable field below is one. The
  * archive's order is the service's own step numbering rather than its array position, checked on every
- * list of every device, the per input and per state ones included, section 305. The fields the archive
+ * list of every device, the per input and per state ones included. The fields the archive
  * drops from a step or an input are in `catalogueraw.ts`, whose `catalogueRules` returns these rules with
  * them attached.
  *
@@ -40,7 +40,7 @@ import { ArchiveError } from './archive.ts';
  *
  * - a bare string is `send`, the command of that name from the device's codeset, sent as one press;
  * - `{command, durationMs}` is `send` with `holdMs`, the command kept going for that long. **This is the
- *   field section 305 is about**: Logitech's compiler turns it into as many copies of the code as fit.
+ *   field a held command's length lives in**: Logitech's compiler turns it into as many copies of the code as fit.
  *   The service also states a duration of 0, and the archive writes that as a bare string;
  * - `{hold}` is `hold`, a press held for a time nobody stated. Its operand is passed through as written,
  *   and it is not always a command that exists: on 14 of the 49 the archive holds it is digits, such as
@@ -50,6 +50,10 @@ import { ArchiveError } from './archive.ts';
  * - `{delayMs}` is `wait`, nothing sent;
  * - `{set, to}` is `state`, **not a transmission**: it records that the device's state `state` now holds
  *   `value`, which is what lets a later input change know where it starts from.
+ *
+ * @privateRemarks
+ * Section 305 is about the `durationMs` field.
+ * section 305.
  */
 export type DriveStep =
   | { readonly kind: 'send'; readonly command: string; readonly holdMs?: number }
@@ -100,6 +104,7 @@ export interface DeviceInput {
   readonly ports?: readonly string[];
 }
 
+/** A device's inputs as the catalogue states them, and the steps that move between them. */
 export interface DeviceInputs {
   /** A Logitech enumeration nobody has decoded, passed through as the number it is. */
   readonly type: number;

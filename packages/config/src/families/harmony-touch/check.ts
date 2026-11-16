@@ -66,6 +66,7 @@ export type Rule =
   | 'favourites address'
   | 'setting mishandled';
 
+/** One thing the check found: which rule, whether the remote would refuse the documents or ignore the part, and where. */
 export interface Finding {
   readonly rule: Rule;
   readonly effect: 'refused' | 'ignored';

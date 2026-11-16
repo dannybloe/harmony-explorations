@@ -11,8 +11,13 @@ import { sameBytes } from '@freeharmony-sdk/base/bytes';
 import { takeAuthorisation } from './authorise.ts';
 import { isReadOnlyReport } from './protocol.ts';
 
+/** No remote found, more than one found where one was asked for, or a remote that could not be opened. */
 export class TransportError extends Error {}
 
+/**
+ * A remote opened on USB, as reports in and out. `openHarmony` gives one, guarded so that only a read goes
+ * through; `HarmonyRemote` speaks the protocol over it.
+ */
 export interface Transport {
   /** Send one report. The caller has already padded it to the report size. */
   write(report: Uint8Array): Promise<void>;
@@ -158,8 +163,11 @@ export function isTunnelledRemote(vendorId: number, productId: number): boolean 
 }
 
 /**
- * Whether a device is a Harmony this library's command protocol applies to.
+ * Whether a device is a Harmony this library's command protocol applies to: a Logitech Harmony product id, and not
+ * one of the file based family (the Harmony 300, 350 and Touch) or the tunnelled family (the Harmony 890 and 895),
+ * which speak other protocols.
  *
+ * @privateRemarks
  * The range is Logitech's Harmony allocation and the exclusion is the file based family, which sits
  * **inside** it: `0xC124` and `0xC12B` are both between `0xC110` and `0xC14F`, so a plain range
  * check claimed a Harmony Touch as a flash protocol remote. Found on 27 August 2026 with a Touch
@@ -206,6 +214,7 @@ export const MICROCHIP_BOOTLOADER_PRODUCT = 0x000b;
  * application. That is the only signal a host gets, since the bootloader writes thirteen ports in
  * total and nothing in it drives the display.
  *
+ * @privateRemarks
  * **The name says Microchip and not Harmony deliberately.** This identity is a stock one and is not
  * specific to these remotes, so a match means "a device presenting a Microchip bootloader" and not
  * "a Harmony". Anything else on the bus in the same state would match too. The honest use is to
@@ -237,6 +246,7 @@ export function isMicrochipBootloader(vendorId: number, productId: number): bool
  * constant whose meaning is not established. Anything else is undefined rather than guessed,
  * because a guess names the wrong remote: an 885's 0x0811 read as BCD is 11, a Harmony 655.
  *
+ * @privateRemarks
  * Kept in step with `harmony.usbdesc.skin_id` by `packages/usb/test/transport/remote.test.ts`, which asserts
  * the same table. `docs/findings.md` section 113.
  */
@@ -309,6 +319,7 @@ export function transportOver(device: HidDeviceLike): Transport {
   };
 }
 
+/** A device on the USB bus as a `list` function reports it, without opening it. */
 export interface FoundRemote {
   readonly vendorId: number;
   readonly productId: number;
@@ -361,6 +372,7 @@ export async function listTunnelledRemotes(): Promise<FoundRemote[]> {
   return listMatching(isTunnelledRemote);
 }
 
+/** A Harmony waiting in its processor maker's bootloader, which no function here opens. Enumerates only. */
 export async function listMicrochipBootloaders(): Promise<FoundRemote[]> {
   return listMatching(isMicrochipBootloader);
 }
@@ -386,19 +398,23 @@ async function listMatching(
     }));
 }
 
-/**
- * Find and open the first attached Harmony.
- *
- * Opening a device claims it, so this is the first thing in the project that does more than look.
- * It is still read only in intent, and the intent is not what enforces it: the write paths are
- * refused by `rails.ts` whether or not the device is open.
- */
 /** Which remote to open, when more than one is attached. */
 export interface RemoteSelector {
   readonly productId?: number;
   readonly path?: string;
 }
 
+/**
+ * Open the one Harmony on the cable that `select` names, to read. Refuses when none matches, and when more than
+ * one does, since two remotes of a model look alike on USB and the caller has to say which by its path. The
+ * transport it gives lets only reads through.
+ *
+ * @privateRemarks
+ * Opening a device claims it, so this is the first thing in the project that does more than look. It is still read
+ * only in intent, and the intent is not what enforces it: the write paths are refused by `rails.ts` whether or not
+ * the device is open. (This stood above `RemoteSelector` as the comment of an earlier "find and open the first
+ * attached Harmony", which the refusal of more than one replaced.)
+ */
 export async function openHarmony(select: RemoteSelector = {}): Promise<Transport> {
   const all = await listHarmony();
   const candidates = all.filter(

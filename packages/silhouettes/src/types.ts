@@ -22,20 +22,23 @@ export const CASE_HEIGHT = 1000;
  *
  * `catalogue` means the name is one Logitech's own button maps give this key, recovered from a config
  * Logitech compiled to a known setup by decoding what each scan code sends and looking the frame up in
- * the command catalogue and button maps its service states for that setup, `docs/findings.md` section
- * 133. Those are Logitech's own words for these keys, and every key named that way carries the scan code
+ * the command catalogue and button maps its service states for that setup. Those are Logitech's own words for these keys, and every key named that way carries the scan code
  * it was named against, `scanFrom` saying how.
  *
- * `printed` means we chose the name because the key says it: `Help`, `Activities`, `Glow`. Sound,
- * and not a measurement, which is why the two are told apart rather than merged. A test asserts the
- * split in both directions.
+ * `printed` means the name was chosen because the key says it: `Help`, `Activities`, `Glow`. Sound,
+ * and not a measurement, which is why the two are told apart rather than merged.
+ *
+ * @privateRemarks
+ * `catalogue` is `docs/findings.md` section 133. A test asserts the split in both directions.
  */
 export type Provenance = 'catalogue' | 'printed';
 
 /**
- * Where a scan code on a drawing came from, as the archive section that holds the argument, with the
- * words the generated keys pages print for it.
+ * Where a scan code on a drawing came from: each key of this record names one piece of evidence, by the number of
+ * the passage of the findings archive that argues it or by the footnote label of a test, and its value is the words
+ * the generated keys pages print for it.
  *
+ * @privateRemarks
  * **These were one document until plan 009's step 3.3**, `reference/button-maps.md`, whose two tables a
  * test parsed back out of Markdown into five readers in two languages. The scan codes are this
  * package's data now and the tables' other columns went where they belong: the frames each button sends
@@ -102,6 +105,7 @@ export const SCAN_SOURCES = {
   't-880pro-keys-u': "read by the key page on a contributor's unit, each key asked by name and confirmed in a "
     + 'second pass',
 } as const;
+/** Where a key's scan code was read, a key of `SCAN_SOURCES`. */
 export type ScanSource = keyof typeof SCAN_SOURCES;
 
 /** The footnote label a source prints as: `s133` for an archive section, a test's label as it is. */
@@ -112,20 +116,24 @@ export function scanFootnote(source: ScanSource): string {
 /**
  * Which population a key belongs to, which is a real division and not a label.
  *
- * `docs/findings.md` section 128: a scan bound by a mode page is a key the screen speaks for, a scan
- * bound by a base slot 9 set is a key on the keypad, and the two share no code at all on three of
- * the four architectures and exactly one on arch 8. It matters to the interface because colouring by
- * device works on the keypad group, while what a screen key does depends on the page in force.
+ * A scan bound by a mode page is a key the screen speaks for, a scan bound by a base slot 9 set is a key on the
+ * keypad, and the two share no code at all on three of the four architectures and exactly one on arch 8. It matters
+ * to the interface because colouring by device works on the keypad group, while what a screen key does depends on the
+ * page in force.
  *
  * `touch` is a key with no moulded part, answering a touch on the case. On arch 12 (Harmony One) base
  * slot 17 states its rectangle; on a Harmony Touch it is the star and the house printed above the
  * screen, which its manual lists as buttons and says to tap, and nothing about its configuration has
  * been read, so there the kind says what the product is and nothing about a population.
+ *
+ * @privateRemarks
+ * `docs/findings.md` section 128.
  */
 export type KeyKind = 'keypad' | 'screen' | 'touch';
 
 /** The layers, each switchable so a thumbnail can drop the text and keep the shape. */
 export const LAYERS = ['case', 'screen', 'keys', 'icons', 'text'] as const;
+/** One layer of the drawing, as `SvgOptions.layers` names it. */
 export type LayerName = (typeof LAYERS)[number];
 
 /**
@@ -163,6 +171,7 @@ export interface Shape {
 /** Where a printed word sits relative to its key. On the real remotes all five of these occur. */
 export type LabelPlace = 'on' | 'above' | 'below' | 'left' | 'right';
 
+/** A word printed on or beside a key, and where it sits. */
 export interface Label {
   /**
    * An absolute place, in model coordinates, for a word whose key is not a useful guide.
@@ -195,9 +204,10 @@ export interface Label {
   readonly rotate?: number;
 }
 
+/** One key of a model: its name, its outline and angle, its words and symbols, and where each was measured. */
 export interface Key {
   /**
-   * The identity. Logitech's own word where we have it, so that "which key is the mute key" is one
+   * The identity. Logitech's own word where there is one, so that "which key is the mute key" is one
    * lookup that gives the same answer on every model, whether that model prints a crossed out
    * speaker or the word Mute.
    */
@@ -256,14 +266,20 @@ export interface Key {
    * complete confidence.
    */
   readonly scan?: number;
-  /** The archive section or test that established `scan`, present exactly when `scan` is. */
+  /** The evidence that established `scan`, a key of `SCAN_SOURCES`, present exactly when `scan` is.
+   *
+   * @privateRemarks
+   * The archive section or test.
+   */
   readonly scanFrom?: ScanSource;
   /**
    * Where the name is settled and the code is narrowed to a set but not decided. The Harmony 525's four
    * soft keys are the case: the firmware's own matrix arithmetic puts them in one block of four codes and
-   * nothing says which column is the left one, section 89. The Harmony 350's Live key is the other; its
-   * four favourites were one until they were heard. The four arrow keys of a Harmony One and a
-   * Harmony 600 were the other case until the devices' own maps decided them, sections 398 and 323.
+   * nothing says which column is the left one. The Harmony 350's Live key is the other.
+   *
+   * @privateRemarks
+   * Section 89 for the 525. The 350's four favourites were one until they were heard. The four arrow keys of a
+   * Harmony One and a Harmony 600 were the other case until the devices' own maps decided them, sections 398 and 323.
    */
   readonly scanCandidates?: readonly number[];
   /** The screen zone this key answers for, where the model has keys flanking its display. */
@@ -333,6 +349,7 @@ export interface Screen {
   readonly touch: boolean;
 }
 
+/** A model's front face: its case, its screen, its keys and regions, each measured. */
 export interface Model {
   readonly id: string;
   readonly label: string;

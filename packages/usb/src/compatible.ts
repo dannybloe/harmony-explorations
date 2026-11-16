@@ -57,8 +57,10 @@ import { readVersion, type VersionReading } from './protocol.ts';
 /** What a config's wrapper states, field name to value, exactly as it states it. */
 export type StatedVersion = Readonly<Record<string, string>>;
 
+/** One field's answer: the configuration and the remote agree, they differ, or the configuration states nothing. */
 export type FieldVerdict = 'match' | 'mismatch' | 'not-stated';
 
+/** One field of the comparison, both sides of it and its verdict. */
 export interface CompatibilityField {
   /** The wrapper's own name for the field. */
   readonly field: string;
@@ -69,6 +71,7 @@ export interface CompatibilityField {
   readonly verdict: FieldVerdict;
 }
 
+/** Whether a configuration file was built for the remote on the cable, field by field. */
 export interface Compatibility {
   readonly fields: readonly CompatibilityField[];
   /** How many fields carried an actual comparison. Zero means the config claimed nothing. */
@@ -79,6 +82,7 @@ export interface Compatibility {
   readonly compatible: boolean;
 }
 
+/** A comparison asked for a field it does not know, where a match would mean nothing. */
 export class CompatibilityError extends Error {}
 
 /** Three components, zero filled, so a two component board version compares with a three. */

@@ -29,6 +29,7 @@ import { IR_PULSE_MARK, IR_PULSE_MAX, irBlockWords, irHeaderPointers } from './i
 /** Which half of a mark and space pair carries the bit. */
 export type FrameCarrier = 'mark' | 'space';
 
+/** An infrared code read as the bits it sends, and the shape of the signal that carries them. */
 export interface IrFrame {
   /** How many bits the train encodes. */
   bits: number;
@@ -49,6 +50,7 @@ export interface IrFrame {
 /**
  * A mark or a space, in microseconds.
  *
+ * @privateRemarks
  * Exported since 22 August 2026, because FreeHarmony holds a command's durations in exactly this shape
  * and needed to frame them. It could not: every entry point here took a container and a record number,
  * so the only way to reuse the decoder was to copy it, and a second copy of a derivation is the one
@@ -222,6 +224,7 @@ function decode(d: readonly Pulse[], carries: FrameCarrier, headerPairs: number,
  * and the two 48 bit families with about 3400 and 1700. A protocol with no header would need zero, so
  * the parameter exists rather than the constant being wired in.
  *
+ * @privateRemarks
  * **Whether one is right for every record here is open**, and the wording was "which is one in every
  * record here", which is a claim nothing checks. A structural test of it was tried on 13 August 2026
  * and was wrong in its own premise, taking a block's marks and spaces to alternate by position when
@@ -259,6 +262,7 @@ export function recordSent(c: Container, record: number): { frame: string; store
 /**
  * Every convention under which a record's first block reads as a frame.
  *
+ * @privateRemarks
  * **Usually one, sometimes both, often none**, and this said "which is one or none here" while the
  * test two files over asserts 3502 one, 0 both and 1128 none since section 163, which emptied the both
  * column. The list return type is kept for the shape rather than for a live population: a
@@ -275,8 +279,10 @@ export function irFrames(c: Container, record: number, headerPairs = 1): IrFrame
 }
 
 /**
- * The same, from a pulse train somebody already has.
+ * The same as `irFrames`, from a pulse train a caller already has, with no container: the leading gap is trimmed,
+ * and adjacent durations of one kind are merged first, since a receiver cannot see the join.
  *
+ * @privateRemarks
  * **The one entry point that does not need a container**, and it exists because a caller turned up that
  * has the durations and not the file: FreeHarmony keeps a command's marks and spaces in its own model,
  * copied out of a config at import, and wanted the frame so it could be matched against a catalogue of
@@ -287,12 +293,14 @@ export function irFrames(c: Container, record: number, headerPairs = 1): IrFrame
  * The leading gap is trimmed here rather than by the caller, since a block commonly opens with several
  * 32767 spaces and knowing that is knowing the format.
  *
- * **Adjacent durations of one kind are merged first**, section 164, because two words of the same kind
+ * **Adjacent durations of one kind are merged first**, because two words of the same kind
  * in a row are one interval and a receiver cannot see the join. Reading them unmerged gave 45 records
  * of three arch 8 (Harmony 880) configs an eight bit frame they do not have, all 45 reading the same
  * value, which forty five different commands cannot be. It costs those 45 and nothing else across the
  * corpus, since requiring a constant non carrying half already refuses everything else the merge
  * changes.
+ *
+ * section 164.
  */
 export function framesOfPulses(train: readonly Pulse[], headerPairs = 1, gapUs?: number): IrFrame[] {
   const d = fromFirstMark(mergedIntervals(train));
@@ -504,17 +512,19 @@ export function blockCopies(words: readonly number[]): number {
 }
 
 /**
- * How many times a press sends the code, section 258, or undefined where the record cannot say.
+ * How many times a press sends the code, or undefined where the record cannot say.
  *
  * **It is a ratio and not the first block's copy count, and that is the whole finding.** A record's
- * first block is what one press sends and its second is what repeats while the key is down, section
- * 127, so the second block holds exactly one press's worth. Dividing removes whatever the **family**
+ * first block is what one press sends and its second is what repeats while the key is down, so the second block holds exactly one press's worth. Dividing removes whatever the **family**
  * puts in a press: `Sharp 15 Bit` sends a frame and its complement, so its blocks hold six copies and
  * two, and the ratio is three, which is the same answer `PanasonicV2 48 Bit` gives from three copies
  * and one. Reading the first block alone would have called those two devices different.
  *
  * Undefined where the record names no second block, which is 1927 of the corpus's 3387 records, since
  * the count is then not stated by anything a reader can divide.
+ *
+ * @privateRemarks
+ * section 258; section 127.
  */
 export function irSendsPerPress(c: Container, record: number): number | undefined {
   const pointers = irHeaderPointers(c, record);
@@ -533,14 +543,20 @@ export function irSendsPerPress(c: Container, record: number): number | undefine
 }
 
 /**
- * The durations a frame is built out of, in microseconds, section 152.
+ * The durations a frame is built out of, in microseconds. They come off the record rather than out of a protocol
+ * table: a stored record states its own timings, so nothing here has to know what a Panasonic or an NEC frame looks
+ * like in order to write one. What it cannot do is invent them: Logitech's catalogue states a protocol family and a
+ * frame value and no durations, so the timings come from a record of the same family that a configuration holds.
  *
+ * @privateRemarks
  * **Five numbers, and they come off the record rather than out of a protocol table.** That is the
  * finding: a stored record states its own timings, so nothing here has to know what a Panasonic or an
  * NEC frame looks like in order to write one. What it cannot do is invent them, which is the shape of
  * the problem FreeHarmony has with Logitech's catalogue: that service states a protocol family and a
  * frame value and no durations at all, so the timings have to come from a record of the same family
  * that some configuration already holds.
+ *
+ * section 152.
  */
 export interface FrameTimings {
   /**
@@ -567,6 +583,7 @@ export interface FrameTimings {
    * a pair that has to be constant is not constant and a strict reader refuses the record, which is
    * what kept the whole Sharp family out of the table.
    *
+   * @privateRemarks
    * It is **not** a lead in, and the difference is settled rather than assumed: reading the first mark
    * as part of the first bit cell makes 162 of 162 of the frames land on numbers Logitech's catalogue
    * states for the same appliances, and reading it as a header would shift every bit by one.
@@ -582,6 +599,7 @@ export interface FrameTimings {
    * chain whichever end you name it from. `JVC 16 Bit` is that case and its measured row, taken off a
    * real remote's configuration, is in the (mark, space) spelling.
    *
+   * @privateRemarks
    * Two things break the equivalence and section 230 found both by comparing against Logitech's own
    * renderings of two million commands:
    *
@@ -602,7 +620,7 @@ export interface FrameTimings {
   /**
    * The mark of a **set** cell, where the mark's length rides with its own cell's bit.
    *
-   * **Three families carry two (mark, space) pairs instead of one flat**, section 170: every set cell
+   * **Three families carry two (mark, space) pairs instead of one flat**: every set cell
    * is one pair and every clear cell the other, perfectly correlated, so the "constant" half is a
    * function of the bit. `Panasonic 16 Bit` sends a clear bit as 521 with 1575 and a set bit as 525
    * with 527, `MemorexV2 32 Bit Dual` as 594 with 1725 against 560 with 594, and `Sharp 48 Bit` as
@@ -610,6 +628,9 @@ export interface FrameTimings {
    * kept 29 catalogue commands out of reach. It is accepted **only on perfect correlation**: a mark
    * that varies within one space cluster is still a wobbling flat and still a refusal. `flat` stays
    * the clear cell's mark, and this field is the set cell's.
+   *
+   * @privateRemarks
+   * section 170.
    */
   oneMark?: number;
   /**
@@ -628,7 +649,7 @@ export interface FrameTimings {
    * The frame is one value sent in sections, this many bits each, and the last bit of every section is
    * carried by a structural space rather than by an ordinary cell.
    *
-   * **Measured on `Samsung 38 Bit`, section 166, and it is what "38 Bit" turns out to mean**: one
+   * **Measured on `Samsung 38 Bit`, and it is what "38 Bit" turns out to mean**: one
    * header, sixteen bit cells, a 4470 space, twenty one more cells whose last is swallowed by the
    * closing silence. 17 + 21 = 38, the catalogue states the two section values separately, and reading
    * the 4470 space as section one's final set bit lands all 35 records of the compiled sample on their
@@ -636,6 +657,9 @@ export interface FrameTimings {
    * section's as `closing`, and both must be **set** bits: every stated value of the family is odd, in
    * both sections, so a frame whose section ends in a zero has never been seen and is refused rather
    * than invented.
+   *
+   * @privateRemarks
+   * section 166.
    */
   sections?: readonly number[];
   /** The space carrying a non final section's last set bit. Present exactly when `sections` is. */
@@ -890,12 +914,10 @@ export interface BlockTail {
  * **What this is.** An ordinary infrared family sends one bit per cell, so it needs two cells and our
  * `FrameTimings` names them `zero` and `one`. Logitech's catalogue also holds families that send **two**
  * bits per cell, out of four lengths, and families that send **four**, out of sixteen. 75 of their
- * families are base four and 67 base sixteen, which together were the largest block of their catalogue
- * this project could not emit at all. Section 231.
+ * families are base four and 67 base sixteen.
  *
  * **Which base a family uses comes from its definition and never from its name**, the number of cells in
- * its frame segment. A first version of this said the names say so, `Quad` being base four and `Hex`
- * base sixteen, and `Quad 5 Bit` refutes it: two symbols, five bits, values in hexadecimal.
+ * its frame segment: `Quad 5 Bit` has two symbols, five bits, and values in hexadecimal.
  *
  * **A cell is a list of intervals and nothing is assumed about its shape**, which is why this is not
  * `FrameTimings` with more fields. Of the 75 base four families, 33 have a constant half and four
@@ -904,6 +926,10 @@ export interface BlockTail {
  * two cell shape has `flat` is that a **stored** record needs it, not that infrared does.
  *
  * `bits` is how many bits one cell carries, 2 or 4, and the cells are indexed by the symbol value.
+ *
+ * @privateRemarks
+ * A first version of this said the names say so, `Quad` being base four and `Hex` base sixteen, and `Quad 5 Bit` refutes it.
+ * Section 231.
  */
 export interface CellTimings {
   /** The lead in as it stands, signed microseconds: positive a mark, negative a space. May be empty. */
@@ -954,14 +980,16 @@ export interface FrameShape {
   readonly cells?: CellTimings | undefined;
   /**
    * The **other** rhythms this family sends, for a block whose copies are not all one shape.
-   *
-   * Section 232. One repetition of `Classe 16 Bit Toggle` is four mode bits at a 442 microsecond half
+   * One repetition of `Classe 16 Bit Toggle` is four mode bits at a 442 microsecond half
    * cell, one bit at 880 and sixteen data bits at 442, so three of Logitech's segments with three
    * different cells go out back to back and a block naming one shape can only send a third of it. A
    * copy item's `shape` indexes this list, offset by one because index 0 is this shape.
    *
    * Deliberately a list on the shape rather than a list of shapes in the signature: every existing
    * caller has one rhythm, and a family with several is the exception rather than the general case.
+   *
+   * @privateRemarks
+   * Section 232.
    */
   readonly also?: readonly FrameShape[] | undefined;
 }

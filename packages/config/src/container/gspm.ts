@@ -37,6 +37,7 @@ import { archSlot, SLOT_MAPS } from './slots.ts';
 export * from './clock.ts';
 export * from './slots.ts';
 
+/** Bytes that are not a configuration, or one that cannot be read as its header states. */
 export class GspmError extends Error {}
 
 /** One container cookie and the end marker that goes with it. */
@@ -309,8 +310,12 @@ export class Section {
   }
 }
 
+/**
+ * A configuration as read by `parse`: its header, its table of sections, and its bytes, which every reader of
+ * this package takes.
+ */
 export class Container {
-  /** Offset of the cookie within whatever was parsed: an EZHex file, or a flash dump. */
+  /** Offset of the cookie within whatever was parsed: an EZHex file, or a read of a remote's flash. */
   readonly blobOffset: number;
   readonly length: number;
   readonly flashBase: number;
@@ -385,7 +390,11 @@ export class Container {
     return stated + FRAME_END_LENGTH;
   }
 
-  /** The pointer count the header states. Section 194, and independent of `pointerCount`. */
+  /** The pointer count the header states, independent of `pointerCount`.
+   *
+   * @privateRemarks
+   * Section 194.
+   */
   get statedPointerCount(): number {
     return statedPointerCount(this.formatRaw);
   }
@@ -395,8 +404,11 @@ export class Container {
    *
    * It splits one byte into nibbles and prints them as major.minor, which reads as a plausible
    * version for `0x14` to `0x17` and as nonsense otherwise: an arch 16 (Harmony 350) container comes
-   * out `0.15`, a lower version than a remote five years older. Section 194 read the byte instead and
-   * it is the pointer count. Prefer `statedPointerCount`.
+   * out `0.15`, a lower version than a remote five years older. The byte is the pointer count: prefer
+   * `statedPointerCount`.
+   *
+   * @privateRemarks
+   * Section 194 read the byte instead.
    */
   get formatVersion(): string {
     return `${this.formatRaw >>> 12}.${(this.formatRaw >>> 8) & 0xf}`;
@@ -409,7 +421,10 @@ export class Container {
   /**
    * Convert an absolute flash address to an offset within the container blob.
    *
-   * Undefined for a NULL pointer and for an address outside the blob. It used to test only
+   * Undefined for a NULL pointer and for an address outside the blob.
+   *
+   * @privateRemarks
+   * It used to test only
    * `address === 0`, so it was a NULL test wearing a range test's signature: it answered 16515071
    * for a 1.6 MB blob and -16 for an address below the base. Every caller guarded the upper bound
    * and none guarded the lower, so a pointer below the base reached `u8` and `u24` and threw a
@@ -428,7 +443,7 @@ export class Container {
    * Convert an absolute flash address to an offset within the file that was parsed.
    *
    * Distinct from `blobOffsetOf` by `blobOffset`, which is non zero whenever the container sits
-   * inside something larger: an EZHex file with its XML header, or a flash dump. Conflating the
+   * inside something larger: an EZHex file with its XML header, or a read of a remote's flash. Conflating the
    * two silently shifts every section by the header length and produces a plausible looking
    * wrong answer rather than an error, which has already cost time here.
    */
@@ -440,6 +455,7 @@ export class Container {
   /**
    * Bytes from this section's start to the next non NULL one, or to the end marker.
    *
+   * @privateRemarks
    * The header does not state section lengths, so they come from the layout: the non NULL
    * pointers ascend with the slot number in every sample, which the `sections_ascend` check now
    * verifies rather than this comment asserting it. NULL slots have no length.
@@ -559,10 +575,13 @@ export class Container {
    * is stated once per method rather than derived twice in different files: a list is a `u8` count
    * then `count` instructions of an operand `u16` and an opcode `u8`. If that rule ever changes,
    * both bodies are on the same screen. `compose.ts` uses this to renumber a state variable, whose
-   * index sits either in an opcode byte or in an operand's low byte, section 277.
+   * index sits either in an opcode byte or in an operand's low byte.
    *
    * Returns undefined on exactly the conditions `actionList` does, so a caller that has a parsed
    * list has an offset list of the same length.
+   *
+   * @privateRemarks
+   * section 277.
    */
   actionListSites(address: number): { operandAt: number; opcodeAt: number }[] | undefined {
     const off = this.blobOffsetOf(address);
@@ -739,6 +758,15 @@ export function containerExtent(data: Uint8Array): { family: Family; start: numb
   return { family, start, blob: new Uint8Array(data.buffer, data.byteOffset + start, endMarker + 4 - start) };
 }
 
+/**
+ * Read a configuration, from bytes read off a remote or from a file, into a `Container`. Refuses bytes that are not
+ * one.
+ *
+ * It looks for the container in the bytes it is given, so a read off a remote, a bare container and a file whose
+ * payload follows its header as it is all parse directly. It does not unwrap a `.EZHex` file whose payload is
+ * written out as hex inside the XML: pass such a file through `payloadOf` first, which hands back the bytes to parse
+ * whatever form the file arrived in.
+ */
 export function parse(data: Uint8Array): Container {
   const { family, start, blob } = containerExtent(data);
   if (blob.length < MINIMUM_HEADER_LENGTH) {

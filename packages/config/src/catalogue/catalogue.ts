@@ -43,9 +43,10 @@ export interface CatalogueManufacturer {
 export interface CatalogueModel {
   /**
    * **Null for the three devices that state no model name**, of 278220: one each under Thomson,
-   * Gemini and Sony, whose only identity is `globalDeviceId` and whose file is named for it. This
-   * field was typed `string` until it was measured, so a caller reaching for a string method on it
-   * threw on Sony, which is a manufacturer the tests here already walk.
+   * Gemini and Sony, whose only identity is `globalDeviceId` and whose file is named for it.
+   *
+   * @privateRemarks
+   * This field was typed `string` until it was measured, so a caller reaching for a string method on it threw on Sony, which is a manufacturer the tests here already walk.
    */
   readonly model: string | null;
   /** The file inside `devices/<slug>/`, which is not always the model name: two models may collide. */
@@ -69,6 +70,7 @@ export interface CatalogueDevice {
   /**
    * The codeset path relative to the archive root, absent for the 18781 devices with no codes.
    *
+   * @privateRemarks
    * **The archive spells that absence as `null` and this field is normalised to omit it**, which is
    * the point of the normalising: the count in this comment was right and the type was wrong about
    * exactly those rows, since all 18781 carry the key with a null value and **not one** of the
@@ -93,8 +95,8 @@ export interface CatalogueCommand {
  * What Logitech's numeric device type means, for the values something outside the archive has named.
  *
  * **Three of these are Logitech's own words** and one is corroborated rather than stated. Their live
- * service returns a `DeviceType` number beside a `DeviceTypeDisplayName`, and a captured reply in the
- * lab pairs 1 with `Television`, 4 with `DVD` and 5 with `StereoReceiver`. Type 2 is not in that reply;
+ * service returns a `DeviceType` number beside a `DeviceTypeDisplayName`, and a captured reply of
+ * theirs pairs 1 with `Television`, 4 with `DVD` and 5 with `StereoReceiver`. Type 2 is not in that reply;
  * what names it is our own corpus, where the one device group a config's owner labelled `VCR` identifies
  * a device the archive types 2, and the archive's own README says 2 is a VCR as well.
  *
@@ -110,10 +112,14 @@ export const DEVICE_TYPE_NAMES: ReadonlyMap<number, string> = new Map([
 ]);
 
 /**
- * The archive as a builder reads it: the four questions a composer asks of a checkout, handed in rather than read from
- * a path, so the builders load where there is no disk, plan 013 decision 5. `archiveAt` in `catalogue.node.ts` answers
- * them from a checkout on disk through the readers there, which is what every builder was handed the path of before;
- * a renderer answers them from wherever it holds the archive. Each answers as the reader it is named after.
+ * The device archive as a builder reads it: the four questions a composer asks of it, handed in rather than read
+ * from a path, so the builders load where there is no disk. `archiveAt` of `@freeharmony-sdk/config/node` answers them
+ * from a folder on disk; a renderer answers them from wherever it holds the archive. Each answers as the reader it is
+ * named after.
+ *
+ * @privateRemarks
+ * Plan 013 decision 5. `archiveAt` in `catalogue.node.ts` answers them from a checkout on disk through the readers
+ * there, which is what every builder was handed the path of before.
  */
 export interface CatalogueSource {
   /** Every protocol definition, `archiveProtocols`. */
@@ -176,7 +182,11 @@ export function commandsOfCodeset(parsed: unknown, options: { readonly pronto?: 
  *
  * **The normalisation is load bearing.** Logitech pads a keycode's number to a whole number of nibbles
  * and our decoder does not, so a Sony frame is `70` here and `070` there, which is the same code. That
- * exact mistake was made once already when comparing our decoding against their analyser, section 159. */
+ * exact mistake was made once already when comparing our decoding against their analyser.
+ *
+ * @privateRemarks
+ * section 159.
+ */
 export function codeKey(hex: string): string {
   return BigInt(`0x${hex}`).toString(16);
 }

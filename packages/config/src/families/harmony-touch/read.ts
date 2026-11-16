@@ -90,6 +90,7 @@ export const INFRARED_TRANSPORT = 1;
  * entry of any other name is placed on no key.
  */
 export const NUMBER_PAD_LEFT = ['-', '.', '*', 'NumberPlus'] as const;
+/** The names the number pad screen places on the key right of 0. */
 export const NUMBER_PAD_RIGHT = ['Enter', 'NumberEnter', '#', 'ENT'] as const;
 
 /** The number pad key a command name lands on, or `undefined` for one placed on no key. */
@@ -198,6 +199,7 @@ export interface ReadPower extends Place {
   readonly source: DeviceFeature;
 }
 
+/** An input of a device as the remote reads it. */
 export interface ReadInput extends Place {
   readonly name: string;
   readonly order: number | undefined;
@@ -221,6 +223,7 @@ export interface ReadChannelTuning extends Place {
   readonly source: DeviceFeature;
 }
 
+/** A device as the remote reads it, with its commands, inputs and power. */
 export interface ReadDevice extends Place {
   readonly id: string;
   readonly name: string | undefined;
@@ -315,6 +318,7 @@ export interface ReadButton extends Place {
   readonly source: Button;
 }
 
+/** A sequence as the remote reads it, its steps in order. */
 export interface ReadSequence extends Place {
   readonly id: string;
   readonly name: string | undefined;
@@ -323,6 +327,7 @@ export interface ReadSequence extends Place {
   readonly source: Sequence;
 }
 
+/** A key map as the remote reads it: whose it is and what each key sends. */
 export interface ReadMap extends Place {
   /** The map's `__type`, a device's or an activity's; the engine does not find a map by it. */
   readonly kind: 'device' | 'activity' | 'other';
@@ -361,6 +366,7 @@ export interface ReadMap extends Place {
   readonly source: ButtonMap;
 }
 
+/** A device's role in an activity as the remote reads it, with its place in the order devices are switched on and off. */
 export interface ReadRole extends Place {
   readonly kind: string;
   readonly deviceId: string;
@@ -403,6 +409,7 @@ export interface ReadActivityStep extends Place {
   readonly source: ActivityAction;
 }
 
+/** An activity as the remote reads it, its devices, steps and key map resolved. */
 export interface ReadActivity extends Place {
   readonly id: string;
   readonly name: string | undefined;
@@ -474,6 +481,7 @@ export interface SettingValue<T> {
   readonly from: 'account' | 'row default' | 'firmware';
 }
 
+/** The Settings document as `readSettings` gives it. */
 export interface ReadSettings extends Place {
   /** The model name on the About screen; the firmware's own when empty. */
   readonly remoteName: string | null | undefined;
@@ -497,6 +505,7 @@ export interface ReadSettings extends Place {
   readonly source: Settings;
 }
 
+/** The Context document as `readContext` gives it. */
 export interface ReadContext extends Place {
   /** The account number in the address of every document the remote hands up. */
   readonly accountId: string | undefined;
@@ -991,6 +1000,7 @@ function readActivity(
  * exercised.
  */
 export const FAVOURITES_ROLES = ['ControlsRokuActivityRole', 'ControlsSonosActivityRole', 'ControlsSpeakerActivityRole', 'ChannelChangingActivityRole'] as const;
+/** The roles in the order the remote picks the device a favourite channel is sent to, the app's role included. */
 export const CHANNEL_DEVICE_ORDER = ['ControlsRokuActivityRole', 'ControlsSonosActivityRole', 'ControlsAppActivityRole', 'ControlsSpeakerActivityRole', 'ChannelChangingActivityRole'] as const;
 
 /** The address of a station's logo, asked for at 54 by 54. */
@@ -1131,6 +1141,7 @@ function aText(row: Setting | undefined, firmware: string | undefined): SettingV
   return first !== undefined ? { value: first, from: 'account' } : { value: firmware, from: 'firmware' };
 }
 
+/** The Settings document as the remote reads it, each setting by its name. */
 export function readSettings(s: Settings): ReadSettings {
   const rows = new Map<string, Setting>();
   for (const [row] of entriesOf(s.Settings)) if (!rows.has(row.Name)) rows.set(row.Name, row);
@@ -1163,6 +1174,7 @@ export function readSettings(s: Settings): ReadSettings {
   };
 }
 
+/** The Context document as the remote reads it. */
 export function readContext(c: Context): ReadContext {
   const installer = c.InstallerId !== null && c.InstallerId !== undefined;
   const language = typeof c.Language === 'string' ? c.Language.split('-')[0] : undefined;

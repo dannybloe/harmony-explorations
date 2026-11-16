@@ -110,7 +110,7 @@ export interface OwnSettings {
 export const CONTEXT_FIELDS_READ = ['AccountId-', 'HouseholdUserProfileUri', 'Language', 'Email', 'InstallerId', 'SetupSession', 'CountryCode'] as const;
 export type ContextFieldRead = (typeof CONTEXT_FIELDS_READ)[number];
 
-/** A Context description: the seven fields read, each as the document states it. Kept in the lab, since it holds the account's. */
+/** A Context description: the seven fields read, each as the document states it. It holds the account's identifiers, so it is kept with the user's data and never in a document. */
 export type OwnContext = { readonly [field in ContextFieldRead]: unknown };
 
 /** The two fields of the seven that are the account's own and are not changed by a description. */

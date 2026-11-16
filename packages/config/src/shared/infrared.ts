@@ -51,43 +51,56 @@ export interface ComposeCommand {
   readonly stated: string;
   /**
    * `stated` as its family's definition reads it, `statedCodeOfDefinition` in `archive.ts`, where the
-   * caller has the archive; absent, `stated` is read at the widths its family's name spells. Section 359.
+   * caller has the archive; absent, `stated` is read at the widths its family's name spells.
    *
-   * **The name is not enough to read a code**, section 231: the number before `Bit` is the digit count on
+   * **The name is not enough to read a code**: the number before `Bit` is the digit count on
    * some families whose cell carries more than one bit and neither count on as many, and several names state
    * no width at all, so a code
    * the name cannot read is one the table's block and the held power step cannot be built for either. The
    * catalogue composer passes this for every command, so the record is built from one reading of the
    * string, the one `make prontocheck` holds against the archive's renderings.
+   *
+   * @privateRemarks
+   * Section 359.
+   * section 231.
    */
   readonly read?: StatedCode;
   /**
-   * Whether the command repeats while its key is held, which nothing states, phase 4's audit gap 2:
+   * Whether the command repeats while its key is held, which nothing states:
    * a record's held block is per command in the format and the catalogue does not say. Absent means
    * take the family's repeat block where the family has one, which is right for volume and channel
    * keys and harmless for the rest, and `false` refuses it for a command that must not repeat.
+   *
+   * @privateRemarks
+   * Phase 4's audit gap 2.
    */
   readonly held?: boolean;
   /**
-   * The silence in front of the once block, phase 7's first measurement: every once block in every
+   * The silence in front of the once block: every once block in every
    * Logitech compile leads with one, 2032 of 2032 across both generator eras, 50 ms on most
    * commands and 500 ms or a second on the ones that deserve a settling time, power and inputs
    * mostly. Absent means the 50 ms the majority carries; the catalogue does not state the longer
    * ones, so a caller that knows better says so here.
+   *
+   * @privateRemarks
+   * Phase 7's first measurement.
    */
   readonly leadInUs?: number;
   /**
-   * A power step the catalogue holds for this many milliseconds, sections 306 to 309: the record is
+   * A power step the catalogue holds for this many milliseconds: the record is
    * `longPressBlockOfStatedCode`'s, its frames counted for the hold, with no held block, the way
    * Logitech's compiler writes one. `held` does not apply and is refused. **The lead in defaults to none
-   * here**, as every long press version of the Harmony 650 and 700 compiles has none, section 309; a
+   * here**, as every long press version of the Harmony 650 and 700 compiles has none; a
    * `leadInUs` given goes in front of the frames, which is how the Harmony 880 and 885 compiles open one,
    * with the device's delay between devices, `reference/infrared/sending.md`, "The delay between devices on the
    * Harmony 880 and 885".
+   *
+   * @privateRemarks
+   * sections 306 to 309; section 309.
    */
   readonly holdMs?: number;
   /**
-   * The press's blocks where the caller derived them at the device's count, sections 348 and 350: `once`
+   * The press's blocks where the caller derived them at the device's count: `once`
    * is the record's first block without its lead in and `held` the second.
    *
    * **The table cannot hold these because the count is the device's and not the family's.** A whole block
@@ -97,8 +110,12 @@ export interface ComposeCommand {
    * family's definition at the device's count, where the table holds no block for the family and where
    * its block was measured on a device stating another count; a caller without the archive leaves this
    * out and gets the table's block, or a refusal where it has none. **Given, they win over the table's
-   * block**, which until section 350 won over them: a table block carries the count of the one device it
+   * block**: a table block carries the count of the one device it
    * was measured on, so where the caller has derived another one the table's is the wrong one.
+   *
+   * @privateRemarks
+   * The table's block won over them until section 350.
+   * sections 348 and 350.
    */
   readonly blocks?: StatedBlocks;
   /**
@@ -107,10 +124,11 @@ export interface ComposeCommand {
    * the same way as the command itself, so the second group is the first group's derivation applied to other
    * frames.
    *
+   * @privateRemarks
    * **Why a record carries the code twice.** A toggle family's code holds one bit that must change on every
    * press so an appliance can tell a second press from a held key, and the remote has no arithmetic to
    * change it. So Logitech's compiler writes two groups, the code as stated and the code flipped, on every
-   * record of every toggle family in every compile in the lab, and the firmware alternates between them per
+   * record of every toggle family in every compile of theirs measured, and the firmware alternates between them per
    * device. `withToggleFlipped` in `archive.ts` carries the measurement. Absent for a code with no toggle bit.
    */
   readonly toggled?: ToggledCode;
@@ -123,11 +141,14 @@ export interface StatedBlocks {
   readonly held?: readonly Pulse[];
   /**
    * What the key sends when it comes up, the code's third group: the record's **third** pointer, which the
-   * firmware plays at the end whether the key was held or not, section 127. Logitech's compiler puts a
-   * code's release group there, section 365: the PlayStation 3's `StopSpacer`, a
+   * firmware plays at the end whether the key was held or not. Logitech's compiler puts a
+   * code's release group there: the PlayStation 3's `StopSpacer`, a
    * six second silence, on the Harmony One, 650 and 700, and `Microsoft 36 Bit`'s constant release on the
-   * contributed Harmony 880 or 885 configurations, the two distinct tails in the lab. Absent for a code
+   * contributed Harmony 880 or 885 configurations, the two distinct tails measured. Absent for a code
    * naming no release group.
+   *
+   * @privateRemarks
+   * section 127; section 365.
    */
   readonly release?: readonly Pulse[];
 }
@@ -141,9 +162,12 @@ export interface ToggledCode {
 /**
  * One step of a power action as the catalogue states it: a command, and how long it is held where the
  * catalogue says, `DriveStep` in `driving.ts`. A step held for a time gets a record of its own holding
- * the frames that time sends, section 309; a step that is not still gets a record of its own, the
+ * the frames that time sends; a step that is not still gets a record of its own, the
  * ordinary press without its lead in silence, which is what every power step record Logitech compiled
  * for the Harmony 650 holds, measured on three devices word for word.
+ *
+ * @privateRemarks
+ * section 309.
  */
 export interface ComposePowerStep {
   readonly stated: string;

@@ -30,6 +30,10 @@
 import { bytesOf, indexOf } from '../support/bytes.ts';
 import { FAMILIES } from './gspm.ts';
 
+/**
+ * A configuration file that cannot be read: no header, or a header that does not say what follows it, or a payload
+ * written as hex with an odd number of digits or with characters that are not hex.
+ */
 export class EzFileError extends Error {}
 
 export const CHECKSUM_SEED = 0x69;
@@ -48,15 +52,19 @@ export const HEADER_WINDOW = 0x4000;
 const XML_OPEN = 0x3c;
 
 /**
- * The six fields a compatibility check compares, section 87.
+ * The six fields a compatibility check compares.
  *
- * Not the four this used to list. `SOFTWARETYPE` says which of the remote's images is running
+ * `SOFTWARETYPE` says which of the remote's images is running
  * and `ARCHITECTURE` is compared too; a field that is absent or empty matches anything, which
  * is how one entry is written to match every remote. `SOFTWARE` is **not** one of the six, so a
- * version that looks like a gate is not one. Three arch 8 wrappers state it inside `INTENDEDVERSION`,
- * and this said one until they were counted. The reader looks up these six
- * names only, so it drops `SOFTWARE` before the comparison sees it, and the comparison's refusal of
- * an unknown field never meets it on a real file: `packages/remote/test/read/compatibility.test.ts`.
+ * version that looks like a gate is not one. The reader looks up these six names only, so it drops `SOFTWARE`
+ * before the comparison sees it.
+ *
+ * @privateRemarks
+ * Not the four this used to list. Three arch 8 wrappers state `SOFTWARE` inside `INTENDEDVERSION`, and this said one
+ * until they were counted. The comparison's refusal of an unknown field never meets it on a real file:
+ * `packages/remote/test/read/compatibility.test.ts`.
+ * section 87.
  */
 export const INTENDED_VERSION_FIELDS = [
   'PROTOCOL',
@@ -75,6 +83,10 @@ export type Encoding = 'hex-data-elements' | 'raw-after-header' | 'bare-containe
 /** How the header's last line ended, or `none` when the terminator sits at end of file. */
 export type LineEnding = 'crlf' | 'lf' | 'cr' | 'none';
 
+/**
+ * A configuration file as Logitech's service delivers it: its text header, what the header states, and the
+ * configuration after it, with the result of each check.
+ */
 export interface EzHex {
   readonly name: string;
   readonly xml: string;
@@ -101,6 +113,7 @@ export function payloadChecksum(payload: Uint8Array): number {
   return value;
 }
 
+/** Whether every check of a read configuration file held. */
 export function allChecksPass(checked: { checks: Record<string, boolean> }): boolean {
   return Object.values(checked.checks).every((ok) => ok);
 }
@@ -290,7 +303,7 @@ export function decodePayload(blob: Uint8Array, name = '<blob>'): Region {
  * Accepts whatever a config arrives as and hands back the bytes to parse.
  *
  * A raw flash read from a remote is passed through untouched, because `gspm.parse` finds the
- * container inside a larger dump on its own. Anything that starts as XML is unwrapped first.
+ * container inside a larger read of the flash on its own. Anything that starts as XML is unwrapped first.
  */
 export function payloadOf(blob: Uint8Array, name = '<blob>'): Uint8Array {
   let i = 0;

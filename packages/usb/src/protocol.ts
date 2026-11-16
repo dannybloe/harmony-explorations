@@ -17,6 +17,11 @@
  *     read an empty report and conclude the device is broken.
  */
 
+/**
+ * A reply that does not have the shape its command gives it, or a request that cannot be built: an argument that
+ * does not fit its field, such as an address past 24 bits, a count past 16 bits, a payload too long, or a value that
+ * is not a byte. A request refused that way is refused before anything is sent.
+ */
 export class ProtocolError extends Error {}
 
 /** The seven commands every image dispatches. `reference/usb-protocol/commands.md`. */
@@ -743,6 +748,7 @@ export const SOFTWARE_TYPE_SAFE_MODE = 4;
 /**
  * The architecture a remote states in its own version block, or undefined if the block is too short.
  *
+ * @privateRemarks
  * **This exists because the tools were reading the version block, printing the architecture, and
  * then throwing it away.** `read-window.ts` defaulted the region validator to arch 12 while holding
  * a reply that said 9, so a legitimate read of a 525's flash was refused with a message naming the
@@ -768,8 +774,9 @@ export function softwareTypeFromVersion(fields: Uint8Array): number | undefined 
 }
 
 /**
- * The version block, read as far as this project has earned a reading, with every byte kept.
+ * The version block, with the fields that have a known meaning named, and every byte kept.
  *
+ * @privateRemarks
  * Written on 21 August 2026 for FreeHarmony, which needs a firmware version and a flash id to put in
  * a document and must not compute either itself: interpreting a protocol reply is this library's job,
  * and a second reading of these fields in the product is exactly the split the two repositories are
@@ -804,11 +811,12 @@ export interface VersionReading {
   /** Field 5, which `bcdDevice` states independently, so the two are a check on each other. */
   readonly skin: number;
   /**
-   * Field 6, which names a **platform** and not an architecture, section 116.
+   * Field 6, which names a **platform** and not an architecture.
    *
    * `0x0C` on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700), which are one platform under
    * it, `0x09` on arch 9 (Harmony 525) and `0x08` on arch 8 (Harmony 880 and 885).
    *
+   * @privateRemarks
    * **What a remote in a recovery role answers is per architecture**, and this said `0x00` for any
    * bootloader or remote in safe mode until section 190. It is zero from an arch 9 safe mode image
    * and from the arch 8 bootloaders, and a live Harmony One in safe mode answers `0x0C`, the same as
@@ -827,6 +835,7 @@ export interface VersionReading {
 /**
  * The names of the fields, for a caller showing the block as it came.
  *
+ * @privateRemarks
  * **Moved here from `packages/bench` on 21 August 2026**, where it had been the only place the block
  * was labelled at all. A second consumer arriving is what made that a problem rather than a location:
  * two tables of names drift, and this one had already carried a wrong claim for a month, that field 6

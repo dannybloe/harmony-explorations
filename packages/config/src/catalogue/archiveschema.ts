@@ -30,9 +30,12 @@ export interface Segment {
      *
      * **It lives inside `Payload` and this interface had it at the top level**, where it is set on none
      * of them, which is why the field's own docstring on `keycodeFields` said it was always null. The
-     * correction matters where a family sends several rhythms in one repetition, section 232: a
+     * correction matters where a family sends several rhythms in one repetition: a
      * secondary segment has no `keycodeFields` entry of its own to look up, so this is the only place
      * its width is stated.
+     *
+     * @privateRemarks
+     * section 232.
      */
     readonly NumberOfBits: number | null;
   } | null;
@@ -52,6 +55,7 @@ export interface Definition {
   /**
    * Which segments a block is made of, which is the block structure stated outright.
    *
+   * @privateRemarks
    * **Read on 31 August 2026 and it had been sitting there unread**, which is worth recording because
    * the shape of a block was reconstructed by hand from our own measurements first: `Repeat` is one
    * repetition, in order, `Start` is what precedes the first one, and `Finish` is what a release sends.

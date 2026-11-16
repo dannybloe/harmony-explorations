@@ -75,7 +75,11 @@ export interface RequirementAnswer {
   readonly state: RequirementState;
 }
 
-/** A bench model, its properties and the status of every requirement on it, in number order. */
+/** A model of `BENCH_MODELS`, its properties and the status of every requirement on it, in number order.
+ *
+ * @privateRemarks
+ * A bench model.
+ */
 export interface ModelCapabilities {
   readonly key: BenchModelKey;
   readonly name: string;
@@ -165,8 +169,12 @@ function propertiesOf(model: BenchModel): ModelProperties {
 }
 
 /**
- * A bench model's properties and the status of every requirement on it, by its key or by a skin one of its remotes
- * reports; undefined for a key or a skin no bench model has, a remote these statuses were never judged for.
+ * A model's properties and the status of every requirement on it, by its key or by a skin one of its remotes
+ * reports, for the models of `BENCH_MODELS`; undefined for a key or a skin none of them has, a remote these statuses
+ * were never judged for.
+ *
+ * @privateRemarks
+ * A bench model.
  */
 export function capabilitiesOf(keyOrSkin: BenchModelKey | number): ModelCapabilities | undefined {
   const model = benchModel(keyOrSkin);

@@ -25,8 +25,9 @@
  */
 
 /**
- * How many extra goes one window gets before the read fails, section 223.
+ * How many extra goes one window gets before the read fails.
  *
+ * @privateRemarks
  * Two rather than one, because the failure it recovers from is a host side queue overflowing while
  * something else held the process up, and whatever held it up may still be happening on the next
  * attempt. Not more, because a link dropping three windows in a row is not a hiccup and the read

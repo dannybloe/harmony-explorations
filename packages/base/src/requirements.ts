@@ -80,7 +80,10 @@ export type RequirementStatus = 'met' | 'open' | 'impossible' | 'unknown';
 /**
  * What an open requirement waits on, the owner of the work that is missing: `shared`, the FHSDK for every model
  * alike; `family`, the model's family, or the lack of one; `model`, this model's own; `bench`, nothing but a run on
- * a unit of the model. The module's header says how each is judged.
+ * a remote of the model.
+ *
+ * @privateRemarks
+ * The module's header says how each is judged.
  */
 export type RequirementWait = 'shared' | 'family' | 'model' | 'bench';
 
@@ -97,6 +100,7 @@ export const REQUIREMENT_STATUS_NAMES: readonly RequirementStatus[] = ['met', 'o
  */
 export type RequirementScope = 'model' | 'whole';
 
+/** One thing the SDK must do for an application, by its permanent number, with its subject, its text and its scope. */
 export interface Requirement {
   /** The permanent number, `R` and this. Never renumbered, never reused. */
   readonly number: number;
@@ -106,7 +110,7 @@ export interface Requirement {
   readonly text: string;
   readonly scope: RequirementScope;
   /**
-   * Whether met needs a bench demonstration as well as a test: true where the ability shows on a remote, a
+   * Whether met needs a run on a remote of the model as well as a test: true where the ability shows on a remote, a
    * configuration it runs, a device it drives, a read or a write over the cable; false where a test can show it
    * whole, reading a configuration's bytes, searching the catalogue, writing Pronto Hex.
    */
@@ -341,7 +345,7 @@ export function requirement(number: number): Requirement | undefined {
 // ---------------------------------------------------------------------------------------------------
 
 /**
- * The bench models by a stable key an application can store: the name of the model's folder under
+ * The models of `BENCH_MODELS` by a stable key an application can store: the name of the model's folder under
  * `reference/remotes/`, so a key also finds the model's facts.
  */
 export type BenchModelKey =
@@ -361,11 +365,14 @@ export interface BenchModel {
 }
 
 /**
- * The thirteen models a unit of which is on the bench, in the order the document's tables list them: the models with a
- * screen first, then the two without, then the Harmony Touch and the two of its generation that work as a set, the
- * Harmony Elite and the Harmony Hub, decision 40.
+ * The thirteen models the SDK proves its abilities on, with a remote of each to run on, in the order the list of
+ * requirements lists them: the models with a screen first, then the two without, then the Harmony Touch and the two of
+ * its generation that work as a set, the Harmony Elite and the Harmony Hub. Each with the skins the library tells
+ * apart as that model; a regional twin whose keypad differs is left out.
  *
- * **The skins are only those this library can tell apart as this model.** The Harmony One and the 600, 650 and 700
+ * @privateRemarks
+ * The bench model.
+ * Decision 40. A unit of each is on the bench. **The skins are only those this library can tell apart as this model.** The Harmony One and the 600, 650 and 700
  * each have a European skin beside the American one, the same hardware in another region, `models.ts`. The Harmony
  * 525 is skin 22 alone: skin 18, the 520, is the same row of the comparison table and a different keypad, without
  * the colour keys. The Harmony 515 is skin 67 alone: skin 68, the 510, is its regional twin by the model
@@ -398,7 +405,7 @@ export const BENCH_MODELS: readonly BenchModel[] = [
   { key: 'harmony-hub', name: 'Harmony Hub', skins: [106] },
 ];
 
-/** The bench model a key or a reported skin names, or undefined where it names none. */
+/** The model of `BENCH_MODELS` a key or a reported skin names, or undefined where it names none. */
 export function benchModel(keyOrSkin: BenchModelKey | number): BenchModel | undefined {
   return typeof keyOrSkin === 'number'
     ? BENCH_MODELS.find((model) => model.skins.includes(keyOrSkin))
@@ -411,7 +418,11 @@ export function benchModel(keyOrSkin: BenchModelKey | number): BenchModel | unde
 
 /**
  * One requirement's status on one model, with what it rests on. Every path is relative to the repository's root and
- * names a file that exists, a test-notes passage by its heading's anchor; `test/requirements.test.ts` holds both.
+ * names a file that exists, a passage of the test notes by its heading's anchor. A met is never written by hand: it is
+ * derived from the tests that prove the requirement, and the other three statuses carry their reason.
+ *
+ * @privateRemarks
+ * `test/requirements.test.ts` holds both.
  *
  * **A met is never written here.** It is derived from the proofs, the calls of `proves` inside the tests that show a
  * requirement, which `packages/config/bin/requirements.ts` reads off the test sources into `proofs.ts`: a requirement
@@ -423,7 +434,11 @@ export interface RequirementState {
   readonly status: RequirementStatus;
   /** The test files whose proofs make it met, in the order of the proofs. Empty but for met. */
   readonly tests: readonly string[];
-  /** Where it was shown on a bench unit of the model, the proofs' bench records together. Empty but for met. */
+  /** Where it was shown on a remote of the model, the proofs' records of such runs together. Empty but for met.
+   *
+   * @privateRemarks
+   * The proofs' bench records.
+   */
   readonly bench: readonly string[];
   /** The proofs a met rests on, each naming its test by file and title. Empty but for met. */
   readonly proofs: readonly Proof[];
@@ -1484,7 +1499,9 @@ const ANSWERED = new Map<string, RequirementState>();
 /**
  * The status of a requirement on a model: the model's own, or for a requirement about the FHSDK as a whole, the one
  * every model shares; met where the committed proofs, `proofs.ts`, prove it. Throws for a number never given, since
- * asking for one is a mistake in the caller and not a status. Every model has a status for every requirement,
+ * asking for one is a mistake in the caller and not a status. Every model has a status for every requirement.
+ *
+ * @privateRemarks
  * `test/requirements.test.ts`.
  */
 export function requirementState(model: BenchModelKey, number: number): RequirementState {

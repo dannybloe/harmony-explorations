@@ -16,8 +16,8 @@ import './support/resources.node.ts';
 
 // The main entry whole: its names are its own explicit list, `index.ts`, so this adds none by default.
 export * from './index.ts';
-// The infrared archive and the catalogue read off the disk by path, and the source a builder is handed for a
-// checkout.
+// Off the disk: the device archive and the catalogue read from a folder by path, and the source a builder is handed
+// for a checkout of the archive.
 export { archiveManifest, archiveProtocols, catalogueByRhythm, segmentLengthsModule } from './catalogue/archive.node.ts';
 export {
   archiveAt,
@@ -28,10 +28,10 @@ export {
   codeIndex,
 } from './catalogue/catalogue.node.ts';
 export { catalogueDriving } from './catalogue/driving.node.ts';
-// A recipe given its codes out of a checkout, so a build of it needs no archive, plan 014.
+// A recipe given its codes out of a checkout, so a build of it needs no archive.
 export { carryCodes } from './catalogue/carried.node.ts';
 // The archive on disk as a source a device search asks, `findDevices`.
 export { archiveSourceAt } from './catalogue/search.node.ts';
 export { catalogueRules, rawCaptureDevice, rawCaptureLine, rawDerivedState, statedSha256 } from './catalogue/catalogueraw.node.ts';
-// The resources as Node supplies them, supplied as this module loads.
+// Resources: the resources as Node supplies them, supplied as this module loads.
 export { NODE_RESOURCES } from './support/resources.node.ts';

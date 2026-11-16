@@ -28,7 +28,10 @@ fail=0
 note() { printf 'pre-commit: %s\n' "$1" >&2; fail=1; }
 
 staged=$(git diff --cached --name-only --diff-filter=ACM)
-[ -n "$staged" ] || exit 0
+# Every path the commit touches, a deletion or a rename included, for the checks that ask whether a kind of file
+# changed at all rather than read what it now holds: a page or a source deleted changes what the pages must say.
+touched=$(git diff --cached --name-only --diff-filter=ACMRD)
+[ -n "$touched" ] || exit 0
 
 # 1. Extensions that are proprietary binaries or personal dumps by definition. Mirrors
 #    .gitignore, deliberately duplicated: this catches the case where .gitignore was edited in
@@ -104,6 +107,28 @@ case "$staged" in
 	if command -v python3 >/dev/null 2>&1; then
 		python3 tools/facts.py --phrases >/dev/null 2>&1 ||
 			note "a document restates a superseded claim: run python3 tools/facts.py --phrases"
+	fi
+	;;
+esac
+
+# 6. The SDK's pages on the website out of step with the packages. Only when the commit touches what they are made of
+#    or checked by, a deletion or a rename included: a package's source or its `package.json`, whose exports decide
+#    which subpaths need a page, an example or a document an example starts from, the generator, or a page of
+#    `reference/sdk/`; another commit pays nothing. The pages are generated from the doc comments and the signatures,
+#    so a comment changed without regenerating would publish the old one; the check takes about two seconds, and a
+#    document an example starts from is held equal to the test setup it copies by the examples test's own check.
+#    Against the working tree, like step 5: checking the staged content would mean writing the index out as a tree
+#    of its own and reading every source of five packages there, which is not cheap, and `make all` and the site's
+#    workflow, which check what is committed, catch what this misses.
+case "$touched" in
+*packages/*/src/* | *packages/*/package.json* | *packages/remote/examples/* | *packages/config/test/references/*-test.json* | \
+	*reference/sdk/* | *packages/lab/bin/api-reference.ts*)
+	if command -v node >/dev/null 2>&1; then
+		node packages/lab/bin/api-reference.ts --check >/dev/null 2>&1 ||
+			note "the SDK pages differ from the sources: run make api-reference-write"
+		node --test --test-name-pattern='documents the examples start from' packages/remote/test/package/examples.test.ts \
+			>/dev/null 2>&1 ||
+			note "a document an example starts from differs from the test setup it copies: run node --test packages/remote/test/package/examples.test.ts"
 	fi
 	;;
 esac

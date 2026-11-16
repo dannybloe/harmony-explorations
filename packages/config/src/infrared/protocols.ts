@@ -37,6 +37,10 @@
  */
 import type { FrameCarrier, FrameShape } from './irframe.ts';
 
+/**
+ * One family of infrared codes, in Logitech's name for it: its carrier, how its bits are sent, and what follows
+ * a code.
+ */
 export interface StatedProtocol {
   /** Logitech's own name for it, as their analyser and their catalogue spell it. */
   readonly family: string;
@@ -59,9 +63,11 @@ export interface StatedProtocol {
    */
   readonly firstMark?: number;
   /**
-   * The mark of a **set** cell, on the three families whose mark rides with its own cell's bit,
-   * section 170. `flat` is then the clear cell's mark. Absent everywhere the flat half really is
+   * The mark of a **set** cell, on the three families whose mark rides with its own cell's bit. `flat` is then the clear cell's mark. Absent everywhere the flat half really is
    * one length.
+   *
+   * @privateRemarks
+   * section 170.
    */
   readonly oneMark?: number;
   /**
@@ -70,7 +76,10 @@ export interface StatedProtocol {
    * `FrameTimings.carriedFirst` in `irframe.ts` carries the argument. The short of it: this spelling is
    * needed only where storing the pair the other way round would change the wire, which is seven of the
    * 37 families that state it this way, and **no measured row sets it**, our corpus decoder reading a
-   * stored train as (mark, space) pairs by construction. Section 230.
+   * stored train as (mark, space) pairs by construction.
+   *
+   * @privateRemarks
+   * Section 230.
    */
   readonly carriedFirst?: boolean;
   readonly zero?: number;
@@ -79,17 +88,20 @@ export interface StatedProtocol {
   /** The constant total a pulse width frame is padded out to, absent on a pulse distance one. */
   readonly framePeriod?: number;
   /**
-   * The whole first block past the frame, section 171: the frame in its copies (`full` with the
+   * The whole first block past the frame: the frame in its copies (`full` with the
    * lead in, `bare` without), literal words (signed microseconds, positive a mark), and pad
    * spaces sharing one per record value plus the stated extra, solved from `total`. Absent where
    * the family's records do not agree on one shape, and `blockOfStatedCode` refuses such a
-   * family rather than guessing, because a tail can hold a second command, section 152.
+   * family rather than guessing, because a tail can hold a second command.
    *
    * **On a `source: 'stated'` row this is derived from Logitech's own definition rather than
-   * measured**, section 228, and `tailExact` is absent there because there is nothing to have
+   * measured**, and `tailExact` is absent there because there is nothing to have
    * rebuilt. The derivation reproduces all 29 measured blocks to the microsecond, which is the
    * reason to believe it; a stated row only carries one where the definition also states how many
    * times a repetition is sent, since that half is stated on 39 of their 684 definitions.
+   *
+   * @privateRemarks
+   * section 228; section 171; section 152.
    */
   readonly tail?: {
     readonly items: readonly ({
@@ -105,7 +117,12 @@ export interface StatedProtocol {
       }
       | {
         readonly pad: number;
-        /** This pad's own copy period, overriding the block's, section 233. */
+        /**
+         * This pad's own copy period, overriding the block's.
+         *
+         * @privateRemarks
+         * section 233.
+         */
         readonly period?: number;
       })[];
     readonly total?: number;
@@ -115,11 +132,14 @@ export interface StatedProtocol {
   readonly tailExact?: number;
   /**
    * The held block, the record's second pointer: what repeats for as long as the key is down, and
-   * whose duration is the repeat rate the user feels, section 127. Same shape as `tail`. Whether
+   * whose duration is the repeat rate the user feels. Same shape as `tail`. Whether
    * a record carries one at all is the command's own property, so `heldOf` states the population
    * On a stated row it is derived from Logitech's definition rather than measured, and every stated row
    * carries one, a repetition holding no count.
    * this was measured over, and Toshiba's is its ditto frame alone with no copy in it.
+   *
+   * @privateRemarks
+   * section 127.
    */
   readonly held?: {
     readonly items: readonly ({
@@ -135,7 +155,12 @@ export interface StatedProtocol {
       }
       | {
         readonly pad: number;
-        /** This pad's own copy period, overriding the block's, section 233. */
+        /**
+         * This pad's own copy period, overriding the block's.
+         *
+         * @privateRemarks
+         * section 233.
+         */
         readonly period?: number;
       })[];
     readonly total?: number;
@@ -169,7 +194,12 @@ export interface StatedProtocol {
       }
       | {
         readonly pad: number;
-        /** This pad's own copy period, overriding the block's, section 233. */
+        /**
+         * This pad's own copy period, overriding the block's.
+         *
+         * @privateRemarks
+         * section 233.
+         */
         readonly period?: number;
       })[];
     readonly total?: number;
@@ -177,11 +207,13 @@ export interface StatedProtocol {
   };
   /**
    * A biphase family, where the bit is in **which half** of one cell the carrier is on.
-   *
-   * Section 162. There is no lead in pair, no constant half and no two carried lengths, so none of the
+   * There is no lead in pair, no constant half and no two carried lengths, so none of the
    * fields above apply: what there is instead is one half cell, a fixed prelude the family always sends,
    * and which half of the cell means a set bit. Four families here are of this kind and each reproduces
    * every one of its records byte for byte.
+   *
+   * @privateRemarks
+   * Section 162.
    */
   readonly biphase?: {
     /** One half cell of carrier. */
@@ -196,13 +228,16 @@ export interface StatedProtocol {
     readonly setIsMark: boolean;
   };
   /**
-   * The frame is one value sent in sections of these widths, section 166.
+   * The frame is one value sent in sections of these widths.
    *
    * `Samsung 38 Bit` is the family that needed it: the catalogue states two values per code and one
    * width, and the wire is one header, the first section's cells, a structural space carrying that
    * section's final set bit, the second section's cells, and a closing silence carrying the last bit of
    * all. The widths sum to the width the family's name states, which is the closure that settled what
    * "38 Bit" means: across the pair.
+   *
+   * @privateRemarks
+   * section 166.
    */
   readonly sections?: readonly number[];
   /** The space carrying a non final section's last set bit. Present exactly when `sections` is. */
@@ -210,13 +245,16 @@ export interface StatedProtocol {
   /** The closing silence, which on a sectioned family carries the final bit and is a measured constant. */
   readonly closing?: number;
   /**
-   * The long toggle shape, set instead of the frame and biphase fields, section 168, one family.
+   * The long toggle shape, set instead of the frame and biphase fields, one family.
    *
    * A code states three values, and the wire is a leader, head cells per kind, one double width toggle
    * cell stored merged, data cells per position, and the whole frame `copies` times with the stored
    * `gap` words after each. A set bit is the cell whose first half is silence, in all three regions.
    * `pulsesOfLongToggle` in `irframe.ts` is the emitter and reproduces every record of the
    * family word for word, copies and gaps included.
+   *
+   * @privateRemarks
+   * section 168.
    */
   readonly longToggle?: {
     readonly leader: readonly [number, number];
@@ -227,7 +265,7 @@ export interface StatedProtocol {
     readonly copies: number;
   };
   /**
-   * The quaternary shape, set instead of the frame and biphase fields, section 169, one family.
+   * The quaternary shape, set instead of the frame and biphase fields, one family.
    *
    * `Quad` in the family's name is the base of its digits twice over: the catalogue writes the
    * values in base 4 and the wire sends one digit per cell as one of four space lengths, two bits at a
@@ -235,6 +273,9 @@ export interface StatedProtocol {
    * `digits` says how many quaternary digits each stated value takes, and the stored `gap` words
    * close the record. `pulsesOfQuad` in `irframe.ts` is the emitter and reproduces every record
    * word for word, gap included.
+   *
+   * @privateRemarks
+   * section 169.
    */
   readonly quad?: {
     readonly firstMark: number;
@@ -245,8 +286,7 @@ export interface StatedProtocol {
   };
   /**
    * A cell table family: the bit is **which of four or sixteen cell shapes** goes on the wire.
-   *
-   * Section 231. Logitech's own `EncodingType` 2 and 3 say so and their definition then lists one cell
+   * Logitech's own `EncodingType` 2 and 3 say so and their definition then lists one cell
    * per symbol value, so a value is read a digit at a time and each digit picks a whole cell rather
    * than a length. 140 of their families are of this kind, against the one the corpus could see, and
    * that one, `Galaxis 16 Bit Quad Toggle`, is the `quad` shape above: the same idea read off a
@@ -254,6 +294,9 @@ export interface StatedProtocol {
    *
    * A row has this or one of the shapes above and never two, and `test/infrared/stated.test.ts` asserts it.
    * The width comes from the code, so `bits` here is one **cell's** width and not the frame's.
+   *
+   * @privateRemarks
+   * Section 231.
    */
   readonly cells?: {
     readonly lead: readonly number[];
@@ -262,8 +305,7 @@ export interface StatedProtocol {
   };
   /**
    * The **other** rhythms this family sends, where one repetition is not all one shape.
-   *
-   * Section 232. `Classe 16 Bit Toggle` sends four mode bits at a 442 microsecond half cell, then one
+   * `Classe 16 Bit Toggle` sends four mode bits at a 442 microsecond half cell, then one
    * bit at 880, then sixteen data bits at 442, so three of Logitech's own segments with three different
    * cells go out back to back. A copy item's `shape` indexes this list, offset by one because index 0
    * is the row's own shape above.
@@ -277,6 +319,9 @@ export interface StatedProtocol {
    * than assumed, because the same omission has already shipped once: `carriedFirst` was live in the
    * reader and missing from this generator's template for one run, and seven rows then described a
    * rhythm correctly and emitted the wrong wire.
+   *
+   * @privateRemarks
+   * Section 232.
    */
   readonly also?: readonly FrameShape[];
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
@@ -305,6 +350,7 @@ export interface StatedProtocol {
    * Catalogue codes emitted with this rhythm that Logitech's own analyser decoded back to the exact
    * number they were built from.
    *
+   * @privateRemarks
    * **This is the only evidence a documented entry has, and it is weaker than `exact` in a way worth
    * stating.** `exact` says the durations are the ones their compiler emitted. This says their own
    * decoder, hearing our train, recovers the bits: the marks and spaces land in the bands it sorts into
@@ -323,6 +369,7 @@ export interface StatedProtocol {
   readonly heardAs?: string;
 }
 
+/** Every family of infrared codes this package can write a code of from its value. */
 export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Toshiba 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [568] }, { pad: 0 }, { words: [8990, -2230, 568, -96078] }], total: 215736 }, tailExact: 703, held: { items: [{ words: [8990, -2230, 568, -96078] }] }, heldExact: 545, heldOf: 545, codes: 703, exact: 703, spread: 0, source: 'both', heardAs: 'MemorexO1 32 Bit' },
   { family: 'Sharp 48 Bit 2', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [408, -73611] }, { copy: 'full' }, { words: [408, -73611] }, { copy: 'full' }, { words: [408, -73612] }] }, tailExact: 378, held: { items: [{ copy: 'full' }, { words: [408, -73612] }] }, heldExact: 317, heldOf: 317, codes: 378, exact: 378, spread: 0, source: 'both', heardAs: 'SharpO1 48 Bit' },

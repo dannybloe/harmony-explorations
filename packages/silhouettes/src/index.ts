@@ -10,16 +10,16 @@
  * with, the shapes and the transforms of a path, is `./internal`, for the models here and this repository's
  * scripts.
  */
-// The geometry table's types: a model, its keys and regions, and where each fact came from.
+// The geometry table: a model, its keys and regions, and where each fact came from.
 export { CASE_HEIGHT, LAYERS, SCAN_SOURCES } from './types.ts';
 export type { Key, KeyKind, Label, LabelPlace, LayerName, Model, Provenance, Region, ScanSource, Screen, Shape }
   from './types.ts';
-// The icons a key is drawn with.
+// Icons: the icons a key is drawn with.
 export { ICONS, extentOf } from './icons.ts';
 export type { Icon, IconPart } from './icons.ts';
-// Which key a point falls in, and a path's extent.
+// Hit testing: which key a point falls in, and a path's extent.
 export { pathBounds, pathPolygon, pointInPath, type Bounds } from './path.ts';
-// The drawing.
+// The drawing: a model's face as SVG.
 export { DEFAULTS, DETAIL, elementId, toSvg } from './svg.ts';
 export type { SvgOptions } from './svg.ts';
 
@@ -47,6 +47,7 @@ export const MODELS: Readonly<Record<string, Model>> = {
   h785: H785, h880: H880, h880pro: H880PRO, h885: H885, h890pro: H890PRO, one: ONE, touch: TOUCH,
 };
 
+// Each model's geometry table under its own name, the same objects `MODELS` holds by key.
 export { H300, H300EU, H350, H515, H525, H600, H650, H700, H720, H785, H880, H880PRO, H885, H890PRO, ONE, TOUCH };
 
 /**

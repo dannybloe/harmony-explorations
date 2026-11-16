@@ -260,7 +260,8 @@ export function settingsOfRows(values: Readonly<Record<string, string>>, remoteN
 
 /**
  * What a set of ours takes from the account: Context's seven fields a Touch reads, and the address and key of the
- * tuning device's favourites documents. Kept in the lab; never in a setup file, a fixture or a test.
+ * tuning device's favourites documents. An application reads it off the remote and keeps it with its user's data,
+ * never inside a document: it is the account's, and a document may be shared.
  */
 export interface TouchAccount {
   readonly context: OwnContext;

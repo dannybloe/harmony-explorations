@@ -70,6 +70,7 @@ function cubicTurns(p0: number, p1: number, p2: number, p3: number): number[] {
   return roots.filter((t) => t > 0 && t < 1);
 }
 
+/** The smallest box around a path, in model coordinates. */
 export interface Bounds {
   readonly minX: number;
   readonly maxX: number;

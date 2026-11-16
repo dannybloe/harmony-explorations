@@ -29,9 +29,15 @@ import { TOUCH_MAPS } from './recipemaps.ts';
 /** The Harmony Touch's own types, as `DocumentFamily` asks for them. */
 export interface TouchTypes {
   readonly documents: SyncDocuments;
-  /** A document of version 2, decision 43: the one shape every model shares, with no block of the Touch's own. */
+  /**
+   * A document of version 2: the one shape every model shares, with no block of the Touch's own.
+   *
+   * @privateRemarks
+   * The infrared archive.
+   * decision 43.
+   */
   readonly setup: Recipe;
-  /** The infrared archive, `archiveAt` on Node, and the account's own fields, which a document never holds. */
+  /** The device archive, `archiveAt` on Node, and the account's own fields, which a document never holds. */
   readonly sources: { readonly archive: CatalogueSource; readonly account: TouchAccount };
   /** A device of ours in the rhythm table's terms, as `packages/remote/touch-devices/` holds one. */
   readonly device: RowDevice;
@@ -45,11 +51,13 @@ export interface TouchTypes {
 }
 
 /**
- * The Harmony Touch's family. `withDevice` composes through `composeTouchDeviceOfRow`, the form every device of
- * ours on the bench took; `without` is the general removal, `remove.ts`, which takes out everything naming what it
+ * The Harmony Touch's family. `withDevice` composes through `composeTouchDeviceOfRow`; `without` is the general removal, `remove.ts`, which takes out everything naming what it
  * removes, where `withoutTouchDevice` and `withoutTouchActivity` refuse a device or an activity something names.
  * `withFavourites` gives the favourites documents keyed by their addresses beside the six, and `check` is the gate
  * the answerer runs before a sync, `refusalsBeforeASync`.
+ *
+ * @privateRemarks
+ * `composeTouchDeviceOfRow` is the form every device of ours on the bench took.
  */
 export const HARMONY_TOUCH_FAMILY: DocumentFamily<TouchTypes> = {
   kind: 'document',

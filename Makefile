@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help site site-offline test test-project test-rails test-archive test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write all full release-pack release-check clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help site site-offline test test-project test-rails test-archive test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-test-all ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets oxanium-alphabet silhouettes key-reader remote-reference remote-reference-write requirements requirements-write api-reference api-reference-write all full release-pack release-check clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw archive-sample archive-measure emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -69,6 +69,8 @@ help:
 	@echo "remote-reference-write  rewrite those blocks from the code"
 	@echo "requirements  check the proofs in the tests, the requirements documents and the bench checklists agree"
 	@echo "requirements-write  regenerate the proofs module, both requirements documents and the bench checklists"
+	@echo "api-reference  check the website's SDK pages, reference/sdk/, against the packages' sources and examples"
+	@echo "api-reference-write  regenerate the API pages and the example and shape blocks of the SDK pages"
 	@echo "site         build the reference website into site/, strict; SITE_STRICT=false builds past a warning"
 	@echo "site-offline the same website for browsing from disk: open site/index.html, no server needed"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
@@ -450,6 +452,18 @@ requirements:
 
 requirements-write:
 	@node packages/config/bin/requirements.ts --write
+
+# The SDK's section of the website, `reference/sdk/`: a page per public entry of the five packages, generated from
+# their sources with the installed TypeScript compiler, each name's signature or shape and its doc comment as the
+# source writes it; and in the guide and the documents page, written by hand, the example programs as their files
+# and the documents' shapes as their types. The check fails naming each page that differs, and runs in `make ts` too,
+# packages/lab/test/api-reference.test.ts, in the pre-commit hook, and in the site's workflow before a deploy.
+# No lab, no network, no remote.
+api-reference:
+	@node packages/lab/bin/api-reference.ts
+
+api-reference-write:
+	@node packages/lab/bin/api-reference.ts --write
 
 # The reference website, plan 009 section 3: MkDocs with the Material theme builds `reference/` into
 # `site/`, which is ignored and never committed; `mkdocs.yml` and `tools/site/hooks.py` say what is built

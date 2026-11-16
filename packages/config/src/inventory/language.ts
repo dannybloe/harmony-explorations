@@ -77,6 +77,7 @@ export const LANGUAGE_MARKERS: Readonly<Record<string, readonly RegExp[]>> = {
 /** How many markers a container has to match before an answer is offered rather than withheld. */
 export const LANGUAGE_MINIMUM_MARKERS = 2;
 
+/** The language a configuration's own words are in, as `configLanguage` judges it. */
 export interface ConfigLanguage {
   /** An IETF language tag, lower case, matching a key of `LANGUAGE_MARKERS`. */
   readonly tag: string;

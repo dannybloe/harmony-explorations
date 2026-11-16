@@ -19,7 +19,7 @@
  * `authorise.ts`. `CLAUDE.md` "Never write to a remote" is the rule.
  */
 
-// Finding a remote and opening it. Enumerating is not opening: the `list` functions only ask what is attached,
+// Finding a remote and opening it: enumerating is not opening. The `list` functions only ask what is attached,
 // and `openHarmony` claims a device, refusing the file based family, the tunnelled family and a remote in its
 // bootloader, each of which a `list` and an `is` function names.
 export {
@@ -44,8 +44,8 @@ export type { RemoteOptions } from './remote.ts';
 export { architectureFromVersion, ProtocolError, readVersion, VERSION_FIELD_NAMES } from './protocol.ts';
 export type { VersionReading } from './protocol.ts';
 
-// Which unit is on the cable, read off the unit and compared, never asserted by a caller. The values live with
-// the user's data, not here.
+// Which unit is on the cable: read off the unit and compared, never asserted by a caller. The values live with
+// the application's data about its user's remotes, not in this library.
 export {
   identifiesAUnit,
   sameUnit,
@@ -55,14 +55,14 @@ export {
   UnitIdentityError,
 } from './identity.ts';
 
-// The Harmony 300 and 350, which `openHarmony` refuses: their own protocol, read paths only. And the Harmony Touch on
-// the same protocol, whose power source is read before a sync, since its screens take part only on USB power.
+// The Harmony 300, 350 and Touch: the file based protocol, which `openHarmony` refuses, read paths only. A Harmony
+// Touch's power source is read before a sync, since its screens take part only on USB power.
 export {
   openFileBasedRemote, parseSysInfo, readFile, readSysInfo, readTouchPowerSource, TOUCH_POWER_SOURCES,
 } from './filepipe.ts';
 export type { TouchPowerSource } from './filepipe.ts';
 
-// The delays a remote saved in its settings store, which win over a configuration's at start.
+// Saved delays: the delays a remote saved in its settings store, which win over a configuration's at start.
 export { delaySlots, latestSettings } from './settings.ts';
 export type { DelaySlot } from './settings.ts';
 
@@ -76,5 +76,5 @@ export {
 } from './compatible.ts';
 export type { Compatibility, CompatibilityField, FieldVerdict, StatedVersion } from './compatible.ts';
 
-// What a refused write throws; the rails themselves are `./rails`.
+// The refusal: what a refused write throws. The rails themselves are on `./rails`.
 export { RailError } from './rails.ts';

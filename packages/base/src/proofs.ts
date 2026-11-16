@@ -13,13 +13,21 @@
 export interface Proof {
   /** The requirement's number. */
   readonly requirement: number;
-  /** The bench models' keys it is proven for, or `'every'` for one that does not depend on the remote. */
+  /** The keys of the models it is proven for, `BenchModelKey`, or `'every'` for one that does not depend on the remote.
+   *
+   * @privateRemarks
+   * The bench models' keys.
+   */
   readonly models: readonly string[] | 'every';
   /** The test file, from the repository's root. */
   readonly test: string;
   /** The test's title, or for a Python test its class and method. */
   readonly title: string;
-  /** Where it was shown on a unit: a bench test, or a passage of `docs/test-notes/` by its heading's anchor. */
+  /** Where it was shown on a remote of the model: a test that ran on one, or a passage of the test notes by its heading's anchor.
+   *
+   * @privateRemarks
+   * A bench test, or a passage of `docs/test-notes/`.
+   */
   readonly bench: readonly string[];
 }
 

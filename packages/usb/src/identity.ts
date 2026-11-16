@@ -138,6 +138,7 @@ export const IDENTITY_FIELDS = {
   trailer: 0x30,
 } as const;
 
+/** An identity block or a written identity that cannot be read as one. */
 export class UnitIdentityError extends Error {}
 
 /** The two GUID fields, 32 bytes, which is the currency every function below deals in. */
@@ -174,8 +175,10 @@ function uniform(bytes: Uint8Array): boolean {
 }
 
 /**
- * Whether this block says anything about **which** unit it came from.
+ * Whether this block says anything about **which** unit it came from. A block filled with one byte, or with a
+ * uniform pair of GUIDs, identifies nothing, and `sameUnit` refuses it rather than report a match.
  *
+ * @privateRemarks
  * The refusal, not a convenience. `0xEE`, `0xFF` and `0x00` fills are all things this project has
  * seen in a field nobody writes, and a uniform GUID pair would make two units indistinguishable
  * while a byte comparison reported a confident match.
@@ -191,11 +194,13 @@ export function identifiesAUnit(blockOrDiscriminator: Uint8Array): boolean {
 }
 
 /**
- * The identity as text, for a caller that has to store it and read it back.
+ * The identity as text, for a caller that has to store it and read it back: hex of the part that tells units apart,
+ * 64 characters, lower case, no separators. `unitIdentityFromText` reads it back.
  *
+ * @privateRemarks
  * Hex of the discriminator, 64 characters, lower case, no separators. The form matters because both
- * callers persist it: the bench writes the block into the lab and FreeHarmony keeps it with the
- * user's data, so a value written by one version has to be readable by the next. Hex of the bytes as
+ * kinds of caller persist it: this project's scripts with their records of its own remotes and an application
+ * with its user's data, so a value written by one version has to be readable by the next. Hex of the bytes as
  * they came is the one encoding with nothing to get wrong later; a GUID rendering would not be,
  * since the two after the serial are stored mixed endian and every reader would have to agree on
  * which way round to print them.
@@ -222,10 +227,12 @@ export function unitIdentityFromText(text: string): Uint8Array {
 }
 
 /**
- * Whether two identity blocks came off the same unit.
+ * Whether two identity blocks came off the same unit. Byte exact over the part that tells units apart, and it
+ * throws `UnitIdentityError` rather than answering false when either block carries no identity, since that cannot be
+ * told.
  *
- * Byte exact over the discriminator, and it refuses rather than answering false when either block
- * carries no identity: `false` would read as "a different unit" where the truth is "this cannot be
+ * @privateRemarks
+ * `false` would read as "a different unit" where the truth is "this cannot be told": `false` would read as "a different unit" where the truth is "this cannot be
  * told", and a rail acting on the first is a rail that refuses for a reason that is not true.
  */
 export function sameUnit(a: Uint8Array, b: Uint8Array): boolean {
@@ -264,8 +271,11 @@ const SERIAL_DOMAIN = 'harmony unit serial, /sys/sysinfo serial_number\0';
 
 /**
  * The 32 byte discriminator for a unit identified by a serial rather than by an identity block, so that
- * `unitIdentityText`, `sameUnit` and the lab's `units/<label>.txt` serve this unit unchanged.
+ * `unitIdentityText`, `sameUnit` and a record a caller stored of a unit serve this unit unchanged. A Harmony Touch
+ * has no identity block; its serial is the `serial_number` line of `readSysInfo`. Throws `UnitIdentityError` for an
+ * empty serial and for one character repeated, which is what a remote states when its record is missing.
  *
+ * @privateRemarks
  * **Why a remote needs this.** A Harmony Touch refuses `/sys/guid` at open, so it has no identity block
  * to read; what tells one Touch from another on the cable is the `serial_number` line of its identity
  * file, which its native program fills from the unit's manufacturing record, the `unitid` key of the

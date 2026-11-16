@@ -187,6 +187,7 @@ export interface Edit {
   owner: string;
 }
 
+/** A configuration after an edit, and every run of bytes the edit changed. */
 export interface EditReport {
   bytes: Uint8Array;
   /** Every run that differs from the input, in order, the trailer word included. */
@@ -235,9 +236,10 @@ export const FRAME_OWNERS: ReadonlySet<string> = new Set([
  * edits on one byte. An empty list is the identity and gives the input back, which is the check that
  * this writes nothing of its own.
  *
+ * @privateRemarks
  * **The first of those is new and it is section 122's hazard.** This stamps a fresh checksum, so a
  * container that arrived damaged went in inconsistent and came out passing the only check the remote
- * makes: measured by flipping one pixel byte of `one_config`, whose stored `0xC9CE` then disagreed
+ * makes: measured by flipping one pixel byte of a Harmony One configuration, whose stored `0xC9CE` then disagreed
  * with its own `0x36CE`, editing an unrelated field, and reading `0x36E1` back out of the result.
  * `packages/remote/src/read.ts` performs this check after every read, because an arch 10 (Harmony 890)
  * read inserts duplicate chunks; nothing performed it before an edit, which is the end where the
@@ -308,11 +310,14 @@ export function applyEdits(c: Container, edits: Edit[]): EditReport {
  * than UTC. `clockRecord` stays zone free on the way back out, which is what keeps the golden
  * vectors independent of where the tests run, so the two are not symmetrical on purpose.
  *
- * **Which zone Logitech stamps in is open, and it does not look like the saver's**, section 322: a
+ * **Which zone Logitech stamps in is open, and it does not look like the saver's**: a
  * MyHarmony sync of the Harmony 650 stamped 14:32:27 and the remote was read at 14:34:08 UTC on the
  * same day, so that stamp was within two minutes of UTC and could not have been the local time of
- * this bench, two hours later. Other Logitech stamps sit an hour or more from UTC either way, so no
+ * the computer that synced it, two hours later. Other Logitech stamps sit an hour or more from UTC either way, so no
  * single zone explains all of them. This stays local until the remote's own display says otherwise.
+ *
+ * @privateRemarks
+ * section 322.
  */
 export function localTimestamp(when: Date): string {
   // Through `timestampOf`, beside `clockRecord`, because this used to spell the same padded format
@@ -326,11 +331,14 @@ export function localTimestamp(when: Date): string {
  * The edit that stamps base slot 3's record with `builtAt`.
  *
  * Seven bytes, and the day of week is **computed** rather than taken from the caller, because both
- * parsers refuse a record whose weekday disagrees with its date, section 21. So a caller cannot
+ * parsers refuse a record whose weekday disagrees with its date. So a caller cannot
  * produce a record this project's own readers would reject, which is the closure worth having here.
  *
  * Exported on its own as well as through `saveEdits`, so a caller who wants to see it in the edit
  * list before applying it can, and so it goes through exactly the same rails as any other edit.
+ *
+ * @privateRemarks
+ * section 21.
  */
 export function timestampEdit(c: Container, builtAt: string): Edit[] {
   // One encoder, in `gspm.ts` beside the decoder it inverts. The day of week is computed there and
@@ -362,7 +370,7 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
 /**
  * The edits that stamp base slot 13's clock, which is the **second** place the build time is stored.
  *
- * Section 130: base slot 13's first seven records are the firmware's own clock, and each one's
+ * Base slot 13's first seven records are the firmware's own clock, and each one's
  * `first` is the corresponding field of base slot 3's timestamp in every container of the corpus.
  * So a config carried over with its old records carries a stale clock in two places, not one, and
  * `timestampEdit` on its own leaves the remote's seconds, minute and hour set to whenever the input
@@ -385,7 +393,11 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
  * the month and the month to the year, the other three carry nothing, and the only part that varies is
  * which action list the hour's `0x7F` names (the Harmony One's minute carries a second transition). On
  * arch 16 (Harmony 300 and 350) the five configurations read carry none at all, so the remote's clock
- * stops at the minute, `tests/harmony_300_350/test_harmony_350_clock.py`; a save leaves that alone too.
+ * stops at the minute; a save leaves that alone too.
+ *
+ * @privateRemarks
+ * `tests/harmony_300_350/test_harmony_350_clock.py`.
+ * Section 130.
  */
 export function clockStateEdits(c: Container, builtAt: string): Edit[] {
   const fields = clockRecordFields(builtAt);
@@ -448,6 +460,7 @@ export function clockStateEdits(c: Container, builtAt: string): Edit[] {
 /**
  * Apply the edits **as a save**: everything `applyEdits` does, plus every field the build time owns.
  *
+ * @privateRemarks
  * The difference from `applyEdits` is eight values in two structures and it is not cosmetic. See
  * `FIELD_RULES`, and see `docs/findings.md` section 111 for the measurement that started it, a power
  * cycled Harmony One reading its config's build timestamp as the time of day, and section 130 for the
@@ -463,6 +476,7 @@ export function saveEdits(c: Container, edits: Edit[], builtAt: string): EditRep
 /**
  * A timer's duration, in seconds.
  *
+ * @privateRemarks
  * Refuses above sixteen bits, which is the rail section 43 found: the firmware clamps there with no
  * error, so a longer duration is silently a different timer. The field itself is a `u24`, and the
  * extra byte is written as the record already has it rather than zeroed.
@@ -499,16 +513,16 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
  * One device's power on delay, on the architectures that inline it.
  *
  * **The smallest change this format admits**: one byte per copy, in place, moving nothing and restamping no
- * count, which is why it is the first thing this project ever changed on a remote. The instruction
+ * count. The instruction
  * is the single `0x7C` at the top level of the action list that device's `Power` variable runs on
  * its 0 to 1 transition, `powerOnInstructions`.
  *
  * **`tenths` is capped at 100, which no inline power on delay here exceeds, not a field width.** A byte
  * holds 255, and the enqueueing worker folds two consecutive quantities for one device by taking the
- * larger **except** at 100, where it pushes a second entry instead, section 70. No inline power on delay
+ * larger **except** at 100, where it pushes a second entry instead. No inline power on delay
  * on arch 8, 9 or 12 exceeds 100, and a larger one spelled out would be a length change and not a byte
  * edit. Logitech's compiler does write a single `0x7C` above 100 for a sequence's pause on the Harmony
- * One, section 327, and the Harmony 350's factory configuration holds one of 170 in its activity's start,
+ * One, and the Harmony 350's factory configuration holds one of 170 in its activity's start,
  * but whether the remote honours one is unmeasured, so a caller asking for one here is asking for something
  * this function cannot honestly do. The same configuration spells that television's own power on delay as
  * two instructions, 100 and 70, which `powerOnInstructions` does not report and this does not edit.
@@ -516,15 +530,18 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
  * **Where a family keeps another copy that a key reaches, this changes it too**, asking `Family.powerOnDelayCopies`.
  * On arch 16 (Harmony 300 and 350) Watch TV switches a device with one power code on by calling that code's list
  * and a `0x7C` of its own, so the delay is written twice; a device with separate codes is switched through its
- * `Power` variable and has the one copy. `packages/config/test/families/harmony-300-350/filefamilydelays.test.ts`.
- * This once changed the device's transition only, and on the bench Harmony 300 that was the copy no key reached.
- * This said "an unread list" of the 170 until that list was read.
+ * `Power` variable and has the one copy.
  *
- * **What it will not tell you is whether the delay does anything**, section 236. The quantity holds
+ * **What it will not tell you is whether the delay does anything**. The quantity holds
  * back the next command to its own device and nothing else, so in an activity that sends that device
  * only its power code the value is inert however large it is. That is a question about an activity
  * rather than about a device, `powerOnDelayReach` answers it, and it deliberately does not gate this
  * edit: a delay that is inert in one activity may not be in another.
+ *
+ * @privateRemarks
+ * The smallest change is why it is the first thing this project ever changed on a remote.
+ * `packages/config/test/families/harmony-300-350/filefamilydelays.test.ts`. This once changed the device's transition only, and on a Harmony 300 that was the copy no key reached. This said "an unread list" of the 170 until that list was read.
+ * section 327; section 70; section 236.
  */
 export function setPowerOnDelay(c: Container, group: number, tenths: number): Edit[] {
   const found = powerOnInstructions(c).get(group);
@@ -618,10 +635,13 @@ export function setPowerOnDelayVariable(c: Container, group: number, tenths: num
 /**
  * One `u16` of one parameter group.
  *
- * The group's own length is what the firmware demands, section 44: a group of a different length is
+ * The group's own length is what the firmware demands: a group of a different length is
  * silently replaced by compiled in defaults, and a group index does not port between architectures.
  * Neither is at risk here, since nothing can change a length, but both are why the index is checked
  * against the group's own count rather than against the section.
+ *
+ * @privateRemarks
+ * section 44.
  */
 export function setParameter(c: Container, group: number, index: number, value: number): Edit[] {
   const groups = parameterGroups(c);
@@ -645,7 +665,7 @@ export function setParameter(c: Container, group: number, index: number, value: 
 /**
  * One entry of one mode page's tagged list, **and its copy**.
  *
- * The rail this exists for. Every page's list has a second copy in the pool, section 69, which
+ * The rail this exists for. Every page's list has a second copy in the pool, which
  * nothing reads and which an emitter still has to reproduce; an editor that changed one and not the
  * other would produce a file the remote accepts and every check here passes. So both are written,
  * and a caller cannot ask for only one.
@@ -653,6 +673,9 @@ export function setParameter(c: Container, group: number, index: number, value: 
  * Opcode `0x7F` is refused in either copy. It is the one field the two are allowed to disagree on,
  * because they name different base slot 10 entries holding identical action lists, so writing one
  * value into both would break exactly the thing this function exists to preserve.
+ *
+ * @privateRemarks
+ * section 69.
  */
 export function setPageListEntry(
   c: Container,
@@ -780,8 +803,8 @@ export function setModeListEntry(
 export interface IntroductionTour {
   /**
    * `shown` when the list enters the tour's first screen, `skipped` when it calls the tour's exit
-   * instead, which is the form Logitech's own compiler writes on `h600_config` and both Harmony 700
-   * configurations and the form `skipIntroductionTour` produces.
+   * instead, which is the form Logitech's own compiler writes for a Harmony 600 and both Harmony 700
+   * configurations measured and the form `skipIntroductionTour` produces.
    */
   state: 'shown' | 'skipped';
   /** The base slot 10 list that marks the tour started and then enters it or skips it. */
@@ -799,7 +822,7 @@ export interface IntroductionTour {
 /**
  * Find the introduction tour a configuration opens after every reload, and whether it is skipped.
  *
- * **What the tour is**, section 286: ten screens, `Welcome to your Harmony 650 remote` to `You can now
+ * **What the tour is**: ten screens, `Welcome to your Harmony 650 remote` to `You can now
  * enjoy your entertainment system`, which a Harmony 650 was seen opening after a write, when the
  * configuration is reloaded. It is started by one list of two instructions, **set a variable
  * to 1, then enter the tour's first screen**, and it ends when its last screen runs one list, the
@@ -807,13 +830,16 @@ export interface IntroductionTour {
  * route calls the tour itself while it is 0, which is why the tour sets it first.
  *
  * **Logitech's compiler writes the same list in a second form**, set the variable and then call the
- * exit, so the tour is never entered: on `h600_config` and both Harmony 700 configurations, lists 364
- * and 1157, where on the Harmony 650's configuration and `calibration_h600` it enters the tour. So the
+ * exit, so the tour is never entered: on a Harmony 600's configuration and both Harmony 700 configurations
+ * measured, lists 364 and 1157, where on a Harmony 650's configuration and another 600's it enters the tour. So the
  * edit below produces the vendor's own form rather than one of ours.
  *
  * Found structurally rather than by number: a two instruction list `[0x80 + v := 1, x]` whose
  * variable no other `0x80 + v` write in an action list sets, where `x` either enters a mode whose screens reach exactly
  * one list between them, or calls a list that exactly one set of screens reaches in that way.
+ *
+ * @privateRemarks
+ * section 286.
  */
 export function introductionTour(c: Container): IntroductionTour {
   const lists = c.actionLists() ?? [];

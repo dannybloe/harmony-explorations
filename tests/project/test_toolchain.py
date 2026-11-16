@@ -33,8 +33,9 @@ sys.path.insert(0, os.path.join(ROOT, 'src'))
 #: served as it is, and `packages/bench` deliberately has no DOM types so that a server file cannot
 #: reference `window` and typecheck. `experiments` because plan 013 decision 7 puts a package's
 #: experiments there, beside its scripts, and both packages that have one include it, which nothing
-#: held before this list named it.
-SOURCE_DIRECTORIES = ('src', 'test', 'bin', 'experiments')
+#: held before this list named it. `examples` because the API guide on the website shows the examples of
+#: `packages/remote/examples`, which a test runs, so they have to typecheck like any other code.
+SOURCE_DIRECTORIES = ('src', 'test', 'bin', 'experiments', 'examples')
 
 
 def read_repo_file(relative):
@@ -83,8 +84,9 @@ class TypeScriptProjects(unittest.TestCase):
         # decided by the workspace layout and moves only when a package or a directory is added,
         # and then it moves in the diff rather than being absorbed. 25 with `packages/base`, its `src`
         # and `test`; 26 with `packages/testkit`, its `src`; 28 with the `experiments` of
-        # `packages/bench` and `packages/remote`; 29 with the `bin` of `packages/lab`.
-        self.assertEqual(found, 29, 'source directories claimed by a tsconfig')
+        # `packages/bench` and `packages/remote`; 29 with the `bin` of `packages/lab`; 30 with the `examples` of
+        # `packages/remote`, the API guide's.
+        self.assertEqual(found, 30, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
         """`make ts` builds the root, so a package missing from it is a package nobody compiles.
@@ -2056,7 +2058,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # runner and test, which drive it against the fake remote.
         # 42 with the sync of a document to an attached Harmony Touch: its runner and test, which drive the Touch's
         # answerer end to end against the pretend Touch with the request flags set.
-        self.assertEqual(len(must), 42, 'the withhold list should resolve to 42 paths, got %s'
+        # 43 with the API reference generator's test, which names the write members the reference leaves off its
+        # pages in order to hold that they stay off.
+        self.assertEqual(len(must), 43, 'the withhold list should resolve to 43 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -2189,7 +2193,10 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # `sync-attached.test.ts`, which name the fake remote's flash write to fail one and to hold the order
         # of what a sync sends. Both went on the withhold list in the same commit, with the sync itself; the
         # list was re-read.
-        self.assertEqual(len(stating), 51,
+        # 52 with `packages/lab/test/api-reference.test.ts`, which names the write members the API reference leaves
+        # off its pages, `writeFlash` among them, to hold that they stay off. It went on the withhold list in the same
+        # commit; the list was re-read.
+        self.assertEqual(len(stating), 52,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

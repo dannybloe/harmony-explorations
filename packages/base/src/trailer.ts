@@ -17,10 +17,10 @@
 /**
  * The trailer checksum's seed, written as two literals by the boot validator on all three images.
  * The checksum is a sixteen bit XOR of the container's little endian words from its first byte up
- * to the stored value, which sits six bytes from the end. `docs/findings.md` section 41.
+ * to the stored value, which sits six bytes from the end. The Harmony 300 and 350 firmware uses the same seed.
  *
- * The Harmony 300 and 350 firmware writes the same two literals in its own validator, read in
- * `tests/harmony_300_350/test_harmony_350_file_write.py`, so the seed covers that family too.
+ * @privateRemarks
+ * `docs/findings.md` section 41. The 300 and 350's literals are read in `tests/harmony_300_350/test_harmony_350_file_write.py`.
  */
 export const TRAILER_CHECKSUM_SEED = 0x4321;
 /** From the end of the container, ahead of the four byte marker. */
@@ -35,6 +35,7 @@ const LITTLE_ENDIAN = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
  * An odd trailing byte is not folded in, because the firmware divides the byte count by two and
  * counts words.
  *
+ * @privateRemarks
  * This said "no container in the corpus has an odd body"<!--superseded--> and called that the
  * firmware's behaviour rather than a tested one, and both halves were wrong. **19 of the 33 parseable
  * containers here have an odd extent**, spanning arch 8, 9, 10, 12 and 14, and 14 of them verify

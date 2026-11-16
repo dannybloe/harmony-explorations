@@ -265,7 +265,7 @@ export const POWER_ON_DELAY_VALUES: readonly number[] =
 
 /**
  * An arch 14 device's power on delay, read from the list its `Power` variable runs when it goes
- * from off to on, section 288.
+ * from off to on.
  *
  * ```
  * on list      [0x7F power command, ..., 0x7F delay]
@@ -278,6 +278,9 @@ export const POWER_ON_DELAY_VALUES: readonly number[] =
  * more instruction between them and one video recorder a third call after. The off transition sends
  * a code of the device with no delay, the same code as the on list on 5 of the 15. Arch 8, 9 and 12 inline the delay as a
  * `0x7C` instead, which `powerOnInstructions` reads.
+ *
+ * @privateRemarks
+ * section 288.
  */
 export interface PowerOnDelay {
   group: number;
@@ -421,7 +424,10 @@ export interface DeviceDelays {
    *
    * `variable` is arch 14 (Harmony 600 and 700): a state variable in base slot 13 whose name carries
    * Logitech's device identifier. `instruction` is arch 8, 9 and 12 (Harmony 880 and 885, Harmony
-   * 525, Harmony One): a `0x7C` inline in the action list that switches the device on. Section 235.
+   * 525, Harmony One): a `0x7C` inline in the action list that switches the device on.
+   *
+   * @privateRemarks
+   * Section 235.
    */
   source: 'variable' | 'instruction';
   /** Tenths of a second between switching the device on and sending it anything. */
@@ -554,8 +560,12 @@ export function deviceIdOfGroup(c: Container): Map<number, number> {
 }
 
 /**
- * How long each device makes the remote wait, in tenths of a second.
+ * How long each device makes the remote wait, in tenths of a second. The delays are ordinary state variables in
+ * base slot 13, eight per device, and the value is the record's `first`, which is both what the generator wrote and
+ * what the firmware seeds the running variable from: a `first` of 80 is eight seconds. A device with no join to a
+ * group is left out rather than reported with a guessed name.
  *
+ * @privateRemarks
  * **This is the answer to a question that was asked the wrong way round for weeks.** The roadmap
  * carried "which base slot 15 group holds a device's delays" as the last reading before the first<!--superseded-->
  * write that changes something, and base slot 15 holds no such group: its shape and its values are
@@ -564,7 +574,7 @@ export function deviceIdOfGroup(c: Container): Map<number, number> {
  *
  * The delays are ordinary state variables in base slot 13, eight per device, and the value is the
  * record's `first`, which is both what the generator wrote and what the firmware seeds the running
- * variable from, section 138.
+ * variable from.
  *
  * **The unit is stated by the config itself**, which is the independent closure: an arch 14 config
  * draws 451 strings reading `( 0 sec )` through `( 45 sec )`, contiguous in tenths with no gap, one
@@ -573,6 +583,9 @@ export function deviceIdOfGroup(c: Container): Map<number, number> {
  *
  * A device with no join to a group is left out rather than reported with a guessed name, because
  * the caller wants a device and half of one is worse than none.
+ *
+ * @privateRemarks
+ * section 138.
  */
 export function deviceDelays(c: Container): DeviceDelays[] {
   const byId = new Map<number, Map<string, number>>();

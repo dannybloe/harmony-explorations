@@ -316,7 +316,7 @@ export class StateTableError extends Error {}
 /**
  * Refuse a container whose base slot 13 header does not add up.
  *
- * **`narrow` and `wide` size the state variable storage and `count` does not**, section 276. The
+ * **`narrow` and `wide` size the state variable storage and `count` does not**. The
  * firmware computes `narrow + 2 * wide` as the RAM the variables occupy, which is what the store's
  * own width arithmetic needs, and then **fills every byte above it with `0xFE` at each boot**. The
  * seeding loop runs first and over `count`, so a container whose `count` exceeds the sum seeds
@@ -325,11 +325,12 @@ export class StateTableError extends Error {}
  * (Harmony 700 reference image) at `0x17A42`, and confirmed on a connected Harmony One where the
  * `0xFE` run begins at the computed byte and not one either side.
  *
+ * @privateRemarks
  * A separate bound check does exist, `0x2A694` and `0x17DCA`, and it is **not** what fires here:
  * its callers are host command handlers, and a configuration's own state write reaches the store
  * with no bound check at all. The first version of this rail had that backwards.
  *
- * Arch 9 (Harmony 525) reads all four words and guards per variable, section 274, so none of this
+ * Arch 9 (Harmony 525) reads all four words and guards per variable, so none of this
  * is its rule.
  *
  * `narrow + wide === count` holds on 19 of 19 containers in the corpus and `narrowAgain === narrow`
@@ -340,6 +341,8 @@ export class StateTableError extends Error {}
  *
  * A rail rather than a warning, for the reason every rail in `writing-a-config` is: the failure is
  * silent on the remote, so the last place it can be caught is before the bytes leave here.
+ *
+ * section 274; section 276.
  */
 export function assertStateTableConsistent(c: Container): void {
   const t = stateTable(c);

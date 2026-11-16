@@ -1,7 +1,7 @@
 """
 The reference stays a reference: plan 009 section 5, decision 25.
 
-Five guards, each defined once in `tools/reference_guards.py` and each run here in full:
+Six guards, each defined once in `tools/reference_guards.py` and each run here in full:
 
 1. **No bench.** `reference/` describes how a Harmony works and never our own work: no bench, lab,
    dump, test account, our unit, the spare, everyday, friend or todo, no lab fixture name, no link into
@@ -16,6 +16,19 @@ Five guards, each defined once in `tools/reference_guards.py` and each run here 
    the archive section, decision or test it names exists.
 5. **Links resolve**, file and anchor, in `reference/`, `docs/`, the root documents and the skills.
    The archive's own links are `tests/project/test_archive.py`'s.
+6. **The FHSDK's section speaks to a stranger.** `reference/sdk/` is mostly generated from the packages' doc
+   comments, whose public part ends at `@privateRemarks`, so its prose carries no findings section, plan, decision or
+   requirement number, no todo, no HTML comment but the generator's markers, no date, no relative time, no bench,
+   lab, dump or appliance, and no link to `CLAUDE.md`, the findings archive, a plan or a test. Prose is the text
+   outside code, and the comments printed inside a code block.
+
+**Two narrowings in that section, each by kind, with the reason beside it in the guards.** The API's own names say
+`bench`, `BENCH_MODELS` among them, so in `reference/sdk/` the bench guard counts that word in prose alone and lets it
+pass in code formatting, in generated and hand written pages alike, which
+`test_the_word_bench_passes_in_the_sdk_section_only_as_code` holds; and the API's parameters name the device archive,
+so there the bare word `archive` is not counted while "catalogue, archived", a path to the converter's modules and
+"the infrared archive" still are, which `test_the_sdk_section_passes_the_word_archive_and_nothing_else_of_the_copy`
+holds.
 
 **The pinned lists, and why they may only shrink.** The reference was not clean when these guards were
 written, and was cleaned file by file afterwards. So `PINNED` below holds exactly what each
@@ -61,6 +74,8 @@ PINNED = {
     'footnotes': {
     },
     'links': {
+    },
+    'sdk': {
     },
 }
 # END PINNED
@@ -141,6 +156,12 @@ class GuardsAgainstThePinnedList(unittest.TestCase):
     def test_links_pinned_list_has_only_shrunk(self):
         self.assert_only_shrunk('links')
 
+    def test_sdk_finds_nothing_beyond_its_pinned_list(self):
+        self.assert_nothing_new('sdk')
+
+    def test_sdk_pinned_list_has_only_shrunk(self):
+        self.assert_only_shrunk('sdk')
+
     def test_the_pin_holds_every_guard_and_nothing_else(self):
         """A guard missing from `PINNED` would be compared against an empty list and look clean."""
         self.assertEqual(sorted(PINNED), sorted(guards.GUARDS))
@@ -199,6 +220,77 @@ class PlantedViolations(unittest.TestCase):
         self.assertEqual(self.kinds(found), sorted(
             [kind for kind, _ in guards.BENCH_WORDS]
             + ['fixture h600_config', 'fixture one.bin', 'link into docs/test-notes/']))
+
+    def test_the_word_bench_passes_in_the_sdk_section_only_as_code(self):
+        """In code formatting, generated page or hand written: passes. In prose, or in a comment in a block: counted."""
+        write(self.root, 'reference/sdk/api/page.md', (
+            '# Page\n\nThe models `BENCH_MODELS` lists, `Proof.bench`.\n\n```ts\nconst BENCH_MODELS: readonly '
+            'BenchModel[]\n```\n'))
+        write(self.root, 'reference/sdk/guide.md', 'Ask `benchModel` for one.\n')
+        self.assertEqual(dict(guards.bench_violations(self.root)), {})
+        write(self.root, 'reference/sdk/api/page.md', (
+            '# Page\n\nRead off the bench.\n\n```ts\ninterface Proof {\n  /** Where it was shown on the bench. */\n'
+            '  readonly bench: string;\n}\n```\n'))
+        write(self.root, 'reference/sdk/guide.md', 'Off the bench, `BENCH_MODELS`.\n')
+        self.assertEqual(dict(guards.bench_violations(self.root)), {
+            ('reference/sdk/api/page.md', 'bench'): 2, ('reference/sdk/guide.md', 'bench'): 1})
+
+    def test_the_sdk_section_passes_the_word_archive_and_nothing_else_of_the_copy(self):
+        """The bare word passes in the section; the rest of its kind, and every other kind, is counted there."""
+        write(self.root, 'reference/sdk/guide.md', 'The device archive, `BuildSources.archive`, an archive source.\n')
+        self.assertEqual(dict(guards.copy_violations(self.root, authors=None)), {})
+        write(self.root, 'reference/sdk/guide.md', (
+            'The infrared archive; the catalogue, archived; '
+            '[the converter](../../packages/config/src/catalogue/archive.ts); cloned from logitech-harmony-ir-archive.\n'))
+        self.assertEqual(dict(guards.copy_violations(self.root, authors=None)), {
+            ('reference/sdk/guide.md', 'its checkout'): 1,
+            ('reference/sdk/guide.md', 'the archive, meaning the copy'): 2,
+            ('reference/sdk/guide.md', 'its repository'): 1})
+
+    def test_sdk(self):
+        """Each kind of the section's guard planted once, in prose or in a comment printed in a block, and the clean twin."""
+        write(self.root, 'CLAUDE.md', '# Brief\n')
+        write(self.root, 'docs/plans/001-a-plan.md', '# A plan\n')
+        write(self.root, 'packages/base/test/x.test.ts', '// a test\n')
+        clean = (
+            '# Page\n\n<!-- introduction -->\nWhat it is.\n<!-- /introduction -->\n\n'
+            '<!-- Generated from the source comments by `make api-reference-write`: change the source. -->\n\n'
+            '<!-- example:packages/remote/examples/x.ts -->\n```ts\nconst R12 = 1; // the twelfth\n```\n'
+            '<!-- /example -->\n\n<!-- shape:@freeharmony-sdk/base#Proof -->\n```ts\ninterface Proof {\n'
+            '  /** Where it was shown on a remote. */\n  readonly bench: string;\n}\n```\n<!-- /shape -->\n\n'
+            'A `section 3`, `R12`, `decision 4` and `plan 013` in code; a label, a dumpling, a benchmark; built at a '
+            'moment, a fortnightly, the 16th of the month. [The guide](guide.md).\n')
+        write(self.root, 'reference/sdk/api/clean.md', clean)
+        write(self.root, 'reference/sdk/guide.md', '# Guide\n')
+        self.assertEqual(dict(guards.sdk_violations(self.root)), {})
+        write(self.root, 'reference/sdk/api/page.md', (
+            '# Page\n\nSee section 128, plan 013 and decision 44, R92 and a todo; a <!--superseded--> claim and an '
+            '&lt;!--superseded--> one; on 16 November 2026, and recently; the bench, the lab, a dump, an appliance.\n\n'
+            '```ts\ninterface Thing {\n  /** Read for weeks, section 7. */\n  readonly a: number;\n}\n```\n\n'
+            '[brief](../../../CLAUDE.md) [archive](../../../docs/findings.md) [plan](../../../docs/plans/001-a-plan.md) '
+            '[test](../../../packages/base/test/x.test.ts)\n'))
+        found = guards.sdk_violations(self.root)
+        self.assertEqual({path for path, _ in found}, {'reference/sdk/api/page.md'})
+        self.assertEqual(dict(found), {
+            ('reference/sdk/api/page.md', 'section number'): 2,
+            ('reference/sdk/api/page.md', 'plan number'): 1,
+            ('reference/sdk/api/page.md', 'decision number'): 1,
+            ('reference/sdk/api/page.md', 'requirement number'): 1,
+            ('reference/sdk/api/page.md', 'todo'): 1,
+            ('reference/sdk/api/page.md', 'html comment'): 2,
+            ('reference/sdk/api/page.md', 'date'): 1,
+            ('reference/sdk/api/page.md', 'relative time'): 2,
+            ('reference/sdk/api/page.md', 'bench'): 1,
+            ('reference/sdk/api/page.md', 'lab'): 1,
+            ('reference/sdk/api/page.md', 'dump'): 1,
+            ('reference/sdk/api/page.md', 'appliance'): 1,
+            ('reference/sdk/api/page.md', 'link to CLAUDE.md'): 1,
+            ('reference/sdk/api/page.md', 'link to docs/findings.md'): 1,
+            ('reference/sdk/api/page.md', 'link to a plan'): 1,
+            ('reference/sdk/api/page.md', 'link to a test'): 1,
+        })
+        self.assertEqual(sorted({kind for _, kind in found}), sorted(
+            [kind for kind, _, _ in guards.SDK_WORDS] + ['html comment'] + [kind for kind, _ in guards.SDK_LINKS]))
 
     def test_names(self):
         write(self.root, 'reference/clean.md', 'Nobody here.\n')

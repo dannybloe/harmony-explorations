@@ -37,7 +37,12 @@ import type {
  * of its family rather than testing which remote it is for.
  */
 export interface FamilyTraits {
-  /** A screen item's list opens with the beeper, as every menu row of the Harmony One does, section 73. */
+  /**
+   * A screen item's list opens with the beeper, as every menu row of the Harmony One does.
+   *
+   * @privateRemarks
+   * section 73.
+   */
   readonly screenItemsBeep: boolean;
 }
 
@@ -94,18 +99,23 @@ export interface SendList {
   readonly code: number;
   readonly quantity: number;
   /**
-   * The four slot family's delay step, section 287: the device's delay list, which every command's private
+   * The four slot family's delay step: the device's delay list, which every command's private
    * condition list calls, and the operands of the private load and condition. What a new send list's own pair
    * copies, `SendShape.newSendLists`.
+   *
+   * @privateRemarks
+   * section 287.
    */
   readonly prelude?: { readonly delay: number; readonly load: number; readonly condition: number };
 }
 
 /**
- * How a family's commands are sent: three lists with a delay prelude on the Harmony 600, 650 and 700, section
- * 287, and the send and its quantity alone on the Harmony One, section 278. One member, asked by every shared
+ * How a family's commands are sent: three lists with a delay prelude on the Harmony 600, 650 and 700, and the send and its quantity alone on the Harmony One. One member, asked by every shared
  * composer that builds or matches a send: the device composer, the input composer, the sequence composer and the
  * donor input matcher, so none of them tests a trait of its own and builds the shape itself.
+ *
+ * @privateRemarks
+ * section 287; section 278.
  */
 export interface SendShape {
   /** How many lists one send of a composed device's command takes, its own first: 3 or 1. */
@@ -117,13 +127,16 @@ export interface SendShape {
   device(c: Container, group: number, device: ComposeDevice, delays: DelayDefaults | undefined): DeviceSends;
   /**
    * How a composed device's power steps are spelled where the family's compiles spell them otherwise than the
-   * shared composer's default, which is the Harmony 650 and 700 compiles' form, section 309 and 320: the ordinary
+   * shared composer's default, which is the Harmony 650 and 700 compiles' form: the ordinary
    * press with no lead in, or the long press version where the catalogue holds the key, sent at the catalogue's
    * inter key delay. Absent keeps that default. The Harmony 880 and 885 open each with the device's delay between
    * devices and send it at a quantity of 1, `families/harmony-880-885/sends.ts`.
    * The Harmony One's family states no `powerStep` yet, although its compiles open a power step with the catalogue's
-   * `interDeviceDelay` on 8 of 8 catalogue devices, section 433, so a power step composed for a One keeps the
+   * `interDeviceDelay` on 8 of 8 catalogue devices, so a power step composed for a One keeps the
    * default. Asked before anything is built, so it is also where a family refuses a delay it cannot spell.
+   *
+   * @privateRemarks
+   * section 433; section 309 and 320.
    */
   powerStep?(device: ComposeDevice): PowerStepSpelling;
   /**
@@ -141,7 +154,12 @@ export interface SendShape {
   sendLists(c: Container): SendList[];
   /** The lists a new send takes from `list` on, given the configuration's own, `composeSequence`. */
   newSendLists(existing: readonly SendList[], group: number, code: number, quantity: number, list: number): ListBody[];
-  /** Which record a sequence's command sends where the caller does not say, `ComposeSequence.records`, section 349. */
+  /**
+   * Which record a sequence's command sends where the caller does not say, `ComposeSequence.records`.
+   *
+   * @privateRemarks
+   * section 349.
+   */
   readonly sequenceRecords: 'copy' | 'named';
   /** Why a sequence's one block copy is refused on this family, or undefined where it is composed. */
   readonly oneBlockCopyRefusal: string | undefined;
@@ -156,12 +174,15 @@ export interface SendShape {
 export type ActivityStartScreen = NonNullable<ComposeActivity['screen']>;
 
 /**
- * The shape of an activity's start: what the shared activity composer asks once an activity has its screens.
- * Section 290 on the Harmony 600, 650 and 700, a variable held at 1 while the start
- * runs, gating the inter device delay, and a flag written 1 before the working screen is deferred, whose list
- * enters the working screen itself; section 279 on the Harmony One, the timers cancelled, the "an activity is
+ * The shape of an activity's start: what the shared activity composer asks once an activity has its screens. On the
+ * Harmony 600, 650 and 700, a variable held at 1 while the start runs, gating the inter device delay, and a flag
+ * written 1 before the working screen is deferred, whose list enters the working screen itself; on the Harmony One,
+ * the timers cancelled, the "an activity is
  * running" list called, and a deferred list that calls the one showing the working screen. The composer asks this
  * rather than testing a trait of its own and building both itself.
+ *
+ * @privateRemarks
+ * Sections 290 and 279.
  */
 export interface ActivityStart {
   /**
@@ -176,7 +197,11 @@ export interface ActivityStart {
   lists(screen: ActivityStartScreen, first: number, writes: ListBody): { enter: ListBody; after: readonly ListBody[] };
   /**
    * Tag 5's own list, picking the running activity again, where a caller names none: `inputs` are the start's
-   * input writes in its order, section 313. Absent where the family keeps section 273's default, the enter list.
+   * input writes in its order. Absent where the family keeps the default, the enter list.
+   *
+   * @privateRemarks
+   * Section 273's default.
+   * section 313.
    */
   resume?(screen: ActivityStartScreen, inputs: ListBody): ListBody;
 }
@@ -195,8 +220,11 @@ export interface CommonChoices {
   readonly delays?: DelayDefaults;
   /**
    * The activity key each MyHarmony type of activity takes, where the family's remotes have activity keys:
-   * the Harmony 600, 650 and 700, section 314. The Harmony One has none. A key by the name printed on it,
+   * the Harmony 600, 650 and 700. The Harmony One has none. A key by the name printed on it,
    * which names the family's `activityKeyEditor` knows.
+   *
+   * @privateRemarks
+   * section 314.
    */
   readonly activityKeys?: Readonly<Record<string, string | undefined>>;
 }
@@ -215,8 +243,11 @@ export interface ActivityKeyState {
 
 /**
  * The hard keys that each start one activity, read and put an activity on, where a family's remotes have
- * them: the three of the Harmony 600, 650 and 700, section 314. What a shared composer asks of them, so it
+ * them: the three of the Harmony 600, 650 and 700. What a shared composer asks of them, so it
  * neither knows where a family keeps its keys nor which names they have.
+ *
+ * @privateRemarks
+ * section 314.
  */
 export interface ActivityKeyEditor {
   /** Refuses, with the reason, a key this configuration cannot take an activity on; asked before anything is built. */
@@ -228,7 +259,7 @@ export interface ActivityKeyEditor {
 }
 
 /**
- * What a family needs to build a recipe's key choices, `Family.recipeKeys`, requirements R31 and R32. The shared
+ * What a family needs to build a recipe's key choices, `Family.recipeKeys`. The shared
  * composer, `composeSetupParts`, resolves each choice to a list of the configuration's, puts an activity's into the
  * keypad map it composes, and asks this for the rest, which is the family's: the keys there are, the number each is
  * bound by, and how a device mode's own map, already composed, takes another binding.
@@ -237,6 +268,9 @@ export interface ActivityKeyEditor {
  * the words are the same key on every model that has it, where a scan code is one family's firmware's. So the words
  * are what the family offers, and the scan is answered only to the shared composer, which binds an activity's keypad
  * map by scan as every map of a compiled configuration is bound; the toolkit and an application see words alone.
+ *
+ * @privateRemarks
+ * Requirements R31 and R32.
  */
 export interface RecipeKeyBuilder {
   /**
@@ -272,7 +306,10 @@ export interface FamilyFonts {
   faceOf(set: SetMeasurement): FaceOrRefusal;
   /**
    * Whether two sets may point at one glyph, which needs the firmware's text routine read to find a glyph from
-   * its own set's pointer alone, section 368.
+   * its own set's pointer alone.
+   *
+   * @privateRemarks
+   * section 368.
    */
   readonly sharesGlyphs: boolean;
   /** Why the font table is not built for a configuration of this family in `skin`, or undefined where it is. */
@@ -284,8 +321,11 @@ export type WithChoices<Options, Choices> = Options & { readonly choices?: Choic
 
 export interface Family<Choices extends CommonChoices = CommonChoices> {
   /**
-   * Which of the two kinds of family this is, plan 013 decision 1: a compiled family builds the container the remote
+   * Which of the two kinds of family this is: a compiled family builds the container the remote
    * is written with, where a document family, `DocumentFamily` in `document.ts`, builds documents.
+   *
+   * @privateRemarks
+   * Plan 013 decision 1.
    */
   readonly kind: 'compiled';
   /** For a refusal or a report: the models this family serves, as a person names them. */
@@ -298,31 +338,46 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * for this family: per key, the commands it takes in order of preference, `deviceModeLayout`.
    */
   readonly deviceModeKeys: readonly HardKey[];
-  /** The keys section 323's activity keypad rule names, on this family's keypad. */
+  /** The keys the activity keypad rule names, `ActivityKeyRules`, on this family's keypad.
+   *
+   * @privateRemarks
+   * Section 323's rule.
+   */
   readonly activityKeyRules: ActivityKeyRules;
   /**
-   * The family's activity keys, where its remotes have them: the Harmony 600, 650 and 700's three, section
-   * 314. Absent on the Harmony One, which has none, so a composer asked to put an activity on one refuses.
+   * The family's activity keys, where its remotes have them: the Harmony 600, 650 and 700's three. Absent on the Harmony One, which has none, so a composer asked to put an activity on one refuses.
+   *
+   * @privateRemarks
+   * section 314.
    */
   readonly activityKeyEditor?: ActivityKeyEditor;
   /**
-   * The keys a recipe chooses otherwise, `RecipeKey`, built for this family, requirements R31 and R32: which keys a
+   * The keys a recipe chooses otherwise, `RecipeKey`, built for this family: which keys a
    * recipe may name, by Logitech's word for each, and how a device mode's own map is rebound. Absent where the family builds none yet, and then a
    * recipe stating a key is refused rather than built without it, since an ignored choice gives a file the remote
    * accepts and a key that does something else. The Harmony One has it, `families/harmony-one/recipekeys.ts`.
+   *
+   * @privateRemarks
+   * Requirements R31 and R32.
    */
   readonly recipeKeys?: RecipeKeyBuilder;
   /**
-   * The family's maps, decision 43, `maps.ts`: the model's places, the commands it carries for a device, and the
+   * The family's maps, `maps.ts`: the model's places, the commands it carries for a device, and the
    * default maps of a device and of an activity, which `resolveMaps` puts the document's choices over for the build and
    * the questions alike. The same interface as a document family's, so a key is asked the same way of every model.
-   * Absent where the family states none yet, which is every compiled family today.
+   * Absent where the family states none yet, which is every compiled family.
+   *
+   * @privateRemarks
+   * decision 43.
    */
   readonly maps?: FamilyMaps;
   /**
-   * The remote's own settings a document may state, R47, `settings.ts`: the rows the build writes with their kind and
+   * The remote's own settings a document may state, `settings.ts`: the rows the build writes with their kind and
    * default, the ones not built yet, and the build's judgement of a value. Absent where the build reads no setting
    * from a document, which is every compiled family: their settings are build choices of their own.
+   *
+   * @privateRemarks
+   * R47.
    */
   readonly settings?: FamilySettings;
   /**
@@ -334,12 +389,18 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * The family's own wiring, the event map, the leading list, the timers, base slot 9's fixed entries and the
    * lists they reach: a configuration's checked against what the family's builder makes from the description
    * read off it, byte for byte, refused at the first difference. The Harmony 600, 650 and 700's is
-   * `families/harmony-600-650-700/wiring.ts`, sections 347 and 360; the Harmony One's `families/harmony-one/wiring.ts`, section 410.
+   * `families/harmony-600-650-700/wiring.ts`; the Harmony One's `families/harmony-one/wiring.ts`.
+   *
+   * @privateRemarks
+   * sections 347 and 360; section 410.
    */
   readonly wiring: { check(c: Container): WiringChecked };
   /**
    * How the family's font sets become our letters: the Harmony 600, 650 and 700's nine faces, measured on the
-   * 650 alone, `families/harmony-600-650-700/fonts.ts`; the Harmony One's five, `families/harmony-one/fonts.ts`, section 396.
+   * 650 alone, `families/harmony-600-650-700/fonts.ts`; the Harmony One's five, `families/harmony-one/fonts.ts`.
+   *
+   * @privateRemarks
+   * section 396.
    */
   readonly fonts: FamilyFonts;
   /**
@@ -356,7 +417,10 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    * What composing an activity changes in the family's own wiring, asked before anything is built with the key
    * the activity goes on: undefined where nothing changes, or what rebuilds the finished configuration's
    * wiring. On the Harmony 600, 650 and 700 the first activity, or one put on an empty key, changes scan 4's
-   * front list and the empty keys' own, section 379. Absent on the Harmony One, whose wiring an activity leaves.
+   * front list and the empty keys' own. Absent on the Harmony One, whose wiring an activity leaves.
+   *
+   * @privateRemarks
+   * section 379.
    */
   activityRewiring?(c: Container, activityKey: string | undefined): ((bytes: Uint8Array) => Uint8Array) | undefined;
   /**
@@ -376,14 +440,20 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   composeDeviceScreen(c: Container, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeScreenOptions, Choices>): ComposedScreen;
   /**
    * The activity menu's mode, or undefined where the configuration has none this family can find. How a
-   * family finds it differs: by structure on the four slot screens, section 375, by its rows on the touch
-   * screens, section 275.
+   * family finds it differs: by structure on the four slot screens, by its rows on the touch
+   * screens.
+   *
+   * @privateRemarks
+   * section 375; section 275.
    */
   activityMenu(c: Container): number | undefined;
   /**
    * The menu marker as a writer other than a menu row names it, or undefined where the family has none
    * measured, which `menuMarkerOf` holds to the rows' answer: on the four slot screens the list the press of
-   * More Activities runs from base slot 9 entry 1 writes it 0 first, section 375.
+   * More Activities runs from base slot 9 entry 1 writes it 0 first.
+   *
+   * @privateRemarks
+   * section 375.
    */
   menuMarkerWriter(c: Container): number | undefined;
   /** A row on the activity menu, once the shared prelude has found the menu and its marker. */
@@ -393,8 +463,10 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   /**
    * The device list an activity's Devices key opens, given after the activity has its row: one of the activity's
    * own on both families, every device with those its start switches on first, `startSwitchedOn`; the Harmony 600,
-   * 650 and 700's `composeActivityDeviceList`, section 352, and the Harmony One's `withOneActivityDeviceList`,
-   * section 424. Returns the configuration's bytes.
+   * 650 and 700's `composeActivityDeviceList`, and the Harmony One's `withOneActivityDeviceList`. Returns the configuration's bytes.
+   *
+   * @privateRemarks
+   * section 352; section 424.
    */
   activityDeviceList(c: Container, activity: number): Uint8Array;
   /** An activity's working screen, `composeActivityScreen`. */
@@ -444,15 +516,18 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   /**
    * The skins `composeSetup` has been run on for this family, where it composes a setup onto a donor at all; a
    * skin outside it is refused. Absent, the family's setups are not composed that way. The Harmony One's is skin
-   * 54, which the spare Harmony One reports.
+   * 54, which a Harmony One reports.
    */
   readonly composedSkins?: ReadonlySet<number>;
   /**
-   * **The configuration a recipe describes, built from nothing**, plan 014: no compile of Logitech's
+   * **The configuration a recipe describes, built from nothing**: no compile of Logitech's
    * goes in, so what comes out is ours byte for byte and the same recipe, sources and stamp give the same bytes. Called
    * by `buildFromRecipe` in `families/fromrecipe.ts`, which chooses the family by the recipe's model; the family reads
    * its own part of the recipe and its choices, and refuses what it does not build. Absent where the family builds
    * nothing from a recipe yet, the Harmony 880 and 885's.
+   *
+   * @privateRemarks
+   * plan 014.
    */
   readonly fromRecipe?: (recipe: Recipe, skin: number, sources: RecipeSources) => Uint8Array;
   /**
@@ -464,9 +539,12 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
    */
   readonly nameRefusal?: (recipe: Recipe, skin: number, owner: 'device' | 'activity', name: string) => string | undefined;
   /**
-   * A recipe's choices over the family's defaults, checked, plan 014: what `composeSetup`
+   * A recipe's choices over the family's defaults, checked: what `composeSetup`
    * composes with when a recipe states choices, so a recipe's look reaches every builder the setup runs. Refuses a
    * choice the family does not make. Absent where the family's setups are not composed by `composeSetup`.
+   *
+   * @privateRemarks
+   * plan 014.
    */
   readonly readChoices?: (given: Readonly<Record<string, unknown>>) => Choices;
 }

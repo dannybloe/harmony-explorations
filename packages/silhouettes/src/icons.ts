@@ -18,12 +18,14 @@
  */
 import { pathBounds } from './path.ts';
 
+/** One stroke or fill of a symbol, as an SVG path in the symbol's unit box. */
 export interface IconPart {
   readonly d: string;
   readonly mode: 'fill' | 'stroke';
   readonly accent?: boolean;
 }
 
+/** A symbol printed on a key, such as play or mute, as its parts. */
 export interface Icon {
   readonly parts: readonly IconPart[];
 }
@@ -31,6 +33,7 @@ export interface Icon {
 /**
  * How much of the unit box a symbol actually uses, measured from its own path.
  *
+ * @privateRemarks
  * There used to be an `aspect` number written by hand beside each symbol, and it was a second
  * statement of something the path already says, which is the shape this repository's oldest rule
  * warns about: it can disagree with the path and nothing would notice. It also sized things wrongly,
@@ -62,6 +65,7 @@ const right = (x0: number, x1: number): string => `M ${x0} -0.85 L ${x0} 0.85 L 
 const left = (x0: number, x1: number): string => `M ${x0} -0.85 L ${x0} 0.85 L ${x1} 0 Z`;
 const bar = (x: number, w: number): string => `M ${x} -0.85 H ${x + w} V 0.85 H ${x} Z`;
 
+/** Every symbol a key is drawn with, by name. */
 export const ICONS: Readonly<Record<string, Icon>> = {
   play: { parts: [{ d: right(-0.7, 0.8), mode: 'fill' }] },
   pause: { parts: [{ d: bar(-0.65, 0.4), mode: 'fill' }, { d: bar(0.25, 0.4), mode: 'fill' }] },

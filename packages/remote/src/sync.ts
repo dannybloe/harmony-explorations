@@ -143,9 +143,12 @@ export type SyncEvent =
  * can be told only by asking it, a request the answerer does not send, and a sync whose every answer turns out 304 has
  * still handed the remote's own changes up and committed, so it is `written`.
  *
- * **Words for a person, data for an application.** `message` is a sentence to show and carries no command, script,
- * path or switch of this repository's bench, since an application's user has none of them; what an application acts
- * on is `result`, `remote`, `phase` and `state`. The bench's scripts word their own instructions from `state`.
+ * **Words for a person, data for an application.** `message` is a sentence to show and names no command, script, path
+ * or switch, since an application's user has none of them; what an application acts
+ * on is `result`, `remote`, `phase` and `state`.
+ *
+ * @privateRemarks
+ * The bench's scripts word their own instructions from `state`.
  */
 export interface SyncOutcome {
   /** How it ended: one of `SYNC_ENDINGS`' results, each described there. */
@@ -170,11 +173,14 @@ export interface SyncOutcome {
    */
   readonly state?: SyncState;
   /**
-   * **The activities the build left out, and why**, decision 44, in the document's order: each one the document switches
-   * off, R92, `reason: 'switched-off'`, and each one that uses no device, `reason: 'no-device'`. On every outcome reached
+   * **The activities the build left out, and why**, in the document's order: each one the document switches
+   * off, `reason: 'switched-off'`, and each one that uses no device, `reason: 'no-device'`. On every outcome reached
    * after the build, whatever it was, and absent where every activity takes part or the sync ended before the build.
    * Stated on the outcome, the one event a screen is sure to show, since what the remote holds afterwards cannot say it: an activity left out is simply not there. The build's own result says the same,
    * `Built.leftOut`, and the journal has a line of it.
+   *
+   * @privateRemarks
+   * Decision 44; switching an activity off is R92.
    */
   readonly leftOut?: readonly LeftOutActivity[];
 }
@@ -184,25 +190,28 @@ export interface SyncOutcome {
  * of the remote (`holds`), whether it may be unplugged now (`unplug`), and what puts it right (`next`), each worded for
  * a person and naming no command, script or switch. An outcome names one in `SyncOutcome.state`, and `SYNC_ENDINGS`
  * pairs each with the result and the remote it comes with. A state is named only where something is owed: a failure
- * that leaves the remote as it was names none.
+ * that leaves the remote as it was names none. An application acts on the state, offering the same sync again,
+ * asking for the batteries or keeping the person from unplugging, which it cannot do by reading a sentence.
  *
+ * * `write-unfinished`, a configuration written into flash: the write stopped part way.
+ * * `neighbour-erased`, the same: the write stopped because an erase reached the block beside the one it was told to
+ *   erase. Running the same sync again is what must not happen here.
+ * * `read-back-failed`, the same: every block was written, and the whole configuration did not read back as written.
+ * * `restart-owed`, the same: the new configuration is whole and the restart failed.
+ * * `restart-withheld`, the same: the new configuration is whole and a check before the restart withheld it. Only a
+ *   Harmony 885's write withholds one, and no document builds for an 885 yet, so no sync reaches this state.
+ * * `stopped-in-hand-over`, a Harmony Touch: the sync stopped while the remote handed its own changes up.
+ * * `stopped-after-hand-over`, the same: the hand over had ended, and the sync then stopped.
+ *
+ * @privateRemarks
  * **Why data and not a sentence in the message.** The way back from these differs per state and an application has to
  * act on it, offer the same sync again, ask for the batteries, or keep the person from unplugging, which it cannot do
  * by reading a sentence; and the bench's scripts word their own commands from the same state, so the library's words
  * carry none of them.
  *
- * * `write-unfinished`, a configuration written into flash: the write stopped part way.
- * * `neighbour-erased`, the same: the write stopped because an erase reached the block beside the one it was told to
- *   erase. Its own state, never `write-unfinished`, because that one's way back, the same sync again, erases and writes
- *   the blocks the sync owns and leaves the neighbour as the erase left it, so here running again is what must not
- *   happen.
- * * `read-back-failed`, the same: every block was written, and the whole configuration did not read back as written.
- * * `restart-owed`, the same: the new configuration is whole and the restart failed.
- * * `restart-withheld`, the same: the new configuration is whole and a check before the restart withheld it. Only a
- *   Harmony 885's write withholds one, `CONFIG_WRITE_MODELS`, and no document builds for an 885 yet, so no sync reaches
- *   this state today; it is stated so that the words are right on the day one does.
- * * `stopped-in-hand-over`, a Harmony Touch: the sync stopped while the remote handed its own changes up.
- * * `stopped-after-hand-over`, the same: the hand over had ended, and the sync then stopped.
+ * `neighbour-erased` is its own state, never `write-unfinished`, because that one's way back, the same sync again,
+ * erases and writes the blocks the sync owns and leaves the neighbour as the erase left it. `restart-withheld` is
+ * stated, though no sync reaches it today (`CONFIG_WRITE_MODELS`), so that the words are right on the day one does.
  *
  * The Harmony Touch's two are the answerer's recovery order and its abort's cost, `RECOVERY` and `abortCost` in
  * `touchsync.ts`, `reference/architectures/harmony-touch/answering-a-sync.md`, put as what is true and what is done
@@ -311,8 +320,8 @@ export const SYNC_ENDINGS = {
 export type SyncEnding = (typeof SYNC_ENDINGS)[keyof typeof SYNC_ENDINGS][number];
 
 /**
- * What a sync to an attached remote needs that only whoever keeps the remote holds. On the bench these are the lab's;
- * in an application they are kept with the user's own data. **None of it is a permission**: which units may be written
+ * What a sync to an attached remote needs that only whoever keeps the remote holds: an application keeps them with
+ * its user's own data. **None of it is a permission**: which units may be written
  * is the library's list, `CONFIG_WRITE_UNITS` or `TOUCH_SYNC_UNITS`, and a label outside it is refused.
  *
  * **A union by kind**, the kind of family the remote's model is chosen into, because a flash write and an answered
@@ -424,7 +433,7 @@ export interface SyncRequest {
 }
 
 /**
- * A remote that is not there, R80: an application syncs to it and reads it as it would a remote on the cable, and it
+ * A remote that is not there: an application syncs to it and reads it as it would a remote on the cable, and it
  * answers with the events, the outcomes and the words a remote on the cable gives, its failures included, so every
  * screen of a sync and a read can be built and tried with nothing attached. Made by `pretendRemote` and by nothing
  * else: an object put together to look like one is refused.
@@ -433,6 +442,9 @@ export interface SyncRequest {
  * bytes of the configuration last written to it, which a sync compares by erase block as the real write does and a
  * read reads back; for a Harmony Touch, nothing but the document last synced, since a Touch's sync never asks the
  * remote what it holds.
+ *
+ * @privateRemarks
+ * R80.
  */
 export interface PretendRemote {
   readonly kind: 'pretend';
@@ -1036,7 +1048,14 @@ function stateOf(remote: PretendRemote): PretendState {
 /** The moment a pretend remote's first configuration is built at, where `PretendOptions.heldSources` names none. */
 const PRETEND_HELD_AT = '2026-01-01T00:00:00';
 
-/** A pretend remote of a model, R80. */
+/**
+ * A pretend remote of a model, holding the configuration built from `options.holds` where one is given. Throws
+ * `RangeError` for a model the library does not know, for a `holds` document of another model and for a negative
+ * `stepMs`.
+ *
+ * @privateRemarks
+ * R80.
+ */
 export function pretendRemote(options: PretendOptions): PretendRemote {
   const stepMs = options.stepMs ?? 0;
   if (!Number.isFinite(stepMs) || stepMs < 0) throw new RangeError(`a pretend remote cannot take ${String(options.stepMs)} milliseconds over a step`);
@@ -1278,11 +1297,15 @@ async function syncPretend(request: SyncRequest, remote: PretendRemote, document
 }
 
 /**
- * A read of a pretend remote, R80: what `readConfig` takes, a reader and the profile of the remote's model, served
+ * A read of a pretend remote: what `readConfig` takes, a reader and the profile of the remote's model, served
  * from what the pretend remote holds. The read itself is `readConfig`'s, so its progress, its retries and its checks
  * are a real read's; a remote holding none of ours reads as erased and is refused by the same check as a remote that
  * holds no configuration. Refused, as `profileFor` refuses a product id, for a model the read of a configuration does
- * not serve: a Harmony Touch, whose documents no entry reads yet, and the Harmony 300 and 350.
+ * not serve: a Harmony Touch, whose documents no entry reads yet, and the Harmony 300 and 350. That refusal is a thrown
+ * `ReadError`.
+ *
+ * @privateRemarks
+ * R80.
  */
 export function pretendReader(remote: PretendRemote): PretendRead {
   const state = stateOf(remote);
@@ -1483,10 +1506,21 @@ async function syncAttachedTouch(request: SyncRequest, remote: AttachedRemote): 
 }
 
 /**
- * Sync a document to a remote, R79: checked, built, written by the model's own write path and, where that path reads
- * back, read back; reported as events. Resolves with the outcome, which is also the last event; a document or a remote
- * that is refused is an outcome and not a throw. Built for the Harmony One, 600, 650 and 700 and the Harmony Touch, on
- * the cable and as a pretend remote; for a document of any other model it refuses by name before anything is opened.
+ * Sync a document to a remote: checked, built, written by the model's own write path and, where that path reads back,
+ * read back; reported as events. Resolves with the outcome, which is also the last event.
+ *
+ * **When it resolves and when it rejects.** From the check on, every refusal and every failure is an outcome and not
+ * an exception: a document the check or the build refuses, a remote on the cable that is not the document's model, a
+ * refusal by the write path or its checks (the write switches among them), a stop, and a failure of the remote or the
+ * cable, each with what it left the remote as. It rejects in two cases only, both before anything is opened or sent:
+ * with `NotBuiltError` for a document of a model whose sync is not built, every model but the Harmony One, 600, 650,
+ * 700 and 885 and the Harmony Touch (a Harmony 300 or 350 among them), and with a `TypeError` for a pretend remote
+ * that `pretendRemote` did not make. A Harmony 885's document gets as far as the build and ends `refused`, since no
+ * document builds for an 885 yet. `capabilitiesOf` says beforehand whether a model's sync is there.
+ *
+ * @privateRemarks
+ * R79. The Harmony 885 is in `CONFIG_WRITE_MODELS`, so its document is let through to the build, whose `NotBuiltError`
+ * the build phase turns into a refusal.
  */
 export async function syncDocument(request: SyncRequest): Promise<SyncOutcome> {
   const remote = request.remote;

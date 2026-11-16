@@ -476,6 +476,10 @@ export function parseSysInfo(text: string): Map<string, string> {
   return fields;
 }
 
+/**
+ * Read a Harmony 300, 350 or Touch's system information, the remote's own file of names and values, and give each
+ * value by its name.
+ */
 export async function readSysInfo(transport: Transport): Promise<Map<string, string>> {
   const bytes = await readFile(transport, '/sys/sysinfo');
   return parseSysInfo(Buffer.from(bytes).toString('ascii'));
@@ -570,9 +574,11 @@ export function guardedProduct(transport: Transport): number | undefined {
 
 /**
  * The five power sources a Harmony Touch's power controller driver names, in the order it names them: the battery,
- * the cradle, a wall adapter, a computer's USB port, and a USB charger. Read in the firmware,
- * `tests/harmony_touch/test_harmony_touch_keys.py`. The remote's screens take part in a sync on `usb` alone,
+ * the cradle, a wall adapter, a computer's USB port, and a USB charger, as the firmware names them. The remote's screens take part in a sync on `usb` alone,
  * `reference/architectures/harmony-touch/answering-a-sync.md`.
+ *
+ * @privateRemarks
+ * Read in the firmware, `tests/harmony_touch/test_harmony_touch_keys.py`.
  */
 export const TOUCH_POWER_SOURCES = ['battery', 'cradle', 'wall_adapter', 'usb', 'usb_charge'] as const;
 
@@ -591,8 +597,8 @@ export const TOUCH_POWER_READ_ON: readonly string[] = ['4.15.330'];
 
 /**
  * Read which power source a Harmony Touch is on, through the read only route: ping, open `/tde/powerstate` for
- * reading, read, close, as `readFile` does, and the text trimmed of white space, since a unit's file holds the
- * source's name and a line feed, `test/touch/touch-power-read.test.ts`.
+ * reading, read, close, as `readFile` does, and the text trimmed of white space, since the file holds the
+ * source's name and a line feed.
  *
  * **Refuses before anything is sent** unless `transport` is a guarded transport opened on the Touch's product id,
  * `openFileBasedRemote` with that id, since the name is a Touch's and nothing is read about it on another model;
@@ -601,7 +607,10 @@ export const TOUCH_POWER_READ_ON: readonly string[] = ['4.15.330'];
  *
  * **And refuses on a firmware build the name's handlers are not read in**, `TOUCH_POWER_READ_ON`: the identity file,
  * which is on the family's inert list, is read first and its build compared, and the name is opened only on a build
- * that is listed. What a name does is a fact about a build, which is why the request channel holds the same check,
+ * that is listed.
+ *
+ * @privateRemarks
+ * The test is `test/touch/touch-power-read.test.ts`. What a name does is a fact about a build, which is why the request channel holds the same check,
  * `TOUCH_REQUEST_READ_ON`. The product id cannot carry this: every remote that runs the Touch's image shares it,
  * on whatever build it is.
  */
