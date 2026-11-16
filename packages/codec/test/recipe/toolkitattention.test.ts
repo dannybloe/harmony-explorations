@@ -18,6 +18,21 @@
  * * **The limit on activities counts those switched on**: on a Harmony 350, which takes one, an activity can be added
  *   once the one there is switched off, `check` lists no problem and the build builds, while switching the first on
  *   again is refused as over the limit; the control is the same document with both on, which `check` lists.
+ * * **No device, no activity**, decision 44 as taken on 16 November 2026: on the same four models a document whose
+ *   last activity uses no device builds exactly what the document without that activity builds, and `leftOut` names
+ *   it with the reason `no-device`; `activities` says the same without building, `check` lists a note and no error, and
+ *   an activity both switched off and with no device is named `switched-off`, the person's choice. The controls are the
+ *   document as it was, which builds otherwise and names nothing, and the activities that take part, which carry no
+ *   reason. A Harmony Touch and a Harmony 350 build it where their own composers refuse one: the shared path takes it
+ *   out before either is reached.
+ * * **The limit counts only the activities that take part**: on a Harmony 350, an activity with no device is added
+ *   beside the one there, the check lists no limit and the build leaves it out; giving it a device is refused as over
+ *   the limit, and with the first switched off the same change is taken. The control is adding one with a device,
+ *   refused.
+ * * **Losing its last device keeps the activity and says it is now left out**: through `setActivity` on a Harmony One,
+ *   an effect at the activity, and on a Harmony Touch the activity holding the favourite channels says who holds them
+ *   while it uses no device; through `remove` of the device, the activity kept, marked, and the same effect after its
+ *   mark, while another activity that used the device and keeps others says nothing of it, nor one already switched off.
  * * **Removing a device marks every activity that used it**, with every press of the activity whose answer the removal
  *   changed, read off the model's maps before and after, what each did and what it does now; on the two models whose
  *   families state their maps, the Harmony One and the Harmony Touch. Not only the presses that sent the removed
@@ -36,8 +51,8 @@
  * * **The reader holds both fields to their form**: each malformed field refused with its own words, one control
  *   accepted per field.
  *
- * **What is not claimed**: that a remote behaves as the build says. That an activity no device of which is used can be
- * built is not decided here, decision 44 leaves it; the switch only takes an activity out. The keys of the Harmony 600,
+ * **What is not claimed**: that a remote behaves as the build says, and nothing of what a remote would do with an
+ * activity of no device, since none is ever given one. The keys of the Harmony 600,
  * 650 and 700, the 880 and 885 and the 300 and 350 are not built yet, R77, so their marks name none.
  *
  * Scope: the Harmony One, skin 54, the Harmony Touch, the Harmony 650 and the Harmony 350, their reference documents.
@@ -51,7 +66,7 @@ import { proves } from '@harmony/testkit/proof';
 
 import '../../src/support/resources.node.ts';
 import { buildFromRecipe, builtDigest, harmonyTouch, readRecipe, recipe, RecipeError, type Built } from '../../src/node.ts';
-import type { Recipe } from '../../src/recipe/recipe.ts';
+import { takingPart, type Recipe } from '../../src/recipe/recipe.ts';
 import type { Change } from '../../src/recipe/toolkit.ts';
 
 type Json = any;
@@ -91,6 +106,9 @@ test('setActivity switches an activity off and on again, the document then being
   assert.deepEqual(off.effects, []);
   assert.equal(off.document.activities[2]!.enabled, false);
   assert.deepEqual(recipe.activities(off.document).map((one) => one.enabled), [true, true, false, true, true]);
+  // Why it is left out, asked without building: switched off, and nothing on the activities that take part.
+  assert.deepEqual(recipe.activities(off.document).map((one) => one.leftOut), [undefined, undefined, 'switched-off', undefined, undefined]);
+  assert.equal('leftOut' in recipe.activities(off.document)[0]!, false);
   // Left alone by a change that does not name it.
   assert.equal(recipe.setActivity(off.document, 'a3', { name: 'Muziek luisteren' }).document.activities[2]!.enabled, false);
   // Switched on, the field goes and the document is the one before, ids and all.
@@ -115,7 +133,7 @@ test('on the Harmony One, 650, 350 and Touch an activity switched off builds wha
     const builtGone = build(recipe.remove(document, { activity: last.id! }).document);
     const builtAsWas = build(document);
     assert.equal(builtDigest(builtOff), builtDigest(builtGone), `${name}: switched off builds as removed`);
-    assert.deepEqual(builtOff.leftOut, [{ id: last.id, name: last.name }], name);
+    assert.deepEqual(builtOff.leftOut, [{ id: last.id, name: last.name, reason: 'switched-off' }], name);
     // The controls: the document as it was builds otherwise, and names nothing left out.
     assert.notEqual(builtDigest(builtAsWas), builtDigest(builtOff), name);
     assert.deepEqual(builtAsWas.leftOut, [], name);
@@ -135,11 +153,11 @@ test('on a Harmony Touch the favourite channels go to the first activity left th
   const tvOff = recipe.setActivity(document, 'a1', { enabled: false }).document;
   const one = build(tvOff);
   assert.deepEqual(shown(one), ['900000202 Watch a Blu-ray', '900000203 Listen to Music', '900000204 Switch Box favourites', '900000205 Play a Game']);
-  assert.deepEqual(one.leftOut, [{ id: 'a1', name: 'Watch TV' }]);
+  assert.deepEqual(one.leftOut, [{ id: 'a1', name: 'Watch TV', reason: 'switched-off' }]);
   // With the two that can hold them both off, none does, and the set still builds.
   const two = build(recipe.setActivity(tvOff, 'a4', { enabled: false }).document);
   assert.deepEqual(shown(two), ['900000202 Watch a Blu-ray', '900000203 Listen to Music', '900000205 Play a Game']);
-  assert.deepEqual(two.leftOut, [{ id: 'a1', name: 'Watch TV' }, { id: 'a4', name: 'Switch Box' }]);
+  assert.deepEqual(two.leftOut, [{ id: 'a1', name: 'Watch TV', reason: 'switched-off' }, { id: 'a4', name: 'Switch Box', reason: 'switched-off' }]);
 });
 
 test('switching off the activity holding the favourite channels says who holds them while it is off, by the family\'s rule or the document\'s', () => {
@@ -165,21 +183,120 @@ test('on a Harmony 350 the limit on activities counts those switched on, in addA
   const second = { name: 'Second', type: 'WatchTV', devices: devicesOf(document, 0) };
   const overLimit = (call: () => unknown): void => {
     assert.throws(call, (error: unknown) => error instanceof recipe.ChangeRefused && error.reason === 'over-limit'
-      && error.message === 'a Harmony 350 holds 1 activity switched on, and the document holds that many');
+      && error.message === 'a Harmony 350 holds 1 activity switched on with a device, and the document holds that many');
   };
   // With the one there switched on, no second; switched off, a second is added, and both build and check clean.
   overLimit(() => recipe.addActivity(document, second));
   const off = recipe.setActivity(document, 'a1', { enabled: false }).document;
   const both = kept(off, () => recipe.addActivity(off, second)).document;
   assert.deepEqual(recipe.check(both).filter((one) => one.code === 'over-limit'), []);
-  assert.deepEqual(build(both).leftOut, [{ id: 'a1', name: 'TV kijken' }]);
+  assert.deepEqual(build(both).leftOut, [{ id: 'a1', name: 'TV kijken', reason: 'switched-off' }]);
   // Switching the first on again would give the remote two: refused as over the limit.
   overLimit(() => recipe.setActivity(both, 'a1', { enabled: true }));
   // The control: the same document with both on, which only a document edited by hand can be, is listed by check.
   const json: Json = copy(both);
   delete json.activities[0].enabled;
   assert.deepEqual(recipe.check(recipe.open(json)).filter((one) => one.code === 'over-limit').map((one) => one.message),
-    ['a Harmony 350 holds 1 activity switched on, and the document has 2 switched on']);
+    ['a Harmony 350 holds 1 activity switched on with a device, and the document has 2']);
+});
+
+// ---------------------------------------------------------------------------------------------------
+// No device, no activity
+// ---------------------------------------------------------------------------------------------------
+
+/** The sentence a change says when it leaves an activity with no device, and the check's note for one. */
+const noDeviceNow = (name: string): string => `activity ${name} uses no device now, so a build and a sync leave it out until a device is added`;
+const noDeviceNote = (name: string): string => `activity ${name} uses no device yet, so a build and a sync leave it out until one is added`;
+
+test('on the Harmony One, 650, 350 and Touch an activity with no device builds what the document without it builds, and is named as left out with no device', () => {
+  for (const name of ['one-test', 'h650-test', 'h350-test', 'touch-test']) {
+    const document = reference(name);
+    const last = document.activities.at(-1)!;
+    const empty = kept(document, () => recipe.setActivity(document, last.id!, { devices: [] })).document;
+    assert.deepEqual(empty.activities.at(-1)!.devices, [], name);
+    const builtEmpty = build(empty);
+    const builtGone = build(recipe.remove(document, { activity: last.id! }).document);
+    assert.equal(builtDigest(builtEmpty), builtDigest(builtGone), `${name}: with no device builds as removed`);
+    assert.deepEqual(builtEmpty.leftOut, [{ id: last.id, name: last.name, reason: 'no-device' }], name);
+    // Said without building, and a note of the check, never an error.
+    assert.deepEqual(recipe.activities(empty).map((one) => one.leftOut), [...document.activities.slice(0, -1).map(() => undefined), 'no-device'], name);
+    assert.deepEqual(recipe.check(empty).filter((one) => one.severity === 'error'), [], name);
+    assert.deepEqual(recipe.check(empty).filter((one) => one.place.kind === 'activity' && one.place.activity === last.id), [
+      { severity: 'note', code: 'unfinished', place: { kind: 'activity', activity: last.id }, message: noDeviceNote(last.name) },
+    ], name);
+    // Switched off as well, the person's choice is the reason named.
+    const both = recipe.setActivity(empty, last.id!, { enabled: false }).document;
+    assert.deepEqual(recipe.activities(both).at(-1)!.leftOut, 'switched-off', name);
+    assert.deepEqual(takenOut(both), [{ id: last.id, name: last.name, reason: 'switched-off' }], name);
+    // The control: the document as it was builds otherwise, and names nothing left out.
+    assert.notEqual(builtDigest(build(document)), builtDigest(builtEmpty), name);
+    assert.deepEqual(recipe.activities(document).map((one) => one.leftOut), document.activities.map(() => undefined), name);
+  }
+});
+
+/** What a build leaves out, asked of the shared path alone, where a whole build would only repeat the one above. */
+const takenOut = (document: Recipe): Built['leftOut'] => takingPart(document).leftOut;
+
+test('on a Harmony 350 the limit counts only the activities that take part, so one with no device is added past it and left out', () => {
+  const document = reference('h350-test');
+  const overLimit = (call: () => unknown): void => {
+    assert.throws(call, (error: unknown) => error instanceof recipe.ChangeRefused && error.reason === 'over-limit'
+      && error.message === 'a Harmony 350 holds 1 activity switched on with a device, and the document holds that many');
+  };
+  // The control: a second activity with a device is refused.
+  overLimit(() => recipe.addActivity(document, { name: 'Second', type: 'WatchTV', devices: devicesOf(document, 0) }));
+  // With no device it takes no part, so it is added, the check lists no limit, and the build leaves it out.
+  const added = kept(document, () => recipe.addActivity(document, { name: 'Second', type: 'WatchTV', devices: [] }));
+  assert.deepEqual(added.effects, []);
+  const second = added.document.activities[1]!;
+  assert.deepEqual(recipe.check(added.document).filter((one) => one.severity === 'error'), []);
+  assert.deepEqual(build(added.document).leftOut, [{ id: second.id, name: 'Second', reason: 'no-device' }]);
+  // Given a device it would take part beside the first: refused as over the limit.
+  overLimit(() => recipe.setActivity(added.document, second.id!, { devices: devicesOf(document, 0) }));
+  // With the first switched off, the same change is taken, and only the first is left out.
+  const off = recipe.setActivity(added.document, 'a1', { enabled: false }).document;
+  const filled = recipe.setActivity(off, second.id!, { devices: devicesOf(document, 0) }).document;
+  assert.deepEqual(takenOut(filled), [{ id: 'a1', name: 'TV kijken', reason: 'switched-off' }]);
+  assert.deepEqual(recipe.check(filled).filter((one) => one.code === 'over-limit'), []);
+});
+
+test('an activity that loses its last device is kept, and the change says a build and a sync now leave it out', () => {
+  // Through setActivity on a Harmony One: an effect at the activity, after the roles and presses it changed.
+  const one = reference('one-test');
+  const emptied = kept(one, () => recipe.setActivity(one, 'a5', { devices: [] }));
+  assert.deepEqual(emptied.effects.at(-1), { place: { kind: 'activity', activity: 'a5' }, effect: 'changed', message: noDeviceNow('Plasma kijken') });
+  assert.equal(emptied.effects.filter((each) => each.message === noDeviceNow('Plasma kijken')).length, 1);
+  // The controls: one device kept says nothing of it, nor emptying an activity already switched off.
+  const kpnOnly = devicesOf(one, 4).filter((used) => used.device === one.devices.find((d) => d.name === 'KPN')!.id);
+  assert.equal(kpnOnly.length, 1);
+  const narrowed = recipe.setActivity(one, 'a5', { devices: kpnOnly });
+  assert.equal(narrowed.effects.some((each) => each.message.includes('uses no device')), false);
+  const off = recipe.setActivity(one, 'a5', { enabled: false }).document;
+  assert.equal(recipe.setActivity(off, 'a5', { devices: [] }).effects.some((each) => each.message.includes('uses no device')), false);
+
+  // On a Harmony Touch, the activity holding the favourite channels says who holds them while it uses no device.
+  const touch = reference('touch-test');
+  assert.deepEqual(recipe.setActivity(touch, 'a1', { devices: [] }).effects.slice(-2).map((each) => each.message), [
+    noDeviceNow('Watch TV'), 'activity Watch TV held the favourite channels, and while it uses no device activity Switch Box holds them',
+  ]);
+
+  // Through remove of the device: the activity kept and marked, and the same effect after its mark; TV kijken, which
+  // used the KPN and keeps its other devices, says nothing of it.
+  const kpn = one.devices.find((d) => d.name === 'KPN')!.id!;
+  const before = narrowed.document;
+  const removed = kept(before, () => recipe.remove(before, { device: kpn }));
+  const after = removed.document.activities.find((a) => a.id === 'a5')!;
+  assert.deepEqual(after.devices, []);
+  assert.equal(after.attention?.length, 1);
+  assert.deepEqual(removed.effects.filter((each) => each.message.includes('uses no device')),
+    [{ place: { kind: 'activity', activity: 'a5' }, effect: 'changed', message: noDeviceNow('Plasma kijken') }]);
+  assert.deepEqual(removed.effects.at(-1)!.message, noDeviceNow('Plasma kijken'));
+  assert.deepEqual(takenOut(removed.document), [{ id: 'a5', name: 'Plasma kijken', reason: 'no-device' }]);
+  // `uses` lists the same places the removal reports, the activity left with no device among them.
+  assert.deepEqual(recipe.uses(before, { device: kpn }), removed.effects.map((each) => each.place));
+  // The control: the same removal with Plasma kijken switched off says nothing of it, which was out already.
+  const offFirst = recipe.setActivity(before, 'a5', { enabled: false }).document;
+  assert.equal(recipe.remove(offFirst, { device: kpn }).effects.some((each) => each.message.includes('uses no device')), false);
 });
 
 // ---------------------------------------------------------------------------------------------------

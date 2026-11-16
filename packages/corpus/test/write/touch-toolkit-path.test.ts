@@ -24,7 +24,9 @@
  * television's, and that one call clears it. And on the third round, that the activity switched off is in no built
  * document, the build's result, the journal and the sync's outcome name it, and switched on again the document is the
  * one before and the activity is built under the id it had, 900000202; the control is the second round's journal and
- * outcome, which name nothing left out.
+ * outcome, which name nothing left out. And on a fourth, the same activity with every device dropped, decision 44: kept,
+ * noted by the check with no error, in no built document, and named by the build, the journal and the outcome with the
+ * reason `no-device`, where the third round named `switched-off`.
  *
  * **Why the read back is believed.** The built documents are read by `harmonyTouch.readConfiguration`, which reads the
  * documents as the remote's engine does and never sees the document they were built from: a button names a device by
@@ -196,9 +198,12 @@ function journalOf(built: Built): string[] {
   const documents = Object.keys(built.documents).length;
   const pictures = built.pictures.length;
   const answers = documents + pictures;
-  // The activities the build left out, said once right after it, decision 44; no line where none was.
-  const left = built.leftOut.length === 0 ? []
-    : [`left out, switched off: ${built.leftOut.map((one) => `activity ${one.name} (${one.id})`).join(', ')}`];
+  // The activities the build left out, said once right after it, one line per reason, switched off first, decision 44;
+  // no line for a reason no activity was left out for.
+  const left = ([['switched-off', 'switched off'], ['no-device', 'with no device']] as const).flatMap(([reason, words]) => {
+    const these = built.leftOut.filter((one) => one.reason === reason);
+    return these.length === 0 ? [] : [`left out, ${words}: ${these.map((one) => `activity ${one.name} (${one.id})`).join(', ')}`];
+  });
   return [
     'identify', 'check', 'build', ...left,
     `built ${documents} documents and ${pictures} pictures, a set of ${answers} answers the gate passes`,
@@ -476,11 +481,11 @@ test('a Harmony Touch document created, filled, changed, asked, checked, built, 
     assert.deepEqual(recipe.activities(document).map((one) => [one.id, one.enabled]), [['a1', true], ['a2', false]]);
     assert.deepEqual(recipe.check(document), []);
     const off = build(document);
-    assert.deepEqual(off.leftOut, [{ id: 'a2', name: 'Watch a Film' }]);
+    assert.deepEqual(off.leftOut, [{ id: 'a2', name: 'Watch a Film', reason: 'switched-off' }]);
     assert.deepEqual(harmonyTouch.readConfiguration(off.documents).activities.map((one) => [one.id, one.name]), [['900000201', 'Watch TV']]);
     const third = await sync(document, remote, true);
     assert.deepEqual(third.words, TOUCH_WRITTEN);
-    assert.deepEqual(third.outcome, { result: 'written', remote: 'new-configuration', leftOut: [{ id: 'a2', name: 'Watch a Film' }] });
+    assert.deepEqual(third.outcome, { result: 'written', remote: 'new-configuration', leftOut: [{ id: 'a2', name: 'Watch a Film', reason: 'switched-off' }] });
     assert.deepEqual(third.lines, journalOf(off));
     assert.ok(third.lines.includes('pretend Harmony Touch: left out, switched off: activity Watch a Film (a2)'));
     // The control: the round before, with nothing switched off, has no such line and an outcome that names none.
@@ -492,4 +497,26 @@ test('a Harmony Touch document created, filled, changed, asked, checked, built, 
     const on = build(document);
     assert.deepEqual(on.leftOut, []);
     assert.deepEqual(harmonyTouch.readConfiguration(on.documents).activities.map((one) => [one.id, one.name]), [['900000201', 'Watch TV'], ['900000202', 'Watch a Film']]);
+
+    // 11. A fourth round: the film activity's devices all dropped, decision 44, no device, no activity. The activity is
+    // kept, the change says it is now left out, the check notes it and lists no error, and the build and the sync leave
+    // it out as a switched off one, naming the reason, in the journal and on the outcome.
+    const emptied = recipe.setActivity(document, 'a2', { devices: [] });
+    assert.ok(emptied.effects.some((one) => one.place.kind === 'activity' && one.place.activity === 'a2'
+      && one.message === 'activity Watch a Film uses no device now, so a build and a sync leave it out until a device is added'));
+    document = emptied.document;
+    assert.deepEqual(recipe.activities(document).map((one) => [one.id, one.enabled, one.leftOut]), [['a1', true, undefined], ['a2', true, 'no-device']]);
+    assert.deepEqual(recipe.check(document).filter((one) => one.severity === 'error'), []);
+    assert.deepEqual(recipe.check(document).map((one) => [one.severity, one.code, one.message]),
+      [['note', 'unfinished', 'activity Watch a Film uses no device yet, so a build and a sync leave it out until one is added']]);
+    const none = build(document);
+    assert.deepEqual(none.leftOut, [{ id: 'a2', name: 'Watch a Film', reason: 'no-device' }]);
+    assert.deepEqual(harmonyTouch.readConfiguration(none.documents).activities.map((one) => [one.id, one.name]), [['900000201', 'Watch TV']]);
+    const fourth = await sync(document, remote, true);
+    assert.deepEqual(fourth.words, TOUCH_WRITTEN);
+    assert.deepEqual(fourth.outcome, { result: 'written', remote: 'new-configuration', leftOut: [{ id: 'a2', name: 'Watch a Film', reason: 'no-device' }] });
+    assert.deepEqual(fourth.lines, journalOf(none));
+    assert.ok(fourth.lines.includes('pretend Harmony Touch: left out, with no device: activity Watch a Film (a2)'));
+    // The control: the switched off round's journal says its own reason and not this one.
+    assert.equal(third.lines.some((line) => line.includes('with no device')), false);
   });

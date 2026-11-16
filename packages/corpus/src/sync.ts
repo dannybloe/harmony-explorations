@@ -67,7 +67,7 @@
  */
 import {
   buildFromRecipe, chooseByModel, NotBuiltError, recipe, recipeTarget,
-  type BuildSources, type Built, type LeftOutActivity, type Recipe, type RecipeModel,
+  type BuildSources, type Built, type LeftOutActivity, type LeftOutReason, type Recipe, type RecipeModel,
 } from '@harmony/codec/node';
 import { harmonyTouch } from '@harmony/codec/build';
 import {
@@ -170,10 +170,10 @@ export interface SyncOutcome {
    */
   readonly state?: SyncState;
   /**
-   * **The activities the document switches off, which the build left out**, R92, decision 44, in the document's order:
-   * on every outcome reached after the build, whatever it was, and absent where the document switches none off or the
-   * sync ended before the build. Stated on the outcome, the one event a screen is sure to show, since what the remote
-   * holds afterwards cannot say it: an activity left out is simply not there. The build's own result says the same,
+   * **The activities the build left out, and why**, decision 44, in the document's order: each one the document switches
+   * off, R92, `reason: 'switched-off'`, and each one that uses no device, `reason: 'no-device'`. On every outcome reached
+   * after the build, whatever it was, and absent where every activity takes part or the sync ended before the build.
+   * Stated on the outcome, the one event a screen is sure to show, since what the remote holds afterwards cannot say it: an activity left out is simply not there. The build's own result says the same,
    * `Built.leftOut`, and the journal has a line of it.
    */
   readonly leftOut?: readonly LeftOutActivity[];
@@ -582,11 +582,21 @@ interface Reporter {
   /** Whether a stop has been asked, read afresh each time since it can be asked at any moment. */
   readonly asked: () => boolean;
   /**
-   * The activities the build left out, said once in the journal by the build and on every outcome after it, R92: the
-   * one place every path, attached or pretend, says it, so the two say it alike.
+   * The activities the build left out, said once in the journal by the build and on every outcome after it, decision
+   * 44: the one place every path, attached or pretend, says it, so the two say it alike.
    */
   readonly leftOut: (activities: readonly LeftOutActivity[]) => void;
 }
+
+/**
+ * **Why an activity was left out, in the journal's words**, one entry per reason a build gives, `LeftOutReason`: the
+ * `Record` makes a reason added to the codec's list a type error here until it has its words, so no activity a build
+ * leaves out goes unsaid in the journal.
+ */
+const LEFT_OUT_WORDS = Object.entries({
+  'switched-off': 'switched off',
+  'no-device': 'with no device',
+} satisfies Record<LeftOutReason, string>) as [LeftOutReason, string][];
 
 function reporterOf(request: SyncRequest, say: (line: string) => void, log: (line: string) => void): Reporter {
   // An observer never stops a sync: a screen that throws between an erase and its write must not be what leaves a
@@ -632,8 +642,10 @@ function reporterOf(request: SyncRequest, say: (line: string) => void, log: (lin
     asked: () => request.stop?.aborted === true,
     leftOut: (activities) => {
       left = activities;
-      if (activities.length > 0) {
-        say(`left out, switched off: ${activities.map((one) => `activity ${one.name}${one.id === undefined ? '' : ` (${one.id})`}`).join(', ')}`);
+      // One line per reason, in the order of `LEFT_OUT_WORDS`, each naming its activities in the document's order.
+      for (const [reason, words] of LEFT_OUT_WORDS) {
+        const these = activities.filter((one) => one.reason === reason);
+        if (these.length > 0) say(`left out, ${words}: ${these.map((one) => `activity ${one.name}${one.id === undefined ? '' : ` (${one.id})`}`).join(', ')}`);
       }
     },
   };
@@ -663,8 +675,9 @@ function identify(r: Reporter, document: Recipe, documents: boolean, reported: n
 /**
  * The `check` and `build` phases, the same for every path: the document's check, refused on its first error with the
  * count of the rest, and the build from the request's sources, which leaves out the activities the document switches
- * off and says which, in the journal and on the outcome, R92. `inject` lets the pretend remote stand in for a document
- * that fails either; an attached sync passes none.
+ * off, R92, and those that use no device, decision 44, and says which and why, in the journal and on the outcome. A
+ * note of the check, such as an activity with no device, stops nothing. `inject` lets the pretend remote stand in for a
+ * document that fails either; an attached sync passes none.
  */
 function checkAndBuild(
   r: Reporter, request: SyncRequest, inject?: (phase: 'check' | 'build') => string | undefined,
@@ -693,7 +706,7 @@ function checkAndBuild(
     // Every refusal of a build is the document's or the sources', and nothing has touched the remote.
     return { outcome: r.refused(said(error)) };
   }
-  // The activities the document switches off, left out by the build: said here, once, for every path.
+  // The activities the build left out, switched off or with no device: said here, once, for every path.
   r.leftOut(built.leftOut);
   return { built };
 }

@@ -76,7 +76,7 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
   - [x] 2.5.2 A failure's words name the phase it happened in: a read back that differs is not a write that stopped part way
   - [ ] 2.5.3 Whether a pretend remote is among the remotes an application lists, and whether reading a Harmony Touch's documents off the remote is a contract, since none exists; a pretend Touch holds the document and not the set it was sent, and nothing reads it back
   - [x] 2.5.4 What a sync does to an activity that is running: Logitech's client asks nothing before a sync and tells the person afterwards to switch every device off before starting an activity; tried once on the bench Harmony Touch, and what an application says to a person follows from it: the Touch kept the activity running and Off still switched its devices off, so an application has nothing to say there; a sync that changes the running activity itself is not checked
-  - [ ] 2.5.5 An activity that cannot work at all, such as one with no device: a Harmony One, 600, 650 and 700 build it, a Harmony Touch and a 350 say no for reasons of their own; one answer for every model is to decide
+  - [x] 2.5.5 An activity that cannot work at all, such as one with no device: decided as no device, no activity, decision 44; built as one rule for every model, left out of a build and a sync like a switched off one with the reason `no-device`, noted by the check, not counted against the limit
   - [ ] 2.5.6 The check takes a few hundred milliseconds a call, since judging a name means drawing it, and judges no name when an application has supplied no fonts: what an application that checks on every edit needs
   - [ ] 2.5.7 A Harmony 650 activity name of one letter repeated (eight W's) passes the check and fails the build on a self check of the start up screen
 
@@ -85,6 +85,9 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
 R75, decision 39. FreeHarmony takes the FHSDK by version through its `package.json`, never as the folder next door.
 
 - [ ] 3.1 Decide how a version is published: what an `exports` map and a build need, and where the packages are served from (decision 4)
+  - [ ] 3.1.1 Two packages renamed before anything is released, folders and import names together: `codec` to `config` and `corpus` to `remote`, and every package under the prefix `@freeharmony-sdk`
+  - [ ] 3.1.2 No released package depends on the lab locator: the Logitech service client in `corpus` takes where its files are from its caller
+  - [ ] 3.1.3 The route written down as a decision: the packed files attached to a GitHub release, npm possibly later; FreeHarmony's committed `package.json` names a released version and a local override to the folder next door is for development only, which adjusts decision 39
 - [ ] 3.2 The first numbered release of `packages/*`, so somebody without this checkout can build on it, and FreeHarmony's `link:` dependency replaced by it
 - [ ] 3.3 The whole API documented for somebody building on it: every entry's functions and types, the schemas of the documents it takes and gives, and worked examples, generated from the sources where that keeps it from drifting; whether it is published with the reference website is to decide
 

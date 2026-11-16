@@ -1173,6 +1173,15 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    `DeleteActivitesForThisDevice` in its dashboard's device view. Here the activity and everything else the person
    built into it stay, and the person decides.
 
-   **Not decided here**: an activity that cannot work at all, such as one that uses no device. It is looked at
-   separately. Measured when this was taken, as a record and not a decision: the Harmony One, 600, 650 and 700 built
-   one, and the Harmony Touch and the Harmony 350 refused it.
+   **Not decided when this was taken**: an activity that cannot work at all, such as one that uses no device. It was
+   looked at separately, and decided below. Measured when this was taken, as a record and not a decision: the Harmony
+   One, 600, 650 and 700 built one, and the Harmony Touch and the Harmony 350 refused it.
+
+   **No device, no activity.** *Added on 16 November 2026.* An activity that uses no device takes no part in a build or
+   a sync, exactly as a switched off one, on every model: it stays in the document, is left out before any family
+   builds, and the build's result, the sync's journal and its outcome name it with the reason, `no-device` beside
+   `switched-off`, the latter named where both hold. It is not an error and the document is not refused, since an
+   activity is never invalid; the check notes it. A model's limit counts only the activities that take part, switched
+   on and using a device, and a change that leaves an activity with no device says so. The switch above stays a stored
+   choice and is not set by this: giving the activity a device again makes it take part, with nothing else to undo. The
+   Harmony Touch's and the Harmony 350's own refusals are no longer met on the way from a document to a build.

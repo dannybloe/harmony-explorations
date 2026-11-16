@@ -46,7 +46,7 @@ const TYPES = [
   'DeviceDelays', 'DeviceDriving', 'DeviceInput', 'DeviceInputs', 'DeviceListRow', 'DeviceModeMap', 'DevicePower',
   'DeviceQuery', 'DeviceSearch', 'DeviceSource', 'DeviceState', 'DeviceTiming', 'DocumentFamily', 'DocumentTypes', 'Edit', 'EditReport', 'EzHex',
   'FoundDevice', 'Identification', 'InfraredCode', 'IntendedVersionField', 'IntroductionTour', 'Inventory', 'IrFrame', 'IrGroup',
-  'KeyCode', 'KeyLabel', 'LeftOutActivity', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
+  'KeyCode', 'KeyLabel', 'LeftOutActivity', 'LeftOutReason', 'Metadata', 'MetadataCommand', 'MetadataDevice', 'ModelCapabilities', 'ModelChoice', 'ModelNamed',
   'ModelProperties', 'NetworkArchiveOptions', 'PngHeader',
   'PowerOnDelay', 'ProntoCode', 'Proof', 'Pulse', 'Raster', 'Recipe', 'RecipeActivity', 'RecipeActivityDevice',
   'RecipeActivityStep', 'RecipeChannelStep', 'RecipeCommand', 'RecipeCommandCode', 'RecipeCommandStep', 'RecipeDevice', 'RecipeDeviceKey', 'RecipeDevicePower',

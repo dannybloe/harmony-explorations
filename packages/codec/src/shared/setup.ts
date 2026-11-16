@@ -115,7 +115,7 @@ export function composeSetupParts(
 } {
   let c = donor;
   // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
-  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  // activity switched off or with no device is left out as every build leaves it out, decision 44, `recipeToBuild`.
   setup = recipeToBuild(setup, 'composeSetupParts', 'compiled');
   // 0. Favourite channels are a recipe field Logitech's service is given and no composer writes, so a
   //    recipe stating some is refused for every family alike rather than built without them, which would
@@ -591,7 +591,7 @@ export interface ComposedSetup {
  */
 export function composeSetup(setup: Recipe, options: AssembleOptions): ComposedSetup {
   // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
-  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  // activity switched off or with no device is left out as every build leaves it out, decision 44, `recipeToBuild`.
   setup = recipeToBuild(setup, 'composeSetup', 'compiled');
   const target = recipeTarget(setup);
   // The skins composing alone has been run on are the family's, `Family.composedSkins`; a family the assembly's

@@ -74,7 +74,7 @@ import { settingValue, type FamilySettings, type SettingKind } from '../families
 import { notBuilt } from '../support/contract.ts';
 import { ResourceError } from '../support/resources.ts';
 import {
-  readRecipe, RECIPE_VERSION, RecipeError, unbuiltFields,
+  leftOutBecause, readRecipe, RECIPE_VERSION, RecipeError, unbuiltFields, type LeftOutReason,
   type Recipe, type RecipeActivity, type RecipeActivityStep, type RecipeCommand, type RecipeCommandCode, type RecipeCommandStep,
   type RecipeDevice, type RecipeDeviceKey, type RecipeDevicePower, type RecipeKey, type RecipeKeyAction, type RecipeModel,
   type RecipePress, type RecipeScreenCommand, type RecipeScreenItem, type RecipeSending, type RecipeSequence,
@@ -189,7 +189,8 @@ export const PROBLEM_CODES = [
   'invalid',
   // A sequence longer than the remote survives.
   'sequence-too-long',
-  // Not wrong, not finished: an activity that uses no device yet, an input not chosen.
+  // Not wrong, not finished: an activity that uses no device yet, which a build and a sync leave out until it has one,
+  // decision 44, and an input not chosen.
   'unfinished',
 ] as const;
 export type ProblemCode = typeof PROBLEM_CODES[number];
@@ -419,6 +420,12 @@ export interface ActivitySummary {
   readonly devices: readonly ActivityDeviceChoice[];
   /** False where a person switched it off, R92: a build and a sync leave it out, and say so. */
   readonly enabled: boolean;
+  /**
+   * **Why a build and a sync leave it out**, decision 44, absent where it takes part: `switched-off`, as `enabled` says,
+   * or `no-device`, since it uses none. The same answer a build gives in `Built.leftOut`, asked without building, so an
+   * application can show it beside the activity before a sync.
+   */
+  readonly leftOut?: LeftOutReason;
   /**
    * Why it needs attention, R93, each reason as the document records it, `Attention`; empty where it needs none. An
    * activity needing attention is still built and synced: it is never invalid, decision 44.
@@ -2054,8 +2061,10 @@ export function addActivity(document: Recipe, activity: NewActivity): Change {
     throw new ChangeRefused('invalid', whole, `activity ${name} states no kind`);
   }
   if (!Array.isArray(activity.devices)) throw new ChangeRefused('invalid', whole, `activity ${name}'s devices are not a list`);
-  // A new activity is switched on, so it counts against the remote's limit as every activity switched on does.
-  if (maxActivities !== undefined && switchedOnCount(document) >= maxActivities) {
+  // A new activity is switched on, so it counts against the remote's limit as every activity taking part does, once it
+  // uses a device: one with none takes no part, decision 44, and is added whatever the limit, as a start a person
+  // fills in.
+  if (maxActivities !== undefined && activity.devices.length > 0 && takingPartCount(document) >= maxActivities) {
     throw new ChangeRefused('over-limit', whole, activityLimitMessage(document.model.name, maxActivities, 'holds that many'));
   }
   const devices = chosenDevices(document, name, activity.devices);
@@ -2065,14 +2074,20 @@ export function addActivity(document: Recipe, activity: NewActivity): Change {
 }
 
 /**
- * **The activities a remote is given**: those switched on, decision 44. The limit on activities is the remote's, so it
- * counts these and not the ones a build leaves out, and `check`, `addActivity` and `setActivity` count alike.
+ * **The activities a remote is given**: those that take part, switched on and using a device, decision 44,
+ * `leftOutBecause`. The limit on activities is the remote's, so it counts these and not the ones a build leaves out,
+ * and `check`, `addActivity` and `setActivity` count alike.
  */
-const switchedOnCount = (document: Recipe): number => document.activities.filter((one) => one.enabled !== false).length;
+const activitiesTakingPart = (document: Recipe): RecipeActivity[] => document.activities.filter((one) => leftOutBecause(one) === undefined);
+const takingPartCount = (document: Recipe): number => activitiesTakingPart(document).length;
 
 /** The sentence an activity over the model's limit is told in, by what the document holds. */
 const activityLimitMessage = (model: string, max: number, holds: string): string =>
-  `a ${model} holds ${max} ${max === 1 ? 'activity' : 'activities'} switched on, and the document ${holds}`;
+  `a ${model} holds ${max} ${max === 1 ? 'activity' : 'activities'} switched on with a device, and the document ${holds}`;
+
+/** The sentence for an activity a change leaves with no device, which a removal and `setActivity` both say. */
+const noDeviceMessage = (name: string): string =>
+  `activity ${name} uses no device now, so a build and a sync leave it out until a device is added`;
 
 /**
  * **Why a model takes no activity opening on `screen`**, R91, or undefined where it takes it, the one judgement
@@ -2113,9 +2128,11 @@ function openingScreen(model: RecipeModel, screen: string, place: Place, asked: 
  * key, saying what it did and does, read off the maps with `sources` as a removal's mark reads them. **No mark is
  * set**, decision 44: the person making the change is looking at the activity.
  * **Whether it is switched on**, R92: false keeps it out of every build and sync, true switches it on again, the same
- * activity under the same id, refused as over the limit where the model takes no more activities switched on.
- * Switching off the activity that holds the favourite channels is an effect at it, naming the activity that holds them
- * while it is off, by the family's rule, or saying none does. Its icon and its activity key have no field in the document yet and refuse by name.
+ * activity under the same id, refused as over the limit where the model takes no more activities that take part.
+ * **Its devices all dropped**, it is kept and takes no part, decision 44: a build and a sync leave it out, which is an
+ * effect at the activity; given a device again, it takes part again, refused as over the limit as switching on is.
+ * Taking out of the build the activity that holds the favourite channels, either way, is an effect at it, naming the
+ * activity that holds them while it is out, by the family's rule, or saying none does. Its icon and its activity key have no field in the document yet and refuse by name.
  * **This writes the document**: whether the model's build reads a stated member is what `check` lists.
  */
 export function setActivity(document: Recipe, activity: ActivityId, changes: ActivityChanges, sources?: QuestionSources): Change {
@@ -2182,13 +2199,6 @@ export function setActivity(document: Recipe, activity: ActivityId, changes: Act
   }
   // Switched off is stated as false and on by leaving the field out, so an activity switched on again is the one it was.
   const enabled = changes.enabled === undefined ? now.enabled : changes.enabled ? undefined : false;
-  // Switching one on is refused past the remote's limit, which counts the activities switched on, as `addActivity` is.
-  if (now.enabled === false && enabled === undefined) {
-    const { maxActivities } = limitsOf(document.model, ['recipe.setActivity', 76]);
-    if (maxActivities !== undefined && switchedOnCount(document) >= maxActivities) {
-      throw new ChangeRefused('over-limit', place, activityLimitMessage(document.model.name, maxActivities, 'holds that many'));
-    }
-  }
   const changed: RecipeActivity = {
     ...without(now, 'name', 'type', 'devices', 'opensOn', 'favourites', 'powerOrder', 'start', 'end', 'enabled'),
     name, type: changes.type ?? now.type, devices: used,
@@ -2199,6 +2209,17 @@ export function setActivity(document: Recipe, activity: ActivityId, changes: Act
     ...stated('end', steps('end')),
     ...stated('enabled', enabled),
   };
+  // Whether it takes part before and after, decision 44: switched on and using a device. One that comes to take part,
+  // switched on or given a device, is refused past the remote's limit, which counts those that take part, as
+  // `addActivity` is.
+  const wasIn = leftOutBecause(now) === undefined;
+  const out = leftOutBecause(changed);
+  if (!wasIn && out === undefined) {
+    const { maxActivities } = limitsOf(document.model, ['recipe.setActivity', 76]);
+    if (maxActivities !== undefined && takingPartCount(document) >= maxActivities) {
+      throw new ChangeRefused('over-limit', place, activityLimitMessage(document.model.name, maxActivities, 'holds that many'));
+    }
+  }
   let next = withActivity(document, changed);
   // A role a device had that no device of the activity has after the change, a device dropped or its roles changed, is
   // told to a person at the role, as a removal of the device tells it: the activity is kept, only the role has no device.
@@ -2208,6 +2229,9 @@ export function setActivity(document: Recipe, activity: ActivityId, changes: Act
   // Every press of the activity the change of its devices or roles made otherwise is told as an effect at the key,
   // decision 44: no mark, since the person making the change is looking at the activity.
   if (changes.devices !== undefined) effects.push(...pressEffects(document, next, changed, sources));
+  // Its last device dropped while it took part: kept, and left out of every build and sync from now on, decision 44,
+  // which a person is told, since the remote will no longer show it.
+  if (wasIn && out === 'no-device') effects.push({ place, effect: 'changed', message: noDeviceMessage(name) });
   if (holds === true) {
     // One activity holds the favourite channels: the one that had them gives them up, which a person is told.
     next = {
@@ -2219,15 +2243,16 @@ export function setActivity(document: Recipe, activity: ActivityId, changes: Act
       }),
     };
   }
-  // Switched off while it holds the favourite channels: a person is told who holds them while it is off, as a removal
-  // tells that none does.
-  if (now.enabled !== false && enabled === false) {
+  // Taken out of the build while it holds the favourite channels, switched off or left with no device: a person is
+  // told who holds them while it is out, as a removal tells that none does.
+  if (wasIn && out !== undefined) {
     const before = favouritesHolderOf(document);
     if (before?.id === activity) {
       const after = favouritesHolderOf(next);
+      const whileOut = out === 'switched-off' ? 'while it is switched off' : 'while it uses no device';
       effects.push({
         place, effect: 'changed',
-        message: `activity ${name} held the favourite channels, and while it is switched off ${after === undefined ? 'no activity holds them' : `activity ${after.name} holds them`}`,
+        message: `activity ${name} held the favourite channels, and ${whileOut} ${after === undefined ? 'no activity holds them' : `activity ${after.name} holds them`}`,
       });
     }
   }
@@ -2235,12 +2260,12 @@ export function setActivity(document: Recipe, activity: ActivityId, changes: Act
 }
 
 /**
- * **Which activity a build gives the favourite channels to**, of those switched on: by the family's own rule where its
- * maps state one, `FamilyMaps.favouritesHolder`, the Harmony Touch's, and otherwise the one the document says holds
- * them. Undefined where none does.
+ * **Which activity a build gives the favourite channels to**, of those that take part, switched on and using a device,
+ * decision 44: by the family's own rule where its maps state one, `FamilyMaps.favouritesHolder`, the Harmony Touch's,
+ * and otherwise the one the document says holds them. Undefined where none does.
  */
 function favouritesHolderOf(document: Recipe): RecipeActivity | undefined {
-  const on = document.activities.filter((one) => one.enabled !== false);
+  const on = activitiesTakingPart(document);
   let rule: ((activities: readonly RecipeActivity[]) => number) | undefined;
   try {
     rule = mapsOfModel(document.model)?.maps.favouritesHolder;
@@ -2549,7 +2574,8 @@ export function setSetting(document: Recipe, setting: string, value: number | bo
  *   every press of its keys whose answer the removal changed and what each did and does, read off the maps before and
  *   after with `sources` as the questions read them: none where no key changed, and no list where the keys cannot be
  *   known, a model whose maps are not built yet or a device whose commands cannot be read. The activity is kept, built
- *   and synced: it is never invalid.
+ *   and synced: it is never invalid. **An activity the removal leaves with no device** is kept as well, and a build
+ *   and a sync leave it out from then on, decision 44, an effect at the activity after its mark.
  * * **An activity** goes with its sequences; nothing else names an activity, and its one effect beyond itself is the
  *   hold on the favourite channels, where it held them: they are then held by no activity, reported at the document.
  * * **A sequence** goes from its activity, and every key that ran it goes back to its default, every screen entry and
@@ -2626,7 +2652,12 @@ function removedDevice(document: Recipe, gone: RecipeDevice, sources: QuestionSo
   // built and synced, and the keys said, decision 44.
   const users = document.activities.filter((one) => one.devices.some((used) => used.device === name)).map((one) => one.id!);
   const marked = withAttention(document, next, name, users, sources);
-  return { document: marked.document, effects: [...effects, ...marked.effects] };
+  // Every activity that took part and is left with no device, kept and left out of every build and sync from now on,
+  // decision 44: one that was switched off already is not, since the removal changes nothing a build gives.
+  const emptied = document.activities.filter((one) => users.includes(one.id!) && leftOutBecause(one) === undefined)
+    .filter((one) => leftOutBecause(marked.document.activities.find((after) => after.id === one.id)!) === 'no-device')
+    .map((one): Effect => ({ place: { kind: 'activity', activity: one.id! }, effect: 'changed', message: noDeviceMessage(one.name) }));
+  return { document: marked.document, effects: [...effects, ...marked.effects, ...emptied] };
 }
 
 /**
@@ -2718,8 +2749,9 @@ export function devices(document: Recipe): DeviceSummary[] {
 }
 
 /**
- * The activities, in the order of the activity menu, each with whether it is switched on, R92, and why it needs
- * attention, R93, where it does: a switched off activity is listed, since it is still the document's.
+ * The activities, in the order of the activity menu, each with whether it is switched on, R92, why a build and a sync
+ * leave it out where they do, switched off or using no device, decision 44, and why it needs attention, R93, where it
+ * does: an activity left out is listed, since it is still the document's.
  */
 export function activities(document: Recipe): ActivitySummary[] {
   opened(document);
@@ -2733,6 +2765,7 @@ export function activities(document: Recipe): ActivitySummary[] {
       device: idOf.get(used.device)!, ...(used.input === undefined ? {} : { input: used.input }), roles: used.roles,
     })),
     enabled: one.enabled !== false,
+    ...stated('leftOut', leftOutBecause(one)),
     // Each reason the caller's own, so changing one changes neither the document nor another answer.
     attention: plain(one.attention ?? []),
   }));
@@ -2908,7 +2941,8 @@ export function favourites(document: Recipe, device: DeviceId): Favourite[] {
  * form, extra step at a start or an end and its favourites; and where a sequence goes with the device, everything that
  * runs that sequence. A role is not a mention of the device's name, but a removal leaves it with no device, so it is
  * listed where the removal reports it; and last, the attention mark of every activity that used the device, decision 44,
- * its keys read off the resolved maps with `sources` as the questions read them. For a
+ * its keys read off the resolved maps with `sources` as the questions read them, then every activity the removal
+ * leaves with no device, which a build and a sync leave out from then on, decision 44. For a
  * sequence, every key, screen entry and extra step of its activity that runs it.
  * For an activity, the document where it holds the favourite channels, which its removal leaves held by none, and
  * nothing otherwise, since nothing names an activity.
@@ -2969,12 +3003,12 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
   if (limits.maxDevices !== undefined && document.devices.length > limits.maxDevices) {
     say('error', 'over-limit', whole, `a ${document.model.name} holds ${limits.maxDevices} devices, and the document holds ${document.devices.length}`);
   }
-  if (limits.maxActivities !== undefined && switchedOnCount(document) > limits.maxActivities) {
-    say('error', 'over-limit', whole, activityLimitMessage(document.model.name, limits.maxActivities, `has ${switchedOnCount(document)} switched on`));
+  if (limits.maxActivities !== undefined && takingPartCount(document) > limits.maxActivities) {
+    say('error', 'over-limit', whole, activityLimitMessage(document.model.name, limits.maxActivities, `has ${takingPartCount(document)}`));
   }
 
   // A name the build would refuse to draw, asked of the model's family by its own judgement, `Family.nameRefusal`:
-  // each device, and each activity switched on, since the build leaves the others out.
+  // each device, and each activity that takes part, since the build leaves the others out.
   const choice = servedBy(document.model, asked);
   const drawable = choice.family.kind === 'compiled' ? choice.family.nameRefusal : undefined;
   if (drawable !== undefined) {
@@ -2986,7 +3020,7 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
         const why = drawable(document, skin, 'device', device.name);
         if (why !== undefined) say('error', 'name-not-drawable', { kind: 'device', device: device.id! }, `the build cannot draw the device ${device.name}'s name: ${why}`);
       }
-      for (const activity of document.activities.filter((one) => one.enabled !== false)) {
+      for (const activity of activitiesTakingPart(document)) {
         const why = drawable(document, skin, 'activity', activity.name);
         if (why !== undefined) say('error', 'name-not-drawable', { kind: 'activity', activity: activity.id! }, `the build cannot draw the activity ${activity.name}'s name: ${why}`);
       }
@@ -3135,7 +3169,13 @@ export function check(document: Recipe, sources?: QuestionSources): Problem[] {
     const place: Place = { kind: 'activity', activity: activity.id! };
     if (activityNames.has(activity.name)) say('error', 'name-taken', place, `two activities are named ${activity.name}`);
     activityNames.add(activity.name);
-    if (activity.devices.length === 0) say('note', 'unfinished', place, `activity ${activity.name} uses no device yet`);
+    // An activity with no device is a start, not a fault, decision 44: noted, and left out of a build and a sync, which
+    // the note says where the activity would otherwise take part.
+    if (activity.devices.length === 0) {
+      say('note', 'unfinished', place, leftOutBecause(activity) === 'no-device'
+        ? `activity ${activity.name} uses no device yet, so a build and a sync leave it out until one is added`
+        : `activity ${activity.name} uses no device yet`);
+    }
     // A screen it opens on that the model does not have; one on a model whose family names none is listed below, as a
     // field its build does not read.
     const opens = activity.opensOn === undefined ? undefined : openingScreenRefusal(document.model, activity.opensOn, asked);

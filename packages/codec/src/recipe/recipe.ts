@@ -293,7 +293,7 @@ const TIMING_READ_BY_DOCUMENTS: readonly string[] = ['interKeyDelay', 'interDevi
 const DOCUMENTS: readonly BuildKind[] = ['document'];
 /**
  * Both kinds: a part every build reads, the two of decision 44. An activity switched off is read once, before any
- * family builds, `switchedOn`; an activity's attention mark changes no build, so every build reads it by building as
+ * family builds, `takingPart`; an activity's attention mark changes no build, so every build reads it by building as
  * it would without it. Neither is ever refused as not built.
  */
 const EVERY_BUILD: readonly BuildKind[] = ['compiled', 'document'];
@@ -335,7 +335,7 @@ const extraSteps = (which: string) => (value: unknown): VersionTwoPart[] => {
  * which its gestures have. **What it does not**: the rest of a device's timing and power, a command's code and how it is
  * sent, which its composer writes nothing of, and a device key's double press, which no key of a device's map has.
  * The compiled families' builds read none of it yet, but for the two every build reads, decision 44: an activity
- * switched off, R92, which `switchedOn` reads before any family builds, and an activity's mark of needing attention,
+ * switched off, R92, which `takingPart` reads before any family builds, and an activity's mark of needing attention,
  * R93, which changes no build.
  */
 export const VERSION_TWO: readonly VersionTwoField[] = [
@@ -559,6 +559,10 @@ export interface RecipeActivity {
   readonly id?: string;
   readonly name: string;
   readonly type: string;
+  /**
+   * The devices it uses. **None is allowed and kept**, decision 44: an activity with no device stays in the document,
+   * and every build and sync leaves it out and says so, `leftOutBecause`, until a device is added.
+   */
   readonly devices: readonly RecipeActivityDevice[];
   readonly screen?: readonly RecipeScreenItem[];
   /** The keys a person chose otherwise in this activity's map; absent is none. */
@@ -587,7 +591,7 @@ export interface RecipeActivity {
   /**
    * **Switched off**, R92, decision 44: stated only as `false`, since an activity is on unless it says otherwise, and a
    * field stating what holds anyway is said by leaving it out. A person switches an activity off on purpose, to keep it
-   * in the document without giving it to the remote: every build leaves it out, `switchedOn`, before any family builds,
+   * in the document without giving it to the remote: every build leaves it out, `takingPart`, before any family builds,
    * and says which it left out. Kept apart from everything else about the activity, so switching it on again gives back
    * the activity it was, under the same id. Version 2.
    */
@@ -637,39 +641,70 @@ export interface RecipeAttentionKey {
   readonly now: RecipeKeyAction;
 }
 
-/** An activity a build left out because the document switches it off, R92: its id where it has one, and its name. */
+/**
+ * **Why a build leaves an activity out**, decision 44, a closed list an application words itself:
+ *
+ * * `switched-off`: a person switched it off, R92, `RecipeActivity.enabled`;
+ * * `no-device`: it uses no device, so there is nothing for it to switch on, put on an input or send a key to. **No
+ *   device, no activity**: it is left out as a switched off one is, on every model, and never refused, since an
+ *   activity is never invalid. Taken on 16 November 2026, decision 44.
+ *
+ * An activity both switched off and with no device is left out as `switched-off`, the person's own choice, which is
+ * what switching it on again would answer first.
+ */
+export type LeftOutReason = 'switched-off' | 'no-device';
+
+/** An activity a build left out, decision 44: its id where it has one, its name, and why, `LeftOutReason`. */
 export interface LeftOutActivity {
   readonly id?: string;
   readonly name: string;
+  readonly reason: LeftOutReason;
 }
 
 /**
- * **The document as every build reads it**, R92, decision 44: the activities switched off taken out, and which they
- * were. The one place `enabled` is read, called before any family builds by `recipeToBuild`, so no family's build
- * meets a switched off activity and each family's build reads the field without knowing it. **What names an activity
- * goes with it**, which is only what the activity holds itself, its keys, screen, sequences and steps, and its hold on
- * the favourite channels: nothing else in a document names an activity, so a family places the favourites by its own
- * rule among the activities left, as it does for a document where none holds them. An activity switched on again is
- * the same activity under the same id, since the document kept it whole; what a family numbers by position, a compiled
- * configuration's activities, follows the activities left, as it would had the document never held the one left out.
+ * **Why every build leaves this activity out**, or undefined where it takes part, decision 44: switched off first, then
+ * no device. The one judgement of it, read by `takingPart` before any family builds and by the toolkit wherever it asks
+ * which activities a remote is given, its limit on activities among them, so a build, a sync, the check and a change
+ * always agree on which activities count.
  */
-export function switchedOn(recipe: Recipe): { readonly recipe: Recipe; readonly leftOut: readonly LeftOutActivity[] } {
-  const leftOut = recipe.activities.filter((one) => one.enabled === false)
-    .map((one): LeftOutActivity => ({ ...(one.id === undefined ? {} : { id: one.id }), name: one.name }));
+export function leftOutBecause(activity: RecipeActivity): LeftOutReason | undefined {
+  if (activity.enabled === false) return 'switched-off';
+  if (activity.devices.length === 0) return 'no-device';
+  return undefined;
+}
+
+/**
+ * **The document as every build reads it**, R92, decision 44: the activities that take no part taken out, and which
+ * they were and why, `leftOutBecause`: those switched off and those that use no device. The one place either is
+ * judged for a build, called before any family builds by `recipeToBuild`, so no family's build meets an activity left
+ * out and each family's build reads both without knowing it. A family's own refusal of an activity with no device, the
+ * Harmony Touch's and the Harmony 350's composers have one each, is therefore never met on this path. **What names an
+ * activity goes with it**, which is only what the activity holds itself, its keys, screen, sequences and steps, and its
+ * hold on the favourite channels: nothing else in a document names an activity, so a family places the favourites by
+ * its own rule among the activities left, as it does for a document where none holds them. An activity switched on
+ * again, or given a device again, is the same activity under the same id, since the document kept it whole; what a
+ * family numbers by position, a compiled configuration's activities, follows the activities left, as it would had the
+ * document never held the one left out.
+ */
+export function takingPart(recipe: Recipe): { readonly recipe: Recipe; readonly leftOut: readonly LeftOutActivity[] } {
+  const leftOut = recipe.activities.flatMap((one): LeftOutActivity[] => {
+    const reason = leftOutBecause(one);
+    return reason === undefined ? [] : [{ ...(one.id === undefined ? {} : { id: one.id }), name: one.name, reason }];
+  });
   if (leftOut.length === 0) return { recipe, leftOut };
-  return { recipe: { ...recipe, activities: recipe.activities.filter((one) => one.enabled !== false) }, leftOut };
+  return { recipe: { ...recipe, activities: recipe.activities.filter((one) => leftOutBecause(one) === undefined) }, leftOut };
 }
 
 /**
  * **What a route to a build builds from**: a field of version 2 the build of `kind` does not read refused as not built,
- * `refuseUnbuiltFields`, then the activities switched off left out, `switchedOn`. Called first by every function that
+ * `refuseUnbuiltFields`, then the activities that take no part left out, `takingPart`. Called first by every function that
  * builds from a recipe, so a route reached past `buildFromRecipe`, by this repository's scripts and tests, builds what
  * the one build builds; only the one build says which activities it left out, since what the others return has no
  * place to say it.
  */
 export function recipeToBuild(recipe: Recipe, route: string, kind: BuildKind): Recipe {
   refuseUnbuiltFields(recipe, route, kind);
-  return switchedOn(recipe).recipe;
+  return takingPart(recipe).recipe;
 }
 
 /**

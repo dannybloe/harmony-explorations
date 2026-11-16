@@ -692,7 +692,7 @@ export function touchSetupOfDocument(document: Recipe, catalogue: CatalogueSourc
   if (document.model.name !== HARMONY_TOUCH_MODEL) refuse(`the document is for the ${document.model.name}, not the ${HARMONY_TOUCH_MODEL}`);
   // What the Touch's composer writes nothing of stops here as on every route to a build, decision 43, before any of it
   // is read: the table says per part which builds read it.
-  // An activity switched off is left out here as every build leaves it out, decision 44, `recipeToBuild`.
+  // An activity switched off or with no device is left out here as every build leaves it out, decision 44, `recipeToBuild`.
   document = recipeToBuild(document, 'the Harmony Touch\'s documents', 'document');
   if (document.favourites !== undefined) refuse('the document states favourite channels, which nothing here composes: the favourites documents stay the remote\'s');
   if (document.choices !== undefined) refuse('the document states choices, and the Harmony Touch\'s family makes none');

@@ -30,7 +30,7 @@
  */
 import { carriedCatalogue } from '../catalogue/carried.ts';
 import type { CatalogueSource } from '../catalogue/catalogue.ts';
-import { readRecipe, RecipeError, refuseUnbuiltFields, statedKeys, switchedOn, type LeftOutActivity } from '../recipe/recipe.ts';
+import { readRecipe, RecipeError, refuseUnbuiltFields, statedKeys, takingPart, type LeftOutActivity, type LeftOutReason } from '../recipe/recipe.ts';
 import { notBuilt } from '../support/contract.ts';
 import { resource } from '../support/resources.ts';
 import type { SyncDocuments } from './harmony-touch/documents.ts';
@@ -45,8 +45,11 @@ import { chooseByModel, NoFamilyError, type ModelChoice } from './registry.ts';
  */
 export type { TouchAccount };
 
-/** An activity a build left out because the document switches it off, R92, exported beside what a build gives. */
-export type { LeftOutActivity };
+/**
+ * An activity a build left out and why, switched off, R92, or with no device, decision 44, exported beside what a build
+ * gives.
+ */
+export type { LeftOutActivity, LeftOutReason };
 
 /** What a build takes besides the recipe. */
 export interface BuildSources {
@@ -63,9 +66,11 @@ export interface BuildSources {
 
 /**
  * What a build gives: the configuration of a compiled family, or a document family's documents and pictures; and on
- * both, **the activities the document switches off, which the build left out**, R92, decision 44, in the document's
- * order, empty where it switches none off. Said here because the bytes or documents built cannot say it: an activity
- * left out is simply not in them, and a person who switched one off and forgot would otherwise see it vanish unexplained.
+ * both, **the activities the build left out and why**, decision 44, in the document's order, empty where every activity
+ * takes part: each one the document switches off, R92, and each one that uses no device, which is left out the same
+ * way on every model. Said here because the bytes or documents built cannot say it: an activity left out is simply not
+ * in them, and a person who switched one off and forgot, or removed its last device, would otherwise see it vanish
+ * unexplained.
  */
 export type Built =
   | {
@@ -106,9 +111,11 @@ export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
   const read = readRecipe(json);
   // A field of version 2 this kind of family's build does not read, before anything is built or any source is asked for.
   refuseUnbuiltFields(read, 'buildFromRecipe', family.kind);
-  // The activities switched off, R92, left out here, once, before any family builds: every family's build reads the
-  // switch by never meeting a switched off activity, and the result says which were left out, decision 44.
-  const { recipe, leftOut } = switchedOn(read);
+  // The activities that take no part, left out here, once, before any family builds, decision 44: those switched off,
+  // R92, and those that use no device, on every model alike. Every family's build reads both by never meeting such an
+  // activity, so a family's own refusal of an activity with no device is never reached from here, and the result says
+  // which were left out and why.
+  const { recipe, leftOut } = takingPart(read);
   // A key the recipe chooses otherwise, R31 and R32, is built by a compiled family that states how,
   // `Family.recipeKeys`, and refused by every other before anything is built: a file built without the choice is one
   // the remote accepts and whose key does something else. The Harmony Touch builds every choice its places take, its
@@ -129,7 +136,7 @@ export function buildFromRecipe(json: unknown, sources: BuildSources): Built {
   if (family.kind === 'document') {
     if (archive === undefined) throw new RecipeError(`the ${model.name} is built from the catalogue, and the recipe carries no device and no archive was given`);
     if (sources.account === undefined) throw new RecipeError(`the ${model.name}'s documents carry its account's identifiers, and no account was given`);
-    // The family reads the document with the switched off activities taken out, as it was read here.
+    // The family reads the document with the activities that take no part taken out, as it was read here.
     const setup = family.readSetup(recipe);
     return {
       kind: 'documents', model: model.name, skin,

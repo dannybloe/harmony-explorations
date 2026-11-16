@@ -336,7 +336,7 @@ export function sixOfSetup(setup: TouchSetup, catalogue: TouchCatalogue, setting
  */
 export function buildTouchDocuments(document: Recipe, options: { readonly archive: CatalogueSource; readonly account: TouchAccount }): SyncDocuments {
   // A field of version 2 the Touch's build does not read stops this route as every other, decision 43, and an
-  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  // activity switched off or with no device is left out as every build leaves it out, decision 44, `recipeToBuild`.
   document = recipeToBuild(document, 'buildTouchDocuments', 'document');
   const parts = touchSetupOfDocument(document, options.archive);
   const written = catalogueOfDevices(document.devices.map((d, k) => ({ entry: d.device, id: parts.setup.devices[k]!.id })), parts.protocols, options.archive);

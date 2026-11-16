@@ -26,7 +26,7 @@ import { ourStateColours, withStateLook } from './statelook.ts';
 
 export function fourSlotFromRecipe(recipe: Recipe, skin: number, sources: RecipeSources): Uint8Array {
   // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
-  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  // activity switched off or with no device is left out as every build leaves it out, decision 44, `recipeToBuild`.
   recipe = recipeToBuild(recipe, 'the Harmony 600, 650 and 700\'s fromRecipe', 'compiled');
   const given = (recipe.choices ?? {}) as FourSlotChoicesGiven;
   if (recipe.devices.length === 0 && recipe.activities.length === 0) {

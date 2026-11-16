@@ -316,7 +316,7 @@ test('a sync to a pretend Harmony Touch reports what a sync to an attached one r
   // The case with an activity switched off compares outcomes that name it, so the two sides agree on a statement made,
   // not on an absent one; every other case's outcome names none.
   const off = TOUCH_CASES.findIndex((one) => one.name === 'written, an activity switched off');
-  assert.deepEqual(attached[off]!.outcome.leftOut, [{ id: 'a3', name: 'Listen to Music' }]);
+  assert.deepEqual(attached[off]!.outcome.leftOut, [{ id: 'a3', name: 'Listen to Music', reason: 'switched-off' }]);
   assert.deepEqual(attached.filter((_, k) => k !== off).map((one) => one.outcome.leftOut), TOUCH_CASES.slice(1).map(() => undefined));
 
   // The control: the same comparison, run on the failing hand over with the pretend remote told to fail in the write

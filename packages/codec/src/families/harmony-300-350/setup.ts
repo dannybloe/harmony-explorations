@@ -116,7 +116,7 @@ function entryOf(device: string): { manufacturer: string; model: string } {
 export function composeNoScreenSetup(c: Container, archive: CatalogueSource, request: NoScreenSetupRequest): ComposedNoScreenSetup {
   const { keys } = request;
   // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
-  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  // activity switched off or with no device is left out as every build leaves it out, decision 44, `recipeToBuild`.
   const recipe = recipeToBuild(request.recipe, 'composeNoScreenSetup', 'compiled');
   // A key the recipe chooses otherwise, R31 and R32, is not built on these remotes yet, and a file built without it
   // would leave the key doing what the builders give it, so the recipe is refused rather than built.
@@ -281,7 +281,7 @@ export interface NoScreenSetupFromNothing extends NoScreenSetupRequest {
  */
 export function buildNoScreenSetup(archive: CatalogueSource, request: NoScreenSetupFromNothing): ComposedNoScreenSetup {
   // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
-  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  // activity switched off or with no device is left out as every build leaves it out, decision 44, `recipeToBuild`.
   const recipe = recipeToBuild(request.recipe, 'buildNoScreenSetup', 'compiled');
   const skin = recipe.model.skin;
   if (skin === undefined) throw new ComposeError('the setup states no skin, so the model the configuration is built for is not known');

@@ -104,7 +104,7 @@ export { readRecipe, recipeTarget, RecipeError, RECIPE_VERSION } from './recipe/
 // **The one build an application makes**, plan 014: a recipe in, the configuration or the documents a remote is
 // sent out, the family chosen by the recipe's model.
 export { buildFromRecipe, builtDigest, unstatedChoices } from './families/fromrecipe.ts';
-export type { BuildSources, Built, LeftOutActivity, TouchAccount } from './families/fromrecipe.ts';
+export type { BuildSources, Built, LeftOutActivity, LeftOutReason, TouchAccount } from './families/fromrecipe.ts';
 export type {
   Recipe,
   RecipeActivity,

@@ -298,7 +298,7 @@ test('an activity is added last by its devices\' ids, written under their names,
   assert.deepEqual(two.activities.map((one) => [one.id, one.name]), [['a1', 'Watch TV'], ['a2', 'Listen']]);
 });
 
-test('an activity is refused with a device the document does not hold or names twice, a role no activity has, a name taken, and as the second on a Harmony 350', () => {
+test('an activity is refused with a device the document does not hold or names twice, a role no activity has, a name taken, and as the second taking part on a Harmony 350', () => {
   const document = small();
   const listen = { name: 'Listen', type: 'ListenToMusic' };
   assert.deepEqual(refused(() => recipe.addActivity(document, { ...listen, devices: [{ device: 'd9', roles: [] }] })), ['unknown', { kind: 'device', device: 'd9' }]);
@@ -307,10 +307,13 @@ test('an activity is refused with a device the document does not hold or names t
   assert.deepEqual(refused(() => recipe.addActivity(document, { ...listen, devices: [{ device: 'd2', roles: ['Dancing' as 'Volume'] }] })),
     ['invalid', { kind: 'device', device: 'd2' }]);
   assert.deepEqual(refused(() => recipe.addActivity(document, { name: 'Watch TV', type: 'WatchTV', devices: [] })), ['invalid', { kind: 'document' }]);
-  // A Harmony 350 holds one activity: the first is taken and the second refused.
-  const first = recipe.addActivity(recipe.create({ name: 'Harmony 350' }), { name: 'Watch TV', type: 'WatchTV', devices: [] }).document;
+  // A Harmony 350 holds one activity that takes part: the first is taken and a second using a device refused, while a
+  // second with no device is taken, since it takes no part, decision 44.
+  const tv = recipe.addDevice(recipe.create({ name: 'Harmony 350' }), { name: 'Television', device: carried('Made/TV') }).document;
+  const first = recipe.addActivity(tv, { name: 'Watch TV', type: 'WatchTV', devices: [{ device: 'd1', roles: [] }] }).document;
   assert.equal(first.activities.length, 1);
-  assert.deepEqual(refused(() => recipe.addActivity(first, { ...listen, devices: [] })), ['over-limit', { kind: 'document' }]);
+  assert.deepEqual(refused(() => recipe.addActivity(first, { ...listen, devices: [{ device: 'd1', roles: [] }] })), ['over-limit', { kind: 'document' }]);
+  assert.equal(refused(() => recipe.addActivity(first, { ...listen, devices: [] })), undefined);
 });
 
 test('a key\'s choice is stated in its owner\'s map, replaced by the next, and given back by default, which leaves the document as it was', () => {

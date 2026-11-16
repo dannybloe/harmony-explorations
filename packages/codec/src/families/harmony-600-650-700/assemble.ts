@@ -143,7 +143,7 @@ export interface Assembled {
  */
 export function assembleSetup(setup: Recipe, options: AssembleOptions): Assembled {
   // A field of version 2 no compiled family's build reads yet stops this route as every other, decision 43, and an
-  // activity switched off is left out as every build leaves it out, decision 44, `recipeToBuild`.
+  // activity switched off or with no device is left out as every build leaves it out, decision 44, `recipeToBuild`.
   setup = recipeToBuild(setup, 'assembleSetup', 'compiled');
   // The recipe's model, whose definition says what it can hold and whose family builds for it.
   const target = recipeTarget(setup);
