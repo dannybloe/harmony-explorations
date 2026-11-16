@@ -18,6 +18,7 @@
  * the length rules is the walk that already applies them.
  */
 import { Container, GspmError, archSlot } from '../container/gspm.ts';
+import { type BytesMemo, memoOverBytes } from '../container/memo.ts';
 import { u16, u24, u8 } from '../support/bytes.ts';
 import { valueMaps } from '../container/valuemap.ts';
 import { modePages, modeProgramRoots } from '../container/sections.ts';
@@ -379,8 +380,19 @@ export function screenProgramRoots(c: Container): number[] {
  */
 export function reachablePrograms(
   c: Container,
-  roots: readonly number[] = screenProgramRoots(c),
+  roots?: readonly number[],
 ): Map<number, ScreenInstruction[]> {
+  // From the configuration's own roots the answer is the configuration's alone, and many readers ask it of one
+  // configuration in turn, a relocation's census and its byte accounting twice for every relocation a composer makes:
+  // so that walk is read once per container and its bytes, `memo.ts`. The map handed back is a copy, so a caller that
+  // changes it changes nothing the next is given; the programs in it are shared and read.
+  if (roots === undefined) return new Map(memoOverBytes(PROGRAMS_FROM_ROOTS, c, (one) => walkPrograms(one, screenProgramRoots(one))));
+  return walkPrograms(c, roots);
+}
+
+const PROGRAMS_FROM_ROOTS: BytesMemo<ReadonlyMap<number, ScreenInstruction[]>> = new WeakMap();
+
+function walkPrograms(c: Container, roots: readonly number[]): Map<number, ScreenInstruction[]> {
   const found = new Map<number, ScreenInstruction[]>();
   const pending = [...roots];
   const seen = new Set<number>(roots);

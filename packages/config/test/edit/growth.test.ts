@@ -204,9 +204,31 @@ test('every address sits inside something the emitter rebuilds', skipWithoutLab(
   for (const name of SAMPLES) {
     const c = parse(require_(name));
     const built = rebuilds(c).sort((a, b) => a.start - b.start);
+    // The first rebuild in that order holding a pointer's field, found by halving rather than by a walk from the start
+    // for each of the tens of thousands of pointers: among the rebuilds starting at or before the field, the first whose
+    // furthest end so far reaches past it, `reach` being the furthest end of the rebuilds up to each one.
+    const reach: number[] = [];
+    for (const [k, one] of built.entries()) reach.push(Math.max(reach[k - 1] ?? 0, one.start + one.bytes.length));
+    const holderOf = (at: number): (typeof built)[number] | undefined => {
+      let low = 0;
+      let high = built.length;
+      while (low < high) {
+        const middle = (low + high) >> 1;
+        if ((built[middle] as (typeof built)[number]).start <= at) low = middle + 1;
+        else high = middle;
+      }
+      // `low` rebuilds start at or before the field; the first of them whose end reaches past it holds it.
+      let first = 0;
+      let last = low;
+      while (first < last) {
+        const middle = (first + last) >> 1;
+        if ((reach[middle] as number) >= at + POINTER_WIDTH) last = middle;
+        else first = middle + 1;
+      }
+      return first < low ? built[first] : undefined;
+    };
     for (const pointer of pointers(c)) {
-      const holding = built.find((one) => pointer.at >= one.start
-        && pointer.at + POINTER_WIDTH <= one.start + one.bytes.length);
+      const holding = holderOf(pointer.at);
       assert.notEqual(holding, undefined, `${name}: ${pointer.holder} at ${pointer.at}`);
       const one = holding as { owner: string; framed: number; bytes: Uint8Array };
       if (one.framed === one.bytes.length) continue;

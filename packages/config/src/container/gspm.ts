@@ -622,13 +622,25 @@ export class Container {
   }
 }
 
+/** The first window `findMagic` searches, in bytes, which holds the magic of every container read whole. */
+const MAGIC_WINDOW = 0x2000;
+
 /** Locate the earliest known container cookie in `data`. */
 export function findMagic(data: Uint8Array): { family: Family; offset: number } {
+  // **Searched a window at a time**, each window taking up where the last stopped and twice as long, every family's
+  // magic that starts inside it, until one is found: the first found in a window is the first in the file, since
+  // anything past the window starts later and nothing before it matched. A container's magic is its first bytes, and
+  // searching the whole megabyte behind it for the families' magics it never holds would be most of what a `parse`
+  // costs; the answer is the same lowest offset of any family's magic, and a file holding none is still read once per
+  // family.
   let best: { family: Family; offset: number } | undefined;
-  for (const family of FAMILIES) {
-    const off = indexOf(data, bytesOf(family.magic));
-    if (off < 0) continue;
-    if (best === undefined || off < best.offset) best = { family, offset: off };
+  for (let from = 0, window = MAGIC_WINDOW; best === undefined && from < data.length; from = window, window *= 2) {
+    for (const family of FAMILIES) {
+      const within = data.subarray(0, Math.min(data.length, window + family.magic.length - 1));
+      const off = indexOf(within, bytesOf(family.magic), from);
+      if (off < 0) continue;
+      if (best === undefined || off < best.offset) best = { family, offset: off };
+    }
   }
   if (best === undefined) {
     throw new GspmError(

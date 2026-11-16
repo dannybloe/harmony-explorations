@@ -56,12 +56,14 @@
  * 650 and 700, the 880 and 885 and the 300 and 350 are not built yet, R77, so their marks name none.
  *
  * Scope: the Harmony One, skin 54, the Harmony Touch, the Harmony 650 and the Harmony 350, their reference documents.
- * No remote.
+ * No remote. The two claims that build every model's reference three times build the Harmony One's and the 650's in
+ * the slow tier, as `BUILT_IN_THE_SLOW_TIER` says why.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+import { slow } from '@freeharmony-sdk/lab';
 import { proves } from '@freeharmony-sdk/testkit/proof';
 
 import '../../src/support/resources.node.ts';
@@ -77,7 +79,22 @@ const BUILT_AT = '2026-11-15T09:00:00';
 
 /** A reference document, opened, so every device and activity has its id. */
 const reference = (name: string): Recipe => recipe.open(JSON.parse(readFileSync(new URL(`${name}.json`, REFERENCES), 'utf8')));
-const build = (document: Recipe): Built => buildFromRecipe(document, { builtAt: BUILT_AT, account: ACCOUNT as never });
+/**
+ * A document built, once per file for each document: the tests build the same reference documents, as they are and
+ * with their last activity removed, as the controls of several claims, and a Harmony One or 650 build is seconds each.
+ * Keyed by the document's whole JSON, so two documents share a build only when they are the same document; every build
+ * is a real one, and the tests only read what it gives.
+ */
+const BUILDS = new Map<string, Built>();
+const build = (document: Recipe): Built => {
+  const key = JSON.stringify(document);
+  let built = BUILDS.get(key);
+  if (built === undefined) {
+    built = buildFromRecipe(document, { builtAt: BUILT_AT, account: ACCOUNT as never });
+    BUILDS.set(key, built);
+  }
+  return built;
+};
 
 /** A change that leaves the document it was given alone, and returns a document that reads as a recipe. */
 function kept(before: Recipe, change: () => Change): Change {
@@ -124,8 +141,19 @@ test('setActivity switches an activity off and on again, the document then being
   });
 });
 
-test('on the Harmony One, 650, 350 and Touch an activity switched off builds what the document without it builds, and is named as left out', () => {
-  for (const name of ['one-test', 'h650-test', 'h350-test', 'touch-test']) {
+/**
+ * **Which models each tier builds.** The two claims below that build each model's reference three times hold for the
+ * Harmony 350 and the Harmony Touch in every run, and for the Harmony One and the Harmony 650 in the slow tier,
+ * `make ts-test-all` and so `make all`, since a build of either takes seconds and those builds would be the longest
+ * run of the everyday tier. What a build leaves out is decided once, before any family builds, `takingPart` in
+ * `families/fromrecipe.ts`, so the fast models' builds already exercise the path every model's build takes; the slow
+ * tier holds that no family's own build undoes it.
+ */
+const BUILT_EVERY_RUN = ['h350-test', 'touch-test'] as const;
+const BUILT_IN_THE_SLOW_TIER = ['one-test', 'h650-test'] as const;
+
+function switchedOffBuildsAsRemoved(names: readonly string[]): void {
+  for (const name of names) {
     const document = reference(name);
     const last = document.activities.at(-1)!;
     const off = recipe.setActivity(document, last.id!, { enabled: false }).document;
@@ -141,6 +169,14 @@ test('on the Harmony One, 650, 350 and Touch an activity switched off builds wha
     // Switched on again, the document is the one it was, so its build is.
     assert.deepEqual(recipe.setActivity(off, last.id!, { enabled: true }).document, document, name);
   }
+}
+
+test('on the Harmony 350 and Touch an activity switched off builds what the document without it builds, and is named as left out', () => {
+  switchedOffBuildsAsRemoved(BUILT_EVERY_RUN);
+});
+
+test('on the Harmony One and 650 an activity switched off builds what the document without it builds, and is named as left out', slow(), () => {
+  switchedOffBuildsAsRemoved(BUILT_IN_THE_SLOW_TIER);
 });
 
 test('on a Harmony Touch the favourite channels go to the first activity left that can hold them, and every id stays', () => {
@@ -208,8 +244,8 @@ test('on a Harmony 350 the limit on activities counts those switched on, in addA
 const noDeviceNow = (name: string): string => `activity ${name} uses no device now, so a build and a sync leave it out until a device is added`;
 const noDeviceNote = (name: string): string => `activity ${name} uses no device yet, so a build and a sync leave it out until one is added`;
 
-test('on the Harmony One, 650, 350 and Touch an activity with no device builds what the document without it builds, and is named as left out with no device', () => {
-  for (const name of ['one-test', 'h650-test', 'h350-test', 'touch-test']) {
+function noDeviceBuildsAsRemoved(names: readonly string[]): void {
+  for (const name of names) {
     const document = reference(name);
     const last = document.activities.at(-1)!;
     const empty = kept(document, () => recipe.setActivity(document, last.id!, { devices: [] })).document;
@@ -232,6 +268,14 @@ test('on the Harmony One, 650, 350 and Touch an activity with no device builds w
     assert.notEqual(builtDigest(build(document)), builtDigest(builtEmpty), name);
     assert.deepEqual(recipe.activities(document).map((one) => one.leftOut), document.activities.map(() => undefined), name);
   }
+}
+
+test('on the Harmony 350 and Touch an activity with no device builds what the document without it builds, and is named as left out with no device', () => {
+  noDeviceBuildsAsRemoved(BUILT_EVERY_RUN);
+});
+
+test('on the Harmony One and 650 an activity with no device builds what the document without it builds, and is named as left out with no device', slow(), () => {
+  noDeviceBuildsAsRemoved(BUILT_IN_THE_SLOW_TIER);
 });
 
 /** What a build leaves out, asked of the shared path alone, where a whole build would only repeat the one above. */

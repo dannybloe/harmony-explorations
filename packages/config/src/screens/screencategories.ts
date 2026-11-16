@@ -226,7 +226,10 @@ const WHOLE_KEYPAD = 20;
 export function contentKey(bytes: Uint8Array): string {
   let a = 0x811c9dc5;
   let b = 0x01000193 ^ bytes.length;
-  for (const byte of bytes) {
+  // By index rather than through the array's iterator, which costs more per byte, and a composer hashes every picture
+  // of a configuration each time it looks one up by its content.
+  for (let at = 0; at < bytes.length; at += 1) {
+    const byte = bytes[at] as number;
     a = Math.imul(a ^ byte, 0x01000193) >>> 0;
     b = Math.imul(b ^ byte, 0x5bd1e995) >>> 0;
   }

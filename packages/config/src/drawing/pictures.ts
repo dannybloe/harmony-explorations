@@ -8,6 +8,7 @@
  */
 import { type ContainerLayout, type ContainerPiece, type PieceRef, layOutContainer, takeApart } from '../assembly/frame.ts';
 import { type Container } from '../container/gspm.ts';
+import { type BytesMemo, memoOverBytes } from '../container/memo.ts';
 import { drawIcon } from './icons.ts';
 import { rgb565, rgbTo565 } from '../screens/png.ts';
 import { namedContentEnd } from '../container/coverage.ts';
@@ -102,8 +103,21 @@ function iconRows(drawing: IconDrawing): (number | undefined)[][] {
   }));
 }
 
-/** Every picture of a configuration by its content, the bank's and the ones outside it, as `screenUnits` lists them. */
+/**
+ * Every picture of a configuration by its content, the bank's and the ones outside it, as `screenUnits` lists them.
+ *
+ * Read once per container and its bytes, `memo.ts`: a composer asks it of one configuration once per picture it
+ * places, and each answer walks every screen program and hashes every picture of the file. The map handed back is a
+ * copy, lists and all, so a caller that changes it changes nothing the next caller is given.
+ */
 export function picturesByContent(c: Container): Map<string, number[]> {
+  const kept = memoOverBytes(PICTURES_BY_CONTENT, c, readPicturesByContent);
+  return new Map([...kept].map(([key, addresses]) => [key, [...addresses]]));
+}
+
+const PICTURES_BY_CONTENT: BytesMemo<ReadonlyMap<string, readonly number[]>> = new WeakMap();
+
+function readPicturesByContent(c: Container): Map<string, number[]> {
   const bank = pictureBank(c, namedContentEnd(c)) ?? [];
   const inBank = new Set(bank.map((one) => one.address));
   const out = new Map<string, number[]>();

@@ -6,10 +6,11 @@
  * the container alone, which is right for what they read, but a container is not immutable: several
  * composers write into `blob` in place after reading it (`shared/core.ts`, `shared/modes.ts`, the
  * One family's menus and lists), so a value cached on the object alone could outlive the bytes it was
- * read from and nothing would say so. Here each entry keeps a copy of the blob and is used only while
- * the blob still equals it, which is a comparison of a megabyte four bytes at a time, `sameBytes`, against a
- * reader costing ten milliseconds and more. It was `Buffer.equals` until Node was taken out of the core. Any other field a reader uses (`flashBase`, `sections`) is set
- * once at parse and is `readonly`.
+ * read from and nothing would say so. Here each entry keeps the copy of the blob it was read against,
+ * one copy per container shared by every table, and is used only while the blob still equals that
+ * copy. The comparison walks a megabyte four bytes at a time, `sameBytes`, against a reader costing ten
+ * milliseconds and more. Any other field a reader uses (`flashBase`, `sections`) is set once at parse
+ * and is `readonly`.
  *
  * **What it is for.** Test files and composers ask the same container the same question many times:
  * `oneDrawsName` asks for the character map once per screen item and name it compares, and a test of
@@ -28,8 +29,25 @@ export type BytesMemo<T> = WeakMap<Container, { bytes: Uint8Array; value: T }>;
 /** `read(c)`, or the value it gave last time for this container when its bytes have not changed since. */
 export function memoOverBytes<T>(table: BytesMemo<T>, c: Container, read: (c: Container) => T): T {
   const kept = table.get(c);
-  if (kept !== undefined && sameBytes(kept.bytes, c.blob)) return kept.value;
+  if (kept !== undefined && kept.bytes === snapshotOf(c)) return kept.value;
   const value = read(c);
-  table.set(c, { bytes: c.blob.slice(), value });
+  table.set(c, { bytes: snapshotOf(c), value });
   return value;
+}
+
+/**
+ * **One copy of a container's bytes for every reader's table**, taken again only when the bytes change. Each entry
+ * keeps the copy it was read against, and holds while that copy is still the container's: the same comparison of the
+ * blob against a copy that each entry made against a copy of its own, but with one copy per container and its bytes
+ * instead of one per reader, each a megabyte for the collector to clear behind a composer's every step.
+ */
+const SNAPSHOTS = new WeakMap<Container, Uint8Array>();
+
+/** The copy of `c`'s bytes as they are now: the one kept when they still agree with it, or a new one. */
+function snapshotOf(c: Container): Uint8Array {
+  const kept = SNAPSHOTS.get(c);
+  if (kept !== undefined && sameBytes(kept, c.blob)) return kept;
+  const fresh = c.blob.slice();
+  SNAPSHOTS.set(c, fresh);
+  return fresh;
 }

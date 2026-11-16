@@ -102,13 +102,20 @@ export function padLabelShifts(c: Container): Map<number, number> {
       }
     }
   }
-  // Per label the shift that centres its block of lines.
+  // Per label the shift that centres its block of lines. A set's capitals are measured once here rather than once per
+  // label: they depend on the configuration and the set alone, neither of which changes inside this loop, and a page
+  // of pads draws dozens of labels in the same two or three sets, each measurement decoding every glyph of its set.
+  const capitalsOf = new Map<number, ReturnType<typeof capitals>>();
+  const capitalsOfSet = (font: number): ReturnType<typeof capitals> => {
+    if (!capitalsOf.has(font)) capitalsOf.set(font, capitals(c, font));
+    return capitalsOf.get(font);
+  };
   const shifts = new Map<number, number>();
   for (const { y, label } of labelsOf) {
     const first = label[0] as TextDrawn;
     const lastLine = label.at(-1) as TextDrawn;
-    const top = capitals(c, first.font);
-    const foot = capitals(c, lastLine.font);
+    const top = capitalsOfSet(first.font);
+    const foot = capitalsOfSet(lastLine.font);
     if (top === undefined || foot === undefined) continue;
     const blockTop = first.y + top.top;
     const blockFoot = lastLine.y + foot.foot;

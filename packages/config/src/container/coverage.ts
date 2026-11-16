@@ -29,6 +29,7 @@ import { BINDING_SLOT, CLOCK_RECORD_LENGTH, CLOCK_SECTION_LENGTH, Container,
   archRecordExtent, archSlot }
   from './gspm.ts';
 import { fontSets, glyphs } from '../screens/font.ts';
+import { SLOT_MAPS } from './slots.ts';
 import { type BytesMemo, memoOverBytes } from './memo.ts';
 import {
   PICTURE_BANK_BIAS,
@@ -116,6 +117,24 @@ export const EMPTY_ARRAY_LIMIT = 3;
  * the raw claims with their owners rather than only the merged result.
  */
 export function claims(c: Container, withPictures = true, refusals: string[] = []): Claim[] {
+  // Read once per container and its bytes and per answer about the pictures, `memo.ts`: a composer's relocation, its
+  // layout and its checks each ask this of one configuration in turn, and each answer reads every structure of it.
+  // The list handed back is a copy, so a caller that sorts or extends it changes nothing the next is given, and the
+  // refusals the reading collected are handed to every caller, as a reading of its own would.
+  const kept = memoOverBytes(withPictures ? CLAIMS_WITH_PICTURES : CLAIMS_WITHOUT_PICTURES, c, (one) => {
+    const refused: string[] = [];
+    return { claims: readClaims(one, withPictures, refused), refused };
+  });
+  refusals.push(...kept.refused);
+  return [...kept.claims];
+}
+
+/** What one reading of the claims gave: the claims and the refusals. */
+interface ClaimsRead { readonly claims: readonly Claim[]; readonly refused: readonly string[] }
+const CLAIMS_WITH_PICTURES: BytesMemo<ClaimsRead> = new WeakMap();
+const CLAIMS_WITHOUT_PICTURES: BytesMemo<ClaimsRead> = new WeakMap();
+
+function readClaims(c: Container, withPictures: boolean, refusals: string[]): Claim[] {
   const out: Claim[] = [];
   let bankClaims: () => void = () => {};
   // The pointer array claims, deferred so they can compare against a section reader's own claim
@@ -265,14 +284,26 @@ export function claims(c: Container, withPictures = true, refusals: string[] = [
   // identical run as legitimate, since a shared infrared block genuinely is one. So the loop runs last
   // now and **compares** where a reader has already claimed, pushing its own claim only when the
   // extents differ, which makes a divergence an overlap instead of a silent second opinion.
+  //
+  // **The first claim of each owner is looked up in a map** built once as the loop starts, and kept up to date with
+  // the claims the loop adds itself, so `already` is exactly what a search of `out` from its start would find. A
+  // search per section would walk a composed configuration's tens of thousands of claims twenty times over and be
+  // most of what `claims` costs, and `claims` runs on every relocation a composer makes.
   tableClaims = () => {
+    const firstOf = new Map<string, Claim>();
+    for (const claim of out) if (!firstOf.has(claim.owner)) firstOf.set(claim.owner, claim);
+    const added = (start: number | undefined, length: number | undefined, owner: string): void => {
+      const before = out.length;
+      add(start, length, owner);
+      if (out.length > before && !firstOf.has(owner)) firstOf.set(owner, out[out.length - 1] as Claim);
+    };
     for (let i = 0; i < c.sections.length; i += 1) {
       const owner = tableOwner(c, i);
-      const already = out.find((claim) => claim.owner === owner);
+      const already = firstOf.get(owner);
       const array = c.pointerArrayAt(i);
       if (array !== undefined) {
         if (already?.start === array.start && already.length === array.length) continue;
-        add(array.start, array.length, owner);
+        added(array.start, array.length, owner);
         continue;
       }
       const section = c.sections[i];
@@ -283,7 +314,7 @@ export function claims(c: Container, withPictures = true, refusals: string[] = [
       if (off === undefined || off + length > c.blob.length) continue;
       if (c.blob.subarray(off, off + length).some((b) => b !== 0)) continue;
       if (already?.start === off && already.length === length) continue;
-      add(off, length, owner);
+      added(off, length, owner);
     }
   };
 
@@ -627,12 +658,16 @@ export function tableOwner(c: Container, slot: number): string {
 /** The base slot number an architecture slot corresponds to, or undefined when it is inserted. */
 export function baseOf(c: Container, slot: number): number | undefined {
   if (c.architecture === undefined) return undefined;
+  // Read off the slot map directly, base by base, stopping where `archSlot` would refuse: at an architecture with
+  // no map, or at the first base slot the architecture does not have. Asking `archSlot` and catching its refusal
+  // gives the same answer, but at the price of an error and its stack for nearly every slot, and `claims` asks this
+  // of every section of every configuration a composer relocates.
+  const map = SLOT_MAPS[c.architecture];
+  if (map === undefined) return undefined;
   for (let base = 0; base < 20; base += 1) {
-    try {
-      if (archSlot(c.architecture, base) === slot) return base;
-    } catch {
-      return undefined;
-    }
+    const raw = map[base];
+    if (raw === undefined) return undefined;
+    if (raw === slot) return base;
   }
   return undefined;
 }

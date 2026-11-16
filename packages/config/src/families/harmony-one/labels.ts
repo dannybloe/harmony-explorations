@@ -242,13 +242,24 @@ export function fontOfFace(c: Container, face: string): number {
  * 402, so a caller that meets two decides by what the configuration draws in them.
  */
 export function fontsOfFace(c: Container, face: string): number[] {
+  return memoOverBytes(SET_FACES, c, readSetFaces).flatMap((one, k) => (one === face ? [k] : []));
+}
+
+/**
+ * Per font set, in table order, the face it is measured as, undefined for a smoothed set and for one no face
+ * measures. Read once per container and its bytes, `memo.ts`, since each set's measurement decodes every glyph of it
+ * and the faces are asked of one configuration face by face: a check judges every name against the same one.
+ */
+const SET_FACES: BytesMemo<readonly (string | undefined)[]> = new WeakMap();
+
+function readSetFaces(c: Container): (string | undefined)[] {
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
-  return (fontSets(c) ?? []).flatMap((set, k) => {
+  return (fontSets(c) ?? []).map((set) => {
     try {
-      return !isSmoothedSet(c, set) && measureSet(c, set, map).face === face ? [k] : [];
+      return isSmoothedSet(c, set) ? undefined : measureSet(c, set, map).face;
     } catch {
-      return [];
+      return undefined;
     }
   });
 }

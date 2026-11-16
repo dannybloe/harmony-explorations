@@ -60,15 +60,21 @@ import { OXANIUM_ALPHABET_TABLES } from './oxaniumalphabet.ts';
  */
 export const ASCII_FIRST_CODE = 32;
 
-/** FNV-1a, so a shape key needs no dependency and is stable across platforms. */
-function fnv1a(text: string, seed: number): number {
-  let hash = seed;
-  for (let i = 0; i < text.length; i += 1) {
-    hash ^= text.charCodeAt(i);
-    // The multiply is done in halves because the FNV prime overflows a double's integer range.
-    hash = Math.imul(hash, 0x01000193) >>> 0;
+/** The FNV-1a prime, which both halves of a shape key multiply by. */
+const FNV_PRIME = 0x01000193;
+
+/**
+ * A pixel value as `toString(36)` spells it, kept per value: a shape key spells every pixel of every glyph of every
+ * configuration it is asked of, and a font's few colours are the same few values every time.
+ */
+const BASE_36 = new Map<number, string>();
+function base36(value: number): string {
+  let spelt = BASE_36.get(value);
+  if (spelt === undefined) {
+    spelt = value.toString(36);
+    BASE_36.set(value, spelt);
   }
-  return hash >>> 0;
+  return spelt;
 }
 
 /**
@@ -77,19 +83,38 @@ function fnv1a(text: string, seed: number): number {
  * Height is part of the key because `I` and `l` are one shape at some sizes and two at others, so
  * a size blind table reads a tall `l` as an `I` from a smaller set. That happened, and it is what
  * the height prefix prevents.
+ *
+ * **The key is two FNV-1a hashes of the glyph's text form**, so it needs no dependency and is stable across
+ * platforms: each row's pixels spelt in base 36, `_` for a skipped one, joined by commas, and the rows joined by
+ * semicolons, hashed once from the seed `0x811c9dc5` and once from `0x01000193`. The text is fed to both hashes a
+ * character at a time as it is spelt rather than built as one string first, which is the same characters in the
+ * same order and so the same key, without a string per row and per glyph.
  */
 export function shapeKey(height: number, glyph: Glyph): string {
   // Each pixel is hashed with its two bytes swapped, as `glyphAt` read it before section 367 found glyphs
   // are stored high byte first. A key is an identity and not a colour, and every key in `alphabets.ts` was
   // made that way, so the key keeps its form rather than the table being regenerated. Arch 9's packed
   // glyphs hold grey levels, not RGB565, and were never swapped.
-  const legacy = (p: number): number => (glyph.packed ? p : ((p & 0xff) << 8) | (p >> 8));
-  const body = glyph.rows
-    .map((row) => row.map((p) => (p === undefined ? '_' : legacy(p).toString(36))).join(','))
-    .join(';');
-  const low = fnv1a(body, 0x811c9dc5).toString(16).padStart(8, '0');
-  const high = fnv1a(body, 0x01000193).toString(16).padStart(8, '0');
-  return `${height}:${low}${high}`;
+  const packed = glyph.packed === true;
+  let low = 0x811c9dc5;
+  let high = 0x01000193;
+  const feed = (code: number): void => {
+    low = Math.imul(low ^ code, FNV_PRIME) >>> 0;
+    high = Math.imul(high ^ code, FNV_PRIME) >>> 0;
+  };
+  glyph.rows.forEach((row, y) => {
+    if (y > 0) feed(0x3b);
+    row.forEach((p, x) => {
+      if (x > 0) feed(0x2c);
+      if (p === undefined) {
+        feed(0x5f);
+        return;
+      }
+      const spelt = base36(packed ? p : ((p & 0xff) << 8) | (p >> 8));
+      for (let i = 0; i < spelt.length; i += 1) feed(spelt.charCodeAt(i));
+    });
+  });
+  return `${height}:${low.toString(16).padStart(8, '0')}${high.toString(16).padStart(8, '0')}`;
 }
 
 /**
@@ -297,10 +322,47 @@ interface ResolveContext {
    */
   shapes: {
     code: number; blank: boolean; key: string; height: number; glyph: Glyph;
-    form?: ReturnType<typeof letterForm> | null; structure?: string;
+    facts: ShapeFacts; structure?: string;
   }[];
   ascii: boolean;
   drawn: Set<number>;
+}
+
+/**
+ * What a glyph's pixels say about it whatever configuration holds it: whether it is blank, its shape key, and its
+ * form as one of our letters, the last worked out on first asking. `null` is a form asked and not found.
+ */
+interface ShapeFacts { readonly blank: boolean; readonly key: string; form?: ReturnType<typeof letterForm> | null }
+
+/**
+ * The facts of every glyph met so far, by its stored bytes, its set's height and whether it is packed.
+ *
+ * **Why across configurations.** `characterMap` is asked of every configuration a composer makes on its way to a
+ * build, one per step, and each one holds the same few thousand glyphs as the last: a composition adds a device or a
+ * page, and the fonts move but do not change. Keyed on the bytes, a glyph's facts are worked out once per process
+ * instead of once per step, which would be most of what reading the letters costs. The key is the glyph's own stored
+ * bytes, the width byte to the end byte, from which its pixels are decoded, with the height that heads its shape key
+ * and the packing that says how the bytes read; so two glyphs share facts exactly when they share pixels and height.
+ * Emptied when it grows past `SHAPE_FACTS_LIMIT`, so a long running application does not keep every glyph it ever
+ * read.
+ */
+const SHAPE_FACTS = new Map<string, ShapeFacts>();
+/** How many glyphs' facts are kept before they are dropped and found again: a few times the glyphs of a build. */
+const SHAPE_FACTS_LIMIT = 200_000;
+
+function shapeFacts(c: Container, height: number, glyph: Glyph): ShapeFacts {
+  const at = c.blobOffsetOf(glyph.address) as number;
+  const stored = c.blob.subarray(at, at + glyph.length);
+  let id = `${height}${glyph.packed === true ? 'p' : 'r'}`;
+  for (let i = 0; i < stored.length; i += 1) id += String.fromCharCode(stored[i] as number);
+  let facts = SHAPE_FACTS.get(id);
+  if (facts === undefined) {
+    const blank = isBlank(glyph);
+    facts = { blank, key: blank ? '' : shapeKey(height, glyph) };
+    if (SHAPE_FACTS.size >= SHAPE_FACTS_LIMIT) SHAPE_FACTS.clear();
+    SHAPE_FACTS.set(id, facts);
+  }
+  return facts;
 }
 
 function resolveContext(c: Container): ResolveContext {
@@ -311,10 +373,10 @@ function resolveContext(c: Container): ResolveContext {
       // decoded here with `glyphAt(c, address)` and **no bound**, so the one route that turns pixels
       // into a character was the one route nothing constrained. Section 139.
       if (glyph === undefined) continue;
-      const blank = isBlank(glyph);
       // The key's height prefix is the set's declared height, which `decodedSet` has just refused to
       // return a glyph disagreeing with, so it is now the decoded height as well.
-      shapes.push({ code: set.first + index, blank, key: blank ? '' : shapeKey(set.height, glyph), height: set.height, glyph });
+      const facts = shapeFacts(c, set.height, glyph);
+      shapes.push({ code: set.first + index, blank: facts.blank, key: facts.key, height: set.height, glyph, facts });
     }
   }
   return { shapes, ascii: usesAscii(c), drawn: drawnCodes(c) };
@@ -365,8 +427,9 @@ interface LetteredAlphabet extends Alphabet {
 }
 
 function formOf(shape: ResolveContext['shapes'][number]): ReturnType<typeof letterForm> {
-  if (shape.form === undefined) shape.form = letterForm(shape.glyph.rows) ?? null;
-  return shape.form ?? undefined;
+  // Kept with the glyph's facts, so a glyph met again in the next configuration is not measured again.
+  if (shape.facts.form === undefined) shape.facts.form = letterForm(shape.glyph.rows) ?? null;
+  return shape.facts.form ?? undefined;
 }
 
 function structureOf(shape: ResolveContext['shapes'][number], inks: { shadowed: number; plain: number }): string {
@@ -551,6 +614,16 @@ export interface ScreenString {
  */
 export function screenStrings(c: Container, map = characterMap(c)): ScreenString[] {
   if (map === undefined) return [];
+  // In the configuration's own letters the answer is the configuration's alone, and readers of a configuration's
+  // devices, activities and menus each ask it of the same one in turn: so that reading is kept once per container and
+  // its bytes, `memo.ts`, and handed back as a copy of the list, its strings shared and read.
+  if (map === characterMap(c)) return [...memoOverBytes(SCREEN_STRINGS, c, (one) => readScreenStrings(one, map))];
+  return readScreenStrings(c, map);
+}
+
+const SCREEN_STRINGS: BytesMemo<readonly ScreenString[]> = new WeakMap();
+
+function readScreenStrings(c: Container, map: CharacterMap): ScreenString[] {
   const out: ScreenString[] = [];
   for (const [program, instructions] of reachablePrograms(c)) {
     let font = -1;

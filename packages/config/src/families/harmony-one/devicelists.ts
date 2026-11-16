@@ -67,6 +67,7 @@
 import { u24 } from '../../support/bytes.ts';
 import { Writer } from '../../container/emit.ts';
 import { ACTION_LIST_TABLE_SLOT, type Container, archSlot, parse } from '../../container/gspm.ts';
+import { type BytesMemo, memoOverBytes } from '../../container/memo.ts';
 import { type ContainerLayout, type ContainerPiece, layOutContainer, takeApart } from '../../assembly/frame.ts';
 import type { PieceTarget } from '../../assembly/statetables.ts';
 import { ENTER_MODE, activities, activityScreens, caseQueued } from '../../inventory/inventory.ts';
@@ -929,16 +930,26 @@ function rowFontOf(c: Container, held: ReturnType<typeof describeOneDeviceLists>
  * `nameRefusal` answers `check` with the builder's own judgement.
  */
 export function oneDeviceNameRefusal(c: Container, name: string): string | undefined {
-  const lists = oneDeviceLists(c);
-  if (lists.length === 0) throw new ComposeError('no device list to put a row on');
-  const held = describeOneDeviceLists(c, takeApart(c), blobReader(c), lists);
+  // The lists and their row font depend on the configuration alone, and a check asks this of every device's name on
+  // the same one, so both are read once per container and its bytes, `memo.ts`; each takes the configuration apart.
+  const held = memoOverBytes(HELD_DEVICE_LISTS, c, readHeldDeviceLists);
   try {
-    deviceListNameLines(c, rowFontOf(c, held), name);
+    deviceListNameLines(c, memoOverBytes(DEVICE_LIST_ROW_FONTS, c, (one) => rowFontOf(one, held)), name);
     return undefined;
   } catch (error) {
     if (error instanceof ScreenRecordError) return error.message;
     throw error;
   }
+}
+
+const HELD_DEVICE_LISTS: BytesMemo<ReturnType<typeof describeOneDeviceLists>> = new WeakMap();
+const DEVICE_LIST_ROW_FONTS: BytesMemo<number> = new WeakMap();
+
+/** The configuration's device lists described, refused where it holds none. */
+function readHeldDeviceLists(c: Container): ReturnType<typeof describeOneDeviceLists> {
+  const lists = oneDeviceLists(c);
+  if (lists.length === 0) throw new ComposeError('no device list to put a row on');
+  return describeOneDeviceLists(c, takeApart(c), blobReader(c), lists);
 }
 
 /**

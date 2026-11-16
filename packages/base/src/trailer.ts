@@ -26,6 +26,9 @@ export const TRAILER_CHECKSUM_SEED = 0x4321;
 /** From the end of the container, ahead of the four byte marker. */
 export const TRAILER_CHECKSUM_OFFSET = 6;
 
+/** Whether this machine stores a word's low byte first, which reading the bytes as 32 bit words relies on. */
+const LITTLE_ENDIAN = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
+
 /**
  * Recompute a container's trailer checksum from its bytes.
  *
@@ -43,7 +46,22 @@ export const TRAILER_CHECKSUM_OFFSET = 6;
 export function trailerChecksum(blob: Uint8Array): number {
   let accumulator = TRAILER_CHECKSUM_SEED;
   const end = blob.length - TRAILER_CHECKSUM_OFFSET;
-  for (let offset = 0; offset + 1 < end; offset += 2) {
+  // **Two words at a time where the bytes allow it.** An XOR does not care how its terms are grouped, so the XOR of
+  // the little endian 32 bit words holds the XOR of the even words in its low half and of the odd words in its high
+  // half, and folding the halves together is the XOR of every word. That reads a megabyte in a quarter of the steps,
+  // and the codec computes this on every parse and every restamp of a configuration it composes. It needs a view on a
+  // four byte boundary and a little endian machine, which every machine running this is; otherwise, and for the one
+  // word a pair leaves over, the word by word loop below does it, from where the pairs stopped.
+  let offset = 0;
+  if (LITTLE_ENDIAN && blob.byteOffset % 4 === 0 && end >= 4) {
+    const pairs = end >>> 2;
+    const words = new Uint32Array(blob.buffer, blob.byteOffset, pairs);
+    let both = 0;
+    for (let k = 0; k < pairs; k += 1) both ^= words[k]!;
+    accumulator ^= (both & 0xffff) ^ (both >>> 16);
+    offset = pairs << 2;
+  }
+  for (; offset + 1 < end; offset += 2) {
     accumulator ^= blob[offset]! | (blob[offset + 1]! << 8);
   }
   return accumulator;

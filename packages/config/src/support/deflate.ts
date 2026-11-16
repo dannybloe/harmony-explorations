@@ -649,19 +649,48 @@ class BitsIn {
     return value & ((1 << width) - 1);
   }
 
-  /** One symbol of `code`, its bits most significant first, RFC 1951 section 3.1.1. */
+  /**
+   * One symbol of `code`, its bits most significant first, RFC 1951 section 3.1.1.
+   *
+   * A bit at a time, as `bits(1)` would hand them over, with the buffer held in locals for the length of the symbol
+   * and put back once it is decoded: every literal, length and distance of a stream comes through here, and a call per
+   * bit would be most of what inflating costs. The buffer holds exactly `count` unread bits with nothing above them,
+   * so a byte is taken in only once it is empty, as `bits` takes one.
+   */
   decode(code: Decoding): number {
     let bits = 0;
     let first = 0;
     let index = 0;
+    let buffer = this.buffer;
+    let count = this.count;
     for (let length = 1; length <= MAX_CODE_BITS; length += 1) {
-      bits |= this.bits(1);
-      const count = code.counts[length]!;
-      if (bits - first < count) return code.symbols[index + bits - first]!;
-      index += count;
-      first = (first + count) << 1;
+      if (count === 0) {
+        if (this.at >= this.data.length) {
+          // The bits already taken stay taken, as `bits(1)` would have left them, so the reader is in the same
+          // state after this refusal whichever of the two read the symbol.
+          this.buffer = buffer;
+          this.count = count;
+          throw new InflateError('the stream ends early');
+        }
+        buffer = this.data[this.at]!;
+        this.at += 1;
+        count = 8;
+      }
+      bits |= buffer & 1;
+      buffer >>>= 1;
+      count -= 1;
+      const counted = code.counts[length]!;
+      if (bits - first < counted) {
+        this.buffer = buffer;
+        this.count = count;
+        return code.symbols[index + bits - first]!;
+      }
+      index += counted;
+      first = (first + counted) << 1;
       bits <<= 1;
     }
+    this.buffer = buffer;
+    this.count = count;
     throw new InflateError('a code no table holds');
   }
 
@@ -773,10 +802,15 @@ function inflateFrom(stream: Uint8Array, at: number): { readonly out: Uint8Array
       const distance = DISTANCE_BASE[distanceSymbol]! + input.bits(DISTANCE_EXTRA[distanceSymbol]!);
       if (distance > out.length) throw new InflateError('a distance reaching back before the start');
       out.room(length);
+      // Byte by byte, since a copy may overlap what it writes, a distance shorter than its length repeating the bytes
+      // just written; the output is held in locals for the loop, which every match of a stream runs.
+      const bytes = out.bytes;
+      let filled = out.length;
       for (let copied = 0; copied < length; copied += 1) {
-        out.bytes[out.length] = out.bytes[out.length - distance]!;
-        out.length += 1;
+        bytes[filled] = bytes[filled - distance]!;
+        filled += 1;
       }
+      out.length = filled;
     }
   } while (last === 0);
   input.align();

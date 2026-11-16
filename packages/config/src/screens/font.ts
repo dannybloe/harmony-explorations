@@ -564,7 +564,12 @@ export function glyphOf(c: Container, font: FontSet, code: number): Glyph | unde
   if (index < 0 || index >= font.glyphs.length) return undefined;
   const address = font.glyphs[index];
   if (address === undefined) return undefined;
-  const live = font.glyphs.filter((a): a is number => a !== undefined).sort((a, b) => a - b);
-  const after = live.find((a) => a > address);
+  // The glyph is bounded by the next live glyph above it, the lowest address past its own, and the last by the set's
+  // header. Found in one pass rather than by sorting the set's addresses for every code asked, which a measurement of
+  // a set asks once per glyph.
+  let after: number | undefined;
+  for (const a of font.glyphs) {
+    if (a !== undefined && a > address && (after === undefined || a < after)) after = a;
+  }
   return ofDeclaredHeight(font, glyphAt(c, address, c.blobOffsetOf(after ?? font.address)));
 }

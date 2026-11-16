@@ -211,15 +211,22 @@ export function bitmapPixels(c: Container, b: Bitmap): (number | undefined)[][] 
 
 /** Put a picture's pixels on the raster at `x, y`, clipped to the display. */
 function drawPixels(raster: Raster, rows: (number | undefined)[][], x: number, y: number): void {
-  rows.forEach((line, row) => {
+  // Plain loops over the rows and the pixels, with the raster's fields held in locals: every picture and every fill of
+  // every page drawn comes through here, and a composer draws each page in several appearances.
+  const { width, height, pixels } = raster;
+  for (let row = 0; row < rows.length; row += 1) {
     const at = y + row;
-    if (at < 0 || at >= raster.height) return;
-    line.forEach((pixel, column) => {
+    if (at < 0 || at >= height) continue;
+    const line = rows[row];
+    if (line === undefined) continue;
+    const start = at * width;
+    for (let column = 0; column < line.length; column += 1) {
+      const pixel = line[column];
       const into = x + column;
-      if (pixel === undefined || into < 0 || into >= raster.width) return;
-      raster.pixels[at * raster.width + into] = pixel;
-    });
-  });
+      if (pixel === undefined || into < 0 || into >= width) continue;
+      pixels[start + into] = pixel;
+    }
+  }
 }
 
 /**

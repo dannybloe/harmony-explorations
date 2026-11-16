@@ -28,7 +28,7 @@ import assert from 'node:assert/strict';
 import { lstatSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { constants, deflateRawSync, deflateSync, inflateRawSync, inflateSync } from 'node:zlib';
-import { IMAGES, LAB, imagePath, skipWithoutLab } from '@freeharmony-sdk/lab';
+import { IMAGES, LAB, imagePath, skipWithoutLab, slow } from '@freeharmony-sdk/lab';
 import { adler32, inflateRaw, inflateZlib } from '../../src/support/deflate.ts';
 import { payloadOf } from '../../src/container/ezhex.ts';
 
@@ -144,7 +144,13 @@ function imageData(bytes: Uint8Array): Uint8Array | undefined {
   return undefined;
 }
 
-test('every PNG file in the lab inflates to node:zlib\'s bytes', skipWithoutLab(), () => {
+/**
+ * A census of the lab, every one of its PNG files read and inflated twice, so it runs in the slow tier, `make
+ * ts-test-all` and so `make all`. What it holds of the inflater is held in every run by the first test of this file,
+ * every stream zlib writes and the same streams damaged, which reaches each block type and each refusal; this one adds
+ * that no PNG the lab holds is a counterexample.
+ */
+test('every PNG file in the lab inflates to node:zlib\'s bytes', slow(skipWithoutLab()), () => {
   const pngs = filesUnder(LAB!).filter((path) => /\.png$/i.test(path));
   let whole = 0;
   for (const path of pngs) {
