@@ -1238,7 +1238,7 @@ const MODEL_STATUSES: Readonly<Record<BenchModelKey, Readonly<Record<number, Req
     88: impossible(['docs/decisions.md#d40'], 'A hub\'s own ability by decision 40: this model is not a hub and finds no smart home devices.'),
     89: open(SHARED_MODEL, 'A command has no timing field in the documents, and how the remote plays a held code has not been read, so nothing tunes one command.'),
     90: open(BENCH, 'A recipe\'s power order for an activity is set by the toolkit and read by the Touch\'s build into the documents, but no document built from one has been sent to the unit.'),
-    91: open(BENCH, 'A recipe\'s opening screen for an activity is set by the toolkit, held to the three screens the build takes, and read by the build into the documents, but no document built from one has been sent to the unit.'),
+    91: open(BENCH, 'A recipe\'s opening screen for an activity is set by the toolkit, held to the three screens the build takes, and read by the build into the documents; a set built from one was sent to the unit and ran, but nobody looked at which screen an activity opened on.'),
     92: open(BENCH, 'A build leaves a switched off activity out of the documents, the same documents as without it, and a sync to a pretend Touch says which, but no such set has been sent to the unit.'),
   },
   // The Harmony Elite, the remote of the set: skin 111, on the Harmony Touch's image, provisioned from its hub. Nothing

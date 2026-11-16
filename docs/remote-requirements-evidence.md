@@ -486,7 +486,7 @@ Every requirement of [the requirements](remote-requirements.md) on every bench m
 * **Harmony 785**, unknown: Which screen a 785 activity opens on, and whether a configuration could choose another, is not checked.
 * **Harmony 300**, impossible: The 300 has no screen, so an activity opens on none. `reference/remotes/harmony-300/display.md#harmony-300-display`.
 * **Harmony 350**, impossible: The 350 has no screen, so an activity opens on none. `reference/remotes/harmony-350/display.md#harmony-350-display`.
-* **Harmony Touch**, open, waiting on a run on a unit: A recipe's opening screen for an activity is set by the toolkit, held to the three screens the build takes, and read by the build into the documents, but no document built from one has been sent to the unit.
+* **Harmony Touch**, open, waiting on a run on a unit: A recipe's opening screen for an activity is set by the toolkit, held to the three screens the build takes, and read by the build into the documents; a set built from one was sent to the unit and ran, but nobody looked at which screen an activity opened on.
 * **Harmony Elite**, open, waiting on the FHSDK and its family: Nothing composes an activity for an Elite, so no start screen can be chosen.
 * **Harmony Hub**, unknown: A hub has no screen; whether its setup carries the start screen a paired remote opens an activity on is not read. `reference/architectures/harmony-touch/remote-and-hub.md#the-remotes-own-screen-engine`.
 

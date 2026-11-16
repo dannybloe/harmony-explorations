@@ -35,6 +35,11 @@ radio link is lost is up and while an activity is starting[^t-touch-keys].
 
 Changes made on the remote travel back to the account at the next sync, [features.md](features.md).
 
+**A sync does not end a running activity.** A remote synced while an activity ran, with a device list and key maps
+that changed and an activity list that did not, still held that activity's devices as on afterwards: Off then sent
+their power off codes[^r-touch-sync-while-running]. A sync that changes or removes the running activity
+itself[^unchecked].
+
 **With no activity running and no device chosen, the keys do nothing**; Home, Favorites and Off are the
 exceptions, which the screens handle themselves[^t-touch-activities-firmware].
 
@@ -108,4 +113,5 @@ remote's own reset and restart files act on a write, not when opened, [firmware.
 [^t-touch-recovery]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_recovery.py)
 [^t-touch-api-setup]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_api_setup.py)
 [^t-touch-changed-set]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-changed-set-sync.test.ts)
+[^r-touch-sync-while-running]: Measured on a unit. An activity was started, the remote synced on the cable with two of its six documents changed, and Off pressed off the cable with an infrared receiver listening: it heard the power off codes of the two devices that activity uses, in the activity's order.
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-full-bench-runs.test.ts)

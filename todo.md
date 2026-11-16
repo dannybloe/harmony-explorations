@@ -54,7 +54,7 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
 
 - [x] 2.1 The contracts written down: the functions of the document toolkit, the device search and the sync with its events, as types on the entries and held by the surface tests, each refusing by name where nothing is behind it yet
 - [x] 2.2 The skeleton on the spare Harmony One: find a device in the catalogue, put it in a document, change what a key does in an activity and in device mode (R31, R32), check it, build it and sync it with events, through the contracts alone, and heard on the infrared monitor
-- [ ] 2.3 The same path on the Harmony Touch, the other kind of family, and whatever of the contracts does not fit it changed before anything is released, [plan 018](docs/plans/018-one-document-shape.md), decision 43
+- [x] 2.3 The same path on the Harmony Touch, the other kind of family, and whatever of the contracts does not fit it changed before anything is released, [plan 018](docs/plans/018-one-document-shape.md), decision 43
   - [x] 2.3.1 The recipe's version 2 types and reader: timing, power, tuning and a screen on a device, what an activity opens on, its power order, steps and sequences, three presses, with the Touch block still read
   - [x] 2.3.2 The maps interface both kinds of family carry: the model's places, a device's and an activity's default map, and defaults with the document's choices resolved
   - [x] 2.3.3 The Harmony Touch's maps: places, resolve, ids from the toolkit's ids, and a converter from the old block proven by a round trip with its listed differences
@@ -64,7 +64,7 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
   - [x] 2.3.7 The callers in `packages/corpus` and `packages/bench` moved to the new shape
   - [x] 2.3.8 The changes work on a Touch document as on any other: keys with a held and a double press, screens, a device's timing kept over the catalogue's, sequences owned by an activity, a definition fetched again, ids never reused
   - [x] 2.3.9 End to end with nothing attached: a Touch document created, a device added, one key changed, the whole map asked, checked, built and synced to the pretend remote
-  - [ ] 2.3.10 The new set heard once on the infrared monitor from the bench Harmony Touch, and its own setup put back
+  - [x] 2.3.10 The new set heard once on the infrared monitor from the bench Harmony Touch, and its own setup put back: 38 of 38, [the test notes](docs/test-notes/harmony-touch.md)
   - [x] 2.3.11 A new Touch document builds with no setting stated: the family's own default settings, the check and the build agreeing, and a question that lists a model's settings with their values, defaults and ranges
   - [x] 2.3.12 A build's refusal is one class an application can catch on every model, and the account a Touch build takes is a type on an entry
   - [x] 2.3.13 Removing a device, or dropping it from an activity, reports each role it leaves with no device and each press it changes
@@ -75,7 +75,7 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
   - [x] 2.5.1 A message an application shows carries no bench command line: after a Harmony Touch sync that acted on the remote, the way back is a state the outcome names
   - [x] 2.5.2 A failure's words name the phase it happened in: a read back that differs is not a write that stopped part way
   - [ ] 2.5.3 Whether a pretend remote is among the remotes an application lists, and whether reading a Harmony Touch's documents off the remote is a contract, since none exists; a pretend Touch holds the document and not the set it was sent, and nothing reads it back
-  - [ ] 2.5.4 What a sync does to an activity that is running: Logitech's client asks nothing before a sync and tells the person afterwards to switch every device off before starting an activity; tried once on the bench Harmony Touch, and what an application says to a person follows from it
+  - [x] 2.5.4 What a sync does to an activity that is running: Logitech's client asks nothing before a sync and tells the person afterwards to switch every device off before starting an activity; tried once on the bench Harmony Touch, and what an application says to a person follows from it: the Touch kept the activity running and Off still switched its devices off, so an application has nothing to say there; a sync that changes the running activity itself is not checked
   - [ ] 2.5.5 An activity that cannot work at all, such as one with no device: a Harmony One, 600, 650 and 700 build it, a Harmony Touch and a 350 say no for reasons of their own; one answer for every model is to decide
   - [ ] 2.5.6 The check takes a few hundred milliseconds a call, since judging a name means drawing it, and judges no name when an application has supplied no fonts: what an application that checks on every edit needs
   - [ ] 2.5.7 A Harmony 650 activity name of one letter repeated (eight W's) passes the check and fails the build on a self check of the start up screen

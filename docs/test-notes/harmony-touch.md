@@ -857,9 +857,52 @@ the 7.1 tests on it, and not put back.
 
 **The infrared half, not run.** The 7.1 tests on the monitor with the unit on this set have not been run. Until they
 are, that the remote plays this set rests on 9.4's 38 of 38 on a set equal to it, not on this run. When they are run,
-their result and the test that holds it go here.
+their result and the test that holds it go here. Test 1 of 7.1 ran on 16 November 2026 on the set built from the
+later document shape instead, the next section.
 
 The run is held by `packages/corpus/test/touch/touch-document-sync-runs.test.ts`.
+
+## A set built from the one document shape, heard, and a sync while an activity ran
+
+**Run on 16 November 2026**, on commit `918c373c` with a clean tree, a person at the bench. The test setup in the
+document shape every remote shares, the reference `packages/codec/test/references/touch-test.json` copied into the lab,
+went to the unit through `syncDocument`, by `touch-sync.ts --document`, the account's description the lab's own from
+9.1. The unit held the set built from nothing in its earlier form, as the run of 14 November left it. In order, each
+read before the next:
+
+| what | result |
+|---|---|
+| `getconfighash` | 200, equal to the read after the sync of 14 November, `reads/20261116T0647Z-touch-confighash` |
+| `touch-sync.ts --document`, no `--commit` | 6 documents and 2 pictures, a set of 8 answers the gate passes, power source `usb`, nothing opened |
+| `touch-sync.ts --document --commit` | identify, check, build, hand-over, write, written. The hand over handed up nothing. Eight request lists: the device list and the key maps answered 200 in one write of 361915 bytes, the other four documents, our two pictures and twelve more answered 304, and the finish. `reads/20261116T0648Z-touch-sync-document`, the set kept beside the document |
+| `getconfighash` | 200, the new device list's tag in it, `reads/20261116T0648Z-touch-confighash` |
+| off the cable, test 1 of 7.1 on the infrared monitor | **38 of 38**: every activity started from Off and ended with Off, every device heard, `reads/20261116T065316Z-ir-test-harmony-touch-7-1-every-activity-started-from-off-and-off.json` |
+
+**Only two documents differ from the earlier form's set**, the device list in five places, a control port of 0 where
+it stated 7, and the key maps, four buttons and the order of twelve maps; the remote asked for the other four with
+tags it already held. So what the 38 expectations show of this build is that every device is still heard with the
+control port at 0.
+
+**Then a sync while an activity ran.** Watch TV was started and left running, the remote put on the cable, and the
+set it held before went back, by `touch-sync.ts --set` on the lab's `9.1-nothing`:
+
+| what | result |
+|---|---|
+| `getconfighash`, Watch TV running | 200, equal to the read after the forward run, `reads/20261116T0657Z-touch-confighash` |
+| `touch-sync.ts --set`, no `--commit` | the gate passed, 8 answers, nothing opened |
+| `touch-sync.ts --set --commit` | the hand over handed up nothing; the device list and the key maps answered 200 in one write of 361907 bytes, the activity list and the rest 304, and the finish, `reads/20261116T0657Z-touch-sync-set` |
+| `getconfighash` | 200, equal to the first read of the day, `reads/20261116T0657Z-touch-confighash-2` |
+| off the cable, the screen | at first sight not in an activity; Watch TV's icon was still shown where Off then put the standard icon, by the word of the person at the bench |
+| Off, on the infrared monitor | the television's power off and the receiver's power off a second later, which is what Off sends after Watch TV, `reads/20261116T065756Z-ir-recording-touch-off-after-a-sync-during-watch-tv.json` |
+
+**So the remote kept the activity running across the sync**: it still held every device of Watch TV as on, and Off
+switched them off. **What this run does not show**: a sync that changes or removes the running activity itself, since
+the activity list was the same in both sets and the remote asked for it with the tag it held; a sync after which the
+remote restarts; and which screen each activity opened on, which nobody looked at. No closing `--unchanged` run was
+made; the hash read stands in for it. The unit was left on the set built from nothing in its earlier form.
+
+No test holds this run: no code of the libraries leans on it. The fact about a sync and a running activity is in
+[the Touch's behaviour](../../reference/remotes/harmony-touch/behaviour.md).
 
 ## The power source, read before a sync
 
