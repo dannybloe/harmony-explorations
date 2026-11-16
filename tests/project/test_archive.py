@@ -87,10 +87,14 @@ FINDINGS_DIGEST = "c4bc62336900cb13eee50b2c375c7a11ca399e67ad9183a44830b8799aa74
 # Repinned for a paragraph added in place under decision 44, and its "not decided here" reworded to say it was
 # decided below: no device, no activity, an activity with no device left out of a build and a sync on every model as
 # a switched off one is. The digest before it was 7af40829.
-DECISIONS_DIGEST = "162a5edfd8195d47134cbf76dd65863d50297c209f69e2b195cf357c1ff0ac64"
+# Repinned for decision 45, a new entry, and a sentence added in place under decision 39 that it adjusts: a release
+# is the packed packages attached to a GitHub release under the prefix @freeharmony-sdk, two packages are renamed
+# before it, no released package depends on the lab, and a local override to the folder next door is for
+# development only. The digest before it was 162a5edf.
+DECISIONS_DIGEST = "eebede5e38eece97f9a9506281070684f2c52c2ff6e8524dbe0be94cb89e0b2c"
 
 SECTIONS = 436
-DECISIONS = 44
+DECISIONS = 45
 
 
 def anchor_problems(findings, decisions):

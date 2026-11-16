@@ -87,7 +87,7 @@ R75, decision 39. FreeHarmony takes the FHSDK by version through its `package.js
 - [ ] 3.1 Decide how a version is published: what an `exports` map and a build need, and where the packages are served from (decision 4)
   - [ ] 3.1.1 Two packages renamed before anything is released, folders and import names together: `codec` to `config` and `corpus` to `remote`, and every package under the prefix `@freeharmony-sdk`
   - [ ] 3.1.2 No released package depends on the lab locator: the Logitech service client in `corpus` takes where its files are from its caller
-  - [ ] 3.1.3 The route written down as a decision: the packed files attached to a GitHub release, npm possibly later; FreeHarmony's committed `package.json` names a released version and a local override to the folder next door is for development only, which adjusts decision 39
+  - [x] 3.1.3 The route written down as a decision: the packed files attached to a GitHub release, npm possibly later; FreeHarmony's committed `package.json` names a released version and a local override to the folder next door is for development only, which adjusts decision 39, [decision 45](docs/decisions.md#d45)
 - [ ] 3.2 The first numbered release of `packages/*`, so somebody without this checkout can build on it, and FreeHarmony's `link:` dependency replaced by it
 - [ ] 3.3 The whole API documented for somebody building on it: every entry's functions and types, the schemas of the documents it takes and gives, and worked examples, generated from the sources where that keeps it from drifting; whether it is published with the reference website is to decide
 

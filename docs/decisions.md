@@ -1072,7 +1072,9 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    are in each other's way. With versions FreeHarmony stays on one until it chooses the next, the FHSDK moves
    freely, and a change of a contract shows in the number. Something FreeHarmony needs that the FHSDK lacks, or the
    other way round, is an ordinary change to the outside. Requirement R75 states the ability; this moves its work to
-   directly after the skeleton. How a version is published is that work's first question.
+   directly after the skeleton. How a version is published is that work's first question. *Adjusted on 16 November 2026 by
+   [decision 45](#d45):* "never as the folder next door" holds for what FreeHarmony commits. A local override to the
+   folder while developing is allowed, as long as it is not committed.
 
 40. <a id="d40"></a>**The Harmony Hub and the Harmony Elite are supported as every bench remote is, and the FHSDK
    drives a hub a little.** *Taken on 14 November 2026, [plan 017](plans/017-contracts-first.md).* Each gets a row
@@ -1185,3 +1187,21 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    on and using a device, and a change that leaves an activity with no device says so. The switch above stays a stored
    choice and is not set by this: giving the activity a device again makes it take part, with nothing else to undo. The
    Harmony Touch's and the Harmony 350's own refusals are no longer met on the way from a document to a build.
+
+45. <a id="d45"></a>**A release is the packed packages attached to a GitHub release, under the prefix
+   `@freeharmony-sdk`, with `codec` named `config` and `corpus` named `remote`, and no released package depends on
+   the lab.** *Taken on 16 November 2026; it answers the question [decision 39](#d39) left, how a version is
+   published.* Three routes were compared. The public npm registry gives a name and a version, and a version
+   published there can never be taken back and the name is claimed for good. GitHub Packages gives the same and asks
+   everyone who installs for a token, even to read. The packed files attached to a GitHub release need no token, can
+   be withdrawn, and carry one version for every package, so that is the route for now; npm may follow later, which
+   is why the prefix is chosen now as one that can still be registered then. **The prefix says SDK**, as
+   `@aws-sdk` does: the libraries are MIT and the application is GPLv3, and a name that says which of the two a
+   package is keeps them apart for a reader too. **Two packages are renamed before anything is released**, folders
+   and import names together, since afterwards a name is in every import of an application: `codec` becomes
+   `config`, because what an application takes from it is creating, changing, questioning, checking and building a
+   configuration, and `corpus` becomes `remote`, because it is what reads a remote and syncs to one, where corpus
+   was this project's word for the configurations in the lab. **No released package depends on the lab locator**:
+   an application has no lab, so what a released package needs it is given by its caller. **While developing, an
+   application may point at the folder next door or at the packed files built locally**; what it commits names a
+   released version. The first version is 0.1.0, a number that says the outside may still change.
